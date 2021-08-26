@@ -281,7 +281,7 @@ class _state(param.Parameterized):
         args = ()
         if self.curdoc:
             args = (id(self.curdoc),)
-            msg = f'Session %s {msg}'
+            msg = f'Session %s logged "{msg}"'
         getattr(_state_logger, level.lower())(msg, *args)
 
     def onload(self, callback):

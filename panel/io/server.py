@@ -365,6 +365,10 @@ def modify_document(self, doc):
         else:
             with profile_ctx(config.profiler) as sessions:
                 self._runner.run(module, post_check)
+
+        def _log_session_destroyed(session_context):
+            logger.info('Session %s destroyed', id(doc))
+        doc.on_session_destroyed(_log_session_destroyed)
     finally:
         state._launching.remove(doc)
         if config.profiler:
