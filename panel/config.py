@@ -95,8 +95,9 @@ class _config(_base_config):
     loading_color = param.Color(default='#c3c3c3', doc="""
         Color of the loading indicator.""")
 
-    profiler = param.Selector(default=None, objects=['pyinstrument', 'snakeviz'], doc="""
-        The profiler to enable.""")
+    profiler = param.Selector(default=None, allow_None=True, objects=[
+        'pyinstrument', 'snakeviz'], doc="""
+        The profiler engine to enable.""")
 
     safe_embed = param.Boolean(default=False, doc="""
         Ensure all bokeh property changes trigger events which are
