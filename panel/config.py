@@ -18,6 +18,7 @@ from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension
 )
 
+from .io.logging import panel_log_handler
 from .io.notebook import load_notebook
 from .io.state import state
 
@@ -195,6 +196,8 @@ class _config(_base_config):
         for p in self.param:
             if p.startswith('_'):
                 setattr(self, p+'_', None)
+        if self.log_level:
+            panel_log_handler.setLevel(self.log_level)
 
     @contextmanager
     def set(self, **kwargs):
@@ -229,6 +232,10 @@ class _config(_base_config):
             super().__setattr__(f'_{attr}_', value)
         else:
             super().__setattr__(attr, value)
+
+    @param.depends('_log_level', watch=True)
+    def _update_log_level(self):
+        panel_log_handler.setLevel(self._log_level)
 
     def __getattribute__(self, attr):
         from .io.state import state

@@ -18,6 +18,7 @@ from pyviz_comms import CommManager as _CommManager
 from tornado.web import decode_signed_value
 
 from ..util import base64url_decode
+from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
 
@@ -133,7 +134,7 @@ class _state(param.Parameterized):
         session_info = self.session_info['sessions'].get(session_id, {})
         if session_info.get('rendered') is not None:
             return
-        logger.info('Session %s rendered', id(self.curdoc))
+        logger.info(LOG_SESSION_RENDERED, id(self.curdoc))
         self.session_info['live'] += 1
         session_info.update({
             'rendered': dt.datetime.now().timestamp()
@@ -281,7 +282,7 @@ class _state(param.Parameterized):
         args = ()
         if self.curdoc:
             args = (id(self.curdoc),)
-            msg = f'Session %s logged "{msg}"'
+            msg = LOG_USER_MSG.format(msg=msg)
         getattr(_state_logger, level.lower())(msg, *args)
 
     def onload(self, callback):
