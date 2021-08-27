@@ -216,6 +216,24 @@ def test_none_table(document, comm):
     assert model.source.data == {}
 
 
+def test_tabulator_selected_dataframe(dataframe):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, selection=[0, 2])
+
+    pd.testing.assert_frame_equal(table.selected_dataframe, df.iloc[[0, 2]])
+
+
+def test_tabulator_selected_and_filtered_dataframe(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    pd.testing.assert_frame_equal(table.selected_dataframe, df)
+
+    table.add_filter('foo3', 'C')
+
+    pd.testing.assert_frame_equal(table.selected_dataframe, df[df["C"] == "foo3"])
+
+
 def test_tabulator_config_defaults(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
