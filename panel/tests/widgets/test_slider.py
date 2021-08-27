@@ -1,11 +1,14 @@
 from datetime import datetime, date
 from collections import OrderedDict
 
-from bokeh.models import Div as BkDiv, Slider as BkSlider, Column as BkColumn
+from bokeh.models import (
+    Div as BkDiv, Slider as BkSlider, Column as BkColumn, Row as BkRow)
+import pytest
 
 from panel import config
 from panel.widgets import (DateSlider, DateRangeSlider, DiscreteSlider,
-                           FloatSlider, IntSlider, RangeSlider)
+                           FloatSlider, IntSlider, RangeSlider,
+                           EditableFloatSlider, EditableIntSlider, StaticText)
 
 
 def test_float_slider(document, comm):
@@ -314,3 +317,61 @@ def test_discrete_slider_options_dict(document, comm):
 
         discrete_slider.value = options['1']
         assert widget.value == 1
+
+
+@pytest.mark.parametrize(
+    'editableslider,start,end,step,val1,val2,val3',
+    [
+        (EditableFloatSlider, 0.1, 0.5, 0.1, 0.4, 0.2, 0.5),
+        (EditableIntSlider, 1, 5, 1, 4, 2, 5)
+    ],
+    ids=["EditableFloatSlider", "EditableIntSlider"]
+)
+def test_editable_float_slider(document, comm,
+    editableslider, start, end, step, val1, val2, val3):
+
+    slider = editableslider(start=start, end=end, value=val1, name='Slider')
+
+    widget = slider.get_root(document, comm=comm)
+
+    assert isinstance(widget, BkColumn)
+
+    col_items = widget.children
+
+    assert len(col_items) == 2
+
+    row, slider_widget = col_items
+
+    assert isinstance(slider_widget, editableslider._slider_widget._widget_type)
+    assert slider_widget.title == ''
+    assert slider_widget.step == step
+    assert slider_widget.start == start
+    assert slider_widget.end == end
+    assert slider_widget.value == val1
+    
+    assert isinstance(row, BkRow)
+
+    static_widget, input_widget = row.children
+
+    assert isinstance(static_widget, StaticText._widget_type)
+    assert static_widget.text == 'Slider:'
+
+    assert isinstance(input_widget, editableslider._input_widget._widget_type)
+    assert input_widget.title == ''
+    assert input_widget.step == step
+    assert input_widget.value == val1
+
+    slider._process_events({'value': val2})
+    assert slider.value == input_widget.value == slider_widget.value == val2
+    slider._process_events({'value_throttled': val2})
+    assert slider.value_throttled == val2
+
+    # Testing throttled mode
+    with config.set(throttled=True):
+        slider._process_events({'value': val1})
+        assert slider.value == val2 # no change
+        slider._process_events({'value_throttled': val1})
+        assert slider.value == val1
+
+        slider.value = val3
+        assert input_widget.value == slider_widget.value == val3
