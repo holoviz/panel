@@ -375,3 +375,7 @@ def test_editable_float_slider(document, comm,
 
         slider.value = val3
         assert input_widget.value == slider_widget.value == val3
+
+    slider.name = 'New Slider'
+
+    assert static_widget.text == 'New Slider:' 
