@@ -216,7 +216,7 @@ def test_none_table(document, comm):
     assert model.source.data == {}
 
 
-def test_tabulator_selected_dataframe(dataframe):
+def test_tabulator_selected_dataframe():
     df = makeMixedDataFrame()
     table = Tabulator(df, selection=[0, 2])
 
