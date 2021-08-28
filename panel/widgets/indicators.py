@@ -1,5 +1,6 @@
 import os
 import sys
+import warnings
 
 from math import pi
 
@@ -130,10 +131,12 @@ class Progress(ValueIndicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    value = param.Integer(default=None, bounds=(-1, None), doc="""
-        The current value of the progress bar. If set to None the progress
+    value = param.Integer(default=-1, bounds=(-1, None),                           
+                          allow_None = True,#TODO: remove
+                          doc="""
+        The current value of the progress bar. If set to -1 the progress
         bar will be indeterminate and animate depending on the active
-        parameter. If set to -1 the progress bar will be empty.""")
+        parameter.""")
 
     _rename = {'name': None}
 
@@ -142,6 +145,11 @@ class Progress(ValueIndicator):
     @param.depends('max', watch=True)
     def _update_value_bounds(self):
         self.param.value.bounds = (-1, self.max)
+        
+    @param.depends('value', watch=True)
+    def _warn_deprecation(self):
+        if self.value is None:
+            warnings.warn('Setting the progress value to None is deprecated, use -1 instead.', DeprecationWarning)
 
     def __init__(self,**params):
         super().__init__(**params)
@@ -786,13 +794,8 @@ class Tqdm(Indicator):
 
         self.param.watch(self._update_layout, list(Viewable.param))
 
-        if self.value == 0:
-            # Hack: to give progress the initial look
-            self.progress.max = 100000
-            self.progress.value = 1
-        else:
-            self.progress.max = self.max
-            self.progress.value = self.value
+        self.progress.max = self.max
+        self.progress.value = self.value
         self.text_pane.object = self.text
 
     def _get_model(self, doc, root=None, parent=None, comm=None):

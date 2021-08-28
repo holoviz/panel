@@ -11,6 +11,8 @@ def test_progress_bounds():
     assert progress.param.value.bounds == (-1, 200)
     progress.value = 120
     assert progress.value == 120
+    progress.value = -1
+    assert progress.value == -1
 
 
 def test_file_download_label():
