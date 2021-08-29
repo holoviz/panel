@@ -516,6 +516,8 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
         server = StoppableThread(
             target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
         )
+        server_id = kwargs.get('server_id', uuid.uuid4().hex)
+        state._threads[server_id] = server
         server.start()
     else:
         server = get_server(panels, **kwargs)
