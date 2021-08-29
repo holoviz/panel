@@ -22,8 +22,8 @@ from ..template import FastListTemplate
 from ..widgets import MultiSelect, Terminal, TextInput
 from ..widgets.indicators import Trend
 from .logging import (
-    LOG_SESSION_CREATED, LOG_SESSION_LAUNCHING, LOG_USER_MSG,
-    LOG_SESSION_DESTROYED, panel_logger
+    LOG_SESSION_CREATED, LOG_SESSION_LAUNCHING, LOG_SESSION_DESTROYED,
+    panel_logger
 )
 from .notebook import push_notebook
 from .profile import profiling_tabs
