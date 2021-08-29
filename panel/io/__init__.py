@@ -2,6 +2,8 @@
 The io module contains utilities for loading JS components, embedding
 model state, and rendering panel objects.
 """
+import sys
+
 from .callbacks import PeriodicCallback # noqa
 from .embed import embed_state # noqa
 from .logging import panel_logger # noqa
