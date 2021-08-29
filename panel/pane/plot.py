@@ -14,7 +14,7 @@ from bokeh.themes import Theme
 
 from ..io import remove_root
 from ..io.notebook import push
-from ..util import escape
+from ..util import escape, bokeh_version
 from ..viewable import Layoutable
 from .base import PaneBase
 from .ipywidget import IPyWidget
@@ -32,7 +32,10 @@ def _wrap_callback(cb, wrapped, doc, comm, callbacks):
     replaces the wrapped callback with the real one while the callback
     is exectuted to ensure the callback can be removed as usual.
     """
-    hold = doc._hold
+    if bokeh_version >= '2.4':
+        hold = doc.callbacks.hold_value
+    else:
+        hold = doc._hold
     doc.hold('combine')
     if wrapped in callbacks:
         index = callbacks.index(wrapped)

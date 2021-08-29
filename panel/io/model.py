@@ -9,6 +9,7 @@ from bokeh.document.events import ColumnDataChangedEvent
 from bokeh.models import Box, ColumnDataSource, Model
 from bokeh.protocol import Protocol
 
+from ..util import bokeh_version
 from .state import state
 
 #---------------------------------------------------------------------
@@ -20,6 +21,11 @@ def diff(doc, binary=True, events=None):
     Returns a json diff required to update an existing plot with
     the latest plot data.
     """
+    if events is None:
+        if bokeh_version >= '2.4':
+            events = list(doc.callbacks._held_events)
+        else:
+            events = list(doc._held_events)
     events = list(doc._held_events) if events is None else events
     if not events or state._hold:
         return None
@@ -54,12 +60,19 @@ def add_to_doc(obj, doc, hold=False):
     # Add new root
     remove_root(obj)
     doc.add_root(obj)
-    if doc._hold is None and hold:
+    if bokeh_version >= '2.4':
+        doc_hold = doc.callbacks.hold_value
+    else:
+        doc_hold = doc._hold
+    if doc_hold is None and hold:
         doc.hold()
 
 @contextmanager
 def hold(doc, policy='combine', comm=None):
-    held = doc._hold
+    if bokeh_version >= '2.4':
+        held = doc.callbacks.hold_value
+    else:
+        held = doc._hold
     try:
         if policy is None:
             doc.unhold()
@@ -68,7 +81,10 @@ def hold(doc, policy='combine', comm=None):
         yield
     finally:
         if held:
-            doc._hold = held
+            if bokeh_version >= '2.4':
+                doc.callbacks._hold = held
+            else:
+                doc._hold = held
         else:
             if comm is not None:
                 from .notebook import push

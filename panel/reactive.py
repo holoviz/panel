@@ -1486,7 +1486,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             model.update(**msg)
         finally:
             if old:
-                self._chaning[root.ref['id']] = old
+                self._changing[root.ref['id']] = old
             else:
                 del self._changing[root.ref['id']]
 

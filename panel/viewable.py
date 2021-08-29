@@ -32,7 +32,7 @@ from .io.notebook import (
 from .io.save import save
 from .io.state import state
 from .io.server import init_doc, serve
-from .util import escape, param_reprs
+from .util import bokeh_version, escape, param_reprs
 
 
 class Layoutable(param.Parameterized):
@@ -266,7 +266,10 @@ class ServableMixin(object):
         """
         root, doc, comm = state._views[ref][1:]
         patch_cds_msg(root, msg)
-        held = doc._hold
+        if bokeh_version >= '2.4':
+            held = doc.callbacks.hold_value
+        else:
+            held = doc._hold
         patch = manager.assemble(msg)
         doc.hold()
         patch.apply_to_document(doc, comm.id)

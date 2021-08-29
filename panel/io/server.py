@@ -424,7 +424,10 @@ def unlocked():
         return
     connections = curdoc.session_context.session._subscribed_connections
 
-    hold = curdoc._hold
+    if bokeh_version >= '2.4':
+        hold = curdoc.callbacks.hold_value
+    else:
+        hold = curdoc._hold
     if hold:
         old_events = list(curdoc._held_events)
     else:
