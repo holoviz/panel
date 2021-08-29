@@ -123,7 +123,7 @@ class Progress(HTMLBox):
 
     max = Int(100, help="""Maximum value""")
 
-    value = Int(help="""Current value""")
+    value = Nullable(Int, help="""Current value""")
 
     style = Dict(String, Any, default={}, help="""
     Raw CSS style declaration. Note this may be web browser dependent.

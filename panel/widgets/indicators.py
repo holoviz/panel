@@ -149,7 +149,9 @@ class Progress(ValueIndicator):
     @param.depends('value', watch=True)
     def _warn_deprecation(self):
         if self.value is None:
-            warnings.warn('Setting the progress value to None is deprecated, use -1 instead.', DeprecationWarning)
+            self.value = -1
+            warnings.warn('Setting the progress value to None is deprecated, use -1 instead.', 
+                          FutureWarning,  stacklevel=2)  
 
     def __init__(self,**params):
         super().__init__(**params)
