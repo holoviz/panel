@@ -163,3 +163,12 @@ def set_env_var(env_var, value):
         del os.environ[env_var]
     else:
         os.environ[env_var] = old_value
+
+
+@pytest.fixture(autouse=True)
+def server_cleanup():
+    """
+    Clean up after test fails
+    """
+    yield
+    state.kill_all_servers()

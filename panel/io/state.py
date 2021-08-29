@@ -84,6 +84,7 @@ class _state(param.Parameterized):
 
     # An index of all currently active servers
     _servers = {}
+    _threads = {}
 
     # Jupyter display handles
     _handles = {}
@@ -260,6 +261,12 @@ class _state(param.Parameterized):
         """
         Stop all servers and clear them from the current state.
         """
+        for thread in self._threads.values():
+            try:
+                thread.stop()
+            except Exception:
+                pass
+        self._threads = {}
         for server_id in self._servers:
             try:
                 self._servers[server_id][0].stop()
