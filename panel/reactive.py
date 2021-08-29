@@ -271,6 +271,7 @@ class Syncable(Renderable):
                 with edit_readonly(obj):
                     obj.param.set_param(**{p: v})
         finally:
+            self._log('finished processing events %s', events)
             with edit_readonly(state):
                 state.busy = busy
 

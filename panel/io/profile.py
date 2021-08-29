@@ -86,7 +86,11 @@ def profiling_tabs(state, allow=None, deny=[]):
     show_all.param.watch(update_profiles, 'value')
     return Column(
         Accordion(
-            ('Config', Row(timeline, show_all)),
+            ('Config', Row(
+                timeline,
+                show_all,
+                sizing_mode='stretch_width'
+            )),
             active=[],
             active_header_background='#444444',
             header_background='#333333',

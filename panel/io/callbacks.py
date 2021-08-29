@@ -2,13 +2,18 @@
 Defines callbacks to be executed on a thread or by scheduling it
 on a running bokeh server.
 """
+import logging
 import time
+
 import param
 
 from bokeh.io import curdoc as _curdoc
 
 from ..util import edit_readonly
+from .logging import LOG_PERIODIC_START, LOG_PERIODIC_END
 from .state import state
+
+_periodic_logger = logging.getLogger(f'{__name__}.PeriodicCallback')
 
 
 class PeriodicCallback(param.Parameterized):
@@ -68,9 +73,18 @@ class PeriodicCallback(param.Parameterized):
     def _periodic_callback(self):
         with edit_readonly(state):
             state.busy = True
+        cbname = self.callback.__name__
+        if self._doc:
+            _periodic_logger.info(
+                LOG_PERIODIC_START, id(self._doc), cbname, self._counter
+            )
         try:
             self.callback()
         finally:
+            if self._doc:
+                _periodic_logger.info(
+                    LOG_PERIODIC_END, id(self._doc), cbname, self._counter
+                )
             with edit_readonly(state):
                 state.busy = False
         self._counter += 1
