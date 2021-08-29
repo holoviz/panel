@@ -267,7 +267,7 @@ class ServableMixin(object):
         root, doc, comm = state._views[ref][1:]
         patch_cds_msg(root, msg)
         if bokeh_version >= '2.4':
-            hold = doc.callbacks.hold_value
+            held = doc.callbacks.hold_value
         else:
             held = doc._hold
         patch = manager.assemble(msg)
