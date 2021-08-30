@@ -290,7 +290,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   private _render_child(model: any, el: Element): void {
     const view: any = this._child_views.get(model)
     if (view == null)
-      el.innerHTML = model
+      el.innerHTML = htmlDecode(model) || model
     else {
       view._parent = this
       view.renderTo(el)
