@@ -40,6 +40,37 @@ class ReactiveHTMLParser(HTMLParser):
         self._node_stack.append((tag, dom_id))
 
         if not dom_id:
+            for attr, value in attrs.items():
+                if value is None:
+                    continue
+                params, methods = [], []
+                for match in self._template_re.findall(value):
+                    match = match[2:-1]
+                    if match.startswith('model.'):
+                        continue
+                    if match in self.cls.param:
+                        params.append(match)
+                    elif hasattr(self.cls, match):
+                        methods.append(match)
+                if methods:
+                    raise ValueError(
+                        "DOM nodes with an attached callback must declare "
+                        f"an id. Found <{tag}> node with `{attr}` callback "
+                        f"referencing `{methods[0]}` method. Add an id "
+                        "attribute like this: "
+                        f"<{tag} id=\"{tag}\" {attr}=\"${{{methods[0]}}}>...</{tag}>."
+                    )
+                elif params:
+                    literal = value.replace(f'${{{params[0]}}}', f'{{{{{params[0]}}}}}')
+                    raise ValueError(
+                        "DOM node with a linked parameter declaration "
+                        f"must declare an id. Found <{tag}> node with "
+                        f"the `{attr}` attribute referencing the {params[0]} "
+                        "parameter. Either declare an id on the node, "
+                        f"i.e. <{tag} id=\"{tag}\" {attr}=\"{value}\">...</{tag}>, "
+                        "or insert the value as a literal: "
+                        f"<{tag} {attr}=\"{literal}\">...</{tag}>."
+                    )
             return
 
         if dom_id in self.nodes:
