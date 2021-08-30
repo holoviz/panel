@@ -12,9 +12,9 @@ from bokeh.events import ModelEvent
 
 
 endfor = '{% endfor %}'
-list_iter_re = '{% for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*) %}'
-items_iter_re = '{% for \s*[A-Za-z_]\w*\s*, (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.items\(\) %}'
-values_iter_re = '{% for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.values\(\) %}'
+list_iter_re = r'{% for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*) %}'
+items_iter_re = r'{% for \s*[A-Za-z_]\w*\s*, (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.items\(\) %}'
+values_iter_re = r'{% for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.values\(\) %}'
 
 
 class ReactiveHTMLParser(HTMLParser):
@@ -27,7 +27,7 @@ class ReactiveHTMLParser(HTMLParser):
         self.children = {}
         self.nodes = []
         self.looped = []
-        self._template_re = re.compile('\$\{[^}]+\}')
+        self._template_re = re.compile(r'\$\{[^}]+\}')
         self._current_node = None
         self._node_stack = []
         self._open_for = False
@@ -55,8 +55,8 @@ class ReactiveHTMLParser(HTMLParser):
                 if methods:
                     raise ValueError(
                         "DOM nodes with an attached callback must declare "
-                        f"an id. Found <{tag}> node with `{attr}` callback "
-                        f"referencing `{methods[0]}` method. Add an id "
+                        f"an id. Found <{tag}> node with the `{attr}` callback "
+                        f"referencing the `{methods[0]}` method. Add an id "
                         "attribute like this: "
                         f"<{tag} id=\"{tag}\" {attr}=\"${{{methods[0]}}}>...</{tag}>."
                     )
@@ -65,7 +65,7 @@ class ReactiveHTMLParser(HTMLParser):
                     raise ValueError(
                         "DOM node with a linked parameter declaration "
                         f"must declare an id. Found <{tag}> node with "
-                        f"the `{attr}` attribute referencing the {params[0]} "
+                        f"the `{attr}` attribute referencing the `{params[0]}` "
                         "parameter. Either declare an id on the node, "
                         f"i.e. <{tag} id=\"{tag}\" {attr}=\"{value}\">...</{tag}>, "
                         "or insert the value as a literal: "
