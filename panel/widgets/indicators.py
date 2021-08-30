@@ -732,9 +732,8 @@ class Tqdm(Indicator):
 
     layout = param.ClassSelector(class_=(Column, Row), precedence=-1, constant=True, doc="""
         The layout for the text and progress indicator.""",)
-
-    max = param.Integer(default=100, doc="""
-        The maximum value of the progress indicator.""")
+            
+    max = Progress.param.max
 
     progress = param.ClassSelector(class_=Progress, precedence=-1, doc="""
         The Progress indicator used to display the progress.""",)
@@ -744,11 +743,9 @@ class Tqdm(Indicator):
 
     text_pane = param.ClassSelector(class_=Str, precedence=-1, doc="""
         The pane to display the text to.""")
-
-    value = param.Integer(default=0, bounds=(0, None), doc="""
-        The current value of the progress bar. If set to None the progress
-        bar will be indeterminate and animate depending on the active
-        parameter.""")
+        
+    value = Progress.param.value
+    value.default = 0
 
     margin = param.Parameter(default=0, doc="""
         Allows to create additional space around the component. May

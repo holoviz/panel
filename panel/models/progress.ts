@@ -49,8 +49,6 @@ export class ProgressView extends HTMLBoxView {
   }
 
   setValue(): void {
-    console.log(this.model.value)
-    console.log(this.progressEl.value)
     if (this.model.value == null)
       this.progressEl.value = 0
     else if (this.model.value >= 0)
