@@ -6,6 +6,7 @@ import numpy as np
 from bokeh.document import Document
 from holoviews import opts
 
+from panel.config import config
 from panel.layout import Column
 from panel.pane import HoloViews, HTML, Markdown
 from panel.param import Param
@@ -175,5 +176,5 @@ def test_app():
 
 
 if __name__.startswith("bokeh"):
-    pn.extension(sizing_mode="stretch_width")
+    config.sizing_mode = "stretch_width"
     test_app().servable()
