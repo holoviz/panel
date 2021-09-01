@@ -313,7 +313,8 @@ class _state(param.Parameterized):
         if not isinstance(indicator.param.value, param.Boolean):
             raise ValueError("Busy indicator must have a value parameter"
                              "of Boolean type.")
-        self._indicators.append(indicator)
+        if indicator not in self._indicators:
+            self._indicators.append(indicator)
 
     #----------------------------------------------------------------
     # Public Properties

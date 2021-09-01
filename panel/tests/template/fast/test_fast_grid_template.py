@@ -2,10 +2,16 @@
 # pylint: disable=missing-function-docstring,missing-module-docstring,missing-class-docstring
 import holoviews as hv
 import numpy as np
-import panel as pn
+
+from bokeh.document import Document
 from holoviews import opts
 
+from panel.config import config
+from panel.layout import Column
+from panel.pane import HoloViews, HTML, Markdown
+from panel.param import Param
 from panel.template.fast.grid import FastGridTemplate, FastGridDarkTheme
+from panel.widgets import Button
 
 hv.extension("bokeh")
 ACCENT_COLOR = "#f63366" # "lightblue"
@@ -19,7 +25,7 @@ def test_template_theme_parameter():
     template = FastGridTemplate(title="Fast", theme="dark")
     # Not '#3f3f3f' which is for the Vanilla theme
 
-    doc = template.server_doc()
+    doc = template.server_doc(Document())
     assert doc.theme._json['attrs']['Figure']['background_fill_color']=="#181818"
 
     assert isinstance(template._get_theme(), FastGridDarkTheme)
@@ -107,18 +113,18 @@ def _create_hvplot():
 
 
 def _navigation_menu():
-    return pn.pane.HTML(NAVIGATION_HTML)
+    return HTML(NAVIGATION_HTML)
 
 
 def _sidebar_items():
     return [
-        pn.pane.Markdown("## Settings"),
+        Markdown("## Settings"),
         _navigation_menu(),
     ]
 
 
 def _fast_button_card():
-    button = pn.widgets.Button(name="Click me", button_type="primary")
+    button = Button(name="Click me", button_type="primary")
     button.param.name.precedence = 0
     button.param.clicks.precedence = 0
     button.param.disabled.precedence = 0
@@ -132,16 +138,16 @@ def _fast_button_card():
         "height",
         "sizing_mode",
     ]
-    settings = pn.Param(
+    settings = Param(
         button,
         parameters=button_parameters,
         show_name=False,
         sizing_mode="stretch_width",
     )
-    return pn.Column(
-        pn.pane.HTML("<h2>Button</h2>"),
+    return Column(
+        HTML("<h2>Button</h2>"),
         button,
-        pn.pane.HTML("<h3>Parameters</h3>"),
+        HTML("<h3>Parameters</h3>"),
         settings,
         sizing_mode="stretch_both",
     )
@@ -160,15 +166,15 @@ def test_app():
         # main_layout="",
         save_layout=True,
     )
-    app.main[0:7, 0:6] = pn.pane.Markdown(INFO, sizing_mode="stretch_both")
-    app.main[0:7, 6:12] = pn.pane.HoloViews(_create_hvplot(), sizing_mode="stretch_both")
+    app.main[0:7, 0:6] = Markdown(INFO, sizing_mode="stretch_both")
+    app.main[0:7, 6:12] = HoloViews(_create_hvplot(), sizing_mode="stretch_both")
     app.main[7:18, 0:6] = _fast_button_card()
-    app.main[7:14, 6:12] = pn.pane.HoloViews(_create_hvplot(), sizing_mode="stretch_both")
+    app.main[7:14, 6:12] = HoloViews(_create_hvplot(), sizing_mode="stretch_both")
     app.sidebar.extend(_sidebar_items())
 
     return app
 
 
 if __name__.startswith("bokeh"):
-    pn.extension(sizing_mode="stretch_width")
+    config.sizing_mode = "stretch_width"
     test_app().servable()

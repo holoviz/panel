@@ -384,3 +384,10 @@ def clone_model(bokeh_model, include_defaults=False, include_undefined=False):
         include_defaults=include_defaults, include_undefined=include_undefined
     )
     return type(bokeh_model)(**properties)
+
+
+def doc_event_obj(doc):
+    """
+    Temporary helper for Bokeh 2.3/2.4 compatibility
+    """
+    return doc.callbacks if bokeh_version >= '2.4' and hasattr(doc, 'callbacks') else doc
