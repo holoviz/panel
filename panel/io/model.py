@@ -9,7 +9,7 @@ from bokeh.document.events import ColumnDataChangedEvent
 from bokeh.models import Box, ColumnDataSource, Model
 from bokeh.protocol import Protocol
 
-from ..util import bokeh_version
+from ..util import doc_event_obj
 from .state import state
 
 #---------------------------------------------------------------------
@@ -21,12 +21,9 @@ def diff(doc, binary=True, events=None):
     Returns a json diff required to update an existing plot with
     the latest plot data.
     """
+    event_obj = doc_event_obj(doc)
     if events is None:
-        if bokeh_version >= '2.4':
-            events = list(doc.callbacks._held_events)
-        else:
-            events = list(doc._held_events)
-    events = list(doc._held_events) if events is None else events
+        events = list(event_obj._held_events)
     if not events or state._hold:
         return None
 
@@ -36,7 +33,7 @@ def diff(doc, binary=True, events=None):
             and e.hint.cols is not None):
             e.hint.cols = None
     msg = Protocol().create("PATCH-DOC", events, use_buffers=binary)
-    doc._held_events = [e for e in doc._held_events if e not in events]
+    event_obj._held_events = [e for e in event_obj._held_events if e not in events]
     return msg
 
 
@@ -60,19 +57,15 @@ def add_to_doc(obj, doc, hold=False):
     # Add new root
     remove_root(obj)
     doc.add_root(obj)
-    if bokeh_version >= '2.4':
-        doc_hold = doc.callbacks.hold_value
-    else:
-        doc_hold = doc._hold
+    event_obj = doc_event_obj(doc)
+    doc_hold = event_obj._hold
     if doc_hold is None and hold:
         doc.hold()
 
 @contextmanager
 def hold(doc, policy='combine', comm=None):
-    if bokeh_version >= '2.4':
-        held = doc.callbacks.hold_value
-    else:
-        held = doc._hold
+    event_obj = doc_event_obj(doc)
+    held = event_obj._hold
     try:
         if policy is None:
             doc.unhold()
@@ -81,10 +74,7 @@ def hold(doc, policy='combine', comm=None):
         yield
     finally:
         if held:
-            if bokeh_version >= '2.4':
-                doc.callbacks._hold = held
-            else:
-                doc._hold = held
+            event_obj._hold = held
         else:
             if comm is not None:
                 from .notebook import push
