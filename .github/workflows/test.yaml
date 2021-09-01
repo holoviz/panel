@@ -27,8 +27,8 @@ jobs:
       DESC: "Python ${{ matrix.python-version }} tests"
       HV_REQUIREMENTS: "unit_tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
-      CHANS: "-c pyviz -c bokeh -c conda-forge"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
+      CHANS: "-c pyviz -c bokeh/label/dev -c conda-forge"
       DISPLAY: ":99.0"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
