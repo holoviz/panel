@@ -47,7 +47,7 @@ from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
-from ..util import bokeh_version, edit_readonly
+from ..util import bokeh_version, doc_event_obj, edit_readonly
 from .logging import LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 
 from .profile import profile_ctx
@@ -452,12 +452,10 @@ def unlocked():
         return
     connections = curdoc.session_context.session._subscribed_connections
 
-    if bokeh_version >= '2.4':
-        hold = curdoc.callbacks.hold_value
-    else:
-        hold = curdoc._hold
+    event_obj = doc_event_obj(curdoc)
+    hold = event_obj._hold
     if hold:
-        old_events = list(curdoc._held_events)
+        old_events = list(event_obj._held_events)
     else:
         old_events = []
         curdoc.hold()
@@ -469,7 +467,7 @@ def unlocked():
             if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
                 state._locks.add(socket)
             locked = socket in state._locks
-            for event in curdoc._held_events:
+            for event in event_obj._held_events:
                 if (isinstance(event, ModelChangedEvent) and event not in old_events
                     and hasattr(socket, 'write_message') and not locked):
                     msg = conn.protocol.create('PATCH-DOC', [event])
@@ -481,7 +479,7 @@ def unlocked():
                         WebSocketHandler.write_message(socket, payload, binary=True)
                 elif event not in events:
                     events.append(event)
-        curdoc._held_events = events
+        event_obj._held_events = events
     finally:
         if not hold:
             curdoc.unhold()

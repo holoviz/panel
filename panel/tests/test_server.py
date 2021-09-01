@@ -1,6 +1,7 @@
 import os
 import pathlib
 import time
+import weakref
 
 import param
 import pytest
@@ -13,6 +14,7 @@ from panel.pane import Markdown
 from panel.io.resources import DIST_DIR
 from panel.io.server import get_server, serve, set_curdoc
 from panel.template import BootstrapTemplate
+from panel.util import bokeh_version
 from panel.widgets import Button
 
 
@@ -125,7 +127,7 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
     finally:
         server.stop()
 
-        
+
 def test_server_async_callbacks():
     button = Button(name='Click')
 
@@ -186,7 +188,7 @@ def test_serve_config_per_session_state():
     finally:
         server1.stop()
         server2.stop()
-    
+
 
 def test_server_session_info():
     with config.set(session_history=-1):
@@ -209,7 +211,10 @@ def test_server_session_info():
         session_context = param.Parameterized()
         session_context._document = doc
         session_context.id = sid
-        doc._session_context = session_context
+        if bokeh_version >= '2.4':
+            doc._session_context = weakref.ref(session_context)
+        else:
+            doc._session_context = session_context
         state.curdoc = doc
         state._init_session(None)
         assert state.session_info['live'] == 1
