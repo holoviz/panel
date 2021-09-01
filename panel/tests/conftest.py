@@ -172,4 +172,5 @@ def server_cleanup():
     """
     yield
     state.kill_all_servers()
-    state._indicators = []
+    state._indicators.clear()
+    state._locations.clear()

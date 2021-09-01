@@ -136,8 +136,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     def _server_destroy(self, session_context):
         doc = session_context._document
         self._documents.remove(doc)
-        if not self._documents and self.busy_indicator in state._indicators:
-            state._indicators.remove(self.busy_indicator)
+        if doc in state._locations:
+            del state._locations[doc]
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         doc = doc or _curdoc()
@@ -706,6 +706,11 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['nav'] = any('nav' in ts for ts in tags)
         self._render_variables['header'] = any('header' in ts for ts in tags)
         self._render_variables['root_labels'] = labels
+
+    def _server_destroy(self, session_context):
+        super()._server_destroy(session_context)
+        if not self._documents and self.busy_indicator in state._indicators:
+            state._indicators.remove(self.busy_indicator)
 
     def open_modal(self):
         """
