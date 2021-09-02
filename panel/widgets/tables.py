@@ -544,8 +544,8 @@ class BaseTable(ReactiveData, Widget):
         Returns a DataFrame of the currently selected rows.
         """
         if not self.selection:
-            return self.value
-        return self.value.iloc[self.selection]
+            return self._processed
+        return self._processed.iloc[self.selection]
 
 
 

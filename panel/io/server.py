@@ -47,7 +47,9 @@ from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
-from ..util import bokeh_version, edit_readonly
+from ..util import bokeh_version, doc_event_obj, edit_readonly
+from .logging import LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
+
 from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import BASE_TEMPLATE, Resources, bundle_resources
@@ -211,7 +213,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
         with self._session_prefix():
             session = await self.get_session()
             state.curdoc = session.document
-            logger.info('Session %s created', id(session.document))
+            logger.info(LOG_SESSION_CREATED, id(session.document))
             try:
                 resources = Resources.from_bokeh(self.application.resources())
                 page = server_html_page_for_session(
@@ -277,7 +279,7 @@ def modify_document(self, doc):
     from bokeh.io.doc import set_curdoc as bk_set_curdoc
     from ..config import config
 
-    logger.info('Session %s launching', id(doc))
+    logger.info(LOG_SESSION_LAUNCHING, id(doc))
 
     if config.autoreload:
         path = self._runner.path
@@ -365,6 +367,10 @@ def modify_document(self, doc):
         else:
             with profile_ctx(config.profiler) as sessions:
                 self._runner.run(module, post_check)
+
+        def _log_session_destroyed(session_context):
+            logger.info(LOG_SESSION_DESTROYED, id(doc))
+        doc.on_session_destroyed(_log_session_destroyed)
     finally:
         state._launching.remove(doc)
         if config.profiler:
@@ -446,9 +452,10 @@ def unlocked():
         return
     connections = curdoc.session_context.session._subscribed_connections
 
-    hold = curdoc._hold
+    event_obj = doc_event_obj(curdoc)
+    hold = event_obj._hold
     if hold:
-        old_events = list(curdoc._held_events)
+        old_events = list(event_obj._held_events)
     else:
         old_events = []
         curdoc.hold()
@@ -460,7 +467,7 @@ def unlocked():
             if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
                 state._locks.add(socket)
             locked = socket in state._locks
-            for event in curdoc._held_events:
+            for event in event_obj._held_events:
                 if (isinstance(event, ModelChangedEvent) and event not in old_events
                     and hasattr(socket, 'write_message') and not locked):
                     msg = conn.protocol.create('PATCH-DOC', [event])
@@ -472,7 +479,7 @@ def unlocked():
                         WebSocketHandler.write_message(socket, payload, binary=True)
                 elif event not in events:
                     events.append(event)
-        curdoc._held_events = events
+        event_obj._held_events = events
     finally:
         if not hold:
             curdoc.unhold()
@@ -535,6 +542,8 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
         server = StoppableThread(
             target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
         )
+        server_id = kwargs.get('server_id', uuid.uuid4().hex)
+        state._threads[server_id] = server
         server.start()
     else:
         server = get_server(panels, **kwargs)

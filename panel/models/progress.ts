@@ -49,8 +49,13 @@ export class ProgressView extends HTMLBoxView {
   }
 
   setValue(): void {
-    if (this.model.value != null)
+    if (this.model.value == null)
+      this.progressEl.value = 0
+    else if (this.model.value >= 0)
       this.progressEl.value = this.model.value
+    else if (this.model.value < 0)
+      this.progressEl.removeAttribute("value")
+    console.log(this.progressEl)
   }
 
   setMax(): void {

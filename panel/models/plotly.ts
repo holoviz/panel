@@ -271,6 +271,13 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     );
   }
 
+  after_layout(): void{
+    super.after_layout()
+    if ((window as any).Plotly) {
+      (window as any).Plotly.Plots.resize(this._layout_wrapper);
+    }
+  }
+
   _get_trace(index: number, update: boolean): any {
     const trace = clone(this.model.data[index]);
     const cds = this.model.data_sources[index];
