@@ -9,7 +9,7 @@ import param
 
 from bokeh.io import curdoc as _curdoc
 
-from ..util import edit_readonly
+from ..util import edit_readonly, function_name
 from .logging import LOG_PERIODIC_START, LOG_PERIODIC_END
 from .state import state
 
@@ -73,7 +73,7 @@ class PeriodicCallback(param.Parameterized):
     def _periodic_callback(self):
         with edit_readonly(state):
             state.busy = True
-        cbname = self.callback.__name__
+        cbname = function_name(self.callback)
         if self._doc:
             _periodic_logger.info(
                 LOG_PERIODIC_START, id(self._doc), cbname, self._counter

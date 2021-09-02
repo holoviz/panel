@@ -16,6 +16,7 @@ from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
 from distutils.version import LooseVersion
+from functools import partial
 from html import escape # noqa
 from importlib import import_module
 from six import string_types
@@ -391,3 +392,14 @@ def doc_event_obj(doc):
     Temporary helper for Bokeh 2.3/2.4 compatibility
     """
     return doc.callbacks if bokeh_version >= '2.4' and hasattr(doc, 'callbacks') else doc
+
+
+def function_name(func):
+    """
+    Returns the name of a function (or its string repr)
+    """
+    while isinstance(func, partial):
+        func = func.func
+    if hasattr(func, '__name__'):
+        return func.__name__
+    return str(func)
