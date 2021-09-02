@@ -165,10 +165,14 @@ def get_timeline(doc=None):
             }
             cds.patch(patch)
         elif new.msg.endswith('rendered'):
-            index = cds.data['msg'].index(f'Session {sid} initializing')
+            try:
+                index = cds.data['msg'].index(f'Session {sid} initializing')
+                x0 = cds.data['x1'][index]
+            except ValueError:
+                x0 = new.created*1000
             etype = 'rendering'
             event = {
-                'x0': [cds.data['x1'][index]],
+                'x0': [x0],
                 'x1': [new.created*1000],
                 'y0': [(sid, -.25)],
                 'y1': [(sid, .25)],
