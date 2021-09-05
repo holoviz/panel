@@ -1196,6 +1196,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _scripts = {}
 
+    _script_assignment = r'data.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,^,|,&&,||,??]*='
+
     __abstract = True
 
     def __init__(self, **params):
@@ -1432,11 +1434,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if not isinstance(scripts, list):
                 scripts = [scripts]
             for script in scripts:
-                attrs = (
-                    list(re.findall('data.([a-zA-Z_]\S+)=', script)) +
-                    list(re.findall('data.([a-zA-Z_]\S+) =', script))
-                )
-                for p in attrs:
+                for p in re.findall(self._script_assignment, script):
                     if p not in linked_properties:
                         linked_properties.append(p)
         for children_param in self._parser.children.values():

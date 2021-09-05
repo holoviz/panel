@@ -403,3 +403,19 @@ def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
         """
     model = test.get_root()
     assert model.looped == ['option']
+
+
+@pytest.mark.parametrize('operator', ['', '+', '-', '*', '\\', '%', '**', '>>', '<<', '>>>', '&', '^', '&&', '||', '??'])
+
+@pytest.mark.parametrize('sep', [' ', ''])
+def test_reactive_html_scripts_linked_properties_assignment_operator(operator, sep):
+
+    class TestScripts(ReactiveHTML):
+
+        clicks = param.Integer()
+
+        _template = "<div id='test'></div>"
+
+        _scripts = {'render': f'test.onclick = () => {{ data.clicks{sep}{operator}= 1 }}'}
+
+    assert TestScripts()._linked_properties() == ['clicks']
