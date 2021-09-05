@@ -45,7 +45,7 @@ class Plotly(PaneBase):
         * "mouseup": updates are synchronized when mouse button is
           released after panning
         * "continuous": updates are synchronized continually while panning
-        * "throttle": updates are synchronized while panning, at 
+        * "throttle": updates are synchronized while panning, at
           intervals determined by the viewport_update_throttle parameter
         """, objects=["mouseup", "continuous", "throttle"])
 
@@ -150,7 +150,14 @@ class Plotly(PaneBase):
     def _update_figure_layout(self):
         if self._figure is None or self.relayout_data is None:
             return
-        self._figure.plotly_relayout(self.relayout_data)
+        relayout_data = self._clean_relayout_data(self.relayout_data)
+        self._figure.plotly_relayout(relayout_data)
+
+    @staticmethod
+    def _clean_relayout_data(relayout_data):
+        return {
+            key: val for key, val in relayout_data.items() if not key.endswith("._derived")
+        }
 
     def _send_update_msg(
         self, restyle_data, relayout_data, trace_indexes=None, source_view_id=None
@@ -210,7 +217,7 @@ class Plotly(PaneBase):
                 if isdatetime(data[idx][key]):
                     arr = data[idx][key]
                     if isinstance(arr, np.ndarray):
-                        arr = arr.astype(str) 
+                        arr = arr.astype(str)
                     else:
                         arr = [str(v) for v in arr]
                     data[idx][key] = arr
