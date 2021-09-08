@@ -162,6 +162,9 @@ class _config(_base_config):
         default=None, allow_None=True, objects=[], doc="""
         Select between a list of authentification providers.""")
 
+    _oauth_expiry = param.Number(default=1, bounds=(0, None), doc="""
+        Expiry of the OAuth cookie in number of days.""")
+
     _oauth_key = param.String(default=None, doc="""
         A client key to provide to the OAuth provider.""")
 
@@ -313,6 +316,11 @@ class _config(_base_config):
     def oauth_provider(self):
         provider = os.environ.get('PANEL_OAUTH_PROVIDER', _config._oauth_provider)
         return provider.lower() if provider else None
+
+    @property
+    def oauth_expiry(self):
+        provider = os.environ.get('PANEL_OAUTH_EXPIRY', _config._oauth_expiry)
+        return float(provider)
 
     @property
     def oauth_key(self):
