@@ -10,4 +10,3 @@ jupyter_bokeh
 jupyter-vscode-proxy
 tqdm
 bleach
-pygraphviz # Problematic on Windows. So I did not put it in setup.py
