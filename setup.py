@@ -153,6 +153,8 @@ extras_require = {
         'pyinstrument >=4.0',
         'aiohttp',
         'croniter'
+        'graphviz',
+        'python-graphviz',
     ],
     'tests': _tests,
     'recommended': _recommended,
