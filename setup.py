@@ -154,6 +154,7 @@ extras_require = {
         'aiohttp',
         'croniter'
         'graphviz',
+        'networkx>=2.5',
     ],
     'tests': _tests,
     'recommended': _recommended,
