@@ -384,14 +384,3 @@ def clone_model(bokeh_model, include_defaults=False, include_undefined=False):
         include_defaults=include_defaults, include_undefined=include_undefined
     )
     return type(bokeh_model)(**properties)
-
-
-def function_name(func):
-    """
-    Returns the name of a function (or its string repr)
-    """
-    while isinstance(func, partial):
-        func = func.func
-    if hasattr(func, '__name__'):
-        return func.__name__
-    return str(func)
