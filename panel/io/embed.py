@@ -15,7 +15,6 @@ from bokeh.core.property.bases import Property
 from bokeh.models import CustomJS
 from param.parameterized import Watcher
 
-from ..util import doc_event_obj
 from .model import add_to_doc, diff
 from .state import state
 
@@ -302,8 +301,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         values.append((ws, w_models, vals, getter))
 
     add_to_doc(model, doc, True)
-    event_obj = doc_event_obj(doc)
-    event_obj._held_events = []
+    doc.callbacks._held_events = []
 
     if not widget_data:
         return
@@ -338,13 +336,12 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                 break
             sub_dict = sub_dict[g(m[0])]
         if skip:
-            event_obj._held_events = []
+            doc.callbacks._held_events = []
             continue
 
         # Drop events originating from widgets being varied
         models = [m for v in values for m in v[1]]
-        event_obj = doc_event_obj(doc)
-        event_obj._held_events = [e for e in event_obj._held_events if e.model not in models]
+        doc.callbacks._held_events = [e for e in doc.callbacks._held_events if e.model not in models]
         events = record_events(doc)
         changes |= events['content'] != '{}'
         if events:
