@@ -14,7 +14,6 @@ from panel.pane import Markdown
 from panel.io.resources import DIST_DIR
 from panel.io.server import get_server, serve, set_curdoc
 from panel.template import BootstrapTemplate
-from panel.util import bokeh_version
 from panel.widgets import Button
 
 
@@ -211,10 +210,7 @@ def test_server_session_info():
         session_context = param.Parameterized()
         session_context._document = doc
         session_context.id = sid
-        if bokeh_version >= '2.4':
-            doc._session_context = weakref.ref(session_context)
-        else:
-            doc._session_context = session_context
+        doc._session_context = weakref.ref(session_context)
         state.curdoc = doc
         state._init_session(None)
         assert state.session_info['live'] == 1

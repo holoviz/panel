@@ -386,8 +386,12 @@ def clone_model(bokeh_model, include_defaults=False, include_undefined=False):
     return type(bokeh_model)(**properties)
 
 
-def doc_event_obj(doc):
+def function_name(func):
     """
-    Temporary helper for Bokeh 2.3/2.4 compatibility
+    Returns the name of a function (or its string repr)
     """
-    return doc.callbacks if bokeh_version >= '2.4' and hasattr(doc, 'callbacks') else doc
+    while isinstance(func, partial):
+        func = func.func
+    if hasattr(func, '__name__'):
+        return func.__name__
+    return str(func)

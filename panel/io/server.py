@@ -24,7 +24,7 @@ import bokeh.command.util
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
-from bokeh.application.handlers.code import CodeHandler
+from bokeh.application.handlers.code import CodeHandler, _monkeypatch_io, patch_curdoc
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.core.templates import AUTOLOAD_JS
@@ -46,7 +46,7 @@ from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
-from ..util import bokeh_version, doc_event_obj, edit_readonly
+from ..util import edit_readonly
 from .reload import autoreload_watcher
 from .resources import BASE_TEMPLATE, Resources, bundle_resources
 from .state import state
@@ -289,17 +289,10 @@ def modify_document(self, doc):
     # stored modules are used to provide correct paths to
     # custom models resolver.
     sys.modules[module.__name__] = module
-    if bokeh_version >= '2.4.0':
-        doc.modules._modules.append(module)
-
-    else:
-        doc._modules.append(module)
+    doc.modules._modules.append(module)
 
     old_doc = curdoc()
     bk_set_curdoc(doc)
-
-    if bokeh_version < '2.4.0':
-        self._monkeypatch_io()
 
     if config.autoreload:
         set_curdoc(doc)
@@ -312,10 +305,7 @@ def modify_document(self, doc):
             # otherwise it will erroneously complain that there is
             # a memory leak
             if config.autoreload:
-                if bokeh_version >= '2.4.0':
-                    newdoc.modules._modules = []
-                else:
-                    newdoc._modules = []
+                newdoc.modules._modules = []
 
             # script is supposed to edit the doc not replace it
             if newdoc is not doc:
@@ -343,17 +333,9 @@ def modify_document(self, doc):
 
         if config.autoreload:
             bokeh.application.handlers.code_runner.handle_exception = handle_exception
-
-        if bokeh_version >= '2.4.0':
-            from bokeh.application.handlers.code import _monkeypatch_io, patch_curdoc
-            with _monkeypatch_io(self._loggers):
-                with patch_curdoc(doc):
-                    self._runner.run(module, post_check)
-        else:
-            self._runner.run(module, post_check)
-    finally:
-        if bokeh_version < '2.4.0':
-            self._unmonkeypatch_io()
+        with _monkeypatch_io(self._loggers):
+            with patch_curdoc(doc):
+                self._runner.run(module, post_check)
         bk_set_curdoc(old_doc)
 
 CodeHandler.modify_document = modify_document
@@ -424,10 +406,9 @@ def unlocked():
         return
     connections = curdoc.session_context.session._subscribed_connections
 
-    event_obj = doc_event_obj(curdoc)
-    hold = event_obj._hold
+    hold = curdoc.callbacks.hold_value
     if hold:
-        old_events = list(event_obj._held_events)
+        old_events = list(curdoc.callbacks._held_events)
     else:
         old_events = []
         curdoc.hold()
@@ -439,7 +420,7 @@ def unlocked():
             if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
                 state._locks.add(socket)
             locked = socket in state._locks
-            for event in event_obj._held_events:
+            for event in curdoc.callbacks._held_events:
                 if (isinstance(event, ModelChangedEvent) and event not in old_events
                     and hasattr(socket, 'write_message') and not locked):
                     msg = conn.protocol.create('PATCH-DOC', [event])
@@ -451,7 +432,7 @@ def unlocked():
                         WebSocketHandler.write_message(socket, payload, binary=True)
                 elif event not in events:
                     events.append(event)
-        event_obj._held_events = events
+        curdoc.callbacks._held_events = events
     finally:
         if not hold:
             curdoc.unhold()
