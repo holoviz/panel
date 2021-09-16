@@ -2,6 +2,7 @@ from functools import partial
 
 import bokeh.core.properties as bp
 import param
+import pytest
 
 from bokeh.models import Div
 from panel.layout import Tabs, WidgetBox
@@ -178,6 +179,26 @@ def test_reactive_html_basic():
     assert root.callbacks == {}
     assert root.events == {}
 
+def test_reactive_html_no_id_param_error():
+
+    with pytest.raises(ValueError) as excinfo:
+        class Test(ReactiveHTML):
+            width = param.Number(default=200)
+
+            _template = '<div width=${width}></div>'
+
+    assert "Found <div> node with the `width` attribute referencing the `width` parameter." in str(excinfo.value)
+
+def test_reactive_html_no_id_method_error():
+
+    with pytest.raises(ValueError) as excinfo:
+        class Test(ReactiveHTML):
+
+            _template = '<div onclick=${_onclick}></div>'
+
+            def _onclick(self):
+                pass
+    assert "Found <div> node with the `onclick` callback referencing the `_onclick` method." in str(excinfo.value)
 
 def test_reactive_html_dom_events():
 
@@ -382,3 +403,19 @@ def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
         """
     model = test.get_root()
     assert model.looped == ['option']
+
+
+@pytest.mark.parametrize('operator', ['', '+', '-', '*', '\\', '%', '**', '>>', '<<', '>>>', '&', '^', '&&', '||', '??'])
+
+@pytest.mark.parametrize('sep', [' ', ''])
+def test_reactive_html_scripts_linked_properties_assignment_operator(operator, sep):
+
+    class TestScripts(ReactiveHTML):
+
+        clicks = param.Integer()
+
+        _template = "<div id='test'></div>"
+
+        _scripts = {'render': f'test.onclick = () => {{ data.clicks{sep}{operator}= 1 }}'}
+
+    assert TestScripts()._linked_properties() == ['clicks']

@@ -24,7 +24,7 @@ import bokeh.command.util
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
-from bokeh.application.handlers.code import CodeHandler
+from bokeh.application.handlers.code import CodeHandler, _monkeypatch_io, patch_curdoc
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.core.templates import AUTOLOAD_JS
@@ -289,11 +289,10 @@ def modify_document(self, doc):
     # stored modules are used to provide correct paths to
     # custom models resolver.
     sys.modules[module.__name__] = module
-    doc._modules.append(module)
+    doc.modules._modules.append(module)
 
     old_doc = curdoc()
     bk_set_curdoc(doc)
-    old_io = self._monkeypatch_io()
 
     if config.autoreload:
         set_curdoc(doc)
@@ -306,7 +305,8 @@ def modify_document(self, doc):
             # otherwise it will erroneously complain that there is
             # a memory leak
             if config.autoreload:
-                newdoc._modules = []
+                newdoc.modules._modules = []
+
             # script is supposed to edit the doc not replace it
             if newdoc is not doc:
                 raise RuntimeError("%s at '%s' replaced the output document" % (self._origin, self._runner.path))
@@ -317,7 +317,11 @@ def modify_document(self, doc):
 
             # Clean up
             del sys.modules[module.__name__]
-            doc._modules.remove(module)
+
+            if hasattr(doc, 'modules'):
+                doc.modules._modules.remove(module)
+            else:
+                doc._modules.remove(module)
             bokeh.application.handlers.code_runner.handle_exception = handle_exception
             tb = html.escape(traceback.format_exc())
 
@@ -329,9 +333,10 @@ def modify_document(self, doc):
 
         if config.autoreload:
             bokeh.application.handlers.code_runner.handle_exception = handle_exception
-        self._runner.run(module, post_check)
+        with _monkeypatch_io(self._loggers):
+            with patch_curdoc(doc):
+                self._runner.run(module, post_check)
     finally:
-        self._unmonkeypatch_io(old_io)
         bk_set_curdoc(old_doc)
 
 CodeHandler.modify_document = modify_document
@@ -402,9 +407,9 @@ def unlocked():
         return
     connections = curdoc.session_context.session._subscribed_connections
 
-    hold = curdoc._hold
+    hold = curdoc.callbacks.hold_value
     if hold:
-        old_events = list(curdoc._held_events)
+        old_events = list(curdoc.callbacks._held_events)
     else:
         old_events = []
         curdoc.hold()
@@ -416,7 +421,7 @@ def unlocked():
             if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
                 state._locks.add(socket)
             locked = socket in state._locks
-            for event in curdoc._held_events:
+            for event in curdoc.callbacks._held_events:
                 if (isinstance(event, ModelChangedEvent) and event not in old_events
                     and hasattr(socket, 'write_message') and not locked):
                     msg = conn.protocol.create('PATCH-DOC', [event])
@@ -428,7 +433,7 @@ def unlocked():
                         WebSocketHandler.write_message(socket, payload, binary=True)
                 elif event not in events:
                     events.append(event)
-        curdoc._held_events = events
+        curdoc.callbacks._held_events = events
     finally:
         if not hold:
             curdoc.unhold()
@@ -491,6 +496,8 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
         server = StoppableThread(
             target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
         )
+        server_id = kwargs.get('server_id', uuid.uuid4().hex)
+        state._threads[server_id] = server
         server.start()
     else:
         server = get_server(panels, **kwargs)

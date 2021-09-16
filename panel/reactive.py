@@ -248,7 +248,7 @@ class Syncable(Renderable):
         if not msg:
             return
 
-        for ref, (model, parent) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update(events, msg, model, ref)
 
     def _process_events(self, events):
@@ -939,7 +939,7 @@ class ReactiveData(SyncableData):
                 finally:
                     self._updating = False
                 # Ensure that if the data was changed in a user
-                # callback, we still send the updated data 
+                # callback, we still send the updated data
                 if old_data is not self.value:
                     self._update_cds()
         if 'indices' in events:
@@ -1194,6 +1194,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _scripts = {}
 
+    _script_assignment = r'data.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,^,|,&&,||,??]*='
+
     __abstract = True
 
     def __init__(self, **params):
@@ -1430,11 +1432,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if not isinstance(scripts, list):
                 scripts = [scripts]
             for script in scripts:
-                attrs = (
-                    list(re.findall('data.([a-zA-Z_]\S+)=', script)) +
-                    list(re.findall('data.([a-zA-Z_]\S+) =', script))
-                )
-                for p in attrs:
+                for p in re.findall(self._script_assignment, script):
                     if p not in linked_properties:
                         linked_properties.append(p)
         for children_param in self._parser.children.values():
@@ -1486,7 +1484,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             model.update(**msg)
         finally:
             if old:
-                self._chaning[root.ref['id']] = old
+                self._changing[root.ref['id']] = old
             else:
                 del self._changing[root.ref['id']]
 

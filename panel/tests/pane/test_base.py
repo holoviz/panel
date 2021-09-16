@@ -33,7 +33,10 @@ def test_pane_layout_properties(pane, document, comm):
 
 @pytest.mark.parametrize('pane', all_panes+[Bokeh])
 def test_pane_linkable_params(pane):
-    p = pane()
+    try:
+        p = pane()
+    except ImportError:
+        pytest.skip("Dependent library could not be imported.")
     controls = p.controls(jslink=True)
     layout = Row(p, controls)
 

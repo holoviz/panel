@@ -206,7 +206,8 @@ export class TrendIndicatorView extends HTMLBoxView {
       this.textDiv.style.flex = "1"
       this.plotDiv.style.flex = "1"
     }
-    this.invalidate_layout()
+    if (this._has_finished)
+      this.invalidate_layout()
   }
 }
 

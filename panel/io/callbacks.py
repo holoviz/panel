@@ -2,6 +2,8 @@
 Defines callbacks to be executed on a thread or by scheduling it
 on a running bokeh server.
 """
+import asyncio
+import inspect
 import time
 import param
 
@@ -65,11 +67,14 @@ class PeriodicCallback(param.Parameterized):
             self.stop()
             self.start()
 
-    def _periodic_callback(self):
+    async def _periodic_callback(self):
         with edit_readonly(state):
             state.busy = True
         try:
-            self.callback()
+            if inspect.isasyncgenfunction(self.callback) or inspect.iscoroutinefunction(self.callback):
+                await self.callback()
+            else:
+                self.callback()
         finally:
             with edit_readonly(state):
                 state.busy = False
@@ -109,7 +114,7 @@ class PeriodicCallback(param.Parameterized):
             self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
         else:
             from tornado.ioloop import PeriodicCallback
-            self._cb = PeriodicCallback(self._periodic_callback, self.period)
+            self._cb = PeriodicCallback(lambda: asyncio.create_task(self._periodic_callback), self.period)
             self._cb.start()
         try:
             state.on_session_destroyed(self._cleanup)

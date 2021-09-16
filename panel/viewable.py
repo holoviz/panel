@@ -266,7 +266,7 @@ class ServableMixin(object):
         """
         root, doc, comm = state._views[ref][1:]
         patch_cds_msg(root, msg)
-        held = doc._hold
+        held = doc.callbacks.hold_value
         patch = manager.assemble(msg)
         doc.hold()
         patch.apply_to_document(doc, comm.id)

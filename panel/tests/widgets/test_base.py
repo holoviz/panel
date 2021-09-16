@@ -103,14 +103,14 @@ def test_widget_triggers_events(document, comm):
     document.hold()
 
     # Simulate client side change
-    document._held_events = document._held_events[:-1]
+    document.callbacks._held_events = document.callbacks._held_events[:-1]
 
     # Set new value
     with block_comm():
         text.value = '123'
 
-    assert len(document._held_events) == 1
-    event = document._held_events[0]
+    assert len(document.callbacks._held_events) == 1
+    event = document.callbacks._held_events[0]
     assert event.attr == 'value'
     assert event.model is widget
     assert event.new == '123'

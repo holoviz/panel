@@ -32,7 +32,7 @@ def _wrap_callback(cb, wrapped, doc, comm, callbacks):
     replaces the wrapped callback with the real one while the callback
     is exectuted to ensure the callback can be removed as usual.
     """
-    hold = doc._hold
+    hold = doc.callbacks.hold_value
     doc.hold('combine')
     if wrapped in callbacks:
         index = callbacks.index(wrapped)
