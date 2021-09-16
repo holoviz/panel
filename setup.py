@@ -154,6 +154,7 @@ extras_require = {
         'aiohttp',
         'croniter'
         'graphviz',
+        'pygraphviz',
         'networkx>=2.5',
     ],
     'tests': _tests,
