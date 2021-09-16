@@ -336,6 +336,7 @@ def modify_document(self, doc):
         with _monkeypatch_io(self._loggers):
             with patch_curdoc(doc):
                 self._runner.run(module, post_check)
+    finally:
         bk_set_curdoc(old_doc)
 
 CodeHandler.modify_document = modify_document
