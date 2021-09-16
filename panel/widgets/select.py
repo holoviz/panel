@@ -17,7 +17,7 @@ from bokeh.models.widgets import (
 
 from ..layout import Column, VSpacer
 from ..models import SingleSelect as _BkSingleSelect
-from ..util import as_unicode, isIn, indexOf, bokeh_version
+from ..util import as_unicode, isIn, indexOf
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
 from .input import TextInput, TextAreaInput
@@ -207,9 +207,7 @@ class MultiChoice(_MultiSelectBase):
 
 
 _AutocompleteInput_rename = {'name': 'title', 'options': 'completions'}
-if bokeh_version < '2.3.0':
-    # disable restrict keyword
-    _AutocompleteInput_rename['restrict'] = None
+
 
 class AutocompleteInput(Widget):
 
