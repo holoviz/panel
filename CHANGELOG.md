@@ -1,5 +1,37 @@
 # Releases
 
+## Version 0.12.2
+
+Date: 2021-09-16
+
+This a patch release with a small number of bug fixes and compatibility for bokeh 2.4. Many thanks to the contributors @Stubatiger, @maximlt, @nghenzi and the maintainers @MarcSkovMadsen and @philippjfr for the fixes in this release.
+
+Enhancements:
+
+Add option to hide constant parameters on `Param` pane (#2637) 
+Added on_session_destroyed callback (#2659)
+- Stricter validation for linking syntax in `ReactiveHTML._template` (#2689)
+
+Bug fixes:
+
+- Improved thread safety (#2631)
+- Ensure sessions get distinct files in `config` (#2646)
+- Fix bug when updating `Trend` data (#2647)
+- Ensure sorters are applied correctly after updating `Tabulator` value (#2639)
+- Correctly reflect filtered data on `Tabulator.selection` (#2676)
+- Unescape child literal HTML in ReactiveHTML (#2690)
+- Ensure Trend indicator can be rendered in layout (#2694)
+
+Documentation:
+
+- Enhance templates docs (#2658)
+- Add Folium reference notebook (#2672) 
+
+Compatibility:
+
+- Add support for bokeh 2.4 (#2644, #2687, #2696)
+
+
 ## Version 0.12.1
 
 Date: 2021-08-10
