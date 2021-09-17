@@ -127,6 +127,21 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
         server.stop()
 
 
+def test_server_extensions_on_root():
+    html = Markdown('# Title')
+
+    server = serve(html, port=6006, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    try:
+        r = requests.get("http://localhost:6006/static/extensions/panel/css/loading.css")
+        assert r.ok
+    finally:
+        server.stop()
+
+
 def test_server_async_callbacks():
     button = Button(name='Click')
 
