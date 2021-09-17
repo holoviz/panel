@@ -6,6 +6,7 @@ ways.
 import ast
 import base64
 import logging
+import importlib
 import os
 import pathlib
 
@@ -203,6 +204,10 @@ class Serve(_BkServe):
             help    = "The endpoint for the liveness API.",
             default = "liveness"
         )),
+        ('--plugins', dict(
+            action  = 'store',
+            type    = str
+        ))
     )
 
     # Supported file extensions
@@ -371,6 +376,15 @@ class Serve(_BkServe):
                     "Supply OAuth provider either using environment variable "
                     "or via explicit argument, not both."
                 )
+
+        if args.plugins:
+            plugins = ast.literal_eval(args.plugins)
+            for slug, plugin in plugins.items():
+                plugin_parts = plugin.split('.')
+                mod, cls = '.'.join(plugin_parts[:-1]), plugin_parts[-1]
+                handler = getattr(importlib.import_module(mod), cls)
+                patterns.append((slug, handler))
+
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
         if config.oauth_provider:
