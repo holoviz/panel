@@ -1,5 +1,13 @@
 # Releases
 
+## Version 0.12.3
+
+Date: 2021-09-17
+
+The 0.12.2 release unfortunately has a compatibility issue with Bokeh 2.4 which broke the `show()` method. This release fixes this regression.
+
+- Patch Bokeh to fix show() ([#2748](https://github.com/holoviz/panel/pull/2748))
+
 ## Version 0.12.2
 
 Date: 2021-09-16
