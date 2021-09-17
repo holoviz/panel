@@ -39,6 +39,7 @@ from bokeh.server.urls import per_app_patterns, toplevel_patterns
 from bokeh.server.views.autoload_js_handler import AutoloadJsHandler as BkAutoloadJsHandler
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.root_handler import RootHandler as BkRootHandler
+from bokeh.server.views.static_handler import StaticHandler
 
 # Tornado imports
 from tornado.ioloop import IOLoop
@@ -367,6 +368,19 @@ def modify_document(self, doc):
         bk_set_curdoc(old_doc)
 
 CodeHandler.modify_document = modify_document
+
+# Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
+def create_static_handler(prefix, key, app):
+    # patch
+    key = '/__patchedroot' if key == '/' else key
+
+    route = prefix
+    route += "/static/(.*)" if key == "/" else key + "/static/(.*)"
+    if app.static_path is not None:
+        return (route, StaticFileHandler, {"path" : app.static_path})
+    return (route, StaticHandler, {})
+
+bokeh.server.tornado.create_static_handler = create_static_handler
 
 #---------------------------------------------------------------------
 # Public API
