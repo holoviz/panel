@@ -171,6 +171,17 @@ class GIF(ImageBase):
         return int(w), int(h)
 
 
+class ICO(ImageBase):
+
+    filetype = 'ico'
+
+    @classmethod
+    def _imgshape(cls, data):
+        import struct
+        w, h = struct.unpack("<BB" , data[6:8])
+        return int(w or 256), int(h or 256)
+
+
 class JPG(ImageBase):
 
     filetype = 'jpg'
