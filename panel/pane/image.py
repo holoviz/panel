@@ -3,6 +3,7 @@ Contains Image panes including renderers for PNG, SVG, GIF and JPG
 file types.
 """
 import base64
+from pathlib import PurePath
 
 from io import BytesIO
 from six import string_types
@@ -21,6 +22,11 @@ class FileBase(DivPaneBase):
     _rerender_params = ['embed', 'object', 'style', 'width', 'height']
 
     __abstract = True
+
+    def __init__(self, object=None, **params):
+        if isinstance(object, PurePath):
+            object = str(object)
+        super().__init__(object=object, **params)
 
     def _type_error(self, object):
         if isinstance(object, string_types):

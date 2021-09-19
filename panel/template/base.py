@@ -8,6 +8,7 @@ import uuid
 
 from collections import OrderedDict
 from functools import partial
+from pathlib import PurePath
 
 import param
 
@@ -483,6 +484,8 @@ class BasicTemplate(BaseTemplate):
             params['modal'] = self._get_params(params['modal'], self.param.modal.class_)
         if 'theme' in params and isinstance(params['theme'], str):
             params['theme'] = THEMES[params['theme']]
+        if 'favicon' in params and isinstance(params['favicon'], PurePath):
+            params['favicon'] = str(params['favicon'])
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
         if '{{ embed(roots.js_area) }}' in template:
