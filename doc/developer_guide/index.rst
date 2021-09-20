@@ -82,7 +82,7 @@ set up an environment with:
     doit env_create -c pyviz/label/dev -c conda-forge --name=panel_dev --python=3.7
 
 Specify the desired Python version, currently Panel officially
-supports Python 2.7, 3.5, 3.6 and 3.7. Once the environment has been
+supports Python 3.7, 3.8 and 3.9. Once the environment has been
 created you can activate it with:
 
 .. code-block:: sh
