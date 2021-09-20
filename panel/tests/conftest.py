@@ -4,6 +4,7 @@ A module containing testing utilities and fixtures.
 import os
 import re
 import shutil
+import tempfile
 
 import pytest
 
@@ -174,3 +175,10 @@ def server_cleanup():
     state.kill_all_servers()
     state._indicators.clear()
     state._locations.clear()
+
+
+@pytest.fixture
+def py_file():
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    yield tf
+    tf.close()
