@@ -36,7 +36,7 @@ def _cleanup_doc(doc):
             callback(None)
         except Exception:
             pass
-    doc._callbacks[None] = {}
+    doc.callbacks._change_callbacks[None] = {}
     doc.destroy(None)
 
 
