@@ -37,6 +37,8 @@ def run_panel_serve(args):
 class NBSR:
     def __init__(self, stream) -> None:
         '''
+        NonBlockingStreamReader
+
         stream: the stream to read from.
                 Usually a process' stdout or stderr.
         '''
@@ -46,7 +48,7 @@ class NBSR:
 
         def _populateQueue(stream, queue):
             '''
-            Collect lines from 'stream' and put them in 'quque'.
+            Collect lines from 'stream' and put them in 'queue'.
             '''
 
             while True:
@@ -74,6 +76,7 @@ def test_autoreload_app(py_file):
     app2 = "import panel as pn; pn.Row('# Example 2').servable(title='B')"
     py_file.file.write(app)
     py_file.file.flush()
+    os.fsync(py_file.file)
 
     py_file.file.seek(0)
 
@@ -101,6 +104,7 @@ def test_autoreload_app(py_file):
 
         py_file.file.write(app2)
         py_file.file.flush()
+        os.fsync(py_file.file)
 
         r2 = requests.get(f"http://localhost:{port}/{app_name}")
         assert r2.status_code == 200
