@@ -10,6 +10,8 @@ import requests
 from queue import Empty, Queue
 from threading import Thread
 
+not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
+
 
 @contextlib.contextmanager
 def run_panel_serve(args):
@@ -71,6 +73,7 @@ class NBSR:
             return None
 
 
+@not_windows
 def test_autoreload_app(py_file):
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     app2 = "import panel as pn; pn.Row('# Example 2').servable(title='B')"
