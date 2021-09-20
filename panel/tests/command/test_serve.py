@@ -69,10 +69,12 @@ class NBSR:
             return None
 
 
-def test_autoreload_page(py_file):
+def test_autoreload_app(py_file):
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     app2 = "import panel as pn; pn.Row('# Example 2').servable(title='B')"
     py_file.file.write(app)
+    py_file.file.flush()
+
     py_file.file.seek(0)
 
     app_name = os.path.basename(py_file.name)[:-3]
@@ -92,11 +94,15 @@ def test_autoreload_page(py_file):
         if m is None:
             pytest.fail("no matching log line in process output")
         port = int(m.group(1))
+
         r = requests.get(f"http://localhost:{port}/{app_name}")
         assert r.status_code == 200
         assert "<title>A</title>" in r.content.decode('utf-8')
+
         py_file.file.write(app2)
         py_file.file.flush()
+
         r2 = requests.get(f"http://localhost:{port}/{app_name}")
+        assert r2.status_code == 200
         assert "<title>B</title>" in r2.content.decode('utf-8')
 
