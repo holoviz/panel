@@ -205,7 +205,7 @@ class Serve(_BkServe):
             default = "liveness"
         )),
         ('--plugins', dict(
-            action  = 'store',
+            action  = 'append',
             type    = str
         ))
     )
@@ -377,13 +377,9 @@ class Serve(_BkServe):
                     "or via explicit argument, not both."
                 )
 
-        if args.plugins:
-            plugins = ast.literal_eval(args.plugins)
-            for slug, plugin in plugins.items():
-                plugin_parts = plugin.split('.')
-                mod, cls = '.'.join(plugin_parts[:-1]), plugin_parts[-1]
-                handler = getattr(importlib.import_module(mod), cls)
-                patterns.append((slug, handler))
+        for plugin in args.plugins:
+            routes = getattr(importlib.import_module(plugin), 'ROUTES')
+            patterns.extend(routes)
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
