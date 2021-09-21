@@ -703,7 +703,7 @@ class Tabulator(BaseTable):
     """
 
     expanded = param.List(default=[], doc="""
-        List of expanded rows, only applicable if a row_detail function
+        List of expanded rows, only applicable if a row_content function
         has been defined.""")
 
     frozen_columns = param.List(default=[], doc="""
@@ -738,7 +738,7 @@ class Tabulator(BaseTable):
     page_size = param.Integer(default=20, bounds=(1, None), doc="""
         Number of rows to render per page, if pagination is enabled.""")
 
-    row_detail = param.Callable(doc="""
+    row_content = param.Callable(doc="""
         A function which is given the DataFrame row and should return
         a Panel object to render as additional detail below the row.""")
 
@@ -892,7 +892,7 @@ class Tabulator(BaseTable):
             return {}
         styler._todo = self.style._todo
         styler._compute()
-        offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_detail))
+        offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
 
         styles = {}
         for (r, c), s in styler.ctx.items():
@@ -918,7 +918,7 @@ class Tabulator(BaseTable):
             self._apply_update([], msg, m, ref)
 
     def _get_children(self, old={}):
-        if self.row_detail is None:
+        if self.row_content is None:
             return {}
         from ..pane import panel
         df = self._processed
@@ -927,7 +927,7 @@ class Tabulator(BaseTable):
             if i in old:
                 children[i] = old[i]
             else:
-                children[i] = panel(self.row_detail(df.iloc[i]))
+                children[i] = panel(self.row_content(df.iloc[i]))
         return children
 
     def _get_model_children(self, panels, doc, root, parent, comm=None):
@@ -1139,7 +1139,7 @@ class Tabulator(BaseTable):
         groups = {}
         columns = []
         selectable = self.selectable
-        if self.row_detail:
+        if self.row_content:
             columns.append({
                 "formatter": "expand"
             })
