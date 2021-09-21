@@ -20,7 +20,7 @@ from bokeh.models.widgets.tables import (
 )
 
 from panel.depends import bind
-from panel.widgets import DataFrame, Tabulator, TextInput
+from panel.widgets import Button, DataFrame, Tabulator, TextInput
 
 pd_old = pytest.mark.skipif(LooseVersion(pd.__version__) < '1.3',
                           reason="Requires latest pandas")
@@ -957,3 +957,34 @@ def test_tabulator_dataframe_replace_data(document, comm):
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
+
+
+def test_tabulator_download_menu_default():
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    filename, button = table.download_menu()
+
+    assert isinstance(filename, TextInput)
+    assert isinstance(button, Button)
+
+    assert filename.value == 'table.csv'
+    assert filename.name == 'Filename'
+    assert button.name == 'Download'
+
+
+def test_tabulator_download_menu_custom_kwargs():
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    filename, button = table.download_menu(
+        text_kwargs={'name': 'Enter filename', 'value': 'file.csv'},
+        button_kwargs={'name': 'Download table'},
+    )
+
+    assert isinstance(filename, TextInput)
+    assert isinstance(button, Button)
+
+    assert filename.value == 'file.csv'
+    assert filename.name == 'Enter filename'
+    assert button.name == 'Download table'
