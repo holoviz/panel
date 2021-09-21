@@ -1191,7 +1191,7 @@ class Tabulator(BaseTable):
             text_kwargs['name'] = 'Filename'
         if 'value' not in text_kwargs:
             text_kwargs['value'] = 'table.csv'
-        filename = TextInput(name='Filename', value='table.csv')
+        filename = TextInput(**text_kwargs)
         filename.jscallback({'table': self}, value="""
         table.filename = cb_obj.value
         """)
