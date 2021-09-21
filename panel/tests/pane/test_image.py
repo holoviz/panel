@@ -3,8 +3,9 @@ import sys
 import pytest
 
 from base64 import b64decode, b64encode
+from pathlib import Path
 
-from panel.pane import GIF, JPG, PDF, PNG, SVG
+from panel.pane import GIF, ICO, JPG, PDF, PNG, SVG
 from panel.pane.markup import escape
 from io import BytesIO, StringIO
 
@@ -53,10 +54,13 @@ twopixel = dict(\
           b'QEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAIDAREAAhEBAxEB/8QAFAABAAAAAAAA' + \
           b'AAAAAAAAAAAACf/EABoQAAEFAQAAAAAAAAAAAAAAAAYABAU2dbX/xAAVAQEBAAA' + \
           b'AAAAAAAAAAAAAAAAFBv/EABkRAAEFAAAAAAAAAAAAAAAAAAEAAjFxsf/aAAwDAQ' + \
-          b'ACEQMRAD8AA0qs5HvTHQcJdsChioXSbOr/2Q==')
+          b'ACEQMRAD8AA0qs5HvTHQcJdsChioXSbOr/2Q==',
+    ico = b'AAABAAEAAgEAAAEAIAA0AAAAFgAAACgAAAACAAAAAgAAAAEAIAAAAAAACAAAAHQ' + \
+          b'SAAB0EgAAAAAAAAAAAAD//////////wAAAAA=')
+
 
 def test_imgshape():
-    for t in [PNG, JPG, GIF]:
+    for t in [PNG, JPG, GIF, ICO]:
         w,h = t._imgshape(b64decode(twopixel[t.name.lower()]))
         assert w == 2
         assert h == 1
@@ -91,6 +95,15 @@ def test_loading_a_image_from_url():
     url = 'https://file-examples-com.github.io/uploads/2017/10/file_example_PNG_500kB.png'
 
     image_pane = PNG(url)
+    image_data = image_pane._data()
+    assert b'PNG' in image_data
+
+
+def test_loading_a_image_from_pathlib():
+    """Tests the loading of a image from a pathlib"""
+    filepath = Path(__file__).parent.parent / "test_data" / "logo.png"
+
+    image_pane = PNG(filepath)
     image_data = image_pane._data()
     assert b'PNG' in image_data
 
