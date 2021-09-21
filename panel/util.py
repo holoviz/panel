@@ -294,6 +294,8 @@ def parse_query(query):
             query[k] = float(v)
         elif v.startswith('[') or v.startswith('{'):
             query[k] = json.loads(v)
+        elif v.lower() in ("true", "false"):
+            query[k] = v.lower() == "true"
     return query
 
 
