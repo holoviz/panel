@@ -3,8 +3,8 @@ import pytest
 
 from panel import config
 from panel.interact import interactive
-from panel.pane import Str
-from panel.viewable import Viewable
+from panel.pane import Str, panel
+from panel.viewable import Viewable, Viewer
 
 from .util import jb_available, py3_only
 
@@ -27,3 +27,16 @@ def test_viewable_signature(viewable):
     parameters = signature(viewable).parameters
     assert 'params' in parameters
     assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD)
+
+
+def test_Viewer_not_initialized():
+    class Test(Viewer):
+        def __panel__(self):
+            return "# Test"
+
+    test = panel(Test)
+    assert test.object == "# Test"
+
+    # Confirm that initialized also work
+    test = panel(Test())
+    assert test.object == "# Test"
