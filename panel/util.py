@@ -371,8 +371,6 @@ def lazy_load(module, model, notebook=False, root=None):
         )
     elif root is not None:
         from .io.state import state
-        import traceback as tb
-        tb.print_stack()
         ext = module.split('.')[-1]
         if root.ref['id'] in state._views:
             param.main.param.warning(
