@@ -13,7 +13,7 @@ from ..layout import Panel, Row
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
-from ..viewable import Layoutable, Viewable
+from ..viewable import Layoutable, Viewable, Viewer
 from ..util import param_reprs
 
 
@@ -46,6 +46,8 @@ def panel(obj, **kwargs):
     if isinstance(obj, Viewable):
         return obj
     elif hasattr(obj, '__panel__'):
+        if not isinstance(obj, Viewer) and issubclass(obj, Viewer):
+            return panel(obj().__panel__())
         return panel(obj.__panel__())
     if kwargs.get('name', False) is None:
         kwargs.pop('name')
