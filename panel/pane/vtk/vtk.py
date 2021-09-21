@@ -359,7 +359,7 @@ class VTKRenderWindow(BaseVTKRenderWindow):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         VTKSynchronizedPlot = lazy_load(
-            'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm)
+            'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm), root
         )
         props = self._process_param_change(self._init_params())
         if self.object is not None:
@@ -419,7 +419,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         VTKSynchronizedPlot = lazy_load(
-            'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm)
+            'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm), root
         )
         import panel.pane.vtk.synchronizable_serializer as rws
         context = rws.SynchronizationContext(
@@ -608,7 +608,7 @@ class VTKVolume(AbstractVTK):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         VTKVolumePlot = lazy_load(
-            'panel.models.vtk', 'VTKVolumePlot', isinstance(comm, JupyterComm)
+            'panel.models.vtk', 'VTKVolumePlot', isinstance(comm, JupyterComm), root
         )
         props = self._process_param_change(self._init_params())
         if self._volume_data is not None:
@@ -764,7 +764,7 @@ class VTKJS(AbstractVTK):
         """
         Should return the bokeh model to be rendered.
         """
-        VTKJSPlot = lazy_load('panel.models.vtk', 'VTKJSPlot', isinstance(comm, JupyterComm))
+        VTKJSPlot = lazy_load('panel.models.vtk', 'VTKJSPlot', isinstance(comm, JupyterComm), root)
         props = self._process_param_change(self._init_params())
         vtkjs = self._get_vtkjs()
         if vtkjs is not None:

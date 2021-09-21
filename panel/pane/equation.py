@@ -51,7 +51,7 @@ class LaTeX(DivPaneBase):
             else:
                 module = 'katex'
         model = 'KaTeX' if module == 'katex' else 'MathJax'
-        return lazy_load(f'panel.models.{module}', model, isinstance(comm, JupyterComm))
+        return lazy_load(f'panel.models.{module}', model, isinstance(comm, JupyterComm), root)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._get_model_type(comm)(**self._get_properties())

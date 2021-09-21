@@ -246,7 +246,7 @@ class Plotly(PaneBase):
         return params
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        PlotlyPlot = lazy_load('panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm))
+        PlotlyPlot = lazy_load('panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root)
         model = PlotlyPlot(**self._init_params())
         if root is None:
             root = model

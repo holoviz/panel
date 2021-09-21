@@ -1044,7 +1044,7 @@ class Tabulator(BaseTable):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:
             self._widget_type = lazy_load(
-                'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm)
+                'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
             )
         if comm:
             with set_resource_mode('inline'):
