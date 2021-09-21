@@ -320,6 +320,11 @@ class BaseTable(ReactiveData, Widget):
                          if filt is not filter]
         self._update_cds()
 
+    def _process_column(self, values):
+        if not isinstance(values, (list, np.ndarray)):
+            return [str(v) for v in values]
+        return values
+
     def _get_data(self):
         df = self._filter_dataframe(self.value)
         if df is None:
@@ -327,7 +332,7 @@ class BaseTable(ReactiveData, Widget):
         elif len(self.indexes) > 1:
             df = df.reset_index()
         data = ColumnDataSource.from_df(df).items()
-        return df, {k if isinstance(k, str) else str(k): v for k, v in data}
+        return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data}
 
     def _update_column(self, column, array):
         self.value[column] = array
