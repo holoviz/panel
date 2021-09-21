@@ -786,9 +786,10 @@ class Tabulator(BaseTable):
     def __init__(self, value=None, **params):
         configuration = params.pop('configuration', {})
         self.style = None
+        self._child_panels = {}
         super().__init__(value=value, **params)
         self._configuration = configuration
-        self.param.watch(self._update_children, 'expanded')
+        self.param.watch(self._update_children, ['expanded']+self._data_params)
 
     def _validate(self, *events):
         super()._validate(*events)
@@ -801,6 +802,11 @@ class Tabulator(BaseTable):
                 self.style._todo = todo
             except Exception:
                 pass
+
+    def _cleanup(self, root):
+        for p in self._child_panels.values():
+            p._cleanup(root)
+        super()._cleanup(root)
 
     def _get_theme(self, theme, resources=None):
         from ..io.resources import RESOURCE_MODE
@@ -865,15 +871,6 @@ class Tabulator(BaseTable):
     def _length(self):
         return len(self._processed)
 
-    def _get_children(self):
-        if self.row_detail is None:
-            return {}
-        from ..pane import panel
-        df = self._processed
-        return {
-            i: panel(self.row_detail(df.iloc[i])) for i in self.expanded
-        }
-
     def _get_style_data(self):
         if self.value is None or self.style is None:
             return {}
@@ -915,6 +912,19 @@ class Tabulator(BaseTable):
         for ref, (m, _) in self._models.items():
             self._apply_update([], msg, m, ref)
 
+    def _get_children(self, old={}):
+        if self.row_detail is None:
+            return {}
+        from ..pane import panel
+        df = self._processed
+        children = {}
+        for i in self.expanded:
+            if i in old:
+                children[i] = old[i]
+            else:
+                children[i] = panel(self.row_detail(df.iloc[i]))
+        return children
+
     def _get_model_children(self, panels, doc, root, parent, comm=None):
         ref = root.ref['id']
         models = {}
@@ -927,10 +937,20 @@ class Tabulator(BaseTable):
             models[i] = model
         return models
 
-    def _update_children(self, *event):
-        child_panels = self._get_children()
+    def _update_children(self, *events):
+        cleanup, reuse = set(), set()
+        for event in events:
+            if event.name == 'expanded' and len(events) == 1:
+                cleanup = set(event.old) - set(event.new)
+                reuse = set(event.old) & set(event.new)
+        old_panels = self._child_panels
+        self._child_panels = child_panels = self._get_children(
+            {i: old_panels[i] for i in reuse}
+        )
         for ref, (m, _) in self._models.items():
             root, doc, comm = state._views[ref][1:]
+            for idx in cleanup:
+                old_panels[idx]._cleanup(root)
             children = self._get_model_children(
                 child_panels, doc, root, m, comm
             )
