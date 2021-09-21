@@ -5,7 +5,7 @@ from types import FunctionType, MethodType
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, Div as BkDiv
 from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CellFormatter, CheckboxEditor,
     DataCube, DataTable, DateEditor, DateFormatter, GroupingInfo,
@@ -697,6 +697,10 @@ class Tabulator(BaseTable):
     table to provide a full-featured interactive table.
     """
 
+    expanded = param.List(default=[], doc="""
+        List of expanded rows, only applicable if a row_detail function
+        has been defined.""")
+
     frozen_columns = param.List(default=[], doc="""
         List indicating the columns to freeze. The column(s) may be
         selected by name or index.""")
@@ -728,6 +732,10 @@ class Tabulator(BaseTable):
 
     page_size = param.Integer(default=20, bounds=(1, None), doc="""
         Number of rows to render per page, if pagination is enabled.""")
+
+    row_detail = param.Callable(doc="""
+        A function which is given the DataFrame row and should return
+        a Panel object to render as additional detail below the row.""")
 
     row_height = param.Integer(default=30, doc="""
         The height of each table row.""")
@@ -780,6 +788,7 @@ class Tabulator(BaseTable):
         self.style = None
         super().__init__(value=value, **params)
         self._configuration = configuration
+        self.param.watch(self._update_children, 'expanded')
 
     def _validate(self, *events):
         super()._validate(*events)
@@ -856,6 +865,15 @@ class Tabulator(BaseTable):
     def _length(self):
         return len(self._processed)
 
+    def _get_children(self):
+        if self.row_detail is None:
+            return {}
+        from ..pane import panel
+        df = self._processed
+        return {
+            i: panel(self.row_detail(df.iloc[i])) for i in self.expanded
+        }
+
     def _get_style_data(self):
         if self.value is None or self.style is None:
             return {}
@@ -872,7 +890,7 @@ class Tabulator(BaseTable):
             return {}
         styler._todo = self.style._todo
         styler._compute()
-        offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single'))
+        offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_detail))
 
         styles = {}
         for (r, c), s in styler.ctx.items():
@@ -895,6 +913,28 @@ class Tabulator(BaseTable):
         styles = self._get_style_data()
         msg = {'styles': styles}
         for ref, (m, _) in self._models.items():
+            self._apply_update([], msg, m, ref)
+
+    def _get_model_children(self, panels, doc, root, parent, comm=None):
+        ref = root.ref['id']
+        models = {}
+        for i, p in panels.items():
+            if ref in p._models:
+                model = p._models[ref][0]
+            else:
+                model = p._get_model(doc, root, parent, comm)
+            model.margin = (0, 5, 0, 10)
+            models[i] = model
+        return models
+
+    def _update_children(self, *event):
+        child_panels = self._get_children()
+        for ref, (m, _) in self._models.items():
+            root, doc, comm = state._views[ref][1:]
+            children = self._get_model_children(
+                child_panels, doc, root, m, comm
+            )
+            msg = {'children': children}
             self._apply_update([], msg, m, ref)
 
     @updating
@@ -1020,6 +1060,7 @@ class Tabulator(BaseTable):
             selectable = self.selectable
         props.update({
             'aggregators': self.aggregators,
+            'expanded': self.expanded,
             'source': source,
             'styles': self._get_style_data(),
             'columns': columns,
@@ -1054,7 +1095,11 @@ class Tabulator(BaseTable):
             model = super()._get_model(doc, root, parent, comm)
         if root is None:
             root = model
-        self._link_props(model, ['page', 'sorters'], doc, root, comm)
+        child_panels = self._get_children()
+        model.children = self._get_model_children(
+            child_panels, doc, root, parent, comm
+        )
+        self._link_props(model, ['page', 'sorters', 'expanded'], doc, root, comm)
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm):
@@ -1069,6 +1114,10 @@ class Tabulator(BaseTable):
         groups = {}
         columns = []
         selectable = self.selectable
+        if self.row_detail:
+            columns.append({
+                "formatter": "expand"
+            })
         if isinstance(selectable, str) and selectable.startswith('checkbox'):
             title = "" if selectable.endswith('-single') else "rowSelection"
             columns.append({

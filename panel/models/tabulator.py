@@ -7,7 +7,7 @@ from bokeh.core.properties import (
     Any, Bool, Dict, Either, Enum, Instance, Int, List, Nullable,
     String, Tuple
 )
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, LayoutDOM
 from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets.tables import TableColumn
 
@@ -65,7 +65,11 @@ class DataTabulator(HTMLBox):
 
     download = Bool(default=False)
 
+    children = Dict(Int, Instance(LayoutDOM))
+
     editable = Bool(default=True)
+
+    expanded = List(Int)
 
     filename = String(default="table.csv")
 
