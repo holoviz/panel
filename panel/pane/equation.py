@@ -43,7 +43,7 @@ class LaTeX(DivPaneBase):
         else:
             return False
 
-    def _get_model_type(self, comm):
+    def _get_model_type(self, root, comm):
         module = self.renderer
         if module is None:
             if 'panel.models.mathjax' in sys.modules and 'panel.models.katex' not in sys.modules:
@@ -54,7 +54,7 @@ class LaTeX(DivPaneBase):
         return lazy_load(f'panel.models.{module}', model, isinstance(comm, JupyterComm), root)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = self._get_model_type(comm)(**self._get_properties())
+        model = self._get_model_type(root, comm)(**self._get_properties())
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
