@@ -50,7 +50,7 @@ class ECharts(PaneBase):
             props['sizing_mode'] = 'fixed'
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        ECharts = lazy_load('panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm))
+        ECharts = lazy_load('panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root)
         props = self._get_echart_dict(self.object)
         props.update(self._process_param_change(self._init_params()))
         self._get_dimensions(props)
