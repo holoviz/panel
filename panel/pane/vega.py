@@ -136,7 +136,7 @@ class Vega(PaneBase):
             props['sizing_mode'] = 'stretch_height'
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        VegaPlot = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm))
+        VegaPlot = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root)
         sources = {}
         if self.object is None:
             json = None
