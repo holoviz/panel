@@ -101,6 +101,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   _data_updating: boolean = true
   _selection_updating: boolean =false
   _styled_cells: any[] = []
+  _styles: any;
   _initializing: boolean
 
   connect_signals(): void {
@@ -137,6 +138,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     })
 
     this.connect(this.model.properties.styles.change, () => {
+      this._styles = this.model.styles
       this.updateStyles()
     })
 
@@ -163,9 +165,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     if (wait)
       return
     this._initializing = true
-    const container = div({class: "pnx-tabulator"});
+    this._styles = this.model.styles
+    const container = div({class: "pnx-tabulator"})
     set_size(container, this.model)
-    let configuration = this.getConfiguration();
+    let configuration = this.getConfiguration()
 
     this.tabulator = new Tabulator(container, configuration)
 
@@ -484,10 +487,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     for (const cell_el of this._styled_cells)
       cell_el.cssText = ""
     this._styled_cells = []
-    if (this.model.styles == null || this.tabulator == null || this.tabulator.getDataCount() == 0)
+    if (this._styles == null || this.tabulator == null || this.tabulator.getDataCount() == 0)
       return
-    for (const r in this.model.styles) {
-      const row_style = this.model.styles[r]
+    for (const r in this._styles) {
+      const row_style = this._styles[r]
       const row = this.tabulator.getRow(r)
       if (!row)
         continue
@@ -512,7 +515,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         }
       }
     }
+    const styles = this._styles
     this.model.styles = {}
+    this._styles = styles
   }
 
   addData(): void {
