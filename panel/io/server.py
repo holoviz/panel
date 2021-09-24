@@ -195,6 +195,13 @@ class SessionPrefixHandler:
         base_url = urljoin('/', prefix)
         rel_path = '/'.join(['..'] * self.application_context._url.strip('/').count('/'))
         old_url, old_rel = state.base_url, state.rel_path
+
+        # Handle autoload.js absolute paths
+        abs_url = self.get_argument('bokeh-absolute-url', default=None)
+        if abs_url is not None:
+            app_path = self.get_argument('bokeh-app-path', default=None)
+            rel_path = abs_url.replace(app_path, '')
+
         with edit_readonly(state):
             state.base_url = base_url
             state.rel_path = rel_path

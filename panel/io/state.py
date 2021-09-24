@@ -48,7 +48,9 @@ class _state(param.Parameterized):
        of secret variables including OAuth information.""")
 
     rel_path = param.String(default='', readonly=True, doc="""
-       Relative path from the current app being served to the root URL.""")
+       Relative path from the current app being served to the root URL.
+       If application is embedded in a different server via autoload.js
+       this will instead reflect an absolute path.""")
 
     session_info = param.Dict(default={'total': 0, 'live': 0,
                                        'sessions': OrderedDict()}, doc="""
