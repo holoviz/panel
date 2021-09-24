@@ -144,8 +144,6 @@ def test_server_extensions_on_root():
 
 def test_autoload_js():
     html = Markdown('# Title')
-
-    static = {'tests': os.path.dirname(__file__)}
     port = 6007
     app_name = 'test'
     server = serve({app_name: html}, port=port, threaded=True, show=False)
