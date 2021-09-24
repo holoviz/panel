@@ -1508,8 +1508,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 model_msg[prop] = v
             elif (
                 (prop in self.param) and (
-                ((self.param[prop].precedence or 0) < 0) or
-                (isinstance(v, Viewable) and not isinstance(self.param[prop], param.ClassSelector))
+                    ((self.param[prop].precedence or 0) < 0) or
+                    (isinstance(v, Viewable) and not isinstance(self.param[prop], param.ClassSelector))
+                )
             ):
                 continue
             elif isinstance(v, str):
