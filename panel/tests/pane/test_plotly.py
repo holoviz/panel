@@ -203,14 +203,14 @@ def test_plotly_tabs(document, comm):
         cb1, cb2 = cb2, cb1
     assert model1.visible
     assert cb1.args['model'] is model1
-    assert cb1.code == 'model.visible = (cb_obj.active == 0);'
+    assert cb1.code == 'try { model.visible = (cb_obj.active == 0); } catch { }'
     assert not model2.visible
     assert cb2.args['model'] is model2
-    assert cb2.code == 'model.visible = (cb_obj.active == 1);'
+    assert cb2.code == 'try { model.visible = (cb_obj.active == 1); } catch { }'
 
     tabs.insert(0, 'Blah')
-    assert cb1.code == 'model.visible = (cb_obj.active == 1);'
-    assert cb2.code == 'model.visible = (cb_obj.active == 2);'
+    assert cb1.code == 'try { model.visible = (cb_obj.active == 1); } catch { }'
+    assert cb2.code == 'try { model.visible = (cb_obj.active == 2); } catch { }'
 
 @plotly_available
 def test_clean_relayout_data():
