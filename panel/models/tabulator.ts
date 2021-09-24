@@ -340,8 +340,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         else {
           tab_column.formatter = (cell: any) => {
             const formatted = column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, null)
+	    if (column.formatter.type === 'HTMLTemplateFormatter')
+	      return formatted
             const node = div()
             node.innerHTML = formatted
+	    console.log(formatted, node.children[0].innerHTML)
             return node.children[0].innerHTML
           }
         }
