@@ -1506,7 +1506,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     data_msg[prop] = v
             elif prop in list(Reactive.param)+['events']:
                 model_msg[prop] = v
-            elif prop in self.param and (self.param[prop].precedence or 0) < 0:
+            elif (prop in self.param and (
+                    ((self.param[prop].precedence or 0) < 0) or
+                    (isinstance(v, Viewable) and type(self.param[prop]) is param.Parameter))
+                  ):
                 continue
             elif isinstance(v, str):
                 data_msg[prop] = bleach.clean(v)
