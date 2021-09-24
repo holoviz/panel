@@ -142,6 +142,26 @@ def test_server_extensions_on_root():
         server.stop()
 
 
+def test_autoload_js():
+    html = Markdown('# Title')
+
+    static = {'tests': os.path.dirname(__file__)}
+    port = 6007
+    app_name = 'test'
+    server = serve({app_name: html}, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(0.5)
+
+    r = requests.get(f"http://localhost:{port}/{app_name}/autoload.js?bokeh-autoload-element=1002&bokeh-app-path=/{app_name}&bokeh-absolute-url=http://localhost:{port}/{app_name}")
+
+    try:
+        assert r.status_code == 200
+        assert f"http://localhost:{port}/static/extensions/panel/css/alerts.css" in r.content.decode('utf-8')
+    finally:
+        server.stop()
+
+
 def test_server_async_callbacks():
     button = Button(name='Click')
 
