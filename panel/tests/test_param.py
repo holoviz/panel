@@ -9,7 +9,7 @@ from bokeh.models import (
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh, HTML
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, ParamFunction, JSONInit
-from panel.widgets import LiteralInput, RangeSlider
+from panel.widgets import LiteralInput, NumberInput, RangeSlider
 from panel.tests.util import mpl_available, mpl_figure
 
 
@@ -1221,3 +1221,16 @@ def test_rerender_bounded_widget_when_bounds_set_and_unset():
     assert isinstance(p._widgets['num'], LiteralInput)
     assert p._widgets['num'] in p._widget_box
 
+
+def test_numberinput_bounds():
+
+    class Test(param.Parameterized):
+        num = param.Number(default=5, bounds=(0, 5))
+
+    test = Test()
+    p = Param(test, widgets={'num': NumberInput})
+
+    numinput = p.layout[1]
+
+    assert numinput.start == 0
+    assert numinput.end == 5
