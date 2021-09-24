@@ -151,7 +151,8 @@ def test_autoload_js():
     # Wait for server to start
     time.sleep(0.5)
 
-    r = requests.get(f"http://localhost:{port}/{app_name}/autoload.js?bokeh-autoload-element=1002&bokeh-app-path=/{app_name}&bokeh-absolute-url=http://localhost:{port}/{app_name}")
+    args = f"bokeh-autoload-element=1002&bokeh-app-path=/{app_name}&bokeh-absolute-url=http://localhost:{port}/{app_name}"
+    r = requests.get(f"http://localhost:{port}/{app_name}/autoload.js?{args}")
 
     try:
         assert r.status_code == 200
