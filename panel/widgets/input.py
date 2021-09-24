@@ -296,6 +296,12 @@ class _NumericInputBase(Widget):
     format = param.ClassSelector(default=None, class_=string_types+(TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
+    start = param.Parameter(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")
+
+    end = param.Parameter(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")
+
     _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
 
     _widget_type = _BkNumericInput
