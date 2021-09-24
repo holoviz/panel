@@ -344,7 +344,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
               return formatted
             const node = div()
             node.innerHTML = formatted
-	    return node.children[0].innerHTML
+            return node.children[0].innerHTML
           }
         }
       }
