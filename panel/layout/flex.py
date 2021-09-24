@@ -55,3 +55,22 @@ class FlexBox(ListLike, ReactiveHTML):
                 params['sizing_mode'] = 'stretch_height'
         super().__init__(objects=list(objects), **params)
 
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = super().select(selector)
+        for obj in self:
+            objects += obj.select(selector)
+        return objects
