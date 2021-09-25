@@ -14,6 +14,7 @@ Enhancements:
 
 - Ensure user is warned if an extension was not loaded in time on server ([#2765](https://github.com/holoviz/panel/pull/2765))
 - Allow Viewer classes to be served ([#2768](https://github.com/holoviz/panel/pull/2768))
+- Add support for rendering `.ico` files and pathlib objects ([#2757](https://github.com/holoviz/panel/pull/2757))
 
 Bug fixes:
 
@@ -26,12 +27,14 @@ Bug fixes:
 - Ensure `Tabulator` style does not disappear after resize event ([#2770](https://github.com/holoviz/panel/pull/2770))
 - Fix `PeriodicCallback` errors ([#2764](https://github.com/holoviz/panel/pull/2764))
 - Fix syncing of boolean types with URL parameters ([#2758](https://github.com/holoviz/panel/pull/2758))
+- Ensure Tabulator `download_menu` applies kwargs to the filename `TextInput` ([#2763](https://github.com/holoviz/panel/pull/2764))
 
 Documentation:
 
 - Fix MaterialUI custom component example ([#2680](https://github.com/holoviz/panel/pull/2680))
 - Fix image url in `Markdown` reference gallery example ([#2734](https://github.com/holoviz/panel/pull/2734))
 - Add Folium thumbnail in reference gallery ([#2744](https://github.com/holoviz/panel/pull/2744))
+
 
 ## Version 0.12.3
 
@@ -40,6 +43,7 @@ Date: 2021-09-17
 The 0.12.2 release unfortunately has a compatibility issue with Bokeh 2.4 which broke the `show()` method. This release fixes this regression.
 
 - Patch Bokeh to fix show() ([#2748](https://github.com/holoviz/panel/pull/2748))
+
 
 ## Version 0.12.2
 
