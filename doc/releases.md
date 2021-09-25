@@ -1,5 +1,41 @@
 # Releases
 
+## Version 0.12.4
+
+Date: 2021-09-24
+
+The 0.12.4 release fixes a number of bugs and a regression of the autoreload feature in 0.12.2 and 0.12.3.
+
+Compatibility:
+
+- Fix issues with `--autoreload` caused by changes in Bokeh 2.4 ([#2755](https://github.com/holoviz/panel/pull/2755))
+
+Enhancements:
+
+- Ensure user is warned if an extension was not loaded in time on server ([#2765](https://github.com/holoviz/panel/pull/2765))
+- Allow Viewer classes to be served ([#2768](https://github.com/holoviz/panel/pull/2768))
+- Add support for rendering `.ico` files and pathlib objects ([#2757](https://github.com/holoviz/panel/pull/2757))
+
+Bug fixes:
+
+- Fix broken `HTMLTemplateFormatter` on `Tabulator` ([#2730](https://github.com/holoviz/panel/pull/2730))
+- Fix serialization issues of Panel components on ReactiveHTML ([#2743](https://github.com/holoviz/panel/pull/2743))
+- Ensure `FlexBox` behaves like a layout and makes its children discoverable ([#2779](https://github.com/holoviz/panel/pull/2779))
+- Ensure `Plotly` plots can be updated in tabs ([#2747](https://github.com/holoviz/panel/pull/2747))
+- Fix embedding of Panel apps in Flask ([#2727](https://github.com/holoviz/panel/pull/2727))
+- Ensure `Spinner` widget honors bounds when created from `Param` object ([#2740](https://github.com/holoviz/panel/pull/2740))
+- Ensure `Tabulator` style does not disappear after resize event ([#2770](https://github.com/holoviz/panel/pull/2770))
+- Fix `PeriodicCallback` errors ([#2764](https://github.com/holoviz/panel/pull/2764))
+- Fix syncing of boolean types with URL parameters ([#2758](https://github.com/holoviz/panel/pull/2758))
+- Ensure Tabulator `download_menu` applies kwargs to the filename `TextInput` ([#2763](https://github.com/holoviz/panel/pull/2764))
+
+Documentation:
+
+- Fix MaterialUI custom component example ([#2680](https://github.com/holoviz/panel/pull/2680))
+- Fix image url in `Markdown` reference gallery example ([#2734](https://github.com/holoviz/panel/pull/2734))
+- Add Folium thumbnail in reference gallery ([#2744](https://github.com/holoviz/panel/pull/2744))
+
+
 ## Version 0.12.3
 
 Date: 2021-09-17
@@ -7,6 +43,7 @@ Date: 2021-09-17
 The 0.12.2 release unfortunately has a compatibility issue with Bokeh 2.4 which broke the `show()` method. This release fixes this regression.
 
 - Patch Bokeh to fix show() ([#2748](https://github.com/holoviz/panel/pull/2748))
+
 
 ## Version 0.12.2
 
