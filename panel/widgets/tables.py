@@ -866,6 +866,8 @@ class Tabulator(BaseTable):
             styler = df.style
         except Exception:
             return {}
+        if styler is None:
+            return {}
         styler._todo = self.style._todo
         styler._compute()
         offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single'))
