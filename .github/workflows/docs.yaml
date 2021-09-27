@@ -60,7 +60,7 @@ jobs:
           conda install ${{ env.CHANS_DEV }} "pip<21.2.1" 
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o doc -o examples
-          pip install pydeck sphinxcontrib-napoleon pyecharts
+          pip install pydeck sphinxcontrib-napoleon sphinx-copybutton pyecharts
           pip install idom pydata_sphinx_theme
       - name: opengl
         run: |
