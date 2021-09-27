@@ -855,7 +855,7 @@ class Tabulator(BaseTable):
         return len(self._processed)
 
     def _get_style_data(self):
-        if self.value is None:
+        if self.value is None or self.style is None:
             return {}
         df = self._processed
         if self.pagination == 'remote':
@@ -865,6 +865,8 @@ class Tabulator(BaseTable):
         try:
             styler = df.style
         except Exception:
+            return {}
+        if styler is None:
             return {}
         styler._todo = self.style._todo
         styler._compute()
