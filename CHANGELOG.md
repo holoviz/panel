@@ -14,13 +14,13 @@ Enhancements:
 
 - Ensure user is warned if an extension was not loaded in time on server ([#2765](https://github.com/holoviz/panel/pull/2765))
 - Allow Viewer classes to be served ([#2768](https://github.com/holoviz/panel/pull/2768))
-- Add support for rendering `.ico` files and pathlib objects ([#2757](https://github.com/holoviz/panel/pull/2757))
+- Add support for rendering `.ico` files and `pathlib` objects ([#2757](https://github.com/holoviz/panel/pull/2757))
 
 Bug fixes:
 
 - Fixed export of vtk.js module ([#2562](https://github.com/holoviz/panel/pull/2562))
 - Fix broken `HTMLTemplateFormatter` on `Tabulator` ([#2730](https://github.com/holoviz/panel/pull/2730))
-- Fix serialization issues of Panel components on ReactiveHTML ([#2743](https://github.com/holoviz/panel/pull/2743))
+- Fix serialization issues of Panel components on `ReactiveHTML` ([#2743](https://github.com/holoviz/panel/pull/2743))
 - Ensure `FlexBox` behaves like a layout and makes its children discoverable ([#2779](https://github.com/holoviz/panel/pull/2779))
 - Ensure `Plotly` plots can be updated in tabs ([#2747](https://github.com/holoviz/panel/pull/2747))
 - Fix embedding of Panel apps in Flask ([#2727](https://github.com/holoviz/panel/pull/2727))
@@ -28,7 +28,8 @@ Bug fixes:
 - Ensure `Tabulator` style does not disappear after resize event ([#2770](https://github.com/holoviz/panel/pull/2770))
 - Fix `PeriodicCallback` errors ([#2764](https://github.com/holoviz/panel/pull/2764))
 - Fix syncing of boolean types with URL parameters ([#2758](https://github.com/holoviz/panel/pull/2758))
-- Ensure Tabulator `download_menu` applies kwargs to the filename `TextInput` ([#2763](https://github.com/holoviz/panel/pull/2764))
+- Ensure `Tabulator.download_menu` applies kwargs to the filename `TextInput` ([#2763](https://github.com/holoviz/panel/pull/2764))
+- Ensure `Tabulator` does not error when no Styler is defined ([#2785](https://github.com/holoviz/panel/pull/2785))
 
 Documentation:
 
