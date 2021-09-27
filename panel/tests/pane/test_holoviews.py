@@ -15,7 +15,7 @@ from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
                           ColumnDataSource)
 from bokeh.plotting import Figure
 
-from panel.layout import Column, Row
+from panel.layout import Column, FlexBox, Row
 from panel.pane import Pane, PaneBase, HoloViews
 from panel.widgets import FloatSlider, DiscreteSlider, Select
 from panel.tests.util import hv_available, mpl_available
@@ -396,6 +396,21 @@ def test_holoviews_linked_axes(document, comm):
     c2 = hv.Curve([1, 2, 3])
 
     layout = Row(HoloViews(c1, backend='bokeh'), HoloViews(c2, backend='bokeh'))
+
+    row_model = layout.get_root(document, comm=comm)
+
+    p1, p2 = row_model.select({'type': Figure})
+
+    assert p1.x_range is p2.x_range
+    assert p1.y_range is p2.y_range
+
+
+@hv_available
+def test_holoviews_linked_axes_flexbox(document, comm):
+    c1 = hv.Curve([1, 2, 3])
+    c2 = hv.Curve([1, 2, 3])
+
+    layout = FlexBox(HoloViews(c1, backend='bokeh'), HoloViews(c2, backend='bokeh'))
 
     row_model = layout.get_root(document, comm=comm)
 

@@ -114,7 +114,7 @@ class PeriodicCallback(param.Parameterized):
             self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
         else:
             from tornado.ioloop import PeriodicCallback
-            self._cb = PeriodicCallback(lambda: asyncio.create_task(self._periodic_callback), self.period)
+            self._cb = PeriodicCallback(lambda: asyncio.create_task(self._periodic_callback()), self.period)
             self._cb.start()
         try:
             state.on_session_destroyed(self._cleanup)
@@ -134,14 +134,17 @@ class PeriodicCallback(param.Parameterized):
         self._counter = 0
         self._timeout = None
         if self._doc:
-            self._doc.remove_periodic_callback(self._cb)
+            if self._doc._session_context:
+                self._doc.callbacks.remove_session_callback(self._cb)
+            else:
+                self._doc.callbacks._session_callbacks.remove(self._cb)
         elif self._cb:
             self._cb.stop()
         self._cb = None
         doc = self._doc or _curdoc()
         if doc:
-            doc.session_destroyed_callbacks = {
-                cb for cb in doc.session_destroyed_callbacks
+            doc.callbacks.session_destroyed_callbacks = {
+                cb for cb in doc.callbacks.session_destroyed_callbacks
                 if cb is not self._cleanup
             }
             self._doc = None

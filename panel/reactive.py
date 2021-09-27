@@ -1194,7 +1194,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _scripts = {}
 
-    _script_assignment = r'data.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,^,|,&&,||,??]*='
+    _script_assignment = r'data.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
 
     __abstract = True
 
@@ -1260,7 +1260,11 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         }
         data_params = {}
         for k, v in self.param.get_param_values():
-            if (k in ignored and k != 'name') or ((self.param[k].precedence or 0) < 0):
+            if (
+                (k in ignored and k != 'name') or
+                ((self.param[k].precedence or 0) < 0) or
+                (isinstance(v, Viewable) and not isinstance(self.param[k], param.ClassSelector))
+            ):
                 continue
             if isinstance(v, str):
                 v = bleach.clean(v)
@@ -1500,7 +1504,12 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     data_msg[prop] = v
             elif prop in list(Reactive.param)+['events']:
                 model_msg[prop] = v
-            elif prop in self.param and (self.param[prop].precedence or 0) < 0:
+            elif (
+                (prop in self.param) and (
+                    ((self.param[prop].precedence or 0) < 0) or
+                    (isinstance(v, Viewable) and not isinstance(self.param[prop], param.ClassSelector))
+                )
+            ):
                 continue
             elif isinstance(v, str):
                 data_msg[prop] = bleach.clean(v)

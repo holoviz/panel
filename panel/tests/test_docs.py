@@ -42,7 +42,7 @@ def test_widgets_are_in_reference_gallery():
 
 @docs_available
 def test_panes_are_in_reference_gallery():
-    exceptions = set(['PaneBase', 'YT', 'RGGPlot', 'Interactive'])
+    exceptions = set(['PaneBase', 'YT', 'RGGPlot', 'Interactive', 'ICO'])
     docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'panes'))}
 
     def is_panel_pane(attr):

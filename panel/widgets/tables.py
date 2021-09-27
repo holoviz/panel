@@ -855,7 +855,7 @@ class Tabulator(BaseTable):
         return len(self._processed)
 
     def _get_style_data(self):
-        if self.value is None:
+        if self.value is None or self.style is None:
             return {}
         df = self._processed
         if self.pagination == 'remote':
@@ -865,6 +865,8 @@ class Tabulator(BaseTable):
         try:
             styler = df.style
         except Exception:
+            return {}
+        if styler is None:
             return {}
         styler._todo = self.style._todo
         styler._compute()
@@ -1044,7 +1046,7 @@ class Tabulator(BaseTable):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:
             self._widget_type = lazy_load(
-                'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm)
+                'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
             )
         if comm:
             with set_resource_mode('inline'):
@@ -1191,7 +1193,7 @@ class Tabulator(BaseTable):
             text_kwargs['name'] = 'Filename'
         if 'value' not in text_kwargs:
             text_kwargs['value'] = 'table.csv'
-        filename = TextInput(name='Filename', value='table.csv')
+        filename = TextInput(**text_kwargs)
         filename.jscallback({'table': self}, value="""
         table.filename = cb_obj.value
         """)

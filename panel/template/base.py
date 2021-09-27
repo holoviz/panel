@@ -8,6 +8,7 @@ import uuid
 
 from collections import OrderedDict
 from functools import partial
+from pathlib import PurePath
 
 import param
 
@@ -483,6 +484,8 @@ class BasicTemplate(BaseTemplate):
             params['modal'] = self._get_params(params['modal'], self.param.modal.class_)
         if 'theme' in params and isinstance(params['theme'], str):
             params['theme'] = THEMES[params['theme']]
+        if 'favicon' in params and isinstance(params['favicon'], PurePath):
+            params['favicon'] = str(params['favicon'])
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
         if '{{ embed(roots.js_area) }}' in template:
@@ -639,14 +642,14 @@ class BasicTemplate(BaseTemplate):
         if os.path.isfile(self.logo):
             img = _panel(self.logo)
             if not isinstance(img, ImageBase):
-                raise ValueError("Could not determine file type of logo: {self.logo}.")
+                raise ValueError(f"Could not determine file type of logo: {self.logo}.")
             logo = img._b64()
         else:
             logo = self.logo
         if os.path.isfile(self.favicon):
             img = _panel(self.favicon)
             if not isinstance(img, ImageBase):
-                raise ValueError("Could not determine file type of favicon: {self.favicon}.")
+                raise ValueError(f"Could not determine file type of favicon: {self.favicon}.")
             favicon = img._b64()
         else:
             if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:

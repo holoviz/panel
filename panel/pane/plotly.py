@@ -246,7 +246,7 @@ class Plotly(PaneBase):
         return params
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        PlotlyPlot = lazy_load('panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm))
+        PlotlyPlot = lazy_load('panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root)
         model = PlotlyPlot(**self._init_params())
         if root is None:
             root = model
@@ -376,7 +376,7 @@ def _patch_tabs_plotly(viewable, root):
             active &= tabs.active == i
 
         model.visible = active
-        code = f'model.visible = {condition};'
+        code = f'try {{ model.visible = {condition}; }} catch {{ }}'
         for tabs in parent_tabs:
             tab_key = f'tabs_{tabs.id}'
             cb_args = dict(args)

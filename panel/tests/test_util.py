@@ -4,7 +4,7 @@ from bokeh.models import Div
 
 from panel.io.notebook import render_mimebundle
 from panel.pane import PaneBase
-from panel.util import get_method_owner, abbreviated_repr
+from panel.util import get_method_owner, abbreviated_repr, parse_query
 
 
 def test_get_method_owner_class():
@@ -37,3 +37,15 @@ def test_abbreviated_repr_list():
 def test_abbreviated_repr_ordereddict():
     assert (abbreviated_repr(OrderedDict([('key', 'some really, really long string')]))
             == "OrderedDict([('key', ...])")
+
+
+def test_parse_query():
+    query = '?bool=true&int=2&float=3.0&json=["a"%2C+"b"]'
+    expected_results = {
+        "bool": True,
+        "int": 2,
+        "float": 3.0,
+        "json": ["a", "b"],
+    }
+    results = parse_query(query)
+    assert expected_results == results
