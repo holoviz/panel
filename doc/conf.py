@@ -42,7 +42,11 @@ html_theme_options = {
     ]
 }
 
-extensions += ['sphinx.ext.napoleon', 'nbsite.gallery']
+extensions += [
+    'sphinx.ext.napoleon',
+    'nbsite.gallery',
+    'sphinx_copybutton',
+]
 napoleon_numpy_docstring = True
 
 nbsite_gallery_conf = {
