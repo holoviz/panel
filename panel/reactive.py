@@ -1194,7 +1194,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _scripts = {}
 
-    _script_assignment = r'data.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,^,|,&&,||,??]*='
+    _script_assignment = r'data.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
 
     __abstract = True
 
