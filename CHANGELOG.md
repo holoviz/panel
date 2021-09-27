@@ -18,6 +18,7 @@ Enhancements:
 
 Bug fixes:
 
+- Fixed export of vtk.js module ([#2562](https://github.com/holoviz/panel/pull/2562))
 - Fix broken `HTMLTemplateFormatter` on `Tabulator` ([#2730](https://github.com/holoviz/panel/pull/2730))
 - Fix serialization issues of Panel components on ReactiveHTML ([#2743](https://github.com/holoviz/panel/pull/2743))
 - Ensure `FlexBox` behaves like a layout and makes its children discoverable ([#2779](https://github.com/holoviz/panel/pull/2779))
