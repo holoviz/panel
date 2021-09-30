@@ -252,7 +252,7 @@ def save(panel, filename, title=None, resources=None, template=None,
     resources = Resources.from_bokeh(resources)
 
     # Set resource mode
-    with set_resource_mode(mode):
+    with set_resource_mode(resources):
         html = file_html(doc, resources, title, **kwargs)
     if hasattr(filename, 'write'):
         if isinstance(filename, io.BytesIO):
