@@ -1,6 +1,8 @@
+import re
+
 from io import StringIO
 
-from panel.pane import Vega
+from panel.pane import Alert, Vega
 from panel.models.vega import VegaPlot
 
 
@@ -30,3 +32,23 @@ def test_save_external():
     html = sio.read()
     for js in VegaPlot.__javascript_raw__:
         assert js in html
+
+
+def test_save_inline_resources():
+    alert = Alert('# Save test')
+
+    sio = StringIO()
+    alert.save(sio, resources='inline')
+    sio.seek(0)
+    html = sio.read()
+    assert '.bk.alert-primary' in html
+
+
+def test_save_cdn_resources():
+    alert = Alert('# Save test')
+
+    sio = StringIO()
+    alert.save(sio, resources='cdn')
+    sio.seek(0)
+    html = sio.read()
+    assert re.findall('https://unpkg.com/@holoviz/panel@(.*)/dist/css/alerts.css', html)
