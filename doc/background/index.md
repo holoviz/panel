@@ -29,11 +29,19 @@ Discover why Panel utilizes the Param library.
 :::
 
 :::{grid-item-card} {octicon}`git-compare;2.5em;sd-mr-1` Library Comparisons
-:link: compare/comparisons
+:link: comparisons
 :link-type: doc
 
 Compare Panel with similar libraries.
 :::
+
+:::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1` Panel in Jupyter, Standalone servers, or exported files
+:link: comms
+:link-type: doc
+
+An overview explaining how Panel communicates between Python and Javascript in different contexts, such as Jupyter, server environments and in exported files.
+:::
+
 
 ::::
 
@@ -46,5 +54,6 @@ Compare Panel with similar libraries.
 components/components_overview
 api/api
 param/param
-compare/comparisons
+comparisons
+comms
 ```
