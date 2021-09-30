@@ -343,7 +343,7 @@ def log_component():
             ('Filters', Row(
                 session_filter,
                 name_filter,
-                sizing_moded='stretch_width'
+                sizing_mode='stretch_width'
             )),
             active=[],
             active_header_background='#444444',
