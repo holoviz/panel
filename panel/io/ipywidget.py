@@ -3,21 +3,20 @@ import logging
 from bokeh.document.events import MessageSentEvent
 from ipykernel.comm import CommManager
 from ipywidgets_bokeh.kernel import BokehKernel, SessionWebsocket, WebsocketStream
+from tornado.ioloop import IOLoop
 
 
 class PanelSessionWebsocket(SessionWebsocket):
 
     def __init__(self, *args, **kwargs):
-        self._document = kwargs.pop('document', None)
         self._queue = []
         super().__init__(*args, **kwargs)
+        self._document = kwargs.pop('document', None)
+        self._document.on_message("ipywidgets_bokeh", self.receive)
 
     def send(self, stream, msg_type, content=None, parent=None, ident=None, buffers=None, track=False, header=None, metadata=None):
         msg = self.msg(msg_type, content=content, parent=parent, header=header, metadata=metadata)
         msg['channel'] = stream.channel
-
-        doc = self._document
-        doc.on_message("ipywidgets_bokeh", self.receive)
 
         packed = self.pack(msg)
 
@@ -38,6 +37,7 @@ class PanelSessionWebsocket(SessionWebsocket):
         else:
             data = packed.decode("utf-8")
 
+        doc = self._document
         event = MessageSentEvent(doc, "ipywidgets_bokeh", data)
         self._queue.append(event)
         doc.add_next_tick_callback(self._dispatch)
@@ -45,7 +45,7 @@ class PanelSessionWebsocket(SessionWebsocket):
     def _dispatch(self):
         try:
             for event in self._queue:
-                self._document._trigger_on_change(event)
+                self._document.callbacks.trigger_on_change(event)
         except Exception:
             pass
         finally:
@@ -59,6 +59,7 @@ class PanelKernel(BokehKernel):
 
         self.session = PanelSessionWebsocket(document=document, parent=self, key=key)
         self.stream = self.iopub_socket = WebsocketStream(self.session)
+        self.io_loop = IOLoop.current()
 
         self.iopub_socket.channel = 'iopub'
         self.session.stream = self.iopub_socket
