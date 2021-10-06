@@ -5,7 +5,8 @@ from bokeh.models.widgets import FileInput as BkFileInput
 from panel import config
 from panel.widgets import (
     Checkbox, DatePicker, DatetimeInput, DatetimePicker,
-    DatetimeRangeInput, DatetimeRangePicker, FileInput,
+    DatetimeRangeInput, DatetimeRangePicker, DateRangePicker,
+    FileInput,
     LiteralInput, TextInput, StaticText, IntInput, FloatInput
 )
 
@@ -115,6 +116,33 @@ def test_datetime_range_picker(document, comm):
     # Check end value
     datetime_range_picker._process_events({'value': '2018-09-09 03:00:01 to 2018-09-10 03:00:01'})
     assert datetime_range_picker.value == (datetime(2018, 9, 9, 3, 0, 1), datetime(2018, 9, 10, 0, 0, 0))
+
+
+def test_date_range_picker(document, comm):
+    date_range_picker = DateRangePicker(
+        name='DateRangePicker', value=(date(2018, 9, 4), date(2018, 9, 10)),
+        start=date(2018, 9, 1), end=(2018, 9, 14)
+    )
+
+    widget = date_range_picker.get_root(document, comm=comm)
+
+    assert isinstance(widget, date_range_picker._widget_type)
+    assert widget.title == 'DateRangePicker'
+    assert widget.value == '2018-09-04 to 2018-09-10'
+    assert widget.min_date == '2018-09-01'
+    assert widget.max_date == '2018-09-14'
+
+    date_range_picker._process_events({'value': '2018-09-03 to 2018-09-09'})
+    assert date_range_picker.value == (date(2018, 9, 3), date(2018, 9, 9))
+
+    value = date_range_picker._process_param_change(
+        {'value': (date(2018, 9, 4), date(2018, 9, 10))}
+    )
+    assert value['value'] == '2018-09-04 to 2018-09-10'
+
+    value = (date(2018, 9, 5), date(2018, 9, 11))
+    assert date_range_picker._deserialize_value(value) == '2018-09-05 to 2018-09-11'
+    assert date_range_picker._serialize_value(date_range_picker._deserialize_value(value)) == value
 
 
 def test_file_input(document, comm):
