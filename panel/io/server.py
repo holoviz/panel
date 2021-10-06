@@ -489,9 +489,9 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
       If None, "localhost" is used.
     loop : tornado.ioloop.IOLoop (optional, default=IOLoop.current())
       The tornado IOLoop to run the Server on
-    show : boolean (optional, default=False)
+    show : boolean (optional, default=True)
       Whether to open the server in a new browser tab on start
-    start : boolean(optional, default=False)
+    start : boolean(optional, default=True)
       Whether to start the Server
     title: str or {str: str} (optional, default=None)
       An HTML title for the application or a dictionary mapping
