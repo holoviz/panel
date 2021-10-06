@@ -275,6 +275,31 @@ class DatetimeRangePicker(_DatetimePickerBase):
         return value
 
 
+class DateRangePicker(DatetimeRangePicker):
+    enable_time = False
+    mode = param.String('range', constant=True)
+    date_format = param.String('Y-m-d', constant=True)
+
+    def _serialize_value(self, value):
+        if isinstance(value, string_types) and value:
+            value = [
+                datetime.strptime(value.split(' ')[0], r'%Y-%m-%d').date()
+                for value in value.split(' to ')
+            ]
+
+            value = tuple(value)
+
+        return value
+
+    def _deserialize_value(self, value):
+        if isinstance(value, tuple):
+            value = " to ".join(v.strftime(r'%Y-%m-%d') for v in value)
+        if value is None:
+            value = ""
+
+        return value
+
+
 class ColorPicker(Widget):
 
     value = param.Color(default=None, doc="""
