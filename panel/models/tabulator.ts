@@ -251,7 +251,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   getConfiguration(): any {
     const pagination = this.model.pagination == 'remote' ? 'local': (this.model.pagination || false)
-    let selectable = !(typeof this.model.select_mode === 'boolean')
+    // selectable is true if select_mode is a string (one of 'checkbox', 'checkbox-single' and 
+    // 'toggle'). False if it's a boolean or a number (integer on the python side).
+    let selectable = (typeof this.model.select_mode) === 'string'
     const that = this
     let configuration = {
       ...this.model.configuration,
@@ -587,7 +589,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   // Update model
 
   rowClicked(e: any, row: any) {
-    if (this._selection_updating || this._initializing || this.model.select_mode !== true)
+    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'string' || this.model.select_mode === false)
       return
     let indices: number[] = []
     const selected = this.model.source.selected
@@ -608,6 +610,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       indices.push(index)
     else
       indices.splice(indices.indexOf(index), 1)
+    // Remove the first selected indices when selectable is an int.
+    if (typeof this.model.select_mode === 'number') {
+      while (indices.length > this.model.select_mode) {
+        indices.shift()
+      }
+    }
     const filtered = this._filter_selected(indices)
     this.tabulator.deselectRow()
     this.tabulator.selectRow(filtered)
