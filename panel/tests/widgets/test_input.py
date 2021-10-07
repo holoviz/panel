@@ -121,7 +121,7 @@ def test_datetime_range_picker(document, comm):
 def test_date_range_picker(document, comm):
     date_range_picker = DateRangePicker(
         name='DateRangePicker', value=(date(2018, 9, 4), date(2018, 9, 10)),
-        start=date(2018, 9, 1), end=(2018, 9, 14)
+        start=date(2018, 9, 1), end=date(2018, 9, 14)
     )
 
     widget = date_range_picker.get_root(document, comm=comm)
