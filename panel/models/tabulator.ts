@@ -123,7 +123,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     })
 
     this.connect(this.model.properties.expanded.change, () => {
-      //this.tabulator.redraw(true)
+      for (const row of this.tabulator.rowManager.getRows())
+	row.cells[0].layoutElement()
     })
 
     this.connect(this.model.properties.hidden_columns.change, () => {
@@ -331,6 +332,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const view = this._child_views.get(model)
     if (view == null)
       return
+    const rowEl = row.getElement()
+    const viewEl = rowEl.children[rowEl.children.length-1]
+    if ((viewEl.className === 'bk') && viewEl.children.length)
+      return
     const style = getComputedStyle(this.tabulator.element.children[1].children[0])
     const bg = style.backgroundColor
     const row_view = div({style: "height: 100%; width: 100%; background-color: " + bg})
@@ -346,13 +351,24 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   _update_expand(cell: any): void {
     const index = cell._cell.row.data._index
-    const exp_index = this.model.expanded.indexOf(index)
+    const expanded = [...this.model.expanded]
+    const exp_index = expanded.indexOf(index)
     if (exp_index < 0)
-      this.model.expanded.push(index)
+      expanded.push(index)
     else
-      this.model.expanded.splice(exp_index, 1)
-    this.model.expanded = [...this.model.expanded]
-    cell._cell.row.reinitialize(true)
+      expanded.splice(exp_index, 1)
+    this.model.expanded = expanded
+    if (expanded.indexOf(index) < 0)
+      return
+    let ready = true
+    for (const idx of this.model.expanded) {
+      if (!(idx in this.model.children)) {
+	ready = false
+	break
+      }
+    }
+    if (ready)
+      this._render_children()
   }
 
   getColumns(): any {

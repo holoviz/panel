@@ -706,6 +706,10 @@ class Tabulator(BaseTable):
         List of expanded rows, only applicable if a row_content function
         has been defined.""")
 
+    embed_content = param.Boolean(default=False, doc="""
+        Whether to embed the row_content or render it dynamically
+        when a row is expanded.""")
+
     frozen_columns = param.List(default=[], doc="""
         List indicating the columns to freeze. The column(s) may be
         selected by name or index.""")
@@ -922,8 +926,12 @@ class Tabulator(BaseTable):
             return {}
         from ..pane import panel
         df = self._processed
+        if self.pagination == 'remote':
+            nrows = self.page_size
+            start = (self.page-1)*nrows
+            df = df.iloc[start:(start+nrows)]
         children = {}
-        for i in self.expanded:
+        for i in (range(len(df)) if self.embed_content else self.expanded):
             if i in old:
                 children[i] = old[i]
             else:
@@ -938,7 +946,7 @@ class Tabulator(BaseTable):
                 model = p._models[ref][0]
             else:
                 model = p._get_model(doc, root, parent, comm)
-            model.margin = (0, 5, 0, 10)
+            model.margin = (0, 0, 0, 0)
             models[i] = model
         return models
 
@@ -948,6 +956,9 @@ class Tabulator(BaseTable):
             if event.name == 'expanded' and len(events) == 1:
                 cleanup = set(event.old) - set(event.new)
                 reuse = set(event.old) & set(event.new)
+            elif event.name == 'page':
+                self.expanded = []
+                return
         old_panels = self._child_panels
         self._child_panels = child_panels = self._get_children(
             {i: old_panels[i] for i in reuse}
@@ -1120,7 +1131,7 @@ class Tabulator(BaseTable):
             model = super()._get_model(doc, root, parent, comm)
         if root is None:
             root = model
-        child_panels = self._get_children()
+        self._child_panels = child_panels = self._get_children()
         model.children = self._get_model_children(
             child_panels, doc, root, parent, comm
         )
