@@ -19,7 +19,7 @@ import param
 
 from bokeh.models import LayoutDOM
 from bokeh.model import DataModel
-from param.parameterized import ParameterizedMetaclass
+from param.parameterized import ParameterizedMetaclass, Watcher
 from tornado import gen
 
 from .config import config
@@ -33,7 +33,7 @@ from .models.reactive_html import (
 from .util import edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable
 
-LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed bidirectional_watcher")
+LinkWatcher = namedtuple("Watcher", Watcher._fields+('target', 'links', 'transformed', 'bidirectional_watcher'))
 
 
 class Syncable(Renderable):
