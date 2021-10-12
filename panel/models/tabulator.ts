@@ -1,5 +1,6 @@
 import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
+import {build_views} from "@bokehjs/core/build_views"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties";
@@ -117,6 +118,17 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.tabulator.download(ftype, this.model.filename)
     })
 
+    this.connect(this.model.properties.children.change, () => {
+      this._render_children()
+    })
+
+    this.connect(this.model.properties.expanded.change, () => {
+      for (const row of this.tabulator.rowManager.getRows()) {
+	if (row.cells.length > 0)
+	  row.cells[0].layoutElement()
+      }
+    })
+
     this.connect(this.model.properties.hidden_columns.change, () => {
       this.hideColumns()
     })
@@ -143,7 +155,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     })
 
     this.connect(this.model.source.properties.data.change, () => {
-      this.setData();
+      this.setData()
     })
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => this.updateOrAddData())
@@ -171,6 +183,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     let configuration = this.getConfiguration()
 
     this.tabulator = new Tabulator(container, configuration)
+    this._render_children()
 
     // Swap pagination mode
     if (this.model.pagination === 'remote') {
@@ -276,6 +289,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       tooltips: (cell: any) => {
         return  cell.getColumn().getField() + ": " + cell.getValue();
       },
+      rowFormatter: (row: any) => this._render_row(row)
     }
     if (pagination) {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
@@ -295,6 +309,70 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     }
   }
 
+  _render_children(): void {
+    new Promise(async (resolve: any) => {
+      const children = []
+      for (const idx of this.model.expanded) {
+	if (idx in this.model.children)
+	  children.push(this.model.children[idx])
+      }
+      await build_views(this._child_views, children, {parent: (null as any)})
+      resolve(null)
+    }).then(() => {
+      for (const r of this.model.expanded) {
+	const row = this.tabulator.getRow(r)
+	this._render_row(row)
+      }
+    })
+  }
+
+  _render_row(row: any): void {
+    const index = row._row.data._index
+    if (this.model.expanded.indexOf(index) < 0 || !(index in this.model.children))
+      return
+    const model = this.model.children[index]
+    const view = this._child_views.get(model)
+    if (view == null)
+      return
+    const rowEl = row.getElement()
+    const viewEl = rowEl.children[rowEl.children.length-1]
+    if ((viewEl.className === 'bk') && viewEl.children.length)
+      return
+    const style = getComputedStyle(this.tabulator.element.children[1].children[0])
+    const bg = style.backgroundColor
+    const row_view = div({style: "height: 100%; width: 100%; background-color: " + bg})
+    view.renderTo(row_view)
+    row.getElement().appendChild(row_view)
+  }
+
+  _expand_render(cell: any): string {
+    const index = cell._cell.row.data._index
+    const icon = this.model.expanded.indexOf(index) < 0 ? "\u25ba" : "\u25bc"
+    return "<i>" + icon + "</i>"
+  }
+
+  _update_expand(cell: any): void {
+    const index = cell._cell.row.data._index
+    const expanded = [...this.model.expanded]
+    const exp_index = expanded.indexOf(index)
+    if (exp_index < 0)
+      expanded.push(index)
+    else
+      expanded.splice(exp_index, 1)
+    this.model.expanded = expanded
+    if (expanded.indexOf(index) < 0)
+      return
+    let ready = true
+    for (const idx of this.model.expanded) {
+      if (!(idx in this.model.children)) {
+	ready = false
+	break
+      }
+    }
+    if (ready)
+      this._render_children()
+  }
+
   getColumns(): any {
     const config_columns: (any[] | undefined) = this.model.configuration?.columns;
     let columns = []
@@ -305,13 +383,21 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           for (const col of column.columns)
             group_columns.push({...col})
           columns.push({...column, columns: group_columns})
-        } else {
+	} else if (column.formatter === "expand") {
+	  const expand = {
+	    align: "center",
+	    cellClick: (_: any, cell: any) => { this._update_expand(cell) },
+	    formatter: (cell: any) => { return this._expand_render(cell) },
+	    width:40
+	  }
+	  columns.push(expand)
+	} else {
 	  if (column.formatter === "rowSelection") {
 	    column.cellClick = (_: any, cell: any) => {
 	      cell.getRow().toggleSelect();
 	    }
 	  }
-          columns.push({...column})
+	  columns.push(column)
 	}
     }
     for (const column of this.model.columns) {
@@ -665,9 +751,11 @@ export namespace DataTabulator {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     aggregators: p.Property<any>
+    children: p.Property<any>
     columns: p.Property<TableColumn[]>
     configuration: p.Property<any>
     download: p.Property<boolean>
+    expanded: p.Property<number[]>
     filename: p.Property<string>
     editable: p.Property<boolean>
     follow: p.Property<boolean>
@@ -707,10 +795,12 @@ export class DataTabulator extends HTMLBox {
 
     this.define<DataTabulator.Props>(({Any, Array, Boolean, Nullable, Number, Ref, String}) => ({
       aggregators:    [ Any,                     {} ],
+      children:       [ Any,                     {} ],
       configuration:  [ Any,                     {} ],
       columns:        [ Array(Ref(TableColumn)), [] ],
       download:       [ Boolean,               true ],
       editable:       [ Boolean,               true ],
+      expanded:       [ Array(Number),           [] ],
       filename:       [ String,         "table.csv" ],
       follow:         [ Boolean,               true ],
       frozen_rows:    [ Array(Number),           [] ],

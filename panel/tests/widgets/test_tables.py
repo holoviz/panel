@@ -223,6 +223,71 @@ def test_tabulator_selected_dataframe():
     pd.testing.assert_frame_equal(table.selected_dataframe, df.iloc[[0, 2]])
 
 
+def test_tabulator_expanded_content():
+    df = makeMixedDataFrame()
+
+    table = Tabulator(df, expanded=[0, 1], row_content=lambda r: r.A)
+
+    model = table.get_root()
+
+    assert len(model.children) == 2
+
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;0.0&lt;/pre&gt;"
+
+    assert 1 in model.children
+    row1 = model.children[1]
+    assert row1.text == "&lt;pre&gt;1.0&lt;/pre&gt;"
+
+    table.expanded = [1, 2]
+
+    assert 0 not in model.children
+
+    assert 1 in model.children
+    assert row1 is model.children[1]
+
+    assert 2 in model.children
+    row2 = model.children[2]
+    assert row2.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
+
+
+def test_tabulator_expanded_content_pagination():
+    df = makeMixedDataFrame()
+
+    table = Tabulator(df, expanded=[0, 1], row_content=lambda r: r.A, pagination='remote', page_size=2)
+
+    model = table.get_root()
+
+    assert len(model.children) == 2
+
+    table.page = 2
+
+    assert len(model.children) == 0
+
+
+def test_tabulator_expanded_content_embed():
+    df = makeMixedDataFrame()
+
+    table = Tabulator(df, embed_content=True, row_content=lambda r: r.A)
+
+    model = table.get_root()
+
+    assert len(model.children) == len(df)
+
+    for i, r in df.iterrows():
+        assert i in model.children
+        row = model.children[i]
+        assert row.text  == f"&lt;pre&gt;{r.A}&lt;/pre&gt;"
+
+    table.row_content = lambda r: r.A + 1
+
+    for i, r in df.iterrows():
+        assert i in model.children
+        row = model.children[i]
+        assert row.text  == f"&lt;pre&gt;{r.A+1}&lt;/pre&gt;"
+
+
 def test_tabulator_selected_and_filtered_dataframe(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)

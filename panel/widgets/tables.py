@@ -320,6 +320,11 @@ class BaseTable(ReactiveData, Widget):
                          if filt is not filter]
         self._update_cds()
 
+    def _process_column(self, values):
+        if not isinstance(values, (list, np.ndarray)):
+            return [str(v) for v in values]
+        return values
+
     def _get_data(self):
         df = self._filter_dataframe(self.value)
         if df is None:
@@ -327,7 +332,7 @@ class BaseTable(ReactiveData, Widget):
         elif len(self.indexes) > 1:
             df = df.reset_index()
         data = ColumnDataSource.from_df(df).items()
-        return df, {k if isinstance(k, str) else str(k): v for k, v in data}
+        return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data}
 
     def _update_column(self, column, array):
         self.value[column] = array
@@ -697,6 +702,14 @@ class Tabulator(BaseTable):
     table to provide a full-featured interactive table.
     """
 
+    expanded = param.List(default=[], doc="""
+        List of expanded rows, only applicable if a row_content function
+        has been defined.""")
+
+    embed_content = param.Boolean(default=False, doc="""
+        Whether to embed the row_content or render it dynamically
+        when a row is expanded.""")
+
     frozen_columns = param.List(default=[], doc="""
         List indicating the columns to freeze. The column(s) may be
         selected by name or index.""")
@@ -728,6 +741,10 @@ class Tabulator(BaseTable):
 
     page_size = param.Integer(default=20, bounds=(1, None), doc="""
         Number of rows to render per page, if pagination is enabled.""")
+
+    row_content = param.Callable(doc="""
+        A function which is given the DataFrame row and should return
+        a Panel object to render as additional detail below the row.""")
 
     row_height = param.Integer(default=30, doc="""
         The height of each table row.""")
@@ -769,17 +786,22 @@ class Tabulator(BaseTable):
 
     _config_params = ['frozen_columns', 'groups', 'selectable', 'hierarchical']
 
+    _content_params = _data_params + ['expanded', 'row_content', 'embed_content']
+
     _manual_params = BaseTable._manual_params + _config_params
 
     _rename = {
-        'disabled': 'editable', 'selection': None, 'selectable': 'select_mode'
+        'disabled': 'editable', 'selection': None, 'selectable': 'select_mode',
+        'row_content': None
     }
 
     def __init__(self, value=None, **params):
         configuration = params.pop('configuration', {})
         self.style = None
+        self._child_panels = {}
         super().__init__(value=value, **params)
         self._configuration = configuration
+        self.param.watch(self._update_children, self._content_params)
 
     def _validate(self, *events):
         super()._validate(*events)
@@ -792,6 +814,11 @@ class Tabulator(BaseTable):
                 self.style._todo = todo
             except Exception:
                 pass
+
+    def _cleanup(self, root):
+        for p in self._child_panels.values():
+            p._cleanup(root)
+        super()._cleanup(root)
 
     def _get_theme(self, theme, resources=None):
         from ..io.resources import RESOURCE_MODE
@@ -872,7 +899,7 @@ class Tabulator(BaseTable):
             return {}
         styler._todo = self.style._todo
         styler._compute()
-        offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single'))
+        offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
 
         styles = {}
         for (r, c), s in styler.ctx.items():
@@ -895,6 +922,59 @@ class Tabulator(BaseTable):
         styles = self._get_style_data()
         msg = {'styles': styles}
         for ref, (m, _) in self._models.items():
+            self._apply_update([], msg, m, ref)
+
+    def _get_children(self, old={}):
+        if self.row_content is None:
+            return {}
+        from ..pane import panel
+        df = self._processed
+        if self.pagination == 'remote':
+            nrows = self.page_size
+            start = (self.page-1)*nrows
+            df = df.iloc[start:(start+nrows)]
+        children = {}
+        for i in (range(len(df)) if self.embed_content else self.expanded):
+            if i in old:
+                children[i] = old[i]
+            else:
+                children[i] = panel(self.row_content(df.iloc[i]))
+        return children
+
+    def _get_model_children(self, panels, doc, root, parent, comm=None):
+        ref = root.ref['id']
+        models = {}
+        for i, p in panels.items():
+            if ref in p._models:
+                model = p._models[ref][0]
+            else:
+                model = p._get_model(doc, root, parent, comm)
+            model.margin = (0, 0, 0, 0)
+            models[i] = model
+        return models
+
+    def _update_children(self, *events):
+        cleanup, reuse = set(), set()
+        for event in events:
+            if event.name == 'expanded' and len(events) == 1:
+                cleanup = set(event.old) - set(event.new)
+                reuse = set(event.old) & set(event.new)
+            elif (event.name in ('page', 'page_size', 'value', 'pagination') or
+                  (self.pagination == 'remote' and event.name == 'sorters')):
+                self.expanded = []
+                return
+        old_panels = self._child_panels
+        self._child_panels = child_panels = self._get_children(
+            {i: old_panels[i] for i in reuse}
+        )
+        for ref, (m, _) in self._models.items():
+            root, doc, comm = state._views[ref][1:]
+            for idx in cleanup:
+                old_panels[idx]._cleanup(root)
+            children = self._get_model_children(
+                child_panels, doc, root, m, comm
+            )
+            msg = {'children': children}
             self._apply_update([], msg, m, ref)
 
     @updating
@@ -1020,6 +1100,7 @@ class Tabulator(BaseTable):
             selectable = self.selectable
         props.update({
             'aggregators': self.aggregators,
+            'expanded': self.expanded,
             'source': source,
             'styles': self._get_style_data(),
             'columns': columns,
@@ -1054,7 +1135,11 @@ class Tabulator(BaseTable):
             model = super()._get_model(doc, root, parent, comm)
         if root is None:
             root = model
-        self._link_props(model, ['page', 'sorters'], doc, root, comm)
+        self._child_panels = child_panels = self._get_children()
+        model.children = self._get_model_children(
+            child_panels, doc, root, parent, comm
+        )
+        self._link_props(model, ['page', 'sorters', 'expanded'], doc, root, comm)
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm):
@@ -1069,6 +1154,10 @@ class Tabulator(BaseTable):
         groups = {}
         columns = []
         selectable = self.selectable
+        if self.row_content:
+            columns.append({
+                "formatter": "expand"
+            })
         if isinstance(selectable, str) and selectable.startswith('checkbox'):
             title = "" if selectable.endswith('-single') else "rowSelection"
             columns.append({
