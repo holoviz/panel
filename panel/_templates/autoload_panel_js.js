@@ -89,8 +89,10 @@ calls it with the rendered model.
     if (window.requirejs) {
       window.requirejs.config({{ config|conffilter }});
       {% for r in requirements %}
-      require(["{{ r }}"], function({{ exports[loop.index0] }}) {
-	window.{{ exports[loop.index0] }} = {{ exports[loop.index0] }}
+      require(["{{ r }}"], function({{ exports[r] }}) {
+	{% if r in exports %}
+	window.{{ exports[r] }} = {{ exports[r] }}
+	{% endif %}
       })
       {% endfor %}
     }

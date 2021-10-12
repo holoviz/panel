@@ -58,7 +58,7 @@ class Perspective(HTMLBox):
             "perspective-viewer-d3fc": "https://unpkg.com/@finos/perspective-viewer-d3fc@0.5.2/dist/umd/perspective-viewer-d3fc",
         },
         "exports": {
-            "perspective": "Perspective",
+            "perspective": "perspective",
             "perspective-viewer": "PerspectiveViewer",
             "perspective-viewer-datagrid": "PerspectiveViewerDatagrid",
             "perspective-viewer-hypergrid": "PerspectiveViewerHypergrid",

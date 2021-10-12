@@ -3,8 +3,9 @@ import { clone } from "@bokehjs/core/util/object"
 
 import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
 
+import {initialize_fullscreen_render} from "./panel_fullscreen_renwin_sync"
+
 import {vtkns} from "./util"
-import {FullScreenRenderWindowSynchronized} from "./panel_fullscreen_renwin_sync"
 
 const CONTEXT_NAME = "panel"
 
@@ -74,7 +75,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
   }
 
   init_vtk_renwin(): void {
-    this._vtk_renwin = FullScreenRenderWindowSynchronized.newInstance({
+    this._vtk_renwin = vtkns.FullScreenRenderWindowSynchronized.newInstance({
       rootContainer: this.el,
       container: this._vtk_container,
       synchronizerContext: this._synchronizer_context,
@@ -176,6 +177,7 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
 
   constructor(attrs?: Partial<VTKSynchronizedPlot.Attrs>) {
     super(attrs)
+    initialize_fullscreen_render()
     this.outline = vtkns.OutlineFilter.newInstance() //use to display bouding box of a selected actor
     const mapper = vtkns.Mapper.newInstance()
     mapper.setInputConnection(this.outline.getOutputPort())

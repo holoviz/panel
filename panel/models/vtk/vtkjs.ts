@@ -1,7 +1,7 @@
 import * as p from "@bokehjs/core/properties"
 
 import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
-import {vtk, vtkns} from "./util"
+import {vtkns} from "./util"
 
 export class VTKJSPlotView extends AbstractVTKView {
   model: VTKJSPlot
@@ -43,7 +43,7 @@ export class VTKJSPlotView extends AbstractVTKView {
           renderer: this._vtk_renwin.getRenderer(),
           dataAccessHelper,
         })
-        const fn = vtk.macro.debounce(
+        const fn = (window as any).vtk.macro.debounce(
           () =>
             setTimeout(() => {
               if (this._axes == null && this.model.axes) this._set_axes()

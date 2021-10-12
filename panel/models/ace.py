@@ -38,8 +38,8 @@ class AcePlot(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            ('ace', ('ace/ace', 'ace/ext-language_tools')): '//cdnjs.cloudflare.com/ajax/libs/ace/1.4.7'},
-        'exports': {'ace': 'ace'},
+            ('ace', ('ace/ace', 'ace/ext-language_tools', 'ace/ext-modelist')): '//cdnjs.cloudflare.com/ajax/libs/ace/1.4.7'},
+        'exports': {'ace/ace': 'ace'},
         'shim': {
             'ace/ext-language_tools': { 'deps': ["ace/ace"] },
             'ace/ext-modelist': { 'deps': ["ace/ace"] }

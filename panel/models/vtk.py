@@ -58,7 +58,6 @@ class AbstractVTKPlot(HTMLBox):
 
     __js_require__ = {
         "paths": {"vtk": vtk_cdn[:-3]},
-        "exports": {"vtk": 'vtk'},
         "shim": {
             "vtk": {"exports": "vtk"},
         }

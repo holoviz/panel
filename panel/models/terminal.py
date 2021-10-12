@@ -46,7 +46,12 @@ class Terminal(HTMLBox):
         ]),
         'exports': {
             "xtermjs": "xtermjs",
-            "xtermjsweblinks": "WebLinksAddon"
+            "xtermjsweblinks": "WebLinksAddon",
         },
-        'shim': {'xtermjsweblinks': {'exports': 'WebLinksAddon', 'deps': ['xtermjs']}}
+        'shim': {
+            'xtermjsweblinks': {
+                'exports': 'WebLinksAddon',
+                'deps': ['xtermjs']
+            }
+        }
     }
