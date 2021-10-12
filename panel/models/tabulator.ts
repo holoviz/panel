@@ -123,8 +123,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     })
 
     this.connect(this.model.properties.expanded.change, () => {
-      for (const row of this.tabulator.rowManager.getRows())
-	row.cells[0].layoutElement()
+      for (const row of this.tabulator.rowManager.getRows()) {
+	if (row.cells.length > 0)
+	  row.cells[0].layoutElement()
+      }
     })
 
     this.connect(this.model.properties.hidden_columns.change, () => {
@@ -153,7 +155,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     })
 
     this.connect(this.model.source.properties.data.change, () => {
-      this.setData();
+      this.setData()
     })
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => this.updateOrAddData())
@@ -381,19 +383,21 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           for (const col of column.columns)
             group_columns.push({...col})
           columns.push({...column, columns: group_columns})
-        } else {
+	} else if (column.formatter === "expand") {
+	  const expand = {
+	    align: "center",
+	    cellClick: (_: any, cell: any) => { this._update_expand(cell) },
+	    formatter: (cell: any) => { return this._expand_render(cell) },
+	    width:40
+	  }
+	  columns.push(expand)
+	} else {
 	  if (column.formatter === "rowSelection") {
 	    column.cellClick = (_: any, cell: any) => {
 	      cell.getRow().toggleSelect();
 	    }
-	  } else if (column.formatter === "expand") {
-	    const expand = {
-	      align: "center",
-	      cellClick: (_: any, cell: any) => { this._update_expand(cell) },
-	      formatter: (cell: any) => { return this._expand_render(cell) },
-	      width:40
 	  }
-	  columns.push(expand)
+	  columns.push(column)
 	}
     }
     for (const column of this.model.columns) {
