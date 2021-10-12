@@ -5,7 +5,7 @@ from types import FunctionType, MethodType
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource, Div as BkDiv
+from bokeh.models import ColumnDataSource
 from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CellFormatter, CheckboxEditor,
     DataCube, DataTable, DateEditor, DateFormatter, GroupingInfo,
@@ -956,7 +956,8 @@ class Tabulator(BaseTable):
             if event.name == 'expanded' and len(events) == 1:
                 cleanup = set(event.old) - set(event.new)
                 reuse = set(event.old) & set(event.new)
-            elif event.name == 'page':
+            elif (event.name in ('page', 'page_size', 'value', 'pagination') or
+                  (self.pagination == 'remote' and event.name == 'sorters')):
                 self.expanded = []
                 return
         old_panels = self._child_panels
