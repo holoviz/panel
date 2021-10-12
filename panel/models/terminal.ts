@@ -35,9 +35,8 @@ export class TerminalView extends PanelHTMLBoxView {
     this.term.open(this.container)
 
     this.term.onRender(() => {
-      if (!this._rendered) {
+      if (!this._rendered)
 	this.fit()
-      }
     })
 
     this.write()
@@ -77,7 +76,6 @@ export class TerminalView extends PanelHTMLBoxView {
   }
 
   clear(): void {
-    // https://stackoverflow.com/questions/65367607/how-to-handle-new-line-in-xterm-js-while-writing-data-into-the-terminal
     this.term.clear()
   }
 
