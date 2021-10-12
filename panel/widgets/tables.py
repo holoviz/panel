@@ -786,10 +786,13 @@ class Tabulator(BaseTable):
 
     _config_params = ['frozen_columns', 'groups', 'selectable', 'hierarchical']
 
+    _content_params = _data_params + ['expanded', 'row_content', 'embed_content']
+
     _manual_params = BaseTable._manual_params + _config_params
 
     _rename = {
-        'disabled': 'editable', 'selection': None, 'selectable': 'select_mode'
+        'disabled': 'editable', 'selection': None, 'selectable': 'select_mode',
+        'row_content': None
     }
 
     def __init__(self, value=None, **params):
@@ -798,7 +801,7 @@ class Tabulator(BaseTable):
         self._child_panels = {}
         super().__init__(value=value, **params)
         self._configuration = configuration
-        self.param.watch(self._update_children, ['expanded']+self._data_params)
+        self.param.watch(self._update_children, self._content_params)
 
     def _validate(self, *events):
         super()._validate(*events)
