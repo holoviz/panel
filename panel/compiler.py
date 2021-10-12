@@ -26,7 +26,7 @@ def require_components():
     from .config import config
     from .reactive import ReactiveHTML
 
-    configs, requirements, exports = [], [], []
+    configs, requirements, exports = [], [], {}
     js_requires = []
 
     from bokeh.model import Model
@@ -63,24 +63,17 @@ def require_components():
 
         for req in list(model_require.get('paths', [])):
             if isinstance(req, tuple):
+                model_require['paths'] = dict(model_require['paths'])
                 model_require['paths'][req[0]] = model_require['paths'].pop(req)
 
-            export = req[0] if isinstance(req, tuple) else req
-            if export not in model_exports:
-                continue
+            reqs = req[1] if isinstance(req, tuple) else (req,)
+            for r in reqs:
+                if r not in requirements:
+                    requirements.append(r)
+                    if r in model_exports:
+                        exports[r] = model_exports[r]
 
-            if isinstance(req, tuple):
-                for r in req[1]:
-                    if r not in requirements:
-                        requirements.append(r)
-                req = req[0]
-            elif req not in requirements:
-                requirements.append(req)
-
-            export = model_exports[req]
-            for e in (export if isinstance(export, list) else [export]):
-                if export not in exports and export is not None:
-                    exports.append(export)
+    print(configs, requirements, exports)
     return configs, requirements, exports, skip_import
 
 def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
