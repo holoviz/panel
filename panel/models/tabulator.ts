@@ -251,9 +251,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   getConfiguration(): any {
     const pagination = this.model.pagination == 'remote' ? 'local': (this.model.pagination || false)
-    // selectable is true if select_mode is a string (one of 'checkbox', 'checkbox-single' and 
-    // 'toggle'). False if it's a boolean or a number (integer on the python side).
-    let selectable = (typeof this.model.select_mode) === 'string'
+    // Only use selectable mode if explicitly requested otherwise manually handle selections
+    let selectable = this.model.select_mode === 'toggle' ? true : NaN
     const that = this
     let configuration = {
       ...this.model.configuration,
@@ -306,8 +305,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           for (const col of column.columns)
             group_columns.push({...col})
           columns.push({...column, columns: group_columns})
-        } else
+        } else {
+	  if (column.formatter === "rowSelection") {
+	    column.cellClick = (_: any, cell: any) => {
+	      cell.getRow().toggleSelect();
+	    }
+	  }
           columns.push({...column})
+	}
     }
     for (const column of this.model.columns) {
       let tab_column: any = null
@@ -635,7 +640,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   rowSelectionChanged(data: any, _: any): void {
-    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean')
+    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean' || (this.model.select_mode.startsWith('checkbox')))
       return
     const indices: number[] = data.map((row: any) => row._index)
     const filtered = this._filter_selected(indices)
