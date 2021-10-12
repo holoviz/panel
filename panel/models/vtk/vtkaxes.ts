@@ -3,7 +3,7 @@ import * as p from "@bokehjs/core/properties"
 import {Model} from "@bokehjs/model"
 import {mat4, vec3} from "gl-matrix"
 
-import {cartesian_product, vtk, vtkns} from "./util"
+import {cartesian_product, vtkns} from "./util"
 
 type VTKTicker = {
   ticks: number[]
@@ -124,7 +124,7 @@ export class VTKAxes extends Model {
     polys.push(
       this._make_grid_lines(this.xticks.length, this.zticks.length, offset)
     ) //xz
-    const gridPolyData = vtk({
+    const gridPolyData = (window as any).vtk({
       vtkClass: "vtkPolyData",
       points: {
         vtkClass: "vtkPoints",
@@ -167,7 +167,7 @@ export class VTKAxes extends Model {
       }
       return coords
     }) as any).flat(2)
-    const axesPolyData = vtk({
+    const axesPolyData = (window as any).vtk({
       vtkClass: "vtkPolyData",
       points: {
         vtkClass: "vtkPoints",

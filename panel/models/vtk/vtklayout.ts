@@ -7,7 +7,7 @@ import {ColorMapper} from "@bokehjs/models/mappers/color_mapper"
 import {Enum} from "@bokehjs/core/kinds"
 
 import {PanelHTMLBoxView, set_size} from "../layout"
-import {vtkns, VolumeType, majorAxis, applyStyle, CSSProperties, Annotation} from "./util"
+import {vtkns, setup_vtkns, VolumeType, majorAxis, applyStyle, CSSProperties, Annotation} from "./util"
 import {VTKColorBar} from "./vtkcolorbar"
 import {VTKAxes} from "./vtkaxes"
 
@@ -170,7 +170,6 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
         )
       }
     }
-    console.log(this.model.annotations)
   }
 
   connect_signals(): void {
@@ -499,6 +498,7 @@ export abstract class AbstractVTKPlot extends HTMLBox {
   static __module__ = "panel.models.vtk"
 
   constructor(attrs?: Partial<AbstractVTKPlot.Attrs>) {
+    setup_vtkns()
     super(attrs)
   }
 

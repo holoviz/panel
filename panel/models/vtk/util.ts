@@ -14,11 +14,12 @@ export const ARRAY_TYPES = {
 
 export type DType = keyof typeof ARRAY_TYPES
 
-export const vtk = (window as any).vtk
-
 export const vtkns: any = {}
 
-if (vtk) {
+export function setup_vtkns(): void {
+  if (vtkns.Actor != null)
+    return
+  const vtk = (window as any).vtk
   vtkns["Actor"] = vtk.Rendering.Core.vtkActor
   vtkns["AxesActor"] = vtk.Rendering.Core.vtkAxesActor
   vtkns["Base64"] = vtk.Common.Core.vtkBase64
@@ -93,6 +94,10 @@ if (vtk) {
     vtkObjectManager.genericUpdater
   )
 }
+
+
+if ((window as any).vtk)
+  setup_vtkns()
 
 declare type RGBnode = {
   x: number
