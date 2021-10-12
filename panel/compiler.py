@@ -73,7 +73,6 @@ def require_components():
                     if r in model_exports:
                         exports[r] = model_exports[r]
 
-    print(configs, requirements, exports)
     return configs, requirements, exports, skip_import
 
 def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
