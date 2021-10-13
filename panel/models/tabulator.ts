@@ -289,7 +289,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       tooltips: (cell: any) => {
         return  cell.getColumn().getField() + ": " + cell.getValue();
       },
-      rowFormatter: (row: any) => this._render_row(row)
+      rowFormatter: (row: any) => this._render_row(row),
+      dataFiltering: () => {
+	if (this.tabulator != null)
+	  this.model.filters = this.tabulator.getHeaderFilters()
+      }
     }
     if (pagination) {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
@@ -465,6 +469,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         tab_column.editor = (cell: any, onRendered: any, success: any, cancel: any) => this.renderEditor(column, cell, onRendered, success, cancel)
       }
       tab_column.editable = () => (this.model.editable && (editor.default_view != null))
+      if (tab_column.headerFilter && (typeof tab_column.headerFilter) === 'boolean' && (typeof tab_column.editor) === 'string') {
+	tab_column.headerFilter = tab_column.editor
+	tab_column.headerFilterParams = tab_column.editorParams
+      }
       if (config_columns == null)
         columns.push(tab_column)
     }
@@ -755,9 +763,10 @@ export namespace DataTabulator {
     columns: p.Property<TableColumn[]>
     configuration: p.Property<any>
     download: p.Property<boolean>
+    editable: p.Property<boolean>
     expanded: p.Property<number[]>
     filename: p.Property<string>
-    editable: p.Property<boolean>
+    filters: p.Property<any[]>
     follow: p.Property<boolean>
     frozen_rows: p.Property<number[]>
     groupby: p.Property<string[]>
@@ -802,6 +811,7 @@ export class DataTabulator extends HTMLBox {
       editable:       [ Boolean,               true ],
       expanded:       [ Array(Number),           [] ],
       filename:       [ String,         "table.csv" ],
+      filters:        [ Array(Any),              [] ],
       follow:         [ Boolean,               true ],
       frozen_rows:    [ Array(Number),           [] ],
       groupby:        [ Array(String),           [] ],

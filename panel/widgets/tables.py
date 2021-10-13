@@ -255,6 +255,34 @@ class BaseTable(ReactiveData, Widget):
                                  "understood. Must be either a scalar, "
                                  "tuple or list.")
             filters.append(mask)
+        for filt in getattr(self, 'filters', []):
+            col_name = filt['field']
+            op = filt['type']
+            val = filt['value']
+            col = df[col_name]
+            val = col.dtype.type(val)
+            if op == '=':
+                filters.append(col == val)
+            elif op == '!=':
+                filters.append(col != val)
+            elif op == '<':
+                filters.append(col < val)
+            elif op == '>':
+                filters.append(col > val)
+            elif op == '>=':
+                filters.append(col >= val)
+            elif op == '<=':
+                filters.append(col <= val)
+            elif op == 'in':
+                filters.append(col.isin(val))
+            elif op == 'like':
+                filters.append(col.str.lower().str.contains(val.lower()))
+            elif op == 'starts':
+                filters.append(col.str.startsWith(val))
+            elif op == 'ends':
+                filters.append(col.str.endsWith(val))
+            elif op == 'regex':
+                raise ValueError("Regex filtering not supported.")
         if filters:
             mask = filters[0]
             for f in filters:
@@ -710,6 +738,10 @@ class Tabulator(BaseTable):
         Whether to embed the row_content or render it dynamically
         when a row is expanded.""")
 
+    filters = param.List(default=[], doc="""
+        List of client-side filters declared as dictionaries containing
+        'field', 'type' and 'value' keys.""")
+
     frozen_columns = param.List(default=[], doc="""
         List indicating the columns to freeze. The column(s) may be
         selected by name or index.""")
@@ -725,6 +757,10 @@ class Tabulator(BaseTable):
 
     groupby = param.List(default=[], doc="""
         Groups rows in the table by one or more columns.""")
+
+    header_filters = param.ClassSelector(class_=(bool, dict), doc="""
+        Whether to enable filters in the header or dictionary
+        configuring filters for each column.""")
 
     hidden_columns = param.List(default=[], doc="""
         List of columns to hide.""")
@@ -782,7 +818,7 @@ class Tabulator(BaseTable):
         ], doc="""
         Tabulator CSS theme to apply to table.""")
 
-    _data_params = ['value', 'page', 'page_size', 'pagination', 'sorters']
+    _data_params = ['value', 'page', 'page_size', 'pagination', 'sorters', 'filters']
 
     _config_params = ['frozen_columns', 'groups', 'selectable', 'hierarchical']
 
@@ -1139,7 +1175,7 @@ class Tabulator(BaseTable):
         model.children = self._get_model_children(
             child_panels, doc, root, parent, comm
         )
-        self._link_props(model, ['page', 'sorters', 'expanded'], doc, root, comm)
+        self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm):
@@ -1207,6 +1243,23 @@ class Tabulator(BaseTable):
                 col_dict['editorParams'] = editor
             if column.field in self.frozen_columns or i in self.frozen_columns:
                 col_dict['frozen'] = True
+            if self.header_filters is True:
+                col_dict['headerFilter'] = True
+            elif isinstance(self.header_filters, dict) and column.field in self.header_filters:
+                filter_type = self.header_filters[column.field]
+                if isinstance(filter_type, dict):
+                    filter_params = dict(filter_type)
+                    filter_type = filter_params.pop('type')
+                    filter_func = filter_params.pop('func', None)
+                else:
+                    filter_params = {}
+                if filter_type == 'select' and not filter_params:
+                    filter_params = {'values': True}
+                col_dict['headerFilter'] = filter_type
+                if filter_params:
+                    col_dict['headerFilterParams'] = filter_params
+                if filter_func:
+                    col_dict['headerFilterFunc'] = filter_func
             if matching_groups:
                 group = matching_groups[0]
                 if group in groups:
