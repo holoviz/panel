@@ -54,7 +54,7 @@ class FileDownload(Widget):
         right-click save as.""")
 
     button_type = param.ObjectSelector(default='default', objects=[
-        'default', 'primary', 'success', 'warning', 'danger'])
+        'default', 'primary', 'success', 'warning', 'danger', 'light'])
 
     callback = param.Callable(default=None, doc="""
         A callable that returns the file path or file-like object.""")
