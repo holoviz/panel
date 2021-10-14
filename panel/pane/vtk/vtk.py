@@ -679,9 +679,9 @@ class VTKVolume(AbstractVTK):
         cls._serializers.update({class_type:serializer})
 
     def _volume_from_array(self, sub_array):
-        return dict(buffer=base64encode(sub_array.ravel(order='F' if sub_array.flags['F_CONTIGUOUS'] else 'C')),
-                    dims=sub_array.shape if sub_array.flags['F_CONTIGUOUS'] else sub_array.shape[::-1],
-                    spacing=self._sub_spacing if sub_array.flags['F_CONTIGUOUS'] else self._sub_spacing[::-1],
+        return dict(buffer=base64encode(sub_array.ravel(order='F')),
+                    dims=sub_array.shape,
+                    spacing=self._sub_spacing,
                     origin=self.origin,
                     data_range=(sub_array.min(), sub_array.max()),
                     dtype=sub_array.dtype.name)
@@ -700,10 +700,10 @@ class VTKVolume(AbstractVTK):
                 def volume_serializer(inst):
                     imageData = inst.object
                     array = numpy_support.vtk_to_numpy(imageData.GetPointData().GetScalars())
-                    dims = imageData.GetDimensions()[::-1]
-                    inst.spacing = imageData.GetSpacing()[::-1]
+                    dims = imageData.GetDimensions()
+                    inst.spacing = imageData.GetSpacing()
                     inst.origin = imageData.GetOrigin()
-                    return inst._volume_from_array(inst._subsample_array(array.reshape(dims, order='C')))
+                    return inst._volume_from_array(inst._subsample_array(array.reshape(dims, order='F')))
 
                 VTKVolume.register_serializer(vtk.vtkImageData, volume_serializer)
                 serializer = volume_serializer
@@ -722,7 +722,7 @@ class VTKVolume(AbstractVTK):
         if any([d_f > 1 for d_f in dowsnscale_factor]):
             try:
                 import scipy.ndimage as nd
-                sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0)
+                sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
             except ImportError:
                 sub_array = array[::int(np.ceil(dowsnscale_factor[0])),
                                   ::int(np.ceil(dowsnscale_factor[1])),
