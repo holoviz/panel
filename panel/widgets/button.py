@@ -15,7 +15,7 @@ from bokeh.events import (MenuItemClick, ButtonClick)
 from .base import Widget
 
 
-BUTTON_TYPES = ['default', 'primary', 'success', 'warning', 'danger']
+BUTTON_TYPES = ['default', 'primary', 'success', 'warning', 'danger','light']
 
 class _ButtonBase(Widget):
 
