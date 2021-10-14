@@ -205,13 +205,15 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         """
         if self._state_cookie is None:
             self._state_cookie = (
-                self.get_secure_cookie(STATE_COOKIE_NAME) or b''
+                self.get_secure_cookie(STATE_COOKIE_NAME, max_age_days=config.oauth_expiry) or b''
             ).decode('utf8', 'replace')
             self.clear_cookie(STATE_COOKIE_NAME)
         return self._state_cookie
 
     def set_state_cookie(self, state):
-        self.set_secure_cookie(STATE_COOKIE_NAME, state, expires_days=1, httponly=True)
+        self.set_secure_cookie(
+            STATE_COOKIE_NAME, state, expires_days=config.oauth_expiry, httponly=True
+        )
 
     async def get(self):
         log.debug("%s received login request" % type(self).__name__)
@@ -261,13 +263,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
     def _on_auth(self, user_info, access_token):
         user_key = config.oauth_jwt_user or self._USER_KEY
         user = user_info[user_key]
-        self.set_secure_cookie('user', user)
+        self.set_secure_cookie('user', user, expires_days=config.oauth_expiry)
         id_token = base64url_encode(json.dumps(user_info))
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
-        self.set_secure_cookie('access_token', access_token)
-        self.set_secure_cookie('id_token', id_token)
+        self.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry)
+        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
         return user
 
     def _on_error(self, response, body=None):
@@ -544,12 +546,12 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
             log.error("%s token payload did not contain expected '%s'." %
                       (type(self).__name__, user_key))
             raise HTTPError(400, "OAuth token payload missing user information")
-        self.set_secure_cookie('user', user)
+        self.set_secure_cookie('user', user, expires_days=config.oauth_expiry)
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
-        self.set_secure_cookie('access_token', access_token)
-        self.set_secure_cookie('id_token', id_token)
+        self.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry)
+        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
         return user
 
 
@@ -661,7 +663,7 @@ class OAuthProvider(AuthProvider):
     @property
     def get_user(self):
         def get_user(request_handler):
-            return request_handler.get_secure_cookie("user")
+            return request_handler.get_secure_cookie("user", max_age_days=config.oauth_expiry)
         return get_user
 
     @property

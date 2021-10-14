@@ -101,6 +101,12 @@ class Serve(_BkServe):
             type    = str,
             help    = "A random string used to encode the user information."
         )),
+        ('--oauth-expiry-days', dict(
+            action  = 'store',
+            type    = float,
+            help    = "Expiry off the OAuth cookie in number of days.",
+            default = 1
+        )),
         ('--rest-provider', dict(
             action = 'store',
             type   = str,
@@ -196,6 +202,7 @@ class Serve(_BkServe):
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
+            config.oauth_expiry = args.oauth_expiry_days
             if config.oauth_key and args.oauth_key:
                 raise ValueError(
                     "Supply OAuth key either using environment variable "
