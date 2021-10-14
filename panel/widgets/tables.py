@@ -283,6 +283,8 @@ class BaseTable(ReactiveData, Widget):
                 filters.append(col.str.endsWith(val))
             elif op == 'regex':
                 raise ValueError("Regex filtering not supported.")
+            else:
+                raise ValueError(f"Filter type {op!r} not recognized.")
         if filters:
             mask = filters[0]
             for f in filters:
@@ -1253,6 +1255,7 @@ class Tabulator(BaseTable):
                     filter_func = filter_params.pop('func', None)
                 else:
                     filter_params = {}
+                    filter_func = None
                 if filter_type == 'select' and not filter_params:
                     filter_params = {'values': True}
                 col_dict['headerFilter'] = filter_type

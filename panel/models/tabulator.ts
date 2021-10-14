@@ -124,8 +124,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     this.connect(this.model.properties.expanded.change, () => {
       for (const row of this.tabulator.rowManager.getRows()) {
-	if (row.cells.length > 0)
-	  row.cells[0].layoutElement()
+        if (row.cells.length > 0)
+          row.cells[0].layoutElement()
       }
     })
 
@@ -291,8 +291,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       },
       rowFormatter: (row: any) => this._render_row(row),
       dataFiltering: () => {
-	if (this.tabulator != null)
-	  this.model.filters = this.tabulator.getHeaderFilters()
+        if (this.tabulator != null)
+          this.model.filters = this.tabulator.getHeaderFilters()
       }
     }
     if (pagination) {
@@ -317,15 +317,15 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     new Promise(async (resolve: any) => {
       const children = []
       for (const idx of this.model.expanded) {
-	if (idx in this.model.children)
-	  children.push(this.model.children[idx])
+        if (idx in this.model.children)
+          children.push(this.model.children[idx])
       }
       await build_views(this._child_views, children, {parent: (null as any)})
       resolve(null)
     }).then(() => {
       for (const r of this.model.expanded) {
-	const row = this.tabulator.getRow(r)
-	this._render_row(row)
+        const row = this.tabulator.getRow(r)
+        this._render_row(row)
       }
     })
   }
@@ -369,8 +369,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     let ready = true
     for (const idx of this.model.expanded) {
       if (!(idx in this.model.children)) {
-	ready = false
-	break
+        ready = false
+        break
       }
     }
     if (ready)
@@ -387,22 +387,22 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           for (const col of column.columns)
             group_columns.push({...col})
           columns.push({...column, columns: group_columns})
-	} else if (column.formatter === "expand") {
-	  const expand = {
-	    align: "center",
-	    cellClick: (_: any, cell: any) => { this._update_expand(cell) },
-	    formatter: (cell: any) => { return this._expand_render(cell) },
-	    width:40
-	  }
-	  columns.push(expand)
-	} else {
-	  if (column.formatter === "rowSelection") {
-	    column.cellClick = (_: any, cell: any) => {
-	      cell.getRow().toggleSelect();
-	    }
-	  }
-	  columns.push(column)
-	}
+        } else if (column.formatter === "expand") {
+          const expand = {
+            align: "center",
+            cellClick: (_: any, cell: any) => { this._update_expand(cell) },
+            formatter: (cell: any) => { return this._expand_render(cell) },
+            width:40
+          }
+          columns.push(expand)
+        } else {
+          if (column.formatter === "rowSelection") {
+            column.cellClick = (_: any, cell: any) => {
+              cell.getRow().toggleSelect();
+            }
+          }
+          columns.push(column)
+        }
     }
     for (const column of this.model.columns) {
       let tab_column: any = null
@@ -469,9 +469,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         tab_column.editor = (cell: any, onRendered: any, success: any, cancel: any) => this.renderEditor(column, cell, onRendered, success, cancel)
       }
       tab_column.editable = () => (this.model.editable && (editor.default_view != null))
-      if (tab_column.headerFilter && (typeof tab_column.headerFilter) === 'boolean' && (typeof tab_column.editor) === 'string') {
-	tab_column.headerFilter = tab_column.editor
-	tab_column.headerFilterParams = tab_column.editorParams
+      if (tab_column.headerFilter) {
+        if ((typeof tab_column.headerFilter) === 'boolean' &&
+            (typeof tab_column.editor) === 'string')) {
+          tab_column.headerFilter = tab_column.editor
+          tab_column.headerFilterParams = tab_column.editorParams
+        }
       }
       if (config_columns == null)
         columns.push(tab_column)
