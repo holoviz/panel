@@ -13,7 +13,7 @@ from bokeh.models import HTMLBox, Model, ColorMapper
 from ..io.resources import bundled_files
 from ..util import classproperty
 
-vtk_cdn = "https://unpkg.com/vtk.js@14.16.4/dist/vtk.js"
+vtk_cdn = "https://unpkg.com/vtk.js@20.0.1/vtk.js"
 
 class VTKAxes(Model):
     """
@@ -134,6 +134,8 @@ class VTKVolumePlot(AbstractVTKPlot):
     interpolation = Enum(enumeration('fast_linear','linear','nearest'))
 
     mapper = Dict(String, Any)
+
+    nan_opacity = Float(default=1)
 
     render_background = String(default='#52576e')
 
