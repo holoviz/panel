@@ -196,7 +196,10 @@ class MultiChoice(_MultiSelectBase):
 
     option_limit = param.Integer(default=None, bounds=(1, None), doc="""
         Maximum number of options to display at once.""")
-
+    
+    search_option_limit = param.Integer(default=None, bounds=(1, None), doc="""
+        Maximum number of options to display at once if search string is entered.""")
+    
     placeholder = param.String(default='', doc="""
         String displayed when no selection has been made.""")
 
