@@ -115,8 +115,11 @@ class BaseTable(ReactiveData, Widget):
         for col in col_names:
             if col in df.columns:
                 data = df[col]
-            else:
-                data = df.index
+            elif col in self.indexes:
+                if len(self.indexes) == 1:
+                    data = df.index
+                else:
+                    data = df.index.get_level_values(self.indexes.index(col))
 
             if isinstance(data, pd.DataFrame):
                 raise ValueError("DataFrame contains duplicate column names.")
@@ -255,6 +258,51 @@ class BaseTable(ReactiveData, Widget):
                                  "understood. Must be either a scalar, "
                                  "tuple or list.")
             filters.append(mask)
+
+        for filt in getattr(self, 'filters', []):
+            col_name = filt['field']
+            op = filt['type']
+            val = filt['value']
+            if col_name in df.columns:
+                col = df[col_name]
+            elif col_name in self.indexes:
+                if len(self.indexes) == 1:
+                    col = df.index
+                else:
+                    col = df.index.get_level_values(self.indexes.index(col))
+
+            # Sometimes Tabulator will provide a zero/single element list
+            if isinstance(val, list):
+                if len(val) == 1:
+                    val = val[0]
+                elif not val:
+                    continue
+
+            val = col.dtype.type(val)
+            if op == '=':
+                filters.append(col == val)
+            elif op == '!=':
+                filters.append(col != val)
+            elif op == '<':
+                filters.append(col < val)
+            elif op == '>':
+                filters.append(col > val)
+            elif op == '>=':
+                filters.append(col >= val)
+            elif op == '<=':
+                filters.append(col <= val)
+            elif op == 'in':
+                filters.append(col.isin(val))
+            elif op == 'like':
+                filters.append(col.str.lower().str.contains(val.lower()))
+            elif op == 'starts':
+                filters.append(col.str.startsWith(val))
+            elif op == 'ends':
+                filters.append(col.str.endsWith(val))
+            elif op == 'regex':
+                raise ValueError("Regex filtering not supported.")
+            else:
+                raise ValueError(f"Filter type {op!r} not recognized.")
         if filters:
             mask = filters[0]
             for f in filters:
@@ -544,6 +592,14 @@ class BaseTable(ReactiveData, Widget):
             )
 
     @property
+    def current_view(self):
+        """
+        Returns the current view of the table after filtering and
+        sorting are applied.
+        """
+        return self._processed
+
+    @property
     def selected_dataframe(self):
         """
         Returns a DataFrame of the currently selected rows.
@@ -710,6 +766,10 @@ class Tabulator(BaseTable):
         Whether to embed the row_content or render it dynamically
         when a row is expanded.""")
 
+    filters = param.List(default=[], doc="""
+        List of client-side filters declared as dictionaries containing
+        'field', 'type' and 'value' keys.""")
+
     frozen_columns = param.List(default=[], doc="""
         List indicating the columns to freeze. The column(s) may be
         selected by name or index.""")
@@ -725,6 +785,10 @@ class Tabulator(BaseTable):
 
     groupby = param.List(default=[], doc="""
         Groups rows in the table by one or more columns.""")
+
+    header_filters = param.ClassSelector(class_=(bool, dict), doc="""
+        Whether to enable filters in the header or dictionary
+        configuring filters for each column.""")
 
     hidden_columns = param.List(default=[], doc="""
         List of columns to hide.""")
@@ -782,7 +846,7 @@ class Tabulator(BaseTable):
         ], doc="""
         Tabulator CSS theme to apply to table.""")
 
-    _data_params = ['value', 'page', 'page_size', 'pagination', 'sorters']
+    _data_params = ['value', 'page', 'page_size', 'pagination', 'sorters', 'filters']
 
     _config_params = ['frozen_columns', 'groups', 'selectable', 'hierarchical']
 
@@ -1139,7 +1203,7 @@ class Tabulator(BaseTable):
         model.children = self._get_model_children(
             child_panels, doc, root, parent, comm
         )
-        self._link_props(model, ['page', 'sorters', 'expanded'], doc, root, comm)
+        self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm):
@@ -1148,6 +1212,40 @@ class Tabulator(BaseTable):
                 msg.pop('theme'), 'inline'
             )
         super()._update_model(events, msg, root, model, doc, comm)
+
+
+    def _get_filter_spec(self, column):
+        fspec = {}
+        if not self.header_filters or (isinstance(self.header_filters, dict) and
+                                       column.field not in self.header_filters):
+            return fspec
+        elif self.header_filters == True:
+            if column.field == 'index':
+                fspec['headerFilter'] = 'number'
+            else:
+                fspec['headerFilter'] = True
+            return fspec
+        filter_type = self.header_filters[column.field]
+        if isinstance(filter_type, dict):
+            filter_params = dict(filter_type)
+            filter_type = filter_params.pop('type', True)
+            filter_func = filter_params.pop('func', None)
+            filter_placeholder = filter_params.pop('placeholder', None)
+        else:
+            filter_params = {}
+            filter_func = None
+            filter_placeholder = None
+        fspec['headerFilter'] = filter_type
+        if filter_type == 'select' and not filter_params:
+            filter_params = {'values': True}
+        fspec['headerFilter'] = filter_type
+        if filter_params:
+            fspec['headerFilterParams'] = filter_params
+        if filter_func:
+            fspec['headerFilterFunc'] = filter_func
+        if filter_placeholder:
+            fspec['headerFilterPlaceholder'] = filter_placeholder
+        return fspec
 
     def _config_columns(self, column_objs):
         column_objs = list(column_objs)
@@ -1207,6 +1305,7 @@ class Tabulator(BaseTable):
                 col_dict['editorParams'] = editor
             if column.field in self.frozen_columns or i in self.frozen_columns:
                 col_dict['frozen'] = True
+            col_dict.update(self._get_filter_spec(column))
             if matching_groups:
                 group = matching_groups[0]
                 if group in groups:
