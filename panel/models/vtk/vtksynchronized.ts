@@ -1,5 +1,5 @@
 import * as p from "@bokehjs/core/properties"
-import { clone } from "@bokehjs/core/util/object"
+import {clone} from "@bokehjs/core/util/object"
 
 import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
 
@@ -16,7 +16,6 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
   protected _decoded_arrays: any
   protected _pending_arrays: any
   protected _promises: Promise<any>[]
-  public getArray: CallableFunction
   public registerArray: CallableFunction
 
   initialize(): void {
@@ -26,16 +25,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     this._arrays = {}
     this._decoded_arrays = {}
     this._pending_arrays = {}
-    // Internal closures
-    this.getArray = (hash: string) => {
-      if (this._arrays[hash]) {
-        return Promise.resolve(this._arrays[hash])
-      }
 
-      return new Promise((resolve, reject) => {
-        this._pending_arrays[hash] = {resolve, reject}
-      })
-    }
 
     this.registerArray = (hash: string, array: any) => {
       this._arrays[hash] = array
@@ -106,7 +96,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
         .loadAsync(atob(arrays[key]))
         .then((zip: any) => zip.file("data/" + key))
         .then((zipEntry: any) => zipEntry.async("arraybuffer"))
-            .then((arraybuffer: any) => registerArray(key, arraybuffer))
+        .then((arraybuffer: any) => registerArray(key, arraybuffer))
         .then(() => {
           arrays_processed.push(key)
           model.properties.arrays_processed.change.emit()
@@ -200,14 +190,14 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
   static init_VTKSynchronizedPlot(): void {
     this.prototype.default_view = VTKSynchronizedPlotView
 
-    this.define<VTKSynchronizedPlot.Props>({
-      arrays:             [ p.Any,        {} ],
-      arrays_processed:   [ p.Array,      [] ],
-      enable_keybindings: [ p.Boolean, false ],
-      one_time_reset:     [ p.Boolean        ],
-      rebuild:            [ p.Boolean, false ],
-      scene:              [ p.Any,        {} ],
-    })
+    this.define<VTKSynchronizedPlot.Props>(({Any, Array, Boolean, String}) => ({
+      arrays:               [ Any,                {} ],
+      arrays_processed:     [ Array(String),      [] ],
+      enable_keybindings:   [ Boolean,         false ],
+      one_time_reset:       [ Boolean                ],
+      rebuild:              [ Boolean,         false ],
+      scene:                [ Any,                {} ],
+    }))
 
     this.override<VTKSynchronizedPlot.Props>({
       height: 300,
