@@ -314,7 +314,6 @@ def test_tabulator_config_defaults(document, comm):
     ]
     assert model.configuration['selectable'] == True
 
-
 def test_tabulator_header_filters_config_boolean(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, header_filters=True)
@@ -322,7 +321,7 @@ def test_tabulator_header_filters_config_boolean(document, comm):
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index', 'headerFilter': True},
+        {'field': 'index', 'headerFilter': 'number'},
         {'field': 'A', 'headerFilter': True},
         {'field': 'B', 'headerFilter': True},
         {'field': 'C', 'headerFilter': True},
@@ -346,7 +345,9 @@ def test_tabulator_header_filters_column_config_select(document, comm):
 
 def test_tabulator_header_filters_column_config_dict(document, comm):
     df = makeMixedDataFrame()
-    table = Tabulator(df, header_filters={'C': {'type': 'select', 'values': True, 'func': '!='}})
+    table = Tabulator(df, header_filters={
+        'C': {'type': 'select', 'values': True, 'func': '!=', 'placeholder': 'Not equal'}
+    })
 
     model = table.get_root(document, comm)
 
@@ -358,7 +359,8 @@ def test_tabulator_header_filters_column_config_dict(document, comm):
             'field': 'C',
             'headerFilter': 'select',
             'headerFilterParams': {'values': True},
-            'headerFilterFunc': '!='
+            'headerFilterFunc': '!=',
+            'headerFilterPlaceholder': 'Not equal'
         },
         {'field': 'D'}
     ]

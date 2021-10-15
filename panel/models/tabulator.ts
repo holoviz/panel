@@ -471,7 +471,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       tab_column.editable = () => (this.model.editable && (editor.default_view != null))
       if (tab_column.headerFilter) {
         if ((typeof tab_column.headerFilter) === 'boolean' &&
-            (typeof tab_column.editor) === 'string')) {
+            (typeof tab_column.editor) === 'string') {
           tab_column.headerFilter = tab_column.editor
           tab_column.headerFilterParams = tab_column.editorParams
         }

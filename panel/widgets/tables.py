@@ -115,8 +115,11 @@ class BaseTable(ReactiveData, Widget):
         for col in col_names:
             if col in df.columns:
                 data = df[col]
-            else:
-                data = df.index
+            elif col in self.indexes:
+                if len(self.indexes) == 1:
+                    data = df.index
+                else:
+                    data = df.index.get_level_values(self.indexes.index(col))
 
             if isinstance(data, pd.DataFrame):
                 raise ValueError("DataFrame contains duplicate column names.")
@@ -255,11 +258,26 @@ class BaseTable(ReactiveData, Widget):
                                  "understood. Must be either a scalar, "
                                  "tuple or list.")
             filters.append(mask)
+
         for filt in getattr(self, 'filters', []):
             col_name = filt['field']
             op = filt['type']
             val = filt['value']
-            col = df[col_name]
+            if col_name in df.columns:
+                col = df[col_name]
+            elif col_name in self.indexes:
+                if len(self.indexes) == 1:
+                    col = df.index
+                else:
+                    col = df.index.get_level_values(self.indexes.index(col))
+
+            # Sometimes Tabulator will provide a zero/single element list
+            if isinstance(val, list):
+                if len(val) == 1:
+                    val = val[0]
+                elif not val:
+                    continue
+
             val = col.dtype.type(val)
             if op == '=':
                 filters.append(col == val)
@@ -572,6 +590,14 @@ class BaseTable(ReactiveData, Widget):
                 f"Patching with a patch_value of type {type(patch_value).__name__} "
                 "is not supported. Please provide a DataFrame, Series or Dict."
             )
+
+    @property
+    def current_view(self):
+        """
+        Returns the current view of the table after filtering and
+        sorting are applied.
+        """
+        return self._processed
 
     @property
     def selected_dataframe(self):
@@ -1187,6 +1213,40 @@ class Tabulator(BaseTable):
             )
         super()._update_model(events, msg, root, model, doc, comm)
 
+
+    def _get_filter_spec(self, column):
+        fspec = {}
+        if not self.header_filters or (isinstance(self.header_filters, dict) and
+                                       column.field not in self.header_filters):
+            return fspec
+        elif self.header_filters == True:
+            if column.field == 'index':
+                fspec['headerFilter'] = 'number'
+            else:
+                fspec['headerFilter'] = True
+            return fspec
+        filter_type = self.header_filters[column.field]
+        if isinstance(filter_type, dict):
+            filter_params = dict(filter_type)
+            filter_type = filter_params.pop('type', True)
+            filter_func = filter_params.pop('func', None)
+            filter_placeholder = filter_params.pop('placeholder', None)
+        else:
+            filter_params = {}
+            filter_func = None
+            filter_placeholder = None
+        fspec['headerFilter'] = filter_type
+        if filter_type == 'select' and not filter_params:
+            filter_params = {'values': True}
+        fspec['headerFilter'] = filter_type
+        if filter_params:
+            fspec['headerFilterParams'] = filter_params
+        if filter_func:
+            fspec['headerFilterFunc'] = filter_func
+        if filter_placeholder:
+            fspec['headerFilterPlaceholder'] = filter_placeholder
+        return fspec
+
     def _config_columns(self, column_objs):
         column_objs = list(column_objs)
         groups = {}
@@ -1245,24 +1305,7 @@ class Tabulator(BaseTable):
                 col_dict['editorParams'] = editor
             if column.field in self.frozen_columns or i in self.frozen_columns:
                 col_dict['frozen'] = True
-            if self.header_filters is True:
-                col_dict['headerFilter'] = True
-            elif isinstance(self.header_filters, dict) and column.field in self.header_filters:
-                filter_type = self.header_filters[column.field]
-                if isinstance(filter_type, dict):
-                    filter_params = dict(filter_type)
-                    filter_type = filter_params.pop('type')
-                    filter_func = filter_params.pop('func', None)
-                else:
-                    filter_params = {}
-                    filter_func = None
-                if filter_type == 'select' and not filter_params:
-                    filter_params = {'values': True}
-                col_dict['headerFilter'] = filter_type
-                if filter_params:
-                    col_dict['headerFilterParams'] = filter_params
-                if filter_func:
-                    col_dict['headerFilterFunc'] = filter_func
+            col_dict.update(self._get_filter_spec(column))
             if matching_groups:
                 group = matching_groups[0]
                 if group in groups:
