@@ -237,6 +237,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   remove(): void {
     this._unsubscribe_camera_cb()
     window.removeEventListener("resize", this._vtk_renwin.resize)
+    if (this._orientationWidget!=null) this._orientationWidget.delete()
     this._vtk_renwin.getRenderWindow().getInteractor().delete()
     this._vtk_renwin.delete()
     super.remove()

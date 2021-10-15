@@ -482,7 +482,15 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         old_camera = self.vtk_camera
         new_camera = vtk.vtkCamera()
         self.vtk_camera = new_camera
-        exclude_properties = ['mtime']
+        exclude_properties = [
+            'mtime',
+            'projectionMatrix',
+            'viewMatrix',
+            'physicalTranslation',
+            'physicalScale',
+            'physicalViewUp',
+            'physicalViewNorth'
+        ]
         if self.camera is not None:
             for k, v in self.camera.items():
                 if k not in exclude_properties:
