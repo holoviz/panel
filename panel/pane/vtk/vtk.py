@@ -539,6 +539,9 @@ class VTKVolume(AbstractVTK):
     max_data_size = param.Number(default=(256 ** 3) * 2 / 1e6, doc="""
         Maximum data size transfert allowed without subsampling""")
 
+    nan_opacity = param.Number(default=1., bounds=(0., 1.), doc="""
+        Opacity applied to nan values in slices""")
+
     origin = param.Tuple(default=None, length=3, allow_None=True)
 
     render_background = param.Color(default='#52576e', doc="""
@@ -617,7 +620,7 @@ class VTKVolume(AbstractVTK):
         model = VTKVolumePlot(**props)
         if root is None:
             root = model
-        self._link_props(model, ['colormap', 'orientation_widget', 'camera', 'mapper', 'controller_expanded'], doc, root, comm)
+        self._link_props(model, ['colormap', 'orientation_widget', 'camera', 'mapper', 'controller_expanded', 'nan_opacity'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -683,7 +686,7 @@ class VTKVolume(AbstractVTK):
                     dims=sub_array.shape,
                     spacing=self._sub_spacing,
                     origin=self.origin,
-                    data_range=(sub_array.min(), sub_array.max()),
+                    data_range=(np.nanmin(sub_array), np.nanmax(sub_array)),
                     dtype=sub_array.dtype.name)
 
     def _get_volume_data(self):

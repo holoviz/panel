@@ -88,7 +88,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
 
     info_div.click()
   }
-  
+
   _init_annotations_container(): void {
     if (!this._annotations_container) {
       this._annotations_container = document.createElement("div")
@@ -237,6 +237,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   remove(): void {
     this._unsubscribe_camera_cb()
     window.removeEventListener("resize", this._vtk_renwin.resize)
+    this._vtk_renwin.getRenderWindow().getInteractor().delete()
     this._vtk_renwin.delete()
     super.remove()
   }
