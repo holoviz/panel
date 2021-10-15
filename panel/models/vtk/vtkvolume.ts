@@ -272,7 +272,6 @@ export class VTKVolumePlotView extends AbstractVTKView {
     const lookupTable = this.volume.getProperty().getRGBTransferFunction(0)
     const range = this.volume.getMapper().getInputData().getPointData().getScalars().getRange()
     piecewiseFunction.removeAllPoints()
-    console.log(this.model.nan_opacity)
     piecewiseFunction.addPoint(range[0]-1, this.model.nan_opacity)
     piecewiseFunction.addPoint(range[0], 1)
     piecewiseFunction.addPoint(range[1], 1)
