@@ -211,7 +211,7 @@ class BaseTable(ReactiveData, Widget):
             else:
                 self._update_columns(event, model)
 
-    def _filter_dataframe(self, df, ):
+    def _filter_dataframe(self, df):
         """
         Filter the DataFrame.
 
@@ -219,8 +219,6 @@ class BaseTable(ReactiveData, Widget):
         ----------
         df : DataFrame
            The DataFrame to filter
-        query : dict
-            A dictionary containing all the query parameters
 
         Returns
         -------
@@ -269,7 +267,7 @@ class BaseTable(ReactiveData, Widget):
                 if len(self.indexes) == 1:
                     col = df.index
                 else:
-                    col = df.index.get_level_values(self.indexes.index(col))
+                    col = df.index.get_level_values(self.indexes.index(col_name))
 
             # Sometimes Tabulator will provide a zero/single element list
             if isinstance(val, list):
@@ -1220,8 +1218,18 @@ class Tabulator(BaseTable):
                                        column.field not in self.header_filters):
             return fspec
         elif self.header_filters == True:
-            if column.field == 'index':
-                fspec['headerFilter'] = 'number'
+            if column.field in self.indexes:
+                if len(self.indexes) == 1:
+                    col = df.index
+                else:
+                    col = df.index.get_level_values(self.indexes.index(col_name))
+                if dtype.kind in 'uif':
+                    fspec['headerFilter'] = 'number'
+                elif dtype.kind == 'b':
+                    fspec['headerFilter'] = 'tickCross'
+                    fspec['headerFilterParams'] = {'tristate': True, 'indeterminateValue': None}
+                else:
+                    fspec['headerFilter'] = True
             else:
                 fspec['headerFilter'] = True
             return fspec
