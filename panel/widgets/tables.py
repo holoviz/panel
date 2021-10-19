@@ -1211,7 +1211,6 @@ class Tabulator(BaseTable):
             )
         super()._update_model(events, msg, root, model, doc, comm)
 
-
     def _get_filter_spec(self, column):
         fspec = {}
         if not self.header_filters or (isinstance(self.header_filters, dict) and
@@ -1220,12 +1219,12 @@ class Tabulator(BaseTable):
         elif self.header_filters == True:
             if column.field in self.indexes:
                 if len(self.indexes) == 1:
-                    col = df.index
+                    col = self.value.index
                 else:
-                    col = df.index.get_level_values(self.indexes.index(col_name))
-                if dtype.kind in 'uif':
+                    col = self.value.index.get_level_values(self.indexes.index(column.field))
+                if col.dtype.kind in 'uif':
                     fspec['headerFilter'] = 'number'
-                elif dtype.kind == 'b':
+                elif col.dtype.kind == 'b':
                     fspec['headerFilter'] = 'tickCross'
                     fspec['headerFilterParams'] = {'tristate': True, 'indeterminateValue': None}
                 else:
