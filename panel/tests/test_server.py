@@ -1,3 +1,4 @@
+import datetime as dt
 import os
 import pathlib
 import time
@@ -52,12 +53,13 @@ def test_server_static_dirs():
     html = Markdown('# Title')
 
     static = {'tests': os.path.dirname(__file__)}
-    serve(html, port=6000, threaded=True, static_dirs=static, show=False)
+    port = 6000
+    serve(html, port=port, threaded=True, static_dirs=static, show=False)
 
     # Wait for server to start
     time.sleep(1)
 
-    r = requests.get("http://localhost:6000/tests/test_server.py")
+    r = requests.get(f"http://localhost:{port}/tests/test_server.py")
     with open(__file__, encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
@@ -65,12 +67,13 @@ def test_server_static_dirs():
 def test_server_template_static_resources():
     template = BootstrapTemplate()
 
-    serve({'template': template}, port=6001, threaded=True, show=False)
+    port = 6001
+    serve({'template': template}, port=port, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
 
-    r = requests.get("http://localhost:6001/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
+    r = requests.get(f"http://localhost:{port}/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
     with open(DIST_DIR / 'bundled' / 'bootstraptemplate' / 'bootstrap.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
@@ -78,12 +81,13 @@ def test_server_template_static_resources():
 def test_server_template_static_resources_with_prefix():
     template = BootstrapTemplate()
 
-    serve({'template': template}, port=6004, threaded=True, show=False, prefix='prefix')
+    port = 6002
+    serve({'template': template}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
     time.sleep(1)
 
-    r = requests.get("http://localhost:6004/prefix/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
+    r = requests.get(f"http://localhost:{port}/prefix/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
     with open(DIST_DIR / 'bundled' / 'bootstraptemplate' / 'bootstrap.css', encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
@@ -91,12 +95,13 @@ def test_server_template_static_resources_with_prefix():
 def test_server_template_static_resources_with_prefix_relative_url():
     template = BootstrapTemplate()
 
-    serve({'template': template}, port=6005, threaded=True, show=False, prefix='prefix')
+    port = 6003
+    serve({'template': template}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
     time.sleep(1)
 
-    r = requests.get("http://localhost:6005/prefix/template")
+    r = requests.get(f"http://localhost:{port}/prefix/template")
     content = r.content.decode('utf-8')
     assert 'href="static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in content
 
@@ -104,12 +109,13 @@ def test_server_template_static_resources_with_prefix_relative_url():
 def test_server_template_static_resources_with_subpath_and_prefix_relative_url():
     template = BootstrapTemplate()
 
-    serve({'/subpath/template': template}, port=6005, threaded=True, show=False, prefix='prefix')
+    port = 6004
+    serve({'/subpath/template': template}, port=6004, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
     time.sleep(1)
 
-    r = requests.get("http://localhost:6005/prefix/subpath/template")
+    r = requests.get(f"http://localhost:{port}/prefix/subpath/template")
     content = r.content.decode('utf-8')
     assert 'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in content
 
@@ -117,18 +123,19 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
 def test_server_extensions_on_root():
     html = Markdown('# Title')
 
-    serve(html, port=6006, threaded=True, show=False)
+    port = 6005
+    serve(html, port=port, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
 
-    r = requests.get("http://localhost:6006/static/extensions/panel/css/loading.css")
+    r = requests.get("http://localhost:{port}/static/extensions/panel/css/loading.css")
     assert r.ok
 
 
 def test_autoload_js():
     html = Markdown('# Title')
-    port = 6007
+    port = 6006
     app_name = 'test'
     serve({app_name: html}, port=port, threaded=True, show=False)
 
@@ -156,12 +163,13 @@ def test_server_async_callbacks():
 
     button.on_click(cb)
 
-    serve(button, port=6002, threaded=True, show=False)
+    port = 6007
+    serve(button, port=port, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
 
-    requests.get("http://localhost:6002/")
+    requests.get(f"http://localhost:{port}/")
 
     doc = list(button._models.values())[0][0].document
     with set_curdoc(doc):
@@ -183,11 +191,16 @@ def test_serve_config_per_session_state():
     def app2():
         config.raw_css = [CSS2]
 
-    serve(app1, port=6004, threaded=True, show=False)
-    serve(app2, port=6005, threaded=True, show=False)
 
-    r1 = requests.get("http://localhost:6004/").content.decode('utf-8')
-    r2 = requests.get("http://localhost:6005/").content.decode('utf-8')
+    port1, port2 = 6008, 6009
+    serve(app1, port=port1, threaded=True, show=False)
+    serve(app2, port=port2, threaded=True, show=False)
+
+    # Wait for servers to start
+    time.sleep(1)
+
+    r1 = requests.get(f"http://localhost:{port1}/").content.decode('utf-8')
+    r2 = requests.get(f"http://localhost:{port2}/").content.decode('utf-8')
 
     assert CSS1 not in config.raw_css
     assert CSS2 not in config.raw_css
@@ -201,12 +214,13 @@ def test_server_session_info():
     with config.set(session_history=-1):
         html = Markdown('# Title')
 
-        serve(html, port=6003, threaded=True, show=False)
+        port = 6010
+        serve(html, port=port, threaded=True, show=False)
 
         # Wait for server to start
         time.sleep(1)
 
-        requests.get("http://localhost:6003/")
+        requests.get(f"http://localhost:{port}/")
 
         assert state.session_info['total'] == 1
         assert len(state.session_info['sessions']) == 1
@@ -226,6 +240,140 @@ def test_server_session_info():
     state.curdoc = None
     html._server_destroy(session_context)
     assert state.session_info['live'] == 0
+
+
+def test_server_schedule_repeat():
+    state.cache['count'] = 0
+    def periodic_cb():
+        state.cache['count'] += 1
+
+    def app():
+        state.schedule('periodic', periodic_cb, period='0.5s')
+        return '# state.schedule test'
+
+    port = 6011
+    server = serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}/")
+
+    # Wait for periodic execution
+    time.sleep(1)
+
+    assert state.cache['count']
+
+    server.stop()
+
+
+def test_server_schedule_at():
+    def periodic_cb():
+        state.cache['at'] = dt.datetime.now()
+
+    scheduled = dt.datetime.now() + dt.timedelta(seconds=1.57)
+
+    def app():
+        state.schedule('periodic', periodic_cb, at=scheduled)
+        return '# state.schedule test'
+
+    port = 6012
+    server = serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}/")
+
+    # Wait for callback to be executed
+    time.sleep(1)
+
+    # Check callback was executed within small margin of error
+    assert 'at' in state.cache
+    assert abs(state.cache['at'] - scheduled) < dt.timedelta(seconds=0.01)
+    assert len(state._scheduled) == 0
+
+    server.stop()
+
+
+def test_server_schedule_at_iterator():
+    state.cache['at'] = []
+    def periodic_cb():
+        state.cache['at'].append(dt.datetime.now())
+
+    scheduled1 = dt.datetime.now() + dt.timedelta(seconds=1.57)
+    scheduled2 = dt.datetime.now() + dt.timedelta(seconds=1.86)
+
+    def schedule():
+        yield scheduled1
+        yield scheduled2
+
+    def app():
+        state.schedule('periodic', periodic_cb, at=schedule())
+        return '# state.schedule test'
+
+    port = 6013
+    server = serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}/")
+
+    # Wait for callbacks to be executed
+    time.sleep(1)
+
+    # Check callbacks were executed within small margin of error
+    assert len(state.cache['at']) == 2
+    assert abs(state.cache['at'][0] - scheduled1) < dt.timedelta(seconds=0.01)
+    assert abs(state.cache['at'][1] - scheduled2) < dt.timedelta(seconds=0.01)
+    assert len(state._scheduled) == 0
+
+    server.stop()
+
+
+def test_server_schedule_at_callable():
+    state.cache['at'] = []
+    def periodic_cb():
+        state.cache['at'].append(dt.datetime.now())
+
+    scheduled = [
+        dt.datetime.utcnow() + dt.timedelta(seconds=1.57),
+        dt.datetime.utcnow() + dt.timedelta(seconds=1.86)
+    ]
+    siter = iter(scheduled)
+
+    def schedule(utcnow):
+        return next(siter)
+
+    def app():
+        state.schedule('periodic', periodic_cb, at=schedule)
+        return '# state.schedule test'
+
+    port = 6014
+    server = serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}/")
+
+    # Wait for callback to be executed
+    time.sleep(1)
+
+    # Convert scheduled times to local time
+    scheduled = [
+        s.replace(tzinfo=dt.timezone.utc).astimezone().replace(tzinfo=None)
+        for s in scheduled
+    ]
+
+    # Check callbacks were executed within small margin of error
+    assert len(state.cache['at']) == 2
+    assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.01)
+    assert abs(state.cache['at'][1] - scheduled[1]) < dt.timedelta(seconds=0.01)
+    assert len(state._scheduled) == 0
+
+    server.stop()
 
 
 def test_show_server_info(html_server_session, markdown_server_session):
@@ -283,7 +431,7 @@ def test_server_thread_pool_change_event(threads):
     button2.on_click(cb)
     layout = Row(button, button2)
 
-    port = 6010
+    port = 6015
     serve(layout, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -321,7 +469,7 @@ def test_server_thread_pool_bokeh_event(threads):
 
     tabulator.on_edit(cb)
 
-    port = 6011
+    port = 6016
     serve(tabulator, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -354,7 +502,7 @@ def test_server_thread_pool_periodic(threads):
         time.sleep(0.5)
         count[0] -= 1
 
-    port = 6012
+    port = 6017
     serve(button, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -393,7 +541,7 @@ def test_server_thread_pool_onload(threads):
 
         return button
 
-    port = 6013
+    port = 6018
     serve(app, port=port, threaded=True, show=False)
 
     # Wait for server to start
