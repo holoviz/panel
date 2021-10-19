@@ -898,6 +898,46 @@ def test_tabulator_constant_scalar_filter_client_side(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
+def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.filters = [{'field': 'index', 'type': '=', 'value': 2}]
+
+    expected = {
+        'index': np.array([2]),
+        'A': np.array([2]),
+        'B': np.array([0]),
+        'C': np.array(['foo3']),
+        'D': np.array(['2009-01-05T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+def test_tabulator_constant_scalar_filter_on_multi_index_client_side(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df.set_index(['A', 'C']))
+
+    model = table.get_root(document, comm)
+
+    table.filters = [
+        {'field': 'A', 'type': '=', 'value': 2},
+        {'field': 'C', 'type': '=', 'value': 'foo3'}
+    ]
+
+    expected = {
+        'index': np.array([0]),
+        'A': np.array([2]),
+        'C': np.array(['foo3']),
+        'B': np.array([0]),
+        'D': np.array(['2009-01-05T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
 
 def test_tabulator_constant_list_filter(document, comm):
     df = makeMixedDataFrame()
