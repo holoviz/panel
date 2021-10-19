@@ -389,7 +389,7 @@ def function_name(func):
     return str(func)
 
 
-_period_regex = re.compile(r'((?P<weeks>\d+?)w)?((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
+_period_regex = re.compile(r'((?P<weeks>\d+?)w)?((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?\.?\d*?)s)?')
 
 def parse_timedelta(time_str):
     parts = _period_regex.match(time_str)
@@ -399,5 +399,5 @@ def parse_timedelta(time_str):
     time_params = {}
     for (name, p) in parts.items():
         if p:
-            time_params[name] = int(p)
+            time_params[name] = float(p)
     return dt.timedelta(**time_params)
