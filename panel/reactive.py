@@ -398,7 +398,12 @@ class Reactive(Syncable, Viewable):
                         _reverse_updating.remove(event.name)
             bidirectional_watcher = target.param.watch(reverse_link, list(reverse_links))
 
-        link = LinkWatcher(*tuple(cb)+(target, links, callbacks is not None, bidirectional_watcher))
+        link_args = tuple(cb)
+        # Compatibility with Param versions where precedence is dropped
+        # from iterator for backward compatibility with older Panel versions
+        if 'precedence' in Watcher._fields and len(link_args) < len(Watcher._fields):
+            link_args += (cb.precedence,)
+        link = LinkWatcher(*(link_args+(target, links, callbacks is not None, bidirectional_watcher)))
         self._links.append(link)
         return cb
 
