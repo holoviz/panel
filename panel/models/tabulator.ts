@@ -344,7 +344,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       return
     const style = getComputedStyle(this.tabulator.element.children[1].children[0])
     const bg = style.backgroundColor
-    const row_view = div({style: "height: 100%; width: 100%; background-color: " + bg})
+    const neg_margin = "-" + rowEl.style.paddingLeft
+    const row_view = div({style: "background-color: " + bg +"; margin-left:" + neg_margin })
     view.renderTo(row_view)
     row.getElement().appendChild(row_view)
   }
@@ -389,10 +390,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           columns.push({...column, columns: group_columns})
         } else if (column.formatter === "expand") {
           const expand = {
-            align: "center",
+            hozAlign: "center",
             cellClick: (_: any, cell: any) => { this._update_expand(cell) },
             formatter: (cell: any) => { return this._expand_render(cell) },
-            width:40
+            width:40,
+	    frozen: true
           }
           columns.push(expand)
         } else {
