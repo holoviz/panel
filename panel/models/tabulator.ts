@@ -345,7 +345,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const style = getComputedStyle(this.tabulator.element.children[1].children[0])
     const bg = style.backgroundColor
     const neg_margin = "-" + rowEl.style.paddingLeft
-    const row_view = div({style: "background-color: " + bg +"; margin-left:" + neg_margin })
+    const row_view = div({style: "background-color: " + bg +"; margin-left:" + neg_margin})
     view.renderTo(row_view)
     row.getElement().appendChild(row_view)
   }
@@ -394,7 +394,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
             cellClick: (_: any, cell: any) => { this._update_expand(cell) },
             formatter: (cell: any) => { return this._expand_render(cell) },
             width:40,
-	    frozen: true
+            frozen: true
           }
           columns.push(expand)
         } else {
