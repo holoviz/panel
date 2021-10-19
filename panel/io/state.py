@@ -235,7 +235,7 @@ class _state(param.Parameterized):
         diter, cb = self._scheduled[name]
         try:
             at = next(diter)
-        except Exception as e:
+        except Exception:
             at = None
             del self._scheduled[name]
         if at is not None:
@@ -515,7 +515,7 @@ class _state(param.Parameterized):
         now = dt.datetime.now().timestamp()
         try:
             call_time_seconds = (next(diter) - now)
-        except:
+        except StopIteration:
             return
         self._scheduled[name] = (diter, callback)
         ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
