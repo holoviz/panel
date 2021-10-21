@@ -312,7 +312,7 @@ class Perspective(PaneBase, ReactiveData):
             ncols = len(df.columns)
             data = {col: df[col].values for col in df.columns}
             if kwargs:
-                self.param.set_param(**{
+                self.param.update(**{
                     k: v for k, v in kwargs.items()
                     if getattr(self, k) is None
                 })

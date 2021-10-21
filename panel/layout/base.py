@@ -256,7 +256,7 @@ class ListLike(param.Parameterized):
             raise ValueError("A %s's objects should be supplied either "
                              "as arguments or as a keyword, not both."
                              % type(self).__name__)
-        p = dict(self.param.get_param_values(), **params)
+        p = dict(self.param.values(), **params)
         del p['objects']
         return type(self)(*objects, **p)
 
@@ -502,7 +502,7 @@ class NamedListLike(param.Parameterized):
             raise ValueError('Tabs objects should be supplied either '
                              'as positional arguments or as a keyword, '
                              'not both.')
-        p = dict(self.param.get_param_values(), **params)
+        p = dict(self.param.values(), **params)
         del p['objects']
         return type(self)(*objects, **params)
 

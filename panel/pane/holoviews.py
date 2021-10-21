@@ -257,7 +257,7 @@ class HoloViews(PaneBase):
         else:
             self._responsive_content = False
 
-        kwargs = {p: v for p, v in self.param.get_param_values()
+        kwargs = {p: v for p, v in self.param.values().items()
                   if p in Layoutable.param and p != 'name'}
         child_pane = self._panes.get(backend, Pane)(state, **kwargs)
         self._update_plot(plot, child_pane)
@@ -395,7 +395,7 @@ class HoloViews(PaneBase):
             elif dim.name in widget_types:
                 widget = widget_types[dim.name]
                 if isinstance(widget, Widget):
-                    widget.param.set_param(**kwargs)
+                    widget.param.update(**kwargs)
                     if not widget.name:
                         widget.name = dim.label
                     widgets.append(widget)
@@ -472,14 +472,14 @@ class Interactive(PaneBase):
             self._layout_panel = None
         else:
             self._layout_panel = self.object.layout()
-            self._layout_panel.param.set_param(**{
+            self._layout_panel.param.update(**{
                 p: getattr(self, p) for p in Layoutable.param if p != 'name'
             })
 
     def _update_layout_properties(self, *events):
         if self._layout_panel is None:
             return
-        self._layout_panel.param.set_param(**{e.name: e.new for e in events})
+        self._layout_panel.param.update(**{e.name: e.new for e in events})
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:

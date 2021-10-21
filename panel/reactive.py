@@ -145,7 +145,7 @@ class Syncable(Renderable):
         return [p for p in self.param if p not in self._manual_params+ignored]
 
     def _init_params(self):
-        return {k: v for k, v in self.param.get_param_values()
+        return {k: v for k, v in self.param.values().items()
                 if k in self._synced_params and v is not None}
 
     def _link_params(self):
@@ -260,7 +260,7 @@ class Syncable(Renderable):
         try:
             with edit_readonly(self):
                 self_events = {k: v for k, v in events.items() if '.' not in k}
-                self.param.set_param(**self_events)
+                self.param.update(**self_events)
             for k, v in self_events.items():
                 if '.' not in k:
                     continue
@@ -269,7 +269,7 @@ class Syncable(Renderable):
                 for sp in subpath:
                     obj = getattr(obj, sp)
                 with edit_readonly(obj):
-                    obj.param.set_param(**{p: v})
+                    obj.param.update(**{p: v})
         finally:
             self._log('finished processing events %s', events)
             with edit_readonly(state):
@@ -645,7 +645,7 @@ class SyncableData(Reactive):
         data[column] = array
 
     def _update_data(self, data):
-        self.param.set_param(**{self._data_params[0]: data})
+        self.param.update(**{self._data_params[0]: data})
 
     def _manual_update(self, events, model, doc, root, parent, comm):
         for event in events:
@@ -1266,7 +1266,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if getattr(self, p) is not None and p != 'name'
         }
         data_params = {}
-        for k, v in self.param.get_param_values():
+        for k, v in self.param.values().items():
             if (
                 (k in ignored and k != 'name') or
                 ((self.param[k].precedence or 0) < 0) or
@@ -1403,7 +1403,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         # Render Jinja template
         template = jinja2.Template(template_string)
         context = {'param': self.param, '__doc__': self.__original_doc__, 'id': id}
-        for parameter, value in self.param.get_param_values():
+        for parameter, value in self.param.values().items():
             context[parameter] = value
             if parameter in self._child_names:
                 context[f'{parameter}_names'] = self._child_names[parameter]

@@ -106,7 +106,7 @@ class ContinuousSlider(_SliderBase):
                              'of valid range.' % type(self).__name__)
 
         # Replace model
-        layout_opts = {k: v for k, v in self.param.get_param_values()
+        layout_opts = {k: v for k, v in self.param.values().items()
                        if k in Layoutable.param and k != 'name'}
         dw = DiscreteSlider(options=values, name=self.name, **layout_opts)
         dw.link(self, value='value')
@@ -304,13 +304,13 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         slider_margin = (0, r, b, l)
         text_style = {k: v for k, v in style.items()
                       if k not in ('style', 'orientation')}
-        self._text.param.set_param(margin=text_margin, **text_style)
-        self._slider.param.set_param(margin=slider_margin, **style)
+        self._text.param.update(margin=text_margin, **text_style)
+        self._slider.param.update(margin=slider_margin, **style)
         if self.width:
             style['width'] = self.width + l + r
         col_style = {k: v for k, v in style.items()
                      if k != 'orientation'}
-        self._composite.param.set_param(**col_style)
+        self._composite.param.update(**col_style)
 
     def _sync_value(self, event):
         """
@@ -376,7 +376,7 @@ class _RangeSliderBase(_SliderBase):
     def _sync_values(self):
         vs, ve = self.value
         with edit_readonly(self):
-            self.param.set_param(value_start=vs, value_end=ve)
+            self.param.update(value_start=vs, value_end=ve)
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -547,12 +547,12 @@ class _EditableContinuousSlider(CompositeWidget):
         else:
             label = ''
             margin = (0, 0, 0, 0)
-        self._label.param.set_param(**{'margin': margin, 'value': label})
+        self._label.param.update(**{'margin': margin, 'value': label})
 
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
                    'show_value', 'tooltips', 'format', watch=True)
     def _update_slider(self):
-        self._slider.param.set_param(**{
+        self._slider.param.update(**{
             'format': self.format,
             'start': self.start,
             'end': self.end,
@@ -571,7 +571,7 @@ class _EditableContinuousSlider(CompositeWidget):
 
     def _sync_value(self, event):
         with param.edit_constant(self):
-            self.param.set_param(**{event.name: event.new})
+            self.param.update(**{event.name: event.new})
 
 
 class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
@@ -673,7 +673,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         else:
             label = ''
             margin = (0, 0, 0, 0)
-        self._label.param.set_param(**{'margin': margin, 'value': label})
+        self._label.param.update(**{'margin': margin, 'value': label})
 
     @param.depends('width', 'height', 'sizing_mode', watch=True)
     def _update_layout(self):
@@ -687,7 +687,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
                    'show_value', 'tooltips', 'name', 'format', watch=True)
     def _update_slider(self):
-        self._slider.param.set_param(**{
+        self._slider.param.update(**{
             'format': self.format,
             'start': self.start,
             'end': self.end,
@@ -708,18 +708,18 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
 
     def _sync_value(self, event):
         with param.edit_constant(self):
-            self.param.set_param(**{event.name: event.new})
+            self.param.update(**{event.name: event.new})
 
     def _sync_start_value(self, event):
         end = self.value[1] if event.name == 'value' else self.value_throttled[1]
         with param.edit_constant(self):
-            self.param.set_param(
+            self.param.update(
                 **{event.name: (event.new, end)}
             )
 
     def _sync_end_value(self, event):
         start = self.value[0] if event.name == 'value' else self.value_throttled[0]
         with param.edit_constant(self):
-            self.param.set_param(
+            self.param.update(
                 **{event.name: (start, event.new)}
             )

@@ -338,7 +338,7 @@ class GridSpec(Panel):
         -------
         Cloned GridSpec object
         """
-        p = dict(self.param.get_param_values(), **params)
+        p = dict(self.param.values(), **params)
         if not self._cols_fixed:
             del p['ncols']
         if not self._rows_fixed:
@@ -372,7 +372,7 @@ class GridSpec(Panel):
 
         subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
-            params = dict(self.param.get_param_values())
+            params = self.param.values()
             params['objects'] = OrderedDict([list(o)[0] for o in subgrid.flatten()])
             gspec = type(self)(**params)
             xoff, yoff = gspec._xoffset, gspec._yoffset

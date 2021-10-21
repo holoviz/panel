@@ -140,7 +140,7 @@ def recursive_parameterized(parameterized, objects=None):
     """
     objects = [] if objects is None else objects
     objects.append(parameterized)
-    for _, p in parameterized.param.get_param_values():
+    for p in parameterized.param.values().values():
         if isinstance(p, param.Parameterized) and not any(p is o for o in objects):
             recursive_parameterized(p, objects)
     return objects
@@ -186,7 +186,7 @@ def param_reprs(parameterized, skip=None):
     """
     cls = type(parameterized).__name__
     param_reprs = []
-    for p, v in sorted(parameterized.param.get_param_values()):
+    for p, v in sorted(parameterized.param.values().items()):
         default = parameterized.param[p].default
         equal = v is default
         if not equal:

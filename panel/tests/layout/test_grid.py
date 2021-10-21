@@ -38,7 +38,7 @@ def test_gridspec_clone():
     clone = gspec.clone()
 
     assert gspec.objects == clone.objects
-    assert gspec.param.get_param_values() == clone.param.get_param_values()
+    assert gspec.param.values() == clone.param.values()
 
 
 def test_gridspec_slice_setitem():

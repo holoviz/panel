@@ -298,11 +298,11 @@ class Pipeline(Viewer):
                            for p in ('ready_parameter', 'next_parameter')]
                 params = [k for k, v in state.param.objects('existing').items()
                           if k not in ignored]
-                kwargs.update({k: v for k, v in state.param.get_param_values()
+                kwargs.update({k: v for k, v in state.param.values().items()
                                if k in stage.param and k != 'name' and k in params})
 
         if isinstance(stage, param.Parameterized):
-            stage.param.set_param(**kwargs)
+            stage.param.update(**kwargs)
             self._state = stage
         else:
             self._state = stage(**kwargs)

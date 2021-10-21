@@ -262,7 +262,7 @@ def test_holoviews_layouts(document, comm):
 
     for center in (True, False):
         for loc in HoloViews.param.widget_location.objects:
-            hv_pane.param.set_param(center=center, widget_location=loc)
+            hv_pane.param.update(center=center, widget_location=loc)
             if center:
                 if loc.startswith('left'):
                     assert len(layout) == 4

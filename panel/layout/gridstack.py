@@ -156,5 +156,7 @@ class GridStack(ReactiveHTML, GridSpec):
                     properties['height'] = h*height
                 elif 'height' in self.sizing_mode:
                     properties['width'] = w*width
-            obj.param.set_param(**{k: v for k, v in properties.items()
-                                   if not obj.param[k].readonly})
+            obj.param.update(**{
+                k: v for k, v in properties.items()
+                if not obj.param[k].readonly
+            })

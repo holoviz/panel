@@ -809,7 +809,7 @@ class Tqdm(Indicator):
         self.layout._cleanup(root)
 
     def _update_layout(self, *events):
-        self.layout.param.set_param(**{event.name: event.new for event in events})
+        self.layout.param.update(**{event.name: event.new for event in events})
 
     @param.depends("text", watch=True)
     def _update_text(self):
