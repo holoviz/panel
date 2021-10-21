@@ -57,7 +57,7 @@ class HTML(DivPaneBase):
     allow room for whatever is being wrapped.
     """
 
-    disable_math = param.Boolean(default=False, doc="""
+    disable_math = param.Boolean(default=True, doc="""
         Whether to disable support for MathJax math rendering for
         strings escaped with $$ delimiters.""")
 
