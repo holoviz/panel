@@ -766,13 +766,13 @@ class ParamMethod(ReplacementPane):
 
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
-        params = parameterized.param.params_depended_on(self.object.__name__)
+        params = parameterized.param.method_dependencies(self.object.__name__)
         deps = params
 
         def update_pane(*events):
             # Update nested dependencies if parameterized object events
             if any(is_parameterized(event.new) for event in events):
-                new_deps = parameterized.param.params_depended_on(self.object.__name__)
+                new_deps = parameterized.param.method_dependencies(self.object.__name__)
                 for p in list(deps):
                     if p in new_deps: continue
                     watchers = self._callbacks
