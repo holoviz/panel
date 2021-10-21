@@ -194,6 +194,6 @@ class FileDownload(Widget):
         data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
         self._synced = True
 
-        self.param.set_param(data=data, filename=filename)
+        self.param.update(data=data, filename=filename)
         self._update_label()
         self._transfers += 1

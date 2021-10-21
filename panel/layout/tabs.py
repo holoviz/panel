@@ -149,7 +149,7 @@ class Tabs(NamedListPanel):
                 new_models.append(panel)
                 continue
             elif self.dynamic and i != self.active:
-                child = BkSpacer(**{k: v for k, v in pane.param.get_param_values()
+                child = BkSpacer(**{k: v for k, v in pane.param.values().items()
                                     if k in Layoutable.param and v is not None})
             else:
                 try:

@@ -162,7 +162,7 @@ class _state(param.Parameterized):
                 if id(parameterized) in _updating:
                     continue
                 try:
-                    parameterized.param.set_param(**values)
+                    parameterized.param.update(**values)
                 except Exception:
                     raise
                 finally:
@@ -346,8 +346,8 @@ class _state(param.Parameterized):
             parameterizeds, old_parameters, cb = self._rest_endpoints[endpoint]
             if set(parameters) != set(old_parameters):
                 raise ValueError("Param REST API output parameters must match across sessions.")
-            values = {k: v for k, v in parameterizeds[0].param.get_param_values() if k in parameters}
-            parameterized.param.set_param(**values)
+            values = {k: v for k, v in parameterizeds[0].param.values().items() if k in parameters}
+            parameterized.param.update(**values)
             parameterizeds.append(parameterized)
         else:
             cb = self._get_callback(endpoint)

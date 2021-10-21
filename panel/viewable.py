@@ -470,7 +470,7 @@ class Renderable(param.Parameterized):
         return model
 
     def _init_params(self):
-        return {k: v for k, v in self.param.get_param_values() if v is not None}
+        return {k: v for k, v in self.param.values().items() if v is not None}
 
     def _server_destroy(self, session_context):
         """
@@ -653,7 +653,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
-        inherited = {p: v for p, v in self.param.get_param_values()
+        inherited = {p: v for p, v in self.param.values().items()
                      if not self.param[p].readonly}
         return type(self)(**dict(inherited, **params))
 

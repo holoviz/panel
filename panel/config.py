@@ -204,14 +204,14 @@ class _config(_base_config):
 
     @contextmanager
     def set(self, **kwargs):
-        values = [(k, v) for k, v in self.param.get_param_values() if k != 'name']
+        values = [(k, v) for k, v in self.param.values().items() if k != 'name']
         overrides = [(k, getattr(self, k+'_')) for k in self.param if k.startswith('_')]
         for k, v in kwargs.items():
             setattr(self, k, v)
         try:
             yield
         finally:
-            self.param.set_param(**dict(values))
+            self.param.update(**dict(values))
             for k, v in overrides:
                 setattr(self, k+'_', v)
 

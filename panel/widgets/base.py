@@ -77,7 +77,7 @@ class Widget(Reactive):
         if root is None:
             root = model
         # Link parameters and bokeh model
-        values = dict(self.param.get_param_values())
+        values = self.param.values()
         properties = self._filter_properties(list(self._process_param_change(values)))
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, properties, doc, root, comm)
@@ -141,7 +141,7 @@ class CompositeWidget(Widget):
 
     def _update_layout_params(self, *events):
         updates = {event.name: event.new for event in events}
-        self._composite.param.set_param(**updates)
+        self._composite.param.update(**updates)
 
     def select(self, selector=None):
         """

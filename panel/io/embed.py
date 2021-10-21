@@ -353,7 +353,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     for (ws, _, _, _), v in zip(values, restore):
         try:
             for w in ws:
-                w.param.set_param(value=v)
+                w.param.update(value=v)
         except Exception:
             pass
 

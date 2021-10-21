@@ -58,7 +58,7 @@ class Location(Syncable):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkLocation(**self._process_param_change(self._init_params()))
         root = root or model
-        values = dict(self.param.get_param_values())
+        values = self.param.values()
         properties = list(self._process_param_change(values))
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, properties, doc, root, comm)
@@ -101,7 +101,7 @@ class Location(Syncable):
                 if not equal:
                     mapped[pname] = v
             try:
-                p.param.set_param(**mapped)
+                p.param.update(**mapped)
             except Exception:
                 if on_error:
                     on_error(mapped)

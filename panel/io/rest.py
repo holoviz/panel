@@ -76,7 +76,7 @@ class ParamHandler(BaseHandler):
             return
         args = parse_qs(self.request.query)
         params = self.deserialize(parameterized[0], args)
-        parameterized[0].param.set_param(**params)
+        parameterized[0].param.update(**params)
         self.set_header('Content-Type', 'application/json')
         self.write(self.serialize(parameterized[0], parameters))
 

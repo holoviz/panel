@@ -64,8 +64,8 @@ def test_widget_clone(widget):
     w = widget()
     clone = w.clone()
 
-    assert ([(k, v) for k, v in sorted(w.param.get_param_values()) if k != 'name'] ==
-            [(k, v) for k, v in sorted(clone.param.get_param_values()) if k != 'name'])
+    assert ([(k, v) for k, v in sorted(w.param.values().items()) if k != 'name'] ==
+            [(k, v) for k, v in sorted(clone.param.values().items()) if k != 'name'])
 
 
 @pytest.mark.parametrize('widget', all_widgets)
@@ -73,8 +73,8 @@ def test_widget_clone_override(widget):
     w = widget()
     clone = w.clone(width=50)
 
-    assert ([(k, v) for k, v in sorted(w.param.get_param_values()) if k not in ['name', 'width']] ==
-            [(k, v) for k, v in sorted(clone.param.get_param_values()) if k not in ['name', 'width']])
+    assert ([(k, v) for k, v in sorted(w.param.values().items()) if k not in ['name', 'width']] ==
+            [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ['name', 'width']])
     assert clone.width == 50
     assert w.width is widget.width
 

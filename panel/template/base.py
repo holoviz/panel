@@ -127,7 +127,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             k: v for k, v in modifiers.items() if k != 'children' and
             getattr(viewable, k) == viewable.param[k].default
         }
-        viewable.param.set_param(**params)
+        viewable.param.update(**params)
         props = viewable._process_param_change(params)
         model.update(**props)
 

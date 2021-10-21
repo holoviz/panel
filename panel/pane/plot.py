@@ -101,7 +101,7 @@ class Bokeh(PaneBase):
             model = self.object
 
         properties = {}
-        for p, value in self.param.get_param_values():
+        for p, value in self.param.values().items():
             if (p not in Layoutable.param or p == 'name' or
                 value is self.param[p].default):
                 continue
