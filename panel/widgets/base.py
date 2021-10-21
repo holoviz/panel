@@ -20,6 +20,13 @@ class Widget(Reactive):
        Whether the widget is disabled.""")
 
     name = param.String(default='')
+    
+    model_name = param.String(default=None, allow_None=True,
+                              doc=('An arbitrary, user supplied name to attach'
+                                   ' to the widget model'))
+    
+    tags = param.List(doc=('An optional list of arbitrary, user-supplied '
+                           'values to attach to the widget model.'))
 
     height = param.Integer(default=None, bounds=(0, None))
 
@@ -49,6 +56,8 @@ class Widget(Reactive):
             self._param_pane = params.pop('_param_pane')
         else:
             self._param_pane = None
+            
+        self._rename.update({'model_name': 'name'})
         super().__init__(**params)
 
     @classmethod
