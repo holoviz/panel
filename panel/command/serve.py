@@ -16,7 +16,7 @@ from ..auth import OAuthProvider
 from ..config import config
 from ..io.rest import REST_PROVIDERS
 from ..io.reload import record_modules, watch
-from ..io.server import INDEX_HTML, get_static_routes
+from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
 
 log = logging.getLogger(__name__)
@@ -188,10 +188,14 @@ class Serve(_BkServe):
                 with record_modules():
                     for app in applications.values():
                         doc = app.create_document()
+                        with set_curdoc(doc):
+                            state._on_load(None)
                         _cleanup_doc(doc)
             else:
                 for app in applications.values():
                     doc = app.create_document()
+                    with set_curdoc(doc):
+                        state._on_load(None)
                     _cleanup_doc(doc)
                     
         config.session_history = args.session_history
