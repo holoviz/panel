@@ -36,7 +36,7 @@ except Exception:
 from ..compiler import require_components
 from .embed import embed_state
 from .model import add_to_doc, diff
-from .resources import Bundle, Resources, _env, bundle_resources
+from .resources import PANEL_DIR, Bundle, Resources, _env, bundle_resources
 from .server import _server_url, _origin_url, get_server
 from .state import state
 
@@ -260,8 +260,10 @@ def load_notebook(inline=True, load_timeout=5000):
     bokeh.io.notebook.curstate().output_notebook()
 
     # Publish comm manager
+    CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text()
     JS = '\n'.join([PYVIZ_PROXY, _JupyterCommManager.js_manager, nb_mime_js])
     publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
+    publish_display_data(data={'text/html': f'<style>{CSS}</style>'})
 
 
 def show_server(panel, notebook_url, port):
