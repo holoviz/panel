@@ -46,8 +46,7 @@ export class HTMLView extends PanelMarkupView {
 
   render(): void {
     super.render()
-    const decoded = htmlDecode(this.model.text);
-    const html = decoded || this.model.text
+    const html = this.process_tex()
     if (!html) {
       this.markup_el.innerHTML = '';
       return;
@@ -56,6 +55,36 @@ export class HTMLView extends PanelMarkupView {
     runScripts(this.markup_el)
     this._setup_event_listeners()
   }
+
+  process_tex(): string {
+    const decoded = htmlDecode(this.model.text);
+    const text = decoded || this.model.text
+    if (this.model.disable_math || !this.contains_tex(text))
+      return text
+
+    const tex_parts = this.provider.MathJax.find_tex(text)
+    const processed_text: string[] = []
+
+    let last_index: number | undefined = 0
+    for (const part of tex_parts) {
+      processed_text.push(text.slice(last_index, part.start.n))
+      processed_text.push(this.provider.MathJax.tex2svg(part.math, {display: part.display}).outerHTML)
+
+      last_index = part.end.n
+    }
+
+    if (last_index! < text.length)
+      processed_text.push(text.slice(last_index))
+
+    return processed_text.join("")
+  }
+
+  private contains_tex(html: string): boolean {
+    if (!this.provider.MathJax)
+      return false
+
+    return this.provider.MathJax.find_tex(html).length > 0
+  };
 
   private _remove_event_listeners(): void {
     for (const node in this._event_listeners) {
