@@ -57,6 +57,10 @@ class HTML(DivPaneBase):
     allow room for whatever is being wrapped.
     """
 
+    disable_math = param.Boolean(default=True, doc="""
+        Whether to disable support for MathJax math rendering for
+        strings escaped with $$ delimiters.""")
+
     # Priority is dependent on the data type
     priority = None
 
@@ -256,6 +260,10 @@ class Markdown(DivPaneBase):
 
     dedent = param.Boolean(default=True, doc="""
         Whether to dedent common whitespace across all lines.""")
+
+    disable_math = param.Boolean(default=False, doc="""
+        Whether to disable support for MathJax math rendering for
+        strings escaped with $$ delimiters.""")
 
     extensions = param.List(default=[
         "extra", "smarty", "codehilite"], doc="""
