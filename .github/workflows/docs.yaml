@@ -96,7 +96,6 @@ jobs:
         run: |
           git status
           git diff
-          steps:
       - name: Print GitHub event action
         run: |
           echo "${{ github.event.action }}"
