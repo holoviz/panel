@@ -55,3 +55,11 @@
 .fa-discourse:before {
     color: white;
 }
+
+button.toggle-button {
+    display: none;
+}
+
+.toggle-hidden:not(.admonition) {
+    height: 0;
+}
