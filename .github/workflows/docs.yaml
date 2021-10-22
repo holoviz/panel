@@ -7,6 +7,9 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+  pull_request:
+    branches:
+    - '*_docs'
 
 jobs:
   build_docs:
@@ -93,6 +96,10 @@ jobs:
         run: |
           git status
           git diff
+          steps:
+      - name: Print GitHub event action
+        run: |
+          echo "${{ github.event.action }}"
       - name: Deploy dev
         uses: peaceiris/actions-gh-pages@v3
         if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
@@ -100,12 +107,4 @@ jobs:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
           external_repository: pyviz-dev/panel
           publish_dir: ./builtdocs
-          force_orphan: true
-      - name: Deploy main
-        if: (!(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./builtdocs
-          cname: panel.holoviz.org
           force_orphan: true
