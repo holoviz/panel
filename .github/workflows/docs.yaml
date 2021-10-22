@@ -96,12 +96,9 @@ jobs:
         run: |
           git status
           git diff
-      - name: Print GitHub event action
-        run: |
-          echo "${{ github.event.action }}"
       - name: Deploy dev
         uses: peaceiris/actions-gh-pages@v3
-        if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
+        if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc') || contains(github.event.action, 'synchronize'))
         with:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
           external_repository: pyviz-dev/panel
