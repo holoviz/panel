@@ -36,7 +36,7 @@ Panel objects are reactive, immediately updating to reflect changes to their sta
 
 Panel lets you move the same code freely between an interactive `Jupyter Notebook <https://jupyter.org>`__ prompt and a fully deployable standalone server.  That way you can easily switch between exploring your data, building visualizations, adding custom interactivity, sharing with non-technical users, and back again at any point, using the same tools and the same code throughout. Panel thus helps support your entire workflow, so that you never have to commit to only one way of using your data and your analyses, and don't have to rewrite your code just to make it usable in a different way. In many cases, using Panel can turn projects that used to take weeks or months into something you finish on the same day you started, creating a full Python-backed deployed web service for your visualized data in minutes or hours without having to run a software development project or hand your work over to another team.
 
-.. notebook:: panel ../../examples/homepage.ipynb
+.. notebook:: panel ../examples/homepage.ipynb
 
 Using Panel for declarative, reactive programming
 -------------------------------------------------
