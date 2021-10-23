@@ -108,12 +108,12 @@ class FileSelector(CompositeWidget):
         sel_layout = dict(layout, sizing_mode='stretch_both', height=None, margin=0)
         self._selector = CrossSelector(filter_fn=lambda p, f: fnmatch(f, p),
                                        size=self.size, **sel_layout)
-        self._back = Button(name='◀', width=25, margin=(5, 10, 0, 0), disabled=True)
-        self._forward = Button(name='▶', width=25, margin=(5, 10), disabled=True)
-        self._up = Button(name='⬆', width=25, margin=(5, 10), disabled=True)
+        self._back = Button(label='◀', width=25, margin=(5, 10, 0, 0), disabled=True)
+        self._forward = Button(label='▶', width=25, margin=(5, 10), disabled=True)
+        self._up = Button(label='⬆', width=25, margin=(5, 10), disabled=True)
         self._directory = TextInput(value=self.directory, margin=(5, 10), width_policy='max')
-        self._go = Button(name='⬇', disabled=True, width=25, margin=(5, 10, 0, 0))
-        self._reload = Button(name='↻', width=25, margin=(5, 15, 0, 10))
+        self._go = Button(label='⬇', disabled=True, width=25, margin=(5, 10, 0, 0))
+        self._reload = Button(label='↻', width=25, margin=(5, 15, 0, 10))
         self._nav_bar = Row(
             self._back, self._forward, self._up, self._directory, self._go, self._reload,
             **dict(layout, width=None, margin=0, width_policy='max')

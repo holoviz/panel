@@ -18,7 +18,7 @@ from bokeh.models.widgets import (
 from ..layout import Column, VSpacer
 from ..models import SingleSelect as _BkSingleSelect
 from ..util import as_unicode, isIn, indexOf
-from .base import Widget, CompositeWidget
+from .base import TitledWidget, Widget, CompositeWidget
 from .button import _ButtonBase, Button
 from .input import TextInput, TextAreaInput
 
@@ -123,7 +123,7 @@ class SingleSelectBase(SelectBase):
                 lambda x: x.value, 'value', 'cb_obj.value')
 
 
-class Select(SingleSelectBase):
+class Select(SingleSelectBase, TitledWidget):
 
     size = param.Integer(default=1, bounds=(1, None), doc="""
         Declares how many options are displayed at the same time.
@@ -177,7 +177,7 @@ class _MultiSelectBase(SingleSelectBase):
         return msg
 
 
-class MultiSelect(_MultiSelectBase):
+class MultiSelect(_MultiSelectBase, TitledWidget):
 
     size = param.Integer(default=4, doc="""
         The number of items displayed at once (i.e. determines the
@@ -186,7 +186,7 @@ class MultiSelect(_MultiSelectBase):
     _widget_type = _BkMultiSelect
 
 
-class MultiChoice(_MultiSelectBase):
+class MultiChoice(_MultiSelectBase, TitledWidget):
 
     delete_button = param.Boolean(default=True, doc="""
         Whether to display a button to delete a selected option.""")
@@ -209,10 +209,10 @@ class MultiChoice(_MultiSelectBase):
     _widget_type = _BkMultiChoice
 
 
-_AutocompleteInput_rename = {'name': 'title', 'options': 'completions'}
+_AutocompleteInput_rename = {'options': 'completions'}
 
 
-class AutocompleteInput(Widget):
+class AutocompleteInput(TitledWidget):
 
     case_sensitive = param.Boolean(default=True, doc="""
         Enable or disable case sensitivity.""")
@@ -247,7 +247,7 @@ class _RadioGroupBase(SingleSelectBase):
 
     _supports_embed = False
 
-    _rename = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename = {'options': 'labels', 'value': 'active'}
 
     _source_transforms = {'value': "source.labels[value]"}
 
@@ -302,6 +302,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
 
     _supports_embed = True
 
+    _rename = {'label': None, 'options': 'labels', 'value': 'active'}
 
 
 class RadioBoxGroup(_RadioGroupBase):
@@ -320,7 +321,7 @@ class _CheckGroupBase(SingleSelectBase):
 
     value = param.List(default=[])
 
-    _rename = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename = {'options': 'labels', 'value': 'active'}
 
     _source_transforms = {'value': "value.map((index) => source.labels[index])"}
 
@@ -356,6 +357,7 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
 
     _widget_type = _BkCheckboxButtonGroup
 
+    _rename = {'label': None, 'options': 'labels', 'value': 'active'}
 
 class CheckBoxGroup(_CheckGroupBase):
 
@@ -459,8 +461,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
         self._lists[True].param.watch(self._update_selection, 'value')
 
         # Define buttons
-        self._buttons = {False: Button(name='<<', width=50),
-                         True: Button(name='>>', width=50)}
+        self._buttons = {False: Button(label='<<', width=50),
+                         True: Button(label='>>', width=50)}
 
         self._buttons[False].param.watch(self._apply_selection, 'clicks')
         self._buttons[True].param.watch(self._apply_selection, 'clicks')

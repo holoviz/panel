@@ -21,11 +21,11 @@ from ..util import (
 )
 from ..viewable import Layoutable
 from ..layout import Column, Row
-from .base import Widget, CompositeWidget
+from .base import CompositeWidget, TitledWidget
 from .input import IntInput, FloatInput, StaticText
 
 
-class _SliderBase(Widget):
+class _SliderBase(TitledWidget):
 
     bar_color = param.Color(default="#e6e6e6", doc="""
         Color of the slider bar as a hexidecimal RGB value.""")
@@ -108,7 +108,7 @@ class ContinuousSlider(_SliderBase):
         # Replace model
         layout_opts = {k: v for k, v in self.param.values().items()
                        if k in Layoutable.param and k != 'name'}
-        dw = DiscreteSlider(options=values, name=self.name, **layout_opts)
+        dw = DiscreteSlider(options=values, title=self.title, **layout_opts)
         dw.link(self, value='value')
         self._models.pop(ref)
         index = parent.children.index(w_model)
@@ -135,8 +135,6 @@ class FloatSlider(ContinuousSlider):
 
     step = param.Number(default=0.1)
 
-    _rename = {'name': 'title'}
-
 
 class IntSlider(ContinuousSlider):
 
@@ -149,8 +147,6 @@ class IntSlider(ContinuousSlider):
     end = param.Integer(default=1)
 
     step = param.Integer(default=1)
-
-    _rename = {'name': 'title'}
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -171,8 +167,6 @@ class DateSlider(_SliderBase):
     start = param.Date(default=None)
 
     end = param.Date(default=None)
-
-    _rename = {'name': 'title'}
 
     _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
 
@@ -342,7 +336,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     @property
     def labels(self):
-        title = (self.name + ': ' if self.name else '')
+        title = (self.title + ': ' if self.title else '')
         if isinstance(self.options, dict):
             return [title + ('<b>%s</b>' % o) for o in self.options]
         else:
@@ -406,7 +400,7 @@ class RangeSlider(_RangeSliderBase):
 
     step = param.Number(default=0.1)
 
-    _rename = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename = {'value_start': None, 'value_end': None}
 
     _widget_type = _BkRangeSlider
 
@@ -456,7 +450,7 @@ class DateRangeSlider(_RangeSliderBase):
     _source_transforms = {'value': None, 'value_throttled': None,
                          'start': None, 'end': None, 'step': None}
 
-    _rename = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename = {'value_start': None, 'value_end': None}
 
     _widget_type = _BkDateRangeSlider
 
@@ -500,8 +494,8 @@ class _EditableContinuousSlider(CompositeWidget):
     def __init__(self, **params):
         if not 'width' in params and not 'sizing_mode' in params:
             params['width'] = 300
-        super().__init__(**params)
         self._label = StaticText(margin=0, align='end')
+        super().__init__(**params)
         self._slider = self._slider_widget(
             value=self.value, margin=(0, 0, 5, 0), sizing_mode='stretch_width'
         )
@@ -524,7 +518,7 @@ class _EditableContinuousSlider(CompositeWidget):
         self._composite.extend([label, self._slider])
         self._update_editable()
         self._update_layout()
-        self._update_name()
+        self._update_title()
         self._update_slider()
         self._update_value()
 
@@ -539,10 +533,10 @@ class _EditableContinuousSlider(CompositeWidget):
     def _update_editable(self):
         self._value_edit.disabled = not self.editable
 
-    @param.depends('name', watch=True)
-    def _update_name(self):
-        if self.name:
-            label = f'{self.name}:'
+    @param.depends('title', watch=True)
+    def _update_title(self):
+        if self.title:
+            label = f'{self.title}:'
             margin = (0, 10, 0, 0)
         else:
             label = ''
@@ -656,7 +650,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         """)
         self._update_editable()
         self._update_layout()
-        self._update_name()
+        self._update_title()
         self._update_slider()
         self._update_value()
 
@@ -665,10 +659,10 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self._start_edit.disabled = not self.editable[0]
         self._end_edit.disabled = not self.editable[1]
 
-    @param.depends('name', watch=True)
-    def _update_name(self):
-        if self.name:
-            label = f'{self.name}:'
+    @param.depends('title', watch=True)
+    def _update_title(self):
+        if self.title:
+            label = f'{self.title}:'
             margin = (0, 10, 0, 0)
         else:
             label = ''
@@ -685,7 +679,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             self._end_edit.width = w
 
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
-                   'show_value', 'tooltips', 'name', 'format', watch=True)
+                   'show_value', 'tooltips', 'title', 'format', watch=True)
     def _update_slider(self):
         self._slider.param.update(**{
             'format': self.format,

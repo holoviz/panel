@@ -94,7 +94,7 @@ def test_text_input_controls():
     assert len(controls) == 2
     wb1, wb2 = controls
     assert isinstance(wb1, WidgetBox)
-    assert len(wb1) == 6
+    assert len(wb1) == 8
     name, disabled, *(ws) = wb1
 
     assert isinstance(name, StaticText)
