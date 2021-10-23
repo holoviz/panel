@@ -29,8 +29,6 @@ class PlayerBase(Widget):
 
     _widget_type = _BkPlayer
 
-    _rename = {'name': None}
-
     __abstract = True
 
 
@@ -80,7 +78,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     value = param.Parameter()
 
-    _rename = {'name': None, 'options': None}
+    _rename = {'options': None}
 
     _source_transforms = {'value': None}
 

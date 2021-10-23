@@ -4,7 +4,7 @@ communication between the rendered dashboard and the Widget
 parameters.
 """
 import param
-
+from bokeh.model import Model as _BkModel
 from ..layout import Row
 from ..reactive import Reactive
 from ..viewable import Layoutable
@@ -19,12 +19,10 @@ class Widget(Reactive):
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
 
-    name = param.String(default='')
-    
-    model_name = param.String(default=None, allow_None=True,
+    name = param.String(default=None, allow_None=True,
                               doc=('An arbitrary, user supplied name to attach'
                                    ' to the widget model'))
-    
+        
     tags = param.List(doc=('An optional list of arbitrary, user-supplied '
                            'values to attach to the widget model.'))
 
@@ -36,8 +34,6 @@ class Widget(Reactive):
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
-
-    _rename = {'name': 'title'}
     
     # Whether the widget supports embedding
     _supports_embed = False
@@ -47,9 +43,8 @@ class Widget(Reactive):
 
     __abstract = True
 
-    def __init__(self, **params):
-        if 'name' not in params:
-            params['name'] = ''
+    def __init__(self, **params):            
+            
         if '_supports_embed' in params:
             self._supports_embed = params.pop('_supports_embed')
         if '_param_pane' in params:
@@ -57,8 +52,22 @@ class Widget(Reactive):
         else:
             self._param_pane = None
             
-        self._rename.update({'model_name': 'name'})
         super().__init__(**params)
+
+
+        #todo: Temporary until `name` becomes only a hidden bokehjs model attribute.
+        #If user has only set `name`, user might expect setting `name`
+        #at a later point should change the non-hidden parameter `label` or `title`.
+        if isinstance(self._widget_type, type) and issubclass(self._widget_type,_BkModel):
+            #give priority to 'title' over 'label'
+            if 'title' in self._widget_type.properties():
+                if ('title' not in params) and ('name' in params):
+                  self.title = self.name
+                  self.link(self,bidirectional=True,title='name')
+            elif 'label' in self._widget_type.properties():
+                if ('label' not in params) and ('name' in params):
+                  self.label = self.name
+                  self.link(self,bidirectional=True,label='name')
 
     @classmethod
     def from_param(cls, parameter, **params):
@@ -189,3 +198,12 @@ class CompositeWidget(Widget):
     @property
     def _synced_params(self):
         return []
+
+
+class TitledWidget(Widget):
+
+
+    title = param.String(default='', allow_None=False,
+                         doc=('Title appearing above the widget.'))
+
+    __abstract = True

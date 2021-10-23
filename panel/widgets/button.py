@@ -21,7 +21,8 @@ class _ButtonBase(Widget):
 
     button_type = param.ObjectSelector(default='default', objects=BUTTON_TYPES)
 
-    _rename = {'name': 'label'}
+    label = param.String(default='', allow_None=False,
+                              doc=('Button label'))
 
     __abstract = True
 
@@ -92,7 +93,7 @@ class Button(_ClickButton):
 
     value = param.Event()
 
-    _rename = {'clicks': None, 'name': 'label', 'value': None}
+    _rename = {'clicks': None, 'value': None}
 
     _target_transforms = {'event:button_click': None, 'value': None}
 
@@ -133,7 +134,7 @@ class Toggle(_ButtonBase):
     value = param.Boolean(default=False, doc="""
         Whether the button is currently toggled.""")
 
-    _rename = {'value': 'active', 'name': 'label'}
+    _rename = {'value': 'active'}
 
     _supports_embed = True
 
@@ -158,7 +159,7 @@ class MenuButton(_ClickButton):
 
     _widget_type = _BkDropdown
 
-    _rename = {'name': 'label', 'items': 'menu', 'clicked': None}
+    _rename = {'items': 'menu', 'clicked': None}
 
     _event = 'menu_item_click'
 

@@ -22,11 +22,11 @@ from bokeh.models.widgets import (
 from ..config import config
 from ..layout import Column
 from ..util import param_reprs, as_unicode
-from .base import Widget, CompositeWidget
+from .base import Widget, CompositeWidget, TitledWidget
 from ..models import DatetimePicker as _bkDatetimePicker
 
 
-class TextInput(Widget):
+class TextInput(TitledWidget):
 
     max_length = param.Integer(default=5000, doc="""
       Max count of characters in the input field.""")
@@ -71,7 +71,7 @@ class FileInput(Widget):
 
     _source_transforms = {'value': "'data:' + source.mime_type + ';base64,' + value"}
 
-    _rename = {'name': None, 'filename': None}
+    _rename = {'filename': None}
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -109,7 +109,7 @@ class FileInput(Widget):
             filename.write(self.value)
 
 
-class StaticText(Widget):
+class StaticText(TitledWidget):
 
     style = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
@@ -118,7 +118,7 @@ class StaticText(Widget):
 
     _format = '<b>{title}</b>: {value}'
 
-    _rename = {'name': None, 'value': 'text'}
+    _rename = {'title': None, 'value': 'text'}
 
     _target_transforms = {'value': 'target.text.split(": ")[0]+": "+value'}
 
@@ -126,18 +126,32 @@ class StaticText(Widget):
 
     _widget_type = _BkDiv
 
+    def __init__(self,**params):
+        super().__init__(**params)
+
+        #todo: Temporary until `name` is considered only a hidden bokehjs model attribute.
+        #If user did not set both `name` or `title`, user might expect setting `name`
+        #at a later point should change the title until using `name` as title is
+        # obsolete.
+        if ('title' not in params) and ('name' in params):
+            self.title = self.name or ''
+            self.link(self,bidirectional=True,title='name')
+
+
     def _process_param_change(self, msg):
-        msg = super()._process_property_change(msg)
+        properties = {self._rename.get(k, k): v for k, v in msg.items()
+                      if self._rename.get(k, False) is not None}
+        msg = super()._process_property_change(properties)
         if 'value' in msg:
             text = as_unicode(msg.pop('value'))
-            partial = self._format.replace('{value}', '').format(title=self.name)
-            if self.name:
-                text = self._format.format(title=self.name, value=text.replace(partial, ''))
+            partial = self._format.replace('{value}', '').format(title=self.title)
+            if self.title:
+                text = self._format.format(title=self.title, value=text.replace(partial, ''))
             msg['text'] = text
         return msg
 
 
-class DatePicker(Widget):
+class DatePicker(TitledWidget):
 
     value = param.CalendarDate(default=None)
 
@@ -148,10 +162,10 @@ class DatePicker(Widget):
     disabled_dates = param.List(default=None, class_=(date, str))
 
     enabled_dates = param.List(default=None, class_=(date, str))
-
+    
     _source_transforms = {}
 
-    _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+    _rename = {'start': 'min_date', 'end': 'max_date'}
 
     _widget_type = _BkDatePicker
 
@@ -163,7 +177,7 @@ class DatePicker(Widget):
         return msg
 
 
-class _DatetimePickerBase(Widget):
+class _DatetimePickerBase(TitledWidget):
 
     start = param.CalendarDate(default=None)
 
@@ -181,7 +195,7 @@ class _DatetimePickerBase(Widget):
 
     _source_transforms = {'value': None, 'start': None, 'end': None, 'mode': None}
 
-    _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+    _rename = {'start': 'min_date', 'end': 'max_date'}
 
     _widget_type = _bkDatetimePicker
 
@@ -275,17 +289,17 @@ class DatetimeRangePicker(_DatetimePickerBase):
         return value
 
 
-class ColorPicker(Widget):
+class ColorPicker(TitledWidget):
 
     value = param.Color(default=None, doc="""
         The selected color""")
 
     _widget_type = _BkColorPicker
 
-    _rename = {'value': 'color', 'name': 'title'}
+    _rename = {'value': 'color'}
 
 
-class _NumericInputBase(Widget):
+class _NumericInputBase(TitledWidget):
 
     value = param.Number(default=0, allow_None=True, doc="""
         The initial value of the spinner.""")
@@ -301,8 +315,8 @@ class _NumericInputBase(Widget):
 
     end = param.Parameter(default=None, allow_None=True, doc="""
         Optional maximum allowable value.""")
-
-    _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
+    
+    _rename = {'start': 'low', 'end': 'high'}
 
     _widget_type = _BkNumericInput
 
@@ -413,7 +427,7 @@ class NumberInput(_SpinnerBase):
 Spinner = NumberInput
 
 
-class LiteralInput(Widget):
+class LiteralInput(TitledWidget):
     """
     LiteralInput allows declaring Python literals using a text
     input widget. Optionally a type may be declared.
@@ -429,7 +443,7 @@ class LiteralInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _rename = {'name': 'title', 'type': None, 'serializer': None}
+    _rename = {'type': None, 'serializer': None}
 
     _source_transforms = {'value': """JSON.parse(value.replace(/'/g, '"'))"""}
 
@@ -484,9 +498,9 @@ class LiteralInput(Widget):
                     else:
                         value = typed_value
             msg['value'] = value
-        msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
+        msg['title'] = msg.get('title', self.title).replace(self._state, '') + new_state
         self._state = new_state
-        self.param.trigger('name')
+        self.param.trigger('title')
         return msg
 
     def _process_param_change(self, msg):
@@ -500,7 +514,7 @@ class LiteralInput(Widget):
             else:
                 value = '' if value is None else as_unicode(value)
             msg['value'] = value
-        msg['title'] = self.name
+        msg['title'] = self.title
         return msg
 
 
@@ -523,7 +537,7 @@ class DatetimeInput(LiteralInput):
 
     _source_transforms = {'value': None, 'start': None, 'end': None}
 
-    _rename = {'format': None, 'type': None, 'name': 'title',
+    _rename = {'format': None, 'type': None,
                'start': None, 'end': None, 'serializer': None}
 
     def __init__(self, **params):
@@ -560,7 +574,7 @@ class DatetimeInput(LiteralInput):
                     new_state = ' (out of bounds)'
                     value = self.value
             msg['value'] = value
-        msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
+        msg['title'] = msg.get('title', self.title).replace(self._state, '') + new_state
         self._state = new_state
         return msg
 
@@ -588,6 +602,10 @@ class DatetimeRangeInput(CompositeWidget):
     format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
         Datetime format used for parsing and formatting the datetime.""")
 
+    
+    title = param.String(default='', allow_None=False,
+                         doc=('Title appearing above the widget.'))
+
     _composite_type = Column
 
     def __init__(self, **params):
@@ -600,13 +618,17 @@ class DatetimeRangeInput(CompositeWidget):
         self._msg = ''
         self._composite.extend([self._text, self._start, self._end])
         self._updating = False
-        self.param.watch(self._update_widgets, [p for p in self.param if p != 'name'])
+        if ('title' not in params) and ('name' in params):
+            self.title = self.name or ''
+            self.link(self,bidirectional=True,title='name')
+        self.param.watch(self._update_widgets, [p for p in self.param if p != 'title'])
         self._update_widgets()
         self._update_label()
 
-    @param.depends('name', '_start.name', '_end.name', watch=True)
+
+    @param.depends('title', '_start.title', '_end.title', watch=True)
     def _update_label(self):
-        self._text.value = f'{self.name}{self._start.name}{self._end.name}{self._msg}'
+        self._text.value = f'{self.title}{self._start.title}{self._end.title}{self._msg}'
 
     @param.depends('_start.value', '_end.value', watch=True)
     def _update(self):
@@ -629,8 +651,8 @@ class DatetimeRangeInput(CompositeWidget):
 
     def _update_widgets(self, *events):
         filters = [event.name for event in events] if events else list(self.param)
-        if 'name' in filters:
-            filters.remove('name')
+        if 'title' in filters:
+            filters.remove('title')
         if self._updating:
             return
         try:
@@ -648,22 +670,36 @@ class Checkbox(Widget):
 
     value = param.Boolean(default=False)
 
+    label =  param.String(default='', allow_None=False,
+                          doc='Checkbox label')
+
     _supports_embed = True
 
-    _rename = {'value': 'active', 'name': 'labels'}
+    _rename = {'value': 'active', 'label': 'labels'}
 
-    _source_transforms = {'value': "value.indexOf(0) >= 0", 'name': "value[0]"}
+    _source_transforms = {'value': "value.indexOf(0) >= 0", 'label': "value[0]"}
 
-    _target_transforms = {'value': "value ? [0] : []", 'name': "[value]"}
+    _target_transforms = {'value': "value ? [0] : []", 'label': "[value]"}
 
     _widget_type = _BkCheckboxGroup
+
+    def __init__(self,**params):
+        super().__init__(**params)
+
+        #todo: Temporary until `name` is considered only a hidden bokehjs model attribute.
+        #If user did not set `label`, user might expect setting `name`
+        #at a later point should change the label until using `name` as label is
+        # obsolete.
+        if 'label' not in params:
+            self.label = self.name or ''
+            self.link(self,bidirectional=True,label='name')
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = 0 in msg.pop('value')
-        if 'name' in msg:
-            msg['name'] = [msg['name']]
+        if 'label' in msg:
+            msg['label'] = [msg['label']]
         return msg
 
     def _process_param_change(self, msg):

@@ -12,7 +12,7 @@ from ..io.state import state
 from ..models import (
     VideoStream as _BkVideoStream, FileDownload as _BkFileDownload
 )
-from .base import Widget
+from .base import Widget, TitledWidget
 from .indicators import Progress # noqa
 
 
@@ -33,8 +33,6 @@ class VideoStream(Widget):
 
     _widget_type = _BkVideoStream
 
-    _rename = {'name': None}
-
     def snapshot(self):
         """
         Triggers a snapshot of the current VideoStream state to sync
@@ -47,7 +45,7 @@ class VideoStream(Widget):
                 push(doc, comm)
 
 
-class FileDownload(Widget):
+class FileDownload(TitledWidget):
 
     auto = param.Boolean(default=True, doc="""
         Whether to download on the initial click or allow for
@@ -106,7 +104,7 @@ class FileDownload(Widget):
 
     _rename = {
         'callback': None, 'embed': None, 'file': None,
-        '_clicks': 'clicks', 'name': 'title'
+        '_clicks': 'clicks'
     }
 
     def __init__(self, file=None, **params):

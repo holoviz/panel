@@ -138,7 +138,6 @@ class Progress(ValueIndicator):
         bar will be indeterminate and animate depending on the active
         parameter.""")
 
-    _rename = {'name': None}
 
     _widget_type = _BkProgress
 
