@@ -62,12 +62,12 @@ class Widget(Reactive):
             #give priority to 'title' over 'label'
             if 'title' in self._widget_type.properties():
                 if ('title' not in params) and ('name' in params):
-                  self.title = self.name
-                  self.link(self,bidirectional=True,title='name')
+                    self.title = self.name
+                    self.link(self,bidirectional=True,title='name')
             elif 'label' in self._widget_type.properties():
                 if ('label' not in params) and ('name' in params):
-                  self.label = self.name
-                  self.link(self,bidirectional=True,label='name')
+                    self.label = self.name
+                    self.link(self,bidirectional=True,label='name')
 
     @classmethod
     def from_param(cls, parameter, **params):
