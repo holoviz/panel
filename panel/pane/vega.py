@@ -22,7 +22,7 @@ def ds_as_cds(dataset):
     data = {k: [] for k in keys}
     for item in dataset:
         for k in keys:
-            data[k].append(item.get(v))
+            data[k].append(item.get(k))
     data = {k: np.asarray(v) for k, v in data.items()}
     return data
 
