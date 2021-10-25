@@ -18,8 +18,7 @@ def ds_as_cds(dataset):
     if len(dataset) == 0:
         return {}
     # create a list of unique keys from all items as some items may not include optional fields
-    keys = list(set(k for d in dataset for k in d.keys()))
-    keys.sort()
+    keys = sorted(set(k for d in dataset for k in d.keys()))
     data = {k: [] for k in keys}
     for item in dataset:
         for k in keys:
