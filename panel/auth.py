@@ -78,7 +78,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         'User-Agent': 'Tornado OAuth'
     }
 
-   _access_token_header = None
+    _access_token_header = None
 
     _EXTRA_TOKEN_PARAMS = {}
 
