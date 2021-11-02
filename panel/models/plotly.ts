@@ -123,6 +123,11 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     this._relayouting = false
   }, 2000, false)
 
+  initialize(): void {
+    super.initialize()
+    this._layout_wrapper = <PlotlyHTMLElement>div({style: "height: 100%; width: 100%;"})
+  }
+
   connect_signals(): void {
     super.connect_signals();
     const {data, data_sources, layout, relayout, restyle} = this.model.properties
@@ -160,7 +165,6 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
 
   async render(): Promise<void> {
     super.render()
-    this._layout_wrapper = <PlotlyHTMLElement>div({style: "height: 100%; width: 100%;"})
     this.el.appendChild(this._layout_wrapper);
     await this.plot();
     (window as any).Plotly.relayout(this._layout_wrapper, this.model.relayout)
@@ -173,7 +177,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     return data
   }
 
-  _layout_data(): void {
+  _layout_data(): any {
     const newLayout = deepCopy(this.model.layout);
     if (this._relayouting) {
       const {layout} = this._layout_wrapper;
@@ -260,16 +264,15 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     const data = this._trace_data()
     const newLayout = this._layout_data()
     this._reacting = true
-    return (window as any).Plotly.react(this._layout_wrapper, data, newLayout, this.model.config).then(() => {
-      this._updateSetViewportFunction()
-      this._updateViewportProperty()
-      if (!this._plotInitialized)
-        this._install_callbacks()
-      else if (!_isHidden(this._layout_wrapper))
-	(window as any).Plotly.Plots.resize(this._layout_wrapper)
-      this._reacting = false
-      this._plotInitialized = true
-    })
+    await (window as any).Plotly.react(this._layout_wrapper, data, newLayout, this.model.config)
+    this._updateSetViewportFunction()
+    this._updateViewportProperty()
+    if (!this._plotInitialized)
+      this._install_callbacks()
+    else if (!_isHidden(this._layout_wrapper))
+      (window as any).Plotly.Plots.resize(this._layout_wrapper)
+    this._reacting = false
+    this._plotInitialized = true
   }
 
   after_layout(): void{
