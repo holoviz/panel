@@ -117,6 +117,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             'redirect_uri': redirect_uri,
             'client_id':    client_id,
             'client_secret': client_secret,
+            'response_type': 'code',
             'extra_params': {
                 'state': state,
             },
@@ -287,29 +288,6 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
                         f"authenticate returning the following response:"
                         f"{body}.")
         raise HTTPError(500, f"{provider} authentication failed")
-
-
-class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
-
-    _EXTRA_TOKEN_PARAMS = {
-        'grant_type':    'authorization_code'
-    }
-    
-    @property
-    def _OAUTH_ACCESS_TOKEN_URL(self):
-        return config.oauth_extra_params['TOKEN_URL']
-
-    @property
-    def _OAUTH_AUTHORIZE_URL(self):
-        return config.oauth_extra_params['AUTHORIZE_URL']
-
-    @property
-    def _OAUTH_USER_URL(self):
-        return config.oauth_extra_params['USER_URL']
-
-    @property
-    def _USER_KEY(self):
-        return config.oauth_extra_params.get('USER_KEY', 'email')
 
 
 class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
@@ -577,6 +555,29 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
         return user
 
+
+class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
+
+    _EXTRA_TOKEN_PARAMS = {
+        'grant_type':    'authorization_code'
+    }
+    
+    @property
+    def _OAUTH_ACCESS_TOKEN_URL(self):
+        return config.oauth_extra_params['TOKEN_URL']
+
+    @property
+    def _OAUTH_AUTHORIZE_URL(self):
+        return config.oauth_extra_params['AUTHORIZE_URL']
+
+    @property
+    def _OAUTH_USER_URL(self):
+        return config.oauth_extra_params['USER_URL']
+
+    @property
+    def _USER_KEY(self):
+        return config.oauth_extra_params.get('USER_KEY', 'email')
+    
 
 class AzureAdLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
 
