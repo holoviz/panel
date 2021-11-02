@@ -60,6 +60,91 @@ def test_select(document, comm):
     assert widget.value == as_unicode(opts['A'])
 
 
+def test_select_groups_list_options(document, comm):
+    opts = [1, 2, 3]
+    groups = dict(a=[1, 2], b=[3])
+    select = Select(options=opts, value=opts[0], groups=groups, name='Select')
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.title == 'Select'
+    assert widget.value == as_unicode(opts[0])
+    assert widget.options == {gr: [(as_unicode(v), as_unicode(v)) for v in values] for gr, values in groups.items()}
+
+    select._process_events({'value': as_unicode(opts[1])})
+    assert select.value == opts[1]
+
+    widget.value = as_unicode(opts[0])
+    select.value = opts[0]
+    assert select.value == opts[0]
+
+    select.value = opts[1]
+    assert widget.value == as_unicode(opts[1])
+
+
+def test_select_groups_dict_options(document, comm):
+    opts = dict(a=1, b=2, c=3)
+    groups = dict(A=['a', 'b'], B=['c'])
+    select = Select(options=opts, value=opts['a'], groups=groups, name='Select')
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.title == 'Select'
+    assert widget.value == as_unicode(opts['a'])
+    assert widget.options == {gr: [(as_unicode(opts[v]), v) for v in values] for gr, values in groups.items()}
+
+    select._process_events({'value': as_unicode(opts['c'])})
+    assert select.value == opts['c']
+
+    widget.value = as_unicode(opts['b'])
+    select.value = opts['b']
+    assert select.value == opts['b']
+
+    select.value = opts['a']
+    assert widget.value == as_unicode(opts['a'])
+
+
+def test_select_change_groups_and_options(document, comm):
+    opts = dict(a=1, b=2, c=3)
+    groups = dict(A=['a', 'b'], B=['c'])
+    select = Select(options=opts, value=opts['a'], groups=groups, name='Select')
+
+    widget = select.get_root(document, comm=comm)
+
+    new_groups = dict(C=['a'], D=['b', 'c'])
+    select.groups = new_groups
+    assert select.value == opts['a']
+    assert widget.value == as_unicode(opts['a'])
+    assert widget.options == {gr: [(as_unicode(opts[v]), v) for v in values] for gr, values in new_groups.items()}
+
+    select.options = dict(a=1, b=2)
+    new_groups = dict(A=['a'], B=['b'])
+    select.groups = new_groups
+    assert select.value == opts['a']
+    assert widget.value == as_unicode(opts['a'])
+    assert widget.options == {gr: [(as_unicode(opts[v]), v) for v in values] for gr, values in new_groups.items()}
+
+    select.options = {}
+    assert select.value == None
+    assert widget.value == ''
+
+
+def test_select_groups_error_not_maching_options(document, comm):
+    opts = dict(a=1, b=2, c=3)
+    groups = dict(A=['a', 'b'], B=['c', 'one_more'])
+    select = Select(options=opts, value=opts['a'], groups=groups, name='Select')
+    with pytest.raises(ValueError):
+        select.get_root(document, comm=comm)
+    
+    opts = [1, 2, 3]
+    groups = dict(a=[1, 2], b=[3, 999])
+    Select(options=opts, value=opts[0], groups=groups, name='Select')
+    with pytest.raises(ValueError):
+        select.get_root(document, comm=comm)
+
+
 def test_select_change_options(document, comm):
     opts = {'A': 'a', '1': 1}
     select = Select(options=opts, value=opts['1'], name='Select')

@@ -5,6 +5,7 @@ from a list of options.
 import re
 
 from collections import OrderedDict
+import itertools
 
 import param
 
@@ -129,8 +130,14 @@ class Select(SingleSelectBase):
         Declares how many options are displayed at the same time.
         If set to 1 displays options as dropdown otherwise displays
         scrollable area.""")
+    
+    groups = param.Dict(default=None, doc="""
+        Dictionary whose keys are used to visually group the options. All
+        put together the values of this dictionary must be equal to the
+        list of options if options is a list, or the keys of options if
+        options is a dictionary.""")
 
-    _source_transforms = {'size': None}
+    _source_transforms = {'size': None, 'groups': None}
 
     @property
     def _widget_type(self):
@@ -145,6 +152,48 @@ class Select(SingleSelectBase):
         msg = super()._process_param_change(msg)
         if msg.get('size') == 1:
             msg.pop('size')
+        groups = msg.pop('groups', None)
+        if groups is not None:
+            labels, values = self.labels, self.values
+            unique = len(set(self.unicode_values)) == len(labels)
+            all_group_values = list(itertools.chain(*groups.values()))
+            all_group_values_unicode = list(map(as_unicode, all_group_values))
+            if isinstance(self.options, dict):
+                if not set(self.labels) == set(all_group_values_unicode):
+                    raise ValueError(
+                        f'The values of the `groups` dictionary ({all_group_values_unicode}) '
+                        f'do not match with the options labels ({self.labels})'
+                    )
+                if unique:
+                    options = {
+                        group: [
+                            (as_unicode(self.options[label]), label)
+                            for label in labels
+                        ]
+                        for group, labels in groups.items()
+                    }
+                else:
+                    options = {
+                        group: [as_unicode(v) for v in groups[group]]
+                        for group in groups.keys()
+                    }
+                msg['options'] = options
+            else:
+                if not set(self.values) == set(all_group_values):
+                    raise ValueError(
+                        f'The values of the `groups` dictionary ({all_group_values}) '
+                        f'do not match with the options ({self.values})'
+                    )
+                msg['options'] = {
+                    group: [(as_unicode(value), as_unicode(value)) for value in values]
+                    for group, values in groups.items()
+                }
+            val = self.value
+            if values:
+                if not isIn(val, values):
+                    self.value = values[0]
+            else:
+                self.value = None
         return msg
 
 
