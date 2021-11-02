@@ -289,6 +289,29 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         raise HTTPError(500, f"{provider} authentication failed")
 
 
+class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
+
+    _EXTRA_TOKEN_PARAMS = {
+        'grant_type':    'authorization_code'
+    }
+    
+    @property
+    def _OAUTH_ACCESS_TOKEN_URL(self):
+        return config.oauth_extra_params['TOKEN_URL']
+
+    @property
+    def _OAUTH_AUTHORIZE_URL(self):
+        return config.oauth_extra_params['AUTHORIZE_URL']
+
+    @property
+    def _OAUTH_USER_URL(self):
+        return config.oauth_extra_params['USER_URL']
+
+    @property
+    def _USER_KEY(self):
+        return config.oauth_extra_params.get('USER_KEY', 'email')
+
+
 class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
     """GitHub OAuth2 Authentication
     To authenticate with GitHub, first register your application at
@@ -648,6 +671,7 @@ class GoogleLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
     _USER_KEY = 'email'
 
 
+
 class LogoutHandler(tornado.web.RequestHandler):
 
     def get(self):
@@ -687,6 +711,7 @@ AUTH_PROVIDERS = {
     'auth0': Auth0Handler,
     'azure': AzureAdLoginHandler,
     'bitbucket': BitbucketLoginHandler,
+    'generic': GenericLoginHandler,
     'google': GoogleLoginHandler,
     'github': GithubLoginHandler,
     'gitlab': GitLabLoginHandler,
