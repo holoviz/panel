@@ -78,7 +78,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         'User-Agent': 'Tornado OAuth'
     }
 
-    _access_token_header = None
+   _access_token_header = None
 
     _EXTRA_TOKEN_PARAMS = {}
 
@@ -290,6 +290,33 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         raise HTTPError(500, f"{provider} authentication failed")
 
 
+class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
+
+    _access_token_header = 'Bearer {}'
+
+    _EXTRA_TOKEN_PARAMS = {
+        'grant_type':    'authorization_code'
+    }
+
+    _SCOPE = ['openid', 'email']
+
+    @property
+    def _OAUTH_ACCESS_TOKEN_URL(self):
+        return config.oauth_extra_params['TOKEN_URL']
+
+    @property
+    def _OAUTH_AUTHORIZE_URL(self):
+        return config.oauth_extra_params['AUTHORIZE_URL']
+
+    @property
+    def _OAUTH_USER_URL(self):
+        return config.oauth_extra_params['USER_URL']
+
+    @property
+    def _USER_KEY(self):
+        return config.oauth_extra_params.get('USER_KEY', 'email')
+
+
 class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
     """GitHub OAuth2 Authentication
     To authenticate with GitHub, first register your application at
@@ -307,7 +334,6 @@ class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
     _USER_KEY = 'login'
 
-    
 
 class BitbucketLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
@@ -556,29 +582,6 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         return user
 
 
-class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
-
-    _EXTRA_TOKEN_PARAMS = {
-        'grant_type':    'authorization_code'
-    }
-    
-    @property
-    def _OAUTH_ACCESS_TOKEN_URL(self):
-        return config.oauth_extra_params['TOKEN_URL']
-
-    @property
-    def _OAUTH_AUTHORIZE_URL(self):
-        return config.oauth_extra_params['AUTHORIZE_URL']
-
-    @property
-    def _OAUTH_USER_URL(self):
-        return config.oauth_extra_params['USER_URL']
-
-    @property
-    def _USER_KEY(self):
-        return config.oauth_extra_params.get('USER_KEY', 'email')
-    
-
 class AzureAdLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
 
     _API_BASE_HEADERS = {
@@ -609,7 +612,7 @@ class AzureAdLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
 
 class OktaLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
     """Okta OAuth2 Authentication
-    
+
     To authenticate with Okta you first need to set up and configure
     in the Okta developer console.
     """
@@ -670,7 +673,6 @@ class GoogleLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
     _SCOPE = ['profile', 'email']
 
     _USER_KEY = 'email'
-
 
 
 class LogoutHandler(tornado.web.RequestHandler):
