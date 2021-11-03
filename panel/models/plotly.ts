@@ -9,7 +9,7 @@ import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 import {debounce} from  "debounce"
 import {deepCopy, isPlainObject, get, throttle} from "./util"
 
-import {PanelHTMLBoxView} from "./layout"
+import {PanelHTMLBoxView, set_size} from "./layout"
 
 
 
@@ -123,6 +123,11 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     this._relayouting = false
   }, 2000, false)
 
+  initialize(): void {
+    super.initialize()
+    this._layout_wrapper = <PlotlyHTMLElement>div({style: "height: 100%; width: 100%;"})
+  }
+
   connect_signals(): void {
     super.connect_signals();
     const {data, data_sources, layout, relayout, restyle} = this.model.properties
@@ -152,27 +157,27 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     this.connect(this.model.properties.viewport_update_throttle.change, () => {
       this._updateSetViewportFunction()
     });
-    this.connect(this.model.properties._render_count.change, () => this.plot());
+    this.connect(this.model.properties._render_count.change, () => {
+      this.plot()
+    });
     this.connect(this.model.properties.viewport.change, () => this._updateViewportFromProperty());
   }
 
-  render(): void {
+  async render(): Promise<void> {
     super.render()
-    this._layout_wrapper = <PlotlyHTMLElement>div({style: "height: 100%; width: 100%"})
-    this.el.appendChild(this._layout_wrapper)
-    if (!(window as any).Plotly) { return }
-    this.plot()
+    this.el.appendChild(this._layout_wrapper);
+    await this.plot();
+    (window as any).Plotly.relayout(this._layout_wrapper, this.model.relayout)
   }
 
   _trace_data(): any {
     const data = [];
-    for (let i = 0; i < this.model.data.length; i++) {
-      data.push(this._get_trace(i, false));
-    }
+    for (let i = 0; i < this.model.data.length; i++)
+      data.push(this._get_trace(i, false))
     return data
   }
 
-  _layout_data(): void {
+  _layout_data(): any {
     const newLayout = deepCopy(this.model.layout);
     if (this._relayouting) {
       const {layout} = this._layout_wrapper;
@@ -253,29 +258,28 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     });
   }
 
-  plot(): void {
-    if (!(window as any).Plotly) { return }
+  async plot(): Promise<void> {
+    if (!(window as any).Plotly)
+      return
     const data = this._trace_data()
     const newLayout = this._layout_data()
-    this._reacting = true;
-    (window as any).Plotly.react(this._layout_wrapper, data, newLayout, this.model.config).then(() => {
-        this._updateSetViewportFunction();
-        this._updateViewportProperty();
-        if (!this._plotInitialized)
-          this._install_callbacks()
-        this._plotInitialized = true;
-        this._reacting = false;
-        if(!_isHidden(this._layout_wrapper))
-          (window as any).Plotly.Plots.resize(this._layout_wrapper);
-      }
-    );
+    this._reacting = true
+    await (window as any).Plotly.react(this._layout_wrapper, data, newLayout, this.model.config)
+    this._updateSetViewportFunction()
+    this._updateViewportProperty()
+    if (!this._plotInitialized)
+      this._install_callbacks()
+    else if (!_isHidden(this._layout_wrapper))
+      (window as any).Plotly.Plots.resize(this._layout_wrapper)
+    this._reacting = false
+    this._plotInitialized = true
   }
 
   after_layout(): void{
     super.after_layout()
-    if ((window as any).Plotly) {
-      (window as any).Plotly.Plots.resize(this._layout_wrapper);
-    }
+    set_size(this.el, this.model)
+    if ((window as any).Plotly && this._plotInitialized)
+      (window as any).Plotly.Plots.resize(this._layout_wrapper)
   }
 
   _get_trace(index: number, update: boolean): any {
@@ -316,8 +320,11 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     Object.keys(this.model.viewport).reduce((value: any, key: string) => {
       if (!isEqual(get(fullLayout, key), value)) {
         let clonedViewport = deepCopy(this.model.viewport)
-        clonedViewport['_update_from_property'] = true;
-        (window as any).Plotly.relayout(this.el, clonedViewport);
+        clonedViewport['_update_from_property'] = true
+        this._settingViewport = true;
+        (window as any).Plotly.relayout(this.el, clonedViewport).then(() => {
+          this._settingViewport = false;
+	})
         return false
       } else {
         return true
@@ -331,18 +338,15 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
 
     // Get range for all xaxis and yaxis properties
     for (let prop in fullLayout) {
-      if (!fullLayout.hasOwnProperty(prop)) {
+      if (!fullLayout.hasOwnProperty(prop))
         continue
-      }
       let maybe_axis = prop.slice(0, 5);
-      if (maybe_axis === 'xaxis' || maybe_axis === 'yaxis') {
+      if (maybe_axis === 'xaxis' || maybe_axis === 'yaxis')
         viewport[prop + '.range'] = deepCopy(fullLayout[prop].range)
-      }
     }
 
-    if (!isEqual(viewport, this.model.viewport)) {
-      this._setViewport(viewport);
-    }
+    if (!isEqual(viewport, this.model.viewport))
+      this._setViewport(viewport)
   }
 
   _updateSetViewportFunction(): void {
@@ -350,19 +354,19 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
         this.model.viewport_update_policy === "mouseup") {
       this._setViewport = (viewport: any) => {
         if (!this._settingViewport) {
-          this._settingViewport = true;
-          this.model.viewport = viewport;
-          this._settingViewport = false;
+          this._settingViewport = true
+          this.model.viewport = viewport
+          this._settingViewport = false
         }
       }
     } else {
       this._setViewport = throttle((viewport: any) => {
         if (!this._settingViewport) {
-          this._settingViewport = true;
-          this.model.viewport = viewport;
-          this._settingViewport = false;
+          this._settingViewport = true
+          this.model.viewport = viewport
+          this._settingViewport = false
         }
-      }, this.model.viewport_update_throttle);
+      }, this.model.viewport_update_throttle)
     }
   }
 }

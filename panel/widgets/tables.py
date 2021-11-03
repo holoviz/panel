@@ -784,6 +784,10 @@ class Tabulator(BaseTable):
     groupby = param.List(default=[], doc="""
         Groups rows in the table by one or more columns.""")
 
+    header_align = param.ClassSelector(default={}, class_=(dict, str), doc="""
+        A mapping from column name to alignment or a fixed column
+        alignment, which should be one of 'left', 'center', 'right'.""")
+
     header_filters = param.ClassSelector(class_=(bool, dict), doc="""
         Whether to enable filters in the header or dictionary
         configuring filters for each column.""")
@@ -1294,6 +1298,10 @@ class Tabulator(BaseTable):
                 col_dict['hozAlign'] = self.text_align
             elif column.field in self.text_align:
                 col_dict['hozAlign'] = self.text_align[column.field]
+            if isinstance(self.header_align, str):
+                col_dict['headerHozAlign'] = self.header_align
+            elif column.field in self.header_align:
+                col_dict['headerHozAlign'] = self.header_align[column.field]
             formatter = self.formatters.get(column.field)
             if isinstance(formatter, str):
                 col_dict['formatter'] = formatter

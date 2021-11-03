@@ -402,6 +402,11 @@ class Param(PaneBase):
             options = p_obj.get_range()
             if not options and value is not None:
                 options = [value]
+            # This applies to widgets whose `options` Parameter is a List type,
+            # such as AutoCompleteInput.
+            if ('options' in widget_class.param
+                and isinstance(widget_class.param['options'], param.List)):
+                options = list(options.values())
             kw['options'] = options
         if hasattr(p_obj, 'get_soft_bounds'):
             bounds = p_obj.get_soft_bounds()

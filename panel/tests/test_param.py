@@ -9,7 +9,7 @@ from bokeh.models import (
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh, HTML
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, ParamFunction, JSONInit
-from panel.widgets import LiteralInput, NumberInput, RangeSlider
+from panel.widgets import AutocompleteInput, LiteralInput, NumberInput, RangeSlider
 from panel.tests.util import mpl_available, mpl_figure
 
 
@@ -1234,3 +1234,16 @@ def test_numberinput_bounds():
 
     assert numinput.start == 0
     assert numinput.end == 5
+
+def test_set_widget_autocompleteinput():
+
+    class Test(param.Parameterized):
+        choice = param.Selector(objects=['a', 'b'])
+
+    test = Test()
+    p = Param(test, widgets={'choice': AutocompleteInput})
+
+    autocompleteinput = p.layout[1]
+
+    assert autocompleteinput.value == 'a'
+    assert autocompleteinput.options == ['a', 'b']
