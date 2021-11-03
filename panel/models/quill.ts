@@ -23,7 +23,7 @@ export class QuillInputView extends PanelHTMLBoxView {
     this.connect(this.model.properties.disabled.change, () => this.quill.enable(!this.model.disabled))
     this.connect(this.model.properties.text.change, () => {
       if (this._editing)
-	return
+        return
       this._editing = true
       this.quill.setContents([])
       this.quill.clipboard.dangerouslyPasteHTML(this.model.text)
@@ -52,7 +52,7 @@ export class QuillInputView extends PanelHTMLBoxView {
     const theme = (this.model.mode === 'bubble') ? 'bubble' : 'snow'
     this.quill = new (window as any).Quill(this._container, {
       modules: {
-	toolbar: this.model.toolbar
+        toolbar: this.model.toolbar
       },
       placeholder: this.model.placeholder,
       theme: theme
@@ -62,7 +62,7 @@ export class QuillInputView extends PanelHTMLBoxView {
     this.quill.clipboard.dangerouslyPasteHTML(this.model.text)
     this.quill.on('text-change', () => {
       if (this._editing)
-	return
+        return
       this._editing = true
       this.model.text = this._editor.innerHTML
       this._editing = false
