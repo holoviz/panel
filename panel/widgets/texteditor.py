@@ -1,5 +1,5 @@
 """
-Defines a WYSIWYG text editor.
+Defines a TextEditor widget based on quill.js.
 """
 import param
 
@@ -9,9 +9,9 @@ from ..util import lazy_load
 from .base import Widget
 
 
-class WYSIWYG(Widget):
+class TextEditor(Widget):
     """
-    WYSIWYG widget allow editing text.
+    TextEditor widget allow editing text using the quill.js library.
     """
 
     disabled = param.Boolean(default=False, doc="""
