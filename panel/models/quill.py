@@ -33,10 +33,10 @@ class QuillInput(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            'quill': 'https://cdn.quilljs.com/1.3.6/quill',
+            'Quill': 'https://cdn.quilljs.com/1.3.6/quill',
         },
         'exports': {
-            'quill': 'Quill'
+            'Quill': 'Quill'
         }
     }
 
