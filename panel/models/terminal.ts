@@ -71,11 +71,6 @@ export class TerminalView extends PanelHTMLBoxView {
 
   handleOnData(value: string): void {
     this.model.trigger_event(new KeystrokeEvent(value))
-    // Hack to handle repeating keyboard inputs
-    if (this.model.input === value)
-      this.model._value_repeats+=1
-    else
-      this.model.input = value;
   }
 
   write(): void {
@@ -109,6 +104,11 @@ export class TerminalView extends PanelHTMLBoxView {
     this._rendered = true
   }
 
+  after_layout(): void {
+    super.after_layout()
+    this.fit()
+  }
+
   resize_layout(): void {
     super.resize_layout()
     this.fit()
@@ -120,7 +120,6 @@ export namespace Terminal {
   export type Props = HTMLBox.Props & {
     options: p.Property<any>
     output: p.Property<string>
-    input: p.Property<string>
     ncols: p.Property<number>  
     nrows: p.Property<number>  
     _clears: p.Property<number>
