@@ -132,10 +132,9 @@ class Select(SingleSelectBase):
         scrollable area.""")
     
     groups = param.Dict(default=None, doc="""
-        Dictionary whose keys are used to visually group the options. All
-        put together the values of this dictionary must be equal to the
-        list of options if options is a list, or the keys of options if
-        options is a dictionary.""")
+        Dictionary whose keys are used to visually group the options
+        and whose values are either a list or a dictionary of options
+        to select from. Mutually exclusive with ``options``.""")
 
     _source_transforms = {'size': None, 'groups': None}
 
@@ -147,6 +146,12 @@ class Select(SingleSelectBase):
         super().__init__(**params)
         if self.size == 1:
             self.param.size.constant = True
+        self._validate_options_groups()
+
+    @param.depends('options', 'groups', watch=True)
+    def _validate_options_groups(self):
+        if self.options and self.groups:
+            raise ValueError('options and groups are mutually exclusive.')
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -154,40 +159,32 @@ class Select(SingleSelectBase):
             msg.pop('size')
         groups = msg.pop('groups', None)
         if groups is not None:
+            if (all(isinstance(values, dict) for values in groups.values()) is False
+               and  all(isinstance(values, list) for values in groups.values()) is False):
+                raise ValueError(
+                    'The values of the groups dictionnary must be all of '
+                    'the dictionnary or the list type.'
+                )
             labels, values = self.labels, self.values
             unique = len(set(self.unicode_values)) == len(labels)
-            all_group_values = list(itertools.chain(*groups.values()))
-            all_group_values_unicode = list(map(as_unicode, all_group_values))
-            if isinstance(self.options, dict):
-                if not set(self.labels) == set(all_group_values_unicode):
-                    raise ValueError(
-                        f'The values of the `groups` dictionary ({all_group_values_unicode}) '
-                        f'do not match with the options labels ({self.labels})'
-                    )
-                if unique:
-                    options = {
-                        group: [
-                            (as_unicode(self.options[label]), label)
-                            for label in labels
-                        ]
-                        for group, labels in groups.items()
-                    }
+            if groups:
+                if isinstance(next(iter(self.groups.values())), dict):
+                    if unique:
+                        options = {
+                            group: [(as_unicode(value), label) for label, value in subd.items()]
+                            for group, subd in groups.items()
+                        }
+                    else:
+                        options = {
+                            group: [as_unicode(v) for v in self.groups[group]]
+                            for group in groups.keys()
+                        }
+                    msg['options'] = options
                 else:
-                    options = {
-                        group: [as_unicode(v) for v in groups[group]]
-                        for group in groups.keys()
+                    msg['options'] = {
+                        group: [(as_unicode(value), as_unicode(value)) for value in values]
+                        for group, values in groups.items()
                     }
-                msg['options'] = options
-            else:
-                if not set(self.values) == set(all_group_values):
-                    raise ValueError(
-                        f'The values of the `groups` dictionary ({all_group_values}) '
-                        f'do not match with the options ({self.values})'
-                    )
-                msg['options'] = {
-                    group: [(as_unicode(value), as_unicode(value)) for value in values]
-                    for group, values in groups.items()
-                }
             val = self.value
             if values:
                 if not isIn(val, values):
@@ -195,6 +192,28 @@ class Select(SingleSelectBase):
             else:
                 self.value = None
         return msg
+
+    @property
+    def labels(self):
+        if self.options:
+            return super().labels
+        else:
+            if not self.groups:
+                return {}
+            else:
+                return list(map(as_unicode, itertools.chain(*self.groups.values())))
+
+    @property
+    def values(self):
+        if self.options:
+            return super().values
+        else:
+            if not self.groups:
+                return []
+            if isinstance(next(iter(self.groups.values())), dict):
+                return [v for subd in self.groups.values() for v in subd.values()]
+            else:
+                return list(itertools.chain(*self.groups.values()))
 
 
 class _MultiSelectBase(SingleSelectBase):
