@@ -1,6 +1,5 @@
 """
-Defines various Select widgets which allow choosing one or more items
-from a list of options.
+Defines the Ace code editor widget.
 """
 import param
 

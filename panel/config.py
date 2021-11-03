@@ -387,7 +387,8 @@ class panel_extension(_pyviz_extension):
         'perspective': 'panel.models.perspective',
         'terminal': 'panel.models.terminal',
         'tabulator': 'panel.models.tabulator',
-        'gridstack': 'panel.layout.gridstack'
+        'gridstack': 'panel.layout.gridstack',
+        'texteditor': 'panel.models.quill'
     }
 
     # Check whether these are loaded before rendering (if any item
