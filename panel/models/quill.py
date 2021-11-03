@@ -1,4 +1,4 @@
-from bokeh.core.properties import Any, Bool, Enum, Either, List, Nullable, String
+from bokeh.core.properties import Any, Bool, Enum, Either, List, String
 from bokeh.models import HTMLBox
 
 from ..io.resources import bundled_files
