@@ -17,15 +17,18 @@ class WYSIWYG(Widget):
     disabled = param.Boolean(default=False, doc="""
         Whether the editor is disabled.""")
 
+    mode = param.Selector(default='toolbar', objects=['bubble', 'toolbar'], doc="""
+        Whether to display a toolbar or a bubble menu on highlight.""")
+
+    toolbar = param.ClassSelector(default=True, class_=(list, bool), doc="""
+        Toolbar configuration either as a boolean toggle or a configuration
+        specified as a list.""")
+
     placeholder = param.String(doc="Placeholder output when the editor is empty.")
 
     value = param.String(doc="State of the current text in the editor")
 
-    _rename = {"value": "text", "disabled": "readonly"}
-
-    def __init__(self, **params):
-        super().__init__(**params)
-        self.jslink(self, readonly='disabled', bidirectional=True)
+    _rename = {"value": "text"}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:

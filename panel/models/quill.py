@@ -1,4 +1,4 @@
-from bokeh.core.properties import Bool, String
+from bokeh.core.properties import Any, Bool, Enum, Either, List, Nullable, String
 from bokeh.models import HTMLBox
 
 from ..io.resources import bundled_files
@@ -11,6 +11,7 @@ class QuillInput(HTMLBox):
     """
 
     __css_raw__ = [
+        'https://cdn.quilljs.com/1.3.6/quill.bubble.css',
         'https://cdn.quilljs.com/1.3.6/quill.snow.css'
     ]
     
@@ -39,8 +40,12 @@ class QuillInput(HTMLBox):
         }
     }
 
+    mode = Enum("bubble", "toolbar", default='toolbar')
+
     placeholder = String()
 
     readonly = Bool(False)
 
     text = String()
+
+    toolbar = Either(List(Any), Bool)

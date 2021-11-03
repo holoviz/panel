@@ -7,8 +7,9 @@ import {PanelHTMLBoxView} from "./layout"
 export class QuillInputView extends PanelHTMLBoxView {
   override model: QuillInput
   protected _container: HTMLDivElement
-  protected _toolbar: HTMLDivElement
-  protected _md: any
+  protected _editor: HTMLDivElement
+  protected _editing: boolean
+  protected _toolbar: HTMLDivElement | null
 
   quill: any
 
@@ -19,31 +20,58 @@ export class QuillInputView extends PanelHTMLBoxView {
 
   connect_signals(): void {
     super.connect_signals()
+    this.connect(this.model.properties.disabled.change, () => this.quill.enable(!this.model.disabled))
     this.connect(this.model.properties.text.change, () => {
+      if (this._editing)
+	return
+      this._editing = true
       this.quill.setContents([])
       this.quill.clipboard.dangerouslyPasteHTML(this.model.text)
+      this._editing = false
     })
+    const {mode, toolbar} = this.model.properties
+    this.on_change([mode, toolbar], () => {
+      this.render()
+      this._layout_toolbar()
+    })
+  }
+
+  _layout_toolbar(): void {
+    if (this._toolbar == null) {
+      this.el.style.removeProperty('padding-top')
+    } else {
+      const height = this._toolbar.getBoundingClientRect().height + 1
+      this.el.style.paddingTop = height + "px"
+      this._toolbar.style.marginTop = -height + "px"
+    }
   }
 
   render(): void {
     super.render()
-    this.el.style.paddingTop = "41px"
     this.el.appendChild(this._container)
+    const theme = (this.model.mode === 'bubble') ? 'bubble' : 'snow'
     this.quill = new (window as any).Quill(this._container, {
+      modules: {
+	toolbar: this.model.toolbar
+      },
       placeholder: this.model.placeholder,
-      theme: 'snow'
+      theme: theme
     });
-    this._toolbar = (this.el.children[0] as HTMLDivElement)
+    this._editor = (this.el.querySelector('.ql-editor') as HTMLDivElement)
+    this._toolbar = (this.el.querySelector('.ql-toolbar') as HTMLDivElement)
     this.quill.clipboard.dangerouslyPasteHTML(this.model.text)
     this.quill.on('text-change', () => {
-      this.model.text = this._container.querySelector('.ql-editor').innerHTML
+      if (this._editing)
+	return
+      this._editing = true
+      this.model.text = this._editor.innerHTML
+      this._editing = false
     });
   }
 
   after_layout(): void {
     super.after_layout()
-    this._toolbar.style.marginTop = "-41px"
-    this._toolbar.style.height = "40px"
+    this._layout_toolbar()
   }
 }
 
@@ -51,9 +79,11 @@ export namespace QuillInput {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = HTMLBox.Props & {
+    mode:        p.Property<string>
     placeholder: p.Property<string>
     readonly:    p.Property<boolean>
     text:        p.Property<string>
+    toolbar:     p.Property<any>
   }
 }
 
@@ -71,10 +101,16 @@ export class QuillInput extends HTMLBox {
   static init_QuillInput(): void {
     this.prototype.default_view = QuillInputView
 
-    this.define<QuillInput.Props>(({Boolean, String}) => ({
-      placeholder:  [ String,       '' ],
-      readonly:     [ Boolean,   false ],
-      text:         [ String,       '' ],
+    this.define<QuillInput.Props>(({Any, Boolean, String}) => ({
+      mode:         [ String, 'toolbar' ],
+      placeholder:  [ String,        '' ],
+      readonly:     [ Boolean,    false ],
+      text:         [ String,        '' ],
+      toolbar:      [ Any,         null ],
     }))
+
+    this.override<QuillInput.Props>({
+      height: 300
+    })
   }
 }
