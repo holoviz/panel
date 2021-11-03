@@ -1,25 +1,28 @@
 from collections import OrderedDict
 
 from bokeh.core.properties import Any, Dict, Int, String
+from bokeh.events import ModelEvent
 from bokeh.models import HTMLBox
 
 from ..io.resources import bundled_files
 from ..util import classproperty
 
 
-XTERM_JS = "https://unpkg.com/xterm@4.11.0/lib/xterm.js"
+XTERM_JS = "https://unpkg.com/xterm@4.14.1/lib/xterm.js"
 XTERM_LINKS_JS = "https://unpkg.com/xterm-addon-web-links@0.4.0/lib/xterm-addon-web-links.js"
+
+
+class KeystrokeEvent(ModelEvent):
+
+    event_name = 'keystroke'
+
+    def __init__(self, model, key=None):
+        self.key = key
+        super().__init__(model=model)
 
 
 class Terminal(HTMLBox):
     """Custom Terminal Model"""
-
-    options = Dict(String, Any)
-    input = String()
-    output = String()
-
-    _clears = Int()
-    _value_repeats = Int()
 
     __css_raw__ = ["https://unpkg.com/xterm@4.11.0/css/xterm.css"]
 
@@ -52,6 +55,16 @@ class Terminal(HTMLBox):
             'xtermjsweblinks': {
                 'exports': 'WebLinksAddon',
                 'deps': ['xtermjs']
-            }
+            },
         }
     }
+
+    _clears = Int()
+
+    nrows = Int()
+
+    ncols = Int()
+
+    options = Dict(String, Any)
+
+    output = String()

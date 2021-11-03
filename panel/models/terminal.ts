@@ -1,14 +1,26 @@
 import { HTMLBox } from "@bokehjs/models/layouts/html_box"
 import * as p from "@bokehjs/core/properties"
-import { div } from "@bokehjs/core/dom";
+import { div } from "@bokehjs/core/dom"
+import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
 
 import { PanelHTMLBoxView, set_size } from "./layout"
 
 
+export class KeystrokeEvent extends ModelEvent {
+  event_name: string = "keystroke"
+
+  constructor(readonly key: string) {
+    super()
+  }
+
+  protected _to_json(): JSON {
+    return {model: this.origin, key: this.key}
+  }
+}
+
 export class TerminalView extends PanelHTMLBoxView {
   model: Terminal
   term: any // Element
-  fitAddon: any
   webLinksAddon: any
   container: HTMLDivElement
   _rendered: boolean
@@ -30,7 +42,7 @@ export class TerminalView extends PanelHTMLBoxView {
     });
 
     this.webLinksAddon = this.getNewWebLinksAddon()
-    this.term.loadAddon(this.webLinksAddon);
+    this.term.loadAddon(this.webLinksAddon)
 
     this.term.open(this.container)
 
@@ -58,6 +70,7 @@ export class TerminalView extends PanelHTMLBoxView {
   }
 
   handleOnData(value: string): void {
+    this.model.trigger_event(new KeystrokeEvent(value))
     // Hack to handle repeating keyboard inputs
     if (this.model.input === value)
       this.model._value_repeats+=1
@@ -89,16 +102,11 @@ export class TerminalView extends PanelHTMLBoxView {
       return
     const cols = Math.max(2, Math.floor(width / cell_width))
     const rows = Math.max(1, Math.floor(height / cell_height))
-    if (this.term.rows !== rows || this.term.cols !== cols) {
-      renderer.clear();
+    if (this.term.rows !== rows || this.term.cols !== cols)
       this.term.resize(cols, rows)
-    }
+    this.model.ncols = cols
+    this.model.nrows = rows
     this._rendered = true
-  }
-
-  after_layout(): void {
-    super.after_layout()
-    this.fit()
   }
 
   resize_layout(): void {
@@ -113,8 +121,9 @@ export namespace Terminal {
     options: p.Property<any>
     output: p.Property<string>
     input: p.Property<string>
+    ncols: p.Property<number>  
+    nrows: p.Property<number>  
     _clears: p.Property<number>
-    _value_repeats: p.Property<number>
   }
 }
 
@@ -134,11 +143,11 @@ export class Terminal extends HTMLBox {
     this.prototype.default_view = TerminalView;
 
     this.define<Terminal.Props>(({Any, Int, String}) => ({
-      options:        [Any,    {} ],
-      output:         [String,    ],
-      input:          [String,    ],
-      _clears:        [Int,     0 ],
-      _value_repeats: [Int,     0 ],
+      _clears:        [ Int,     0 ],
+      options:        [ Any,    {} ],
+      output:         [ String,    ],
+      ncols:          [ Int        ],
+      nrows:          [ Int        ],
     }))
   }
 }
