@@ -6,6 +6,8 @@ import * as p from "@bokehjs/core/properties";
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 import {TableColumn} from "@bokehjs/models/widgets/tables"
 
+import {debounce} from  "debounce"
+
 import {transform_cds_to_records} from "./data"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
@@ -276,6 +278,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       tooltips: (cell: any) => {
         return  cell.getColumn().getField() + ": " + cell.getValue();
       },
+      scrollVertical: debounce(() => {
+        this.updateStyles()
+      }, 50, false)
     }
     if (pagination) {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
