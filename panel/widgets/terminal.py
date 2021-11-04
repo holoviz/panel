@@ -163,19 +163,15 @@ class TerminalSubprocess(param.Parameterized):
     def _remove_last_line_from_string(value):
         return value[: value.rfind("CompletedProcess")]
 
-    def _decode_utf8_on_boundary(self, fd, max_read_bytes):
+    def _decode_utf8_on_boundary(self, fd, max_read_bytes, max_extra_bytes=2):
         "UTF-8 characters can be multi-byte so need to decode on correct boundary"
-        raw = os.read(fd, max_read_bytes)
-        try:
-            return raw.decode('utf-8')
-        except UnicodeDecodeError:
-            extra_byte = os.read(fd, 1)
-            data = (raw + extra_byte)
+        data = os.read(fd, max_read_bytes)
+        for _ in range(max_extra_bytes+1):
             try:
                 return data.decode('utf-8')
             except UnicodeDecodeError:
-                another_extra_byte = os.read(fd, 1)
-                return (data + another_extra_byte).decode('utf-8')
+                data = data + os.read(fd, 1)
+        raise Exception('Could not find decode boundary for UTF-8')
 
     def _forward_subprocess_output_to_terminal(self):
         if not self._fd:
