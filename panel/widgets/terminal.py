@@ -163,6 +163,20 @@ class TerminalSubprocess(param.Parameterized):
     def _remove_last_line_from_string(value):
         return value[: value.rfind("CompletedProcess")]
 
+    def _decode_utf8_on_boundary(self, fd, max_read_bytes):
+        "UTF-8 characters can be multi-byte so need to decode on correct boundary"
+        raw = os.read(fd, max_read_bytes)
+        try:
+            return raw.decode('utf-8')
+        except UnicodeDecodeError:
+            extra_byte = os.read(fd, 1)
+            data = (raw + extra_byte)
+            try:
+                return data.decode('utf-8')
+            except UnicodeDecodeError:
+                another_extra_byte = os.read(fd, 1)
+                return (data + another_extra_byte).decode('utf-8')
+
     def _forward_subprocess_output_to_terminal(self):
         if not self._fd:
             return
@@ -170,18 +184,7 @@ class TerminalSubprocess(param.Parameterized):
         if not data_ready:
             return
 
-        raw = os.read(self._fd, self._max_read_bytes)
-        try:
-            output = raw.decode('utf-8')
-        except UnicodeDecodeError:
-            # UTF8 characters may be one or two bytes long
-            extra_byte = os.read(self._fd, 1)
-            data = (raw + extra_byte)
-            try:
-                output = data.decode('utf-8')
-            except UnicodeDecodeError:
-                another_extra_byte = os.read(self._fd, 1)
-                output = (data + another_extra_byte).decode('utf-8')
+        output = self._decode_utf8_on_boundary(self._fd, self._max_read_bytes)
 
         # If Child Process finished it will signal this by appending "CompletedProcess(...)"
         if "CompletedProcess" in output:
