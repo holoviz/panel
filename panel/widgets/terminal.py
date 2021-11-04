@@ -174,6 +174,7 @@ class TerminalSubprocess(param.Parameterized):
         try:
             output = raw.decode('utf-8')
         except UnicodeDecodeError:
+            # UTF8 characters may be one or two bytes long
             extra_byte = os.read(self._fd, 1)
             data = (raw + extra_byte)
             try:
