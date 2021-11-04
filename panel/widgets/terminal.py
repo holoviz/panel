@@ -171,7 +171,7 @@ class TerminalSubprocess(param.Parameterized):
                 return data.decode('utf-8')
             except UnicodeDecodeError:
                 data = data + os.read(fd, 1)
-        raise Exception('Could not find decode boundary for UTF-8')
+        raise UnicodeError('Could not find decode boundary for UTF-8')
 
     def _forward_subprocess_output_to_terminal(self):
         if not self._fd:
