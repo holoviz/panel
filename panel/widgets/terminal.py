@@ -169,7 +169,19 @@ class TerminalSubprocess(param.Parameterized):
         (data_ready, _, _) = select.select([self._fd], [], [], self._timeout_sec)
         if not data_ready:
             return
-        output = os.read(self._fd, self._max_read_bytes).decode()
+
+        raw = os.read(self._fd, self._max_read_bytes)
+        try:
+            output = raw.decode('utf-8')
+        except UnicodeDecodeError:
+            extra_byte = os.read(self._fd, 1)
+            data = (raw + extra_byte)
+            try:
+                output = data.decode('utf-8')
+            except UnicodeDecodeError:
+                another_extra_byte = os.read(self._fd, 1)
+                output = (data + another_extra_byte).decode('utf-8')
+
         # If Child Process finished it will signal this by appending "CompletedProcess(...)"
         if "CompletedProcess" in output:
             self._reset()
