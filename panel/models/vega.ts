@@ -72,7 +72,6 @@ export class VegaPlotView extends HTMLBoxView {
       this.model.data['datasets'] = datasets
     }
     const config: any = {actions: this.model.show_actions, theme: this.model.theme};
-    console.log('plot', config);
     (window as any).vegaEmbed(this.el, this.model.data, config)
   }
 }
