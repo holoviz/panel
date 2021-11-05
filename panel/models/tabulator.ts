@@ -1,6 +1,7 @@
 import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {build_views} from "@bokehjs/core/build_views"
+import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties";
@@ -12,6 +13,17 @@ import {debounce} from  "debounce"
 import {transform_cds_to_records} from "./data"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
+export class TableEditEvent extends ModelEvent {
+  event_name: string = "table-edit"
+
+  constructor(readonly column: string, readonly row: number, readonly new_value: any) {
+    super()
+  }
+
+  protected _to_json(): JSON {
+    return {model: this.origin, column: this.column, row: this.row, value: this.new_value}
+  }
+}
 
 declare const Tabulator: any;
 
@@ -408,7 +420,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
               cell.getRow().toggleSelect();
             }
           }
-          columns.push(column)
+          columns.push({...column})
         }
     }
     for (const column of this.model.columns) {
@@ -760,6 +772,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this._tabulator_cell_updating = true
     this.model.source.patch({[field]: [[index, value]]});
     this._tabulator_cell_updating = false
+    this.model.trigger_event(new TableEditEvent(field, index, value))
   }
 }
 

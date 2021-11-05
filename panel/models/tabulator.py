@@ -7,6 +7,7 @@ from bokeh.core.properties import (
     Any, Bool, Dict, Either, Enum, Instance, Int, List, Nullable,
     String, Tuple
 )
+from bokeh.events import ModelEvent
 from bokeh.models import ColumnDataSource, LayoutDOM
 from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets.tables import TableColumn
@@ -24,6 +25,17 @@ TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
     'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'
 ]
+
+class TableEditEvent(ModelEvent):
+
+    event_name = 'table-edit'
+
+    def __init__(self, model, column, row, value):
+        self.column = column
+        self.row = row
+        self.value = value
+        super().__init__(model=model)
+
 
 def _get_theme_url(url, theme):
     if 'bootstrap' in theme:
