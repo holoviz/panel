@@ -34,7 +34,7 @@ class BootstrapTemplate(BasicTemplate):
             'bootstrap': "https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
         },
         'js': {
-            'jquery': "https://code.jquery.com/jquery-3.4.1.slim.min.js",
+            'jquery': "https://code.jquery.com/jquery-3.5.1.slim.min.js",
             'bootstrap': "https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js",
         }
     }
