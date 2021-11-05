@@ -887,11 +887,6 @@ class Tabulator(BaseTable):
             p._cleanup(root)
         super()._cleanup(root)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        super()._get_model(doc, root, parent, comm)
-        model.on_event('table-edit', self._on_edit)
-        return model
-
     def _on_edit(self, event):
         for cb in self._on_edit_callbacks:
             cb(event)
@@ -1216,6 +1211,7 @@ class Tabulator(BaseTable):
             child_panels, doc, root, parent, comm
         )
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
+        model.on_event('table-edit', self._on_edit)
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm):
