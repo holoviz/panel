@@ -33,7 +33,7 @@ class GoldenTemplate(BasicTemplate):
             'goldenlayout': "https://golden-layout.com/files/latest/css/goldenlayout-base.css",
         },
         'js': {
-            'jquery': "http://code.jquery.com/jquery-1.11.1.min.js",
+            'jquery': "http://code.jquery.com/jquery-3.5.1.min.js",
             'goldenlayout': "https://golden-layout.com/files/latest/js/goldenlayout.js"
         }
     }

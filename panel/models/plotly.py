@@ -17,7 +17,7 @@ class PlotlyPlot(LayoutDOM):
     """
 
     __javascript_raw__ = [
-        'https://code.jquery.com/jquery-3.4.1.min.js',
+        'https://code.jquery.com/jquery-3.5.1.min.js',
         'https://cdn.plot.ly/plotly-latest.min.js'
     ]
 
