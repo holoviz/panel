@@ -888,6 +888,7 @@ class Tabulator(BaseTable):
         super()._cleanup(root)
 
     def _on_edit(self, event):
+        event.value = self.value[event.column].iloc[event.row]
         for cb in self._on_edit_callbacks:
             cb(event)
 

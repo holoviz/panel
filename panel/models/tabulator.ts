@@ -16,12 +16,12 @@ import {PanelHTMLBoxView, set_size} from "./layout"
 export class TableEditEvent extends ModelEvent {
   event_name: string = "table-edit"
 
-  constructor(readonly column: string, readonly row: number, readonly new_value: any) {
+  constructor(readonly column: string, readonly row: number) {
     super()
   }
 
   protected _to_json(): JSON {
-    return {model: this.origin, column: this.column, row: this.row, value: this.new_value}
+    return {model: this.origin, column: this.column, row: this.row}
   }
 }
 
@@ -772,7 +772,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this._tabulator_cell_updating = true
     this.model.source.patch({[field]: [[index, value]]});
     this._tabulator_cell_updating = false
-    this.model.trigger_event(new TableEditEvent(field, index, value))
+    this.model.trigger_event(new TableEditEvent(field, index))
   }
 }
 
