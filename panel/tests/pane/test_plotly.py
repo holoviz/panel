@@ -201,16 +201,16 @@ def test_plotly_tabs(document, comm):
     cb1, cb2 = root.js_property_callbacks['change:active']
     if cb1.args['model'] is model2:
         cb1, cb2 = cb2, cb1
-    assert model1.visible
+    assert model1.visibility
     assert cb1.args['model'] is model1
-    assert cb1.code == 'try { model.visible = (cb_obj.active == 0); } catch { }'
-    assert not model2.visible
+    assert cb1.code == 'try { model.visibility = (cb_obj.active == 0); } catch { }'
+    assert not model2.visibility
     assert cb2.args['model'] is model2
-    assert cb2.code == 'try { model.visible = (cb_obj.active == 1); } catch { }'
+    assert cb2.code == 'try { model.visibility = (cb_obj.active == 1); } catch { }'
 
     tabs.insert(0, 'Blah')
-    assert cb1.code == 'try { model.visible = (cb_obj.active == 1); } catch { }'
-    assert cb2.code == 'try { model.visible = (cb_obj.active == 2); } catch { }'
+    assert cb1.code == 'try { model.visibility = (cb_obj.active == 1); } catch { }'
+    assert cb2.code == 'try { model.visibility = (cb_obj.active == 2); } catch { }'
 
 @plotly_available
 def test_clean_relayout_data():
