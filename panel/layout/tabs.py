@@ -147,8 +147,11 @@ class Tabs(NamedListPanel):
                 hasattr(panel, 'child') and isinstance(panel.child, BkSpacer) and
                 panel.child.tags == ['hidden']
             )
+            # If object has not changed, we have not toggled between
+            # hidden and unhidden state or the tabs are not
+            # dynamic then reuse the panel
             if (pane in old_objects and id(pane) in panels and
-                (not (hidden ^ prev_hidden) or not self.dynamic)):
+                (not (hidden ^ prev_hidden) or not (self.dynamic or prev_hidden))):
                 new_models.append(panel)
                 continue
 
