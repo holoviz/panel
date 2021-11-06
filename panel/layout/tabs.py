@@ -145,7 +145,7 @@ class Tabs(NamedListPanel):
             panel = panels.get(id(pane))
             prev_hidden = hasattr(panel, 'child') and isinstance(panel.child, BkSpacer)
             if (pane in old_objects and id(pane) in panels and
-                ((hidden + prev_hidden) in (0, 2) or not dynamic)):
+                ((hidden + prev_hidden) in (0, 2) or not self.dynamic)):
                 new_models.append(panel)
                 continue
 
