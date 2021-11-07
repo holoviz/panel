@@ -2,7 +2,7 @@
 
 ## 👩🏽‍👩🏽‍👦🏽‍👧🏽 Summary
 
-The Panel community is fantastic. We wan't it to stay that way.
+The Panel community is fantastic. We want it to stay that way.
 
 If you are a community member: **Please be kind, respectful and inclusive.**
 
