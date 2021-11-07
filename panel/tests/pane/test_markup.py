@@ -131,6 +131,26 @@ def test_dataframe_pane_pandas(document, comm):
     pane._cleanup(model)
     assert pane._models == {}
 
+@pd_available
+def test_dataframe_pane_supports_escape(document, comm):
+    import pandas as pd
+    url = "<a href='https://panel.holoviz.org/'>Panel</a>"
+    df = pd.DataFrame({"url": [url]})
+    pane = DataFrame(df)
+
+    # Create pane
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    assert pane.escape
+    assert "&lt;a href=&#x27;https://panel.holoviz.org/&#x27;&gt;Panel&lt;/a&gt;" not in model.text
+
+    pane.escape = False
+    assert "&lt;a href=&#x27;https://panel.holoviz.org/&#x27;&gt;Panel&lt;/a&gt;" in model.text
+
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._models == {}
+
 
 @streamz_available
 def test_dataframe_pane_streamz(document, comm):
