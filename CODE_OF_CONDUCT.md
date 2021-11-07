@@ -4,7 +4,7 @@
 
 The Panel community is fantastic. We wan't it to stay that way.
 
-If you are a community member: **Please always be kind, respectful and inclusive.**
+If you are a community member: **Please be kind, respectful and inclusive.**
 
 If you are a leading community member: **Please act as a role model**.
 
