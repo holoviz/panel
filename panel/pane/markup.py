@@ -107,6 +107,10 @@ class DataFrame(HTML):
     decimal = param.String(default='.', doc="""
         Character recognized as decimal separator, e.g. ',' in Europe.""")
 
+    escape = param.Boolean(default=True, doc="""
+        Whether or not to escape the dataframe HTML. For security reasons
+        the default value is True.""")
+
     float_format = param.Callable(default=None, doc="""
         Formatter function to apply to columns' elements if they are
         floats. The result of this function must be a unicode string.""")
@@ -155,7 +159,7 @@ class DataFrame(HTML):
 
     _rerender_params = [
         'object', '_object', 'bold_rows', 'border', 'classes',
-        'col_space', 'decimal', 'float_format', 'formatters',
+        'col_space', 'decimal', 'escape', 'float_format', 'formatters',
         'header', 'index', 'index_names', 'justify', 'max_rows',
         'max_cols', 'na_rep', 'render_links', 'show_dimensions',
         'sparsify', 'sizing_mode'
