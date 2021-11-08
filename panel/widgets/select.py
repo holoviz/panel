@@ -161,7 +161,7 @@ class Select(SingleSelectBase):
             if (all(isinstance(values, dict) for values in groups.values()) is False
                and  all(isinstance(values, list) for values in groups.values()) is False):
                 raise ValueError(
-                    'The values of the groups dictionnary must be all of '
+                    'The values of the groups dictionary must be all of '
                     'the dictionary or the list type.'
                 )
             labels, values = self.labels, self.values
