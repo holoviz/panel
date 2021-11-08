@@ -146,9 +146,8 @@ class Select(SingleSelectBase):
         super().__init__(**params)
         if self.size == 1:
             self.param.size.constant = True
-        self._validate_options_groups()
 
-    @param.depends('options', 'groups', watch=True)
+    @param.depends('options', 'groups', watch=True, on_init=True)
     def _validate_options_groups(self):
         if self.options and self.groups:
             raise ValueError('options and groups are mutually exclusive.')
@@ -163,7 +162,7 @@ class Select(SingleSelectBase):
                and  all(isinstance(values, list) for values in groups.values()) is False):
                 raise ValueError(
                     'The values of the groups dictionnary must be all of '
-                    'the dictionnary or the list type.'
+                    'the dictionary or the list type.'
                 )
             labels, values = self.labels, self.values
             unique = len(set(self.unicode_values)) == len(labels)
