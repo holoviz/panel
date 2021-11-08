@@ -485,7 +485,11 @@ class Param(PaneBase):
                     self._rerender()
                 return
             elif change.what == 'objects':
-                updates['options'] = p_obj.get_range()
+                options = p_obj.get_range()
+                if ('options' in widget.param and
+                    isinstance(widget.param['options'], param.List)):
+                    options = list(options)
+                updates['options'] = options
             elif change.what == 'bounds':
                 start, end = p_obj.get_soft_bounds()
                 supports_bounds = hasattr(widget, 'start')
