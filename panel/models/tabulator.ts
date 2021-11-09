@@ -168,10 +168,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   init_callbacks(): void {
-    const that: any = this
-    this.tabulator.on("tableBuilding", function() { that.tableInit(that, this) })
+    this.tabulator.on("tableBuilding", () => this.tableInit())
     this.tabulator.on("tableBuilt", () => this.tableBuilt())
-    this.tabulator.on("renderComplete", () => this.renderComplete())
     this.tabulator.on("rowSelectionChanged", (data: any, rows: any) => this.rowSelectionChanged(data, rows))
     this.tabulator.on("rowClick", (e: any, row: any) => this.rowClicked(e, row))
     this.tabulator.on("cellEdited", (cell: any) => this.cellEdited(cell))
@@ -213,13 +211,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.el.appendChild(container)
   }
 
-  tableInit(view: DataTabulatorView, tabulator: any): void {
+  tableInit(): void {
     // Patch the ajax request and page data parsing methods
-    const ajax = tabulator.modules.ajax
+    const ajax = this.tabulator.modules.ajax
     ajax.sendRequest = () => {
-      return view.requestPage(ajax.params.page, ajax.params.sort)
+      return this.requestPage(ajax.params.page, ajax.params.sort)
     }
-    tabulator.modules.page._parseRemoteData = (): boolean => {
+    this.tabulator.modules.page._parseRemoteData = (): boolean => {
       return false
     }
   }
@@ -235,6 +233,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     }
     this.tabulator.redraw(true)
     this.updateStyles()
+    this.updateSelection()
+    this._initializing = false
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
@@ -242,9 +242,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       try {
         if (page != null && sorters != null) {
           this.model.sorters = sorters
-	  this._updating_page = true
-          this.model.page = page || 1
-	  this._updating_page = false
+          this._updating_page = true
+          try {
+            this.model.page = page || 1
+          } finally {
+            this._updating_page = false
+          }
         }
         resolve([])
       } catch(err) {
@@ -253,21 +256,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     })
   }
 
-  renderComplete(): void {
-    // Only have to set up styles after initial render subsequent
-    // styling is handled by change event on styles property
-    if (this._initializing) {
-      this.updateStyles()
-      this.updateSelection()
-    }
-    this._initializing = false
-  }
-
   freezeRows(): void {
-    for (const row of this.model.frozen_rows) {
-      const trow = this.tabulator.getRow(row)
-      trow.freeze()
-    }
+    for (const row of this.model.frozen_rows)
+      this.tabulator.getRow(row).freeze()
   }
 
   getLayout(): string {
