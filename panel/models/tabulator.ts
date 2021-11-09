@@ -111,7 +111,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   model: DataTabulator;
   tabulator: any;
   _tabulator_cell_updating: boolean=false
-  _data_updating: boolean = true
+  _updating_page: boolean = true
   _selection_updating: boolean =false
   _styled_cells: any[] = []
   _styles: any;
@@ -130,9 +130,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.tabulator.download(ftype, this.model.filename)
     })
 
-    this.connect(this.model.properties.children.change, () => {
-      this._render_children()
-    })
+    this.connect(this.model.properties.children.change, () => this._render_children())
 
     this.connect(this.model.properties.expanded.change, () => {
       for (const row of this.tabulator.rowManager.getRows()) {
@@ -141,34 +139,20 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }
     })
 
-    this.connect(this.model.properties.hidden_columns.change, () => {
-      this.hideColumns()
-    })
-
-    this.connect(this.model.properties.page_size.change, () => {
-      this.setPageSize();
-    })
-
-    this.connect(this.model.properties.page.change, () => {
-      this.setPage();
-    })
-
-    this.connect(this.model.properties.max_page.change, () => {
-      this.setMaxPage();
-    })
-
-    this.connect(this.model.properties.frozen_rows.change, () => {
-      this.freezeRows()
-    })
-
     this.connect(this.model.properties.styles.change, () => {
       this._styles = this.model.styles
       this.updateStyles()
     })
 
-    this.connect(this.model.source.properties.data.change, () => {
-      this.setData()
+    this.connect(this.model.properties.hidden_columns.change, () => this.hideColumns())
+    this.connect(this.model.properties.page_size.change, () => this.setPageSize())
+    this.connect(this.model.properties.page.change, () => {
+      if (!this._updating_page)
+        this.setPage()
     })
+    this.connect(this.model.properties.max_page.change, () => this.setMaxPage())
+    this.connect(this.model.properties.frozen_rows.change, () => this.freezeRows())
+    this.connect(this.model.source.properties.data.change, () => this.setData())
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => this.updateOrAddData())
     this.connect(this.model.source.selected.change, () => this.updateSelection())
@@ -186,6 +170,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   init_callbacks(): void {
     const that: any = this
     this.tabulator.on("tableBuilding", function() { that.tableInit(that, this) })
+    this.tabulator.on("tableBuilt", () => this.tableBuilt())
     this.tabulator.on("renderComplete", () => this.renderComplete())
     this.tabulator.on("rowSelectionChanged", (data: any, rows: any) => this.rowSelectionChanged(data, rows))
     this.tabulator.on("rowClick", (e: any, row: any) => this.rowClicked(e, row))
@@ -222,15 +207,24 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.init_callbacks()
     this._render_children()
 
-    // Swap pagination mode
-    if (this.model.pagination === 'remote') {
-      this.tabulator.options.pagination = this.model.pagination
-      this.tabulator.modules.page.mode = 'remote'
-    }
-
     this.setGroupBy()
     this.hideColumns()
 
+    this.el.appendChild(container)
+  }
+
+  tableInit(view: DataTabulatorView, tabulator: any): void {
+    // Patch the ajax request and page data parsing methods
+    const ajax = tabulator.modules.ajax
+    ajax.sendRequest = () => {
+      return view.requestPage(ajax.params.page, ajax.params.sort)
+    }
+    tabulator.modules.page._parseRemoteData = (): boolean => {
+      return false
+    }
+  }
+
+  tableBuilt(): void {
     // Set up page
     if (this.model.pagination) {
       this.setMaxPage()
@@ -239,27 +233,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     } else {
       this.freezeRows()
     }
-    this.el.appendChild(container)
-  }
-
-  tableInit(view: DataTabulatorView, tabulator: any): void {
-    // Patch the ajax request and page data parsing methods
-    const ajax = tabulator.modules.ajax
-    ajax.sendRequest = () => {
-      return view.requestPage(ajax.params.page, ajax.params.sorters)
-    }
-    tabulator.modules.page._parseRemoteData = () => {}
+    this.tabulator.redraw(true)
+    this.updateStyles()
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
     return new Promise((resolve: any, reject: any) => {
       try {
         if (page != null && sorters != null) {
-          if (this._data_updating)
-            this._data_updating = false
-          else
-            this.model.sorters = sorters
+          this.model.sorters = sorters
+	  this._updating_page = true
           this.model.page = page || 1
+	  this._updating_page = false
         }
         resolve([])
       } catch(err) {
@@ -279,8 +264,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   freezeRows(): void {
-    for (const row of this.model.frozen_rows)
-      this.tabulator.getRow(row).freeze()
+    for (const row of this.model.frozen_rows) {
+      const trow = this.tabulator.getRow(row)
+      trow.freeze()
+    }
   }
 
   getLayout(): string {
@@ -300,7 +287,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   getConfiguration(): any {
-    const pagination = this.model.pagination == 'remote' ? 'local': (this.model.pagination || false)
     // Only use selectable mode if explicitly requested otherwise manually handle selections
     let selectable = this.model.select_mode === 'toggle' ? true : NaN
     let configuration = {
@@ -310,13 +296,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       selectable: selectable,
       columns: this.getColumns(),
       layout: this.getLayout(),
-      pagination: pagination,
+      pagination: this.model.pagination != null,
+      paginationMode: this.model.pagination,
       paginationSize: this.model.page_size,
       paginationInitialPage: 1,
     }
-    if (pagination) {
+    if (this.model.pagination === "remote") {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
-      configuration['ajaxSorting'] = true
+      configuration['sortMode'] = "remote"
     }
     const cds: any = this.model.source;
     let data: any[]
@@ -527,25 +514,21 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     return view.inputEl
   }
 
-  after_layout(): void {
-    super.after_layout()
-    if (this.tabulator != null)
-      this.tabulator.redraw(true)
-    this.updateStyles()
-  }
-
   // Update table
 
-  setData(): void {
-    let data = transform_cds_to_records(this.model.source, true);
+  getData(): any[] {
+    let data = transform_cds_to_records(this.model.source, true)
     if (this.model.configuration.dataTree)
       data = group_data(data, this.model.columns, this.model.indexes, this.model.aggregators)
-    this._data_updating = true
+    return data
+  }
+
+  setData(): void {
+    const data = this.getData()
     if (this.model.pagination != null)
       this.tabulator.rowManager.setData(data, true, false)
     else {
       this.tabulator.setData(data)
-      this._data_updating = false
     }
     this.freezeRows()
     this.updateSelection()
