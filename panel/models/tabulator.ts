@@ -107,8 +107,6 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
 }
 
 
-// The view of the Bokeh extension/ HTML element
-// Here you can define how to render the model as well as react to model changes or View events.
 export class DataTabulatorView extends PanelHTMLBoxView {
   model: DataTabulator;
   tabulator: any;
@@ -185,6 +183,30 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.invalidate_layout()
   }
 
+  init_callbacks(): void {
+    const that: any = this
+    this.tabulator.on("tableBuilding", function() { that.tableInit(that, this) })
+    this.tabulator.on("renderComplete", () => this.renderComplete())
+    this.tabulator.on("rowSelectionChanged", (data: any, rows: any) => this.rowSelectionChanged(data, rows))
+    this.tabulator.on("rowClick", (e: any, row: any) => this.rowClicked(e, row))
+    this.tabulator.on("cellEdited", (cell: any) => this.cellEdited(cell))
+    this.tabulator.on("selectableCheck", (row: any) => {
+      const selectable = this.model.selectable_rows
+      return (selectable == null) || (selectable.indexOf(row._row.data._index) >= 0)
+    })
+    this.tabulator.on("tooltips", (cell: any) => {
+      return  cell.getColumn().getField() + ": " + cell.getValue();
+    })
+    this.tabulator.on("scrollVertical", debounce(() => {
+      this.updateStyles()
+    }, 50, false))
+    this.tabulator.on("rowFormatter", (row: any) => this._render_row(row))
+    this.tabulator.on("dataFiltering", () => {
+      if (this.tabulator != null)
+        this.model.filters = this.tabulator.getHeaderFilters()
+    })
+  }
+
   render(): void {
     super.render()
     const wait = this.setCSS()
@@ -197,6 +219,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     let configuration = this.getConfiguration()
 
     this.tabulator = new Tabulator(container, configuration)
+    this.init_callbacks()
     this._render_children()
 
     // Swap pagination mode
@@ -280,37 +303,16 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const pagination = this.model.pagination == 'remote' ? 'local': (this.model.pagination || false)
     // Only use selectable mode if explicitly requested otherwise manually handle selections
     let selectable = this.model.select_mode === 'toggle' ? true : NaN
-    const that = this
     let configuration = {
       ...this.model.configuration,
       index: "_index",
       nestedFieldSeparator: false,
       selectable: selectable,
-      tableBuilding: function() { that.tableInit(that, this) },
-      renderComplete: () => this.renderComplete(),
-      rowSelectionChanged: (data: any, rows: any) => this.rowSelectionChanged(data, rows),
-      rowClick: (e: any, row: any) => this.rowClicked(e, row),
-      cellEdited: (cell: any) => this.cellEdited(cell),
       columns: this.getColumns(),
       layout: this.getLayout(),
       pagination: pagination,
       paginationSize: this.model.page_size,
       paginationInitialPage: 1,
-      selectableCheck: (row: any) => {
-        const selectable = this.model.selectable_rows
-        return (selectable == null) || (selectable.indexOf(row._row.data._index) >= 0)
-      },
-      tooltips: (cell: any) => {
-        return  cell.getColumn().getField() + ": " + cell.getValue();
-      },
-      scrollVertical: debounce(() => {
-        this.updateStyles()
-      }, 50, false),
-      rowFormatter: (row: any) => this._render_row(row),
-      dataFiltering: () => {
-        if (this.tabulator != null)
-          this.model.filters = this.tabulator.getHeaderFilters()
-      }
     }
     if (pagination) {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
