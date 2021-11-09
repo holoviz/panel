@@ -546,11 +546,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       const editor: any = column.editor
       const ctype = editor.type
       if (tab_column.editor != null) {
-	if (tab_column.editor === 'date') {
-	  tab_column.editor = dateEditor
-	} else if (tab_column.editor === 'datetime') {
-	  tab_column.editor = datetimeEditor
-	}
+        if (tab_column.editor === 'date') {
+          tab_column.editor = dateEditor
+        } else if (tab_column.editor === 'datetime') {
+          tab_column.editor = datetimeEditor
+        }
       } else if (ctype === "StringEditor") {
         if (editor.completions.length > 0) {
           tab_column.editor = "autocomplete"
@@ -565,7 +565,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       } else if (ctype === "CheckboxEditor") {
         tab_column.editor = "tickCross"
       } else if (ctype === "DateEditor") {
-	tab_column.editor = dateEditor
+        tab_column.editor = dateEditor
       } else if (ctype === "SelectEditor") {
         tab_column.editor = "select"
         tab_column.editorParams = {values: editor.options}
