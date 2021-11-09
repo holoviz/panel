@@ -921,55 +921,74 @@ class ReactiveData(SyncableData):
     def _update_selection(self, indices):
         self.selection = indices
 
+    def _process_data(self, data):
+        if self._updating:
+            return
+
+        # Get old data to compare to
+        old_raw, old_data = self._get_data()
+        if hasattr(old_raw, 'copy'):
+            old_raw = old_raw.copy()
+        elif isinstance(old_raw, dict):
+            old_raw = dict(old_raw)
+
+        updated = False
+        for k, v in data.items():
+            if k in self.indexes:
+                continue
+            k = self._renamed_cols.get(k, k)
+            if isinstance(v, dict):
+                v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
+            v = np.asarray(v)
+            old_dtype = old_raw[k].dtype
+            if old_dtype.kind == 'M':
+                if v.dtype.kind in 'if':
+                    v = (v * 10e5).astype(old_raw[k].dtype)
+            elif old_dtype.kind == 'O':
+                if (all(isinstance(ov, dt.date) for ov in old_raw[k]) and
+                    not all(isinstance(iv, dt.date) for iv in v)):
+                    vs = []
+                    for iv in v:
+                        if isinstance(iv, dt.datetime):
+                            iv = iv.date()
+                        elif not isinstance(iv, dt.date):
+                            iv = dt.date.fromtimestamp(iv/1000)
+                        vs.append(iv)
+                    v = vs
+            else:
+                v = v.astype(old_raw[k].dtype)
+            try:
+                isequal = (old_raw[k] == v).all()
+            except Exception:
+                isequal = False
+            if not isequal:
+                self._update_column(k, v)
+                updated = True
+
+        # If no columns were updated we don't have to sync data
+        if not updated:
+            return
+
+        # Ensure we trigger events
+        self._updating = True
+        old_data = getattr(self, self._data_params[0])
+        try:
+            if old_raw is self.value:
+                with param.discard_events(self):
+                    self.value = old_raw
+                self.value = data
+            else:
+                self.param.trigger('value')
+        finally:
+            self._updating = False
+        # Ensure that if the data was changed in a user
+        # callback, we still send the updated data
+        if old_data is not self.value:
+            self._update_cds()
+
     def _process_events(self, events):
         if 'data' in events:
-            data = events.pop('data')
-            if self._updating:
-                data = {}
-            old_raw, old_data = self._get_data()
-            if hasattr(old_raw, 'copy'):
-                old_raw = old_raw.copy()
-            elif isinstance(old_raw, dict):
-                old_raw = dict(old_raw)
-            updated = False
-            for k, v in data.items():
-                if k in self.indexes:
-                    continue
-                k = self._renamed_cols.get(k, k)
-                if isinstance(v, dict):
-                    v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
-                v = np.asarray(v)
-                old_dtype = old_raw[k].dtype
-                if old_dtype.kind == 'M':
-                    v = (v * 10e5).astype(old_raw[k].dtype)
-                elif old_dtype.kind == 'O':
-                    if all(isinstance(ov, dt.date) for ov in old_raw[k]):
-                        v = np.array([dt.date.fromtimestamp(iv/1000) for iv in v])
-                else:
-                    v = v.astype(old_raw[k].dtype)
-                try:
-                    isequal = (old_data[k] == v).all()
-                except Exception:
-                    isequal = False
-                if not isequal:
-                    self._update_column(k, v)
-                    updated = True
-            if updated:
-                self._updating = True
-                old_data = getattr(self, self._data_params[0])
-                try:
-                    if old_raw is self.value:
-                        with param.discard_events(self):
-                            self.value = old_raw
-                        self.value = data
-                    else:
-                        self.param.trigger('value')
-                finally:
-                    self._updating = False
-                # Ensure that if the data was changed in a user
-                # callback, we still send the updated data
-                if old_data is not self.value:
-                    self._update_cds()
+            self._process_data(events.pop('data'))
         if 'indices' in events:
             self._updating = True
             try:

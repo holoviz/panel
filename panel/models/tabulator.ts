@@ -106,6 +106,104 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
   return grouped
 }
 
+const dateEditor = function(cell: any, onRendered: any, success: any, cancel: any) {
+  //cell - the cell component for the editable cell
+  //onRendered - function to call when the editor has been rendered
+  //success - function to call to pass the successfuly updated value to Tabulator
+  //cancel - function to call to abort the edit and return to a normal cell
+
+  //create and style input
+  const rawValue = cell.getValue()
+  const opts = {zone: new (window as any).luxon.IANAZone('UTC')}
+  const cellValue = (window as any).luxon.DateTime.fromMillis(rawValue, opts).toFormat("yyyy-MM-dd")
+  const input = document.createElement("input")
+
+  input.setAttribute("type", "date");
+
+  input.style.padding = "4px";
+  input.style.width = "100%";
+  input.style.boxSizing = "border-box";
+
+  input.value = cellValue;
+
+  onRendered(() => {
+    input.focus();
+    input.style.height = "100%";
+  });
+
+  function onChange() {
+    const new_val = (window as any).luxon.DateTime.fromFormat(input.value, "yyyy-MM-dd", opts).toMillis()
+    if (new_val != cellValue)
+      success(new_val)
+    else
+      cancel()
+  }
+
+  //submit new value on blur or change
+  input.addEventListener("blur", onChange);
+
+  //submit new value on enter
+  input.addEventListener("keydown", function(e){
+    if(e.keyCode == 13)
+      onChange()
+
+    if(e.keyCode == 27)
+      cancel()
+  });
+
+  return input;
+};
+
+
+
+const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel: any) {
+  //cell - the cell component for the editable cell
+  //onRendered - function to call when the editor has been rendered
+  //success - function to call to pass the successfuly updated value to Tabulator
+  //cancel - function to call to abort the edit and return to a normal cell
+
+  //create and style input
+  const rawValue = cell.getValue()
+  const opts = {zone: new (window as any).luxon.IANAZone('UTC')}
+  const cellValue = (window as any).luxon.DateTime.fromMillis(rawValue, opts).toFormat("yyyy-MM-dd'T'T")
+  const input = document.createElement("input")
+
+  input.setAttribute("type", "datetime-local");
+
+  input.style.padding = "4px";
+  input.style.width = "100%";
+  input.style.boxSizing = "border-box";
+
+  input.value = cellValue;
+
+  onRendered(() => {
+    input.focus();
+    input.style.height = "100%";
+  });
+
+  function onChange() {
+    const new_val = (window as any).luxon.DateTime.fromFormat(input.value, "yyyy-MM-dd'T'T", opts).toMillis()
+    if (new_val != cellValue)
+      success(new_val)
+    else
+      cancel()
+  }
+
+  //submit new value on blur or change
+  input.addEventListener("blur", onChange);
+
+  //submit new value on enter
+  input.addEventListener("keydown", function(e){
+    if(e.keyCode == 13)
+      onChange()
+
+    if(e.keyCode == 27)
+      cancel()
+  });
+
+  return input;
+};
+
 
 export class DataTabulatorView extends PanelHTMLBoxView {
   model: DataTabulator;
@@ -448,6 +546,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       const editor: any = column.editor
       const ctype = editor.type
       if (tab_column.editor != null) {
+	if (tab_column.editor === 'date') {
+	  tab_column.editor = dateEditor
+	} else if (tab_column.editor === 'datetime') {
+	  tab_column.editor = datetimeEditor
+	}
       } else if (ctype === "StringEditor") {
         if (editor.completions.length > 0) {
           tab_column.editor = "autocomplete"
@@ -461,6 +564,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         tab_column.editorParams = {step: editor.step}
       } else if (ctype === "CheckboxEditor") {
         tab_column.editor = "tickCross"
+      } else if (ctype === "DateEditor") {
+	tab_column.editor = dateEditor
       } else if (ctype === "SelectEditor") {
         tab_column.editor = "select"
         tab_column.editorParams = {values: editor.options}
