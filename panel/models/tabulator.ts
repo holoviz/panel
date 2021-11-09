@@ -679,14 +679,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.tabulator.deselectRow()
     this.tabulator.selectRow(indices)
     // This actually places the selected row at the top of the table
-    this.tabulator.scrollToRow(indices[0], "bottom", false)
+    for (const index of indices) {
+      const row = this.tabulator.rowManager.findRow(index)
+      if (row)
+        this.tabulator.scrollToRow(index, "bottom", false).catch(() => {})
+    }
     this._selection_updating = false
   }
 
   // Update model
 
   rowClicked(e: any, row: any) {
-    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'string' || this.model.select_mode === false)
+    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'string' || this.model.select_mode === false || this.model.configuration.dataTree)
       return
     let indices: number[] = []
     const selected = this.model.source.selected
@@ -732,7 +736,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   rowSelectionChanged(data: any, _: any): void {
-    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean' || (this.model.select_mode.startsWith('checkbox')))
+    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean' || (typeof this.model.select_mode) === 'number' || this.model.select_mode.startsWith('checkbox') || this.model.configuration.dataTree)
       return
     const indices: number[] = data.map((row: any) => row._index)
     const filtered = this._filter_selected(indices)
