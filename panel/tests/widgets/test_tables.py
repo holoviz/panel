@@ -479,7 +479,7 @@ def test_tabulator_pagination(document, comm):
         'C': np.array(['foo1', 'foo2']),
         'D': np.array(['2009-01-01T00:00:00.000000000',
                        '2009-01-02T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -493,7 +493,7 @@ def test_tabulator_pagination(document, comm):
         'C': np.array(['foo3', 'foo4']),
         'D': np.array(['2009-01-05T00:00:00.000000000',
                        '2009-01-06T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -511,7 +511,7 @@ def test_tabulator_pagination(document, comm):
         'D': np.array(['2009-01-01T00:00:00.000000000',
                        '2009-01-02T00:00:00.000000000',
                        '2009-01-05T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -603,7 +603,7 @@ def test_tabulator_stream_series(document, comm):
                        '2009-01-06T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000',
                        '2009-01-08T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -631,7 +631,7 @@ def test_tabulator_stream_series_rollover(document, comm):
                        '2009-01-06T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000',
                        '2009-01-08T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -658,7 +658,7 @@ def test_tabulator_stream_df_rollover(document, comm):
                        '2009-01-06T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000',
                        '2009-01-08T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -686,7 +686,7 @@ def test_tabulator_stream_dict_rollover(document, comm):
                        '2009-01-06T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000',
                        '2009-01-08T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -710,7 +710,7 @@ def test_tabulator_patch_scalars(document, comm):
                        '2009-01-05T00:00:00.000000000',
                        '2009-01-06T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -737,7 +737,7 @@ def test_tabulator_patch_ranges(document, comm):
                        '2009-01-05T00:00:00.000000000',
                        '2009-01-06T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -763,7 +763,7 @@ def test_tabulator_stream_series_paginated_not_follow(document, comm):
         'C': np.array(['foo1', 'foo2']),
         'D': np.array(['2009-01-01T00:00:00.000000000',
                        '2009-01-02T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -789,7 +789,7 @@ def test_tabulator_stream_series_paginated_follow(document, comm):
         'C': np.array(['foo5', 'foo6']),
         'D': np.array(['2009-01-07T00:00:00.000000000',
                        '2009-01-08T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -855,7 +855,7 @@ def test_tabulator_stream_dataframe(document, comm):
                        '2009-01-07T00:00:00.000000000',
                        '2009-01-08T00:00:00.000000000',
                        '2009-01-09T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -875,7 +875,7 @@ def test_tabulator_constant_scalar_filter(document, comm):
         'B': np.array([0]),
         'C': np.array(['foo3']),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -895,7 +895,7 @@ def test_tabulator_constant_scalar_filter_client_side(document, comm):
         'B': np.array([0]),
         'C': np.array(['foo3']),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -914,7 +914,7 @@ def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm):
         'B': np.array([0]),
         'C': np.array(['foo3']),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -936,7 +936,7 @@ def test_tabulator_constant_scalar_filter_on_multi_index_client_side(document, c
         'C': np.array(['foo3']),
         'B': np.array([0]),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -956,7 +956,7 @@ def test_tabulator_constant_list_filter(document, comm):
         'C': np.array(['foo3', 'foo5']),
         'D': np.array(['2009-01-05T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -977,7 +977,7 @@ def test_tabulator_constant_list_filter_client_side(document, comm):
         'C': np.array(['foo3', 'foo5']),
         'D': np.array(['2009-01-05T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -998,7 +998,7 @@ def test_tabulator_widget_scalar_filter(document, comm):
         'B': np.array([0]),
         'C': np.array(['foo3']),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -1011,7 +1011,7 @@ def test_tabulator_widget_scalar_filter(document, comm):
         'B': np.array([0]),
         'C': np.array(['foo1']),
         'D': np.array(['2009-01-01T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -1036,7 +1036,7 @@ def test_tabulator_function_filter(document, comm):
         'B': np.array([0]),
         'C': np.array(['foo3']),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -1049,7 +1049,7 @@ def test_tabulator_function_filter(document, comm):
         'B': np.array([0]),
         'C': np.array(['foo1']),
         'D': np.array(['2009-01-01T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -1070,7 +1070,7 @@ def test_tabulator_constant_tuple_filter(document, comm):
         'C': np.array(['foo3', 'foo4']),
         'D': np.array(['2009-01-05T00:00:00.000000000',
                        '2009-01-06T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
@@ -1102,7 +1102,7 @@ def test_tabulator_stream_dataframe_with_filter(document, comm):
         'C': np.array(['foo2', 'foo7']),
         'D': np.array(['2009-01-02T00:00:00.000000000',
                        '2009-01-09T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
+                      dtype='datetime64[ns]').astype(int) / 10e5
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
