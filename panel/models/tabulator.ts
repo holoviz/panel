@@ -535,14 +535,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   addData(): void {
-    const rows = this.tabulator.rowManager.getRows();
+    const rows = this.tabulator.rowManager.getRows()
     const last_row = rows[rows.length-1]
-
-    let data = transform_cds_to_records(this.model.source, true);
-    this.tabulator.setData(data);
-    if (this.model.follow) {
-      this.tabulator.scrollToRow((last_row.data._index || 0), "top", false);
-    }
+    const start = ((last_row?.data._index + 1) || 0)
+    let data = transform_cds_to_records(this.model.source, true, start)x
+    this.tabulator.addData(data)
+    if (this.model.follow && last_row)
+      this.tabulator.scrollToRow(start, "top", false)
     this.freezeRows()
     this.updateSelection()
   }
@@ -569,7 +568,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   setMaxPage(): void {
     this.tabulator.setMaxPage(this.model.max_page)
-    this.tabulator.modules.page._setPageButtons()
+    if (this.tabulator.modules.page.pagesElement)
+      this.tabulator.modules.page._setPageButtons()
   }
 
   setPage(): void {
