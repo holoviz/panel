@@ -204,6 +204,6 @@ class TitledWidget(Widget):
 
 
     title = param.String(default='', allow_None=False,
-                         doc=('Title appearing above the widget.'))
+                         doc=('Title appearing besides the widget.'))
 
     __abstract = True

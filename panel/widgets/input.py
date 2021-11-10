@@ -587,7 +587,7 @@ class DatetimeInput(LiteralInput):
             else:
                 value = datetime.strftime(msg['value'], self.format)
             msg['value'] = value
-        msg['title'] = self.name
+        msg['title'] = self.title
         return msg
 
 

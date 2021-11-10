@@ -33,7 +33,10 @@ class Ace(Widget):
 
     value = param.String(doc="State of the current code in the editor")
 
-    _rename = {"value": "code"}
+    name = param.String(default=None, allow_None=True,
+                              doc='Unused')
+
+    _rename = {"value": "code", "name": None}
 
     def __init__(self, **params):
         if 'readonly' in params:
