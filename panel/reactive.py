@@ -669,6 +669,13 @@ class SyncableData(Reactive):
         for ref, (m, _) in self._models.items():
             self._apply_update(events, msg, m.source.selected, ref)
 
+    def _apply_stream(self, ref, model, stream, rollover):
+        self._changing[ref] = ['data']
+        try:
+            model.source.stream(stream, rollover)
+        finally:
+            del self._changing[ref]
+
     @updating
     def _stream(self, stream, rollover=None):
         self._processed, _ = self._get_data()
@@ -682,8 +689,15 @@ class SyncableData(Reactive):
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
-                cb = partial(m.source.stream, stream, rollover)
+                cb = partial(self._apply_stream, ref, m, stream, rollover)
                 doc.add_next_tick_callback(cb)
+
+    def _apply_patch(self, ref, model, patch):
+        self._changing[ref] = ['data']
+        try:
+            model.source.patch(patch)
+        finally:
+            del self._changing[ref]
 
     @updating
     def _patch(self, patch):
@@ -697,7 +711,7 @@ class SyncableData(Reactive):
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
-                cb = partial(m.source.patch, patch)
+                cb = partial(self._apply_patch, ref, m, patch)
                 doc.add_next_tick_callback(cb)
 
     def _update_manual(self, *events):
