@@ -102,6 +102,7 @@ def main(args=None):
             print("install pyct to enable this command (e.g. `conda install -c pyviz pyct` or `pip install pyct[cmd]`)")
             sys.exit(1)
         pyct.cmd.substitute_main('panel', cmds=pyct_commands, args=args)
+        sys.exit()
     else:
         parser.parse_args(sys.argv[1:])
         sys.exit(1)

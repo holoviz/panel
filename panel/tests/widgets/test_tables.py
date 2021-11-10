@@ -20,7 +20,9 @@ from bokeh.models.widgets.tables import (
 )
 
 from panel.depends import bind
-from panel.widgets import Button, DataFrame, Tabulator, TextInput
+from panel.models.tabulator import TableEditEvent
+from panel.widgets import Button, TextInput
+from panel.widgets.tables import DataFrame, Tabulator
 
 pd_old = pytest.mark.skipif(LooseVersion(pd.__version__) < '1.3',
                           reason="Requires latest pandas")
@@ -1184,3 +1186,16 @@ def test_tabulator_download_menu_custom_kwargs():
     assert filename.value == 'file.csv'
     assert filename.name == 'Enter filename'
     assert button.name == 'Download table'
+
+def test_tabulator_patch_event():
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    values = []
+    table.on_edit(lambda e: values.append((e.column, e.row, e.value)))
+
+    for col in df.columns:
+        for row in range(len(df)):
+            event = TableEditEvent(model=None, column=col, row=row)
+            table._on_edit(event)
+            assert values[-1] == (col, row, df[col].iloc[row])

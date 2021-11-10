@@ -41,6 +41,13 @@ class Vega(PaneBase):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
+    show_actions = param.Boolean(default=False, doc="""
+        Whether to show Vega actions.""")
+
+    theme = param.ObjectSelector(default=None, allow_None=True, objects=[
+        'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
+        'latimes', 'urbaninstitute', 'googlecharts'])
+
     priority = 0.8
 
     _updates = True

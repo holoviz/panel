@@ -403,13 +403,13 @@ class BaseTable(ReactiveData, Widget):
 
         Arguments
         ---------
-        stream_value (Union[pd.DataFrame, pd.Series, Dict])
+        stream_value: (Union[pd.DataFrame, pd.Series, Dict])
           The new value(s) to append to the existing value.
         rollover: int
            A maximum column size, above which data from the start of
            the column begins to be discarded. If None, then columns
            will continue to grow unbounded.
-        reset_index (bool, default=True):
+        reset_index: (bool, default=True)
           If True and the stream_value is a DataFrame,
           then its index is reset. Helps to keep the
           index unique and named `index`
@@ -865,6 +865,7 @@ class Tabulator(BaseTable):
         configuration = params.pop('configuration', {})
         self.style = None
         self._child_panels = {}
+        self._on_edit_callbacks = []
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
@@ -885,6 +886,11 @@ class Tabulator(BaseTable):
         for p in self._child_panels.values():
             p._cleanup(root)
         super()._cleanup(root)
+
+    def _on_edit(self, event):
+        event.value = self.value[event.column].iloc[event.row]
+        for cb in self._on_edit_callbacks:
+            cb(event)
 
     def _get_theme(self, theme, resources=None):
         from ..io.resources import RESOURCE_MODE
@@ -1206,6 +1212,7 @@ class Tabulator(BaseTable):
             child_panels, doc, root, parent, comm
         )
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
+        model.on_event('table-edit', self._on_edit)
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm):
@@ -1400,3 +1407,18 @@ class Tabulator(BaseTable):
         table.filename = cb_obj.value
         """)
         return filename, button
+
+    def on_edit(self, callback):
+        """
+        Register a callback to be executed when a cell is edited.
+        Whenever a cell is edited on_edit callbacks are called with
+        a TableEditEvent as the first argument containing the column,
+        row and value of the edited cell.
+
+        Arguments
+        ---------
+        callback: (callable)
+            The callback to run on edit events.
+        """
+        self._on_edit_callbacks.append(callback)
+

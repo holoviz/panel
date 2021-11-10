@@ -242,6 +242,13 @@ class AutocompleteInput(TitledWidget):
 
     _rename = _AutocompleteInput_rename
 
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if 'completions' in msg:
+            if self.restrict and not isIn(self.value, msg['completions']):
+                msg['value'] = self.value = ''
+        return msg
+
 
 class _RadioGroupBase(SingleSelectBase):
 

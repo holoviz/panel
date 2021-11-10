@@ -1,7 +1,9 @@
 """
 Defines custom VegaPlot bokeh model to render Vega json plots.
 """
-from bokeh.core.properties import Any, Dict, Instance, Nullable, String
+from bokeh.core.properties import (
+    Any, Bool, Dict, Enum, Instance, Nullable, String
+)
 from bokeh.models import LayoutDOM, ColumnDataSource
 
 from ..io.resources import bundled_files
@@ -44,3 +46,8 @@ class VegaPlot(LayoutDOM):
     data = Nullable(Dict(String, Any))
 
     data_sources = Dict(String, Instance(ColumnDataSource))
+
+    show_actions = Bool(False)
+
+    theme = Nullable(Enum('excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
+                 'latimes', 'urbaninstitute', 'googlecharts', default=None))

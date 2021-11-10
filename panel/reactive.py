@@ -5,6 +5,7 @@ models rendered on the frontend.
 """
 
 import difflib
+import datetime as dt
 import re
 import sys
 import textwrap
@@ -926,8 +927,17 @@ class ReactiveData(SyncableData):
                 k = self._renamed_cols.get(k, k)
                 if isinstance(v, dict):
                     v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
+                v = np.asarray(v)
+                old_dtype = old_raw[k].dtype
+                if old_dtype.kind == 'M':
+                    v = (v * 10e5).astype(old_raw[k].dtype)
+                elif old_dtype.kind == 'O':
+                    if all(isinstance(ov, dt.date) for ov in old_raw[k]):
+                        v = np.array([dt.date.fromtimestamp(iv/1000) for iv in v])
+                else:
+                    v = v.astype(old_raw[k].dtype)
                 try:
-                    isequal = (old_data[k] == np.asarray(v)).all()
+                    isequal = (old_data[k] == v).all()
                 except Exception:
                     isequal = False
                 if not isequal:
