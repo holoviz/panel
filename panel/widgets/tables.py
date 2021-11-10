@@ -13,6 +13,7 @@ from bokeh.models.widgets.tables import (
     NumberFormatter, RowAggregator, StringEditor, StringFormatter,
     SumAggregator, TableColumn
 )
+from bokeh.util.serialization import convert_datetime_array
 from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget
@@ -182,6 +183,14 @@ class BaseTable(ReactiveData, Widget):
                                  **col_kwargs)
             columns.append(column)
         return columns
+
+    @updating
+    def _update_cds(self, *events):
+        self._processed, data = self._get_data()
+        self._data = {k: convert_datetime_array(v) for k, v in data.items()}
+        msg = {'data': self._data}
+        for ref, (m, _) in self._models.items():
+            self._apply_update(events, msg, m.source, ref)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         source = ColumnDataSource(data=self._data)
