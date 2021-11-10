@@ -700,6 +700,17 @@ class SyncableData(Reactive):
                 cb = partial(m.source.patch, patch)
                 doc.add_next_tick_callback(cb)
 
+    def _update_manual(self, *events):
+        """
+        Skip events triggered internally
+        """
+        processed_events = []
+        for e in events:
+            if e.name == self._data_params[0] and e.type == 'triggered' and self._updating:
+                continue
+            processed_events.append(e)
+        super()._update_manual(*processed_events)
+
     def stream(self, stream_value, rollover=None, reset_index=True):
         """
         Streams (appends) the `stream_value` provided to the existing
