@@ -296,6 +296,12 @@ class _NumericInputBase(Widget):
     format = param.ClassSelector(default=None, class_=string_types+(TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
+    start = param.Parameter(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")
+
+    end = param.Parameter(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")
+
     _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
 
     _widget_type = _BkNumericInput
@@ -629,11 +635,11 @@ class DatetimeRangeInput(CompositeWidget):
             return
         try:
             self._updating = True
-            params = {k: v for k, v in self.param.get_param_values() if k in filters}
+            params = {k: v for k, v in self.param.values().items() if k in filters}
             start_params = dict(params, value=self.value[0])
             end_params = dict(params, value=self.value[1])
-            self._start.param.set_param(**start_params)
-            self._end.param.set_param(**end_params)
+            self._start.param.update(**start_params)
+            self._end.param.update(**end_params)
         finally:
             self._updating = False
 

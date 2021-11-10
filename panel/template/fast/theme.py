@@ -45,7 +45,7 @@ class FastStyle(param.Parameterized):
 
     header_background = param.String(default="#00aa41")
     header_neutral_color = param.String(default="#ffffff")
-    header_accent_base_color = param.String(default="#A01346")
+    header_accent_base_color = param.String(default="#ffffff")
     header_color = param.String(default="#ffffff")
     font = param.String(default="Open Sans, sans-serif")
     font_url = param.String(default=FONT_URL)
@@ -100,6 +100,7 @@ class FastStyle(param.Parameterized):
                     "background_fill_color": self.neutral_fill_card_rest,
                 },
                 "ColorBar": {
+                    "background_fill_color": self.background_color,
                     "title_text_color": self.neutral_foreground_rest,
                     "title_text_font": self.font,
                     "title_text_font_size": "1.025em",
@@ -107,7 +108,6 @@ class FastStyle(param.Parameterized):
                     "major_label_text_color": self.neutral_foreground_rest,
                     "major_label_text_font": self.font,
                     "major_label_text_font_size": "1.025em",
-                    # "background_fill_color": FAST_DARK_75,
                     "major_tick_line_alpha": 0,
                     "bar_line_alpha": 0,
                 },

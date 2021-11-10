@@ -18,7 +18,7 @@ def param_value_if_widget(arg):
             ipy_param = param.parameterized_class(name, {'value': param.Parameter()})
         ipywidget_classes[name] = ipy_param
         ipy_inst = ipy_param(value=arg.value)
-        arg.observe(lambda event: ipy_inst.param.set_param(value=event['new']), 'value')
+        arg.observe(lambda event: ipy_inst.param.update(value=event['new']), 'value')
         return ipy_inst.param.value
     return arg
 

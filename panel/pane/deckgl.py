@@ -194,7 +194,7 @@ class DeckGL(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         DeckGLPlot = lazy_load(
-            'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm)
+            'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm), root
         )
         data, properties = self._get_properties()
         properties['data_sources'] = sources = []

@@ -42,7 +42,11 @@ html_theme_options = {
     ]
 }
 
-extensions += ['sphinx.ext.napoleon', 'nbsite.gallery']
+extensions += [
+    'sphinx.ext.napoleon',
+    'nbsite.gallery',
+    'sphinx_copybutton',
+]
 napoleon_numpy_docstring = True
 
 nbsite_gallery_conf = {
@@ -105,6 +109,7 @@ nbsite_gallery_conf = {
 templates_path = ['_templates']
 
 html_context.update({
+    "last_release": f"v{'.'.join(panel.__version__.split('.')[:3])}",
     "github_user": "holoviz",
     "github_repo": "panel",
     "google_analytics_id": "UA-154795830-2",

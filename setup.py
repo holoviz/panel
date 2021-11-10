@@ -97,12 +97,12 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=2.3.0,<2.4.0',
-    'param >=1.10.0',
+    'bokeh >=2.4.0,<2.5.0',
+    'param >=1.12.0',
     'pyviz_comms >=0.7.4',
     'markdown',
     'requests',
-    'tqdm',
+    'tqdm >=4.48.0',
     'pyct >=0.4.4',
     'bleach'
 ]
@@ -141,7 +141,7 @@ extras_require = {
         'vtk ==9.0.1',
         'scikit-learn',
         'datashader',
-        'jupyter_bokeh>=3.0.2',
+        'jupyter_bokeh >=3.0.2',
         'django',
         'channels',
         'pyvista',
@@ -149,7 +149,8 @@ extras_require = {
         'ipywidgets_bokeh',
         'ipyvolume',
         'ipyleaflet',
-        'xarray <0.17',
+        'xarray',
+        'pyinstrument >=4.0'
     ],
     'tests': _tests,
     'recommended': _recommended,

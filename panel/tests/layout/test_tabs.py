@@ -291,7 +291,7 @@ def test_dynamic_tabs(document, comm, tabs):
     assert tab1.child is div1.object
     assert tab2.child is div2.object
 
-    tabs.param.set_param(dynamic=True, active=0)
+    tabs.param.update(dynamic=True, active=0)
 
     tab1, tab2 = model.tabs
     assert tab1.child is div1.object
@@ -516,8 +516,8 @@ def test_tabs_clone():
     tabs = Tabs(Pane(div1), Pane(div2))
     clone = tabs.clone()
 
-    assert ([(k, v) for k, v in tabs.param.get_param_values() if k != 'name'] ==
-            [(k, v) for k, v in clone.param.get_param_values() if k != 'name'])
+    assert ([(k, v) for k, v in tabs.param.values().items() if k != 'name'] ==
+            [(k, v) for k, v in clone.param.values().items() if k != 'name'])
 
 
 def test_tabs_clone_args():

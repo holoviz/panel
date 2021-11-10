@@ -359,7 +359,7 @@ class VTKRenderWindow(BaseVTKRenderWindow):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         VTKSynchronizedPlot = lazy_load(
-            'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm)
+            'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm), root
         )
         props = self._process_param_change(self._init_params())
         if self.object is not None:
@@ -419,7 +419,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         VTKSynchronizedPlot = lazy_load(
-            'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm)
+            'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm), root
         )
         import panel.pane.vtk.synchronizable_serializer as rws
         context = rws.SynchronizationContext(
@@ -482,7 +482,15 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         old_camera = self.vtk_camera
         new_camera = vtk.vtkCamera()
         self.vtk_camera = new_camera
-        exclude_properties = ['mtime']
+        exclude_properties = [
+            'mtime',
+            'projectionMatrix',
+            'viewMatrix',
+            'physicalTranslation',
+            'physicalScale',
+            'physicalViewUp',
+            'physicalViewNorth'
+        ]
         if self.camera is not None:
             for k, v in self.camera.items():
                 if k not in exclude_properties:
@@ -538,6 +546,9 @@ class VTKVolume(AbstractVTK):
 
     max_data_size = param.Number(default=(256 ** 3) * 2 / 1e6, doc="""
         Maximum data size transfert allowed without subsampling""")
+
+    nan_opacity = param.Number(default=1., bounds=(0., 1.), doc="""
+        Opacity applied to nan values in slices""")
 
     origin = param.Tuple(default=None, length=3, allow_None=True)
 
@@ -608,7 +619,7 @@ class VTKVolume(AbstractVTK):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         VTKVolumePlot = lazy_load(
-            'panel.models.vtk', 'VTKVolumePlot', isinstance(comm, JupyterComm)
+            'panel.models.vtk', 'VTKVolumePlot', isinstance(comm, JupyterComm), root
         )
         props = self._process_param_change(self._init_params())
         if self._volume_data is not None:
@@ -617,7 +628,7 @@ class VTKVolume(AbstractVTK):
         model = VTKVolumePlot(**props)
         if root is None:
             root = model
-        self._link_props(model, ['colormap', 'orientation_widget', 'camera', 'mapper', 'controller_expanded'], doc, root, comm)
+        self._link_props(model, ['colormap', 'orientation_widget', 'camera', 'mapper', 'controller_expanded', 'nan_opacity'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -679,11 +690,11 @@ class VTKVolume(AbstractVTK):
         cls._serializers.update({class_type:serializer})
 
     def _volume_from_array(self, sub_array):
-        return dict(buffer=base64encode(sub_array.ravel(order='F' if sub_array.flags['F_CONTIGUOUS'] else 'C')),
-                    dims=sub_array.shape if sub_array.flags['F_CONTIGUOUS'] else sub_array.shape[::-1],
-                    spacing=self._sub_spacing if sub_array.flags['F_CONTIGUOUS'] else self._sub_spacing[::-1],
+        return dict(buffer=base64encode(sub_array.ravel(order='F')),
+                    dims=sub_array.shape,
+                    spacing=self._sub_spacing,
                     origin=self.origin,
-                    data_range=(sub_array.min(), sub_array.max()),
+                    data_range=(np.nanmin(sub_array), np.nanmax(sub_array)),
                     dtype=sub_array.dtype.name)
 
     def _get_volume_data(self):
@@ -700,10 +711,10 @@ class VTKVolume(AbstractVTK):
                 def volume_serializer(inst):
                     imageData = inst.object
                     array = numpy_support.vtk_to_numpy(imageData.GetPointData().GetScalars())
-                    dims = imageData.GetDimensions()[::-1]
-                    inst.spacing = imageData.GetSpacing()[::-1]
+                    dims = imageData.GetDimensions()
+                    inst.spacing = imageData.GetSpacing()
                     inst.origin = imageData.GetOrigin()
-                    return inst._volume_from_array(inst._subsample_array(array.reshape(dims, order='C')))
+                    return inst._volume_from_array(inst._subsample_array(array.reshape(dims, order='F')))
 
                 VTKVolume.register_serializer(vtk.vtkImageData, volume_serializer)
                 serializer = volume_serializer
@@ -722,7 +733,7 @@ class VTKVolume(AbstractVTK):
         if any([d_f > 1 for d_f in dowsnscale_factor]):
             try:
                 import scipy.ndimage as nd
-                sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0)
+                sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0, mode="nearest")
             except ImportError:
                 sub_array = array[::int(np.ceil(dowsnscale_factor[0])),
                                   ::int(np.ceil(dowsnscale_factor[1])),
@@ -764,7 +775,7 @@ class VTKJS(AbstractVTK):
         """
         Should return the bokeh model to be rendered.
         """
-        VTKJSPlot = lazy_load('panel.models.vtk', 'VTKJSPlot', isinstance(comm, JupyterComm))
+        VTKJSPlot = lazy_load('panel.models.vtk', 'VTKJSPlot', isinstance(comm, JupyterComm), root)
         props = self._process_param_change(self._init_params())
         vtkjs = self._get_vtkjs()
         if vtkjs is not None:

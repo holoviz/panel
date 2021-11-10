@@ -92,7 +92,7 @@ def test_plotly_pane_datetime_array_transform(document, comm):
     pane = Plotly(fig)
 
     model = pane.get_root(document, comm)
-    assert all(isinstance(v, str) for v in model.data[0]['x'])
+    assert model.data_sources[0].data['x'][0].dtype.kind == 'U'
 
 
 @plotly_available
@@ -165,7 +165,7 @@ def test_plotly_pane_numpy_to_cds_traces(document, comm):
 @plotly_available
 def test_plotly_autosize(document, comm):
     trace = go.Scatter(x=[0, 1], y=[2, 3])
-    
+
     pane = Plotly(dict(data=[trace], layout={'autosize': True}))
 
     model = pane.get_root(document, comm=comm)
@@ -187,7 +187,7 @@ def test_plotly_autosize(document, comm):
 @plotly_available
 def test_plotly_tabs(document, comm):
     trace = go.Scatter(x=[0, 1], y=[2, 3])
-    
+
     pane1 = Plotly(dict(data=[trace], layout={'autosize': True}))
     pane2 = Plotly(dict(data=[trace], layout={'autosize': True}))
 
@@ -201,13 +201,37 @@ def test_plotly_tabs(document, comm):
     cb1, cb2 = root.js_property_callbacks['change:active']
     if cb1.args['model'] is model2:
         cb1, cb2 = cb2, cb1
-    assert model1.visible
+    assert model1.visibility
     assert cb1.args['model'] is model1
-    assert cb1.code == 'model.visible = (cb_obj.active == 0);'
-    assert not model2.visible
+    assert cb1.code == 'try { model.visibility = (cb_obj.active == 0); } catch { }'
+    assert not model2.visibility
     assert cb2.args['model'] is model2
-    assert cb2.code == 'model.visible = (cb_obj.active == 1);'
-    
+    assert cb2.code == 'try { model.visibility = (cb_obj.active == 1); } catch { }'
+
     tabs.insert(0, 'Blah')
-    assert cb1.code == 'model.visible = (cb_obj.active == 1);'
-    assert cb2.code == 'model.visible = (cb_obj.active == 2);'
+    assert cb1.code == 'try { model.visibility = (cb_obj.active == 1); } catch { }'
+    assert cb2.code == 'try { model.visibility = (cb_obj.active == 2); } catch { }'
+
+@plotly_available
+def test_clean_relayout_data():
+    relayout_data = {
+        "mapbox.center": {"lon": -73.59183434290809, "lat": 45.52341668343991},
+        "mapbox.zoom": 10,
+        "mapbox.bearing": 0,
+        "mapbox.pitch": 0,
+        "mapbox._derived": {
+            "coordinates": [
+                [-73.92279747767401, 45.597934047192865],
+                [-73.26087120814279, 45.597934047192865],
+                [-73.26087120814279, 45.44880048640681],
+                [-73.92279747767401, 45.44880048640681],
+            ]
+        },
+    }
+    result = Plotly._clean_relayout_data(relayout_data)
+    assert result == {
+        "mapbox.center": {"lon": -73.59183434290809, "lat": 45.52341668343991},
+        "mapbox.zoom": 10,
+        "mapbox.bearing": 0,
+        "mapbox.pitch": 0,
+    }

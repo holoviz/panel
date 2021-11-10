@@ -1,6 +1,5 @@
 """
-Defines various Select widgets which allow choosing one or more items
-from a list of options.
+Defines the Ace code editor widget.
 """
 import param
 
@@ -48,7 +47,7 @@ class Ace(Widget):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:
             self._widget_type = lazy_load(
-                'panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm)
+                'panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm), root
             )
         return super()._get_model(doc, root, parent, comm)
 

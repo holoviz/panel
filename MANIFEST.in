@@ -8,9 +8,12 @@ include panel/index.ts
 include panel/layout/*.html
 include panel/models/*.ts
 include panel/models/vtk/*.ts
+include panel/_templates/*.css
 include panel/_templates/*.js
 include panel/_templates/*.html
 include panel/tests/test_data/*.png
+include panel/tests/pane/assets/*.mp3
+include panel/tests/pane/assets/*.mp4
 recursive-include panel/template *.html
 recursive-include panel/template *.css
 recursive-include panel/template *.js

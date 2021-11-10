@@ -2,14 +2,22 @@
 Defines callbacks to be executed on a thread or by scheduling it
 on a running bokeh server.
 """
+import asyncio
+import inspect
+import logging
 import time
+
 import param
 
-from ..util import edit_readonly
+from bokeh.io import curdoc as _curdoc
+
+from ..util import edit_readonly, function_name
+from .logging import LOG_PERIODIC_START, LOG_PERIODIC_END
 from .state import state
 
 import logging
 log = logging.getLogger('panel.callbacks')
+_periodic_logger = logging.getLogger(f'{__name__}.PeriodicCallback')
 
 class PeriodicCallback(param.Parameterized):
     """
@@ -65,15 +73,28 @@ class PeriodicCallback(param.Parameterized):
             self.stop()
             self.start()
 
-    def _periodic_callback(self):
+    async def _periodic_callback(self):
         with edit_readonly(state):
             state.busy = True
+        cbname = function_name(self.callback)
+        if self._doc:
+            _periodic_logger.info(
+                LOG_PERIODIC_START, id(self._doc), cbname, self._counter
+            )
         try:
-            self.callback()
+            if inspect.isasyncgenfunction(self.callback) or inspect.iscoroutinefunction(self.callback):
+                await self.callback()
+            else:
+                self.callback()
+
         except Exception:
             log.exception('Periodic callback failed.')
             raise
         finally:
+            if self._doc:
+                _periodic_logger.info(
+                    LOG_PERIODIC_END, id(self._doc), cbname, self._counter
+                )
             with edit_readonly(state):
                 state.busy = False
         self._counter += 1
@@ -91,6 +112,9 @@ class PeriodicCallback(param.Parameterized):
         """
         return self._counter
 
+    def _cleanup(self, session_context):
+        self.stop()
+
     def start(self):
         """
         Starts running the periodic callback.
@@ -104,13 +128,17 @@ class PeriodicCallback(param.Parameterized):
             finally:
                 self._updating = False
         self._start_time = time.time()
-        if state.curdoc and state.curdoc.session_context:
+        if state.curdoc:
             self._doc = state.curdoc
             self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
         else:
             from tornado.ioloop import PeriodicCallback
-            self._cb = PeriodicCallback(self._periodic_callback, self.period)
+            self._cb = PeriodicCallback(lambda: asyncio.create_task(self._periodic_callback()), self.period)
             self._cb.start()
+        try:
+            state.on_session_destroyed(self._cleanup)
+        except Exception:
+            pass
 
     def stop(self):
         """
@@ -125,7 +153,17 @@ class PeriodicCallback(param.Parameterized):
         self._counter = 0
         self._timeout = None
         if self._doc:
-            self._doc.remove_periodic_callback(self._cb)
-        else:
+            if self._doc._session_context:
+                self._doc.callbacks.remove_session_callback(self._cb)
+            else:
+                self._doc.callbacks._session_callbacks.remove(self._cb)
+        elif self._cb:
             self._cb.stop()
         self._cb = None
+        doc = self._doc or _curdoc()
+        if doc:
+            doc.callbacks.session_destroyed_callbacks = {
+                cb for cb in doc.callbacks.session_destroyed_callbacks
+                if cb is not self._cleanup
+            }
+            self._doc = None

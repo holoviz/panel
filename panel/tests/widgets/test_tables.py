@@ -20,7 +20,9 @@ from bokeh.models.widgets.tables import (
 )
 
 from panel.depends import bind
-from panel.widgets import DataFrame, Tabulator, TextInput
+from panel.models.tabulator import TableEditEvent
+from panel.widgets import Button, TextInput
+from panel.widgets.tables import DataFrame, Tabulator
 
 pd_old = pytest.mark.skipif(LooseVersion(pd.__version__) < '1.3',
                           reason="Requires latest pandas")
@@ -216,6 +218,89 @@ def test_none_table(document, comm):
     assert model.source.data == {}
 
 
+def test_tabulator_selected_dataframe():
+    df = makeMixedDataFrame()
+    table = Tabulator(df, selection=[0, 2])
+
+    pd.testing.assert_frame_equal(table.selected_dataframe, df.iloc[[0, 2]])
+
+
+def test_tabulator_expanded_content():
+    df = makeMixedDataFrame()
+
+    table = Tabulator(df, expanded=[0, 1], row_content=lambda r: r.A)
+
+    model = table.get_root()
+
+    assert len(model.children) == 2
+
+    assert 0 in model.children
+    row0 = model.children[0]
+    assert row0.text == "&lt;pre&gt;0.0&lt;/pre&gt;"
+
+    assert 1 in model.children
+    row1 = model.children[1]
+    assert row1.text == "&lt;pre&gt;1.0&lt;/pre&gt;"
+
+    table.expanded = [1, 2]
+
+    assert 0 not in model.children
+
+    assert 1 in model.children
+    assert row1 is model.children[1]
+
+    assert 2 in model.children
+    row2 = model.children[2]
+    assert row2.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
+
+
+def test_tabulator_expanded_content_pagination():
+    df = makeMixedDataFrame()
+
+    table = Tabulator(df, expanded=[0, 1], row_content=lambda r: r.A, pagination='remote', page_size=2)
+
+    model = table.get_root()
+
+    assert len(model.children) == 2
+
+    table.page = 2
+
+    assert len(model.children) == 0
+
+
+def test_tabulator_expanded_content_embed():
+    df = makeMixedDataFrame()
+
+    table = Tabulator(df, embed_content=True, row_content=lambda r: r.A)
+
+    model = table.get_root()
+
+    assert len(model.children) == len(df)
+
+    for i, r in df.iterrows():
+        assert i in model.children
+        row = model.children[i]
+        assert row.text  == f"&lt;pre&gt;{r.A}&lt;/pre&gt;"
+
+    table.row_content = lambda r: r.A + 1
+
+    for i, r in df.iterrows():
+        assert i in model.children
+        row = model.children[i]
+        assert row.text  == f"&lt;pre&gt;{r.A+1}&lt;/pre&gt;"
+
+
+def test_tabulator_selected_and_filtered_dataframe(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    pd.testing.assert_frame_equal(table.selected_dataframe, df)
+
+    table.add_filter('foo3', 'C')
+
+    pd.testing.assert_frame_equal(table.selected_dataframe, df[df["C"] == "foo3"])
+
+
 def test_tabulator_config_defaults(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
@@ -231,6 +316,57 @@ def test_tabulator_config_defaults(document, comm):
     ]
     assert model.configuration['selectable'] == True
 
+def test_tabulator_header_filters_config_boolean(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, header_filters=True)
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index', 'headerFilter': 'number'},
+        {'field': 'A', 'headerFilter': True},
+        {'field': 'B', 'headerFilter': True},
+        {'field': 'C', 'headerFilter': True},
+        {'field': 'D', 'headerFilter': True}
+    ]
+
+def test_tabulator_header_filters_column_config_select(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, header_filters={'C': 'select'})
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index'},
+        {'field': 'A'},
+        {'field': 'B'},
+        {'field': 'C', 'headerFilter': 'select', 'headerFilterParams': {'values': True}},
+        {'field': 'D'}
+    ]
+    assert model.configuration['selectable'] == True
+
+def test_tabulator_header_filters_column_config_dict(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, header_filters={
+        'C': {'type': 'select', 'values': True, 'func': '!=', 'placeholder': 'Not equal'}
+    })
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index'},
+        {'field': 'A'},
+        {'field': 'B'},
+        {
+            'field': 'C',
+            'headerFilter': 'select',
+            'headerFilterParams': {'values': True},
+            'headerFilterFunc': '!=',
+            'headerFilterPlaceholder': 'Not equal'
+        },
+        {'field': 'D'}
+    ]
+    assert model.configuration['selectable'] == True
 
 def test_tabulator_config_formatter_string(document, comm):
     df = makeMixedDataFrame()
@@ -633,7 +769,6 @@ def test_tabulator_stream_series_paginated_not_follow(document, comm):
         np.testing.assert_array_equal(values, expected[col])
 
 
-
 def test_tabulator_stream_series_paginated_follow(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, pagination='remote', page_size=2)
@@ -746,6 +881,66 @@ def test_tabulator_constant_scalar_filter(document, comm):
         np.testing.assert_array_equal(values, expected[col])
 
 
+def test_tabulator_constant_scalar_filter_client_side(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.filters = [{'field': 'C', 'type': '=', 'value': 'foo3'}]
+
+    expected = {
+        'index': np.array([2]),
+        'A': np.array([2]),
+        'B': np.array([0]),
+        'C': np.array(['foo3']),
+        'D': np.array(['2009-01-05T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.filters = [{'field': 'index', 'type': '=', 'value': 2}]
+
+    expected = {
+        'index': np.array([2]),
+        'A': np.array([2]),
+        'B': np.array([0]),
+        'C': np.array(['foo3']),
+        'D': np.array(['2009-01-05T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+def test_tabulator_constant_scalar_filter_on_multi_index_client_side(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df.set_index(['A', 'C']))
+
+    model = table.get_root(document, comm)
+
+    table.filters = [
+        {'field': 'A', 'type': '=', 'value': 2},
+        {'field': 'C', 'type': '=', 'value': 'foo3'}
+    ]
+
+    expected = {
+        'index': np.array([0]),
+        'A': np.array([2]),
+        'C': np.array(['foo3']),
+        'B': np.array([0]),
+        'D': np.array(['2009-01-05T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
 def test_tabulator_constant_list_filter(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
@@ -753,6 +948,27 @@ def test_tabulator_constant_list_filter(document, comm):
     model = table.get_root(document, comm)
 
     table.add_filter(['foo3', 'foo5'], 'C')
+
+    expected = {
+        'index': np.array([2, 4]),
+        'A': np.array([2, 4]),
+        'B': np.array([0, 0]),
+        'C': np.array(['foo3', 'foo5']),
+        'D': np.array(['2009-01-05T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+
+def test_tabulator_constant_list_filter_client_side(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.filters = [{'field': 'C', 'type': 'in', 'value': ['foo3', 'foo5']}]
 
     expected = {
         'index': np.array([2, 4]),
@@ -929,7 +1145,8 @@ def test_tabulator_dataframe_replace_data(document, comm):
     assert c3.field == 'C_l0_g1'
     assert model.configuration == {
         'columns': [{'field': 'R0'}, {'field': 'C_l0_g0'}, {'field': 'C_l0_g1'}],
-        'selectable': True
+        'selectable': True,
+        'dataTree': False
     }
     expected = {
         'C_l0_g0': np.array(['R0C0', 'R1C0'], dtype=object),
@@ -938,3 +1155,47 @@ def test_tabulator_dataframe_replace_data(document, comm):
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
+
+
+def test_tabulator_download_menu_default():
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    filename, button = table.download_menu()
+
+    assert isinstance(filename, TextInput)
+    assert isinstance(button, Button)
+
+    assert filename.value == 'table.csv'
+    assert filename.name == 'Filename'
+    assert button.name == 'Download'
+
+
+def test_tabulator_download_menu_custom_kwargs():
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    filename, button = table.download_menu(
+        text_kwargs={'name': 'Enter filename', 'value': 'file.csv'},
+        button_kwargs={'name': 'Download table'},
+    )
+
+    assert isinstance(filename, TextInput)
+    assert isinstance(button, Button)
+
+    assert filename.value == 'file.csv'
+    assert filename.name == 'Enter filename'
+    assert button.name == 'Download table'
+
+def test_tabulator_patch_event():
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    values = []
+    table.on_edit(lambda e: values.append((e.column, e.row, e.value)))
+
+    for col in df.columns:
+        for row in range(len(df)):
+            event = TableEditEvent(model=None, column=col, row=row)
+            table._on_edit(event)
+            assert values[-1] == (col, row, df[col].iloc[row])

@@ -14,12 +14,15 @@ from bokeh.themes import Theme
 
 from ..io import remove_root
 from ..io.notebook import push
+from ..util import escape
 from ..viewable import Layoutable
 from .base import PaneBase
 from .ipywidget import IPyWidget
 from .markup import HTML
 from .image import PNG
 
+FOLIUM_BEFORE = '<div style="width:100%;"><div style="position:relative;width:100%;height:0;padding-bottom:60%;">'
+FOLIUM_AFTER = '<div style="width:100%;height:100%"><div style="position:relative;width:100%;height:100%;padding-bottom:0%;">'
 
 @contextmanager
 def _wrap_callback(cb, wrapped, doc, comm, callbacks):
@@ -29,7 +32,7 @@ def _wrap_callback(cb, wrapped, doc, comm, callbacks):
     replaces the wrapped callback with the real one while the callback
     is exectuted to ensure the callback can be removed as usual.
     """
-    hold = doc._hold
+    hold = doc.callbacks.hold_value
     doc.hold('combine')
     if wrapped in callbacks:
         index = callbacks.index(wrapped)
@@ -98,7 +101,7 @@ class Bokeh(PaneBase):
             model = self.object
 
         properties = {}
-        for p, value in self.param.get_param_values():
+        for p, value in self.param.values().items():
             if (p not in Layoutable.param or p == 'name' or
                 value is self.param[p].default):
                 continue
@@ -310,3 +313,10 @@ class Folium(HTML):
     def applies(cls, obj):
         return (getattr(obj, '__module__', '').startswith('folium.') and
                 hasattr(obj, "_repr_html_"))
+
+    def _get_properties(self):
+        properties = super()._get_properties()
+        text = '' if self.object is None else self.object
+        if hasattr(text, '_repr_html_'):
+            text = text._repr_html_().replace(FOLIUM_BEFORE, FOLIUM_AFTER)
+        return dict(properties, text=escape(text))

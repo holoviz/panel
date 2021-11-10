@@ -142,15 +142,23 @@ class Tabs(NamedListPanel):
         panels = self._panels[root.ref['id']]
         for i, (name, pane) in enumerate(zip(self._names, self)):
             hidden = self.dynamic and i != self.active
+            panel = panels.get(id(pane))
+            prev_hidden = (
+                hasattr(panel, 'child') and isinstance(panel.child, BkSpacer) and
+                panel.child.tags == ['hidden']
+            )
+            # If object has not changed, we have not toggled between
+            # hidden and unhidden state or the tabs are not
+            # dynamic then reuse the panel
             if (pane in old_objects and id(pane) in panels and
-                ((hidden and isinstance(panels[id(pane)].child, BkSpacer)) or
-                 (not hidden and not isinstance(panels[id(pane)].child, BkSpacer)))):
-                panel = panels[id(pane)]
+                (not (hidden ^ prev_hidden) or not (self.dynamic or prev_hidden))):
                 new_models.append(panel)
                 continue
-            elif self.dynamic and i != self.active:
-                child = BkSpacer(**{k: v for k, v in pane.param.get_param_values()
+
+            if hidden:
+                child = BkSpacer(**{k: v for k, v in pane.param.values().items()
                                     if k in Layoutable.param and v is not None})
+                child.tags = ['hidden']
             else:
                 try:
                     child = pane._get_model(doc, root, model, comm)

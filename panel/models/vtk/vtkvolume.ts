@@ -103,6 +103,12 @@ export class VTKVolumePlotView extends AbstractVTKView {
       if (this._controllerWidget != null)
         this._controllerWidget.setExpanded(this.model.controller_expanded)
     })
+    this.connect(this.model.properties.nan_opacity.change, () => {
+      const scalar_opacity = this.image_actor_i.getProperty().getScalarOpacity()
+      scalar_opacity.get(["nodes"]).nodes[0].y = this.model.nan_opacity
+      scalar_opacity.modified()
+      this._vtk_renwin.getRenderWindow().render()
+    })
   }
 
   render(): void {
@@ -263,9 +269,13 @@ export class VTKVolumePlotView extends AbstractVTKView {
 
     // set_color and opacity
     const piecewiseFunction = vtkns.PiecewiseFunction.newInstance()
-    piecewiseFunction.removeAllPoints()
-    piecewiseFunction.addPoint(0, 1)
     const lookupTable = this.volume.getProperty().getRGBTransferFunction(0)
+    const range = this.volume.getMapper().getInputData().getPointData().getScalars().getRange()
+    piecewiseFunction.removeAllPoints()
+    piecewiseFunction.addPoint(range[0]-1, this.model.nan_opacity)
+    piecewiseFunction.addPoint(range[0], 1)
+    piecewiseFunction.addPoint(range[1], 1)
+
     const property = image_actor_i.getProperty()
     image_actor_j.setProperty(property)
     image_actor_k.setProperty(property)
@@ -360,10 +370,9 @@ export class VTKVolumePlotView extends AbstractVTKView {
   }
 
   _set_slices_visibility(visibility: boolean): void {
-    this._vtk_renwin
-      .getRenderer()
-      .getActors()
-      .map((actor: any) => actor.setVisibility(visibility))
+    this.image_actor_i.setVisibility(visibility)
+    this.image_actor_j.setVisibility(visibility)
+    this.image_actor_k.setVisibility(visibility)
   }
 
   _set_volume_visibility(visibility: boolean): void {
@@ -382,6 +391,7 @@ export namespace VTKVolumePlot {
     edge_gradient: p.Property<number>
     interpolation: p.Property<Interpolation>
     mapper: p.Property<ColorMapper>
+    nan_opacity: p.Property<number>
     render_background: p.Property<string>
     rescale: p.Property<boolean>
     sampling: p.Property<number>
@@ -417,6 +427,7 @@ export class VTKVolumePlot extends AbstractVTKPlot {
       edge_gradient:        [ Number,            0.2 ],
       interpolation:        [ Interpolation, 'fast_linear'],
       mapper:               [ Struct({palette: Array(String), low: Number, high: Number}) ],
+      nan_opacity:          [ Number,              1 ],
       render_background:    [ String,      '#52576e' ],
       rescale:              [ Boolean,         false ],
       sampling:             [ Number,            0.4 ],

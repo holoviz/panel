@@ -112,7 +112,8 @@ def record_modules():
 def _reload(module=None):
     if module is not None:
         for module in _modules:
-            del sys.modules[module]
+            if module in sys.modules:
+                del sys.modules[module]
     for cb in _callbacks.values():
         cb.stop()
     _callbacks.clear()

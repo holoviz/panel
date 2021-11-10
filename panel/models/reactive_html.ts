@@ -105,6 +105,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       else
         subpath = prop
       const obj = model[prop]
+      if (obj == null)
+        continue
       if (obj.properties != null)
         this._recursive_connect(obj, true, subpath)
       this.connect(model.properties[prop].change, () => {
@@ -290,7 +292,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   private _render_child(model: any, el: Element): void {
     const view: any = this._child_views.get(model)
     if (view == null)
-      el.innerHTML = model
+      el.innerHTML = htmlDecode(model) || model
     else {
       view._parent = this
       view.renderTo(el)

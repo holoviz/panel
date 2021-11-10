@@ -7,23 +7,35 @@ from bokeh.core.properties import (
     Any, Bool, Dict, Either, Enum, Instance, Int, List, Nullable,
     String, Tuple
 )
-from bokeh.models import ColumnDataSource
+from bokeh.events import ModelEvent
+from bokeh.models import ColumnDataSource, LayoutDOM
 from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets.tables import TableColumn
 
 from ..io.resources import bundled_files
 from ..util import classproperty
 
-JS_SRC = "https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.js"
-MOMENT_SRC = "https://unpkg.com/moment@2.27.0/moment.js"
+JS_SRC = "https://unpkg.com/tabulator-tables@5.0.7/dist/js/tabulator.js"
+MOMENT_SRC = "https://cdn.jsdelivr.net/npm/luxon/build/global/luxon.min.js"
 
-THEME_PATH = "tabulator-tables@4.9.3/dist/css/"
+THEME_PATH = "tabulator-tables@5.0.7/dist/css/"
 THEME_URL = f"https://unpkg.com/{THEME_PATH}"
 PANEL_CDN = f'https://cdn.jsdelivr.net/npm/@holoviz/panel/dist/bundled/{THEME_PATH}'
 TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
     'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'
 ]
+
+class TableEditEvent(ModelEvent):
+
+    event_name = 'table-edit'
+
+    def __init__(self, model, column, row, value=None):
+        self.column = column
+        self.row = row
+        self.value = value
+        super().__init__(model=model)
+
 
 def _get_theme_url(url, theme):
     if 'bootstrap' in theme:
@@ -55,6 +67,8 @@ class DataTabulator(HTMLBox):
     See http://tabulator.info/
     """
 
+    aggregators = Dict(String, String)
+
     configuration = Dict(String, Any)
 
     columns = List(Instance(TableColumn), help="""
@@ -63,9 +77,15 @@ class DataTabulator(HTMLBox):
 
     download = Bool(default=False)
 
+    children = Dict(Int, Instance(LayoutDOM))
+
     editable = Bool(default=True)
 
+    expanded = List(Int)
+
     filename = String(default="table.csv")
+
+    filters = List(Any)
 
     follow = Bool(True)
 
@@ -74,6 +94,8 @@ class DataTabulator(HTMLBox):
     groupby = List(String)
 
     hidden_columns = List(String)
+
+    indexes = List(String)
 
     layout = Enum('fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table', 'fit_columns', default="fit_data")
 

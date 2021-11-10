@@ -4,6 +4,7 @@ A module containing testing utilities and fixtures.
 import os
 import re
 import shutil
+import tempfile
 
 import pytest
 
@@ -163,3 +164,21 @@ def set_env_var(env_var, value):
         del os.environ[env_var]
     else:
         os.environ[env_var] = old_value
+
+
+@pytest.fixture(autouse=True)
+def server_cleanup():
+    """
+    Clean up after test fails
+    """
+    yield
+    state.kill_all_servers()
+    state._indicators.clear()
+    state._locations.clear()
+
+
+@pytest.fixture
+def py_file():
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    yield tf
+    tf.close()

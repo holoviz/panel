@@ -52,3 +52,4 @@ from .tables import DataFrame, Tabulator  # noqa
 from .terminal import Terminal # noqa
 from .debugger import Debugger # noqa
 from .text_to_speech import TextToSpeech, Utterance, Voice # noqa
+from .texteditor import TextEditor # noqa

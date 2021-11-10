@@ -1,25 +1,120 @@
 import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
+import {build_views} from "@bokehjs/core/build_views"
+import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties";
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 import {TableColumn} from "@bokehjs/models/widgets/tables"
 
+import {debounce} from  "debounce"
+
 import {transform_cds_to_records} from "./data"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
+export class TableEditEvent extends ModelEvent {
+  event_name: string = "table-edit"
+
+  constructor(readonly column: string, readonly row: number) {
+    super()
+  }
+
+  protected _to_json(): JSON {
+    return {model: this.origin, column: this.column, row: this.row}
+  }
+}
 
 declare const Tabulator: any;
 
-// The view of the Bokeh extension/ HTML element
-// Here you can define how to render the model as well as react to model changes or View events.
+function find_group(key: any, value: string, records: any[]): any {
+  for (const record of records) {
+    if (record[key] == value)
+      return record
+  }
+  return null
+}
+
+function summarize(grouped: any[], columns: any[], aggregators: string[], depth: number = 0): any {
+  const summary: any = {}
+  if (grouped.length == 0)
+    return summary
+  const agg = aggregators[depth]
+  for (const group of grouped) {
+    const subsummary = summarize(group._children, columns, aggregators, depth+1)
+    for (const col in subsummary) {
+      if (isArray(subsummary[col]))
+        group[col] = subsummary[col].reduce((a: any, b: any) => a + b, 0) / subsummary[col].length
+      else
+        group[col] = subsummary[col]
+    }
+    for (const column of columns.slice(1)) {
+      const val = group[column.field]
+      if (column.field in summary) {
+        const old_val = summary[column.field]
+        if (agg === 'min')
+          summary[column.field] = Math.min(val, old_val)
+        else if (agg === 'max')
+          summary[column.field] = Math.max(val, old_val)
+        else if (agg === 'sum')
+          summary[column.field] = val + old_val
+        else if (agg === 'mean') {
+          if (isArray(summary[column.field]))
+            summary[column.field].push(val)
+          else
+            summary[column.field] = [old_val, val]
+        }
+      } else
+        summary[column.field] = val
+    }
+  }
+  return summary
+}
+
+function group_data(records: any[], columns: any[], indexes: string[], aggregators: any): any[] {
+  const grouped = []
+  const index_field = columns[0].field
+  for (const record of records) {
+    const value = record[indexes[0]]
+    let group = find_group(index_field, value, grouped)
+    if (group == null) {
+      group = {_children: []}
+      group[index_field] = value
+      grouped.push(group)
+    }
+    let subgroup = group
+    const groups: any = {}
+    for (const index of indexes.slice(1)) {
+      subgroup = find_group(index_field, record[index], subgroup._children)
+      if (subgroup == null) {
+        subgroup = {_children: []}
+        subgroup[index_field] = record[index]
+        group._children.push(subgroup)
+      }
+      groups[index] = group
+      for (const column of columns.slice(1))
+        subgroup[column.field] = record[column]
+      group = subgroup
+    }
+    for (const column of columns.slice(1))
+      subgroup[column.field] = record[column.field]
+  }
+  const aggs = []
+  for (const index of indexes)
+    aggs.push((index in aggregators) ? aggregators[index] : 'sum')
+  summarize(grouped, columns, aggs)
+  return grouped
+}
+
+
 export class DataTabulatorView extends PanelHTMLBoxView {
   model: DataTabulator;
   tabulator: any;
-  _tabulator_cell_updating: boolean=false;
-  _selection_updating: boolean=false;
+  _tabulator_cell_updating: boolean=false
+  _updating_page: boolean = true
+  _selection_updating: boolean =false
   _styled_cells: any[] = []
+  _styles: any;
   _initializing: boolean
 
   connect_signals(): void {
@@ -35,33 +130,29 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.tabulator.download(ftype, this.model.filename)
     })
 
-    this.connect(this.model.properties.hidden_columns.change, () => {
-      this.hideColumns()
-    })
+    this.connect(this.model.properties.children.change, () => this._render_children())
 
-    this.connect(this.model.properties.page_size.change, () => {
-      this.setPageSize();
-    })
-
-    this.connect(this.model.properties.page.change, () => {
-      this.setPage();
-    })
-
-    this.connect(this.model.properties.max_page.change, () => {
-      this.setMaxPage();
-    })
-
-    this.connect(this.model.properties.frozen_rows.change, () => {
-      this.freezeRows()
+    this.connect(this.model.properties.expanded.change, () => {
+      for (const row of this.tabulator.rowManager.getRows()) {
+        if (row.cells.length > 0)
+          row.cells[0].layoutElement()
+      }
     })
 
     this.connect(this.model.properties.styles.change, () => {
+      this._styles = this.model.styles
       this.updateStyles()
     })
 
-    this.connect(this.model.source.properties.data.change, () => {
-      this.setData();
+    this.connect(this.model.properties.hidden_columns.change, () => this.hideColumns())
+    this.connect(this.model.properties.page_size.change, () => this.setPageSize())
+    this.connect(this.model.properties.page.change, () => {
+      if (!this._updating_page)
+        this.setPage()
     })
+    this.connect(this.model.properties.max_page.change, () => this.setMaxPage())
+    this.connect(this.model.properties.frozen_rows.change, () => this.freezeRows())
+    this.connect(this.model.source.properties.data.change, () => this.setData())
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => this.updateOrAddData())
     this.connect(this.model.source.selected.change, () => this.updateSelection())
@@ -76,27 +167,62 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.invalidate_layout()
   }
 
+  init_callbacks(): void {
+    this.tabulator.on("tableBuilding", () => this.tableInit())
+    this.tabulator.on("tableBuilt", () => this.tableBuilt())
+    this.tabulator.on("rowSelectionChanged", (data: any, rows: any) => this.rowSelectionChanged(data, rows))
+    this.tabulator.on("rowClick", (e: any, row: any) => this.rowClicked(e, row))
+    this.tabulator.on("cellEdited", (cell: any) => this.cellEdited(cell))
+    this.tabulator.on("selectableCheck", (row: any) => {
+      const selectable = this.model.selectable_rows
+      return (selectable == null) || (selectable.indexOf(row._row.data._index) >= 0)
+    })
+    this.tabulator.on("tooltips", (cell: any) => {
+      return  cell.getColumn().getField() + ": " + cell.getValue();
+    })
+    this.tabulator.on("scrollVertical", debounce(() => {
+      this.updateStyles()
+    }, 50, false))
+    this.tabulator.on("rowFormatter", (row: any) => this._render_row(row))
+    this.tabulator.on("dataFiltering", () => {
+      if (this.tabulator != null)
+        this.model.filters = this.tabulator.getHeaderFilters()
+    })
+  }
+
   render(): void {
     super.render()
     const wait = this.setCSS()
     if (wait)
       return
     this._initializing = true
-    const container = div({class: "pnx-tabulator"});
+    this._styles = this.model.styles
+    const container = div({class: "pnx-tabulator"})
     set_size(container, this.model)
-    let configuration = this.getConfiguration();
+    let configuration = this.getConfiguration()
 
     this.tabulator = new Tabulator(container, configuration)
-
-    // Swap pagination mode
-    if (this.model.pagination === 'remote') {
-      this.tabulator.options.pagination = this.model.pagination
-      this.tabulator.modules.page.mode = 'remote'
-    }
+    this.init_callbacks()
+    this._render_children()
 
     this.setGroupBy()
     this.hideColumns()
 
+    this.el.appendChild(container)
+  }
+
+  tableInit(): void {
+    // Patch the ajax request and page data parsing methods
+    const ajax = this.tabulator.modules.ajax
+    ajax.sendRequest = () => {
+      return this.requestPage(ajax.params.page, ajax.params.sort)
+    }
+    this.tabulator.modules.page._parseRemoteData = (): boolean => {
+      return false
+    }
+  }
+
+  tableBuilt(): void {
     // Set up page
     if (this.model.pagination) {
       this.setMaxPage()
@@ -105,40 +231,29 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     } else {
       this.freezeRows()
     }
-    this.el.appendChild(container)
-  }
-
-  tableInit(view: DataTabulatorView, tabulator: any): void {
-    // Patch the ajax request and page data parsing methods
-    const ajax = tabulator.modules.ajax
-    ajax.sendRequest = () => {
-      return view.requestPage(ajax.params.page, ajax.params.sorters)
-    }
-    tabulator.modules.page._parseRemoteData = () => {}
+    this.tabulator.redraw(true)
+    this.updateStyles()
+    this.updateSelection()
+    this._initializing = false
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
     return new Promise((resolve: any, reject: any) => {
       try {
-	if (page != null && sorters != null) {
-          this.model.page = page || 1
+        if (page != null && sorters != null) {
           this.model.sorters = sorters
-	}
+          this._updating_page = true
+          try {
+            this.model.page = page || 1
+          } finally {
+            this._updating_page = false
+          }
+        }
         resolve([])
       } catch(err) {
         reject(err)
       }
     })
-  }
-
-  renderComplete(): void {
-    // Only have to set up styles after initial render subsequent
-    // styling is handled by change event on styles property
-    if (this._initializing) {
-      this.updateStyles()
-      this.updateSelection()
-    }
-    this._initializing = false
   }
 
   freezeRows(): void {
@@ -163,35 +278,23 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   getConfiguration(): any {
-    const pagination = this.model.pagination == 'remote' ? 'local': (this.model.pagination || false)
-    let selectable = !(typeof this.model.select_mode === 'boolean')
-    const that = this
+    // Only use selectable mode if explicitly requested otherwise manually handle selections
+    let selectable = this.model.select_mode === 'toggle' ? true : NaN
     let configuration = {
       ...this.model.configuration,
       index: "_index",
       nestedFieldSeparator: false,
       selectable: selectable,
-      tableBuilding: function() { that.tableInit(that, this) },
-      renderComplete: () => this.renderComplete(),
-      rowSelectionChanged: (data: any, rows: any) => this.rowSelectionChanged(data, rows),
-      rowClick: (e: any, row: any) => this.rowClicked(e, row),
-      cellEdited: (cell: any) => this.cellEdited(cell),
       columns: this.getColumns(),
       layout: this.getLayout(),
-      pagination: pagination,
+      pagination: this.model.pagination != null,
+      paginationMode: this.model.pagination,
       paginationSize: this.model.page_size,
       paginationInitialPage: 1,
-      selectableCheck: (row: any) => {
-	const selectable = this.model.selectable_rows
-	return (selectable == null) || (selectable.indexOf(row._row.data._index) >= 0)
-      },
-      tooltips: (cell: any) => {
-        return  cell.getColumn().getField() + ": " + cell.getValue();
-      },
     }
-    if (pagination) {
+    if (this.model.pagination === "remote") {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
-      configuration['ajaxSorting'] = true
+      configuration['sortMode'] = "remote"
     }
     const cds: any = this.model.source;
     let data: any[]
@@ -199,10 +302,77 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       data = []
     else
       data = transform_cds_to_records(cds, true)
+    if (configuration.dataTree)
+      data = group_data(data, this.model.columns, this.model.indexes, this.model.aggregators)
     return {
       ...configuration,
       "data": data,
     }
+  }
+
+  _render_children(): void {
+    new Promise(async (resolve: any) => {
+      const children = []
+      for (const idx of this.model.expanded) {
+        if (idx in this.model.children)
+          children.push(this.model.children[idx])
+      }
+      await build_views(this._child_views, children, {parent: (null as any)})
+      resolve(null)
+    }).then(() => {
+      for (const r of this.model.expanded) {
+        const row = this.tabulator.getRow(r)
+        this._render_row(row)
+      }
+    })
+  }
+
+  _render_row(row: any): void {
+    const index = row._row.data._index
+    if (this.model.expanded.indexOf(index) < 0 || !(index in this.model.children))
+      return
+    const model = this.model.children[index]
+    const view = this._child_views.get(model)
+    if (view == null)
+      return
+    const rowEl = row.getElement()
+    const viewEl = rowEl.children[rowEl.children.length-1]
+    if ((viewEl.className === 'bk') && viewEl.children.length)
+      return
+    const style = getComputedStyle(this.tabulator.element.children[1].children[0])
+    const bg = style.backgroundColor
+    const neg_margin = "-" + rowEl.style.paddingLeft
+    const row_view = div({style: "background-color: " + bg +"; margin-left:" + neg_margin})
+    view.renderTo(row_view)
+    row.getElement().appendChild(row_view)
+  }
+
+  _expand_render(cell: any): string {
+    const index = cell._cell.row.data._index
+    const icon = this.model.expanded.indexOf(index) < 0 ? "\u25ba" : "\u25bc"
+    return "<i>" + icon + "</i>"
+  }
+
+  _update_expand(cell: any): void {
+    const index = cell._cell.row.data._index
+    const expanded = [...this.model.expanded]
+    const exp_index = expanded.indexOf(index)
+    if (exp_index < 0)
+      expanded.push(index)
+    else
+      expanded.splice(exp_index, 1)
+    this.model.expanded = expanded
+    if (expanded.indexOf(index) < 0)
+      return
+    let ready = true
+    for (const idx of this.model.expanded) {
+      if (!(idx in this.model.children)) {
+        ready = false
+        break
+      }
+    }
+    if (ready)
+      this._render_children()
   }
 
   getColumns(): any {
@@ -215,8 +385,23 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           for (const col of column.columns)
             group_columns.push({...col})
           columns.push({...column, columns: group_columns})
-        } else
+        } else if (column.formatter === "expand") {
+          const expand = {
+            hozAlign: "center",
+            cellClick: (_: any, cell: any) => { this._update_expand(cell) },
+            formatter: (cell: any) => { return this._expand_render(cell) },
+            width:40,
+            frozen: true
+          }
+          columns.push(expand)
+        } else {
+          if (column.formatter === "rowSelection") {
+            column.cellClick = (_: any, cell: any) => {
+              cell.getRow().toggleSelect();
+            }
+          }
           columns.push({...column})
+        }
     }
     for (const column of this.model.columns) {
       let tab_column: any = null
@@ -250,7 +435,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           tab_column.formatter = "tickCross"
         else {
           tab_column.formatter = (cell: any) => {
-            return column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, null)
+            const formatted = column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, null)
+            if (column.formatter.type === 'HTMLTemplateFormatter')
+              return formatted
+            const node = div()
+            node.innerHTML = formatted
+            return node.children[0].innerHTML
           }
         }
       }
@@ -278,6 +468,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         tab_column.editor = (cell: any, onRendered: any, success: any, cancel: any) => this.renderEditor(column, cell, onRendered, success, cancel)
       }
       tab_column.editable = () => (this.model.editable && (editor.default_view != null))
+      if (tab_column.headerFilter) {
+        if ((typeof tab_column.headerFilter) === 'boolean' &&
+            (typeof tab_column.editor) === 'string') {
+          tab_column.headerFilter = tab_column.editor
+          tab_column.headerFilterParams = tab_column.editorParams
+        }
+      }
       if (config_columns == null)
         columns.push(tab_column)
     }
@@ -308,21 +505,22 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     return view.inputEl
   }
 
-  after_layout(): void {
-    super.after_layout()
-    if (this.tabulator != null)
-      this.tabulator.redraw(true)
-    this.updateStyles()
-  }
-
   // Update table
 
+  getData(): any[] {
+    let data = transform_cds_to_records(this.model.source, true)
+    if (this.model.configuration.dataTree)
+      data = group_data(data, this.model.columns, this.model.indexes, this.model.aggregators)
+    return data
+  }
+
   setData(): void {
-    const data = transform_cds_to_records(this.model.source, true);
+    const data = this.getData()
     if (this.model.pagination != null)
       this.tabulator.rowManager.setData(data, true, false)
-    else
-      this.tabulator.setData(data);
+    else {
+      this.tabulator.setData(data)
+    }
     this.freezeRows()
     this.updateSelection()
   }
@@ -390,10 +588,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     for (const cell_el of this._styled_cells)
       cell_el.cssText = ""
     this._styled_cells = []
-    if (this.model.styles == null || this.tabulator == null || this.tabulator.getDataCount() == 0)
+    if (this._styles == null || this.tabulator == null || this.tabulator.getDataCount() == 0)
       return
-    for (const r in this.model.styles) {
-      const row_style = this.model.styles[r]
+    for (const r in this._styles) {
+      const row_style = this._styles[r]
       const row = this.tabulator.getRow(r)
       if (!row)
         continue
@@ -407,7 +605,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         this._styled_cells.push(element)
         element.cssText = ""
         for (const s of style) {
-	  let prop, value
+          let prop, value
           if (isArray(s))
             [prop, value] = s
           else if (!s.includes(':'))
@@ -418,18 +616,19 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         }
       }
     }
+    const styles = this._styles
     this.model.styles = {}
+    this._styles = styles
   }
 
   addData(): void {
-    const rows = this.tabulator.rowManager.getRows();
+    const rows = this.tabulator.rowManager.getRows()
     const last_row = rows[rows.length-1]
-
-    let data = transform_cds_to_records(this.model.source, true);
-    this.tabulator.setData(data);
-    if (this.model.follow) {
-      this.tabulator.scrollToRow((last_row.data._index || 0), "top", false);
-    }
+    const start = ((last_row?.data._index + 1) || 0)
+    let data = transform_cds_to_records(this.model.source, true, start)x
+    this.tabulator.addData(data)
+    if (this.model.follow && last_row)
+      this.tabulator.scrollToRow(start, "top", false)
     this.freezeRows()
     this.updateSelection()
   }
@@ -455,12 +654,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   setMaxPage(): void {
-    this.tabulator.setMaxPage(Math.max(this.model.page, this.model.max_page))
-    this.tabulator.modules.page._setPageButtons()
+    this.tabulator.setMaxPage(this.model.max_page)
+    if (this.tabulator.modules.page.pagesElement)
+      this.tabulator.modules.page._setPageButtons()
   }
 
   setPage(): void {
-    this.tabulator.setPage(this.model.page)
+    this.tabulator.setPage(Math.min(this.model.max_page, this.model.page))
   }
 
   setPageSize(): void {
@@ -479,14 +679,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.tabulator.deselectRow()
     this.tabulator.selectRow(indices)
     // This actually places the selected row at the top of the table
-    this.tabulator.scrollToRow(indices[0], "bottom", false)
+    for (const index of indices) {
+      const row = this.tabulator.rowManager.findRow(index)
+      if (row)
+        this.tabulator.scrollToRow(index, "bottom", false).catch(() => {})
+    }
     this._selection_updating = false
   }
 
   // Update model
 
   rowClicked(e: any, row: any) {
-    if (this._selection_updating || this._initializing || this.model.select_mode !== true)
+    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'string' || this.model.select_mode === false || this.model.configuration.dataTree)
       return
     let indices: number[] = []
     const selected = this.model.source.selected
@@ -507,6 +711,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       indices.push(index)
     else
       indices.splice(indices.indexOf(index), 1)
+    // Remove the first selected indices when selectable is an int.
+    if (typeof this.model.select_mode === 'number') {
+      while (indices.length > this.model.select_mode) {
+        indices.shift()
+      }
+    }
     const filtered = this._filter_selected(indices)
     this.tabulator.deselectRow()
     this.tabulator.selectRow(filtered)
@@ -519,14 +729,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const filtered = []
     for (const ind of indices) {
       if (this.model.selectable_rows == null ||
-	  this.model.selectable_rows.indexOf(ind) >= 0)
-	filtered.push(ind)
+          this.model.selectable_rows.indexOf(ind) >= 0)
+        filtered.push(ind)
     }
     return filtered
   }
 
   rowSelectionChanged(data: any, _: any): void {
-    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean')
+    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean' || (typeof this.model.select_mode) === 'number' || this.model.select_mode.startsWith('checkbox') || this.model.configuration.dataTree)
       return
     const indices: number[] = data.map((row: any) => row._index)
     const filtered = this._filter_selected(indices)
@@ -542,6 +752,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this._tabulator_cell_updating = true
     this.model.source.patch({[field]: [[index, value]]});
     this._tabulator_cell_updating = false
+    this.model.trigger_event(new TableEditEvent(field, index))
   }
 }
 
@@ -550,15 +761,20 @@ export const TableLayout = Enum("fit_data", "fit_data_fill", "fit_data_stretch",
 export namespace DataTabulator {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
+    aggregators: p.Property<any>
+    children: p.Property<any>
     columns: p.Property<TableColumn[]>
     configuration: p.Property<any>
     download: p.Property<boolean>
-    filename: p.Property<string>
     editable: p.Property<boolean>
+    expanded: p.Property<number[]>
+    filename: p.Property<string>
+    filters: p.Property<any[]>
     follow: p.Property<boolean>
     frozen_rows: p.Property<number[]>
     groupby: p.Property<string[]>
     hidden_columns: p.Property<string[]>
+    indexes: p.Property<string[]>
     layout: p.Property<typeof TableLayout["__type__"]>
     max_page: p.Property<number>
     page: p.Property<number>
@@ -590,15 +806,20 @@ export class DataTabulator extends HTMLBox {
     this.prototype.default_view = DataTabulatorView;
 
     this.define<DataTabulator.Props>(({Any, Array, Boolean, Nullable, Number, Ref, String}) => ({
+      aggregators:    [ Any,                     {} ],
+      children:       [ Any,                     {} ],
       configuration:  [ Any,                     {} ],
       columns:        [ Array(Ref(TableColumn)), [] ],
       download:       [ Boolean,               true ],
       editable:       [ Boolean,               true ],
+      expanded:       [ Array(Number),           [] ],
       filename:       [ String,         "table.csv" ],
+      filters:        [ Array(Any),              [] ],
       follow:         [ Boolean,               true ],
       frozen_rows:    [ Array(Number),           [] ],
       groupby:        [ Array(String),           [] ],
       hidden_columns: [ Array(String),           [] ],
+      indexes:        [ Array(String),           [] ],
       layout:         [ TableLayout,     "fit_data" ],
       max_page:       [ Number,                   0 ],
       pagination:     [ Nullable(String),      null ],

@@ -16,6 +16,7 @@ from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
 from distutils.version import LooseVersion
+from functools import partial
 from html import escape # noqa
 from importlib import import_module
 from six import string_types
@@ -139,7 +140,7 @@ def recursive_parameterized(parameterized, objects=None):
     """
     objects = [] if objects is None else objects
     objects.append(parameterized)
-    for _, p in parameterized.param.get_param_values():
+    for p in parameterized.param.values().values():
         if isinstance(p, param.Parameterized) and not any(p is o for o in objects):
             recursive_parameterized(p, objects)
     return objects
@@ -185,7 +186,7 @@ def param_reprs(parameterized, skip=None):
     """
     cls = type(parameterized).__name__
     param_reprs = []
-    for p, v in sorted(parameterized.param.get_param_values()):
+    for p, v in sorted(parameterized.param.values().items()):
         default = parameterized.param[p].default
         equal = v is default
         if not equal:
@@ -294,6 +295,8 @@ def parse_query(query):
             query[k] = float(v)
         elif v.startswith('[') or v.startswith('{'):
             query[k] = json.loads(v)
+        elif v.lower() in ("true", "false"):
+            query[k] = v.lower() == "true"
     return query
 
 
@@ -355,16 +358,27 @@ def edit_readonly(parameterized):
             p.constant = constant
 
 
-def lazy_load(module, model, notebook=False):
+def lazy_load(module, model, notebook=False, root=None):
     if module in sys.modules:
         return getattr(sys.modules[module], model)
     if notebook:
         ext = module.split('.')[-1]
-        param.main.param.warning(f'{model} was not imported on instantiation '
-                                 'and may not render in a notebook. Restart '
-                                 'the notebook kernel and ensure you load '
-                                 'it as part of the extension using:'
-                                 f'\n\npn.extension(\'{ext}\')\n')
+        param.main.param.warning(
+            f'{model} was not imported on instantiation and may not '
+            'render in a notebook. Restart the notebook kernel and '
+            'ensure you load it as part of the extension using:'
+            f'\n\npn.extension(\'{ext}\')\n'
+        )
+    elif root is not None:
+        from .io.state import state
+        ext = module.split('.')[-1]
+        if root.ref['id'] in state._views:
+            param.main.param.warning(
+                f'{model} was not imported on instantiation may not '
+                'render in the served application. Ensure you add the '
+                'following to the top of your application:'
+                f'\n\npn.extension(\'{ext}\')\n'
+            )
     return getattr(import_module(module), model)
 
 
@@ -384,3 +398,14 @@ def clone_model(bokeh_model, include_defaults=False, include_undefined=False):
         include_defaults=include_defaults, include_undefined=include_undefined
     )
     return type(bokeh_model)(**properties)
+
+
+def function_name(func):
+    """
+    Returns the name of a function (or its string repr)
+    """
+    while isinstance(func, partial):
+        func = func.func
+    if hasattr(func, '__name__'):
+        return func.__name__
+    return str(func)

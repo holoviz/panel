@@ -8,6 +8,7 @@ import uuid
 
 from collections import OrderedDict
 from functools import partial
+from pathlib import PurePath
 
 import param
 
@@ -69,6 +70,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         self.nb_template = nb_template or template
         self._render_items = OrderedDict()
         self._render_variables = {}
+        self._documents = []
         self._server = None
         self._layout = self._build_layout()
 
@@ -125,19 +127,27 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             k: v for k, v in modifiers.items() if k != 'children' and
             getattr(viewable, k) == viewable.param[k].default
         }
-        viewable.param.set_param(**params)
+        viewable.param.update(**params)
         props = viewable._process_param_change(params)
         model.update(**props)
 
     def _apply_root(self, name, viewable, tags):
         pass
 
+    def _server_destroy(self, session_context):
+        doc = session_context._document
+        self._documents.remove(doc)
+        if doc in state._locations:
+            del state._locations[doc]
+
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         doc = doc or _curdoc()
+        self._documents.append(doc)
         title = title or 'Panel Application'
         if location and self.location:
             loc = self._add_location(doc, location)
             doc.on_session_destroyed(loc._server_destroy)
+        doc.on_session_destroyed(self._server_destroy)
         doc.title = title
 
         # Initialize fake root. This is needed to ensure preprocessors
@@ -474,9 +484,9 @@ class BasicTemplate(BaseTemplate):
             params['modal'] = self._get_params(params['modal'], self.param.modal.class_)
         if 'theme' in params and isinstance(params['theme'], str):
             params['theme'] = THEMES[params['theme']]
+        if 'favicon' in params and isinstance(params['favicon'], PurePath):
+            params['favicon'] = str(params['favicon'])
         super().__init__(template=template, **params)
-        if self.busy_indicator:
-            state.sync_busy(self.busy_indicator)
         self._js_area = HTML(margin=0, width=0, height=0)
         if '{{ embed(roots.js_area) }}' in template:
             self._render_items['js_area'] = (self._js_area, [])
@@ -494,6 +504,8 @@ class BasicTemplate(BaseTemplate):
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         title = title or self.title
+        if self.busy_indicator:
+            state.sync_busy(self.busy_indicator)
         self._update_vars()
         doc = super()._init_doc(doc, comm, title, notebook, location)
         if self.theme:
@@ -630,14 +642,14 @@ class BasicTemplate(BaseTemplate):
         if os.path.isfile(self.logo):
             img = _panel(self.logo)
             if not isinstance(img, ImageBase):
-                raise ValueError("Could not determine file type of logo: {self.logo}.")
+                raise ValueError(f"Could not determine file type of logo: {self.logo}.")
             logo = img._b64()
         else:
             logo = self.logo
         if os.path.isfile(self.favicon):
             img = _panel(self.favicon)
             if not isinstance(img, ImageBase):
-                raise ValueError("Could not determine file type of favicon: {self.favicon}.")
+                raise ValueError(f"Could not determine file type of favicon: {self.favicon}.")
             favicon = img._b64()
         else:
             if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
@@ -697,6 +709,11 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['nav'] = any('nav' in ts for ts in tags)
         self._render_variables['header'] = any('header' in ts for ts in tags)
         self._render_variables['root_labels'] = labels
+
+    def _server_destroy(self, session_context):
+        super()._server_destroy(session_context)
+        if not self._documents and self.busy_indicator in state._indicators:
+            state._indicators.remove(self.busy_indicator)
 
     def open_modal(self):
         """

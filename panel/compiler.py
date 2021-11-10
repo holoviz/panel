@@ -26,7 +26,7 @@ def require_components():
     from .config import config
     from .reactive import ReactiveHTML
 
-    configs, requirements, exports = [], [], []
+    configs, requirements, exports = [], [], {}
     js_requires = []
 
     from bokeh.model import Model
@@ -63,26 +63,17 @@ def require_components():
 
         for req in list(model_require.get('paths', [])):
             if isinstance(req, tuple):
+                model_require['paths'] = dict(model_require['paths'])
                 model_require['paths'][req[0]] = model_require['paths'].pop(req)
 
-            export = req[0] if isinstance(req, tuple) else req
-            if export not in model_exports:
-                continue
+            reqs = req[1] if isinstance(req, tuple) else (req,)
+            for r in reqs:
+                if r not in requirements:
+                    requirements.append(r)
+                    if r in model_exports:
+                        exports[r] = model_exports[r]
 
-            if isinstance(req, tuple):
-                for r in req[1]:
-                    if r not in requirements:
-                        requirements.append(r)
-                req = req[0]
-            elif req not in requirements:
-                requirements.append(req)
-
-            export = model_exports[req]
-            for e in (export if isinstance(export, list) else [export]):
-                if export not in exports and export is not None:
-                    exports.append(export)
     return configs, requirements, exports, skip_import
-
 
 def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
     model_name = name.split('.')[-1].lower()
@@ -94,8 +85,17 @@ def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
             try:
                 response = requests.get(bundle_file, verify=False)
             except Exception as e:
-                print(f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}.")
-                continue
+                raise ConnectionError(
+                    f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}."
+                )
+        try:
+            map_file = f'{bundle_file}.map'
+            map_response = requests.get(map_file)
+        except Exception:
+            try:
+                map_response = requests.get(map_file, verify=False)
+            except Exception:
+                map_response = None
         bundle_path = os.path.join(*os.path.join(*bundle_file.split('//')[1:]).split('/')[1:])
         obj_dir = explicit_dir or model_name
         filename = bundle_dir.joinpath(obj_dir, bundle_path)
@@ -105,6 +105,9 @@ def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
             filename += f'.{ext}'
         with open(filename, 'w', encoding="utf-8") as f:
             f.write(response.content.decode('utf-8'))
+        if map_response:
+            with open(f'{filename}.map', 'w', encoding="utf-8") as f:
+                f.write(map_response.content.decode('utf-8'))
 
 def write_bundled_tarball(name, tarball, bundle_dir, module=False):
     model_name = name.split('.')[-1].lower()

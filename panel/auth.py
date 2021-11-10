@@ -117,6 +117,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             'redirect_uri': redirect_uri,
             'client_id':    client_id,
             'client_secret': client_secret,
+            'response_type': 'code',
             'extra_params': {
                 'state': state,
             },
@@ -125,7 +126,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             params['scope'] = self._SCOPE
         if 'scope' in config.oauth_extra_params:
             params['scope'] = config.oauth_extra_params['scope']
-        log.debug("%s making authorize request" % type(self).__name__)
+        log.debug("%s making authorize request", type(self).__name__)
         self.authorize_redirect(**params)
 
     async def _fetch_access_token(self, code, redirect_uri, client_id, client_secret):
@@ -149,7 +150,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         if not client_secret:
             raise ValueError('The client secret is undefined.')
 
-        log.debug("%s making access token request." % type(self).__name__)
+        log.debug("%s making access token request.", type(self).__name__)
 
         params = {
             'code':          code,
@@ -196,7 +197,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         if not user:
             return
 
-        log.debug("%s received user information." % type(self).__name__)
+        log.debug("%s received user information.", type(self).__name__)
         return self._on_auth(user, body['access_token'])
 
     def get_state_cookie(self):
@@ -205,16 +206,18 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         """
         if self._state_cookie is None:
             self._state_cookie = (
-                self.get_secure_cookie(STATE_COOKIE_NAME) or b''
+                self.get_secure_cookie(STATE_COOKIE_NAME, max_age_days=config.oauth_expiry) or b''
             ).decode('utf8', 'replace')
             self.clear_cookie(STATE_COOKIE_NAME)
         return self._state_cookie
 
     def set_state_cookie(self, state):
-        self.set_secure_cookie(STATE_COOKIE_NAME, state, expires_days=1, httponly=True)
+        self.set_secure_cookie(
+            STATE_COOKIE_NAME, state, expires_days=config.oauth_expiry, httponly=True
+        )
 
     async def get(self):
-        log.debug("%s received login request" % type(self).__name__)
+        log.debug("%s received login request", type(self).__name__)
         if config.oauth_redirect_uri:
             redirect_uri = config.oauth_redirect_uri
         else:
@@ -249,7 +252,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             user = await self.get_authenticated_user(**params)
             if user is None:
                 raise HTTPError(403)
-            log.debug("%s authorized user, redirecting to app." % type(self).__name__)
+            log.debug("%s authorized user, redirecting to app.", type(self).__name__)
             self.redirect('/')
         else:
             # Redirect for user authentication
@@ -261,13 +264,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
     def _on_auth(self, user_info, access_token):
         user_key = config.oauth_jwt_user or self._USER_KEY
         user = user_info[user_key]
-        self.set_secure_cookie('user', user)
+        self.set_secure_cookie('user', user, expires_days=config.oauth_expiry)
         id_token = base64url_encode(json.dumps(user_info))
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
-        self.set_secure_cookie('access_token', access_token)
-        self.set_secure_cookie('id_token', id_token)
+        self.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry)
+        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
         return user
 
     def _on_error(self, response, body=None):
@@ -287,6 +290,33 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         raise HTTPError(500, f"{provider} authentication failed")
 
 
+class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
+
+    _access_token_header = 'Bearer {}'
+
+    _EXTRA_TOKEN_PARAMS = {
+        'grant_type':    'authorization_code'
+    }
+
+    _SCOPE = ['openid', 'email']
+
+    @property
+    def _OAUTH_ACCESS_TOKEN_URL(self):
+        return config.oauth_extra_params['TOKEN_URL']
+
+    @property
+    def _OAUTH_AUTHORIZE_URL(self):
+        return config.oauth_extra_params['AUTHORIZE_URL']
+
+    @property
+    def _OAUTH_USER_URL(self):
+        return config.oauth_extra_params['USER_URL']
+
+    @property
+    def _USER_KEY(self):
+        return config.oauth_extra_params.get('USER_KEY', 'email')
+
+
 class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
     """GitHub OAuth2 Authentication
     To authenticate with GitHub, first register your application at
@@ -304,7 +334,6 @@ class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
     _USER_KEY = 'login'
 
-    
 
 class BitbucketLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
@@ -407,7 +436,7 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         if not client_secret:
             raise ValueError('The client secret is undefined.')
 
-        log.debug("%s making access token request." % type(self).__name__)
+        log.debug("%s making access token request.", type(self).__name__)
 
         http = self.get_auth_http_client()
 
@@ -441,7 +470,7 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         if 'access_token' not in body:
             return self._on_error(response, body)
 
-        log.debug("%s granted access_token." % type(self).__name__)
+        log.debug("%s granted access_token.", type(self).__name__)
 
         headers = dict(self._API_BASE_HEADERS, **{
             "Authorization": "Bearer {}".format(body['access_token']),
@@ -458,7 +487,7 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         if not user:
             return
 
-        log.debug("%s received user information." % type(self).__name__)
+        log.debug("%s received user information.", type(self).__name__)
 
         return self._on_auth(user, body['access_token'])
 
@@ -496,7 +525,7 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         if not client_secret:
             raise ValueError('The client secret are undefined.')
 
-        log.debug("%s making access token request." % type(self).__name__)
+        log.debug("%s making access token request.", type(self).__name__)
 
         http = self.get_auth_http_client()
 
@@ -529,7 +558,7 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         if 'access_token' not in body:
             return self._on_error(response, body)
 
-        log.debug("%s granted access_token." % type(self).__name__)
+        log.debug("%s granted access_token.", type(self).__name__)
 
         access_token = body['access_token']
         id_token = body['id_token']
@@ -541,15 +570,15 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         if user_key in decoded:
             user = decoded[user_key]
         else:
-            log.error("%s token payload did not contain expected '%s'." %
-                      (type(self).__name__, user_key))
+            log.error("%s token payload did not contain expected %r.",
+                      type(self).__name__, user_key)
             raise HTTPError(400, "OAuth token payload missing user information")
-        self.set_secure_cookie('user', user)
+        self.set_secure_cookie('user', user, expires_days=config.oauth_expiry)
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
-        self.set_secure_cookie('access_token', access_token)
-        self.set_secure_cookie('id_token', id_token)
+        self.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry)
+        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
         return user
 
 
@@ -583,7 +612,7 @@ class AzureAdLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
 
 class OktaLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
     """Okta OAuth2 Authentication
-    
+
     To authenticate with Okta you first need to set up and configure
     in the Okta developer console.
     """
@@ -661,7 +690,7 @@ class OAuthProvider(AuthProvider):
     @property
     def get_user(self):
         def get_user(request_handler):
-            return request_handler.get_secure_cookie("user")
+            return request_handler.get_secure_cookie("user", max_age_days=config.oauth_expiry)
         return get_user
 
     @property
@@ -685,6 +714,7 @@ AUTH_PROVIDERS = {
     'auth0': Auth0Handler,
     'azure': AzureAdLoginHandler,
     'bitbucket': BitbucketLoginHandler,
+    'generic': GenericLoginHandler,
     'google': GoogleLoginHandler,
     'github': GithubLoginHandler,
     'gitlab': GitLabLoginHandler,

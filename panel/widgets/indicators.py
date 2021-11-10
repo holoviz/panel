@@ -1,5 +1,6 @@
 import os
 import sys
+import warnings
 
 from math import pi
 
@@ -34,6 +35,10 @@ class Indicator(Widget):
         'scale_width', 'scale_height', 'scale_both', None])
 
     __abstract = True
+
+    def _filter_properties(self, properties):
+        "Indicators are solely display units so we do not need to sync properties."
+        return []
 
 
 class BooleanIndicator(Indicator):
@@ -130,10 +135,12 @@ class Progress(ValueIndicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    value = param.Integer(default=None, bounds=(-1, None), doc="""
-        The current value of the progress bar. If set to None the progress
+    value = param.Integer(default=-1, bounds=(-1, None),                           
+                          allow_None = True,#TODO: remove
+                          doc="""
+        The current value of the progress bar. If set to -1 the progress
         bar will be indeterminate and animate depending on the active
-        parameter. If set to -1 the progress bar will be empty.""")
+        parameter.""")
 
     _rename = {'name': None}
 
@@ -142,6 +149,13 @@ class Progress(ValueIndicator):
     @param.depends('max', watch=True)
     def _update_value_bounds(self):
         self.param.value.bounds = (-1, self.max)
+        
+    @param.depends('value', watch=True)
+    def _warn_deprecation(self):
+        if self.value is None:
+            self.value = -1
+            warnings.warn('Setting the progress value to None is deprecated, use -1 instead.', 
+                          FutureWarning,  stacklevel=2)  
 
     def __init__(self,**params):
         super().__init__(**params)
@@ -662,6 +676,11 @@ class Trend(SyncableData, Indicator):
         super()._update_cds(*events)
         self._trigger_auto_values()
 
+    def _update_data(self, data):
+        if isinstance(data, _BkTrendIndicator):
+            return
+        super()._update_data(data)
+
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         ys = self._data.get(self.plot_y, [])
@@ -717,9 +736,8 @@ class Tqdm(Indicator):
 
     layout = param.ClassSelector(class_=(Column, Row), precedence=-1, constant=True, doc="""
         The layout for the text and progress indicator.""",)
-
-    max = param.Integer(default=100, doc="""
-        The maximum value of the progress indicator.""")
+            
+    max = Progress.param.max
 
     progress = param.ClassSelector(class_=Progress, precedence=-1, doc="""
         The Progress indicator used to display the progress.""",)
@@ -729,11 +747,9 @@ class Tqdm(Indicator):
 
     text_pane = param.ClassSelector(class_=Str, precedence=-1, doc="""
         The pane to display the text to.""")
-
-    value = param.Integer(default=0, bounds=(0, None), doc="""
-        The current value of the progress bar. If set to None the progress
-        bar will be indeterminate and animate depending on the active
-        parameter.""")
+        
+    value = Progress.param.value
+    value.default = 0
 
     margin = param.Parameter(default=0, doc="""
         Allows to create additional space around the component. May
@@ -781,13 +797,8 @@ class Tqdm(Indicator):
 
         self.param.watch(self._update_layout, list(Viewable.param))
 
-        if self.value == 0:
-            # Hack: to give progress the initial look
-            self.progress.max = 100000
-            self.progress.value = 1
-        else:
-            self.progress.max = self.max
-            self.progress.value = self.value
+        self.progress.max = self.max
+        self.progress.value = self.value
         self.text_pane.object = self.text
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -802,7 +813,7 @@ class Tqdm(Indicator):
         self.layout._cleanup(root)
 
     def _update_layout(self, *events):
-        self.layout.param.set_param(**{event.name: event.new for event in events})
+        self.layout.param.update(**{event.name: event.new for event in events})
 
     @param.depends("text", watch=True)
     def _update_text(self):

@@ -5,11 +5,13 @@ import param
 from bokeh.models import (
     Div, Slider, Select, RangeSlider as BkRangeSlider, MultiSelect,
     Row as BkRow, CheckboxGroup, Toggle, Button, TextInput as
-    BkTextInput,Tabs as BkTabs, Column as BkColumn, TextInput)
+    BkTextInput,Tabs as BkTabs, Column as BkColumn, TextInput,
+    AutocompleteInput as BkAutocompleteInput,
+)
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh, HTML
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, ParamFunction, JSONInit
-from panel.widgets import LiteralInput, RangeSlider
+from panel.widgets import AutocompleteInput, LiteralInput, NumberInput, RangeSlider
 from panel.tests.util import mpl_available, mpl_figure
 
 
@@ -408,6 +410,22 @@ def test_param_precedence(document, comm):
 
     a_param.precedence = None
     assert test_pane._widgets['a'] in test_pane._widget_box.objects
+
+
+def test_hide_constant(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), constant=True)
+
+    test = Test()
+    test_pane = Pane(test, parameters=['a'], hide_constant=True)
+    model = test_pane.get_root(document, comm=comm)
+
+    slider = model.children[1]
+    assert not slider.visible
+
+    test.param.a.constant = False
+
+    assert slider.visible
 
 
 def test_param_label(document, comm):
@@ -1205,3 +1223,43 @@ def test_rerender_bounded_widget_when_bounds_set_and_unset():
     assert isinstance(p._widgets['num'], LiteralInput)
     assert p._widgets['num'] in p._widget_box
 
+
+def test_numberinput_bounds():
+
+    class Test(param.Parameterized):
+        num = param.Number(default=5, bounds=(0, 5))
+
+    test = Test()
+    p = Param(test, widgets={'num': NumberInput})
+
+    numinput = p.layout[1]
+
+    assert numinput.start == 0
+    assert numinput.end == 5
+
+def test_set_widget_autocompleteinput(document, comm):
+
+    class Test(param.Parameterized):
+        # Testing with default='' and check_on_set=False since this feels
+        # like the most sensible default config for Selector -> AutocompleteInput
+        choice = param.Selector(default='', objects=['a', 'b'], check_on_set=False)
+
+    test = Test()
+    test_pane = Param(test, widgets={'choice': AutocompleteInput})
+
+    model = test_pane.get_root(document, comm=comm)
+
+    autocompleteinput = model.children[1]
+    assert isinstance(autocompleteinput, BkAutocompleteInput)
+    assert autocompleteinput.completions == ['a', 'b']
+    assert autocompleteinput.value == ''
+    assert autocompleteinput.disabled == False
+
+    # Check changing param value updates widget
+    test.choice = 'b'
+    assert autocompleteinput.value == 'b'
+
+    # Check changing param attribute updates widget
+    test.param['choice'].objects = ['c', 'd']
+    assert autocompleteinput.completions == ['c', 'd']
+    assert autocompleteinput.value == ''

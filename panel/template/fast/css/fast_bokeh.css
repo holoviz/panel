@@ -23,7 +23,6 @@
   background-image: none;
   font-family: var(--body-font);
   font-size: var(--type-ramp-base-font-size);
-  line-height: var(--type-ramp-base-line-height);
 }
 .bk-root pre.bk {
   font-family: Courier, monospace;

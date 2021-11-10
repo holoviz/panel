@@ -2,10 +2,11 @@
 Various utilities for recording and embedding state in a rendered app.
 """
 import datetime as dt
+import logging
 import json
 import threading
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from weakref import WeakKeyDictionary, WeakSet
 from urllib.parse import urljoin
 
@@ -17,6 +18,10 @@ from pyviz_comms import CommManager as _CommManager
 from tornado.web import decode_signed_value
 
 from ..util import base64url_decode
+from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
+
+_state_logger = logging.getLogger('panel.state')
+
 
 
 class _state(param.Parameterized):
@@ -24,6 +29,8 @@ class _state(param.Parameterized):
     Holds global state associated with running apps, allowing running
     apps to indicate their state to a user.
     """
+
+    admin_context = param.Parameter()
 
     base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
@@ -41,7 +48,9 @@ class _state(param.Parameterized):
        of secret variables including OAuth information.""")
 
     rel_path = param.String(default='', readonly=True, doc="""
-       Relative path from the current app being served to the root URL.""")
+       Relative path from the current app being served to the root URL.
+       If application is embedded in a different server via autoload.js
+       this will instead reflect an absolute path.""")
 
     session_info = param.Dict(default={'total': 0, 'live': 0,
                                        'sessions': OrderedDict()}, doc="""
@@ -78,6 +87,7 @@ class _state(param.Parameterized):
 
     # An index of all currently active servers
     _servers = {}
+    _threads = {}
 
     # Jupyter display handles
     _handles = {}
@@ -91,6 +101,10 @@ class _state(param.Parameterized):
 
     # Indicators listening to the busy state
     _indicators = []
+
+    # Profilers
+    _launching = []
+    _profiles = param.Dict(defaultdict(list))
 
     # Endpoints
     _rest_endpoints = {}
@@ -118,14 +132,17 @@ class _state(param.Parameterized):
     def _init_session(self, event):
         if not self.curdoc.session_context:
             return
+        from .server import logger
         session_id = self.curdoc.session_context.id
         session_info = self.session_info['sessions'].get(session_id, {})
         if session_info.get('rendered') is not None:
             return
+        logger.info(LOG_SESSION_RENDERED, id(self.curdoc))
         self.session_info['live'] += 1
         session_info.update({
             'rendered': dt.datetime.now().timestamp()
         })
+        self.param.trigger('session_info')
 
     def _get_callback(self, endpoint):
         _updating = {}
@@ -142,16 +159,19 @@ class _state(param.Parameterized):
                 return
             _updating[id(obj)] = list(values)
             for parameterized in parameterizeds:
-                if parameterized in _updating:
+                if id(parameterized) in _updating:
                     continue
                 try:
-                    parameterized.param.set_param(**values)
+                    parameterized.param.update(**values)
                 except Exception:
                     raise
                 finally:
                     if id(obj) in _updating:
                         not_updated = [p for p in _updating[id(obj)] if p not in values]
-                        _updating[id(obj)] = not_updated
+                        if not_updated:
+                            _updating[id(obj)] = not_updated
+                        else:
+                            del _updating[id(obj)]
         return link
 
     def _on_load(self, event):
@@ -216,21 +236,63 @@ class _state(param.Parameterized):
         Return a PeriodicCallback object with start and stop methods.
         """
         from .callbacks import PeriodicCallback
-
-        cb = PeriodicCallback(callback=callback, period=period,
-                              count=count, timeout=timeout)
+        cb = PeriodicCallback(
+            callback=callback, period=period, count=count, timeout=timeout
+        )
         if start:
             cb.start()
         return cb
 
+    def get_profile(self, profile):
+        """
+        Returns the requested profiling output.
+
+        Arguments
+        ---------
+        profile: str
+          The name of the profiling output to return.
+
+        Returns
+        -------
+        Profiling output wrapped in a pane.
+        """
+        from .profile import get_profiles
+        return get_profiles({(n, e): ps for (n, e), ps in state._profiles.items()
+                             if n == profile})[0][1]
+
     def kill_all_servers(self):
-        """Stop all servers and clear them from the current state."""
+        """
+        Stop all servers and clear them from the current state.
+        """
+        for thread in self._threads.values():
+            try:
+                thread.stop()
+            except Exception:
+                pass
+        self._threads = {}
         for server_id in self._servers:
             try:
                 self._servers[server_id][0].stop()
             except AssertionError:  # can't stop a server twice
                 pass
         self._servers = {}
+
+    def log(self, msg, level='info'):
+        """
+        Logs user messages to the Panel logger.
+
+        Arguments
+        ---------
+        msg: str
+          Log message
+        level: int or str
+          Log level as a string, i.e. 'debug', 'info', 'warning' or 'error'.
+        """
+        args = ()
+        if self.curdoc:
+            args = (id(self.curdoc),)
+            msg = LOG_USER_MSG.format(msg=msg)
+        getattr(_state_logger, level.lower())(msg, *args)
 
     def onload(self, callback):
         """
@@ -249,6 +311,19 @@ class _state(param.Parameterized):
         Callback that is triggered when a session is created.
         """
         self._on_session_created.append(callback)
+
+    def on_session_destroyed(self, callback):
+        """
+        Callback that is triggered when a session is destroyed.
+        """
+        doc = self._curdoc or _curdoc()
+        if doc:
+            doc.on_session_destroyed(callback)
+        else:
+            raise RuntimeError(
+                "Could not add session destroyed callback since no "
+                "document to attach it to could be found."
+            )
 
     def publish(self, endpoint, parameterized, parameters=None):
         """
@@ -271,8 +346,8 @@ class _state(param.Parameterized):
             parameterizeds, old_parameters, cb = self._rest_endpoints[endpoint]
             if set(parameters) != set(old_parameters):
                 raise ValueError("Param REST API output parameters must match across sessions.")
-            values = {k: v for k, v in parameterizeds[0].param.get_param_values() if k in parameters}
-            parameterized.param.set_param(**values)
+            values = {k: v for k, v in parameterizeds[0].param.values().items() if k in parameters}
+            parameterized.param.update(**values)
             parameterizeds.append(parameterized)
         else:
             cb = self._get_callback(endpoint)
@@ -291,7 +366,8 @@ class _state(param.Parameterized):
         if not isinstance(indicator.param.value, param.Boolean):
             raise ValueError("Busy indicator must have a value parameter"
                              "of Boolean type.")
-        self._indicators.append(indicator)
+        if indicator not in self._indicators:
+            self._indicators.append(indicator)
 
     #----------------------------------------------------------------
     # Public Properties
@@ -345,6 +421,11 @@ class _state(param.Parameterized):
             return self._location
         else:
             return self._locations.get(self.curdoc) if self.curdoc else None
+
+    @property
+    def log_terminal(self):
+        from .admin import log_terminal
+        return log_terminal
 
     @property
     def session_args(self):

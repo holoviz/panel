@@ -65,6 +65,10 @@ when needed.
 
 `Authentication <Authentication.html>`_
  Learn how to add an authentication component in front of your application.
+
+`Profiling and Debugging <Performance_and_Debugging.html>`_
+ Learn how to speed up your application and find issues.
+ 
  
 Supplementary guides
 --------------------
@@ -93,4 +97,5 @@ Supplementary guides
     Building Custom Components <Custom_Components>
     Asynchronous and Concurrent Process <Async_and_Concurrency>
     Authentication <Authentication>
+    Performance and Debugging <Performance_and_Debugging>
     Django Apps <Django_Apps>

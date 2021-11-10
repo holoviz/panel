@@ -312,7 +312,7 @@ class Perspective(PaneBase, ReactiveData):
             ncols = len(df.columns)
             data = {col: df[col].values for col in df.columns}
             if kwargs:
-                self.param.set_param(**{
+                self.param.update(**{
                     k: v for k, v in kwargs.items()
                     if getattr(self, k) is None
                 })
@@ -399,7 +399,7 @@ class Perspective(PaneBase, ReactiveData):
         return msg
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        Perspective = lazy_load('panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm))
+        Perspective = lazy_load('panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root)
         properties = self._process_param_change(self._init_params())
         if properties.get('toggle_config'):
             properties['height'] = self.height or 300

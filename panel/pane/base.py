@@ -13,7 +13,7 @@ from ..layout import Panel, Row
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
-from ..viewable import Layoutable, Viewable
+from ..viewable import Layoutable, Viewable, Viewer
 from ..util import param_reprs
 
 
@@ -46,6 +46,8 @@ def panel(obj, **kwargs):
     if isinstance(obj, Viewable):
         return obj
     elif hasattr(obj, '__panel__'):
+        if not isinstance(obj, Viewer) and issubclass(obj, Viewer):
+            return panel(obj().__panel__())
         return panel(obj.__panel__())
     if kwargs.get('name', False) is None:
         kwargs.pop('name')
@@ -237,7 +239,7 @@ class PaneBase(Reactive):
         -------
         Cloned Pane object
         """
-        params = dict(self.param.get_param_values(), **params)
+        params = dict(self.param.values(), **params)
         old_object = params.pop('object')
         if object is None:
             object = old_object
@@ -373,10 +375,10 @@ class ReplacementPane(PaneBase):
             # If the object has not external referrers we can update
             # it inplace instead of replacing it
             if isinstance(object, Reactive):
-                pvals = dict(old_object.param.get_param_values())
-                new_params = {k: v for k, v in object.param.get_param_values()
+                pvals = old_object.param.values()
+                new_params = {k: v for k, v in object.param.values().items()
                               if k != 'name' and v is not pvals[k]}
-                old_object.param.set_param(**new_params)
+                old_object.param.update(**new_params)
             else:
                 old_object.object = object
         else:
@@ -398,7 +400,7 @@ class ReplacementPane(PaneBase):
         return pane, internal
 
     def _update_inner(self, new_object):
-        kwargs = dict(self.param.get_param_values(), **self._kwargs)
+        kwargs = dict(self.param.values(), **self._kwargs)
         del kwargs['object']
         new_pane, internal = self._update_from_object(
             new_object, self._pane, self._internal, **kwargs

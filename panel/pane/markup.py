@@ -57,6 +57,10 @@ class HTML(DivPaneBase):
     allow room for whatever is being wrapped.
     """
 
+    disable_math = param.Boolean(default=True, doc="""
+        Whether to disable support for MathJax math rendering for
+        strings escaped with $$ delimiters.""")
+
     # Priority is dependent on the data type
     priority = None
 
@@ -102,6 +106,10 @@ class DataFrame(HTML):
 
     decimal = param.String(default='.', doc="""
         Character recognized as decimal separator, e.g. ',' in Europe.""")
+
+    escape = param.Boolean(default=True, doc="""
+        Whether or not to escape the dataframe HTML. For security reasons
+        the default value is True.""")
 
     float_format = param.Callable(default=None, doc="""
         Formatter function to apply to columns' elements if they are
@@ -151,7 +159,7 @@ class DataFrame(HTML):
 
     _rerender_params = [
         'object', '_object', 'bold_rows', 'border', 'classes',
-        'col_space', 'decimal', 'float_format', 'formatters',
+        'col_space', 'decimal', 'escape', 'float_format', 'formatters',
         'header', 'index', 'index_names', 'justify', 'max_rows',
         'max_cols', 'na_rep', 'render_links', 'show_dimensions',
         'sparsify', 'sizing_mode'
@@ -256,6 +264,10 @@ class Markdown(DivPaneBase):
 
     dedent = param.Boolean(default=True, doc="""
         Whether to dedent common whitespace across all lines.""")
+
+    disable_math = param.Boolean(default=False, doc="""
+        Whether to disable support for MathJax math rendering for
+        strings escaped with $$ delimiters.""")
 
     extensions = param.List(default=[
         "extra", "smarty", "codehilite"], doc="""

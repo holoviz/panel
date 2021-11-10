@@ -54,7 +54,7 @@ class FileDownload(Widget):
         right-click save as.""")
 
     button_type = param.ObjectSelector(default='default', objects=[
-        'default', 'primary', 'success', 'warning', 'danger'])
+        'default', 'primary', 'success', 'warning', 'danger', 'light'])
 
     callback = param.Callable(default=None, doc="""
         A callable that returns the file path or file-like object.""")
@@ -194,6 +194,6 @@ class FileDownload(Widget):
         data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
         self._synced = True
 
-        self.param.set_param(data=data, filename=filename)
+        self.param.update(data=data, filename=filename)
         self._update_label()
         self._transfers += 1

@@ -75,12 +75,12 @@ def set_values(*parameterizeds, **param_values):
     for parameterized in parameterizeds:
         old_values = {p: getattr(parameterized, p) for p in param_values}
         old.append((parameterized, old_values))
-        parameterized.param.set_param(**param_values)
+        parameterized.param.update(**param_values)
     try:
         yield
     finally:
         for parameterized, old_values in old:
-            parameterized.param.set_param(**old_values)
+            parameterized.param.update(**old_values)
 
 
 class Param(PaneBase):
@@ -114,6 +114,9 @@ class Param(PaneBase):
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
         Height of widgetbox the parameter widgets are displayed in.""")
+
+    hide_constant = param.Boolean(default=False, doc="""
+        Whether to hide widgets of constant parameters.""")
 
     initializer = param.Callable(default=None, doc="""
         User-supplied function that will be called on initialization,
@@ -195,7 +198,7 @@ class Param(PaneBase):
         self._updating = []
 
         # Construct Layout
-        kwargs = {p: v for p, v in self.param.get_param_values()
+        kwargs = {p: v for p, v in self.param.values().items()
                   if p in Layoutable.param and v is not None}
         self._widget_box = self.default_layout(**kwargs)
 
@@ -213,7 +216,8 @@ class Param(PaneBase):
                              type(layout).__name__)
         self.param.watch(self._update_widgets, [
             'object', 'parameters', 'name', 'display_threshold', 'expand_button',
-            'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name'])
+            'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name',
+            'hide_constant'])
         self._update_widgets()
 
     def __repr__(self, depth=0):
@@ -222,7 +226,7 @@ class Param(PaneBase):
         params = [] if self.object is None else list(self.object.param)
         parameters = [k for k in params if k != 'name']
         params = []
-        for p, v in sorted(self.param.get_param_values()):
+        for p, v in sorted(self.param.values().items()):
             if v is self.param[p].default: continue
             elif v is None: continue
             elif isinstance(v, string_types) and v == '': continue
@@ -318,7 +322,7 @@ class Param(PaneBase):
                         if e not in existing
                     ]
                 elif change.new:
-                    kwargs = {k: v for k, v in self.param.get_param_values()
+                    kwargs = {k: v for k, v in self.param.values().items()
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
                                  **kwargs)
@@ -339,7 +343,7 @@ class Param(PaneBase):
                     return
                 elif is_parameterized(change.new):
                     parameterized = change.new
-                    kwargs = {k: v for k, v in self.param.get_param_values()
+                    kwargs = {k: v for k, v in self.param.values().items()
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
                                  **kwargs)
@@ -384,6 +388,8 @@ class Param(PaneBase):
         else:
             label = p_obj.label
         kw = dict(disabled=p_obj.constant, name=label)
+        if self.hide_constant:
+            kw['visible'] = not p_obj.constant
 
         value = getattr(self.object, p_name)
         if value is not None:
@@ -396,6 +402,11 @@ class Param(PaneBase):
             options = p_obj.get_range()
             if not options and value is not None:
                 options = [value]
+            # This applies to widgets whose `options` Parameter is a List type,
+            # such as AutoCompleteInput.
+            if ('options' in widget_class.param
+                and isinstance(widget_class.param['options'], param.List)):
+                options = list(options.values())
             kw['options'] = options
         if hasattr(p_obj, 'get_soft_bounds'):
             bounds = p_obj.get_soft_bounds()
@@ -435,7 +446,7 @@ class Param(PaneBase):
                 return
             try:
                 self._updating.append(p_name)
-                self.object.param.set_param(**{p_name: change.new})
+                self.object.param.update(**{p_name: change.new})
             finally:
                 self._updating.remove(p_name)
 
@@ -460,6 +471,8 @@ class Param(PaneBase):
             widget = self._widgets[p_name]
             if change.what == 'constant':
                 updates['disabled'] = change.new
+                if self.hide_constant:
+                    updates['visible'] = not change.new
             elif change.what == 'precedence':
                 if change.new is change.old:
                     return
@@ -472,7 +485,11 @@ class Param(PaneBase):
                     self._rerender()
                 return
             elif change.what == 'objects':
-                updates['options'] = p_obj.get_range()
+                options = p_obj.get_range()
+                if ('options' in widget.param and
+                    isinstance(widget.param['options'], param.List)):
+                    options = list(options)
+                updates['options'] = options
             elif change.what == 'bounds':
                 start, end = p_obj.get_soft_bounds()
                 supports_bounds = hasattr(widget, 'start')
@@ -516,10 +533,10 @@ class Param(PaneBase):
                 self._updating.append(p_name)
                 if change.type == 'triggered':
                     with discard_events(widget):
-                        widget.param.set_param(**updates)
+                        widget.param.update(**updates)
                     widget.param.trigger(*updates)
                 else:
-                    widget.param.set_param(**updates)
+                    widget.param.update(**updates)
             finally:
                 self._updating.remove(p_name)
 
@@ -758,13 +775,13 @@ class ParamMethod(ReplacementPane):
 
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
-        params = parameterized.param.params_depended_on(self.object.__name__)
+        params = parameterized.param.method_dependencies(self.object.__name__)
         deps = params
 
         def update_pane(*events):
             # Update nested dependencies if parameterized object events
             if any(is_parameterized(event.new) for event in events):
-                new_deps = parameterized.param.params_depended_on(self.object.__name__)
+                new_deps = parameterized.param.method_dependencies(self.object.__name__)
                 for p in list(deps):
                     if p in new_deps: continue
                     watchers = self._callbacks
@@ -909,7 +926,7 @@ class JSONInit(param.Parameterized):
 
         for name, value in params.items():
             try:
-                parameterized.param.set_param(**{name:value})
+                parameterized.param.update(**{name:value})
             except ValueError as e:
                 warnobj.warning(str(e))
 

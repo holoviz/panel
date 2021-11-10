@@ -6,20 +6,38 @@ ways.
 import ast
 import base64
 import logging # isort:skip
+import os
 
 from glob import glob
 
 from bokeh.command.subcommands.serve import Serve as _BkServe
 from bokeh.command.util import build_single_handler_applications
 
+from bokeh.application import Application
+from bokeh.application.handlers.document_lifecycle import DocumentLifecycleHandler
+from bokeh.application.handlers.function import FunctionHandler
+from bokeh.server.contexts import ApplicationContext
+from tornado.ioloop import PeriodicCallback, IOLoop
+from tornado.web import StaticFileHandler
+
 from ..auth import OAuthProvider
 from ..config import config
 from ..io.rest import REST_PROVIDERS
 from ..io.reload import record_modules, watch
-from ..io.server import INDEX_HTML, get_static_routes
+from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
 
 log = logging.getLogger(__name__)
+
+
+def _cleanup_doc(doc):
+    for callback in doc.session_destroyed_callbacks:
+        try:
+            callback(None)
+        except Exception:
+            pass
+    doc.callbacks._change_callbacks[None] = {}
+    doc.destroy(None)
 
 
 def parse_var(s):
@@ -45,6 +63,28 @@ def parse_vars(items):
     Parse a series of key-value pairs and return a dictionary
     """
     return dict((parse_var(item) for item in items))
+
+
+class AdminApplicationContext(ApplicationContext):
+
+    def __init__(self, application, unused_timeout=15000, **kwargs):
+        super().__init__(application, io_loop=IOLoop.current(), **kwargs)
+        self._unused_timeout = unused_timeout
+        self._cleanup_cb = None
+        self._loop.add_callback(self.run_load_hook)
+
+    async def cleanup_sessions(self):
+        await self._cleanup_sessions(self._unused_timeout)
+
+    def run_load_hook(self):
+        self._cleanup_cb = PeriodicCallback(self.cleanup_sessions, self._unused_timeout)
+        self._cleanup_cb.start()
+        super().run_load_hook()
+
+    def run_unload_hook(self):
+        if self._cleanup_cb:
+            self._cleanup_cb.stop()
+        super().run_unload_hook()
 
 
 class Serve(_BkServe):
@@ -91,6 +131,12 @@ class Serve(_BkServe):
             type    = str,
             help    = "A random string used to encode the user information."
         )),
+        ('--oauth-expiry-days', dict(
+            action  = 'store',
+            type    = float,
+            help    = "Expiry off the OAuth cookie in number of days.",
+            default = 1
+        )),
         ('--rest-provider', dict(
             action = 'store',
             type   = str,
@@ -115,6 +161,15 @@ class Serve(_BkServe):
         ('--warm', dict(
             action  = 'store_true',
             help    = "Whether to execute scripts on startup to warm up the server."
+        )),
+        ('--admin', dict(
+            action  = 'store_true',
+            help    = "Whether to add an admin panel."
+        )),
+        ('--profiler', dict(
+            action  = 'store',
+            type    = str,
+            help    = "The profiler to use by default, e.g. pyinstrument or snakeviz."
         )),
         ('--autoreload', dict(
             action  = 'store_true',
@@ -168,9 +223,61 @@ class Serve(_BkServe):
         if args.warm or args.autoreload:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
-            with record_modules():
+            if args.autoreload:
+                with record_modules():
+                    for app in applications.values():
+                        doc = app.create_document()
+                        with set_curdoc(doc):
+                            state._on_load(None)
+                        _cleanup_doc(doc)
+            else:
                 for app in applications.values():
-                    app.create_document()
+                    doc = app.create_document()
+                    with set_curdoc(doc):
+                        state._on_load(None)
+                    _cleanup_doc(doc)
+
+        prefix = args.prefix
+        if prefix is None:
+            prefix = ""
+        prefix = prefix.strip("/")
+        if prefix:
+            prefix = "/" + prefix
+
+        config.profiler = args.profiler
+        if args.admin:
+            from ..io.admin import admin_panel
+            from ..io.server import per_app_patterns
+            config._admin = True
+            app = Application(FunctionHandler(admin_panel))
+            unused_timeout = args.check_unused_sessions or 15000
+            app_ctx = AdminApplicationContext(app, unused_timeout=unused_timeout, url='/admin')
+            if all(not isinstance(handler, DocumentLifecycleHandler) for handler in app._handlers):
+                app.add(DocumentLifecycleHandler())
+            app_patterns = []
+            for p in per_app_patterns:
+                route = '/admin' + p[0]
+                context = {"application_context": app_ctx}
+                route = prefix + route
+                app_patterns.append((route, p[1], context))
+
+            websocket_path = None
+            for r in app_patterns:
+                if r[0].endswith("/ws"):
+                    websocket_path = r[0]
+            if not websocket_path:
+                raise RuntimeError("Couldn't find websocket path")
+            for r in app_patterns:
+                r[2]["bokeh_websocket_path"] = websocket_path
+            try:
+                import snakeviz
+                SNAKEVIZ_PATH = os.path.join(os.path.dirname(snakeviz.__file__), 'static')
+                app_patterns.append(
+                    ('/snakeviz/static/(.*)', StaticFileHandler, dict(path=SNAKEVIZ_PATH))
+                )
+            except Exception:
+                pass
+            patterns.extend(app_patterns)
 
         config.session_history = args.session_history
         if args.rest_session_info:
@@ -180,6 +287,7 @@ class Serve(_BkServe):
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
+            config.oauth_expiry = args.oauth_expiry_days
             if config.oauth_key and args.oauth_key:
                 raise ValueError(
                     "Supply OAuth key either using environment variable "

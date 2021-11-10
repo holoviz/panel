@@ -17,7 +17,7 @@ from bokeh.models.widgets import (
 
 from ..layout import Column, VSpacer
 from ..models import SingleSelect as _BkSingleSelect
-from ..util import as_unicode, isIn, indexOf, bokeh_version
+from ..util import as_unicode, isIn, indexOf
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
 from .input import TextInput, TextAreaInput
@@ -196,7 +196,10 @@ class MultiChoice(_MultiSelectBase):
 
     option_limit = param.Integer(default=None, bounds=(1, None), doc="""
         Maximum number of options to display at once.""")
-
+    
+    search_option_limit = param.Integer(default=None, bounds=(1, None), doc="""
+        Maximum number of options to display at once if search string is entered.""")
+    
     placeholder = param.String(default='', doc="""
         String displayed when no selection has been made.""")
 
@@ -207,9 +210,7 @@ class MultiChoice(_MultiSelectBase):
 
 
 _AutocompleteInput_rename = {'name': 'title', 'options': 'completions'}
-if bokeh_version < '2.3.0':
-    # disable restrict keyword
-    _AutocompleteInput_rename['restrict'] = None
+
 
 class AutocompleteInput(Widget):
 
@@ -240,6 +241,13 @@ class AutocompleteInput(Widget):
     _widget_type = _BkAutocompleteInput
 
     _rename = _AutocompleteInput_rename
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if 'completions' in msg:
+            if self.restrict and not isIn(self.value, msg['completions']):
+                msg['value'] = self.value = ''
+        return msg
 
 
 class _RadioGroupBase(SingleSelectBase):

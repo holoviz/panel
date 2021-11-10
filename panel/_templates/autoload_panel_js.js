@@ -59,7 +59,6 @@ calls it with the rendered model.
       return null;
     }
     console.debug("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
-    root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length;
 
     function on_load() {
       root._bokeh_is_loading--;
@@ -89,10 +88,16 @@ calls it with the rendered model.
     if (window.requirejs) {
       window.requirejs.config({{ config|conffilter }});
       {% for r in requirements %}
-      require(["{{ r }}"], function({{ exports[loop.index0] }}) {
-	window.{{ exports[loop.index0] }} = {{ exports[loop.index0] }}
+      require(["{{ r }}"], function({{ exports[r] }}) {
+	{% if r in exports %}
+	window.{{ exports[r] }} = {{ exports[r] }}
+	{% endif %}
+	on_load()
       })
       {% endfor %}
+      root._bokeh_is_loading = css_urls.length + {{ requirements|length }};
+    } else {
+      root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length;
     }
     {%- for lib, urls in skip_imports.items() %}
     if (((window['{{ lib }}'] !== undefined) && (!(window['{{ lib }}'] instanceof HTMLElement))) || window.requirejs) {
@@ -104,7 +109,12 @@ calls it with the rendered model.
     {%- endfor %}
     for (var i = 0; i < js_urls.length; i++) {
       var url = js_urls[i];
-      if (skip.indexOf(url) >= 0) { on_load(); continue; }
+      if (skip.indexOf(url) >= 0) {
+	if (!window.requirejs) {
+	  on_load();
+	}
+	continue;
+      }
       var element = document.createElement('script');
       element.onload = on_load;
       element.onerror = on_error;
@@ -115,7 +125,12 @@ calls it with the rendered model.
     }
     for (var i = 0; i < js_modules.length; i++) {
       var url = js_modules[i];
-      if (skip.indexOf(url) >= 0) { on_load(); continue; }
+      if (skip.indexOf(url) >= 0) {
+	if (!window.requirejs) {
+	  on_load();
+	}
+	continue;
+      }
       var element = document.createElement('script');
       element.onload = on_load;
       element.onerror = on_error;

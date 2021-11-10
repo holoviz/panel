@@ -17,10 +17,12 @@ def ds_as_cds(dataset):
     """
     if len(dataset) == 0:
         return {}
-    data = {k: [] for k, v in dataset[0].items()}
+    # create a list of unique keys from all items as some items may not include optional fields
+    keys = sorted(set(k for d in dataset for k in d.keys()))
+    data = {k: [] for k in keys}
     for item in dataset:
-        for k, v in item.items():
-            data[k].append(v)
+        for k in keys:
+            data[k].append(item.get(k))
     data = {k: np.asarray(v) for k, v in data.items()}
     return data
 
@@ -38,6 +40,13 @@ class Vega(PaneBase):
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
+
+    show_actions = param.Boolean(default=False, doc="""
+        Whether to show Vega actions.""")
+
+    theme = param.ObjectSelector(default=None, allow_None=True, objects=[
+        'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
+        'latimes', 'urbaninstitute', 'googlecharts'])
 
     priority = 0.8
 
@@ -136,7 +145,7 @@ class Vega(PaneBase):
             props['sizing_mode'] = 'stretch_height'
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        VegaPlot = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm))
+        VegaPlot = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root)
         sources = {}
         if self.object is None:
             json = None

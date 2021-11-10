@@ -7,7 +7,7 @@ import {ColorMapper} from "@bokehjs/models/mappers/color_mapper"
 import {Enum} from "@bokehjs/core/kinds"
 
 import {PanelHTMLBoxView, set_size} from "../layout"
-import {vtkns, VolumeType, majorAxis, applyStyle, CSSProperties, Annotation} from "./util"
+import {vtkns, setup_vtkns, VolumeType, majorAxis, applyStyle, CSSProperties, Annotation} from "./util"
 import {VTKColorBar} from "./vtkcolorbar"
 import {VTKAxes} from "./vtkaxes"
 
@@ -88,7 +88,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
 
     info_div.click()
   }
-  
+
   _init_annotations_container(): void {
     if (!this._annotations_container) {
       this._annotations_container = document.createElement("div")
@@ -170,7 +170,6 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
         )
       }
     }
-    console.log(this.model.annotations)
   }
 
   connect_signals(): void {
@@ -238,6 +237,8 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   remove(): void {
     this._unsubscribe_camera_cb()
     window.removeEventListener("resize", this._vtk_renwin.resize)
+    if (this._orientationWidget!=null) this._orientationWidget.delete()
+    this._vtk_renwin.getRenderWindow().getInteractor().delete()
     this._vtk_renwin.delete()
     super.remove()
   }
@@ -499,6 +500,7 @@ export abstract class AbstractVTKPlot extends HTMLBox {
   static __module__ = "panel.models.vtk"
 
   constructor(attrs?: Partial<AbstractVTKPlot.Attrs>) {
+    setup_vtkns()
     super(attrs)
   }
 

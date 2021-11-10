@@ -1,6 +1,7 @@
 import os
 import pathlib
 import time
+import weakref
 
 import param
 import pytest
@@ -125,7 +126,41 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
     finally:
         server.stop()
 
-        
+
+def test_server_extensions_on_root():
+    html = Markdown('# Title')
+
+    server = serve(html, port=6006, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    try:
+        r = requests.get("http://localhost:6006/static/extensions/panel/css/loading.css")
+        assert r.ok
+    finally:
+        server.stop()
+
+
+def test_autoload_js():
+    html = Markdown('# Title')
+    port = 6007
+    app_name = 'test'
+    server = serve({app_name: html}, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(0.5)
+
+    args = f"bokeh-autoload-element=1002&bokeh-app-path=/{app_name}&bokeh-absolute-url=http://localhost:{port}/{app_name}"
+    r = requests.get(f"http://localhost:{port}/{app_name}/autoload.js?{args}")
+
+    try:
+        assert r.status_code == 200
+        assert f"http://localhost:{port}/static/extensions/panel/css/alerts.css" in r.content.decode('utf-8')
+    finally:
+        server.stop()
+
+
 def test_server_async_callbacks():
     button = Button(name='Click')
 
@@ -186,7 +221,7 @@ def test_serve_config_per_session_state():
     finally:
         server1.stop()
         server2.stop()
-    
+
 
 def test_server_session_info():
     with config.set(session_history=-1):
@@ -209,7 +244,7 @@ def test_server_session_info():
         session_context = param.Parameterized()
         session_context._document = doc
         session_context.id = sid
-        doc._session_context = session_context
+        doc._session_context = weakref.ref(session_context)
         state.curdoc = doc
         state._init_session(None)
         assert state.session_info['live'] == 1

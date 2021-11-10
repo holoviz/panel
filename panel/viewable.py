@@ -266,7 +266,7 @@ class ServableMixin(object):
         """
         root, doc, comm = state._views[ref][1:]
         patch_cds_msg(root, msg)
-        held = doc._hold
+        held = doc.callbacks.hold_value
         patch = manager.assemble(msg)
         doc.hold()
         patch.apply_to_document(doc, comm.id)
@@ -403,6 +403,10 @@ class Renderable(param.Parameterized):
         self._comms = {}
         self._kernels = {}
         self._found_links = set()
+        self._logger = logging.getLogger(f'{__name__}.{type(self).__name__}')
+
+    def _log(self, msg, *args, level='debug'):
+        getattr(self._logger, level)(f'Session %s {msg}', id(state.curdoc), *args)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -466,7 +470,7 @@ class Renderable(param.Parameterized):
         return model
 
     def _init_params(self):
-        return {k: v for k, v in self.param.get_param_values() if v is not None}
+        return {k: v for k, v in self.param.values().items() if v is not None}
 
     def _server_destroy(self, session_context):
         """
@@ -479,6 +483,7 @@ class Renderable(param.Parameterized):
             if session['rendered'] is not None:
                 state.session_info['live'] -= 1
             session['ended'] = dt.datetime.now().timestamp()
+            state.param.trigger('session_info')
         doc = session_context._document
         root = self._documents[doc]
         ref = root.ref['id']
@@ -648,7 +653,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
-        inherited = {p: v for p, v in self.param.get_param_values()
+        inherited = {p: v for p, v in self.param.values().items()
                      if not self.param[p].readonly}
         return type(self)(**dict(inherited, **params))
 
