@@ -624,10 +624,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   addData(): void {
     const rows = this.tabulator.rowManager.getRows()
     const last_row = rows[rows.length-1]
-    let data = transform_cds_to_records(this.model.source, true)
-    this.tabulator.updateOrAddData(data)
+    const start = ((last_row?.data._index + 1) || 0)
+    let data = transform_cds_to_records(this.model.source, true, start)
+    console.log(data)
+    this.tabulator.addData(data)
     if (this.model.follow && last_row)
-      this.tabulator.scrollToRow((last_row.data._index || 0), "top", false);
+      this.tabulator.scrollToRow(start, "top", false);
     this.freezeRows()
     this.updateSelection()
   }
