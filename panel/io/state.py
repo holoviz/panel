@@ -175,8 +175,20 @@ class _state(param.Parameterized):
         return link
 
     def _on_load(self, event):
-        for cb in self._onload.pop(self.curdoc, []):
-            cb()
+        callbacks = self._onload.pop(self.curdoc, [])
+        if not callbacks:
+             return
+
+        from ..config import config
+        from .profile import profile_ctx
+        if (self.curdoc and self.curdoc in self._launching) or not config.profiler:
+            for cb in callbacks: cb()
+            return
+        with profile_ctx(config.profiler) as sessions:
+            for cb in callbacks: cb()
+        path = self.curdoc.session_context.request.path
+        self._profiles[(path+':on_load', config.profiler)] += sessions
+        self.param.trigger('_profiles')
 
     #----------------------------------------------------------------
     # Public Methods
