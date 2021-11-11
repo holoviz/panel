@@ -882,6 +882,7 @@ class Tabulator(BaseTable):
     def __init__(self, value=None, **params):
         configuration = params.pop('configuration', {})
         self.style = None
+        self._computed_styler = None
         self._child_panels = {}
         self._on_edit_callbacks = []
         super().__init__(value=value, **params)
@@ -973,18 +974,24 @@ class Tabulator(BaseTable):
     def _length(self):
         return len(self._processed)
 
-    def _get_style_data(self):
+    def _get_style_data(self, recompute=True):
         if self.value is None or self.style is None:
             return {}
         df = self._processed
-        try:
-            styler = df.style
-        except Exception:
-            return {}
+        if recompute:
+            try:
+                self._computed_styler = styler = df.style
+            except Exception:
+                self._computed_styler = None
+                return {}
+            if styler is None:
+                return {}
+            styler._todo = self.style._todo
+            styler._compute()
+        else:
+            styler = self._computed_styler
         if styler is None:
             return {}
-        styler._todo = self.style._todo
-        styler._compute()
         offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
         if self.pagination == 'remote':
             start = (self.page-1)*self.page_size
@@ -1011,8 +1018,8 @@ class Tabulator(BaseTable):
             df = df.iloc[start:(start+nrows)]
         return self.selectable_rows(df)
 
-    def _update_style(self):
-        styles = self._get_style_data()
+    def _update_style(self, recompute=True):
+        styles = self._get_style_data(recompute)
         msg = {'styles': styles}
         for ref, (m, _) in self._models.items():
             self._apply_update([], msg, m, ref)
@@ -1107,18 +1114,20 @@ class Tabulator(BaseTable):
         if not patch:
             return
         super()._patch(patch)
+        self._update_style()
         self._update_selectable()
-        if self.pagination == 'remote':
-            self._update_style()
 
     def _update_cds(self, *events):
         if self._updating:
             return
+        recompute = not all(
+            e.name in ('page', 'page_size', 'pagination') for e in events
+        )
         super()._update_cds(*events)
         if self.pagination:
             self._update_max_page()
             self._update_selected()
-        self._update_style()
+        self._update_style(recompute)
         self._update_selectable()
 
     def _update_selectable(self):
