@@ -268,7 +268,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         this.setStyles()
         this.relayout()
         this.setFrozen()
-        this._initializing = true
+        this._initializing = false
       })
     }
     // Rendering callbacks
