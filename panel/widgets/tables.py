@@ -96,18 +96,23 @@ class BaseTable(ReactiveData, Widget):
             msg['editable'] = not msg.pop('editable') and len(self.indexes) <= 1
         return msg
 
-    def _get_columns(self):
-        if self.value is None:
-            return []
-
+    def _get_fields(self):
         indexes = self.indexes
         col_names = list(self.value.columns)
         if not self.hierarchical or len(indexes) == 1:
             col_names = indexes + col_names
         else:
             col_names = indexes[-1:] + col_names
+        return col_names
+
+    def _get_columns(self):
+        if self.value is None:
+            return []
+
+        indexes = self.indexes
+        fields = self._get_fields()
         df = self.value.reset_index() if len(indexes) > 1 else self.value
-        return self._get_column_definitions(col_names, df)
+        return self._get_column_definitions(fields, df)
 
     def _get_column_definitions(self, col_names, df):
         import pandas as pd
@@ -205,6 +210,10 @@ class BaseTable(ReactiveData, Widget):
         return model
 
     def _update_columns(self, event, model):
+        if event.name == 'value' and [c.field for c in model.columns] == self._get_fields():
+            # Skip column update if the data has changed but the columns
+            # have not
+            return
         model.columns = self._get_columns()
 
     def _manual_update(self, events, model, doc, root, parent, comm):
@@ -968,10 +977,6 @@ class Tabulator(BaseTable):
         if self.value is None or self.style is None:
             return {}
         df = self._processed
-        if self.pagination == 'remote':
-            nrows = self.page_size
-            start = (self.page-1)*nrows
-            df = df.iloc[start:(start+nrows)]
         try:
             styler = df.style
         except Exception:
@@ -981,9 +986,16 @@ class Tabulator(BaseTable):
         styler._todo = self.style._todo
         styler._compute()
         offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
-
+        if self.pagination == 'remote':
+            start = (self.page-1)*self.page_size
+            end = start + self.page_size
         styles = {}
         for (r, c), s in styler.ctx.items():
+            if self.pagination == 'remote':
+                if (r < start or r >= end):
+                    continue
+                else:
+                    r -= start
             if r not in styles:
                 styles[int(r)] = {}
             styles[int(r)][offset+int(c)] = s
@@ -1168,12 +1180,6 @@ class Tabulator(BaseTable):
     def _get_properties(self, source):
         props = {p : getattr(self, p) for p in list(Layoutable.param)
                  if getattr(self, p) is not None}
-        if self.pagination:
-            length = self.page_size
-        else:
-            length = self._length
-        if props.get('height', None) is None:
-            props['height'] = length * self.row_height + 30
         columns = self._get_columns()
         if self.selectable == 'checkbox-single':
             selectable = 'checkbox'
