@@ -390,13 +390,20 @@ class BaseTable(ReactiveData, Widget):
         return values
 
     def _get_data(self):
+        import pandas as pd
         df = self._filter_dataframe(self.value)
         if df is None:
             return [], {}
-        elif len(self.indexes) > 1:
+        if isinstance(self.value.index, pd.MultiIndex):
+            indexes = list(df.index.names)
+        else:
+            indexes = [df.index.name or 'index']
+        if len(indexes) > 1:
             df = df.reset_index()
-        data = ColumnDataSource.from_df(df).items()
-        return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data}
+        data = ColumnDataSource.from_df(df)
+        if not self.show_index:
+            data = {k: v for k, v in data.items() if k not in indexes}
+        return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
 
     def _update_column(self, column, array):
         self.value[column] = array
