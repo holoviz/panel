@@ -96,18 +96,23 @@ class BaseTable(ReactiveData, Widget):
             msg['editable'] = not msg.pop('editable') and len(self.indexes) <= 1
         return msg
 
-    def _get_columns(self):
-        if self.value is None:
-            return []
-
+    def _get_fields(self):
         indexes = self.indexes
         col_names = list(self.value.columns)
         if not self.hierarchical or len(indexes) == 1:
             col_names = indexes + col_names
         else:
             col_names = indexes[-1:] + col_names
+        return col_names
+
+    def _get_columns(self):
+        if self.value is None:
+            return []
+
+        indexes = self.indexes
+        fields = self._get_fields()
         df = self.value.reset_index() if len(indexes) > 1 else self.value
-        return self._get_column_definitions(col_names, df)
+        return self._get_column_definitions(fields, df)
 
     def _get_column_definitions(self, col_names, df):
         import pandas as pd
@@ -205,6 +210,10 @@ class BaseTable(ReactiveData, Widget):
         return model
 
     def _update_columns(self, event, model):
+        if event.name == 'value' and [c.field for c in model.columns] == self._get_fields():
+            # Skip column update if the data has changed but the columns
+            # have not
+            return
         model.columns = self._get_columns()
 
     def _manual_update(self, events, model, doc, root, parent, comm):
@@ -381,13 +390,20 @@ class BaseTable(ReactiveData, Widget):
         return values
 
     def _get_data(self):
+        import pandas as pd
         df = self._filter_dataframe(self.value)
         if df is None:
             return [], {}
-        elif len(self.indexes) > 1:
+        if isinstance(self.value.index, pd.MultiIndex):
+            indexes = list(df.index.names)
+        else:
+            indexes = [df.index.name or 'index']
+        if len(indexes) > 1:
             df = df.reset_index()
-        data = ColumnDataSource.from_df(df).items()
-        return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data}
+        data = ColumnDataSource.from_df(df)
+        if not self.show_index:
+            data = {k: v for k, v in data.items() if k not in indexes}
+        return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
 
     def _update_column(self, column, array):
         self.value[column] = array
@@ -873,6 +889,7 @@ class Tabulator(BaseTable):
     def __init__(self, value=None, **params):
         configuration = params.pop('configuration', {})
         self.style = None
+        self._computed_styler = None
         self._child_panels = {}
         self._on_edit_callbacks = []
         super().__init__(value=value, **params)
@@ -964,26 +981,35 @@ class Tabulator(BaseTable):
     def _length(self):
         return len(self._processed)
 
-    def _get_style_data(self):
+    def _get_style_data(self, recompute=True):
         if self.value is None or self.style is None:
             return {}
         df = self._processed
-        if self.pagination == 'remote':
-            nrows = self.page_size
-            start = (self.page-1)*nrows
-            df = df.iloc[start:(start+nrows)]
-        try:
-            styler = df.style
-        except Exception:
-            return {}
+        if recompute:
+            try:
+                self._computed_styler = styler = df.style
+            except Exception:
+                self._computed_styler = None
+                return {}
+            if styler is None:
+                return {}
+            styler._todo = self.style._todo
+            styler._compute()
+        else:
+            styler = self._computed_styler
         if styler is None:
             return {}
-        styler._todo = self.style._todo
-        styler._compute()
         offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
-
+        if self.pagination == 'remote':
+            start = (self.page-1)*self.page_size
+            end = start + self.page_size
         styles = {}
         for (r, c), s in styler.ctx.items():
+            if self.pagination == 'remote':
+                if (r < start or r >= end):
+                    continue
+                else:
+                    r -= start
             if r not in styles:
                 styles[int(r)] = {}
             styles[int(r)][offset+int(c)] = s
@@ -999,8 +1025,8 @@ class Tabulator(BaseTable):
             df = df.iloc[start:(start+nrows)]
         return self.selectable_rows(df)
 
-    def _update_style(self):
-        styles = self._get_style_data()
+    def _update_style(self, recompute=True):
+        styles = self._get_style_data(recompute)
         msg = {'styles': styles}
         for ref, (m, _) in self._models.items():
             self._apply_update([], msg, m, ref)
@@ -1095,18 +1121,20 @@ class Tabulator(BaseTable):
         if not patch:
             return
         super()._patch(patch)
+        self._update_style()
         self._update_selectable()
-        if self.pagination == 'remote':
-            self._update_style()
 
     def _update_cds(self, *events):
         if self._updating:
             return
+        recompute = not all(
+            e.name in ('page', 'page_size', 'pagination') for e in events
+        )
         super()._update_cds(*events)
         if self.pagination:
             self._update_max_page()
             self._update_selected()
-        self._update_style()
+        self._update_style(recompute)
         self._update_selectable()
 
     def _update_selectable(self):
@@ -1168,12 +1196,6 @@ class Tabulator(BaseTable):
     def _get_properties(self, source):
         props = {p : getattr(self, p) for p in list(Layoutable.param)
                  if getattr(self, p) is not None}
-        if self.pagination:
-            length = self.page_size
-        else:
-            length = self._length
-        if props.get('height', None) is None:
-            props['height'] = length * self.row_height + 30
         columns = self._get_columns()
         if self.selectable == 'checkbox-single':
             selectable = 'checkbox'
