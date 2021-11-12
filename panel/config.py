@@ -95,6 +95,9 @@ class _config(_base_config):
     loading_color = param.Color(default='#c3c3c3', doc="""
         Color of the loading indicator.""")
 
+    loading_max_height = param.Integer(default=400, doc="""
+        Maximum height of the loading indicator.""")
+
     safe_embed = param.Boolean(default=False, doc="""
         Ensure all bokeh property changes trigger events which are
         embedded. Useful when only partial updates are made in an
