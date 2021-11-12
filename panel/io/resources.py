@@ -77,7 +77,8 @@ def loading_css():
     b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return f"""
     .bk.pn-loading.{config.loading_spinner}:before {{
-      background-image: url("data:image/svg+xml;base64,{b64}")
+      background-image: url("data:image/svg+xml;base64,{b64}");
+      max-height: {config.loading_max_height}px;
     }}
     """
 
