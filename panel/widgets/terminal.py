@@ -11,6 +11,8 @@ import signal
 import subprocess
 import sys
 
+from functools import partial
+
 import param
 
 from pyviz_comms import JupyterComm
