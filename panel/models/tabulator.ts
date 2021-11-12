@@ -332,6 +332,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         this.tabulator.off("dataProcessed")
         this.setStyles()
         setTimeout(() => this.relayout(), 10)
+        this._initializing = false
       })
       this.setData()
     }
