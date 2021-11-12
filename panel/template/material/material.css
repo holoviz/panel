@@ -135,8 +135,8 @@ div.bk.mdc-card {
   font-weight: bold;
   align-items: center;
   display: flex !important;
-  padding: 0.25em;
   position: relative !important;
+  margin-left: -1.4em;
 }
 
 .pn-modal {
