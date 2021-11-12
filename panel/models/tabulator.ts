@@ -390,6 +390,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       ...this.model.configuration,
       index: "_index",
       nestedFieldSeparator: false,
+      movableColumns: false,
       selectable: selectable,
       columns: this.getColumns(),
       layout: this.getLayout(),
