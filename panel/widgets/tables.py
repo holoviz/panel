@@ -1,5 +1,6 @@
 import datetime as dt
 
+from functools import partial
 from types import FunctionType, MethodType
 
 import numpy as np
