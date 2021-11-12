@@ -177,7 +177,7 @@ class _state(param.Parameterized):
     def _on_load(self, event):
         callbacks = self._onload.pop(self.curdoc, [])
         if not callbacks:
-             return
+            return
 
         from ..config import config
         from .profile import profile_ctx
