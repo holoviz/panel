@@ -303,6 +303,15 @@ class Syncable(Renderable):
         with hold(doc, comm=comm):
             self._process_events({attr: new})
 
+    def _server_event(self, doc, event):
+        state._locks.clear()
+        if doc.session_context:
+            doc.add_next_tick_callback(
+                partial(self._process_event, event),
+            )
+        else:
+            self._process_event(event)
+
     def _server_change(self, doc, ref, subpath, attr, old, new):
         if subpath:
             attr = f'{subpath}.{attr}'
@@ -1514,7 +1523,11 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if isinstance(v, DataModel):
                 v.tags.append(f"__ref:{root.ref['id']}")
         model.children = self._get_children(doc, root, model, comm)
-        model.on_event('dom_event', self._process_event)
+
+        if comm:
+            model.on_event('dom_event', self._process_event)
+        else:
+            model.on_event('dom_event', partial(self._server_event, doc))
 
         self._link_props(model.data, self._linked_properties(), doc, root, comm)
         self._models[root.ref['id']] = (model, parent)

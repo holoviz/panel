@@ -10,6 +10,7 @@ import {TableColumn} from "@bokehjs/models/widgets/tables"
 
 import {debounce} from  "debounce"
 
+import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
@@ -872,8 +873,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const index = cell._cell.row.data._index;
     const value = cell._cell.value;
     this._tabulator_cell_updating = true
-    this.model.source.patch({[field]: [[index, value]]});
-    this._tabulator_cell_updating = false
+    comm_settings.debounce = false
+    try {
+      this.model.source.patch({[field]: [[index, value]]})
+    } finally {
+      comm_settings.debounce = true
+      this._tabulator_cell_updating = false
+    }
     this.model.trigger_event(new TableEditEvent(field, index))
   }
 }

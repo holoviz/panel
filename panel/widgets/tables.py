@@ -913,7 +913,7 @@ class Tabulator(BaseTable):
             p._cleanup(root)
         super()._cleanup(root)
 
-    def _on_edit(self, event):
+    def _process_event(self, event):
         event.value = self.value[event.column].iloc[event.row]
         for cb in self._on_edit_callbacks:
             cb(event)
@@ -1243,7 +1243,10 @@ class Tabulator(BaseTable):
             child_panels, doc, root, parent, comm
         )
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
-        model.on_event('table-edit', self._on_edit)
+        if comm:
+            model.on_event('table-edit', self._process_event)
+        else:
+            model.on_event('table-edit', partial(self._server_event, doc))
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm):
