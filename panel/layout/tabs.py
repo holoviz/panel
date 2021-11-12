@@ -1,6 +1,8 @@
 """
 Layout component to lay out objects in a set of tabs.
 """
+from collections import defaultdict
+
 import param
 
 from bokeh.models import (
@@ -48,6 +50,7 @@ class Tabs(NamedListPanel):
 
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
+        self._rendered = defaultdict(dict)
         self.param.active.bounds = (0, len(self)-1)
         self.param.watch(self._update_active, ['dynamic', 'active'])
 
@@ -59,6 +62,8 @@ class Tabs(NamedListPanel):
         super()._cleanup(root)
         if root.ref['id'] in self._panels:
             del self._panels[root.ref['id']]
+        if root.ref['id'] in self._rendered:
+            del self._rendered[root.ref['id']]
 
     @property
     def _preprocess_params(self):
@@ -134,23 +139,31 @@ class Tabs(NamedListPanel):
             pane = panel(pane, name=name)
             self.objects[i] = pane
 
+        ref = root.ref['id']
+        panels = self._panels[ref]
+        rendered = self._rendered[ref]
         for obj in old_objects:
-            if obj not in self.objects:
-                obj._cleanup(root)
+            if obj in self.objects:
+                continue
+            obj._cleanup(root)
+            panels.pop(id(obj), None)
+            rendered.pop(id(obj), None)
 
         current_objects = list(self)
-        panels = self._panels[root.ref['id']]
         for i, (name, pane) in enumerate(zip(self._names, self)):
+            pref = id(pane)
             hidden = self.dynamic and i != self.active
-            panel = panels.get(id(pane))
+            panel = panels.get(pref)
             prev_hidden = (
                 hasattr(panel, 'child') and isinstance(panel.child, BkSpacer) and
                 panel.child.tags == ['hidden']
             )
+            if prev_hidden and not hidden and pref in rendered:
+                panel = rendered[pref]
             # If object has not changed, we have not toggled between
             # hidden and unhidden state or the tabs are not
             # dynamic then reuse the panel
-            if (pane in old_objects and id(pane) in panels and
+            if (pane in old_objects and pref in panels and
                 (not (hidden ^ prev_hidden) or not (self.dynamic or prev_hidden))):
                 new_models.append(panel)
                 continue
@@ -161,10 +174,10 @@ class Tabs(NamedListPanel):
                 child.tags = ['hidden']
             else:
                 try:
-                    child = pane._get_model(doc, root, model, comm)
+                    rendered[pref] = child = pane._get_model(doc, root, model, comm)
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
-            panel = panels[id(pane)] = BkPanel(
+            panel = panels[pref] = BkPanel(
                 title=name, name=pane.name, child=child, closable=self.closable
             )
             new_models.append(panel)
