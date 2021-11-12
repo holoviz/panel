@@ -136,6 +136,9 @@ div.bk.mdc-card {
   align-items: center;
   display: flex !important;
   position: relative !important;
+}
+
+.bk.mdc-card-title:nth-child(2) {
   margin-left: -1.4em;
 }
 
