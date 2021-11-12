@@ -96,6 +96,9 @@ class _config(_base_config):
     loading_color = param.Color(default='#c3c3c3', doc="""
         Color of the loading indicator.""")
 
+    loading_max_height = param.Integer(default=400, doc="""
+        Maximum height of the loading indicator.""")
+
     profiler = param.Selector(default=None, allow_None=True, objects=[
         'pyinstrument', 'snakeviz'], doc="""
         The profiler engine to enable.""")
