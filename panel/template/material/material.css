@@ -130,6 +130,10 @@ div.bk.mdc-card {
   border-radius: 0px
 }
 
+.mdc-card .bk.card-header {
+  display: flex;
+}
+
 .bk.mdc-card-title {
   font-size: 1.4em;
   font-weight: bold;
