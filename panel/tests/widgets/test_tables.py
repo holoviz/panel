@@ -292,13 +292,21 @@ def test_tabulator_expanded_content_embed():
 
 def test_tabulator_selected_and_filtered_dataframe(document, comm):
     df = makeMixedDataFrame()
-    table = Tabulator(df)
+    table = Tabulator(df, selection=list(range(len(df))))
 
     pd.testing.assert_frame_equal(table.selected_dataframe, df)
 
     table.add_filter('foo3', 'C')
 
     pd.testing.assert_frame_equal(table.selected_dataframe, df[df["C"] == "foo3"])
+
+    table.remove_filter('foo3')
+
+    table.selection = [0, 1, 2]
+
+    table.add_filter('foo3', 'C')
+
+    assert table.selection == [0]
 
 
 def test_tabulator_config_defaults(document, comm):
@@ -1197,5 +1205,5 @@ def test_tabulator_patch_event():
     for col in df.columns:
         for row in range(len(df)):
             event = TableEditEvent(model=None, column=col, row=row)
-            table._on_edit(event)
+            table._process_event(event)
             assert values[-1] == (col, row, df[col].iloc[row])
