@@ -1,5 +1,6 @@
 import datetime as dt
 
+from functools import partial
 from types import FunctionType, MethodType
 
 import numpy as np
@@ -191,7 +192,20 @@ class BaseTable(ReactiveData, Widget):
 
     @updating
     def _update_cds(self, *events):
+        old_processed = self._processed
         self._processed, data = self._get_data()
+        # If there is a selection we have to compute new index
+        if self.selection and old_processed is not None:
+            indexes = list(self._processed.index)
+            selection = []
+            for sel in self.selection:
+                iv = old_processed.index[sel]
+                try:
+                    idx = indexes.index(iv)
+                    selection.append(idx)
+                except Exception:
+                    continue
+            self.selection = selection
         self._data = {k: convert_datetime_array(v) for k, v in data.items()}
         msg = {'data': self._data}
         for ref, (m, _) in self._models.items():
@@ -628,7 +642,7 @@ class BaseTable(ReactiveData, Widget):
         Returns a DataFrame of the currently selected rows.
         """
         if not self.selection:
-            return self._processed
+            return self._processed.iloc[:0]
         return self._processed.iloc[self.selection]
 
 
@@ -913,7 +927,7 @@ class Tabulator(BaseTable):
             p._cleanup(root)
         super()._cleanup(root)
 
-    def _on_edit(self, event):
+    def _process_event(self, event):
         event.value = self.value[event.column].iloc[event.row]
         for cb in self._on_edit_callbacks:
             cb(event)
@@ -1243,7 +1257,10 @@ class Tabulator(BaseTable):
             child_panels, doc, root, parent, comm
         )
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
-        model.on_event('table-edit', self._on_edit)
+        if comm:
+            model.on_event('table-edit', self._process_event)
+        else:
+            model.on_event('table-edit', partial(self._server_event, doc))
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm):
