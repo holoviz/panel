@@ -172,6 +172,9 @@ class DateSlider(_SliderBase):
 
     end = param.Date(default=None)
 
+    format = param.String(r"%m%Y", doc="""
+        Allows defining a custom date format string. Default is "%m%Y".""")
+
     _rename = {'name': 'title'}
 
     _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
@@ -182,15 +185,14 @@ class DateSlider(_SliderBase):
         if 'value' not in params:
             params['value'] = params.get('start', self.start)
         super().__init__(**params)
-
+        
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = value_as_date(msg['value'])
-        if 'value_throttled' in msg:
-            msg['value_throttled'] = value_as_date(msg['value_throttled'])
+        if "value" in msg:
+            msg["value"] = datetime.strptime(msg['value'].strftime(self.format), self.format)
+        if "value_throttled" in msg:
+            msg["value_throttled"] = datetime.strptime(msg['value'].strftime(self.format), self.format)
         return msg
-
 
 class DiscreteSlider(CompositeWidget, _SliderBase):
 
@@ -452,6 +454,9 @@ class DateRangeSlider(_RangeSliderBase):
     end = param.Date(default=None)
 
     step = param.Number(default=1)
+    
+    format = param.String(r"%m%Y",
+        doc="""Allows defining a custom date format string. Default is "%m%Y".""")
 
     _source_transforms = {'value': None, 'value_throttled': None,
                          'start': None, 'end': None, 'step': None}
@@ -470,14 +475,17 @@ class DateRangeSlider(_RangeSliderBase):
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            v1, v2 = msg['value']
-            msg['value'] = (value_as_datetime(v1), value_as_datetime(v2))
-        if 'value_throttled' in msg:
-            v1, v2 = msg['value_throttled']
-            msg['value_throttled'] = (value_as_datetime(v1), value_as_datetime(v2))
-        return msg
-
+        if "value" in msg:
+            v1, v2 = msg["value"]
+            v1 = datetime.strptime(v1.strftime(self.format), self.format)
+            v2 = datetime.strptime(v2.strftime(self.format), self.format)
+            msg["value"] = (v1, v2)
+        if "value_throttled" in msg:
+            v1, v2 = msg["value_throttled"]
+            v1 = datetime.strptime(v1.strftime(self.format), self.format)
+            v2 = datetime.strptime(v2.strftime(self.format), self.format)
+            msg["value_throttled"] = (v1, v2)
+        return msg    
 
 class _EditableContinuousSlider(CompositeWidget):
     """
