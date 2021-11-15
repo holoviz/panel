@@ -148,13 +148,13 @@ def server_html_page_for_session(session, resources, title, template=BASE_TEMPLA
     if template_variables is None:
         template_variables = {}
 
-    bundle = bundle_resources(resources)
+    bundle = bundle_resources(session.document.roots, resources)
     return html_page_for_render_items(bundle, {}, [render_item], title,
         template=template, template_variables=template_variables)
 
-def autoload_js_script(resources, token, element_id, app_path, absolute_url):
+def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url):
     resources = Resources.from_bokeh(resources)
-    bundle = bundle_resources(resources)
+    bundle = bundle_resources(doc.roots, resources)
 
     render_items = [RenderItem(token=token, elementid=element_id, use_for_title=False)]
     bundle.add(Script(script_for_render_items({}, render_items, app_path=app_path, absolute_url=absolute_url)))
@@ -252,7 +252,10 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
             state.curdoc = session.document
             try:
                 resources = Resources.from_bokeh(self.application.resources(server_url))
-                js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
+                js = autoload_js_script(
+                    session.document, resources, session.token, element_id,
+                    app_path, absolute_url
+                )
             finally:
                 state.curdoc = None
 
