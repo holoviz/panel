@@ -8,7 +8,6 @@ from six import string_types
 import bokeh
 
 from bokeh.document.document import Document
-from bokeh.embed.bundle import bundle_for_objs_and_resources
 from bokeh.embed.elements import html_page_for_render_items
 from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
 from bokeh.io.export import get_screenshot_as_png
