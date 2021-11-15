@@ -259,7 +259,10 @@ class HoloViews(PaneBase):
 
         kwargs = {p: v for p, v in self.param.get_param_values()
                   if p in Layoutable.param and p != 'name'}
-        child_pane = self._panes.get(backend, Pane)(state, **kwargs)
+        pane_type = self._panes.get(backend, Pane)
+        if 'tight' in pane_type.param:
+            kwargs['tight'] = True
+        child_pane = pane_type(state, **kwargs)
         self._update_plot(plot, child_pane)
         model = child_pane._get_model(doc, root, parent, comm)
         if ref in self._plots:
