@@ -155,7 +155,7 @@ def server_html_page_for_session(session, resources, title, template=BASE_TEMPLA
     if template_variables is None:
         template_variables = {}
 
-    bundle = bundle_resources(resources)
+    bundle = bundle_resources(session.document.roots, resources)
     return html_page_for_render_items(bundle, {}, [render_item], title,
         template=template, template_variables=template_variables)
 

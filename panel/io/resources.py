@@ -2,6 +2,7 @@
 Patches bokeh resources to make it easy to add external JS and CSS
 resources via the panel.config object.
 """
+import copy
 import glob
 import json
 import os
@@ -15,7 +16,7 @@ import param
 
 from bokeh.embed.bundle import (
     Bundle as BkBundle, _bundle_extensions, extension_dirs,
-    bundle_models
+    bundle_models, _use_mathjax
 )
 
 from bokeh.resources import Resources as BkResources
@@ -98,7 +99,8 @@ def bundled_files(model, file_type='javascript'):
     return files
 
 
-def bundle_resources(resources):
+def bundle_resources(roots, resources):
+    from ..config import panel_extension as ext
     global RESOURCE_MODE
     js_resources = css_resources = resources
     RESOURCE_MODE = mode = js_resources.mode if resources is not None else "inline"
@@ -108,13 +110,20 @@ def bundle_resources(resources):
     css_files = []
     css_raw = []
 
-    js_files.extend(js_resources.js_files)
-    js_raw.extend(js_resources.js_raw)
+    use_mathjax = (_use_mathjax(roots) or 'mathjax' in ext._loaded_extensions) if roots else True
+
+    if js_resources:
+        js_resources = copy.deepcopy(js_resources)
+        if not use_mathjax and "bokeh-mathjax" in js_resources.js_components:
+            js_resources.js_components.remove("bokeh-mathjax")
+
+        js_files.extend(js_resources.js_files)
+        js_raw.extend(js_resources.js_raw)
 
     css_files.extend(css_resources.css_files)
     css_raw.extend(css_resources.css_raw)
 
-    extensions = _bundle_extensions(None, js_resources)
+    extensions = _bundle_extensions(roots, js_resources)
     if mode == "inline":
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
     elif mode == "server":

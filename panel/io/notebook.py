@@ -241,7 +241,7 @@ def load_notebook(inline=True, load_timeout=5000):
     user_resources = settings.resources._user_value is not _Unset
     resources = Resources.from_bokeh(resources)
     try:
-        bundle = bundle_resources(resources)
+        bundle = bundle_resources(None, resources)
         bundle = Bundle.from_bokeh(bundle)
         configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
