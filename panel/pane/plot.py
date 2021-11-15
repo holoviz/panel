@@ -216,11 +216,6 @@ class Matplotlib(PNG, IPyWidget):
             manager.canvas.handle_resize(event)
         manager.canvas.draw_idle()
 
-    def _imgshape(self, data):
-        """Calculate and return image width,height"""
-        w, h = self.object.get_size_inches()
-        return int(w*72), int(h*72)
-
     def _data(self):
         self.object.set_dpi(self.dpi)
         b = BytesIO()
