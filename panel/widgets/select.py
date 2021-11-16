@@ -5,6 +5,7 @@ from a list of options.
 import re
 
 from collections import OrderedDict
+import itertools
 
 import param
 
@@ -129,8 +130,13 @@ class Select(SingleSelectBase):
         Declares how many options are displayed at the same time.
         If set to 1 displays options as dropdown otherwise displays
         scrollable area.""")
+    
+    groups = param.Dict(default=None, doc="""
+        Dictionary whose keys are used to visually group the options
+        and whose values are either a list or a dictionary of options
+        to select from. Mutually exclusive with ``options``.""")
 
-    _source_transforms = {'size': None}
+    _source_transforms = {'size': None, 'groups': None}
 
     @property
     def _widget_type(self):
@@ -140,12 +146,78 @@ class Select(SingleSelectBase):
         super().__init__(**params)
         if self.size == 1:
             self.param.size.constant = True
+        watcher = self.param.watch(self._validate_options_groups, ['options', 'groups'])
+        self._callbacks.append(watcher)
+        self._validate_options_groups()
+
+    def _validate_options_groups(self, *events):
+        if self.options and self.groups:
+            raise ValueError(
+                f'{type(self).__name__} options and groups parameters '
+                'are mutually exclusive.'
+            )
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if msg.get('size') == 1:
             msg.pop('size')
+        groups = msg.pop('groups', None)
+        if groups is not None:
+            if (all(isinstance(values, dict) for values in groups.values()) is False
+               and  all(isinstance(values, list) for values in groups.values()) is False):
+                raise ValueError(
+                    'The values of the groups dictionary must be all of '
+                    'the dictionary or the list type.'
+                )
+            labels, values = self.labels, self.values
+            unique = len(set(self.unicode_values)) == len(labels)
+            if groups:
+                if isinstance(next(iter(self.groups.values())), dict):
+                    if unique:
+                        options = {
+                            group: [(as_unicode(value), label) for label, value in subd.items()]
+                            for group, subd in groups.items()
+                        }
+                    else:
+                        options = {
+                            group: [as_unicode(v) for v in self.groups[group]]
+                            for group in groups.keys()
+                        }
+                    msg['options'] = options
+                else:
+                    msg['options'] = {
+                        group: [(as_unicode(value), as_unicode(value)) for value in values]
+                        for group, values in groups.items()
+                    }
+            val = self.value
+            if values:
+                if not isIn(val, values):
+                    self.value = values[0]
+            else:
+                self.value = None
         return msg
+
+    @property
+    def labels(self):
+        if self.options:
+            return super().labels
+        else:
+            if not self.groups:
+                return {}
+            else:
+                return list(map(as_unicode, itertools.chain(*self.groups.values())))
+
+    @property
+    def values(self):
+        if self.options:
+            return super().values
+        else:
+            if not self.groups:
+                return []
+            if isinstance(next(iter(self.groups.values())), dict):
+                return [v for subd in self.groups.values() for v in subd.values()]
+            else:
+                return list(itertools.chain(*self.groups.values()))
 
 
 class _MultiSelectBase(SingleSelectBase):
