@@ -146,11 +146,16 @@ class Select(SingleSelectBase):
         super().__init__(**params)
         if self.size == 1:
             self.param.size.constant = True
+        watcher = self.param.watch(self._validate_options_groups, ['options', 'groups'])
+        self._callbacks.append(watcher)
+        self._validate_options_groups()
 
-    @param.depends('options', 'groups', watch=True, on_init=True)
-    def _validate_options_groups(self):
+    def _validate_options_groups(self, *events):
         if self.options and self.groups:
-            raise ValueError('options and groups are mutually exclusive.')
+            raise ValueError(
+                f'{type(self).__name__} options and groups parameters '
+                'are mutually exclusive.'
+            )
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
