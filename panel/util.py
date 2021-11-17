@@ -1,6 +1,7 @@
 """
 Various general utilities used in the panel codebase.
 """
+import ast
 import base64
 import datetime as dt
 import inspect
@@ -294,7 +295,10 @@ def parse_query(query):
         elif is_number(v):
             query[k] = float(v)
         elif v.startswith('[') or v.startswith('{'):
-            query[k] = json.loads(v)
+            try:
+                query[k] = json.loads(v)
+            except Exception:
+                query[k] = ast.literal_eval(v)
         elif v.lower() in ("true", "false"):
             query[k] = v.lower() == "true"
     return query
