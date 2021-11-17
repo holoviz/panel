@@ -346,6 +346,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.compute_layout()
     if (this.root !== this)
       this.invalidate_layout()
+    else if ((this as any)._parent != undefined) // HACK: Support ReactiveHTML
+      (this as any)._parent.invalidate_layout()
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
