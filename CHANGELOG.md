@@ -12,7 +12,6 @@ Compatibility:
 
 Enhancements:
 
-- Restore ability to set a maximum number of selectable rows on `Tabulator` ([#2791](https://github.com/holoviz/panel/pull/2791)) 
 - Add 'light' to list of button types ([#2814, [#2816](https://github.com/holoviz/panel/pull/2816))
 - Make OAuth cookie expiry configurable ([#2724](https://github.com/holoviz/panel/pull/2724))
 - Run `onload` callbacks with `--warm` option ([#2844](https://github.com/holoviz/panel/pull/2844))
@@ -26,6 +25,7 @@ Enhancements:
 Bug fixes:
 
 - Resolve issues with inline resources on save ([#2794](https://github.com/holoviz/panel/pull/2794))
+- Restore ability to set a maximum number of selectable rows on `Tabulator` ([#2791](https://github.com/holoviz/panel/pull/2791)) 
 - Fixed bug where Tabulator with remote pagination would modify the wrong rows ([#2801](https://github.com/holoviz/panel/pull/2801))
 - Ensure non-exported requirejs modules do not error ([#2808](https://github.com/holoviz/panel/pull/2808))
 - Ensure `Tabulator` checkbox selection only happens in checkbox column ([#2812](https://github.com/holoviz/panel/pull/2812))
