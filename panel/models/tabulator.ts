@@ -645,12 +645,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   rowSelectionChanged(data: any, _: any): void {
-    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean' || (this.model.select_mode.startsWith('checkbox')))
+    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean' || (typeof this.model.select_mode) === 'number' || this.model.configuration.dataTree)
       return
     const indices: number[] = data.map((row: any) => row._index)
     const filtered = this._filter_selected(indices)
     this._selection_updating = indices.length === filtered.length
-    this.model.source.selected.indices = filtered;
+    this.model.source.selected.indices = filtered
     this._selection_updating = false
   }
 
