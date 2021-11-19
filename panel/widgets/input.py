@@ -433,7 +433,7 @@ class LiteralInput(Widget):
 
     _source_transforms = {'value': """JSON.parse(value.replace(/'/g, '"'))"""}
 
-    _target_transforms = {'value': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
+    _target_transforms = {'value': """JSON.stringify(value).replace(/,/g, ",").replace(/:/g, ": ")"""}
 
     _widget_type = _BkTextInput
 
