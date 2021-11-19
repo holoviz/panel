@@ -33,7 +33,7 @@ export class VegaPlotView extends HTMLBoxView {
         if (this._callbacks.indexOf(event) > -1)
           continue
         this._callbacks.push(event)
-        this._vega_view.addSignalListener(event, (name: string, value: any) => this._dispatch_event(name, value))
+        this.vega_view.addSignalListener(event, (name: string, value: any) => this._dispatch_event(name, value))
       }
     })
     this._connected = []
