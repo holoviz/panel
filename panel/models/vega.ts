@@ -4,6 +4,7 @@ import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
 export class VegaPlotView extends HTMLBoxView {
   model: VegaPlot
+  vega_view: any
   _connected: string[]
 
   connect_signals(): void {
@@ -72,7 +73,33 @@ export class VegaPlotView extends HTMLBoxView {
       this.model.data['datasets'] = datasets
     }
     const config: any = {actions: this.model.show_actions, theme: this.model.theme};
-    (window as any).vegaEmbed(this.el, this.model.data, config)
+    (window as any).vegaEmbed(this.el, this.model.data, config).then((result: any) => {
+      this.vega_view = result.view
+      this.relayout()
+      if (this.vega_view._viewHeight <= 0 || this.vega_view._viewWidth <= 0) {
+	(window as any).dispatchEvent(new Event('resize'));
+      }
+    })
+  }
+
+  relayout(): void {
+    this.update_layout()
+    this.compute_layout()
+    if (this.root !== this)
+      this.invalidate_layout()
+    else if ((this as any)._parent != undefined) // HACK: Support ReactiveHTML
+      (this as any)._parent.invalidate_layout()
+  }
+
+  box_sizing(): any {
+    const sizing = super.box_sizing()
+    if (this.vega_view != null) {
+      if (sizing.height_policy === "fixed")
+	sizing.height = this.vega_view._viewHeight
+      if (sizing.width_policy === "fixed")
+	sizing.width = this.vega_view._viewWidth
+    }
+    return sizing
   }
 }
 
