@@ -1,7 +1,4 @@
 import sys
-import time
-
-from collections import defaultdict
 
 import param
 import numpy as np
@@ -9,7 +6,6 @@ import numpy as np
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..io.callbacks import PeriodicCallback, debounce as _debounce
 from ..viewable import Layoutable
 from ..util import lazy_load, string_types
 from .base import PaneBase
