@@ -126,14 +126,45 @@ def test_accordion_active(document, comm, accordion):
 def test_accordion_set_card_collapsed(document, comm, accordion):
     accordion.get_root(document, comm=comm)
 
+    events = []
+
+    accordion.param.watch(lambda e: events.append(e), 'active')
+
     c1, c2 = accordion._panels.values()
 
     c1.collapsed = False
     assert accordion.active == [0]
 
+    assert len(events) == 1
+
     c2.collapsed = False
     assert accordion.active == [0, 1]
+
+    assert len(events) == 2
 
     c1.collapsed = True
     c2.collapsed = True
     assert accordion.active == []
+
+    assert len(events) == 4
+
+
+def test_accordion_set_card_collapsed_toggle(document, comm, accordion):
+    accordion.toggle = True
+    accordion.get_root(document, comm=comm)
+
+    events = []
+
+    accordion.param.watch(lambda e: events.append(e), 'active')
+
+    c1, c2 = accordion._panels.values()
+
+    c1.collapsed = False
+    assert accordion.active == [0]
+
+    assert len(events) == 1
+
+    c2.collapsed = False
+    assert accordion.active == [1]
+
+    assert len(events) == 2
