@@ -25,23 +25,27 @@ Enhancements:
 Bug fixes:
 
 - Resolve issues with inline resources on save ([#2794](https://github.com/holoviz/panel/pull/2794))
-- Restore ability to set a maximum number of selectable rows on `Tabulator` ([#2791](https://github.com/holoviz/panel/pull/2791)) 
+- Restore ability to set a maximum number of selectable rows on `Tabulator` ([#2791](https://github.com/holoviz/panel/pull/2791))
 - Fixed bug where Tabulator with remote pagination would modify the wrong rows ([#2801](https://github.com/holoviz/panel/pull/2801))
 - Ensure non-exported requirejs modules do not error ([#2808](https://github.com/holoviz/panel/pull/2808))
 - Ensure `Tabulator` checkbox selection only happens in checkbox column ([#2812](https://github.com/holoviz/panel/pull/2812))
 - `Vtkvolume` correction of dimensions order ([#2818](https://github.com/holoviz/panel/pull/2818))
 - Allow data item to miss optional field in `Vega` pane ([#2853](https://github.com/holoviz/panel/pull/2853))
 - Allow to set `AutoCompleteInput` in a Param pane ([#2874](https://github.com/holoviz/panel/pull/2874))
-- Fix `Terminal` keystroke and size handling ([#2878](https://github.com/holoviz/panel/pull/2878)) 
+- Fix `Terminal` keystroke and size handling ([#2878](https://github.com/holoviz/panel/pull/2878))
 - Fix `Tabulator` styles on scroll ([#2881](https://github.com/holoviz/panel/pull/2881))
 - Do not sync `Indicator` properties from frontend to avoid errors ([#2886](https://github.com/holoviz/panel/pull/2886))
-- Fix roundtrip of datetimes on `ReactiveData` components ([#2888](https://github.com/holoviz/panel/pull/2888)) 
+- Fix roundtrip of datetimes on `ReactiveData` components ([#2888](https://github.com/holoviz/panel/pull/2888))
 - Fix handling of `Plotly` pane in `Tabs` ([#2890](https://github.com/holoviz/panel/pull/2890))
 - Fix bokeh colorbar background for dark theme ([#2897](https://github.com/holoviz/panel/pull/2897))
 - Fix issues when streaming or patching `ReactiveData` ([#2900](https://github.com/holoviz/panel/pull/2900))
 - Ensure stream and patch events do not boomerang ([#2902](https://github.com/holoviz/panel/pull/2902))
 - Fixes for `Card` rendering in `MaterialTemplate` ([#2911](https://github.com/holoviz/panel/pull/2911), [#2912](https://github.com/holoviz/panel/pull/2912))
 - Ensure `HoloViews` matplotlib output uses tight layout ([#2920](https://github.com/holoviz/panel/pull/2920))
+- Fix Tabulator checkbox selection ([#2931](https://github.com/holoviz/panel/pull/2931))
+- Fix Vega pane sizing issues ([#2933](https://github.com/holoviz/panel/pull/2933))
+- Ensure toggled Accordion only triggers one event on change of active Card ([#2934](https://github.com/holoviz/panel/pull/2934))
+- Ensure LiteralInput JS deserializer does not insert extra spaces ([#2935](https://github.com/holoviz/panel/pull/2935))
 
 Documentation:
 

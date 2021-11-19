@@ -43,6 +43,10 @@ Bug fixes:
 - Fixes for `Card` rendering in `MaterialTemplate` ([#2911](https://github.com/holoviz/panel/pull/2911), [#2912](https://github.com/holoviz/panel/pull/2912))
 - Ensure `HoloViews` matplotlib output uses tight layout ([#2920](https://github.com/holoviz/panel/pull/2920))
 - Fix decoding of single quoted strings in url parameters ([#2925](https://github.com/holoviz/panel/pull/2925))
+- Fix Tabulator checkbox selection ([#2931](https://github.com/holoviz/panel/pull/2931))
+- Fix Vega pane sizing issues ([#2933](https://github.com/holoviz/panel/pull/2933))
+- Ensure toggled Accordion only triggers one event on change of active Card ([#2934](https://github.com/holoviz/panel/pull/2934))
+- Ensure LiteralInput JS deserializer does not insert extra spaces ([#2935](https://github.com/holoviz/panel/pull/2935))
 
 Documentation:
 
