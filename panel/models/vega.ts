@@ -3,6 +3,8 @@ import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
 import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
+import {debounce} from  "debounce"
+
 export class VegaEvent extends ModelEvent {
   event_name: string = "vega_event"
 
@@ -33,7 +35,9 @@ export class VegaPlotView extends HTMLBoxView {
         if (this._callbacks.indexOf(event) > -1)
           continue
         this._callbacks.push(event)
-        this.vega_view.addSignalListener(event, (name: string, value: any) => this._dispatch_event(name, value))
+	const callback = (name: string, value: any) => this._dispatch_event(name, value)
+	const timeout = this.model.throttle[event] || 20
+        this.vega_view.addSignalListener(event, debounce(callback, timeout, false))
       }
     })
     this._connected = []
@@ -108,9 +112,9 @@ export class VegaPlotView extends HTMLBoxView {
       }
       for (const event of this.model.events) {
 	this._callbacks.push(event)
-	this.vega_view.addSignalListener(event, (name: string, value: any) => {
-	  this._dispatch_event(name, value)
-	})
+	const callback = (name: string, value: any) => this._dispatch_event(name, value)
+	const timeout = this.model.throttle[event] || 20
+	this.vega_view.addSignalListener(event, debounce(callback, timeout, false))
       }
     })
   }
@@ -144,6 +148,7 @@ export namespace VegaPlot {
     events: p.Property<string[]>
     show_actions: p.Property<boolean>
     theme: p.Property<string | null>
+    throttle: p.Property<any>
   }
 }
 
@@ -166,7 +171,8 @@ export class VegaPlot extends HTMLBox {
       data_sources: [ Any,           {} ],
       events:       [ Array(String), [] ],
       show_actions: [ Boolean,    false ],
-      theme:        [ String,           ]
+      theme:        [ String,           ],
+      throttle:     [ Any,           {} ]
     }))
   }
 }

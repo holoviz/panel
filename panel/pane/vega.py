@@ -31,6 +31,36 @@ def ds_as_cds(dataset):
     return data
 
 
+_containers = ['hconcat', 'vconcat', 'layer']
+
+def _isin(obj, attr):
+    if isinstance(obj, dict):
+        return attr in obj
+    else:
+        return hasattr(obj, attr)
+
+
+def _get_selections(obj):
+    selections = []
+    if _isin(obj, 'selection'):
+        try:
+            selections += obj['selection']
+        except TypeError:
+            pass
+    for c in _containers:
+        if _isin(obj, c):
+            for subobj in obj[c]:
+                selections += _get_selections(subobj)
+    return selections
+
+
+class Selection(param.Parameterized):
+    """
+    The Events object is dynamically updated to allow listening to
+    selection events.
+    """
+
+
 class Vega(PaneBase):
     """
     Vega panes allow rendering Vega plots and traces.
@@ -40,10 +70,18 @@ class Vega(PaneBase):
     the figure on bokeh server and via Comms.
     """
 
+    debounce = param.ClassSelector(default=20, class_=(int, dict), doc="""
+        Declares the debounce time in milliseconds either for all
+        events or if a dictionary is provided for individual events.""")
+
     margin = param.Parameter(default=(5, 5, 30, 5), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
+
+    selection = param.ClassSelector(class_=Selection, doc="""
+        The Selection object reflects any selections available on the
+        supplied vega plot into Python.""")
 
     show_actions = param.Boolean(default=False, doc="""
         Whether to show Vega actions.""")
@@ -54,12 +92,35 @@ class Vega(PaneBase):
 
     priority = 0.8
 
+    _rename = {'selection': None, 'debounce': None}
+
     _updates = True
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
-        self._event_callbacks = defaultdict(list)
-        self._event_state = {}
+        self.param.watch(self._update_selections, ['object'])
+        self._update_selections()
+
+    @property
+    def _selections(self):
+        return _get_selections(self.object)
+
+    @property
+    def _throttle(self):
+        default = self.param.debounce.default
+        if isinstance(self.debounce, dict):
+            throttle = {
+                sel: self.debounce.get(sel, default)
+                for sel in self._selections
+            }
+        else:
+            throttle = {sel: self.debounce or default for sel in self._selections}    
+        return throttle
+
+    def _update_selections(self, *args):
+        self.selection = Selection()
+        for e in self._selections:
+            self.selection.param._add_parameter(e, param.Dict())
 
     @classmethod
     def is_altair(cls, obj):
@@ -118,7 +179,6 @@ class Vega(PaneBase):
                 if 'values' in d:
                     sources[d['name']] = ColumnDataSource(data=ds_as_cds(d.pop('values')))
 
-
     @classmethod
     def _get_dimensions(cls, json, props):
         if json is None:
@@ -154,11 +214,7 @@ class Vega(PaneBase):
             props['sizing_mode'] = 'stretch_height'
 
     def _process_event(self, event):
-        event_type = event.data['type']
-        self._event_state[event_type] = event
-        cbs = self._event_callbacks.get(event_type, [])
-        for cb in cbs:
-            cb(event)
+        self.selection.param.update(**{event.data['type']: event.data['value']})
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         VegaPlot = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root)
@@ -169,9 +225,11 @@ class Vega(PaneBase):
             json = self._to_json(self.object)
             self._get_sources(json, sources)
         props = self._process_param_change(self._init_params())
-        events = list(self._event_callbacks)
         self._get_dimensions(json, props)
-        model = VegaPlot(data=json, data_sources=sources, events=events, **props)
+        model = VegaPlot(
+            data=json, data_sources=sources, events=self._selections,
+            throttle=self._throttle, **props
+        )
         model.on_event('vega_event', self._process_event)
         if root is None:
             root = model
@@ -186,26 +244,8 @@ class Vega(PaneBase):
             self._get_sources(json, model.data_sources)
         props = {p : getattr(self, p) for p in list(Layoutable.param)
                  if getattr(self, p) is not None}
+        props['throttle'] = self._throttle
+        props['events'] = self._selections
         self._get_dimensions(json, props)
         props['data'] = json
         model.update(**props)
-
-    def on_event(self, event, callback, debounce=100):
-        """
-        Registers a callback to be executed when a particular event
-        fires.
-
-        Arguments
-        ---------
-        event: str
-          Name of the DOM event to add an event listener to.
-        callback: callable
-          A callable which will be given the VegaEvent object.
-        debounce: int or None
-          Debounce duration
-        """
-        if debounce:
-            callback = _debounce(callback, timeout=debounce)
-        self._event_callbacks[event].append(callback)
-        for ref, (model, _) in self._models.items():
-            self._apply_update([], {'events': list(self._event_callbacks)}, model, ref)
