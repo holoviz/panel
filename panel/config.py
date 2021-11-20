@@ -399,7 +399,10 @@ class panel_extension(_pyviz_extension):
     _loaded_extensions = []
 
     def __call__(self, *args, **params):
-        # Abort if IPython not found
+        # Load ipywidget support if requested in environment variable
+        if 'ipywidgets' in sys.modules and os.environ.get("PANEL_IPYWIDGET"):
+            args += ('ipywidgets',)
+    
         for arg in args:
             if arg not in self._imports:
                 self.param.warning('%s extension not recognized and '
@@ -445,6 +448,7 @@ class panel_extension(_pyviz_extension):
             else:
                 hv.Store.current_backend = backend
 
+        # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except Exception:
