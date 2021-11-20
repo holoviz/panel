@@ -89,6 +89,9 @@ jobs:
           conda activate test-environment
           nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
           cp -r ./panel/dist ./builtdocs/panel_dist
+      - name: report failure
+        if: failure()
+        run: cat /tmp/sphinx-*.log | tail -n 50
       - name: git status
         run: |
           git status
