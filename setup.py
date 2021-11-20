@@ -156,7 +156,8 @@ extras_require = {
     'doc': _recommended + [
         'nbsite >=0.7.0a4',
         'graphviz',
-        'lxml'
+        'lxml',
+        'sphinx <=4.3.0'
     ]
 }
 
