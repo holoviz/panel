@@ -100,13 +100,13 @@ def async_execute(func):
         unlock = not func.func.lock
     else:
         unlock = not getattr(func, 'lock', False)
-    if unlock:
-        @wraps(func)
-        async def wrapper(*args, **kw):
+    curdoc = state.curdoc
+    @wraps(func)
+    async def wrapper(*args, **kw):
+        with set_curdoc(curdoc):
             return await func(*args, **kw)
+    if unlock:
         wrapper.nolock = True
-    else:
-        wrapper = func
     state.curdoc.add_next_tick_callback(wrapper)
 
 param.parameterized.async_executor = async_execute
