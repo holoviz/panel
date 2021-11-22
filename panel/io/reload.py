@@ -30,6 +30,11 @@ DEFAULT_FOLDER_BLACKLIST = [
     "**/virtualenv",
 ]
 
+IGNORED_MODULES = [
+    'bokeh_app',
+    'panel.'
+]
+
 
 def in_blacklist(filepath):
     return any(
@@ -86,7 +91,7 @@ def record_modules():
     if _modules:
         return
     for module_name in set(sys.modules).difference(modules):
-        if module_name.startswith('bokeh_app'):
+        if any(module_name.startswith(imodule) for imodule in IGNORED_MODULES):
             continue
         module = sys.modules[module_name]
         try:
