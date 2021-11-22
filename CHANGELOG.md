@@ -46,6 +46,10 @@ Bug fixes:
 - Fix Vega pane sizing issues ([#2933](https://github.com/holoviz/panel/pull/2933))
 - Ensure toggled Accordion only triggers one event on change of active Card ([#2934](https://github.com/holoviz/panel/pull/2934))
 - Ensure LiteralInput JS deserializer does not insert extra spaces ([#2935](https://github.com/holoviz/panel/pull/2935))
+- Fix issue in detecting script data assignment in `ReactiveHTML` ([#2939](https://github.com/holoviz/panel/pull/2939))
+- Ensure `Card` collapsible icon offset is computed robustly ([#2940](https://github.com/holoviz/panel/pull/2940))
+- Ensure `--autoreload` does not reload panel modules ([#2941](https://github.com/holoviz/panel/pull/2941))
+- Ensure `pn.state.curdoc` is available to async callbacks ([#2942](https://github.com/holoviz/panel/pull/2942))
 
 Documentation:
 
