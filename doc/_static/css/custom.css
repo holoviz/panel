@@ -66,5 +66,8 @@ button.toggle-button {
 
 .tag_hide-input {
     margin-bottom: 0 !important;
-    height: 0;
+}
+
+.toggle-hidden + .cell_output {
+    margin-top: 0 !important;
 }
