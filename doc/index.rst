@@ -2,8 +2,8 @@
 
 .. raw:: html
 
-  <h1><img src="_static/logo_stacked.png" width="125"></h1>
-  <h2>A high-level app and dashboarding solution for Python</h2>
+  <img src="_static/logo_stacked.png" width="125">
+  <h2 style="margin-top: 0.3em;">A high-level app and dashboarding solution for Python</h2>
 
    <table class="showcase-table">
      <tr>
