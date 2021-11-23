@@ -49,3 +49,13 @@ def test_parse_query():
     }
     results = parse_query(query)
     assert expected_results == results
+
+
+def test_parse_query_singe_quoted():
+    query = "?str=abc&json=%5B%27def%27%5D"
+    expected_results = {
+        "str": 'abc',
+        "json": ['def'],
+    }
+    results = parse_query(query)
+    assert expected_results == results

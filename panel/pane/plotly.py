@@ -375,8 +375,8 @@ def _patch_tabs_plotly(viewable, root):
             args.update({f'tabs_{tabs.id}': tabs})
             active &= tabs.active == i
 
-        model.visible = active
-        code = f'try {{ model.visible = {condition}; }} catch {{ }}'
+        model.visibility = active
+        code = f'try {{ model.visibility = {condition}; }} catch {{ }}'
         for tabs in parent_tabs:
             tab_key = f'tabs_{tabs.id}'
             cb_args = dict(args)

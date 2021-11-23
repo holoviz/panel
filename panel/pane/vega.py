@@ -17,10 +17,12 @@ def ds_as_cds(dataset):
     """
     if len(dataset) == 0:
         return {}
-    data = {k: [] for k, v in dataset[0].items()}
+    # create a list of unique keys from all items as some items may not include optional fields
+    keys = sorted(set(k for d in dataset for k in d.keys()))
+    data = {k: [] for k in keys}
     for item in dataset:
-        for k, v in item.items():
-            data[k].append(v)
+        for k in keys:
+            data[k].append(item.get(k))
     data = {k: np.asarray(v) for k, v in data.items()}
     return data
 

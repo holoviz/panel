@@ -724,16 +724,16 @@ class Tabulator(BaseTable):
                                       objects=['local', 'remote'])
 
     page = param.Integer(default=1, doc="""
-        Currently selected page (indexed starting at 1).""")
+        Currently selected page (indexed starting at 1), if pagination is enabled.""")
 
     page_size = param.Integer(default=20, bounds=(1, None), doc="""
-        Number of rows to render per page.""")
+        Number of rows to render per page, if pagination is enabled.""")
 
     row_height = param.Integer(default=30, doc="""
         The height of each table row.""")
 
-    selectable = param.ObjectSelector(
-        default=True, objects=[True, False, 'checkbox', 'checkbox-single', 'toggle'], doc="""
+    selectable = param.ClassSelector(
+        default=True, class_=(bool, str, int), doc="""
         Defines the selection mode of the Tabulator.
 
           - True
@@ -747,6 +747,8 @@ class Tabulator(BaseTable):
               Same as 'checkbox' but header does not alllow select/deselect all
           - 'toggle'
               Selection toggles when clicked
+          - int
+              The maximum number of selectable rows.
         """)
 
     selectable_rows = param.Callable(default=None, doc="""
@@ -984,11 +986,8 @@ class Tabulator(BaseTable):
         nrows = self.page_size
         start = (self.page-1)*nrows
         end = start+nrows
-        if self.sorters:
-            index = self._processed.iloc[start:end].index.values
-            self.value[column].loc[index] = array
-        else:
-            self.value[column].iloc[start:end] = array
+        index = self._processed.iloc[start:end].index.values
+        self.value[column].loc[index] = array
 
     def _update_selection(self, indices):
         if self.pagination != 'remote':

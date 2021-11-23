@@ -118,15 +118,20 @@ class Accordion(NamedListPanel):
     def _set_active(self, *events):
         if self._updating_active:
             return
-        active = []
         self._updating_active = True
         try:
-            for i, pane in enumerate(self.objects):
-                if id(pane) not in self._panels:
-                    continue
-                elif not self._panels[id(pane)].collapsed:
-                    active.append(i)
-            self.active = active
+            if self.toggle and not events[0].new:
+                active = [list(self._panels.values()).index(events[0].obj)]
+            else:
+                active = []
+                for i, pane in enumerate(self.objects):
+                    if id(pane) not in self._panels:
+                        continue
+                    elif not self._panels[id(pane)].collapsed:
+                        active.append(i)
+            
+            if not self.toggle or active:
+                self.active = active
         finally:
             self._updating_active = False
 

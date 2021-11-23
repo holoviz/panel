@@ -49,7 +49,7 @@ jobs:
           conda config --set always_yes True
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
-          doit env_create ${{ env.CHANS_DEV}} --python=3.7
+          doit env_create ${{ env.CHANS_DEV}} --python=3.8
       - uses: actions/setup-node@v2
         with:
           node-version: '15'
@@ -89,6 +89,9 @@ jobs:
           conda activate test-environment
           nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
           cp -r ./panel/dist ./builtdocs/panel_dist
+      - name: report failure
+        if: failure()
+        run: cat /tmp/sphinx-*.log | tail -n 50
       - name: git status
         run: |
           git status

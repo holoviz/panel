@@ -6,6 +6,8 @@ import * as p from "@bokehjs/core/properties";
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 import {TableColumn} from "@bokehjs/models/widgets/tables"
 
+import {debounce} from  "debounce"
+
 import {transform_cds_to_records} from "./data"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
@@ -251,7 +253,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   getConfiguration(): any {
     const pagination = this.model.pagination == 'remote' ? 'local': (this.model.pagination || false)
-    let selectable = !(typeof this.model.select_mode === 'boolean')
+    // Only use selectable mode if explicitly requested otherwise manually handle selections
+    let selectable = this.model.select_mode === 'toggle' ? true : NaN
     const that = this
     let configuration = {
       ...this.model.configuration,
@@ -275,6 +278,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       tooltips: (cell: any) => {
         return  cell.getColumn().getField() + ": " + cell.getValue();
       },
+      scrollVertical: debounce(() => {
+        this.updateStyles()
+      }, 50, false)
     }
     if (pagination) {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
@@ -304,8 +310,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           for (const col of column.columns)
             group_columns.push({...col})
           columns.push({...column, columns: group_columns})
-        } else
+        } else {
+	  if (column.formatter === "rowSelection") {
+	    column.cellClick = (_: any, cell: any) => {
+	      cell.getRow().toggleSelect();
+	    }
+	  }
           columns.push({...column})
+	}
     }
     for (const column of this.model.columns) {
       let tab_column: any = null
@@ -523,16 +535,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   addData(): void {
-    const rows = this.tabulator.rowManager.getRows();
+    const rows = this.tabulator.rowManager.getRows()
     const last_row = rows[rows.length-1]
-
-    let data = transform_cds_to_records(this.model.source, true);
-    this.tabulator.setData(data);
-    if (this.model.follow) {
-      this.tabulator.scrollToRow((last_row.data._index || 0), "top", false);
-    }
-    this.freezeRows()
-    this.updateSelection()
+    const start = ((last_row?.data._index) || 0)
+    this.setData()
+    if (this.model.follow && last_row)
+      this.tabulator.scrollToRow(start, "top", false)
   }
 
   updateOrAddData(): void {
@@ -557,7 +565,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   setMaxPage(): void {
     this.tabulator.setMaxPage(this.model.max_page)
-    this.tabulator.modules.page._setPageButtons()
+    if (this.tabulator.modules.page.pagesElement)
+      this.tabulator.modules.page._setPageButtons()
   }
 
   setPage(): void {
@@ -587,7 +596,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   // Update model
 
   rowClicked(e: any, row: any) {
-    if (this._selection_updating || this._initializing || this.model.select_mode !== true)
+    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'string' || this.model.select_mode === false)
       return
     let indices: number[] = []
     const selected = this.model.source.selected
@@ -608,6 +617,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       indices.push(index)
     else
       indices.splice(indices.indexOf(index), 1)
+    // Remove the first selected indices when selectable is an int.
+    if (typeof this.model.select_mode === 'number') {
+      while (indices.length > this.model.select_mode) {
+        indices.shift()
+      }
+    }
     const filtered = this._filter_selected(indices)
     this.tabulator.deselectRow()
     this.tabulator.selectRow(filtered)
@@ -627,12 +642,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   rowSelectionChanged(data: any, _: any): void {
-    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean')
+    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean' || (typeof this.model.select_mode) === 'number' || this.model.configuration.dataTree)
       return
     const indices: number[] = data.map((row: any) => row._index)
     const filtered = this._filter_selected(indices)
     this._selection_updating = indices.length === filtered.length
-    this.model.source.selected.indices = filtered;
+    this.model.source.selected.indices = filtered
     this._selection_updating = false
   }
 

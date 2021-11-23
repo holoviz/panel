@@ -5,11 +5,13 @@ import param
 from bokeh.models import (
     Div, Slider, Select, RangeSlider as BkRangeSlider, MultiSelect,
     Row as BkRow, CheckboxGroup, Toggle, Button, TextInput as
-    BkTextInput,Tabs as BkTabs, Column as BkColumn, TextInput)
+    BkTextInput,Tabs as BkTabs, Column as BkColumn, TextInput,
+    AutocompleteInput as BkAutocompleteInput,
+)
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh, HTML
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, ParamFunction, JSONInit
-from panel.widgets import LiteralInput, NumberInput, RangeSlider
+from panel.widgets import AutocompleteInput, LiteralInput, NumberInput, RangeSlider
 from panel.tests.util import mpl_available, mpl_figure
 
 
@@ -1234,3 +1236,30 @@ def test_numberinput_bounds():
 
     assert numinput.start == 0
     assert numinput.end == 5
+
+def test_set_widget_autocompleteinput(document, comm):
+
+    class Test(param.Parameterized):
+        # Testing with default='' and check_on_set=False since this feels
+        # like the most sensible default config for Selector -> AutocompleteInput
+        choice = param.Selector(default='', objects=['a', 'b'], check_on_set=False)
+
+    test = Test()
+    test_pane = Param(test, widgets={'choice': AutocompleteInput})
+
+    model = test_pane.get_root(document, comm=comm)
+
+    autocompleteinput = model.children[1]
+    assert isinstance(autocompleteinput, BkAutocompleteInput)
+    assert autocompleteinput.completions == ['a', 'b']
+    assert autocompleteinput.value == ''
+    assert autocompleteinput.disabled == False
+
+    # Check changing param value updates widget
+    test.choice = 'b'
+    assert autocompleteinput.value == 'b'
+
+    # Check changing param attribute updates widget
+    test.param['choice'].objects = ['c', 'd']
+    assert autocompleteinput.completions == ['c', 'd']
+    assert autocompleteinput.value == ''

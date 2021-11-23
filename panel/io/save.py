@@ -8,7 +8,6 @@ from six import string_types
 import bokeh
 
 from bokeh.document.document import Document
-from bokeh.embed.bundle import bundle_for_objs_and_resources
 from bokeh.embed.elements import html_page_for_render_items
 from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
 from bokeh.io.export import get_screenshot_as_png
@@ -19,7 +18,10 @@ from pyviz_comms import Comm
 from ..config import config
 from .embed import embed_state
 from .model import add_to_doc
-from .resources import BASE_TEMPLATE, DEFAULT_TITLE, Bundle, Resources, set_resource_mode
+from .resources import (
+    BASE_TEMPLATE, DEFAULT_TITLE, Bundle, Resources, bundle_resources,
+    set_resource_mode
+)
 from .state import state
 
 #---------------------------------------------------------------------
@@ -134,7 +136,7 @@ def file_html(models, resources, title=None, template=BASE_TEMPLATE,
             models_seq, suppress_callback_warning=True
         )
         title = _title_from_models(models_seq, title)
-        bundle = bundle_for_objs_and_resources(None, resources)
+        bundle = bundle_resources(models_seq, resources)
         bundle = Bundle.from_bokeh(bundle)
         return html_page_for_render_items(
             bundle, docs_json, render_items, title=title, template=template,
@@ -252,7 +254,7 @@ def save(panel, filename, title=None, resources=None, template=None,
     resources = Resources.from_bokeh(resources)
 
     # Set resource mode
-    with set_resource_mode(mode):
+    with set_resource_mode(resources):
         html = file_html(doc, resources, title, **kwargs)
     if hasattr(filename, 'write'):
         if isinstance(filename, io.BytesIO):

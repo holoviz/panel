@@ -5,6 +5,7 @@ models rendered on the frontend.
 """
 
 import difflib
+import datetime as dt
 import re
 import sys
 import textwrap
@@ -19,7 +20,7 @@ import param
 
 from bokeh.models import LayoutDOM
 from bokeh.model import DataModel
-from param.parameterized import ParameterizedMetaclass
+from param.parameterized import ParameterizedMetaclass, Watcher
 from tornado import gen
 
 from .config import config
@@ -33,7 +34,7 @@ from .models.reactive_html import (
 from .util import edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable
 
-LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed bidirectional_watcher")
+LinkWatcher = namedtuple("Watcher", Watcher._fields+('target', 'links', 'transformed', 'bidirectional_watcher'))
 
 
 class Syncable(Renderable):
@@ -396,7 +397,12 @@ class Reactive(Syncable, Viewable):
                         _reverse_updating.remove(event.name)
             bidirectional_watcher = target.param.watch(reverse_link, list(reverse_links))
 
-        link = LinkWatcher(*tuple(cb)+(target, links, callbacks is not None, bidirectional_watcher))
+        link_args = tuple(cb)
+        # Compatibility with Param versions where precedence is dropped
+        # from iterator for backward compatibility with older Panel versions
+        if 'precedence' in Watcher._fields and len(link_args) < len(Watcher._fields):
+            link_args += (cb.precedence,)
+        link = LinkWatcher(*(link_args+(target, links, callbacks is not None, bidirectional_watcher)))
         self._links.append(link)
         return cb
 
@@ -661,6 +667,13 @@ class SyncableData(Reactive):
         for ref, (m, _) in self._models.items():
             self._apply_update(events, msg, m.source.selected, ref)
 
+    def _apply_stream(self, ref, model, stream, rollover):
+        self._changing[ref] = ['data']
+        try:
+            model.source.stream(stream, rollover)
+        finally:
+            del self._changing[ref]
+
     @updating
     def _stream(self, stream, rollover=None):
         self._processed, _ = self._get_data()
@@ -674,8 +687,15 @@ class SyncableData(Reactive):
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
-                cb = partial(m.source.stream, stream, rollover)
+                cb = partial(self._apply_stream, ref, m, stream, rollover)
                 doc.add_next_tick_callback(cb)
+
+    def _apply_patch(self, ref, model, patch):
+        self._changing[ref] = ['data']
+        try:
+            model.source.patch(patch)
+        finally:
+            del self._changing[ref]
 
     @updating
     def _patch(self, patch):
@@ -689,8 +709,19 @@ class SyncableData(Reactive):
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
-                cb = partial(m.source.patch, patch)
+                cb = partial(self._apply_patch, ref, m, patch)
                 doc.add_next_tick_callback(cb)
+
+    def _update_manual(self, *events):
+        """
+        Skip events triggered internally
+        """
+        processed_events = []
+        for e in events:
+            if e.name == self._data_params[0] and e.type == 'triggered' and self._updating:
+                continue
+            processed_events.append(e)
+        super()._update_manual(*processed_events)
 
     def stream(self, stream_value, rollover=None, reset_index=True):
         """
@@ -919,8 +950,17 @@ class ReactiveData(SyncableData):
                 k = self._renamed_cols.get(k, k)
                 if isinstance(v, dict):
                     v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
+                v = np.asarray(v)
+                old_dtype = old_raw[k].dtype
+                if old_dtype.kind == 'M':
+                    v = (v * 10e5).astype(old_raw[k].dtype)
+                elif old_dtype.kind == 'O':
+                    if all(isinstance(ov, dt.date) for ov in old_raw[k]):
+                        v = np.array([dt.date.fromtimestamp(iv/1000) for iv in v])
+                else:
+                    v = v.astype(old_raw[k].dtype)
                 try:
-                    isequal = (old_data[k] == np.asarray(v)).all()
+                    isequal = (old_data[k] == v).all()
                 except Exception:
                     isequal = False
                 if not isequal:
@@ -1194,7 +1234,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _scripts = {}
 
-    _script_assignment = r'data.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
+    _script_assignment = r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
 
     __abstract = True
 

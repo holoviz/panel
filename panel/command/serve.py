@@ -16,7 +16,7 @@ from ..auth import OAuthProvider
 from ..config import config
 from ..io.rest import REST_PROVIDERS
 from ..io.reload import record_modules, watch
-from ..io.server import INDEX_HTML, get_static_routes
+from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
 
 log = logging.getLogger(__name__)
@@ -101,6 +101,12 @@ class Serve(_BkServe):
             type    = str,
             help    = "A random string used to encode the user information."
         )),
+        ('--oauth-expiry-days', dict(
+            action  = 'store',
+            type    = float,
+            help    = "Expiry off the OAuth cookie in number of days.",
+            default = 1
+        )),
         ('--rest-provider', dict(
             action = 'store',
             type   = str,
@@ -182,10 +188,14 @@ class Serve(_BkServe):
                 with record_modules():
                     for app in applications.values():
                         doc = app.create_document()
+                        with set_curdoc(doc):
+                            state._on_load(None)
                         _cleanup_doc(doc)
             else:
                 for app in applications.values():
                     doc = app.create_document()
+                    with set_curdoc(doc):
+                        state._on_load(None)
                     _cleanup_doc(doc)
                     
         config.session_history = args.session_history
@@ -196,6 +206,7 @@ class Serve(_BkServe):
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
+            config.oauth_expiry = args.oauth_expiry_days
             if config.oauth_key and args.oauth_key:
                 raise ValueError(
                     "Supply OAuth key either using environment variable "

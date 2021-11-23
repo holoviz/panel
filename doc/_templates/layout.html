@@ -29,7 +29,7 @@
   {% endfor %}
   {% endif %}
   {% if ('gallery' in pagename or 'reference' in pagename or 'user_guide' in pagename) and not pagename.endswith('index') %}
-  <a href="https://mybinder.org/v2/gh/holoviz/panel/{{ last_release }}?urlpath=lab/tree/examples/{{ pagename }}.ipynb">Open this example in Binder</a>
+  <a href="https://mybinder.org/v2/gh/holoviz/panel/{{ last_release }}?urlpath=lab/tree/examples/{{ pagename }}.ipynb" style="padding-left: 1.5rem;">Open this page in Binder</a>
   {% endif %}
 </div>
 {% endblock %}
@@ -47,9 +47,7 @@
   </div>
   {% endblock %}
   {% if theme_show_prev_next %}
-  <div class='prev-next-bottom'>
-    {{ prev_next(prev, next) }}
-  </div>
+  {% include "prev-next.html" %}
   {% endif %}
 </main>
 {% endblock %}

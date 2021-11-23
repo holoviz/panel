@@ -16,7 +16,7 @@ import param
 from pyviz_comms import JupyterComm
 
 from ..io.callbacks import PeriodicCallback
-from ..util import lazy_load
+from ..util import edit_readonly, lazy_load
 from .base import Widget
 
 
@@ -113,23 +113,32 @@ class TerminalSubprocess(param.Parameterized):
             self._child_pid = child_pid
             self._fd = fd
 
-            # Todo: Determine if it is better to run this is seperate thread?
+            self._set_winsize()
+
             self._periodic_callback = PeriodicCallback(
                 callback=self._forward_subprocess_output_to_terminal,
-                period=self._period,
+                period=self._period
             )
             self._periodic_callback.start()
 
             self._watcher = self._terminal.param.watch(
-                self._forward_terminal_input_to_subprocess, "value"
+                self._forward_terminal_input_to_subprocess, 'value',
+                onlychanged=False
             )
             with param.edit_constant(self):
                 self.running = True
 
+    @param.depends('_terminal.ncols', '_terminal.nrows', watch=True)
+    def _set_winsize(self):
+        if self._fd is None:
+            return
+        import termios
+        import struct
+        import fcntl
+        winsize = struct.pack("HHHH", self._terminal.nrows, self._terminal.ncols, 0, 0)
+        fcntl.ioctl(self._fd, termios.TIOCSWINSZ, winsize)
+
     def _kill(self, *events):
-        """
-        Kills the subprocess.
-        """
         child_pid = self._child_pid
         self._reset()
 
@@ -154,16 +163,30 @@ class TerminalSubprocess(param.Parameterized):
     def _remove_last_line_from_string(value):
         return value[: value.rfind("CompletedProcess")]
 
+    def _decode_utf8_on_boundary(self, fd, max_read_bytes, max_extra_bytes=2):
+        "UTF-8 characters can be multi-byte so need to decode on correct boundary"
+        data = os.read(fd, max_read_bytes)
+        for _ in range(max_extra_bytes+1):
+            try:
+                return data.decode('utf-8')
+            except UnicodeDecodeError:
+                data = data + os.read(fd, 1)
+        raise UnicodeError('Could not find decode boundary for UTF-8')
+
     def _forward_subprocess_output_to_terminal(self):
-        if self._fd:
-            (data_ready, _, _) = select.select([self._fd], [], [], self._timeout_sec)
-            if data_ready:
-                output = os.read(self._fd, self._max_read_bytes).decode()
-                # If Child Process finished it will signal this by appending "CompletedProcess(...)"
-                if "CompletedProcess" in output:
-                    self._reset()
-                    output = self._remove_last_line_from_string(output)
-                self._terminal.write(output)
+        if not self._fd:
+            return
+        (data_ready, _, _) = select.select([self._fd], [], [], self._timeout_sec)
+        if not data_ready:
+            return
+
+        output = self._decode_utf8_on_boundary(self._fd, self._max_read_bytes)
+
+        # If Child Process finished it will signal this by appending "CompletedProcess(...)"
+        if "CompletedProcess" in output:
+            self._reset()
+            output = self._remove_last_line_from_string(output)
+        self._terminal.write(output)
 
     def _forward_terminal_input_to_subprocess(self, *events):
         if self._fd:
@@ -203,27 +226,28 @@ class Terminal(Widget):
     output = param.String(default="", doc="""
         System output written to the Terminal""")
 
+    ncols = param.Integer(readonly=True, doc="""
+        The number of columns in the terminal.""")
+
+    nrows = param.Integer(readonly=True, doc="""
+        The number of rows in the terminal.""")
+
     value = param.String(label="Input", readonly=True, doc="""
         User input received from the Terminal. Sent one character at the time.""")
 
     write_to_console = param.Boolean(default=False, doc="""
-        Weather or not to write to the server console. Default is False""")
+        Whether or not to write to the server console.""")
 
     _clears = param.Integer(doc="Sends a signal to clear the terminal")
 
     _output = param.String(default="")
-    
-    _value_repeats = param.Integer(
-        doc="""
-        Hack: Sends a signal that the value has been repeated."""
-    )
 
     _rename = {
         "clear": None,
         "output": None,
         "_output": "output",
-        "value": "input",
         "write_to_console": None,
+        "value": None
     }
 
     def __init__(self, output=None, **params):
@@ -232,7 +256,7 @@ class Terminal(Widget):
         super().__init__(output=output, **params)
         self._subprocess = None
 
-    def write(self, __s, ):
+    def write(self, __s):
         cleaned = __s
         if isinstance(__s, str):
             cleaned = __s
@@ -241,7 +265,7 @@ class Terminal(Widget):
         else:
             cleaned = str(__s)
 
-        if self.output == cleaned:
+        if self._output == cleaned:
             # Hack to support writing the same string multiple times in a row
             self._output = ""
 
@@ -256,7 +280,14 @@ class Terminal(Widget):
             )
         model = super()._get_model(doc, root, parent, comm)
         model.output = self.output
+        model.on_event('keystroke', self._process_event)
         return model
+
+    def _process_event(self, event):
+        with edit_readonly(self):
+            self.value = event.key
+            with param.discard_events(self):
+                self.value = ""
 
     def _clear(self, *events):
         """
@@ -269,10 +300,6 @@ class Terminal(Widget):
     def _write(self):
         if self.write_to_console:
             sys.__stdout__.write(self._output)
-
-    @param.depends("_value_repeats", watch=True)
-    def _repeat_value_hack(self):
-        self.param.trigger('value')
 
     def __repr__(self, depth=None):
         return f"Terminal(id={id(self)})"

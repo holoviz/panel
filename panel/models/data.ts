@@ -1,13 +1,12 @@
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 
-export function transform_cds_to_records(cds: ColumnDataSource, addId: boolean = false): any {
+export function transform_cds_to_records(cds: ColumnDataSource, addId: boolean = false, start: number = 0): any {
   const data: any = []
   const columns = cds.columns()
   const cdsLength = cds.get_length()
-  if (columns.length === 0||cdsLength === null) {
-    return [];
-  }
-  for (let i = 0; i < cdsLength; i++) {
+  if (columns.length === 0||cdsLength === null)
+    return []
+  for (let i = start; i < cdsLength; i++) {
     const item: any = {}
     for (const column of columns) {
       let array: any = cds.get_array(column);
