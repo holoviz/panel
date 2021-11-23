@@ -1,9 +1,9 @@
+.. title:: Panel Documentation
+
 .. raw:: html
 
   <h1><img src="_static/logo_stacked.png" width="125"></h1>
   <h2>A high-level app and dashboarding solution for Python</h2>
-
-.. raw:: html
 
    <table class="showcase-table">
      <tr>
