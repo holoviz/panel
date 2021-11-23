@@ -537,13 +537,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   addData(): void {
     const rows = this.tabulator.rowManager.getRows()
     const last_row = rows[rows.length-1]
-    const start = ((last_row?.data._index + 1) || 0)
-    let data = transform_cds_to_records(this.model.source, true, start)
-    this.tabulator.addData(data)
+    const start = ((last_row?.data._index) || 0)
+    this.setData()
     if (this.model.follow && last_row)
       this.tabulator.scrollToRow(start, "top", false)
-    this.freezeRows()
-    this.updateSelection()
   }
 
   updateOrAddData(): void {
