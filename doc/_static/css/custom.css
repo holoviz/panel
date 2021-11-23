@@ -63,3 +63,7 @@ button.toggle-button {
 .toggle-hidden:not(.admonition) {
     height: 0;
 }
+
+.tag_hide-input {
+    margin-bottom: 0 !important;
+}
