@@ -2,13 +2,14 @@
 
 ## Version 0.12.5
 
-Date: 2021-11-16
+Date: 2021-11-23
 
 The 0.12.5 release contains a larger number of bug fixes and minor enhancements. Many thanks to @pmav99, @samuelyeewl, @xavArtley, @L8Y, @Prashant0kgp, @t-houssian, @kristw, @jlstevens and the maintainers @maximlt, @MarcSkovMadsen and @philippjfr for their contributions to this release.
 
 Compatibility:
 
 - Ensure ipywidget rendering is compatible with ipykernel>6 and bokeh>2.4 ([#2798](https://github.com/holoviz/panel/pull/2798))
+- Build panel.js against bokeh.js 2.4.2 ([#2945](https://github.com/holoviz/panel/pull/2945))
 
 Enhancements:
 
@@ -57,6 +58,7 @@ Documentation:
 - Fix default values of panels.io.server.serve(](https://github.com/holoviz/panel/pull/)) ([#2799](https://github.com/holoviz/panel/pull/2799))
 - Update docs about pn.serve per user state ([#2849](https://github.com/holoviz/panel/pull/2849))
 - Added FastApi in the user guide for embedding apps ([#2870](https://github.com/holoviz/panel/pull/2870))
+- Simplify homepage ([#2850](https://github.com/holoviz/panel/pull/2850))
 
 CVEs:
 

@@ -2,13 +2,14 @@
 
 ## Version 0.12.5
 
-Date: 2021-11-16
+Date: 2021-11-23
 
 The 0.12.5 release contains a larger number of bug fixes and minor enhancements. Many thanks to @pmav99, @samuelyeewl, @xavArtley, @L8Y, @Prashant0kgp, @t-houssian, @kristw, @jlstevens and the maintainers @maximlt, @MarcSkovMadsen and @philippjfr for their contributions to this release.
 
 Compatibility:
 
 - Ensure ipywidget rendering is compatible with ipykernel>6 and bokeh>2.4 ([#2798](https://github.com/holoviz/panel/pull/2798))
+- Build panel.js against bokeh.js 2.4.2 ([#2945](https://github.com/holoviz/panel/pull/2945))
 
 Enhancements:
 
@@ -42,6 +43,7 @@ Bug fixes:
 - Ensure stream and patch events do not boomerang ([#2902](https://github.com/holoviz/panel/pull/2902))
 - Fixes for `Card` rendering in `MaterialTemplate` ([#2911](https://github.com/holoviz/panel/pull/2911), [#2912](https://github.com/holoviz/panel/pull/2912))
 - Ensure `HoloViews` matplotlib output uses tight layout ([#2920](https://github.com/holoviz/panel/pull/2920))
+- Fix decoding of single quoted strings in url parameters ([#2925](https://github.com/holoviz/panel/pull/2925))
 - Fix Tabulator checkbox selection ([#2931](https://github.com/holoviz/panel/pull/2931))
 - Fix Vega pane sizing issues ([#2933](https://github.com/holoviz/panel/pull/2933))
 - Ensure toggled Accordion only triggers one event on change of active Card ([#2934](https://github.com/holoviz/panel/pull/2934))
@@ -56,6 +58,7 @@ Documentation:
 - Fix default values of panels.io.server.serve(](https://github.com/holoviz/panel/pull/)) ([#2799](https://github.com/holoviz/panel/pull/2799))
 - Update docs about pn.serve per user state ([#2849](https://github.com/holoviz/panel/pull/2849))
 - Added FastApi in the user guide for embedding apps ([#2870](https://github.com/holoviz/panel/pull/2870))
+- Simplify homepage ([#2850](https://github.com/holoviz/panel/pull/2850))
 
 CVEs:
 
