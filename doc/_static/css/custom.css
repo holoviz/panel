@@ -66,4 +66,5 @@ button.toggle-button {
 
 .tag_hide-input {
     margin-bottom: 0 !important;
+    height: 0;
 }

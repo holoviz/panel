@@ -1,10 +1,7 @@
 .. raw:: html
 
   <h1><img src="_static/logo_stacked.png" width="125"></h1>
-
-
-A high-level app and dashboarding solution for Python
------------------------------------------------------
+  <h2>A high-level app and dashboarding solution for Python</h2>
 
 .. raw:: html
 
@@ -18,36 +15,25 @@ A high-level app and dashboarding solution for Python
      <tr>
    </table>
 
-Panel is an `open-source <https://github.com/pyviz/panel/blob/master/LICENSE.txt>`_ Python library that lets you create custom interactive web apps and dashboards by connecting user-defined widgets to plots, images, tables, or text.
-
+Panel is an `open-source <https://github.com/holoviz/panel/blob/master/LICENSE.txt>`_ Python library that lets you create custom interactive web apps and dashboards by connecting user-defined widgets to plots, images, tables, or text.
 
 .. notebook:: panel ../examples/homepage.ipynb
     :disable_interactivity_warning: True
 
 Compared to other approaches, Panel is novel in that it supports nearly all plotting libraries, works just as well in a Jupyter notebook as on a standalone secure web server, uses the same code for both those cases, supports both Python-backed and static HTML/JavaScript exported applications, and can be used to develop rich interactive applications without tying your domain-specific code to any particular GUI or web tools.
 
-Panel makes it simple to make:
+Panel makes it simple to:
 
--  Plots with user-defined controls
--  Property sheets for editing parameters of objects in a workflow
--  Control panels for simulations or experiments
--  Custom data-exploration tools
--  Dashboards reporting key performance indicators (KPIs) and trends
--  Data-rich Python-backed web servers
--  and anything in between
-
-Panel objects are reactive, immediately updating to reflect changes to their state, which makes it simple to compose viewable objects and link them into simple, one-off apps to do a specific exploratory task. The same objects can then be reused in more complex combinations to build more ambitious apps, while always sharing the same code that works well on its own.
-
-Panel lets you move the same code freely between an interactive `Jupyter Notebook <https://jupyter.org>`__ prompt and a fully deployable standalone server.  That way you can easily switch between exploring your data, building visualizations, adding custom interactivity, sharing with non-technical users, and back again at any point, using the same tools and the same code throughout. Panel thus helps support your entire workflow, so that you never have to commit to only one way of using your data and your analyses, and don't have to rewrite your code just to make it usable in a different way. In many cases, using Panel can turn projects that used to take weeks or months into something you finish on the same day you started, creating a full Python-backed deployed web service for your visualized data in minutes or hours without having to run a software development project or hand your work over to another team.
-
-Using Panel for declarative, reactive programming
--------------------------------------------------
-
-Panel can also be used with the separate `Param <https://param.pyviz.org>`__ project to create interactively configurable objects with or without associated visualizations, in a fully declarative way. With this approach, you declare your configurable object using the pure-Python, zero-dependency ``param`` library, annotating your code with parameter ranges, documentation, and dependencies between parameters and your code. Using this information, you can make all of your domain-specific code be *optionally* configurable in a GUI, with *optional* visual displays and debugging information if you like, all with just a few lines of declarations. With this approach, you don't ever have to decide whether your code will eventually be used in a notebook, in a GUI app, or completely behind the scenes in batch processing, servers, or reports -- the same code can support all of these cases equally well, once you declare the associated parameters and constraints. This approach lets you completely separate your domain-specific code from anything to do with web browsers, GUI toolkits, or other volatile technologies that would otherwise make your hard work become obsolete as they change over time.
-
+- Use the PyData tools and plotting libraries that you know and love
+- Develop in your favorite editor or notebook environment and seamlessly deploy the resulting application
+- Iterate quickly to prototype apps and dashboards while offering polished templates for your final deployment
+- Support deep interactivity by communicating client-side interactions and events to Python
+- Stream data large and small to the frontend
+- Add authentication to your application using the inbuilt OAuth providers
+  
 The `Getting Started <getting_started>`_ will provide a quick introduction to the panel API and get you started while the `User Guide <user_guide>`_ provides a more detailed guide on how to use Panel.
 
-For usage questions or technical assistance, please head over to `Discourse <https://discourse.holoviz.org/>`_. If you have any `issues <https://github.com/pyviz/panel/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/pyviz/panel>`_.
+For usage questions or technical assistance, please head over to `Discourse <https://discourse.holoviz.org/>`_. If you have any `issues <https://github.com/holoviz/panel/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/holoviz/panel>`_.
 
 Installation
 ------------
@@ -61,20 +47,6 @@ Panel works with `Python 3 <https://github.com/holoviz/panel/actions?query=workf
 or using PyPI::
 
   pip install panel
-
-
-Getting Started
----------------
-
-Once you've installed Panel, you can get your own copy of all the notebooks used to make this website by running the following commands on the commandline in your conda or pip environment::
-
-  panel examples
-  cd panel-examples
-
-And then you can launch Jupyter to explore them yourself using either Jupyter Notebook or JupyterLab (having first installed the extension!)::
-
-  jupyter notebook
-  jupyter lab
 
 Usage
 -----
