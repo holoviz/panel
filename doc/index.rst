@@ -14,6 +14,7 @@
        <td border=1><a href="https://examples.pyviz.org/portfolio_optimizer/portfolio.html"><b>Portfolio Optimizer</b></a><br><a href="https://portfolio-optimizer.pyviz.demo.anaconda.com"><img src="https://assets.holoviews.org/panel/thumbnails/index/portfolio_optimizer.png" /></a></td>
      <tr>
    </table>
+   <hr>
 
 Panel is an `open-source <https://github.com/holoviz/panel/blob/master/LICENSE.txt>`_ Python library that lets you create custom interactive web apps and dashboards by connecting user-defined widgets to plots, images, tables, or text.
 
