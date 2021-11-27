@@ -38,6 +38,9 @@ class Card(Column):
     header_css_classes = param.List(['card-header'], doc="""
         CSS classes to apply to the header element.""")
 
+    hide_header = param.Boolean(default=False, doc="""
+        Whether to skip rendering the header.""")
+
     title_css_classes = param.List(['card-title'], doc="""
         CSS classes to apply to the header title.""")
 

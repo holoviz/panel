@@ -13,12 +13,16 @@ export class CardView extends ColumnView {
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.collapsed.change, () => this._collapse())
-    const {active_header_background, header_background, header_color} = this.model.properties
-    this.on_change([active_header_background, header_background, header_color], () => this.render())
+    const {active_header_background, header_background, header_color, hide_header} = this.model.properties
+    this.on_change([active_header_background, header_background, header_color, hide_header], () => this.render())
   }
 
   _update_layout(): void {
-    const views = this.model.collapsed ? this.child_views.slice(0, 1) : this.child_views
+    let views: any[]
+    if (this.model.hide_header)
+      views = this.child_views.slice(1)
+    else
+      views = this.model.collapsed ? this.child_views.slice(0, 1) : this.child_views
     const items = views.map((child) => child.layout)
     this.layout = new ColumnLayout(items)
     this.layout.rows = this.model.rows
@@ -27,7 +31,7 @@ export class CardView extends ColumnView {
   }
 
   update_position(): void {
-    if (this.model.collapsible) {
+    if (this.model.collapsible && !this.model.hide_header) {
       const header = this.child_views[0]
       const obbox = header.layout.bbox
       const ibbox = header.layout.inner_bbox
@@ -77,11 +81,12 @@ export class CardView extends ColumnView {
       header_el.style.backgroundColor = header_background != null ? header_background : ""
       header_el.appendChild(header.el)
     }
-    header_el.style.color = header_color != null ? header_color : ""
 
-    this.el.appendChild(header_el)
-    header.render()
-
+    if (!this.model.hide_header) {
+      header_el.style.color = header_color != null ? header_color : ""
+      this.el.appendChild(header_el)
+      header.render()
+    }
     for (const child_view of this.child_views.slice(1)) {
       if (!this.model.collapsed)
         this.el.appendChild(child_view.el)
@@ -114,6 +119,7 @@ export namespace Card {
     header_color: p.Property<string | null>
     header_css_classes: p.Property<string[]>
     header_tag: p.Property<string>
+    hide_header: p.Property<boolean>
     tag: p.Property<string>
   }
 }
@@ -141,6 +147,7 @@ export class Card extends Column {
       header_color:             [ Nullable(String), null ],
       header_css_classes:       [ Array(String),      [] ],
       header_tag:               [ String,          "div" ],
+      hide_header:              [ Boolean,         false ],
       tag:                      [ String,          "div" ],
     }))
   }
