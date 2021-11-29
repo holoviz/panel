@@ -298,23 +298,27 @@ class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         'grant_type':    'authorization_code'
     }
 
-    _SCOPE = ['openid', 'email']
-
     @property
     def _OAUTH_ACCESS_TOKEN_URL(self):
-        return config.oauth_extra_params['TOKEN_URL']
+        return config.oauth_extra_params.get('TOKEN_URL', os.environ.get('PANEL_OAUTH_TOKEN_URL'))
 
     @property
     def _OAUTH_AUTHORIZE_URL(self):
-        return config.oauth_extra_params['AUTHORIZE_URL']
+        return config.oauth_extra_params.get('AUTHORIZE_URL', os.environ.get('PANEL_OAUTH_AUTHORIZE_URL'))
 
     @property
     def _OAUTH_USER_URL(self):
-        return config.oauth_extra_params['USER_URL']
+        return config.oauth_extra_params.get('USER_URL', os.environ.get('PANEL_OAUTH_USER_URL'))
+
+    @property
+    def _SCOPE(self):
+        if 'PANEL_OAUTH_SCOPE' not in os.environ:
+            return ['openid', 'email']
+        return [scope for scope in os.environ['PANEL_OAUTH_SCOPE'].split(',')]
 
     @property
     def _USER_KEY(self):
-        return config.oauth_extra_params.get('USER_KEY', 'email')
+        return config.oauth_extra_params.get('USER_KEY', os.environ.get('PANEL_USER_KEY', 'email'))
 
 
 class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
