@@ -14,7 +14,6 @@ function ID() {
 
 export class AcePlotView extends PanelHTMLBoxView {
   model: AcePlot
-  protected _ace: any
   protected _editor: any
   protected _langTools: any
   protected _modelist: any
@@ -22,7 +21,6 @@ export class AcePlotView extends PanelHTMLBoxView {
 
   initialize(): void {
     super.initialize()
-    this._ace = (window as any).ace
     this._container = div({
       id: ID(),
       style: {
@@ -51,9 +49,9 @@ export class AcePlotView extends PanelHTMLBoxView {
     if (!(this._container === this.el.childNodes[0]))
       this.el.appendChild(this._container)
       this._container.textContent = this.model.code
-      this._editor = this._ace.edit(this._container.id)
-      this._langTools = this._ace.require('ace/ext/language_tools')
-      this._modelist = this._ace.require("ace/ext/modelist")
+      this._editor = (window as any).ace.edit(this._container.id)
+      this._langTools = (window as any).ace.require('ace/ext/language_tools')
+      this._modelist = (window as any).ace.require("ace/ext/modelist")
       this._editor.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
