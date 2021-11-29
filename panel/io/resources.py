@@ -123,7 +123,7 @@ def bundle_resources(roots, resources):
     css_files.extend(css_resources.css_files)
     css_raw.extend(css_resources.css_raw)
 
-    extensions = _bundle_extensions(roots, js_resources)
+    extensions = _bundle_extensions(None, js_resources)
     if mode == "inline":
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
     elif mode == "server":
