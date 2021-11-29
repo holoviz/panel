@@ -511,12 +511,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           }
           columns.push(expand)
         } else {
-          if (column.formatter === "rowSelection") {
-            column.cellClick = (_: any, cell: any) => {
+          const new_column = {...column}
+          if (new_column.formatter === "rowSelection") {
+            new_column.cellClick = (_: any, cell: any) => {
               cell.getRow().toggleSelect();
             }
           }
-          columns.push({...column})
+          columns.push(new_column)
         }
     }
     for (const column of this.model.columns) {
