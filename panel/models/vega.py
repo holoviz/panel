@@ -2,12 +2,22 @@
 Defines custom VegaPlot bokeh model to render Vega json plots.
 """
 from bokeh.core.properties import (
-    Any, Bool, Dict, Enum, Instance, Nullable, String
+    Any, Bool, Dict, Enum, Instance, Int, List, Nullable, String
 )
+from bokeh.events import ModelEvent
 from bokeh.models import LayoutDOM, ColumnDataSource
 
 from ..io.resources import bundled_files
 from ..util import classproperty
+
+
+class VegaEvent(ModelEvent):
+
+    event_name = 'vega_event'
+
+    def __init__(self, model, data=None):
+        self.data = data
+        super().__init__(model=model)
 
 
 class VegaPlot(LayoutDOM):
@@ -47,7 +57,11 @@ class VegaPlot(LayoutDOM):
 
     data_sources = Dict(String, Instance(ColumnDataSource))
 
+    events = List(String)
+
     show_actions = Bool(False)
 
     theme = Nullable(Enum('excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
                  'latimes', 'urbaninstitute', 'googlecharts', default=None))
+
+    throttle = Dict(String, Int)

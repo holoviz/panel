@@ -13,6 +13,7 @@ from bokeh.io import curdoc as _curdoc
 
 from ..util import edit_readonly, function_name
 from .logging import LOG_PERIODIC_START, LOG_PERIODIC_END
+
 from .state import state
 
 _periodic_logger = logging.getLogger(f'{__name__}.PeriodicCallback')
