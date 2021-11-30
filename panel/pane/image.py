@@ -46,6 +46,12 @@ class FileBase(DivPaneBase):
                 return True
             elif isurl(obj, None):
                 return 0
+        elif isinstance(obj, bytes):
+            try:
+                cls._imgshape(obj)
+                return True
+            except Exception:
+                return False
         if hasattr(obj, 'read'):  # Check for file like object
             return True
         return False
@@ -57,6 +63,8 @@ class FileBase(DivPaneBase):
             if isfile(self.object):
                 with open(self.object, 'rb') as f:
                     return f.read()
+        elif isinstance(self.object, bytes):
+            return self.object
         if hasattr(self.object, 'read'):
             if hasattr(self.object, 'seek'):
                 self.object.seek(0)
