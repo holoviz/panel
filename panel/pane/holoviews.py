@@ -259,10 +259,7 @@ class HoloViews(PaneBase):
 
         kwargs = {p: v for p, v in self.param.values().items()
                   if p in Layoutable.param and p != 'name'}
-        pane_type = self._panes.get(backend, Pane)
-        if 'tight' in pane_type.param:
-            kwargs['tight'] = True
-        child_pane = pane_type(state, **kwargs)
+        child_pane = self._get_pane(backend, state, **kwargs)
         self._update_plot(plot, child_pane)
         model = child_pane._get_model(doc, root, parent, comm)
         if ref in self._plots:
@@ -272,6 +269,12 @@ class HoloViews(PaneBase):
         self._plots[ref] = (plot, child_pane)
         self._models[ref] = (model, parent)
         return model
+
+    def _get_pane(self, backend, state, **kwargs):
+        pane_type = self._panes.get(backend, Pane)
+        if isinstance(pane_type, type) and issubclass(pane_type, Matplotlib):
+            kwargs['tight'] = True
+        return pane_type(state, **kwargs)
 
     def _render(self, doc, comm, root):
         import holoviews as hv
