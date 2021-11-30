@@ -174,6 +174,12 @@ class Serve(_BkServe):
         ('--autoreload', dict(
             action  = 'store_true',
             help    = "Whether to autoreload source when script changes."
+        )),
+        ('--num-threads', dict(
+            action  = 'store',
+            type    = int,
+            help    = "Whether to start a thread pool which events are dispatched to.",
+            default = -1
         ))
     )
 
@@ -284,6 +290,9 @@ class Serve(_BkServe):
             pattern = REST_PROVIDERS['param'](files, 'rest')
             patterns.extend(pattern)
             state.publish('session_info', state, ['session_info'])
+
+        if args.num_threads != -1:
+            config.nthreads = args.num_threads
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
