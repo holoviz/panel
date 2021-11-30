@@ -50,7 +50,7 @@ class FileBase(DivPaneBase):
             try:
                 cls._imgshape(obj)
                 return True
-            except Exception as e:
+            except Exception:
                 return False
         if hasattr(obj, 'read'):  # Check for file like object
             return True
