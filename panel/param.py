@@ -2,15 +2,16 @@
 Defines the Param pane which converts Parameterized classes into a
 set of widgets.
 """
-import os
-import sys
-import json
-import types
 import inspect
 import itertools
+import json
+import os
+import sys
+import types
 
 from collections import OrderedDict, defaultdict, namedtuple
 from contextlib import contextmanager
+from functools import partial
 from six import string_types
 
 import param
@@ -18,6 +19,7 @@ import param
 from param.parameterized import classlist, discard_events
 
 from .io import init_doc, state
+from .io.server import async_execute
 from .layout import Column, Panel, Row, Spacer, Tabs
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
@@ -748,6 +750,13 @@ class ParamMethod(ReplacementPane):
                 kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
         return function(*args, **kwargs)
 
+    async def _eval_async(self, awaitable):
+        try:
+            new_object = await awaitable
+            self._update_inner(new_object)
+        finally:
+            self._inner_layout.loading = False
+
     def _replace_pane(self, *args, force=False):
         self._evaled = bool(self._models) or force or not self.lazy
         if self._evaled:
@@ -757,6 +766,9 @@ class ParamMethod(ReplacementPane):
                     new_object = Spacer()
                 else:
                     new_object = self.eval(self.object)
+                if inspect.isawaitable(new_object):
+                    async_execute(partial(self._eval_async, new_object))
+                    return
                 self._update_inner(new_object)
             finally:
                 self._inner_layout.loading = False
