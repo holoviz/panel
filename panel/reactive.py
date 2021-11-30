@@ -286,15 +286,11 @@ class Syncable(Renderable):
     def _change_event(self, doc=None):
         try:
             state.curdoc = doc
-            thread = threading.current_thread()
-            thread_id = thread.ident if thread else None
-            state._thread_id = thread_id
             events = self._events
             self._events = {}
             self._process_events(events)
         finally:
             state.curdoc = None
-            state._thread_id = None
 
     def _schedule_change(self, doc, comm):
         with hold(doc, comm=comm):

@@ -401,6 +401,11 @@ def init_doc(doc):
     if not doc.session_context:
         return doc
 
+    thread = threading.current_thread()
+    if thread:
+        with set_curdoc(doc):
+            state._main_thread = thread.ident
+
     session_id = doc.session_context.id
     sessions = state.session_info['sessions']
     if session_id not in sessions:
@@ -414,9 +419,10 @@ def init_doc(doc):
 
 @contextmanager
 def set_curdoc(doc):
+    orig_doc = state._curdoc
     state.curdoc = doc
     yield
-    state.curdoc = None
+    state.curdoc = orig_doc
 
 def with_lock(func):
     """
