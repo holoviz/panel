@@ -179,7 +179,7 @@ class Serve(_BkServe):
             action  = 'store',
             type    = int,
             help    = "Whether to start a thread pool which events are dispatched to.",
-            default = -1
+            default = None
         ))
     )
 
@@ -291,7 +291,7 @@ class Serve(_BkServe):
             patterns.extend(pattern)
             state.publish('session_info', state, ['session_info'])
 
-        if args.num_threads != -1:
+        if args.num_threads is not None:
             config.nthreads = args.num_threads
 
         if args.oauth_provider:

@@ -126,7 +126,7 @@ class _config(_base_config):
     theme = param.ObjectSelector(default='default', objects=['default', 'dark'], doc="""
         The theme to apply to the selected global template.""")
 
-    nthreads = param.Integer(default=0, doc="""
+    nthreads = param.Integer(default=None, doc="""
         When set to a non-None value a thread pool will be started.
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
