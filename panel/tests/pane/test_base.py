@@ -5,14 +5,18 @@ import param
 from panel.interact import interactive
 from panel.layout import Row
 from panel.links import CallbackGenerator
-from panel.pane import Pane, PaneBase, Bokeh, HoloViews, IPyWidget, Interactive, IDOM
+from panel.pane import (
+    Bokeh, HoloViews, IPyWidget, Interactive, IDOM, Pane, PaneBase, Vega
+)
 from panel.param import ParamMethod
 from panel.tests.util import check_layoutable_properties, py3_only
 
 
+SKIP_PANES = (Bokeh, HoloViews, ParamMethod, interactive, IPyWidget, Interactive, IDOM, Vega)
+
 all_panes = [w for w in param.concrete_descendents(PaneBase).values()
              if not w.__name__.startswith('_') and not
-             issubclass(w, (Bokeh, HoloViews, ParamMethod, interactive, IPyWidget, Interactive, IDOM))
+             issubclass(w, SKIP_PANES)
              and w.__module__.startswith('panel')]
 
 
