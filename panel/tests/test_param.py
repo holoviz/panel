@@ -1263,3 +1263,21 @@ def test_set_widget_autocompleteinput(document, comm):
     test.param['choice'].objects = ['c', 'd']
     assert autocompleteinput.completions == ['c', 'd']
     assert autocompleteinput.value == ''
+
+def test_set_widget_autocompleteinput_empty_objects(document, comm):
+
+    class Test(param.Parameterized):
+        # Testing with default='' and check_on_set=False since this feels
+        # like the most sensible default config for Selector -> AutocompleteInput
+        choice = param.Selector(default='', objects=[], check_on_set=False)
+
+    test = Test()
+    test_pane = Param(test, widgets={'choice': AutocompleteInput})
+
+    model = test_pane.get_root(document, comm=comm)
+
+    autocompleteinput = model.children[1]
+    assert isinstance(autocompleteinput, BkAutocompleteInput)
+    assert autocompleteinput.completions == ['']
+    assert autocompleteinput.value == ''
+    assert autocompleteinput.disabled == False
