@@ -213,12 +213,12 @@ class _config(_base_config):
 
     @param.depends('nthreads', watch=True)
     def _set_thread_pool(self):
+        from .io.state import state
         if self.nthreads is None:
             if state._thread_pool is not None:
                 state._thread_pool.shutdown(wait=False)
             state._thread_pool = None
             return
-        from .io.state import state
         if state._thread_pool:
             raise RuntimeError("Thread pool already running")
         threads = self.nthreads if self.nthreads else None
