@@ -14,6 +14,7 @@ from bokeh.document import Document
 from bokeh.client import pull_session
 from pyviz_comms import Comm
 
+from panel import config
 from panel.pane import HTML, Markdown
 from panel.io import state
 from panel import serve
@@ -182,3 +183,10 @@ def py_file():
     tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
     yield tf
     tf.close()
+
+
+@pytest.fixture
+def threads():
+    config.nthreads = 4
+    yield 4
+    config.nthreads = None

@@ -9,12 +9,14 @@ import requests
 
 from panel.config import config
 from panel.io import state
+from panel.layout import Row
 from panel.models import HTML as BkHTML
+from panel.models.tabulator import TableEditEvent
 from panel.pane import Markdown
 from panel.io.resources import DIST_DIR
 from panel.io.server import get_server, serve, set_curdoc
 from panel.template import BootstrapTemplate
-from panel.widgets import Button
+from panel.widgets import Button, Tabulator
 
 
 def test_get_server(html_server_session):
@@ -291,3 +293,114 @@ def test_serve_can_serve_bokeh_app_from_file():
     path = pathlib.Path(__file__).parent / "io"/"bk_app.py"
     server = get_server({"bk-app": path})
     assert "/bk-app" in server._tornado.applications
+
+
+def test_server_thread_pool_change_event(threads):
+    button = Button(name='Click')
+    button2 = Button(name='Click')
+
+    counts = []
+
+    def cb(event, count=[0]):
+        count[0] += 1
+        counts.append(count[0])
+        time.sleep(0.5)
+        count[0] -= 1
+
+    button.on_click(cb)
+    button2.on_click(cb)
+    layout = Row(button, button2)
+
+    port = 6010
+    server = serve(layout, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}/")
+
+    model = list(layout._models.values())[0][0]
+    doc = model.document
+    with set_curdoc(doc):
+        button._server_change(doc, model.ref['id'], None, 'clicks', 0, 1)
+        button2._server_change(doc, model.ref['id'], None, 'clicks', 0, 1)
+
+    # Wait for callbacks to be scheduled
+    time.sleep(1)
+
+    # Checks whether Button on_click callback was executed concurrently
+    assert max(counts) == 2
+
+
+def test_server_thread_pool_bokeh_event(threads):
+    import pandas as pd
+
+    df = pd.DataFrame([[1, 1], [2, 2]], columns=['A', 'B'])
+
+    tabulator = Tabulator(df)
+
+    counts = []
+
+    def cb(event, count=[0]):
+        count[0] += 1
+        counts.append(count[0])
+        time.sleep(0.5)
+        count[0] -= 1
+
+    tabulator.on_edit(cb)
+
+    port = 6011
+    server = serve(tabulator, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}/")
+
+    model = list(tabulator._models.values())[0][0]
+    doc = model.document
+    event = TableEditEvent(model, 'A', 0)
+    with set_curdoc(doc):
+        for _ in range(2):
+            tabulator._server_event(doc, event)
+
+    # Wait for callbacks to be scheduled
+    time.sleep(1)
+
+    # Checks whether Tabulator on_edit callback was executed concurrently
+    assert max(counts) == 2
+
+
+def test_server_thread_pool_periodic(threads):
+    button = Button(name='Click')
+
+    counts = []
+
+    def setup(event):
+        state.add_periodic_callback(cb, 100)
+
+    def cb(count=[0]):
+        count[0] += 1
+        counts.append(count[0])
+        time.sleep(0.5)
+        count[0] -= 1
+
+    button.on_click(setup)
+
+    port = 6012
+    server = serve(button, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}/")
+
+    doc = list(button._models.values())[0][0].document
+    with set_curdoc(doc):
+        button.clicks += 1
+
+    # Wait for callbacks to be scheduled
+    time.sleep(1)
+
+    # Checks whether periodic callbacks were executed concurrently
+    assert max(counts) >= 2
