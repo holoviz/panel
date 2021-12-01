@@ -312,7 +312,7 @@ def test_server_thread_pool_change_event(threads):
     layout = Row(button, button2)
 
     port = 6010
-    server = serve(layout, port=port, threaded=True, show=False)
+    serve(layout, port=port, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
@@ -350,7 +350,7 @@ def test_server_thread_pool_bokeh_event(threads):
     tabulator.on_edit(cb)
 
     port = 6011
-    server = serve(tabulator, port=port, threaded=True, show=False)
+    serve(tabulator, port=port, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
@@ -388,7 +388,7 @@ def test_server_thread_pool_periodic(threads):
     button.on_click(setup)
 
     port = 6012
-    server = serve(button, port=port, threaded=True, show=False)
+    serve(button, port=port, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
