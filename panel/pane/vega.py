@@ -226,7 +226,10 @@ class Vega(PaneBase):
             data=json, data_sources=sources, events=self._selections,
             throttle=self._throttle, **props
         )
-        model.on_event('vega_event', self._process_event)
+        if comm:
+            model.on_event('vega_event', self._comm_event)
+        else:
+            model.on_event('vega_event', partial(self._server_event, doc))
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)

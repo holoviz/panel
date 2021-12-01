@@ -283,7 +283,7 @@ class Terminal(Widget):
         model = super()._get_model(doc, root, parent, comm)
         model.output = self.output
         if comm:
-            model.on_event('keystroke', self._process_event)
+            model.on_event('keystroke', self._comm_event)
         else:
             model.on_event('keystroke', partial(self._server_event, doc))
         return model

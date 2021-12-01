@@ -1282,7 +1282,7 @@ class Tabulator(BaseTable):
         )
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
         if comm:
-            model.on_event('table-edit', self._process_event)
+            model.on_event('table-edit', self._comm_event)
         else:
             model.on_event('table-edit', partial(self._server_event, doc))
         return model

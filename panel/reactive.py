@@ -283,6 +283,13 @@ class Syncable(Renderable):
         else:
             self._change_event(doc)
 
+    @gen.coroutine
+    def _event_coroutine(self, event):
+        if state._thread_pool:
+            state._thread_pool.submit(self._process_event, event)
+        else:
+            self._process_event(event)
+
     def _change_event(self, doc=None):
         try:
             state.curdoc = doc
@@ -309,11 +316,17 @@ class Syncable(Renderable):
         else:
             self._schedule_change(doc, comm)
 
+    def _comm_event(self, event):
+        if state._thread_pool:
+            state._thread_pool.submit(self._process_event, event)
+        else:
+            self._process_event(event)
+
     def _server_event(self, doc, event):
         state._locks.clear()
         if doc.session_context:
             doc.add_timeout_callback(
-                partial(self._process_event, event),
+                partial(self._event_coroutine, event),
                 self._debounce
             )
         else:
@@ -329,14 +342,16 @@ class Syncable(Renderable):
         state._locks.clear()
         processing = bool(self._events)
         self._events.update({attr: new})
-        if not processing:
-            if doc.session_context:
-                doc.add_timeout_callback(
-                    partial(self._change_coroutine, doc),
-                    self._debounce
-                )
-            else:
-                self._change_event(doc)
+        if processing:
+            return
+
+        if doc.session_context:
+            doc.add_timeout_callback(
+                partial(self._change_coroutine, doc),
+                self._debounce
+            )
+        else:
+            self._change_event(doc)
 
 
 class Reactive(Syncable, Viewable):
@@ -1516,7 +1531,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         model.children = self._get_children(doc, root, model, comm)
 
         if comm:
-            model.on_event('dom_event', self._process_event)
+            model.on_event('dom_event', self._comm_event)
         else:
             model.on_event('dom_event', partial(self._server_event, doc))
 
