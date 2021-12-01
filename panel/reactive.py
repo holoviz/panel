@@ -9,7 +9,6 @@ import datetime as dt
 import re
 import sys
 import textwrap
-import threading
 
 from collections import Counter, defaultdict, namedtuple
 from functools import partial

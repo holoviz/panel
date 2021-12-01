@@ -1,5 +1,7 @@
 import sys
 
+from functools import partial
+
 import param
 import numpy as np
 

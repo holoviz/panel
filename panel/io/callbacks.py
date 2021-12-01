@@ -113,7 +113,6 @@ class PeriodicCallback(param.Parameterized):
             inspect.iscoroutinefunction(self.callback)
         )
         if state._thread_pool and not is_async:
-            from tornado.ioloop import IOLoop
             state._thread_pool.submit(self._exec_callback, True)
             return
         try:
