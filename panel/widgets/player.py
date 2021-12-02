@@ -23,6 +23,10 @@ class PlayerBase(Widget):
     show_loop_controls = param.Boolean(default=True, doc="""
         Whether the loop controls radio buttons are shown""")
 
+    direction = param.Integer(0, readonly=True, doc="""
+        Current play direction of the Player (-1: playing in reverse,
+        0: paused, 1: playing)""")
+
     height = param.Integer(default=80)
 
     width = param.Integer(default=510)
