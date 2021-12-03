@@ -336,9 +336,11 @@ class _state(param.Parameterized):
             except Exception:
                 pass
         self._threads = {}
-        for server_id in self._servers:
+        for server_id, (server, root_panel, _) in self._servers.items():
+            for root, _ in list(root_panel._models.values()):
+                root_panel._cleanup(root)
             try:
-                self._servers[server_id][0].stop()
+                server.stop()
             except AssertionError:  # can't stop a server twice
                 pass
         self._servers = {}
