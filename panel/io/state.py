@@ -336,9 +336,13 @@ class _state(param.Parameterized):
             except Exception:
                 pass
         self._threads = {}
-        for server_id, (server, root_panel, _) in self._servers.items():
-            for root, _ in list(root_panel._models.values()):
-                root_panel._cleanup(root)
+        for server_id, (server, _, _) in self._servers.items():
+            try:
+                for session in server.get_sessions():
+                    for cb in session.document.session_destroyed_callbacks:
+                        cb(session.document.session_context)
+            except Exception:
+                pass
             try:
                 server.stop()
             except AssertionError:  # can't stop a server twice
