@@ -1262,19 +1262,12 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             else:
                 params[children_param] = panel(child_value)
         super().__init__(**params)
+        self._panes = {}
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
 
     def _cleanup(self, root):
-        for children_param in self._parser.children.values():
-            children = getattr(self, children_param)
-            mode = self._child_config.get(children_param)
-            if mode != 'model':
-                continue
-            if isinstance(children, dict):
-                children = children.values()
-            elif not isinstance(children, list):
-                children = [children]
-            for child in children:
+        for child, panes in self._panes.items():
+            for pane in panes:
                 child._cleanup(root)
         super()._cleanup(root)
 
@@ -1341,12 +1334,11 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     node_events[e] = False
         return events
 
-    def _get_children(self, doc, root, model, comm, old_children=None):
+    def _get_children(self, doc, root, model, comm):
         from .pane import panel
-        old_children = old_children or {}
         old_models = model.children
         new_models = {parent: [] for parent in self._parser.children}
-        new_panes = {}
+        new_panes, internal_panes = {}, {}
 
         for parent, children_param in self._parser.children.items():
             mode = self._child_config.get(children_param, 'model')
@@ -1363,20 +1355,13 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             else:
                 panes = [panel(panes)]
             new_panes[parent] = panes
+            if isinstance(panes, dict):
+                panes = list(panes.values())
+            internal_panes[children_param] = panes
 
-        for children_param, old_panes in old_children.items():
-            mode = self._child_config.get(children_param, 'model')
-            if mode == 'literal':
-                continue
-            panes = getattr(self, children_param)
-            if not isinstance(panes, (list, dict)):
-                panes = [panes]
-                old_panes = [old_panes]
-            elif isinstance(panes, dict):
-                panes = panes.values()
-                old_panes = old_panes.values()
+        for children_param, old_panes in self._panes.items():
             for old_pane in old_panes:
-                if old_pane not in panes and hasattr(old_pane, '_cleanup'):
+                if old_pane not in internal_panes.get(children_param, []):
                     old_pane._cleanup(root)
 
         for parent, child_panes in new_panes.items():
@@ -1386,11 +1371,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             mode = self._child_config.get(children_param, 'model')
             if mode == 'literal':
                 new_models[parent] = children_param
-            elif children_param in old_children:
+            elif children_param in self._panes:
                 # Find existing models
-                old_panes = old_children[children_param]
-                if not isinstance(old_panes, (list, dict)):
-                    old_panes = [old_panes]
+                old_panes = self._panes[children_param]
                 for i, pane in enumerate(child_panes):
                     if pane in old_panes and root.ref['id'] in pane._models:
                         child, _ = pane._models[root.ref['id']]
@@ -1405,6 +1388,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     pane._get_model(doc, root, model, comm)
                     for pane in child_panes
                 ]
+        self._panes = internal_panes
         return self._process_children(doc, root, model, comm, new_models)
 
     def _get_template(self):
@@ -1556,10 +1540,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             else:
                 data_msg[prop] = v
         if new_children:
-            old_children = {key: events[key].old for key in new_children}
             if self._parser.looped:
                 model_msg['html'] = escape(self._get_template())
-            children = self._get_children(doc, root, model, comm, old_children)
+            children = self._get_children(doc, root, model, comm)
         else:
             children = None
         if children is not None:
