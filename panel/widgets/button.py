@@ -34,7 +34,6 @@ class _ClickButton(_ButtonBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = super()._get_model(doc, root, parent, comm)
-        ref = (root or model).ref['id']
         if comm:
             model.on_event(self._event, self._comm_event)
         else:
