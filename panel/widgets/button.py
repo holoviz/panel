@@ -35,7 +35,10 @@ class _ClickButton(_ButtonBase):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = super()._get_model(doc, root, parent, comm)
         ref = (root or model).ref['id']
-        model.on_click(partial(self._server_click, doc, ref))
+        if comm:
+            model.on_event(self._event, self._comm_event)
+        else:
+            model.on_event(self._event, partial(self._server_event, doc))
         return model
 
     def js_on_click(self, args={}, code=""):
@@ -108,21 +111,9 @@ class Button(_ClickButton):
 
     jslink.__doc__ = Widget.jslink.__doc__
 
-    def _server_click(self, doc, ref, event):
-        processing = bool(self._events)
-        self._events.update({"clicks": self.clicks+1})
+    def _process_event(self, event):
         self.param.trigger('value')
-        if not processing:
-            if doc.session_context:
-                doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
-            else:
-                self._change_event(doc)
-
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'clicks' in msg:
-            msg['clicks'] = self.clicks + 1
-        return msg
+        self.clicks += 1
 
     def on_click(self, callback):
         self.param.watch(callback, 'clicks', onlychanged=False)
@@ -162,17 +153,12 @@ class MenuButton(_ClickButton):
 
     _event = 'menu_item_click'
 
+    def _process_event(self, event):
+        if isinstance(event, MenuItemClick):
+            item = event.item
+        elif isinstance(event, ButtonClick):
+            item = self.name
+        self.clicked = item
+
     def on_click(self, callback):
         self.param.watch(callback, 'clicked', onlychanged=False)
-
-    def _server_click(self, doc, ref, event):
-        processing = bool(self._events)
-        if isinstance(event, MenuItemClick):
-            self._events.update({"clicked": event.item})
-        elif isinstance(event, ButtonClick):
-            self._events.update({"clicked": self.name})
-        if not processing:
-            if doc.session_context:
-                doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
-            else:
-                self._change_event(doc)
