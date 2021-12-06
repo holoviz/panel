@@ -404,7 +404,7 @@ def init_doc(doc):
     thread = threading.current_thread()
     if thread:
         with set_curdoc(doc):
-            state._main_thread = thread.ident
+            state._thread_id = thread.ident
 
     session_id = doc.session_context.id
     sessions = state.session_info['sessions']

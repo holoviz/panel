@@ -67,7 +67,7 @@ class _state(param.Parameterized):
     _hold = False
 
     # Used to ensure that events are not scheduled from the wrong thread
-    _main_thread_ = WeakKeyDictionary()
+    _thread_id_ = WeakKeyDictionary()
     _thread_pool = None
 
     _comm_manager = _CommManager
@@ -121,17 +121,17 @@ class _state(param.Parameterized):
         return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
 
     @property
-    def _main_thread(self):
-        return self._main_thread_[self.curdoc]
+    def _thread_id(self):
+        return self._thread_id_[self.curdoc]
 
-    @_main_thread.setter
-    def _main_thread(self, thread_id):
-        self._main_thread_[self.curdoc] = thread_id
+    @_thread_id.setter
+    def _thread_id(self, thread_id):
+        self._thread_id_[self.curdoc] = thread_id
 
     def _unblocked(self, doc):
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
-        return doc is self.curdoc and self._main_thread == thread_id
+        return doc is self.curdoc and self._thread_id == thread_id
 
     @param.depends('busy', watch=True)
     def _update_busy(self):
