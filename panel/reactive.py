@@ -324,9 +324,8 @@ class Syncable(Renderable):
     def _server_event(self, doc, event):
         state._locks.clear()
         if doc.session_context:
-            doc.add_timeout_callback(
-                partial(self._event_coroutine, event),
-                self._debounce
+            doc.add_next_tick_callback(
+                partial(self._event_coroutine, event)
             )
         else:
             self._process_event(event)
