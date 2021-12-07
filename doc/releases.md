@@ -16,7 +16,7 @@ Bug fixes:
 - Do not run `Ace` import on initialization ([#2959](https://github.com/holoviz/panel/pull/2959))
 - Improve handling of `ReactiveHTML` cleanup ([#2974](https://github.com/holoviz/panel/pull/2974))
 - Ensure empty `Str` has same height as non-empty ([#2981](https://github.com/holoviz/panel/pull/2981))
-- Ensure `Tabulator` supports grouping on numeric columns ([#2987](https://github.com/holoviz/panel/pull/2987()
+- Ensure `Tabulator` supports grouping on numeric columns ([#2987](https://github.com/holoviz/panel/pull/2987))
 - Fix `Tabulator` with multi-index and pagination ([#2989](https://github.com/holoviz/panel/pull/2989))
 - Allow index as column name in table widgets ([#2990](https://github.com/holoviz/panel/pull/2990))
 
@@ -33,7 +33,7 @@ Compatibility:
 
 Enhancements:
 
-- Add 'light' to list of button types ([#2814, [#2816](https://github.com/holoviz/panel/pull/2816))
+- Add 'light' to list of button types ([#2814](https://github.com/holoviz/panel/pull/2814), [#2816](https://github.com/holoviz/panel/pull/2816))
 - Make OAuth cookie expiry configurable ([#2724](https://github.com/holoviz/panel/pull/2724))
 - Run `onload` callbacks with `--warm` option ([#2844](https://github.com/holoviz/panel/pull/2844))
 - Improve Plotly responsive sizing behavior ([#2838](https://github.com/holoviz/panel/pull/2838))
