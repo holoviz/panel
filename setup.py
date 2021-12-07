@@ -142,7 +142,7 @@ extras_require = {
         'scikit-learn',
         'datashader',
         'jupyter_bokeh >=3.0.2',
-        'django',
+        'django <4',
         'channels',
         'pyvista',
         'ipywidgets',

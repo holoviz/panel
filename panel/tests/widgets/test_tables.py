@@ -223,6 +223,40 @@ def test_tabulator_selected_dataframe():
     pd.testing.assert_frame_equal(table.selected_dataframe, df.iloc[[0, 2]])
 
 
+def test_tabulator_multi_index(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df.set_index(['A', 'C']))
+
+    model = table.get_root()
+
+    assert model.configuration['columns'] == [
+        {'field': 'A'},
+        {'field': 'C'},
+        {'field': 'B'},
+        {'field': 'D'}
+    ]
+
+    assert np.array_equal(model.source.data['A'], np.array([0., 1., 2., 3., 4.]))
+    assert np.array_equal(model.source.data['C'], np.array(['foo1', 'foo2', 'foo3', 'foo4', 'foo5']))
+
+
+def test_tabulator_multi_index_remote_pagination(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df.set_index(['A', 'C']), pagination='remote', page_size=3)
+
+    model = table.get_root()
+
+    assert model.configuration['columns'] == [
+        {'field': 'A'},
+        {'field': 'C'},
+        {'field': 'B'},
+        {'field': 'D'}
+    ]
+
+    assert np.array_equal(model.source.data['A'], np.array([0., 1., 2.]))
+    assert np.array_equal(model.source.data['C'], np.array(['foo1', 'foo2', 'foo3']))
+
+
 def test_tabulator_selected_and_filtered_dataframe(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
