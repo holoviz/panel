@@ -1271,7 +1271,7 @@ def test_sorted():
         valuea = param.Integer(label="bbb")
 
     my_class = MyClass()
-    _, input1, input2, input3 = Param(my_class, sorted=True)
+    _, input1, input2, input3 = Param(my_class, sort=True)
     assert input1.name=="aaa"
     assert input2.name=="bbb"
     assert input3.name=="zzz"
@@ -1285,7 +1285,7 @@ def test_sorted_func():
     my_class = MyClass()
     def sort_func(x):
         return x[1].label[::-1]
-    _, input1, input2, input3 = Param(my_class, sorted=sort_func)
+    _, input1, input2, input3 = Param(my_class, sort=sort_func)
     assert input1.name=="cba"
     assert input2.name=="acb"
     assert input3.name=="bac"

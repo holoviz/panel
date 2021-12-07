@@ -8,7 +8,7 @@ import json
 import os
 import types
 
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple, Callable
 from contextlib import contextmanager
 from functools import partial
 
@@ -136,10 +136,11 @@ class Param(PaneBase):
     show_name = param.Boolean(default=True, doc="""
         Whether to show the parameterized object's name""")
 
-    sorted = param.Parameter(default=False, doc="""
-    If True the widgets will be sorted alphabetically by label. If a callable is provided
-    it will be used to sort the Parameters, for example lambda x: x[1].label[::-1] will sort by the
-    reversed label.""")
+    sort = param.ClassSelector(default=False, class_=(bool, Callable), doc="""
+        If True the widgets will be sorted alphabetically by label.
+        If a callable is provided it will be used to sort the Parameters,
+        for example lambda x: x[1].label[::-1] will sort by the reversed
+        label.""")
 
     width = param.Integer(default=300, allow_None=True, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
@@ -576,9 +577,9 @@ class Param(PaneBase):
     def _ordered_params(self):
         params = [(p, pobj) for p, pobj in self.object.param.objects('existing').items()
                   if p in self.parameters or p == 'name']
-        if self.sorted is True or callable(self.sorted):
-            if callable(self.sorted):
-                key_fn = self.sorted
+        if self.sort:
+            if callable(self.sort):
+                key_fn = self.sort
             else:
                 key_fn = lambda x: x[1].label
             sorted_params = sorted(params, key=key_fn)
