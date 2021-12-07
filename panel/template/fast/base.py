@@ -12,7 +12,7 @@ _ROOT = pathlib.Path(__file__).parent
 
 class FastBaseTemplate(BasicTemplate):
 
-    accent_base_color = param.String(doc="""
+    accent_base_color = param.String(default="#0072B5", doc="""
         Optional body accent color override.""")
 
     background_color = param.String(doc="""
