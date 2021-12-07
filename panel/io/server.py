@@ -804,7 +804,10 @@ class StoppableThread(threading.Thread):
             bokeh_server = target(*args, **kwargs)
         finally:
             if isinstance(bokeh_server, Server):
-                bokeh_server.stop()
+                try:
+                    bokeh_server.stop()
+                except Exception:
+                    pass
             if hasattr(self, '_target'):
                 del self._target, self._args, self._kwargs
             else:

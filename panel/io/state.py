@@ -122,7 +122,7 @@ class _state(param.Parameterized):
 
     @property
     def _thread_id(self):
-        return self._thread_id_[self.curdoc]
+        return self._thread_id_.get(self.curdoc)
 
     @_thread_id.setter
     def _thread_id(self, thread_id):
@@ -261,6 +261,12 @@ class _state(param.Parameterized):
             callback=callback, period=period, count=count, timeout=timeout
         )
         if start:
+            if self._thread_id is not None:
+                thread = threading.current_thread()
+                thread_id = thread.ident if thread else Non
+                if self._thread_id != thread_id:
+                    self.curdoc.add_next_tick_callback(cb.start)
+                    return cb
             cb.start()
         return cb
 
