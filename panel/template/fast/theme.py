@@ -35,7 +35,7 @@ class FastStyle(param.Parameterized):
 
     background_color = param.String(default="#ffffff")
     neutral_color = param.String(default="#000000")
-    accent_base_color = param.String(default="#A01346")
+    accent_base_color = param.String(default="#0072B5")
     collapsed_icon = param.String(default=COLLAPSED_SVG_ICON)
     expanded_icon = param.String(default=EXPANDED_SVG_ICON)
     color = param.String(default="#00aa41")
@@ -43,7 +43,7 @@ class FastStyle(param.Parameterized):
     neutral_focus = param.String(default="#888888")
     neutral_foreground_rest = param.String(default="#2B2B2B")
 
-    header_background = param.String(default="#00aa41")
+    header_background = param.String(default="#0072B5")
     header_neutral_color = param.String(default="#ffffff")
     header_accent_base_color = param.String(default="#ffffff")
     header_color = param.String(default="#ffffff")
@@ -122,10 +122,8 @@ class FastStyle(param.Parameterized):
 
 DEFAULT_STYLE = FastStyle()
 DARK_STYLE = FastStyle(
-    accent_base_color="#E1477E",
     background_color="#181818",
     color="#ffffff",
-    header_background="#313131",
     header_color="#ffffff",
     neutral_fill_card_rest="#212121",
     neutral_focus="#717171",

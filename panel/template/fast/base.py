@@ -81,6 +81,10 @@ class FastBaseTemplate(BasicTemplate):
             params['theme'] = DefaultTheme
         elif isinstance(params['theme'], str):
             params['theme'] = THEMES[params['theme']]
+        if "accent" in params and not "accent_base_color" in params:
+            params["accent_base_color"]=params["accent"]
+        if "accent" in params and not "header_background" in params:
+            params["header_background"]=params["accent"]
 
         super().__init__(**params)
         theme = self._get_theme()
