@@ -411,7 +411,8 @@ class BaseTable(ReactiveData, Widget):
         if isinstance(self.value.index, pd.MultiIndex):
             indexes = list(df.index.names)
         else:
-            indexes = [df.index.name or 'index']
+            default_index = ('level_0' if 'index' in df.columns else 'index')
+            indexes = [df.index.name or default_index]
         if len(indexes) > 1:
             df = df.reset_index()
         data = ColumnDataSource.from_df(df)
@@ -433,7 +434,8 @@ class BaseTable(ReactiveData, Widget):
             return []
         elif isinstance(self.value.index, pd.MultiIndex):
             return list(self.value.index.names)
-        return [self.value.index.name or 'index']
+        default_index = ('level_0' if 'index' in self.value.columns else 'index')
+        return [self.value.index.name or default_index]
 
     def stream(self, stream_value, rollover=None, reset_index=True):
         """
@@ -992,7 +994,8 @@ class Tabulator(BaseTable):
         if isinstance(self.value.index, pd.MultiIndex):
             indexes = list(df.index.names)
         else:
-            indexes = [df.index.name or 'index']
+            default_index = ('level_0' if 'index' in df.columns else 'index')
+            indexes = [df.index.name or default_index]
         if len(indexes) > 1:
             page_df = page_df.reset_index()
         data = ColumnDataSource.from_df(page_df).items()
