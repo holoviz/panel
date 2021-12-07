@@ -983,11 +983,18 @@ class Tabulator(BaseTable):
     def _get_data(self):
         if self.pagination != 'remote' or self.value is None:
             return super()._get_data()
+        import pandas as pd
         df = self._filter_dataframe(self.value)
         df = self._sort_df(df)
         nrows = self.page_size
         start = (self.page-1)*nrows
         page_df = df.iloc[start: start+nrows]
+        if isinstance(self.value.index, pd.MultiIndex):
+            indexes = list(df.index.names)
+        else:
+            indexes = [df.index.name or 'index']
+        if len(indexes) > 1:
+            page_df = page_df.reset_index()
         data = ColumnDataSource.from_df(page_df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
 
