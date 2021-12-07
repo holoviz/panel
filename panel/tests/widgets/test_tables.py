@@ -307,6 +307,23 @@ def test_tabulator_groups(document, comm):
     ]
 
 
+def test_tabulator_numeric_groups(document, comm):
+    df = pd.DataFrame(np.random.rand(10, 3))
+    table = Tabulator(df, groups={'Number': [0, 1]})
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index'},
+        {'title': 'Number',
+         'columns': [
+            {'field': '0'},
+            {'field': '1'}
+        ]},
+        {'field': '2'}
+    ]
+
+
 def test_tabulator_frozen_cols(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, frozen_columns=['index'])

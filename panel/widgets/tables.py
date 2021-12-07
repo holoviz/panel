@@ -1090,9 +1090,13 @@ class Tabulator(BaseTable):
                     column_objs.remove(cols[0])
         ordered += column_objs
 
+        grouping = {
+            group: [str(gc) for gc in group_cols]
+            for group, group_cols in self.groups.items()
+        }
         for i, column in enumerate(ordered):
             matching_groups = [
-                group for group, group_cols in self.groups.items()
+                group for group, group_cols in grouping.items()
                 if column.field in group_cols
             ]
             col_dict = {'field': column.field}
