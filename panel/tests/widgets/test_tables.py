@@ -219,6 +219,7 @@ def test_table_index_column(document, comm):
 
     assert np.array_equal(model.source.data['level_0'], np.array([1, 2, 3]))
     assert model.columns[0].field == 'level_0'
+    assert model.columns[0].title == ''
 
 
 def test_none_table(document, comm):
@@ -312,6 +313,7 @@ def test_tabulator_index_column(document, comm):
 
     assert np.array_equal(model.source.data['level_0'], np.array([1, 2, 3]))
     assert model.columns[0].field == 'level_0'
+    assert model.columns[0].title == ''
 
 
 def test_tabulator_expanded_content_pagination():
