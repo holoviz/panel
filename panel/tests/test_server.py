@@ -57,12 +57,9 @@ def test_server_static_dirs():
     # Wait for server to start
     time.sleep(1)
 
-    try:
-        r = requests.get("http://localhost:6000/tests/test_server.py")
-        with open(__file__, encoding='utf-8') as f:
-            assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
-    finally:
-        server.stop()
+    r = requests.get("http://localhost:6000/tests/test_server.py")
+    with open(__file__, encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
 def test_server_template_static_resources():
@@ -73,12 +70,9 @@ def test_server_template_static_resources():
     # Wait for server to start
     time.sleep(1)
 
-    try:
-        r = requests.get("http://localhost:6001/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
-        with open(DIST_DIR / 'bundled' / 'bootstraptemplate' / 'bootstrap.css', encoding='utf-8') as f:
-            assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
-    finally:
-        server.stop()
+    r = requests.get("http://localhost:6001/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
+    with open(DIST_DIR / 'bundled' / 'bootstraptemplate' / 'bootstrap.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
 def test_server_template_static_resources_with_prefix():
@@ -89,12 +83,9 @@ def test_server_template_static_resources_with_prefix():
     # Wait for server to start
     time.sleep(1)
 
-    try:
-        r = requests.get("http://localhost:6004/prefix/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
-        with open(DIST_DIR / 'bundled' / 'bootstraptemplate' / 'bootstrap.css', encoding='utf-8') as f:
-            assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
-    finally:
-        server.stop()
+    r = requests.get("http://localhost:6004/prefix/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
+    with open(DIST_DIR / 'bundled' / 'bootstraptemplate' / 'bootstrap.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
 def test_server_template_static_resources_with_prefix_relative_url():
@@ -105,12 +96,9 @@ def test_server_template_static_resources_with_prefix_relative_url():
     # Wait for server to start
     time.sleep(1)
 
-    try:
-        r = requests.get("http://localhost:6005/prefix/template")
-        content = r.content.decode('utf-8')
-        assert 'href="static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in content
-    finally:
-        server.stop()
+    r = requests.get("http://localhost:6005/prefix/template")
+    content = r.content.decode('utf-8')
+    assert 'href="static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in content
 
 
 def test_server_template_static_resources_with_subpath_and_prefix_relative_url():
@@ -121,12 +109,9 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
     # Wait for server to start
     time.sleep(1)
 
-    try:
-        r = requests.get("http://localhost:6005/prefix/subpath/template")
-        content = r.content.decode('utf-8')
-        assert 'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in content
-    finally:
-        server.stop()
+    r = requests.get("http://localhost:6005/prefix/subpath/template")
+    content = r.content.decode('utf-8')
+    assert 'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in content
 
 
 def test_server_extensions_on_root():
@@ -137,11 +122,8 @@ def test_server_extensions_on_root():
     # Wait for server to start
     time.sleep(1)
 
-    try:
-        r = requests.get("http://localhost:6006/static/extensions/panel/css/loading.css")
-        assert r.ok
-    finally:
-        server.stop()
+    r = requests.get("http://localhost:6006/static/extensions/panel/css/loading.css")
+    assert r.ok
 
 
 def test_autoload_js():
@@ -156,11 +138,8 @@ def test_autoload_js():
     args = f"bokeh-autoload-element=1002&bokeh-app-path=/{app_name}&bokeh-absolute-url=http://localhost:{port}/{app_name}"
     r = requests.get(f"http://localhost:{port}/{app_name}/autoload.js?{args}")
 
-    try:
-        assert r.status_code == 200
-        assert f"http://localhost:{port}/static/extensions/panel/css/alerts.css" in r.content.decode('utf-8')
-    finally:
-        server.stop()
+    assert r.status_code == 200
+    assert f"http://localhost:{port}/static/extensions/panel/css/alerts.css" in r.content.decode('utf-8')
 
 
 def test_server_async_callbacks():
@@ -193,10 +172,7 @@ def test_server_async_callbacks():
     time.sleep(2)
 
     # Ensure multiple callbacks started concurrently
-    try:
-        assert max(counts) > 1
-    finally:
-        server.stop()
+    assert max(counts) > 1
 
 
 def test_serve_config_per_session_state():
@@ -376,16 +352,11 @@ def test_server_thread_pool_periodic(threads):
 
     counts = []
 
-    def setup(event):
-        state.add_periodic_callback(cb, 100)
-
     def cb(count=[0]):
         count[0] += 1
         counts.append(count[0])
         time.sleep(0.5)
         count[0] -= 1
-
-    button.on_click(setup)
 
     port = 6012
     serve(button, port=port, threaded=True, show=False)
@@ -397,7 +368,7 @@ def test_server_thread_pool_periodic(threads):
 
     doc = list(button._models.values())[0][0].document
     with set_curdoc(doc):
-        button.clicks += 1
+        state.add_periodic_callback(cb, 100)
 
     # Wait for callbacks to be scheduled
     time.sleep(1)
