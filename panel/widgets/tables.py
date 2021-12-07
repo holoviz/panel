@@ -1258,6 +1258,9 @@ class Tabulator(BaseTable):
         if self.pagination:
             length = 0 if self._processed is None else len(self._processed)
             props['max_page'] = length//self.page_size + bool(length%self.page_size)
+        if self.frozen_rows and 'height' not in props and 'sizing_mode' not in props:
+            length = self.page_size+2 if self.pagination else self._length
+            props['height'] = min([length * self.row_height + 30, 2000])
         props['indexes'] = self.indexes
         return props
 
@@ -1350,7 +1353,8 @@ class Tabulator(BaseTable):
                 "titleFormatter": title,
                 "hozAlign": "center",
                 "headerSort": False,
-                "frozen": True
+                "frozen": True,
+                "width": 40,
             })
 
         ordered = []
@@ -1428,6 +1432,10 @@ class Tabulator(BaseTable):
                              "or via the configuration, not both.")
         configuration['columns'] = self._config_columns(columns)
         configuration['dataTree'] = self.hierarchical
+        if self.sizing_mode in ('stretch_height', 'stretch_both'):
+            configuration['maxHeight'] = '100%'
+        elif self.height:
+            configuration['height'] = self.height
         return configuration
 
     def download(self, filename='table.csv'):
