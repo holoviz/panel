@@ -1,4 +1,6 @@
-from panel.widgets import Button, Toggle
+from bokeh.events import ButtonClick, MenuItemClick
+
+from panel.widgets import Button, MenuButton, Toggle
 
 
 def test_button(document, comm):
@@ -9,7 +11,7 @@ def test_button(document, comm):
     assert isinstance(widget, button._widget_type)
     assert widget.label == 'Button'
 
-    button._process_events({'clicks': 1})
+    button._process_event(None)
     assert button.clicks == 1
 
 
@@ -25,9 +27,26 @@ def test_button_event(document, comm):
     button.param.watch(callback, 'value')
 
     assert button.value == False
-    button._server_click(document, widget.ref['id'], None)
+    button._process_event(ButtonClick(widget))
     assert events == [True]
     assert button.value == False
+
+
+def test_menu_button(document, comm):
+    menu_items = [('Option A', 'a'), ('Option B', 'b'), ('Option C', 'c'), None, ('Help', 'help')]
+    menu_button = MenuButton(items=menu_items)
+
+    widget = menu_button.get_root(document, comm=comm)
+
+    events = []
+    def callback(event):
+        events.append(event.new)
+
+    menu_button.param.watch(callback, 'clicked')
+
+    menu_button._process_event(MenuItemClick(widget, 'b'))
+
+    assert events == ['b']
 
 
 def test_button_jscallback_clicks(document, comm):

@@ -10,7 +10,7 @@ from bokeh.models import (
     Button as _BkButton, Toggle as _BkToggle, Dropdown as _BkDropdown
 )
 
-from bokeh.events import (MenuItemClick, ButtonClick)
+from bokeh.events import MenuItemClick, ButtonClick
 
 from .base import Widget
 
