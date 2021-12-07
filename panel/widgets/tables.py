@@ -174,6 +174,8 @@ class BaseTable(ReactiveData, Widget):
             title = self.titles.get(col, str(col))
             if col in indexes and len(indexes) > 1 and self.hierarchical:
                 title = 'Index: %s' % ' | '.join(indexes)
+            elif col in self.indexes and col.startswith('level_'):
+                title = ''
             column = TableColumn(field=str(col), title=title,
                                  editor=editor, formatter=formatter,
                                  **col_kwargs)
@@ -324,7 +326,16 @@ class BaseTable(ReactiveData, Widget):
         df = self._filter_dataframe(self.value)
         if df is None:
             return [], {}
-        elif len(self.indexes) > 1:
+        import pandas as pd
+        if isinstance(self.value.index, pd.MultiIndex):
+            indexes = [
+                f'level_{i}' if n is None else n
+                for i, n in enumerate(df.index.names)
+            ]
+        else:
+            default_index = ('level_0' if 'index' in df.columns else 'index')
+            indexes = [df.index.name or default_index]
+        if len(indexes) > 1:
             df = df.reset_index()
         data = ColumnDataSource.from_df(df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
@@ -342,8 +353,12 @@ class BaseTable(ReactiveData, Widget):
         if self.value is None or not self.show_index:
             return []
         elif isinstance(self.value.index, pd.MultiIndex):
-            return list(self.value.index.names)
-        return [self.value.index.name or 'index']
+            return [
+                f'level_{i}' if n is None else n
+                for i, n in enumerate(self.value.index.names)
+            ]
+        default_index = ('level_0' if 'index' in self.value.columns else 'index')
+        return [self.value.index.name or default_index]
 
     def stream(self, stream_value, rollover=None, reset_index=True):
         """
@@ -851,9 +866,13 @@ class Tabulator(BaseTable):
         start = (self.page-1)*nrows
         page_df = df.iloc[start: start+nrows]
         if isinstance(self.value.index, pd.MultiIndex):
-            indexes = list(df.index.names)
+            indexes = [
+                f'level_{i}' if n is None else n
+                for i, n in enumerate(df.index.names)
+            ]
         else:
-            indexes = [df.index.name or 'index']
+            default_index = ('level_0' if 'index' in df.columns else 'index')
+            indexes = [df.index.name or default_index]
         if len(indexes) > 1:
             page_df = page_df.reset_index()
         data = ColumnDataSource.from_df(page_df).items()

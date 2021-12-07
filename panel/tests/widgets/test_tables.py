@@ -205,6 +205,19 @@ def test_hierarchical_index(document, comm):
     assert isinstance(agg2, MinAggregator)
 
 
+def test_table_index_column(document, comm):
+    df = pd.DataFrame({
+        'int': [1, 2, 3],
+        'float': [3.14, 6.28, 9.42],
+        'index': ['A', 'B', 'C'],
+    }, index=[1, 2, 3])
+    table = DataFrame(value=df)
+
+    model = table.get_root(document, comm=comm)
+
+    assert np.array_equal(model.source.data['level_0'], np.array([1, 2, 3]))
+    assert model.columns[0].field == 'level_0'
+    assert model.columns[0].title == ''
 
 
 def test_none_table(document, comm):
