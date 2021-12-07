@@ -52,7 +52,7 @@ def test_server_static_dirs():
     html = Markdown('# Title')
 
     static = {'tests': os.path.dirname(__file__)}
-    server = serve(html, port=6000, threaded=True, static_dirs=static, show=False)
+    serve(html, port=6000, threaded=True, static_dirs=static, show=False)
 
     # Wait for server to start
     time.sleep(1)
@@ -65,7 +65,7 @@ def test_server_static_dirs():
 def test_server_template_static_resources():
     template = BootstrapTemplate()
 
-    server = serve({'template': template}, port=6001, threaded=True, show=False)
+    serve({'template': template}, port=6001, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
@@ -78,7 +78,7 @@ def test_server_template_static_resources():
 def test_server_template_static_resources_with_prefix():
     template = BootstrapTemplate()
 
-    server = serve({'template': template}, port=6004, threaded=True, show=False, prefix='prefix')
+    serve({'template': template}, port=6004, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
     time.sleep(1)
@@ -91,7 +91,7 @@ def test_server_template_static_resources_with_prefix():
 def test_server_template_static_resources_with_prefix_relative_url():
     template = BootstrapTemplate()
 
-    server = serve({'template': template}, port=6005, threaded=True, show=False, prefix='prefix')
+    serve({'template': template}, port=6005, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
     time.sleep(1)
@@ -104,7 +104,7 @@ def test_server_template_static_resources_with_prefix_relative_url():
 def test_server_template_static_resources_with_subpath_and_prefix_relative_url():
     template = BootstrapTemplate()
 
-    server = serve({'/subpath/template': template}, port=6005, threaded=True, show=False, prefix='prefix')
+    serve({'/subpath/template': template}, port=6005, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
     time.sleep(1)
@@ -117,7 +117,7 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
 def test_server_extensions_on_root():
     html = Markdown('# Title')
 
-    server = serve(html, port=6006, threaded=True, show=False)
+    serve(html, port=6006, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
@@ -130,7 +130,7 @@ def test_autoload_js():
     html = Markdown('# Title')
     port = 6007
     app_name = 'test'
-    server = serve({app_name: html}, port=port, threaded=True, show=False)
+    serve({app_name: html}, port=port, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(0.5)
@@ -156,7 +156,7 @@ def test_server_async_callbacks():
 
     button.on_click(cb)
 
-    server = serve(button, port=6002, threaded=True, show=False)
+    serve(button, port=6002, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
@@ -183,29 +183,25 @@ def test_serve_config_per_session_state():
     def app2():
         config.raw_css = [CSS2]
 
-    server1 = serve(app1, port=6004, threaded=True, show=False)
-    server2 = serve(app2, port=6005, threaded=True, show=False)
+    serve(app1, port=6004, threaded=True, show=False)
+    serve(app2, port=6005, threaded=True, show=False)
 
     r1 = requests.get("http://localhost:6004/").content.decode('utf-8')
     r2 = requests.get("http://localhost:6005/").content.decode('utf-8')
 
-    try:
-        assert CSS1 not in config.raw_css
-        assert CSS2 not in config.raw_css
-        assert CSS1 in r1
-        assert CSS2 not in r1
-        assert CSS1 not in r2
-        assert CSS2 in r2
-    finally:
-        server1.stop()
-        server2.stop()
+    assert CSS1 not in config.raw_css
+    assert CSS2 not in config.raw_css
+    assert CSS1 in r1
+    assert CSS2 not in r1
+    assert CSS1 not in r2
+    assert CSS2 in r2
 
 
 def test_server_session_info():
     with config.set(session_history=-1):
         html = Markdown('# Title')
 
-        server = serve(html, port=6003, threaded=True, show=False)
+        serve(html, port=6003, threaded=True, show=False)
 
         # Wait for server to start
         time.sleep(1)
@@ -227,7 +223,6 @@ def test_server_session_info():
         state._init_session(None)
         assert state.session_info['live'] == 1
 
-    server.stop()
     state.curdoc = None
     html._server_destroy(session_context)
     assert state.session_info['live'] == 0
@@ -264,6 +259,7 @@ def test_serve_can_serve_panel_app_from_file():
     path = pathlib.Path(__file__).parent / "io"/"panel_app.py"
     server = get_server({"panel-app": path})
     assert "/panel-app" in server._tornado.applications
+
 
 def test_serve_can_serve_bokeh_app_from_file():
     path = pathlib.Path(__file__).parent / "io"/"bk_app.py"
