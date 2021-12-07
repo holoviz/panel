@@ -263,7 +263,7 @@ class _state(param.Parameterized):
         if start:
             if self._thread_id is not None:
                 thread = threading.current_thread()
-                thread_id = thread.ident if thread else Non
+                thread_id = thread.ident if thread else None
                 if self._thread_id != thread_id:
                     self.curdoc.add_next_tick_callback(cb.start)
                     return cb
