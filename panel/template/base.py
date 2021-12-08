@@ -335,7 +335,9 @@ class TemplateActions(ReactiveHTML):
 
     close_modal = param.Integer(default=0)
 
-    _template = "<div></div>"
+    margin = param.Integer(default=0)
+
+    _template = ""
 
     _scripts = {
         'open_modal': ["document.getElementById('pn-Modal').style.display = 'block'"],
