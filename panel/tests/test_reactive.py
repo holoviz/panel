@@ -300,6 +300,10 @@ def test_reactive_html_children():
     assert root.children == {'div': [widget_new._models[root.ref['id']][0]]}
     assert test._panes == {'children': [widget_new]}
 
+    test._cleanup(root)
+    assert len(test._models) == 0
+    assert len(widget_new._models) == 0
+    
 
 def test_reactive_html_templated_children():
 
