@@ -1268,7 +1268,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _cleanup(self, root):
         for child, panes in self._panes.items():
             for pane in panes:
-                child._cleanup(root)
+                pane._cleanup(root)
         super()._cleanup(root)
 
     @property
