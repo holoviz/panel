@@ -2,7 +2,7 @@
 
 ## Version 0.12.6
 
-Date: 2021-12-07
+Date: 2021-12-08
 
 The 0.12.6 release fixes a major regression introduced in the last release along with a small number of pre-existing bugs.
 
@@ -14,11 +14,12 @@ Regressions:
 Bug fixes:
 
 - Do not run `Ace` import on initialization ([#2959](https://github.com/holoviz/panel/pull/2959))
-- Improve handling of `ReactiveHTML` cleanup ([#2974](https://github.com/holoviz/panel/pull/2974))
+- Improve handling of `ReactiveHTML` cleanup ([#2974](https://github.com/holoviz/panel/pull/2974), [#2993](https://github.com/holoviz/panel/pull/2993))
 - Ensure empty `Str` has same height as non-empty ([#2981](https://github.com/holoviz/panel/pull/2981))
 - Ensure `Tabulator` supports grouping on numeric columns ([#2987](https://github.com/holoviz/panel/pull/2987))
 - Fix `Tabulator` with multi-index and pagination ([#2989](https://github.com/holoviz/panel/pull/2989))
 - Allow index as column name in table widgets ([#2990](https://github.com/holoviz/panel/pull/2990))
+- Ensure TemplateActions component does not have height ([#2997](https://github.com/holoviz/panel/pull/2997))
 
 ## Version 0.12.5
 
