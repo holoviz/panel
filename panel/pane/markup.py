@@ -243,8 +243,8 @@ class Str(DivPaneBase):
 
     def _get_properties(self):
         properties = super()._get_properties()
-        if self.object is None:
-            text = ''
+        if self.object is None or (isinstance(self.object, str) and self.object == ''):
+            text = '<pre> </pre>'
         else:
             text = '<pre>'+str(self.object)+'</pre>'
         return dict(properties, text=escape(text))
