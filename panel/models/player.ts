@@ -23,9 +23,11 @@ export class PlayerView extends WidgetView {
   protected _toggle_reverse: CallableFunction
   protected _toogle_pause: CallableFunction
   protected _toggle_play: CallableFunction
+  protected _changing: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
+    this.connect(this.model.properties.direction.change, () => this.set_direction())
     this.connect(this.model.properties.value.change, () => this.render())
     this.connect(this.model.properties.loop_policy.change, () => this.set_loop_state(this.model.loop_policy))
     this.connect(this.model.properties.disabled.change, () => this.toggle_disable())
@@ -301,29 +303,46 @@ export class PlayerView extends WidgetView {
     }
   }
 
+  set_direction(): void {
+    if (this._changing)
+      return
+    else if (this.model.direction === 0)
+      this.pause_animation()
+    else if(this.model.direction === 1)
+      this.play_animation()
+    else if(this.model.direction === -1)
+      this.reverse_animation()
+  }
+
   pause_animation(): void {
     this._toogle_pause()
-    this.model.direction = 0;
+    this._changing = true
+    this.model.direction = 0
+    this._changing = false
     if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
+      clearInterval(this.timer)
+      this.timer = null
     }
   }
 
   play_animation(): void {
-    this.pause_animation();
+    this.pause_animation()
     this._toggle_play()
-    this.model.direction = 1;
+    this._changing = true
+    this.model.direction = 1
+    this._changing = false
     if (!this.timer)
-      this.timer = setInterval(() => this.anim_step_forward(), this.model.interval);
+      this.timer = setInterval(() => this.anim_step_forward(), this.model.interval)
   }
 
   reverse_animation(): void {
-    this.pause_animation();
+    this.pause_animation()
     this._toggle_reverse()
-    this.model.direction = -1;
+    this._changing = true
+    this.model.direction = -1
+    this._changing = false
     if (!this.timer)
-      this.timer = setInterval(() => this.anim_step_reverse(), this.model.interval);
+      this.timer = setInterval(() => this.anim_step_reverse(), this.model.interval)
   }
 }
 
