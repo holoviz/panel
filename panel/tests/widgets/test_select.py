@@ -320,6 +320,11 @@ def test_toggle_group_check(document, comm):
         select._process_events({'active': []})
         assert select.value == []
 
+        select.value = ["A", "B"]
+        select.options = ["B", "C"]
+        select.options = ["A", "B"]
+        assert widget.labels[widget.active[0]] == "B"
+
 
 def test_toggle_group_radio(document, comm):
 
