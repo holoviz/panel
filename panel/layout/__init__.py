@@ -32,6 +32,7 @@ from .accordion import Accordion  # noqa
 from .base import (  # noqa
     Column, ListLike, ListPanel, Panel, Row, WidgetBox,
 )
+from .before_after_slider import BeforeAfterSlider # noqa
 from .card import Card  # noqa
 from .flex import FlexBox  # noqa
 from .grid import GridBox, GridSpec  # noqa
