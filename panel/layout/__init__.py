@@ -1,5 +1,6 @@
 from .accordion import Accordion # noqa
 from .base import Column, ListLike, ListPanel, Panel, Row, WidgetBox # noqa
+from .before_after_slider import BeforeAfterSlider # noqa
 from .card import Card # noqa
 from .flex import FlexBox # noqa
 from .grid import GridBox, GridSpec # noqa
