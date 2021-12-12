@@ -32,6 +32,7 @@ CSS = """
     justify-content: center;
     align-items: center;
     --track-width: 0;
+    background: none;
 }
 .before-after-container .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -48,8 +49,8 @@ CSS = """
 
 class BeforeAfterSlider(pn.reactive.ReactiveHTML):
     """The BeforeAfterSlider layout enables you to quickly compare two panels layed out on top of
-    each other with `value` percent of the *before* panel shown on one side of a slider and
-    100-`value` percent shown on the other side."""
+    each other with a part of the *before* panel shown on one side of a slider and a part of the
+    *after* panel shown on the other side."""
     value = param.Integer(50, bounds=(0, 100), doc="""
         The percentage of the *after* panel to show.""")
     before = param.Parameter(allow_None=False, doc="""
@@ -78,17 +79,13 @@ class BeforeAfterSlider(pn.reactive.ReactiveHTML):
 
     _scripts = {
         "render": """
+console.log("render start")
 window.addEventListener("resize", self.layoutPanel);
 
 self.layoutPanel()
 self.value()
 self.slider_width()
-""",
-        "after_layout": """
-console.log(data, model, view)
-window.myview=view
-setTimeout(function(){window.dispatchEvent(new Event('resize'))}, 25);
-console.log("dispatched")
+console.log("render end")
 """,
         "handle_change": """
 data.value=parseInt(event.target.value);
