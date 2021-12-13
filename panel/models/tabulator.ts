@@ -116,7 +116,11 @@ const dateEditor = function(cell: any, onRendered: any, success: any, cancel: an
   //create and style input
   const rawValue = cell.getValue()
   const opts = {zone: new (window as any).luxon.IANAZone('UTC')}
-  const cellValue = (window as any).luxon.DateTime.fromMillis(rawValue, opts).toFormat("yyyy-MM-dd")
+  let cellValue: any
+  if (rawValue === 'NaN' || rawValue === null)
+    cellValue = null
+  else
+    cellValue = (window as any).luxon.DateTime.fromMillis(rawValue, opts).toFormat("yyyy-MM-dd")
   const input = document.createElement("input")
 
   input.setAttribute("type", "date");
@@ -166,7 +170,11 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
   //create and style input
   const rawValue = cell.getValue()
   const opts = {zone: new (window as any).luxon.IANAZone('UTC')}
-  const cellValue = (window as any).luxon.DateTime.fromMillis(rawValue, opts).toFormat("yyyy-MM-dd'T'T")
+  let cellValue: any
+  if (rawValue === 'NaN' || rawValue === null)
+    cellValue = null
+  else
+    cellValue = (window as any).luxon.DateTime.fromMillis(rawValue, opts).toFormat("yyyy-MM-dd'T'T")
   const input = document.createElement("input")
 
   input.setAttribute("type", "datetime-local");
@@ -557,7 +565,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
               return formatted
             const node = div()
             node.innerHTML = formatted
-            return node.children[0].innerHTML
+            const output = node.children[0].innerHTML
+            if (output === "function(){return c.convert(arguments)}") // If the formatter fails
+              return ''
+            return output
           }
         }
       }
@@ -574,7 +585,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         if (editor.completions.length > 0) {
           tab_column.editor = "autocomplete"
           tab_column.editorParams = {values: editor.completions}
-        } else
+      } else
           tab_column.editor = "input"
       } else if (ctype === "TextEditor")
         tab_column.editor = "textarea"
