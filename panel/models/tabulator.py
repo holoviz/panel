@@ -38,15 +38,7 @@ class TableEditEvent(ModelEvent):
 
 
 def _get_theme_url(url, theme):
-    if 'bootstrap' in theme:
-        url += 'bootstrap/'
-    elif 'materialize' in theme:
-        url += 'materialize/'
-    elif 'semantic-ui' in theme:
-        url += 'semantic-ui/'
-    elif 'bulma' in theme:
-        url += 'bulma/'
-    elif 'fast' in theme:
+    if 'fast' in theme:
         if url.startswith(THEME_URL):
             url = url.replace(THEME_URL, PANEL_CDN)
         url += 'fast/'
