@@ -460,8 +460,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const bg = style.backgroundColor
     const neg_margin = "-" + rowEl.style.paddingLeft
     const row_view = div({style: "background-color: " + bg +"; margin-left:" + neg_margin})
+    row.getElement().appendChild(row_view);
+    (view as any)._parent = this
     view.renderTo(row_view)
-    row.getElement().appendChild(row_view)
   }
 
   _expand_render(cell: any): string {
