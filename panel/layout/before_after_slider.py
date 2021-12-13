@@ -34,10 +34,8 @@ CSS = """
     --track-width: 0;
     background: none;
 }
-.before-after-container .slider::-webkit-slider-thumb {
+.before-after-container input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    appearance: none;
-    height: 99%;
     cursor: pointer;
     border-radius: 8px
 }
@@ -79,13 +77,13 @@ class BeforeAfterSlider(pn.reactive.ReactiveHTML):
 
     _scripts = {
         "render": """
-console.log("render start")
 window.addEventListener("resize", self.layoutPanel);
 
+
+""",
+        "after_layout": """
 self.layoutPanel()
 self.value()
-self.slider_width()
-console.log("render end")
 """,
         "handle_change": """
 data.value=parseInt(event.target.value);
@@ -97,10 +95,14 @@ after.style.width=`calc(${data.value}% - ${adjustment}px)`
         "slider_color": "self.slider_style()",
         "slider_width": "self.slider_style()",
         "slider_style": """
+height=view.el.offsetHeight-10
+marginTop=parseInt(height/2)
 slider_style.innerHTML=`
-.before-after-container .slider::-webkit-slider-thumb {
+.before-after-container input[type=range]::-webkit-slider-thumb {
     width: ${data.slider_width}px;
     background: ${data.slider_color};
+    height: ${height}px;
+    margin-top: -${marginTop}px;
 }
 .before-after-container .slider::-moz-range-thumb {
     width: ${data.slider_width}px;
@@ -113,5 +115,31 @@ after.children[0].style.width=`${width}px`
 before.children[0].style.width=`${width}px`
 after.children[0].style.height=`${height}px`
 before.children[0].style.height=`${height}px`
+self.slider_style()
 """
 }
+
+if __name__.startswith("bokeh"):
+    import hvplot.pandas
+    import pandas as pd
+    pn.extension(sizing_mode="stretch_width")
+
+    ACCENT_COLOR = "#D2386C"
+
+    data = pd.DataFrame({"y": range(10)})
+    before = data.hvplot().opts(color="green", line_width=6, responsive=True, height=700)
+    after = data.hvplot().opts(color="red", line_width=6, responsive=True, height=700)
+
+    before = pn.Spacer(background="red", sizing_mode="stretch_both")
+    after = pn.Spacer(background="green", sizing_mode="stretch_both")
+
+    before_after = BeforeAfterSlider(value=20, before=before, after=after, height=600)
+    controls = pn.Param(before_after, parameters=["value", "slider_width", "slider_color"])
+    pn.template.FastListTemplate(
+        site="Awesome Panel",
+        title="Before After Slider",
+        sidebar=[controls],
+        main=[before_after],
+        accent_base_color=ACCENT_COLOR,
+        header_background=ACCENT_COLOR,
+    ).servable()
