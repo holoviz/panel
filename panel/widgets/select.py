@@ -410,7 +410,7 @@ class _CheckGroupBase(SingleSelectBase):
     __abstract = True
 
     def _process_param_change(self, msg):
-        msg = super(SingleSelectBase, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         values = self.values
         if 'active' in msg:
             msg['active'] = [indexOf(v, values) for v in msg['active']
@@ -419,6 +419,8 @@ class _CheckGroupBase(SingleSelectBase):
             msg['labels'] = self.labels
             if any(not isIn(v, values) for v in self.value):
                 self.value = [v for v in self.value if isIn(v, values)]
+            msg["active"] = [indexOf(v, values) for v in self.value
+                             if isIn(v, values)]
         msg.pop('title', None)
         return msg
 
