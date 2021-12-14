@@ -483,9 +483,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     else
       expanded.splice(exp_index, 1)
     this.model.expanded = expanded
-    if (expanded.indexOf(index) < 0) {
+    if (expanded.indexOf(index) < 0)
       return
-    }
     let ready = true
     for (const idx of this.model.expanded) {
       if (!(idx in this.model.children)) {
@@ -493,9 +492,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         break
       }
     }
-    if (ready) {
+    if (ready)
       this.renderChildren()
-    }
   }
 
   getData(): any[] {
