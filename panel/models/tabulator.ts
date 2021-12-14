@@ -275,6 +275,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         this.tabulator.off("renderComplete")
         // Apply styles after first render then unsubscribe
         this.setStyles()
+	this.renderChildren()
         this.relayout()
         this.setFrozen()
         this._initializing = false
@@ -340,13 +341,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.tabulator.on("dataProcessed", () => {
         this.tabulator.off("dataProcessed")
         this.setStyles()
+	this.renderChildren()
         setTimeout(() => this.relayout(), 10)
         this._initializing = false
       })
       this.setData()
     }
     this.setSelection()
-    this.renderChildren()
   }
 
   relayout(): void {
@@ -441,6 +442,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         const row = this.tabulator.getRow(r)
         this._render_row(row)
       }
+      if (!this.model.expanded.length && !this._initializing)
+	this.invalidate_layout()
     })
   }
 
