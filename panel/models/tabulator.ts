@@ -341,6 +341,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.tabulator.on("dataProcessed", () => {
         this.tabulator.off("dataProcessed")
         this.setStyles()
+	this.renderChildren()
         setTimeout(() => this.relayout(), 10)
         this._initializing = false
       })
