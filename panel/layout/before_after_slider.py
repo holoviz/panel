@@ -43,7 +43,8 @@ CSS = """
     height: 99%;
     cursor: pointer;
     border-radius: 8px
-}"""
+}
+"""
 
 class BeforeAfterSlider(pn.reactive.ReactiveHTML):
     """The BeforeAfterSlider layout enables you to quickly compare two panels layed out on top of
@@ -59,7 +60,7 @@ class BeforeAfterSlider(pn.reactive.ReactiveHTML):
     slider_width = param.Integer(default=12, bounds=(0, 100), doc="""
         The width of the slider in pixels""")
     slider_color = param.Color(default="silver", doc="""
-        The color of the slider""")
+        The color of the slider""")   
 
     _template = f"<style>{CSS}</style>""" + """
 <style id="slider_style"></style>
@@ -96,7 +97,12 @@ after.style.width=`calc(${data.value}% - ${adjustment}px)`
         "slider_width": "self.slider_style()",
         "slider_style": """
 height=view.el.offsetHeight-10
-marginTop=parseInt(height/2)
+if (window.JupyterCommManager){
+    marginTop=0
+} else {
+    marginTop=parseInt(height/2)
+}
+console.log(marginTop)
 slider_style.innerHTML=`
 .before-after-container input[type=range]::-webkit-slider-thumb {
     width: ${data.slider_width}px;
@@ -127,13 +133,13 @@ if __name__.startswith("bokeh"):
     ACCENT_COLOR = "#D2386C"
 
     data = pd.DataFrame({"y": range(10)})
-    before = data.hvplot().opts(color="green", line_width=6, responsive=True, height=700)
-    after = data.hvplot().opts(color="red", line_width=6, responsive=True, height=700)
+    before = data.hvplot().opts(color="green", line_width=6, responsive=True, height=400)
+    after = data.hvplot().opts(color="red", line_width=6, responsive=True, height=400)
 
     before = pn.Spacer(background="red", sizing_mode="stretch_both")
     after = pn.Spacer(background="green", sizing_mode="stretch_both")
 
-    before_after = BeforeAfterSlider(value=20, before=before, after=after, height=600)
+    before_after = BeforeAfterSlider(value=20, before=before, after=after, height=400)
     controls = pn.Param(before_after, parameters=["value", "slider_width", "slider_color"])
     pn.template.FastListTemplate(
         site="Awesome Panel",
