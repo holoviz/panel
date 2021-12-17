@@ -850,3 +850,145 @@ class Tqdm(Indicator):
         """Resets the parameters"""
         self.value = self.param.value.default
         self.text = self.param.text.default
+
+"""Module of classification tools"""
+
+import panel as pn
+import param
+
+CONFIG = {
+    "series": [
+        {
+            "name": "Score",
+            "data": [
+                {"x": "Egyptian cat", "y": 1},
+                {"x": "tabby, tabby cat", "y": 21.0},
+                {"x": "tiger cat", "y": 15.0},
+                {"x": "lynx, catamount", "y": 10.0},
+                {"x": "Siamese cat, Siamese", "y": 5.0},
+            ],
+        },
+    ],
+    "chart": {"type": "bar", "height": "100%"},
+    "plotOptions": {
+        "bar": {
+            "borderRadius": 4,
+            "horizontal": True,
+            "dataLabels": {"position": "bottom"},
+        }
+    },
+    "theme": {"mode": "light"},
+    "colors": ["#0072B5"],
+    "title": {"text": "Score", "align": "center", "floating": True},
+    "dataLabels": {
+        "enabled": True,
+        "textAnchor": "start",
+    },
+    "xaxis": {"type": "category", "min": 0, "max": 100, "labels": {"trim": True}},
+    "grid": {
+        "padding": {
+            "right": 15
+        }
+    }
+}
+
+def _get_theme() -> str:
+    """Returns the current theme: 'default' or 'dark'
+
+    Returns:
+        str: The current theme
+    """
+    args = pn.state.session_args
+    if "theme" in args and args["theme"][0] == b"dark":
+        return "dark"
+    return "default"
+
+class Label(pn.reactive.ReactiveHTML):
+    """The Label visualizes the output of a classification, i.e. the *labels* and their *score*.
+    
+    For example an output value like `{"egyptian": 0.22, "tabby cat": 0.18, "tiger cat": 0.13, "lynx": 0.09, "Siamese cat": 0.04}`.
+    """
+
+    value = param.Dict(
+        doc="""
+        The output of a classification. The key is the label and the value the score. 
+        For example  `{"egyptian": 0.22, "tabby cat": 0.18, "tiger cat": 0.13, "lynx": 0.09, "Siamese cat": 0.04}`""",
+        precedence=-1, # Will raise error if not set to -1 because its not used on js side
+    )
+    top = param.Integer(
+        5,
+        bounds=(1, None),
+        doc="""
+        The number of labels to plots
+    """,
+    )
+    color = param.Color(
+        "#0072B5",
+        """
+        The color of the bars of the plot""",
+    )
+    theme = param.Selector(
+        default="default",
+        objects=["default", "dark"],
+        doc="""
+        The theme of the plot. Either 'default' or 'dark'. Automatically determined from the url query args.""",
+    )
+    
+
+    label = param.String("ORANGUTAN", constant=True)
+    top_value = param.List(constant=True)
+
+    _base_options = param.Dict(CONFIG, constant=True)
+    _template = """
+    <svg xmlns="http://www.w3.org/2000/svg" height="50%" width="100%" viewBox="0 0 110 50" style="fill: currentColor">
+        <text x="50%" y="50%" text-anchor="middle" alignment-baseline="central" dominant-baseline="central" font-size="1em">${label}</text>
+      </svg>
+    <div id="component" style="height:50%;width:100%"><div id="plot"></div></div>
+    """
+
+    _scripts = {
+"render": """
+  state.oMap = function(x){return {"x": x["label"], "y": Math.round(x["score"]*100)}}
+  state.theme = function(){return {default: "light", dark: "dark"}[data.theme]}
+  state.options=()=>{return {...data._base_options, series: [{name: "Score", "data": Array.from(data.top_value, state.oMap)}], colors: [data.color], theme: {mode: state.theme()}}};
+  console.log(state.options())
+  state.chart = new ApexCharts(plot, state.options());
+  state.chart.render();
+""",
+"top_value": """
+  state.chart.updateOptions(state.options())
+""",
+"color": """
+  state.chart.updateOptions({colors: [data.color]})
+""",
+"theme": """
+  state.chart.updateOptions({theme: {mode: state.theme()}})
+""",
+"after_layout": """
+  state.chart.updateOptions(state.options())
+""",}
+
+    __javascript__ = ["https://cdn.jsdelivr.net/npm/apexcharts"]
+
+    def __init__(self, **params):
+        params["theme"] = params.get("theme", _get_theme())
+
+        super().__init__(**params)
+
+        self._handle_change()
+
+    @param.depends("value", "top", watch=True)
+    def _handle_change(self):
+        if not self.value:
+            self.label = ""
+            self.top_value = []
+            return
+
+        value = [{"label": key, "score": value} for key, value in self.value.items()]
+        top_value = sorted(value, key=lambda x: -x["score"])
+        if len(top_value) > self.top:
+            top_value = top_value[0 : self.top]
+        with param.edit_constant(self):
+            self.label = top_value[0]["label"].upper()
+            self.top_value = top_value
+
