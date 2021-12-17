@@ -16,7 +16,7 @@ from ..models import (
     HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator
 )
 from ..pane.markup import Str
-from ..reactive import SyncableData
+from ..reactive import SyncableData, ReactiveHTML
 from ..util import escape, updating
 from ..viewable import Viewable
 from .base import Widget
@@ -851,11 +851,6 @@ class Tqdm(Indicator):
         self.value = self.param.value.default
         self.text = self.param.text.default
 
-"""Module of classification tools"""
-
-import panel as pn
-import param
-
 CONFIG = {
     "series": [
         {
@@ -898,15 +893,16 @@ def _get_theme() -> str:
     Returns:
         str: The current theme
     """
+    import panel as pn
     args = pn.state.session_args
     if "theme" in args and args["theme"][0] == b"dark":
         return "dark"
     return "default"
 
-class Label(pn.reactive.ReactiveHTML):
-    """The Label visualizes the output of a classification, i.e. the *labels* and their *score*.
+class Label(ReactiveHTML):
+    """The Label visualizes the result of a classification, i.e. the *labels* and their *score*.
     
-    For example an output value like `{"egyptian": 0.22, "tabby cat": 0.18, "tiger cat": 0.13, "lynx": 0.09, "Siamese cat": 0.04}`.
+    For example a result like `{"egyptian": 0.22, "tabby cat": 0.18, "tiger cat": 0.13, "lynx": 0.09, "Siamese cat": 0.04}`.
     """
 
     value = param.Dict(
@@ -951,7 +947,6 @@ class Label(pn.reactive.ReactiveHTML):
   state.oMap = function(x){return {"x": x["label"], "y": Math.round(x["score"]*100)}}
   state.theme = function(){return {default: "light", dark: "dark"}[data.theme]}
   state.options=()=>{return {...data._base_options, series: [{name: "Score", "data": Array.from(data.top_value, state.oMap)}], colors: [data.color], theme: {mode: state.theme()}}};
-  console.log(state.options())
   state.chart = new ApexCharts(plot, state.options());
   state.chart.render();
 """,
