@@ -907,7 +907,7 @@ class Label(ReactiveHTML):
 
     value = param.Dict(
         doc="""
-        The output of a classification. The key is the label and the value the score. 
+        A dictionary of labels (key) and their scores (value).
         For example  `{"egyptian": 0.22, "tabby cat": 0.18, "tiger cat": 0.13, "lynx": 0.09, "Siamese cat": 0.04}`""",
         precedence=-1, # Will raise error if not set to -1 because its not used on js side
     )
@@ -915,13 +915,13 @@ class Label(ReactiveHTML):
         5,
         bounds=(1, 10),
         doc="""
-        The number of labels to plots
+        The maximum number of labels to plots
     """,
     )
     color = param.Color(
         "#0072B5",
         """
-        The color of the bars of the plot""",
+        The color of the bars. Default is the same as the Fast default accent_base_color.""",
     )
     theme = param.Selector(
         default="default",
