@@ -913,7 +913,7 @@ class Label(ReactiveHTML):
     )
     top = param.Integer(
         5,
-        bounds=(1, None),
+        bounds=(1, 10),
         doc="""
         The number of labels to plots
     """,
