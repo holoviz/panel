@@ -19,30 +19,11 @@ CSS = """
  {
     height: 100%
 }
-.before-after-container .slider {
-    position: absolute;
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 100%;
-    outline: none;
-    margin: 0;
-    transition: all 0.2s;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    --track-width: 0;
-    background: none;
-}
-.before-after-container input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    cursor: pointer;
-    border-radius: 8px
-}
-.before-after-container .slider::-moz-range-thumb {
-    height: 99%;
-    cursor: pointer;
-    border-radius: 8px
+.pn-beforeafter-slider {
+    position:absolute;
+    height:100%;
+    border-radius: 8px;
+    cursor: move;
 }
 """
 
@@ -71,8 +52,7 @@ class BeforeAfterSlider(pn.reactive.ReactiveHTML):
     <div id="after" class='outer' style="overflow:hidden">
         <div id="after_inner" class="inner">${after}</div>
     </div>
-    <input id="slider" type="range" min="1" max="100" value="${value}" class="slider" name='slider'
-    oninput="${script('handle_change')}"></input>
+    <div id="slider" class="pn-beforeafter-slider"></div>
 </div>
 """
 
@@ -80,6 +60,29 @@ class BeforeAfterSlider(pn.reactive.ReactiveHTML):
         "render": """
 window.addEventListener("resize", self.layoutPanel);
 
+function closeDragElement() {
+    document.onmouseup = null;
+    document.onmousemove = null;
+}
+function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    
+    current = e.clientX
+    start = view.el.getBoundingClientRect().left
+    end = start + view.el.clientWidth
+    
+    value = parseInt( (current-start)/view.el.clientWidth*100  )
+    value = Math.max(0,Math.min(value,100))
+    data.value = value
+}
+function dragMouseDown(e) {
+    e = e || window.event;
+    e.preventDefault();
+    document.onmouseup = closeDragElement;
+    document.onmousemove = elementDrag;
+}
+slider.onmousedown = dragMouseDown   
 
 """,
         "after_layout": """
@@ -92,23 +95,15 @@ data.value=parseInt(event.target.value);
         "value": """
 adjustment = parseInt((100-data.value)/100*10)
 after.style.width=`calc(${data.value}% - ${adjustment}px)`
+slider.style.left = after.style.width
 """,
         "slider_color": "self.slider_style()",
         "slider_width": "self.slider_style()",
         "slider_style": """
-height=view.el.offsetHeight-10
-if (window.JupyterCommManager){
-    marginTop=0
-} else {
-    marginTop=parseInt(height/2)
-}
-console.log(marginTop)
 slider_style.innerHTML=`
-.before-after-container input[type=range]::-webkit-slider-thumb {
+.before-after-container .pn-beforeafter-slider {
     width: ${data.slider_width}px;
     background: ${data.slider_color};
-    height: ${height}px;
-    margin-top: -${marginTop}px;
 }
 .before-after-container .slider::-moz-range-thumb {
     width: ${data.slider_width}px;
