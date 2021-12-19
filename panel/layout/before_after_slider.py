@@ -19,7 +19,7 @@ CSS = """
  {
     height: 100%
 }
-.pn-beforeafter-slider {
+.before-after-container .slider {
     position:absolute;
     height:100%;
     border-radius: 8px;
@@ -38,13 +38,12 @@ class BeforeAfterSlider(pn.reactive.ReactiveHTML):
     after = param.Parameter(allow_None=False, doc="""
         The after panel""")
 
-    slider_width = param.Integer(default=12, bounds=(0, 100), doc="""
+    slider_width = param.Integer(default=12, bounds=(0, 25), doc="""
         The width of the slider in pixels""")
     slider_color = param.Color(default="silver", doc="""
         The color of the slider""")   
 
     _template = f"<style>{CSS}</style>""" + """
-<style id="slider_style"></style>
 <div id="container" class='before-after-container'>
     <div id="before" class='outer'>
         <div id="before_inner" class="inner" >${before}</div>
@@ -52,7 +51,7 @@ class BeforeAfterSlider(pn.reactive.ReactiveHTML):
     <div id="after" class='outer' style="overflow:hidden">
         <div id="after_inner" class="inner">${after}</div>
     </div>
-    <div id="slider" class="pn-beforeafter-slider"></div>
+    <div id="slider" class="slider"></div>
 </div>
 """
 
@@ -84,6 +83,8 @@ function dragMouseDown(e) {
 }
 slider.onmousedown = dragMouseDown   
 
+self.slider_color()
+self.slider_width()
 """,
         "after_layout": """
 self.layoutPanel()
@@ -93,30 +94,25 @@ self.value()
 data.value=parseInt(event.target.value);
 """,
         "value": """
-adjustment = parseInt((100-data.value)/100*10)
-after.style.width=`calc(${data.value}% - ${adjustment}px)`
-slider.style.left = after.style.width
+after.style.width=`calc(${data.value}% + 5px)`
+self.slider_left()
 """,
-        "slider_color": "self.slider_style()",
-        "slider_width": "self.slider_style()",
-        "slider_style": """
-slider_style.innerHTML=`
-.before-after-container .pn-beforeafter-slider {
-    width: ${data.slider_width}px;
-    background: ${data.slider_color};
-}
-.before-after-container .slider::-moz-range-thumb {
-    width: ${data.slider_width}px;
-    background: ${data.slider_color};
-}`""",
+        "slider_color": "slider.style.background=data.slider_color",
+        "slider_width": """
+slider.style.width=`${data.slider_width}px`;
+self.slider_left()
+""",
+        "slider_left": """
+halfWidth=parseInt(data.slider_width/2)
+slider.style.left = `calc(${data.value}% + 5px - ${halfWidth}px)`
+""",
     "layoutPanel": """
-width=view.el.offsetWidth-12
-height=view.el.offsetHeight-10
+width=view.el.offsetWidth
+height=view.el.offsetHeight
 after.children[0].style.width=`${width}px`
 before.children[0].style.width=`${width}px`
 after.children[0].style.height=`${height}px`
 before.children[0].style.height=`${height}px`
-self.slider_style()
 """
 }
 
