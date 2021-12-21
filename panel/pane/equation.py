@@ -4,8 +4,6 @@ SymPy objects.
 """
 import sys
 
-from six import string_types
-
 import param
 
 from pyviz_comms import JupyterComm
@@ -38,7 +36,7 @@ class LaTeX(DivPaneBase):
     def applies(cls, obj):
         if is_sympy_expr(obj) or hasattr(obj, '_repr_latex_'):
             return 0.05
-        elif isinstance(obj, string_types):
+        elif isinstance(obj, str):
             return None
         else:
             return False

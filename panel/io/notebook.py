@@ -8,7 +8,6 @@ import sys
 
 from contextlib import contextmanager
 from collections import OrderedDict
-from six import string_types
 
 import bokeh
 import bokeh.embed.notebook
@@ -135,7 +134,7 @@ def html_for_render_items(docs_json, render_items, template=None, template_varia
 
     if template is None:
         template = NB_TEMPLATE_BASE
-    elif isinstance(template, string_types):
+    elif isinstance(template, str):
         template = _env.from_string("{% extends base %}\n" + template)
 
     return template.render(context)

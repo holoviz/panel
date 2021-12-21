@@ -5,8 +5,6 @@ Markdown, and also regular strings.
 import json
 import textwrap
 
-from six import string_types
-
 import param
 
 from ..models import HTML as _BkHTML, JSON as _BkJSON
@@ -70,7 +68,7 @@ class HTML(DivPaneBase):
         if ((any(m in module for m in ('pandas', 'dask')) and
             name in ('DataFrame', 'Series')) or hasattr(obj, '_repr_html_')):
             return 0.2
-        elif isinstance(obj, string_types):
+        elif isinstance(obj, str):
             return None
         else:
             return False
@@ -284,7 +282,7 @@ class Markdown(DivPaneBase):
     def applies(cls, obj):
         if hasattr(obj, '_repr_markdown_'):
             return 0.3
-        elif isinstance(obj, string_types):
+        elif isinstance(obj, str):
             return 0.1
         else:
             return False
@@ -294,7 +292,7 @@ class Markdown(DivPaneBase):
         data = self.object
         if data is None:
             data = ''
-        elif not isinstance(data, string_types):
+        elif not isinstance(data, str):
             data = data._repr_markdown_()
         if self.dedent:
             data = textwrap.dedent(data)
@@ -343,7 +341,7 @@ class JSON(DivPaneBase):
                 return False
             else:
                 return 0.1
-        elif isinstance(obj, string_types):
+        elif isinstance(obj, str):
             return 0
         else:
             return None

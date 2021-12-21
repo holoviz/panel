@@ -7,7 +7,6 @@ import json
 
 from base64 import b64decode
 from datetime import datetime, date
-from six import string_types
 
 import param
 
@@ -88,7 +87,7 @@ class FileInput(Widget):
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
-            if isinstance(msg['value'], string_types):
+            if isinstance(msg['value'], str):
                 msg['value'] = b64decode(msg['value'])
             else:
                 msg['value'] = [b64decode(content) for content in msg['value']]
@@ -102,7 +101,7 @@ class FileInput(Widget):
         ---------
         filename (str): File path or file-like object
         """
-        if isinstance(filename, string_types):
+        if isinstance(filename, str):
             with open(filename, 'wb') as f:
                 f.write(self.value)
         else:
@@ -158,7 +157,7 @@ class DatePicker(Widget):
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
-            if isinstance(msg['value'], string_types):
+            if isinstance(msg['value'], str):
                 msg['value'] = datetime.date(datetime.strptime(msg['value'], '%Y-%m-%d'))
         return msg
 
@@ -224,7 +223,7 @@ class DatetimePicker(_DatetimePickerBase):
     mode = param.String('single', constant=True)
 
     def _serialize_value(self, value):
-        if isinstance(value, string_types) and value:
+        if isinstance(value, str) and value:
             value = datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
 
             # Hour, minute and seconds can be increased after end is reached.
@@ -248,7 +247,7 @@ class DatetimeRangePicker(_DatetimePickerBase):
     mode = param.String('range', constant=True)
 
     def _serialize_value(self, value):
-        if isinstance(value, string_types) and value:
+        if isinstance(value, str) and value:
             value = [
                 datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
                 for value in value.split(' to ')
@@ -293,7 +292,7 @@ class _NumericInputBase(Widget):
     placeholder = param.String(default='0', doc="""
         Placeholder for empty input field.""")
 
-    format = param.ClassSelector(default=None, class_=string_types+(TickFormatter,), doc="""
+    format = param.ClassSelector(default=None, class_=(str, TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
     start = param.Parameter(default=None, allow_None=True, doc="""
@@ -493,7 +492,7 @@ class LiteralInput(Widget):
         msg = super()._process_param_change(msg)
         if 'value' in msg:
             value = msg['value']
-            if isinstance(value, string_types):
+            if isinstance(value, str):
                 value = repr(value)
             elif self.serializer == 'json':
                 value = json.dumps(value)

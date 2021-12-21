@@ -20,7 +20,6 @@ from distutils.version import LooseVersion
 from functools import partial
 from html import escape # noqa
 from importlib import import_module
-from six import string_types
 
 import bokeh
 import param
@@ -40,7 +39,7 @@ def isfile(path):
 
 
 def isurl(obj, formats):
-    if not isinstance(obj, string_types):
+    if not isinstance(obj, str):
         return False
     lower_string = obj.lower().split('?')[0].split('#')[0]
     return (
@@ -182,7 +181,7 @@ def param_reprs(parameterized, skip=None):
 
         if equal: continue
         elif v is None: continue
-        elif isinstance(v, string_types) and v == '': continue
+        elif isinstance(v, str) and v == '': continue
         elif isinstance(v, list) and v == []: continue
         elif isinstance(v, dict) and v == {}: continue
         elif (skip and p in skip) or (p == 'name' and v.startswith(cls)): continue

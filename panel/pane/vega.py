@@ -7,7 +7,7 @@ from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from ..viewable import Layoutable
-from ..util import lazy_load, string_types
+from ..util import lazy_load
 from .base import PaneBase
 
 
@@ -194,7 +194,7 @@ class Vega(PaneBase):
                 view['height'] = size_config[h]
 
         for p in ('width', 'height'):
-            if p not in view or isinstance(view[p], string_types):
+            if p not in view or isinstance(view[p], str):
                 continue
             if props.get(p) is None or p in view and props.get(p) < view[p]:
                 v = view[p]

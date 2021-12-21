@@ -3,8 +3,6 @@ Defines utilities to save panel objects to files as HTML or PNG.
 """
 import io
 
-from six import string_types
-
 import bokeh
 
 from bokeh.document.document import Document
@@ -193,7 +191,7 @@ def save(panel, filename, title=None, resources=None, template=None,
     if isinstance(panel, PaneBase) and len(panel.layout) > 1:
         panel = panel.layout
 
-    as_png = isinstance(filename, string_types) and filename.endswith('png')
+    as_png = isinstance(filename, str) and filename.endswith('png')
 
     if isinstance(panel, Document):
         doc = panel
@@ -239,7 +237,7 @@ def save(panel, filename, title=None, resources=None, template=None,
             model, resources=resources, filename=filename, template=template,
             template_variables=template_variables, **kwargs
         )
-    elif isinstance(filename, string_types) and not filename.endswith('.html'):
+    elif isinstance(filename, str) and not filename.endswith('.html'):
         filename = filename + '.html'
 
     kwargs = {}

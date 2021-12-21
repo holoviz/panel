@@ -3,8 +3,6 @@ Defines the Widget base class which provides bi-directional
 communication between the rendered dashboard and the Widget
 parameters.
 """
-from six import string_types
-
 import param
 import numpy as np
 
@@ -76,7 +74,7 @@ class _SliderBase(Widget):
 
 class ContinuousSlider(_SliderBase):
 
-    format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
+    format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
     _supports_embed = True
@@ -346,7 +344,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         if isinstance(self.options, dict):
             return [title + ('<b>%s</b>' % o) for o in self.options]
         else:
-            return [title + ('<b>%s</b>' % (o if isinstance(o, string_types) else (self.formatter % o)))
+            return [title + ('<b>%s</b>' % (o if isinstance(o, str) else (self.formatter % o)))
                     for o in self.options]
     @property
     def values(self):
@@ -389,7 +387,7 @@ class _RangeSliderBase(_SliderBase):
 
 class RangeSlider(_RangeSliderBase):
 
-    format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
+    format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
     value = param.Range(default=(0, 1))
@@ -598,7 +596,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
 
     end = param.Number(default=1., doc="Upper bound of the range.")
 
-    format = param.ClassSelector(default='0.0[0000]', class_=string_types+(TickFormatter,), doc="""
+    format = param.ClassSelector(default='0.0[0000]', class_=(str, TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""

@@ -5,7 +5,6 @@ import os
 
 from base64 import b64encode
 from io import BytesIO
-from six import string_types
 
 import numpy as np
 import param
@@ -51,7 +50,7 @@ class _MediaBase(PaneBase):
 
     @classmethod
     def applies(cls, obj):
-        if isinstance(obj, string_types):
+        if isinstance(obj, str):
             if isfile(obj) and any(obj.endswith('.'+fmt) for fmt in cls._formats):
                 return True
             if isurl(obj, cls._formats):
@@ -107,7 +106,7 @@ class _MediaBase(PaneBase):
 
 class Audio(_MediaBase):
 
-    object = param.ClassSelector(default='', class_=(string_types + (np.ndarray,)),
+    object = param.ClassSelector(default='', class_=(str, np.ndarray,),
                                  allow_None=True, doc="""
         The audio file either local or remote.""")
 
