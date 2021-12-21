@@ -7,7 +7,7 @@ from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from ..viewable import Layoutable
-from ..util import lazy_load, string_types
+from ..util import lazy_load
 from .base import PaneBase
 
 
