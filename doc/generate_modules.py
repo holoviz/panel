@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 sphinx-autopackage-script
 This script parses a directory tree looking for python modules and packages and
