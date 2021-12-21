@@ -106,7 +106,7 @@ class _MediaBase(PaneBase):
 
 class Audio(_MediaBase):
 
-    object = param.ClassSelector(default='', class_=(str, np.ndarray,)),
+    object = param.ClassSelector(default='', class_=(str, np.ndarray,),
                                  allow_None=True, doc="""
         The audio file either local or remote.""")
 
