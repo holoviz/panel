@@ -1,5 +1,3 @@
-import sys
-
 from distutils.version import LooseVersion
 
 import numpy as np
@@ -36,8 +34,6 @@ try:
 except Exception:
     jupyter_bokeh = None
 jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
-
-py3_only = pytest.mark.skipif(sys.version_info.major < 3, reason="requires Python 3")
 
 from panel.pane.markup import Markdown
 

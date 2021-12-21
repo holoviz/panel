@@ -339,7 +339,7 @@ class HoloViews(PaneBase):
     def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual'):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
-        from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
+        from holoviews.core.util import isnumeric, datetime_types, unique_iterator
         from holoviews.core.traversal import unique_dimkeys
         from holoviews.plotting.plot import Plot, GenericCompositePlot
         from holoviews.plotting.util import get_dynamic_mode
@@ -421,7 +421,7 @@ class HoloViews(PaneBase):
             if vals:
                 if all(isnumeric(v) or isinstance(v, datetime_types) for v in vals) and len(vals) > 1:
                     vals = sorted(vals)
-                    labels = [unicode(dim.pprint_value(v)) for v in vals]
+                    labels = [str(dim.pprint_value(v)) for v in vals]
                     options = OrderedDict(zip(labels, vals))
                     widget_type = widget_type or DiscreteSlider
                 else:
