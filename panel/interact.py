@@ -13,7 +13,6 @@ import types
 from collections import OrderedDict
 from inspect import getcallargs
 from numbers import Real, Integral
-from six import string_types
 
 try:  # Python >= 3.3
     from inspect import signature, Parameter
@@ -300,7 +299,7 @@ class interactive(PaneBase):
     @staticmethod
     def widget_from_single_value(o, name):
         """Make widgets from single values, which can be used as parameter defaults."""
-        if isinstance(o, string_types):
+        if isinstance(o, str):
             return TextInput(value=str(o), name=name)
         elif isinstance(o, bool):
             return Checkbox(value=o, name=name)

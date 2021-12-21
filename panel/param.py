@@ -11,7 +11,6 @@ import types
 from collections import OrderedDict, defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import partial
-from six import string_types
 
 import param
 
@@ -230,7 +229,7 @@ class Param(PaneBase):
         for p, v in sorted(self.param.values().items()):
             if v is self.param[p].default: continue
             elif v is None: continue
-            elif isinstance(v, string_types) and v == '': continue
+            elif isinstance(v, str) and v == '': continue
             elif p == 'object' or (p == 'name' and (v.startswith(obj_cls) or v.startswith(cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:

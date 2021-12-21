@@ -7,7 +7,6 @@ import base64
 import zipfile
 
 from abc import abstractmethod
-from six import string_types
 from urllib.request import urlopen
 
 import param
@@ -767,7 +766,7 @@ class VTKJS(AbstractVTK):
 
     @classmethod
     def applies(cls, obj):
-        if isinstance(obj, string_types) and obj.endswith('.vtkjs'):
+        if isinstance(obj, str) and obj.endswith('.vtkjs'):
             return True
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -788,7 +787,7 @@ class VTKJS(AbstractVTK):
 
     def _get_vtkjs(self):
         if self._vtkjs is None and self.object is not None:
-            if isinstance(self.object, string_types) and self.object.endswith('.vtkjs'):
+            if isinstance(self.object, str) and self.object.endswith('.vtkjs'):
                 if isfile(self.object):
                     with open(self.object, 'rb') as f:
                         vtkjs = f.read()

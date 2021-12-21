@@ -194,7 +194,7 @@ class Vega(PaneBase):
                 view['height'] = size_config[h]
 
         for p in ('width', 'height'):
-            if p not in view or isinstance(view[p], string_types):
+            if p not in view or isinstance(view[p], str):
                 continue
             if props.get(p) is None or p in view and props.get(p) < view[p]:
                 v = view[p]

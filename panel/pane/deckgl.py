@@ -102,15 +102,15 @@ class DeckGL(PaneBase):
         if (hasattr(obj, "to_json") and hasattr(obj, "mapbox_key")
             and hasattr(obj, "deck_widget")):
             return 0.8
-        elif isinstance(obj, (dict, string_types)):
+        elif isinstance(obj, (dict, str)):
             return 0
         return False
 
     def _get_properties(self, layout=True):
         if self.object is None:
             data, mapbox_api_key, tooltip = {}, self.mapbox_api_key, self.tooltips
-        elif isinstance(self.object, (string_types, dict)):
-            if isinstance(self.object, string_types):
+        elif isinstance(self.object, (str, dict)):
+            if isinstance(self.object, str):
                 data = json.loads(self.object)
             else:
                 data = dict(self.object)
