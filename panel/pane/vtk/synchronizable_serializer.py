@@ -2,7 +2,6 @@ import base64
 import hashlib
 import io
 import struct
-import sys
 import time
 import zipfile
 
@@ -13,25 +12,12 @@ from vtk.vtkCommonDataModel import vtkDataObject
 
 from .enums import TextPosition
 
-# -----------------------------------------------------------------------------
-# Python compatibility handling 2.6, 2.7, 3+
-# -----------------------------------------------------------------------------
 
-py3 = sys.version_info >= (3, 0)
+def iteritems(d, **kwargs):
+    return iter(d.items(**kwargs))
 
-if py3:
-    def iteritems(d, **kwargs):
-        return iter(d.items(**kwargs))
-else:
-    def iteritems(d, **kwargs):
-        return d.iteritems(**kwargs)
-
-if sys.version_info >= (2, 7):
-    buffer = memoryview
-    base64Encode = lambda x: base64.b64encode(x).decode('utf-8')
-else:
-    buffer = buffer
-    base64Encode = lambda x: x.encode('base64')
+buffer = memoryview
+base64Encode = lambda x: base64.b64encode(x).decode('utf-8')
 
 # -----------------------------------------------------------------------------
 # Array helpers

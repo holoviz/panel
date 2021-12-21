@@ -28,9 +28,6 @@ import numpy as np
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
-if sys.version_info.major > 2:
-    unicode = str
-
 bokeh_version = LooseVersion(bokeh.__version__)
 
 
@@ -107,31 +104,12 @@ def indexOf(obj, objs):
     raise ValueError('%s not in list' % obj)
 
 
-def as_unicode(obj):
-    """
-    Safely casts any object to unicode including regular string
-    (i.e. bytes) types in python 2.
-    """
-    if sys.version_info.major < 3 and isinstance(obj, str):
-        obj = obj.decode('utf-8')
-    return unicode(obj)
-
-
 def param_name(name):
     """
     Removes the integer id from a Parameterized class name.
     """
     match = re.findall(r'\D+(\d{5,})', name)
     return name[:name.index(match[0])] if match else name
-
-
-def unicode_repr(obj):
-    """
-    Returns a repr without the unicode prefix.
-    """
-    if sys.version_info.major == 2 and isinstance(obj, unicode):
-        return repr(obj)[1:]
-    return repr(obj)
 
 
 def recursive_parameterized(parameterized, objects=None):
@@ -229,10 +207,7 @@ def get_method_owner(meth):
     the class owning the supplied classmethod.
     """
     if inspect.ismethod(meth):
-        if sys.version_info < (3,0):
-            return meth.im_class if meth.im_self is None else meth.im_self
-        else:
-            return meth.__self__
+        return meth.__self__
 
 
 def is_parameterized(obj):

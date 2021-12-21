@@ -433,7 +433,7 @@ class panel_extension(_pyviz_extension):
             else:
                 setattr(config, k, v)
 
-        if config.apply_signatures and sys.version_info.major >= 3:
+        if config.apply_signatures:
             self._apply_signatures()
 
         loaded = self._loaded

@@ -21,7 +21,7 @@ from bokeh.models.widgets import (
 
 from ..config import config
 from ..layout import Column
-from ..util import param_reprs, as_unicode
+from ..util import param_reprs
 from .base import Widget, CompositeWidget
 from ..models import DatetimePicker as _bkDatetimePicker
 
@@ -129,7 +129,7 @@ class StaticText(Widget):
     def _process_param_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
-            text = as_unicode(msg.pop('value'))
+            text = str(msg.pop('value'))
             partial = self._format.replace('{value}', '').format(title=self.name)
             if self.name:
                 text = self._format.format(title=self.name, value=text.replace(partial, ''))
@@ -498,7 +498,7 @@ class LiteralInput(Widget):
             elif self.serializer == 'json':
                 value = json.dumps(value)
             else:
-                value = '' if value is None else as_unicode(value)
+                value = '' if value is None else str(value)
             msg['value'] = value
         msg['title'] = self.name
         return msg

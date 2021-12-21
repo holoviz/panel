@@ -9,7 +9,7 @@ from panel.pane import (
     Bokeh, HoloViews, IPyWidget, Interactive, IDOM, Pane, PaneBase, Vega
 )
 from panel.param import ParamMethod
-from panel.tests.util import check_layoutable_properties, py3_only
+from panel.tests.util import check_layoutable_properties
 
 
 SKIP_PANES = (Bokeh, HoloViews, ParamMethod, interactive, IPyWidget, Interactive, IDOM, Vega)
@@ -65,7 +65,6 @@ def test_pane_clone(pane):
             [(k, v) for k, v in sorted(clone.param.values().items()) if k != 'name'])
 
 
-@py3_only
 @pytest.mark.parametrize('pane', all_panes)
 def test_pane_signature(pane):
     from inspect import Parameter, signature
