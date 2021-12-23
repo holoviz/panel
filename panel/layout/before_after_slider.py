@@ -34,10 +34,10 @@ class BeforeAfterSlider(ListLike, ReactiveHTML):
     _template = """
     <div id="container" class="before-after-container">
       <div id="before" class="outer">
-        <div id="before_inner" class="inner">${_before}</div>
+        <div id="before-inner" class="inner">${_before}</div>
       </div>
       <div id="after" class="outer" style="overflow: hidden;">
-        <div id="after_inner" class="inner">${_after}</div>
+        <div id="after-inner" class="inner">${_after}</div>
       </div>
       <div id="slider" class="slider" onmousedown="${script('drag')}"
            style="background: ${slider_color}; width: ${slider_width}px;">
@@ -47,6 +47,7 @@ class BeforeAfterSlider(ListLike, ReactiveHTML):
 
     _scripts = {
         'render': """
+          set_size(container, model)
           self.adjustSlider()
         """,
         'after_layout': """
