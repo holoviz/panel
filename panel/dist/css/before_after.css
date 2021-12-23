@@ -1,0 +1,18 @@
+.before-after-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: fit-content;
+  height: fit-content;
+}
+.before-after-container .outer {
+  grid-row-start: 1;
+  grid-column-start: 1;
+  width: 100%;
+}
+.before-after-container .slider {
+  grid-row-start: 1;
+  grid-column-start: 1;
+  z-index: 1;
+  height: 100%;
+  cursor: move;
+}
