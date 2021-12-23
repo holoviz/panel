@@ -18,5 +18,6 @@
   cursor: move;
 }
 .before-after-container .inner {
+  width: 100%;
   height: 100%;
 }
