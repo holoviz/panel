@@ -19,11 +19,6 @@ or using PyPI::
 
   pip install panel
 
-Support for classic Jupyter Notebook is included with Panel. If you want to work with JupyterLab, you will also need to install the optional PyViz JupyterLab extension::
-
-  conda install -c conda-forge jupyterlab
-  jupyter labextension install @pyviz/jupyterlab_pyviz
-
 
 .. |CondaPyViz| image:: https://img.shields.io/conda/v/pyviz/panel.svg
 .. _CondaPyViz: https://anaconda.org/pyviz/panel
