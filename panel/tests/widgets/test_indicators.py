@@ -1,6 +1,6 @@
 import pytest
 
-from panel.widgets.indicators import Dial, Gauge, Number
+from panel.widgets.indicators import Dial, Gauge, Number, Tqdm
 
 def test_number_none(document, comm):
     number = Number(value=None, name='Value')
@@ -98,3 +98,10 @@ def test_gauge_bounds():
 
     with pytest.raises(ValueError):
         dial.value = 100
+
+def test_tqdm_color():
+    tqdm = Tqdm()
+    tqdm.text_pane.style={'color': 'green'}
+    for _ in tqdm(range(0,2)):
+        pass
+    assert tqdm.text_pane.style["color"]=="green"
