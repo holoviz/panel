@@ -123,3 +123,4 @@ discover/
 node_modules/*
 /tmp
 .devcontainer/*
+json*
