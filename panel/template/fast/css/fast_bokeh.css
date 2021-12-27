@@ -1521,6 +1521,23 @@ input[type=range]::-moz-range-track {
   cursor: not-allowed;
   opacity: 0.5;
 }
+.bk-root .noUi-vertical {
+  margin-top: 15px;
+  width: calc(var(--track-width) * 1px);
+  background-color: var(--neutral-outline-rest);
+  border-radius: calc(var(--corner-radius) * 1px);
+}
+.bk-root .noUi-target.noUi-vertical {
+    margin-top: 10px;
+}
+.bk-root .noUi-vertical .noUi-handle {
+    border: none;
+    width: 12px;
+    height: 12px;
+    background: var(--neutral-foreground-rest);
+    border-radius: calc(var(--corner-radius) * 1px);
+    box-shadow: none;
+}
 .bk-root .bk-tabs-header {
   display: flex;
   display: -webkit-flex;
