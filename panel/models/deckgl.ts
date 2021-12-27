@@ -226,7 +226,7 @@ export class DeckGLPlot extends HTMLBox {
       initialViewState: [ Any,                          {} ],
       layers:           [ Array(Any),                   [] ],
       mapbox_api_key:   [ String,                       '' ],
-      tooltip:          [ Any,                          {} ],
+      tooltip:          [ Any,                          false ],
       viewState:        [ Any,                          {} ],
     }))
 
