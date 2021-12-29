@@ -25,6 +25,8 @@ export class AudioView extends PanelHTMLBoxView {
     this.connect(this.model.properties.time.change, () => this.set_time())
     this.connect(this.model.properties.value.change, () => this.set_value())
     this.connect(this.model.properties.volume.change, () => this.set_volume())
+    this.connect(this.model.properties.muted.change, () => this.set_muted())
+    this.connect(this.model.properties.autoplay.change, () => this.set_autoplay())
   }
 
   render(): void {
@@ -34,6 +36,8 @@ export class AudioView extends PanelHTMLBoxView {
     this.audioEl.src = this.model.value
     this.audioEl.currentTime = this.model.time
     this.audioEl.loop = this.model.loop
+    this.audioEl.muted = this.model.muted
+    this.audioEl.autoplay = this.model.autoplay
     if (this.model.volume != null)
       this.audioEl.volume = this.model.volume/100
     else
@@ -70,6 +74,14 @@ export class AudioView extends PanelHTMLBoxView {
 
   set_loop(): void {
     this.audioEl.loop = this.model.loop
+  }
+
+  set_muted(): void {
+    this.audioEl.muted = this.model.muted
+  }
+
+  set_autoplay(): void {
+    this.audioEl.autoplay = this.model.autoplay
   }
 
   set_paused(): void {
@@ -109,6 +121,8 @@ export namespace Audio {
   export type Props = HTMLBox.Props & {
     loop: p.Property<boolean>
     paused: p.Property<boolean>
+    muted: p.Property<boolean>
+    autoplay: p.Property<boolean>
     time: p.Property<number>
     throttle: p.Property<number>
     value: p.Property<any>
@@ -133,6 +147,8 @@ export class Audio extends HTMLBox {
     this.define<Audio.Props>(({Any, Boolean, Int, Number}) => ({
       loop:     [ Boolean, false ],
       paused:   [ Boolean,  true ],
+      muted:    [ Boolean, false ],
+      autoplay: [ Boolean, false ],
       time:     [ Number,      0 ],
       throttle: [ Number,    250 ],
       value:    [ Any,        '' ],
