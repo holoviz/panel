@@ -1491,10 +1491,13 @@ input[type=range]::-moz-range-track {
   background-position: center;
   border-radius: calc(var(--corner-radius) * 1px);
 }
+.noUi-connect, .noUi-connects {
+  background-color: var(--neutral-outline-rest) !important;
+}
 .bk-root .noUi-horizontal {
   /* height: 2px; */
   margin-top: 15px;
-  height: calc(var(--track-width) * 1px);
+  height: calc(var(--track-width) * 2px);
   background-color: var(--neutral-outline-rest);
   border-radius: calc(var(--corner-radius) * 1px);
 }
@@ -1510,8 +1513,8 @@ input[type=range]::-moz-range-track {
 
 .bk-root .noUi-horizontal .noUi-handle {
     border: none;
-    width: 12px;
-    height: 12px;
+    width: 13px;
+    height: 13px;
     background: var(--neutral-foreground-rest);
     border-radius: calc(var(--corner-radius) * 1px);
     box-shadow: none;
@@ -1523,7 +1526,7 @@ input[type=range]::-moz-range-track {
 }
 .bk-root .noUi-vertical {
   margin-top: 15px;
-  width: calc(var(--track-width) * 1px);
+  width: calc(var(--track-width) * 2px);
   background-color: var(--neutral-outline-rest);
   border-radius: calc(var(--corner-radius) * 1px);
 }
@@ -1532,8 +1535,8 @@ input[type=range]::-moz-range-track {
 }
 .bk-root .noUi-vertical .noUi-handle {
     border: none;
-    width: 12px;
-    height: 12px;
+    width: 13px;
+    height: 13px;
     background: var(--neutral-foreground-rest);
     border-radius: calc(var(--corner-radius) * 1px);
     box-shadow: none;
