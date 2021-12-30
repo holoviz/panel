@@ -930,6 +930,13 @@ class Scores(ReactiveHTML):
         doc="""
         The theme of the plot. Either 'default' or 'dark'. Automatically determined from the url query args.""",
     )
+    width = param.Integer(default=300, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
+
+    height = param.Integer(default=300, bounds=(0, None), doc="""
+        The height of the component (in pixels).  This can be either
+        fixed or preferred height, depending on height sizing policy.""")
     
 
     label = param.String("", constant=True)
