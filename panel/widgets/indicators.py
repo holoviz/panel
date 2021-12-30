@@ -899,10 +899,11 @@ def _get_theme() -> str:
         return "dark"
     return "default"
 
-class Label(ReactiveHTML):
-    """The Label visualizes the result of a classification, i.e. the *labels* and their *score*.
+class Scores(ReactiveHTML):
+    """The Scores indicator visualizes a dictionary of *labels* and their *score*. 
     
-    For example a result like `{"egyptian": 0.22, "tabby cat": 0.18, "tiger cat": 0.13, "lynx": 0.09, "Siamese cat": 0.04}`.
+    For example the results of a ML classification like 
+    `{"egyptian": 0.22, "tabby cat": 0.18, "tiger cat": 0.13, "lynx": 0.09, "Siamese cat": 0.04}`.
     """
 
     value = param.Dict(
@@ -931,7 +932,7 @@ class Label(ReactiveHTML):
     )
     
 
-    label = param.String("ORANGUTAN", constant=True)
+    label = param.String("", constant=True)
     top_value = param.List(constant=True)
 
     _base_options = param.Dict(CONFIG, constant=True)
