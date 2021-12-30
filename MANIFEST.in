@@ -1,6 +1,7 @@
 include README.md
 include LICENSE.txt
 include panel/.version
+include panel/py.typed
 include panel/*.json
 include panel/assets/*.gif
 include panel/assets/*.svg
