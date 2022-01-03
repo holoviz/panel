@@ -617,7 +617,7 @@ class BasicTemplate(BaseTemplate):
                     if (BUNDLE_DIR / name / basename).is_file():
                         css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
                     else:
-                        with open(theme.base_css, encoding='utf-8') as f:
+                        with open(theme.css, encoding='utf-8') as f:
                             raw_css.append(f.read())
 
         return {
