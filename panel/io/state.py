@@ -458,6 +458,13 @@ class _state(param.Parameterized):
         return template
 
     @property
+    def theme(self):
+        theme = self.session_args.get('theme', [None])[0]
+        if theme is None:
+            return "default"
+        return theme
+
+    @property
     def user(self):
         from ..config import config
         user = self.cookies.get('user')

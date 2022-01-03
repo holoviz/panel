@@ -11,6 +11,7 @@ from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
 from tqdm.asyncio import tqdm as _tqdm
 
+from  ..io import state
 from ..layout import Column, Row
 from ..models import (
     HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator
@@ -135,7 +136,7 @@ class Progress(ValueIndicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    value = param.Integer(default=-1, bounds=(-1, None),                           
+    value = param.Integer(default=-1, bounds=(-1, None),
                           allow_None = True,#TODO: remove
                           doc="""
         The current value of the progress bar. If set to -1 the progress
@@ -149,13 +150,13 @@ class Progress(ValueIndicator):
     @param.depends('max', watch=True)
     def _update_value_bounds(self):
         self.param.value.bounds = (-1, self.max)
-        
+
     @param.depends('value', watch=True)
     def _warn_deprecation(self):
         if self.value is None:
             self.value = -1
-            warnings.warn('Setting the progress value to None is deprecated, use -1 instead.', 
-                          FutureWarning,  stacklevel=2)  
+            warnings.warn('Setting the progress value to None is deprecated, use -1 instead.',
+                          FutureWarning,  stacklevel=2)
 
     def __init__(self,**params):
         super().__init__(**params)
@@ -736,7 +737,7 @@ class Tqdm(Indicator):
 
     layout = param.ClassSelector(class_=(Column, Row), precedence=-1, constant=True, doc="""
         The layout for the text and progress indicator.""",)
-            
+
     max = Progress.param.max
 
     progress = param.ClassSelector(class_=Progress, precedence=-1, doc="""
@@ -747,7 +748,7 @@ class Tqdm(Indicator):
 
     text_pane = param.ClassSelector(class_=Str, precedence=-1, doc="""
         The pane to display the text to.""")
-        
+
     value = Progress.param.value
     value.default = 0
 
@@ -769,7 +770,7 @@ class Tqdm(Indicator):
 
     def __init__(self, **params):
         layout = params.pop('layout', 'column')
-        layout = self._layouts.get(layout, layout) 
+        layout = self._layouts.get(layout, layout)
         if "text_pane" not in params:
             sizing_mode = 'stretch_width' if layout == 'column' else 'fixed'
             params["text_pane"] = Str(
@@ -887,49 +888,33 @@ CONFIG = {
     }
 }
 
-def _get_theme() -> str:
-    """Returns the current theme: 'default' or 'dark'
-
-    Returns:
-        str: The current theme
-    """
-    import panel as pn
-    args = pn.state.session_args
-    if "theme" in args and args["theme"][0] == b"dark":
-        return "dark"
-    return "default"
 
 class Scores(ReactiveHTML):
-    """The Scores indicator visualizes a dictionary of *labels* and their *score*. 
-    
-    For example the results of a ML classification like 
+    """
+    The Scores indicator visualizes a dictionary of *labels* and their
+    *score*.
+
+    For example the results of a ML classification like:
+
     `{"egyptian": 0.22, "tabby cat": 0.18, "tiger cat": 0.13, "lynx": 0.09, "Siamese cat": 0.04}`.
     """
 
-    value = param.Dict(
-        doc="""
+    value = param.Dict(doc="""
         A dictionary of labels (key) and their scores (value).
-        For example  `{"egyptian": 0.22, "tabby cat": 0.18, "tiger cat": 0.13, "lynx": 0.09, "Siamese cat": 0.04}`""",
-        precedence=-1, # Will raise error if not set to -1 because its not used on js side
-    )
-    top = param.Integer(
-        5,
-        bounds=(1, 10),
-        doc="""
-        The maximum number of labels to plots
-    """,
-    )
-    color = param.Color(
-        "#0072B5",
-        """
-        The color of the bars. Default is the same as the Fast default accent_base_color.""",
-    )
-    theme = param.Selector(
-        default="default",
-        objects=["default", "dark"],
-        doc="""
-        The theme of the plot. Either 'default' or 'dark'. Automatically determined from the url query args.""",
-    )
+        For example  `{"egyptian": 0.22, "tabby cat": 0.18, "tiger cat": 0.13,
+                       "lynx": 0.09, "Siamese cat": 0.04}`.
+        """, precedence=-1)
+
+    top = param.Integer(default=5, bounds=(1, 10), doc="""
+        The maximum number of labels to plots.""")
+
+    color = param.Color(default="#0072B5", doc="""
+        The color of the bars.""")
+
+    theme = param.Selector(default="default", objects=["default", "dark"], doc="""
+        The theme of the plot. Either 'default' or 'dark'. Automatically
+        determined from the url query args.""")
+
     width = param.Integer(default=300, bounds=(0, None), doc="""
         The width of the component (in pixels). This can be either
         fixed or preferred width, depending on width sizing policy.""")
@@ -937,12 +922,13 @@ class Scores(ReactiveHTML):
     height = param.Integer(default=300, bounds=(0, None), doc="""
         The height of the component (in pixels).  This can be either
         fixed or preferred height, depending on height sizing policy.""")
-    
+
 
     label = param.String("", constant=True)
     top_value = param.List(constant=True)
 
     _base_options = param.Dict(CONFIG, constant=True)
+
     _template = """
     <svg xmlns="http://www.w3.org/2000/svg" height="50%" width="100%" viewBox="0 0 110 50" style="fill: currentColor">
         <text x="50%" y="50%" text-anchor="middle" alignment-baseline="central" dominant-baseline="central" font-size="1em">${label}</text>
@@ -951,43 +937,42 @@ class Scores(ReactiveHTML):
     """
 
     _scripts = {
-"render": """
-  state.oMap = function(x){return {"x": x["label"], "y": Math.round(x["score"]*100)}}
-  state.theme = function(){return {default: "light", dark: "dark"}[data.theme]}
-  state.options=()=>{
-        return {
-            ...data._base_options, 
-            series: [{name: "Score", "data": Array.from(data.top_value, state.oMap)}], 
-            colors: [data.color], 
-            theme: {mode: state.theme()}
-        }
-    };
-  state.chart = new ApexCharts(plot, state.options());
-  state.chart.render();
-""",
-"top_value": """
-  state.chart.updateOptions(state.options())
-""",
-"color": """
-  state.chart.updateOptions({colors: [data.color]})
-""",
-"theme": """
-  state.chart.updateOptions({theme: {mode: state.theme()}})
-""",
-"after_layout": """
-  state.chart.updateOptions(state.options())
-""",}
+        "render": """
+      state.oMap = function(x) { return {"x": x["label"], "y": Math.round(x["score"]*100)} }
+      state.theme = function() { return {default: "light", dark: "dark"}[data.theme] }
+      state.options = () => {
+          return {
+              ...data._base_options,
+              series: [{name: "Score", "data": Array.from(data.top_value, state.oMap)}],
+              colors: [data.color],
+              theme: {mode: state.theme()}
+          }
+      };
+      state.chart = new ApexCharts(plot, state.options());
+      state.chart.render();
+        """,
+        "top_value": """
+      state.chart.updateOptions(state.options())
+        """,
+        "color": """
+      state.chart.updateOptions({colors: [data.color]})
+        """,
+        "theme": """
+      state.chart.updateOptions({theme: {mode: state.theme()}})
+        """,
+        "after_layout": """
+      state.chart.updateOptions(state.options())
+        """
+    }
 
     __javascript__ = ["https://cdn.jsdelivr.net/npm/apexcharts"]
 
     def __init__(self, **params):
-        params["theme"] = params.get("theme", _get_theme())
-
+        if 'theme' not in params:
+            params['theme'] = state.theme
         super().__init__(**params)
 
-        self._handle_change()
-
-    @param.depends("value", "top", watch=True)
+    @param.depends("value", "top", watch=True, on_init=True)
     def _handle_change(self):
         if not self.value:
             self.label = ""
@@ -999,6 +984,7 @@ class Scores(ReactiveHTML):
         if len(top_value) > self.top:
             top_value = top_value[0 : self.top]
         with param.edit_constant(self):
-            self.label = top_value[0]["label"].upper()
-            self.top_value = top_value
-
+            self.param.set_param(
+                label=top_value[0]["label"].upper(),
+                top_value=top_value
+            )
