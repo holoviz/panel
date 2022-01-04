@@ -22,7 +22,7 @@ from panel.widgets import Button, Tabulator
 def test_get_server(html_server_session):
     html, server, session = html_server_session
 
-    assert server.port == 5006
+    assert server.port == 6000
     root = session.document.roots[0]
     assert isinstance(root, BkHTML)
     assert root.text == '&lt;h1&gt;Title&lt;/h1&gt;'
@@ -230,8 +230,8 @@ def test_server_session_info():
 
 def test_show_server_info(html_server_session, markdown_server_session):
     server_info = repr(state)
-    assert "localhost:5006 - HTML" in server_info
-    assert "localhost:5007 - Markdown" in server_info
+    assert "localhost:6000 - HTML" in server_info
+    assert "localhost:6001 - Markdown" in server_info
 
 
 def test_kill_all_servers(html_server_session, markdown_server_session):

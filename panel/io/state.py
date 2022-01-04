@@ -122,7 +122,7 @@ class _state(param.Parameterized):
 
     @property
     def _thread_id(self):
-        return self._thread_id_.get(self.curdoc)
+        return self._thread_id_.get(self.curdoc) if self.curdoc else None
 
     @_thread_id.setter
     def _thread_id(self, thread_id):

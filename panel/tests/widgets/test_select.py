@@ -73,7 +73,7 @@ def test_select_groups_list_options(document, comm):
     select._process_events({'value': str(groups['a'][1])})
     assert select.value == groups['a'][1]
 
-    widget.value = str(groups['a'][0])
+    select._process_events({'value': str(groups['a'][0])})
     assert select.value == groups['a'][0]
 
     select.value = groups['a'][1]
@@ -94,7 +94,7 @@ def test_select_groups_dict_options(document, comm):
     select._process_events({'value': str(groups['B']['c'])})
     assert select.value == groups['B']['c']
 
-    widget.value = str(groups['A']['b'])
+    select._process_events({'value': str(groups['A']['b'])})
     assert select.value == groups['A']['b']
 
     select.value = groups['A']['a']
