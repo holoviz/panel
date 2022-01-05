@@ -277,7 +277,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         this.setStyles()
 	this.renderChildren()
         this.relayout()
-        this.setFrozen()
         this._initializing = false
       })
     }
@@ -318,6 +317,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.init_callbacks()
 
     this.setGroupBy()
+    this.setFrozen()
 
     this.el.appendChild(container)
   }
@@ -345,7 +345,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         setTimeout(() => this.relayout(), 10)
         this._initializing = false
       })
-      this.setData()
     }
     this.setSelection()
   }
