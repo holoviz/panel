@@ -9,6 +9,7 @@ import inspect
 import os
 import sys
 
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from weakref import WeakKeyDictionary
 
@@ -125,6 +126,11 @@ class _config(_base_config):
     theme = param.ObjectSelector(default='default', objects=['default', 'dark'], doc="""
         The theme to apply to the selected global template.""")
 
+    nthreads = param.Integer(default=None, doc="""
+        When set to a non-None value a thread pool will be started.
+        Whenever an event arrives from the frontend it will be
+        dispatched to the thread pool to be processed.""")
+
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
 
@@ -204,6 +210,19 @@ class _config(_base_config):
                 setattr(self, p+'_', None)
         if self.log_level:
             panel_log_handler.setLevel(self.log_level)
+
+    @param.depends('nthreads', watch=True)
+    def _set_thread_pool(self):
+        from .io.state import state
+        if self.nthreads is None:
+            if state._thread_pool is not None:
+                state._thread_pool.shutdown(wait=False)
+            state._thread_pool = None
+            return
+        if state._thread_pool:
+            raise RuntimeError("Thread pool already running")
+        threads = self.nthreads if self.nthreads else None
+        state._thread_pool = ThreadPoolExecutor(max_workers=threads)
 
     @contextmanager
     def set(self, **kwargs):

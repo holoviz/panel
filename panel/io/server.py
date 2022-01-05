@@ -401,6 +401,11 @@ def init_doc(doc):
     if not doc.session_context:
         return doc
 
+    thread = threading.current_thread()
+    if thread:
+        with set_curdoc(doc):
+            state._thread_id = thread.ident
+
     session_id = doc.session_context.id
     sessions = state.session_info['sessions']
     if session_id not in sessions:
@@ -414,9 +419,10 @@ def init_doc(doc):
 
 @contextmanager
 def set_curdoc(doc):
+    orig_doc = state._curdoc
     state.curdoc = doc
     yield
-    state.curdoc = None
+    state.curdoc = orig_doc
 
 def with_lock(func):
     """
@@ -798,7 +804,10 @@ class StoppableThread(threading.Thread):
             bokeh_server = target(*args, **kwargs)
         finally:
             if isinstance(bokeh_server, Server):
-                bokeh_server.stop()
+                try:
+                    bokeh_server.stop()
+                except Exception:
+                    pass
             if hasattr(self, '_target'):
                 del self._target, self._args, self._kwargs
             else:

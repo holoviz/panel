@@ -150,7 +150,8 @@ extras_require = {
         'ipyvolume',
         'ipyleaflet',
         'xarray',
-        'pyinstrument >=4.0'
+        'pyinstrument >=4.0',
+        'aiohttp'
     ],
     'tests': _tests,
     'recommended': _recommended,

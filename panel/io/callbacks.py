@@ -73,6 +73,33 @@ class PeriodicCallback(param.Parameterized):
             self.stop()
             self.start()
 
+    def _exec_callback(self, post=False):
+        from .server import set_curdoc
+        try:
+            with set_curdoc(self._doc):
+                cb = self.callback()
+        except Exception:
+            cb = None
+        if post:
+            self._post_callback()
+        return cb
+
+    def _post_callback(self):
+        cbname = function_name(self.callback)
+        if self._doc:
+            _periodic_logger.info(
+                LOG_PERIODIC_END, id(self._doc), cbname, self._counter
+            )
+        with edit_readonly(state):
+            state.busy = False
+        self._counter += 1
+        if self.timeout is not None:
+            dt = (time.time() - self._start_time) * 1000
+            if dt > self.timeout:
+                self.stop()
+        if self._counter == self.count:
+            self.stop()
+
     async def _periodic_callback(self):
         with edit_readonly(state):
             state.busy = True
@@ -81,25 +108,19 @@ class PeriodicCallback(param.Parameterized):
             _periodic_logger.info(
                 LOG_PERIODIC_START, id(self._doc), cbname, self._counter
             )
+        is_async = (
+            inspect.isasyncgenfunction(self.callback) or
+            inspect.iscoroutinefunction(self.callback)
+        )
+        if state._thread_pool and not is_async:
+            state._thread_pool.submit(self._exec_callback, True)
+            return
         try:
-            if inspect.isasyncgenfunction(self.callback) or inspect.iscoroutinefunction(self.callback):
-                await self.callback()
-            else:
-                self.callback()
+            cb = self._exec_callback()
+            if inspect.isawaitable(cb):
+                await cb
         finally:
-            if self._doc:
-                _periodic_logger.info(
-                    LOG_PERIODIC_END, id(self._doc), cbname, self._counter
-                )
-            with edit_readonly(state):
-                state.busy = False
-        self._counter += 1
-        if self.timeout is not None:
-            dt = (time.time() - self._start_time) * 1000
-            if dt > self.timeout:
-                self.stop()
-        if self._counter == self.count:
-            self.stop()
+            self._post_callback()
 
     @property
     def counter(self):
