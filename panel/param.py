@@ -8,7 +8,8 @@ import json
 import os
 import types
 
-from collections import OrderedDict, defaultdict, namedtuple, Callable
+from collections.abc import Callable
+from collections import OrderedDict, defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import partial
 
