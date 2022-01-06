@@ -270,23 +270,34 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     // Initialization
     this.tabulator.on("tableBuilding", () => this.tableInit())
     this.tabulator.on("tableBuilt", () => this.tableBuilt())
+
+    // For disabled pagination initialize on renderComplete
     if (this.model.pagination !== 'remote') {
       this.tabulator.on("renderComplete", () => {
         this.tabulator.off("renderComplete")
         // Apply styles after first render then unsubscribe
+        this.setFrozen()
         this.setStyles()
-	this.renderChildren()
+        this.renderChildren()
+        this.tabulator.modules.frozenColumns.active = true
+        this.tabulator.modules.frozenColumns.layout()
         this.relayout()
         this._initializing = false
       })
     }
+
+    // Disable frozenColumns during rendering (see https://github.com/olifolkerd/tabulator/issues/3530)
+    this.tabulator.on("dataLoading", () => {
+      this.tabulator.modules.frozenColumns.active = false
+    })
+
     // Rendering callbacks
     this.tabulator.on("selectableCheck", (row: any) => {
       const selectable = this.model.selectable_rows
       return (selectable == null) || (selectable.indexOf(row._row.data._index) >= 0)
     })
     this.tabulator.on("tooltips", (cell: any) => {
-      return  cell.getColumn().getField() + ": " + cell.getValue();
+      return cell.getColumn().getField() + ": " + cell.getValue();
     })
     this.tabulator.on("scrollVertical", debounce(() => {
       this.setStyles()
@@ -317,9 +328,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.init_callbacks()
 
     this.setGroupBy()
-    this.setFrozen()
 
-    this.el.appendChild(container)
+    this.el.appendChild(container);
   }
 
   tableInit(): void {
@@ -335,18 +345,19 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   tableBuilt(): void {
     this.setHidden()
+    this.setSelection()
+
+    // For remote pagination initialize on tableBuilt
     if (this.model.pagination) {
       this.setMaxPage()
       this.tabulator.setPage(this.model.page)
-      this.tabulator.on("dataProcessed", () => {
-        this.tabulator.off("dataProcessed")
-        this.setStyles()
-	this.renderChildren()
-        setTimeout(() => this.relayout(), 10)
-        this._initializing = false
-      })
+      this.setStyles()
+      this.renderChildren()
+      this.tabulator.modules.frozenColumns.active = true
+      this.tabulator.modules.frozenColumns.layout()
+      setTimeout(() => this.relayout(), 10)
+      this._initializing = false
     }
-    this.setSelection()
   }
 
   relayout(): void {
@@ -442,7 +453,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         this._render_row(row)
       }
       if (!this.model.expanded.length && !this._initializing)
-	this.invalidate_layout()
+        this.invalidate_layout()
     })
   }
 
