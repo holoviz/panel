@@ -207,6 +207,121 @@ def test_select_change_options_on_watch(document, comm):
     assert model.options == [(str(v),k) for k,v in select.options.items()]
 
 
+def test_select_disabled_options_init_options_list(document, comm):
+    select = Select(options=['a', 'b'], disabled_options=['b'])
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.disabled_options == ['b']
+
+
+def test_select_disabled_options_init_options_dict(document, comm):
+    select = Select(options=dict(A=1, B=2), disabled_options=[2])
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.disabled_options == [2]
+
+
+def test_select_disabled_options_after_init_options_list(document, comm):
+    select = Select(options=['a', 'b'])
+    select.disabled_options = ['b']
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.disabled_options == ['b']
+
+
+def test_select_disabled_options_after_init_options_dict(document, comm):
+    select = Select(options=dict(A=1, B=2))
+    select.disabled_options = [2]
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.disabled_options == [2]
+
+
+def test_select_disabled_options_all_raises_error_on_init_options_list():
+    with pytest.raises(ValueError, match='All the options'):
+        Select(options=['a', 'b'], disabled_options=['a', 'b'])
+
+def test_select_disabled_options_all_raises_error_on_init_options_dict():
+    with pytest.raises(ValueError, match='All the options'):
+        Select(options=dict(A=1, B=2), disabled_options=[1, 2])
+
+
+def test_select_disabled_options_all_raises_error_after_init_options_list():
+    select = Select(options=['a', 'b'])
+
+    with pytest.raises(ValueError, match='All the options'):
+        select.disabled_options = ['a', 'b']
+
+
+def test_select_disabled_options_all_raises_error_after_init_options_dict():
+    select = Select(options=dict(A=1, B=2))
+
+    with pytest.raises(ValueError, match='All the options'):
+        select.disabled_options = [1, 2]
+
+
+def test_select_disabled_options_error_disabled_options_not_in_options_options_list():
+    with pytest.raises(ValueError, match='Cannot disable non existing options'):
+        Select(options=['a', 'b'], disabled_options=['c'])
+
+
+def test_select_disabled_options_error_disabled_options_not_in_options_options_dict():
+    with pytest.raises(ValueError, match='Cannot disable non existing options'):
+        Select(options=dict(A=1, B=2), disabled_options=[3])
+
+
+def test_select_disabled_options_error_set_value_options_list():
+    select = Select(options=['a', 'b'], disabled_options=['b'])
+    with pytest.raises(ValueError, match='as it is a disabled option'):
+        select.value = 'b'
+
+
+def test_select_disabled_options_error_set_value_options_dict():
+    select = Select(options=dict(A=1, B=2), disabled_options=[2])
+    with pytest.raises(ValueError, match='as it is a disabled option'):
+        select.value = 2
+
+
+def test_select_disabled_options_error_set_disabled_options_options_list():
+    select = Select(value='a', options=['a', 'b'])
+    with pytest.raises(ValueError, match='Cannot set disabled_options'):
+        select.disabled_options = ['a']
+
+
+def test_select_disabled_options_error_set_disabled_options_options_dict():
+    select = Select(value=1, options=dict(A=1, B=2))
+    with pytest.raises(ValueError, match='Cannot set disabled_options'):
+        select.disabled_options = [1]
+
+
+def test_select_disabled_options_set_value_and_disabled_options_options_list(document, comm):
+    select = Select(options=['a', 'b'], disabled_options=['b'])
+    select.param.set_param(value='b', disabled_options=['a'])
+
+    widget = select.get_root(document, comm=comm)
+
+    assert widget.value == 'b'
+    assert widget.disabled_options == ['a']
+
+
+def test_select_disabled_options_set_value_and_disabled_options_options_dict(document, comm):
+    select = Select(options=dict(A=1, B=2), disabled_options=[2])
+    select.param.set_param(value=2, disabled_options=[1])
+
+    widget = select.get_root(document, comm=comm)
+
+    assert widget.value == '2'
+    assert widget.disabled_options == [1]
+
+
 def test_multi_select(document, comm):
     select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                          value=[object, 1], name='Select')
