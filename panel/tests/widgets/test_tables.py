@@ -1,7 +1,7 @@
 import datetime as dt
 import pytest
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 
@@ -24,8 +24,8 @@ from panel.models.tabulator import TableEditEvent
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
-pd_old = pytest.mark.skipif(LooseVersion(pd.__version__) < '1.3',
-                          reason="Requires latest pandas")
+pd_old = pytest.mark.skipif(Version(pd.__version__) < Version('1.3'),
+                            reason="Requires latest pandas")
 
 
 def test_dataframe_widget(dataframe, document, comm):

@@ -1,8 +1,7 @@
 """
 These that verify Templates are working correctly.
 """
-from distutils.version import LooseVersion
-from panel.layout.grid import GridSpec
+from packaging.version import Version
 
 try:
     import holoviews as hv
@@ -12,10 +11,11 @@ except Exception:
 import param
 import pytest
 
-latest_param = pytest.mark.skipif(LooseVersion(param.__version__) < '1.10.0a4',
+latest_param = pytest.mark.skipif(Version(param.__version__) < Version('1.10.0a4'),
                                   reason="requires param>=1.10.0a4")
 
-from panel.layout import Row
+
+from panel.layout import GridSpec, Row
 from panel.pane import HoloViews, Markdown
 from panel.template import (
     BootstrapTemplate, GoldenTemplate, MaterialTemplate, ReactTemplate,

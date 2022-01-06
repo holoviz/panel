@@ -16,10 +16,10 @@ from collections.abc import MutableSequence, MutableMapping
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
-from distutils.version import LooseVersion
 from functools import partial
 from html import escape # noqa
 from importlib import import_module
+from packaging.version import Version
 
 import bokeh
 import param
@@ -27,7 +27,7 @@ import numpy as np
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
-bokeh_version = LooseVersion(bokeh.__version__)
+bokeh_version = Version(bokeh.__version__)
 
 
 def isfile(path):

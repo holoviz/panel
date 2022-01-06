@@ -5,7 +5,7 @@ objects and their widgets and support for Links
 import sys
 
 from collections import OrderedDict, defaultdict
-from distutils.version import LooseVersion
+from packaging.version import Version
 from functools import partial
 
 import param
@@ -303,7 +303,7 @@ class HoloViews(PaneBase):
                 renderer = renderer.instance(**params)
 
         kwargs = {'margin': self.margin}
-        if backend == 'bokeh' or LooseVersion(str(hv.__version__)) >= str('1.13.0'):
+        if backend == 'bokeh' or Version(str(hv.__version__)) >= Version('1.13.0'):
             kwargs['doc'] = doc
             kwargs['root'] = root
             if comm:
