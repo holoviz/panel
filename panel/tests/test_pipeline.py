@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import pytest
 import param
@@ -9,7 +9,7 @@ from panel.param import ParamMethod
 from panel.pipeline import Pipeline, find_route
 from panel.widgets import Button, Select
 
-if LooseVersion(param.__version__) < '1.8.2':
+if Version(param.__version__) < Version('1.8.2'):
     pytestmark = pytest.mark.skip("skipping if param version < 1.8.2", allow_module_level=True)
 
 try:
