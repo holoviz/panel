@@ -116,7 +116,11 @@ const dateEditor = function(cell: any, onRendered: any, success: any, cancel: an
   //create and style input
   const rawValue = cell.getValue()
   const opts = {zone: new (window as any).luxon.IANAZone('UTC')}
-  const cellValue = (window as any).luxon.DateTime.fromMillis(rawValue, opts).toFormat("yyyy-MM-dd")
+  let cellValue: any
+  if (rawValue === 'NaN' || rawValue === null)
+    cellValue = null
+  else
+    cellValue = (window as any).luxon.DateTime.fromMillis(rawValue, opts).toFormat("yyyy-MM-dd")
   const input = document.createElement("input")
 
   input.setAttribute("type", "date");
@@ -166,7 +170,11 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
   //create and style input
   const rawValue = cell.getValue()
   const opts = {zone: new (window as any).luxon.IANAZone('UTC')}
-  const cellValue = (window as any).luxon.DateTime.fromMillis(rawValue, opts).toFormat("yyyy-MM-dd'T'T")
+  let cellValue: any
+  if (rawValue === 'NaN' || rawValue === null)
+    cellValue = null
+  else
+    cellValue = (window as any).luxon.DateTime.fromMillis(rawValue, opts).toFormat("yyyy-MM-dd'T'T")
   const input = document.createElement("input")
 
   input.setAttribute("type", "datetime-local");
@@ -262,23 +270,34 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     // Initialization
     this.tabulator.on("tableBuilding", () => this.tableInit())
     this.tabulator.on("tableBuilt", () => this.tableBuilt())
+
+    // For disabled pagination initialize on renderComplete
     if (this.model.pagination !== 'remote') {
       this.tabulator.on("renderComplete", () => {
         this.tabulator.off("renderComplete")
         // Apply styles after first render then unsubscribe
-        this.setStyles()
-        this.relayout()
         this.setFrozen()
+        this.setStyles()
+        this.renderChildren()
+        this.tabulator.modules.frozenColumns.active = true
+        this.tabulator.modules.frozenColumns.layout()
+        this.relayout()
         this._initializing = false
       })
     }
+
+    // Disable frozenColumns during rendering (see https://github.com/olifolkerd/tabulator/issues/3530)
+    this.tabulator.on("dataLoading", () => {
+      this.tabulator.modules.frozenColumns.active = false
+    })
+
     // Rendering callbacks
     this.tabulator.on("selectableCheck", (row: any) => {
       const selectable = this.model.selectable_rows
       return (selectable == null) || (selectable.indexOf(row._row.data._index) >= 0)
     })
     this.tabulator.on("tooltips", (cell: any) => {
-      return  cell.getColumn().getField() + ": " + cell.getValue();
+      return cell.getColumn().getField() + ": " + cell.getValue();
     })
     this.tabulator.on("scrollVertical", debounce(() => {
       this.setStyles()
@@ -310,7 +329,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     this.setGroupBy()
 
-    this.el.appendChild(container)
+    this.el.appendChild(container);
   }
 
   tableInit(): void {
@@ -326,19 +345,19 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   tableBuilt(): void {
     this.setHidden()
+    this.setSelection()
+
+    // For remote pagination initialize on tableBuilt
     if (this.model.pagination) {
       this.setMaxPage()
       this.tabulator.setPage(this.model.page)
-      this.tabulator.on("dataProcessed", () => {
-        this.tabulator.off("dataProcessed")
-        this.setStyles()
-        setTimeout(() => this.relayout(), 10)
-        this._initializing = false
-      })
-      this.setData()
+      this.setStyles()
+      this.renderChildren()
+      this.tabulator.modules.frozenColumns.active = true
+      this.tabulator.modules.frozenColumns.layout()
+      setTimeout(() => this.relayout(), 10)
+      this._initializing = false
     }
-    this.setSelection()
-    this.renderChildren()
   }
 
   relayout(): void {
@@ -433,6 +452,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         const row = this.tabulator.getRow(r)
         this._render_row(row)
       }
+      if (!this.model.expanded.length && !this._initializing)
+        this.invalidate_layout()
     })
   }
 
@@ -452,8 +473,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const bg = style.backgroundColor
     const neg_margin = "-" + rowEl.style.paddingLeft
     const row_view = div({style: "background-color: " + bg +"; margin-left:" + neg_margin})
+    row.getElement().appendChild(row_view);
+    (view as any)._parent = this
     view.renderTo(row_view)
-    row.getElement().appendChild(row_view)
   }
 
   _expand_render(cell: any): string {
@@ -557,7 +579,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
               return formatted
             const node = div()
             node.innerHTML = formatted
-            return node.children[0].innerHTML
+            const output = node.children[0].innerHTML
+            if (output === "function(){return c.convert(arguments)}") // If the formatter fails
+              return ''
+            return output
           }
         }
       }
@@ -574,7 +599,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         if (editor.completions.length > 0) {
           tab_column.editor = "autocomplete"
           tab_column.editorParams = {values: editor.completions}
-        } else
+      } else
           tab_column.editor = "input"
       } else if (ctype === "TextEditor")
         tab_column.editor = "textarea"

@@ -1,7 +1,7 @@
 import datetime as dt
 import pytest
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 
@@ -24,8 +24,8 @@ from panel.models.tabulator import TableEditEvent
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
-pd_old = pytest.mark.skipif(LooseVersion(pd.__version__) < '1.3',
-                          reason="Requires latest pandas")
+pd_old = pytest.mark.skipif(Version(pd.__version__) < Version('1.3'),
+                            reason="Requires latest pandas")
 
 
 def test_dataframe_widget(dataframe, document, comm):
@@ -207,6 +207,19 @@ def test_hierarchical_index(document, comm):
     assert isinstance(agg2, MinAggregator)
 
 
+def test_table_index_column(document, comm):
+    df = pd.DataFrame({
+        'int': [1, 2, 3],
+        'float': [3.14, 6.28, 9.42],
+        'index': ['A', 'B', 'C'],
+    }, index=[1, 2, 3])
+    table = DataFrame(value=df)
+
+    model = table.get_root(document, comm=comm)
+
+    assert np.array_equal(model.source.data['level_0'], np.array([1, 2, 3]))
+    assert model.columns[0].field == 'level_0'
+    assert model.columns[0].title == ''
 
 
 def test_none_table(document, comm):
@@ -223,6 +236,40 @@ def test_tabulator_selected_dataframe():
     table = Tabulator(df, selection=[0, 2])
 
     pd.testing.assert_frame_equal(table.selected_dataframe, df.iloc[[0, 2]])
+
+
+def test_tabulator_multi_index(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df.set_index(['A', 'C']))
+
+    model = table.get_root()
+
+    assert model.configuration['columns'] == [
+        {'field': 'A'},
+        {'field': 'C'},
+        {'field': 'B'},
+        {'field': 'D'}
+    ]
+
+    assert np.array_equal(model.source.data['A'], np.array([0., 1., 2., 3., 4.]))
+    assert np.array_equal(model.source.data['C'], np.array(['foo1', 'foo2', 'foo3', 'foo4', 'foo5']))
+
+
+def test_tabulator_multi_index_remote_pagination(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df.set_index(['A', 'C']), pagination='remote', page_size=3)
+
+    model = table.get_root()
+
+    assert model.configuration['columns'] == [
+        {'field': 'A'},
+        {'field': 'C'},
+        {'field': 'B'},
+        {'field': 'D'}
+    ]
+
+    assert np.array_equal(model.source.data['A'], np.array([0., 1., 2.]))
+    assert np.array_equal(model.source.data['C'], np.array(['foo1', 'foo2', 'foo3']))
 
 
 def test_tabulator_expanded_content():
@@ -252,6 +299,21 @@ def test_tabulator_expanded_content():
     assert 2 in model.children
     row2 = model.children[2]
     assert row2.text == "&lt;pre&gt;2.0&lt;/pre&gt;"
+
+
+def test_tabulator_index_column(document, comm):
+    df = pd.DataFrame({
+        'int': [1, 2, 3],
+        'float': [3.14, 6.28, 9.42],
+        'index': ['A', 'B', 'C'],
+    }, index=[1, 2, 3])
+    table = Tabulator(value=df)
+
+    model = table.get_root(document, comm=comm)
+
+    assert np.array_equal(model.source.data['level_0'], np.array([1, 2, 3]))
+    assert model.columns[0].field == 'level_0'
+    assert model.columns[0].title == ''
 
 
 def test_tabulator_expanded_content_pagination():
@@ -430,6 +492,23 @@ def test_tabulator_groups(document, comm):
             {'field': 'C'},
             {'field': 'D'}
         ]}
+    ]
+
+
+def test_tabulator_numeric_groups(document, comm):
+    df = pd.DataFrame(np.random.rand(10, 3))
+    table = Tabulator(df, groups={'Number': [0, 1]})
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index'},
+        {'title': 'Number',
+         'columns': [
+            {'field': '0'},
+            {'field': '1'}
+        ]},
+        {'field': '2'}
     ]
 
 

@@ -16,11 +16,10 @@ from collections.abc import MutableSequence, MutableMapping
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
-from distutils.version import LooseVersion
 from functools import partial
 from html import escape # noqa
 from importlib import import_module
-from six import string_types
+from packaging.version import Version
 
 import bokeh
 import param
@@ -28,10 +27,7 @@ import numpy as np
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
-if sys.version_info.major > 2:
-    unicode = str
-
-bokeh_version = LooseVersion(bokeh.__version__)
+bokeh_version = Version(bokeh.__version__)
 
 
 def isfile(path):
@@ -43,7 +39,7 @@ def isfile(path):
 
 
 def isurl(obj, formats):
-    if not isinstance(obj, string_types):
+    if not isinstance(obj, str):
         return False
     lower_string = obj.lower().split('?')[0].split('#')[0]
     return (
@@ -107,31 +103,12 @@ def indexOf(obj, objs):
     raise ValueError('%s not in list' % obj)
 
 
-def as_unicode(obj):
-    """
-    Safely casts any object to unicode including regular string
-    (i.e. bytes) types in python 2.
-    """
-    if sys.version_info.major < 3 and isinstance(obj, str):
-        obj = obj.decode('utf-8')
-    return unicode(obj)
-
-
 def param_name(name):
     """
     Removes the integer id from a Parameterized class name.
     """
     match = re.findall(r'\D+(\d{5,})', name)
     return name[:name.index(match[0])] if match else name
-
-
-def unicode_repr(obj):
-    """
-    Returns a repr without the unicode prefix.
-    """
-    if sys.version_info.major == 2 and isinstance(obj, unicode):
-        return repr(obj)[1:]
-    return repr(obj)
 
 
 def recursive_parameterized(parameterized, objects=None):
@@ -204,7 +181,7 @@ def param_reprs(parameterized, skip=None):
 
         if equal: continue
         elif v is None: continue
-        elif isinstance(v, string_types) and v == '': continue
+        elif isinstance(v, str) and v == '': continue
         elif isinstance(v, list) and v == []: continue
         elif isinstance(v, dict) and v == {}: continue
         elif (skip and p in skip) or (p == 'name' and v.startswith(cls)): continue
@@ -229,10 +206,7 @@ def get_method_owner(meth):
     the class owning the supplied classmethod.
     """
     if inspect.ismethod(meth):
-        if sys.version_info < (3,0):
-            return meth.im_class if meth.im_self is None else meth.im_self
-        else:
-            return meth.__self__
+        return meth.__self__
 
 
 def is_parameterized(obj):

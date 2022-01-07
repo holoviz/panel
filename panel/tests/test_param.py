@@ -1237,6 +1237,7 @@ def test_numberinput_bounds():
     assert numinput.start == 0
     assert numinput.end == 5
 
+
 def test_set_widget_autocompleteinput(document, comm):
 
     class Test(param.Parameterized):
@@ -1264,6 +1265,7 @@ def test_set_widget_autocompleteinput(document, comm):
     assert autocompleteinput.completions == ['c', 'd']
     assert autocompleteinput.value == ''
 
+
 def test_set_widget_autocompleteinput_empty_objects(document, comm):
 
     class Test(param.Parameterized):
@@ -1281,3 +1283,30 @@ def test_set_widget_autocompleteinput_empty_objects(document, comm):
     assert autocompleteinput.completions == ['']
     assert autocompleteinput.value == ''
     assert autocompleteinput.disabled == False
+
+
+def test_sorted():
+    class MyClass(param.Parameterized):
+        valueb = param.Integer(label="zzz")
+        valuez = param.String(label="aaa")
+        valuea = param.Integer(label="bbb")
+
+    my_class = MyClass()
+    _, input1, input2, input3 = Param(my_class, sort=True)
+    assert input1.name=="aaa"
+    assert input2.name=="bbb"
+    assert input3.name=="zzz"
+
+def test_sorted_func():
+    class MyClass(param.Parameterized):
+        valueb = param.Integer(label="bac")
+        valuez = param.String(label="acb")
+        valuea = param.Integer(label="cba")
+
+    my_class = MyClass()
+    def sort_func(x):
+        return x[1].label[::-1]
+    _, input1, input2, input3 = Param(my_class, sort=sort_func)
+    assert input1.name=="cba"
+    assert input2.name=="acb"
+    assert input3.name=="bac"

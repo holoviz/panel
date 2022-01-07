@@ -6,7 +6,6 @@ import base64
 from pathlib import PurePath
 
 from io import BytesIO
-from six import string_types
 
 import param
 
@@ -29,7 +28,7 @@ class FileBase(DivPaneBase):
         super().__init__(object=object, **params)
 
     def _type_error(self, object):
-        if isinstance(object, string_types):
+        if isinstance(object, str):
             raise ValueError("%s pane cannot parse string that is not a filename "
                              "or URL." % type(self).__name__)
         super()._type_error(object)
@@ -39,13 +38,19 @@ class FileBase(DivPaneBase):
         filetype = cls.filetype
         if hasattr(obj, '_repr_{}_'.format(filetype)):
             return True
-        if isinstance(obj, string_types):
+        if isinstance(obj, str):
             if isfile(obj) and obj.endswith('.'+filetype):
                 return True
             if isurl(obj, [cls.filetype]):
                 return True
             elif isurl(obj, None):
                 return 0
+        elif isinstance(obj, bytes):
+            try:
+                cls._imgshape(obj)
+                return True
+            except Exception:
+                return False
         if hasattr(obj, 'read'):  # Check for file like object
             return True
         return False
@@ -53,10 +58,12 @@ class FileBase(DivPaneBase):
     def _data(self):
         if hasattr(self.object, '_repr_{}_'.format(self.filetype)):
             return getattr(self.object, '_repr_' + self.filetype + '_')()
-        if isinstance(self.object, string_types):
+        if isinstance(self.object, str):
             if isfile(self.object):
                 with open(self.object, 'rb') as f:
                     return f.read()
+        elif isinstance(self.object, bytes):
+            return self.object
         if hasattr(self.object, 'read'):
             if hasattr(self.object, 'seek'):
                 self.object.seek(0)
@@ -224,16 +231,16 @@ class SVG(ImageBase):
     @classmethod
     def applies(cls, obj):
         return (super().applies(obj) or
-                (isinstance(obj, string_types) and obj.lstrip().startswith('<svg')))
+                (isinstance(obj, str) and obj.lstrip().startswith('<svg')))
 
     def _type_error(self, object):
-        if isinstance(object, string_types):
+        if isinstance(object, str):
             raise ValueError("%s pane cannot parse string that is not a filename, "
                              "URL or a SVG XML contents." % type(self).__name__)
         super()._type_error(object)
 
     def _data(self):
-        if (isinstance(self.object, string_types) and
+        if (isinstance(self.object, str) and
             self.object.lstrip().startswith('<svg')):
             return self.object
         return super()._data()

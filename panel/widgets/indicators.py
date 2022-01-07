@@ -714,8 +714,9 @@ class ptqdm(_tqdm):
     def display(self, msg=None, pos=None, bar_style=None):
         super().display(msg, pos)
         style = self._indicator.text_pane.style or {}
-        color = self.colour or 'black'
-        self._indicator.text_pane.style = dict(style, color=color)
+        if not "color" in style:
+            color = self.colour or 'black'
+            self._indicator.text_pane.style = dict(style, color=color)
         if self.total is not None and self.n is not None:
             self._indicator.max = int(self.total) # Can be numpy.int64
             self._indicator.value = int(self.n)

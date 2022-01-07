@@ -73,7 +73,7 @@ export class CachedVariadicBox extends VariadicBox {
     const min_count = (!this.changed || (this.sizing_mode == 'fixed') || (this.sizing_mode == null)) ? 0 : 1;
     const cached = this._cache.get(key_str);
     const cache_count = this._cache_count.get(key_str)
-    if (cached != null && cache_count != null && (cache_count >= min_count)) {
+    if (cached != null && cache_count != null && (cache_count >= min_count) && (isFinite(viewport.width)) && (isFinite(viewport.height))) {
       this._cache_count.set(key_str, cache_count + 1);
       return cached
     }

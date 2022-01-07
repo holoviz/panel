@@ -13,7 +13,6 @@ import types
 from collections import OrderedDict
 from inspect import getcallargs
 from numbers import Real, Integral
-from six import string_types
 
 try:  # Python >= 3.3
     from inspect import signature, Parameter
@@ -37,7 +36,6 @@ import param
 from .layout import Panel, Column, Row
 from .pane import PaneBase, HTML, panel
 from .pane.base import ReplacementPane
-from .util import as_unicode
 from .viewable import Viewable
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
                       Select, DiscreteSlider, Button)
@@ -301,8 +299,8 @@ class interactive(PaneBase):
     @staticmethod
     def widget_from_single_value(o, name):
         """Make widgets from single values, which can be used as parameter defaults."""
-        if isinstance(o, string_types):
-            return TextInput(value=as_unicode(o), name=name)
+        if isinstance(o, str):
+            return TextInput(value=str(o), name=name)
         elif isinstance(o, bool):
             return Checkbox(value=o, name=name)
         elif isinstance(o, Integral):

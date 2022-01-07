@@ -1,10 +1,10 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import pytest
 
 try:
     import altair as alt
-    altair_version = LooseVersion(alt.__version__)
+    altair_version = Version(alt.__version__)
 except Exception:
     alt = None
 
@@ -216,7 +216,7 @@ def test_altair_pane(document, comm):
     assert isinstance(model, VegaPlot)
 
     expected = dict(vega_example, data={})
-    if altair_version >= '4.0.0':
+    if altair_version >= Version('4.0.0'):
         expected['config'] = vega4_config
     assert dict(model.data, **blank_schema) == dict(expected, **blank_schema)
 
@@ -229,7 +229,7 @@ def test_altair_pane(document, comm):
     chart.data.values[0]['x'] = 'C'
     pane.object = chart
     point_example = dict(vega_example, mark='point')
-    if altair_version >= '4.0.0':
+    if altair_version >= Version('4.0.0'):
         point_example['config'] = vega4_config
     assert dict(model.data, **blank_schema) == dict(point_example, **blank_schema)
     cds_data = model.data_sources['data'].data

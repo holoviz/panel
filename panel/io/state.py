@@ -67,7 +67,8 @@ class _state(param.Parameterized):
     _hold = False
 
     # Used to ensure that events are not scheduled from the wrong thread
-    _thread_id = None
+    _thread_id_ = WeakKeyDictionary()
+    _thread_pool = None
 
     _comm_manager = _CommManager
 
@@ -118,6 +119,14 @@ class _state(param.Parameterized):
         if not server_info:
             return "state(servers=[])"
         return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
+
+    @property
+    def _thread_id(self):
+        return self._thread_id_.get(self.curdoc) if self.curdoc else None
+
+    @_thread_id.setter
+    def _thread_id(self, thread_id):
+        self._thread_id_[self.curdoc] = thread_id
 
     def _unblocked(self, doc):
         thread = threading.current_thread()
@@ -252,6 +261,12 @@ class _state(param.Parameterized):
             callback=callback, period=period, count=count, timeout=timeout
         )
         if start:
+            if self._thread_id is not None:
+                thread = threading.current_thread()
+                thread_id = thread.ident if thread else None
+                if self._thread_id != thread_id:
+                    self.curdoc.add_next_tick_callback(cb.start)
+                    return cb
             cb.start()
         return cb
 

@@ -1,6 +1,4 @@
 import os
-import sys
-import pytest
 
 from base64 import b64decode, b64encode
 from pathlib import Path
@@ -77,7 +75,6 @@ def test_load_from_byteio():
     image_data = image_pane._data()
     assert b'PNG' in image_data
 
-@pytest.mark.skipif(sys.version_info.major <= 2, reason="Doesn't work with python 2")
 def test_load_from_stringio():
     """Testing a loading a image from a StringIO"""
     memory = StringIO()
@@ -98,6 +95,14 @@ def test_loading_a_image_from_url():
     image_data = image_pane._data()
     assert b'PNG' in image_data
 
+def test_image_from_bytes():
+    path = os.path.dirname(__file__)
+    with open(os.path.join(path, '../test_data/logo.png'), 'rb') as f:
+        img = f.read()
+
+    image_pane = PNG(img)
+    image_data = image_pane._data()
+    assert b'PNG' in image_data
 
 def test_loading_a_image_from_pathlib():
     """Tests the loading of a image from a pathlib"""
@@ -106,7 +111,6 @@ def test_loading_a_image_from_pathlib():
     image_pane = PNG(filepath)
     image_data = image_pane._data()
     assert b'PNG' in image_data
-
 
 def test_image_alt_text(document, comm):
     """Tests the loading of a image from a url"""

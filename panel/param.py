@@ -2,22 +2,23 @@
 Defines the Param pane which converts Parameterized classes into a
 set of widgets.
 """
-import os
-import sys
-import json
-import types
 import inspect
 import itertools
+import json
+import os
+import types
 
+from collections.abc import Callable
 from collections import OrderedDict, defaultdict, namedtuple
 from contextlib import contextmanager
-from six import string_types
+from functools import partial
 
 import param
 
 from param.parameterized import classlist, discard_events
 
 from .io import init_doc, state
+from .io.server import async_execute
 from .layout import Column, Panel, Row, Spacer, Tabs
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
@@ -136,6 +137,12 @@ class Param(PaneBase):
     show_name = param.Boolean(default=True, doc="""
         Whether to show the parameterized object's name""")
 
+    sort = param.ClassSelector(default=False, class_=(bool, Callable), doc="""
+        If True the widgets will be sorted alphabetically by label.
+        If a callable is provided it will be used to sort the Parameters,
+        for example lambda x: x[1].label[::-1] will sort by the reversed
+        label.""")
+
     width = param.Integer(default=300, allow_None=True, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
 
@@ -229,7 +236,7 @@ class Param(PaneBase):
         for p, v in sorted(self.param.values().items()):
             if v is self.param[p].default: continue
             elif v is None: continue
-            elif isinstance(v, string_types) and v == '': continue
+            elif isinstance(v, str) and v == '': continue
             elif p == 'object' or (p == 'name' and (v.startswith(obj_cls) or v.startswith(cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:
@@ -257,7 +264,7 @@ class Param(PaneBase):
                     # Setting object will trigger this method a second time
                     self.object = event.new.cls if event.new.self is None else event.new.self
                     return
-                
+
                 if self._explicit_parameters:
                     parameters = self.parameters
                 elif event.new is None:
@@ -571,14 +578,21 @@ class Param(PaneBase):
     def _ordered_params(self):
         params = [(p, pobj) for p, pobj in self.object.param.objects('existing').items()
                   if p in self.parameters or p == 'name']
+        if self.sort:
+            if callable(self.sort):
+                key_fn = self.sort
+            else:
+                key_fn = lambda x: x[1].label
+            sorted_params = sorted(params, key=key_fn)
+            sorted_params = [el[0] for el in sorted_params if (el[0] != 'name' or el[0] in self.parameters)]
+            return sorted_params
+
         key_fn = lambda x: x[1].precedence if x[1].precedence is not None else self.default_precedence
         sorted_precedence = sorted(params, key=key_fn)
         filtered = [(k, p) for k, p in sorted_precedence]
         groups = itertools.groupby(filtered, key=key_fn)
         # Params preserve definition order in Python 3.6+
-        dict_ordered_py3 = (sys.version_info.major == 3 and sys.version_info.minor >= 6)
-        dict_ordered = dict_ordered_py3 or (sys.version_info.major > 3)
-        ordered_groups = [list(grp) if dict_ordered else sorted(grp) for (_, grp) in groups]
+        ordered_groups = [list(grp) for (_, grp) in groups]
         ordered_params = [el[0] for group in ordered_groups for el in group
                           if (el[0] != 'name' or el[0] in self.parameters)]
         return ordered_params
@@ -607,7 +621,7 @@ class Param(PaneBase):
                 watchers.append(w)
         self._widgets[p_name] = self.widget(p_name)
         self._rerender()
-    
+
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
         # Format name specially
@@ -748,6 +762,13 @@ class ParamMethod(ReplacementPane):
                 kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
         return function(*args, **kwargs)
 
+    async def _eval_async(self, awaitable):
+        try:
+            new_object = await awaitable
+            self._update_inner(new_object)
+        finally:
+            self._inner_layout.loading = False
+
     def _replace_pane(self, *args, force=False):
         self._evaled = bool(self._models) or force or not self.lazy
         if self._evaled:
@@ -757,6 +778,9 @@ class ParamMethod(ReplacementPane):
                     new_object = Spacer()
                 else:
                     new_object = self.eval(self.object)
+                if inspect.isawaitable(new_object):
+                    async_execute(partial(self._eval_async, new_object))
+                    return
                 self._update_inner(new_object)
             finally:
                 self._inner_layout.loading = False

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Defines a FileSelector widget which allows selecting files and
 directories on the server.

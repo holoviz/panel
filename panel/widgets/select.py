@@ -18,7 +18,7 @@ from bokeh.models.widgets import (
 
 from ..layout import Column, VSpacer
 from ..models import SingleSelect as _BkSingleSelect
-from ..util import as_unicode, isIn, indexOf
+from ..util import isIn, indexOf
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
 from .input import TextInput, TextAreaInput
@@ -32,7 +32,7 @@ class SelectBase(Widget):
 
     @property
     def labels(self):
-        return [as_unicode(o) for o in self.options]
+        return [str(o) for o in self.options]
 
     @property
     def values(self):
@@ -95,7 +95,7 @@ class SingleSelectBase(SelectBase):
 
     @property
     def unicode_values(self):
-        return [as_unicode(v) for v in self.values]
+        return [str(v) for v in self.values]
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -175,18 +175,18 @@ class Select(SingleSelectBase):
                 if isinstance(next(iter(self.groups.values())), dict):
                     if unique:
                         options = {
-                            group: [(as_unicode(value), label) for label, value in subd.items()]
+                            group: [(str(value), label) for label, value in subd.items()]
                             for group, subd in groups.items()
                         }
                     else:
                         options = {
-                            group: [as_unicode(v) for v in self.groups[group]]
+                            group: [str(v) for v in self.groups[group]]
                             for group in groups.keys()
                         }
                     msg['options'] = options
                 else:
                     msg['options'] = {
-                        group: [(as_unicode(value), as_unicode(value)) for value in values]
+                        group: [(str(value), str(value)) for value in values]
                         for group, values in groups.items()
                     }
             val = self.value
@@ -205,7 +205,7 @@ class Select(SingleSelectBase):
             if not self.groups:
                 return {}
             else:
-                return list(map(as_unicode, itertools.chain(*self.groups.values())))
+                return list(map(str, itertools.chain(*self.groups.values())))
 
     @property
     def values(self):
@@ -410,7 +410,7 @@ class _CheckGroupBase(SingleSelectBase):
     __abstract = True
 
     def _process_param_change(self, msg):
-        msg = super(SingleSelectBase, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         values = self.values
         if 'active' in msg:
             msg['active'] = [indexOf(v, values) for v in msg['active']
@@ -419,6 +419,8 @@ class _CheckGroupBase(SingleSelectBase):
             msg['labels'] = self.labels
             if any(not isIn(v, values) for v in self.value):
                 self.value = [v for v in self.value if isIn(v, values)]
+            msg["active"] = [indexOf(v, values) for v in self.value
+                             if isIn(v, values)]
         msg.pop('title', None)
         return msg
 

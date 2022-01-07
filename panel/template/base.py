@@ -16,7 +16,6 @@ from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
 from bokeh.settings import settings as _settings
 from jinja2.environment import Template as _Template
-from six import string_types
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
 from ..config import _base_config, config, panel_extension
@@ -59,13 +58,13 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
     def __init__(self, template=None, items=None, nb_template=None, **params):
         super().__init__(**params)
-        if isinstance(template, string_types):
+        if isinstance(template, str):
             self._code = template
             template = _Template(template)
         else:
             self._code = None
         self.template = template
-        if isinstance(nb_template, string_types):
+        if isinstance(nb_template, str):
             nb_template = _Template(nb_template)
         self.nb_template = nb_template or template
         self._render_items = OrderedDict()
@@ -335,7 +334,9 @@ class TemplateActions(ReactiveHTML):
 
     close_modal = param.Integer(default=0)
 
-    _template = "<div></div>"
+    margin = param.Integer(default=0)
+
+    _template = ""
 
     _scripts = {
         'open_modal': ["document.getElementById('pn-Modal').style.display = 'block'"],
@@ -616,7 +617,7 @@ class BasicTemplate(BaseTemplate):
                     if (BUNDLE_DIR / name / basename).is_file():
                         css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
                     else:
-                        with open(theme.base_css, encoding='utf-8') as f:
+                        with open(theme.css, encoding='utf-8') as f:
                             raw_css.append(f.read())
 
         return {

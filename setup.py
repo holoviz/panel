@@ -142,7 +142,7 @@ extras_require = {
         'scikit-learn',
         'datashader',
         'jupyter_bokeh >=3.0.2',
-        'django',
+        'django <4',
         'channels',
         'pyvista',
         'ipywidgets',
@@ -150,7 +150,8 @@ extras_require = {
         'ipyvolume',
         'ipyleaflet',
         'xarray',
-        'pyinstrument >=4.0'
+        'pyinstrument >=4.0',
+        'aiohttp'
     ],
     'tests': _tests,
     'recommended': _recommended,
