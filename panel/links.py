@@ -50,7 +50,6 @@ PARAM_MAPPING = {
         if isinstance(p.class_, type) and issubclass(p.class_, param.Parameterized) else
         bp.Any(**kwargs)
     ),
-    pm.Color: lambda p, kwargs: bp.Color(**kwargs),
     pm.DataFrame: lambda p, kwargs: (
         bp.ColumnData(bp.Any, bp.Seq(bp.Any), **kwargs),
         [(bp.PandasDataFrame, lambda x: ColumnDataSource._data_from_df(x))]
@@ -67,6 +66,18 @@ PARAM_MAPPING = {
     pm.String: lambda p, kwargs: bp.String(**kwargs),
     pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in p.length), **kwargs),
 }
+
+
+# The Bokeh Color property has `_default_help` set which causes
+# an error to be raise when Nullable is called on it. This converter
+# overrides the Bokeh _help to set it to None and avoid the error.
+# See https://github.com/holoviz/panel/issues/3058
+def color_param_to_ppt(p, kwargs):
+    ppt = bp.Color(**kwargs)
+    ppt._help = None
+    return ppt
+
+PARAM_MAPPING[pm.Color] = color_param_to_ppt
 
 
 def construct_data_model(parameterized, name=None, ignore=[], types={}):
