@@ -1,3 +1,4 @@
+import {Patch} from "@bokehjs/document"
 import * as p from "@bokehjs/core/properties"
 import {View} from "@bokehjs/core/view"
 import {copy} from "@bokehjs/core/util/array"
@@ -52,7 +53,7 @@ export class State extends Model {
     this._receiver.consume(state.metadata)
     this._receiver.consume(state.content)
     if (this._receiver.message && this.document) {
-      this.document.apply_json_patch(this._receiver.message.content)
+      this.document.apply_json_patch(this._receiver.message.content as Patch)
     }
   }
 
