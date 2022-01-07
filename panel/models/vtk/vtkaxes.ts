@@ -38,17 +38,17 @@ export class VTKAxes extends Model {
   static __module__ = "panel.models.vtk"
 
   static init_VTKAxes(): void {
-    this.define<VTKAxes.Props>({
-      origin: [p.Array],
-      xticker: [p.Instance],
-      yticker: [p.Instance],
-      zticker: [p.Instance],
-      digits: [p.Number, 1],
-      show_grid: [p.Boolean, true],
-      grid_opacity: [p.Number, 0.1],
-      axes_opacity: [p.Number, 1],
-      fontsize: [p.Number, 12],
-    })
+    this.define<VTKAxes.Props>(({Any, Array, Boolean, Number}) => ({
+      origin: [Array(Number)],
+      xticker: [Any],
+      yticker: [Any],
+      zticker: [Any],
+      digits: [Number, 1],
+      show_grid: [Boolean, true],
+      grid_opacity: [Number, 0.1],
+      axes_opacity: [Number, 1],
+      fontsize: [Number, 12]
+    }))
   }
 
   get xticks(): number[] {

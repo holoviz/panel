@@ -212,25 +212,25 @@ export class SpeechToText extends HTMLBox {
   static init_SpeechToText(): void {
     this.prototype.default_view = SpeechToTextView
 
-    this.define<SpeechToText.Props>({
-      start: [ p.Boolean, false   ],
-      stop: [ p.Boolean, false   ],
-      abort: [ p.Boolean, false   ],
-      grammars: [p.Array, []],
-      lang: [p.String, ""],
-      continuous: [ p.Boolean,   false ],
-      interim_results: [ p.Boolean,   false ],
-      max_alternatives: [ p.Number,   1 ],
-      service_uri: [p.String, ],
-      started: [ p.Boolean,   false ],
-      audio_started: [ p.Boolean,   false ],
-      sound_started: [ p.Boolean,   false ],
-      speech_started: [ p.Boolean,   false ],
-      button_type: [p.String, 'light'],
-      button_hide: [ p.Boolean,   false ],
-      button_not_started: [ p.String,   '' ],
-      button_started: [ p.String,   '' ],
-      results: [ p.Array, []],
-    })
+    this.define<SpeechToText.Props>(({Array, Boolean, Number, String}) => ({
+      start: [ Boolean, false   ],
+      stop: [ Boolean, false   ],
+      abort: [ Boolean, false   ],
+      grammars: [Array(String), []],
+      lang: [String, ""],
+      continuous: [ Boolean,   false ],
+      interim_results: [ Boolean,   false ],
+      max_alternatives: [ Number,   1 ],
+      service_uri: [String, ],
+      started: [ Boolean,   false ],
+      audio_started: [ Boolean,   false ],
+      sound_started: [ Boolean,   false ],
+      speech_started: [ Boolean,   false ],
+      button_type: [String, 'light'],
+      button_hide: [ Boolean,   false ],
+      button_not_started: [ String,   '' ],
+      button_started: [ String,   '' ],
+      results: [ Array(String), []],
+    }))
   }
 }
