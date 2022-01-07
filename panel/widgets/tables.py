@@ -1470,22 +1470,20 @@ class Tabulator(BaseTable):
         button: Button
             The Button that triggers a download.
         """
-        button_kwargs = dict(button_kwargs)
-        if 'name' not in button_kwargs:
-            button_kwargs['name'] = 'Download'
-        button = Button(**button_kwargs)
-        button.js_on_click({'table': self}, code="""
-        table.download = !table.download
-        """)
-
         text_kwargs = dict(text_kwargs)
         if 'name' not in text_kwargs:
             text_kwargs['name'] = 'Filename'
         if 'value' not in text_kwargs:
             text_kwargs['value'] = 'table.csv'
         filename = TextInput(**text_kwargs)
-        filename.jscallback({'table': self}, value="""
-        table.filename = cb_obj.value
+
+        button_kwargs = dict(button_kwargs)
+        if 'name' not in button_kwargs:
+            button_kwargs['name'] = 'Download'
+        button = Button(**button_kwargs)
+        button.js_on_click({'table': self, 'filename': filename}, code="""
+        table.filename = filename.value
+        table.download = !table.download
         """)
         return filename, button
 
