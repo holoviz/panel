@@ -158,8 +158,7 @@ class Resources(BkResources):
             kwargs['root_url'] = bkr.root_url
         return cls(
             mode=bkr.mode, version=bkr.version, minified=bkr.minified,
-            legacy=bkr.legacy, log_level=bkr.log_level,
-            path_versioner=bkr.path_versioner,
+            log_level=bkr.log_level, path_versioner=bkr.path_versioner,
             components=bkr._components, base_dir=bkr.base_dir,
             root_dir=bkr.root_dir, **kwargs
         )
