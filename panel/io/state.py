@@ -192,8 +192,8 @@ class _state(param.Parameterized):
         return link
 
     def _schedule_on_load(self, event):
-        if state._thread_pool:
-            state._thread_pool.submit(self._on_load, self.curdoc)
+        if self._thread_pool:
+            self._thread_pool.submit(self._on_load, self.curdoc)
         else:
             self._on_load()
 
@@ -342,7 +342,10 @@ class _state(param.Parameterized):
         Callback that is triggered when a session has been served.
         """
         if self.curdoc is None:
-            callback()
+            if self._thread_pool:
+                self._thread_pool.submit(callback)
+            else:
+                callback()
             return
         if self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
