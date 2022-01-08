@@ -7,6 +7,7 @@ import json
 import threading
 
 from collections import OrderedDict, defaultdict
+from contextlib import contextmanager
 from weakref import WeakKeyDictionary, WeakSet
 from urllib.parse import urljoin
 
@@ -22,6 +23,13 @@ from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
 
+
+@contextmanager
+def set_curdoc(doc):
+    orig_doc = state._curdoc
+    state.curdoc = doc
+    yield
+    state.curdoc = orig_doc
 
 
 class _state(param.Parameterized):
@@ -183,21 +191,29 @@ class _state(param.Parameterized):
                             del _updating[id(obj)]
         return link
 
-    def _on_load(self, event):
-        callbacks = self._onload.pop(self.curdoc, [])
+    def _schedule_on_load(self, event):
+        if state._thread_pool:
+            state._thread_pool.submit(self._on_load, self.curdoc)
+        else:
+            self._on_load()
+
+    def _on_load(self, doc=None):
+        doc = doc or self.curdoc
+        callbacks = self._onload.pop(doc, [])
         if not callbacks:
             return
 
         from ..config import config
         from .profile import profile_ctx
-        if (self.curdoc and self.curdoc in self._launching) or not config.profiler:
-            for cb in callbacks: cb()
-            return
-        with profile_ctx(config.profiler) as sessions:
-            for cb in callbacks: cb()
-        path = self.curdoc.session_context.request.path
-        self._profiles[(path+':on_load', config.profiler)] += sessions
-        self.param.trigger('_profiles')
+        with set_curdoc(doc):
+            if (doc and doc in self._launching) or not config.profiler:
+                for cb in callbacks: cb()
+                return
+            with profile_ctx(config.profiler) as sessions:
+                for cb in callbacks: cb()
+            path = doc.session_context.request.path
+            self._profiles[(path+':on_load', config.profiler)] += sessions
+            self.param.trigger('_profiles')
 
     #----------------------------------------------------------------
     # Public Methods
@@ -330,7 +346,7 @@ class _state(param.Parameterized):
             return
         if self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
-            self.curdoc.on_event('document_ready', self._on_load)
+            self.curdoc.on_event('document_ready', self._schedule_on_load)
         self._onload[self.curdoc].append(callback)
 
     def on_session_created(self, callback):
