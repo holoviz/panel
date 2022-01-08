@@ -371,3 +371,38 @@ def test_server_thread_pool_periodic(threads):
 
     # Checks whether periodic callbacks were executed concurrently
     assert max(counts) >= 2
+
+
+def test_server_thread_pool_onload(threads):
+    counts = []
+
+    def app(count=[0]):
+        button = Button(name='Click')
+        def onload():
+            count[0] += 1
+            counts.append(count[0])
+            time.sleep(2)
+            count[0] -= 1
+
+        state.onload(onload)
+
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(None)
+        state.curdoc.add_next_tick_callback(loaded)
+
+        return button
+
+    port = 6013
+    serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}/")
+    requests.get(f"http://localhost:{port}/")
+
+    time.sleep(1)
+
+    # Checks whether onload callbacks were executed concurrently
+    assert max(counts) >= 2
