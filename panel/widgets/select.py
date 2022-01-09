@@ -377,6 +377,10 @@ class _RadioGroupBase(SingleSelectBase):
 
 class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
 
+    orientation = param.Selector(default='horizontal',
+        objects=['horizontal', 'vertical'], doc="""
+        Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+
     _widget_type = _BkRadioButtonGroup
 
     _supports_embed = True
@@ -434,6 +438,10 @@ class _CheckGroupBase(SingleSelectBase):
 
 
 class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
+
+    orientation = param.Selector(default='horizontal',
+        objects=['horizontal', 'vertical'], doc="""
+        Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
     _widget_type = _BkCheckboxButtonGroup
 
