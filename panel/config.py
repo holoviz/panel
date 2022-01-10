@@ -351,7 +351,8 @@ class _config(_base_config):
 
     @property
     def nthreads(self):
-        return int(os.environ.get('PANEL_NUM_THREADS', self._nthreads))
+        nthreads = os.environ.get('PANEL_NUM_THREADS', self._nthreads)
+        return None if nthreads is None else int(nthreads) 
 
     @property
     def oauth_provider(self):
