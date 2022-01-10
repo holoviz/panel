@@ -322,7 +322,7 @@ class _config(_base_config):
 
     @property
     def comms(self):
-        return os.environ.get('PANEL_COMMS', _config._comms)
+        return os.environ.get('PANEL_COMMS', self._comms)
 
     @property
     def embed_json(self):
@@ -356,47 +356,47 @@ class _config(_base_config):
 
     @property
     def oauth_provider(self):
-        provider = os.environ.get('PANEL_OAUTH_PROVIDER', _config._oauth_provider)
+        provider = os.environ.get('PANEL_OAUTH_PROVIDER', self._oauth_provider)
         return provider.lower() if provider else None
 
     @property
     def oauth_expiry(self):
-        provider = os.environ.get('PANEL_OAUTH_EXPIRY', _config._oauth_expiry)
+        provider = os.environ.get('PANEL_OAUTH_EXPIRY', self._oauth_expiry)
         return float(provider)
 
     @property
     def oauth_key(self):
-        return os.environ.get('PANEL_OAUTH_KEY', _config._oauth_key)
+        return os.environ.get('PANEL_OAUTH_KEY', self._oauth_key)
 
     @property
     def cookie_secret(self):
         return os.environ.get(
             'PANEL_COOKIE_SECRET',
-            os.environ.get('BOKEH_COOKIE_SECRET', _config._cookie_secret)
+            os.environ.get('BOKEH_COOKIE_SECRET', self._cookie_secret)
         )
 
     @property
     def oauth_secret(self):
-        return os.environ.get('PANEL_OAUTH_SECRET', _config._oauth_secret)
+        return os.environ.get('PANEL_OAUTH_SECRET', self._oauth_secret)
 
     @property
     def oauth_redirect_uri(self):
-        return os.environ.get('PANEL_OAUTH_REDIRECT_URI', _config._oauth_redirect_uri)
+        return os.environ.get('PANEL_OAUTH_REDIRECT_URI', self._oauth_redirect_uri)
 
     @property
     def oauth_jwt_user(self):
-        return os.environ.get('PANEL_OAUTH_JWT_USER', _config._oauth_jwt_user)
+        return os.environ.get('PANEL_OAUTH_JWT_USER', self._oauth_jwt_user)
 
     @property
     def oauth_encryption_key(self):
-        return os.environ.get('PANEL_OAUTH_ENCRYPTION', _config._oauth_encryption_key)
+        return os.environ.get('PANEL_OAUTH_ENCRYPTION', self._oauth_encryption_key)
 
     @property
     def oauth_extra_params(self):
         if 'PANEL_OAUTH_EXTRA_PARAMS' in os.environ:
             return ast.literal_eval(os.environ['PANEL_OAUTH_EXTRA_PARAMS'])
         else:
-            return _config._oauth_extra_params
+            return self._oauth_extra_params
 
 
 if hasattr(_config.param, 'objects'):
