@@ -126,13 +126,10 @@ class _config(_base_config):
     theme = param.ObjectSelector(default='default', objects=['default', 'dark'], doc="""
         The theme to apply to the selected global template.""")
 
-    nthreads = param.Integer(default=None, doc="""
-        When set to a non-None value a thread pool will be started.
-        Whenever an event arrives from the frontend it will be
-        dispatched to the thread pool to be processed.""")
-
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
+
+    _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
 
     _comms = param.ObjectSelector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
@@ -167,6 +164,11 @@ class _config(_base_config):
         default='WARNING', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of Panel loggers")
 
+    _nthreads = param.Integer(default=None, doc="""
+        When set to a non-None value a thread pool will be started.
+        Whenever an event arrives from the frontend it will be
+        dispatched to the thread pool to be processed.""")
+
     _oauth_provider = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
         Select between a list of authentification providers.""")
@@ -196,7 +198,12 @@ class _config(_base_config):
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
-    _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
+    _globals = [
+        'autoreload', 'comms', 'cookie_secret', 'nthreads',
+        'oauth_provider', 'oauth_expiry', 'oauth_key', 'oauth_secret',
+        'oauth_jwt_user', 'oauth_redirect_uri','oauth_encryption_key',
+        'oauth_extra_params'
+    ]
 
     _truthy = ['True', 'true', '1', True, 1]
 
@@ -206,12 +213,12 @@ class _config(_base_config):
         super().__init__(**params)
         self._validating = False
         for p in self.param:
-            if p.startswith('_'):
+            if p.startswith('_') and p[1:] not in self._globals:
                 setattr(self, p+'_', None)
         if self.log_level:
             panel_log_handler.setLevel(self.log_level)
 
-    @param.depends('nthreads', watch=True)
+    @param.depends('_nthreads', watch=True, on_init=True)
     def _set_thread_pool(self):
         from .io.state import state
         if self.nthreads is None:
@@ -227,7 +234,10 @@ class _config(_base_config):
     @contextmanager
     def set(self, **kwargs):
         values = [(k, v) for k, v in self.param.values().items() if k != 'name']
-        overrides = [(k, getattr(self, k+'_')) for k in self.param if k.startswith('_')]
+        overrides = [
+            (k, getattr(self, k+'_')) for k in self.param
+            if k.startswith('_') and k[1:] not in self._globals
+        ]
         for k, v in kwargs.items():
             setattr(self, k, v)
         try:
@@ -242,7 +252,9 @@ class _config(_base_config):
         if not getattr(self, 'initialized', False) or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
             return super().__setattr__(attr, value)
         value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
-        if state.curdoc is not None:
+        if attr in self._globals:
+            super().__setattr__(attr if attr in self.param else f'_{attr}', value)
+        elif state.curdoc is not None:
             if attr in self.param:
                 validate_config(self, attr, value)
             elif f'_{attr}' in self.param:
@@ -265,6 +277,7 @@ class _config(_base_config):
     def __getattribute__(self, attr):
         from .io.state import state
         init = super().__getattribute__('initialized')
+        global_params = super().__getattribute__('_globals')
         if init and not attr.startswith('__'):
             params = super().__getattribute__('param')
         else:
@@ -276,7 +289,9 @@ class _config(_base_config):
             state.curdoc and attr not in session_config[state.curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
-        if state.curdoc and state.curdoc in session_config and attr in session_config[state.curdoc]:
+        if attr in global_params:
+            return super().__getattribute__(attr)
+        elif state.curdoc and state.curdoc in session_config and attr in session_config[state.curdoc]:
             return session_config[state.curdoc][attr]
         elif f'_{attr}' in params and getattr(self, f'_{attr}_') is not None:
             return super().__getattribute__(f'_{attr}_')
@@ -333,6 +348,10 @@ class _config(_base_config):
     def log_level(self):
         log_level = os.environ.get('PANEL_LOG_LEVEL', self._log_level)
         return log_level.upper() if log_level else None
+
+    @property
+    def nthreads(self):
+        return int(os.environ.get('PANEL_NUM_THREADS', self._nthreads))
 
     @property
     def oauth_provider(self):
