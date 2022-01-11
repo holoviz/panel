@@ -21,6 +21,7 @@ from pyviz_comms import JupyterCommManager as _JupyterCommManager
 from ..config import _base_config, config, panel_extension
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
+from ..io.notifications import NotificationArea
 from ..io.resources import CDN_DIST, LOCAL_DIST, BUNDLE_DIR
 from ..io.save import save
 from ..io.state import state
@@ -372,6 +373,10 @@ class BasicTemplate(BaseTemplate):
         The maximum width of the main area. For example '800px' or '80%'.
         If the string is '' (default) no max width is set.""")
 
+    notifications = param.ClassSelector(default=NotificationArea(),
+        class_=NotificationArea, constant=True, doc="""
+        A Notifications instance which allows displaying toasts inside the template.""")
+
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
 
@@ -489,10 +494,12 @@ class BasicTemplate(BaseTemplate):
             params['favicon'] = str(params['favicon'])
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
-        if '{{ embed(roots.js_area) }}' in template:
+        if 'embed(roots.js_area)' in template:
             self._render_items['js_area'] = (self._js_area, [])
-        if '{{ embed(roots.actions) }}' in template:
+        if 'embed(roots.actions)' in template:
             self._render_items['actions'] = (self._actions, [])
+        if 'embed(roots.notifications)' in template:
+            self._render_items['notifications'] = (self.notifications, [])
         self._update_busy()
         self.main.param.watch(self._update_render_items, ['objects'])
         self.modal.param.watch(self._update_render_items, ['objects'])

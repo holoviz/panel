@@ -37,36 +37,26 @@ class Parameterized(bokeh.core.property.bases.Property):
         raise ValueError(msg)
 
 
+class ParameterizedList(bokeh.core.property.bases.Property):
+    """ Accept a list of Parameterized objects.
+
+    This property only exists to support type validation, e.g. for "accepts"
+    clauses. It is not serializable itself, and is not useful to add to
+    Bokeh models directly.
+
+    """
+
+    def validate(self, value, detail=True):
+        super().validate(value, detail)
+
+        if isinstance(value, list) and all(isinstance(v, param.Parameterized) for v in value):
+            return
+
+        msg = "" if not detail else f"expected list of param.Parameterized, got {value!r}"
+        raise ValueError(msg)
+
 
 _DATA_MODELS = weakref.WeakKeyDictionary()
-
-PARAM_MAPPING = {
-    pm.Array: lambda p, kwargs: bp.Array(bp.Any, **kwargs),
-    pm.Boolean: lambda p, kwargs: bp.Bool(**kwargs),
-    pm.CalendarDate: lambda p, kwargs: bp.Date(**kwargs),
-    pm.CalendarDateRange: lambda p, kwargs: bp.Tuple(bp.Date, bp.Date, **kwargs),
-    pm.ClassSelector: lambda p, kwargs: (
-        (bp.Instance(DataModel, **kwargs), [(Parameterized, create_linked_datamodel)])
-        if isinstance(p.class_, type) and issubclass(p.class_, param.Parameterized) else
-        bp.Any(**kwargs)
-    ),
-    pm.DataFrame: lambda p, kwargs: (
-        bp.ColumnData(bp.Any, bp.Seq(bp.Any), **kwargs),
-        [(bp.PandasDataFrame, lambda x: ColumnDataSource._data_from_df(x))]
-    ),
-    pm.DateRange: lambda p, kwargs: bp.Tuple(bp.Datetime, bp.Datetime, **kwargs),
-    pm.Date: lambda p, kwargs: bp.Datetime(**kwargs),
-    pm.Dict: lambda p, kwargs: bp.Dict(bp.String, bp.Any, **kwargs),
-    pm.Event: lambda p, kwargs: bp.Bool(**kwargs),
-    pm.Integer: lambda p, kwargs: bp.Int(**kwargs),
-    pm.List: lambda p, kwargs: bp.List(bp.Any, **kwargs),
-    pm.Number: lambda p, kwargs: bp.Float(**kwargs),
-    pm.NumericTuple: lambda p, kwargs: bp.Tuple(*(bp.Float for p in p.length), **kwargs),
-    pm.Range: lambda p, kwargs: bp.Tuple(bp.Float, bp.Float, **kwargs),
-    pm.String: lambda p, kwargs: bp.String(**kwargs),
-    pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in p.length), **kwargs),
-}
-
 
 # The Bokeh Color property has `_default_help` set which causes
 # an error to be raise when Nullable is called on it. This converter
@@ -77,7 +67,41 @@ def color_param_to_ppt(p, kwargs):
     ppt._help = None
     return ppt
 
-PARAM_MAPPING[pm.Color] = color_param_to_ppt
+
+def list_param_to_ppt(p, kwargs):
+    if isinstance(p.item_type, type) and issubclass(p.item_type, pm.Parameterized):
+        return bp.List(bp.Instance(DataModel)), [(ParameterizedList, lambda ps: [create_linked_datamodel(p) for p in ps])]
+    return bp.List(bp.Any, **kwargs)
+
+
+PARAM_MAPPING = {
+    pm.Array: lambda p, kwargs: bp.Array(bp.Any, **kwargs),
+    pm.Boolean: lambda p, kwargs: bp.Bool(**kwargs),
+    pm.CalendarDate: lambda p, kwargs: bp.Date(**kwargs),
+    pm.CalendarDateRange: lambda p, kwargs: bp.Tuple(bp.Date, bp.Date, **kwargs),
+    pm.ClassSelector: lambda p, kwargs: (
+        (bp.Instance(DataModel, **kwargs), [(Parameterized, create_linked_datamodel)])
+        if isinstance(p.class_, type) and issubclass(p.class_, pm.Parameterized) else
+        bp.Any(**kwargs)
+    ),
+    pm.Color: color_param_to_ppt,
+    pm.DataFrame: lambda p, kwargs: (
+        bp.ColumnData(bp.Any, bp.Seq(bp.Any), **kwargs),
+        [(bp.PandasDataFrame, lambda x: ColumnDataSource._data_from_df(x))]
+    ),
+    pm.DateRange: lambda p, kwargs: bp.Tuple(bp.Datetime, bp.Datetime, **kwargs),
+    pm.Date: lambda p, kwargs: bp.Datetime(**kwargs),
+    pm.Dict: lambda p, kwargs: bp.Dict(bp.String, bp.Any, **kwargs),
+    pm.Event: lambda p, kwargs: bp.Bool(**kwargs),
+    pm.Integer: lambda p, kwargs: bp.Int(**kwargs),
+    pm.List: list_param_to_ppt,
+    pm.Number: lambda p, kwargs: bp.Float(**kwargs),
+    pm.NumericTuple: lambda p, kwargs: bp.Tuple(*(bp.Float for p in p.length), **kwargs),
+    pm.Range: lambda p, kwargs: bp.Tuple(bp.Float, bp.Float, **kwargs),
+    pm.String: lambda p, kwargs: bp.String(**kwargs),
+    pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in p.length), **kwargs),
+}
+
 
 
 def construct_data_model(parameterized, name=None, ignore=[], types={}):

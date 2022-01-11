@@ -2,6 +2,7 @@ import pathlib
 
 import param
 
+from ...io.notifications import ToastedNotificationArea, NotificationArea
 from ...io.state import state
 from ..base import BasicTemplate
 from ..react import ReactTemplate
@@ -49,6 +50,10 @@ class FastBaseTemplate(BasicTemplate):
     main_layout = param.Selector(default="card", label="Layout", objects=["", "card"], doc="""
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
         Could be extended to Accordion, Tab etc. in the future.""")
+
+
+    notifications = param.ClassSelector(default=ToastedNotificationArea(),
+                                        class_=NotificationArea)
 
     _css = [
         _ROOT / "css/fast_root.css",
