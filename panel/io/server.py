@@ -53,7 +53,7 @@ from .logging import LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAU
 from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import BASE_TEMPLATE, Resources, bundle_resources
-from .state import state
+from .state import set_curdoc, state
 
 logger = logging.getLogger(__name__)
 
@@ -417,12 +417,6 @@ def init_doc(doc):
     doc.on_event('document_ready', state._init_session)
     return doc
 
-@contextmanager
-def set_curdoc(doc):
-    orig_doc = state._curdoc
-    state.curdoc = doc
-    yield
-    state.curdoc = orig_doc
 
 def with_lock(func):
     """
