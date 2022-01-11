@@ -21,16 +21,12 @@ export class CustomSelectView extends SelectView {
     }
 
     protected _update_disabled_options(): void {
-        console.log(this.input_el)
-        console.log('UPDATE DISABLED OPTIONS HERE')
-        console.log(this.model.disabled_options)
         for (const element of this.input_el.options) {
             if (this.model.disabled_options.includes(element.value)) {
                 element.setAttribute('disabled', 'true')
             } else {
                 element.removeAttribute('disabled')
             }
-            console.log(element)
         }
     }
 }
