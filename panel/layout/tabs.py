@@ -158,8 +158,7 @@ class Tabs(NamedListPanel):
                 hasattr(panel, 'child') and isinstance(panel.child, BkSpacer) and
                 panel.child.tags == ['hidden']
             )
-            if prev_hidden and not hidden and pref in rendered:
-                panel = rendered[pref]
+
             # If object has not changed, we have not toggled between
             # hidden and unhidden state or the tabs are not
             # dynamic then reuse the panel
@@ -168,7 +167,9 @@ class Tabs(NamedListPanel):
                 new_models.append(panel)
                 continue
 
-            if hidden:
+            if prev_hidden and not hidden and pref in rendered:
+                child = rendered[pref]
+            elif hidden:
                 child = BkSpacer(**{k: v for k, v in pane.param.values().items()
                                     if k in Layoutable.param and v is not None})
                 child.tags = ['hidden']
