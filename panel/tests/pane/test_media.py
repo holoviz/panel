@@ -35,6 +35,19 @@ def test_local_video(document, comm):
     assert model.value == 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAAhtZGF0AAAA1m1vb3YAAABsbXZoZAAAAAAAAAAAAAAAAAAAA+gAAAAAAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjU3LjQxLjEwMA==' # noqa
 
 
+def test_video_autoplay(document, comm):
+    video = Video(str(ASSETS / 'mp4.mp4'), autoplay=True)
+    model = video.get_root(document, comm=comm)
+
+    assert model.autoplay
+
+def test_video_muted(document, comm):
+    video = Video(str(ASSETS / 'mp4.mp4'), muted=True)
+    model = video.get_root(document, comm=comm)
+
+    assert model.muted
+
+
 def test_local_audio(document, comm):
     audio = Audio(str(ASSETS / 'mp3.mp3'))
     model = audio.get_root(document, comm=comm)
@@ -86,3 +99,17 @@ def test_audio_url(document, comm):
     model = audio.get_root(document, comm=comm)
 
     assert audio_url == model.value
+
+def test_audio_muted(document, comm):
+    audio_url = 'http://ccrma.stanford.edu/~jos/mp3/pno-cs.mp3'
+    audio = Audio(audio_url, muted=True)
+    model = audio.get_root(document, comm=comm)
+
+    assert model.muted
+
+def test_audio_autoplay(document, comm):
+    audio_url = 'http://ccrma.stanford.edu/~jos/mp3/pno-cs.mp3'
+    audio = Audio(audio_url, autoplay=True)
+    model = audio.get_root(document, comm=comm)
+
+    assert model.autoplay

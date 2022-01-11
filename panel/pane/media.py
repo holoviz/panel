@@ -34,6 +34,13 @@ class _MediaBase(PaneBase):
     volume = param.Number(default=None, bounds=(0, 100), doc="""
         The volume of the media player.""")
 
+    autoplay = param.Boolean(default=False, doc="""
+        When True, it specifies that the output will play automatically. 
+        In Chromium browsers this requires the user to click play once.""")
+
+    muted = param.Boolean(default=False, doc="""
+        When True, it specifies that the output should be muted.""")
+
     _default_mime = None
 
     _formats = []

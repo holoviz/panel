@@ -22,6 +22,8 @@ export class VideoView extends PanelHTMLBoxView {
     super.connect_signals()
     this.connect(this.model.properties.loop.change, () => this.set_loop())
     this.connect(this.model.properties.paused.change, () => this.set_paused())
+    this.connect(this.model.properties.muted.change, () => this.set_muted())
+    this.connect(this.model.properties.autoplay.change, () => this.set_autoplay())
     this.connect(this.model.properties.time.change, () => this.set_time())
     this.connect(this.model.properties.value.change, () => this.set_value())
     this.connect(this.model.properties.volume.change, () => this.set_volume())
@@ -43,6 +45,8 @@ export class VideoView extends PanelHTMLBoxView {
     this.videoEl.src = this.model.value
     this.videoEl.currentTime = this.model.time
     this.videoEl.loop = this.model.loop
+    this.videoEl.muted = this.model.muted
+    this.videoEl.autoplay = this.model.autoplay
     if (this.model.volume != null)
       this.videoEl.volume = this.model.volume/100
     else
@@ -81,6 +85,14 @@ export class VideoView extends PanelHTMLBoxView {
     this.videoEl.loop = this.model.loop
   }
 
+  set_muted(): void {
+    this.videoEl.muted = this.model.muted
+  }
+
+  set_autoplay(): void {
+    this.videoEl.autoplay = this.model.autoplay
+  }
+
   set_paused(): void {
     if (!this.videoEl.paused && this.model.paused)
       this.videoEl.pause()
@@ -117,6 +129,8 @@ export namespace Video {
   export type Props = HTMLBox.Props & {
     loop: p.Property<boolean>
     paused: p.Property<boolean>
+    muted: p.Property<boolean>
+    autoplay: p.Property<boolean>
     time: p.Property<number>
     throttle: p.Property<number>
     value: p.Property<any>
@@ -141,6 +155,8 @@ export class Video extends HTMLBox {
     this.define<Video.Props>(({Any, Boolean, Int, Number}) => ({
       loop:     [ Boolean, false ],
       paused:   [ Boolean,  true ],
+      muted:    [ Boolean, false ],
+      autoplay: [ Boolean, false ],
       time:     [ Number,      0 ],
       throttle: [ Int,       250 ],
       value:    [ Any,        '' ],
