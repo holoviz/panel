@@ -73,7 +73,7 @@ jobs:
       - name: windows_opengl
         if: contains(matrix.os, 'windows')
         run: |
-          git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
+          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
       - name: doit env_capture
         run: |
