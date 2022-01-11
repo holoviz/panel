@@ -188,7 +188,7 @@ class Select(SingleSelectBase):
             elif events[0].name == 'disabled_options' and self.value in self.disabled_options:
                 raise ValueError(
                     f'Cannot set disabled_options of {type(self).__name__} to a list that '
-                    f'includes the current value {self.value}.'
+                    f'includes the current value {self.value!r}.'
                 )
 
     def _validate_options_groups(self, *events):
