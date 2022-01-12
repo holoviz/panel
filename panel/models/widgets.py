@@ -45,6 +45,10 @@ class SingleSelect(InputWidget):
 
     '''
 
+    disabled_options = List(Any, default=[], help="""
+    List of options to disable.
+    """)
+
     options = List(Either(String, Tuple(String, String)), help="""
     Available selection options. Options may be provided either as a list of
     possible string values, or as a list of tuples, each of the form
