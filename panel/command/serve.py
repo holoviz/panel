@@ -292,6 +292,11 @@ class Serve(_BkServe):
             state.publish('session_info', state, ['session_info'])
 
         if args.num_threads is not None:
+            if config.nthreads is not None:
+                raise ValueError(
+                    "Supply num_threads either using the environment variable "
+                    "PANEL_NUM_THREADS or as an explicit argument, not both."
+                )
             config.nthreads = args.num_threads
 
         if args.oauth_provider:

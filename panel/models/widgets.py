@@ -67,6 +67,10 @@ class Audio(HTMLBox):
 
     paused = Bool(False, help="""Whether the audio is paused""")
 
+    muted = Bool(False, help="""Whether the audio is muted""")
+
+    autoplay = Bool(False, help="""Whether the audio is playing automatically""")
+
     time = Float(0, help="""
         The current time stamp of the audio playback""")
 
@@ -83,6 +87,10 @@ class Video(HTMLBox):
     loop = Bool(False, help="""Whether the video should loop""")
 
     paused = Bool(False, help="""Whether the video is paused""")
+
+    muted = Bool(False, help="""Whether the video is muted""")
+
+    autoplay = Bool(False, help="""Whether the video is playing automatically""")
 
     time = Float(0, help="""
         The current time stamp of the video playback""")

@@ -579,10 +579,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
               return formatted
             const node = div()
             node.innerHTML = formatted
-            const output = node.children[0].innerHTML
-            if (output === "function(){return c.convert(arguments)}") // If the formatter fails
+            const child = node.children[0]
+            if (child.innerHTML === "function(){return c.convert(arguments)}") // If the formatter fails
               return ''
-            return output
+            return child
           }
         }
       }
