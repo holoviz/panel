@@ -100,6 +100,9 @@ class _config(_base_config):
     loading_max_height = param.Integer(default=400, doc="""
         Maximum height of the loading indicator.""")
 
+    notifications = param.Boolean(default=False, doc="""
+        Whether to enable notifications functionality.""")
+
     profiler = param.Selector(default=None, allow_None=True, objects=[
         'pyinstrument', 'snakeviz'], doc="""
         The profiler engine to enable.""")
@@ -230,6 +233,13 @@ class _config(_base_config):
             raise RuntimeError("Thread pool already running")
         threads = self.nthreads if self.nthreads else None
         state._thread_pool = ThreadPoolExecutor(max_workers=threads)
+
+    @param.depends('notifications', watch=True)
+    def _enable_notifications(self):
+        from .io.notifications import NotyficationArea
+        from .io.state import state
+        if not state.curdoc:
+            state._notification = NotyficationArea()
 
     @contextmanager
     def set(self, **kwargs):
@@ -553,6 +563,9 @@ class panel_extension(_pyviz_extension):
         # Check if we're running in VSCode
         if "VSCODE_PID" in os.environ:
             config.comms = "vscode"
+
+        if config.notifications:
+            display(state.notifications)
 
     def _apply_signatures(self):
         from inspect import Parameter, Signature

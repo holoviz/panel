@@ -7,49 +7,10 @@ import param
 
 from bokeh.themes import Theme as _BkTheme
 
-from ...io.notifications import NotificationArea, Notification
 from ...layout import Card
 from ...reactive import ReactiveHTML
 from ..base import BasicTemplate, TemplateActions
 from ..theme import DefaultTheme, DarkTheme
-
-
-class MaterialNotification(Notification, ReactiveHTML):
-
-    _template = """
-    <aside id="toast" class="mdc-snackbar {% if position: left %}mdc-snackbar--leading{% endif %}">
-      <div class="mdc-snackbar__surface" role="status" aria-relevant="additions">
-        <div class="mdc-snackbar__label" aria-atomic="false">
-        ${body}
-        </div>
-        <div class="mdc-snackbar__actions" aria-atomic="true">
-          <button type="button" class="mdc-button mdc-snackbar__dismiss">
-            <div class="mdc-button__ripple"></div>
-            <span class="mdc-button__label">×</span>
-          </button>
-        </div>
-      </div>
-    </aside>
-    """
-
-    _scripts = {
-        'render': """
-          state.toast = new mdc.snackbar.MDCSnackbar(toast);
-          state.toast.timeoutMs = data.autohide ? data.duration : -1;
-          state.toast.listen('MDCSnackbar:closed', function () {
-            data._destroyed = true;
-          });
-          state.toast.open();
-        """,
-        'destroyed': """
-          state.toast.destroy()
-        """
-    }
-
-
-class MaterialNotificationArea(NotificationArea):
-
-    _notification_type = MaterialNotification
 
 
 class MaterialTemplateActions(TemplateActions):
@@ -67,9 +28,6 @@ class MaterialTemplate(BasicTemplate):
     """
     MaterialTemplate is built on top of Material web components.
     """
-
-    notifications = param.ClassSelector(default=MaterialNotificationArea(),
-                                        class_=NotificationArea)
 
     sidebar_width = param.Integer(370, doc="""
         The width of the sidebar in pixels. Default is 370.""")
