@@ -190,6 +190,12 @@ class Select(SingleSelectBase):
                     f'Cannot set disabled_options of {type(self).__name__} to a list that '
                     f'includes the current value {self.value!r}.'
                 )
+        if self.value in self.disabled_options:
+            raise ValueError(
+                f'Cannot initialize {type(self).__name__} with value {self.value!r} '
+                'as it is one of the disabled options.'
+            )
+
 
     def _validate_options_groups(self, *events):
         if self.options and self.groups:
