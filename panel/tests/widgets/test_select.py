@@ -207,135 +207,79 @@ def test_select_change_options_on_watch(document, comm):
     assert model.options == [(str(v),k) for k,v in select.options.items()]
 
 
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_init_options_list(size, document, comm):
-    select = Select(options=['a', 'b'], disabled_options=['b'], size=size)
+def test_select_disabled_options_init(options, size, document, comm):
+    select = Select(options=options, disabled_options=[20], size=size)
 
     widget = select.get_root(document, comm=comm)
 
     assert isinstance(widget, select._widget_type)
-    assert widget.disabled_options == ['b']
+    assert widget.disabled_options == [20]
 
 
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_init_options_dict(size, document, comm):
-    select = Select(options=dict(A=1, B=2), disabled_options=[2], size=size)
+def test_select_disabled_options_after_init(options, size, document, comm):
+    select = Select(options=options, size=size)
+    select.disabled_options = [20]
 
     widget = select.get_root(document, comm=comm)
 
     assert isinstance(widget, select._widget_type)
-    assert widget.disabled_options == [2]
+    assert widget.disabled_options == [20]
 
 
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_after_init_options_list(size, document, comm):
-    select = Select(options=['a', 'b'], size=size)
-    select.disabled_options = ['b']
-
-    widget = select.get_root(document, comm=comm)
-
-    assert isinstance(widget, select._widget_type)
-    assert widget.disabled_options == ['b']
-
-
-@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_after_init_options_dict(size, document, comm):
-    select = Select(options=dict(A=1, B=2), size=size)
-    select.disabled_options = [2]
-
-    widget = select.get_root(document, comm=comm)
-
-    assert isinstance(widget, select._widget_type)
-    assert widget.disabled_options == [2]
-
-
-@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_all_raises_error_on_init_options_list(size):
+def test_select_disabled_options_all_raises_error_on_init(options, size):
     with pytest.raises(ValueError, match='All the options'):
-        Select(options=['a', 'b'], disabled_options=['a', 'b'], size=size)
+        Select(options=options, disabled_options=[10, 20], size=size)
 
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_all_raises_error_on_init_options_dict(size):
-    with pytest.raises(ValueError, match='All the options'):
-        Select(options=dict(A=1, B=2), disabled_options=[1, 2], size=size)
-
-
-@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_all_raises_error_after_init_options_list(size):
-    select = Select(options=['a', 'b'], size=size)
+def test_select_disabled_options_all_raises_error_after_init(options, size):
+    select = Select(options=options, size=size)
 
     with pytest.raises(ValueError, match='All the options'):
-        select.disabled_options = ['a', 'b']
+        select.disabled_options = [10, 20]
 
 
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_all_raises_error_after_init_options_dict(size):
-    select = Select(options=dict(A=1, B=2), size=size)
-
-    with pytest.raises(ValueError, match='All the options'):
-        select.disabled_options = [1, 2]
-
-
-@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_error_disabled_options_not_in_options_options_list(size):
+def test_select_disabled_options_error_disabled_options_not_in_options(options, size):
     with pytest.raises(ValueError, match='Cannot disable non existing options'):
-        Select(options=['a', 'b'], disabled_options=['c'], size=size)
+        Select(options=options, disabled_options=[30], size=size)
 
 
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_error_disabled_options_not_in_options_options_dict(size):
-    with pytest.raises(ValueError, match='Cannot disable non existing options'):
-        Select(options=dict(A=1, B=2), disabled_options=[3], size=size)
-
-
-@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_error_set_value_options_list(size):
-    select = Select(options=['a', 'b'], disabled_options=['b'], size=size)
+def test_select_disabled_options_error_set_value(options, size):
+    select = Select(options=options, disabled_options=[20], size=size)
     with pytest.raises(ValueError, match='as it is a disabled option'):
-        select.value = 'b'
+        select.value = 20
 
 
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_error_set_value_options_dict(size):
-    select = Select(options=dict(A=1, B=2), disabled_options=[2], size=size)
-    with pytest.raises(ValueError, match='as it is a disabled option'):
-        select.value = 2
-
-
-@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_error_set_disabled_options_options_list(size):
-    select = Select(value='a', options=['a', 'b'], size=size)
+def test_select_disabled_options_error_set_disabled_options(options, size):
+    select = Select(value=20, options=options, size=size)
     with pytest.raises(ValueError, match='Cannot set disabled_options'):
-        select.disabled_options = ['a']
+        select.disabled_options = [20]
 
 
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
 @pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_error_set_disabled_options_options_dict(size):
-    select = Select(value=1, options=dict(A=1, B=2), size=size)
-    with pytest.raises(ValueError, match='Cannot set disabled_options'):
-        select.disabled_options = [1]
-
-
-@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_set_value_and_disabled_options_options_list(size, document, comm):
-    select = Select(options=['a', 'b'], disabled_options=['b'], size=size)
-    select.param.set_param(value='b', disabled_options=['a'])
+def test_select_disabled_options_set_value_and_disabled_options(options, size, document, comm):
+    select = Select(options=options, disabled_options=[20], size=size)
+    select.param.set_param(value=20, disabled_options=[10])
 
     widget = select.get_root(document, comm=comm)
 
-    assert widget.value == 'b'
-    assert widget.disabled_options == ['a']
-
-
-@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
-def test_select_disabled_options_set_value_and_disabled_options_options_dict(size, document, comm):
-    select = Select(options=dict(A=1, B=2), disabled_options=[2], size=size)
-    select.param.set_param(value=2, disabled_options=[1])
-
-    widget = select.get_root(document, comm=comm)
-
-    assert widget.value == '2'
-    assert widget.disabled_options == [1]
+    assert widget.value == '20'
+    assert select.value == 20
+    assert widget.disabled_options == [10]
 
 
 def test_multi_select(document, comm):
