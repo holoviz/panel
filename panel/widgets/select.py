@@ -129,7 +129,7 @@ class Select(SingleSelectBase):
     disabled_options = param.List(default=[], doc="""
         Optional list of ``options`` that are disabled, i.e. unusable and
         un-clickable. If ``options`` is a dictionary the list items must be
-        dictionary values. Applies only when ``size`` is 1.""")
+        dictionary values.""")
 
     groups = param.Dict(default=None, doc="""
         Dictionary whose keys are used to visually group the options
