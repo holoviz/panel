@@ -134,7 +134,8 @@ class Select(SingleSelectBase):
     groups = param.Dict(default=None, doc="""
         Dictionary whose keys are used to visually group the options
         and whose values are either a list or a dictionary of options
-        to select from. Mutually exclusive with ``options``.""")
+        to select from. Mutually exclusive with ``options``  and valid only
+        if ``size`` is 1.""")
 
     size = param.Integer(default=1, bounds=(1, None), doc="""
         Declares how many options are displayed at the same time.
