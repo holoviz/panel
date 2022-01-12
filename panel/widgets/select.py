@@ -197,6 +197,11 @@ class Select(SingleSelectBase):
                 f'{type(self).__name__} options and groups parameters '
                 'are mutually exclusive.'
             )
+        if self.size > 1 and self.groups:
+            raise ValueError(
+                f'{type(self).__name__} with size > 1 doe not support the'
+                ' `groups` parameter, use `options` instead.'
+            )
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
