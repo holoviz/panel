@@ -7,7 +7,6 @@ import param
 
 from ...io.resources import CSS_URLS, JS_URLS
 from ...layout import Card
-from ...reactive import ReactiveHTML
 from ..base import BasicTemplate
 from ..theme import DarkTheme, DefaultTheme
 

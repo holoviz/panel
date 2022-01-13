@@ -565,7 +565,7 @@ class panel_extension(_pyviz_extension):
             config.comms = "vscode"
 
         if config.notifications:
-            display(state.notifications)
+            display(state.notifications) # noqa
 
     def _apply_signatures(self):
         from inspect import Parameter, Signature
