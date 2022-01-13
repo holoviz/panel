@@ -8,7 +8,6 @@ import param
 from bokeh.themes import Theme as _BkTheme
 
 from ...layout import Card
-from ...reactive import ReactiveHTML
 from ..base import BasicTemplate, TemplateActions
 from ..theme import DefaultTheme, DarkTheme
 
