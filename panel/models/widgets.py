@@ -8,7 +8,7 @@ from bokeh.core.properties import (
     Override, String, Tuple
 )
 from bokeh.models.layouts import HTMLBox
-from bokeh.models.widgets import InputWidget, Widget
+from bokeh.models.widgets import InputWidget, Select, Widget
 
 
 class Player(Widget):
@@ -44,6 +44,10 @@ class SingleSelect(InputWidget):
     ''' Single-select widget.
 
     '''
+
+    disabled_options = List(Any, default=[], help="""
+    List of options to disable.
+    """)
 
     options = List(Either(String, Tuple(String, String)), help="""
     Available selection options. Options may be provided either as a list of
@@ -161,3 +165,13 @@ class FileDownload(InputWidget):
     """)
 
     title = Override(default='')
+
+
+class CustomSelect(Select):
+    ''' Custom widget that extends the base Bokeh Select
+    by adding a parameter to disable one or more options.
+
+    '''
+    disabled_options = List(Any, default=[], help="""
+    List of options to disable.
+    """)

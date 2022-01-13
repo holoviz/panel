@@ -15,5 +15,5 @@ from .reactive_html import ReactiveHTML # noqa
 from .state import State # noqa
 from .trend import TrendIndicator # noqa
 from .widgets import ( # noqa
-    Audio, FileDownload, Player, Progress, SingleSelect, Video, VideoStream
+    Audio, CustomSelect, FileDownload, Player, Progress, SingleSelect, Video, VideoStream
 )

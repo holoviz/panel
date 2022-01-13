@@ -207,6 +207,88 @@ def test_select_change_options_on_watch(document, comm):
     assert model.options == [(str(v),k) for k,v in select.options.items()]
 
 
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_init(options, size, document, comm):
+    select = Select(options=options, disabled_options=[20], size=size)
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.disabled_options == [20]
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_after_init(options, size, document, comm):
+    select = Select(options=options, size=size)
+    select.disabled_options = [20]
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.disabled_options == [20]
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_error_on_init(options, size):
+    with pytest.raises(ValueError, match='as it is one of the disabled options'):
+        Select(options=options, disabled_options=[10])
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_all_raises_error_on_init(options, size):
+    with pytest.raises(ValueError, match='All the options'):
+        Select(options=options, disabled_options=[10, 20], size=size)
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_all_raises_error_after_init(options, size):
+    select = Select(options=options, size=size)
+
+    with pytest.raises(ValueError, match='All the options'):
+        select.disabled_options = [10, 20]
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_error_disabled_options_not_in_options(options, size):
+    with pytest.raises(ValueError, match='Cannot disable non existing options'):
+        Select(options=options, disabled_options=[30], size=size)
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_error_set_value(options, size):
+    select = Select(options=options, disabled_options=[20], size=size)
+    with pytest.raises(ValueError, match='as it is a disabled option'):
+        select.value = 20
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_error_set_disabled_options(options, size):
+    select = Select(value=20, options=options, size=size)
+    with pytest.raises(ValueError, match='Cannot set disabled_options'):
+        select.disabled_options = [20]
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_set_value_and_disabled_options(options, size, document, comm):
+    select = Select(options=options, disabled_options=[20], size=size)
+    select.param.set_param(value=20, disabled_options=[10])
+
+    widget = select.get_root(document, comm=comm)
+
+    assert widget.value == '20'
+    assert select.value == 20
+    assert widget.disabled_options == [10]
+
+
 def test_multi_select(document, comm):
     select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                          value=[object, 1], name='Select')
