@@ -494,7 +494,8 @@ class BasicTemplate(BaseTemplate):
         if 'embed(roots.actions)' in template:
             self._render_items['actions'] = (self._actions, [])
         if 'embed(roots.notifications)' in template and config.notifications:
-            self._render_items['notifications'] = (self.notifications, [])
+            self._render_items['notifications'] = (state.notifications, [])
+            self._render_variables['notifications'] = True
         self._update_busy()
         self.main.param.watch(self._update_render_items, ['objects'])
         self.modal.param.watch(self._update_render_items, ['objects'])

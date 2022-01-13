@@ -479,8 +479,8 @@ class _state(param.Parameterized):
         if not config.notifications:
             return None
         if self.curdoc and self.curdoc not in self._notifications:
-            from .notifications import NotifycationArea
-            self._notifications[self.curdoc] = notifications = NotifycationArea()
+            from .notifications import NotificationArea
+            self._notifications[self.curdoc] = notifications = NotificationArea()
             return notifications
         elif self.curdoc is None:
             return self._notification

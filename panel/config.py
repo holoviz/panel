@@ -236,10 +236,10 @@ class _config(_base_config):
 
     @param.depends('notifications', watch=True)
     def _enable_notifications(self):
-        from .io.notifications import NotyficationArea
+        from .io.notifications import NotificationArea
         from .io.state import state
         if not state.curdoc:
-            state._notification = NotyficationArea()
+            state._notification = NotificationArea()
 
     @contextmanager
     def set(self, **kwargs):

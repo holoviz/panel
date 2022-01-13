@@ -120,9 +120,6 @@
       </div>
     </div>
   </div>
-  <div id="pn-notifications-area">
-  {{ embed(roots.notifications) }}
-  </div>
 </div>
 
 <script>
@@ -152,5 +149,8 @@
 {{ embed(roots.js_area) }}
 {{ embed(roots.actions) }}
 {{ embed(roots.location) }}
+{% if notifications %}
+{{ embed(roots.notifications) }}
+{% endif %}
 
 {% endblock %}

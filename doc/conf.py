@@ -95,6 +95,7 @@ nbsite_gallery_conf = {
                 'panes',
                 'layouts',
                 'templates',
+                'global',
                 'indicators',
                 'widgets',
             ]
