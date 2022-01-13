@@ -118,6 +118,14 @@ class NotificationArea(NotificationAreaBase):
     def __javascript__(cls):
         return bundled_files(cls)
 
+    @classproperty
+    def __js_skip__(cls):
+        return {'Notyf': cls.__javascript__}
+
+    __js_require__ = {
+        "paths": {"notyf": __javascript_raw__[0][:-3]}
+    }
+
     __css_raw__ = [
         "https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css",
         CSS_URLS['font-awesome']
@@ -140,7 +148,6 @@ class NotificationArea(NotificationAreaBase):
       """,
       "notifications": """
         var notification = state.current || data.notifications[data.notifications.length-1]
-        console.log(notification)
         if (notification._destroyed) {
           return
         }
