@@ -22,7 +22,6 @@ from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
 from tornado import gen
 
-from .config import config
 from .io.model import hold
 from .io.notebook import push
 from .io.server import unlocked
@@ -155,6 +154,7 @@ class Syncable(Renderable):
             self._callbacks.append(watcher)
 
     def _link_props(self, model, properties, doc, root, comm=None):
+        from .config import config
         ref = root.ref['id']
         if config.embed:
             return
@@ -1054,7 +1054,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
     _script_regex = r"script\([\"|'](.*)[\"|']\)"
 
     def __init__(mcs, name, bases, dict_):
-        from .links import PARAM_MAPPING, construct_data_model
+        from .io.datamodel import PARAM_MAPPING, construct_data_model
 
         mcs.__original_doc__ = mcs.__doc__
         ParameterizedMetaclass.__init__(mcs, name, bases, dict_)

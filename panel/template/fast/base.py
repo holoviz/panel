@@ -65,8 +65,8 @@ class FastBaseTemplate(BasicTemplate):
 
     _resources = {
         'js_modules': {
-            'fast-colors': 'https://unpkg.com/@microsoft/fast-colors@5.1.0',
-            'fast': 'https://unpkg.com/@microsoft/fast-components@1.13.0'
+            'fast-colors': 'https://unpkg.com/@microsoft/fast-colors@5.1.4',
+            'fast': 'https://unpkg.com/@microsoft/fast-components@1.21.8'
         },
         'bundle': False
     }

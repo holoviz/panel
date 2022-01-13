@@ -489,10 +489,13 @@ class BasicTemplate(BaseTemplate):
             params['favicon'] = str(params['favicon'])
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
-        if '{{ embed(roots.js_area) }}' in template:
+        if 'embed(roots.js_area)' in template:
             self._render_items['js_area'] = (self._js_area, [])
-        if '{{ embed(roots.actions) }}' in template:
+        if 'embed(roots.actions)' in template:
             self._render_items['actions'] = (self._actions, [])
+        if 'embed(roots.notifications)' in template and config.notifications:
+            self._render_items['notifications'] = (state.notifications, [])
+            self._render_variables['notifications'] = True
         self._update_busy()
         self.main.param.watch(self._update_render_items, ['objects'])
         self.modal.param.watch(self._update_render_items, ['objects'])

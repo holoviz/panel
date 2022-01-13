@@ -84,6 +84,10 @@ class _state(param.Parameterized):
     _location = None # Global location, e.g. for notebook context
     _locations = WeakKeyDictionary() # Server locations indexed by document
 
+    # Locations
+    _notification = None # Global location, e.g. for notebook context
+    _notifications = WeakKeyDictionary() # Server locations indexed by document
+
     # Templates
     _templates = WeakKeyDictionary() # Server templates indexed by document
     _template = None
@@ -192,6 +196,7 @@ class _state(param.Parameterized):
         return link
 
     def _schedule_on_load(self, event):
+        print(self._thread_pool)
         if self._thread_pool:
             self._thread_pool.submit(self._on_load, self.curdoc)
         else:
@@ -467,6 +472,20 @@ class _state(param.Parameterized):
             return self._location
         else:
             return self._locations.get(self.curdoc) if self.curdoc else None
+
+    @property
+    def notifications(self):
+        from ..config import config
+        if not config.notifications:
+            return None
+        if self.curdoc and self.curdoc not in self._notifications:
+            from .notifications import NotificationArea
+            self._notifications[self.curdoc] = notifications = NotificationArea()
+            return notifications
+        elif self.curdoc is None:
+            return self._notification
+        else:
+            return self._notifications.get(self.curdoc) if self.curdoc else None
 
     @property
     def log_terminal(self):
