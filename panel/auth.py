@@ -11,12 +11,14 @@ from urllib.parse import urlencode
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
+from jinja2 import Environment, FileSystemLoader
 from tornado.auth import OAuth2Mixin
 from tornado.httpclient import HTTPRequest, HTTPError
 from tornado.httputil import url_concat
 
 from .config import config
 from .io import state
+from .io.resources import ERROR_TEMPLATE
 from .util import base64url_encode, base64url_decode
 
 log = logging.getLogger(__name__)
@@ -85,6 +87,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
     _SCOPE = None
 
     _state_cookie = None
+
+    _error_template = ERROR_TEMPLATE
 
     async def get_authenticated_user(self, redirect_uri, client_id, state,
                                      client_secret=None, code=None):
@@ -234,6 +238,17 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         url_state = self.get_argument('state', None)
         code = self.get_argument('code', extract_urlparam('code', next_arg))
         url_state = self.get_argument('state', extract_urlparam('state', next_arg))
+
+        error = self.get_argument('error', extract_urlparam('error', next_arg))
+        if error is not None:
+            error_msg = self.get_argument(
+                'error_description', extract_urlparam('error_description', next_arg))
+            if not error_msg:
+                error_msg = error
+            log.debug("%s errored with %s", type(self).__name__, error)
+            self.set_header("Content-Type", 'text/html')
+            self.write(self._error_template.render(error=error, error_msg=error_msg))
+            return
 
         # Seek the authorization
         cookie_state = self.get_state_cookie()
@@ -691,6 +706,14 @@ class LogoutHandler(tornado.web.RequestHandler):
 
 class OAuthProvider(AuthProvider):
 
+    def __init__(self, error_template=None):
+        if error_template is None:
+            self._error_template = None
+        else:
+            env = Environment(loader=FileSystemLoader(os.path.abspath('.')))
+            self._error_template = env.get_template(error_template)
+        super().__init__()
+
     @property
     def get_user(self):
         def get_user(request_handler):
@@ -703,7 +726,10 @@ class OAuthProvider(AuthProvider):
 
     @property
     def login_handler(self):
-        return AUTH_PROVIDERS[config.oauth_provider]
+        handler = AUTH_PROVIDERS[config.oauth_provider]
+        if self._error_template:
+            handler._error_template = self._error_template
+        return handler
 
     @property
     def logout_url(self):

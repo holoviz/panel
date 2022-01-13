@@ -51,6 +51,7 @@ DIST_DIR = PANEL_DIR / 'dist'
 BUNDLE_DIR = DIST_DIR / 'bundled'
 ASSETS_DIR = PANEL_DIR / 'assets'
 BASE_TEMPLATE = _env.get_template('base.html')
+ERROR_TEMPLATE = _env.get_template('auth_error.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
 CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
