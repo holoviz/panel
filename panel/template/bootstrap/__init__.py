@@ -5,6 +5,7 @@ import pathlib
 
 import param
 
+from ...io.resources import CSS_URLS, JS_URLS
 from ...layout import Card
 from ...reactive import ReactiveHTML
 from ..base import BasicTemplate
@@ -33,11 +34,11 @@ class BootstrapTemplate(BasicTemplate):
 
     _resources = {
         'css': {
-            'bootstrap': "https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+            'bootstrap': CSS_URLS['bootstrap4']
         },
         'js': {
-            'jquery': "https://code.jquery.com/jquery-3.5.1.slim.min.js",
-            'bootstrap': "https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+            'jquery': JS_URLS['jQuery'],
+            'bootstrap': JS_URLS['bootstrap4']
         }
     }
 
