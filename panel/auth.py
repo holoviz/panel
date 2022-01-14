@@ -6,7 +6,8 @@ import pkg_resources
 import re
 import uuid
 
-from urllib.parse import urlencode
+
+import urllib.parse as urlparse
 
 import tornado
 
@@ -58,19 +59,11 @@ def decode_id_token(id_token):
     return json.loads(base64url_decode(payload_segment).decode('utf-8'))
 
 
-def extract_urlparam(name, urlparam):
+def extract_urlparam(args, key):
     """
-    Attempts to extract a url parameter embedded in another URL
-    parameter.
+    Extracts a request argument from a urllib.parse.parse_qs dict.
     """
-    if urlparam is None:
-        return None
-    query = name+'='
-    if query in urlparam:
-        split_args = urlparam[urlparam.index(query):].replace(query, '').split('&')
-        return split_args[0] if split_args else None
-    else:
-        return None
+    return args.get(key, args.get(f'/?{key}', [None]))[0]
 
 
 class OAuthLoginHandler(tornado.web.RequestHandler):
@@ -170,7 +163,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         req = HTTPRequest(
             self._OAUTH_ACCESS_TOKEN_URL,
             method='POST',
-            body=urlencode(params),
+            body=urlparse.urlencode(params),
             headers=self._API_BASE_HEADERS
         )
         try:
@@ -234,18 +227,23 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             'client_id':    config.oauth_key,
         }
         # Some OAuth2 backends do not correctly return code
-        next_arg = self.get_argument('next', None)
-        url_state = self.get_argument('state', None)
-        code = self.get_argument('code', extract_urlparam('code', next_arg))
-        url_state = self.get_argument('state', extract_urlparam('state', next_arg))
+        next_arg = self.get_argument('next', {})
+        if next_arg:
+            next_arg = urlparse.parse_qs(next_arg)
+        code = self.get_argument('code', extract_urlparam(next_arg, 'code'))
+        url_state = self.get_argument('state', extract_urlparam(next_arg, 'state'))
 
-        error = self.get_argument('error', extract_urlparam('error', next_arg))
+        # Handle authentication error
+        error = self.get_argument('error', extract_urlparam(next_arg, 'error'))
         if error is not None:
             error_msg = self.get_argument(
-                'error_description', extract_urlparam('error_description', next_arg))
+                'error_description', extract_urlparam(next_arg, 'error_description'))
             if not error_msg:
                 error_msg = error
-            log.debug("%s errored with %s", type(self).__name__, error)
+            log.error(
+                "%s failed to authenticate with following error: %s",
+                type(self).__name__, error
+            )
             self.set_header("Content-Type", 'text/html')
             self.write(self._error_template.render(error=error, error_msg=error_msg))
             return
@@ -556,7 +554,7 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
             **self._EXTRA_AUTHORIZE_PARAMS
         }
 
-        data = urlencode(
+        data = urlparse.urlencode(
             params, doseq=True, encoding='utf-8', safe='=')
 
         # Request the access token.
