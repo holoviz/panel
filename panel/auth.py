@@ -6,17 +6,20 @@ import pkg_resources
 import re
 import uuid
 
-from urllib.parse import urlencode
+
+import urllib.parse as urlparse
 
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
+from jinja2 import Environment, FileSystemLoader
 from tornado.auth import OAuth2Mixin
 from tornado.httpclient import HTTPRequest, HTTPError
 from tornado.httputil import url_concat
 
 from .config import config
 from .io import state
+from .io.resources import ERROR_TEMPLATE
 from .util import base64url_encode, base64url_decode
 
 log = logging.getLogger(__name__)
@@ -56,19 +59,11 @@ def decode_id_token(id_token):
     return json.loads(base64url_decode(payload_segment).decode('utf-8'))
 
 
-def extract_urlparam(name, urlparam):
+def extract_urlparam(args, key):
     """
-    Attempts to extract a url parameter embedded in another URL
-    parameter.
+    Extracts a request argument from a urllib.parse.parse_qs dict.
     """
-    if urlparam is None:
-        return None
-    query = name+'='
-    if query in urlparam:
-        split_args = urlparam[urlparam.index(query):].replace(query, '').split('&')
-        return split_args[0] if split_args else None
-    else:
-        return None
+    return args.get(key, args.get(f'/?{key}', [None]))[0]
 
 
 class OAuthLoginHandler(tornado.web.RequestHandler):
@@ -85,6 +80,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
     _SCOPE = None
 
     _state_cookie = None
+
+    _error_template = ERROR_TEMPLATE
 
     async def get_authenticated_user(self, redirect_uri, client_id, state,
                                      client_secret=None, code=None):
@@ -166,7 +163,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         req = HTTPRequest(
             self._OAUTH_ACCESS_TOKEN_URL,
             method='POST',
-            body=urlencode(params),
+            body=urlparse.urlencode(params),
             headers=self._API_BASE_HEADERS
         )
         try:
@@ -230,10 +227,26 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             'client_id':    config.oauth_key,
         }
         # Some OAuth2 backends do not correctly return code
-        next_arg = self.get_argument('next', None)
-        url_state = self.get_argument('state', None)
-        code = self.get_argument('code', extract_urlparam('code', next_arg))
-        url_state = self.get_argument('state', extract_urlparam('state', next_arg))
+        next_arg = self.get_argument('next', {})
+        if next_arg:
+            next_arg = urlparse.parse_qs(next_arg)
+        code = self.get_argument('code', extract_urlparam(next_arg, 'code'))
+        url_state = self.get_argument('state', extract_urlparam(next_arg, 'state'))
+
+        # Handle authentication error
+        error = self.get_argument('error', extract_urlparam(next_arg, 'error'))
+        if error is not None:
+            error_msg = self.get_argument(
+                'error_description', extract_urlparam(next_arg, 'error_description'))
+            if not error_msg:
+                error_msg = error
+            log.error(
+                "%s failed to authenticate with following error: %s",
+                type(self).__name__, error
+            )
+            self.set_header("Content-Type", 'text/html')
+            self.write(self._error_template.render(error=error, error_msg=error_msg))
+            return
 
         # Seek the authorization
         cookie_state = self.get_state_cookie()
@@ -541,7 +554,7 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
             **self._EXTRA_AUTHORIZE_PARAMS
         }
 
-        data = urlencode(
+        data = urlparse.urlencode(
             params, doseq=True, encoding='utf-8', safe='=')
 
         # Request the access token.
@@ -691,6 +704,14 @@ class LogoutHandler(tornado.web.RequestHandler):
 
 class OAuthProvider(AuthProvider):
 
+    def __init__(self, error_template=None):
+        if error_template is None:
+            self._error_template = None
+        else:
+            env = Environment(loader=FileSystemLoader(os.path.abspath('.')))
+            self._error_template = env.get_template(error_template)
+        super().__init__()
+
     @property
     def get_user(self):
         def get_user(request_handler):
@@ -703,7 +724,10 @@ class OAuthProvider(AuthProvider):
 
     @property
     def login_handler(self):
-        return AUTH_PROVIDERS[config.oauth_provider]
+        handler = AUTH_PROVIDERS[config.oauth_provider]
+        if self._error_template:
+            handler._error_template = self._error_template
+        return handler
 
     @property
     def logout_url(self):

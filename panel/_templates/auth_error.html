@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>Panel: Authentication Error</title>
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600&Lato|Work+Sans:400,700&display=swap" rel="stylesheet" type='text/css'>
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="apple-touch-icon" sizes="180x180" href="https://static.bokeh.org/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://panel.holoviz.org/_static/favicon.ico">
+  <link rel="manifest" href="https://static.bokeh.org/favicon/site.webmanifest">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+  <script type="module" src="https://unpkg.com/@microsoft/fast-colors@5.1.0"></script>
+  <script type="module" src="https://unpkg.com/@microsoft/fast-components@1.13.0"></script>
+  <style>
+  html {
+      height:100%;
+  }
+  html, #body-design-provider {
+      min-height: 100vh;
+  }
+  body {
+      margin: 0px;
+      padding: 0;
+      font-style: normal;
+      font-variant-ligatures: normal;
+      font-variant-caps: normal;
+      font-variant-numeric: normal;
+      font-variant-east-asian: normal;
+      font-weight: normal;
+      font-stretch: normal;
+      font-size: 16px;
+      line-height: normal;
+      font-family: aktiv-grotesk, "Segoe UI", Arial, Helvetica, sans-serif;
+      overflow-y: scroll;
+  }
+  .header {
+    /* Photo by mnm.all on Unsplash */
+    background-image: url('static/extensions/panel/images/index_background.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+  .header-grid {
+    /* Grid styles */
+    padding: 4rem 2rem;
+    display: grid;
+    align-items: center;
+    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  }
+  .header article {
+      margin-right: 1.0em;
+      padding-left: 1.0em;
+      padding-right: 1.0em;
+      opacity: 0.8;
+  }
+  #title, #divider, #subtitle {
+      background: transparent;
+      font-size: 1.5em;
+      color: white;
+  }
+  .error-message {
+      text-align: center;
+  }
+  footer {
+      padding: .50rem;
+      text-align: center;
+      font-size: .75rem;
+  }
+  #panel-logo {
+    width: 300px;
+  }
+  </style>
+</head>
+<body>
+  <fast-design-system-provider id="body-design-provider" use-defaults background-color="#ffffff">
+    <fast-design-system-provider id="header-design-provider" use-defaults background-color="#000000">
+      <section class="header">
+        <div class="header-grid">
+          <h1>
+            <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self"><img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/></fast-anchor>
+            <fast-tooltip anchor="title">Click to visit the Panel web site</fast-tooltip>
+          </h1>
+          <article>
+            <h2>Authentication Error: {{ error }}</h2>
+          </article>
+        </div>
+      </section>
+    </fast-design-system-provider>
+    <section class="error-message">
+      <h3>Error Message: {{ error_msg }}</h3>
+    </section>
+    <section>
+      <fast-divider></fast-divider>
+      <footer>
+        <p>Made with <fast-anchor href="https://fast.design" appearance="hypertext" target="_blank">Fast</fast-anchor> and <fast-anchor href="https://panel.holoviz.org" appearance="hypertext" target="_blank">Panel</fast-anchor>.</p>
+      </footer>
+    </section>
+  </fast-design-system-provider>
+</body>
+</html>

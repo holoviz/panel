@@ -131,6 +131,11 @@ class Serve(_BkServe):
             type    = str,
             help    = "A random string used to encode the user information."
         )),
+        ('--oauth-error-template', dict(
+            action = 'store',
+            type    = str,
+            help    = "A random string used to encode the user information."
+        )),
         ('--oauth-expiry-days', dict(
             action  = 'store',
             type    = float,
@@ -391,7 +396,7 @@ class Serve(_BkServe):
                     "CLI argument or the PANEL_COOKIE_SECRET environment "
                     "variable."
                 )
-            kwargs['auth_provider'] = OAuthProvider()
+            kwargs['auth_provider'] = OAuthProvider(error_template=args.oauth_error_template)
 
             if args.oauth_redirect_uri and config.oauth_redirect_uri:
                 raise ValueError(
