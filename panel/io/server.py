@@ -445,6 +445,15 @@ def with_lock(func):
     return wrapper
 
 
+def _dispatch_events(doc, events):
+    """
+    Handles dispatch of events which could not be processed in
+    unlocked decorator.
+    """
+    for event in events:
+        doc.trigger_on_change(event)
+
+
 @contextmanager
 def unlocked():
     """
@@ -486,8 +495,12 @@ def unlocked():
                     events.append(event)
         curdoc.callbacks._held_events = events
     finally:
-        if not hold:
+        if hold:
+            return
+        try:
             curdoc.unhold()
+        except RuntimeError:
+            curdoc.add_next_tick_callback(_dispatch_events, curdoc, events)
 
 
 def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
