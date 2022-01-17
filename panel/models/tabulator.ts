@@ -219,6 +219,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   tabulator: any;
   _tabulator_cell_updating: boolean=false
   _updating_page: boolean = true
+  _relayouting: boolean = false
   _selection_updating: boolean =false
   _styled_cells: any[] = []
   _styles: any;
@@ -272,13 +273,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     if (this._initializing) {
       this.setStyles()
       this.setSelection()
+      this._initializing = false
+      this.relayout()
     }
-    this._initializing = false
   }
 
   after_layout(): void {
     super.after_layout()
-    if (this.tabulator != null) {
+    if (this.tabulator != null && !this._relayouting) {
       this.tabulator.redraw(true)
       this.setStyles()
     }
@@ -406,12 +408,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   relayout(): void {
+    this._relayouting = true
     this.update_layout()
     this.compute_layout()
     if (this.root !== this)
       this.invalidate_layout()
-    else if ((this as any)._parent != undefined) // HACK: Support ReactiveHTML
-      (this as any)._parent.invalidate_layout()
+    else if ((this as any)._parent != undefined) { // HACK: Support ReactiveHTML
+      if ((this as any)._parent.relayout != undefined)
+        (this as any)._parent.relayout()
+      else
+        (this as any)._parent.invalidate_layout()
+    }
+    this._relayouting = true
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
@@ -518,7 +526,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         this._render_row(row)
       }
       if (!this.model.expanded.length && !this._initializing)
-        this.invalidate_layout()
+        this.relayout()
     })
   }
 
