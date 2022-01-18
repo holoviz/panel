@@ -26,6 +26,18 @@ export class TableEditEvent extends ModelEvent {
   }
 }
 
+export class CellClickEvent extends ModelEvent {
+  event_name: string = "cell-click"
+
+  constructor(readonly column: string, readonly row: number) {
+    super()
+  }
+
+  protected _to_json(): JSON {
+    return {model: this.origin, column: this.column, row: this.row}
+  }
+}
+
 declare const Tabulator: any;
 
 function find_group(key: any, value: string, records: any[]): any {
@@ -702,6 +714,21 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       if (config_columns == null)
         columns.push(tab_column)
     }
+    for (const col in this.model.buttons) {
+      const button_formatter = () => {
+	return this.model.buttons[col];
+      };
+      const button_column = {
+	formatter: button_formatter,
+	width: 40,
+	hozAlign: "center",
+	cellClick: (_: any, cell: any) => {
+	  const index = cell._cell.row.data._index;
+	  this.model.trigger_event(new CellClickEvent(col, index))
+	}
+      }
+      columns.push(button_column)
+    }
     return columns
   }
 
@@ -991,6 +1018,7 @@ export namespace DataTabulator {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     aggregators: p.Property<any>
+    buttons: p.Property<any>
     children: p.Property<any>
     columns: p.Property<TableColumn[]>
     configuration: p.Property<any>
@@ -1036,6 +1064,7 @@ export class DataTabulator extends HTMLBox {
 
     this.define<DataTabulator.Props>(({Any, Array, Boolean, Nullable, Number, Ref, String}) => ({
       aggregators:    [ Any,                     {} ],
+      buttons:        [ Any,                     {} ],
       children:       [ Any,                     {} ],
       configuration:  [ Any,                     {} ],
       columns:        [ Array(Ref(TableColumn)), [] ],

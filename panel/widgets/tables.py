@@ -805,6 +805,10 @@ class Tabulator(BaseTable):
     table to provide a full-featured interactive table.
     """
 
+    buttons = param.Dict(default={}, doc="""
+        Dictionary mapping from column name to a HTML element
+        to use as the button icon.""")
+
     expanded = param.List(default=[], doc="""
         List of expanded rows, only applicable if a row_content function
         has been defined.""")
@@ -916,6 +920,7 @@ class Tabulator(BaseTable):
         self._computed_styler = None
         self._child_panels = {}
         self._on_edit_callbacks = []
+        self._on_click_callbacks = {}
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
@@ -938,9 +943,13 @@ class Tabulator(BaseTable):
         super()._cleanup(root)
 
     def _process_event(self, event):
-        event.value = self.value[event.column].iloc[event.row]
-        for cb in self._on_edit_callbacks:
-            cb(event)
+        if event.event_name == 'table-edit':
+            event.value = self.value[event.column].iloc[event.row]
+            for cb in self._on_edit_callbacks:
+                cb(event)
+        else:
+            for cb in self._on_click_callbacks[event.column]:
+                cb(event)
 
     def _get_theme(self, theme, resources=None):
         from ..io.resources import RESOURCE_MODE
@@ -1238,6 +1247,7 @@ class Tabulator(BaseTable):
             selectable = self.selectable
         props.update({
             'aggregators': self.aggregators,
+            'buttons': self.buttons,
             'expanded': self.expanded,
             'source': source,
             'styles': self._get_style_data(),
@@ -1283,8 +1293,10 @@ class Tabulator(BaseTable):
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
         if comm:
             model.on_event('table-edit', self._comm_event)
+            model.on_event('cell-click', self._comm_event)
         else:
             model.on_event('table-edit', partial(self._server_event, doc))
+            model.on_event('cell-click', partial(self._server_event, doc))
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm):
@@ -1500,4 +1512,23 @@ class Tabulator(BaseTable):
             The callback to run on edit events.
         """
         self._on_edit_callbacks.append(callback)
+
+    def on_button_click(self, column, callback):
+        """
+        Register a callback to be executed when a cell corresponding
+        to a column declared in the `buttons` parameter is clicked.
+        The callback is given a CellClickEvent declaring the column
+        and row of the cell that was clicked.
+
+        Arguments
+        ---------
+        column: (str)
+            The column to respond to clicks on (must be declared in
+             `buttons` parameter).
+        callback: (callable)
+            The callback to run on edit events.
+        """
+        if column not in self._on_click_callbacks:
+            self._on_click_callbacks[column] = []
+        self._on_click_callbacks[column].append(callback)
 
