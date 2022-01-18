@@ -34,7 +34,7 @@ async def autoload_handle(self, body):
         server_url = None
 
     resources = self.resources(server_url)
-    js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
+    js = autoload_js_script(session.document, resources, session.token, element_id, app_path, absolute_url)
 
     headers = [
         (b"Access-Control-Allow-Headers", b"*"),
