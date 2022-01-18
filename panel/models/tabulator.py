@@ -36,6 +36,17 @@ class TableEditEvent(ModelEvent):
         self.value = value
         super().__init__(model=model)
 
+
+class CellClickEvent(ModelEvent):
+
+    event_name = 'cell-click'
+
+    def __init__(self, model, column, row):
+        self.column = column
+        self.row = row
+        super().__init__(model=model)
+
+
 def _get_theme_url(url, theme):
     if 'bootstrap' in theme:
         url += 'bootstrap/'
@@ -67,6 +78,8 @@ class DataTabulator(HTMLBox):
     """
 
     aggregators = Dict(String, String)
+
+    buttons = Dict(String, String)
 
     configuration = Dict(String, Any)
 
