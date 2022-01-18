@@ -948,7 +948,9 @@ class Tabulator(BaseTable):
             for cb in self._on_edit_callbacks:
                 cb(event)
         else:
-            for cb in self._on_click_callbacks[event.column]:
+            for cb in self._on_click_callbacks.get(None, []):
+                cb(event)
+            for cb in self._on_click_callbacks.get(event.column, []):
                 cb(event)
 
     def _get_theme(self, theme, resources=None):
@@ -1513,7 +1515,7 @@ class Tabulator(BaseTable):
         """
         self._on_edit_callbacks.append(callback)
 
-    def on_button_click(self, column, callback):
+    def on_button_click(self, callback, column=None):
         """
         Register a callback to be executed when a cell corresponding
         to a column declared in the `buttons` parameter is clicked.
@@ -1522,11 +1524,11 @@ class Tabulator(BaseTable):
 
         Arguments
         ---------
-        column: (str)
-            The column to respond to clicks on (must be declared in
-             `buttons` parameter).
         callback: (callable)
             The callback to run on edit events.
+        column: (str)
+            Optional argument restricting the callback to a specific
+            column.
         """
         if column not in self._on_click_callbacks:
             self._on_click_callbacks[column] = []
