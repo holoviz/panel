@@ -475,24 +475,31 @@ def unlocked():
         curdoc.hold()
     try:
         yield
-        events = []
+        locked = False
         for conn in connections:
             socket = conn._socket
             if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
                 state._locks.add(socket)
-            locked = socket in state._locks
-            for event in curdoc.callbacks._held_events:
-                if (isinstance(event, ModelChangedEvent) and event not in old_events
-                    and hasattr(socket, 'write_message') and not locked):
-                    msg = conn.protocol.create('PATCH-DOC', [event])
-                    WebSocketHandler.write_message(socket, msg.header_json)
-                    WebSocketHandler.write_message(socket, msg.metadata_json)
-                    WebSocketHandler.write_message(socket, msg.content_json)
-                    for header, payload in msg._buffers:
-                        WebSocketHandler.write_message(socket, header)
-                        WebSocketHandler.write_message(socket, payload, binary=True)
-                elif event not in events:
-                    events.append(event)
+            locked |= socket in state._locks
+
+        events = []
+        for event in curdoc.callbacks._held_events:
+            if not isinstance(event, ModelChangedEvent) or event in old_events or locked:
+                events.append(event)
+                continue
+            for conn in connections:
+                socket = conn._socket
+                ws_conn = getattr(socket, 'ws_connection', False)
+                if (not hasattr(socket, 'write_message') or
+                    ws_conn is None or (ws_conn and ws_conn.is_closing())):
+                    continue
+                msg = conn.protocol.create('PATCH-DOC', [event])
+                WebSocketHandler.write_message(socket, msg.header_json)
+                WebSocketHandler.write_message(socket, msg.metadata_json)
+                WebSocketHandler.write_message(socket, msg.content_json)
+                for header, payload in msg._buffers:
+                    WebSocketHandler.write_message(socket, header)
+                    WebSocketHandler.write_message(socket, payload, binary=True)
         curdoc.callbacks._held_events = events
     finally:
         if hold:
