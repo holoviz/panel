@@ -479,8 +479,8 @@ def unlocked():
         for conn in connections:
             socket = conn._socket
             if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
-                state._locks.add(socket)
-            locked |= socket in state._locks
+                locked = True
+                break
 
         events = []
         for event in curdoc.callbacks._held_events:
