@@ -8,7 +8,7 @@ import threading
 
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
-from weakref import WeakKeyDictionary, WeakSet
+from weakref import WeakKeyDictionary
 from urllib.parse import urljoin
 
 import param
@@ -108,9 +108,6 @@ class _state(param.Parameterized):
     # Dictionary of callbacks to be triggered on app load
     _onload = WeakKeyDictionary()
     _on_session_created = []
-
-    # Stores a set of locked Websockets, reset after every change event
-    _locks = WeakSet()
 
     # Indicators listening to the busy state
     _indicators = []

@@ -322,7 +322,6 @@ class Syncable(Renderable):
             self._process_event(event)
 
     def _server_event(self, doc, event):
-        state._locks.clear()
         if doc.session_context:
             doc.add_next_tick_callback(
                 partial(self._event_coroutine, event)
@@ -337,7 +336,6 @@ class Syncable(Renderable):
             self._changing[ref].remove(attr)
             return
 
-        state._locks.clear()
         processing = bool(self._events)
         self._events.update({attr: new})
         if processing:
