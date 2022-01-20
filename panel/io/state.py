@@ -500,7 +500,7 @@ class _state(param.Parameterized):
             return self._templates[self.curdoc]
         elif self.curdoc is None and self._template:
             return self._template
-        template = config.template(theme=config.theme)
+        template = config.template(theme=config.theme, **config.template_kwargs)
         if self.curdoc is None:
             self._template = template
         else:

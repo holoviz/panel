@@ -126,6 +126,9 @@ class _config(_base_config):
     template = param.ObjectSelector(default=None, doc="""
         The default template to render served applications into.""")
 
+    template_kwargs = param.Dict(default={}, instantiate=True, doc="""
+        A dictionary of arguments to apply to the template specified.""")
+
     theme = param.ObjectSelector(default='default', objects=['default', 'dark'], doc="""
         The theme to apply to the selected global template.""")
 
