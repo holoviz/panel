@@ -102,7 +102,6 @@ def test_text_input_controls():
 
     not_checked = []
     for w in ws:
-        print(w.name)
         if w.name == 'Value':
             assert isinstance(w, TextInput)
             text_input.value = "New value"

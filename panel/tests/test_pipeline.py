@@ -103,7 +103,6 @@ def test_pipeline_from_classes():
     assert len(graph) == 1
     labels = hv_obj.get(1)
     assert isinstance(labels, hv.Labels)
-    print(labels)
     assert list(labels['Stage']) == ['Stage 1', 'Stage 2']
 
     stage = layout[1][0]
@@ -144,7 +143,6 @@ def test_pipeline_from_instances():
     assert len(graph) == 1
     labels = hv_obj.get(1)
     assert isinstance(labels, hv.Labels)
-    print(labels)
     assert list(labels['Stage']) == ['Stage 1', 'Stage 2']
 
     stage = layout[1][0]
@@ -188,7 +186,6 @@ def test_pipeline_from_add_stages():
     assert len(graph) == 1
     labels = hv_obj.get(1)
     assert isinstance(labels, hv.Labels)
-    print(labels)
     assert list(labels['Stage']) == ['Stage 1', 'Stage 2']
 
     stage = layout[1][0]
@@ -375,7 +372,6 @@ def test_pipeline_network_diagram_states():
 
     pipeline.define_graph({'Stage 1': ('Stage 2', 'Stage 2b')})
 
-    print(pipeline.network.object)
     [s1, s2, s2b] = pipeline.network.object.get(0).nodes['State']
 
     assert s1 == 'active'

@@ -200,7 +200,6 @@ def test_hierarchical_index(document, comm):
     table.aggregators = {'Year': 'min'}
 
     agg1, agg2 = grouping.aggregators
-    print(grouping)
     assert agg1.field_ == 'Int'
     assert isinstance(agg1, MinAggregator)
     assert agg2.field_ == 'Float'
@@ -627,7 +626,6 @@ def test_tabulator_pagination_selectable_rows(document, comm):
 
     model = table.get_root(document, comm)
 
-    print(table._processed)
     assert model.selectable_rows == [0, 2]
 
     table.page = 2

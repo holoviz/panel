@@ -193,7 +193,6 @@ class _state(param.Parameterized):
         return link
 
     def _schedule_on_load(self, event):
-        print(self._thread_pool)
         if self._thread_pool:
             self._thread_pool.submit(self._on_load, self.curdoc)
         else:
