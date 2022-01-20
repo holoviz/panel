@@ -451,7 +451,7 @@ def _dispatch_events(doc, events):
     unlocked decorator.
     """
     for event in events:
-        doc.trigger_on_change(event)
+        doc.callbacks.trigger_on_change(event)
 
 
 @contextmanager
@@ -507,7 +507,7 @@ def unlocked():
         try:
             curdoc.unhold()
         except RuntimeError:
-            curdoc.add_next_tick_callback(_dispatch_events, curdoc, events)
+            curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, events))
 
 
 def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
