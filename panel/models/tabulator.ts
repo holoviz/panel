@@ -286,13 +286,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.setStyles()
       this.setSelection()
       this._initializing = false
-      this.relayout()
     }
   }
 
   after_layout(): void {
     super.after_layout()
-    if (this.tabulator != null && !this._relayouting) {
+    if (this.tabulator != null && (!this._relayouting || this._initializing)) {
       this.tabulator.redraw(true)
       this.setStyles()
     }
