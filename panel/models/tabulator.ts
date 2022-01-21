@@ -286,14 +286,19 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.setStyles()
       this.setSelection()
       this._initializing = false
+      this.relayout()
     }
+  }
+
+  redraw(): void {
+    this.tabulator.redraw(true)
+    this.setStyles()
   }
 
   after_layout(): void {
     super.after_layout()
     if (this.tabulator != null && (!this._relayouting || this._initializing)) {
-      this.tabulator.redraw(true)
-      this.setStyles()
+      this.redraw()
     }
   }
 
@@ -310,7 +315,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     this.tabulator = new Tabulator(container, configuration)
 
-    this.renderChildren()
+    this.renderChildren(true)
 
      // Swap pagination mode
     if (this.model.pagination === 'remote') {
@@ -426,7 +431,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.invalidate_layout()
     else if ((this as any)._parent != undefined) { // HACK: Support ReactiveHTML
       if ((this as any)._parent.relayout != undefined)
-        (this as any)._parent.relayout()
+	(this as any)._parent.relayout()
       else
         (this as any)._parent.invalidate_layout()
     }
@@ -522,7 +527,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     }
   }
 
-  renderChildren(): void {
+  renderChildren(initializing: boolean=false): void {
     new Promise(async (resolve: any) => {
       const children = []
       for (const idx of this.model.expanded) {
@@ -536,7 +541,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         const row = this.tabulator.getRow(r)
         this._render_row(row)
       }
-      if (!this.model.expanded.length && !this._initializing)
+      if ((!this.model.expanded.length) && (!initializing))
         this.relayout()
     })
   }
@@ -549,17 +554,23 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const view = this._child_views.get(model)
     if (view == null)
       return
-    const rowEl = row.getElement()
-    const viewEl = rowEl.children[rowEl.children.length-1]
-    if ((viewEl.className === 'bk') && viewEl.children.length)
-      return
-    const style = getComputedStyle(this.tabulator.element.children[1].children[0])
-    const bg = style.backgroundColor
-    const neg_margin = "-" + rowEl.style.paddingLeft
-    const row_view = div({style: "background-color: " + bg +"; margin-left:" + neg_margin})
-    row.getElement().appendChild(row_view);
     (view as any)._parent = this
-    view.renderTo(row_view)
+    const rowEl = row.getElement()
+    let viewEl = rowEl.children[rowEl.children.length-1]
+    if (viewEl.className === 'bk') {
+      if (viewEl.children.length)
+	return
+    } else {
+      viewEl = null
+    }
+    if (viewEl == null) {
+      const style = getComputedStyle(this.tabulator.element.children[1].children[0])
+      const bg = style.backgroundColor
+      const neg_margin = "-" + rowEl.style.paddingLeft
+      viewEl = div({style: "background-color: " + bg +"; margin-left:" + neg_margin})
+    }
+    row.getElement().appendChild(viewEl);
+    view.renderTo(viewEl)
   }
 
   _expand_render(cell: any): string {
