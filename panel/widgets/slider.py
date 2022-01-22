@@ -146,9 +146,6 @@ class IntSlider(ContinuousSlider):
     value = param.Integer(default=0, doc="""
         The value of the widget. Updated when the slider is dragged""")
 
-    value_throttled = param.Integer(default=None, constant=True, doc=""""
-        The value of the widget. Updated when the mouse is no longer clicked""")
-
     start = param.Integer(default=0, doc="""
         The lower bound""")
 
@@ -157,6 +154,9 @@ class IntSlider(ContinuousSlider):
 
     step = param.Integer(default=1, doc="""
         The step size""")
+
+    value_throttled = param.Integer(default=None, constant=True, doc="""
+        The value of the widget. Updated on mouse up""")
 
     _rename = {'name': 'title'}
 

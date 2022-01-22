@@ -91,10 +91,24 @@ def _to_typed_attributes(parameterized):
             typed_attributes += f"    {parameter.name}: {typehint}"
     return typed_attributes
 
+def _sorted_parameter_names(parameterized):
+    parameters = []
+    for class_ in reversed(parameterized.mro()):
+        if issubclass(class_, param.Parameterized):
+            for parameter in reversed(list(class_.param)):
+                if not parameter in parameters:
+                    parameters.append(parameter)
+    return list(reversed(parameters))
+
+def _sorted_parameters(parameterized):
+    return [parameterized.param[name] for name in _sorted_parameter_names(parameterized)]
+
 def _to_init(parameterized):
     typed_attributes = ""
     type_hints=_to_type_hints(parameterized)
-    for parameter in sorted(type_hints.keys(), key=lambda x: x.name):
+    for parameter in _sorted_parameters(parameterized):
+        if not parameter in type_hints:
+            continue
         typehint=type_hints[parameter]
         if typed_attributes:
             typed_attributes += "\n"
@@ -122,17 +136,36 @@ def _get_original_docstring(parameterized):
     doc3=doc2[:doc2.find("\nParameters of \'")]
     return doc3
 
+def _get_args(parameterized):
+    args = ""
+    for name in sorted(parameterized.param):
+        parameter = parameterized.param[name]
+        if not name.startswith("_"):
+            if args:
+                args += "\n"
+            doc = parameter.doc.lstrip('\n').lstrip()
+            if "\n\n" in doc:
+                doc = doc.split("\n\n")[0] # We simplify the docstring for now
+            doc=doc.replace("\n", " ") # Move to one line
+            doc=re.sub(' +', ' ', doc)
+            args += f"        {name}: {doc}"
+    return args
+
 def to_stub(parameterized: param.Parameterized):
     class_name = _to_class_name(parameterized)
     bases = _to_bases(parameterized)
     _typed_parameters = _to_typed_attributes(parameterized)
     _init = _to_init(parameterized)
     original_doc=_get_original_docstring(parameterized)
-    return f'''Class {class_name}({bases}):
+    args = _get_args(parameterized)
+    return f'''class {class_name}({bases}):
 {_typed_parameters}
 
 {_init}
         """{original_doc}"""
+
+        Args:
+{args}
 '''
 
     
