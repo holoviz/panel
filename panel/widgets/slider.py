@@ -137,16 +137,26 @@ class FloatSlider(ContinuousSlider):
 
 
 class IntSlider(ContinuousSlider):
+    """The IntSlider widget allows selecting selecting an integer value within a set bounds 
+    using a slider.
+    
+    See https://panel.holoviz.org/reference/widgets/IntSlider.html
+    """
 
-    value = param.Integer(default=0)
+    value = param.Integer(default=0, doc="""
+        The value of the widget. Updated when the slider is dragged""")
 
-    value_throttled = param.Integer(default=None, constant=True)
+    value_throttled = param.Integer(default=None, constant=True, doc=""""
+        The value of the widget. Updated when the mouse is no longer clicked""")
 
-    start = param.Integer(default=0)
+    start = param.Integer(default=0, doc="""
+        The lower bound""")
 
-    end = param.Integer(default=1)
+    end = param.Integer(default=1, doc="""
+        The upper bound""")
 
-    step = param.Integer(default=1)
+    step = param.Integer(default=1, doc="""
+        The step size""")
 
     _rename = {'name': 'title'}
 
