@@ -3,7 +3,8 @@ import importlib.util
 import param
 import re
 
-def get_parameterized_classes(module_name, module_path):    
+def _get_parameterized_classes(module_name, module_path):
+    """Returns an iterator of the Parameterized classes of a module to be included in a stub file"""    
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     foo = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(foo)
@@ -35,9 +36,9 @@ def _default_to_string(default):
         return f'"{default}"'
     else:
         return str(default)
-    return 
 
 def _to_typehint(parameter: param.Parameter) -> str:
+    """Returns the typehint as a string of a Parameter"""
     if isinstance(parameter, param.ClassSelector):
         class_ = parameter.class_
         if isinstance(class_, (list, tuple, set)):
@@ -74,6 +75,7 @@ def _to_typehint(parameter: param.Parameter) -> str:
     return tpe
 
 def _to_type_hints(parameterized) -> dict:
+    """Returns a dictionary of parameter names and typehints"""
     typed_attributes = {}
     for parameter_name in parameterized.param:
         parameter=parameterized.param[parameter_name]
@@ -83,6 +85,14 @@ def _to_type_hints(parameterized) -> dict:
     return typed_attributes
 
 def _to_typed_attributes(parameterized):
+    """Returns a string of typed attributes
+    
+    Example:
+
+    value: int=0
+    value_throttled: Optional[int]=None
+    ...
+"""
     typed_attributes = ""
     for parameter, typehint in _to_type_hints(parameterized).items():
         if not parameter.name=="name" and parameter.owner is parameterized:
@@ -92,6 +102,7 @@ def _to_typed_attributes(parameterized):
     return typed_attributes
 
 def _sorted_parameter_names(parameterized):
+    "Returns a list of parameter names sorted by 'relevance'. Most relevant parameters first."
     parameters = []
     for class_ in reversed(parameterized.mro()):
         if issubclass(class_, param.Parameterized):
@@ -101,9 +112,11 @@ def _sorted_parameter_names(parameterized):
     return list(reversed(parameters))
 
 def _sorted_parameters(parameterized):
+    "Returns a list of parameter names sorted by 'relevance'. Most relevant parameters first."
     return [parameterized.param[name] for name in _sorted_parameter_names(parameterized)]
 
 def _to_init(parameterized):
+    """Returns the __init__ signature with typed arguments"""
     typed_attributes = ""
     type_hints=_to_type_hints(parameterized)
     for parameter in _sorted_parameters(parameterized):
@@ -131,12 +144,20 @@ ansi_escape = re.compile(r'''
 ''', re.VERBOSE)
 
 def _get_original_docstring(parameterized):
+    """Returns the original docstring of a Parameterized class"""
     doc=ansi_escape.sub('', parameterized.__doc__)
     doc2=doc[doc.find("\n")+1:]
     doc3=doc2[:doc2.find("\nParameters of \'")]
     return doc3
 
 def _get_args(parameterized):
+    """Returns a string of arguments with docstrings
+    
+    Example:
+
+    value: The slider value. Updated when the slider is dragged
+    value_throttled: The slider value. Updated on mouse up.
+    """
     args = ""
     for name in sorted(parameterized.param):
         parameter = parameterized.param[name]
@@ -151,7 +172,8 @@ def _get_args(parameterized):
             args += f"        {name}: {doc}"
     return args
 
-def to_stub(parameterized: param.Parameterized):
+def to_stub(parameterized):
+    """Returns the stub of a Parameterized class"""
     class_name = _to_class_name(parameterized)
     bases = _to_bases(parameterized)
     _typed_parameters = _to_typed_attributes(parameterized)
