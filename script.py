@@ -1,7 +1,3 @@
 import panel as pn
 
-islider = pn.widgets.IntSlider()
-
-
-
-
+pn.extension(sizing_mode="stretch_width", template="fast")
