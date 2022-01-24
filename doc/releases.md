@@ -1,5 +1,7 @@
 # Releases
 
+See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual summary of the major features added in each release.
+
 ## Version 0.12.6
 
 Date: 2021-12-08

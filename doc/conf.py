@@ -84,6 +84,9 @@ nbsite_gallery_conf = {
                  'title': 'Linking',
                  'description': ('Using Javascript based links to define interactivity without '
                                  'without requiring a live kernel.')},
+                {'path': 'styles',
+                 'title': 'Styling & Theming',
+                 'description': "Examples demonstrating how to style and theme different components."},
                 {'path': 'external',
                  'title': 'External libraries',
                  'description': 'Wrapping external libraries with Panel.'}
