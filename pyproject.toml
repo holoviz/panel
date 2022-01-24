@@ -11,3 +11,4 @@ requires = [
     "tqdm >=4.48.0",
     "setuptools>=42"
 ]
+build-backend = "setuptools.build_meta"
