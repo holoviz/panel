@@ -443,8 +443,12 @@ class _state(param.Parameterized):
     def curdoc(self):
         if self._curdoc:
             return self._curdoc
-        elif _curdoc().session_context:
-            return _curdoc()
+        try:
+            doc = _curdoc()
+        except Exception:
+            return None
+        if doc.session_context:
+            return doc
 
     @curdoc.setter
     def curdoc(self, doc):
