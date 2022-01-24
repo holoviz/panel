@@ -425,6 +425,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   relayout(): void {
     this._relayouting = true
+    this.tabulator.rowManager.adjustTableSize()
     this.update_layout()
     this.compute_layout()
     if (this.root !== this)
@@ -435,7 +436,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       else
         (this as any)._parent.invalidate_layout()
     }
-    this._relayouting = true
+    this._relayouting = false
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
