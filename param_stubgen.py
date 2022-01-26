@@ -1,12 +1,18 @@
+import glob
+import importlib
 import importlib.util
-from types import ModuleType
 import inspect
+import logging
+import os
+import pathlib
+import re
+from types import ModuleType
+from typing import Type
+import datetime
 
 import param
-import re
-from typing import Type
 
-import logging
+import panel as pn
 
 logger = logging.getLogger("param_stubgen")
 
@@ -18,7 +24,12 @@ def _get_parameterized_classes(mod: ModuleType):
 
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     foo = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(foo)
+    try:
+        spec.loader.exec_module(foo)
+    except Warning as exc_info:
+        # Todo: Learn to handle
+        logger.warning("Could not _get_parameterized_classes of %s", mod, exc_info=exc_info)
+        return 
     for value in foo.__dict__.values():
         try:
             if issubclass(value, param.Parameterized) and value.__module__ == module_name:
@@ -46,15 +57,25 @@ PARAMETER_TO_TYPE = {
     param.Parameter: "Any",
     param.String: "str",
     param.Number: "Number",
-    param.Date: "Union[datetime,date,np.datetime64]",
+    param.Date: "Union[datetime.datetime,datetime.date,np.datetime64]",
     param.Tuple: "tuple",
     param.Range: "Tuple[Number,Number]",
+    param.Callable: "Callable",
+    param.Action: "Callable",
+    param.Filename: "Union[str,pathlib.Path]",
+    param.Event: "bool",
+    param.CalendarDate: "datetime.date",
+    param.DateRange: "Tuple[Union[datetime.datetime,datetime.date,np.datetime64],Union[datetime.datetime,datetime.date,np.datetime64]]"
 }
 
 
 def _default_to_string(default):
     if default is None:
         return "None"
+    elif callable(default):
+        return "..."
+    elif isinstance(default, (pathlib.Path, datetime.date)):
+        return f'...'
     elif isinstance(default, str):
         return f'"{default}"'
     else:
@@ -78,7 +99,7 @@ def _to_typehint(parameter: param.Parameter) -> str:
             )
         else:
             tpe = class_.__name__
-    elif isinstance(parameter, param.ObjectSelector):
+    elif isinstance(parameter, (param.ObjectSelector, param.Selector)):
         types = set(type(item).__name__ for item in parameter.objects)
         if len(types) == 0:
             tpe = "Any"
@@ -97,7 +118,12 @@ def _to_typehint(parameter: param.Parameter) -> str:
     elif parameter.__class__ in PARAMETER_TO_TYPE:
         tpe = PARAMETER_TO_TYPE[parameter.__class__]
     else:
-        raise NotImplementedError(parameter)
+        if parameter.owner:
+            parameter_class = f"{parameter.owner}".split("'")[1]
+        else:
+            parameter_class = "<Unknown>"
+        parameter_type = f"{type(parameter)}".split("'")[1]
+        raise NotImplementedError(f"Converting parameter type '{parameter_type}' is not implemented. Found in parameter '{parameter.name}' on the class '{parameter_class}'")
 
     if parameter.allow_None and not tpe == "Any":
         tpe = f"Optional[{tpe}]"
@@ -193,6 +219,7 @@ ANSI_ESCAPE = re.compile(
 )
 
 import ast
+
 # fname = "panel/widgets/slider.py"
 # with open(fname, 'r') as f:
 #     tree = ast.parse(f.read())
@@ -263,7 +290,7 @@ def _get_args(parameterized: Type[param.Parameterized]) -> str:
                 doc = doc.split("\n\n")[0]  # We simplify the docstring for now
             doc = doc.replace("\n", " ")  # Move to one line
             doc = re.sub(" +", " ", doc)
-            args += f"        {name}: {doc}"
+            args += f"            {name}: {doc}"
     return args
 
 
@@ -294,4 +321,21 @@ def module_to_stub(module: ModuleType) -> str:
         stub += "\n\n" + parameterized_to_stub(parameterized)
     return stub
 
+def get_package_folder(package) -> pathlib.Path:
+    return pathlib.Path(package.__file__).parent
 
+def to_module(path, parent, package_name="panel"):
+    relative = str(pathlib.Path(path).relative_to(parent))
+
+    module_name = package_name + "." + str(relative).replace(".py", "").replace(os.path.sep, ".")
+    try:
+        return importlib.import_module(module_name)
+    except Exception as exc_info:
+        logger.warning("Error. Cannot import %s", path, exc_info=exc_info)
+
+def get_modules(package):
+    package_path = get_package_folder(package)
+    for filename in glob.iglob(str(package_path.resolve()) + '/**/*.py', recursive=True):
+        module = to_module(filename, package_path)
+        if module:
+            yield(module, filename)

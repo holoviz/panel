@@ -365,6 +365,13 @@ class EditableFloatSlider(_EditableContinuousSlider, FloatSlider): ...
 class EditableIntSlider(_EditableContinuousSlider, IntSlider): ...
 
 class EditableRangeSlider(CompositeWidget, _SliderBase):
+    """
+    <iframe src="https://share.streamlit.io/streamlit/docs/main/python/api-examples-source/charts.image.py" style="height: 710px"></iframe>
+
+    Args:
+        CompositeWidget ([type]): [description]
+        _SliderBase ([type]): [description]
+    """
     editable: Any
     end: Any
     format: Any

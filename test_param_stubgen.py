@@ -1,16 +1,19 @@
 import datetime
 import logging
+import pathlib
+from inspect import ismodule
 
 import numpy as np
 import param
 import pytest
 
+import panel as pn
 from panel.widgets import slider
 from param_stubgen import (_default_to_string, _get_original_docstring,
                            _get_parameterized_classes, _sorted_parameter_names,
                            _to_bases, _to_class_name, _to_init,
-                           _to_typed_attributes, _to_typehint, module_to_stub,
-                           parameterized_to_stub)
+                           _to_typed_attributes, _to_typehint, get_modules,
+                           module_to_stub, parameterized_to_stub, to_module)
 
 FORMAT = '%(asctime)s %(message)s'
 logging.basicConfig(format=FORMAT)
@@ -61,6 +64,7 @@ def test_to_bases():
         (param.String(default="a"), '"a"'),
         (param.String(default=None), "None"),
         (param.Integer(default=2), "2"),
+        (param.Callable(default=print), "print"),
     ],
 )
 def test_default_to_string(parameter, expected):
@@ -103,9 +107,23 @@ def test_default_to_string(parameter, expected):
         ),
         (slider.Widget.param.sizing_mode, "Union[NoneType,str]=None"),
         (param.Number(), 'Number=0.0'),
-        (param.Date(), 'Optional[Union[datetime,date,np.datetime64]]=None'),
+        (param.Date(), 'Optional[Union[datetime.datetime,datetime.date,np.datetime64]]=None'),
         (param.Tuple(), "tuple=(0, 0)"),
         (param.Range(), "Optional[Tuple[Number,Number]]=None"),
+        (param.ObjectSelector(), "Any=None"),
+        (param.Selector() ,"Any=None"),
+        (param.Callable(), "Optional[Callable]=None"),
+        (param.Callable(print), "Callable=..."),
+        (param.Action(), "Optional[Callable]=None"),
+        (param.Action(default=lambda x: print(x)), "Callable=..."),
+        (param.Filename(), "Optional[Union[str,pathlib.Path]]=None"),
+        (param.Filename(default=pathlib.Path(__file__)), 'Union[str,pathlib.Path]=...'),
+        (param.Filename(default='/home/'), 'Union[str,pathlib.Path]="/home/"'),
+        (param.Event(), "bool=False"),
+        (param.CalendarDate(), "Optional[datetime.date]=None"),
+        (param.CalendarDate(default=datetime.date(2020,2,3)), "datetime.date=..."),
+        (param.DateRange(),"Optional[Tuple[Union[datetime.datetime,datetime.date,np.datetime64],Union[datetime.datetime,datetime.date,np.datetime64]]]=None"),
+        (param.DateRange((datetime.date(2020,2,3), datetime.date(2021,2,3))),"Tuple[Union[datetime.datetime,datetime.date,np.datetime64],Union[datetime.datetime,datetime.date,np.datetime64]]=..."),
     ],
 )
 def test_to_type_hint(parameter, typehint):
@@ -193,16 +211,27 @@ class Child(Parent):
         """The Child class provides ...
 
         Args:
-        a: A string parameter
-        b: A list parameter
-        c: An int parameter
-        name: String identifier for this object.
+            a: A string parameter
+            b: A list parameter
+            c: An int parameter
+            name: String identifier for this object.
 """
 '''
     assert parameterized_to_stub(Child) == expected
 
+def test_module_to_stub():
+    """Can create stub from module"""
+    assert module_to_stub(slider)
 
-def test_module_to_stub_without_exceptions():
-    module_to_stub(slider)
+def test_to_module():
+    to_module(path="", parent="pathlib.Path(pn.__file__).parent")
 
-print(module_to_stub(slider))
+def test_get_modules(): 
+    modules = list(get_modules(pn))
+    assert modules
+    assert ismodule(modules[0][0])
+    assert isinstance(modules[0][1], str)
+
+def test_can_stub_panel():
+    for module, path in get_modules(pn):
+        module_to_stub(module)
