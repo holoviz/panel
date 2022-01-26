@@ -235,17 +235,15 @@ class JSONEditor(Widget):
             self._widget_type = lazy_load(
                 'panel.models.json_editor', 'JSONEditor', isinstance(comm, JupyterComm)
             )
-        return super()._get_model(doc, root, parent, comm)
+        model = super()._get_model(doc, root, parent, comm)
+        if comm:
+            model.on_event('json_edit', self._comm_event)
+        else:
+            model.on_event('json_edit', partial(self._server_event, doc))
+        return model
 
-    def _filter_properties(self, properties):
-        return super()._filter_properties(properties) + ['query']
-
-    def _process_events(self, events):
-        if 'query' in events:
-            self._process_query(events.pop('query'))
-        if not events:
-            return
-        super()._process_events(events)
+    def _process_event(self, event):
+        self._process_query(event.data)
 
     @updating
     def _process_query(self, query):
@@ -258,9 +256,15 @@ class JSONEditor(Widget):
                 cb = self.key_autocomplete
             else:
                 cb = self.value_autocomplete
-            result = cb(tuple(query['path']), query['text'])
+            if cb is None:
+                result = None
+            else:
+                result = cb(tuple(query['path']), query['text'])
         elif qtype == 'append':
-            result = self.append_suggestions(tuple(query['node']['path']))
+            if self.append_suggestions:
+                result = self.append_suggestions(tuple(query['node']['path']))
+            else:
+                result = []
         for ref, (m, _) in self._models.items():
             if qtype == 'append':
                 m.templates = result

@@ -2,9 +2,20 @@
 Custom bokeh Markup models.
 """
 from bokeh.core.properties import Any, Bool, List
+from bokeh.events import ModelEvent
 from bokeh.models import HTMLBox
 
-from ..util import classproperty, bundled_files
+from ..io.resources import bundled_files
+from ..util import classproperty
+
+
+class JSONEditEvent(ModelEvent):
+
+    event_name = 'json_edit'
+
+    def __init__(self, model, data=None):
+        self.data = data
+        super().__init__(model=model)
 
 
 class JSONEditor(HTMLBox):
@@ -19,8 +30,6 @@ class JSONEditor(HTMLBox):
     selection = List(Any)
 
     templates = List(Any)
-
-    query = Any()
 
     result = Any()
 

@@ -1,6 +1,20 @@
 import * as p from "@bokehjs/core/properties"
+import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {PanelHTMLBoxView} from "./layout"
+
+export class JSONEditEvent extends ModelEvent {
+  event_name: string = "json_edit"
+
+  constructor(readonly data: any) {
+    super()
+  }
+
+  protected _to_json(): JSON {
+    return {model: this.origin, data: this.data}
+  }
+}
+
 
 export class JSONEditorView extends PanelHTMLBoxView {
   model: JSONEditor
@@ -30,7 +44,7 @@ export class JSONEditorView extends PanelHTMLBoxView {
       autocomplete: {
 	trigger: focus,
 	getOptions: async (text: string, path: string[], input: string) => {
-	  this.model.query = {text, path, input, type: 'autocomplete'}
+	  this.model.trigger_event(new JSONEditEvent({text, path, input, type: 'autocomplete'}))
 	  const result = await this._result_available()
 	  this.model.result = null
 	  return result
@@ -51,7 +65,7 @@ export class JSONEditorView extends PanelHTMLBoxView {
 	  }
 	}
 	this._menu_context = {type: node.type, node: current_node}
-	this.model.query = {type: 'append', node}
+	this.model.trigger_event(new JSONEditEvent({type: 'append', node}))
 	return items
       },
       onChangeJSON: (json: any) => {
@@ -59,6 +73,7 @@ export class JSONEditorView extends PanelHTMLBoxView {
       },
       onSelectionChange: (start: any, end: any) => {
 	this.model.selection = [start, end];
+	this.resize_layout()
       },
       templates: this.model.templates,
       search: this.model.search
