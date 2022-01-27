@@ -864,6 +864,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     css_node.onload = () => {
       this.render()
+      this.relayout()
     }
     parent_node.appendChild(css_node)
     return true
@@ -1100,7 +1101,7 @@ export class DataTabulator extends HTMLBox {
       sorters:        [ Array(Any),              [] ],
       styles:         [ Any,                     {} ],
       theme:          [ String,            "simple" ],
-      theme_url:      [ String, "https://unpkg.com/tabulator-tables@5.0.7/dist/css/"]
+      theme_url:      [ String, "https://unpkg.com/tabulator-tables@4.9.3/dist/css/"]
     }))
   }
 }
