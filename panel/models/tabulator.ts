@@ -864,6 +864,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     css_node.onload = () => {
       this.render()
+      this.relayout()
     }
     parent_node.appendChild(css_node)
     return true
