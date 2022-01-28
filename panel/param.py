@@ -439,6 +439,23 @@ class Param(PaneBase):
         if isinstance(widget_class, type) and issubclass(widget_class, Button):
             kwargs.pop('value', None)
 
+        # Set sizing
+        if 'sizing_mode' not in kwargs and self.sizing_mode not in (None, 'fixed'):
+            kwargs['sizing_mode'] = self.sizing_mode
+        elif 'width' not in kwargs:
+            margin = kwargs.get('margin', widget_class.margin)
+            offset = 0
+            if not margin:
+                pass
+            elif isinstance(margin, int):
+                offset = margin*2
+            if isinstance(margin, tuple):
+                if len(margin) == 2:
+                    offset = margin[1]*2
+                elif len(margin) == 4:
+                    offset = margin[1] + margin[3]
+            kwargs['width'] = self.width - offset
+
         if isinstance(widget_class, Widget):
             widget = widget_class
         else:
