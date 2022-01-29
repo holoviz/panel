@@ -173,7 +173,7 @@ class DataFrame(HTML):
         module = getattr(obj, '__module__', '')
         name = type(obj).__name__
         if (any(m in module for m in ('pandas', 'dask', 'streamz')) and
-            name in ('DataFrame', 'Series', 'Random', 'DataFrames', 'Seriess')):
+            name in ('DataFrame', 'Series', 'Random', 'DataFrames', 'Seriess', 'Styler')):
             return 0.3
         else:
             return False
@@ -215,6 +215,9 @@ class DataFrame(HTML):
         if hasattr(df, 'to_html'):
             if 'dask' in module:
                 html = df.to_html(max_rows=self.max_rows).replace('border="1"', '')
+            elif 'style' in module:
+                classes = ' '.join(self.classes)
+                html = df.to_html(table_attributes=f'class="{classes}"')
             else:
                 kwargs = {p: getattr(self, p) for p in self._rerender_params
                           if p not in DivPaneBase.param and p != '_object'}

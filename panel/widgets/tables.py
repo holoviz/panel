@@ -915,6 +915,12 @@ class Tabulator(BaseTable):
     }
 
     def __init__(self, value=None, **params):
+        import pandas.io.formats.style
+        if isinstance(value, pandas.io.formats.style.Styler):
+            style = value
+            value = value.data
+        else:
+            style = None
         configuration = params.pop('configuration', {})
         self.style = None
         self._computed_styler = None
@@ -924,6 +930,8 @@ class Tabulator(BaseTable):
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
+        if style is not None:
+            self.style._todo = style._todo
 
     def _validate(self, *events):
         super()._validate(*events)
@@ -1533,4 +1541,3 @@ class Tabulator(BaseTable):
         if column not in self._on_click_callbacks:
             self._on_click_callbacks[column] = []
         self._on_click_callbacks[column].append(callback)
-
