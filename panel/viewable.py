@@ -819,14 +819,24 @@ class Viewer(param.Parameterized):
         """
         raise NotImplementedError
 
+    def _create_view(self):
+        from .param import ParamMethod
+
+        if hasattr(self.__panel__, "_dinfo"):
+            view = ParamMethod(self.__panel__)
+        else:
+            view = self.__panel__()
+
+        return view
+
     def servable(self, title=None, location=True):
-        return self.__panel__().servable(title, location)
+        return self._create_view().servable(title, location)
 
     servable.__doc__ = ServableMixin.servable.__doc__
 
     def show(self, title=None, port=0, address=None, websocket_origin=None,
              threaded=False, verbose=True, open=True, location=True, **kwargs):
-        return self.__panel__().show(
+        return self._create_view().show(
             title, port, address, websocket_origin, threaded,
             verbose, open, location, **kwargs
         )
@@ -834,4 +844,4 @@ class Viewer(param.Parameterized):
     show.__doc__ = ServableMixin.show.__doc__
 
     def _repr_mimebundle_(self, include=None, exclude=None):
-        return self.__panel__()._repr_mimebundle_(include, exclude)
+        return self._create_view()._repr_mimebundle_(include, exclude)
