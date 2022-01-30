@@ -30,7 +30,6 @@ export class JSONEditorView extends PanelHTMLBoxView {
       if (this._menu_context) {
 	let node = this._menu_context.node;
 	node = this._menu_context.type === 'append' ? node.append : node
-	console.log(this._menu_context)
 	node.showContextMenu(node.dom.menu)
 	this._menu_context = null
       }
