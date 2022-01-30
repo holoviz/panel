@@ -733,7 +733,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     def save(self, filename, title=None, resources=None, template=None,
              template_variables=None, embed=False, max_states=1000,
              max_opts=3, embed_json=False, json_prefix='', save_path='./',
-             load_path=None, progress=True, embed_states={}, **kwargs):
+             load_path=None, progress=True, embed_states={}, as_png=None,
+             **kwargs):
         """
         Saves Panel objects to file.
 
@@ -767,11 +768,14 @@ class Viewable(Renderable, Layoutable, ServableMixin):
           Whether to report progress
         embed_states: dict (default={})
           A dictionary specifying the widget values to embed for each widget
+        save_png: boolean (default=None)
+          To save as a .png. If None save_png will be true if filename is
+          string and ends with png.
         """
         return save(self, filename, title, resources, template,
                     template_variables, embed, max_states, max_opts,
                     embed_json, json_prefix, save_path, load_path,
-                    progress, embed_states, **kwargs)
+                    progress, embed_states, as_png, **kwargs)
 
     def server_doc(self, doc=None, title=None, location=True):
         """
