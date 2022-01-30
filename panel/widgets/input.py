@@ -375,6 +375,13 @@ class _SpinnerBase(_NumericInputBase):
 
         return super()._update_model(events, msg, root, model, doc, comm)
 
+    def _process_param_change(self, msg):
+        # Workaround for -inf serialization errors
+        if 'value' in msg and msg['value'] == float('-inf'):
+            msg['value'] = None
+            msg['value_throttled'] = None
+        return super()._process_param_change(msg)
+
     def _process_property_change(self, msg):
         if config.throttled:
             if "value" in msg:
