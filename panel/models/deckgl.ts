@@ -57,8 +57,8 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   initialize(): void {
     super.initialize()
     if ((window as any).deck.JSONConverter) {
-      const {CSVLoader, Tile3DLoader} = (window as any).loaders;
-      (window as any).loaders.registerLoaders([Tile3DLoader, CSVLoader]);
+      const {CSVLoader, Tiles3DLoader} = (window as any).loaders;
+      (window as any).loaders.registerLoaders([Tiles3DLoader, CSVLoader]);
       const jsonConverterConfiguration: any = {
         classes: extractClasses(),
         // Will be resolved as `<enum-name>.<enum-value>`
@@ -68,7 +68,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
         },
         // Constants that should be resolved with the provided values by JSON converter
         constants: {
-          Tile3DLoader
+          Tiles3DLoader
         }
       };
       this.jsonConverter = new (window as any).deck.JSONConverter({
@@ -97,27 +97,34 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   }
 
   _on_click_event(event: any): void {
-    const clickState = {
+    const click_state: any = {
       coordinate: event.coordinate,
-      lngLat: event.lngLat,
+      lngLat: event.coordinate,
       index: event.index
     }
-    this.model.clickState = clickState
+    if (event.layer)
+      click_state.layer = event.layer.id
+    this.model.clickState = click_state
   }
 
   _on_hover_event(event: any): void {
     if (event.coordinate == null)
       return
-    const hoverState = {
+    const hover_state: any = {
       coordinate: event.coordinate,
-      lngLat: event.lngLat,
+      lngLat: event.coordinate,
       index: event.index
     }
-    this.model.hoverState = hoverState
+    if (event.layer)
+      hover_state.layer = event.layer.id
+    this.model.hoverState = hover_state
   }
 
   _on_viewState_event(event: any): void {
-    this.model.viewState = event.viewState
+    const view_state = {...event.viewState}
+    delete view_state.normalize
+    console.log(this.deckGL)
+    this.model.viewState = view_state
   }
 
   getData(): any {

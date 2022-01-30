@@ -30,12 +30,14 @@ class DeckGLPlot(HTMLBox):
         return bundled_files(cls, 'css')
 
     __javascript_raw__ = [
-        "https://cdn.jsdelivr.net/npm/deck.gl@8.1.12/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.1.12/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@2.0.2/dist/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@loaders.gl/json@2.0.2/dist/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@2.0.2/dist/dist.min.js",
-        "https://api.mapbox.com/mapbox-gl-js/v1.7.0/mapbox-gl.js",
+        "https://cdn.jsdelivr.net/npm/deck.gl@8.6.7/dist.min.js",
+        "https://cdn.jsdelivr.net/npm/@deck.gl/geo-layers@8.6.7/dist.min.js",
+        "https://cdn.jsdelivr.net/npm/@deck.gl/layers@8.6.7/dist.min.js",
+        "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.6.7/dist.min.js",
+        "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@3.1.7/dist/dist.min.js",
+        "https://cdn.jsdelivr.net/npm/@loaders.gl/json@3.1.7/dist/dist.min.js",
+        "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@3.1.7/dist/dist.min.js",
+        "https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js",
     ]
 
     @classproperty
@@ -51,8 +53,8 @@ class DeckGLPlot(HTMLBox):
 
     __js_require__ = {
         'paths': OrderedDict([
-            ("deck.gl", "https://cdn.jsdelivr.net/npm/@deck.gl/jupyter-widget@^8.1.2/dist/index"),
-            ("mapbox-gl", 'https://cdn.jsdelivr.net/npm/mapbox-gl@1.7.0/dist/mapbox-gl.min'),
+            ("deck.gl", "https://cdn.jsdelivr.net/npm/@deck.gl/jupyter-widget@^8.6.7/dist/index"),
+            ("mapbox-gl", 'https://cdn.jsdelivr.net/npm/mapbox-gl@2.6.1/dist/mapbox-gl.min'),
         ]),
         'exports': {"deck.gl": "deck", "mapbox-gl": "mapboxgl"}
     }
