@@ -234,7 +234,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   _relayouting: boolean = false
   _selection_updating: boolean =false
   _styled_cells: any[] = []
-  _styles: any;
+  _styles: any = null
   _initializing: boolean
 
   connect_signals(): void {
@@ -308,7 +308,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     if (wait)
       return
     this._initializing = true
-    this._styles = this.model.styles
+    if (this._styles == null)
+      this._styles = this.model.styles
     const container = div({class: "pnx-tabulator"})
     set_size(container, this.model)
     let configuration = this.getConfiguration()
