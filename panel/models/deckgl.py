@@ -30,9 +30,8 @@ class DeckGLPlot(HTMLBox):
         return bundled_files(cls, 'css')
 
     __javascript_raw__ = [
+        "https://unpkg.com/h3-js@3.7.2/dist/h3-js.umd.js",
         "https://cdn.jsdelivr.net/npm/deck.gl@8.6.7/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@deck.gl/geo-layers@8.6.7/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@deck.gl/layers@8.6.7/dist.min.js",
         "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.6.7/dist.min.js",
         "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@3.1.7/dist/dist.min.js",
         "https://cdn.jsdelivr.net/npm/@loaders.gl/json@3.1.7/dist/dist.min.js",
@@ -69,7 +68,7 @@ class DeckGLPlot(HTMLBox):
 
     mapbox_api_key = String()
 
-    tooltip = Either(Bool, Dict(Any, Any))
+    tooltip = Either(Bool, Dict(Any, Any), default=True)
 
     clickState = Dict(String, Any)
 

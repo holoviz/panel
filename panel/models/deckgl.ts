@@ -123,7 +123,10 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   _on_viewState_event(event: any): void {
     const view_state = {...event.viewState}
     delete view_state.normalize
-    console.log(this.deckGL)
+    for (const p in view_state) {
+      if (p.startsWith('transition'))
+	delete view_state[p]
+    }
     this.model.viewState = view_state
   }
 
@@ -140,7 +143,10 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   }
 
   updateDeck(): void {
-    if (!this.deckGL) { this.render(); return; }
+    if (!this.deckGL) {
+      this.render()
+      return
+    }
     const data = this.getData()
     if ((window as any).deck.updateDeck) {
       (window as any).deck.updateDeck(data, this.deckGL)
@@ -170,12 +176,14 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
 
   render(): void {
     super.render()
-    const container = div({class: "deckgl"});
+    const container = div({class: "deckgl"})
     set_size(container, this.model)
 
-    const MAPBOX_API_KEY = this.model.mapbox_api_key;
-    const tooltip = this.model.tooltip;
-    const data = this.getData();
+    const MAPBOX_API_KEY = this.model.mapbox_api_key
+    const tooltip = this.model.tooltip
+    const data = this.getData()
+
+    console.log(data)
 
     if ((window as any).deck.createDeck) {
       this.deckGL = (window as any).deck.createDeck({
@@ -233,7 +241,7 @@ export class DeckGLPlot extends HTMLBox {
       initialViewState: [ Any,                          {} ],
       layers:           [ Array(Any),                   [] ],
       mapbox_api_key:   [ String,                       '' ],
-      tooltip:          [ Any,                          {} ],
+      tooltip:          [ Any,                        true ],
       viewState:        [ Any,                          {} ],
     }))
 
