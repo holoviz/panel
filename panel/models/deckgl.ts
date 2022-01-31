@@ -3,6 +3,8 @@ import * as p from "@bokehjs/core/properties"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
+import {debounce} from  "debounce"
+
 import {transform_cds_to_records} from "./data"
 import {PanelHTMLBoxView, set_size} from "./layout"
 import {makeTooltip} from "./tooltips"
@@ -57,8 +59,8 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   initialize(): void {
     super.initialize()
     if ((window as any).deck.JSONConverter) {
-      const {CSVLoader, Tile3DLoader} = (window as any).loaders;
-      (window as any).loaders.registerLoaders([Tile3DLoader, CSVLoader]);
+      const {CSVLoader, Tiles3DLoader} = (window as any).loaders;
+      (window as any).loaders.registerLoaders([Tiles3DLoader, CSVLoader]);
       const jsonConverterConfiguration: any = {
         classes: extractClasses(),
         // Will be resolved as `<enum-name>.<enum-value>`
@@ -68,7 +70,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
         },
         // Constants that should be resolved with the provided values by JSON converter
         constants: {
-          Tile3DLoader
+          Tiles3DLoader
         }
       };
       this.jsonConverter = new (window as any).deck.JSONConverter({
@@ -97,43 +99,63 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   }
 
   _on_click_event(event: any): void {
-    const clickState = {
+    const click_state: any = {
       coordinate: event.coordinate,
-      lngLat: event.lngLat,
+      lngLat: event.coordinate,
       index: event.index
     }
-    this.model.clickState = clickState
+    if (event.layer)
+      click_state.layer = event.layer.id
+    this.model.clickState = click_state
   }
 
   _on_hover_event(event: any): void {
     if (event.coordinate == null)
       return
-    const hoverState = {
+    const hover_state: any = {
       coordinate: event.coordinate,
-      lngLat: event.lngLat,
+      lngLat: event.coordinate,
       index: event.index
     }
-    this.model.hoverState = hoverState
+    if (event.layer)
+      hover_state.layer = event.layer.id
+    this.model.hoverState = hover_state
   }
 
   _on_viewState_event(event: any): void {
-    this.model.viewState = event.viewState
+    const view_state = {...event.viewState}
+    delete view_state.normalize
+    for (const p in view_state) {
+      if (p.startsWith('transition'))
+	delete view_state[p]
+    }
+    const viewport = new (window as any).deck.WebMercatorViewport(view_state);
+    view_state.nw = viewport.unproject([0, 0]);
+    view_state.se = viewport.unproject([viewport.width, viewport.height]);
+    this.model.viewState = view_state
   }
 
   getData(): any {
+    const view_timeout = this.model.throttle['view'] || 200
+    const hover_timeout = this.model.throttle['hover'] || 100
+    const view_cb = debounce((event: any) => this._on_viewState_event(event), view_timeout, false)
+    const hover_cb = debounce((event: any) => this._on_hover_event(event), hover_timeout, false)
     const data = {
       ...this.model.data,
       layers: this.model.layers,
       initialViewState: this.model.initialViewState,
-      onViewStateChange: (event: any) => this._on_viewState_event(event),
+      onViewStateChange: view_cb,
       onClick: (event: any) => this._on_click_event(event),
-      onHover: (event: any) => this._on_hover_event(event)
+      onHover: hover_cb
     }
     return data
   }
 
   updateDeck(): void {
-    if (!this.deckGL) { this.render(); return; }
+    if (!this.deckGL) {
+      this.render()
+      return
+    }
     const data = this.getData()
     if ((window as any).deck.updateDeck) {
       (window as any).deck.updateDeck(data, this.deckGL)
@@ -163,12 +185,14 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
 
   render(): void {
     super.render()
-    const container = div({class: "deckgl"});
+    const container = div({class: "deckgl"})
     set_size(container, this.model)
 
-    const MAPBOX_API_KEY = this.model.mapbox_api_key;
-    const tooltip = this.model.tooltip;
-    const data = this.getData();
+    const MAPBOX_API_KEY = this.model.mapbox_api_key
+    const tooltip = this.model.tooltip
+    const data = this.getData()
+
+    console.log(data)
 
     if ((window as any).deck.createDeck) {
       this.deckGL = (window as any).deck.createDeck({
@@ -200,6 +224,7 @@ export namespace DeckGLPlot {
     tooltip: p.Property<any>
     clickState: p.Property<any>
     hoverState: p.Property<any>
+    throttle: p.Property<any>
     viewState: p.Property<any>
   }
 }
@@ -226,7 +251,8 @@ export class DeckGLPlot extends HTMLBox {
       initialViewState: [ Any,                          {} ],
       layers:           [ Array(Any),                   [] ],
       mapbox_api_key:   [ String,                       '' ],
-      tooltip:          [ Any,                          {} ],
+      throttle:         [ Any,                          {} ],
+      tooltip:          [ Any,                        true ],
       viewState:        [ Any,                          {} ],
     }))
 
