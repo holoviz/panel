@@ -52,10 +52,19 @@ class DeckGLPlot(HTMLBox):
 
     __js_require__ = {
         'paths': OrderedDict([
-            ("deck.gl", "https://cdn.jsdelivr.net/npm/@deck.gl/jupyter-widget@^8.6.7/dist/index"),
+            ("h3", "https://unpkg.com/h3-js@3.7.2/dist/h3-js.umd"),
+            ("deck-gl", "https://cdn.jsdelivr.net/npm/deck.gl@8.6.7/dist.min"),
+            ("deck-json", "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.6.7/dist.min"),
+            ("loader-csv", "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@3.1.7/dist/dist.min"),
+            ("loader-json", "https://cdn.jsdelivr.net/npm/@loaders.gl/json@3.1.7/dist/dist.min"),
+            ("loader-tiles", "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@3.1.7/dist/dist.min"),
             ("mapbox-gl", 'https://cdn.jsdelivr.net/npm/mapbox-gl@2.6.1/dist/mapbox-gl.min'),
         ]),
-        'exports': {"deck.gl": "deck", "mapbox-gl": "mapboxgl"}
+        'exports': {"deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3"},
+        'shim': {
+            'deck-json': {'deps': ["deck-gl"]},
+            'deck-gl': {'deps': ["h3"]}
+        }
     }
 
     data = Dict(String, Any)
