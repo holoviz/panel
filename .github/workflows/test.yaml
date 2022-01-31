@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9, '3.10']
         exclude:
           - os: windows-latest
             python-version: 3.8
@@ -61,7 +61,6 @@ jobs:
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
           sleep 3
       - name: doit develop_install
-        continue-on-error: true
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
