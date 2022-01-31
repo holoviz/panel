@@ -3,6 +3,8 @@ import * as p from "@bokehjs/core/properties"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
+import {debounce} from  "debounce"
+
 import {transform_cds_to_records} from "./data"
 import {PanelHTMLBoxView, set_size} from "./layout"
 import {makeTooltip} from "./tooltips"
@@ -134,13 +136,17 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   }
 
   getData(): any {
+    const view_timeout = this.model.throttle['view'] || 200
+    const hover_timeout = this.model.throttle['hover'] || 100
+    const view_cb = debounce((event: any) => this._on_viewState_event(event), view_timeout, false)
+    const hover_cb = debounce((event: any) => this._on_hover_event(event), hover_timeout, false)
     const data = {
       ...this.model.data,
       layers: this.model.layers,
       initialViewState: this.model.initialViewState,
-      onViewStateChange: (event: any) => this._on_viewState_event(event),
+      onViewStateChange: view_cb,
       onClick: (event: any) => this._on_click_event(event),
-      onHover: (event: any) => this._on_hover_event(event)
+      onHover: hover_cb
     }
     return data
   }
@@ -218,6 +224,7 @@ export namespace DeckGLPlot {
     tooltip: p.Property<any>
     clickState: p.Property<any>
     hoverState: p.Property<any>
+    throttle: p.Property<any>
     viewState: p.Property<any>
   }
 }
@@ -244,6 +251,7 @@ export class DeckGLPlot extends HTMLBox {
       initialViewState: [ Any,                          {} ],
       layers:           [ Array(Any),                   [] ],
       mapbox_api_key:   [ String,                       '' ],
+      throttle:         [ Any,                          {} ],
       tooltip:          [ Any,                        true ],
       viewState:        [ Any,                          {} ],
     }))

@@ -12,7 +12,7 @@ And now DeckGL provides Python bindings. See
 from collections import OrderedDict
 
 from bokeh.core.properties import (
-    Any, Bool, Dict, Either, Instance, List, Override, String
+    Any, Bool, Dict, Either, Instance, Int, List, String, Override
 )
 from bokeh.models import HTMLBox, ColumnDataSource
 
@@ -23,7 +23,7 @@ from ..util import classproperty
 class DeckGLPlot(HTMLBox):
     """A Bokeh model that wraps around a DeckGL plot and renders it inside a HTMLBox"""
 
-    __css_raw__ = ["https://api.mapbox.com/mapbox-gl-js/v1.7.0/mapbox-gl.css"]
+    __css_raw__ = ["https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css"]
 
     @classproperty
     def __css__(cls):
@@ -84,6 +84,8 @@ class DeckGLPlot(HTMLBox):
     hoverState = Dict(String, Any)
 
     viewState = Dict(String, Any)
+
+    throttle = Dict(String, Int)
 
     height = Override(default=400)
 

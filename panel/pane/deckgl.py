@@ -88,6 +88,10 @@ class DeckGL(PaneBase):
     view_state = param.Dict(default={}, doc="""
         The current view state of the DeckGL plot.""")
 
+    throttle = param.Dict(default={'view': 200, 'hover': 200}, doc="""
+        Throttling timeout (in milliseconds) for view state and hover
+        events sent from the frontend.""")
+
     _rename = {
         'click_state': 'clickState', 'hover_state': 'hoverState',
         'view_state': 'viewState', 'tooltips': 'tooltip'
