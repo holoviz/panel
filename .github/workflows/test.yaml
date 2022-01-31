@@ -41,7 +41,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
-          channel-priority: strict
+          # channel-priority: strict
           channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
