@@ -28,6 +28,9 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
       DISPLAY: ":99.0"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Without this env var `doit env_create ...` uses by default
+      # the `pyviz` channel, except that we don't want to configure
+      # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
       - uses: actions/checkout@v2
