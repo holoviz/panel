@@ -17,7 +17,6 @@ import bleach
 import numpy as np
 import param
 
-from bokeh.models import LayoutDOM
 from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
 from tornado import gen
@@ -562,7 +561,7 @@ class Reactive(Syncable, Viewable):
         mapping = code or links
         assert_source_syncable(self, mapping)
         if isinstance(target, Syncable) and code is None:
-            assert_target_syncable(source, target, mapping)
+            assert_target_syncable(self, target, mapping)
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)
 

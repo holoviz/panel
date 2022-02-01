@@ -1,11 +1,13 @@
 """
 Defines Links which allow declaring links between bokeh properties.
 """
-import param
-import weakref
+import difflib
 import sys
+import weakref
 
-from bokeh.models import CustomJS, Model as BkModel
+import param
+
+from bokeh.models import CustomJS, Model as BkModel, LayoutDOM
 
 from .io.datamodel import create_linked_datamodel
 from .models import ReactiveHTML
@@ -28,7 +30,7 @@ def assert_source_syncable(source, properties):
                     "Ensure you jslink an attribute that exists on the "
                     "bokeh model."
                 )
-        elif (prop not in self.param and prop not in list(source._rename.values())):
+        elif (prop not in source.param and prop not in list(source._rename.values())):
             matches = difflib.get_close_matches(prop, list(source.param))
             if matches:
                 matches = ' Similar parameters include: %r' % matches
@@ -40,7 +42,7 @@ def assert_source_syncable(source, properties):
                 "found. Similar parameters include: {matches}."
             )
         elif (source._source_transforms.get(prop, False) is None or
-              self._rename.get(prop, False) is None):
+              source._rename.get(prop, False) is None):
             raise ValueError(
                 "Cannot jslink {prop!r} parameter on {type(source).__name__} "
                 "object, the parameter requires a live Python kernel "
