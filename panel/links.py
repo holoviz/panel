@@ -102,7 +102,12 @@ class Callback(param.Parameterized):
 
         arg_overrides = {}
         if 'holoviews' in sys.modules:
+            from holoviews.core.dimension import Dimensioned
             from .pane.holoviews import HoloViews, generate_panel_bokeh_map
+            found = [
+                (link, src, tgt) for (link, src, tgt) in found
+                if not (isinstance(src, Dimensioned) or isinstance(tgt, Dimensioned))
+            ]
             hv_views = root_view.select(HoloViews)
             map_hve_bk = generate_panel_bokeh_map(root_model, hv_views)
             for src in linkable:
@@ -276,7 +281,8 @@ class CallbackGenerator(object):
 
         src_model = self._resolve_model(root_model, source, src_spec[0])
         ref = root_model.ref['id']
-        link_id = id(link)
+
+        link_id = (id(link), src_spec, tgt_spec)
         if (any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs) or
             any(link_id in cb.tags for cbs in src_model.js_event_callbacks.values() for cb in cbs)):
             # Skip registering callback if already registered
