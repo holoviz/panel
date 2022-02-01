@@ -425,13 +425,17 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   relayout(): void {
+    if (this._relayouting)
+      return
     this._relayouting = true
     this.tabulator.rowManager.adjustTableSize()
     this.update_layout()
     this.compute_layout()
-    if (this.root !== this)
+    if (this.root !== this) {
       this.invalidate_layout()
-    else if ((this as any)._parent != undefined) { // HACK: Support ReactiveHTML
+      if ((this as any).root?._parent.relayout != undefined)
+	(this as any).root._parent.relayout()
+    } else if ((this as any)._parent != undefined) { // HACK: Support ReactiveHTML
       if ((this as any)._parent.relayout != undefined)
 	(this as any)._parent.relayout()
       else
@@ -544,7 +548,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         this._render_row(row)
       }
       if ((!this.model.expanded.length) && (!initializing))
-        this.relayout()
+        setTimeout(() => this.relayout(), 20)
     })
   }
 
