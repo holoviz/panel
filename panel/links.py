@@ -13,6 +13,64 @@ from .reactive import Reactive
 from .viewable import Viewable
 
 
+def assert_source_syncable(source, properties):
+    for prop in properties:
+        if prop.startswith('event:'):
+            continue
+        elif hasattr(source, 'object') and isinstance(source.object, LayoutDOM):
+            current = source.object
+            for attr in prop.split('.'):
+                if hasattr(current, attr):
+                    current = getattr(current, attr)
+                    continue
+                raise ValueError(
+                    f"Could not resolve {prop} on {source.object} model. "
+                    "Ensure you jslink an attribute that exists on the "
+                    "bokeh model."
+                )
+        elif (prop not in self.param and prop not in list(source._rename.values())):
+            matches = difflib.get_close_matches(prop, list(source.param))
+            if matches:
+                matches = ' Similar parameters include: %r' % matches
+            else:
+                matches = ''
+            raise ValueError(
+                f"Could not jslink {prop!r} parameter (or property) "
+                f"on {type(source).__name__} object because it was not "
+                "found. Similar parameters include: {matches}."
+            )
+        elif (source._source_transforms.get(prop, False) is None or
+              self._rename.get(prop, False) is None):
+            raise ValueError(
+                "Cannot jslink {prop!r} parameter on {type(source).__name__} "
+                "object, the parameter requires a live Python kernel "
+                "to have an effect."
+            )
+
+def assert_target_syncable(source, target, properties):
+    for k, p in properties.items():
+        if k.startswith('event:'):
+            continue
+        elif p not in target.param and p not in list(target._rename.values()):
+            matches = difflib.get_close_matches(p, list(target.param))
+            if matches:
+                matches = ' Similar parameters include: %r' % matches
+            else:
+                matches = ''
+            raise ValueError(
+                f"Could not jslink {p!r} parameter (or property) "
+                f"on {type(source).__name__} object because it was not "
+                "found. Similar parameters include: {matches}"
+            )
+        elif (target._source_transforms.get(p, False) is None or
+              target._rename.get(p, False) is None):
+            raise ValueError(
+                "Cannot jslink {k!r} parameter on {type(source).__name__} "
+                "object to {p!r} parameter on {type(target)__name__}. "
+                "It requires a live Python kernel to have an effect."
+            )
+
+
 class Callback(param.Parameterized):
     """
     A Callback defines some callback to be triggered when a property
