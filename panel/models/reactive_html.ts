@@ -309,7 +309,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   invalidate_layout(): void {
     if (this._parent != null)
       this._parent.invalidate_layout()
-    if (this.root != this)
+    if (this.root != this && this.root.has_finished())
       super.invalidate_layout()
   }
 
