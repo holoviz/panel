@@ -999,11 +999,6 @@ class Checkbox(Widget):
 
     _widget_type: ClassVar[Type[Model]] = _BkCheckboxGroup
 
-    def __init__(self, **params):
-        if params.get('value') is None:
-            params['value'] = False
-        super().__init__(**params)
-
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
