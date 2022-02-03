@@ -33,18 +33,18 @@ def assert_source_syncable(source, properties):
         elif (prop not in source.param and prop not in list(source._rename.values())):
             matches = difflib.get_close_matches(prop, list(source.param))
             if matches:
-                matches = ' Similar parameters include: %r' % matches
+                matches = f' Similar parameters include: {matches!r}'
             else:
                 matches = ''
             raise ValueError(
                 f"Could not jslink {prop!r} parameter (or property) "
                 f"on {type(source).__name__} object because it was not "
-                "found. Similar parameters include: {matches}."
+                "found.{matches}."
             )
         elif (source._source_transforms.get(prop, False) is None or
               source._rename.get(prop, False) is None):
             raise ValueError(
-                "Cannot jslink {prop!r} parameter on {type(source).__name__} "
+                f"Cannot jslink {prop!r} parameter on {type(source).__name__} "
                 "object, the parameter requires a live Python kernel "
                 "to have an effect."
             )
@@ -67,8 +67,8 @@ def assert_target_syncable(source, target, properties):
         elif (target._source_transforms.get(p, False) is None or
               target._rename.get(p, False) is None):
             raise ValueError(
-                "Cannot jslink {k!r} parameter on {type(source).__name__} "
-                "object to {p!r} parameter on {type(target)__name__}. "
+                f"Cannot jslink {k!r} parameter on {type(source).__name__} "
+                f"object to {p!r} parameter on {type(target).__name__}. "
                 "It requires a live Python kernel to have an effect."
             )
 
