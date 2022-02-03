@@ -430,7 +430,7 @@ class Param(PaneBase):
             if bounds[1] is not None:
                 kw['end'] = bounds[1]
             if ('start' not in kw or 'end' not in kw):
-                # Do not change widget class if _mapping was overridden
+                # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
                     if (isinstance(p_obj, param.Number) and
                         not isinstance(p_obj, (param.Date, param.CalendarDate))):
@@ -665,10 +665,12 @@ class Param(PaneBase):
     def widget_type(cls, pobj):
         ptype = type(pobj)
         for t in classlist(ptype)[::-1]:
-            if t in cls._mapping:
-                if isinstance(cls._mapping[t], types.FunctionType):
-                    return cls._mapping[t](pobj)
-                return cls._mapping[t]
+            if t not in cls.mapping:
+                continue
+            wtype = cls.mapping[t]
+            if isinstance(wtype, types.FunctionType):
+                return wtype(pobj)
+            return wtype
 
     def select(self, selector=None):
         """
