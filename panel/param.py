@@ -22,8 +22,8 @@ from .io.server import async_execute
 from .layout import Column, Panel, Row, Spacer, Tabs
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
-    abbreviated_repr, full_groupby, get_method_owner, is_parameterized,
-    param_name, recursive_parameterized
+    abbreviated_repr, classproperty, full_groupby, get_method_owner,
+    is_parameterized, param_name, recursive_parameterized
 )
 from .reactive import Reactive
 from .viewable import Layoutable, Viewable
@@ -150,11 +150,7 @@ class Param(PaneBase):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
-    priority = 0.1
-
-    _unpack = True
-
-    _mapping = {
+    mapping = {
         param.Action:            Button,
         param.Boolean:           Checkbox,
         param.CalendarDate:      DatePicker,
@@ -180,7 +176,11 @@ class Param(PaneBase):
     }
 
     if hasattr(param, 'Event'):
-        _mapping[param.Event] = Button
+        mapping[param.Event] = Button
+
+    priority = 0.1
+
+    _unpack = True
 
     _rerender_params = []
 
@@ -226,6 +226,14 @@ class Param(PaneBase):
             'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name',
             'hide_constant'])
         self._update_widgets()
+
+    @classproperty
+    def _mapping(cls):
+        cls.param.warning(
+            "Param._mapping is now deprecated in favor of the public "
+            "Param.mapping attribute. Update your code accordingly."
+        )
+        return cls.mapping
 
     def __repr__(self, depth=0):
         cls = type(self).__name__
@@ -422,7 +430,7 @@ class Param(PaneBase):
             if bounds[1] is not None:
                 kw['end'] = bounds[1]
             if ('start' not in kw or 'end' not in kw):
-                # Do not change widget class if _mapping was overridden
+                # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
                     if (isinstance(p_obj, param.Number) and
                         not isinstance(p_obj, (param.Date, param.CalendarDate))):
@@ -657,10 +665,12 @@ class Param(PaneBase):
     def widget_type(cls, pobj):
         ptype = type(pobj)
         for t in classlist(ptype)[::-1]:
-            if t in cls._mapping:
-                if isinstance(cls._mapping[t], types.FunctionType):
-                    return cls._mapping[t](pobj)
-                return cls._mapping[t]
+            if t not in cls.mapping:
+                continue
+            wtype = cls.mapping[t]
+            if isinstance(wtype, types.FunctionType):
+                return wtype(pobj)
+            return wtype
 
     def select(self, selector=None):
         """
