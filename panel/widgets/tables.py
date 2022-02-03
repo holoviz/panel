@@ -1,4 +1,5 @@
 import datetime as dt
+import uuid
 
 from functools import partial
 from types import FunctionType, MethodType
@@ -783,7 +784,7 @@ class DataFrame(BaseTable):
         props['fit_columns'] = self.fit_columns
         if 'autosize_mode' in DataTable.properties():
             props['frozen_columns'] = self.frozen_columns
-            props['frozen_rows'] = self.frozen_rows
+            props['frozen_rows'] = self.frozen_bows
             props['autosize_mode'] = self.autosize_mode
             props['auto_edit'] = self.auto_edit
         props['row_height'] = self.row_height
@@ -1067,7 +1068,7 @@ class Tabulator(BaseTable):
             if r not in styles:
                 styles[int(r)] = {}
             styles[int(r)][offset+int(c)] = s
-        return styles
+        return {'id': uuid.uuid4().hex, 'data': styles}
 
     def _get_selectable(self):
         if self.value is None or self.selectable_rows is None:

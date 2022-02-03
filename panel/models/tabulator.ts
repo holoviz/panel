@@ -233,8 +233,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   _updating_page: boolean = true
   _relayouting: boolean = false
   _selection_updating: boolean =false
-  _styled_cells: any[] = []
-  _styles: any = null
   _initializing: boolean
 
   connect_signals(): void {
@@ -259,11 +257,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }
     })
 
-    this.connect(this.model.properties.styles.change, () => {
-      this._styles = this.model.styles
-      this.setStyles()
-    })
-
+    this.connect(this.model.properties.styles.change, () => this.setStyles())
     this.connect(this.model.properties.hidden_columns.change, () => this.setHidden())
     this.connect(this.model.properties.page_size.change, () => this.setPageSize())
     this.connect(this.model.properties.page.change, () => {
@@ -297,9 +291,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   after_layout(): void {
     super.after_layout()
-    if (this.tabulator != null && (!this._relayouting || this._initializing)) {
+    if (this.tabulator != null && (!this._relayouting || this._initializing))
       this.redraw()
-    }
   }
 
   render(): void {
@@ -308,8 +301,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     if (wait)
       return
     this._initializing = true
-    if (this._styles == null)
-      this._styles = this.model.styles
     const container = div({class: "pnx-tabulator"})
     set_size(container, this.model)
     let configuration = this.getConfiguration()
@@ -335,7 +326,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     } else
       this.setFrozen()
 
-    this.el.appendChild(container);
+    this.el.appendChild(container)
   }
 
   /*
@@ -807,6 +798,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     let data = transform_cds_to_records(this.model.source, true)
     this.tabulator.setData(data)
+    console.log('update')
     this.postUpdate()
   }
 
@@ -876,13 +868,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   setStyles(): void {
-    for (const cell_el of this._styled_cells)
-      cell_el.cssText = ""
-    this._styled_cells = []
-    if (this._styles == null || this.tabulator == null || this.tabulator.getDataCount() == 0)
+    if (this.tabulator == null || this.tabulator.getDataCount() == 0)
       return
-    for (const r in this._styles) {
-      const row_style = this._styles[r]
+    for (const r in this.model.styles.data) {
+      const row_style = this.model.styles.data[r]
       const row = this.tabulator.getRow(r)
       if (!row)
         continue
@@ -893,8 +882,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         if (cell == null || !style.length)
           continue
         const element = cell.element
-        this._styled_cells.push(element)
-        element.cssText = ""
         for (const s of style) {
           let prop, value
           if (isArray(s))
@@ -907,9 +894,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         }
       }
     }
-    const styles = this._styles
-    this.model.styles = {}
-    this._styles = styles
   }
 
   setHidden(): void {
