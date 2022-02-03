@@ -784,7 +784,7 @@ class DataFrame(BaseTable):
         props['fit_columns'] = self.fit_columns
         if 'autosize_mode' in DataTable.properties():
             props['frozen_columns'] = self.frozen_columns
-            props['frozen_rows'] = self.frozen_bows
+            props['frozen_rows'] = self.frozen_rows
             props['autosize_mode'] = self.autosize_mode
             props['auto_edit'] = self.auto_edit
         props['row_height'] = self.row_height
