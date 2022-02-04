@@ -1,4 +1,5 @@
 import datetime as dt
+import uuid
 
 from functools import partial
 from types import FunctionType, MethodType
@@ -1067,7 +1068,7 @@ class Tabulator(BaseTable):
             if r not in styles:
                 styles[int(r)] = {}
             styles[int(r)][offset+int(c)] = s
-        return styles
+        return {'id': uuid.uuid4().hex, 'data': styles}
 
     def _get_selectable(self):
         if self.value is None or self.selectable_rows is None:

@@ -644,7 +644,7 @@ def test_tabulator_styling(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert model.styles == {
+    assert model.styles['data'] == {
         0: {1: [('color', 'black')]},
         1: {1: [('color', 'black')]},
         2: {1: [('color', 'black')]},
