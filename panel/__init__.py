@@ -5,9 +5,11 @@ Works with the tools you know and ❤️.
 
 [Check out](https://panel.holoviz.org/) | [Get started](https://panel.holoviz.org/getting_started/index.html) | [Join the community](https://discourse.holoviz.org/) | [Github](https://github.com/holoviz/panel) | [Twitter](https://twitter.com/Panel_org) | [LinkedIn](https://www.linkedin.com/company/79754450)
 
+![Panel Dashboard](https://user-images.githubusercontent.com/42288570/152672367-6c239073-0ea0-4a2b-a4c0-817e8090e877.gif)
+
 ## Interactive models with `.bind`
 
-![Interactive Model App](https://user-images.githubusercontent.com/42288570/150686594-21b03e55-79ef-406b-9e61-1764c6b493c3.gif)
+![Interactive Model App](https://user-images.githubusercontent.com/42288570/152672364-582016c1-3085-4895-9884-541b896c34a6.gif)
 
 You can use Panels `.bind` to bind your models to widgets.
 
@@ -55,7 +57,7 @@ This includes
 
 ## Interactive dataframes with `.interactive`
 
-![Interactive DataFrame App](https://user-images.githubusercontent.com/42288570/150683991-9cece6a1-3751-42d2-8256-505f5deb12be.gif)
+![Interactive DataFrame App](https://user-images.githubusercontent.com/42288570/152672366-39b8b964-5627-4448-9788-5faf86095c3c.gif)
 
 You can use [hvplot .interactive](https://hvplot.holoviz.org/user_guide/Interactive.html) and 
 Panels widgets to make your dataframes interactive.
