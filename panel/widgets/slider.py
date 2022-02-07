@@ -216,7 +216,6 @@ class DateSlider(_SliderBase):
     )
     ```
     """
-
     value = param.Date(default=None, doc="""
         The selected date value of the slider. Updated when the slider handle is dragged. Supports
         datetime.datetime, datetime.date or np.datetime64 types.""")
@@ -261,8 +260,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     ```python
     pn.widgets.DiscreteSlider(
-        value="love",
-        options=list(["We", "love", "data", "apps"]),
+        value=0,
+        options=list([0, 1, 2, 4, 8, 16, 32, 64]),
         name="A discrete value",
     )
     ```
@@ -580,7 +579,7 @@ class DateRangeSlider(_RangeSliderBase):
 
     value = param.Tuple(default=(None, None), length=2, doc=
         """The selected range as a tuple of values. Updated when one of the handles is
-        dragged. Supports datetime.datetime, datetime.date, np.datetime64 ranges.""")
+        dragged. Supports datetime.datetime, datetime.date, and np.datetime64 ranges.""")
 
     start = param.Date(default=None, doc="""
         The lower bound.""")
@@ -795,7 +794,8 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
 
-    value_throttled = param.Range(default=None, constant=True)
+    value_throttled = param.Range(default=None, constant=True, doc="""
+        The value of the slider. Updated when the handle is released.""")
 
     _composite_type = Column
 
