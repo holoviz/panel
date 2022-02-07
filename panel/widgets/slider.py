@@ -75,7 +75,7 @@ class _SliderBase(Widget):
         return super()._update_model(events, msg, root, model, doc, comm)
 
 
-class _ContinuousSlider(_SliderBase):
+class ContinuousSlider(_SliderBase):
 
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A custom format string or Bokeh TickFormatter.""")
@@ -124,7 +124,7 @@ class _ContinuousSlider(_SliderBase):
         return (dw, w_model, values, lambda x: x.value, 'value', 'cb_obj.value')
 
 
-class FloatSlider(_ContinuousSlider):
+class FloatSlider(ContinuousSlider):
     """The FloatSlider widget allows selecting a floating-point value within a
     set of bounds using a slider.
 
@@ -160,7 +160,7 @@ class FloatSlider(_ContinuousSlider):
     _rename = {'name': 'title'}
 
 
-class IntSlider(_ContinuousSlider):
+class IntSlider(ContinuousSlider):
     """The IntSlider widget allows selecting an integer value within a set of bounds
     using a slider.
 
