@@ -7,7 +7,7 @@ dashboards by connecting user-defined widgets to plots, images, tables, or text.
 
 Panel works with the tools you know and ❤️.
 
-![Panel Dashboard](https://user-images.githubusercontent.com/42288570/152672367-6c239073-0ea0-4a2b-a4c0-817e8090e877.gif)
+![Panel Dashboard](https://assets.holoviews.org/panel/thumbnails/docstrings/panel.gif)
 """
 from . import layout # noqa
 from . import links # noqa
