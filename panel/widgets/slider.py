@@ -133,10 +133,6 @@ class FloatSlider(ContinuousSlider):
     ## Example
 
     ```python
-    import panel as pn
-
-    pn.extension()
-
     slider=pn.widgets.FloatSlider(value=0.5,start=0.0,end=1.0,step=0.1, name="Float Value")
     ```
     """
@@ -169,10 +165,6 @@ class IntSlider(ContinuousSlider):
     ## Example
 
     ```python
-    import panel as pn
-
-    pn.extension()
-
     slider=pn.widgets.IntSlider(value=5,start=0,end=10,step=1, name="Integer Value")
     ```
     """
@@ -216,11 +208,7 @@ class DateSlider(_SliderBase):
 
     ```python
     import datetime as dt
-    import panel as pn
-
-    pn.extension()
-
-    slider = pn.widgets.DateSlider(
+    pn.widgets.DateSlider(
         value=dt.datetime(2025, 1, 1),
         start=dt.datetime(2025, 1, 1),
         end=dt.datetime(2025, 1, 7),
@@ -272,11 +260,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     ## Example
 
     ```python
-    import panel as pn
-
-    pn.extension()
-
-    slider = pn.widgets.DiscreteSlider(
+    pn.widgets.DiscreteSlider(
         value="love",
         options=list(["We", "love", "data", "apps"]),
         name="A discrete value",
@@ -495,11 +479,7 @@ class RangeSlider(_RangeSliderBase):
     ## Example
 
     ```python
-    import panel as pn
-
-    pn.extension()
-
-    slider = pn.widgets.RangeSlider(
+    pn.widgets.RangeSlider(
         value=(1.0, 1.5), start=0.0, end=2.0, step=0.25, name="A tuple of floats"
     )
     ```
@@ -552,11 +532,7 @@ class IntRangeSlider(RangeSlider):
     ## Example
 
     ```python
-    import panel as pn
-
-    pn.extension()
-
-    slider = pn.widgets.IntRangeSlider(
+    pn.widgets.IntRangeSlider(
         value=(2, 4), start=0, end=10, step=2, name="A tuple of integers"
     )
     ```
@@ -592,11 +568,7 @@ class DateRangeSlider(_RangeSliderBase):
 
     ```python
     import datetime as dt
-    import panel as pn
-
-    pn.extension()
-
-    slider = pn.widgets.DateRangeSlider(
+    pn.widgets.DateRangeSlider(
         value=(dt.datetime(2025, 1, 9), dt.datetime(2025, 1, 16)),
         start=dt.datetime(2025, 1, 1),
         end=dt.datetime(2025, 1, 31),
@@ -760,11 +732,7 @@ class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
     ## Example
 
     ```python
-    import panel as pn
-
-    pn.extension()
-
-    slider = pn.widgets.EditableFloatSlider(
+    pn.widgets.EditableFloatSlider(
         value=1.0, start=0.0, end=2.0, step=0.25, name="A float value"
     )
     ```
@@ -784,11 +752,7 @@ class EditableIntSlider(_EditableContinuousSlider, IntSlider):
     ## Example
 
     ```python
-    import panel as pn
-
-    pn.extension()
-
-    slider = pn.widgets.EditableIntSlider(
+    pn.widgets.EditableIntSlider(
         value=2, start=0, end=5, step=1, name="An integer value"
     )
     ```
@@ -808,11 +772,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     ## Example
 
     ```python
-    import panel as pn
-
-    pn.extension()
-
-    slider = pn.widgets.EditableRangeSlider(
+    pn.widgets.EditableRangeSlider(
         value=(1.0, 1.5), start=0.0, end=2.0, step=0.25, name="A tuple of floats"
     )
     ```
