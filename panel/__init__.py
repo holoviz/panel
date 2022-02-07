@@ -93,6 +93,8 @@ from . import links # noqa
 from . import pane # noqa
 from . import param # noqa
 from . import pipeline # noqa
+from . import reactive # noqa
+from . import viewable # noqa
 from . import widgets # noqa
 
 from .config import config, panel_extension as extension, __version__ # noqa
