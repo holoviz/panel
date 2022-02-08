@@ -429,11 +429,11 @@ class Param(PaneBase):
                 kw['start'] = bounds[0]
             if bounds[1] is not None:
                 kw['end'] = bounds[1]
-            if ('start' not in kw or 'end' not in kw):
+            if (('start' not in kw or 'end' not in kw) and
+                not isinstance(p_obj, (param.Date, param.CalendarDate))):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
-                    if (isinstance(p_obj, param.Number) and
-                        not isinstance(p_obj, (param.Date, param.CalendarDate))):
+                    if isinstance(p_obj, param.Number):
                         widget_class = FloatInput
                         if isinstance(p_obj, param.Integer):
                             widget_class = IntInput
