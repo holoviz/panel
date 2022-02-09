@@ -780,15 +780,17 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const last_row = rows[rows.length-1]
     const start = ((last_row?.data._index) || 0)
     this.setData()
+    this.postUpdate()
     if (this.model.follow && last_row)
       this.tabulator.scrollToRow(start, "top", false)
-    this.postUpdate()
   }
 
   postUpdate(): void {
     if (!this.model.pagination)
       this.setFrozen()
     this.setSelection()
+    if (this.model.height == null && this.model.pagination == null)
+      this.relayout()
   }
 
   updateOrAddData(): void {
@@ -798,7 +800,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     let data = transform_cds_to_records(this.model.source, true)
     this.tabulator.setData(data)
-    console.log('update')
     this.postUpdate()
   }
 
