@@ -727,7 +727,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       };
       const button_column = {
 	formatter: button_formatter,
-	width: 40,
 	hozAlign: "center",
 	cellClick: (_: any, cell: any) => {
 	  const index = cell._cell.row.data._index;
