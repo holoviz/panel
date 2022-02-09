@@ -16,12 +16,6 @@ class Widget(Reactive):
     parameters on the Widget instance.
     """
 
-    align = param.ClassSelector(default=('start', 'end'),
-                                class_=(str, tuple), doc="""
-        Whether the object should be aligned with the start, end or
-        center of its container. If set as a tuple it will declare
-        (horizontal, vertical) alignment.""")
-
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
 
