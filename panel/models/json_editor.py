@@ -59,7 +59,12 @@ class JSONEditor(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            'jsoneditor': "//cdn.jsdelivr.net/npm/jsoneditor@9.1.9/dist/jsoneditor.min.js"
+            'jsoneditor': "//cdn.jsdelivr.net/npm/jsoneditor@9.1.9/dist/jsoneditor.min"
         },
-        'shim': {'jsoneditor': {'exports': "JSONEditor"}}
+        'exports': {'jsoneditor': 'JSONEditor'},
+        'shim': {
+            'jsoneditor': {
+                'exports': "JSONEditor"
+            }
+        }
     }
