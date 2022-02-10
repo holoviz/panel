@@ -9,12 +9,12 @@ import param
 
 from pyviz_comms import JupyterComm
 
-from ..io.notebook import push, push_on_root
+from ..io.notebook import push
 from ..io.state import state
 from ..models import (
     VideoStream as _BkVideoStream, FileDownload as _BkFileDownload
 )
-from ..util import lazy_load, updating
+from ..util import lazy_load
 from .base import Widget
 from .indicators import Progress # noqa
 
@@ -252,8 +252,4 @@ class JSONEditor(Widget):
                 'panel.models.json_editor', 'JSONEditor', isinstance(comm, JupyterComm)
             )
         model = super()._get_model(doc, root, parent, comm)
-        if comm:
-            model.on_event('json_edit', self._comm_event)
-        else:
-            model.on_event('json_edit', partial(self._server_event, doc))
         return model
