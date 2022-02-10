@@ -205,30 +205,46 @@ class FileDownload(Widget):
 
 class JSONEditor(Widget):
 
-    append_suggestions = param.Callable()
+    menu = param.Boolean(default=True, doc="""
+        Adds main menu bar - Contains format, sort, transform, search
+        etc. functionality. true by default. Applicable in all types
+        of mode.""")
 
-    value_autocomplete = param.Callable()
-
-    key_autocomplete = param.Callable()
+    mode = param.Selector(default='tree', objects=[
+        "tree", "view", "form", "code", "text", "preview"], doc="""
+        Sets the editor mode. In 'view' mode, the data and
+        datastructure is read-only. In 'form' mode, only the value can
+        be changed, the data structure is read-only. Mode 'code'
+        requires the Ace editor to be loaded on the page. Mode 'text'
+        shows the data as plain text. The 'preview' mode can handle
+        large JSON documents up to 500 MiB. It shows a preview of the
+        data, and allows to transform, sort, filter, format, or
+        compact the data.""")
 
     search = param.Boolean(default=True, doc="""
-        Whether to add a search widget.""")
+        Enables a search box in the upper right corner of the
+        JSONEditor. true by default. Only applicable when mode is
+        'tree', 'view', or 'form'.""")
 
     selection = param.List(default=[], doc="""
         Current selection.""")
 
+    schema = param.Dict(default=None, doc="""
+        Validate the JSON object against a JSON schema. A JSON schema
+        describes the structure that a JSON object must have, like
+        required properties or the type that a value must have.
+
+        See http://json-schema.org/ for more information.""")
+
     templates = param.List(doc="""
-        Templates of objects.""")
+        Array of templates that will appear in the context menu, Each
+        template is a json object precreated that can be added as a
+        object value to any node in your document.""")
 
     value = param.Parameter(default={}, doc="""
         JSON data to be edited.""")
 
-    _rename = {
-        'value': 'data',
-        'key_autocomplete': None,
-        'value_autocomplete': None,
-        'append_suggestions': None
-    }
+    _rename = {'value': 'data'}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:
@@ -241,33 +257,3 @@ class JSONEditor(Widget):
         else:
             model.on_event('json_edit', partial(self._server_event, doc))
         return model
-
-    def _process_event(self, event):
-        self._process_query(event.data)
-
-    @updating
-    def _process_query(self, query):
-        if query is None:
-            return []
-        qtype = query.pop('type')
-        if qtype == 'autocomplete':
-            inp = query.pop('input')
-            if inp == 'key':
-                cb = self.key_autocomplete
-            else:
-                cb = self.value_autocomplete
-            if cb is None:
-                result = None
-            else:
-                result = cb(tuple(query['path']), query['text'])
-        elif qtype == 'append':
-            if self.append_suggestions:
-                result = self.append_suggestions(tuple(query['node']['path']))
-            else:
-                result = []
-        for ref, (m, _) in self._models.items():
-            if qtype == 'append':
-                m.templates = result
-            else:
-                m.result = result
-            push_on_root(ref)

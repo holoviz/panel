@@ -1,7 +1,7 @@
 """
 Custom bokeh Markup models.
 """
-from bokeh.core.properties import Any, Bool, List
+from bokeh.core.properties import Any, Bool, Dict, Enum, List, Nullable, String
 from bokeh.events import ModelEvent
 from bokeh.models import HTMLBox
 
@@ -25,13 +25,17 @@ class JSONEditor(HTMLBox):
 
     data = Any()
 
+    menu = Bool(True)
+
+    mode = Enum("tree", "view", "form", "code", "text", "preview", default='tree')
+
     search = Bool(True)
 
     selection = List(Any)
 
-    templates = List(Any)
+    schema = Nullable(Dict(String, Any), default=None)
 
-    result = Any()
+    templates = List(Any)
 
     __javascript_raw__ = [
         'https://cdn.jsdelivr.net/npm/jsoneditor@9.1.9/dist/jsoneditor.min.js'
