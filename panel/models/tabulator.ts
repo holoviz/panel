@@ -424,10 +424,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.compute_layout()
     if (this.root !== this) {
       this.invalidate_layout()
-      if ((this as any).root?._parent.relayout != undefined)
-	(this as any).root._parent.relayout()
-    } else if ((this as any)._parent != undefined) { // HACK: Support ReactiveHTML
-      if ((this as any)._parent.relayout != undefined)
+      const parent = (this as any).root._parent
+      if (parent != null && parent.relayout != null)
+	parent.relayout()
+    } else if ((this as any)._parent != null) { // HACK: Support ReactiveHTML
+      if ((this as any)._parent.relayout != null)
 	(this as any)._parent.relayout()
       else
         (this as any)._parent.invalidate_layout()
