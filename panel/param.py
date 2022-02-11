@@ -152,6 +152,7 @@ class Param(PaneBase):
 
     mapping = {
         param.Action:            Button,
+        param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
         param.CalendarDate:      DatePicker,
         param.Color:             ColorPicker,
@@ -173,7 +174,6 @@ class Param(PaneBase):
         param.Range:             RangeSlider,
         param.Selector:          Select,
         param.String:            TextInput,
-        param.Array:             ArrayInput,
     }
 
     if hasattr(param, 'Event'):
