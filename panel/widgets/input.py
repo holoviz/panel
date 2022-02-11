@@ -513,18 +513,24 @@ class LiteralInput(Widget):
 
 
 class ArrayInput(LiteralInput):
+    """
+    ArrayInput allows rendering and editing NumPy arrays in a text
+    input widget. Arrays larger than the `max_array_size` will be
+    summarized and editing will be disbaled.
+    """
 
     max_array_size = param.Number(default=1000, doc="""
-        Arrays larger than this limit will be allowed in Python but will not
-        be serialized into JavaScript. Although such large arrays will thus
-        not be editable in the widget, such a restriction helps avoid 
-        overwhelming the browser and lets other widgets remain usable.
-    """)
+        Arrays larger than this limit will be allowed in Python but
+        will not be serialized into JavaScript. Although such large
+        arrays will thus not be editable in the widget, such a
+        restriction helps avoid overwhelming the browser and lets
+        other widgets remain usable.""")
 
-    _rename = dict(**LiteralInput._rename, **{'max_array_size': None})
+    _rename = dict(LiteralInput._rename, max_array_size=None)
 
-    _auto_disabled = False
-
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._auto_disabled = False
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -533,25 +539,33 @@ class ArrayInput(LiteralInput):
         return msg
 
     def _process_param_change(self, msg):
-        if 'disabled' in msg and msg['disabled']:
+        if msg.get('disabled', False):
             self._auto_disabled = False
-        if 'value' in msg and msg['value'] is not None:
-            if msg['value'].size <= self.max_array_size:
-                msg['value'] = msg['value'].tolist()
-                if self.disabled and self._auto_disabled:
-                    self.disabled = False
-                    msg['disabled'] = False
-                    self._auto_disabled = False
-            else:
-                msg['value'] = np.array2string(msg['value'], separator=',')
-                if not self.disabled:
-                    self.param.warning("".join(
-                        (f"Number of array elements ({msg['value'].size}) exceed  `max_array_size` ({self.max_array_size}), "
-                        "widget edition capabilities will be dropped")
-                    ))
-                    self.disabled = True
-                    msg['disabled'] = True
-                    self._auto_disabled = True
+        value = msg.get('value')
+        if value is None:
+            return super()._process_param_change(msg)
+        if value.size <= self.max_array_size:
+            msg['value'] = value.tolist()
+            # If array is no longer larger than max_array_size
+            # unset disabled
+            if self.disabled and self._auto_disabled:
+                self.disabled = False
+                msg['disabled'] = False
+                self._auto_disabled = False
+        else:
+            msg['value'] = np.array2string(
+                msg['value'], separator=',',
+                threshold=self.max_array_size
+            )
+            if not self.disabled:
+                self.param.warning(
+                    f"Number of array elements ({value.size}) exceeds "
+                    f"`max_array_size` ({self.max_array_size}), editing "
+                    "will be disabled."
+                )
+                self.disabled = True
+                msg['disabled'] = True
+                self._auto_disabled = True
         return super()._process_param_change(msg)
 
 
