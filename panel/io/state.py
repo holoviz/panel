@@ -2,11 +2,11 @@
 Various utilities for recording and embedding state in a rendered app.
 """
 import datetime as dt
+import inspect
 import logging
 import json
 import threading
 import time
-
 
 from collections.abc import Iterator
 from collections import OrderedDict, defaultdict
@@ -115,6 +115,9 @@ class _state(param.Parameterized):
     # Dictionary of callbacks to be triggered on app load
     _onload = WeakKeyDictionary()
     _on_session_created = []
+
+    # Module that was run during setup
+    _setup_module = None
 
     # Scheduled callbacks
     _scheduled = {}
@@ -229,7 +232,7 @@ class _state(param.Parameterized):
             self._profiles[(path+':on_load', config.profiler)] += sessions
             self.param.trigger('_profiles')
 
-    def _scheduled_cb(self, name):
+    async def _scheduled_cb(self, name):
         if name not in self._scheduled:
             return
         diter, cb = self._scheduled[name]
@@ -243,7 +246,9 @@ class _state(param.Parameterized):
             now = dt.datetime.now().timestamp()
             call_time_seconds = (at - now)
             ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
-        cb()
+        res = cb()
+        if inspect.isawaitable(res):
+            await res
 
     #----------------------------------------------------------------
     # Public Methods
@@ -331,6 +336,24 @@ class _state(param.Parameterized):
                     return cb
             cb.start()
         return cb
+
+    def cancel_scheduled(self, name, wait=False):
+        """
+        Cancel a task scheduled using the `state.schedule` method by name.
+
+        Arguments
+        ---------
+        name: str
+            The name of the scheduled task.
+        wait: boolean
+            Whether to wait until after the next execution.
+        """
+        if name not in self._scheduled:
+            raise KeyError(f'No task with the name {name!r} has been scheduled.')
+        if wait:
+            self._scheduled[name] = (None, self._scheduled[name][1])
+        else:
+            del self._scheduled[name]
 
     def get_profile(self, profile):
         """
@@ -484,8 +507,15 @@ class _state(param.Parameterized):
         if name in self._scheduled:
             return
         ioloop = IOLoop.current()
-        if not ioloop.asyncio_loop.is_running():
-            raise RuntimeError("Cannot schedule task, event loop is not running.")
+        if getattr(callback, '__module__', '').startswith('bokeh_app_'):
+            raise RuntimeError(
+                "Cannot schedule a task from within the context of an "
+                "application. Either serve an application structured "
+                "into a directory containing a main.py module and declare "
+                "any scheduled tasks in a server_lifecycle.py or explicitly "
+                "provide a Python module containing the scheduled tasks "
+                "using the --tasks commandline argument to panel serve."
+            )
         if cron is None:
             if isinstance(period, str):
                 period = parse_timedelta(period)
@@ -509,7 +539,7 @@ class _state(param.Parameterized):
                     new_time += period
             diter = dgen()
         else:
-            import croniter
+            from croniter import croniter
             base = dt.datetime.now() if at is None else at
             diter = croniter(cron, base)
         now = dt.datetime.now().timestamp()

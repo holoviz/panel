@@ -9,6 +9,7 @@ import logging # isort:skip
 import os
 
 from glob import glob
+from types import ModuleType
 
 from bokeh.command.subcommands.serve import Serve as _BkServe
 from bokeh.command.util import build_single_handler_applications
@@ -185,6 +186,12 @@ class Serve(_BkServe):
             type    = int,
             help    = "Whether to start a thread pool which events are dispatched to.",
             default = None
+        )),
+        ('--setup', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Path to a setup script to run before server starts.",
+            default = None
         ))
     )
 
@@ -251,6 +258,18 @@ class Serve(_BkServe):
         if config.autoreload:
             for f in files:
                 watch(f)
+
+        if args.setup:
+            setup_path = args.setup
+            with open(setup_path) as f:
+                setup_source = f.read()
+            nodes = ast.parse(setup_source, os.fspath(setup_path))
+            code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
+            module_name = 'panel_setup_module'
+            module = ModuleType(module_name)
+            module.__dict__['__file__'] = os.path.abspath(setup_path)
+            exec(code, module.__dict__)
+            state._setup_module = module
 
         if args.warm or args.autoreload:
             argvs = {f: args.args for f in files}
