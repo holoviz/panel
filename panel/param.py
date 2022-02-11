@@ -28,7 +28,7 @@ from .util import (
 from .reactive import Reactive
 from .viewable import Layoutable, Viewable
 from .widgets import (
-    Button, Checkbox, ColorPicker, DataFrame, DatePicker,
+    ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
     DatetimeInput, DateRangeSlider, DiscreteSlider, FileSelector,
     FloatSlider, IntInput, IntSlider, LiteralInput, MultiSelect,
     RangeSlider, Select, FloatInput, StaticText, TextInput, Toggle,
@@ -152,6 +152,7 @@ class Param(PaneBase):
 
     mapping = {
         param.Action:            Button,
+        param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
         param.CalendarDate:      DatePicker,
         param.Color:             ColorPicker,

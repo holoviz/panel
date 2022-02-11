@@ -1,12 +1,14 @@
-import pytest
 from datetime import datetime, date
+
+import numpy as np
+import pytest
 
 from bokeh.models.widgets import FileInput as BkFileInput
 from panel import config
 from panel.widgets import (
-    Checkbox, DatePicker, DatetimeInput, DatetimePicker,
-    DatetimeRangeInput, DatetimeRangePicker, FileInput,
-    LiteralInput, TextInput, StaticText, IntInput, FloatInput
+    ArrayInput, Checkbox, DatePicker, DatetimeInput, DatetimePicker,
+    DatetimeRangeInput, DatetimeRangePicker, FileInput, LiteralInput,
+    TextInput, StaticText, IntInput, FloatInput
 )
 
 
@@ -323,3 +325,23 @@ def test_float_input(document, comm):
 
         float_input.value = 0.5
         assert widget.value == 0.5
+
+
+def test_array_input(document, comm):
+    array_input = ArrayInput(value=np.array([1, 2, 3]),  name="Array input", max_array_size=3)
+    widget = array_input.get_root(document, comm=comm)
+
+    assert isinstance(widget, array_input._widget_type)
+    assert widget.title == 'Array input'
+    assert widget.value == '[1, 2, 3]'
+    assert not widget.disabled
+
+    array_input.value = np.array([1, 2, 3, 4])
+
+    assert widget.value == "'[1,2,3,4]'"
+    assert widget.disabled
+    assert array_input._auto_disabled
+
+    array_input.value = np.array([1, 2, 3])
+    assert not widget.disabled
+    assert not array_input._auto_disabled

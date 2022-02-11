@@ -17,6 +17,7 @@ from .indicators import ( # noqa
     Tqdm,
 )
 from .input import (  # noqa
+    ArrayInput,
     ColorPicker,
     Checkbox,
     DatetimeInput,
