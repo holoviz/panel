@@ -528,6 +528,8 @@ class ArrayInput(LiteralInput):
 
     _rename = dict(LiteralInput._rename, max_array_size=None)
 
+    _source_transforms = {'value': None}
+
     def __init__(self, **params):
         super().__init__(**params)
         self._auto_disabled = False
