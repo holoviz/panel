@@ -39,6 +39,6 @@ service-identity==18.1.0
 six==1.13.0
 sqlparse==0.3.0
 tornado==6.0.3
-Twisted==20.3.0
+Twisted==22.1.0
 txaio==18.8.1
 zope.interface==4.7.1
