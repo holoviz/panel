@@ -13,7 +13,7 @@ from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
 from functools import partial
 from urllib.parse import urljoin
-from weakref import WeakKeyDictionary, WeakSet
+from weakref import WeakKeyDictionary
 
 import param
 
