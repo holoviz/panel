@@ -135,20 +135,20 @@ class BaseTable(ReactiveData, Widget):
             col_kwargs = {}
             kind = data.dtype.kind
             if kind == 'i':
-                formatter = NumberFormatter()
+                formatter = NumberFormatter(text_align='right')
                 editor = IntEditor()
             elif kind == 'b':
-                formatter = StringFormatter()
+                formatter = StringFormatter(text_align='center')
                 editor = CheckboxEditor()
             elif kind == 'f':
-                formatter = NumberFormatter(format='0,0.0[00000]')
+                formatter = NumberFormatter(format='0,0.0[00000]', text_align='right')
                 editor = NumberEditor()
             elif isdatetime(data) or kind == 'M':
                 if len(data) and isinstance(data.values[0], dt.date):
                     date_format = '%Y-%m-%d'
                 else:
                     date_format = '%Y-%m-%d %H:%M:%S'
-                formatter = DateFormatter(format=date_format)
+                formatter = DateFormatter(format=date_format, text_align='right')
                 editor = DateEditor()
             else:
                 formatter = StringFormatter()
@@ -158,6 +158,8 @@ class BaseTable(ReactiveData, Widget):
                 formatter.text_align = self.text_align
             elif col in self.text_align:
                 formatter.text_align = self.text_align[col]
+            elif col in self.indexes:
+                formatter.text_align = 'left'
 
             if col in self.editors and not isinstance(self.editors[col], (dict, str)):
                 editor = self.editors[col]
