@@ -290,7 +290,7 @@ def test_server_schedule_at():
 
     # Check callback was executed within small margin of error
     assert 'at' in state.cache
-    assert abs(state.cache['at'] - scheduled) < dt.timedelta(seconds=0.02)
+    assert abs(state.cache['at'] - scheduled) < dt.timedelta(seconds=0.2)
     assert len(state._scheduled) == 0
 
     server.stop()
@@ -325,8 +325,8 @@ def test_server_schedule_at_iterator():
 
     # Check callbacks were executed within small margin of error
     assert len(state.cache['at']) == 2
-    assert abs(state.cache['at'][0] - scheduled1) < dt.timedelta(seconds=0.01)
-    assert abs(state.cache['at'][1] - scheduled2) < dt.timedelta(seconds=0.01)
+    assert abs(state.cache['at'][0] - scheduled1) < dt.timedelta(seconds=0.2)
+    assert abs(state.cache['at'][1] - scheduled2) < dt.timedelta(seconds=0.2)
     assert len(state._scheduled) == 0
 
     server.stop()
