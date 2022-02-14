@@ -472,14 +472,23 @@ class _state(param.Parameterized):
     def schedule(self, name, callback, at=None, period=None, cron=None):
         """
         Schedule a callback periodically at a specific time.
-        Scheduling is idempotent, i.e. if a callback has already
-        been scheduled under the same name subsequent calls will have
-        no effect. By default the starting time is immediate but may
-        be overridden with the `at` keyword argument. The period may
-        be declared using the `period` argument or a cron expression
+
+        By default the starting time is immediate but may be
+        overridden with the `at` keyword argument. The period may be
+        declared using the `period` argument or a cron expression
         (which requires the `croniter` library). Note that the `at`
-        time should be in local time but if a callable is provided
-        it must return a UTC time.
+        time should be in local time but if a callable is provided it
+        must return a UTC time.
+
+        Note that the scheduled callback may not be defined within a
+        script served using `panel serve` because it is cleaned up
+        when the user session is destroyed. Therefore the callback
+        must be imported from a separate module or should be scheduled
+        from a setup script. Note also that scheduling is idempotent,
+        i.e.  if a callback has already been scheduled under the same
+        name subsequent calls will have no effect. This is ensured that
+        even if you schedule a task from within your application code,
+        the task is only scheduled once.
 
         Arguments
         ---------
@@ -512,9 +521,10 @@ class _state(param.Parameterized):
                 "Cannot schedule a task from within the context of an "
                 "application. Either serve an application structured "
                 "into a directory containing a main.py module and declare "
-                "any scheduled tasks in a server_lifecycle.py or explicitly "
-                "provide a Python module containing the scheduled tasks "
-                "using the --tasks commandline argument to panel serve."
+                "any scheduled tasks in a server_lifecycle.py module or "
+                "explicitly provide a Python module containing the "
+                "scheduled tasks using the --setup commandline argument "
+                "to panel serve."
             )
         if cron is None:
             if isinstance(period, str):
