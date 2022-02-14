@@ -129,7 +129,7 @@ def test_server_extensions_on_root():
     # Wait for server to start
     time.sleep(1)
 
-    r = requests.get("http://localhost:{port}/static/extensions/panel/css/loading.css")
+    r = requests.get(f"http://localhost:{port}/static/extensions/panel/css/loading.css")
     assert r.ok
 
 
