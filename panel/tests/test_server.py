@@ -369,8 +369,8 @@ def test_server_schedule_at_callable():
 
     # Check callbacks were executed within small margin of error
     assert len(state.cache['at']) == 2
-    assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.02)
-    assert abs(state.cache['at'][1] - scheduled[1]) < dt.timedelta(seconds=0.02)
+    assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.2)
+    assert abs(state.cache['at'][1] - scheduled[1]) < dt.timedelta(seconds=0.2)
     assert len(state._scheduled) == 0
 
     server.stop()
