@@ -972,16 +972,17 @@ class ReactiveData(SyncableData):
 
         # Get old data to compare to
         old_raw, old_data = self._get_data()
-        if hasattr(old_raw, 'copy'):
-            old_raw = old_raw.copy()
-        elif isinstance(old_raw, dict):
-            old_raw = dict(old_raw)
+        old_raw = old_raw.copy()
+        if hasattr(old_raw, 'columns'):
+            columns = list(old_raw.columns)
+        else:
+            columns = list(old_raw)
 
         updated = False
         for k, v in data.items():
-            if k in self.indexes:
-                continue
             k = self._renamed_cols.get(k, k)
+            if k in self.indexes or k not in columns:
+                continue
             if isinstance(v, dict):
                 v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
             v = np.asarray(v)
