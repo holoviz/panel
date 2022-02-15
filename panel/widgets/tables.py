@@ -912,6 +912,8 @@ class Tabulator(BaseTable):
 
     _manual_params = BaseTable._manual_params + _config_params
 
+    _priority_changes = ['data']
+
     _rename = {
         'disabled': 'editable', 'selection': None, 'selectable': 'select_mode',
         'row_content': None
@@ -955,7 +957,7 @@ class Tabulator(BaseTable):
 
     def _process_event(self, event):
         if event.event_name == 'table-edit':
-            event.value = self.value[event.column].iloc[event.row]
+            event.value = self._processed[event.column].iloc[event.row]
             for cb in self._on_edit_callbacks:
                 cb(event)
         else:
