@@ -56,6 +56,9 @@ class Syncable(Renderable):
     # Timeout before the first event is processed
     _debounce = 50
 
+    # Property changes which should not be debounced
+    _priority_changes = []
+
     # Any parameters that require manual updates handling for the models
     # e.g. parameters which affect some sub-model
     _manual_params = []
@@ -342,10 +345,11 @@ class Syncable(Renderable):
             return
 
         if doc.session_context:
-            doc.add_timeout_callback(
-                partial(self._change_coroutine, doc),
-                self._debounce
-            )
+            cb = partial(self._change_coroutine, doc)
+            if attr in self._priority_changes:
+                doc.add_next_tick_callback(cb)
+            else:
+                doc.add_timeout_callback(cb, self._debounce)
         else:
             self._change_event(doc)
 

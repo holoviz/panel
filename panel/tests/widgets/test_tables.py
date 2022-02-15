@@ -1,9 +1,11 @@
 import datetime as dt
-import pytest
+import time
 
 from packaging.version import Version
 
 import numpy as np
+import pytest
+import requests
 
 try:
     import pandas as pd
@@ -20,6 +22,7 @@ from bokeh.models.widgets.tables import (
 )
 
 from panel.depends import bind
+from panel.io.server import serve
 from panel.models.tabulator import TableEditEvent
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
@@ -1284,3 +1287,31 @@ def test_tabulator_patch_event():
             event = TableEditEvent(model=None, column=col, row=row)
             table._process_event(event)
             assert values[-1] == (col, row, df[col].iloc[row])
+
+
+def test_server_edit_event():
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    serve(table, port=7000, threaded=True, show=False)
+
+    time.sleep(0.5)
+
+    requests.get('http://localhost:7000')
+    
+    assert table._models
+    ref, (model, _) = list(table._models.items())[0]
+    doc = list(table._documents.keys())[0]
+
+    events = []
+    table.on_edit(lambda e: events.append(e))
+    
+    new_data = dict(model.source.data)
+    new_data['B'][1] = 3.14
+
+    table._server_change(doc, ref, None, 'data', model.source.data, new_data)
+    table._server_event(doc, TableEditEvent(model, 'B', 1))
+
+    time.sleep(0.1)
+    assert len(events) == 1
+    assert events[0].value == 3.14
