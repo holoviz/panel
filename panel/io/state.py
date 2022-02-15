@@ -263,7 +263,7 @@ class _state(param.Parameterized):
                 if key in self.cache:
                     ret, expiry = self.cache.get(key)
                 else:
-                    ret = _Undefined
+                    ret, expiry = _Undefined, None
                 if ret is _Undefined or (expiry is not None and expiry < time.monotonic()):
                     ret, _ = self.cache[key] = (fn(**kwargs), new_expiry)
         finally:

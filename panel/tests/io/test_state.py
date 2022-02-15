@@ -16,7 +16,6 @@ def test_as_cached_key_only():
 
     assert state.as_cached('test', test_fn) == 1
     assert state.as_cached('test', test_fn) == 1
-    state.cache.clear()
 
 def test_as_cached_key_and_kwarg():
     global i
@@ -32,7 +31,6 @@ def test_as_cached_key_and_kwarg():
     assert state.as_cached('test', test_fn, a=2) == 2
     assert state.as_cached('test', test_fn, a=1) == 1
     assert state.as_cached('test', test_fn, a=2) == 2
-    state.cache.clear()
 
 def test_as_cached_thread_locks():
     global j
@@ -63,4 +61,4 @@ def test_as_cached_ttl():
 
     assert state.as_cached('test', test_fn, ttl=0.1) == 1
     time.sleep(0.1)
-    assert state.as_cached('test', test_fn) == 2
+    assert state.as_cached('test', test_fn, ttl=0.1) == 2
