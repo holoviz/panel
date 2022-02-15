@@ -5,6 +5,7 @@ import datetime as dt
 import logging
 import json
 import threading
+import time
 
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
@@ -30,6 +31,8 @@ def set_curdoc(doc):
     state.curdoc = doc
     yield
     state.curdoc = orig_doc
+
+class _Undefined: pass
 
 
 class _state(param.Parameterized):
@@ -118,6 +121,9 @@ class _state(param.Parameterized):
 
     # Endpoints
     _rest_endpoints = {}
+
+    # Locks
+    _cache_locks = {'main': threading.Lock()}
 
     def __repr__(self):
         server_info = []
@@ -220,7 +226,7 @@ class _state(param.Parameterized):
     # Public Methods
     #----------------------------------------------------------------
 
-    def as_cached(self, key, fn, **kwargs):
+    def as_cached(self, key, fn, ttl=None, **kwargs):
         """
         Caches the return value of a function, memoizing on the given
         key and supplied keyword arguments.
@@ -233,6 +239,9 @@ class _state(param.Parameterized):
           The key to cache the return value under.
         fn: (callable)
           The function or callable whose return value will be cached.
+        ttl: (int)
+          The number of seconds to keep an item in the cache, or None
+          if the cache should not expire. The default is None.
         **kwargs: dict
           Additional keyword arguments to supply to the function,
           which will be memoized over as well.
@@ -243,10 +252,23 @@ class _state(param.Parameterized):
         the cache.
         """
         key = (key,)+tuple((k, v) for k, v in sorted(kwargs.items()))
-        if key in self.cache:
-            ret = self.cache.get(key)
-        else:
-            ret = self.cache[key] = fn(**kwargs)
+        new_expiry = time.monotonic() + ttl if ttl else None
+        with self._cache_locks['main']:
+            if key in self._cache_locks:
+                lock = self._cache_locks[key]
+            else:
+                self._cache_locks[key] = lock = threading.Lock()
+        try:
+            with lock:
+                if key in self.cache:
+                    ret, expiry = self.cache.get(key)
+                else:
+                    ret = _Undefined
+                if ret is _Undefined or (expiry is not None and expiry < time.monotonic()):
+                    ret, _ = self.cache[key] = (fn(**kwargs), new_expiry)
+        finally:
+            if not lock.locked() and key in self._cache_locks:
+                del self._cache_locks[key]
         return ret
 
     def add_periodic_callback(self, callback, period=500, count=None,
