@@ -168,7 +168,6 @@ def set_env_var(env_var, value):
     else:
         os.environ[env_var] = old_value
 
-
 @pytest.fixture(autouse=True)
 def server_cleanup():
     """
@@ -181,6 +180,7 @@ def server_cleanup():
         state._indicators.clear()
         state._locations.clear()
         state._curdoc = None
+        state.cache.clear()
         if state._thread_pool is not None:
             state._thread_pool.shutdown(wait=False)
             state._thread_pool = None
