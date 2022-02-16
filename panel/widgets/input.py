@@ -166,9 +166,9 @@ class DatePicker(Widget):
 
 class _DatetimePickerBase(Widget):
 
-    start = param.CalendarDate(default=None)
+    start = param.Date(default=None)
 
-    end = param.CalendarDate(default=None)
+    end = param.Date(default=None)
 
     disabled_dates = param.List(default=None, class_=(date, str))
 
@@ -244,6 +244,7 @@ class DatetimePicker(_DatetimePickerBase):
 
 
 class DatetimeRangePicker(_DatetimePickerBase):
+
     value = param.DateRange(default=None)
 
     mode = param.String('range', constant=True)
