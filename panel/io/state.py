@@ -337,9 +337,9 @@ class _state(param.Parameterized):
             cb.start()
         return cb
 
-    def cancel_scheduled(self, name, wait=False):
+    def cancel_task(self, name, wait=False):
         """
-        Cancel a task scheduled using the `state.schedule` method by name.
+        Cancel a task scheduled using the `state.schedule_task` method by name.
 
         Arguments
         ---------
@@ -469,26 +469,28 @@ class _state(param.Parameterized):
             self._rest_endpoints[endpoint] = ([parameterized], parameters, cb)
         parameterized.param.watch(cb, parameters)
 
-    def schedule(self, name, callback, at=None, period=None, cron=None):
+    def schedule_task(self, name, callback, at=None, period=None, cron=None):
         """
-        Schedule a callback periodically at a specific time.
+        Schedules a task at a specific time or on a schedule.
 
         By default the starting time is immediate but may be
-        overridden with the `at` keyword argument. The period may be
-        declared using the `period` argument or a cron expression
+        overridden with the `at` keyword argument. The scheduling may
+        be declared using the `period` argument or a cron expression
         (which requires the `croniter` library). Note that the `at`
         time should be in local time but if a callable is provided it
         must return a UTC time.
 
-        Note that the scheduled callback may not be defined within a
-        script served using `panel serve` because it is cleaned up
-        when the user session is destroyed. Therefore the callback
-        must be imported from a separate module or should be scheduled
-        from a setup script. Note also that scheduling is idempotent,
-        i.e.  if a callback has already been scheduled under the same
-        name subsequent calls will have no effect. This is ensured that
-        even if you schedule a task from within your application code,
-        the task is only scheduled once.
+        Note that the scheduled callback must not be defined within a
+        script served using `panel serve` because the script and all
+        its contents are cleaned up when the user session is
+        destroyed. Therefore the callback must be imported from a
+        separate module or should be scheduled from a setup script
+        (provided to `panel serve` using the `--setup` argument). Note
+        also that scheduling is idempotent, i.e.  if a callback has
+        already been scheduled under the same name subsequent calls
+        will have no effect. This is ensured that even if you schedule
+        a task from within your application code, the task is only
+        scheduled once.
 
         Arguments
         ---------
@@ -496,10 +498,12 @@ class _state(param.Parameterized):
           Name of the scheduled task
         callback: callable
           Callback to schedule
-        at: datetime.datetime or callable
-          Datetime to schedule the task at in the local timezone or
-          a callable which is given the current UTC time and must
-          return a datetime also in UTC.
+        at: datetime.datetime, Iterator or callable
+          Declares a time to schedule the task at. May be given as a
+          datetime or an Iterator of datetimes in the local timezone
+          declaring when to execute the task. Alternatively may also
+          declare a callable which is given the current UTC time and
+          must return a datetime also in UTC.
         period: str or datetime.timedelta
           The period between executions, may be expressed as a
           timedelta or a string:
@@ -514,17 +518,23 @@ class _state(param.Parameterized):
           A cron expression (requires croniter to parse)
         """
         if name in self._scheduled:
+            if callback is not self._scheduled[name][1]:
+                self.param.warning(
+                    "A separate task was already scheduled under the "
+                    f"name {name!r}. The new task will be ignored. If "
+                    "you want to replace the existing task cancel it "
+                    "with `state.cancel_task({name!r})` before adding "
+                    "adding a new task under the same name."
+                )
             return
         ioloop = IOLoop.current()
         if getattr(callback, '__module__', '').startswith('bokeh_app_'):
             raise RuntimeError(
                 "Cannot schedule a task from within the context of an "
-                "application. Either serve an application structured "
-                "into a directory containing a main.py module and declare "
-                "any scheduled tasks in a server_lifecycle.py module or "
-                "explicitly provide a Python module containing the "
-                "scheduled tasks using the --setup commandline argument "
-                "to panel serve."
+                "application. Either import the task callback from a "
+                "separate module or schedule the task from a setup "
+                "script that you provide to `panel serve` using the "
+                "--setup commandline argument."
             )
         if cron is None:
             if isinstance(period, str):
@@ -558,7 +568,9 @@ class _state(param.Parameterized):
         except StopIteration:
             return
         self._scheduled[name] = (diter, callback)
-        ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
+        ioloop.call_later(
+            delay=call_time_seconds, callback=partial(self._scheduled_cb, name)
+        )
 
     def sync_busy(self, indicator):
         """

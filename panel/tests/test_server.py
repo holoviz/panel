@@ -248,7 +248,7 @@ def test_server_schedule_repeat():
         state.cache['count'] += 1
 
     def app():
-        state.schedule('periodic', periodic_cb, period='0.5s')
+        state.schedule_task('periodic', periodic_cb, period='0.5s')
         return '# state.schedule test'
 
     port = 6011
@@ -274,7 +274,7 @@ def test_server_schedule_at():
     scheduled = dt.datetime.now() + dt.timedelta(seconds=1.57)
 
     def app():
-        state.schedule('periodic', periodic_cb, at=scheduled)
+        state.schedule_task('periodic', periodic_cb, at=scheduled)
         return '# state.schedule test'
 
     port = 6012
@@ -309,7 +309,7 @@ def test_server_schedule_at_iterator():
         yield scheduled2
 
     def app():
-        state.schedule('periodic', periodic_cb, at=schedule())
+        state.schedule_task('periodic', periodic_cb, at=schedule())
         return '# state.schedule test'
 
     port = 6013
@@ -347,7 +347,7 @@ def test_server_schedule_at_callable():
         return next(siter)
 
     def app():
-        state.schedule('periodic', periodic_cb, at=schedule)
+        state.schedule_task('periodic', periodic_cb, at=schedule)
         return '# state.schedule test'
 
     port = 6014
