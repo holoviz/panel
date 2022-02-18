@@ -90,7 +90,7 @@ def loading_css():
     return f"""
     .bk.pn-loading.{config.loading_spinner}:before {{
       background-image: url("data:image/svg+xml;base64,{b64}");
-      max-height: {config.loading_max_height}px;
+      background-size: auto calc(min(50%, {config.loading_max_height}px));
     }}
     """
 
