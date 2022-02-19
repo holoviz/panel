@@ -1,13 +1,16 @@
-"""[Panel site](https://panel.holoviz.org/), [Getting started guide](https://panel.holoviz.org/getting_started/index.html), [Community forum](https://discourse.holoviz.org/), [Github](https://github.com/holoviz/panel), [Twitter](https://twitter.com/Panel_org), and [LinkedIn](https://www.linkedin.com/company/79754450)
+"""Panel is a high level app and dashboarding framework
+====================================================
 
-# Panel is a high level app and dashboarding framework
-
-Panel is an open-source Python library that lets you create custom interactive web apps and 
-dashboards by connecting user-defined widgets to plots, images, tables, or text. 
+Panel is an open-source Python library that lets you create custom
+interactive web apps and dashboards by connecting user-defined widgets
+to plots, images, tables, or text.
 
 Panel works with the tools you know and ❤️.
 
-![Panel Dashboard](https://assets.holoviews.org/panel/thumbnails/docstrings/panel.gif)
+.. figure:: https://user-images.githubusercontent.com/42288570/152672367-6c239073-0ea0-4a2b-a4c0-817e8090e877.gif
+   :alt: Panel Dashboard
+
+   Panel Dashboard
 """
 from . import layout # noqa
 from . import links # noqa
