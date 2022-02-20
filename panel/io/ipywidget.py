@@ -28,7 +28,7 @@ class PanelSessionWebsocket(SessionWebsocket):
             offsets = [start]
 
             for buffer in buffers[:-1]:
-                start += len(buffer)
+                start += memoryview(buffer).nbytes
                 offsets.append(start)
 
             u32 = lambda n: n.to_bytes(4, "big")
