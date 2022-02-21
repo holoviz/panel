@@ -957,7 +957,15 @@ class Tabulator(BaseTable):
 
     def _process_event(self, event):
         if event.event_name == 'table-edit':
-            event.value = self._processed[event.column].iloc[event.row]
+            if self.pagination:
+                nrows = self.page_size
+                offset = (self.page-1)*nrows
+            else:
+                offset = 0
+            row = offset + event.row
+            if self._old is not None:
+                event.old = self._old[event.column].iloc[row]
+            event.value = self._processed[event.column].iloc[row]
             for cb in self._on_edit_callbacks:
                 cb(event)
         else:
