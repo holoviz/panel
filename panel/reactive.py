@@ -979,7 +979,7 @@ class ReactiveData(SyncableData):
             if (all(isinstance(ov, dt.date) for ov in old_values) and
                 not all(isinstance(iv, dt.date) for iv in values)):
                 new_values = []
-                for iv in v:
+                for iv in values:
                     if isinstance(iv, dt.datetime):
                         iv = iv.date()
                     elif not isinstance(iv, dt.date):
