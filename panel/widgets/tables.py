@@ -430,6 +430,8 @@ class BaseTable(ReactiveData, Widget):
 
     def _update_column(self, column, array):
         self.value[column] = array
+        if self._processed is not None and self.value is not self._processed:
+            self._processed[column] = array
 
     #----------------------------------------------------------------
     # Public API
@@ -1238,12 +1240,14 @@ class Tabulator(BaseTable):
         if self.pagination != 'remote':
             index = self._processed.index.values
             self.value.loc[index, column] = array
+            self._processed[column] = array
             return
         nrows = self.page_size
         start = (self.page-1)*nrows
         end = start+nrows
         index = self._processed.iloc[start:end].index.values
         self.value[column].loc[index] = array
+        self._processed[column].loc[index] = array
 
     def _update_selection(self, indices):
         if self.pagination != 'remote':
