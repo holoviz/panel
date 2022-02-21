@@ -252,17 +252,19 @@ def load_notebook(inline=True, load_timeout=5000):
         else:
             settings.resources.unset_value()
 
-    publish_display_data({
-        'application/javascript': bokeh_js,
-        LOAD_MIME: bokeh_js,
-    })
-    bokeh.io.notebook.curstate().output_notebook()
-
-    # Publish comm manager
+    # CSS and JS for the comm manager
     CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text()
     JS = '\n'.join([PYVIZ_PROXY, _JupyterCommManager.js_manager, nb_mime_js])
-    publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
-    publish_display_data(data={'text/html': f'<style>{CSS}</style>'})
+
+    # Call publish_display_data once to avoid displaying more than one empty
+    # line in JupyterLab.
+    merged_js = '\n'.join([bokeh_js, JS])
+    publish_display_data(data={
+        LOAD_MIME: merged_js,
+        'application/javascript': merged_js,
+        'text/html': f'<style>{CSS}</style>',
+    })
+    bokeh.io.notebook.curstate().output_notebook()
 
 
 def show_server(panel, notebook_url, port):
