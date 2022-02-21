@@ -42,16 +42,17 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
-          channel-priority: strict
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
       - name: conda setup
         run: |
-          conda update -n base conda
-          conda install "pyctdev>=0.5"
-          conda install "nodejs=15.3.0"
-          doit env_create --python=${{ matrix.python-version }}
+          conda update -n base -c defaults conda
+          conda config --prepend channels pyviz/label/dev
+          conda config --prepend channels bokeh/label/dev
+          conda config --prepend channels conda-forge
+          conda config --prepend channels nodefaults
+          conda config --remove channels defaults
+          conda create -n test-environment python=${{ matrix.python-version }} "pyctdev>=0.5" "nodejs=15.3.0"
       - name: nix_opengl
         if: contains(matrix.os, 'ubuntu')
         run: |
