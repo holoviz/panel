@@ -675,6 +675,8 @@ class SyncableData(Reactive):
         """
         data = getattr(self, self._data_params[0])
         data[column] = array
+        if self._processed is not None:
+            self._processed[column] = array
 
     def _update_data(self, data):
         self.param.update(**{self._data_params[0]: data})
