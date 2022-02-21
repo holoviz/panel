@@ -963,8 +963,32 @@ class ReactiveData(SyncableData):
     parameter between frontend and backend using a ColumnDataSource.
     """
 
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._old = None
+    
     def _update_selection(self, indices):
         self.selection = indices
+
+    def _convert_column(self, values, old_values):
+        dtype = old_values.dtype
+        if dtype.kind == 'M':
+            if values.dtype.kind in 'if':
+                values = (values * 10e5).astype(dtype)
+        elif dtype.kind == 'O':
+            if (all(isinstance(ov, dt.date) for ov in old_values) and
+                not all(isinstance(iv, dt.date) for iv in values)):
+                new_values = []
+                for iv in v:
+                    if isinstance(iv, dt.datetime):
+                        iv = iv.date()
+                    elif not isinstance(iv, dt.date):
+                        iv = dt.date.fromtimestamp(iv/1000)
+                    new_values.append(iv)
+                values = new_values
+        else:
+            values = values.astype(dtype)
+        return values
 
     def _process_data(self, data):
         if self._updating:
@@ -972,43 +996,29 @@ class ReactiveData(SyncableData):
 
         # Get old data to compare to
         old_raw, old_data = self._get_data()
-        old_raw = old_raw.copy()
+        self._old = old_raw = old_raw.copy()
         if hasattr(old_raw, 'columns'):
             columns = list(old_raw.columns)
         else:
             columns = list(old_raw)
 
         updated = False
-        for k, v in data.items():
-            k = self._renamed_cols.get(k, k)
-            if k in self.indexes or k not in columns:
+        for col, values in data.items():
+            col = self._renamed_cols.get(col, col)
+            if col in self.indexes or col not in columns:
                 continue
-            if isinstance(v, dict):
-                v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
-            v = np.asarray(v)
-            old_dtype = old_raw[k].dtype
-            if old_dtype.kind == 'M':
-                if v.dtype.kind in 'if':
-                    v = (v * 10e5).astype(old_raw[k].dtype)
-            elif old_dtype.kind == 'O':
-                if (all(isinstance(ov, dt.date) for ov in old_raw[k]) and
-                    not all(isinstance(iv, dt.date) for iv in v)):
-                    vs = []
-                    for iv in v:
-                        if isinstance(iv, dt.datetime):
-                            iv = iv.date()
-                        elif not isinstance(iv, dt.date):
-                            iv = dt.date.fromtimestamp(iv/1000)
-                        vs.append(iv)
-                    v = vs
-            else:
-                v = v.astype(old_raw[k].dtype)
+            if isinstance(values, dict):
+                sorted_values = sorted(values.items(), key=lambda it: int(it[0]))
+                values = [v for _, v in sorted_values]
+            values = self._convert_column(
+                np.asarray(values), old_raw[col]
+            )
             try:
-                isequal = (old_raw[k] == v).all()
+                isequal = (old_raw[col] == values).all()
             except Exception:
                 isequal = False
             if not isequal:
-                self._update_column(k, v)
+                self._update_column(col, values)
                 updated = True
 
         # If no columns were updated we don't have to sync data

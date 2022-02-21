@@ -1315,3 +1315,4 @@ def test_server_edit_event():
     time.sleep(0.1)
     assert len(events) == 1
     assert events[0].value == 3.14
+    assert events[0].old == 1

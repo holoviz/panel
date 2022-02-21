@@ -957,6 +957,8 @@ class Tabulator(BaseTable):
 
     def _process_event(self, event):
         if event.event_name == 'table-edit':
+            if self._old is not None:
+                event.old = self._old[event.column][event.row]
             event.value = self._processed[event.column].iloc[event.row]
             for cb in self._on_edit_callbacks:
                 cb(event)
