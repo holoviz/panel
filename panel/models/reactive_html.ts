@@ -97,6 +97,15 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this.html = htmlDecode(this.model.html) || this.model.html
   }
 
+  override async lazy_initialize(): Promise<void> {
+    super.lazy_initialize()
+    if (Object.keys(this.model.code).length && !(window as any).pyiodide) {
+      (window as any).pyiodide = await (window as any).loadPyodide({
+	indexURL : "https://cdn.jsdelivr.net/pyodide/v0.19.0/full/"
+      });
+    }
+  }
+
   _recursive_connect(model: any, update_children: boolean, path: string): void {
     for (const prop in model.properties) {
       let subpath: string
@@ -172,6 +181,26 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         })
       }
     }
+  }
+
+  run_pyscript(script: string, event: any=null): void {
+    const id = this.model.data.id
+    const code = this.model.code[script]
+    let defs = 'import js; document = js.document;'
+    for (const elname of this.model.nodes) {
+      if (elname in this.model.children && typeof this.model.children[elname] !== "string")
+        continue
+      const elvar = elname.replace('-', '_')
+      if (code.indexOf(elvar) === -1)
+        continue
+      defs += `${elvar} = document.getElementById('${elname}-${id}');`
+    }
+    if (event != null)
+      (window as any).pyiodide.globals.set("event", event);
+    (window as any).pyiodide.globals.set("model", this.model);
+    (window as any).pyiodide.globals.set("self", this.model.data);
+    (window as any).pyiodide.globals.set("state", this._state);
+    (window as any).pyiodide.runPython(defs+code)
   }
 
   run_script(property: string, silent: boolean=false): void {
@@ -280,6 +309,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this._render_children()
     this._setup_mutation_observers()
     this._setup_event_listeners()
+    this.run_pyscript('render')
     this.run_script('render', true)
   }
 
@@ -402,7 +432,13 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
             delete view._state.event
           }
           `
-        } else {
+        } else if (method in this.model.code) {
+	  definition = `
+          const ${method} = (event) => {
+            view.run_pyscript("${method}", event)
+          }
+          `
+	} else {
           definition = `
           const ${method} = (event) => {
             view._send_event("${elname}", "${cb}", event)
@@ -422,6 +458,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         .replaceAll('$-{model.', '${model.')
         .replaceAll('$--{', '${')
     )
+    console.log(callbacks)
     return new Function("view, model, data, state, html, useCallback", callbacks+"return html`"+htm+"`;")(
       this, this.model, this.model.data, state, html, useCallback
     )
@@ -566,6 +603,7 @@ export namespace ReactiveHTML {
   export type Props = HTMLBox.Props & {
     attrs: p.Property<any>
     callbacks: p.Property<any>
+    code: p.Property<any>
     children: p.Property<any>
     data: p.Property<any>
     events: p.Property<any>
@@ -593,6 +631,7 @@ export class ReactiveHTML extends HTMLBox {
       attrs:     [ Any,    {} ],
       callbacks: [ Any,    {} ],
       children:  [ Any,    {} ],
+      code:      [ Any,    {} ],
       data:      [ Any,       ],
       events:    [ Any,    {} ],
       html:      [ String, "" ],

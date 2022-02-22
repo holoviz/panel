@@ -441,7 +441,8 @@ class panel_extension(_pyviz_extension):
         'tabulator': 'panel.models.tabulator',
         'gridstack': 'panel.layout.gridstack',
         'texteditor': 'panel.models.quill',
-        'jsoneditor': 'panel.models.json_editor'
+        'jsoneditor': 'panel.models.json_editor',
+        'pyiodide': 'panel.models.pyiodide'
     }
 
     # Check whether these are loaded before rendering (if any item

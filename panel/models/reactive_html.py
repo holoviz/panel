@@ -189,6 +189,8 @@ class ReactiveHTML(HTMLBox):
 
     children = bp.Dict(bp.String, bp.Either(bp.List(bp.Either(bp.Instance(LayoutDOM), bp.String)), bp.String))
 
+    code = bp.Dict(bp.String, bp.String)
+
     data = bp.Instance(DataModel)
 
     events = bp.Dict(bp.String, bp.Dict(bp.String, bp.Bool))

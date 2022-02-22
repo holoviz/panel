@@ -6,6 +6,7 @@ models rendered on the frontend.
 
 import difflib
 import datetime as dt
+import inspect
 import re
 import sys
 import textwrap
@@ -1068,6 +1069,8 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
 
     _script_regex = r"script\([\"|'](.*)[\"|']\)"
 
+    _pyscript_regex = r"pyscript\([\"|'](.*)[\"|']\)"
+
     def __init__(mcs, name, bases, dict_):
         from .io.datamodel import PARAM_MAPPING, construct_data_model
 
@@ -1108,6 +1111,19 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
                 "matching closing tag, e.g. if there is a tag <div>, "
                 "ensure there is a matching </div> tag."
             )
+
+        
+        # Search pyscripts for assignments
+        predicate = lambda o: inspect.isfunction(o) and hasattr(o, '_pyscript')
+        pyscripts = inspect.getmembers(mcs, predicate)
+        mcs._pyscripts = {}
+        for name, method in pyscripts:
+            source = (
+                inspect.getsource(method)
+                .replace(f'def {name}(self):', '')
+                .replace('@pyscript', '')
+            )
+            mcs._pyscripts[name] = textwrap.dedent(source).strip()
 
         mcs._attrs, mcs._node_callbacks = {}, {}
         mcs._inline_callbacks = []
@@ -1370,6 +1386,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         params.update({
             'attrs': self._attrs,
             'callbacks': self._node_callbacks,
+            'code': self._pyscripts,
             'data': self._data_model(**self._process_param_change(data_params)),
             'events': self._get_events(),
             'html': escape(textwrap.dedent(self._get_template())),
@@ -1520,7 +1537,12 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         return html
 
     def _linked_properties(self):
-        linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
+        linked_properties = [
+            p for pss in self._attrs.values()
+            for _, ps, _ in pss for p in ps
+        ]
+
+        # Search scripts for assignments
         for scripts in self._scripts.values():
             if not isinstance(scripts, list):
                 scripts = [scripts]
@@ -1528,6 +1550,13 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 for p in re.findall(self._script_assignment, script):
                     if p not in linked_properties:
                         linked_properties.append(p)
+
+        for script in self._pyscripts.values():
+            for p in re.findall(self._script_assignment.replace('data', 'self'), script):
+                if p not in linked_properties:
+                    linked_properties.append(p)
+
+        # Add child parameters to linked properties
         for children_param in self._parser.children.values():
             if children_param in self._data_model.properties():
                 linked_properties.append(children_param)
@@ -1542,12 +1571,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if isinstance(v, DataModel):
                 v.tags.append(f"__ref:{root.ref['id']}")
         model.children = self._get_children(doc, root, model, comm)
-
         if comm:
             model.on_event('dom_event', self._comm_event)
         else:
             model.on_event('dom_event', partial(self._server_event, doc))
-
         self._link_props(model.data, self._linked_properties(), doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
