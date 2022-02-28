@@ -7,6 +7,9 @@ on:
     branches:
     - '*'
 
+env:
+  CACHE_VERSION: 1
+
 jobs:
   test_suite:
     name: Pytest on ${{ matrix.os }} with Python ${{ matrix.python-version }}
@@ -19,6 +22,13 @@ jobs:
         exclude:
           - os: windows-latest
             python-version: 3.8
+        include:
+        - os: ubuntu-latest
+          path: /usr/share/miniconda3/envs/
+        - os: macos-latest
+          path: /Users/runner/miniconda3/envs/
+        - os: windows-latest
+          path: C:\Miniconda3\envs\
     timeout-minutes: 60
     defaults:
       run:
@@ -51,8 +61,18 @@ jobs:
           conda install "pyctdev>=0.5"
           conda install "nodejs=15.3.0"
           doit env_create --python=${{ matrix.python-version }}
+      - name: Get Today's date for cache
+        run: echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+      - name: conda cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ matrix.path }}
+          key: ${{ runner.os }}-conda-${{ matrix.python-version }}-${{ hashFiles('setup.py') }}-${{ env.TODAY }}-${{ env.CACHE_VERSION }}
+          restore-keys: |
+           ${{ runner.os }}-conda-${{ matrix.python-version }}-${{ env.TODAY }}-${{ env.CACHE_VERSION }}
+        id: cache
       - name: nix_opengl
-        if: contains(matrix.os, 'ubuntu')
+        if: steps.cache.outputs.cache-hit != 'true' && contains(matrix.os, 'ubuntu')
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
@@ -61,6 +81,7 @@ jobs:
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
           sleep 3
       - name: doit develop_install
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
