@@ -494,10 +494,16 @@ class _state(param.Parameterized):
         else:
             loc = self._locations.get(self.curdoc) if self.curdoc else None
 
-        try:
-            loc.search = self.base_url.replace("/", "")
-        except Exception:
-            pass
+        if '?' in self.base_url:
+            try:
+                loc.search = f'?{self.base_url.split("?")[-1].strip("/")}'
+            except Exception:
+                pass
+        if '#' in self.base_url:
+            try:
+                loc.hash = f'#{self.base_url.split("#")[-1].strip("/")}'
+            except Exception:
+                pass
 
         return loc
 
