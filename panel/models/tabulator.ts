@@ -231,6 +231,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   tabulator: any;
   _tabulator_cell_updating: boolean=false
   _updating_page: boolean = true
+  _updating_sort: boolean = false
   _relayouting: boolean = false
   _selection_updating: boolean =false
   _initializing: boolean
@@ -266,6 +267,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     })
     this.connect(this.model.properties.max_page.change, () => this.setMaxPage())
     this.connect(this.model.properties.frozen_rows.change, () => this.setFrozen())
+    this.connect(this.model.properties.sorters.change, () => this.setSorters())
     this.connect(this.model.source.properties.data.change, () => this.setData())
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => this.updateOrAddData())
@@ -440,7 +442,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     return new Promise((resolve: any, reject: any) => {
       try {
         if (page != null && sorters != null) {
+	  this._updating_sort = true
           this.model.sorters = sorters
+	  this._updating_sort = false
           this._updating_page = true
           try {
             this.model.page = page || 1
@@ -482,6 +486,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       movableColumns: false,
       selectable: selectable,
       columns: this.getColumns(),
+      dataSorting: (sorters: any[]) => {
+	const sorts = []
+	for (const s of sorters) {
+	  sorts.push({field: s.field, dir: s.dir})
+	}
+	if (this.model.pagination !== 'remote') {
+	  this._updating_sort = true
+	  this.model.sorters = sorts
+	  this._updating_sort = false
+	}
+      },
+      initialSort: this.model.sorters,
       layout: this.getLayout(),
       pagination: this.model.pagination,
       paginationSize: this.model.page_size,
@@ -822,6 +838,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       return groups.join(', ')
     }
     this.tabulator.setGroupBy(groupby)
+  }
+
+  setSorters(): void {
+    if (this._updating_sort)
+      return
+    const sorters = []
+    for (const sort of this.model.sorters) {
+      if (sort.column === undefined)
+	sort.column = sort.field
+      sorters.push(sort)
+    }
+    this.tabulator.setSort(sorters)
   }
 
   setCSS(): boolean {
