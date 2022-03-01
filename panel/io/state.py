@@ -488,12 +488,24 @@ class _state(param.Parameterized):
     def location(self):
         if self.curdoc and self.curdoc not in self._locations:
             from .location import Location
-            self._locations[self.curdoc] = loc = Location()
-            return loc
+            loc = self._locations[self.curdoc] = Location()
         elif self.curdoc is None:
-            return self._location
+            loc = self._location
         else:
-            return self._locations.get(self.curdoc) if self.curdoc else None
+            loc = self._locations.get(self.curdoc) if self.curdoc else None
+
+        if '?' in self.base_url:
+            try:
+                loc.search = f'?{self.base_url.split("?")[-1].strip("/")}'
+            except Exception:
+                pass
+        if '#' in self.base_url:
+            try:
+                loc.hash = f'#{self.base_url.split("#")[-1].strip("/")}'
+            except Exception:
+                pass
+
+        return loc
 
     @property
     def notifications(self):
