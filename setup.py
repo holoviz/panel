@@ -194,6 +194,9 @@ setup_args = dict(
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://panel.holoviz.org',
+    project_urls={
+        'Source': 'https://github.com/holoviz/panel',
+    },
     cmdclass=_COMMANDS,
     packages=find_packages(),
     include_package_data=True,
