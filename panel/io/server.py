@@ -35,7 +35,7 @@ from bokeh.embed.elements import html_page_for_render_items, script_for_render_i
 from bokeh.embed.util import RenderItem
 from bokeh.io import curdoc
 from bokeh.server.server import Server
-from bokeh.server.urls import per_app_patterns, toplevel_patterns
+from bokeh.server.urls import per_app_patterns
 from bokeh.server.views.autoload_js_handler import AutoloadJsHandler as BkAutoloadJsHandler
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.static_handler import StaticHandler
