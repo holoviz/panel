@@ -657,6 +657,155 @@ class Dial(ValueIndicator):
         model.select(name='label_source').data.update(labels)
 
 
+class LinearGauge(ValueIndicator):
+    """
+    A LinearGauge represents a value in some range as a position on an
+    linear scale. It is similar to a Dial/Gauge but more minimal visually.
+    """
+
+    bounds = param.Range(default=(0, 100), doc="""
+      The upper and lower bound of the gauge.""")
+
+    colors = param.Parameter(default=None, doc="""
+      Color thresholds for the gauge, specified as a list of tuples
+      of the fractional threshold and the color to switch to.""")
+
+    format = param.String(default='{value:.2f}%', doc="""
+      Formatting string for the value indicator and lower/upper bounds.""")
+
+    height = param.Integer(default=300, bounds=(1, None))
+
+    horizontal = param.Boolean(default=False)
+
+    nan_format = param.String(default='-', doc="""
+      How to format nan values.""")
+
+    needle_color = param.String(default='black', doc="""
+      Color of the Dial needle.""")
+
+    needle_width = param.Number(default=0.1, doc="""
+      Radial width of the needle.""")
+
+    unfilled_color = param.String(default='whitesmoke', doc="""
+      Color of the unfilled region of the LinearGauge.""")    
+
+    title_size = param.String(default='16pt', doc="""
+      Font size of the Dial title.""")
+
+    value_size = param.String(default='12pt', doc="""
+      Font size of the Dial value label.""")
+
+    value = param.Number(default=25, allow_None=True, doc="""
+      Value to indicate on the dial a value within the declared bounds.""")
+
+    width = param.Integer(default=150, bounds=(1, None))
+
+    _manual_params = [
+        'value', 'bounds', 'format', 'background', 'needle_width',
+        'title_size', 'value_size', 'horizontal',
+        'height', 'colors', 'title_size', 'unfilled_color',
+        'width', 'nan_format', 'needle_color'
+    ]
+
+    _data_params = _manual_params
+    
+    _rerender_params = ['horizontal']
+
+    _rename = {'background': 'background_fill_color'}
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._update_value_bounds()
+
+    @param.depends('bounds', watch=True)
+    def _update_value_bounds(self):
+        self.param.value.bounds = self.bounds
+
+    def _get_data(self):
+        vmin, vmax = self.bounds
+        vs = np.linspace(vmin, vmax, num=len(self.colors)+1)
+        value = self.value
+        
+        value = self.format.format(value=value).replace('nan', self.nan_format)
+        center = -np.pi/2 if self.horizontal else np.pi
+        needle_start = center-(self.needle_width/2.)
+        needle_end = center+(self.needle_width/2.)
+        needle_data = {
+            'y':      np.array([self.value]),
+            'start':  np.array([needle_start]),
+            'end':    np.array([needle_end]),
+            'radius': np.array([8]),
+            'text':   np.array([value])
+        }
+        return {'y0': vs[:-1], 'y1': vs[1:], 'color': list(self.colors)}, needle_data
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        params = self._process_param_change(self._init_params())
+        if self.horizontal:
+            params.update(
+                width=self.height, height=self.width,
+                x_axis_location='above', x_axis_label=self.name,
+                y_range=(-0.7, 0.5), x_range=tuple(self.bounds)
+            )
+        else:
+            params.update(
+                width=self.width, height=self.height,
+                y_axis_location='right', y_axis_label=self.name,
+                x_range=(-0.75, 0.5), y_range=tuple(self.bounds)
+            )
+        model = figure(
+            outline_line_color=None, toolbar_location=None, **params
+        )
+        model.grid.visible = False
+        
+        data, needle_data = self._get_data()
+        bar_source = ColumnDataSource(data=data, name='bar_source')
+        needle_source = ColumnDataSource(data=needle_data, name='needle_source')
+        if self.horizontal:
+            model.xaxis.axis_label_text_font_size = self.title_size
+            model.yaxis.visible = False
+            model.hbar(y=0, left='y0', right='y1', height=1, color='color', source=bar_source)
+            wedge_params = {'y': -.25, 'x': 'y'}
+            text_params = {'y': -0.2, 'x': 'y', 'text_align': 'center', 'text_baseline': 'bottom'}
+        else:
+            model.xaxis.visible = False
+            model.yaxis.axis_label_text_font_size = self.title_size
+            model.vbar(x=0, bottom='y0', top='y1', width=1, color='color', source=bar_source)
+            wedge_params = {'x': -0.25, 'y': 'y'}
+            text_params = {'x': -0.2, 'y': 'y', 'text_align': 'left', 'text_baseline': 'middle'}
+        model.wedge(
+            radius='radius', start_angle='start', end_angle='end',
+            fill_color=self.needle_color, line_color=self.needle_color,
+            source=needle_source, name='needle_renderer', **wedge_params
+        )
+        model.text(
+            text='text', source=needle_source, text_font_size=self.value_size, **text_params
+        )
+        if root is None:
+            root = model
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+    def _manual_update(self, events, model, doc, root, parent, comm):
+        update_data = False
+        for event in events:
+            if event.name in ('width', 'height'):
+                model.update(**{event.name: event.new})
+            if event.name == 'bounds':
+                model.y_range.update(start=event.new[0], end=event.new[0])
+            if event.name in self._data_params:
+                update_data = True
+            elif event.name == 'needle_color':
+                needle_r = model.select(name='needle_renderer')
+                needle_r.glyph.line_color = event.new
+                needle_r.glyph.fill_color = event.new
+        if not update_data:
+            return
+        data, needle_data = self._get_data()
+        model.select(name='bar_source').data.update(data)
+        model.select(name='needle_source').data.update(needle_data)
+        
+
 class Trend(SyncableData, Indicator):
     """
     The `Trend` indicator enables the user to display a dashboard kpi
