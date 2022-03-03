@@ -188,6 +188,19 @@ class Serve(_BkServe):
         ))
     )
 
+    # Supported file extensions
+    _extensions = ['.py']
+
+    def customize_applications(self, args, applications):
+        if args.index and not args.index.endswith('.html'):
+            index = args.index.split(os.path.sep)[-1]
+            for ext in self._extensions:
+                if index.endswith(ext):
+                    index = index[:-len(ext)]
+            if f'/{index}' in applications:
+                applications['/'] = applications.pop(f'/{index}')
+        return super().customize_applications(args, applications)
+
     def customize_kwargs(self, args, server_kwargs):
         '''Allows subclasses to customize ``server_kwargs``.
 
@@ -211,12 +224,20 @@ class Serve(_BkServe):
             else:
                 files.append(f)
 
-        if args.index and not args.index.endswith('.html') and not any(f.endswith(args.index) for f in files):
-            raise ValueError("The --index argument must either specify a jinja2 "
-                             "template with a .html file extension or select one "
-                             "of the applications being served as the default. "
-                             f"The specified application {args.index!r} could "
-                             "not be found.")
+        if args.index and not args.index.endswith('.html'):
+            found = False
+            for ext in self._extensions:
+                index = args.index if args.index.endswith(ext) else f'{args.index}{ext}'
+                if any(f.endswith(index) for f in files):
+                    found = True
+            if not found:
+                raise ValueError(
+                    "The --index argument must either specify a jinja2 "
+                    "template with a .html file extension or select one "
+                    "of the applications being served as the default. "
+                    f"The specified application {index!r} could not be "
+                    "found."
+                )
 
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:
