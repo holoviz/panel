@@ -166,19 +166,30 @@ class DatePicker(Widget):
 
 class _DatetimePickerBase(Widget):
 
-    start = param.Date(default=None)
+    disabled_dates = param.List(default=None, class_=(date, str), doc="""
+      Dates to make unavailable for selection.""")
 
-    end = param.Date(default=None)
+    enabled_dates = param.List(default=None, class_=(date, str), doc="""
+      Dates to make available for selection.""")
 
-    disabled_dates = param.List(default=None, class_=(date, str))
+    enable_time = param.Boolean(default=True, doc="""
+      Enable editing of the time in the widget.""")
 
-    enabled_dates = param.List(default=None, class_=(date, str))
+    enable_seconds = param.Boolean(default=True, doc="""
+      Enable editing of the seconds in the widget.""")
 
-    enable_time = param.Boolean(default=True)
+    end = param.Date(default=None, doc="""
+      Inclusive upper bound of the allowed date selection. Note that while
+      the parameter accepts datetimes the time portion of the range
+      is ignored.""")
 
-    enable_seconds = param.Boolean(default=True)
+    military_time = param.Boolean(default=True, doc="""
+      Whether to display time in 24 hour format.""")
 
-    military_time = param.Boolean(default=True)
+    start = param.Date(default=None, doc="""
+      Inclusive lower bound of the allowed date selection. Note that while
+      the parameter accepts datetimes the time portion of the range
+      is ignored.""")
 
     _source_transforms = {'value': None, 'start': None, 'end': None, 'mode': None}
 
