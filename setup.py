@@ -151,7 +151,8 @@ extras_require = {
         'ipyleaflet',
         'xarray',
         'pyinstrument >=4.0',
-        'aiohttp'
+        'aiohttp',
+        'croniter'
     ],
     'tests': _tests,
     'recommended': _recommended,
