@@ -469,8 +469,11 @@ class _state(param.Parameterized):
             doc = _curdoc()
         except Exception:
             return None
-        if doc.session_context:
-            return doc
+        try:
+            if doc.session_context:
+                return doc
+        except Exception:
+            return None
 
     @curdoc.setter
     def curdoc(self, doc):
