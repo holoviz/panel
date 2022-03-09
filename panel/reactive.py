@@ -20,12 +20,11 @@ import param
 from bokeh.models import LayoutDOM
 from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
-from tornado import gen
 
 from .io.model import hold
 from .io.notebook import push
 from .io.server import unlocked
-from .io.state import state
+from .io.state import set_curdoc, state
 from .models.reactive_html import (
     ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser
 )
@@ -278,19 +277,19 @@ class Syncable(Renderable):
             with edit_readonly(state):
                 state.busy = busy
 
-    @gen.coroutine
-    def _change_coroutine(self, doc=None):
+    async def _change_coroutine(self, doc=None):
         if state._thread_pool:
             state._thread_pool.submit(self._change_event, doc)
         else:
-            self._change_event(doc)
+            with set_curdoc(doc):
+                self._change_event(doc)
 
-    @gen.coroutine
-    def _event_coroutine(self, event):
+    async def _event_coroutine(self, event, doc):
         if state._thread_pool:
             state._thread_pool.submit(self._process_event, event)
         else:
-            self._process_event(event)
+            with set_curdoc(doc):
+                self._process_event(event)
 
     def _change_event(self, doc=None):
         try:
@@ -325,12 +324,12 @@ class Syncable(Renderable):
             self._process_event(event)
 
     def _server_event(self, doc, event):
-        if doc.session_context:
+        if doc.session_context and not state._unblocked(doc):
             doc.add_next_tick_callback(
-                partial(self._event_coroutine, event)
+                partial(self._event_coroutine, event, doc)
             )
         else:
-            self._process_event(event)
+            self._comm_event(event)
 
     def _server_change(self, doc, ref, subpath, attr, old, new):
         if subpath:
