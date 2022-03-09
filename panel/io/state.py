@@ -156,7 +156,7 @@ class _state(param.Parameterized):
     def _unblocked(self, doc):
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
-        return doc is self.curdoc and self._thread_id == thread_id
+        return doc is self.curdoc and self._thread_id in (thread_id, None)
 
     @param.depends('busy', watch=True)
     def _update_busy(self):
