@@ -205,7 +205,7 @@ class Serve(_BkServe):
                 if index.endswith(ext):
                     index = index[:-len(ext)]
             if f'/{index}' in applications:
-                applications['/'] = applications.pop(f'/{index}')
+                applications['/'] = applications[f'/{index}']
         return super().customize_applications(args, applications)
 
     def customize_kwargs(self, args, server_kwargs):
