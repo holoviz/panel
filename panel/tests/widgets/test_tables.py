@@ -388,6 +388,21 @@ def test_tabulator_config_defaults(document, comm):
     ]
     assert model.configuration['selectable'] == True
 
+def test_tabulator_config_widths_percent(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, widths={'A': '22%', 'B': 100})
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index'},
+        {'field': 'A', 'width': '22%'},
+        {'field': 'B'},
+        {'field': 'C'},
+        {'field': 'D'}
+    ]
+    assert model.columns[2].width == 100
+
 def test_tabulator_header_filters_config_boolean(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, header_filters=True)
