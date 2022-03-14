@@ -1112,7 +1112,6 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
         mcs._inline_callbacks = []
         for node, attrs in mcs._parser.attrs.items():
             for (attr, parameters, template) in attrs:
-                param_attrs = []
                 for p in parameters:
                     if p in mcs.param or '.' in p:
                         continue
