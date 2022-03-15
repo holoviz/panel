@@ -1364,9 +1364,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if isinstance(v, str):
                 v = bleach.clean(v)
             data_params[k] = v
-        html, nodes, attrs = self._get_template()
+        html, nodes, self._attrs = self._get_template()
         params.update({
-            'attrs': attrs,
+            'attrs': self._attrs,
             'callbacks': self._node_callbacks,
             'data': self._data_model(**self._process_param_change(data_params)),
             'events': self._get_events(),
@@ -1620,8 +1620,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 data_msg[prop] = v
         if new_children:
             if self._parser.looped:
-                html, nodes, attrs = self._get_template()
-                model_msg['attrs'] = attrs
+                html, nodes, self._attrs = self._get_template()
+                model_msg['attrs'] = self._attrs
                 model_msg['nodes'] = nodes
                 model_msg['html'] = escape(textwrap.dedent(html))
             children = self._get_children(doc, root, model, comm)
