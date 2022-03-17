@@ -42,9 +42,10 @@ class CellClickEvent(ModelEvent):
 
     event_name = 'cell-click'
 
-    def __init__(self, model, column, row):
+    def __init__(self, model, column, row, value=None):
         self.column = column
         self.row = row
+        self.value = value
         super().__init__(model=model)
 
 

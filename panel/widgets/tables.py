@@ -961,10 +961,11 @@ class Tabulator(BaseTable):
         if self.pagination == 'remote':
             nrows = self.page_size
             event.row = (self.page-1)*nrows
+        if event.column not in self.buttons:
+            event.value = self._processed[event.column].iloc[event.row]
         if event.event_name == 'table-edit':
             if self._old is not None:
                 event.old = self._old[event.column].iloc[event.row]
-            event.value = self._processed[event.column].iloc[event.row]
             for cb in self._on_edit_callbacks:
                 cb(event)
         else:
