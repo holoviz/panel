@@ -1108,15 +1108,14 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
                 "ensure there is a matching </div> tag."
             )
 
-        mcs._attrs, mcs._node_callbacks = {}, {}
+        mcs._node_callbacks = {}
         mcs._inline_callbacks = []
         for node, attrs in mcs._parser.attrs.items():
             for (attr, parameters, template) in attrs:
-                param_attrs = []
                 for p in parameters:
                     if p in mcs.param or '.' in p:
-                        param_attrs.append(p)
-                    elif re.match(mcs._script_regex, p):
+                        continue
+                    if re.match(mcs._script_regex, p):
                         name = re.findall(mcs._script_regex, p)[0]
                         if name not in mcs._scripts:
                             raise ValueError(
@@ -1140,9 +1139,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
                             f"parameter or method '{p}', similar parameters "
                             f"and methods include {matches}."
                         )
-                if node not in mcs._attrs:
-                    mcs._attrs[node] = []
-                mcs._attrs[node].append((attr, param_attrs, template))
+
         ignored = list(Reactive.param)
         types = {}
         for child in mcs._parser.children.values():
@@ -1247,7 +1244,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     Additionally we can invoke pure JS scripts defined on the class, e.g.:
 
-        <input id="input" onchange="${run_script('some_script')}"></input>
+        <input id="input" onchange="${script('some_script')}"></input>
 
     This will invoke the following script if it is defined on the class:
 
@@ -1326,6 +1323,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             else:
                 params[children_param] = panel(child_value)
         super().__init__(**params)
+        self._attrs = {}
         self._panes = {}
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
 
@@ -1366,13 +1364,14 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if isinstance(v, str):
                 v = bleach.clean(v)
             data_params[k] = v
+        html, nodes, self._attrs = self._get_template()
         params.update({
             'attrs': self._attrs,
             'callbacks': self._node_callbacks,
             'data': self._data_model(**self._process_param_change(data_params)),
             'events': self._get_events(),
-            'html': escape(textwrap.dedent(self._get_template())),
-            'nodes': self._parser.nodes,
+            'html': escape(textwrap.dedent(html)),
+            'nodes': nodes,
             'looped': [node for node, _ in self._parser.looped],
             'scripts': {}
         })
@@ -1509,6 +1508,18 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 .replace(f'id="{name}"', f'id="{name}-${{id}}"')
             )
 
+        # Parse attrs
+        p_attrs = {}
+        for node, attrs in parser.attrs.items():
+            for (attr, parameters, template) in attrs:
+                param_attrs = []
+                for p in parameters:
+                    if p in self.param or '.' in p:
+                        param_attrs.append(p)
+                if node not in p_attrs:
+                    p_attrs[node] = []
+                p_attrs[node].append((attr, param_attrs, template))
+
         # Remove child node template syntax
         for parent, child_name in self._parser.children.items():
             if (parent, child_name) in self._parser.looped:
@@ -1516,7 +1527,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     html = html.replace('${%s[%d]}' % (child_name, i), '')
             else:
                 html = html.replace('${%s}' % child_name, '')
-        return html
+        return html, parser.nodes, p_attrs
 
     def _linked_properties(self):
         linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
@@ -1609,7 +1620,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 data_msg[prop] = v
         if new_children:
             if self._parser.looped:
-                model_msg['html'] = escape(self._get_template())
+                html, nodes, self._attrs = self._get_template()
+                model_msg['attrs'] = self._attrs
+                model_msg['nodes'] = nodes
+                model_msg['html'] = escape(textwrap.dedent(html))
             children = self._get_children(doc, root, model, comm)
         else:
             children = None
