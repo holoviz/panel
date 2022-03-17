@@ -735,6 +735,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           tab_column.headerFilterParams = tab_column.editorParams
         }
       }
+      tab_column.cellClick = (_: any, cell: any) => {
+	const index = cell._cell.row.data._index;
+	this.model.trigger_event(new CellClickEvent(column.field, index))
+      }
       if (config_columns == null)
         columns.push(tab_column)
     }

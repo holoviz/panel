@@ -958,16 +958,14 @@ class Tabulator(BaseTable):
         super()._cleanup(root)
 
     def _process_event(self, event):
+        if self.pagination == 'remote':
+            nrows = self.page_size
+            event.row = (self.page-1)*nrows
+        if event.column not in self.buttons:
+            event.value = self._processed[event.column].iloc[event.row]
         if event.event_name == 'table-edit':
-            if self.pagination:
-                nrows = self.page_size
-                offset = (self.page-1)*nrows
-            else:
-                offset = 0
-            row = offset + event.row
             if self._old is not None:
-                event.old = self._old[event.column].iloc[row]
-            event.value = self._processed[event.column].iloc[row]
+                event.old = self._old[event.column].iloc[event.row]
             for cb in self._on_edit_callbacks:
                 cb(event)
         else:
@@ -1543,6 +1541,24 @@ class Tabulator(BaseTable):
         """
         self._on_edit_callbacks.append(callback)
 
+    def on_click(self, callback, column=None):
+        """
+        Register a callback to be executed when any cell is clicked.
+        The callback is given a CellClickEvent declaring the column
+        and row of the cell that was clicked.
+
+        Arguments
+        ---------
+        callback: (callable)
+            The callback to run on edit events.
+        column: (str)
+            Optional argument restricting the callback to a specific
+            column.
+        """
+        if column not in self._on_click_callbacks:
+            self._on_click_callbacks[column] = []
+        self._on_click_callbacks[column].append(callback)
+
     def on_button_click(self, callback, column=None):
         """
         Register a callback to be executed when a cell corresponding
@@ -1558,6 +1574,11 @@ class Tabulator(BaseTable):
             Optional argument restricting the callback to a specific
             column.
         """
+        self.param.warning(
+            "DeprecationWarning: The on_button_click callbacks will be "
+            "removed before the 0.13.0 release, please use the generic "
+            "on_click callback instead."
+        )
         if column not in self._on_click_callbacks:
             self._on_click_callbacks[column] = []
         self._on_click_callbacks[column].append(callback)
