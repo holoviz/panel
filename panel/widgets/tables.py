@@ -1539,7 +1539,7 @@ class Tabulator(BaseTable):
         callback: (callable)
             The callback to run on edit events.
         """
-        self._on_callbacks.append(callback)
+        self._on_edit_callbacks.append(callback)
 
     def on_click(self, callback, column=None):
         """
