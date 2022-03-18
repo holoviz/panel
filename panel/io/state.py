@@ -20,8 +20,6 @@ import param
 from bokeh.document import Document
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
-from tornado.ioloop import IOLoop
-from tornado.web import decode_signed_value
 
 from ..util import base64url_decode, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
@@ -242,6 +240,7 @@ class _state(param.Parameterized):
             at = None
             del self._scheduled[name]
         if at is not None:
+            from tornado.ioloop import IOLoop
             ioloop = IOLoop.current()
             now = dt.datetime.now().timestamp()
             call_time_seconds = (at - now)
@@ -517,6 +516,7 @@ class _state(param.Parameterized):
         cron: str
           A cron expression (requires croniter to parse)
         """
+        from tornado.ioloop import IOLoop
         if name in self._scheduled:
             if callback is not self._scheduled[name][1]:
                 self.param.warning(
@@ -593,6 +593,7 @@ class _state(param.Parameterized):
 
     @property
     def access_token(self):
+        from tornado.web import decode_signed_value
         from ..config import config
         access_token = self.cookies.get('access_token')
         if access_token is None:
@@ -698,6 +699,7 @@ class _state(param.Parameterized):
 
     @property
     def user(self):
+        from tornado.web import decode_signed_value
         from ..config import config
         user = self.cookies.get('user')
         if user is None or config.cookie_secret is None:
@@ -706,6 +708,7 @@ class _state(param.Parameterized):
 
     @property
     def user_info(self):
+        from tornado.web import decode_signed_value
         from ..config import config
         id_token = self.cookies.get('id_token')
         if id_token is None or config.cookie_secret is None:

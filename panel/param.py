@@ -18,7 +18,6 @@ import param
 from param.parameterized import classlist, discard_events
 
 from .io import init_doc, state
-from .io.server import async_execute
 from .layout import Column, Panel, Row, Spacer, Tabs
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
@@ -790,7 +789,7 @@ class ParamMethod(ReplacementPane):
                 else:
                     new_object = self.eval(self.object)
                 if inspect.isawaitable(new_object):
-                    async_execute(partial(self._eval_async, new_object))
+                    param.parameterized.async_executor(partial(self._eval_async, new_object))
                     return
                 self._update_inner(new_object)
             finally:
