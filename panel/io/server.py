@@ -3,7 +3,6 @@ Utilities for creating bokeh Server instances.
 """
 import datetime as dt
 import html
-import inspect
 import logging
 import os
 import pathlib
@@ -29,7 +28,6 @@ from bokeh.application.handlers.code import CodeHandler, _monkeypatch_io, patch_
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.core.templates import AUTOLOAD_JS
-from bokeh.document.events import ModelChangedEvent
 from bokeh.embed.bundle import Script
 from bokeh.embed.elements import html_page_for_render_items, script_for_render_items
 from bokeh.embed.util import RenderItem

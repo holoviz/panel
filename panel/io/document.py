@@ -1,11 +1,14 @@
+import datetime as dt
 import inspect
 import threading
 
 from contextlib import contextmanager
+from functools import partial, wraps
 
+from bokeh.document.events import ModelChangedEvent
 from bokeh.io import curdoc
 
-from .state import state
+from .state import set_curdoc, state
 
 
 def init_doc(doc):

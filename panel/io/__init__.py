@@ -5,7 +5,7 @@ model state, and rendering panel objects.
 import sys
 
 from .callbacks import PeriodicCallback # noqa
-from .document import init_doc, unlocked, with_lock
+from .document import init_doc, unlocked, with_lock # noqa
 from .embed import embed_state # noqa
 from .logging import panel_logger # noqa
 from .model import add_to_doc, remove_root, diff # noqa
@@ -16,5 +16,5 @@ from .notebook import ( # noqa
     load_notebook, push, push_notebook
 )
 
-#if 'django' in sys.modules:
-#    from . import django # noqa
+if 'django' in sys.modules:
+    from . import django # noqa
