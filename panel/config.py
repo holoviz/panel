@@ -565,6 +565,9 @@ class panel_extension(_pyviz_extension):
         if "VSCODE_PID" in os.environ:
             config.comms = "vscode"
 
+        if "pyodide" in sys.modules:
+            config.comms = "ipywidgets"
+
         if config.notifications:
             display(state.notifications) # noqa
 
