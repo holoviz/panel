@@ -23,6 +23,8 @@ from bokeh.io import curdoc as _curdoc
 from pyviz_comms import JupyterCommManager
 
 from .config import config, panel_extension
+from .io import serve
+from .io.document import init_doc
 from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
@@ -31,7 +33,6 @@ from .io.notebook import (
 )
 from .io.save import save
 from .io.state import state
-from .io.server import init_doc, serve
 from .util import escape, param_reprs
 
 

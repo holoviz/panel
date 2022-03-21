@@ -21,9 +21,9 @@ from bokeh.models import LayoutDOM
 from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
 
+from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
-from .io.server import unlocked
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
     ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser
