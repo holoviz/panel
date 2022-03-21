@@ -45,6 +45,7 @@ from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from ..util import edit_readonly
+from .document import init_doc, with_lock, unlocked # noqa
 from .logging import LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .profile import profile_ctx
 from .reload import autoreload_watcher
