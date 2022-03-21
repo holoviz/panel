@@ -4,8 +4,9 @@ Various utilities for recording and embedding state in a rendered app.
 import asyncio
 import datetime as dt
 import inspect
-import logging
 import json
+import logging
+import sys
 import threading
 import time
 
