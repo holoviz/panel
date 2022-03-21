@@ -16,5 +16,9 @@ from .notebook import ( # noqa
     load_notebook, push, push_notebook
 )
 
-if 'django' in sys.modules:
-    from . import django # noqa
+if 'pyodide' in sys.modules:
+    from .pyodide import serve
+else:
+    from .server import serve # noqa
+    if 'django' in sys.modules:
+        from . import django # noqa

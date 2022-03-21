@@ -1,6 +1,7 @@
 """
 Various utilities for recording and embedding state in a rendered app.
 """
+import asyncio
 import datetime as dt
 import inspect
 import logging
@@ -144,6 +145,14 @@ class _state(param.Parameterized):
         return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
 
     @property
+    def _ioloop(self):
+        if 'pyodide' in sys.modules:
+            return asyncio.get_running_loop()
+        else:
+            from tornado.ioloop import IOLoop
+            return IOLoop.current()
+
+    @property
     def _thread_id(self):
         return self._thread_id_.get(self.curdoc) if self.curdoc else None
 
@@ -240,11 +249,9 @@ class _state(param.Parameterized):
             at = None
             del self._scheduled[name]
         if at is not None:
-            from tornado.ioloop import IOLoop
-            ioloop = IOLoop.current()
             now = dt.datetime.now().timestamp()
             call_time_seconds = (at - now)
-            ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
+            self._ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
         res = cb()
         if inspect.isawaitable(res):
             await res
@@ -516,7 +523,6 @@ class _state(param.Parameterized):
         cron: str
           A cron expression (requires croniter to parse)
         """
-        from tornado.ioloop import IOLoop
         if name in self._scheduled:
             if callback is not self._scheduled[name][1]:
                 self.param.warning(
@@ -527,7 +533,6 @@ class _state(param.Parameterized):
                     "adding a new task under the same name."
                 )
             return
-        ioloop = IOLoop.current()
         if getattr(callback, '__module__', '').startswith('bokeh_app_'):
             raise RuntimeError(
                 "Cannot schedule a task from within the context of an "
@@ -568,7 +573,7 @@ class _state(param.Parameterized):
         except StopIteration:
             return
         self._scheduled[name] = (diter, callback)
-        ioloop.call_later(
+        self._ioloop.call_later(
             delay=call_time_seconds, callback=partial(self._scheduled_cb, name)
         )
 

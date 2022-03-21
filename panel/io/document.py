@@ -32,7 +32,6 @@ def init_doc(doc):
     doc.on_event('document_ready', state._init_session)
     return doc
 
-
 def with_lock(func):
     """
     Wrap a callback function to execute with a lock allowing the
@@ -58,7 +57,6 @@ def with_lock(func):
             return func(*args, **kw)
     wrapper.lock = True
     return wrapper
-
 
 def _dispatch_events(doc, events):
     """
