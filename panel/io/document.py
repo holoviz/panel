@@ -73,11 +73,11 @@ def unlocked():
     ModelChangedEvents triggered in the context body to all sockets
     on current sessions.
     """
-    from tornado.websocket import WebSocketHandler
     curdoc = state.curdoc
     if curdoc is None or curdoc.session_context is None or curdoc.session_context.session is None:
         yield
         return
+    from tornado.websocket import WebSocketHandler
     connections = curdoc.session_context.session._subscribed_connections
 
     hold = curdoc.callbacks.hold_value
