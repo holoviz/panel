@@ -9,6 +9,7 @@ from .document import init_doc, unlocked, with_lock # noqa
 from .embed import embed_state # noqa
 from .logging import panel_logger # noqa
 from .model import add_to_doc, remove_root, diff # noqa
+from .profile import profile # noqa
 from .resources import Resources # noqa
 from .state import state # noqa
 from .notebook import ( # noqa
