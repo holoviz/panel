@@ -14,10 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['macos-latest']
-        # os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: ["3.10"]
-        # python-version: ["3.7", "3.8", "3.9", "3.10"]
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
         exclude:
           - os: windows-latest
             python-version: 3.8
@@ -68,17 +66,17 @@ jobs:
           conda activate test-environment
           conda install "pip<21.2.1" 
       - name: doit develop_install < 3.10
-        if: matrix.python-version < '3.10'
+        # if: matrix.python-version < '3.10'
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit develop_install -o examples -o recommended -o tests -o build --conda-mode=mamba
-      - name: doit develop_install >= 3.10
-        if: matrix.python-version >= '3.10'
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit develop_install -o recommended -o tests -o build --conda-mode=mamba
+      # - name: doit develop_install >= 3.10
+      #   if: matrix.python-version >= '3.10'
+      #   run: |
+      #     eval "$(conda shell.bash hook)"
+      #     conda activate test-environment
+      #     doit develop_install -o recommended -o tests -o build --conda-mode=mamba
       - name: pip installs
         run: |
           eval "$(conda shell.bash hook)"
