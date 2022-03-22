@@ -110,7 +110,6 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          pytest -v panel/tests/widgets/test_terminal.py
           doit test_unit
       - name: test examples
         if: matrix.python-version < '3.10'
