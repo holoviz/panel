@@ -156,6 +156,7 @@ extras_require = {
         'graphviz',
         'python-graphviz',
         'networkx>=2.5',
+        'pygraphviz'
     ],
     'tests': _tests,
     'recommended': _recommended,
