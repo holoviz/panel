@@ -28,6 +28,8 @@ class GridStack(ReactiveHTML, GridSpec):
 
     height = param.Integer(default=None)
 
+    _extension_name = 'gridstack'
+
     _template = """
     <div id="grid" class="grid-stack">
     {% for key, obj in objects.items() %}
