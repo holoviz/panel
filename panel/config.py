@@ -468,8 +468,7 @@ class panel_extension(_pyviz_extension):
         }
         for arg in args:
             if arg in self._imports:
-                 __import__(self._imports[arg])
-
+                __import__(self._imports[arg])
             elif arg in reactive_exts:
                 ReactiveHTMLMetaclass._loaded_extensions.add(arg)
             else:
