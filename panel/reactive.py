@@ -1063,6 +1063,8 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
     HTML attributes.
     """
 
+    _loaded_extensions = set()
+
     _name_counter = Counter()
 
     _script_regex = r"script\([\"|'](.*)[\"|']\)"
@@ -1291,6 +1293,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _dom_events = {}
 
+    _extension_name = None
+
     _template = ""
 
     _scripts = {}
@@ -1298,6 +1302,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     _script_assignment = r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
 
     __abstract = True
+
+    __css__ = None
+    __javascript__ = None
+    __javascript_modules__ = None
 
     def __init__(self, **params):
         from .pane import panel
@@ -1326,6 +1334,16 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         self._attrs = {}
         self._panes = {}
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
+
+    @classmethod
+    def _loaded(cls):
+        """
+        Whether the component has been loaded.
+        """
+        return (
+            cls._extension_name is None or
+            cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions
+        )
 
     def _cleanup(self, root):
         for child, panes in self._panes.items():
@@ -1546,8 +1564,26 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         properties = self._process_param_change(self._init_params())
         model = _BkReactiveHTML(**properties)
+        if comm and not self._loaded():
+            self.param.warning(
+                f'{type(self).__name__} was not imported on instantiation and may not '
+                'render in a notebook. Restart the notebook kernel and '
+                'ensure you load it as part of the extension using:'
+                f'\n\npn.extension(\'{self._extension_name}\')\n'
+            )
+        elif root is not None and not self._loaded() and root.ref['id'] in state._views:
+            self.param.warning(
+                f'{type(self).__name__} was not imported on instantiation may not '
+                'render in the served application. Ensure you add the '
+                'following to the top of your application:'
+                f'\n\npn.extension(\'{self._extension_name}\')\n'
+            )
+        if self._extension_name:
+            ReactiveHTMLMetaclass._loaded_extensions.add(self._extension_name)
+
         if not root:
             root = model
+
         for p, v in model.data.properties_with_values().items():
             if isinstance(v, DataModel):
                 v.tags.append(f"__ref:{root.ref['id']}")

@@ -439,7 +439,6 @@ class panel_extension(_pyviz_extension):
         'perspective': 'panel.models.perspective',
         'terminal': 'panel.models.terminal',
         'tabulator': 'panel.models.tabulator',
-        'gridstack': 'panel.layout.gridstack',
         'texteditor': 'panel.models.quill',
         'jsoneditor': 'panel.models.json_editor'
     }
@@ -463,13 +462,19 @@ class panel_extension(_pyviz_extension):
     _loaded_extensions = []
 
     def __call__(self, *args, **params):
-        # Abort if IPython not found
+        from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
+        reactive_exts = {
+            v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
+        }
         for arg in args:
-            if arg not in self._imports:
+            if arg in self._imports:
+                 __import__(self._imports[arg])
+
+            elif arg in reactive_exts:
+                ReactiveHTMLMetaclass._loaded_extensions.add(arg)
+            else:
                 self.param.warning('%s extension not recognized and '
                                    'will be skipped.' % arg)
-            else:
-                __import__(self._imports[arg])
 
         for k, v in params.items():
             if k in ['raw_css', 'css_files']:
@@ -509,6 +514,7 @@ class panel_extension(_pyviz_extension):
             else:
                 hv.Store.current_backend = backend
 
+        # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except Exception:
