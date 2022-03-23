@@ -152,7 +152,11 @@ extras_require = {
         'xarray',
         'pyinstrument >=4.0',
         'aiohttp',
-        'croniter'
+        'croniter',
+        'graphviz',
+        'python-graphviz',
+        'networkx>=2.5',
+        'pygraphviz'
     ],
     'tests': _tests,
     'recommended': _recommended,

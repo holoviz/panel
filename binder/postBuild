@@ -1,5 +1,6 @@
 pip install voila>=0.2.10 -U
 conda install -c conda-forge code-server
+conda install -c conda-forge pygraphviz
 code-server --install-extension ms-python.python
 SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vscode/item code-server --install-extension wesbos.theme-cobalt2
 SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vscode/item code-server --install-extension RandomFractalsInc.vscode-data-preview
