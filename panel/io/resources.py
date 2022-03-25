@@ -21,7 +21,9 @@ from bokeh.embed.bundle import (
 
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
-from jinja2 import Environment, Markup, FileSystemLoader
+from markupsafe import Markup
+from jinja2.environment import Environment
+from jinja2.loaders import FileSystemLoader
 
 from ..util import url_path
 from .state import state
