@@ -212,6 +212,16 @@ class SessionPrefixHandler:
 # Patch Bokeh DocHandler URL
 class DocHandler(BkDocHandler, SessionPrefixHandler):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._resources = None
+
+    @property
+    def resources(self):
+        if self._resources is None:
+            self._resources = Resources.from_bokeh(self.application.resources())
+        return self._resources
+
     @authenticated
     async def get(self, *args, **kwargs):
         with self._session_prefix():
@@ -219,9 +229,9 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
             state.curdoc = session.document
             logger.info(LOG_SESSION_CREATED, id(session.document))
             try:
-                resources = Resources.from_bokeh(self.application.resources())
                 page = server_html_page_for_session(
-                    session, resources=resources, title=session.document.title,
+                    session, resources=self.resources,
+                    title=session.document.title,
                     template=session.document.template,
                     template_variables=session.document.template_variables
                 )
