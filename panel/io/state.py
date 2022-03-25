@@ -530,7 +530,7 @@ class _state(param.Parameterized):
                     "A separate task was already scheduled under the "
                     f"name {name!r}. The new task will be ignored. If "
                     "you want to replace the existing task cancel it "
-                    "with `state.cancel_task({name!r})` before adding "
+                    f"with `state.cancel_task({name!r})` before adding "
                     "adding a new task under the same name."
                 )
             return

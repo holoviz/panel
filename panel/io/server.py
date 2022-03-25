@@ -2,6 +2,7 @@
 Utilities for creating bokeh Server instances.
 """
 import datetime as dt
+import gc
 import html
 import logging
 import os
@@ -164,6 +165,28 @@ def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url
     bundle.add(Script(script_for_render_items({}, render_items, app_path=app_path, absolute_url=absolute_url)))
 
     return AUTOLOAD_JS.render(bundle=bundle, elementid=element_id)
+
+
+def destroy_document(self, session):
+    """
+    Override for Document.destroy() without calling gc.collect directly.
+    The gc.collect() call is scheduled as a task, ensuring that when
+    multiple documents are destroyed in quick succession we do not
+    schedule excessive garbage collection.
+    """
+    self.remove_on_change(session)
+    del self._roots
+    del self._theme
+    del self._template
+    self._session_context = None
+
+    self.callbacks.destroy()
+    self.models.destroy()
+    self.modules.destroy()
+
+    at = dt.datetime.now() + dt.timedelta(seconds=5)
+    state.schedule_task('gc.collect', gc.collect, at=at)
+
 
 # Patch Application to handle session callbacks
 class Application(BkApplication):
@@ -349,7 +372,9 @@ def modify_document(self, doc):
 
         def _log_session_destroyed(session_context):
             logger.info(LOG_SESSION_DESTROYED, id(doc))
+
         doc.on_session_destroyed(_log_session_destroyed)
+        doc.destroy = partial(destroy_document, doc)
     finally:
         state._launching.remove(doc)
         if config.profiler:
