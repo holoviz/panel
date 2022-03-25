@@ -16,11 +16,12 @@ from collections.abc import MutableSequence, MutableMapping
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
-from functools import partial
+from functools import cache, partial
 from html import escape # noqa
 from importlib import import_module
 from packaging.version import Version
 
+import bleach as _bleach
 import bokeh
 import param
 import numpy as np
@@ -401,3 +402,7 @@ def parse_timedelta(time_str):
         if p:
             time_params[name] = float(p)
     return dt.timedelta(**time_params)
+
+@cache
+def bleach(string):
+    return _bleach.clean(string)

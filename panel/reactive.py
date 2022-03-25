@@ -13,7 +13,6 @@ import textwrap
 from collections import Counter, defaultdict, namedtuple
 from functools import partial
 
-import bleach
 import numpy as np
 import param
 
@@ -28,7 +27,7 @@ from .io.state import set_curdoc, state
 from .models.reactive_html import (
     ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser
 )
-from .util import edit_readonly, escape, updating
+from .util import bleach, edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable
 
 LinkWatcher = namedtuple("Watcher", Watcher._fields+('target', 'links', 'transformed', 'bidirectional_watcher'))
@@ -1380,7 +1379,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             ):
                 continue
             if isinstance(v, str):
-                v = bleach.clean(v)
+                v = bleach(v)
             data_params[k] = v
         html, nodes, self._attrs = self._get_template()
         params.update({
@@ -1638,7 +1637,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if prop in child_params:
                 new_children[prop] = prop
                 if self._child_config.get(prop) == 'literal':
-                    data_msg[prop] = bleach.clean(v)
+                    data_msg[prop] = bleach(v)
                 elif prop in model.data.properties():
                     data_msg[prop] = v
             elif prop in list(Reactive.param)+['events']:
@@ -1651,7 +1650,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             ):
                 continue
             elif isinstance(v, str):
-                data_msg[prop] = bleach.clean(v)
+                data_msg[prop] = bleach(v)
             else:
                 data_msg[prop] = v
         if new_children:
