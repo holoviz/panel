@@ -1,5 +1,25 @@
 # Releases
 
+## Version 0.12.7
+
+Date: 2022-03-26
+
+The 0.12.7 release primarily fixes an incompatibility with the new jinja2 3.1.0 release. Many thanks to @maartenbreddels, @govinda18, @raybellwaves and the maintainers @maximlt and @philippjfr for contributing further fixes to this release.
+
+Bug fixes:
+
+- Wrong offset when memoryview format is non-byte ([#3206](https://github.com/holoviz/panel/pull/3206))
+- Support jupyter server root_dir with lab extension ([#3172](https://github.com/holoviz/panel/pull/3172))
+
+Docs:
+
+- add note on enabling panel widget on Jupyter Lab ([#3029](https://github.com/holoviz/panel/pull/3029))
+- Remove redundant and confusing JupyterLab install instructions ([#3037](https://github.com/holoviz/panel/pull/3037)) 
+
+Compatibility:
+
+- Fix jinja2 imports ([#3258](https://github.com/holoviz/panel/pull/3258))
+
 ## Version 0.12.6
 
 Date: 2021-12-08
