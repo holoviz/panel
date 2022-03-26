@@ -542,16 +542,16 @@ class panel_extension(_pyviz_extension):
             # In embedded mode the ipywidgets_bokeh model must be loaded
             __import__(self._imports['ipywidgets'])
 
-        nb_load = False
+        nb_loaded = getattr(self, '_repeat_execution_in_cell', False)
         if 'holoviews' in sys.modules:
             if getattr(hv.extension, '_loaded', False):
                 return
             with param.logging_level('ERROR'):
                 hv.plotting.Renderer.load_nb(config.inline)
                 if hasattr(hv.plotting.Renderer, '_render_with_panel'):
-                    nb_load = True
+                    nb_loaded = True
 
-        if not nb_load and hasattr(ip, 'kernel'):
+        if not nb_loaded and hasattr(ip, 'kernel'):
             load_notebook(config.inline)
         panel_extension._loaded = True
 
