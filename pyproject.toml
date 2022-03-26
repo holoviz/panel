@@ -8,5 +8,6 @@ requires = [
     "requests",
     "bleach",
     "packaging",
-    "tqdm >=4.48.0"
+    "tqdm >=4.48.0",
+    "setuptools>=42"
 ]
