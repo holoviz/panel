@@ -57,7 +57,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install ${{ env.CHANS_DEV }} "pip<21.2.1" 
+          conda install ${{ env.CHANS_DEV }} "pip<21.2.1" "setuptools<61" 
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o doc -o examples
           pip install pydeck sphinxcontrib-napoleon sphinx-copybutton pyecharts
