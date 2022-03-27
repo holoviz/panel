@@ -42,6 +42,9 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 
 **A:** This error usually means that you forgot to run panel.extension() in a notebook context to set up the code for communicating between JavaScript and Python.  It's easy to get confused and think you don't need that line, because notebooks will often work fine as long as *some* notebook somewhere in your Jupyter session has run the command, but the only reliable way to make the communication channels available is to make sure *every* notebook includes this command.
 
+**Q: How do I enable the panel widget on Jupyter Lab?**
+
+**A:** Run `jupyter serverextension enable panel.io.jupyter_server_extension`.
 
 **Q: Why is my object being shown using the wrong type of pane?**
 

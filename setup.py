@@ -99,6 +99,7 @@ except Exception:
 install_requires = [
     'bokeh >=2.4.0,<2.5.0',
     'param >=1.10.0',
+    'setuptools >=42,<61',
     'pyviz_comms >=0.7.4',
     'markdown',
     'requests',
@@ -144,7 +145,7 @@ extras_require = {
         'jupyter_bokeh >=3.0.2',
         'django <4',
         'channels',
-        'pyvista',
+        'pyvista <0.33',
         'ipywidgets',
         'ipywidgets_bokeh',
         'ipyvolume',
@@ -170,8 +171,8 @@ extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 extras_require['build'] = [
     'param >=1.9.2',
     'pyct >=0.4.4',
-    'setuptools >=30.3.0',
-    'bokeh >=2.0.0',
+    'setuptools >=42,<61',
+    'bokeh >=2.4.0,<2.5.0',
     'pyviz_comms >=0.6.0',
     'bleach',
     'tqdm'
@@ -207,6 +208,8 @@ setup_args = dict(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",

@@ -92,12 +92,11 @@ def test_load_from_stringio():
 
 def test_loading_a_image_from_url():
     """Tests the loading of a image from a url"""
-    url = 'https://file-examples-com.github.io/uploads/2017/10/file_example_PNG_500kB.png'
+    url = 'https://raw.githubusercontent.com/holoviz/panel/master/doc/_static/logo.png'
 
     image_pane = PNG(url)
     image_data = image_pane._data()
     assert b'PNG' in image_data
-
 
 def test_loading_a_image_from_pathlib():
     """Tests the loading of a image from a pathlib"""
@@ -106,7 +105,6 @@ def test_loading_a_image_from_pathlib():
     image_pane = PNG(filepath)
     image_data = image_pane._data()
     assert b'PNG' in image_data
-
 
 def test_image_alt_text(document, comm):
     """Tests the loading of a image from a url"""
@@ -117,7 +115,6 @@ def test_image_alt_text(document, comm):
 
     assert 'alt=&quot;Some alt text&quot;' in model.text
 
-
 def test_image_link_url(document, comm):
     """Tests the loading of a image from a url"""
     url = 'https://file-examples-com.github.io/uploads/2017/10/file_example_PNG_500kB.png'
@@ -126,7 +123,6 @@ def test_image_link_url(document, comm):
     model = image_pane.get_root(document, comm)
 
     assert model.text.startswith('&lt;a href=&quot;http://anaconda.org&quot;')
-
 
 def test_pdf_embed(document, comm):
     pdf_pane = PDF('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf')
