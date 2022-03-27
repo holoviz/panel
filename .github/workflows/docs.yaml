@@ -64,8 +64,13 @@ jobs:
           conda activate test-environment
           conda install "pip<21.2.1" 
           conda list
-          doit develop_install -o doc -o examples --conda-more=mamba
+          doit develop_install -o doc -o examples
           pip install pyecharts idom
+      - name: temporarily pin jinja2
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda install "jinja2<=3.0.3" 
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
