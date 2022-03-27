@@ -64,7 +64,7 @@ jobs:
           conda activate test-environment
           conda install "pip<21.2.1" 
           conda list
-          doit develop_install -o doc -o examples --conda-more=mamba
+          doit develop_install -o doc -o examples --conda-mode=mamba
           pip install pyecharts idom
       - name: doit env_capture
         run: |
