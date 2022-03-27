@@ -161,9 +161,12 @@ extras_require = {
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite >=0.7.0a4',
+        'nbsite >=0.7.1',
         'graphviz',
-        'lxml'
+        'lxml',
+        'pydata-sphinx-theme',
+        'sphinx-copybutton',
+        'pydeck',
     ]
 }
 
