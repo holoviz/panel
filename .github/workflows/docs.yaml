@@ -66,6 +66,11 @@ jobs:
           conda list
           doit develop_install -o doc -o examples --conda-mode=mamba
           pip install pyecharts idom
+      - name: temporarily pin jinja2
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          mamba install "jinja2<=3.0.3" 
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
