@@ -58,6 +58,9 @@ class BaseTable(ReactiveData, Widget):
     show_index = param.Boolean(default=True, doc="""
         Whether to show the index column.""")
 
+    sorters = param.List(default=[], doc="""
+        A list of sorters to apply during pagination.""")
+
     text_align = param.ClassSelector(default={}, class_=(dict, str), doc="""
         A mapping from column name to alignment or a fixed column
         alignment, which should be one of 'left', 'center', 'right'.""")
@@ -248,6 +251,14 @@ class BaseTable(ReactiveData, Widget):
             else:
                 self._update_columns(event, model)
 
+    def _sort_df(self, df):
+        if not self.sorters:
+            return df
+        return df.sort_values(
+            [s['field'] for s in self.sorters],
+            ascending=[s['dir'] == 'asc' for s in self.sorters]
+        )
+
     def _filter_dataframe(self, df):
         """
         Filter the DataFrame.
@@ -411,6 +422,7 @@ class BaseTable(ReactiveData, Widget):
     def _get_data(self):
         import pandas as pd
         df = self._filter_dataframe(self.value)
+        df = self._sort_df(df)
         if df is None:
             return [], {}
         if isinstance(self.value.index, pd.MultiIndex):
@@ -555,7 +567,7 @@ class BaseTable(ReactiveData, Widget):
         else:
             raise ValueError("The stream value provided is not a DataFrame, Series or Dict!")
 
-    def patch(self, patch_value):
+    def patch(self, patch_value, as_index=True):
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
 
@@ -563,6 +575,9 @@ class BaseTable(ReactiveData, Widget):
         ---------
         patch_value: (Union[pd.DataFrame, pd.Series, Dict])
           The value(s) to patch the existing value with.
+        as_index: boolean
+          Whether to treat the patch index as DataFrame indexes (True)
+          or as simple integer index.
 
         Raises
         ------
@@ -603,9 +618,8 @@ class BaseTable(ReactiveData, Widget):
         >>> tabulator.value.to_dict("list")
         {'x': [3, 4], 'y': ['c', 'd']}
         """
-        if self.value is None or isinstance(patch_value, dict):
-            self._patch(patch_value)
-            return
+        if self.value is None:
+            raise ValueError("Cannot patch empty {type(self).__name__}.")
 
         import pandas as pd
         if not isinstance(self.value, pd.DataFrame):
@@ -617,10 +631,17 @@ class BaseTable(ReactiveData, Widget):
         if isinstance(patch_value, pd.DataFrame):
             patch_value_dict = {}
             for column in patch_value.columns:
-                patch_value_dict[column] = []
-                for index in patch_value.index:
-                    patch_value_dict[column].append((index, patch_value.loc[index, column]))
-            self.patch(patch_value_dict)
+                series = patch_value[column]
+                if as_index:
+                    patches = [
+                        (index, series.loc[index]) for index in series.index
+                    ]
+                else:
+                    patches = [
+                        (i, value) for (i, (_, value)) in enumerate(series.iterrows())
+                    ]
+                patch_value_dict[column] = patches
+            self.patch(patch_value_dict, as_index=as_index)
         elif isinstance(patch_value, pd.Series):
             if "index" in patch_value:  # Series orient is row
                 patch_value_dict = {
@@ -633,10 +654,16 @@ class BaseTable(ReactiveData, Widget):
                 }
             self.patch(patch_value_dict)
         elif isinstance(patch_value, dict):
+            columns = list(self.value.columns)
             for k, v in patch_value.items():
-                for update in v:
-                    self.value.loc[update[0], k] = update[1]
-                self._patch(patch_value)
+                for (ind, value) in v:
+                    if isinstance(ind, slice):
+                        ind = range(ind.start, ind.stop, ind.step or 1)
+                    if as_index:
+                        self.value.loc[ind, k] = value
+                    else:
+                        self.value.iloc[ind, columns.index(k)] = value
+            self._patch(patch_value)
         else:
             raise ValueError(
                 f"Patching with a patch_value of type {type(patch_value).__name__} "
@@ -896,9 +923,6 @@ class Tabulator(BaseTable):
         A function which given a DataFrame should return a list of
         rows by integer index, which are selectable.""")
 
-    sorters = param.List(default=[], doc="""
-        A list of sorters to apply during pagination.""")
-
     theme = param.ObjectSelector(
         default="simple", objects=[
             'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
@@ -1013,14 +1037,6 @@ class Tabulator(BaseTable):
                 # update to config
                 return
         model.configuration = self._get_configuration(model.columns)
-
-    def _sort_df(self, df):
-        if not self.sorters:
-            return df
-        return df.sort_values(
-            [s['field'] for s in self.sorters],
-            ascending=[s['dir'] == 'asc' for s in self.sorters]
-        )
 
     def _get_data(self):
         if self.pagination != 'remote' or self.value is None:
@@ -1175,6 +1191,11 @@ class Tabulator(BaseTable):
 
     @updating
     def _patch(self, patch):
+        if self.filters or self.sorters:
+            print('>>>')
+            self._updating = False
+            self._update_cds()
+            return
         if self.pagination == 'remote':
             nrows = self.page_size
             start = (self.page-1)*nrows

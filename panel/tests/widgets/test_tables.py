@@ -813,12 +813,159 @@ def test_tabulator_patch_scalars(document, comm):
                        '2009-01-05T00:00:00.000000000',
                        '2009-01-06T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        if col == 'D':
+            expected_array = expected[col].astype(np.int64) / 10e5
+        else:
+            expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+def test_tabulator_patch_scalars_not_as_index(document, comm):
+    df = makeMixedDataFrame().sort_values('A', ascending=False)
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch({'A': [(0, 2), (4, 1)], 'C': [(0, 'foo0')]}, as_index=False)
+
+    expected = {
+        'index': np.array([4, 3, 2, 1, 0]),
+        'A': np.array([2, 3, 2, 1, 1]),
+        'B': np.array([0, 1, 0, 1, 0]),
+        'C': np.array(['foo0', 'foo4', 'foo3', 'foo2', 'foo1']),
+        'D': np.array(['2009-01-07T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-02T00:00:00.000000000',
+                       '2009-01-01T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        if col == 'D':
+            expected_array = expected[col].astype(np.int64) / 10e5
+        else:
+            expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_filters(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, filters=[{'field': 'A', 'type': '>', 'value': '2'}])
+
+    model = table.get_root(document, comm)
+
+    table.patch({'A': [(0, 2), (4, 1)], 'C': [(0, 'foo0')]})
+
+    expected_df = {
+        'index': np.array([0, 1, 2, 3, 4]),
+        'A': np.array([2, 1, 2, 3, 1]),
+        'B': np.array([0, 1, 0, 1, 0]),
+        'C': np.array(['foo0', 'foo2', 'foo3', 'foo4', 'foo5']),
+        'D': np.array(['2009-01-01T00:00:00.000000000',
+                       '2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    expected_src = {
+        'index': np.array([3]),
+        'A': np.array([3]),
+        'B': np.array([1]),
+        'C': np.array(['foo4']),
+        'D': np.array(['2009-01-06T00:00:00.000000000'],
                       dtype='datetime64[ns]').astype(np.int64) / 10e5
     }
     for col, values in model.source.data.items():
-        np.testing.assert_array_equal(values, expected[col])
+        np.testing.assert_array_equal(values, expected_src[col])
+        if col != 'index':
+            np.testing.assert_array_equal(
+                table.value[col].values, expected_df[col]
+            )
 
 
+def test_tabulator_patch_with_sorters(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, sorters=[{'field': 'A', 'dir': 'desc'}])
+
+    model = table.get_root(document, comm)
+
+    table.patch({'A': [(0, 2), (4, 1)], 'C': [(0, 'foo0')]})
+
+    expected_df = {
+        'index': np.array([0, 1, 2, 3, 4]),
+        'A': np.array([2, 1, 2, 3, 1]),
+        'B': np.array([0, 1, 0, 1, 0]),
+        'C': np.array(['foo0', 'foo2', 'foo3', 'foo4', 'foo5']),
+        'D': np.array(['2009-01-01T00:00:00.000000000',
+                       '2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    expected_src = {
+        'index': np.array([3, 0, 2, 1, 4]),
+        'A': np.array([3, 2, 2, 1, 1]),
+        'B': np.array([1, 0, 0, 1, 0]),
+        'C': np.array(['foo4', 'foo0', 'foo3', 'foo2', 'foo5']),
+        'D': np.array(['2009-01-06T00:00:00.000000000',
+                       '2009-01-01T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-02T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000'],
+                      dtype='datetime64[ns]').astype(np.int64) / 10e5
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected_src[col])
+        if col != 'index':
+            np.testing.assert_array_equal(
+                table.value[col].values, expected_df[col]
+            )
+
+def test_tabulator_patch_with_sorters_and_pagination(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(
+        df, sorters=[{'field': 'A', 'dir': 'desc'}],
+        pagination='remote', page_size=3, page=2
+    )
+
+    model = table.get_root(document, comm)
+
+    table.patch({'A': [(0, 2), (4, 1)], 'C': [(0, 'foo0')]})
+
+    expected_df = {
+        'index': np.array([0, 1, 2, 3, 4]),
+        'A': np.array([2, 1, 2, 3, 1]),
+        'B': np.array([0, 1, 0, 1, 0]),
+        'C': np.array(['foo0', 'foo2', 'foo3', 'foo4', 'foo5']),
+        'D': np.array(['2009-01-01T00:00:00.000000000',
+                       '2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    expected_src = {
+        'index': np.array([1, 4]),
+        'A': np.array([1, 1]),
+        'B': np.array([1, 0]),
+        'C': np.array(['foo2', 'foo5']),
+        'D': np.array(['2009-01-02T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000'],
+                      dtype='datetime64[ns]').astype(np.int64) / 10e5
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected_src[col])
+        if col != 'index':
+            np.testing.assert_array_equal(
+                table.value[col].values, expected_df[col]
+            )
+            
 def test_tabulator_patch_ranges(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
@@ -840,10 +987,16 @@ def test_tabulator_patch_ranges(document, comm):
                        '2009-01-05T00:00:00.000000000',
                        '2009-01-06T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
-                      dtype='datetime64[ns]').astype(np.int64) / 10e5
+                      dtype='datetime64[ns]')
     }
     for col, values in model.source.data.items():
-        np.testing.assert_array_equal(values, expected[col])
+        if col == 'D':
+            expected_array = expected[col].astype(np.int64) / 10e5
+        else:
+            expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
 
 
 def test_tabulator_stream_series_paginated_not_follow(document, comm):
@@ -1308,19 +1461,19 @@ def test_server_edit_event():
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
-    serve(table, port=7000, threaded=True, show=False)
+    serve(table, port=7001, threaded=True, show=False)
 
     time.sleep(0.5)
 
-    requests.get('http://localhost:7000')
-    
+    requests.get('http://localhost:7001')
+
     assert table._models
     ref, (model, _) = list(table._models.items())[0]
     doc = list(table._documents.keys())[0]
 
     events = []
     table.on_edit(lambda e: events.append(e))
-    
+
     new_data = dict(model.source.data)
     new_data['B'][1] = 3.14
 
