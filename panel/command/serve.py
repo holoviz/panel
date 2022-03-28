@@ -23,6 +23,7 @@ from tornado.web import StaticFileHandler
 
 from ..auth import OAuthProvider
 from ..config import config
+from ..util import fullpath
 from ..io.rest import REST_PROVIDERS
 from ..io.reload import record_modules, watch
 from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
@@ -267,7 +268,7 @@ class Serve(_BkServe):
             code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
             module_name = 'panel_setup_module'
             module = ModuleType(module_name)
-            module.__dict__['__file__'] = os.path.abspath(os.path.expanduser(setup_path))
+            module.__dict__['__file__'] = fullpath(setup_path)
             exec(code, module.__dict__)
             state._setup_module = module
 

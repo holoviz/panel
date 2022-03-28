@@ -45,7 +45,7 @@ from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
-from ..util import edit_readonly
+from ..util import edit_readonly, fullpath
 from .document import init_doc, with_lock, unlocked # noqa
 from .logging import LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .profile import profile_ctx
@@ -499,7 +499,7 @@ def get_static_routes(static_dirs):
         if slug == '/static':
             raise ValueError("Static file route may not use /static "
                              "this is reserved for internal use.")
-        path = os.path.abspath(os.path.expanduser(path))
+        path = fullpath(path)
         if not os.path.isdir(path):
             raise ValueError("Cannot serve non-existent path %s" % path)
         patterns.append(

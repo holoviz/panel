@@ -21,7 +21,7 @@ from .io import init_doc, state
 from .layout import Column, Panel, Row, Spacer, Tabs
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
-    abbreviated_repr, classproperty, full_groupby, get_method_owner,
+    abbreviated_repr, classproperty, full_groupby, fullpath, get_method_owner,
     is_parameterized, param_name, recursive_parameterized
 )
 from .reactive import Reactive
@@ -943,7 +943,7 @@ class JSONInit(param.Parameterized):
         if self.json_file or env_var.endswith('.json'):
             try:
                 fname = self.json_file if self.json_file else env_var
-                spec = json.load(open(os.path.abspath(os.path.expanduser(fname)), 'r'))
+                spec = json.load(open(fullpath(fname), 'r'))
             except Exception:
                 warnobj.warning('Could not load JSON file %r' % spec)
         else:

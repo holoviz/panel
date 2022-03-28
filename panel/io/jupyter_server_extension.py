@@ -21,7 +21,7 @@ from bokeh.util.token import get_session_id
 from tornado.web import StaticFileHandler
 
 from ..config import config
-from ..util import edit_readonly
+from ..util import edit_readonly, fullpath
 from .state import state
 from .resources import DIST_DIR, Resources
 
@@ -43,13 +43,6 @@ def url_path_join(*pieces):
     if final: result = result + '/'
     if result == '//': result = '/'
     return result
-
-
-def fullpath(path):
-    """Expanduser and then abspath for given path
-    """
-    return os.path.abspath(os.path.expanduser(path))
-
 
 
 class ServerApplicationProxy:
