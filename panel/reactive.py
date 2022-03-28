@@ -84,6 +84,7 @@ class Syncable(Renderable):
 
         # A dictionary of current property change events
         self._events = {}
+        self._param_changes = {}
 
         # Any watchers associated with links between two objects
         self._links = []
@@ -241,6 +242,8 @@ class Syncable(Renderable):
     def _param_change(self, *events):
         msgs = []
         for event in events:
+            if event.name in self._param_changes and self._param_changes[event.name] is event.new:
+                continue
             msg = self._process_param_change({event.name: event.new})
             if msg:
                 msgs.append(msg)
@@ -262,7 +265,11 @@ class Syncable(Renderable):
         try:
             with edit_readonly(self):
                 self_events = {k: v for k, v in events.items() if '.' not in k}
-                self.param.update(**self_events)
+                try:
+                    self._param_changes = self_events
+                    self.param.update(**self_events)
+                finally:
+                    self._param_changes.clear()
             for k, v in self_events.items():
                 if '.' not in k:
                     continue
