@@ -190,9 +190,11 @@ class Syncable(Renderable):
         """
         filtered = []
         for event in events:
-            if event.name in self._param_changes and self._param_changes[event.name] is event.new:
-                del self._param_changes[event.name]
-                continue
+            if event.name in self._param_changes:
+                if self._param_changes[event.name] is event.new:
+                    continue
+                else:
+                    del self._param_changes[event.name]
             filtered.append(event)
         return tuple(filtered)
 
