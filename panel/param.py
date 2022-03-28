@@ -943,7 +943,8 @@ class JSONInit(param.Parameterized):
         if self.json_file or env_var.endswith('.json'):
             try:
                 fname = self.json_file if self.json_file else env_var
-                spec = json.load(open(fullpath(fname), 'r'))
+                with open(fullpath(fname), 'r') as f:
+                    spec = json.load(f)
             except Exception:
                 warnobj.warning('Could not load JSON file %r' % spec)
         else:
