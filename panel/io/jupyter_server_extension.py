@@ -45,6 +45,13 @@ def url_path_join(*pieces):
     return result
 
 
+def fullpath(path):
+    """Expanduser and then abspath for given path
+    """
+    return os.path.abspath(os.path.expanduser(path))
+
+
+
 class ServerApplicationProxy:
     """
     A wrapper around the jupyter_server.serverapp.ServerWebApplication
@@ -75,10 +82,11 @@ class ServerApplicationProxy:
         may be different from the root dir.
         Reference: https://github.com/holoviz/panel/issues/3170
         """
-        return self._app.settings['server_root_dir']
+        return fullpath(self._app.settings['server_root_dir'])
 
     def __getattr__(self, key):
         return getattr(self._app, key)
+
 
 
 class PanelHandler(DocHandler):
@@ -93,7 +101,7 @@ class PanelHandler(DocHandler):
         pass
 
     async def get(self, path, *args, **kwargs):
-        path = os.path.join(self.application.root_dir, path)
+        path = os.path.join(self.application.root_dir, fullpath(path))
         if path in _APPS:
             app, context = _APPS[path]
         else:
@@ -135,7 +143,7 @@ class PanelWSHandler(WSHandler):
         pass
 
     async def open(self, path, *args, **kwargs):
-        path = os.path.join(self.application.root_dir, path)
+        path = os.path.join(self.application.root_dir, fullpath(path))
         _, context = _APPS[path]
 
         token = self._token
