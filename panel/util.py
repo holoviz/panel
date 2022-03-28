@@ -401,3 +401,9 @@ def parse_timedelta(time_str):
         if p:
             time_params[name] = float(p)
     return dt.timedelta(**time_params)
+
+
+def fullpath(path):
+    """Expanduser and then abspath for a given path
+    """
+    return os.path.abspath(os.path.expanduser(path))
