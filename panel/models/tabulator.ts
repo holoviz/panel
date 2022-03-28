@@ -270,7 +270,15 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.connect(this.model.properties.sorters.change, () => this.setSorters())
     this.connect(this.model.source.properties.data.change, () => this.setData())
     this.connect(this.model.source.streaming, () => this.addData())
-    this.connect(this.model.source.patching, () => this.updateOrAddData())
+    this.connect(this.model.source.patching, () => {
+      const visible = this.tabulator.rowManager.getVisibleRows(this.tabulator.rowManager.element)
+      this.updateOrAddData()
+      if (visible.length) {
+        const index = ((visible[0]?.data._index) || 0)
+        const row = this.tabulator.rowManager.findRow(index)
+        this.tabulator.rowManager.scrollToRow(row, 'end', false)
+      }
+    })
     this.connect(this.model.source.selected.change, () => this.setSelection())
     this.connect(this.model.source.selected.properties.indices.change, () => this.setSelection())
   }
