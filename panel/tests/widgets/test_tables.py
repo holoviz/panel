@@ -823,6 +823,94 @@ def test_tabulator_patch_scalars(document, comm):
         np.testing.assert_array_equal(values, expected_array)
         if col != 'index':
             np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_dataframe(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch(pd.DataFrame({'A': [2, 1]}, index=[0, 4]))
+
+    expected = {
+        'index': np.array([0, 1, 2, 3, 4]),
+        'A': np.array([2, 1, 2, 3, 1]),
+        'B': np.array([0, 1, 0, 1, 0]),
+        'C': np.array(['foo1', 'foo2', 'foo3', 'foo4', 'foo5']),
+        'D': np.array(['2009-01-01T00:00:00.000000000',
+                       '2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        if col == 'D':
+            expected_array = expected[col].astype(np.int64) / 10e5
+        else:
+            expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_dataframe_not_as_index(document, comm):
+    df = makeMixedDataFrame().sort_values('A', ascending=False)
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch(pd.DataFrame({'A': [2, 1]}, index=[0, 4]), as_index=False)
+
+    expected = {
+        'index': np.array([4, 3, 2, 1, 0]),
+        'A': np.array([2, 3, 2, 1, 1]),
+        'B': np.array([0, 1, 0, 1, 0]),
+        'C': np.array(['foo5', 'foo4', 'foo3', 'foo2', 'foo1']),
+        'D': np.array(['2009-01-07T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-02T00:00:00.000000000',
+                       '2009-01-01T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        if col == 'D':
+            expected_array = expected[col].astype(np.int64) / 10e5
+        else:
+            expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+def test_tabulator_patch_with_series(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch(pd.Series([2, 1], index=[0, 4], name='A'))
+
+    expected = {
+        'index': np.array([0, 1, 2, 3, 4]),
+        'A': np.array([2, 1, 2, 3, 1]),
+        'B': np.array([0, 1, 0, 1, 0]),
+        'C': np.array(['foo1', 'foo2', 'foo3', 'foo4', 'foo5']),
+        'D': np.array(['2009-01-01T00:00:00.000000000',
+                       '2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        if col == 'D':
+            expected_array = expected[col].astype(np.int64) / 10e5
+        else:
+            expected_array = expected[col]
+        np.testing.assert_array_equal(values, expected_array)
+        if col != 'index':
+            np.testing.assert_array_equal(table.value[col].values, expected[col])
+
 def test_tabulator_patch_scalars_not_as_index(document, comm):
     df = makeMixedDataFrame().sort_values('A', ascending=False)
     table = Tabulator(df)

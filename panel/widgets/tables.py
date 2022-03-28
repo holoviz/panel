@@ -629,18 +629,9 @@ class BaseTable(ReactiveData, Widget):
             )
 
         if isinstance(patch_value, pd.DataFrame):
-            patch_value_dict = {}
-            for column in patch_value.columns:
-                series = patch_value[column]
-                if as_index:
-                    patches = [
-                        (index, series.loc[index]) for index in series.index
-                    ]
-                else:
-                    patches = [
-                        (i, value) for (i, (_, value)) in enumerate(series.iterrows())
-                    ]
-                patch_value_dict[column] = patches
+            patch_value_dict = {
+                column: list(patch_value[column].items()) for column in patch_value.columns
+            }
             self.patch(patch_value_dict, as_index=as_index)
         elif isinstance(patch_value, pd.Series):
             if "index" in patch_value:  # Series orient is row
@@ -649,10 +640,8 @@ class BaseTable(ReactiveData, Widget):
                 }
                 patch_value_dict.pop("index")
             else:  # Series orient is column
-                patch_value_dict = {
-                    patch_value.name: [(index, value) for index, value in patch_value.items()]
-                }
-            self.patch(patch_value_dict)
+                patch_value_dict = {patch_value.name: list(patch_value.items())}
+            self.patch(patch_value_dict, as_index=as_index)
         elif isinstance(patch_value, dict):
             columns = list(self.value.columns)
             for k, v in patch_value.items():
@@ -1192,7 +1181,6 @@ class Tabulator(BaseTable):
     @updating
     def _patch(self, patch):
         if self.filters or self.sorters:
-            print('>>>')
             self._updating = False
             self._update_cds()
             return
