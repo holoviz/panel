@@ -183,7 +183,21 @@ class Syncable(Renderable):
         by changes in the manual params.
         """
 
+    def _filter_param_events(self, events):
+        """
+        Filters parameter change events, based on whether they were
+        triggered by a change on the frontend.
+        """
+        filtered = []
+        for event in events:
+            if event.name in self._param_changes and self._param_changes[event.name] is event.new:
+                del self._param_changes[event.name]
+                continue
+            filtered.append(event)
+        return tuple(filtered)
+
     def _update_manual(self, *events):
+        events = self._filter_param_events(events)
         for ref, (model, parent) in self._models.items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
@@ -241,9 +255,7 @@ class Syncable(Renderable):
 
     def _param_change(self, *events):
         msgs = []
-        for event in events:
-            if event.name in self._param_changes and self._param_changes[event.name] is event.new:
-                continue
+        for event in self._filter_param_events(events):
             msg = self._process_param_change({event.name: event.new})
             if msg:
                 msgs.append(msg)
