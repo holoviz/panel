@@ -103,7 +103,7 @@ def record_modules():
             else:
                 filepath = spec.origin
 
-            filepath = os.path.abspath(filepath)
+            filepath = os.path.abspath(os.path.expanduser(filepath))
 
             if filepath is None or in_blacklist(filepath):
                 continue

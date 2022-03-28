@@ -174,7 +174,7 @@ class FileSelector(CompositeWidget):
         self._update_files(refresh=True)
 
     def _update_files(self, event=None, refresh=False):
-        path = os.path.abspath(self._directory.value)
+        path = os.path.abspath(os.path.expanduser(self._directory.value))
         refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
         if refresh:
             path = self._cwd
@@ -233,7 +233,7 @@ class FileSelector(CompositeWidget):
             return
 
         relpath = event.new[0].replace('📁', '')
-        sel = os.path.abspath(os.path.join(self._cwd, relpath))
+        sel = os.path.abspath(os.path.expanduser(os.path.join(self._cwd, relpath)))
         if os.path.isdir(sel):
             self._directory.value = sel
         else:

@@ -267,7 +267,7 @@ class Serve(_BkServe):
             code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
             module_name = 'panel_setup_module'
             module = ModuleType(module_name)
-            module.__dict__['__file__'] = os.path.abspath(setup_path)
+            module.__dict__['__file__'] = os.path.abspath(os.path.expanduser(setup_path))
             exec(code, module.__dict__)
             state._setup_module = module
 

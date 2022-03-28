@@ -499,7 +499,7 @@ def get_static_routes(static_dirs):
         if slug == '/static':
             raise ValueError("Static file route may not use /static "
                              "this is reserved for internal use.")
-        path = os.path.abspath(path)
+        path = os.path.abspath(os.path.expanduser(path))
         if not os.path.isdir(path):
             raise ValueError("Cannot serve non-existent path %s" % path)
         patterns.append(
