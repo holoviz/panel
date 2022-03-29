@@ -17,7 +17,8 @@ from bokeh.models.widgets import (
 from ..config import config
 from ..io import state
 from ..util import (
-    edit_readonly, param_reprs, value_as_datetime, value_as_date
+    datetime_as_utctimestamp, edit_readonly, param_reprs,
+    value_as_datetime, value_as_date
 )
 from ..viewable import Layoutable
 from ..layout import Column, Row
@@ -191,7 +192,7 @@ class DateSlider(_SliderBase):
         if 'value' in msg:
             value = msg['value']
             if isinstance(value, dt.datetime):
-                value = value.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+                value = datetime_as_utctimestamp(value)
             msg['value'] = value
         return msg
 
@@ -480,9 +481,9 @@ class DateRangeSlider(_RangeSliderBase):
         elif 'value' in msg:
             v1, v2 = msg['value']
             if isinstance(v1, dt.datetime):
-                v1 = v1.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+                v1 = datetime_as_utctimestamp(v1)
             if isinstance(v2, dt.datetime):
-                v2 = v2.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+                v2 = datetime_as_utctimestamp(v2)
             msg['value'] = (v1, v2)
         if msg.get('value_throttled') == (None, None):
             del msg['value_throttled']
