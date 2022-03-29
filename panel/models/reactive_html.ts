@@ -389,7 +389,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       for (const callback of this.model.callbacks[elname]) {
         const [cb, method] = callback;
         let definition: string
-        htm = htm.replaceAll('${'+method, '$--{'+method)
+        htm = htm.replaceAll('${'+method+'}', '$--{'+method+'}')
         if (method.startsWith('script(')) {
           const meth = (
             method
