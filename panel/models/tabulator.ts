@@ -283,6 +283,16 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.connect(this.model.source.selected.properties.indices.change, () => this.setSelection())
   }
 
+  get sorters(): any[] {
+    const sorters = []
+    for (const sort of this.model.sorters) {
+      if (sort.column === undefined)
+	sort.column = sort.field
+      sorters.push(sort)
+    }
+    return sorters
+  }
+
   renderComplete(): void {
     // Only have to set up styles after initial render subsequent
     // styling is handled by change event on styles property
@@ -505,7 +515,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 	  this._updating_sort = false
 	}
       },
-      initialSort: this.model.sorters,
+      initialSort: this.sorters,
       layout: this.getLayout(),
       pagination: this.model.pagination,
       paginationSize: this.model.page_size,
@@ -743,6 +753,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           tab_column.headerFilterParams = tab_column.editorParams
         }
       }
+      for (const sort of this.model.sorters) {
+	if (tab_column.field === sort.field)
+	  tab_column.headerSortStartingDir = sort.dir
+      }
       tab_column.cellClick = (_: any, cell: any) => {
 	const index = cell._cell.row.data._index;
 	this.model.trigger_event(new CellClickEvent(column.field, index))
@@ -855,13 +869,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   setSorters(): void {
     if (this._updating_sort)
       return
-    const sorters = []
-    for (const sort of this.model.sorters) {
-      if (sort.column === undefined)
-	sort.column = sort.field
-      sorters.push(sort)
-    }
-    this.tabulator.setSort(sorters)
+    this.tabulator.setSort(this.sorters)
   }
 
   setCSS(): boolean {
