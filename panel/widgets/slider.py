@@ -3,6 +3,8 @@ Defines the Widget base class which provides bi-directional
 communication between the rendered dashboard and the Widget
 parameters.
 """
+import datetime as dt
+
 import param
 import numpy as np
 
@@ -462,6 +464,13 @@ class DateRangeSlider(_RangeSliderBase):
         msg = super()._process_param_change(msg)
         if msg.get('value') == (None, None):
             del msg['value']
+        elif 'value' in msg:
+            v1, v2 = msg['value']
+            if isinstance(v1, dt.datetime):
+                v1 = v1.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+            if isinstance(v2, dt.datetime):
+                v2 = v2.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+            msg['value'] = (v1, v2)
         if msg.get('value_throttled') == (None, None):
             del msg['value_throttled']
         return msg
