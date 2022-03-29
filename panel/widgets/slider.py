@@ -3,6 +3,8 @@ Defines the Widget base class which provides bi-directional
 communication between the rendered dashboard and the Widget
 parameters.
 """
+import datetime as dt
+
 import param
 import numpy as np
 
@@ -15,7 +17,8 @@ from bokeh.models.widgets import (
 from ..config import config
 from ..io import state
 from ..util import (
-    edit_readonly, param_reprs, value_as_datetime, value_as_date
+    datetime_as_utctimestamp, edit_readonly, param_reprs,
+    value_as_datetime, value_as_date
 )
 from ..viewable import Layoutable
 from ..layout import Column, Row
@@ -162,6 +165,9 @@ class IntSlider(ContinuousSlider):
 
 class DateSlider(_SliderBase):
 
+    as_datetime = param.Boolean(default=False, doc="""
+      Whether to store the date as a datetime.""")
+
     value = param.Date(default=None)
 
     value_throttled = param.Date(default=None, constant=True)
@@ -170,7 +176,7 @@ class DateSlider(_SliderBase):
 
     end = param.Date(default=None)
 
-    _rename = {'name': 'title'}
+    _rename = {'name': 'title', 'as_datetime': None}
 
     _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
 
@@ -181,12 +187,22 @@ class DateSlider(_SliderBase):
             params['value'] = params.get('start', self.start)
         super().__init__(**params)
 
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if 'value' in msg:
+            value = msg['value']
+            if isinstance(value, dt.datetime):
+                value = datetime_as_utctimestamp(value)
+            msg['value'] = value
+        return msg
+
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
+        transform = value_as_datetime if self.as_datetime else value_as_date
         if 'value' in msg:
-            msg['value'] = value_as_date(msg['value'])
+            msg['value'] = transform(msg['value'])
         if 'value_throttled' in msg:
-            msg['value_throttled'] = value_as_date(msg['value_throttled'])
+            msg['value_throttled'] = transform(msg['value_throttled'])
         return msg
 
 
@@ -462,6 +478,13 @@ class DateRangeSlider(_RangeSliderBase):
         msg = super()._process_param_change(msg)
         if msg.get('value') == (None, None):
             del msg['value']
+        elif 'value' in msg:
+            v1, v2 = msg['value']
+            if isinstance(v1, dt.datetime):
+                v1 = datetime_as_utctimestamp(v1)
+            if isinstance(v2, dt.datetime):
+                v2 = datetime_as_utctimestamp(v2)
+            msg['value'] = (v1, v2)
         if msg.get('value_throttled') == (None, None):
             del msg['value_throttled']
         return msg

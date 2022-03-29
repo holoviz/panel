@@ -249,6 +249,13 @@ def value_as_date(value):
     return value
 
 
+def datetime_as_utctimestamp(value):
+    """
+    Converts a datetime to a UTC timestamp used by Bokeh interally.
+    """
+    return value.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+
+
 def is_number(s):
     try:
         float(s)
