@@ -7,11 +7,14 @@ from base64 import b64encode
 
 import param
 
+from pyviz_comms import JupyterComm
+
 from ..io.notebook import push
 from ..io.state import state
 from ..models import (
     VideoStream as _BkVideoStream, FileDownload as _BkFileDownload
 )
+from ..util import lazy_load
 from .base import Widget
 from .indicators import Progress # noqa
 
@@ -197,3 +200,56 @@ class FileDownload(Widget):
         self.param.update(data=data, filename=filename)
         self._update_label()
         self._transfers += 1
+
+
+
+class JSONEditor(Widget):
+
+    menu = param.Boolean(default=True, doc="""
+        Adds main menu bar - Contains format, sort, transform, search
+        etc. functionality. true by default. Applicable in all types
+        of mode.""")
+
+    mode = param.Selector(default='tree', objects=[
+        "tree", "view", "form", "code", "text", "preview"], doc="""
+        Sets the editor mode. In 'view' mode, the data and
+        datastructure is read-only. In 'form' mode, only the value can
+        be changed, the data structure is read-only. Mode 'code'
+        requires the Ace editor to be loaded on the page. Mode 'text'
+        shows the data as plain text. The 'preview' mode can handle
+        large JSON documents up to 500 MiB. It shows a preview of the
+        data, and allows to transform, sort, filter, format, or
+        compact the data.""")
+
+    search = param.Boolean(default=True, doc="""
+        Enables a search box in the upper right corner of the
+        JSONEditor. true by default. Only applicable when mode is
+        'tree', 'view', or 'form'.""")
+
+    selection = param.List(default=[], doc="""
+        Current selection.""")
+
+    schema = param.Dict(default=None, doc="""
+        Validate the JSON object against a JSON schema. A JSON schema
+        describes the structure that a JSON object must have, like
+        required properties or the type that a value must have.
+
+        See http://json-schema.org/ for more information.""")
+
+    templates = param.List(doc="""
+        Array of templates that will appear in the context menu, Each
+        template is a json object precreated that can be added as a
+        object value to any node in your document.""")
+
+    value = param.Parameter(default={}, doc="""
+        JSON data to be edited.""")
+
+    _rename = {'value': 'data'}
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if self._widget_type is None:
+            self._widget_type = lazy_load(
+                'panel.models.json_editor', 'JSONEditor', isinstance(comm, JupyterComm)
+            )
+        model = super()._get_model(doc, root, parent, comm)
+        return model

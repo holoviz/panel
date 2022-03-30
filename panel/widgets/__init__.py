@@ -17,6 +17,7 @@ from .indicators import ( # noqa
     Tqdm,
 )
 from .input import (  # noqa
+    ArrayInput,
     ColorPicker,
     Checkbox,
     DatetimeInput,
@@ -35,7 +36,7 @@ from .input import (  # noqa
     PasswordInput,
     TextAreaInput,
 )
-from .misc import FileDownload, VideoStream # noqa
+from .misc import FileDownload, JSONEditor, VideoStream # noqa
 from .player import DiscretePlayer, Player # noqa
 from .slider import ( # noqa
     DateSlider, DateRangeSlider, DiscreteSlider, EditableRangeSlider,

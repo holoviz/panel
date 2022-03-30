@@ -4,9 +4,6 @@ import re
 from contextlib import contextmanager
 from cProfile import Profile
 from functools import wraps
-from pstats import Stats
-
-from tornado.template import Template
 
 from ..util import escape
 from .state import state
@@ -25,7 +22,11 @@ def render_pyinstrument(sessions, timeline=False, show_all=False):
 
 def render_snakeviz(name, sessions):
     import snakeviz
+
+    from pstats import Stats
     from snakeviz.stats import json_stats, table_rows
+    from tornado.template import Template
+
     SNAKEVIZ_PATH = os.path.join(os.path.dirname(snakeviz.__file__), 'templates', 'viz.html')
     with open(SNAKEVIZ_PATH) as f:
         SNAKEVIZ_TEMPLATE = Template(f.read())

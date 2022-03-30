@@ -439,8 +439,8 @@ class panel_extension(_pyviz_extension):
         'perspective': 'panel.models.perspective',
         'terminal': 'panel.models.terminal',
         'tabulator': 'panel.models.tabulator',
-        'gridstack': 'panel.layout.gridstack',
-        'texteditor': 'panel.models.quill'
+        'texteditor': 'panel.models.quill',
+        'jsoneditor': 'panel.models.json_editor'
     }
 
     # Check whether these are loaded before rendering (if any item
@@ -462,13 +462,18 @@ class panel_extension(_pyviz_extension):
     _loaded_extensions = []
 
     def __call__(self, *args, **params):
-        # Abort if IPython not found
+        from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
+        reactive_exts = {
+            v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
+        }
         for arg in args:
-            if arg not in self._imports:
+            if arg in self._imports:
+                __import__(self._imports[arg])
+            elif arg in reactive_exts:
+                ReactiveHTMLMetaclass._loaded_extensions.add(arg)
+            else:
                 self.param.warning('%s extension not recognized and '
                                    'will be skipped.' % arg)
-            else:
-                __import__(self._imports[arg])
 
         for k, v in params.items():
             if k in ['raw_css', 'css_files']:
@@ -508,6 +513,7 @@ class panel_extension(_pyviz_extension):
             else:
                 hv.Store.current_backend = backend
 
+        # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except Exception:
@@ -536,16 +542,16 @@ class panel_extension(_pyviz_extension):
             # In embedded mode the ipywidgets_bokeh model must be loaded
             __import__(self._imports['ipywidgets'])
 
-        nb_load = False
+        nb_loaded = getattr(self, '_repeat_execution_in_cell', False)
         if 'holoviews' in sys.modules:
             if getattr(hv.extension, '_loaded', False):
                 return
             with param.logging_level('ERROR'):
                 hv.plotting.Renderer.load_nb(config.inline)
                 if hasattr(hv.plotting.Renderer, '_render_with_panel'):
-                    nb_load = True
+                    nb_loaded = True
 
-        if not nb_load and hasattr(ip, 'kernel'):
+        if not nb_loaded and hasattr(ip, 'kernel'):
             load_notebook(config.inline)
         panel_extension._loaded = True
 
@@ -563,6 +569,9 @@ class panel_extension(_pyviz_extension):
         # Check if we're running in VSCode
         if "VSCODE_PID" in os.environ:
             config.comms = "vscode"
+
+        if "pyodide" in sys.modules:
+            config.comms = "ipywidgets"
 
         if config.notifications:
             display(state.notifications) # noqa

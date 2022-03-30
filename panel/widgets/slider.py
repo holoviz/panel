@@ -5,6 +5,8 @@ moving one or more handle(s).
 - The `value` will update when a handle is dragged.
 - The `value_throttled`will update when a handle is released.
 """
+import datetime as dt
+
 import param
 import numpy as np
 
@@ -17,7 +19,8 @@ from bokeh.models.widgets import (
 from ..config import config
 from ..io import state
 from ..util import (
-    edit_readonly, param_reprs, value_as_datetime, value_as_date
+    datetime_as_utctimestamp, edit_readonly, param_reprs,
+    value_as_datetime, value_as_date
 )
 from ..viewable import Layoutable
 from ..layout import Column, Row
@@ -27,13 +30,16 @@ from .input import IntInput, FloatInput, StaticText
 
 class _SliderBase(Widget):
 
-    name = param.String(default=None, constant=True, doc="""
-        The name of the widget. Also used as the label of the widget. If not set,
-        the widget has no label.""")
+    bar_color = param.Color(default="#e6e6e6", doc="""
+        Color of the slider bar as a hexidecimal RGB value.""")
 
     direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'], doc="""
         Whether the slider should go from left-to-right ('ltr') or
         right-to-left ('rtl').""")
+
+    name = param.String(default=None, constant=True, doc="""
+        The name of the widget. Also used as the label of the widget. If not set,
+        the widget has no label.""")
 
     orientation = param.ObjectSelector(default='horizontal', objects=['horizontal', 'vertical'],
         doc="""
@@ -45,9 +51,6 @@ class _SliderBase(Widget):
 
     tooltips = param.Boolean(default=True, doc="""
         Whether the slider handle should display tooltips.""")
-
-    bar_color = param.Color(default="#e6e6e6", doc="""
-        Color of the slider bar as a hexidecimal RGB value.""")
 
     _widget_type = _BkSlider
 
@@ -142,6 +145,9 @@ class FloatSlider(ContinuousSlider):
         The selected floating-point value of the slider. Updated when the handle is dragged.
         """)
 
+    value_throttled = param.Number(default=None, constant=True, doc="""
+         The value of the slider. Updated when the handle is released.""")
+
     start = param.Number(default=0.0, doc="""
         The lower bound.""")
 
@@ -150,9 +156,6 @@ class FloatSlider(ContinuousSlider):
 
     step = param.Number(default=0.1, doc="""
         The step size.""")
-
-    value_throttled = param.Number(default=None, constant=True, doc="""
-         The value of the slider. Updated when the handle is released.""")
 
     _rename = {'name': 'title'}
 
@@ -214,10 +217,14 @@ class DateSlider(_SliderBase):
     ...     name="A datetime value"
     ... )
     """
-    value = param.Date(default=None, doc="""
-        The selected date value of the slider. Updated when the slider handle is dragged. Supports
-        datetime.datetime, datetime.date or np.datetime64 types.""")
 
+    value = param.Date(default=None, doc="""
+        The selected date value of the slider. Updated when the slider
+        handle is dragged. Supports datetime.datetime, datetime.date
+        or np.datetime64 types.""")
+
+    value_throttled = param.Date(default=None, constant=True, doc="""
+        The value of the slider. Updated when the slider handle is released.""")
 
     start = param.Date(default=None, doc="""
         The lower bound.""")
@@ -225,10 +232,10 @@ class DateSlider(_SliderBase):
     end = param.Date(default=None, doc="""
         The upper bound.""")
 
-    value_throttled = param.Date(default=None, constant=True, doc="""
-        The value of the slider. Updated when the slider handle is released.""")
+    as_datetime = param.Boolean(default=False, doc="""
+        Whether to store the date as a datetime.""")
 
-    _rename = {'name': 'title'}
+    _rename = {'name': 'title', 'as_datetime': None}
 
     _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
 
@@ -239,12 +246,22 @@ class DateSlider(_SliderBase):
             params['value'] = params.get('start', self.start)
         super().__init__(**params)
 
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if 'value' in msg:
+            value = msg['value']
+            if isinstance(value, dt.datetime):
+                value = datetime_as_utctimestamp(value)
+            msg['value'] = value
+        return msg
+
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
+        transform = value_as_datetime if self.as_datetime else value_as_date
         if 'value' in msg:
-            msg['value'] = value_as_date(msg['value'])
+            msg['value'] = transform(msg['value'])
         if 'value_throttled' in msg:
-            msg['value_throttled'] = value_as_date(msg['value_throttled'])
+            msg['value_throttled'] = transform(msg['value_throttled'])
         return msg
 
 
@@ -263,19 +280,20 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     ...     name="A discrete value",
     ... )
     """
+
     value = param.Parameter(doc="""
-        The selected value of the slider. Updated when the handle is dragged. Must be one of
-        the options.""")
+        The selected value of the slider. Updated when the handle is
+        dragged. Must be one of the options.""")
+
+    value_throttled = param.Parameter(constant=True, doc="""
+        The value of the slider. Updated when the handle is released.""")
 
     options = param.ClassSelector(default=[], class_=(dict, list), doc="""
         A list or dictionary of valid options.""")
 
-    value_throttled = param.Parameter(constant=True, doc="""The value of the slider. Updated when
-        the handle is released""")
-
-    # Why do we have both a format and formatter parameter?
     formatter = param.String(default='%.3g', doc="""
-        A custom format string""")
+        A custom format string. Separate from format parameter since
+        formatting is applied in Python, not via the bokeh TickFormatter.""")
 
     _source_transforms = {'value': None, 'value_throttled': None, 'options': None}
 
@@ -352,15 +370,14 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                 setattr(self, event.name, values[0])
             return
         index = self.values.index(getattr(self, event.name))
+        if event.name == 'value':
+            self._text.value = self.labels[index]
         if self._syncing:
             return
         try:
             self._syncing = True
             with param.edit_constant(self._slider):
                 setattr(self._slider, event.name, index)
-            if event.name == 'value':
-                with param.discard_events(self._text):
-                    self._text.value = self.labels[index]
         finally:
             self._syncing = False
 
@@ -396,7 +413,6 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
         event.name is either value or value_throttled.
         """
-
         if self._syncing:
             return
         try:
@@ -483,6 +499,16 @@ class RangeSlider(_RangeSliderBase):
         """The selected range as a tuple of values. Updated when a handle is
         dragged.""")
 
+    value_throttled = param.Range(default=None, constant=True, doc="""
+        The selected range as a tuple of floating point values. Updated when a handle is
+        released""")
+
+    value_start = param.Number(default=0, readonly=True, doc="""
+        The lower value of the selected range.""")
+
+    value_end = param.Number(default=1, readonly=True, doc="""
+        The upper value of the selected range.""")
+
     start = param.Number(default=0, doc="""
         The lower bound.""")
 
@@ -494,16 +520,6 @@ class RangeSlider(_RangeSliderBase):
 
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A format string or bokeh TickFormatter.""")
-
-    value_throttled = param.Range(default=None, constant=True, doc="""
-        The selected range as a tuple of floating point values. Updated when a handle is
-        released""")
-
-    value_start = param.Number(default=0, readonly=True, doc="""
-        The lower value of the selected range.""")
-
-    value_end = param.Number(default=1, readonly=True, doc="""
-        The upper value of the selected range.""")
 
     _rename = {'name': 'title', 'value_start': None, 'value_end': None}
 
@@ -575,15 +591,6 @@ class DateRangeSlider(_RangeSliderBase):
         """The selected range as a tuple of values. Updated when one of the handles is
         dragged. Supports datetime.datetime, datetime.date, and np.datetime64 ranges.""")
 
-    start = param.Date(default=None, doc="""
-        The lower bound.""")
-
-    end = param.Date(default=None, doc="""
-        The upper bound.""")
-
-    step = param.Number(default=1, doc="""
-        The step size. Default is 1 (day).""")
-
     value_start = param.Date(default=None, readonly=True, doc="""
         The lower value of the selected range.""")
 
@@ -593,6 +600,15 @@ class DateRangeSlider(_RangeSliderBase):
     value_throttled = param.Tuple(default=None, length=2, constant=True, doc="""
         The selected range as a tuple of values. Updated one of the handles is released. Supports 
         datetime.datetime, datetime.date and np.datetime64 ranges""")
+
+    start = param.Date(default=None, doc="""
+        The lower bound.""")
+
+    end = param.Date(default=None, doc="""
+        The upper bound.""")
+
+    step = param.Number(default=1, doc="""
+        The step size. Default is 1 (day).""")
 
     _source_transforms = {'value': None, 'value_throttled': None,
                          'start': None, 'end': None, 'step': None}
@@ -605,6 +621,13 @@ class DateRangeSlider(_RangeSliderBase):
         msg = super()._process_param_change(msg)
         if msg.get('value') == (None, None):
             del msg['value']
+        elif 'value' in msg:
+            v1, v2 = msg['value']
+            if isinstance(v1, dt.datetime):
+                v1 = datetime_as_utctimestamp(v1)
+            if isinstance(v2, dt.datetime):
+                v2 = datetime_as_utctimestamp(v2)
+            msg['value'] = (v1, v2)
         if msg.get('value_throttled') == (None, None):
             del msg['value_throttled']
         return msg
@@ -770,6 +793,9 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
 
     value = param.Range(default=(0, 1), doc="Current range value. Updated when a handle is dragged")
 
+    value_throttled = param.Range(default=None, constant=True, doc="""
+        The value of the slider. Updated when the handle is released.""")
+
     start = param.Number(default=0., doc="Lower bound of the range.")
 
     end = param.Number(default=1., doc="Upper bound of the range.")
@@ -784,9 +810,6 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
 
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
-
-    value_throttled = param.Range(default=None, constant=True, doc="""
-        The value of the slider. Updated when the handle is released.""")
 
     _composite_type = Column
 

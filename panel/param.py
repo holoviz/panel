@@ -18,17 +18,16 @@ import param
 from param.parameterized import classlist, discard_events
 
 from .io import init_doc, state
-from .io.server import async_execute
 from .layout import Column, Panel, Row, Spacer, Tabs
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
-    abbreviated_repr, classproperty, full_groupby, get_method_owner,
+    abbreviated_repr, classproperty, full_groupby, fullpath, get_method_owner,
     is_parameterized, param_name, recursive_parameterized
 )
 from .reactive import Reactive
 from .viewable import Layoutable, Viewable
 from .widgets import (
-    Button, Checkbox, ColorPicker, DataFrame, DatePicker,
+    ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
     DatetimeInput, DateRangeSlider, DiscreteSlider, FileSelector,
     FloatSlider, IntInput, IntSlider, LiteralInput, MultiSelect,
     RangeSlider, Select, FloatInput, StaticText, TextInput, Toggle,
@@ -152,6 +151,7 @@ class Param(PaneBase):
 
     mapping = {
         param.Action:            Button,
+        param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
         param.CalendarDate:      DatePicker,
         param.Color:             ColorPicker,
@@ -429,11 +429,11 @@ class Param(PaneBase):
                 kw['start'] = bounds[0]
             if bounds[1] is not None:
                 kw['end'] = bounds[1]
-            if ('start' not in kw or 'end' not in kw):
+            if (('start' not in kw or 'end' not in kw) and
+                not isinstance(p_obj, (param.Date, param.CalendarDate))):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
-                    if (isinstance(p_obj, param.Number) and
-                        not isinstance(p_obj, (param.Date, param.CalendarDate))):
+                    if isinstance(p_obj, param.Number):
                         widget_class = FloatInput
                         if isinstance(p_obj, param.Integer):
                             widget_class = IntInput
@@ -789,7 +789,7 @@ class ParamMethod(ReplacementPane):
                 else:
                     new_object = self.eval(self.object)
                 if inspect.isawaitable(new_object):
-                    async_execute(partial(self._eval_async, new_object))
+                    param.parameterized.async_executor(partial(self._eval_async, new_object))
                     return
                 self._update_inner(new_object)
             finally:
@@ -943,7 +943,8 @@ class JSONInit(param.Parameterized):
         if self.json_file or env_var.endswith('.json'):
             try:
                 fname = self.json_file if self.json_file else env_var
-                spec = json.load(open(os.path.abspath(fname), 'r'))
+                with open(fullpath(fname), 'r') as f:
+                    spec = json.load(f)
             except Exception:
                 warnobj.warning('Could not load JSON file %r' % spec)
         else:

@@ -21,7 +21,9 @@ from bokeh.embed.bundle import (
 
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
-from jinja2 import Environment, Markup, FileSystemLoader
+from markupsafe import Markup
+from jinja2.environment import Environment
+from jinja2.loaders import FileSystemLoader
 
 from ..util import url_path
 from .state import state
@@ -90,7 +92,7 @@ def loading_css():
     return f"""
     .bk.pn-loading.{config.loading_spinner}:before {{
       background-image: url("data:image/svg+xml;base64,{b64}");
-      max-height: {config.loading_max_height}px;
+      background-size: auto calc(min(50%, {config.loading_max_height}px));
     }}
     """
 
@@ -206,7 +208,7 @@ class Resources(BkResources):
         files = super(Resources, self).js_files
 
         for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__javascript__'):
+            if getattr(model, '__javascript__', None) and model._loaded():
                 for jsfile in model.__javascript__:
                     if jsfile not in files:
                         files.append(jsfile)
@@ -245,7 +247,7 @@ class Resources(BkResources):
         from ..reactive import ReactiveHTML
         modules = list(config.js_modules.values())
         for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__javascript_modules__'):
+            if hasattr(model, '__javascript_modules__') and model._loaded():
                 for jsmodule in model.__javascript_modules__:
                     if jsmodule not in modules:
                         modules.append(jsmodule)
@@ -259,7 +261,7 @@ class Resources(BkResources):
         files = super(Resources, self).css_files
 
         for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__css__'):
+            if getattr(model, '__css__', None) and model._loaded():
                 for css_file in model.__css__:
                     if css_file not in files:
                         files.append(css_file)
@@ -296,7 +298,7 @@ class Bundle(BkBundle):
         from ..reactive import ReactiveHTML
         js_modules = list(config.js_modules.values())
         for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__javascript_modules__'):
+            if getattr(model, '__javascript_modules__', None) and model._loaded():
                 for js_module in model.__javascript_modules__:
                     if js_module not in js_modules:
                         js_modules.append(js_module)

@@ -627,6 +627,35 @@ class AzureAdLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
         return self._OAUTH_USER_URL_.format(**config.oauth_extra_params)
 
 
+class AzureAdV2LoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
+
+    _API_BASE_HEADERS = {
+        'Accept': 'application/json',
+        'User-Agent': 'Tornado OAuth'
+    }
+
+    _OAUTH_ACCESS_TOKEN_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token'
+    _OAUTH_AUTHORIZE_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize'
+    _OAUTH_USER_URL_ = ''
+
+    _USER_KEY = 'email'
+    _SCOPE = ['openid', 'email', 'profile']
+
+    @property
+    def _OAUTH_ACCESS_TOKEN_URL(self):
+        tenant = os.environ.get('AAD_TENANT_ID', config.oauth_extra_params.get('tenant', 'common'))
+        return self._OAUTH_ACCESS_TOKEN_URL_.format(tenant=tenant)
+
+    @property
+    def _OAUTH_AUTHORIZE_URL(self):
+        tenant = os.environ.get('AAD_TENANT_ID', config.oauth_extra_params.get('tenant', 'common'))
+        return self._OAUTH_AUTHORIZE_URL_.format(tenant=tenant)
+
+    @property
+    def _OAUTH_USER_URL(self):
+        return self._OAUTH_USER_URL_.format(**config.oauth_extra_params)
+
+
 class OktaLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
     """Okta OAuth2 Authentication
 
@@ -741,6 +770,7 @@ class OAuthProvider(AuthProvider):
 AUTH_PROVIDERS = {
     'auth0': Auth0Handler,
     'azure': AzureAdLoginHandler,
+    'azurev2': AzureAdV2LoginHandler,
     'bitbucket': BitbucketLoginHandler,
     'generic': GenericLoginHandler,
     'google': GoogleLoginHandler,

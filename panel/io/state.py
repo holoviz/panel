@@ -1,24 +1,29 @@
 """
 Various utilities for recording and embedding state in a rendered app.
 """
+import asyncio
 import datetime as dt
-import logging
+import inspect
 import json
+import logging
+import sys
 import threading
+import time
 
+from collections.abc import Iterator
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
-from weakref import WeakKeyDictionary
+from functools import partial
 from urllib.parse import urljoin
+from weakref import WeakKeyDictionary
 
 import param
 
 from bokeh.document import Document
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
-from tornado.web import decode_signed_value
 
-from ..util import base64url_decode
+from ..util import base64url_decode, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -30,6 +35,8 @@ def set_curdoc(doc):
     state.curdoc = doc
     yield
     state.curdoc = orig_doc
+
+class _Undefined: pass
 
 
 class _state(param.Parameterized):
@@ -109,6 +116,12 @@ class _state(param.Parameterized):
     _onload = WeakKeyDictionary()
     _on_session_created = []
 
+    # Module that was run during setup
+    _setup_module = None
+
+    # Scheduled callbacks
+    _scheduled = {}
+
     # Indicators listening to the busy state
     _indicators = []
 
@@ -118,6 +131,9 @@ class _state(param.Parameterized):
 
     # Endpoints
     _rest_endpoints = {}
+
+    # Locks
+    _cache_locks = {'main': threading.Lock()}
 
     def __repr__(self):
         server_info = []
@@ -130,6 +146,14 @@ class _state(param.Parameterized):
         return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
 
     @property
+    def _ioloop(self):
+        if 'pyodide' in sys.modules:
+            return asyncio.get_running_loop()
+        else:
+            from tornado.ioloop import IOLoop
+            return IOLoop.current()
+
+    @property
     def _thread_id(self):
         return self._thread_id_.get(self.curdoc) if self.curdoc else None
 
@@ -140,7 +164,7 @@ class _state(param.Parameterized):
     def _unblocked(self, doc):
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
-        return doc is self.curdoc and self._thread_id == thread_id
+        return doc is self.curdoc and self._thread_id in (thread_id, None)
 
     @param.depends('busy', watch=True)
     def _update_busy(self):
@@ -216,11 +240,28 @@ class _state(param.Parameterized):
             self._profiles[(path+':on_load', config.profiler)] += sessions
             self.param.trigger('_profiles')
 
+    async def _scheduled_cb(self, name):
+        if name not in self._scheduled:
+            return
+        diter, cb = self._scheduled[name]
+        try:
+            at = next(diter)
+        except Exception:
+            at = None
+            del self._scheduled[name]
+        if at is not None:
+            now = dt.datetime.now().timestamp()
+            call_time_seconds = (at - now)
+            self._ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
+        res = cb()
+        if inspect.isawaitable(res):
+            await res
+
     #----------------------------------------------------------------
     # Public Methods
     #----------------------------------------------------------------
 
-    def as_cached(self, key, fn, **kwargs):
+    def as_cached(self, key, fn, ttl=None, **kwargs):
         """
         Caches the return value of a function, memoizing on the given
         key and supplied keyword arguments.
@@ -233,6 +274,9 @@ class _state(param.Parameterized):
           The key to cache the return value under.
         fn: (callable)
           The function or callable whose return value will be cached.
+        ttl: (int)
+          The number of seconds to keep an item in the cache, or None
+          if the cache should not expire. The default is None.
         **kwargs: dict
           Additional keyword arguments to supply to the function,
           which will be memoized over as well.
@@ -243,10 +287,23 @@ class _state(param.Parameterized):
         the cache.
         """
         key = (key,)+tuple((k, v) for k, v in sorted(kwargs.items()))
-        if key in self.cache:
-            ret = self.cache.get(key)
-        else:
-            ret = self.cache[key] = fn(**kwargs)
+        new_expiry = time.monotonic() + ttl if ttl else None
+        with self._cache_locks['main']:
+            if key in self._cache_locks:
+                lock = self._cache_locks[key]
+            else:
+                self._cache_locks[key] = lock = threading.Lock()
+        try:
+            with lock:
+                if key in self.cache:
+                    ret, expiry = self.cache.get(key)
+                else:
+                    ret, expiry = _Undefined, None
+                if ret is _Undefined or (expiry is not None and expiry < time.monotonic()):
+                    ret, _ = self.cache[key] = (fn(**kwargs), new_expiry)
+        finally:
+            if not lock.locked() and key in self._cache_locks:
+                del self._cache_locks[key]
         return ret
 
     def add_periodic_callback(self, callback, period=500, count=None,
@@ -286,6 +343,24 @@ class _state(param.Parameterized):
                     return cb
             cb.start()
         return cb
+
+    def cancel_task(self, name, wait=False):
+        """
+        Cancel a task scheduled using the `state.schedule_task` method by name.
+
+        Arguments
+        ---------
+        name: str
+            The name of the scheduled task.
+        wait: boolean
+            Whether to wait until after the next execution.
+        """
+        if name not in self._scheduled:
+            raise KeyError(f'No task with the name {name!r} has been scheduled.')
+        if wait:
+            self._scheduled[name] = (None, self._scheduled[name][1])
+        else:
+            del self._scheduled[name]
 
     def get_profile(self, profile):
         """
@@ -401,6 +476,108 @@ class _state(param.Parameterized):
             self._rest_endpoints[endpoint] = ([parameterized], parameters, cb)
         parameterized.param.watch(cb, parameters)
 
+    def schedule_task(self, name, callback, at=None, period=None, cron=None):
+        """
+        Schedules a task at a specific time or on a schedule.
+
+        By default the starting time is immediate but may be
+        overridden with the `at` keyword argument. The scheduling may
+        be declared using the `period` argument or a cron expression
+        (which requires the `croniter` library). Note that the `at`
+        time should be in local time but if a callable is provided it
+        must return a UTC time.
+
+        Note that the scheduled callback must not be defined within a
+        script served using `panel serve` because the script and all
+        its contents are cleaned up when the user session is
+        destroyed. Therefore the callback must be imported from a
+        separate module or should be scheduled from a setup script
+        (provided to `panel serve` using the `--setup` argument). Note
+        also that scheduling is idempotent, i.e.  if a callback has
+        already been scheduled under the same name subsequent calls
+        will have no effect. This is ensured that even if you schedule
+        a task from within your application code, the task is only
+        scheduled once.
+
+        Arguments
+        ---------
+        name: str
+          Name of the scheduled task
+        callback: callable
+          Callback to schedule
+        at: datetime.datetime, Iterator or callable
+          Declares a time to schedule the task at. May be given as a
+          datetime or an Iterator of datetimes in the local timezone
+          declaring when to execute the task. Alternatively may also
+          declare a callable which is given the current UTC time and
+          must return a datetime also in UTC.
+        period: str or datetime.timedelta
+          The period between executions, may be expressed as a
+          timedelta or a string:
+
+            - Week:   '1w'
+            - Day:    '1d'
+            - Hour:   '1h'
+            - Minute: '1m'
+            - Second: '1s'
+
+        cron: str
+          A cron expression (requires croniter to parse)
+        """
+        if name in self._scheduled:
+            if callback is not self._scheduled[name][1]:
+                self.param.warning(
+                    "A separate task was already scheduled under the "
+                    f"name {name!r}. The new task will be ignored. If "
+                    "you want to replace the existing task cancel it "
+                    f"with `state.cancel_task({name!r})` before adding "
+                    "adding a new task under the same name."
+                )
+            return
+        if getattr(callback, '__module__', '').startswith('bokeh_app_'):
+            raise RuntimeError(
+                "Cannot schedule a task from within the context of an "
+                "application. Either import the task callback from a "
+                "separate module or schedule the task from a setup "
+                "script that you provide to `panel serve` using the "
+                "--setup commandline argument."
+            )
+        if cron is None:
+            if isinstance(period, str):
+                period = parse_timedelta(period)
+            def dgen():
+                if isinstance(at, Iterator):
+                    while True:
+                        new = next(at)
+                        yield new.timestamp()
+                elif callable(at):
+                    while True:
+                        new = at(dt.datetime.utcnow())
+                        if new is None:
+                            raise StopIteration
+                        yield new.replace(tzinfo=dt.timezone.utc).astimezone().timestamp()
+                elif period is None:
+                    yield at.timestamp()
+                    raise StopIteration
+                new_time = at or dt.datetime.now()
+                while True:
+                    yield new_time.timestamp()
+                    new_time += period
+            diter = dgen()
+        else:
+            from croniter import croniter
+            base = dt.datetime.now() if at is None else at
+            diter = croniter(cron, base)
+        now = dt.datetime.now().timestamp()
+        try:
+            call_time_seconds = (next(diter) - now)
+        except StopIteration:
+            return
+        self._scheduled[name] = (diter, callback)
+        self._ioloop.call_later(
+            delay=call_time_seconds, callback=partial(self._scheduled_cb, name)
+        )
+
     def sync_busy(self, indicator):
         """
         Syncs the busy state with an indicator with a boolean value
@@ -422,6 +599,7 @@ class _state(param.Parameterized):
 
     @property
     def access_token(self):
+        from tornado.web import decode_signed_value
         from ..config import config
         access_token = self.cookies.get('access_token')
         if access_token is None:
@@ -447,8 +625,11 @@ class _state(param.Parameterized):
             doc = _curdoc()
         except Exception:
             return None
-        if doc.session_context:
-            return doc
+        try:
+            if doc.session_context:
+                return doc
+        except Exception:
+            return None
 
     @curdoc.setter
     def curdoc(self, doc):
@@ -466,12 +647,24 @@ class _state(param.Parameterized):
     def location(self):
         if self.curdoc and self.curdoc not in self._locations:
             from .location import Location
-            self._locations[self.curdoc] = loc = Location()
-            return loc
+            loc = self._locations[self.curdoc] = Location()
         elif self.curdoc is None:
-            return self._location
+            loc = self._location
         else:
-            return self._locations.get(self.curdoc) if self.curdoc else None
+            loc = self._locations.get(self.curdoc) if self.curdoc else None
+
+        if '?' in self.base_url:
+            try:
+                loc.search = f'?{self.base_url.split("?")[-1].strip("/")}'
+            except Exception:
+                pass
+        if '#' in self.base_url:
+            try:
+                loc.hash = f'#{self.base_url.split("#")[-1].strip("/")}'
+            except Exception:
+                pass
+
+        return loc
 
     @property
     def notifications(self):
@@ -512,6 +705,7 @@ class _state(param.Parameterized):
 
     @property
     def user(self):
+        from tornado.web import decode_signed_value
         from ..config import config
         user = self.cookies.get('user')
         if user is None or config.cookie_secret is None:
@@ -520,6 +714,7 @@ class _state(param.Parameterized):
 
     @property
     def user_info(self):
+        from tornado.web import decode_signed_value
         from ..config import config
         id_token = self.cookies.get('id_token')
         if id_token is None or config.cookie_secret is None:

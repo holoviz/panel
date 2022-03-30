@@ -231,6 +231,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   tabulator: any;
   _tabulator_cell_updating: boolean=false
   _updating_page: boolean = true
+  _updating_sort: boolean = false
   _relayouting: boolean = false
   _selection_updating: boolean =false
   _initializing: boolean
@@ -266,11 +267,30 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     })
     this.connect(this.model.properties.max_page.change, () => this.setMaxPage())
     this.connect(this.model.properties.frozen_rows.change, () => this.setFrozen())
+    this.connect(this.model.properties.sorters.change, () => this.setSorters())
     this.connect(this.model.source.properties.data.change, () => this.setData())
     this.connect(this.model.source.streaming, () => this.addData())
-    this.connect(this.model.source.patching, () => this.updateOrAddData())
+    this.connect(this.model.source.patching, () => {
+      const visible = this.tabulator.rowManager.getVisibleRows(this.tabulator.rowManager.element)
+      this.updateOrAddData()
+      if (visible.length) {
+        const index = ((visible[0]?.data._index) || 0)
+        const row = this.tabulator.rowManager.findRow(index)
+        this.tabulator.rowManager.scrollToRow(row, 'end', false)
+      }
+    })
     this.connect(this.model.source.selected.change, () => this.setSelection())
     this.connect(this.model.source.selected.properties.indices.change, () => this.setSelection())
+  }
+
+  get sorters(): any[] {
+    const sorters = []
+    for (const sort of this.model.sorters) {
+      if (sort.column === undefined)
+	sort.column = sort.field
+      sorters.push(sort)
+    }
+    return sorters
   }
 
   renderComplete(): void {
@@ -424,10 +444,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.compute_layout()
     if (this.root !== this) {
       this.invalidate_layout()
-      if ((this as any).root?._parent.relayout != undefined)
-	(this as any).root._parent.relayout()
-    } else if ((this as any)._parent != undefined) { // HACK: Support ReactiveHTML
-      if ((this as any)._parent.relayout != undefined)
+      const parent = (this as any).root._parent
+      if (parent != null && parent.relayout != null)
+	parent.relayout()
+    } else if ((this as any)._parent != null) { // HACK: Support ReactiveHTML
+      if ((this as any)._parent.relayout != null)
 	(this as any)._parent.relayout()
       else
         (this as any)._parent.invalidate_layout()
@@ -439,7 +460,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     return new Promise((resolve: any, reject: any) => {
       try {
         if (page != null && sorters != null) {
+	  this._updating_sort = true
           this.model.sorters = sorters
+	  this._updating_sort = false
           this._updating_page = true
           try {
             this.model.page = page || 1
@@ -481,6 +504,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       movableColumns: false,
       selectable: selectable,
       columns: this.getColumns(),
+      dataSorting: (sorters: any[]) => {
+	const sorts = []
+	for (const s of sorters) {
+	  sorts.push({field: s.field, dir: s.dir})
+	}
+	if (this.model.pagination !== 'remote') {
+	  this._updating_sort = true
+	  this.model.sorters = sorts
+	  this._updating_sort = false
+	}
+      },
+      initialSort: this.sorters,
       layout: this.getLayout(),
       pagination: this.model.pagination,
       paginationSize: this.model.page_size,
@@ -718,6 +753,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           tab_column.headerFilterParams = tab_column.editorParams
         }
       }
+      for (const sort of this.model.sorters) {
+	if (tab_column.field === sort.field)
+	  tab_column.headerSortStartingDir = sort.dir
+      }
+      tab_column.cellClick = (_: any, cell: any) => {
+	const index = cell._cell.row.data._index;
+	this.model.trigger_event(new CellClickEvent(column.field, index))
+      }
       if (config_columns == null)
         columns.push(tab_column)
     }
@@ -727,7 +770,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       };
       const button_column = {
 	formatter: button_formatter,
-	width: 40,
 	hozAlign: "center",
 	cellClick: (_: any, cell: any) => {
 	  const index = cell._cell.row.data._index;
@@ -780,15 +822,17 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const last_row = rows[rows.length-1]
     const start = ((last_row?.data._index) || 0)
     this.setData()
+    this.postUpdate()
     if (this.model.follow && last_row)
       this.tabulator.scrollToRow(start, "top", false)
-    this.postUpdate()
   }
 
   postUpdate(): void {
     if (!this.model.pagination)
       this.setFrozen()
     this.setSelection()
+    if (this.model.height == null && this.model.pagination == null)
+      this.relayout()
   }
 
   updateOrAddData(): void {
@@ -798,7 +842,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     let data = transform_cds_to_records(this.model.source, true)
     this.tabulator.setData(data)
-    console.log('update')
     this.postUpdate()
   }
 
@@ -821,6 +864,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       return groups.join(', ')
     }
     this.tabulator.setGroupBy(groupby)
+  }
+
+  setSorters(): void {
+    if (this._updating_sort)
+      return
+    this.tabulator.setSort(this.sorters)
   }
 
   setCSS(): boolean {

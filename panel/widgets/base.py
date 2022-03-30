@@ -3,6 +3,8 @@ Defines the Widget base class which provides bi-directional
 communication between the rendered dashboard and the Widget
 parameters.
 """
+import math
+
 import param
 
 from ..layout import Row
@@ -15,12 +17,6 @@ class Widget(Reactive):
     Widgets allow syncing changes in bokeh widget models with the
     parameters on the Widget instance.
     """
-
-    align = param.ClassSelector(default=('start', 'end'),
-                                class_=(str, tuple), doc="""
-        Whether the object should be aligned with the start, end or
-        center of its container. If set as a tuple it will declare
-        (horizontal, vertical) alignment.""")
 
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
@@ -75,7 +71,10 @@ class Widget(Reactive):
         Widget instance linked to the supplied parameter
         """
         from ..param import Param
-        layout = Param(parameter, widgets={parameter.name: dict(type=cls, **params)})
+        layout = Param(
+            parameter, widgets={parameter.name: dict(type=cls, **params)},
+            display_threshold=-math.inf
+        )
         return layout[0]
 
     def _get_model(self, doc, root=None, parent=None, comm=None):

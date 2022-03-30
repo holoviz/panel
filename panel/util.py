@@ -249,6 +249,13 @@ def value_as_date(value):
     return value
 
 
+def datetime_as_utctimestamp(value):
+    """
+    Converts a datetime to a UTC timestamp used by Bokeh interally.
+    """
+    return value.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+
+
 def is_number(s):
     try:
         float(s)
@@ -387,3 +394,23 @@ def function_name(func):
     if hasattr(func, '__name__'):
         return func.__name__
     return str(func)
+
+
+_period_regex = re.compile(r'((?P<weeks>\d+?)w)?((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?\.?\d*?)s)?')
+
+def parse_timedelta(time_str):
+    parts = _period_regex.match(time_str)
+    if not parts:
+        return
+    parts = parts.groupdict()
+    time_params = {}
+    for (name, p) in parts.items():
+        if p:
+            time_params[name] = float(p)
+    return dt.timedelta(**time_params)
+
+
+def fullpath(path):
+    """Expanduser and then abspath for a given path
+    """
+    return os.path.abspath(os.path.expanduser(path))

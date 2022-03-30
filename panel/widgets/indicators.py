@@ -64,18 +64,19 @@ class BooleanStatus(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename = {'color': None}
+    _rename = {}
 
-    _source_transforms = {'value': None}
+    _source_transforms = {'value': None, 'color': None}
 
     _widget_type = HTML
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         value = msg.pop('value', None)
-        if value is None:
+        color = msg.pop('color', None)
+        if value is None and not color:
             return msg
-        msg['css_classes'] = ['dot-filled', self.color] if value else ['dot']
+        msg['css_classes'] = ['dot-filled', self.color] if self.value else ['dot']
         return msg
 
 
@@ -96,19 +97,21 @@ class LoadingSpinner(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename = {'color': None, 'bgcolor': None}
+    _rename = {}
 
-    _source_transforms = {'value': None}
+    _source_transforms = {'value': None, 'color': None, 'bgcolor': None}
 
     _widget_type = HTML
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         value = msg.pop('value', None)
-        if value is None:
+        color = msg.pop('color', None)
+        bgcolor = msg.pop('bgcolor', None)
+        if value is None and not (color or bgcolor):
             return msg
         color_cls = f'{self.color}-{self.bgcolor}'
-        msg['css_classes'] = ['loader', 'spin', color_cls] if value else ['loader', self.bgcolor]
+        msg['css_classes'] = ['loader', 'spin', color_cls] if self.value else ['loader', self.bgcolor]
         return msg
 
 

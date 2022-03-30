@@ -11,7 +11,10 @@ from bokeh.models import (
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh, HTML
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, ParamFunction, JSONInit
-from panel.widgets import AutocompleteInput, LiteralInput, NumberInput, RangeSlider
+from panel.widgets import (
+    AutocompleteInput, DatePicker, DatetimeInput, LiteralInput,
+    NumberInput, RangeSlider
+)
 from panel.tests.util import mpl_available, mpl_figure
 
 
@@ -793,7 +796,6 @@ def test_switch_param_subobject(document, comm):
     assert subpanel._models == {}
 
 
-
 def test_expand_param_subobject_into_row(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
@@ -921,6 +923,24 @@ def test_param_js_callbacks(document, comm):
     assert 'button_click' in callbacks
     assert len(callbacks['button_click']) == 1
     assert code in callbacks['button_click'][0].code
+
+
+def test_param_calendar_date_mapping():
+
+    class Test(param.Parameterized):
+
+        a = param.CalendarDate()
+
+    assert isinstance(Param(Test().param).layout[1], DatePicker)
+
+
+def test_param_date_mapping():
+
+    class Test(param.Parameterized):
+
+        a = param.Date()
+
+    assert isinstance(Param(Test().param).layout[1], DatetimeInput)
 
 
 class View(param.Parameterized):

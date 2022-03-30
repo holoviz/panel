@@ -12,6 +12,7 @@ import param
 from ..io import PeriodicCallback
 from ..layout import Column, Divider, Row
 from ..viewable import Layoutable
+from ..util import fullpath
 from .base import CompositeWidget
 from .button import Button
 from .input import TextInput
@@ -92,10 +93,10 @@ class FileSelector(CompositeWidget):
     def __init__(self, directory=None, **params):
         from ..pane import Markdown
         if directory is not None:
-            params['directory'] = os.path.abspath(os.path.expanduser(directory))
+            params['directory'] = fullpath(directory)
         if 'root_directory' in params:
             root = params['root_directory']
-            params['root_directory'] = os.path.abspath(os.path.expanduser(root))
+            params['root_directory'] = fullpath(root)
         if params.get('width') and params.get('height') and 'sizing_mode' not in params:
             params['sizing_mode'] = None
 
@@ -162,7 +163,7 @@ class FileSelector(CompositeWidget):
         self.value = value
 
     def _dir_change(self, event):
-        path = os.path.abspath(os.path.expanduser(self._directory.value))
+        path = fullpath(self._directory.value)
         if not path.startswith(self._root_directory):
             self._directory.value = self._root_directory
             return
@@ -174,7 +175,7 @@ class FileSelector(CompositeWidget):
         self._update_files(refresh=True)
 
     def _update_files(self, event=None, refresh=False):
-        path = os.path.abspath(self._directory.value)
+        path = fullpath(self._directory.value)
         refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
         if refresh:
             path = self._cwd
@@ -233,7 +234,7 @@ class FileSelector(CompositeWidget):
             return
 
         relpath = event.new[0].replace('📁', '')
-        sel = os.path.abspath(os.path.join(self._cwd, relpath))
+        sel = fullpath(os.path.join(self._cwd, relpath))
         if os.path.isdir(sel):
             self._directory.value = sel
         else:

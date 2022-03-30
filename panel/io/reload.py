@@ -8,6 +8,7 @@ from functools import partial
 
 from .callbacks import PeriodicCallback
 from .state import state
+from ..util import fullpath
 
 _watched_files = set()
 _modules = set()
@@ -103,7 +104,7 @@ def record_modules():
             else:
                 filepath = spec.origin
 
-            filepath = os.path.abspath(filepath)
+            filepath = fullpath(filepath)
 
             if filepath is None or in_blacklist(filepath):
                 continue

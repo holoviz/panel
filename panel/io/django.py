@@ -12,7 +12,7 @@ from .server import (
 
 async def doc_handle(self, body):
     session = await self._get_session()
-    resources = Resources.from_bokeh(self.application.resources())
+    resources = Resources.from_bokeh(self.resources())
     page = server_html_page_for_session(
         session, resources=resources, title=session.document.title,
         template=session.document.template,

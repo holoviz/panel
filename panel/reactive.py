@@ -20,12 +20,11 @@ import param
 from bokeh.models import LayoutDOM
 from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
-from tornado import gen
 
+from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
-from .io.server import unlocked
-from .io.state import state
+from .io.state import set_curdoc, state
 from .models.reactive_html import (
     ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser
 )
@@ -55,6 +54,9 @@ class Syncable(Renderable):
 
     # Timeout before the first event is processed
     _debounce = 50
+
+    # Property changes which should not be debounced
+    _priority_changes = []
 
     # Any parameters that require manual updates handling for the models
     # e.g. parameters which affect some sub-model
@@ -275,19 +277,19 @@ class Syncable(Renderable):
             with edit_readonly(state):
                 state.busy = busy
 
-    @gen.coroutine
-    def _change_coroutine(self, doc=None):
+    async def _change_coroutine(self, doc=None):
         if state._thread_pool:
             state._thread_pool.submit(self._change_event, doc)
         else:
-            self._change_event(doc)
+            with set_curdoc(doc):
+                self._change_event(doc)
 
-    @gen.coroutine
-    def _event_coroutine(self, event):
+    async def _event_coroutine(self, event, doc):
         if state._thread_pool:
             state._thread_pool.submit(self._process_event, event)
         else:
-            self._process_event(event)
+            with set_curdoc(doc):
+                self._process_event(event)
 
     def _change_event(self, doc=None):
         try:
@@ -322,12 +324,12 @@ class Syncable(Renderable):
             self._process_event(event)
 
     def _server_event(self, doc, event):
-        if doc.session_context:
+        if doc.session_context and not state._unblocked(doc):
             doc.add_next_tick_callback(
-                partial(self._event_coroutine, event)
+                partial(self._event_coroutine, event, doc)
             )
         else:
-            self._process_event(event)
+            self._comm_event(event)
 
     def _server_change(self, doc, ref, subpath, attr, old, new):
         if subpath:
@@ -342,10 +344,11 @@ class Syncable(Renderable):
             return
 
         if doc.session_context:
-            doc.add_timeout_callback(
-                partial(self._change_coroutine, doc),
-                self._debounce
-            )
+            cb = partial(self._change_coroutine, doc)
+            if attr in self._priority_changes:
+                doc.add_next_tick_callback(cb)
+            else:
+                doc.add_timeout_callback(cb, self._debounce)
         else:
             self._change_event(doc)
 
@@ -671,6 +674,8 @@ class SyncableData(Reactive):
         """
         data = getattr(self, self._data_params[0])
         data[column] = array
+        if self._processed is not None:
+            self._processed[column] = array
 
     def _update_data(self, data):
         self.param.update(**{self._data_params[0]: data})
@@ -959,8 +964,32 @@ class ReactiveData(SyncableData):
     parameter between frontend and backend using a ColumnDataSource.
     """
 
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._old = None
+    
     def _update_selection(self, indices):
         self.selection = indices
+
+    def _convert_column(self, values, old_values):
+        dtype = old_values.dtype
+        if dtype.kind == 'M':
+            if values.dtype.kind in 'if':
+                values = (values * 10e5).astype(dtype)
+        elif dtype.kind == 'O':
+            if (all(isinstance(ov, dt.date) for ov in old_values) and
+                not all(isinstance(iv, dt.date) for iv in values)):
+                new_values = []
+                for iv in values:
+                    if isinstance(iv, dt.datetime):
+                        iv = iv.date()
+                    elif not isinstance(iv, dt.date):
+                        iv = dt.date.fromtimestamp(iv/1000)
+                    new_values.append(iv)
+                values = new_values
+        else:
+            values = values.astype(dtype)
+        return values
 
     def _process_data(self, data):
         if self._updating:
@@ -968,42 +997,29 @@ class ReactiveData(SyncableData):
 
         # Get old data to compare to
         old_raw, old_data = self._get_data()
-        if hasattr(old_raw, 'copy'):
-            old_raw = old_raw.copy()
-        elif isinstance(old_raw, dict):
-            old_raw = dict(old_raw)
+        self._old = old_raw = old_raw.copy()
+        if hasattr(old_raw, 'columns'):
+            columns = list(old_raw.columns)
+        else:
+            columns = list(old_raw)
 
         updated = False
-        for k, v in data.items():
-            if k in self.indexes:
+        for col, values in data.items():
+            col = self._renamed_cols.get(col, col)
+            if col in self.indexes or col not in columns:
                 continue
-            k = self._renamed_cols.get(k, k)
-            if isinstance(v, dict):
-                v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
-            v = np.asarray(v)
-            old_dtype = old_raw[k].dtype
-            if old_dtype.kind == 'M':
-                if v.dtype.kind in 'if':
-                    v = (v * 10e5).astype(old_raw[k].dtype)
-            elif old_dtype.kind == 'O':
-                if (all(isinstance(ov, dt.date) for ov in old_raw[k]) and
-                    not all(isinstance(iv, dt.date) for iv in v)):
-                    vs = []
-                    for iv in v:
-                        if isinstance(iv, dt.datetime):
-                            iv = iv.date()
-                        elif not isinstance(iv, dt.date):
-                            iv = dt.date.fromtimestamp(iv/1000)
-                        vs.append(iv)
-                    v = vs
-            else:
-                v = v.astype(old_raw[k].dtype)
+            if isinstance(values, dict):
+                sorted_values = sorted(values.items(), key=lambda it: int(it[0]))
+                values = [v for _, v in sorted_values]
+            values = self._convert_column(
+                np.asarray(values), old_raw[col]
+            )
             try:
-                isequal = (old_raw[k] == v).all()
+                isequal = (old_raw[col] == values).all()
             except Exception:
                 isequal = False
             if not isequal:
-                self._update_column(k, v)
+                self._update_column(col, values)
                 updated = True
 
         # If no columns were updated we don't have to sync data
@@ -1046,6 +1062,8 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
     variables, callbacks and the data model to sync the parameters and
     HTML attributes.
     """
+
+    _loaded_extensions = set()
 
     _name_counter = Counter()
 
@@ -1092,15 +1110,14 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
                 "ensure there is a matching </div> tag."
             )
 
-        mcs._attrs, mcs._node_callbacks = {}, {}
+        mcs._node_callbacks = {}
         mcs._inline_callbacks = []
         for node, attrs in mcs._parser.attrs.items():
             for (attr, parameters, template) in attrs:
-                param_attrs = []
                 for p in parameters:
                     if p in mcs.param or '.' in p:
-                        param_attrs.append(p)
-                    elif re.match(mcs._script_regex, p):
+                        continue
+                    if re.match(mcs._script_regex, p):
                         name = re.findall(mcs._script_regex, p)[0]
                         if name not in mcs._scripts:
                             raise ValueError(
@@ -1124,9 +1141,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
                             f"parameter or method '{p}', similar parameters "
                             f"and methods include {matches}."
                         )
-                if node not in mcs._attrs:
-                    mcs._attrs[node] = []
-                mcs._attrs[node].append((attr, param_attrs, template))
+
         ignored = list(Reactive.param)
         types = {}
         for child in mcs._parser.children.values():
@@ -1231,7 +1246,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     Additionally we can invoke pure JS scripts defined on the class, e.g.:
 
-        <input id="input" onchange="${run_script('some_script')}"></input>
+        <input id="input" onchange="${script('some_script')}"></input>
 
     This will invoke the following script if it is defined on the class:
 
@@ -1278,6 +1293,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _dom_events = {}
 
+    _extension_name = None
+
     _template = ""
 
     _scripts = {}
@@ -1285,6 +1302,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     _script_assignment = r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
 
     __abstract = True
+
+    __css__ = None
+    __javascript__ = None
+    __javascript_modules__ = None
 
     def __init__(self, **params):
         from .pane import panel
@@ -1310,8 +1331,19 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             else:
                 params[children_param] = panel(child_value)
         super().__init__(**params)
+        self._attrs = {}
         self._panes = {}
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
+
+    @classmethod
+    def _loaded(cls):
+        """
+        Whether the component has been loaded.
+        """
+        return (
+            cls._extension_name is None or
+            cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions
+        )
 
     def _cleanup(self, root):
         for child, panes in self._panes.items():
@@ -1350,13 +1382,14 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if isinstance(v, str):
                 v = bleach.clean(v)
             data_params[k] = v
+        html, nodes, self._attrs = self._get_template()
         params.update({
             'attrs': self._attrs,
             'callbacks': self._node_callbacks,
             'data': self._data_model(**self._process_param_change(data_params)),
             'events': self._get_events(),
-            'html': escape(textwrap.dedent(self._get_template())),
-            'nodes': self._parser.nodes,
+            'html': escape(textwrap.dedent(html)),
+            'nodes': nodes,
             'looped': [node for node, _ in self._parser.looped],
             'scripts': {}
         })
@@ -1493,6 +1526,18 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 .replace(f'id="{name}"', f'id="{name}-${{id}}"')
             )
 
+        # Parse attrs
+        p_attrs = {}
+        for node, attrs in parser.attrs.items():
+            for (attr, parameters, template) in attrs:
+                param_attrs = []
+                for p in parameters:
+                    if p in self.param or '.' in p:
+                        param_attrs.append(p)
+                if node not in p_attrs:
+                    p_attrs[node] = []
+                p_attrs[node].append((attr, param_attrs, template))
+
         # Remove child node template syntax
         for parent, child_name in self._parser.children.items():
             if (parent, child_name) in self._parser.looped:
@@ -1500,7 +1545,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     html = html.replace('${%s[%d]}' % (child_name, i), '')
             else:
                 html = html.replace('${%s}' % child_name, '')
-        return html
+        return html, parser.nodes, p_attrs
 
     def _linked_properties(self):
         linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
@@ -1519,8 +1564,26 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         properties = self._process_param_change(self._init_params())
         model = _BkReactiveHTML(**properties)
+        if comm and not self._loaded():
+            self.param.warning(
+                f'{type(self).__name__} was not imported on instantiation and may not '
+                'render in a notebook. Restart the notebook kernel and '
+                'ensure you load it as part of the extension using:'
+                f'\n\npn.extension(\'{self._extension_name}\')\n'
+            )
+        elif root is not None and not self._loaded() and root.ref['id'] in state._views:
+            self.param.warning(
+                f'{type(self).__name__} was not imported on instantiation may not '
+                'render in the served application. Ensure you add the '
+                'following to the top of your application:'
+                f'\n\npn.extension(\'{self._extension_name}\')\n'
+            )
+        if self._extension_name:
+            ReactiveHTMLMetaclass._loaded_extensions.add(self._extension_name)
+
         if not root:
             root = model
+
         for p, v in model.data.properties_with_values().items():
             if isinstance(v, DataModel):
                 v.tags.append(f"__ref:{root.ref['id']}")
@@ -1593,7 +1656,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 data_msg[prop] = v
         if new_children:
             if self._parser.looped:
-                model_msg['html'] = escape(self._get_template())
+                html, nodes, self._attrs = self._get_template()
+                model_msg['attrs'] = self._attrs
+                model_msg['nodes'] = nodes
+                model_msg['html'] = escape(textwrap.dedent(html))
             children = self._get_children(doc, root, model, comm)
         else:
             children = None

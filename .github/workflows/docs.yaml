@@ -7,20 +7,27 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Site to build and deploy'
+        type: choice
+        options:
+        - dev
+        - main
+        required: true
+        default: dev
 
 jobs:
   build_docs:
     name: Documentation
     runs-on: 'ubuntu-latest'
-    strategy:
-      fail-fast: false
     timeout-minutes: 120
     defaults:
       run:
         shell: bash -l {0}
     env:
       DESC: "Documentation build"
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
       MPLBACKEND: "Agg"
       MOZ_HEADLESS: 1
       DISPLAY: ":99.0"
@@ -33,39 +40,46 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: "100"
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
+          mamba-version: "*"
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           miniconda-version: "latest"
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
-      - name: Set output
+      - name: Set and echo git ref
         id: vars
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+        run: |
+          echo "Deploying from ref ${GITHUB_REF#refs/*/}"
+          echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: conda setup
         run: |
-          conda config --set always_yes True
-          conda install -c pyviz "pyctdev>=0.5"
-          doit ecosystem_setup
-          doit env_create ${{ env.CHANS_DEV}} --python=3.8
+          conda create -n test-environment python=3.8 pyctdev
       - uses: actions/setup-node@v2
         with:
           node-version: '15'
-      - name: doit develop_install
+      - name: doit develop_install and other installs
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install ${{ env.CHANS_DEV }} "pip<21.2.1" 
+          conda install "pip<21.2.1" 
           conda list
-          doit develop_install ${{ env.CHANS_DEV}} -o doc -o examples
-          pip install pydeck sphinxcontrib-napoleon sphinx-copybutton pyecharts
-          pip install idom pydata_sphinx_theme
+          doit develop_install -o doc -o examples
+          pip install pyecharts idom
+      - name: temporarily pin jinja2
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda install "jinja2<=3.0.3" 
+      - name: doit env_capture
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit env_capture
       - name: opengl
         run: |
           sudo apt-get install libglu1-mesa
-          conda install -c conda-forge mesalib
+          conda install mesalib
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
           sleep 3
       - name: bokeh sampledata
@@ -89,20 +103,24 @@ jobs:
           conda activate test-environment
           nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
           cp -r ./panel/dist ./builtdocs/panel_dist
-      - name: git status
+      - name: git status and git diff
         run: |
           git status
           git diff
       - name: Deploy dev
         uses: peaceiris/actions-gh-pages@v3
-        if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
+          (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         with:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
           external_repository: pyviz-dev/panel
           publish_dir: ./builtdocs
           force_orphan: true
       - name: Deploy main
-        if: (!(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
+          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -5,13 +5,14 @@ param.parameterized.docstring_describe_params = False
 
 from nbsite.shared_conf import *
 
-project = u'Panel'
-authors = u'Panel contributors'
-copyright = u'2019-2021 ' + authors
+project = 'Panel'
+authors = 'Panel contributors'
+copyright_years['start_year'] = '2019'
+copyright = copyright_fmt.format(**copyright_years)
 description = 'High-level dashboarding for python visualization libraries'
 
 import panel
-version = release = str(panel.__version__)
+version = release = base_version(panel.__version__)
 
 html_static_path += ['_static']
 
@@ -24,7 +25,7 @@ html_theme = "pydata_sphinx_theme"
 html_logo = "_static/logo_horizontal.png"
 html_favicon = "_static/favicon.ico"
 
-html_theme_options = {
+html_theme_options.update({
     "github_url": "https://github.com/holoviz/panel",
     "icon_links": [
         {
@@ -34,11 +35,12 @@ html_theme_options = {
         },
         {
             "name": "Discourse",
-            "url": "https://discourse.holoviz.org/",
+            "url": "https://discourse.holoviz.org/c/panel/5",
             "icon": "fab fa-discourse",
         },
-    ]
-}
+    ],
+    "google_analytics_id": "UA-154795830-2",
+})
 
 extensions += [
     'sphinx.ext.napoleon',
@@ -108,13 +110,17 @@ nbsite_gallery_conf = {
     'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
 }
 
-templates_path = ['_templates']
+templates_path += [
+    '_templates',
+]
 
 html_context.update({
-    "last_release": f"v{'.'.join(panel.__version__.split('.')[:3])}",
+    "last_release": f"v{release}",
     "github_user": "holoviz",
     "github_repo": "panel",
-    "google_analytics_id": "UA-154795830-2",
 })
 
 nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
+
+# Override the Sphinx default title that appends `documentation`
+html_title = f'{project} v{version}'
