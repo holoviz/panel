@@ -532,7 +532,8 @@ class BasicTemplate(BaseTemplate):
                 pass
 
     def _template_resources(self):
-        name = type(self).__name__.lower()
+        clsname = type(self).__name__
+        name = clsname.lower()
         resources = _settings.resources(default="server")
         if resources == 'server':
             if state.rel_path:
@@ -549,9 +550,9 @@ class BasicTemplate(BaseTemplate):
             if (BUNDLE_DIR / 'css' / css_path.replace('/', os.path.sep)).is_file():
                 css_files[cssname] = dist_path + f'bundled/css/{css_path}'
             elif isurl(js):
-                css_files[jsname] = js
+                css_files[cssname] = css
             else:
-                css_files[jsname] = f'components/{self.__module__}/{css}'
+                css_files[cssname] = f'components/{self.__module__}/{clsname}/_resources/css/{css}'
         js_files = dict(self._resources.get('js', {}))
         for jsname, js in js_files.items():
             js_path = url_path(js)
@@ -560,7 +561,7 @@ class BasicTemplate(BaseTemplate):
             elif isurl(js):
                 js_files[jsname] = js
             else:
-                js_files[jsname] = f'components/{self.__module__}/{js}'
+                js_files[jsname] = f'components/{self.__module__}/{clsname}/_resources/js/{js}'
 
         js_modules = dict(self._resources.get('js_modules', {}))
         for jsname, js in js_modules.items():
@@ -571,6 +572,11 @@ class BasicTemplate(BaseTemplate):
                 js_path += '.mjs'
             if os.path.isfile(BUNDLE_DIR / js_path.replace('/', os.path.sep)):
                 js_modules[jsname] = dist_path + f'bundled/js/{js_path}'
+            elif isurl(js):
+                js_modules[jsname] = js
+            else:
+                js_modules[jsname] = f'components/{self.__module__}/{clsname}/_resources/js_modules/{js}'
+
         for name, js in self.config.js_files.items():
             if not '//' in js and state.rel_path:
                 js = f'{state.rel_path}/{js}'
@@ -599,10 +605,10 @@ class BasicTemplate(BaseTemplate):
             css_file = os.path.basename(css)
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
-            elif is_url(css):
+            elif isurl(css):
                 css_files[f'base_{css_file}'] = css
             else:
-                css_files[f'base_{css_file}' ] = f'components/{self.__module__}/{css}'
+                css_files[f'base_{css_file}' ] = f'components/{self.__module__}/{clsname}/_css/{css}'
 
         # JS files
         base_js = self._js
@@ -620,20 +626,21 @@ class BasicTemplate(BaseTemplate):
             elif isurl(js):
                 js_files[f'base_{js_name}'] = js
             else:
-                js_files[f'base_{js_name}' ] = f'components/{self.__module__}/{js}'                
+                js_files[f'base_{js_name}' ] = f'components/{self.__module__}/{clsname}/_js/{js}'
 
         if self.theme:
-            theme = self.theme.find_theme(type(self))
+            theme = self._get_theme()
+            theme_name = type(theme).__name__
             if theme:
                 if theme.base_css:
                     basename = os.path.basename(theme.base_css)
-                    owner = theme.param.base_css.owner.__name__.lower()
+                    owner = type(theme.param.base_css.owner).__name__.lower()
                     if (BUNDLE_DIR / owner / basename).is_file():
                         css_files['theme_base'] = dist_path + f'bundled/{owner}/{basename}'
                     elif isurl(theme.base_css):
                         css_files['theme_base'] = theme.base_css
                     else:
-                        css_files['theme_base'] = f'components/{theme.__module__}/{theme.base_css}'
+                        css_files['theme_base'] = f'components/{theme.__module__}/{theme_name}/base_css/{theme.base_css}'
                 if theme.css:
                     basename = os.path.basename(theme.css)
                     if (BUNDLE_DIR / name / basename).is_file():
@@ -641,7 +648,7 @@ class BasicTemplate(BaseTemplate):
                     elif isurl(theme.css):
                         css_files['theme'] = theme.css
                     else:
-                        css_files['theme'] = f'components/{theme.__module__}/{theme.css}'
+                        css_files['theme'] = f'components/{theme.__module__}/{theme_name}/css/{theme.css}'
 
         return {
             'css': css_files,

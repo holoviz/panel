@@ -41,7 +41,7 @@ from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.static_handler import StaticHandler
 
 # Tornado imports
-from tornado import httputil
+from tornado import httputil, iostream
 from tornado.ioloop import IOLoop
 from tornado.web import HTTPError, RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
@@ -295,14 +295,14 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
 per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
 
 
-class ModuleResourceHandler(StaticFileHandler):
+class ComponentResourceHandler(StaticFileHandler):
     """
     A handler that serves local resources relative to a Python module.
-    The handler resolves the module and then resolves any path relative
-    to the location of that module making it possible to resolve any
-    resources bundled inside a Python module.
+    The handler resolves the module and component then resolves any
+    path relative to the location of that module making it possible to
+    resolve any resources bundled inside a Python module.
 
-    /<endpoint>/<module>/<path>
+    /<endpoint>/<module>/<class>/<type>/<path>
     """
 
     def initialize(self, path=None, default_filename=None):
@@ -311,25 +311,55 @@ class ModuleResourceHandler(StaticFileHandler):
 
     def parse_url_pattern(self, path):
         parts = path.split('/')
-        if len(parts) < 2:
+        if len(parts) < 4:
             raise HTTPError(400, 'Malformed URL')
-        module, *subpath = parts
+        module, cls, rtype, *subpath = parts
         try:
             module = importlib.import_module(module)
-        except Exception as e:
+        except Exception:
             raise HTTPError(404, 'Module not found')
+        print(module)
+        try:
+            component = getattr(module, cls)
+        except AttributeError:
+            raise HTTPError(404, 'Component not found')
+        try:
+            resources = getattr(component, rtype)
+        except AttributeError:
+            raise HTTPError(404, 'Resource type not found')
+
+        # Handle template resources
+        if rtype == '_resources':
+            rtype = subpath[0]
+            subpath = subpath[1:]
+            if rtype in resources:
+                resources = resources[rtype]
+            else:
+                raise HTTPError(404, 'Resource type not found')
+
+        if isinstance(resources, dict):
+            resources = list(resources.values())
+
         if subpath[0] == '':
             path = os.path.join('/', *subpath[1:])
         else:
-            path = pathlib.Path(module.__file__).parent / os.path.join(*subpath)
+            path = os.path.join(*subpath)
+
+        if path not in resources and f'./{path}' not in resources:
+            raise HTTPError(403, 'Requested resource was not listed.')
+
+        if subpath[0] == '':
+            path = os.path.join('/', *subpath[1:])
+        else:
+            path = pathlib.Path(module.__file__).parent / path
         return path
 
     async def get(self, path: str, include_body: bool = True) -> None:
         # Set up our path instance variables.
+        print(path)
         self.path = self.parse_url_pattern(path)
         del path  # make sure we don't refer to path instead of self.path again
         self.absolute_path = self.validate_absolute_path(self.root, self.path)
-        print(self.absolute_path)
         if self.absolute_path is None:
             return
 
@@ -629,8 +659,9 @@ def get_static_routes(static_dirs):
             (r"%s/(.*)" % slug, StaticFileHandler, {"path": path})
         )
     patterns.append((
-        '/components/(.*)', ModuleResourceHandler, {}
+        '/components/(.*)', ComponentResourceHandler, {}
     ))
+    print(patterns)
     return patterns
 
 

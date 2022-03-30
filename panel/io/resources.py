@@ -184,7 +184,7 @@ class Resources(BkResources):
                 continue
             for resource in getattr(model, resource_type, []):
                 if not isurl(resource) and not resource.startswith('static/extensions'):
-                    resource = f'components/{model.__module__}/{resource}'
+                    resource = f'components/{model.__module__}/{model.__name__}/{resource_type}/{resource}'
                 if resource not in resources:
                     resources.append(resource)
 

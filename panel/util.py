@@ -38,7 +38,7 @@ def isfile(path):
         return False
 
 
-def isurl(obj, formats):
+def isurl(obj, formats=None):
     if not isinstance(obj, str):
         return False
     lower_string = obj.lower().split('?')[0].split('#')[0]
