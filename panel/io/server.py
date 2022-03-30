@@ -4,6 +4,7 @@ Utilities for creating bokeh Server instances.
 import datetime as dt
 import gc
 import html
+import importlib
 import logging
 import os
 import pathlib
@@ -40,8 +41,9 @@ from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.static_handler import StaticHandler
 
 # Tornado imports
+from tornado import httputil
 from tornado.ioloop import IOLoop
-from tornado.web import RequestHandler, StaticFileHandler, authenticated
+from tornado.web import HTTPError, RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
@@ -291,6 +293,127 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
         self.write(js)
 
 per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
+
+
+class ModuleResourceHandler(StaticFileHandler):
+    """
+    A handler that serves local resources relative to a Python module.
+    The handler resolves the module and then resolves any path relative
+    to the location of that module making it possible to resolve any
+    resources bundled inside a Python module.
+
+    /<endpoint>/<module>/<path>
+    """
+
+    def initialize(self, path=None, default_filename=None):
+        self.root = path
+        self.default_filename = default_filename
+
+    def parse_url_pattern(self, path):
+        parts = path.split('/')
+        if len(parts) < 2:
+            raise HTTPError(400, 'Malformed URL')
+        module, *subpath = parts
+        try:
+            module = importlib.import_module(module)
+        except Exception as e:
+            raise HTTPError(404, 'Module not found')
+        if subpath[0] == '':
+            path = os.path.join('/', *subpath[1:])
+        else:
+            path = pathlib.Path(module.__file__).parent / os.path.join(*subpath)
+        return path
+
+    async def get(self, path: str, include_body: bool = True) -> None:
+        # Set up our path instance variables.
+        self.path = self.parse_url_pattern(path)
+        del path  # make sure we don't refer to path instead of self.path again
+        self.absolute_path = self.validate_absolute_path(self.root, self.path)
+        print(self.absolute_path)
+        if self.absolute_path is None:
+            return
+
+        self.modified = self.get_modified_time()
+        self.set_headers()
+
+        if self.should_return_304():
+            self.set_status(304)
+            return
+
+        request_range = None
+        range_header = self.request.headers.get("Range")
+        if range_header:
+            # As per RFC 2616 14.16, if an invalid Range header is specified,
+            # the request will be treated as if the header didn't exist.
+            request_range = httputil._parse_request_range(range_header)
+
+        size = self.get_content_size()
+        if request_range:
+            start, end = request_range
+            if start is not None and start < 0:
+                start += size
+                if start < 0:
+                    start = 0
+            if (
+                start is not None
+                and (start >= size or (end is not None and start >= end))
+            ) or end == 0:
+                # As per RFC 2616 14.35.1, a range is not satisfiable only: if
+                # the first requested byte is equal to or greater than the
+                # content, or when a suffix with length 0 is specified.
+                # https://tools.ietf.org/html/rfc7233#section-2.1
+                # A byte-range-spec is invalid if the last-byte-pos value is present
+                # and less than the first-byte-pos.
+                self.set_status(416)  # Range Not Satisfiable
+                self.set_header("Content-Type", "text/plain")
+                self.set_header("Content-Range", "bytes */%s" % (size,))
+                return
+            if end is not None and end > size:
+                # Clients sometimes blindly use a large range to limit their
+                # download size; cap the endpoint at the actual file size.
+                end = size
+            # Note: only return HTTP 206 if less than the entire range has been
+            # requested. Not only is this semantically correct, but Chrome
+            # refuses to play audio if it gets an HTTP 206 in response to
+            # ``Range: bytes=0-``.
+            if size != (end or size) - (start or 0):
+                self.set_status(206)  # Partial Content
+                self.set_header(
+                    "Content-Range", httputil._get_content_range(start, end, size)
+                )
+        else:
+            start = end = None
+
+        if start is not None and end is not None:
+            content_length = end - start
+        elif end is not None:
+            content_length = end
+        elif start is not None:
+            content_length = size - start
+        else:
+            content_length = size
+        self.set_header("Content-Length", content_length)
+
+        if include_body:
+            content = self.get_content(self.absolute_path, start, end)
+            if isinstance(content, bytes):
+                content = [content]
+            for chunk in content:
+                try:
+                    self.write(chunk)
+                    await self.flush()
+                except iostream.StreamClosedError:
+                    return
+        else:
+            assert self.request.method == "HEAD"
+
+    def validate_absolute_path(self, root, absolute_path):
+        if not os.path.exists(absolute_path):
+            raise HTTPError(404)
+        if not os.path.isfile(absolute_path):
+            raise HTTPError(403, "%s is not a file", self.path)
+        return absolute_path
+
 
 def modify_document(self, doc):
     from bokeh.io.doc import set_curdoc as bk_set_curdoc

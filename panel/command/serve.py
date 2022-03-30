@@ -26,7 +26,7 @@ from ..config import config
 from ..util import fullpath
 from ..io.rest import REST_PROVIDERS
 from ..io.reload import record_modules, watch
-from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
+from ..io.server import INDEX_HTML, ModuleResourceHandler, get_static_routes, set_curdoc
 from ..io.state import state
 
 log = logging.getLogger(__name__)
@@ -224,6 +224,10 @@ class Serve(_BkServe):
         if args.static_dirs:
             static_dirs = parse_vars(args.static_dirs)
             patterns += get_static_routes(static_dirs)
+
+        patterns.append((
+            '/components/(.*)', ModuleResourceHandler, {}
+        ))
 
         files = []
         for f in args.files:

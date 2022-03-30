@@ -29,7 +29,7 @@ from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..pane.image import ImageBase
 from ..reactive import ReactiveHTML
-from ..util import url_path
+from ..util import isurl, url_path
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
@@ -525,7 +525,11 @@ class BasicTemplate(BaseTemplate):
             root.document.theme = theme.bokeh_theme
 
     def _get_theme(self):
-        return self.theme.find_theme(type(self))()
+        for cls in type(self).__mro__:
+            try:
+                return self.theme.find_theme(cls)()
+            except Exception:
+                pass
 
     def _template_resources(self):
         name = type(self).__name__.lower()
@@ -544,11 +548,20 @@ class BasicTemplate(BaseTemplate):
             css_path = url_path(css)
             if (BUNDLE_DIR / 'css' / css_path.replace('/', os.path.sep)).is_file():
                 css_files[cssname] = dist_path + f'bundled/css/{css_path}'
+            elif isurl(js):
+                css_files[jsname] = js
+            else:
+                css_files[jsname] = f'components/{self.__module__}/{css}'
         js_files = dict(self._resources.get('js', {}))
         for jsname, js in js_files.items():
             js_path = url_path(js)
             if (BUNDLE_DIR / 'js' / js_path.replace('/', os.path.sep)).is_file():
                 js_files[jsname] = dist_path + f'bundled/js/{js_path}'
+            elif isurl(js):
+                js_files[jsname] = js
+            else:
+                js_files[jsname] = f'components/{self.__module__}/{js}'
+
         js_modules = dict(self._resources.get('js_modules', {}))
         for jsname, js in js_modules.items():
             js_path = url_path(js)
@@ -586,9 +599,10 @@ class BasicTemplate(BaseTemplate):
             css_file = os.path.basename(css)
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
+            elif is_url(css):
+                css_files[f'base_{css_file'] = css
             else:
-                with open(css, encoding='utf-8') as f:
-                    raw_css.append(f.read())
+                css_files[f'base_{css_file}' ] = f'components/{self.__module__}/{css}'
 
         # JS files
         base_js = self._js
@@ -600,9 +614,13 @@ class BasicTemplate(BaseTemplate):
                 tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
                 if js in tmpl_js:
                     tmpl_name = cls.__name__.lower()
-            js = os.path.basename(js)
-            if (BUNDLE_DIR / tmpl_name / js).is_file():
-                js_files[f'base_{js}'] = dist_path + f'bundled/{tmpl_name}/{js}'
+            js_name = os.path.basename(js)
+            if (BUNDLE_DIR / tmpl_name / js_name).is_file():
+                js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
+            elif isurl(js):
+                js_files[f'base_{js_name}'] = js
+            else:
+                js_files[f'base_{js_name}' ] = f'components/{self.__module__}/{js}'                
 
         if self.theme:
             theme = self.theme.find_theme(type(self))
@@ -612,16 +630,18 @@ class BasicTemplate(BaseTemplate):
                     owner = theme.param.base_css.owner.__name__.lower()
                     if (BUNDLE_DIR / owner / basename).is_file():
                         css_files['theme_base'] = dist_path + f'bundled/{owner}/{basename}'
+                    elif isurl(theme.base_css):
+                        css_files['theme_base'] = theme.base_css
                     else:
-                        with open(theme.base_css, encoding='utf-8') as f:
-                            raw_css.append(f.read())
+                        css_files['theme_base'] = f'components/{theme.__module__}/{theme.base_css}'
                 if theme.css:
                     basename = os.path.basename(theme.css)
                     if (BUNDLE_DIR / name / basename).is_file():
                         css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
+                    elif isurl(theme.css):
+                        css_files['theme'] = theme.css
                     else:
-                        with open(theme.css, encoding='utf-8') as f:
-                            raw_css.append(f.read())
+                        css_files['theme'] = f'components/{theme.__module__}/{theme.css}'
 
         return {
             'css': css_files,
