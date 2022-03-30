@@ -471,7 +471,7 @@ class Param(PaneBase):
             watcher = widget.param.watch(event, 'clicks')
         elif isinstance(p_obj, param.Action):
             def action(change):
-                value(self.object)
+                value()
             watcher = widget.param.watch(action, 'clicks')
         elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
             watcher = widget.param.watch(link_widget, 'value_throttled')
