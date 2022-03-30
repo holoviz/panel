@@ -628,6 +628,9 @@ def get_static_routes(static_dirs):
         patterns.append(
             (r"%s/(.*)" % slug, StaticFileHandler, {"path": path})
         )
+    patterns.append((
+        '/components/(.*)', ModuleResourceHandler, {}
+    ))
     return patterns
 
 
