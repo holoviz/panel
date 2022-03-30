@@ -1,5 +1,6 @@
-"""Sliders allow you to select a value from a defined range of values by moving one or more
-handle(s).
+"""
+Sliders allow you to select a value from a defined range of values by
+moving one or more handle(s).
 
 - The `value` will update when a handle is dragged.
 - The `value_throttled`will update when a handle is released.
@@ -25,6 +26,7 @@ from .input import IntInput, FloatInput, StaticText
 
 
 class _SliderBase(Widget):
+
     name = param.String(default=None, constant=True, doc="""
         The name of the widget. Also used as the label of the widget. If not set,
         the widget has no label.""")
@@ -125,16 +127,15 @@ class ContinuousSlider(_SliderBase):
 
 
 class FloatSlider(ContinuousSlider):
-    """The FloatSlider widget allows selecting a floating-point value within a
-    set of bounds using a slider.
+    """
+    The FloatSlider widget allows selecting a floating-point value
+    within a set of bounds using a slider.
 
     Reference: https://panel.holoviz.org/reference/widgets/FloatSlider.html
 
-    ## Example
+    :Example:
 
-    ```python
-    slider=pn.widgets.FloatSlider(value=0.5,start=0.0,end=1.0,step=0.1, name="Float Value")
-    ```
+    >>> FloatSlider(value=0.5, start=0.0, end=1.0, step=0.1, name="Float value")
     """
 
     value = param.Number(default=0.0, doc="""
@@ -157,16 +158,15 @@ class FloatSlider(ContinuousSlider):
 
 
 class IntSlider(ContinuousSlider):
-    """The IntSlider widget allows selecting an integer value within a set of bounds
-    using a slider.
+    """
+    The IntSlider widget allows selecting an integer value within a
+    set of bounds using a slider.
 
     Reference: https://panel.holoviz.org/reference/widgets/IntSlider.html
 
-    ## Example
+    :Example:
 
-    ```python
-    slider=pn.widgets.IntSlider(value=5,start=0,end=10,step=1, name="Integer Value")
-    ```
+    >>> IntSlider(value=5, start=0, end=10, step=1, name="Integer Value")
     """
 
     value = param.Integer(default=0, doc="""
@@ -197,24 +197,22 @@ class IntSlider(ContinuousSlider):
 
 
 class DateSlider(_SliderBase):
-    """The DateSlider widget allows selecting a value within a set of bounds using a slider.
-    Supports datetime.datetime, datetime.date and np.datetime64 values.
-
-    The step size is currently fixed at 1 day.
+    """
+    The DateSlider widget allows selecting a value within a set of
+    bounds using a slider.  Supports datetime.datetime, datetime.date
+    and np.datetime64 values. The step size is fixed at 1 day.
 
     Reference: https://panel.holoviz.org/reference/widgets/DateSlider.html
 
-    ## Example
+    :Example:
 
-    ```python
-    import datetime as dt
-    pn.widgets.DateSlider(
-        value=dt.datetime(2025, 1, 1),
-        start=dt.datetime(2025, 1, 1),
-        end=dt.datetime(2025, 1, 7),
-        name="A datetime Value",
-    )
-    ```
+    >>> import datetime as dt
+    >>> DateSlider(
+    ...     value=dt.datetime(2025, 1, 1),
+    ...     start=dt.datetime(2025, 1, 1),
+    ...     end=dt.datetime(2025, 1, 7),
+    ...     name="A datetime value"
+    ... )
     """
     value = param.Date(default=None, doc="""
         The selected date value of the slider. Updated when the slider handle is dragged. Supports
@@ -251,20 +249,19 @@ class DateSlider(_SliderBase):
 
 
 class DiscreteSlider(CompositeWidget, _SliderBase):
-    """The DiscreteSlider widget allows selecting a value from a discrete list or dictionary of
-    values using a slider.
+    """
+    The DiscreteSlider widget allows selecting a value from a discrete
+    list or dictionary of values using a slider.
 
     Reference: https://panel.holoviz.org/reference/widgets/DiscreteSlider.html
 
-    ## Example
+    :Example:
 
-    ```python
-    pn.widgets.DiscreteSlider(
-        value=0,
-        options=list([0, 1, 2, 4, 8, 16, 32, 64]),
-        name="A discrete value",
-    )
-    ```
+    >>> DiscreteSlider(
+    ...     value=0,
+    ...     options=list([0, 1, 2, 4, 8, 16, 32, 64]),
+    ...     name="A discrete value",
+    ... )
     """
     value = param.Parameter(doc="""
         The selected value of the slider. Updated when the handle is dragged. Must be one of
@@ -468,20 +465,18 @@ class _RangeSliderBase(_SliderBase):
         return msg
 
 
-# Why don't we call this a FloatRangeSlider in accordance with FloatSlider?
 class RangeSlider(_RangeSliderBase):
-    """The RangeSlider widget allows selecting a floating-point range using a slider with
-    two handles.
+    """
+    The RangeSlider widget allows selecting a floating-point range
+    using a slider with two handles.
 
     Reference: https://panel.holoviz.org/reference/widgets/RangeSlider.html
 
-    ## Example
+    :Example:
 
-    ```python
-    pn.widgets.RangeSlider(
-        value=(1.0, 1.5), start=0.0, end=2.0, step=0.25, name="A tuple of floats"
-    )
-    ```
+    >>> RangeSlider(
+    ...     value=(1.0, 1.5), start=0.0, end=2.0, step=0.25, name="A tuple of floats"
+    ... )
     """
 
     value = param.Range(default=(0, 1), doc=
@@ -523,18 +518,17 @@ class RangeSlider(_RangeSliderBase):
 
 
 class IntRangeSlider(RangeSlider):
-    """The IntRangeSlider widget allows selecting an integer range using a slider with
-    two handles.
+    """
+    The IntRangeSlider widget allows selecting an integer range using
+    a slider with two handles.
 
     Reference: https://panel.holoviz.org/reference/widgets/IntRangeSlider.html
 
-    ## Example
+    :Example:
 
-    ```python
-    pn.widgets.IntRangeSlider(
-        value=(2, 4), start=0, end=10, step=2, name="A tuple of integers"
-    )
-    ```
+    >>> IntRangeSlider(
+    ...     value=(2, 4), start=0, end=10, step=2, name="A tuple of integers"
+    ... )
     """
 
     start = param.Integer(default=0, doc="""
@@ -558,23 +552,23 @@ class IntRangeSlider(RangeSlider):
 
 
 class DateRangeSlider(_RangeSliderBase):
-    """The DateRangeSlider widget allows selecting a date range using a slider with
-    two handles. Supports datetime.datetime, datetime.data and np.datetime64 ranges.
+    """
+    The DateRangeSlider widget allows selecting a date range using a
+    slider with two handles. Supports datetime.datetime, datetime.data
+    and np.datetime64 ranges.
 
     Reference: https://panel.holoviz.org/reference/widgets/DateRangeSlider.html
 
-    ## Example
+    :Example:
 
-    ```python
-    import datetime as dt
-    pn.widgets.DateRangeSlider(
-        value=(dt.datetime(2025, 1, 9), dt.datetime(2025, 1, 16)),
-        start=dt.datetime(2025, 1, 1),
-        end=dt.datetime(2025, 1, 31),
-        step=2,
-        name="A tuple of datetimes",
-    )
-    ```
+    >>> import datetime as dt
+    >>> DateRangeSlider(
+    ...     value=(dt.datetime(2025, 1, 9), dt.datetime(2025, 1, 16)),
+    ...     start=dt.datetime(2025, 1, 1),
+    ...     end=dt.datetime(2025, 1, 31),
+    ...     step=2,
+    ...     name="A tuple of datetimes"
+    ... )
     """
 
     value = param.Tuple(default=(None, None), length=2, doc=
@@ -722,19 +716,18 @@ class _EditableContinuousSlider(CompositeWidget):
 
 
 class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
-    """The EditableFloatSlider widget allows selecting selecting a numeric floating-point value
-    within a set of bounds using a slider and for more precise control offers an editable number
-    input box.
+    """
+    The EditableFloatSlider widget allows selecting selecting a
+    numeric floating-point value within a set of bounds using a slider
+    and for more precise control offers an editable number input box.
 
     Reference: https://panel.holoviz.org/reference/widgets/EditableFloatSlider.html
 
-    ## Example
+    :Example:
 
-    ```python
-    pn.widgets.EditableFloatSlider(
-        value=1.0, start=0.0, end=2.0, step=0.25, name="A float value"
-    )
-    ```
+    >>> EditableFloatSlider(
+    ...     value=1.0, start=0.0, end=2.0, step=0.25, name="A float value"
+    ... )
     """
 
     _slider_widget = FloatSlider
@@ -743,18 +736,17 @@ class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
 
 class EditableIntSlider(_EditableContinuousSlider, IntSlider):
     """
-    The EditableIntSlider widget allows selecting selecting an integer value within a set of bounds
-    using a slider and for more precise control offers an editable integer input box.
+    The EditableIntSlider widget allows selecting selecting an integer
+    value within a set of bounds using a slider and for more precise
+    control offers an editable integer input box.
 
     Reference: https://panel.holoviz.org/reference/widgets/EditableIntSlider.html
 
-    ## Example
+    :Example:
 
-    ```python
-    pn.widgets.EditableIntSlider(
-        value=2, start=0, end=5, step=1, name="An integer value"
-    )
-    ```
+    >>> EditableIntSlider(
+    ...     value=2, start=0, end=5, step=1, name="An integer value"
+    ... )
     """
 
     _slider_widget = IntSlider
@@ -763,18 +755,17 @@ class EditableIntSlider(_EditableContinuousSlider, IntSlider):
 
 class EditableRangeSlider(CompositeWidget, _SliderBase):
     """
-    The EditableRangeSlider widget allows selecting a floating-point range using a slider with two
-    handles and for more precise control also offers a set of number input boxes.
+    The EditableRangeSlider widget allows selecting a floating-point
+    range using a slider with two handles and for more precise control
+    also offers a set of number input boxes.
 
     Reference: https://panel.holoviz.org/reference/widgets/EditableRangeSlider.html
 
-    ## Example
+    :Example:
 
-    ```python
-    pn.widgets.EditableRangeSlider(
-        value=(1.0, 1.5), start=0.0, end=2.0, step=0.25, name="A tuple of floats"
-    )
-    ```
+    >>> EditableRangeSlider(
+    ...      value=(1.0, 1.5), start=0.0, end=2.0, step=0.25, name="A tuple of floats"
+    ... )
     """
 
     value = param.Range(default=(0, 1), doc="Current range value. Updated when a handle is dragged")
