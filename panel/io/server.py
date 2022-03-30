@@ -298,11 +298,11 @@ per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
 class ComponentResourceHandler(StaticFileHandler):
     """
     A handler that serves local resources relative to a Python module.
-    The handler resolves the module and component then resolves any
-    path relative to the location of that module making it possible to
-    resolve any resources bundled inside a Python module.
+    The handler resolves a specific Panel component by module reference
+    and name, then resolves an attribute on that component to check
+    if it contains the requested resource path.
 
-    /<endpoint>/<module>/<class>/<type>/<path>
+    /<endpoint>/<module>/<class>/<attribute>/<path>
     """
 
     def initialize(self, path=None, default_filename=None):
@@ -310,6 +310,9 @@ class ComponentResourceHandler(StaticFileHandler):
         self.default_filename = default_filename
 
     def parse_url_pattern(self, path):
+        """
+        Resolves the resource the URL pattern refers to.
+        """
         parts = path.split('/')
         if len(parts) < 4:
             raise HTTPError(400, 'Malformed URL')
@@ -345,18 +348,17 @@ class ComponentResourceHandler(StaticFileHandler):
         else:
             path = os.path.join(*subpath)
 
+        # Important: May only access resources explicitly listed on the component
+        # Otherwise this potentially exposes all files to the web
         if path not in resources and f'./{path}' not in resources:
             raise HTTPError(403, 'Requested resource was not listed.')
 
-        if subpath[0] == '':
-            path = os.path.join('/', *subpath[1:])
-        else:
+        if not path.startswith('/'):
             path = pathlib.Path(module.__file__).parent / path
         return path
 
     async def get(self, path: str, include_body: bool = True) -> None:
         # Set up our path instance variables.
-        print(path)
         self.path = self.parse_url_pattern(path)
         del path  # make sure we don't refer to path instead of self.path again
         self.absolute_path = self.validate_absolute_path(self.root, self.path)
@@ -661,7 +663,6 @@ def get_static_routes(static_dirs):
     patterns.append((
         '/components/(.*)', ComponentResourceHandler, {}
     ))
-    print(patterns)
     return patterns
 
 
