@@ -600,7 +600,7 @@ class BasicTemplate(BaseTemplate):
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
             elif is_url(css):
-                css_files[f'base_{css_file'] = css
+                css_files[f'base_{css_file}'] = css
             else:
                 css_files[f'base_{css_file}' ] = f'components/{self.__module__}/{css}'
 
