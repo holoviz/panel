@@ -549,7 +549,7 @@ class BasicTemplate(BaseTemplate):
             css_path = url_path(css)
             if (BUNDLE_DIR / 'css' / css_path.replace('/', os.path.sep)).is_file():
                 css_files[cssname] = dist_path + f'bundled/css/{css_path}'
-            elif isurl(js):
+            elif isurl(css):
                 css_files[cssname] = css
             else:
                 css_files[cssname] = f'components/{self.__module__}/{clsname}/_resources/css/{css}'
