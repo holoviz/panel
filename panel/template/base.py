@@ -21,7 +21,7 @@ from pyviz_comms import JupyterCommManager as _JupyterCommManager
 from ..config import _base_config, config, panel_extension
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
-from ..io.resources import CDN_DIST, LOCAL_DIST, BUNDLE_DIR
+from ..io.resources import CDN_DIST, LOCAL_DIST, BUNDLE_DIR, resolve_custom_path
 from ..io.save import save
 from ..io.state import state
 from ..layout import Column, ListLike, GridSpec
@@ -29,7 +29,7 @@ from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..pane.image import ImageBase
 from ..reactive import ReactiveHTML
-from ..util import url_path
+from ..util import isurl, url_path
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
@@ -525,10 +525,15 @@ class BasicTemplate(BaseTemplate):
             root.document.theme = theme.bokeh_theme
 
     def _get_theme(self):
-        return self.theme.find_theme(type(self))()
+        for cls in type(self).__mro__:
+            try:
+                return self.theme.find_theme(cls)()
+            except Exception:
+                pass
 
     def _template_resources(self):
-        name = type(self).__name__.lower()
+        clsname = type(self).__name__
+        name = clsname.lower()
         resources = _settings.resources(default="server")
         if resources == 'server':
             if state.rel_path:
@@ -538,17 +543,31 @@ class BasicTemplate(BaseTemplate):
         else:
             dist_path = self._CDN
 
+        custom_path = "components"
+        if state.rel_path:
+            custom_path = f"{state.rel_path}/{custom_path}"
+
         # External resources
         css_files = dict(self._resources.get('css', {}))
         for cssname, css in css_files.items():
             css_path = url_path(css)
             if (BUNDLE_DIR / 'css' / css_path.replace('/', os.path.sep)).is_file():
                 css_files[cssname] = dist_path + f'bundled/css/{css_path}'
+            elif isurl(css):
+                css_files[cssname] = css
+            elif resolve_custom_path(self, css):
+                css_files[cssname] = f'{custom_path}/{self.__module__}/{clsname}/_resources/css/{css}'
+
         js_files = dict(self._resources.get('js', {}))
         for jsname, js in js_files.items():
             js_path = url_path(js)
             if (BUNDLE_DIR / 'js' / js_path.replace('/', os.path.sep)).is_file():
                 js_files[jsname] = dist_path + f'bundled/js/{js_path}'
+            elif isurl(js):
+                js_files[jsname] = js
+            elif resolve_custom_path(self, js):
+                js_files[jsname] = f'{custom_path}/{self.__module__}/{clsname}/_resources/js/{js}'
+
         js_modules = dict(self._resources.get('js_modules', {}))
         for jsname, js in js_modules.items():
             js_path = url_path(js)
@@ -558,6 +577,11 @@ class BasicTemplate(BaseTemplate):
                 js_path += '.mjs'
             if os.path.isfile(BUNDLE_DIR / js_path.replace('/', os.path.sep)):
                 js_modules[jsname] = dist_path + f'bundled/js/{js_path}'
+            elif isurl(js):
+                js_modules[jsname] = js
+            elif resolve_custom_path(self, js):
+                js_modules[jsname] = f'{custom_path}/{self.__module__}/{clsname}/_resources/js_modules/{js}'
+
         for name, js in self.config.js_files.items():
             if not '//' in js and state.rel_path:
                 js = f'{state.rel_path}/{js}'
@@ -586,9 +610,10 @@ class BasicTemplate(BaseTemplate):
             css_file = os.path.basename(css)
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
-            else:
-                with open(css, encoding='utf-8') as f:
-                    raw_css.append(f.read())
+            elif isurl(css):
+                css_files[f'base_{css_file}'] = css
+            elif resolve_custom_path(self, css):
+                css_files[f'base_{css_file}' ] = f'{custom_path}/{self.__module__}/{clsname}/_css/{css}'
 
         # JS files
         base_js = self._js
@@ -600,28 +625,35 @@ class BasicTemplate(BaseTemplate):
                 tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
                 if js in tmpl_js:
                     tmpl_name = cls.__name__.lower()
-            js = os.path.basename(js)
-            if (BUNDLE_DIR / tmpl_name / js).is_file():
-                js_files[f'base_{js}'] = dist_path + f'bundled/{tmpl_name}/{js}'
+            js_name = os.path.basename(js)
+            if (BUNDLE_DIR / tmpl_name / js_name).is_file():
+                js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
+            elif isurl(js):
+                js_files[f'base_{js_name}'] = js
+            elif resolve_custom_path(self, js):
+                js_files[f'base_{js_name}' ] = f'{custom_path}/{self.__module__}/{clsname}/_js/{js}'
 
         if self.theme:
-            theme = self.theme.find_theme(type(self))
+            theme = self._get_theme()
+            theme_name = type(theme).__name__
             if theme:
                 if theme.base_css:
                     basename = os.path.basename(theme.base_css)
-                    owner = theme.param.base_css.owner.__name__.lower()
+                    owner = type(theme.param.base_css.owner).__name__.lower()
                     if (BUNDLE_DIR / owner / basename).is_file():
                         css_files['theme_base'] = dist_path + f'bundled/{owner}/{basename}'
-                    else:
-                        with open(theme.base_css, encoding='utf-8') as f:
-                            raw_css.append(f.read())
+                    elif isurl(theme.base_css):
+                        css_files['theme_base'] = theme.base_css
+                    elif resolve_custom_path(theme, theme.base_css):
+                        css_files['theme_base'] = f'{custom_path}/{theme.__module__}/{theme_name}/base_css/{theme.base_css}'
                 if theme.css:
                     basename = os.path.basename(theme.css)
                     if (BUNDLE_DIR / name / basename).is_file():
                         css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
-                    else:
-                        with open(theme.css, encoding='utf-8') as f:
-                            raw_css.append(f.read())
+                    elif isurl(theme.css):
+                        css_files['theme'] = theme.css
+                    elif resolve_custom_path(theme, theme.css):
+                        css_files['theme'] = f'{custom_path}/{theme.__module__}/{theme_name}/css/{theme.css}'
 
         return {
             'css': css_files,

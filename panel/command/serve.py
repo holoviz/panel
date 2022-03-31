@@ -221,9 +221,8 @@ class Serve(_BkServe):
         # Handle tranquilized functions in the supplied functions
         kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
 
-        if args.static_dirs:
-            static_dirs = parse_vars(args.static_dirs)
-            patterns += get_static_routes(static_dirs)
+        static_dirs = parse_vars(args.static_dirs) if args.static_dirs else {}
+        patterns += get_static_routes(static_dirs)
 
         files = []
         for f in args.files:

@@ -4,6 +4,7 @@ Utilities for creating bokeh Server instances.
 import datetime as dt
 import gc
 import html
+import importlib
 import logging
 import os
 import pathlib
@@ -41,7 +42,7 @@ from bokeh.server.views.static_handler import StaticHandler
 
 # Tornado imports
 from tornado.ioloop import IOLoop
-from tornado.web import RequestHandler, StaticFileHandler, authenticated
+from tornado.web import HTTPError, RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
@@ -292,6 +293,88 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
 
 per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
 
+
+class ComponentResourceHandler(StaticFileHandler):
+    """
+    A handler that serves local resources relative to a Python module.
+    The handler resolves a specific Panel component by module reference
+    and name, then resolves an attribute on that component to check
+    if it contains the requested resource path.
+
+    /<endpoint>/<module>/<class>/<attribute>/<path>
+    """
+
+    _resource_attrs = [
+        '__css__', '__javascript__', '__js_module__',  '_resources',
+        '_css', '_js', 'base_css', 'css'
+    ]
+
+    def initialize(self, path=None, default_filename=None):
+        self.root = path
+        self.default_filename = default_filename
+
+    def parse_url_path(self, path):
+        """
+        Resolves the resource the URL pattern refers to.
+        """
+        parts = path.split('/')
+        if len(parts) < 4:
+            raise HTTPError(400, 'Malformed URL')
+        module, cls, rtype, *subpath = parts
+        try:
+            module = importlib.import_module(module)
+        except ModuleNotFoundError:
+            raise HTTPError(404, 'Module not found')
+        try:
+            component = getattr(module, cls)
+        except AttributeError:
+            raise HTTPError(404, 'Component not found')
+
+        # May only access resources listed in specific attributes
+        if rtype not in self._resource_attrs:
+            raise HTTPError(403, 'Requested resource type not valid.')
+
+        try:
+            resources = getattr(component, rtype)
+        except AttributeError:
+            raise HTTPError(404, 'Resource type not found')
+
+        # Handle template resources
+        if rtype == '_resources':
+            rtype = subpath[0]
+            subpath = subpath[1:]
+            if rtype in resources:
+                resources = resources[rtype]
+            else:
+                raise HTTPError(404, 'Resource type not found')
+
+        if isinstance(resources, dict):
+            resources = list(resources.values())
+
+        if subpath[0] == '':
+            subpath = tuple('/')+subpath[1:]
+        path = '/'.join(subpath)
+
+        # Important: May only access resources explicitly listed on the component
+        # Otherwise this potentially exposes all files to the web
+        if path not in resources and f'./{path}' not in resources:
+            raise HTTPError(403, 'Requested resource was not listed.')
+
+        if not path.startswith('/'):
+            path = pathlib.Path(module.__file__).parent / path
+        return path
+
+    def get_absolute_path(self, root, path):
+        return path
+
+    def validate_absolute_path(self, root, absolute_path):
+        if not os.path.exists(absolute_path):
+            raise HTTPError(404)
+        if not os.path.isfile(absolute_path):
+            raise HTTPError(403, "%s is not a file", self.path)
+        return absolute_path
+
+
 def modify_document(self, doc):
     from bokeh.io.doc import set_curdoc as bk_set_curdoc
     from ..config import config
@@ -505,6 +588,9 @@ def get_static_routes(static_dirs):
         patterns.append(
             (r"%s/(.*)" % slug, StaticFileHandler, {"path": path})
         )
+    patterns.append((
+        '/components/(.*)', ComponentResourceHandler, {}
+    ))
     return patterns
 
 

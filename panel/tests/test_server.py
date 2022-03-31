@@ -10,12 +10,13 @@ import requests
 
 from panel.config import config
 from panel.io import state
+from panel.io.resources import DIST_DIR
+from panel.io.server import get_server, serve, set_curdoc
 from panel.layout import Row
 from panel.models import HTML as BkHTML
 from panel.models.tabulator import TableEditEvent
 from panel.pane import Markdown
-from panel.io.resources import DIST_DIR
-from panel.io.server import get_server, serve, set_curdoc
+from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
 from panel.widgets import Button, Tabulator
 
@@ -110,7 +111,7 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
     template = BootstrapTemplate()
 
     port = 6004
-    serve({'/subpath/template': template}, port=6004, threaded=True, show=False, prefix='prefix')
+    serve({'/subpath/template': template}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
     time.sleep(1)
@@ -554,3 +555,125 @@ def test_server_thread_pool_onload(threads):
 
     # Checks whether onload callbacks were executed concurrently
     assert max(counts) >= 2
+
+
+class CustomBootstrapTemplate(BootstrapTemplate):
+
+    _css = './assets/custom.css'
+
+
+def test_server_template_custom_resources():
+    template = CustomBootstrapTemplate()
+
+    port = 6019
+    serve({'template': template}, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css")
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+
+
+def test_server_template_custom_resources_with_prefix():
+    template = CustomBootstrapTemplate()
+
+    port = 6020
+    serve({'template': template}, port=port, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/prefix/components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css")
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+
+
+def test_server_template_custom_resources_with_prefix_relative_url():
+    template = CustomBootstrapTemplate()
+
+    port = 6021
+    serve({'template': template}, port=port, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/prefix/template")
+    content = r.content.decode('utf-8')
+    assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/./assets/custom.css"' in content
+
+
+def test_server_template_custom_resources_with_subpath_and_prefix_relative_url():
+    template = CustomBootstrapTemplate()
+
+    port = 6022
+    serve({'/subpath/template': template}, port=port, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/prefix/subpath/template")
+    content = r.content.decode('utf-8')
+    assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/./assets/custom.css"' in content
+
+
+class CustomComponent(ReactiveHTML):
+
+    __css__ = ['./assets/custom.css']
+
+
+def test_server_component_custom_resources():
+    component = CustomComponent()
+
+    port = 6023
+    serve({'component': component}, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css")
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+
+
+def test_server_component_custom_resources_with_prefix():
+    component = CustomComponent()
+
+    port = 6024
+    serve({'component': component}, port=port, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/prefix/components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css")
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+
+
+def test_server_component_custom_resources_with_prefix_relative_url():
+    component = CustomComponent()
+
+    port = 6025
+    serve({'component': component}, port=port, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/prefix/component")
+    content = r.content.decode('utf-8')
+    assert 'href="components/panel.tests.test_server/CustomComponent/__css__/./assets/custom.css"' in content
+
+
+def test_server_component_custom_resources_with_subpath_and_prefix_relative_url():
+    component = CustomComponent()
+
+    port = 6026
+    serve({'/subpath/component': component}, port=port, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/prefix/subpath/component")
+    content = r.content.decode('utf-8')
+    assert 'href="../components/panel.tests.test_server/CustomComponent/__css__/./assets/custom.css"' in content
