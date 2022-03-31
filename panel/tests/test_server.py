@@ -18,7 +18,7 @@ from panel.models.tabulator import TableEditEvent
 from panel.pane import Markdown
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
-from panel.widgets import Button, Tabulator
+from panel.widgets import Button, Tabulator, Terminal
 
 
 def test_get_server(html_server_session):
@@ -677,3 +677,31 @@ def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(
     r = requests.get(f"http://localhost:{port}/prefix/subpath/component")
     content = r.content.decode('utf-8')
     assert 'href="../components/panel.tests.test_server/CustomComponent/__css__/./assets/custom.css"' in content
+
+
+def test_server_component_css_with_prefix_relative_url():
+    component = Terminal()
+
+    port = 6027
+    serve({'component': component}, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/component")
+    content = r.content.decode('utf-8')
+    assert 'href="static/extensions/panel/bundled/terminal/xterm@4.11.0/css/xterm.css' in content
+
+
+def test_server_component_css_with_subpath_and_prefix_relative_url():
+    component = Terminal()
+
+    port = 6028
+    serve({'/subpath/component': component}, port=port, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/prefix/subpath/component")
+    content = r.content.decode('utf-8')
+    assert 'href="../static/extensions/panel/bundled/terminal/xterm@4.11.0/css/xterm.css' in content
