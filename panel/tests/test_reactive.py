@@ -1,14 +1,37 @@
+import unittest.mock
+
 from functools import partial
 
 import bokeh.core.properties as bp
 import param
 import pytest
 
+from bokeh.document import Document
+from bokeh.io.doc import patch_curdoc
 from bokeh.models import Div
 from panel.layout import Tabs, WidgetBox
 from panel.reactive import Reactive, ReactiveHTML
 from panel.viewable import Viewable
 from panel.widgets import Checkbox, StaticText, TextInput, IntInput
+
+
+def test_reactive_default_title():
+    doc = ReactiveHTML().server_doc()
+
+    assert doc.title == 'Panel Application'
+
+
+def test_reactive_servable_title():
+    doc = Document()
+
+    session_context = unittest.mock.Mock()
+
+    with patch_curdoc(doc):
+        doc._session_context = lambda: session_context
+        ReactiveHTML().servable(title='A')
+        ReactiveHTML().servable(title='B')
+
+    assert doc.title == 'B'
 
 
 def test_link():

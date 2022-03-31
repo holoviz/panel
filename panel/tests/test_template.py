@@ -14,6 +14,8 @@ import pytest
 latest_param = pytest.mark.skipif(Version(param.__version__) < Version('1.10.0a4'),
                                   reason="requires param>=1.10.0a4")
 
+from bokeh.document import Document
+from bokeh.io.doc import patch_curdoc
 
 from panel.layout import GridSpec, Row
 from panel.pane import HoloViews, Markdown
@@ -139,6 +141,17 @@ def test_basic_template(template, document, comm):
     assert str(id(subtitle)) not in titems
     assert tvars['header'] == False
 
+
+def test_template_server_title():
+    tmpl = VanillaTemplate(title='Main title')
+
+    doc = Document()
+
+    with patch_curdoc(doc):
+        doc = tmpl.server_doc(title='Ignored title')
+
+    assert doc.title == 'Main title'
+    
 
 def test_react_template(document, comm):
     tmplt = ReactTemplate(title='BasicTemplate', header_background='blue', header_color='red')

@@ -142,12 +142,14 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         doc = doc or _curdoc()
         self._documents.append(doc)
-        title = title or 'Panel Application'
         if location and self.location:
             loc = self._add_location(doc, location)
             doc.on_session_destroyed(loc._server_destroy)
         doc.on_session_destroyed(self._server_destroy)
-        doc.title = title
+
+        if title or doc.title == 'Bokeh Application':
+            title = title or 'Panel Application'
+            doc.title = title
 
         # Initialize fake root. This is needed to ensure preprocessors
         # which assume that all models are owned by a single root can
@@ -507,7 +509,7 @@ class BasicTemplate(BaseTemplate):
         self.modal.param.trigger('objects')
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
-        title = title or self.title
+        title = self.title if self.title != self.param.title.default else title
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
         self._update_vars()
