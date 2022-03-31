@@ -279,7 +279,7 @@ class Resources(BkResources):
         for css_file in files:
             if (css_file.startswith(state.base_url) or css_file.startswith('static/')):
                 if css_file.startswith(state.base_url):
-                    css_file = js_file[len(state.base_url):]
+                    css_file = css_file[len(state.base_url):]
                 if state.rel_path:
                     css_file = f'{state.rel_path}/{css_file}'
             css_files.append(css_file)
