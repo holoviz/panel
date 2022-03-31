@@ -96,7 +96,6 @@ def resolve_custom_path(obj, path):
         mod = importlib.import_module(obj.__module__)
         return (Path(mod.__file__).parent / path).is_file()
     except Exception as e:
-        print(e)
         return None
 
 def loading_css():

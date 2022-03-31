@@ -41,7 +41,6 @@ from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.static_handler import StaticHandler
 
 # Tornado imports
-from tornado import httputil, iostream
 from tornado.ioloop import IOLoop
 from tornado.web import HTTPError, RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer

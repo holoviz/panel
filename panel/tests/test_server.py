@@ -576,7 +576,7 @@ def test_server_template_custom_resources():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-def test_server_template_static_resources_with_prefix():
+def test_server_template_custom_resources_with_prefix():
     template = CustomBootstrapTemplate()
 
     port = 6020
@@ -637,7 +637,7 @@ def test_server_component_custom_resources():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-def test_server_component_static_resources_with_prefix():
+def test_server_component_custom_resources_with_prefix():
     component = CustomComponent()
 
     port = 6024
