@@ -4,6 +4,7 @@ resources via the panel.config object.
 """
 import copy
 import glob
+import importlib
 import json
 import os
 
@@ -83,6 +84,20 @@ def set_resource_mode(mode):
         RESOURCE_MODE = old_mode
         _settings.resources.set_value(old_resources)
 
+def resolve_custom_path(obj, path):
+    """
+    Attempts to resolve a path relative to some component.
+    """
+    if not path:
+        return
+    elif path.startswith(os.path.sep):
+        return os.path.isfile(path)
+    try:
+        mod = importlib.import_module(obj.__module__)
+        return (Path(mod.__file__).parent / path).is_file()
+    except Exception as e:
+        print(e)
+        return None
 
 def loading_css():
     from ..config import config
@@ -95,7 +110,6 @@ def loading_css():
       background-size: auto calc(min(50%, {config.loading_max_height}px));
     }}
     """
-
 
 def bundled_files(model, file_type='javascript'):
     bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
@@ -110,7 +124,6 @@ def bundled_files(model, file_type='javascript'):
         else:
             files.append(url)
     return files
-
 
 def bundle_resources(roots, resources):
     from ..config import panel_extension as ext
@@ -179,12 +192,15 @@ class Resources(BkResources):
 
     def extra_resources(self, resources, resource_type):
         from ..reactive import ReactiveHTML
+        custom_path = "components"
+        if state.rel_path:
+            custom_path = f"{state.rel_path}/{custom_path}"
         for model in param.concrete_descendents(ReactiveHTML).values():
             if not (getattr(model, resource_type, None) and model._loaded()):
                 continue
             for resource in getattr(model, resource_type, []):
                 if not isurl(resource) and not resource.startswith('static/extensions'):
-                    resource = f'components/{model.__module__}/{model.__name__}/{resource_type}/{resource}'
+                    resource = f'{custom_path}/{model.__module__}/{model.__name__}/{resource_type}/{resource}'
                 if resource not in resources:
                     resources.append(resource)
 

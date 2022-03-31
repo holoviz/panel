@@ -110,7 +110,7 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
     template = BootstrapTemplate()
 
     port = 6004
-    serve({'/subpath/template': template}, port=6004, threaded=True, show=False, prefix='prefix')
+    serve({'/subpath/template': template}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
     time.sleep(1)
@@ -554,3 +554,67 @@ def test_server_thread_pool_onload(threads):
 
     # Checks whether onload callbacks were executed concurrently
     assert max(counts) >= 2
+
+
+class CustomBootstrapTemplate(BootstrapTemplate):
+
+    _css = './assets/custom.css'
+
+
+def test_server_template_custom_resources():
+    template = CustomBootstrapTemplate()
+
+    port = 6019
+    serve({'template': template}, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css")
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+
+
+def test_server_template_static_resources_with_prefix():
+    template = CustomBootstrapTemplate()
+
+    port = 6020
+    serve({'template': template}, port=port, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/prefix/components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css")
+    with open(pathlib.Path(__file__).parent / 'assets' / 'custom.css', encoding='utf-8') as f:
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+
+
+def test_server_template_custom_resources_with_prefix_relative_url():
+    template = CustomBootstrapTemplate()
+
+    port = 6021
+    serve({'template': template}, port=port, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/prefix/template")
+    content = r.content.decode('utf-8')
+    print(content)
+    assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/./assets/custom.css"' in content
+
+
+def test_server_template_custom_resources_with_subpath_and_prefix_relative_url():
+    template = CustomBootstrapTemplate()
+
+    port = 6022
+    serve({'/subpath/template': template}, port=port, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/prefix/subpath/template")
+    content = r.content.decode('utf-8')
+    print(content)
+    assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/./assets/custom.css"' in content
+
