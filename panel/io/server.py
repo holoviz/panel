@@ -352,7 +352,7 @@ class ComponentResourceHandler(StaticFileHandler):
             resources = list(resources.values())
 
         if subpath[0] == '':
-            subpath = tuple('/')+subpath[1:]
+            subpath = tuple('/')+tuple(subpath[1:])
         path = '/'.join(subpath)
 
         # Important: May only access resources explicitly listed on the component
