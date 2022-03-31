@@ -736,11 +736,10 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
 
     # Configure OAuth
     from ..config import config
-    if config.oauth_provider:
-        from ..auth import OAuthProvider
-        opts['auth_provider'] = OAuthProvider()
     if oauth_provider:
+        from ..auth import OAuthProvider
         config.oauth_provider = oauth_provider
+        opts['auth_provider'] = OAuthProvider()
     if oauth_key:
         config.oauth_key = oauth_key
     if oauth_extra_params:
