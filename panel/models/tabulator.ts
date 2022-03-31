@@ -1120,7 +1120,7 @@ export class DataTabulator extends HTMLBox {
       children:       [ Any,                     {} ],
       configuration:  [ Any,                     {} ],
       columns:        [ Array(Ref(TableColumn)), [] ],
-      download:       [ Boolean,               true ],
+      download:       [ Boolean,              false ],
       editable:       [ Boolean,               true ],
       expanded:       [ Array(Number),           [] ],
       filename:       [ String,         "table.csv" ],
