@@ -127,7 +127,7 @@ class DataTabulator(HTMLBox):
 
     sorters = List(Dict(String, String))
 
-    select_mode = Any(default=True)
+    select_mode = Any()
 
     selectable_rows = Nullable(List(Int))
 
