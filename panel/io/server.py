@@ -305,6 +305,11 @@ class ComponentResourceHandler(StaticFileHandler):
     /<endpoint>/<module>/<class>/<attribute>/<path>
     """
 
+    _resource_attrs = [
+        '__css__', '__javascript__', '__js_module__',  '_resources',
+        '_css', '_js', 'base_css', 'css'
+    ]
+
     def initialize(self, path=None, default_filename=None):
         self.root = path
         self.default_filename = default_filename
@@ -319,12 +324,17 @@ class ComponentResourceHandler(StaticFileHandler):
         module, cls, rtype, *subpath = parts
         try:
             module = importlib.import_module(module)
-        except Exception:
+        except ModuleNotFoundError:
             raise HTTPError(404, 'Module not found')
         try:
             component = getattr(module, cls)
         except AttributeError:
             raise HTTPError(404, 'Component not found')
+
+        # May only access resources listed in specific attributes
+        if rtype not in self._resource_attrs:
+            raise HTTPError(403, 'Requested resource type not valid.')
+
         try:
             resources = getattr(component, rtype)
         except AttributeError:
