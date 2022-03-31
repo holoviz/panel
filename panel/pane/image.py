@@ -3,6 +3,7 @@ Contains Image panes including renderers for PNG, SVG, GIF and JPG
 file types.
 """
 import base64
+
 from pathlib import PurePath
 
 from io import BytesIO
@@ -38,6 +39,8 @@ class FileBase(DivPaneBase):
         filetype = cls.filetype
         if hasattr(obj, '_repr_{}_'.format(filetype)):
             return True
+        if isinstance(obj, PurePath):
+            obj = str(obj.absolute())
         if isinstance(obj, str):
             if isfile(obj) and obj.endswith('.'+filetype):
                 return True
