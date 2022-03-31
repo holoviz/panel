@@ -211,8 +211,8 @@ setup_args = dict(
     data_files=[
         # like `jupyter serverextension enable --sys-prefix`
         (
-            "etc/jupyter/jupyter_notebook_config.d",
-            ["jupyter-config/jupyter_notebook_config.d/panel-client-jupyter.json"],
+            "etc/jupyter/jupyter_server_config.d",
+            ["jupyter-config/jupyter_server_config.d/panel-client-jupyter.json"],
         ),
     ],
     classifiers=[
