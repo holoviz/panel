@@ -275,10 +275,19 @@ class Resources(BkResources):
         files = super(Resources, self).css_files
         self.extra_resources(files, '__css__')
 
+        css_files = []
+        for css_file in files:
+            if (css_file.startswith(state.base_url) or css_file.startswith('static/')):
+                if css_file.startswith(state.base_url):
+                    css_file = js_file[len(state.base_url):]
+                if state.rel_path:
+                    css_file = f'{state.rel_path}/{css_file}'
+            css_files.append(css_file)
+
         for cssf in config.css_files:
             if os.path.isfile(cssf) or cssf in files:
                 continue
-            files.append(cssf)
+            css_files.append(cssf)
         if self.mode == 'server':
             if state.rel_path:
                 dist_dir = f'{state.rel_path}/{LOCAL_DIST}'
@@ -290,8 +299,8 @@ class Resources(BkResources):
         for cssf in glob.glob(str(DIST_DIR / 'css' / '*.css')):
             if self.mode == 'inline':
                 break
-            files.append(dist_dir + f'css/{os.path.basename(cssf)}')
-        return files
+            css_files.append(dist_dir + f'css/{os.path.basename(cssf)}')
+        return css_files
 
     @property
     def render_js(self):
