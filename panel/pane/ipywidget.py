@@ -24,6 +24,12 @@ class IPyWidget(PaneBase):
             import ipykernel
             from ipywidgets_bokeh.widget import IPyWidget
             from ..io.ipywidget import PanelKernel
+
+            # Patch font-awesome CSS
+            IPyWidget.__css__ = [
+                "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.css"
+            ]
+            
             if not isinstance(ipykernel.kernelbase.Kernel._instance, PanelKernel):
                 kernel = PanelKernel(document=doc, key=str(id(doc)).encode('utf-8'))
                 for w in obj.widgets.values():
