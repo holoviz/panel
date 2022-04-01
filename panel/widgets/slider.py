@@ -315,7 +315,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self.formatter = '%d'
         if self.value is None and None not in self.values and self.options:
             self.value = self.values[0]
-        elif self.value not in self.values:
+        elif self.value not in self.values and not (self.value is None or self.options):
             raise ValueError('Value %s not a valid option, '
                              'ensure that the supplied value '
                              'is one of the declared options.'
@@ -325,24 +325,31 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._slider = None
         self._composite = Column(self._text, self._slider)
         self._update_options()
-        self.param.watch(self._update_options, ['options', 'formatter'])
+        self.param.watch(self._update_options, ['options', 'formatter', 'name'])
         self.param.watch(self._update_value, 'value')
         self.param.watch(self._update_value, 'value_throttled')
         self.param.watch(self._update_style, self._style_params)
 
     def _update_options(self, *events):
         values, labels = self.values, self.labels
-        if self.value not in values:
+        if not self.options and self.value is None:
+            value = 0
+            label = (f'{self.name}: ' if self.name else '') + '<b>-</b>'
+        elif self.value not in values:
             value = 0
             self.value = values[0]
+            label = labels[value]
         else:
             value = values.index(self.value)
+            label = labels[value]
+        disabled = len(values) in (0, 1)
+        end = 1 if disabled else len(self.options)-1
 
         self._slider = IntSlider(
-            start=0, end=len(self.options)-1, value=value, tooltips=False,
+            start=0, end=end, value=value, tooltips=False,
             show_value=False, margin=(0, 5, 5, 5),
             orientation=self.orientation,
-            _supports_embed=False
+            _supports_embed=False, disabled=disabled
         )
         self._update_style()
         js_code = self._text_link.format(
@@ -351,7 +358,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._jslink = self._slider.jslink(self._text, code={'value': js_code})
         self._slider.param.watch(self._sync_value, 'value')
         self._slider.param.watch(self._sync_value, 'value_throttled')
-        self._text.value = labels[value]
+        self._text.value = label
         self._composite[1] = self._slider
 
     def _update_value(self, event):
