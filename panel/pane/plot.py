@@ -194,7 +194,7 @@ class Matplotlib(PNG, IPyWidget):
         kwargs = {k: v for k, v in props.items()
                   if k not in self._rerender_params+['interactive']}
         w, h = self.object.get_size_inches()
-        kwargs['width'], = self.width or int(self.dpi * w)
+        kwargs['width'] = self.width or int(self.dpi * w)
         kwargs['height'] = self.height or int(self.dpi * h)
         kwargs['sizing_mode'] = self.sizing_mode
         model = self._get_ipywidget(manager.canvas, doc, root, comm,
