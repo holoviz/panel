@@ -10,9 +10,6 @@ from ipykernel.comm import CommManager
 from tornado.ioloop import IOLoop
 from ipywidgets_bokeh.kernel import BokehKernel, SessionWebsocket, WebsocketStream
 
-from ..config import config
-from .resources import CSS_URLS
-
 
 class MessageSentBuffers(TypedDict):
     kind: Literal["MessageSent"]

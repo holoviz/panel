@@ -5,7 +5,6 @@ import param
 from pyviz_comms import JupyterComm
 
 from ..config import config
-from ..io.resources import CSS_URLS
 from ..models import IPyWidget as _BkIPyWidget
 from .base import PaneBase
 
