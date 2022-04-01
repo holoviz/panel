@@ -309,6 +309,7 @@ class BaseTable(ReactiveData, Widget):
             col_name = filt['field']
             op = filt['type']
             val = filt['value']
+            filt_def = getattr(self, 'header_filters', {}) or {}
             if col_name in df.columns:
                 col = df[col_name]
             elif col_name in self.indexes:
@@ -345,6 +346,18 @@ class BaseTable(ReactiveData, Widget):
                 filters.append(col.str.startsWith(val))
             elif op == 'ends':
                 filters.append(col.str.endsWith(val))
+            elif op == 'keywords':
+                match_all = filt_def.get(col_name, {}).get('matchAll', False)
+                sep = filt_def.get(col_name, {}).get('separator', ' ')
+                matches = val.lower().split(sep)
+                if match_all:
+                    for match in matches:
+                        filters.append(col.str.lower().str.contains(match))
+                else:
+                    filt = col.str.lower().str.contains(matches[0])
+                    for match in matches[1:]:
+                        filt |= col.str.lower().str.contains(match)
+                    filters.append(filt)
             elif op == 'regex':
                 raise ValueError("Regex filtering not supported.")
             else:
