@@ -18,7 +18,9 @@ class MessageSentBuffers(TypedDict):
 
 class MessageSentEventPatched(MessageSentEvent):
     """
-    Patches MessageSentEvent with fix for MessageSentBuffers
+    Patches MessageSentEvent with fix that ensures MessageSent event
+    does not define msg_data (which is an assumption in BokehJS
+    Document.apply_json_patch.) 
     """
 
     def generate(self, references, buffers):
@@ -37,18 +39,16 @@ class MessageSentEventPatched(MessageSentEvent):
             buffer_id = make_id()
             buf = (dict(id=buffer_id), self.msg_data)
             buffers.append(buf)
-
         return msg
 
 
 class PanelSessionWebsocket(SessionWebsocket):
 
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._document = kwargs.pop('document', None)
         self._queue = []
-        doc = self._document
-        doc.on_message("ipywidgets_bokeh", self.receive)
-        super(PanelSessionWebsocket, self).__init__(*args, **kwargs)
+        self._document.on_message("ipywidgets_bokeh", self.receive)
 
     def send(self, stream, msg_type, content=None, parent=None, ident=None, buffers=None, track=False, header=None, metadata=None):
         msg = self.msg(msg_type, content=content, parent=parent, header=header, metadata=metadata)
@@ -90,7 +90,7 @@ class PanelSessionWebsocket(SessionWebsocket):
 class PanelKernel(BokehKernel):
 
     def __init__(self, key=None, document=None):
-        super(BokehKernel, self).__init__()
+        super().__init__()
 
         self.session = PanelSessionWebsocket(document=document, parent=self, key=key)
         self.stream = self.iopub_socket = WebsocketStream(self.session)
