@@ -164,7 +164,7 @@ class Matplotlib(PNG, IPyWidget):
         self._managers = {}
 
     def _get_widget(self, fig):
-        import matplotlib
+        import matplotlib.backends
         old_backend = getattr(matplotlib.backends, 'backend', 'agg')
 
         from ipympl.backend_nbagg import FigureManager, Canvas, is_interactive
@@ -193,6 +193,10 @@ class Matplotlib(PNG, IPyWidget):
         props = self._process_param_change(self._init_params())
         kwargs = {k: v for k, v in props.items()
                   if k not in self._rerender_params+['interactive']}
+        w, h = self.object.get_size_inches()
+        kwargs['width'], = self.width or int(self.dpi * w)
+        kwargs['height'] = self.height or int(self.dpi * h)
+        kwargs['sizing_mode'] = self.sizing_mode
         model = self._get_ipywidget(manager.canvas, doc, root, comm,
                                     **kwargs)
         if root is None:
