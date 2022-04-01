@@ -1586,5 +1586,4 @@ def test_tabulator_cell_click_event():
         for row in range(len(data)):
             event = CellClickEvent(model=None, column=col, row=row)
             table._process_event(event)
-            import pdb; pdb.set_trace()
             assert values[-1] == (col, row, data[col].iloc[row])
