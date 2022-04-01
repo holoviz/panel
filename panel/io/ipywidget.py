@@ -1,18 +1,54 @@
 import logging
 
+import param
+
 from bokeh.document.events import MessageSentEvent
+from bokeh.document.json import MessageSent, Literal, TypedDict
+from bokeh.util.serialization import make_id
+
 from ipykernel.comm import CommManager
-from ipywidgets_bokeh.kernel import BokehKernel, SessionWebsocket, WebsocketStream
 from tornado.ioloop import IOLoop
+from ipywidgets_bokeh.kernel import BokehKernel, SessionWebsocket, WebsocketStream
+
+
+class MessageSentBuffers(TypedDict):
+    kind: Literal["MessageSent"]
+    msg_type: str
+
+
+class MessageSentEventPatched(MessageSentEvent):
+    """
+    Patches MessageSentEvent with fix for MessageSentBuffers
+    """
+
+    def generate(self, references, buffers):
+        if not isinstance(self.msg_data, bytes):
+            msg = MessageSent(
+                kind=self.kind,
+                msg_type=self.msg_type,
+                msg_data=self.msg_data
+            )
+        else:
+            msg = MessageSentBuffers(
+                kind=self.kind,
+                msg_type=self.msg_type
+            )
+            assert buffers is not None
+            buffer_id = make_id()
+            buf = (dict(id=buffer_id), self.msg_data)
+            buffers.append(buf)
+
+        return msg
 
 
 class PanelSessionWebsocket(SessionWebsocket):
 
     def __init__(self, *args, **kwargs):
-        self._queue = []
-        super().__init__(*args, **kwargs)
         self._document = kwargs.pop('document', None)
-        self._document.on_message("ipywidgets_bokeh", self.receive)
+        self._queue = []
+        doc = self._document
+        doc.on_message("ipywidgets_bokeh", self.receive)
+        super(PanelSessionWebsocket, self).__init__(*args, **kwargs)
 
     def send(self, stream, msg_type, content=None, parent=None, ident=None, buffers=None, track=False, header=None, metadata=None):
         msg = self.msg(msg_type, content=content, parent=parent, header=header, metadata=metadata)
@@ -37,17 +73,16 @@ class PanelSessionWebsocket(SessionWebsocket):
         else:
             data = packed.decode("utf-8")
 
-        doc = self._document
-        event = MessageSentEvent(doc, "ipywidgets_bokeh", data)
+        event = MessageSentEventPatched(self._document, "ipywidgets_bokeh", data)
         self._queue.append(event)
-        doc.add_next_tick_callback(self._dispatch)
+        self._document.add_next_tick_callback(self._dispatch)
 
     def _dispatch(self):
         try:
             for event in self._queue:
                 self._document.callbacks.trigger_on_change(event)
-        except Exception:
-            pass
+        except Exception as e:
+            param.main.warning(f'ipywidgets event dispatch failed with: {e}')
         finally:
             self._queue = []
 
