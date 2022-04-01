@@ -6,9 +6,10 @@ from collections import defaultdict
 import param
 
 from bokeh.models import (
-    Spacer as BkSpacer, Panel as BkPanel, Tabs as BkTabs
+    Spacer as BkSpacer, Panel as BkPanel
 )
 
+from ..models import Tabs as BkTabs
 from ..viewable import Layoutable
 from .base import NamedListPanel
 
@@ -178,6 +179,7 @@ class Tabs(NamedListPanel):
                     rendered[pref] = child = pane._get_model(doc, root, model, comm)
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
+
             panel = panels[pref] = BkPanel(
                 title=name, name=pane.name, child=child, closable=self.closable
             )
