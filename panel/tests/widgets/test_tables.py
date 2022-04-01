@@ -23,7 +23,7 @@ from bokeh.models.widgets.tables import (
 
 from panel.depends import bind
 from panel.io.server import serve
-from panel.models.tabulator import TableEditEvent
+from panel.models.tabulator import CellClickEvent, TableEditEvent
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
