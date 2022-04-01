@@ -975,7 +975,10 @@ class Tabulator(BaseTable):
             nrows = self.page_size
             event.row = (self.page-1)*nrows
         if event.column not in self.buttons:
-            event.value = self._processed[event.column].iloc[event.row]
+            if event.column not in self._processed.columns:
+                event.value = self._processed.index[event.row]
+            else:
+                event.value = self._processed[event.column].iloc[event.row]
         if event.event_name == 'table-edit':
             if self._old is not None:
                 event.old = self._old[event.column].iloc[event.row]
