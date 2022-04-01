@@ -97,17 +97,37 @@ class FileInput(Widget):
 
     def save(self, filename):
         """
-        Saves the uploaded FileInput data to a file or BytesIO object.
+        Saves the uploaded FileInput data object(s) to file(s) or
+        BytesIO object(s).
 
         Arguments
         ---------
-        filename (str): File path or file-like object
+        filename (str or list[str]): File path or file-like object
         """
-        if isinstance(filename, str):
-            with open(filename, 'wb') as f:
-                f.write(self.value)
-        else:
-            filename.write(self.value)
+        value = self.value
+        if isinstance(filename, list) and not isinstance(value, list):
+            raise TypeError(
+                "FileInput contains a list of files but only a single "
+                "filename was given. Please provide a list of filenames or "
+                "file-like objects."
+            )
+        elif not isinstance(filename, list) and isinstance(value, list):
+            raise TypeError(
+                "FileInput contains a single files but a list of "
+                "filenames was given. Please provide a single filename "
+                "or file-like object."
+            )
+        elif not isinstance(value, list):
+            value = [self.value]
+        elif not isinstance(filename, list):
+            filename = [filename]
+
+        for val, fn in zip(value, filename):
+            if isinstance(fn, str):
+                with open(fn, 'wb') as f:
+                    f.write(val)
+            else:
+                fn.write(val)
 
 
 class StaticText(Widget):
