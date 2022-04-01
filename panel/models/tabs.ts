@@ -1,9 +1,13 @@
 import {Grid, ContentBox, Sizeable} from "@bokehjs/core/layout"
-import {size, children} from "@bokehjs/core/dom"
-import {sum} from "@bokehjs/core/util/array"
+import {div, size, children} from "@bokehjs/core/dom"
+import {sum, remove_at} from "@bokehjs/core/util/array"
 import * as p from "@bokehjs/core/properties"
-
 import {Tabs as  BkTabs, TabsView as BkTabsView} from "@bokehjs/models/layouts/tabs"
+import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
+
+import * as tabs from "@bokehjs/styles/tabs.css"
+import * as buttons from "@bokehjs/styles/buttons.css"
+import * as menus from "@bokehjs/styles/menus.css"
 
 export class TabsView extends BkTabsView {
   model: Tabs
@@ -73,6 +77,57 @@ export class TabsView extends BkTabsView {
     this.layout = new Grid([header, ...panels])
     this.layout.set_sizing(this.box_sizing())
   }
+
+  override render(): void {
+    LayoutDOMView.prototype.render.call(this)
+
+    let {active} = this.model
+
+    const headers = this.model.tabs.map((tab, i) => {
+      const el = div({class: [tabs.tab, i == active ? tabs.active : null]}, tab.title)
+      el.addEventListener("click", (event) => {
+        if (this.model.disabled)
+          return
+        if (event.target == event.currentTarget)
+          this.change_active(i)
+      })
+      if (tab.closable) {
+        const close_el = div({class: tabs.close})
+        close_el.addEventListener("click", (event) => {
+          if (event.target == event.currentTarget) {
+            this.model.tabs = remove_at(this.model.tabs, i)
+
+            const ntabs = this.model.tabs.length
+            if (this.model.active > ntabs - 1)
+              this.model.active = ntabs - 1
+          }
+        })
+        el.appendChild(close_el)
+      }
+      if (this.model.disabled || tab.disabled) {
+        el.classList.add(tabs.disabled)
+      }
+      return el
+    })
+    this.headers_el = div({class: [tabs.headers]}, headers)
+    this.wrapper_el = div({class: tabs.headers_wrapper}, this.headers_el)
+
+    this.left_el = div({class: [buttons.btn, buttons.btn_default], disabled: ""}, div({class: [menus.caret, tabs.left]}))
+    this.right_el = div({class: [buttons.btn, buttons.btn_default]}, div({class: [menus.caret, tabs.right]}))
+
+    this.left_el.addEventListener("click", () => this.do_scroll("left"))
+    this.right_el.addEventListener("click", () => this.do_scroll("right"))
+
+    this.scroll_el = div({class: buttons.btn_group}, this.left_el, this.right_el)
+
+    const loc = this.model.tabs_location
+    this.header_el = div({class: [tabs.tabs_header, tabs[loc]]}, this.scroll_el, this.wrapper_el)
+    this.el.appendChild(this.header_el)
+
+    if (active === -1 && this.model.tabs.length)
+      this.model.active = 0
+  }
+
 }
 
 export namespace Tabs {
