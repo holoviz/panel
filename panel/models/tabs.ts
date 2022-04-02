@@ -1,5 +1,5 @@
 import {Grid, ContentBox, Sizeable} from "@bokehjs/core/layout"
-import {div, size, children} from "@bokehjs/core/dom"
+import {div, size, children, show, hide, display, undisplay, position, scroll_size} from "@bokehjs/core/dom"
 import {sum, remove_at} from "@bokehjs/core/util/array"
 import * as p from "@bokehjs/core/properties"
 import {Tabs as  BkTabs, TabsView as BkTabsView} from "@bokehjs/models/layouts/tabs"
@@ -78,6 +78,52 @@ export class TabsView extends BkTabsView {
     this.layout.set_sizing(this.box_sizing())
   }
 
+  override update_position(): void {
+    super.update_position()
+
+    this.header_el.style.position = "absolute" // XXX: do it in position()
+    position(this.header_el, this.header.bbox)
+
+    const loc = this.model.tabs_location
+    const vertical = loc == "above" || loc == "below"
+
+    const scroll_el_size = size(this.scroll_el)
+    const headers_el_size = scroll_size(this.headers_el)
+    if (vertical) {
+      const {width} = this.header.bbox
+      if (headers_el_size.width > width) {
+        this.wrapper_el.style.maxWidth = `${width - scroll_el_size.width}px`
+        display(this.scroll_el)
+        this.do_scroll(this.model.active)
+      } else {
+        this.wrapper_el.style.maxWidth = ""
+        undisplay(this.scroll_el)
+      }
+    } else {
+      const {height} = this.header.bbox
+      if (headers_el_size.height > height) {
+        this.wrapper_el.style.maxHeight = `${height - scroll_el_size.height}px`
+        display(this.scroll_el)
+        this.do_scroll(this.model.active)
+      } else {
+        this.wrapper_el.style.maxHeight = ""
+        undisplay(this.scroll_el)
+      }
+    }
+
+    const {child_views} = this
+    for (const child_view of child_views) {
+      hide(child_view.el)
+      child_view.el.style.removeProperty('zIndex');
+    }
+
+    const tab = child_views[this.model.active]
+    if (tab != null) {
+      show(tab.el)
+      tab.el.style.zIndex = '1'
+    }
+  }
+
   override render(): void {
     LayoutDOMView.prototype.render.call(this)
 
@@ -126,6 +172,25 @@ export class TabsView extends BkTabsView {
 
     if (active === -1 && this.model.tabs.length)
       this.model.active = 0
+  }
+
+  on_active_change(): void {
+    const i = this.model.active
+
+    const headers = children(this.headers_el)
+    for (const el of headers)
+      el.classList.remove(tabs.active)
+
+    headers[i].classList.add(tabs.active)
+
+    const {child_views} = this
+    for (const child_view of child_views) {
+      hide(child_view.el)
+      child_view.el.style.removeProperty('zIndex');
+    }
+
+    show(child_views[i].el)
+    child_views[i].el.style.zIndex = '1'
   }
 
 }
