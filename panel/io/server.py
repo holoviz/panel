@@ -51,7 +51,9 @@ from .document import init_doc, with_lock, unlocked # noqa
 from .logging import LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .profile import profile_ctx
 from .reload import autoreload_watcher
-from .resources import BASE_TEMPLATE, Resources, bundle_resources
+from .resources import (
+    BASE_TEMPLATE, COMPONENT_PATH, Resources, bundle_resources, component_rel_path
+)
 from .state import set_curdoc, state
 
 logger = logging.getLogger(__name__)
@@ -343,26 +345,27 @@ class ComponentResourceHandler(StaticFileHandler):
         if rtype == '_resources':
             rtype = subpath[0]
             subpath = subpath[1:]
-            if rtype in resources:
-                resources = resources[rtype]
-            else:
+            if rtype not in resources:
                 raise HTTPError(404, 'Resource type not found')
+            resources = resources[rtype]
+            rtype = f'_resources/{rtype}'
 
         if isinstance(resources, dict):
             resources = list(resources.values())
+        elif isinstance(resources, str):
+            resources = [resources]
+        resources = [
+            component_rel_path(component, resource) for resource in resources
+        ]
 
-        if subpath[0] == '':
-            subpath = tuple('/')+tuple(subpath[1:])
-        path = '/'.join(subpath)
+        rel_path = '/'.join(subpath)
 
         # Important: May only access resources explicitly listed on the component
         # Otherwise this potentially exposes all files to the web
-        if path not in resources and f'./{path}' not in resources:
+        if rel_path not in resources:
             raise HTTPError(403, 'Requested resource was not listed.')
 
-        if not path.startswith('/'):
-            path = pathlib.Path(module.__file__).parent / path
-        return path
+        return pathlib.Path(module.__file__).parent / rel_path
 
     def get_absolute_path(self, root, path):
         return path
@@ -589,7 +592,7 @@ def get_static_routes(static_dirs):
             (r"%s/(.*)" % slug, StaticFileHandler, {"path": path})
         )
     patterns.append((
-        '/components/(.*)', ComponentResourceHandler, {}
+        f'/{COMPONENT_PATH}(.*)', ComponentResourceHandler, {}
     ))
     return patterns
 

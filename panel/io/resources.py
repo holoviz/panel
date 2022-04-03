@@ -59,6 +59,7 @@ DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
 CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
 LOCAL_DIST = "static/extensions/panel/"
+COMPONENT_PATH = "components/"
 
 CSS_URLS = {
     'font-awesome': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css',
@@ -97,6 +98,32 @@ def resolve_custom_path(obj, path):
         return (Path(mod.__file__).parent / path).is_file()
     except Exception:
         return None
+
+def component_rel_path(component, path):
+    """
+    Computes the absolute to a component resource.
+    """
+    if not isinstance(component, type):
+        component = type(component)
+    mod = importlib.import_module(component.__module__)
+    rel_dir = Path(mod.__file__).parent
+    if os.path.isabs(path):
+        abs_path = path
+    else:
+        abs_path = os.path.abspath(os.path.join(rel_dir, path))
+    return os.path.relpath(abs_path, rel_dir)
+
+def component_resource_path(component, attr, path):
+    """
+    Generates a canonical URL for a component resource.
+    """
+    if not isinstance(component, type):
+        component = type(component)
+    component_path = COMPONENT_PATH
+    if state.rel_path:
+        component_path = f"{state.rel_path}/{component_path}"
+    rel_path = component_rel_path(component, path)
+    return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def loading_css():
     from ..config import config
@@ -191,15 +218,12 @@ class Resources(BkResources):
 
     def extra_resources(self, resources, resource_type):
         from ..reactive import ReactiveHTML
-        custom_path = "components"
-        if state.rel_path:
-            custom_path = f"{state.rel_path}/{custom_path}"
         for model in param.concrete_descendents(ReactiveHTML).values():
             if not (getattr(model, resource_type, None) and model._loaded()):
                 continue
             for resource in getattr(model, resource_type, []):
                 if not isurl(resource) and not resource.startswith('static/extensions'):
-                    resource = f'{custom_path}/{model.__module__}/{model.__name__}/{resource_type}/{resource}'
+                    resource = component_resource_path(model, resource_type, resource)
                 if resource not in resources:
                     resources.append(resource)
 
