@@ -1,6 +1,7 @@
 """
 Various general utilities used in the panel codebase.
 """
+import ast
 import base64
 import datetime as dt
 import inspect
@@ -15,11 +16,10 @@ from collections.abc import MutableSequence, MutableMapping
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
-from distutils.version import LooseVersion
 from functools import partial
 from html import escape # noqa
 from importlib import import_module
-from six import string_types
+from packaging.version import Version
 
 import bokeh
 import param
@@ -27,10 +27,7 @@ import numpy as np
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
-if sys.version_info.major > 2:
-    unicode = str
-
-bokeh_version = LooseVersion(bokeh.__version__)
+bokeh_version = Version(bokeh.__version__)
 
 
 def isfile(path):
@@ -41,8 +38,8 @@ def isfile(path):
         return False
 
 
-def isurl(obj, formats):
-    if not isinstance(obj, string_types):
+def isurl(obj, formats=None):
+    if not isinstance(obj, str):
         return False
     lower_string = obj.lower().split('?')[0].split('#')[0]
     return (
@@ -106,31 +103,12 @@ def indexOf(obj, objs):
     raise ValueError('%s not in list' % obj)
 
 
-def as_unicode(obj):
-    """
-    Safely casts any object to unicode including regular string
-    (i.e. bytes) types in python 2.
-    """
-    if sys.version_info.major < 3 and isinstance(obj, str):
-        obj = obj.decode('utf-8')
-    return unicode(obj)
-
-
 def param_name(name):
     """
     Removes the integer id from a Parameterized class name.
     """
     match = re.findall(r'\D+(\d{5,})', name)
     return name[:name.index(match[0])] if match else name
-
-
-def unicode_repr(obj):
-    """
-    Returns a repr without the unicode prefix.
-    """
-    if sys.version_info.major == 2 and isinstance(obj, unicode):
-        return repr(obj)[1:]
-    return repr(obj)
 
 
 def recursive_parameterized(parameterized, objects=None):
@@ -203,7 +181,7 @@ def param_reprs(parameterized, skip=None):
 
         if equal: continue
         elif v is None: continue
-        elif isinstance(v, string_types) and v == '': continue
+        elif isinstance(v, str) and v == '': continue
         elif isinstance(v, list) and v == []: continue
         elif isinstance(v, dict) and v == {}: continue
         elif (skip and p in skip) or (p == 'name' and v.startswith(cls)): continue
@@ -228,10 +206,7 @@ def get_method_owner(meth):
     the class owning the supplied classmethod.
     """
     if inspect.ismethod(meth):
-        if sys.version_info < (3,0):
-            return meth.im_class if meth.im_self is None else meth.im_self
-        else:
-            return meth.__self__
+        return meth.__self__
 
 
 def is_parameterized(obj):
@@ -274,6 +249,13 @@ def value_as_date(value):
     return value
 
 
+def datetime_as_utctimestamp(value):
+    """
+    Converts a datetime to a UTC timestamp used by Bokeh interally.
+    """
+    return value.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+
+
 def is_number(s):
     try:
         float(s)
@@ -294,7 +276,10 @@ def parse_query(query):
         elif is_number(v):
             query[k] = float(v)
         elif v.startswith('[') or v.startswith('{'):
-            query[k] = json.loads(v)
+            try:
+                query[k] = json.loads(v)
+            except Exception:
+                query[k] = ast.literal_eval(v)
         elif v.lower() in ("true", "false"):
             query[k] = v.lower() == "true"
     return query
@@ -330,7 +315,11 @@ class classproperty(object):
 
 
 def url_path(url):
-    return os.path.join(*os.path.join(*url.split('//')[1:]).split('/')[1:])
+    """
+    Strips the protocol and domain from a URL returning just the path.
+    """
+    subpaths = url.split('//')[1:]
+    return '/'.join('/'.join(subpaths).split('/')[1:])
 
 
 # This functionality should be contributed to param
@@ -409,3 +398,23 @@ def function_name(func):
     if hasattr(func, '__name__'):
         return func.__name__
     return str(func)
+
+
+_period_regex = re.compile(r'((?P<weeks>\d+?)w)?((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?\.?\d*?)s)?')
+
+def parse_timedelta(time_str):
+    parts = _period_regex.match(time_str)
+    if not parts:
+        return
+    parts = parts.groupdict()
+    time_params = {}
+    for (name, p) in parts.items():
+        if p:
+            time_params[name] = float(p)
+    return dt.timedelta(**time_params)
+
+
+def fullpath(path):
+    """Expanduser and then abspath for a given path
+    """
+    return os.path.abspath(os.path.expanduser(path))

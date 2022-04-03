@@ -12,7 +12,6 @@ from ..base import BasicTemplate, TemplateActions
 from ..theme import DefaultTheme, DarkTheme
 
 
-
 class MaterialTemplateActions(TemplateActions):
 
     _scripts = {
@@ -24,11 +23,11 @@ class MaterialTemplateActions(TemplateActions):
     }
 
 
-
 class MaterialTemplate(BasicTemplate):
     """
     MaterialTemplate is built on top of Material web components.
     """
+
     sidebar_width = param.Integer(370, doc="""
         The width of the sidebar in pixels. Default is 370.""")
 

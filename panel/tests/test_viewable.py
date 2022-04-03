@@ -6,7 +6,7 @@ from panel.interact import interactive
 from panel.pane import Str, panel
 from panel.viewable import Viewable, Viewer
 
-from .util import jb_available, py3_only
+from .util import jb_available
 
 all_viewables = [w for w in param.concrete_descendents(Viewable).values()
                if not w.__name__.startswith('_') and
@@ -20,7 +20,6 @@ def test_viewable_ipywidget():
     assert 'application/vnd.jupyter.widget-view+json' in data
 
 
-@py3_only
 @pytest.mark.parametrize('viewable', all_viewables)
 def test_viewable_signature(viewable):
     from inspect import Parameter, signature

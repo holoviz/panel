@@ -5,6 +5,7 @@ import pathlib
 
 import param
 
+from ...io.resources import CSS_URLS, JS_URLS
 from ...layout import Card
 from ..base import BasicTemplate
 from ..theme import DarkTheme, DefaultTheme
@@ -14,6 +15,7 @@ class BootstrapTemplate(BasicTemplate):
     """
     BootstrapTemplate
     """
+
     sidebar_width = param.Integer(350, doc="""
         The width of the sidebar in pixels. Default is 350.""")
 
@@ -31,11 +33,11 @@ class BootstrapTemplate(BasicTemplate):
 
     _resources = {
         'css': {
-            'bootstrap': "https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+            'bootstrap': CSS_URLS['bootstrap4']
         },
         'js': {
-            'jquery': "https://code.jquery.com/jquery-3.5.1.slim.min.js",
-            'bootstrap': "https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js",
+            'jquery': JS_URLS['jQuery'],
+            'bootstrap': JS_URLS['bootstrap4']
         }
     }
 

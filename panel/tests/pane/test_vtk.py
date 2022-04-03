@@ -1,5 +1,3 @@
-# coding: utf-8
-
 import os
 import base64
 from io import BytesIO
@@ -18,7 +16,6 @@ try:
 except Exception:
     pv = None
 
-from six import string_types
 from bokeh.models import ColorBar
 
 from panel.models.vtk import VTKJSPlot, VTKVolumePlot, VTKAxes, VTKSynchronizedPlot
@@ -138,7 +135,7 @@ def test_vtkjs_pane(document, comm, tmp_path):
     model = pane_from_url.get_root(document, comm=comm)
     assert isinstance(model, VTKJSPlot)
     assert pane_from_url._models[model.ref['id']][0] is model
-    assert isinstance(model.data, string_types)
+    assert isinstance(model.data, str)
 
     with BytesIO(base64.b64decode(model.data.encode())) as in_memory:
         with ZipFile(in_memory) as zf:

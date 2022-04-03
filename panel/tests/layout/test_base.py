@@ -11,13 +11,12 @@ from panel.layout.base import ListPanel, NamedListPanel
 from panel.widgets import Debugger
 from panel.param import Param
 from panel.pane import Bokeh
-from panel.tests.util import check_layoutable_properties, py3_only
+from panel.tests.util import check_layoutable_properties
 
 excluded = (NamedListPanel, Debugger)
 all_panels = [w for w in param.concrete_descendents(ListPanel).values()
                if not w.__name__.startswith('_') and not issubclass(w, excluded)]
 
-@py3_only
 @pytest.mark.parametrize('panel', all_panels)
 def test_layout_signature(panel):
     from inspect import signature

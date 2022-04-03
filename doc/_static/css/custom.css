@@ -55,3 +55,19 @@
 .fa-discourse:before {
     color: white;
 }
+
+button.toggle-button {
+    display: none;
+}
+
+.toggle-hidden:not(.admonition) {
+    height: 0;
+}
+
+.tag_hide-input {
+    margin-bottom: 0 !important;
+}
+
+.toggle-hidden + .cell_output {
+    margin-top: 0 !important;
+}

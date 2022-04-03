@@ -64,4 +64,3 @@ def test_all_view():
 if __name__.startswith("bokeh"):
     pn.extension(sizing_mode="stretch_width")
     test_all_view().servable()
-    print("served")

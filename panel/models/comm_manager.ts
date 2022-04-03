@@ -5,6 +5,10 @@ import {Model} from "@bokehjs/model"
 import {Message} from "@bokehjs/protocol/message"
 import {Receiver} from "@bokehjs/protocol/receiver"
 
+export const comm_settings: any = {
+  debounce: true
+}
+
 export class CommManagerView extends View {
   model: CommManager
 
@@ -67,7 +71,9 @@ export class CommManager extends Model {
       return
 
     this._event_buffer.push(event);
-    if ((!this._blocked || (Date.now() > this._timeout))) {
+    if (!comm_settings.debounce) {
+      this.process_events()
+    } else if ((!this._blocked || (Date.now() > this._timeout))) {
       setTimeout(() => this.process_events(), this.debounce);
       this._blocked = true;
       this._timeout = Date.now()+this.timeout;

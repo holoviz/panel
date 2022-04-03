@@ -12,7 +12,7 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..util import is_dataframe, lazy_load, string_types
+from ..util import is_dataframe, lazy_load
 from ..viewable import Layoutable
 from .base import PaneBase
 
@@ -88,6 +88,10 @@ class DeckGL(PaneBase):
     view_state = param.Dict(default={}, doc="""
         The current view state of the DeckGL plot.""")
 
+    throttle = param.Dict(default={'view': 200, 'hover': 200}, doc="""
+        Throttling timeout (in milliseconds) for view state and hover
+        events sent from the frontend.""")
+
     _rename = {
         'click_state': 'clickState', 'hover_state': 'hoverState',
         'view_state': 'viewState', 'tooltips': 'tooltip'
@@ -102,15 +106,15 @@ class DeckGL(PaneBase):
         if (hasattr(obj, "to_json") and hasattr(obj, "mapbox_key")
             and hasattr(obj, "deck_widget")):
             return 0.8
-        elif isinstance(obj, (dict, string_types)):
+        elif isinstance(obj, (dict, str)):
             return 0
         return False
 
     def _get_properties(self, layout=True):
         if self.object is None:
             data, mapbox_api_key, tooltip = {}, self.mapbox_api_key, self.tooltips
-        elif isinstance(self.object, (string_types, dict)):
-            if isinstance(self.object, string_types):
+        elif isinstance(self.object, (str, dict)):
+            if isinstance(self.object, str):
                 data = json.loads(self.object)
             else:
                 data = dict(self.object)

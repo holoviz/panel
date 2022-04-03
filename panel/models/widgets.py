@@ -8,7 +8,7 @@ from bokeh.core.properties import (
     Override, String, Tuple
 )
 from bokeh.models.layouts import HTMLBox
-from bokeh.models.widgets import InputWidget, Widget
+from bokeh.models.widgets import InputWidget, Select, Widget
 
 
 class Player(Widget):
@@ -45,6 +45,10 @@ class SingleSelect(InputWidget):
 
     '''
 
+    disabled_options = List(Any, default=[], help="""
+    List of options to disable.
+    """)
+
     options = List(Either(String, Tuple(String, String)), help="""
     Available selection options. Options may be provided either as a list of
     possible string values, or as a list of tuples, each of the form
@@ -67,6 +71,10 @@ class Audio(HTMLBox):
 
     paused = Bool(False, help="""Whether the audio is paused""")
 
+    muted = Bool(False, help="""Whether the audio is muted""")
+
+    autoplay = Bool(False, help="""Whether the audio is playing automatically""")
+
     time = Float(0, help="""
         The current time stamp of the audio playback""")
 
@@ -83,6 +91,10 @@ class Video(HTMLBox):
     loop = Bool(False, help="""Whether the video should loop""")
 
     paused = Bool(False, help="""Whether the video is paused""")
+
+    muted = Bool(False, help="""Whether the video is muted""")
+
+    autoplay = Bool(False, help="""Whether the video is playing automatically""")
 
     time = Float(0, help="""
         The current time stamp of the video playback""")
@@ -153,3 +165,13 @@ class FileDownload(InputWidget):
     """)
 
     title = Override(default='')
+
+
+class CustomSelect(Select):
+    ''' Custom widget that extends the base Bokeh Select
+    by adding a parameter to disable one or more options.
+
+    '''
+    disabled_options = List(Any, default=[], help="""
+    List of options to disable.
+    """)

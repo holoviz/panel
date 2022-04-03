@@ -6,7 +6,7 @@ from bokeh.core.properties import (
 )
 from bokeh.models import LayoutDOM, ColumnDataSource
 
-from ..io.resources import bundled_files
+from ..io.resources import JS_URLS, bundled_files
 from ..util import classproperty
 
 
@@ -17,8 +17,8 @@ class PlotlyPlot(LayoutDOM):
     """
 
     __javascript_raw__ = [
-        'https://code.jquery.com/jquery-3.5.1.min.js',
-        'https://cdn.plot.ly/plotly-latest.min.js'
+        JS_URLS['jQuery'],
+        'https://cdn.plot.ly/plotly-2.10.1.min.js'
     ]
 
     @classproperty
@@ -31,7 +31,7 @@ class PlotlyPlot(LayoutDOM):
 
     __js_require__ = {
         'paths': {
-            'plotly': 'https://cdn.plot.ly/plotly-latest.min'
+            'plotly': 'https://cdn.plot.ly/plotly-2.10.1.min'
         },
         'exports': {'plotly': 'Plotly'}
     }

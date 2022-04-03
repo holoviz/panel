@@ -23,6 +23,8 @@ from bokeh.io import curdoc as _curdoc
 from pyviz_comms import JupyterCommManager
 
 from .config import config, panel_extension
+from .io import serve
+from .io.document import init_doc
 from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
@@ -31,7 +33,6 @@ from .io.notebook import (
 )
 from .io.save import save
 from .io.state import state
-from .io.server import init_doc, serve
 from .util import escape, param_reprs
 
 
@@ -733,7 +734,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     def save(self, filename, title=None, resources=None, template=None,
              template_variables=None, embed=False, max_states=1000,
              max_opts=3, embed_json=False, json_prefix='', save_path='./',
-             load_path=None, progress=True, embed_states={}, **kwargs):
+             load_path=None, progress=True, embed_states={}, as_png=None,
+             **kwargs):
         """
         Saves Panel objects to file.
 
@@ -767,11 +769,14 @@ class Viewable(Renderable, Layoutable, ServableMixin):
           Whether to report progress
         embed_states: dict (default={})
           A dictionary specifying the widget values to embed for each widget
+        save_png: boolean (default=None)
+          To save as a .png. If None save_png will be true if filename is
+          string and ends with png.
         """
         return save(self, filename, title, resources, template,
                     template_variables, embed, max_states, max_opts,
                     embed_json, json_prefix, save_path, load_path,
-                    progress, embed_states, **kwargs)
+                    progress, embed_states, as_png, **kwargs)
 
     def server_doc(self, doc=None, title=None, location=True):
         """
@@ -794,8 +799,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
           The bokeh document the panel was attached to
         """
         doc = init_doc(doc)
-        title = title or 'Panel Application'
-        doc.title = title
+        if title or doc.title == 'Bokeh Application':
+            title = title or 'Panel Application'
+            doc.title = title
         model = self.get_root(doc)
         if hasattr(doc, 'on_session_destroyed'):
             doc.on_session_destroyed(self._server_destroy)
@@ -819,14 +825,24 @@ class Viewer(param.Parameterized):
         """
         raise NotImplementedError
 
+    def _create_view(self):
+        from .param import ParamMethod
+
+        if hasattr(self.__panel__, "_dinfo"):
+            view = ParamMethod(self.__panel__)
+        else:
+            view = self.__panel__()
+
+        return view
+
     def servable(self, title=None, location=True):
-        return self.__panel__().servable(title, location)
+        return self._create_view().servable(title, location)
 
     servable.__doc__ = ServableMixin.servable.__doc__
 
     def show(self, title=None, port=0, address=None, websocket_origin=None,
              threaded=False, verbose=True, open=True, location=True, **kwargs):
-        return self.__panel__().show(
+        return self._create_view().show(
             title, port, address, websocket_origin, threaded,
             verbose, open, location, **kwargs
         )
@@ -834,4 +850,4 @@ class Viewer(param.Parameterized):
     show.__doc__ = ServableMixin.show.__doc__
 
     def _repr_mimebundle_(self, include=None, exclude=None):
-        return self.__panel__()._repr_mimebundle_(include, exclude)
+        return self._create_view()._repr_mimebundle_(include, exclude)

@@ -286,6 +286,10 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   private _send_event(elname: string, attr: string, event: any) {
     let serialized = serializeEvent(event)
     serialized.type = attr
+    for (const key in serialized) {
+      if (serialized[key] === undefined)
+	delete serialized[key]
+    }
     this.model.trigger_event(new DOMEvent(elname, serialized))
   }
 
@@ -309,7 +313,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   invalidate_layout(): void {
     if (this._parent != null)
       this._parent.invalidate_layout()
-    if (this.root != this)
+    if (this.root != this && this.root.has_finished())
       super.invalidate_layout()
   }
 
@@ -385,7 +389,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       for (const callback of this.model.callbacks[elname]) {
         const [cb, method] = callback;
         let definition: string
-        htm = htm.replace('${'+method, '$--{'+method)
+        htm = htm.replaceAll('${'+method+'}', '$--{'+method+'}')
         if (method.startsWith('script(')) {
           const meth = (
             method
@@ -393,8 +397,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
               .replace('("', "_").replace('")', "")
               .replace('-', '_')
           )
-          const script_name = meth.replace("script_", "")
-          htm = htm.replace(method, meth)
+          const script_name = meth.replaceAll("script_", "")
+          htm = htm.replaceAll(method, meth)
           definition = `
           const ${meth} = (event) => {
             view._state.event = event

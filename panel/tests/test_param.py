@@ -11,7 +11,10 @@ from bokeh.models import (
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh, HTML
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, ParamFunction, JSONInit
-from panel.widgets import AutocompleteInput, LiteralInput, NumberInput, RangeSlider
+from panel.widgets import (
+    AutocompleteInput, DatePicker, DatetimeInput, LiteralInput,
+    NumberInput, RangeSlider
+)
 from panel.tests.util import mpl_available, mpl_figure
 
 
@@ -793,7 +796,6 @@ def test_switch_param_subobject(document, comm):
     assert subpanel._models == {}
 
 
-
 def test_expand_param_subobject_into_row(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
@@ -921,6 +923,24 @@ def test_param_js_callbacks(document, comm):
     assert 'button_click' in callbacks
     assert len(callbacks['button_click']) == 1
     assert code in callbacks['button_click'][0].code
+
+
+def test_param_calendar_date_mapping():
+
+    class Test(param.Parameterized):
+
+        a = param.CalendarDate()
+
+    assert isinstance(Param(Test().param).layout[1], DatePicker)
+
+
+def test_param_date_mapping():
+
+    class Test(param.Parameterized):
+
+        a = param.Date()
+
+    assert isinstance(Param(Test().param).layout[1], DatetimeInput)
 
 
 class View(param.Parameterized):
@@ -1263,3 +1283,29 @@ def test_set_widget_autocompleteinput(document, comm):
     test.param['choice'].objects = ['c', 'd']
     assert autocompleteinput.completions == ['c', 'd']
     assert autocompleteinput.value == ''
+
+def test_sorted():
+    class MyClass(param.Parameterized):
+        valueb = param.Integer(label="zzz")
+        valuez = param.String(label="aaa")
+        valuea = param.Integer(label="bbb")
+
+    my_class = MyClass()
+    _, input1, input2, input3 = Param(my_class, sort=True)
+    assert input1.name=="aaa"
+    assert input2.name=="bbb"
+    assert input3.name=="zzz"
+
+def test_sorted_func():
+    class MyClass(param.Parameterized):
+        valueb = param.Integer(label="bac")
+        valuez = param.String(label="acb")
+        valuea = param.Integer(label="cba")
+
+    my_class = MyClass()
+    def sort_func(x):
+        return x[1].label[::-1]
+    _, input1, input2, input3 = Param(my_class, sort=sort_func)
+    assert input1.name=="cba"
+    assert input2.name=="acb"
+    assert input3.name=="bac"

@@ -14,6 +14,7 @@ export class SingleSelectView extends InputWidgetView {
     super.connect_signals()
     this.connect(this.model.properties.value.change, () => this.render_selection())
     this.connect(this.model.properties.options.change, () => this.render())
+    this.connect(this.model.properties.disabled_options.change, () => this.render())
     this.connect(this.model.properties.name.change, () => this.render())
     this.connect(this.model.properties.title.change, () => this.render())
     this.connect(this.model.properties.size.change, () => this.render())
@@ -30,7 +31,9 @@ export class SingleSelectView extends InputWidgetView {
       else
         [value, _label] = opt
 
-      return option({value}, _label)
+      let disabled = this.model.disabled_options.includes(value)
+
+      return option({value: value, disabled: disabled}, _label)
     })
 
     this.select_el = select({
@@ -85,9 +88,10 @@ export namespace SingleSelect {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = InputWidget.Props & {
-    value: p.Property<string|null>
+    disabled_options: p.Property<string[]>
     options: p.Property<(string | [string, string])[]>
     size: p.Property<number>
+    value: p.Property<string|null>
   }
 }
 
@@ -107,9 +111,10 @@ export class SingleSelect extends InputWidget {
     this.prototype.default_view = SingleSelectView
 
     this.define<SingleSelect.Props>(({Any, Array, Int, String}) => ({
-      value:   [ String,     "" ],
-      options: [ Array(Any), [] ],
-      size:    [ Int,         4 ], // 4 is the HTML default
+      disabled_options: [ Array(String), [] ],
+      options:          [ Array(Any), []    ],
+      size:             [ Int,         4    ], // 4 is the HTML default
+      value:            [ String,     ""    ],
     }))
   }
 }

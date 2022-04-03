@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 sphinx-autopackage-script
 This script parses a directory tree looking for python modules and packages and
@@ -161,7 +160,7 @@ def recurse_tree(path, excludes, opts):
     """
     # use absolute path for root, as relative paths like '../../foo' cause
     # 'if "/." in root ...' to filter out *all* modules otherwise
-    path = os.path.abspath(path)
+    path = os.path.abspath(os.path.expanduser(path))
     # check if the base directory is a package and get is name
     if INIT in os.listdir(path):
         package_name = path.split(os.path.sep)[-1]

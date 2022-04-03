@@ -1,15 +1,18 @@
-from urllib.parse import urlparse
+from contextlib import contextmanager
+from urllib.parse import urlparse, urljoin 
 
 from bokeh.server.django.consumers import DocConsumer, AutoloadJsConsumer
 
+from ..util import edit_readonly
 from .resources import Resources
+from .state import state
 from .server import (
-    autoload_js_script, server_html_page_for_session
+    autoload_js_script, server_html_page_for_session, 
 )
 
 async def doc_handle(self, body):
     session = await self._get_session()
-    resources = Resources.from_bokeh(self.application.resources())
+    resources = Resources.from_bokeh(self.resources())
     page = server_html_page_for_session(
         session, resources=resources, title=session.document.title,
         template=session.document.template,
@@ -18,23 +21,50 @@ async def doc_handle(self, body):
     await self.send_response(200, page.encode(), headers=[(b"Content-Type", b"text/html")])
 
 
+@contextmanager
+def _session_prefix(consumer):
+    prefix = consumer.scope.get('root_path', '').replace(consumer.application_context._url, '')
+    if not prefix.endswith('/'):
+        prefix += '/'
+    base_url = urljoin('/', prefix)
+    rel_path = '/'.join(['..'] * consumer.application_context._url.strip('/').count('/'))
+    old_url, old_rel = state.base_url, state.rel_path
+
+    # Handle autoload.js absolute paths
+    abs_url = consumer.get_argument('bokeh-absolute-url', default=None)
+    if abs_url is not None:
+        app_path = consumer.get_argument('bokeh-app-path', default='')
+        rel_path = abs_url.replace(app_path, '')
+
+    with edit_readonly(state):
+        state.base_url = base_url
+        state.rel_path = rel_path
+    try:
+        yield
+    finally:
+        with edit_readonly(state):
+            state.base_url = old_url
+            state.rel_path = old_rel
+    
+
 async def autoload_handle(self, body):
-    session = await self._get_session()
+    with _session_prefix(self):
+        session = await self._get_session()
 
-    element_id = self.get_argument("bokeh-autoload-element", default=None)
-    if not element_id:
-        raise RuntimeError("No bokeh-autoload-element query parameter")
+        element_id = self.get_argument("bokeh-autoload-element", default=None)
+        if not element_id:
+            raise RuntimeError("No bokeh-autoload-element query parameter")
 
-    app_path = self.get_argument("bokeh-app-path", default="/")
-    absolute_url = self.get_argument("bokeh-absolute-url", default=None)
+        app_path = self.get_argument("bokeh-app-path", default="/")
+        absolute_url = self.get_argument("bokeh-absolute-url", default=None)
 
-    if absolute_url:
-        server_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(absolute_url))
-    else:
-        server_url = None
+        if absolute_url:
+            server_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(absolute_url))
+        else:
+            server_url = None
 
-    resources = self.resources(server_url)
-    js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
+        resources = self.resources(server_url)
+        js = autoload_js_script(session.document, resources, session.token, element_id, app_path, absolute_url)
 
     headers = [
         (b"Access-Control-Allow-Headers", b"*"),

@@ -64,18 +64,19 @@ class BooleanStatus(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename = {'color': None}
+    _rename = {}
 
-    _source_transforms = {'value': None}
+    _source_transforms = {'value': None, 'color': None}
 
     _widget_type = HTML
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         value = msg.pop('value', None)
-        if value is None:
+        color = msg.pop('color', None)
+        if value is None and not color:
             return msg
-        msg['css_classes'] = ['dot-filled', self.color] if value else ['dot']
+        msg['css_classes'] = ['dot-filled', self.color] if self.value else ['dot']
         return msg
 
 
@@ -96,19 +97,21 @@ class LoadingSpinner(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename = {'color': None, 'bgcolor': None}
+    _rename = {}
 
-    _source_transforms = {'value': None}
+    _source_transforms = {'value': None, 'color': None, 'bgcolor': None}
 
     _widget_type = HTML
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         value = msg.pop('value', None)
-        if value is None:
+        color = msg.pop('color', None)
+        bgcolor = msg.pop('bgcolor', None)
+        if value is None and not (color or bgcolor):
             return msg
         color_cls = f'{self.color}-{self.bgcolor}'
-        msg['css_classes'] = ['loader', 'spin', color_cls] if value else ['loader', self.bgcolor]
+        msg['css_classes'] = ['loader', 'spin', color_cls] if self.value else ['loader', self.bgcolor]
         return msg
 
 
@@ -714,8 +717,9 @@ class ptqdm(_tqdm):
     def display(self, msg=None, pos=None, bar_style=None):
         super().display(msg, pos)
         style = self._indicator.text_pane.style or {}
-        color = self.colour or 'black'
-        self._indicator.text_pane.style = dict(style, color=color)
+        if not "color" in style:
+            color = self.colour or 'black'
+            self._indicator.text_pane.style = dict(style, color=color)
         if self.total is not None and self.n is not None:
             self._indicator.max = int(self.total) # Can be numpy.int64
             self._indicator.value = int(self.n)

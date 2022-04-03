@@ -9,6 +9,7 @@ import inspect
 import os
 import sys
 
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from weakref import WeakKeyDictionary
 
@@ -96,6 +97,12 @@ class _config(_base_config):
     loading_color = param.Color(default='#c3c3c3', doc="""
         Color of the loading indicator.""")
 
+    loading_max_height = param.Integer(default=400, doc="""
+        Maximum height of the loading indicator.""")
+
+    notifications = param.Boolean(default=False, doc="""
+        Whether to enable notifications functionality.""")
+
     profiler = param.Selector(default=None, allow_None=True, objects=[
         'pyinstrument', 'snakeviz'], doc="""
         The profiler engine to enable.""")
@@ -124,6 +131,8 @@ class _config(_base_config):
 
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
+
+    _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
 
     _comms = param.ObjectSelector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
@@ -158,6 +167,11 @@ class _config(_base_config):
         default='WARNING', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of Panel loggers")
 
+    _nthreads = param.Integer(default=None, doc="""
+        When set to a non-None value a thread pool will be started.
+        Whenever an event arrives from the frontend it will be
+        dispatched to the thread pool to be processed.""")
+
     _oauth_provider = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
         Select between a list of authentification providers.""")
@@ -187,7 +201,12 @@ class _config(_base_config):
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
-    _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
+    _globals = [
+        'autoreload', 'comms', 'cookie_secret', 'nthreads',
+        'oauth_provider', 'oauth_expiry', 'oauth_key', 'oauth_secret',
+        'oauth_jwt_user', 'oauth_redirect_uri','oauth_encryption_key',
+        'oauth_extra_params'
+    ]
 
     _truthy = ['True', 'true', '1', True, 1]
 
@@ -197,15 +216,38 @@ class _config(_base_config):
         super().__init__(**params)
         self._validating = False
         for p in self.param:
-            if p.startswith('_'):
+            if p.startswith('_') and p[1:] not in self._globals:
                 setattr(self, p+'_', None)
         if self.log_level:
             panel_log_handler.setLevel(self.log_level)
 
+    @param.depends('_nthreads', watch=True, on_init=True)
+    def _set_thread_pool(self):
+        from .io.state import state
+        if self.nthreads is None:
+            if state._thread_pool is not None:
+                state._thread_pool.shutdown(wait=False)
+            state._thread_pool = None
+            return
+        if state._thread_pool:
+            raise RuntimeError("Thread pool already running")
+        threads = self.nthreads if self.nthreads else None
+        state._thread_pool = ThreadPoolExecutor(max_workers=threads)
+
+    @param.depends('notifications', watch=True)
+    def _enable_notifications(self):
+        from .io.notifications import NotificationArea
+        from .io.state import state
+        if not state.curdoc:
+            state._notification = NotificationArea()
+
     @contextmanager
     def set(self, **kwargs):
         values = [(k, v) for k, v in self.param.values().items() if k != 'name']
-        overrides = [(k, getattr(self, k+'_')) for k in self.param if k.startswith('_')]
+        overrides = [
+            (k, getattr(self, k+'_')) for k in self.param
+            if k.startswith('_') and k[1:] not in self._globals
+        ]
         for k, v in kwargs.items():
             setattr(self, k, v)
         try:
@@ -220,7 +262,9 @@ class _config(_base_config):
         if not getattr(self, 'initialized', False) or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
             return super().__setattr__(attr, value)
         value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
-        if state.curdoc is not None:
+        if attr in self._globals:
+            super().__setattr__(attr if attr in self.param else f'_{attr}', value)
+        elif state.curdoc is not None:
             if attr in self.param:
                 validate_config(self, attr, value)
             elif f'_{attr}' in self.param:
@@ -243,6 +287,7 @@ class _config(_base_config):
     def __getattribute__(self, attr):
         from .io.state import state
         init = super().__getattribute__('initialized')
+        global_params = super().__getattribute__('_globals')
         if init and not attr.startswith('__'):
             params = super().__getattribute__('param')
         else:
@@ -254,7 +299,9 @@ class _config(_base_config):
             state.curdoc and attr not in session_config[state.curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
-        if state.curdoc and state.curdoc in session_config and attr in session_config[state.curdoc]:
+        if attr in global_params:
+            return super().__getattribute__(attr)
+        elif state.curdoc and state.curdoc in session_config and attr in session_config[state.curdoc]:
             return session_config[state.curdoc][attr]
         elif f'_{attr}' in params and getattr(self, f'_{attr}_') is not None:
             return super().__getattribute__(f'_{attr}_')
@@ -285,7 +332,7 @@ class _config(_base_config):
 
     @property
     def comms(self):
-        return os.environ.get('PANEL_COMMS', _config._comms)
+        return os.environ.get('PANEL_COMMS', self._comms)
 
     @property
     def embed_json(self):
@@ -313,48 +360,53 @@ class _config(_base_config):
         return log_level.upper() if log_level else None
 
     @property
+    def nthreads(self):
+        nthreads = os.environ.get('PANEL_NUM_THREADS', self._nthreads)
+        return None if nthreads is None else int(nthreads) 
+
+    @property
     def oauth_provider(self):
-        provider = os.environ.get('PANEL_OAUTH_PROVIDER', _config._oauth_provider)
+        provider = os.environ.get('PANEL_OAUTH_PROVIDER', self._oauth_provider)
         return provider.lower() if provider else None
 
     @property
     def oauth_expiry(self):
-        provider = os.environ.get('PANEL_OAUTH_EXPIRY', _config._oauth_expiry)
+        provider = os.environ.get('PANEL_OAUTH_EXPIRY', self._oauth_expiry)
         return float(provider)
 
     @property
     def oauth_key(self):
-        return os.environ.get('PANEL_OAUTH_KEY', _config._oauth_key)
+        return os.environ.get('PANEL_OAUTH_KEY', self._oauth_key)
 
     @property
     def cookie_secret(self):
         return os.environ.get(
             'PANEL_COOKIE_SECRET',
-            os.environ.get('BOKEH_COOKIE_SECRET', _config._cookie_secret)
+            os.environ.get('BOKEH_COOKIE_SECRET', self._cookie_secret)
         )
 
     @property
     def oauth_secret(self):
-        return os.environ.get('PANEL_OAUTH_SECRET', _config._oauth_secret)
+        return os.environ.get('PANEL_OAUTH_SECRET', self._oauth_secret)
 
     @property
     def oauth_redirect_uri(self):
-        return os.environ.get('PANEL_OAUTH_REDIRECT_URI', _config._oauth_redirect_uri)
+        return os.environ.get('PANEL_OAUTH_REDIRECT_URI', self._oauth_redirect_uri)
 
     @property
     def oauth_jwt_user(self):
-        return os.environ.get('PANEL_OAUTH_JWT_USER', _config._oauth_jwt_user)
+        return os.environ.get('PANEL_OAUTH_JWT_USER', self._oauth_jwt_user)
 
     @property
     def oauth_encryption_key(self):
-        return os.environ.get('PANEL_OAUTH_ENCRYPTION', _config._oauth_encryption_key)
+        return os.environ.get('PANEL_OAUTH_ENCRYPTION', self._oauth_encryption_key)
 
     @property
     def oauth_extra_params(self):
         if 'PANEL_OAUTH_EXTRA_PARAMS' in os.environ:
             return ast.literal_eval(os.environ['PANEL_OAUTH_EXTRA_PARAMS'])
         else:
-            return _config._oauth_extra_params
+            return self._oauth_extra_params
 
 
 if hasattr(_config.param, 'objects'):
@@ -387,8 +439,8 @@ class panel_extension(_pyviz_extension):
         'perspective': 'panel.models.perspective',
         'terminal': 'panel.models.terminal',
         'tabulator': 'panel.models.tabulator',
-        'gridstack': 'panel.layout.gridstack',
-        'texteditor': 'panel.models.quill'
+        'texteditor': 'panel.models.quill',
+        'jsoneditor': 'panel.models.json_editor'
     }
 
     # Check whether these are loaded before rendering (if any item
@@ -410,13 +462,18 @@ class panel_extension(_pyviz_extension):
     _loaded_extensions = []
 
     def __call__(self, *args, **params):
-        # Abort if IPython not found
+        from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
+        reactive_exts = {
+            v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
+        }
         for arg in args:
-            if arg not in self._imports:
+            if arg in self._imports:
+                __import__(self._imports[arg])
+            elif arg in reactive_exts:
+                ReactiveHTMLMetaclass._loaded_extensions.add(arg)
+            else:
                 self.param.warning('%s extension not recognized and '
                                    'will be skipped.' % arg)
-            else:
-                __import__(self._imports[arg])
 
         for k, v in params.items():
             if k in ['raw_css', 'css_files']:
@@ -430,7 +487,7 @@ class panel_extension(_pyviz_extension):
             else:
                 setattr(config, k, v)
 
-        if config.apply_signatures and sys.version_info.major >= 3:
+        if config.apply_signatures:
             self._apply_signatures()
 
         loaded = self._loaded
@@ -456,6 +513,7 @@ class panel_extension(_pyviz_extension):
             else:
                 hv.Store.current_backend = backend
 
+        # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except Exception:
@@ -484,16 +542,16 @@ class panel_extension(_pyviz_extension):
             # In embedded mode the ipywidgets_bokeh model must be loaded
             __import__(self._imports['ipywidgets'])
 
-        nb_load = False
+        nb_loaded = getattr(self, '_repeat_execution_in_cell', False)
         if 'holoviews' in sys.modules:
             if getattr(hv.extension, '_loaded', False):
                 return
             with param.logging_level('ERROR'):
                 hv.plotting.Renderer.load_nb(config.inline)
                 if hasattr(hv.plotting.Renderer, '_render_with_panel'):
-                    nb_load = True
+                    nb_loaded = True
 
-        if not nb_load and hasattr(ip, 'kernel'):
+        if not nb_loaded and hasattr(ip, 'kernel'):
             load_notebook(config.inline)
         panel_extension._loaded = True
 
@@ -511,6 +569,12 @@ class panel_extension(_pyviz_extension):
         # Check if we're running in VSCode
         if "VSCODE_PID" in os.environ:
             config.comms = "vscode"
+
+        if "pyodide" in sys.modules:
+            config.comms = "ipywidgets"
+
+        if config.notifications:
+            display(state.notifications) # noqa
 
     def _apply_signatures(self):
         from inspect import Parameter, Signature

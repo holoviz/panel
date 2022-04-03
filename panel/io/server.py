@@ -2,8 +2,9 @@
 Utilities for creating bokeh Server instances.
 """
 import datetime as dt
+import gc
 import html
-import inspect
+import importlib
 import logging
 import os
 import pathlib
@@ -29,31 +30,31 @@ from bokeh.application.handlers.code import CodeHandler, _monkeypatch_io, patch_
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.core.templates import AUTOLOAD_JS
-from bokeh.document.events import ModelChangedEvent
 from bokeh.embed.bundle import Script
 from bokeh.embed.elements import html_page_for_render_items, script_for_render_items
 from bokeh.embed.util import RenderItem
 from bokeh.io import curdoc
 from bokeh.server.server import Server
-from bokeh.server.urls import per_app_patterns, toplevel_patterns
+from bokeh.server.urls import per_app_patterns
 from bokeh.server.views.autoload_js_handler import AutoloadJsHandler as BkAutoloadJsHandler
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
-from bokeh.server.views.root_handler import RootHandler as BkRootHandler
 from bokeh.server.views.static_handler import StaticHandler
 
 # Tornado imports
 from tornado.ioloop import IOLoop
-from tornado.websocket import WebSocketHandler
-from tornado.web import RequestHandler, StaticFileHandler, authenticated
+from tornado.web import HTTPError, RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
-from ..util import edit_readonly
+from ..util import edit_readonly, fullpath
+from .document import init_doc, with_lock, unlocked # noqa
 from .logging import LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .profile import profile_ctx
 from .reload import autoreload_watcher
-from .resources import BASE_TEMPLATE, Resources, bundle_resources
-from .state import state
+from .resources import (
+    BASE_TEMPLATE, COMPONENT_PATH, Resources, bundle_resources, component_rel_path
+)
+from .state import set_curdoc, state
 
 logger = logging.getLogger(__name__)
 
@@ -105,13 +106,13 @@ def async_execute(func):
         unlock = not func.func.lock
     else:
         unlock = not getattr(func, 'lock', False)
-    if unlock:
-        @wraps(func)
-        async def wrapper(*args, **kw):
+    curdoc = state.curdoc
+    @wraps(func)
+    async def wrapper(*args, **kw):
+        with set_curdoc(curdoc):
             return await func(*args, **kw)
+    if unlock:
         wrapper.nolock = True
-    else:
-        wrapper = func
     state.curdoc.add_next_tick_callback(wrapper)
 
 param.parameterized.async_executor = async_execute
@@ -155,18 +156,40 @@ def server_html_page_for_session(session, resources, title, template=BASE_TEMPLA
     if template_variables is None:
         template_variables = {}
 
-    bundle = bundle_resources(resources)
+    bundle = bundle_resources(session.document.roots, resources)
     return html_page_for_render_items(bundle, {}, [render_item], title,
         template=template, template_variables=template_variables)
 
-def autoload_js_script(resources, token, element_id, app_path, absolute_url):
+def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url):
     resources = Resources.from_bokeh(resources)
-    bundle = bundle_resources(resources)
+    bundle = bundle_resources(doc.roots, resources)
 
     render_items = [RenderItem(token=token, elementid=element_id, use_for_title=False)]
     bundle.add(Script(script_for_render_items({}, render_items, app_path=app_path, absolute_url=absolute_url)))
 
     return AUTOLOAD_JS.render(bundle=bundle, elementid=element_id)
+
+
+def destroy_document(self, session):
+    """
+    Override for Document.destroy() without calling gc.collect directly.
+    The gc.collect() call is scheduled as a task, ensuring that when
+    multiple documents are destroyed in quick succession we do not
+    schedule excessive garbage collection.
+    """
+    self.remove_on_change(session)
+    del self._roots
+    del self._theme
+    del self._template
+    self._session_context = None
+
+    self.callbacks.destroy()
+    self.models.destroy()
+    self.modules.destroy()
+
+    at = dt.datetime.now() + dt.timedelta(seconds=5)
+    state.schedule_task('gc.collect', gc.collect, at=at)
+
 
 # Patch Application to handle session callbacks
 class Application(BkApplication):
@@ -199,7 +222,7 @@ class SessionPrefixHandler:
         # Handle autoload.js absolute paths
         abs_url = self.get_argument('bokeh-absolute-url', default=None)
         if abs_url is not None:
-            app_path = self.get_argument('bokeh-app-path', default=None)
+            app_path = self.get_argument('bokeh-app-path', default='')
             rel_path = abs_url.replace(app_path, '')
 
         with edit_readonly(state):
@@ -260,7 +283,10 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
             state.curdoc = session.document
             try:
                 resources = Resources.from_bokeh(self.application.resources(server_url))
-                js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
+                js = autoload_js_script(
+                    session.document, resources, session.token, element_id,
+                    app_path, absolute_url
+                )
             finally:
                 state.curdoc = None
 
@@ -269,18 +295,91 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
 
 per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
 
-class RootHandler(BkRootHandler):
 
-    @authenticated
-    async def get(self, *args, **kwargs):
-        if self.index and not self.index.endswith('.html'):
-            prefix = "" if self.prefix is None else self.prefix
-            redirect_to = prefix + '.'.join(self.index.split('.')[:-1])
-            self.redirect(redirect_to)
-        await super().get(*args, **kwargs)
+class ComponentResourceHandler(StaticFileHandler):
+    """
+    A handler that serves local resources relative to a Python module.
+    The handler resolves a specific Panel component by module reference
+    and name, then resolves an attribute on that component to check
+    if it contains the requested resource path.
 
-toplevel_patterns[0] = (r'/?', RootHandler)
-bokeh.server.tornado.RootHandler = RootHandler
+    /<endpoint>/<module>/<class>/<attribute>/<path>
+    """
+
+    _resource_attrs = [
+        '__css__', '__javascript__', '__js_module__',  '_resources',
+        '_css', '_js', 'base_css', 'css'
+    ]
+
+    def initialize(self, path=None, default_filename=None):
+        self.root = path
+        self.default_filename = default_filename
+
+    def parse_url_path(self, path):
+        """
+        Resolves the resource the URL pattern refers to.
+        """
+        parts = path.split('/')
+        if len(parts) < 4:
+            raise HTTPError(400, 'Malformed URL')
+        module, cls, rtype, *subpath = parts
+        try:
+            module = importlib.import_module(module)
+        except ModuleNotFoundError:
+            raise HTTPError(404, 'Module not found')
+        try:
+            component = getattr(module, cls)
+        except AttributeError:
+            raise HTTPError(404, 'Component not found')
+
+        # May only access resources listed in specific attributes
+        if rtype not in self._resource_attrs:
+            raise HTTPError(403, 'Requested resource type not valid.')
+
+        try:
+            resources = getattr(component, rtype)
+        except AttributeError:
+            raise HTTPError(404, 'Resource type not found')
+
+        # Handle template resources
+        if rtype == '_resources':
+            rtype = subpath[0]
+            subpath = subpath[1:]
+            if rtype not in resources:
+                raise HTTPError(404, 'Resource type not found')
+            resources = resources[rtype]
+            rtype = f'_resources/{rtype}'
+
+        if isinstance(resources, dict):
+            resources = list(resources.values())
+        elif isinstance(resources, str):
+            resources = [resources]
+        resources = [
+            component_rel_path(component, resource).replace(os.path.sep, '/')
+            for resource in resources
+        ]
+
+        rel_path = '/'.join(subpath)
+
+        print(rel_path, resources)
+
+        # Important: May only access resources explicitly listed on the component
+        # Otherwise this potentially exposes all files to the web
+        if rel_path not in resources:
+            raise HTTPError(403, 'Requested resource was not listed.')
+
+        return pathlib.Path(module.__file__).parent / rel_path
+
+    def get_absolute_path(self, root, path):
+        return path
+
+    def validate_absolute_path(self, root, absolute_path):
+        if not os.path.exists(absolute_path):
+            raise HTTPError(404)
+        if not os.path.isfile(absolute_path):
+            raise HTTPError(403, "%s is not a file", self.path)
+        return absolute_path
+
 
 def modify_document(self, doc):
     from bokeh.io.doc import set_curdoc as bk_set_curdoc
@@ -362,7 +461,9 @@ def modify_document(self, doc):
 
         def _log_session_destroyed(session_context):
             logger.info(LOG_SESSION_DESTROYED, id(doc))
+
         doc.on_session_destroyed(_log_session_destroyed)
+        doc.destroy = partial(destroy_document, doc)
     finally:
         state._launching.remove(doc)
         if config.profiler:
@@ -392,100 +493,6 @@ bokeh.server.tornado.create_static_handler = create_static_handler
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
-
-def init_doc(doc):
-    doc = doc or curdoc()
-    if not doc.session_context:
-        return doc
-
-    session_id = doc.session_context.id
-    sessions = state.session_info['sessions']
-    if session_id not in sessions:
-        return doc
-
-    sessions[session_id].update({
-        'started': dt.datetime.now().timestamp()
-    })
-    doc.on_event('document_ready', state._init_session)
-    return doc
-
-@contextmanager
-def set_curdoc(doc):
-    state.curdoc = doc
-    yield
-    state.curdoc = None
-
-def with_lock(func):
-    """
-    Wrap a callback function to execute with a lock allowing the
-    function to modify bokeh models directly.
-
-    Arguments
-    ---------
-    func: callable
-      The callable to wrap
-
-    Returns
-    -------
-    wrapper: callable
-      Function wrapped to execute without a Document lock.
-    """
-    if inspect.iscoroutinefunction(func):
-        @wraps(func)
-        async def wrapper(*args, **kw):
-            return await func(*args, **kw)
-    else:
-        @wraps(func)
-        def wrapper(*args, **kw):
-            return func(*args, **kw)
-    wrapper.lock = True
-    return wrapper
-
-
-@contextmanager
-def unlocked():
-    """
-    Context manager which unlocks a Document and dispatches
-    ModelChangedEvents triggered in the context body to all sockets
-    on current sessions.
-    """
-    curdoc = state.curdoc
-    if curdoc is None or curdoc.session_context is None or curdoc.session_context.session is None:
-        yield
-        return
-    connections = curdoc.session_context.session._subscribed_connections
-
-    hold = curdoc.callbacks.hold_value
-    if hold:
-        old_events = list(curdoc.callbacks._held_events)
-    else:
-        old_events = []
-        curdoc.hold()
-    try:
-        yield
-        events = []
-        for conn in connections:
-            socket = conn._socket
-            if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
-                state._locks.add(socket)
-            locked = socket in state._locks
-            for event in curdoc.callbacks._held_events:
-                if (isinstance(event, ModelChangedEvent) and event not in old_events
-                    and hasattr(socket, 'write_message') and not locked):
-                    msg = conn.protocol.create('PATCH-DOC', [event])
-                    WebSocketHandler.write_message(socket, msg.header_json)
-                    WebSocketHandler.write_message(socket, msg.metadata_json)
-                    WebSocketHandler.write_message(socket, msg.content_json)
-                    for header, payload in msg._buffers:
-                        WebSocketHandler.write_message(socket, header)
-                        WebSocketHandler.write_message(socket, payload, binary=True)
-                elif event not in events:
-                    events.append(event)
-        curdoc.callbacks._held_events = events
-    finally:
-        if not hold:
-            curdoc.unhold()
-
 
 def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
           show=True, start=True, title=None, verbose=True, location=True,
@@ -581,12 +588,15 @@ def get_static_routes(static_dirs):
         if slug == '/static':
             raise ValueError("Static file route may not use /static "
                              "this is reserved for internal use.")
-        path = os.path.abspath(path)
+        path = fullpath(path)
         if not os.path.isdir(path):
             raise ValueError("Cannot serve non-existent path %s" % path)
         patterns.append(
             (r"%s/(.*)" % slug, StaticFileHandler, {"path": path})
         )
+    patterns.append((
+        f'/{COMPONENT_PATH}(.*)', ComponentResourceHandler, {}
+    ))
     return patterns
 
 
@@ -694,6 +704,8 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
             if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb"))
                 and os.path.isfile(app)):
                 apps[slug] = build_single_handler_application(app)
+            elif isinstance(app, Application):
+                apps[slug] = app
             else:
                 handler = FunctionHandler(partial(_eval_panel, app, server_id, title_, location))
                 apps[slug] = Application(handler)
@@ -730,11 +742,10 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
 
     # Configure OAuth
     from ..config import config
-    if config.oauth_provider:
-        from ..auth import OAuthProvider
-        opts['auth_provider'] = OAuthProvider()
     if oauth_provider:
+        from ..auth import OAuthProvider
         config.oauth_provider = oauth_provider
+        opts['auth_provider'] = OAuthProvider()
     if oauth_key:
         config.oauth_key = oauth_key
     if oauth_extra_params:
@@ -795,7 +806,10 @@ class StoppableThread(threading.Thread):
             bokeh_server = target(*args, **kwargs)
         finally:
             if isinstance(bokeh_server, Server):
-                bokeh_server.stop()
+                try:
+                    bokeh_server.stop()
+                except Exception:
+                    pass
             if hasattr(self, '_target'):
                 del self._target, self._args, self._kwargs
             else:

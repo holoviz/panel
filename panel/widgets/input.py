@@ -7,8 +7,8 @@ import json
 
 from base64 import b64decode
 from datetime import datetime, date
-from six import string_types
 
+import numpy as np
 import param
 
 from bokeh.models.formatters import TickFormatter
@@ -17,11 +17,12 @@ from bokeh.models.widgets import (
     DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
     FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput,
-    NumericInput as _BkNumericInput)
+    NumericInput as _BkNumericInput
+)
 
 from ..config import config
 from ..layout import Column
-from ..util import param_reprs, as_unicode
+from ..util import param_reprs
 from .base import Widget, CompositeWidget
 from ..models import DatetimePicker as _bkDatetimePicker
 
@@ -88,7 +89,7 @@ class FileInput(Widget):
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
-            if isinstance(msg['value'], string_types):
+            if isinstance(msg['value'], str):
                 msg['value'] = b64decode(msg['value'])
             else:
                 msg['value'] = [b64decode(content) for content in msg['value']]
@@ -96,17 +97,37 @@ class FileInput(Widget):
 
     def save(self, filename):
         """
-        Saves the uploaded FileInput data to a file or BytesIO object.
+        Saves the uploaded FileInput data object(s) to file(s) or
+        BytesIO object(s).
 
         Arguments
         ---------
-        filename (str): File path or file-like object
+        filename (str or list[str]): File path or file-like object
         """
-        if isinstance(filename, string_types):
-            with open(filename, 'wb') as f:
-                f.write(self.value)
-        else:
-            filename.write(self.value)
+        value = self.value
+        if isinstance(filename, list) and not isinstance(value, list):
+            raise TypeError(
+                "FileInput contains a list of files but only a single "
+                "filename was given. Please provide a list of filenames or "
+                "file-like objects."
+            )
+        elif not isinstance(filename, list) and isinstance(value, list):
+            raise TypeError(
+                "FileInput contains a single files but a list of "
+                "filenames was given. Please provide a single filename "
+                "or file-like object."
+            )
+        elif not isinstance(value, list):
+            value = [self.value]
+        elif not isinstance(filename, list):
+            filename = [filename]
+
+        for val, fn in zip(value, filename):
+            if isinstance(fn, str):
+                with open(fn, 'wb') as f:
+                    f.write(val)
+            else:
+                fn.write(val)
 
 
 class StaticText(Widget):
@@ -129,7 +150,7 @@ class StaticText(Widget):
     def _process_param_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
-            text = as_unicode(msg.pop('value'))
+            text = str(msg.pop('value'))
             partial = self._format.replace('{value}', '').format(title=self.name)
             if self.name:
                 text = self._format.format(title=self.name, value=text.replace(partial, ''))
@@ -158,26 +179,37 @@ class DatePicker(Widget):
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
-            if isinstance(msg['value'], string_types):
+            if isinstance(msg['value'], str):
                 msg['value'] = datetime.date(datetime.strptime(msg['value'], '%Y-%m-%d'))
         return msg
 
 
 class _DatetimePickerBase(Widget):
 
-    start = param.CalendarDate(default=None)
+    disabled_dates = param.List(default=None, class_=(date, str), doc="""
+      Dates to make unavailable for selection.""")
 
-    end = param.CalendarDate(default=None)
+    enabled_dates = param.List(default=None, class_=(date, str), doc="""
+      Dates to make available for selection.""")
 
-    disabled_dates = param.List(default=None, class_=(date, str))
+    enable_time = param.Boolean(default=True, doc="""
+      Enable editing of the time in the widget.""")
 
-    enabled_dates = param.List(default=None, class_=(date, str))
+    enable_seconds = param.Boolean(default=True, doc="""
+      Enable editing of the seconds in the widget.""")
 
-    enable_time = param.Boolean(default=True)
+    end = param.Date(default=None, doc="""
+      Inclusive upper bound of the allowed date selection. Note that while
+      the parameter accepts datetimes the time portion of the range
+      is ignored.""")
 
-    enable_seconds = param.Boolean(default=True)
+    military_time = param.Boolean(default=True, doc="""
+      Whether to display time in 24 hour format.""")
 
-    military_time = param.Boolean(default=True)
+    start = param.Date(default=None, doc="""
+      Inclusive lower bound of the allowed date selection. Note that while
+      the parameter accepts datetimes the time portion of the range
+      is ignored.""")
 
     _source_transforms = {'value': None, 'start': None, 'end': None, 'mode': None}
 
@@ -224,7 +256,7 @@ class DatetimePicker(_DatetimePickerBase):
     mode = param.String('single', constant=True)
 
     def _serialize_value(self, value):
-        if isinstance(value, string_types) and value:
+        if isinstance(value, str) and value:
             value = datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
 
             # Hour, minute and seconds can be increased after end is reached.
@@ -243,12 +275,13 @@ class DatetimePicker(_DatetimePickerBase):
 
 
 class DatetimeRangePicker(_DatetimePickerBase):
+
     value = param.DateRange(default=None)
 
     mode = param.String('range', constant=True)
 
     def _serialize_value(self, value):
-        if isinstance(value, string_types) and value:
+        if isinstance(value, str) and value:
             value = [
                 datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
                 for value in value.split(' to ')
@@ -293,7 +326,7 @@ class _NumericInputBase(Widget):
     placeholder = param.String(default='0', doc="""
         Placeholder for empty input field.""")
 
-    format = param.ClassSelector(default=None, class_=string_types+(TickFormatter,), doc="""
+    format = param.ClassSelector(default=None, class_=(str, TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
     start = param.Parameter(default=None, allow_None=True, doc="""
@@ -376,6 +409,13 @@ class _SpinnerBase(_NumericInputBase):
 
         return super()._update_model(events, msg, root, model, doc, comm)
 
+    def _process_param_change(self, msg):
+        # Workaround for -inf serialization errors
+        if 'value' in msg and msg['value'] == float('-inf'):
+            msg['value'] = None
+            msg['value_throttled'] = None
+        return super()._process_param_change(msg)
+
     def _process_property_change(self, msg):
         if config.throttled:
             if "value" in msg:
@@ -433,7 +473,7 @@ class LiteralInput(Widget):
 
     _source_transforms = {'value': """JSON.parse(value.replace(/'/g, '"'))"""}
 
-    _target_transforms = {'value': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
+    _target_transforms = {'value': """JSON.stringify(value).replace(/,/g, ",").replace(/:/g, ": ")"""}
 
     _widget_type = _BkTextInput
 
@@ -493,15 +533,74 @@ class LiteralInput(Widget):
         msg = super()._process_param_change(msg)
         if 'value' in msg:
             value = msg['value']
-            if isinstance(value, string_types):
+            if isinstance(value, str):
                 value = repr(value)
             elif self.serializer == 'json':
                 value = json.dumps(value)
             else:
-                value = '' if value is None else as_unicode(value)
+                value = '' if value is None else str(value)
             msg['value'] = value
         msg['title'] = self.name
         return msg
+
+
+class ArrayInput(LiteralInput):
+    """
+    ArrayInput allows rendering and editing NumPy arrays in a text
+    input widget. Arrays larger than the `max_array_size` will be
+    summarized and editing will be disbaled.
+    """
+
+    max_array_size = param.Number(default=1000, doc="""
+        Arrays larger than this limit will be allowed in Python but
+        will not be serialized into JavaScript. Although such large
+        arrays will thus not be editable in the widget, such a
+        restriction helps avoid overwhelming the browser and lets
+        other widgets remain usable.""")
+
+    _rename = dict(LiteralInput._rename, max_array_size=None)
+
+    _source_transforms = {'value': None}
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._auto_disabled = False
+
+    def _process_property_change(self, msg):
+        msg = super()._process_property_change(msg)
+        if 'value' in msg and isinstance(msg['value'], list):
+            msg['value'] = np.asarray(msg['value'])
+        return msg
+
+    def _process_param_change(self, msg):
+        if msg.get('disabled', False):
+            self._auto_disabled = False
+        value = msg.get('value')
+        if value is None:
+            return super()._process_param_change(msg)
+        if value.size <= self.max_array_size:
+            msg['value'] = value.tolist()
+            # If array is no longer larger than max_array_size
+            # unset disabled
+            if self.disabled and self._auto_disabled:
+                self.disabled = False
+                msg['disabled'] = False
+                self._auto_disabled = False
+        else:
+            msg['value'] = np.array2string(
+                msg['value'], separator=',',
+                threshold=self.max_array_size
+            )
+            if not self.disabled:
+                self.param.warning(
+                    f"Number of array elements ({value.size}) exceeds "
+                    f"`max_array_size` ({self.max_array_size}), editing "
+                    "will be disabled."
+                )
+                self.disabled = True
+                msg['disabled'] = True
+                self._auto_disabled = True
+        return super()._process_param_change(msg)
 
 
 class DatetimeInput(LiteralInput):

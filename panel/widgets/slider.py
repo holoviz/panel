@@ -1,9 +1,11 @@
 """
-Defines the Widget base class which provides bi-directional
-communication between the rendered dashboard and the Widget
-parameters.
+Sliders allow you to select a value from a defined range of values by
+moving one or more handle(s).
+
+- The `value` will update when a handle is dragged.
+- The `value_throttled`will update when a handle is released.
 """
-from six import string_types
+import datetime as dt
 
 import param
 import numpy as np
@@ -17,7 +19,8 @@ from bokeh.models.widgets import (
 from ..config import config
 from ..io import state
 from ..util import (
-    edit_readonly, param_reprs, unicode_repr, value_as_datetime, value_as_date
+    datetime_as_utctimestamp, edit_readonly, param_reprs,
+    value_as_datetime, value_as_date
 )
 from ..viewable import Layoutable
 from ..layout import Column, Row
@@ -30,18 +33,21 @@ class _SliderBase(Widget):
     bar_color = param.Color(default="#e6e6e6", doc="""
         Color of the slider bar as a hexidecimal RGB value.""")
 
-    direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'],
-                                     doc="""
+    direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'], doc="""
         Whether the slider should go from left-to-right ('ltr') or
-        right-to-left ('rtl')""")
+        right-to-left ('rtl').""")
 
-    orientation = param.ObjectSelector(default='horizontal',
-                                       objects=['horizontal', 'vertical'], doc="""
+    name = param.String(default=None, doc="""
+        The name of the widget. Also used as the label of the widget. If not set,
+        the widget has no label.""")
+
+    orientation = param.ObjectSelector(default='horizontal', objects=['horizontal', 'vertical'],
+        doc="""
         Whether the slider should be oriented horizontally or
         vertically.""")
 
     show_value = param.Boolean(default=True, doc="""
-        Whether to show the widget value.""")
+        Whether to show the widget value as a label or not.""")
 
     tooltips = param.Boolean(default=True, doc="""
         Whether the slider handle should display tooltips.""")
@@ -76,8 +82,8 @@ class _SliderBase(Widget):
 
 class ContinuousSlider(_SliderBase):
 
-    format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
-        Allows defining a custom format string or bokeh TickFormatter.""")
+    format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
+        A custom format string or Bokeh TickFormatter.""")
 
     _supports_embed = True
 
@@ -124,31 +130,62 @@ class ContinuousSlider(_SliderBase):
 
 
 class FloatSlider(ContinuousSlider):
+    """
+    The FloatSlider widget allows selecting a floating-point value
+    within a set of bounds using a slider.
 
-    start = param.Number(default=0.0)
+    Reference: https://panel.holoviz.org/reference/widgets/FloatSlider.html
 
-    end = param.Number(default=1.0)
+    :Example:
 
-    value = param.Number(default=0.0)
+    >>> FloatSlider(value=0.5, start=0.0, end=1.0, step=0.1, name="Float value")
+    """
 
-    value_throttled = param.Number(default=None, constant=True)
+    value = param.Number(default=0.0, doc="""
+        The selected floating-point value of the slider. Updated when the handle is dragged.
+        """)
 
-    step = param.Number(default=0.1)
+    value_throttled = param.Number(default=None, constant=True, doc="""
+         The value of the slider. Updated when the handle is released.""")
+
+    start = param.Number(default=0.0, doc="""
+        The lower bound.""")
+
+    end = param.Number(default=1.0, doc="""
+        The upper bound.""")
+
+    step = param.Number(default=0.1, doc="""
+        The step size.""")
 
     _rename = {'name': 'title'}
 
 
 class IntSlider(ContinuousSlider):
+    """
+    The IntSlider widget allows selecting an integer value within a
+    set of bounds using a slider.
 
-    value = param.Integer(default=0)
+    Reference: https://panel.holoviz.org/reference/widgets/IntSlider.html
 
-    value_throttled = param.Integer(default=None, constant=True)
+    :Example:
 
-    start = param.Integer(default=0)
+    >>> IntSlider(value=5, start=0, end=10, step=1, name="Integer Value")
+    """
 
-    end = param.Integer(default=1)
+    value = param.Integer(default=0, doc="""
+        The selected integer value of the slider. Updated when the handle is dragged.""")
 
-    step = param.Integer(default=1)
+    start = param.Integer(default=0, doc="""
+        The lower bound.""")
+
+    end = param.Integer(default=1, doc="""
+        The upper bound.""")
+
+    step = param.Integer(default=1, doc="""
+        The step size.""")
+
+    value_throttled = param.Integer(default=None, constant=True, doc="""
+        The value of the slider. Updated when the handle is released""")
 
     _rename = {'name': 'title'}
 
@@ -163,16 +200,42 @@ class IntSlider(ContinuousSlider):
 
 
 class DateSlider(_SliderBase):
+    """
+    The DateSlider widget allows selecting a value within a set of
+    bounds using a slider.  Supports datetime.datetime, datetime.date
+    and np.datetime64 values. The step size is fixed at 1 day.
 
-    value = param.Date(default=None)
+    Reference: https://panel.holoviz.org/reference/widgets/DateSlider.html
 
-    value_throttled = param.Date(default=None, constant=True)
+    :Example:
 
-    start = param.Date(default=None)
+    >>> import datetime as dt
+    >>> DateSlider(
+    ...     value=dt.datetime(2025, 1, 1),
+    ...     start=dt.datetime(2025, 1, 1),
+    ...     end=dt.datetime(2025, 1, 7),
+    ...     name="A datetime value"
+    ... )
+    """
 
-    end = param.Date(default=None)
+    value = param.Date(default=None, doc="""
+        The selected date value of the slider. Updated when the slider
+        handle is dragged. Supports datetime.datetime, datetime.date
+        or np.datetime64 types.""")
 
-    _rename = {'name': 'title'}
+    value_throttled = param.Date(default=None, constant=True, doc="""
+        The value of the slider. Updated when the slider handle is released.""")
+
+    start = param.Date(default=None, doc="""
+        The lower bound.""")
+
+    end = param.Date(default=None, doc="""
+        The upper bound.""")
+
+    as_datetime = param.Boolean(default=False, doc="""
+        Whether to store the date as a datetime.""")
+
+    _rename = {'name': 'title', 'as_datetime': None}
 
     _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
 
@@ -183,24 +246,54 @@ class DateSlider(_SliderBase):
             params['value'] = params.get('start', self.start)
         super().__init__(**params)
 
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if 'value' in msg:
+            value = msg['value']
+            if isinstance(value, dt.datetime):
+                value = datetime_as_utctimestamp(value)
+            msg['value'] = value
+        return msg
+
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
+        transform = value_as_datetime if self.as_datetime else value_as_date
         if 'value' in msg:
-            msg['value'] = value_as_date(msg['value'])
+            msg['value'] = transform(msg['value'])
         if 'value_throttled' in msg:
-            msg['value_throttled'] = value_as_date(msg['value_throttled'])
+            msg['value_throttled'] = transform(msg['value_throttled'])
         return msg
 
 
 class DiscreteSlider(CompositeWidget, _SliderBase):
+    """
+    The DiscreteSlider widget allows selecting a value from a discrete
+    list or dictionary of values using a slider.
 
-    options = param.ClassSelector(default=[], class_=(dict, list))
+    Reference: https://panel.holoviz.org/reference/widgets/DiscreteSlider.html
 
-    value = param.Parameter()
+    :Example:
 
-    value_throttled = param.Parameter(constant=True)
+    >>> DiscreteSlider(
+    ...     value=0,
+    ...     options=list([0, 1, 2, 4, 8, 16, 32, 64]),
+    ...     name="A discrete value",
+    ... )
+    """
 
-    formatter = param.String(default='%.3g')
+    value = param.Parameter(doc="""
+        The selected value of the slider. Updated when the handle is
+        dragged. Must be one of the options.""")
+
+    value_throttled = param.Parameter(constant=True, doc="""
+        The value of the slider. Updated when the handle is released.""")
+
+    options = param.ClassSelector(default=[], class_=(dict, list), doc="""
+        A list or dictionary of valid options.""")
+
+    formatter = param.String(default='%.3g', doc="""
+        A custom format string. Separate from format parameter since
+        formatting is applied in Python, not via the bokeh TickFormatter.""")
 
     _source_transforms = {'value': None, 'value_throttled': None, 'options': None}
 
@@ -222,7 +315,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self.formatter = '%d'
         if self.value is None and None not in self.values and self.options:
             self.value = self.values[0]
-        elif self.value not in self.values:
+        elif self.value not in self.values and not (self.value is None or self.options):
             raise ValueError('Value %s not a valid option, '
                              'ensure that the supplied value '
                              'is one of the declared options.'
@@ -232,33 +325,40 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._slider = None
         self._composite = Column(self._text, self._slider)
         self._update_options()
-        self.param.watch(self._update_options, ['options', 'formatter'])
+        self.param.watch(self._update_options, ['options', 'formatter', 'name'])
         self.param.watch(self._update_value, 'value')
         self.param.watch(self._update_value, 'value_throttled')
         self.param.watch(self._update_style, self._style_params)
 
     def _update_options(self, *events):
         values, labels = self.values, self.labels
-        if self.value not in values:
+        if not self.options and self.value is None:
+            value = 0
+            label = (f'{self.name}: ' if self.name else '') + '<b>-</b>'
+        elif self.value not in values:
             value = 0
             self.value = values[0]
+            label = labels[value]
         else:
             value = values.index(self.value)
+            label = labels[value]
+        disabled = len(values) in (0, 1)
+        end = 1 if disabled else len(self.options)-1
 
         self._slider = IntSlider(
-            start=0, end=len(self.options)-1, value=value, tooltips=False,
+            start=0, end=end, value=value, tooltips=False,
             show_value=False, margin=(0, 5, 5, 5),
             orientation=self.orientation,
-            _supports_embed=False
+            _supports_embed=False, disabled=disabled
         )
         self._update_style()
         js_code = self._text_link.format(
-            labels='['+', '.join([unicode_repr(l) for l in labels])+']'
+            labels='['+', '.join([repr(l) for l in labels])+']'
         )
         self._jslink = self._slider.jslink(self._text, code={'value': js_code})
         self._slider.param.watch(self._sync_value, 'value')
         self._slider.param.watch(self._sync_value, 'value_throttled')
-        self._text.value = labels[value]
+        self._text.value = label
         self._composite[1] = self._slider
 
     def _update_value(self, event):
@@ -277,15 +377,14 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                 setattr(self, event.name, values[0])
             return
         index = self.values.index(getattr(self, event.name))
+        if event.name == 'value':
+            self._text.value = self.labels[index]
         if self._syncing:
             return
         try:
             self._syncing = True
             with param.edit_constant(self._slider):
                 setattr(self._slider, event.name, index)
-            if event.name == 'value':
-                with param.discard_events(self._text):
-                    self._text.value = self.labels[index]
         finally:
             self._syncing = False
 
@@ -321,7 +420,6 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
         event.name is either value or value_throttled.
         """
-
         if self._syncing:
             return
         try:
@@ -342,25 +440,28 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     @property
     def labels(self):
+        """The list of labels to display"""
         title = (self.name + ': ' if self.name else '')
         if isinstance(self.options, dict):
             return [title + ('<b>%s</b>' % o) for o in self.options]
         else:
-            return [title + ('<b>%s</b>' % (o if isinstance(o, string_types) else (self.formatter % o)))
+            return [title + ('<b>%s</b>' % (o if isinstance(o, str) else (self.formatter % o)))
                     for o in self.options]
     @property
     def values(self):
+        """The list of option values"""
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
 
 
 class _RangeSliderBase(_SliderBase):
 
-    value = param.Tuple(length=2)
+    value = param.Tuple(length=2, doc="""
+        The selected range of the slider. Updated when a handle is dragged.""")
 
-    value_start = param.Parameter(readonly=True)
+    value_start = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")
 
-    value_end = param.Parameter(readonly=True)
+    value_end = param.Parameter(readonly=True, doc="""The upper value of the selected range.""")
 
     __abstract = True
 
@@ -388,23 +489,44 @@ class _RangeSliderBase(_SliderBase):
 
 
 class RangeSlider(_RangeSliderBase):
+    """
+    The RangeSlider widget allows selecting a floating-point range
+    using a slider with two handles.
 
-    format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
-        Allows defining a custom format string or bokeh TickFormatter.""")
+    Reference: https://panel.holoviz.org/reference/widgets/RangeSlider.html
 
-    value = param.Range(default=(0, 1))
+    :Example:
 
-    value_start = param.Number(default=0, readonly=True)
+    >>> RangeSlider(
+    ...     value=(1.0, 1.5), start=0.0, end=2.0, step=0.25, name="A tuple of floats"
+    ... )
+    """
 
-    value_end = param.Number(default=1, readonly=True)
+    value = param.Range(default=(0, 1), doc=
+        """The selected range as a tuple of values. Updated when a handle is
+        dragged.""")
 
-    value_throttled = param.Range(default=None, constant=True)
+    value_throttled = param.Range(default=None, constant=True, doc="""
+        The selected range as a tuple of floating point values. Updated when a handle is
+        released""")
 
-    start = param.Number(default=0)
+    value_start = param.Number(default=0, readonly=True, doc="""
+        The lower value of the selected range.""")
 
-    end = param.Number(default=1)
+    value_end = param.Number(default=1, readonly=True, doc="""
+        The upper value of the selected range.""")
 
-    step = param.Number(default=0.1)
+    start = param.Number(default=0, doc="""
+        The lower bound.""")
+
+    end = param.Number(default=1, doc="""
+        The upper bound.""")
+
+    step = param.Number(default=0.1, doc="""
+        The step size.""")
+
+    format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
+        A format string or bokeh TickFormatter.""")
 
     _rename = {'name': 'title', 'value_start': None, 'value_end': None}
 
@@ -419,12 +541,27 @@ class RangeSlider(_RangeSliderBase):
 
 
 class IntRangeSlider(RangeSlider):
+    """
+    The IntRangeSlider widget allows selecting an integer range using
+    a slider with two handles.
 
-    start = param.Integer(default=0)
+    Reference: https://panel.holoviz.org/reference/widgets/IntRangeSlider.html
 
-    end = param.Integer(default=1)
+    :Example:
 
-    step = param.Integer(default=1)
+    >>> IntRangeSlider(
+    ...     value=(2, 4), start=0, end=10, step=2, name="A tuple of integers"
+    ... )
+    """
+
+    start = param.Integer(default=0, doc="""
+        The lower bound.""")
+
+    end = param.Integer(default=1, doc="""
+        The uppper bound.""")
+
+    step = param.Integer(default=1, doc="""
+        The step size""")
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -438,20 +575,47 @@ class IntRangeSlider(RangeSlider):
 
 
 class DateRangeSlider(_RangeSliderBase):
+    """
+    The DateRangeSlider widget allows selecting a date range using a
+    slider with two handles. Supports datetime.datetime, datetime.data
+    and np.datetime64 ranges.
 
-    value = param.Tuple(default=(None, None), length=2)
+    Reference: https://panel.holoviz.org/reference/widgets/DateRangeSlider.html
 
-    value_start = param.Date(default=None, readonly=True)
+    :Example:
 
-    value_end = param.Date(default=None, readonly=True)
+    >>> import datetime as dt
+    >>> DateRangeSlider(
+    ...     value=(dt.datetime(2025, 1, 9), dt.datetime(2025, 1, 16)),
+    ...     start=dt.datetime(2025, 1, 1),
+    ...     end=dt.datetime(2025, 1, 31),
+    ...     step=2,
+    ...     name="A tuple of datetimes"
+    ... )
+    """
 
-    value_throttled = param.Tuple(default=None, length=2, constant=True)
+    value = param.Tuple(default=(None, None), length=2, doc=
+        """The selected range as a tuple of values. Updated when one of the handles is
+        dragged. Supports datetime.datetime, datetime.date, and np.datetime64 ranges.""")
 
-    start = param.Date(default=None)
+    value_start = param.Date(default=None, readonly=True, doc="""
+        The lower value of the selected range.""")
 
-    end = param.Date(default=None)
+    value_end = param.Date(default=None, readonly=True, doc="""
+        The upper value of the selected range.""")
 
-    step = param.Number(default=1)
+    value_throttled = param.Tuple(default=None, length=2, constant=True, doc="""
+        The selected range as a tuple of values. Updated one of the handles is released. Supports 
+        datetime.datetime, datetime.date and np.datetime64 ranges""")
+
+    start = param.Date(default=None, doc="""
+        The lower bound.""")
+
+    end = param.Date(default=None, doc="""
+        The upper bound.""")
+
+    step = param.Number(default=1, doc="""
+        The step size. Default is 1 (day).""")
 
     _source_transforms = {'value': None, 'value_throttled': None,
                          'start': None, 'end': None, 'step': None}
@@ -464,6 +628,13 @@ class DateRangeSlider(_RangeSliderBase):
         msg = super()._process_param_change(msg)
         if msg.get('value') == (None, None):
             del msg['value']
+        elif 'value' in msg:
+            v1, v2 = msg['value']
+            if isinstance(v1, dt.datetime):
+                v1 = datetime_as_utctimestamp(v1)
+            if isinstance(v2, dt.datetime):
+                v2 = datetime_as_utctimestamp(v2)
+            msg['value'] = (v1, v2)
         if msg.get('value_throttled') == (None, None):
             del msg['value_throttled']
         return msg
@@ -575,12 +746,38 @@ class _EditableContinuousSlider(CompositeWidget):
 
 
 class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
+    """
+    The EditableFloatSlider widget allows selecting selecting a
+    numeric floating-point value within a set of bounds using a slider
+    and for more precise control offers an editable number input box.
+
+    Reference: https://panel.holoviz.org/reference/widgets/EditableFloatSlider.html
+
+    :Example:
+
+    >>> EditableFloatSlider(
+    ...     value=1.0, start=0.0, end=2.0, step=0.25, name="A float value"
+    ... )
+    """
 
     _slider_widget = FloatSlider
     _input_widget = FloatInput
 
 
 class EditableIntSlider(_EditableContinuousSlider, IntSlider):
+    """
+    The EditableIntSlider widget allows selecting selecting an integer
+    value within a set of bounds using a slider and for more precise
+    control offers an editable integer input box.
+
+    Reference: https://panel.holoviz.org/reference/widgets/EditableIntSlider.html
+
+    :Example:
+
+    >>> EditableIntSlider(
+    ...     value=2, start=0, end=5, step=1, name="An integer value"
+    ... )
+    """
 
     _slider_widget = IntSlider
     _input_widget = IntInput
@@ -588,29 +785,38 @@ class EditableIntSlider(_EditableContinuousSlider, IntSlider):
 
 class EditableRangeSlider(CompositeWidget, _SliderBase):
     """
-    The EditableRangeSlider extends the RangeSlider by adding text
-    input fields to manually edit the range and potentially override
-    the bounds.
+    The EditableRangeSlider widget allows selecting a floating-point
+    range using a slider with two handles and for more precise control
+    also offers a set of number input boxes.
+
+    Reference: https://panel.holoviz.org/reference/widgets/EditableRangeSlider.html
+
+    :Example:
+
+    >>> EditableRangeSlider(
+    ...      value=(1.0, 1.5), start=0.0, end=2.0, step=0.25, name="A tuple of floats"
+    ... )
     """
+
+    value = param.Range(default=(0, 1), doc="Current range value. Updated when a handle is dragged")
+
+    value_throttled = param.Range(default=None, constant=True, doc="""
+        The value of the slider. Updated when the handle is released.""")
+
+    start = param.Number(default=0., doc="Lower bound of the range.")
+
+    end = param.Number(default=1., doc="Upper bound of the range.")
+
+    step = param.Number(default=0.1, doc="Slider and number input step.")
 
     editable = param.Tuple(default=(True, True), doc="""
         Whether the lower and upper values are editable.""")
 
-    end = param.Number(default=1., doc="Upper bound of the range.")
-
-    format = param.ClassSelector(default='0.0[0000]', class_=string_types+(TickFormatter,), doc="""
+    format = param.ClassSelector(default='0.0[0000]', class_=(str, TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
-
-    start = param.Number(default=0., doc="Lower bound of the range.")
-
-    step = param.Number(default=0.1, doc="Slider and number input step.")
-
-    value = param.Range(default=(0, 1), doc="Current range value.")
-
-    value_throttled = param.Range(default=None, constant=True)
 
     _composite_type = Column
 

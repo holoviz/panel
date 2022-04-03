@@ -1,16 +1,15 @@
-import sys
-
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 import pytest
 
 try:
     import holoviews as hv
-    hv_version = LooseVersion(hv.__version__)
+    hv_version = Version(hv.__version__)
 except Exception:
     hv, hv_version = None, None
-hv_available = pytest.mark.skipif(hv is None or hv_version < '1.13.0a23', reason="requires holoviews")
+hv_available = pytest.mark.skipif(hv is None or hv_version < Version('1.13.0a23'),
+                                  reason="requires holoviews")
 
 try:
     import matplotlib as mpl
@@ -36,8 +35,6 @@ try:
 except Exception:
     jupyter_bokeh = None
 jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
-
-py3_only = pytest.mark.skipif(sys.version_info.major < 3, reason="requires Python 3")
 
 from panel.pane.markup import Markdown
 

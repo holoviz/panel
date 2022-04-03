@@ -35,6 +35,6 @@
   overflow-wrap: break-word;
 }
 .bk.card-header-row > .bk {
-  padding-right: 1.5em !important;
   overflow-wrap: break-word;
+  text-align: center;
 }

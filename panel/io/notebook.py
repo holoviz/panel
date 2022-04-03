@@ -8,7 +8,6 @@ import sys
 
 from contextlib import contextmanager
 from collections import OrderedDict
-from six import string_types
 
 import bokeh
 import bokeh.embed.notebook
@@ -37,7 +36,6 @@ from ..compiler import require_components
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import PANEL_DIR, Bundle, Resources, _env, bundle_resources
-from .server import _server_url, _origin_url, get_server
 from .state import state
 
 
@@ -135,7 +133,7 @@ def html_for_render_items(docs_json, render_items, template=None, template_varia
 
     if template is None:
         template = NB_TEMPLATE_BASE
-    elif isinstance(template, string_types):
+    elif isinstance(template, str):
         template = _env.from_string("{% extends base %}\n" + template)
 
     return template.render(context)
@@ -241,7 +239,7 @@ def load_notebook(inline=True, load_timeout=5000):
     user_resources = settings.resources._user_value is not _Unset
     resources = Resources.from_bokeh(resources)
     try:
-        bundle = bundle_resources(resources)
+        bundle = bundle_resources(None, resources)
         bundle = Bundle.from_bokeh(bundle)
         configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
@@ -286,6 +284,7 @@ def show_server(panel, notebook_url, port):
     server: bokeh.server.Server
     """
     from IPython.display import publish_display_data
+    from .server import _server_url, _origin_url, get_server
 
     if callable(notebook_url):
         origin = notebook_url(None)

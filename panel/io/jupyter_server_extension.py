@@ -1,6 +1,7 @@
 from urllib.parse import urljoin
 
 import tornado
+import os
 
 from bokeh.command.util import build_single_handler_application
 from bokeh.embed.bundle import extension_dirs
@@ -20,7 +21,7 @@ from bokeh.util.token import get_session_id
 from tornado.web import StaticFileHandler
 
 from ..config import config
-from ..util import edit_readonly
+from ..util import edit_readonly, fullpath
 from .state import state
 from .resources import DIST_DIR, Resources
 
@@ -65,8 +66,20 @@ class ServerApplicationProxy:
     def __init__(self, app, **kw):
         self._app = app
 
+    @property
+    def root_dir(self):
+        """
+        Gets the root directory of the jupyter server app
+
+        This is useful as the path sent received by the handler
+        may be different from the root dir.
+        Reference: https://github.com/holoviz/panel/issues/3170
+        """
+        return fullpath(self._app.settings['server_root_dir'])
+
     def __getattr__(self, key):
         return getattr(self._app, key)
+
 
 
 class PanelHandler(DocHandler):
@@ -81,6 +94,7 @@ class PanelHandler(DocHandler):
         pass
 
     async def get(self, path, *args, **kwargs):
+        path = os.path.join(self.application.root_dir, fullpath(path))
         if path in _APPS:
             app, context = _APPS[path]
         else:
@@ -122,6 +136,7 @@ class PanelWSHandler(WSHandler):
         pass
 
     async def open(self, path, *args, **kwargs):
+        path = os.path.join(self.application.root_dir, fullpath(path))
         _, context = _APPS[path]
 
         token = self._token

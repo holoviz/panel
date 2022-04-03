@@ -15,10 +15,10 @@ from bokeh.models.widgets.tables import TableColumn
 from ..io.resources import bundled_files
 from ..util import classproperty
 
-JS_SRC = "https://unpkg.com/tabulator-tables@5.0.7/dist/js/tabulator.js"
+JS_SRC = "https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.js"
 MOMENT_SRC = "https://cdn.jsdelivr.net/npm/luxon/build/global/luxon.min.js"
 
-THEME_PATH = "tabulator-tables@5.0.7/dist/css/"
+THEME_PATH = "tabulator-tables@4.9.3/dist/css/"
 THEME_URL = f"https://unpkg.com/{THEME_PATH}"
 PANEL_CDN = f'https://cdn.jsdelivr.net/npm/@holoviz/panel/dist/bundled/{THEME_PATH}'
 TABULATOR_THEMES = [
@@ -29,6 +29,18 @@ TABULATOR_THEMES = [
 class TableEditEvent(ModelEvent):
 
     event_name = 'table-edit'
+
+    def __init__(self, model, column, row, value=None, old=None):
+        self.column = column
+        self.row = row
+        self.value = value
+        self.old = old
+        super().__init__(model=model)
+
+
+class CellClickEvent(ModelEvent):
+
+    event_name = 'cell-click'
 
     def __init__(self, model, column, row, value=None):
         self.column = column
@@ -69,6 +81,8 @@ class DataTabulator(HTMLBox):
 
     aggregators = Dict(String, String)
 
+    buttons = Dict(String, String)
+
     configuration = Dict(String, Any)
 
     columns = List(Instance(TableColumn), help="""
@@ -101,7 +115,7 @@ class DataTabulator(HTMLBox):
 
     source = Instance(ColumnDataSource)
 
-    styles = Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))
+    styles = Dict(String, Either(String, Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))))
 
     pagination = Nullable(String)
 
@@ -113,7 +127,7 @@ class DataTabulator(HTMLBox):
 
     sorters = List(Dict(String, String))
 
-    select_mode = Any(default=True)
+    select_mode = Any()
 
     selectable_rows = Nullable(List(Int))
 

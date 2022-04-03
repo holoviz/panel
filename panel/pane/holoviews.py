@@ -5,7 +5,7 @@ objects and their widgets and support for Links
 import sys
 
 from collections import OrderedDict, defaultdict
-from distutils.version import LooseVersion
+from packaging.version import Version
 from functools import partial
 
 import param
@@ -259,7 +259,7 @@ class HoloViews(PaneBase):
 
         kwargs = {p: v for p, v in self.param.values().items()
                   if p in Layoutable.param and p != 'name'}
-        child_pane = self._panes.get(backend, Pane)(state, **kwargs)
+        child_pane = self._get_pane(backend, state, **kwargs)
         self._update_plot(plot, child_pane)
         model = child_pane._get_model(doc, root, parent, comm)
         if ref in self._plots:
@@ -269,6 +269,12 @@ class HoloViews(PaneBase):
         self._plots[ref] = (plot, child_pane)
         self._models[ref] = (model, parent)
         return model
+
+    def _get_pane(self, backend, state, **kwargs):
+        pane_type = self._panes.get(backend, Pane)
+        if isinstance(pane_type, type) and issubclass(pane_type, Matplotlib):
+            kwargs['tight'] = True
+        return pane_type(state, **kwargs)
 
     def _render(self, doc, comm, root):
         import holoviews as hv
@@ -297,7 +303,7 @@ class HoloViews(PaneBase):
                 renderer = renderer.instance(**params)
 
         kwargs = {'margin': self.margin}
-        if backend == 'bokeh' or LooseVersion(str(hv.__version__)) >= str('1.13.0'):
+        if backend == 'bokeh' or Version(str(hv.__version__)) >= Version('1.13.0'):
             kwargs['doc'] = doc
             kwargs['root'] = root
             if comm:
@@ -333,7 +339,7 @@ class HoloViews(PaneBase):
     def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual'):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
-        from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
+        from holoviews.core.util import isnumeric, datetime_types, unique_iterator
         from holoviews.core.traversal import unique_dimkeys
         from holoviews.plotting.plot import Plot, GenericCompositePlot
         from holoviews.plotting.util import get_dynamic_mode
@@ -415,7 +421,7 @@ class HoloViews(PaneBase):
             if vals:
                 if all(isnumeric(v) or isinstance(v, datetime_types) for v in vals) and len(vals) > 1:
                     vals = sorted(vals)
-                    labels = [unicode(dim.pprint_value(v)) for v in vals]
+                    labels = [str(dim.pprint_value(v)) for v in vals]
                     options = OrderedDict(zip(labels, vals))
                     widget_type = widget_type or DiscreteSlider
                 else:

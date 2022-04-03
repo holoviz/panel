@@ -6,7 +6,6 @@ import pytest
 from panel.widgets import (
     CrossSelector, MultiChoice, MultiSelect, Select, ToggleGroup
 )
-from panel.util import as_unicode
 
 
 def test_select_list_constructor():
@@ -46,18 +45,96 @@ def test_select(document, comm):
 
     assert isinstance(widget, select._widget_type)
     assert widget.title == 'Select'
-    assert widget.value == as_unicode(opts['1'])
-    assert widget.options == [(as_unicode(v),k) for k,v in opts.items()]
+    assert widget.value == str(opts['1'])
+    assert widget.options == [(str(v),k) for k,v in opts.items()]
 
-    select._process_events({'value': as_unicode(opts['A'])})
+    select._process_events({'value': str(opts['A'])})
     assert select.value == opts['A']
 
-    widget.value = as_unicode(opts['1'])
+    widget.value = str(opts['1'])
     select.value = opts['1']
     assert select.value == opts['1']
 
     select.value = opts['A']
-    assert widget.value == as_unicode(opts['A'])
+    assert widget.value == str(opts['A'])
+
+
+def test_select_groups_list_options(document, comm):
+    groups = dict(a=[1, 2], b=[3])
+    select = Select(value=groups['a'][0], groups=groups, name='Select')
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.title == 'Select'
+    assert widget.value == str(groups['a'][0])
+    assert widget.options == {gr: [(str(v), str(v)) for v in values] for gr, values in groups.items()}
+
+    select._process_events({'value': str(groups['a'][1])})
+    assert select.value == groups['a'][1]
+
+    select._process_events({'value': str(groups['a'][0])})
+    assert select.value == groups['a'][0]
+
+    select.value = groups['a'][1]
+    assert widget.value == str(groups['a'][1])
+
+
+def test_select_groups_dict_options(document, comm):
+    groups = dict(A=dict(a=1, b=2), B=dict(c=3))
+    select = Select(value=groups['A']['a'], groups=groups, name='Select')
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.title == 'Select'
+    assert widget.value == str(groups['A']['a'])
+    assert widget.options == {'A': [('1', 'a'), ('2', 'b')], 'B': [('3', 'c')]}
+
+    select._process_events({'value': str(groups['B']['c'])})
+    assert select.value == groups['B']['c']
+
+    select._process_events({'value': str(groups['A']['b'])})
+    assert select.value == groups['A']['b']
+
+    select.value = groups['A']['a']
+    assert widget.value == str(groups['A']['a'])
+
+
+def test_select_change_groups(document, comm):
+    groups = dict(A=dict(a=1, b=2), B=dict(c=3))
+    select = Select(value=groups['A']['a'], groups=groups, name='Select')
+
+    widget = select.get_root(document, comm=comm)
+
+    new_groups = dict(C=dict(d=4), D=dict(e=5, f=6))
+    select.groups = new_groups
+    assert select.value == new_groups['C']['d']
+    assert widget.value == str(new_groups['C']['d'])
+    assert widget.options == {'C': [('4', 'd')], 'D': [('5', 'e'), ('6', 'f')]}
+
+    select.groups = {}
+    assert select.value == None
+    assert widget.value == ''
+
+
+def test_select_groups_error_with_options():
+    # Instantiate with groups and options
+    with pytest.raises(ValueError):
+        Select(options=[1, 2], groups=dict(a=[1], b=[2]), name='Select')
+
+    opts = [1, 2, 3]
+    groups = dict(a=[1, 2], b=[3])
+
+    # Instamtiate with options and then update groups
+    select = Select(options=opts, name='Select')
+    with pytest.raises(ValueError):
+        select.groups = groups
+
+    # Instantiate with groups and then update options
+    select = Select(groups=groups, name='Select')
+    with pytest.raises(ValueError):
+        select.options = opts
 
 
 def test_select_change_options(document, comm):
@@ -68,7 +145,7 @@ def test_select_change_options(document, comm):
 
     select.options = {'A': 'a'}
     assert select.value == opts['A']
-    assert widget.value == as_unicode(opts['A'])
+    assert widget.value == str(opts['A'])
 
     select.options = {}
     assert select.value == None
@@ -83,12 +160,12 @@ def test_select_non_hashable_options(document, comm):
 
     select.value = opts['A']
     assert select.value is opts['A']
-    assert widget.value == as_unicode(opts['A'])
+    assert widget.value == str(opts['A'])
 
     opts.pop('A')
     select.options = opts
     assert select.value is opts['1']
-    assert widget.value == as_unicode(opts['1'])
+    assert widget.value == str(opts['1'])
 
 
 def test_select_mutables(document, comm):
@@ -99,19 +176,19 @@ def test_select_mutables(document, comm):
 
     assert isinstance(widget, select._widget_type)
     assert widget.title == 'Select'
-    assert widget.value == as_unicode(opts['B'])
-    assert widget.options == [(as_unicode(v),k) for k,v in opts.items()]
+    assert widget.value == str(opts['B'])
+    assert widget.options == [(str(v),k) for k,v in opts.items()]
 
-    widget.value = as_unicode(opts['B'])
-    select._process_events({'value': as_unicode(opts['A'])})
+    widget.value = str(opts['B'])
+    select._process_events({'value': str(opts['A'])})
     assert select.value == opts['A']
 
-    widget.value = as_unicode(opts['B'])
-    select._process_events({'value': as_unicode(opts['B'])})
+    widget.value = str(opts['B'])
+    select._process_events({'value': str(opts['B'])})
     assert select.value == opts['B']
 
     select.value = opts['A']
-    assert widget.value == as_unicode(opts['A'])
+    assert widget.value == str(opts['A'])
 
 
 def test_select_change_options_on_watch(document, comm):
@@ -126,8 +203,90 @@ def test_select_change_options_on_watch(document, comm):
     model = select.get_root(document, comm=comm)
 
     select.value = 1
-    assert model.value == as_unicode(list(select.options.values())[0])
-    assert model.options == [(as_unicode(v),k) for k,v in select.options.items()]
+    assert model.value == str(list(select.options.values())[0])
+    assert model.options == [(str(v),k) for k,v in select.options.items()]
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_init(options, size, document, comm):
+    select = Select(options=options, disabled_options=[20], size=size)
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.disabled_options == [20]
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_after_init(options, size, document, comm):
+    select = Select(options=options, size=size)
+    select.disabled_options = [20]
+
+    widget = select.get_root(document, comm=comm)
+
+    assert isinstance(widget, select._widget_type)
+    assert widget.disabled_options == [20]
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_error_on_init(options, size):
+    with pytest.raises(ValueError, match='as it is one of the disabled options'):
+        Select(options=options, disabled_options=[10])
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_all_raises_error_on_init(options, size):
+    with pytest.raises(ValueError, match='All the options'):
+        Select(options=options, disabled_options=[10, 20], size=size)
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_all_raises_error_after_init(options, size):
+    select = Select(options=options, size=size)
+
+    with pytest.raises(ValueError, match='All the options'):
+        select.disabled_options = [10, 20]
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_error_disabled_options_not_in_options(options, size):
+    with pytest.raises(ValueError, match='Cannot disable non existing options'):
+        Select(options=options, disabled_options=[30], size=size)
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_error_set_value(options, size):
+    select = Select(options=options, disabled_options=[20], size=size)
+    with pytest.raises(ValueError, match='as it is a disabled option'):
+        select.value = 20
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_error_set_disabled_options(options, size):
+    select = Select(value=20, options=options, size=size)
+    with pytest.raises(ValueError, match='Cannot set disabled_options'):
+        select.disabled_options = [20]
+
+
+@pytest.mark.parametrize('options', [[10, 20], dict(A=10, B=20)], ids=['list', 'dict'])
+@pytest.mark.parametrize('size', [1, 2], ids=['size=1', 'size>1'])
+def test_select_disabled_options_set_value_and_disabled_options(options, size, document, comm):
+    select = Select(options=options, disabled_options=[20], size=size)
+    select.param.set_param(value=20, disabled_options=[10])
+
+    widget = select.get_root(document, comm=comm)
+
+    assert widget.value == '20'
+    assert select.value == 20
+    assert widget.disabled_options == [10]
 
 
 def test_multi_select(document, comm):
@@ -241,6 +400,11 @@ def test_toggle_group_check(document, comm):
         widget.active = []
         select._process_events({'active': []})
         assert select.value == []
+
+        select.value = ["A", "B"]
+        select.options = ["B", "C"]
+        select.options = ["A", "B"]
+        assert widget.labels[widget.active[0]] == "B"
 
 
 def test_toggle_group_radio(document, comm):

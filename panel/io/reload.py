@@ -8,6 +8,7 @@ from functools import partial
 
 from .callbacks import PeriodicCallback
 from .state import state
+from ..util import fullpath
 
 _watched_files = set()
 _modules = set()
@@ -28,6 +29,11 @@ DEFAULT_FOLDER_BLACKLIST = [
     "**/site-packages",
     "**/venv",
     "**/virtualenv",
+]
+
+IGNORED_MODULES = [
+    'bokeh_app',
+    'panel.'
 ]
 
 
@@ -86,7 +92,7 @@ def record_modules():
     if _modules:
         return
     for module_name in set(sys.modules).difference(modules):
-        if module_name.startswith('bokeh_app'):
+        if any(module_name.startswith(imodule) for imodule in IGNORED_MODULES):
             continue
         module = sys.modules[module_name]
         try:
@@ -98,7 +104,7 @@ def record_modules():
             else:
                 filepath = spec.origin
 
-            filepath = os.path.abspath(filepath)
+            filepath = fullpath(filepath)
 
             if filepath is None or in_blacklist(filepath):
                 continue

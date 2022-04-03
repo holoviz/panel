@@ -25,12 +25,13 @@ jobs:
         shell: bash -l {0} 
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
-      HV_REQUIREMENTS: "unit_tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
-      CHANS: "-c pyviz -c bokeh/label/dev -c conda-forge"
       DISPLAY: ":99.0"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Without this env var `doit env_create ...` uses by default
+      # the `pyviz` channel, except that we don't want to configure
+      # it as one of the sources.
+      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
       - uses: actions/checkout@v2
         with:
@@ -41,31 +42,31 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
+          channel-priority: strict
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
       - name: conda setup
         run: |
-          conda config --set always_yes True
-          conda install -c pyviz "pyctdev>=0.5"
-          doit ecosystem_setup
-          conda install -c conda-forge "nodejs=15.3.0"
-          doit env_create ${{ env.CHANS_DEV}} --python=${{ matrix.python-version }}
+          conda install "pyctdev>=0.5"
+          conda install "nodejs=15.3.0"
+          doit env_create --python=${{ matrix.python-version }}
       - name: nix_opengl
         if: contains(matrix.os, 'ubuntu')
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           sudo apt-get install libglu1-mesa
-          conda install -c conda-forge mesalib
+          conda install mesalib
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
           sleep 3
       - name: doit develop_install
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install ${{ env.CHANS_DEV }} "pip<21.2.1" 
+          conda install "pip<21.2.1" "setuptools<61" 
           conda list
-          doit develop_install ${{ env.CHANS_DEV}} -o examples -o recommended -o tests -o build
+          doit develop_install -o examples -o recommended -o tests -o build
           pip install pyecharts idom
           bokeh sampledata
           echo "-----"
@@ -73,7 +74,7 @@ jobs:
       - name: windows_opengl
         if: contains(matrix.os, 'windows')
         run: |
-          git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
+          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
       - name: doit env_capture
         run: |

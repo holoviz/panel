@@ -1,17 +1,53 @@
 import logging
 
+import param
+
 from bokeh.document.events import MessageSentEvent
+from bokeh.document.json import MessageSent, Literal, TypedDict
+from bokeh.util.serialization import make_id
+
 from ipykernel.comm import CommManager
-from ipywidgets_bokeh.kernel import BokehKernel, SessionWebsocket, WebsocketStream
 from tornado.ioloop import IOLoop
+from ipywidgets_bokeh.kernel import BokehKernel, SessionWebsocket, WebsocketStream
+
+
+class MessageSentBuffers(TypedDict):
+    kind: Literal["MessageSent"]
+    msg_type: str
+
+
+class MessageSentEventPatched(MessageSentEvent):
+    """
+    Patches MessageSentEvent with fix that ensures MessageSent event
+    does not define msg_data (which is an assumption in BokehJS
+    Document.apply_json_patch.) 
+    """
+
+    def generate(self, references, buffers):
+        if not isinstance(self.msg_data, bytes):
+            msg = MessageSent(
+                kind=self.kind,
+                msg_type=self.msg_type,
+                msg_data=self.msg_data
+            )
+        else:
+            msg = MessageSentBuffers(
+                kind=self.kind,
+                msg_type=self.msg_type
+            )
+            assert buffers is not None
+            buffer_id = make_id()
+            buf = (dict(id=buffer_id), self.msg_data)
+            buffers.append(buf)
+        return msg
 
 
 class PanelSessionWebsocket(SessionWebsocket):
 
     def __init__(self, *args, **kwargs):
-        self._queue = []
         super().__init__(*args, **kwargs)
         self._document = kwargs.pop('document', None)
+        self._queue = []
         self._document.on_message("ipywidgets_bokeh", self.receive)
 
     def send(self, stream, msg_type, content=None, parent=None, ident=None, buffers=None, track=False, header=None, metadata=None):
@@ -28,7 +64,7 @@ class PanelSessionWebsocket(SessionWebsocket):
             offsets = [start]
 
             for buffer in buffers[:-1]:
-                start += len(buffer)
+                start += memoryview(buffer).nbytes
                 offsets.append(start)
 
             u32 = lambda n: n.to_bytes(4, "big")
@@ -37,17 +73,16 @@ class PanelSessionWebsocket(SessionWebsocket):
         else:
             data = packed.decode("utf-8")
 
-        doc = self._document
-        event = MessageSentEvent(doc, "ipywidgets_bokeh", data)
+        event = MessageSentEventPatched(self._document, "ipywidgets_bokeh", data)
         self._queue.append(event)
-        doc.add_next_tick_callback(self._dispatch)
+        self._document.add_next_tick_callback(self._dispatch)
 
     def _dispatch(self):
         try:
             for event in self._queue:
                 self._document.callbacks.trigger_on_change(event)
-        except Exception:
-            pass
+        except Exception as e:
+            param.main.warning(f'ipywidgets event dispatch failed with: {e}')
         finally:
             self._queue = []
 
@@ -55,7 +90,7 @@ class PanelSessionWebsocket(SessionWebsocket):
 class PanelKernel(BokehKernel):
 
     def __init__(self, key=None, document=None):
-        super(BokehKernel, self).__init__()
+        super().__init__()
 
         self.session = PanelSessionWebsocket(document=document, parent=self, key=key)
         self.stream = self.iopub_socket = WebsocketStream(self.session)

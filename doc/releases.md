@@ -1,5 +1,92 @@
 # Releases
 
+See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual summary of the major features added in each release.
+
+## Version 0.12.6
+
+Date: 2021-12-08
+
+The 0.12.6 release fixes a major regression introduced in the last release along with a small number of pre-existing bugs.
+
+Regressions:
+
+- Always load imported bokeh extensions ([#2957](https://github.com/holoviz/panel/pull/2957))
+- Fix regression rendering `HoloViews` plotly backend ([#2961](https://github.com/holoviz/panel/pull/2961))
+
+Bug fixes:
+
+- Do not run `Ace` import on initialization ([#2959](https://github.com/holoviz/panel/pull/2959))
+- Improve handling of `ReactiveHTML` cleanup ([#2974](https://github.com/holoviz/panel/pull/2974), [#2993](https://github.com/holoviz/panel/pull/2993))
+- Ensure empty `Str` has same height as non-empty ([#2981](https://github.com/holoviz/panel/pull/2981))
+- Ensure `Tabulator` supports grouping on numeric columns ([#2987](https://github.com/holoviz/panel/pull/2987))
+- Fix `Tabulator` with multi-index and pagination ([#2989](https://github.com/holoviz/panel/pull/2989))
+- Allow index as column name in table widgets ([#2990](https://github.com/holoviz/panel/pull/2990))
+- Ensure TemplateActions component does not have height ([#2997](https://github.com/holoviz/panel/pull/2997))
+
+## Version 0.12.5
+
+Date: 2021-11-23
+
+The 0.12.5 release contains a larger number of bug fixes and minor enhancements. Many thanks to @pmav99, @samuelyeewl, @xavArtley, @L8Y, @Prashant0kgp, @t-houssian, @kristw, @jlstevens and the maintainers @maximlt, @MarcSkovMadsen and @philippjfr for their contributions to this release.
+
+Compatibility:
+
+- Ensure ipywidget rendering is compatible with ipykernel>6 and bokeh>2.4 ([#2798](https://github.com/holoviz/panel/pull/2798))
+- Build panel.js against bokeh.js 2.4.2 ([#2945](https://github.com/holoviz/panel/pull/2945))
+
+Enhancements:
+
+- Add 'light' to list of button types ([#2814](https://github.com/holoviz/panel/pull/2814), [#2816](https://github.com/holoviz/panel/pull/2816))
+- Make OAuth cookie expiry configurable ([#2724](https://github.com/holoviz/panel/pull/2724))
+- Run `onload` callbacks with `--warm` option ([#2844](https://github.com/holoviz/panel/pull/2844))
+- Improve Plotly responsive sizing behavior ([#2838](https://github.com/holoviz/panel/pull/2838))
+- Adds escape parameter to `DataFrame` pane to enable using html markup ([#2893](https://github.com/holoviz/panel/pull/2893))
+- Allow to update the completions options from a parameter ([#2895](https://github.com/holoviz/panel/pull/2895))
+- `Tabs` cache dynamic contents ([#2909](https://github.com/holoviz/panel/pull/2909))
+- Allow setting a maximum height for the loading indicator ([#2910](https://github.com/holoviz/panel/pull/2910))
+- Ensure loading of MathJax bundle is optional ([#2919](https://github.com/holoviz/panel/pull/2919))
+
+Bug fixes:
+
+- Resolve issues with inline resources on save ([#2794](https://github.com/holoviz/panel/pull/2794))
+- Restore ability to set a maximum number of selectable rows on `Tabulator` ([#2791](https://github.com/holoviz/panel/pull/2791))
+- Fixed bug where Tabulator with remote pagination would modify the wrong rows ([#2801](https://github.com/holoviz/panel/pull/2801))
+- Ensure non-exported requirejs modules do not error ([#2808](https://github.com/holoviz/panel/pull/2808))
+- Ensure `Tabulator` checkbox selection only happens in checkbox column ([#2812](https://github.com/holoviz/panel/pull/2812))
+- `Vtkvolume` correction of dimensions order ([#2818](https://github.com/holoviz/panel/pull/2818))
+- Allow data item to miss optional field in `Vega` pane ([#2853](https://github.com/holoviz/panel/pull/2853))
+- Allow to set `AutoCompleteInput` in a Param pane ([#2874](https://github.com/holoviz/panel/pull/2874))
+- Fix `Terminal` keystroke and size handling ([#2878](https://github.com/holoviz/panel/pull/2878))
+- Fix `Tabulator` styles on scroll ([#2881](https://github.com/holoviz/panel/pull/2881))
+- Do not sync `Indicator` properties from frontend to avoid errors ([#2886](https://github.com/holoviz/panel/pull/2886))
+- Fix roundtrip of datetimes on `ReactiveData` components ([#2888](https://github.com/holoviz/panel/pull/2888))
+- Fix handling of `Plotly` pane in `Tabs` ([#2890](https://github.com/holoviz/panel/pull/2890))
+- Fix bokeh colorbar background for dark theme ([#2897](https://github.com/holoviz/panel/pull/2897))
+- Fix issues when streaming or patching `ReactiveData` ([#2900](https://github.com/holoviz/panel/pull/2900))
+- Ensure stream and patch events do not boomerang ([#2902](https://github.com/holoviz/panel/pull/2902))
+- Fixes for `Card` rendering in `MaterialTemplate` ([#2911](https://github.com/holoviz/panel/pull/2911), [#2912](https://github.com/holoviz/panel/pull/2912))
+- Ensure `HoloViews` matplotlib output uses tight layout ([#2920](https://github.com/holoviz/panel/pull/2920))
+- Fix decoding of single quoted strings in url parameters ([#2925](https://github.com/holoviz/panel/pull/2925))
+- Fix Tabulator checkbox selection ([#2931](https://github.com/holoviz/panel/pull/2931))
+- Fix Vega pane sizing issues ([#2933](https://github.com/holoviz/panel/pull/2933))
+- Ensure toggled Accordion only triggers one event on change of active Card ([#2934](https://github.com/holoviz/panel/pull/2934))
+- Ensure LiteralInput JS deserializer does not insert extra spaces ([#2935](https://github.com/holoviz/panel/pull/2935))
+- Fix issue in detecting script data assignment in `ReactiveHTML` ([#2939](https://github.com/holoviz/panel/pull/2939))
+- Ensure `Card` collapsible icon offset is computed robustly ([#2940](https://github.com/holoviz/panel/pull/2940))
+- Ensure `--autoreload` does not reload panel modules ([#2941](https://github.com/holoviz/panel/pull/2941))
+- Ensure `pn.state.curdoc` is available to async callbacks ([#2942](https://github.com/holoviz/panel/pull/2942))
+
+Documentation:
+
+- Fix default values of panels.io.server.serve(](https://github.com/holoviz/panel/pull/)) ([#2799](https://github.com/holoviz/panel/pull/2799))
+- Update docs about pn.serve per user state ([#2849](https://github.com/holoviz/panel/pull/2849))
+- Added FastApi in the user guide for embedding apps ([#2870](https://github.com/holoviz/panel/pull/2870))
+- Simplify homepage ([#2850](https://github.com/holoviz/panel/pull/2850))
+
+CVEs:
+
+- Update jQuery to remediate CVEs ([#2885](https://github.com/holoviz/panel/pull/2885))
+
 ## Version 0.12.4
 
 Date: 2021-09-24

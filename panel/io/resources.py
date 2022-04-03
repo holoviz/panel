@@ -2,7 +2,9 @@
 Patches bokeh resources to make it easy to add external JS and CSS
 resources via the panel.config object.
 """
+import copy
 import glob
+import importlib
 import json
 import os
 
@@ -15,14 +17,16 @@ import param
 
 from bokeh.embed.bundle import (
     Bundle as BkBundle, _bundle_extensions, extension_dirs,
-    bundle_models
+    bundle_models, _use_mathjax
 )
 
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
-from jinja2 import Environment, Markup, FileSystemLoader
+from markupsafe import Markup
+from jinja2.environment import Environment
+from jinja2.loaders import FileSystemLoader
 
-from ..util import url_path
+from ..util import isurl, url_path
 from .state import state
 
 
@@ -50,10 +54,22 @@ DIST_DIR = PANEL_DIR / 'dist'
 BUNDLE_DIR = DIST_DIR / 'bundled'
 ASSETS_DIR = PANEL_DIR / 'assets'
 BASE_TEMPLATE = _env.get_template('base.html')
+ERROR_TEMPLATE = _env.get_template('auth_error.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
 CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
 LOCAL_DIST = "static/extensions/panel/"
+COMPONENT_PATH = "components/"
+
+CSS_URLS = {
+    'font-awesome': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css',
+    'bootstrap4': 'https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css'
+}
+
+JS_URLS = {
+    'jQuery': 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js',
+    'bootstrap4': 'https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js'
+}
 
 extension_dirs['panel'] = str(DIST_DIR)
 
@@ -69,6 +85,45 @@ def set_resource_mode(mode):
         RESOURCE_MODE = old_mode
         _settings.resources.set_value(old_resources)
 
+def resolve_custom_path(obj, path):
+    """
+    Attempts to resolve a path relative to some component.
+    """
+    if not path:
+        return
+    elif path.startswith(os.path.sep):
+        return os.path.isfile(path)
+    try:
+        mod = importlib.import_module(obj.__module__)
+        return (Path(mod.__file__).parent / path).is_file()
+    except Exception:
+        return None
+
+def component_rel_path(component, path):
+    """
+    Computes the absolute to a component resource.
+    """
+    if not isinstance(component, type):
+        component = type(component)
+    mod = importlib.import_module(component.__module__)
+    rel_dir = Path(mod.__file__).parent
+    if os.path.isabs(path):
+        abs_path = path
+    else:
+        abs_path = os.path.abspath(os.path.join(rel_dir, path))
+    return os.path.relpath(abs_path, rel_dir)
+
+def component_resource_path(component, attr, path):
+    """
+    Generates a canonical URL for a component resource.
+    """
+    if not isinstance(component, type):
+        component = type(component)
+    component_path = COMPONENT_PATH
+    if state.rel_path:
+        component_path = f"{state.rel_path}/{component_path}"
+    rel_path = component_rel_path(component, path).replace(os.path.sep, '/')
+    return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def loading_css():
     from ..config import config
@@ -77,10 +132,10 @@ def loading_css():
     b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return f"""
     .bk.pn-loading.{config.loading_spinner}:before {{
-      background-image: url("data:image/svg+xml;base64,{b64}")
+      background-image: url("data:image/svg+xml;base64,{b64}");
+      background-size: auto calc(min(50%, {config.loading_max_height}px));
     }}
     """
-
 
 def bundled_files(model, file_type='javascript'):
     bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
@@ -96,8 +151,8 @@ def bundled_files(model, file_type='javascript'):
             files.append(url)
     return files
 
-
-def bundle_resources(resources):
+def bundle_resources(roots, resources):
+    from ..config import panel_extension as ext
     global RESOURCE_MODE
     js_resources = css_resources = resources
     RESOURCE_MODE = mode = js_resources.mode if resources is not None else "inline"
@@ -107,8 +162,15 @@ def bundle_resources(resources):
     css_files = []
     css_raw = []
 
-    js_files.extend(js_resources.js_files)
-    js_raw.extend(js_resources.js_raw)
+    use_mathjax = (_use_mathjax(roots) or 'mathjax' in ext._loaded_extensions) if roots else True
+
+    if js_resources:
+        js_resources = copy.deepcopy(js_resources)
+        if not use_mathjax and "bokeh-mathjax" in js_resources.js_components:
+            js_resources.js_components.remove("bokeh-mathjax")
+
+        js_files.extend(js_resources.js_files)
+        js_raw.extend(js_resources.js_raw)
 
     css_files.extend(css_resources.css_files)
     css_raw.extend(css_resources.css_raw)
@@ -154,6 +216,17 @@ class Resources(BkResources):
             root_dir=bkr.root_dir, **kwargs
         )
 
+    def extra_resources(self, resources, resource_type):
+        from ..reactive import ReactiveHTML
+        for model in param.concrete_descendents(ReactiveHTML).values():
+            if not (getattr(model, resource_type, None) and model._loaded()):
+                continue
+            for resource in getattr(model, resource_type, []):
+                if not isurl(resource) and not resource.startswith('static/extensions'):
+                    resource = component_resource_path(model, resource_type, resource)
+                if resource not in resources:
+                    resources.append(resource)
+
     @property
     def css_raw(self):
         from ..config import config
@@ -180,15 +253,9 @@ class Resources(BkResources):
     @property
     def js_files(self):
         from ..config import config
-        from ..reactive import ReactiveHTML
 
         files = super(Resources, self).js_files
-
-        for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__javascript__'):
-                for jsfile in model.__javascript__:
-                    if jsfile not in files:
-                        files.append(jsfile)
+        self.extra_resources(files, '__javascript__')
 
         js_files = []
         for js_file in files:
@@ -221,32 +288,30 @@ class Resources(BkResources):
     @property
     def js_modules(self):
         from ..config import config
-        from ..reactive import ReactiveHTML
         modules = list(config.js_modules.values())
-        for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__javascript_modules__'):
-                for jsmodule in model.__javascript_modules__:
-                    if jsmodule not in modules:
-                        modules.append(jsmodule)
+        self.extra_resources(modules, '__javascript_modules__')
         return modules
 
     @property
     def css_files(self):
         from ..config import config
-        from ..reactive import ReactiveHTML
 
         files = super(Resources, self).css_files
+        self.extra_resources(files, '__css__')
 
-        for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__css__'):
-                for css_file in model.__css__:
-                    if css_file not in files:
-                        files.append(css_file)
+        css_files = []
+        for css_file in files:
+            if (css_file.startswith(state.base_url) or css_file.startswith('static/')):
+                if css_file.startswith(state.base_url):
+                    css_file = css_file[len(state.base_url):]
+                if state.rel_path:
+                    css_file = f'{state.rel_path}/{css_file}'
+            css_files.append(css_file)
 
         for cssf in config.css_files:
             if os.path.isfile(cssf) or cssf in files:
                 continue
-            files.append(cssf)
+            css_files.append(cssf)
         if self.mode == 'server':
             if state.rel_path:
                 dist_dir = f'{state.rel_path}/{LOCAL_DIST}'
@@ -254,11 +319,12 @@ class Resources(BkResources):
                 dist_dir = LOCAL_DIST
         else:
             dist_dir = CDN_DIST
+
         for cssf in glob.glob(str(DIST_DIR / 'css' / '*.css')):
             if self.mode == 'inline':
                 break
-            files.append(dist_dir + f'css/{os.path.basename(cssf)}')
-        return files
+            css_files.append(dist_dir + f'css/{os.path.basename(cssf)}')
+        return css_files
 
     @property
     def render_js(self):
@@ -275,7 +341,7 @@ class Bundle(BkBundle):
         from ..reactive import ReactiveHTML
         js_modules = list(config.js_modules.values())
         for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__javascript_modules__'):
+            if getattr(model, '__javascript_modules__', None) and model._loaded():
                 for js_module in model.__javascript_modules__:
                     if js_module not in js_modules:
                         js_modules.append(js_module)

@@ -14,6 +14,7 @@ from bokeh.document import Document
 from bokeh.client import pull_session
 from pyviz_comms import Comm
 
+from panel import config
 from panel.pane import HTML, Markdown
 from panel.io import state
 from panel import serve
@@ -88,7 +89,7 @@ def tmpdir(request, tmpdir_factory):
 @pytest.fixture()
 def html_server_session():
     html = HTML('<h1>Title</h1>')
-    server = serve(html, port=5006, show=False, start=False)
+    server = serve(html, port=6000, show=False, start=False)
     session = pull_session(
         session_id='Test',
         url="http://localhost:{:d}/".format(server.port),
@@ -104,7 +105,7 @@ def html_server_session():
 @pytest.fixture()
 def markdown_server_session():
     html = Markdown('#Title')
-    server = serve(html, port=5007, show=False, start=False)
+    server = serve(html, port=6001, show=False, start=False)
     session = pull_session(
         session_id='Test',
         url="http://localhost:{:d}/".format(server.port),
@@ -151,8 +152,10 @@ def multiple_apps_server_sessions():
 def with_curdoc():
     old_curdoc = state.curdoc
     state.curdoc = Document()
-    yield
-    state.curdoc = old_curdoc
+    try:
+        yield
+    finally:
+        state.curdoc = old_curdoc
         
 
 @contextmanager
@@ -165,20 +168,37 @@ def set_env_var(env_var, value):
     else:
         os.environ[env_var] = old_value
 
-
 @pytest.fixture(autouse=True)
 def server_cleanup():
     """
     Clean up after test fails
     """
-    yield
-    state.kill_all_servers()
-    state._indicators.clear()
-    state._locations.clear()
-
+    try:
+        yield
+    finally:
+        state.kill_all_servers()
+        state._indicators.clear()
+        state._locations.clear()
+        state._curdoc = None
+        state.cache.clear()
+        state._scheduled.clear()
+        if state._thread_pool is not None:
+            state._thread_pool.shutdown(wait=False)
+            state._thread_pool = None
 
 @pytest.fixture
 def py_file():
     tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
-    yield tf
-    tf.close()
+    try:
+        yield tf
+    finally:
+        tf.close()
+
+
+@pytest.fixture
+def threads():
+    config.nthreads = 4
+    try:
+        yield 4
+    finally:
+        config.nthreads = None

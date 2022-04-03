@@ -3,12 +3,9 @@ Defines utilities to save panel objects to files as HTML or PNG.
 """
 import io
 
-from six import string_types
-
 import bokeh
 
 from bokeh.document.document import Document
-from bokeh.embed.bundle import bundle_for_objs_and_resources
 from bokeh.embed.elements import html_page_for_render_items
 from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
 from bokeh.io.export import get_screenshot_as_png
@@ -19,7 +16,10 @@ from pyviz_comms import Comm
 from ..config import config
 from .embed import embed_state
 from .model import add_to_doc
-from .resources import BASE_TEMPLATE, DEFAULT_TITLE, Bundle, Resources, set_resource_mode
+from .resources import (
+    BASE_TEMPLATE, DEFAULT_TITLE, Bundle, Resources, bundle_resources,
+    set_resource_mode
+)
 from .state import state
 
 #---------------------------------------------------------------------
@@ -98,7 +98,7 @@ def save_png(model, filename, resources=CDN, template=None, template_variables=N
         if img.width == 0 or img.height == 0:
             raise ValueError("unable to save an empty image")
 
-        img.save(filename)
+        img.save(filename, format="png")
     except Exception:
         raise
     finally:
@@ -134,7 +134,7 @@ def file_html(models, resources, title=None, template=BASE_TEMPLATE,
             models_seq, suppress_callback_warning=True
         )
         title = _title_from_models(models_seq, title)
-        bundle = bundle_for_objs_and_resources(None, resources)
+        bundle = bundle_resources(models_seq, resources)
         bundle = Bundle.from_bokeh(bundle)
         return html_page_for_render_items(
             bundle, docs_json, render_items, title=title, template=template,
@@ -148,7 +148,8 @@ def file_html(models, resources, title=None, template=BASE_TEMPLATE,
 def save(panel, filename, title=None, resources=None, template=None,
          template_variables=None, embed=False, max_states=1000,
          max_opts=3, embed_json=False, json_prefix='', save_path='./',
-         load_path=None, progress=True, embed_states={}, **kwargs):
+         load_path=None, progress=True, embed_states={}, as_png=None,
+         **kwargs):
     """
     Saves Panel objects to file.
 
@@ -184,6 +185,9 @@ def save(panel, filename, title=None, resources=None, template=None,
       Whether to report progress
     embed_states: dict (default={})
       A dictionary specifying the widget values to embed for each widget
+    save_png: boolean (default=None)
+        To save as a .png. If None save_png will be true if filename is
+        string and ends with png.
     """
     from ..pane import PaneBase
     from ..template import BaseTemplate
@@ -191,7 +195,8 @@ def save(panel, filename, title=None, resources=None, template=None,
     if isinstance(panel, PaneBase) and len(panel.layout) > 1:
         panel = panel.layout
 
-    as_png = isinstance(filename, string_types) and filename.endswith('png')
+    if as_png is None:
+        as_png = isinstance(filename, str) and filename.endswith('png')
 
     if isinstance(panel, Document):
         doc = panel
@@ -237,7 +242,7 @@ def save(panel, filename, title=None, resources=None, template=None,
             model, resources=resources, filename=filename, template=template,
             template_variables=template_variables, **kwargs
         )
-    elif isinstance(filename, string_types) and not filename.endswith('.html'):
+    elif isinstance(filename, str) and not filename.endswith('.html'):
         filename = filename + '.html'
 
     kwargs = {}

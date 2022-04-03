@@ -11,6 +11,8 @@ import signal
 import subprocess
 import sys
 
+from functools import partial
+
 import param
 
 from pyviz_comms import JupyterComm
@@ -280,7 +282,10 @@ class Terminal(Widget):
             )
         model = super()._get_model(doc, root, parent, comm)
         model.output = self.output
-        model.on_event('keystroke', self._process_event)
+        if comm:
+            model.on_event('keystroke', self._comm_event)
+        else:
+            model.on_event('keystroke', partial(self._server_event, doc))
         return model
 
     def _process_event(self, event):
