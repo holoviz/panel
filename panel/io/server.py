@@ -355,7 +355,8 @@ class ComponentResourceHandler(StaticFileHandler):
         elif isinstance(resources, str):
             resources = [resources]
         resources = [
-            component_rel_path(component, resource) for resource in resources
+            component_rel_path(component, resource).replace(os.path.sep, '/')
+            for resource in resources
         ]
 
         rel_path = '/'.join(subpath)
