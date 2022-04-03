@@ -315,7 +315,11 @@ class classproperty(object):
 
 
 def url_path(url):
-    return os.path.join(*os.path.join(*url.split('//')[1:]).split('/')[1:])
+    """
+    Strips the protocol and domain from a URL returning just the path.
+    """
+    subpaths = url.split('//')[1:]
+    return '/'.join('/'.join(subpaths).split('/')[1:])
 
 
 # This functionality should be contributed to param

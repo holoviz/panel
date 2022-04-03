@@ -601,7 +601,7 @@ def test_server_template_custom_resources_with_prefix_relative_url():
 
     r = requests.get(f"http://localhost:{port}/prefix/template")
     content = r.content.decode('utf-8')
-    assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/./assets/custom.css"' in content
+    assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in content
 
 
 def test_server_template_custom_resources_with_subpath_and_prefix_relative_url():
@@ -615,7 +615,7 @@ def test_server_template_custom_resources_with_subpath_and_prefix_relative_url()
 
     r = requests.get(f"http://localhost:{port}/prefix/subpath/template")
     content = r.content.decode('utf-8')
-    assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/./assets/custom.css"' in content
+    assert 'href="../components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in content
 
 
 class CustomComponent(ReactiveHTML):
@@ -662,7 +662,7 @@ def test_server_component_custom_resources_with_prefix_relative_url():
 
     r = requests.get(f"http://localhost:{port}/prefix/component")
     content = r.content.decode('utf-8')
-    assert 'href="components/panel.tests.test_server/CustomComponent/__css__/./assets/custom.css"' in content
+    assert 'href="components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"' in content
 
 
 def test_server_component_custom_resources_with_subpath_and_prefix_relative_url():
@@ -676,7 +676,8 @@ def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(
 
     r = requests.get(f"http://localhost:{port}/prefix/subpath/component")
     content = r.content.decode('utf-8')
-    assert 'href="../components/panel.tests.test_server/CustomComponent/__css__/./assets/custom.css"' in content
+    print(content)
+    assert 'href="../components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"' in content
 
 
 def test_server_component_css_with_prefix_relative_url():
