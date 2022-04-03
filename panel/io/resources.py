@@ -204,17 +204,19 @@ def bundle_resources(roots, resources):
 class Resources(BkResources):
 
     @classmethod
-    def from_bokeh(cls, bkr):
+    def from_bokeh(cls, bkr, save=False):
         kwargs = {}
         if bkr.mode.startswith("server"):
             kwargs['root_url'] = bkr.root_url
-        return cls(
+        inst = cls(
             mode=bkr.mode, version=bkr.version, minified=bkr.minified,
             legacy=bkr.legacy, log_level=bkr.log_level,
             path_versioner=bkr.path_versioner,
             components=bkr._components, base_dir=bkr.base_dir,
             root_dir=bkr.root_dir, **kwargs
         )
+        inst.save = save
+        return inst
 
     def extra_resources(self, resources, resource_type):
         from ..reactive import ReactiveHTML
@@ -227,6 +229,19 @@ class Resources(BkResources):
                 if resource not in resources:
                     resources.append(resource)
 
+    @property
+    def dist_dir(self):
+        if self.mode == 'server':
+            if state.rel_path:
+                dist_dir = f'{state.rel_path}/{LOCAL_DIST}'
+            else:
+                dist_dir = LOCAL_DIST
+            if self.save:
+                dist_dir = f'{self.root_url}{dist_dir}'
+        else:
+            dist_dir = CDN_DIST
+        return dist_dir
+    
     @property
     def css_raw(self):
         from ..config import config
@@ -264,18 +279,14 @@ class Resources(BkResources):
                     js_file = js_file[len(state.base_url):]
                 if state.rel_path:
                     js_file = f'{state.rel_path}/{js_file}'
+                elif self.save and self.mode == 'server':
+                    js_file = f'{self.root_url}{js_file}'
             js_files.append(js_file)
         js_files += list(config.js_files.values())
 
         # Load requirejs last to avoid interfering with other libraries
+        dist_dir = self.dist_dir
         require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
-        if self.mode == 'server':
-            if state.rel_path:
-                dist_dir = f'{state.rel_path}/{LOCAL_DIST}'
-            else:
-                dist_dir = LOCAL_DIST
-        else:
-            dist_dir = CDN_DIST
         if require_index:
             requirejs = js_files.pop(require_index[0])
             if any('ace' in jsf for jsf in js_files):
@@ -283,6 +294,7 @@ class Resources(BkResources):
             js_files.append(requirejs)
             if any('ace' in jsf for jsf in js_files):
                 js_files.append(dist_dir + 'post_require.js')
+
         return js_files
 
     @property
@@ -306,24 +318,21 @@ class Resources(BkResources):
                     css_file = css_file[len(state.base_url):]
                 if state.rel_path:
                     css_file = f'{state.rel_path}/{css_file}'
+                elif self.save and self.mode == 'server':
+                    css_file = f'{self.root_url}{css_file}'
             css_files.append(css_file)
 
         for cssf in config.css_files:
             if os.path.isfile(cssf) or cssf in files:
                 continue
             css_files.append(cssf)
-        if self.mode == 'server':
-            if state.rel_path:
-                dist_dir = f'{state.rel_path}/{LOCAL_DIST}'
-            else:
-                dist_dir = LOCAL_DIST
-        else:
-            dist_dir = CDN_DIST
 
+        dist_dir = self.dist_dir
         for cssf in glob.glob(str(DIST_DIR / 'css' / '*.css')):
             if self.mode == 'inline':
                 break
             css_files.append(dist_dir + f'css/{os.path.basename(cssf)}')
+
         return css_files
 
     @property
@@ -355,20 +364,12 @@ class Bundle(BkBundle):
             js_raw=bk_bundle.js_raw,
             css_files=bk_bundle.css_files,
             css_raw=bk_bundle.css_raw,
-            hashes=bk_bundle.hashes
+            hashes=bk_bundle.hashes,
+            save=save
         )
 
     def _render_js(self):
-        js_files = []
-        for js_file in self.js_files:
-            if (js_file.startswith(state.base_url) or js_file.startswith('static/')):
-                if js_file.startswith(state.base_url):
-                    js_file = js_file[len(state.base_url):]
-                
-                if state.rel_path:
-                    js_file = f'{state.rel_path}/{js_file}'
-            js_files.append(js_file)
         return JS_RESOURCES.render(
-            js_raw=self.js_raw, js_files=js_files,
+            js_raw=self.js_raw, js_files=self.js_files,
             js_modules=self.js_modules, hashes=self.hashes
         )
