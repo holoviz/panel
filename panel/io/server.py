@@ -360,6 +360,8 @@ class ComponentResourceHandler(StaticFileHandler):
 
         rel_path = '/'.join(subpath)
 
+        print(rel_path, resources)
+
         # Important: May only access resources explicitly listed on the component
         # Otherwise this potentially exposes all files to the web
         if rel_path not in resources:
