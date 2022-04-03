@@ -564,7 +564,7 @@ class BasicTemplate(BaseTemplate):
                 elif isurl(resource):
                     resource_files[rname] = resource
                 elif resolve_custom_path(self, resource):
-                    resource_files[cssname] = component_resource_path(
+                    resource_files[rname] = component_resource_path(
                         self, f'_resources/{resource_type}', resource
                     )
 
@@ -582,7 +582,7 @@ class BasicTemplate(BaseTemplate):
             if not '//' in css and state.rel_path:
                 css = f'{state.rel_path}/{css}'
             extra_css.append(css)
-        resource_types['raw_css'] = raw_css = list(self.config.raw_css)
+        resource_types['raw_css'] = list(self.config.raw_css)
 
         # CSS files
         base_css = self._css
@@ -624,8 +624,6 @@ class BasicTemplate(BaseTemplate):
         theme = self._get_theme()
         if not theme:
             return resource_types
-
-        theme_name = type(theme).__name__
         if theme.base_css:
             basename = os.path.basename(theme.base_css)
             owner = type(theme).param.base_css.owner
