@@ -434,8 +434,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   private _render_script(literal: any, id: string) {
     const scripts = []
     for (const elname of this.model.nodes) {
-      if (elname in this.model.children && typeof this.model.children[elname] !== "string")
-        continue
       const elvar = elname.replace('-', '_')
       if (literal.indexOf(elvar) === -1)
         continue
