@@ -154,7 +154,6 @@ extras_require = {
         'aiohttp',
         'croniter',
         'graphviz',
-        'python-graphviz',
         'networkx>=2.5',
         'pygraphviz'
     ],
@@ -164,6 +163,7 @@ extras_require = {
         'nbsite >=0.7.1',
         'graphviz',
         'lxml',
+        'python-graphviz',
         'pydata-sphinx-theme',
         'sphinx-copybutton',
         'pydeck',

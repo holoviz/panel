@@ -1,2 +1,3 @@
 libgl1-mesa-dev
 xvfb
+graphviz-dev
