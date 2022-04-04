@@ -947,6 +947,10 @@ class Tabulator(BaseTable):
         'row_content': None
     }
 
+    # Determines the maximum size limits beyond which (local, remote)
+    # pagination is enabled
+    _MAX_ROW_LIMITS = (200, 10000)
+
     def __init__(self, value=None, **params):
         import pandas.io.formats.style
         if isinstance(value, pandas.io.formats.style.Styler):
@@ -958,6 +962,7 @@ class Tabulator(BaseTable):
         self.style = None
         self._computed_styler = None
         self._child_panels = {}
+        self._explicit_pagination = 'pagination' in params
         self._on_edit_callbacks = []
         self._on_click_callbacks = {}
         super().__init__(value=value, **params)
@@ -965,6 +970,23 @@ class Tabulator(BaseTable):
         self.param.watch(self._update_children, self._content_params)
         if style is not None:
             self.style._todo = style._todo
+
+    @param.depends('value', watch=True, on_init=True)
+    def _apply_max_size(self):
+        """
+        Ensure large tables automatically enable remote pagination.
+        """
+        if self.value is None or self._explicit_pagination:
+            return
+        if len(self.value) > self._MAX_ROW_LIMITS[0]:
+            self.pagination = 'local'
+        elif len(self.value) > self._MAX_ROW_LIMITS[1]:
+            self.pagination = 'remote'
+        self._explicit_pagination = False
+
+    @param.depends('pagination', watch=True)
+    def _set_explicict_pagination(self):
+        self._explicit_pagination = True
 
     def _validate(self, *events):
         super()._validate(*events)
