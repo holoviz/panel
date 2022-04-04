@@ -1,4 +1,4 @@
--e .['all']
+-e .['examples']
 -e binder/jupyter-panel-apps-server/.
 -e binder/jupyter-voila-docs-server/.
 pydeck
