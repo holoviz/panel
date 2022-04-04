@@ -31,11 +31,11 @@ class GoldenTemplate(BasicTemplate):
 
     _resources = {
         'css': {
-            'goldenlayout': "https://golden-layout.com/files/latest/css/goldenlayout-base.css",
+            'goldenlayout': "https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/src/css/goldenlayout-base.css",
         },
         'js': {
             'jquery': JS_URLS['jQuery'],
-            'goldenlayout': "https://golden-layout.com/files/latest/js/goldenlayout.js"
+            'goldenlayout': 'https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/dist/goldenlayout.min.js'
         }
     }
 
