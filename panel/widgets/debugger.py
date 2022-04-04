@@ -93,11 +93,14 @@ class CheckFilter(logging.Filter):
         if not hasattr(self, 'debugger'):
             return True
 
+
         if state.curdoc and state.curdoc.session_context:
             session_id = state.curdoc.session_context.id
             widget_session_ids = set(m.document.session_context.id
                                      for m in sum(self.debugger._models.values(),
                                                   tuple()) if m.document.session_context)
+            
+            print('>>>', session_id, widget_session_ids)
             if session_id not in widget_session_ids:
                 return False
         self._update_debugger(record)
@@ -187,11 +190,13 @@ class Debugger(Card):
 
     _rename = Card._rename.copy()
 
-    _rename.update({'_number_of_errors': None,
-                    '_number_of_warnings': None,
-                    '_number_of_infos': None,
-                    'only_last': None,
-                    'level': None})
+    _rename.update({
+        '_number_of_errors': None,
+        '_number_of_warnings': None,
+        '_number_of_infos': None,
+        'only_last': None,
+        'level': None
+    })
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -234,7 +239,7 @@ class Debugger(Card):
 
         stream_handler.addFilter(curr_filter)
 
-        logger = logging.getLogger('panel.callbacks')
+        logger = logging.getLogger('panel')
         logger.addHandler(stream_handler)
 
         self.terminal = terminal
