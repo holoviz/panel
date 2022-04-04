@@ -138,9 +138,7 @@ class Progress(ValueIndicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    value = param.Integer(default=-1, bounds=(-1, None),                           
-                          allow_None = True,#TODO: remove
-                          doc="""
+    value = param.Integer(default=-1, bounds=(-1, None), doc="""
         The current value of the progress bar. If set to -1 the progress
         bar will be indeterminate and animate depending on the active
         parameter.""")
@@ -152,13 +150,6 @@ class Progress(ValueIndicator):
     @param.depends('max', watch=True)
     def _update_value_bounds(self):
         self.param.value.bounds = (-1, self.max)
-        
-    @param.depends('value', watch=True)
-    def _warn_deprecation(self):
-        if self.value is None:
-            self.value = -1
-            warnings.warn('Setting the progress value to None is deprecated, use -1 instead.', 
-                          FutureWarning,  stacklevel=2)  
 
     def __init__(self,**params):
         super().__init__(**params)
@@ -738,10 +729,15 @@ class ptqdm(_tqdm):
 
 class Tqdm(Indicator):
 
+    value = param.Integer(default=0, bounds=(-1, None), doc="""
+        The current value of the progress bar. If set to -1 the progress
+        bar will be indeterminate and animate depending on the active
+        parameter.""")
+
     layout = param.ClassSelector(class_=(Column, Row), precedence=-1, constant=True, doc="""
         The layout for the text and progress indicator.""",)
-            
-    max = Progress.param.max
+
+    max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
     progress = param.ClassSelector(class_=Progress, precedence=-1, doc="""
         The Progress indicator used to display the progress.""",)
@@ -751,9 +747,6 @@ class Tqdm(Indicator):
 
     text_pane = param.ClassSelector(class_=Str, precedence=-1, doc="""
         The pane to display the text to.""")
-        
-    value = Progress.param.value
-    value.default = 0
 
     margin = param.Parameter(default=0, doc="""
         Allows to create additional space around the component. May
@@ -773,7 +766,7 @@ class Tqdm(Indicator):
 
     def __init__(self, **params):
         layout = params.pop('layout', 'column')
-        layout = self._layouts.get(layout, layout) 
+        layout = self._layouts.get(layout, layout)
         if "text_pane" not in params:
             sizing_mode = 'stretch_width' if layout == 'column' else 'fixed'
             params["text_pane"] = Str(
