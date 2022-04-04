@@ -17,7 +17,6 @@ import bleach
 import numpy as np
 import param
 
-from bokeh.models import LayoutDOM
 from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
 
@@ -561,55 +560,11 @@ class Reactive(Syncable, Viewable):
         if args is None:
             args = {}
 
+        from .links import Link, assert_source_syncable, assert_target_syncable
         mapping = code or links
-        for k in mapping:
-            if k.startswith('event:'):
-                continue
-            elif hasattr(self, 'object') and isinstance(self.object, LayoutDOM):
-                current = self.object
-                for attr in k.split('.'):
-                    if not hasattr(current, attr):
-                        raise ValueError(f"Could not resolve {k} on "
-                                         f"{self.object} model. Ensure "
-                                         "you jslink an attribute that "
-                                         "exists on the bokeh model.")
-                    current = getattr(current, attr)
-            elif (k not in self.param and k not in list(self._rename.values())):
-                matches = difflib.get_close_matches(k, list(self.param))
-                if matches:
-                    matches = ' Similar parameters include: %r' % matches
-                else:
-                    matches = ''
-                raise ValueError("Could not jslink %r parameter (or property) "
-                                 "on %s object because it was not found.%s"
-                                 % (k, type(self).__name__, matches))
-            elif (self._source_transforms.get(k, False) is None or
-                  self._rename.get(k, False) is None):
-                raise ValueError("Cannot jslink %r parameter on %s object, "
-                                 "the parameter requires a live Python kernel "
-                                 "to have an effect." % (k, type(self).__name__))
-
+        assert_source_syncable(self, mapping)
         if isinstance(target, Syncable) and code is None:
-            for k, p in mapping.items():
-                if k.startswith('event:'):
-                    continue
-                elif p not in target.param and p not in list(target._rename.values()):
-                    matches = difflib.get_close_matches(p, list(target.param))
-                    if matches:
-                        matches = ' Similar parameters include: %r' % matches
-                    else:
-                        matches = ''
-                    raise ValueError("Could not jslink %r parameter (or property) "
-                                     "on %s object because it was not found.%s"
-                                    % (p, type(self).__name__, matches))
-                elif (target._source_transforms.get(p, False) is None or
-                      target._rename.get(p, False) is None):
-                    raise ValueError("Cannot jslink %r parameter on %s object "
-                                     "to %r parameter on %s object. It requires "
-                                     "a live Python kernel to have an effect."
-                                     % (k, type(self).__name__, p, type(target).__name__))
-
-        from .links import Link
+            assert_target_syncable(self, target, mapping)
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)
 

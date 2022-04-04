@@ -335,6 +335,23 @@ class HoloViews(PaneBase):
         from holoviews.plotting.plot import Plot
         return isinstance(obj, Dimensioned) or isinstance(obj, Plot)
 
+    def jslink(self, target, code=None, args=None, bidirectional=False, **links):
+        if links and code:
+            raise ValueError('Either supply a set of properties to '
+                             'link as keywords or a set of JS code '
+                             'callbacks, not both.')
+        elif not links and not code:
+            raise ValueError('Declare parameters to link or a set of '
+                             'callbacks, neither was defined.')
+        if args is None:
+            args = {}
+
+        from ..links import Link
+        return Link(self, target, properties=links, code=code, args=args,
+                    bidirectional=bidirectional)
+
+    jslink.__doc__ = PaneBase.jslink.__doc__
+
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual'):
         from holoviews.core import Dimension, DynamicMap
