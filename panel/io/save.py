@@ -254,7 +254,7 @@ def save(panel, filename, title=None, resources=None, template=None,
     if template_variables:
         kwargs['template_variables'] = template_variables
 
-    resources = Resources.from_bokeh(resources)
+    resources = Resources.from_bokeh(resources, absolute=True)
 
     # Set resource mode
     with set_resource_mode(resources):
