@@ -204,7 +204,7 @@ def bundle_resources(roots, resources):
 class Resources(BkResources):
 
     @classmethod
-    def from_bokeh(cls, bkr, save=False):
+    def from_bokeh(cls, bkr, absolute=False):
         kwargs = {}
         if bkr.mode.startswith("server"):
             kwargs['root_url'] = bkr.root_url
@@ -215,10 +215,13 @@ class Resources(BkResources):
             components=bkr._components, base_dir=bkr.base_dir,
             root_dir=bkr.root_dir, **kwargs
         )
-        inst.save = save
+        inst.absolute = absolute
         return inst
 
     def extra_resources(self, resources, resource_type):
+        """
+        Adds resources for ReactiveHTML components.
+        """
         from ..reactive import ReactiveHTML
         for model in param.concrete_descendents(ReactiveHTML).values():
             if not (getattr(model, resource_type, None) and model._loaded()):
@@ -229,6 +232,22 @@ class Resources(BkResources):
                 if resource not in resources:
                     resources.append(resource)
 
+    def adjust_paths(self, resources):
+        """
+        Computes relative and absolute paths for resources.
+        """
+        new_resources = []
+        for resource in resources:
+            if (resource.startswith(state.base_url) or resource.startswith('static/')):
+                if resource.startswith(state.base_url):
+                    resource = resource[len(state.base_url):]
+                if state.rel_path:
+                    resource = f'{state.rel_path}/{resource}'
+                elif self.absolute and self.mode == 'server':
+                    resource = f'{self.root_url}{resource}'
+            new_resources.append(resource)
+        return new_resources
+
     @property
     def dist_dir(self):
         if self.mode == 'server':
@@ -236,12 +255,12 @@ class Resources(BkResources):
                 dist_dir = f'{state.rel_path}/{LOCAL_DIST}'
             else:
                 dist_dir = LOCAL_DIST
-            if self.save:
+            if self.absolute:
                 dist_dir = f'{self.root_url}{dist_dir}'
         else:
             dist_dir = CDN_DIST
         return dist_dir
-    
+
     @property
     def css_raw(self):
         from ..config import config
@@ -272,16 +291,7 @@ class Resources(BkResources):
         files = super(Resources, self).js_files
         self.extra_resources(files, '__javascript__')
 
-        js_files = []
-        for js_file in files:
-            if (js_file.startswith(state.base_url) or js_file.startswith('static/')):
-                if js_file.startswith(state.base_url):
-                    js_file = js_file[len(state.base_url):]
-                if state.rel_path:
-                    js_file = f'{state.rel_path}/{js_file}'
-                elif self.save and self.mode == 'server':
-                    js_file = f'{self.root_url}{js_file}'
-            js_files.append(js_file)
+        js_files = self.adjust_paths(files)
         js_files += list(config.js_files.values())
 
         # Load requirejs last to avoid interfering with other libraries
@@ -302,6 +312,8 @@ class Resources(BkResources):
         from ..config import config
         modules = list(config.js_modules.values())
         self.extra_resources(modules, '__javascript_modules__')
+        
+        
         return modules
 
     @property
@@ -310,17 +322,7 @@ class Resources(BkResources):
 
         files = super(Resources, self).css_files
         self.extra_resources(files, '__css__')
-
-        css_files = []
-        for css_file in files:
-            if (css_file.startswith(state.base_url) or css_file.startswith('static/')):
-                if css_file.startswith(state.base_url):
-                    css_file = css_file[len(state.base_url):]
-                if state.rel_path:
-                    css_file = f'{state.rel_path}/{css_file}'
-                elif self.save and self.mode == 'server':
-                    css_file = f'{self.root_url}{css_file}'
-            css_files.append(css_file)
+        css_files = self.adjust_paths(files)
 
         for cssf in config.css_files:
             if os.path.isfile(cssf) or cssf in files:
@@ -365,7 +367,6 @@ class Bundle(BkBundle):
             css_files=bk_bundle.css_files,
             css_raw=bk_bundle.css_raw,
             hashes=bk_bundle.hashes,
-            save=save
         )
 
     def _render_js(self):
