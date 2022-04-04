@@ -1,6 +1,5 @@
 import os
 import sys
-import warnings
 
 from math import pi
 
