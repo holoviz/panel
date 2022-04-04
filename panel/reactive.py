@@ -6,6 +6,7 @@ models rendered on the frontend.
 
 import difflib
 import datetime as dt
+import logging
 import re
 import sys
 import textwrap
@@ -20,7 +21,6 @@ import param
 from bokeh.models import LayoutDOM
 from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
-import logging
 from pprint import pformat
 
 from .io.document import unlocked
@@ -32,7 +32,9 @@ from .models.reactive_html import (
 )
 from .util import edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable
-log = logging.getLogger('panel.callbacks')
+
+log = logging.getLogger('panel.reactive')
+
 LinkWatcher = namedtuple("Watcher", Watcher._fields+('target', 'links', 'transformed', 'bidirectional_watcher'))
 
 
