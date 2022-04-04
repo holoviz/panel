@@ -12,7 +12,7 @@ _ROOT = pathlib.Path(__file__).parent
 
 class FastBaseTemplate(BasicTemplate):
 
-    accent_base_color = param.String(doc="""
+    accent_base_color = param.String(default="#0072B5", doc="""
         Optional body accent color override.""")
 
     background_color = param.String(doc="""
@@ -81,6 +81,12 @@ class FastBaseTemplate(BasicTemplate):
             params['theme'] = DefaultTheme
         elif isinstance(params['theme'], str):
             params['theme'] = THEMES[params['theme']]
+        if "accent" in params:
+            accent = params.pop("accent")
+            if not "accent_base_color" in params:
+                params["accent_base_color"]=accent
+            if not "header_background" in params:
+                params["header_background"]=accent
 
         super().__init__(**params)
         theme = self._get_theme()
