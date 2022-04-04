@@ -1030,10 +1030,10 @@ class ReactiveData(SyncableData):
         self._updating = True
         old_data = getattr(self, self._data_params[0])
         try:
-            if old_raw is self.value:
+            if old_data is self.value:
                 with param.discard_events(self):
                     self.value = old_raw
-                self.value = data
+                self.value = old_data
             else:
                 self.param.trigger('value')
         finally:
