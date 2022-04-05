@@ -280,6 +280,9 @@ class Perspective(PaneBase, ReactiveData):
     filters = param.List(default=None, doc="""
       How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")
 
+    min_width = param.Integer(default=420, bounds=(0, None), doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""")
+
     object = param.Parameter(doc="""
       The plot data declared as a dictionary of arrays or a DataFrame.""")
 
