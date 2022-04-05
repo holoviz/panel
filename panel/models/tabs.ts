@@ -19,7 +19,7 @@ export class TabsView extends BkTabsView {
       if (view.model.type.endsWith('Tabs')) {
 	view.connect(view.model.properties.active.change, () => this.update_zindex())
       }
-      view = view.parent
+      view = view.parent || view._parent // Handle ReactiveHTML
     }
   }
 
@@ -33,7 +33,7 @@ export class TabsView extends BkTabsView {
         }
       }
       current_view = parent
-      parent = parent.parent
+      parent = parent.parent || parent._parent // Handle ReactiveHTML
     }
     return true
   }
