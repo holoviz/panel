@@ -11,7 +11,33 @@ import * as menus from "@bokehjs/styles/menus.css"
 
 export class TabsView extends BkTabsView {
   model: Tabs
-  
+
+  connect_signals(): void {
+    super.connect_signals()
+    let view: any = this
+    while (view != null) {
+      if (view.model.type.endsWith('Tabs')) {
+	view.connect(view.model.properties.active.change, () => this.update_zindex())
+      }
+      view = view.parent
+    }
+  }
+
+  get is_visible(): boolean {
+    let parent: any = this.parent
+    let current_view: any = this
+    while (parent != null) {
+      if (parent.model.type.endsWith('Tabs')) {
+	if (parent.child_views.indexOf(current_view) !== parent.model.active) {
+	  return false
+        }
+      }
+      current_view = parent
+      parent = parent.parent
+    }
+    return true
+  }
+
   override _update_layout(): void {
     const loc = this.model.tabs_location
     const vertical = loc == "above" || loc == "below"
@@ -78,6 +104,15 @@ export class TabsView extends BkTabsView {
     this.layout.set_sizing(this.box_sizing())
   }
 
+  update_zindex(): void {
+    const {child_views} = this
+    for (const child_view of child_views) {
+      child_view.el.style.zIndex = ""
+    }
+    if (this.is_visible)
+      child_views[this.model.active].el.style.zIndex = "1"
+  }
+
   override update_position(): void {
     super.update_position()
 
@@ -118,10 +153,8 @@ export class TabsView extends BkTabsView {
     }
 
     const tab = child_views[this.model.active]
-    if (tab != null) {
+    if (tab != null)
       show(tab.el)
-      tab.el.style.zIndex = '1'
-    }
   }
 
   override render(): void {
@@ -170,6 +203,7 @@ export class TabsView extends BkTabsView {
     this.header_el = div({class: [tabs.tabs_header, tabs[loc]]}, this.scroll_el, this.wrapper_el)
     this.el.appendChild(this.header_el)
 
+    this.update_zindex()
     if (active === -1 && this.model.tabs.length)
       this.model.active = 0
   }
@@ -186,11 +220,9 @@ export class TabsView extends BkTabsView {
     const {child_views} = this
     for (const child_view of child_views) {
       hide(child_view.el)
-      child_view.el.style.removeProperty('zIndex');
     }
 
     show(child_views[i].el)
-    child_views[i].el.style.zIndex = '1'
   }
 
 }
