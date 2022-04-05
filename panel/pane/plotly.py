@@ -5,13 +5,12 @@ bokeh model.
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource, CustomJS, Tabs
+from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from .base import PaneBase
 from ..util import isdatetime, lazy_load
-from ..viewable import Layoutable, Viewable
-
+from ..viewable import Layoutable
 
 
 class Plotly(PaneBase):
