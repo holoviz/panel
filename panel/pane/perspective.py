@@ -307,6 +307,8 @@ class Perspective(PaneBase, ReactiveData):
     theme = param.ObjectSelector(default=DEFAULT_THEME, objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example material-dark""")
 
+    priority = None
+
     _data_params = ['object']
 
     _rerender_params = ['object']
@@ -329,14 +331,17 @@ class Perspective(PaneBase, ReactiveData):
     def __init__(self, object=None, **params):
         super().__init__(object=object, **params)
         self.param.watch(self._deprecated_warning, ['computed_columns', 'column_pivots', 'row_pivots'])
+        ps = [deprecation for deprecation in self._deprecations if deprecation in params]
+        self.param.trigger(*ps)
 
     @classmethod
     def applies(cls, object):
-        if isinstance(object, dict):
-            return True
+        if isinstance(object, dict) and all(isinstance(v, (list, np.ndarray)) for v in object.values()):
+            return 0.2
         elif 'pandas' in sys.modules:
             import pandas as pd
-            return isinstance(object, pd.DataFrame)
+            if isinstance(object, pd.DataFrame):
+                return 0
         return False
 
     def _get_data(self):
@@ -360,13 +365,16 @@ class Perspective(PaneBase, ReactiveData):
                              "converted to strings.")
         return df, {str(k): v for k, v in data.items()}
 
-    def _deprecated_warning(self, event):
-        renamed = self._deprecations[event.name]
-        warnings.warn(
-            f'The {event.name!r} parameter is deprecated use {renamed!r} parameter instead.',
-            DeprecationWarning
-        )
-        self.param.update(**{renamed: event.new})
+    def _deprecated_warning(self, *events):
+        updates = {}
+        for event in events:
+            renamed = self._deprecations[event.name]
+            warnings.warn(
+                f'The {event.name!r} parameter is deprecated use {renamed!r} parameter instead.',
+                DeprecationWarning
+            )
+            updates[renamed] = event.new
+        self.param.update(**updates)
 
     def _filter_properties(self, properties):
         ignored = list(Viewable.param)
@@ -412,7 +420,7 @@ class Perspective(PaneBase, ReactiveData):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         for p in ('columns', 'group_by', 'split_by'):
-            if p in msg:
+            if msg.get(p):
                 msg[p] = [None if col is None else str(col) for col in msg[p]]
         if msg.get('sort'):
             msg['sort'] = [[str(col), *args] for col, *args in msg['sort']]
