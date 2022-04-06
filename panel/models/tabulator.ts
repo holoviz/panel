@@ -233,8 +233,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   _updating_page: boolean = true
   _updating_sort: boolean = false
   _relayouting: boolean = false
-  _selection_updating: boolean =false
+  _selection_updating: boolean = false
   _initializing: boolean
+  _lastVerticalScrollbarTopPosition: number = 0;
 
   connect_signals(): void {
     super.connect_signals()
@@ -272,13 +273,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => {
       const inds = this.model.source.selected.indices
-      const visible = this.tabulator.rowManager.getVisibleRows(this.tabulator.rowManager.element)
-      this.updateOrAddData()
-      if (visible.length) {
-        const index = ((visible[0]?.data._index) || 0)
-        const row = this.tabulator.rowManager.findRow(index)
-        this.tabulator.rowManager.scrollToRow(row, 'end', false)
-      }
+      this.updateOrAddData();
+      this.tabulator.rowManager.element.scrollTop = this._lastVerticalScrollbarTopPosition;
       // Restore indices since updating data may have reset checkbox column 
       this.model.source.selected.indices = inds;
     })
@@ -449,10 +445,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.invalidate_layout()
       const parent = (this as any).root._parent
       if (parent != null && parent.relayout != null)
-	parent.relayout()
+        parent.relayout()
     } else if ((this as any)._parent != null) { // HACK: Support ReactiveHTML
       if ((this as any)._parent.relayout != null)
-	(this as any)._parent.relayout()
+        (this as any)._parent.relayout()
       else
         (this as any)._parent.invalidate_layout()
     }
@@ -536,6 +532,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         return  cell.getColumn().getField() + ": " + cell.getValue();
       },
       scrollVertical: debounce(() => {
+        this._lastVerticalScrollbarTopPosition = this.tabulator.rowManager.element.scrollTop;
         this.setStyles()
       }, 50, false),
       rowFormatter: (row: any) => this._render_row(row),
