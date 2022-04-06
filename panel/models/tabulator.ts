@@ -236,12 +236,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   _selection_updating: boolean = false
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0;
+  _timeout_queue: any[] = []
 
   connect_signals(): void {
     super.connect_signals()
 
     const {configuration, layout, columns, theme, groupby} = this.model.properties;
-    this.on_change([configuration, layout, columns, groupby], () => this.render())
+    this.on_change([configuration, layout, columns, groupby], debounce(() => this.render(), 20, false))
 
     this.on_change([theme], () => this.setCSS())
 
@@ -295,11 +296,17 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   renderComplete(): void {
     // Only have to set up styles after initial render subsequent
     // styling is handled by change event on styles property
+    if (this._timeout_queue.length) {
+      const timeout = this._timeout_queue.shift()
+      clearTimeout(timeout)
+    }
+
     if (this._initializing) {
       this.setStyles()
       this.setSelection()
-      this._initializing = false
       this.relayout()
+      this._initializing = false
+      this.redraw()
     }
   }
 
@@ -346,6 +353,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.setFrozen()
 
     this.el.appendChild(container)
+
+    // Ensure renderComplete is run eventually
+    this._timeout_queue.push(setTimeout(() => this.renderComplete(), 500))
   }
 
   /*
