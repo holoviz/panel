@@ -1483,15 +1483,17 @@ def test_tabulator_constant_list_filter(document, comm):
 
     table.add_filter(['foo3', 'foo5'], 'C')
 
-    expected = pd.DataFrame({
+    expected = {
+        'index': np.array([2, 4]),
         'A': np.array([2., 4.]),
         'B': np.array([0., 0.]),
         'C': np.array(['foo3', 'foo5']),
         'D': np.array(['2009-01-05T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
-                      dtype='datetime64[ns]')
-    }, index=np.array([2, 4]))
-    pd.testing.assert_frame_equal(table._processed, expected)
+                      dtype='datetime64[ns]').astype(np.int64) / 10e5
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
 
 def test_tabulator_function_filter(document, comm):
     df = makeMixedDataFrame()
