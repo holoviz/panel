@@ -596,11 +596,11 @@ class BasicTemplate(BaseTemplate):
                     tmpl_name = cls.__name__.lower()
             css_file = os.path.basename(css)
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
-                css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
+                css_files[f'base_{tmpl_name}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
             elif isurl(css):
-                css_files[f'base_{css_file}'] = css
+                css_files[f'base_{tmpl_name}'] = css
             elif resolve_custom_path(self, css):
-                css_files[f'base_{css_file}' ] = component_resource_path(self, '_css', css)
+                css_files[f'base_{tmpl_name}' ] = component_resource_path(self, '_css', css)
 
         # JS files
         base_js = self._js
@@ -614,13 +614,12 @@ class BasicTemplate(BaseTemplate):
                     tmpl_name = cls.__name__.lower()
             js_name = os.path.basename(js)
             if (BUNDLE_DIR / tmpl_name / js_name).is_file():
-                js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
+                js_files[f'base_{tmpl_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
             elif isurl(js):
-                js_files[f'base_{js_name}'] = js
+                js_files[f'base_{tmpl_name}'] = js
             elif resolve_custom_path(self, js):
-                js_files[f'base_{js_name}' ] = component_resource_path(self, '_js', js)
+                js_files[f'base_{tmpl_name}'] = component_resource_path(self, '_js', js)
 
-    
         theme = self._get_theme()
         if not theme:
             return resource_types
