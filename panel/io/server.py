@@ -352,7 +352,7 @@ class ComponentResourceHandler(StaticFileHandler):
 
         if isinstance(resources, dict):
             resources = list(resources.values())
-        elif isinstance(resources, str):
+        elif isinstance(resources, (str, pathlib.PurePath)):
             resources = [resources]
         resources = [
             component_rel_path(component, resource).replace(os.path.sep, '/')

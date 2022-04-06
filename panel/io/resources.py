@@ -91,7 +91,8 @@ def resolve_custom_path(obj, path):
     """
     if not path:
         return
-    elif path.startswith(os.path.sep):
+    path = str(path)
+    if path.startswith(os.path.sep):
         return os.path.isfile(path)
     try:
         mod = importlib.import_module(obj.__module__)
