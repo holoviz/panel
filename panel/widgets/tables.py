@@ -1246,7 +1246,10 @@ class Tabulator(BaseTable):
 
     def _update_cds(self, *events):
         page_events = ('page', 'page_size', 'sorters', 'filters')
-        if self._updating or (events and all(e.name in page_events for e in events) and not self.pagination):
+        if self._updating:
+            return
+        elif (events and all(e.name in page_events for e in events) and not self.pagination):
+            self._processed, _ = self._get_data()
             return
         recompute = not all(
             e.name in ('page', 'page_size', 'pagination') for e in events
