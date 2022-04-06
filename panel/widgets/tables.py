@@ -254,10 +254,15 @@ class BaseTable(ReactiveData, Widget):
     def _sort_df(self, df):
         if not self.sorters:
             return df
-        return df.sort_values(
-            [s['field'] for s in self.sorters],
-            ascending=[s['dir'] == 'asc' for s in self.sorters]
-        )
+        fields = [s['field'] for s in self.sorters]
+        ascending = [s['dir'] == 'asc' for s in self.sorters]
+        rename = 'index' in fields and df.index.name is None
+        if rename:
+            df.index.name = 'index'
+        df_sorted = df.sort_values(fields, ascending=ascending)
+        if rename:
+            df.index.name = None
+        return df_sorted
 
     def _filter_dataframe(self, df):
         """
@@ -1240,7 +1245,8 @@ class Tabulator(BaseTable):
         self._update_selectable()
 
     def _update_cds(self, *events):
-        if self._updating:
+        page_events = ('page', 'page_size', 'sorters', 'filters')
+        if self._updating or (events and all(e.name in page_events for e in events) and not self.pagination):
             return
         recompute = not all(
             e.name in ('page', 'page_size', 'pagination') for e in events
