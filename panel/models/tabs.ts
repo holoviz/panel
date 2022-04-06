@@ -1,5 +1,5 @@
 import {Grid, ContentBox, Sizeable} from "@bokehjs/core/layout"
-import {div, size, children, show, hide, display, undisplay, position, scroll_size} from "@bokehjs/core/dom"
+import {div, size, children, display, undisplay, position, scroll_size} from "@bokehjs/core/dom"
 import {sum, remove_at} from "@bokehjs/core/util/array"
 import * as p from "@bokehjs/core/properties"
 import {Tabs as  BkTabs, TabsView as BkTabsView} from "@bokehjs/models/layouts/tabs"
@@ -8,6 +8,17 @@ import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import * as tabs from "@bokehjs/styles/tabs.css"
 import * as buttons from "@bokehjs/styles/buttons.css"
 import * as menus from "@bokehjs/styles/menus.css"
+
+
+function show(element: HTMLElement): void {
+  element.style.visibility = ""
+  element.style.opacity = ""
+}
+
+function hide(element: HTMLElement): void {
+  element.style.visibility = "hidden"
+  element.style.opacity = "0"
+}
 
 export class TabsView extends BkTabsView {
   model: Tabs
