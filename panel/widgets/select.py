@@ -636,6 +636,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
         self._selections = {False: [], True: []}
         self._query = {False: '', True: ''}
 
+        self._update_disabled()
+
     @param.depends('size', watch=True)
     def _update_size(self):
         self._lists[False].size = self.size
