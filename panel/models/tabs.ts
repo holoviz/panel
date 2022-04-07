@@ -118,10 +118,14 @@ export class TabsView extends BkTabsView {
   update_zindex(): void {
     const {child_views} = this
     for (const child_view of child_views) {
-      child_view.el.style.zIndex = ""
+      if (child_view != null && child_view.el != null)
+        child_view.el.style.zIndex = ""
     }
-    if (this.is_visible)
-      child_views[this.model.active].el.style.zIndex = "1"
+    if (this.is_visible) {
+      const active = child_views[this.model.active]
+      if (active != null && active.el != null)
+        active.el.style.zIndex = "1"
+    }
   }
 
   override update_position(): void {
