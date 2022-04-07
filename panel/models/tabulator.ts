@@ -1,3 +1,4 @@
+import {undisplay} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {build_views} from "@bokehjs/core/build_views"
@@ -627,8 +628,15 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const exp_index = expanded.indexOf(index)
     if (exp_index < 0)
       expanded.push(index)
-    else
-      expanded.splice(exp_index, 1)
+    else {
+      const removed = expanded.splice(exp_index, 1)[0]
+      if (removed in this.model.children) {
+	const model = this.model.children[removed]
+	const view = this._child_views.get(model)
+	if (view !== undefined && view.el != null)
+	  undisplay(view.el)
+      }
+    }
     this.model.expanded = expanded
     if (expanded.indexOf(index) < 0)
       return
