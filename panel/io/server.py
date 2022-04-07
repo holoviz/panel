@@ -1,6 +1,7 @@
 """
 Utilities for creating bokeh Server instances.
 """
+import asyncio
 import datetime as dt
 import gc
 import html
@@ -490,6 +491,16 @@ def create_static_handler(prefix, key, app):
     return (route, StaticHandler, {})
 
 bokeh.server.tornado.create_static_handler = create_static_handler
+
+# Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
+# support the WindowsProactorEventLoopPolicy so we restore it.
+if (
+    sys.platform == 'win32' and
+    sys.version_info[:3] >= (3, 8, 0) and
+    tornado.version_info >= (6, 1)) and
+    type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy
+):
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 #---------------------------------------------------------------------
 # Public API
