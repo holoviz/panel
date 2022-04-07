@@ -87,6 +87,15 @@ class BaseTable(ReactiveData, Widget):
         self._filters = []
         super().__init__(value=value, **params)
 
+    @param.depends('value', watch=True, on_init=True)
+    def _compute_renamed_cols(self):
+        if self.value is None:
+            self._renamed_cols.clear()
+            return
+        self._renamed_cols = {
+            str(col) if str(col) != col else col: col for col in self._get_fields()
+        }
+
     def _validate(self, *events):
         if self.value is None:
             return
@@ -177,9 +186,6 @@ class BaseTable(ReactiveData, Widget):
                 if isinstance(formatter, CellFormatter):
                     formatter = clone_model(formatter)
 
-            if str(col) != col:
-                self._renamed_cols[str(col)] = col
-
             if isinstance(self.widths, int):
                 col_kwargs['width'] = self.widths
             elif str(col) in self.widths and isinstance(self.widths.get(str(col)), int):
@@ -254,7 +260,7 @@ class BaseTable(ReactiveData, Widget):
     def _sort_df(self, df):
         if not self.sorters:
             return df
-        fields = [s['field'] for s in self.sorters]
+        fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
         ascending = [s['dir'] == 'asc' for s in self.sorters]
         rename = 'index' in fields and df.index.name is None
         if rename:
@@ -262,6 +268,7 @@ class BaseTable(ReactiveData, Widget):
         df_sorted = df.sort_values(fields, ascending=ascending)
         if rename:
             df.index.name = None
+            df_sorted.index.name = None
         return df_sorted
 
     def _filter_dataframe(self, df):

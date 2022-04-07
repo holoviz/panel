@@ -683,6 +683,30 @@ def test_tabulator_empty_table(document, comm):
 
     assert table.value.shape == value_df.shape
 
+
+def test_tabulator_sorters_unnamed_index(document, comm):
+    df = pd.DataFrame(np.random.rand(10, 4))
+    table = Tabulator(df)
+
+    table.sorters = [{'field': 'index', 'dir': 'desc'}]
+
+    pd.testing.assert_frame_equal(
+        table._processed,
+        df.sort_index(ascending=False)
+    )
+
+def test_tabulator_sorters_int_name_column(document, comm):
+    df = pd.DataFrame(np.random.rand(10, 4))
+    table = Tabulator(df)
+
+    table.sorters = [{'field': '0', 'dir': 'desc'}]
+
+    pd.testing.assert_frame_equal(
+        table._processed,
+        df.sort_values([0], ascending=False)
+    )
+
+
 def test_tabulator_stream_series(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
@@ -974,7 +998,6 @@ def test_tabulator_patch_with_filters(document, comm):
             np.testing.assert_array_equal(
                 table.value[col].values, expected_df[col]
             )
-
 
 def test_tabulator_patch_with_sorters(document, comm):
     df = makeMixedDataFrame()
