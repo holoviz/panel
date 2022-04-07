@@ -276,6 +276,18 @@ class Syncable(Renderable):
             with edit_readonly(state):
                 state.busy = busy
 
+    def _process_bokeh_event(self, event):
+        self._log('received bokeh event %s', event)
+        busy = state.busy
+        with edit_readonly(state):
+            state.busy = True
+        try:
+            self._process_event(event)
+        finally:
+            self._log('finished processing bokeh event %s', event)
+            with edit_readonly(state):
+                state.busy = busy
+
     async def _change_coroutine(self, doc=None):
         if state._thread_pool:
             state._thread_pool.submit(self._change_event, doc)
@@ -285,10 +297,10 @@ class Syncable(Renderable):
 
     async def _event_coroutine(self, event, doc):
         if state._thread_pool:
-            state._thread_pool.submit(self._process_event, event)
+            state._thread_pool.submit(self._process_bokeh_event, event)
         else:
             with set_curdoc(doc):
-                self._process_event(event)
+                self._process_bokeh_event(event)
 
     def _change_event(self, doc=None):
         try:
@@ -318,9 +330,9 @@ class Syncable(Renderable):
 
     def _comm_event(self, event):
         if state._thread_pool:
-            state._thread_pool.submit(self._process_event, event)
+            state._thread_pool.submit(self._process_bokeh_event, event)
         else:
-            self._process_event(event)
+            self._process_bokeh_event(event)
 
     def _server_event(self, doc, event):
         if doc.session_context and not state._unblocked(doc):
