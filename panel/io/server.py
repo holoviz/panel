@@ -25,6 +25,7 @@ from urllib.parse import urljoin, urlparse
 import param
 import bokeh
 import bokeh.command.util
+import tornado
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
