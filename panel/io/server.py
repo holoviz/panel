@@ -497,7 +497,7 @@ bokeh.server.tornado.create_static_handler = create_static_handler
 if (
     sys.platform == 'win32' and
     sys.version_info[:3] >= (3, 8, 0) and
-    tornado.version_info >= (6, 1)) and
+    tornado.version_info >= (6, 1) and
     type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy
 ):
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
