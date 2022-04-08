@@ -795,12 +795,13 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
         server.start()
         try:
             server.io_loop.start()
-        except Exception:
+        except RuntimeError:
+            pass
+        except TypeError:
             warnings.warn(
                 "IOLoop couldn't be started. Ensure it is started by "
                 "process invoking the panel.io.server.serve."
             )
-                
     return server
 
 
