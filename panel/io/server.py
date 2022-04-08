@@ -1,6 +1,7 @@
 """
 Utilities for creating bokeh Server instances.
 """
+import asyncio
 import datetime as dt
 import gc
 import html
@@ -24,6 +25,7 @@ from urllib.parse import urljoin, urlparse
 import param
 import bokeh
 import bokeh.command.util
+import tornado
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
@@ -491,6 +493,16 @@ def create_static_handler(prefix, key, app):
 
 bokeh.server.tornado.create_static_handler = create_static_handler
 
+# Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
+# support the WindowsProactorEventLoopPolicy so we restore it.
+if (
+    sys.platform == 'win32' and
+    sys.version_info[:3] >= (3, 8, 0) and
+    tornado.version_info >= (6, 1) and
+    type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy
+):
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -783,12 +795,13 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
         server.start()
         try:
             server.io_loop.start()
-        except Exception:
+        except RuntimeError:
+            pass
+        except TypeError:
             warnings.warn(
                 "IOLoop couldn't be started. Ensure it is started by "
                 "process invoking the panel.io.server.serve."
             )
-                
     return server
 
 
