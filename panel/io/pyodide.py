@@ -10,8 +10,6 @@ from bokeh import __version__
 from bokeh.embed.util import standalone_docs_json
 from bokeh.protocol.messages.patch_doc import process_document_events
 
-from ..pane import panel as as_panel
-
 
 def async_execute(func):
     event_loop = asyncio.get_running_loop()
@@ -77,6 +75,8 @@ async def show(obj, target):
         Target ID of the DOM node to render the object into. 
     """
     from js import Bokeh
+    from ..pane import panel as as_panel
+
     obj = as_panel(obj)
     pydoc, model_json = _doc_json(obj, target)
     views = await Bokeh.embed.embed_item(JSON.parse(model_json))
