@@ -67,7 +67,7 @@ def _link_docs(pydoc, jsdoc):
         json_patch, buffers = process_document_events([event], use_buffers=True)
         buffer_map = {}
         for (ref, buffer) in buffers:
-          buffer_map[ref['id']] = buffer
+            buffer_map[ref['id']] = buffer
         jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.to_js(buffer_map), setter_id='js')
 
     pydoc.on_change(pysync)
