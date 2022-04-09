@@ -40,14 +40,14 @@ def test_debugger_logging():
 def test_debugger_logging_info():
     logger = logging.getLogger('panel.callbacks')
     debugger = pn.widgets.Debugger(level=logging.DEBUG)
+    msg = 'debugger test message'
+    logger.info(msg)
     
-    logger.info('test')
-    
-    assert '[INFO]' in debugger.terminal.output
+    assert msg in debugger.terminal.output
     assert debugger.title == 'i: 1'
     
+    msg = 'debugger test warning'
+    logger.warning(msg)
     
-    logger.warning('warning test')
-    
-    assert '[WARNING]' in debugger.terminal.output
+    assert msg in debugger.terminal.output
     assert 'w: </span>1' in debugger.title

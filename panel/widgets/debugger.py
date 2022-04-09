@@ -183,10 +183,24 @@ class Debugger(Card):
         Whether only the last stack is printed or the full.""")
 
     level = param.Integer(default=logging.ERROR, doc="""
-        Logging level to print in the debugger terminal. Unless you
-        explicitely use the `panel.callbacks` logger within your
-        callbacks, Only exceptions (errors) are caught for the
-        moment.""")
+        Logging level to print in the debugger terminal.""")
+
+    formatter_args = param.Dict(
+        default={'fmt':"%(asctime)s [%(name)s - %(levelname)s]: %(message)s"},
+        precedence=-1,
+        doc="""
+        Arguments to pass to the logging formatter. See 
+        the standard python logging libraries."""
+        )
+
+    logger_names = param.List(
+        default=['panel'],
+        item_type=str,
+        bounds=(1, None),
+        precedence=-1,
+        doc="""
+        Loggers which will be prompted in the debugger terminal."""
+    )
 
     _rename = Card._rename.copy()
 
@@ -195,7 +209,9 @@ class Debugger(Card):
         '_number_of_warnings': None,
         '_number_of_infos': None,
         'only_last': None,
-        'level': None
+        'level': None,
+        'formatter_args': None,
+        'logger_names': None,
     })
 
     def __init__(self, **params):
@@ -227,7 +243,7 @@ class Debugger(Card):
         stream_handler.terminator = "  \n"
 
         formatter = TermFormatter(
-            "%(asctime)s [%(levelname)s]: %(message)s",
+            **self.formatter_args,
             only_last=self.only_last
         )
 
@@ -239,8 +255,9 @@ class Debugger(Card):
 
         stream_handler.addFilter(curr_filter)
 
-        logger = logging.getLogger('panel')
-        logger.addHandler(stream_handler)
+        for logger_name in self.logger_names:
+            logger = logging.getLogger(logger_name)
+            logger.addHandler(stream_handler)
 
         self.terminal = terminal
 
