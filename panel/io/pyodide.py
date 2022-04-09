@@ -1,14 +1,21 @@
 import asyncio
 import json
 import pyodide
+import os
 
 from js import JSON
 
 import param
 
 from bokeh import __version__
+from bokeh.document import Document
 from bokeh.embed.util import standalone_docs_json
 from bokeh.protocol.messages.patch_doc import process_document_events
+
+from . import resources
+
+resources.RESOURCE_MODE = 'CDN'
+os.environ['BOKEH_RESOURCES'] = 'cdn'
 
 
 def async_execute(func):
@@ -30,7 +37,8 @@ def serve(*args, **kwargs):
 
 
 def _doc_json(model, target):
-    doc = model.server_doc()
+    doc = Document()
+    model.server_doc(doc=doc)
     model = doc.roots[0]
     docs_json = standalone_docs_json([model])
 
@@ -56,9 +64,11 @@ def _link_docs(pydoc, jsdoc):
     jsdoc.on_change(pyodide.create_proxy(jssync), pyodide.to_js(False))
 
     def pysync(event):
-        json_patch = process_document_events([event], use_buffers=False)[0]
-
-        jsdoc.apply_json_patch(JSON.parse(json_patch), {}, setter_id='js')
+        json_patch, buffers = process_document_events([event], use_buffers=True)
+        buffer_map = {}
+        for (ref, buffer) in buffers:
+          buffer_map[ref['id']] = buffer
+        jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.to_js(buffer_map), setter_id='js')
 
     pydoc.on_change(pysync)
 
