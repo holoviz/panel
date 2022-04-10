@@ -990,10 +990,11 @@ class Tabulator(BaseTable):
         """
         if self.value is None or self._explicit_pagination:
             return
-        if len(self.value) > self._MAX_ROW_LIMITS[0]:
-            self.pagination = 'local'
-        elif len(self.value) > self._MAX_ROW_LIMITS[1]:
-            self.pagination = 'remote'
+        with param.parameterized.discard_events(self):
+            if self._MAX_ROW_LIMITS[0] < len(self.value) <= self._MAX_ROW_LIMITS[1]:
+                self.pagination = 'local'
+            elif len(self.value) > self._MAX_ROW_LIMITS[1]:
+                self.pagination = 'remote'
         self._explicit_pagination = False
 
     @param.depends('pagination', watch=True)
