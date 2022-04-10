@@ -216,14 +216,22 @@ class Syncable(Renderable):
             doc.add_next_tick_callback(cb)
 
     def _update_model(self, events, msg, root, model, doc, comm):
-        self._changing[root.ref['id']] = [
+        ref = root.ref['id']
+        self._changing[ref] = attrs = [
             attr for attr, value in msg.items()
             if not model.lookup(attr).property.matches(getattr(model, attr), value)
         ]
         try:
             model.update(**msg)
         finally:
-            del self._changing[root.ref['id']]
+            changing = [
+                attr for attr in self._changing.get(ref, [])
+                if attr not in attrs
+            ]
+            if changing:
+                self._changing[ref] = changing
+            elif ref in self._changing:
+                del self._changing[ref]
 
     def _cleanup(self, root):
         super()._cleanup(root)
