@@ -41,7 +41,6 @@ class Indicator(Widget):
 
 
 class BooleanIndicator(Indicator):
-
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
@@ -49,10 +48,24 @@ class BooleanIndicator(Indicator):
 
 
 class BooleanStatus(BooleanIndicator):
+    """The `BooleanStatus` is a boolean indicator providing a visual representation of a boolean
+    status as filled or non-filled circle.
+    
+    If the value is set to `True` the indicator will be filled while setting it to `False` will
+    cause it to be non-filled.
+
+    Reference: https://panel.holoviz.org/reference/indicators/BooleanStatus.html#indicators-gallery-booleanstatus
+
+    :Example:
+
+    >>> BooleanStatus(value=True, color='primary', width=100, height=100)
+    """
 
     color = param.ObjectSelector(default='dark', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
-        'light', 'dark'])
+        'light', 'dark'], doc="""
+            The color of the circle, one of 'primary', 'secondary', 'success', 'info', 'warn',
+            'danger', 'light', 'dark'""")
 
     height = param.Integer(default=20, doc="""
         height of the circle.""")
@@ -80,6 +93,18 @@ class BooleanStatus(BooleanIndicator):
 
 
 class LoadingSpinner(BooleanIndicator):
+    """The LoadingSpinner is a boolean indicator providing a visual representation of the loading
+    status. 
+    
+    If the value is set to True the spinner will rotate while setting it to False will disable the
+    rotating segment.
+
+    Reference: https://panel.holoviz.org/reference/indicators/LoadingSpinner.html#indicators-gallery-loadingspinner
+
+    :Example:
+
+    >>> LoadingSpinner(value=True, color='primary', bgcolor='light', width=100, height=100)
+    """
 
     bgcolor = param.ObjectSelector(default='light', objects=['dark', 'light'])
 
@@ -126,6 +151,19 @@ class ValueIndicator(Indicator):
 
 
 class Progress(ValueIndicator):
+    """The `Progress` widget displays the progress towards some target based on the current `value`
+    and the `max` value. 
+    
+    If no `value` is set, the Progress widget is in indeterminate mode and will animate depending on
+    whether it is `active` or not. A more beautiful indicator for this use case is the
+    `LoadingSpinner`.
+
+    Reference: https://panel.holoviz.org/reference/indicators/Progress.html#indicators-gallery-progress
+
+    :Example:
+
+    >>> Progress(value=20, max=100, bar_color="primary")
+    """
 
     active = param.Boolean(default=True, doc="""
         If no value is set the active property toggles animation of the
@@ -157,22 +195,34 @@ class Progress(ValueIndicator):
 
 class Number(ValueIndicator):
     """
-    The Number indicator renders the value as text optionally colored
-    according to the color thresholds.
+    The `Number` indicator renders the `value` as text optionally colored
+    according to the `colors` thresholds.
+
+    Reference: https://panel.holoviz.org/reference/indicators/Number.html#indicators-gallery-number
+
+    :Example:
+
+    >>> Number(name='Rate', value=72, format='{value}%', colors=[(80, 'green'), (100, 'red')]
     """
 
-    default_color = param.String(default='black')
+    default_color = param.String(default='black', doc="""
+        The color of the Number indicator if no colors are provided""")
 
-    colors = param.List(default=None)
+    colors = param.List(default=None, doc="""
+        Color thresholds for the Number indicator, specified as a tuple of the absolute thresholds
+        and the color to switch to.""")
 
-    format = param.String(default='{value}')
+    format = param.String(default='{value}', doc="""
+        A formatter string which accepts a {value}.""")
 
-    font_size = param.String(default='54pt')
+    font_size = param.String(default='54pt', doc="""
+        The size of number itself.""")
 
     nan_format = param.String(default='-', doc="""
-      How to format nan values.""")
+        How to format nan values.""")
 
-    title_size = param.String(default='18pt')
+    title_size = param.String(default='18pt', doc="""
+        The size of the title given by the name.""")
 
     _rename = {}
 
@@ -213,13 +263,17 @@ class String(ValueIndicator):
     The String indicator renders a string with a title.
     """
 
-    default_color = param.String(default='black')
+    default_color = param.String(default='black', doc="""
+        The color of the Number indicator if no colors are provided""")
 
-    font_size = param.String(default='54pt')
+    font_size = param.String(default='54pt', doc="""
+        The size of number itself.""")
 
-    title_size = param.String(default='18pt')
+    title_size = param.String(default='18pt', doc="""
+        The size of the title given by the name.""")
 
-    value = param.String(default=None, allow_None=True)
+    value = param.String(default=None, allow_None=True, doc="""
+        The string to display""")
 
     _rename = {}
 
@@ -246,9 +300,15 @@ class String(ValueIndicator):
 
 class Gauge(ValueIndicator):
     """
-    A Gauge represents a value in some range as a position on
-    speedometer or gauge. It is similar to a Dial but visually a lot
+    A `Gauge` represents a value in some range as a position on
+    speedometer or gauge. It is similar to a `Dial` but visually a lot
     busier.
+
+    Reference: https://panel.holoviz.org/reference/indicators/Gauge.html#indicators-gallery-gauge
+
+    :Example:
+
+    >>> Gauge(name='Speed', value=79, bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
     """
 
     annulus_width = param.Integer(default=10, doc="""
@@ -366,8 +426,14 @@ class Gauge(ValueIndicator):
 
 class Dial(ValueIndicator):
     """
-    A Dial represents a value in some range as a position on an
-    annular dial. It is similar to a Gauge but more minimal visually.
+    A `Dial` represents a value in some range as a position on an
+    annular dial. It is similar to a `Gauge` but more minimal visually.
+
+    Reference: https://panel.holoviz.org/reference/indicators/Dial.html#indicators-gallery-dial
+
+    :Example:
+
+    >>> Dial(name='Speed', value=79, format="{value} km/h", bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
     """
 
     annulus_width = param.Number(default=0.2, doc="""
@@ -589,14 +655,19 @@ class Dial(ValueIndicator):
 
 class Trend(SyncableData, Indicator):
     """
-    The Trend indicator enables the user to display a Dashboard KPI Card.
+    The `Trend` indicator enables the user to display a dashboard kpi card.
 
     The card can be layout out as:
 
     * a column (text and plot on top of each other) or
     * a row (text and plot after each other)
 
-    The text section is responsive and resizes on window resize.
+    Reference: https://panel.holoviz.org/reference/indicators/Trend.html#indicators-gallery-trend
+
+    :Example:
+
+    >>> data = {'x': np.arange(50), 'y': np.random.randn(50).cumsum()}
+    >>> Trend(title='Price', data=data, plot_type='area', width=200, height=200)
     """
 
     data = param.Parameter(doc="""
@@ -699,7 +770,7 @@ MARGIN = {
 
 
 class ptqdm(_tqdm):
-
+    
     def __init__(self, *args, **kwargs):
         self._indicator = kwargs.pop('indicator')
         super().__init__(*args, **kwargs)
@@ -727,6 +798,19 @@ class ptqdm(_tqdm):
 
 
 class Tqdm(Indicator):
+    """
+    The `Tqdm` indicator wraps the well known `tqdm` progress indicator and displays the progress
+    towards some target in your Panel app.
+
+    Reference: https://panel.holoviz.org/reference/indicators/Tqdm.html#indicators-gallery-tqdm
+
+    :Example:
+
+    >>> tqdm = Tqdm()
+    >>> for i in tqdm(range(0,10), desc="My loop", leave=True, colour='#666666'):
+    ...     time.sleep(timeout)
+    """
+
 
     value = param.Integer(default=0, bounds=(-1, None), doc="""
         The current value of the progress bar. If set to -1 the progress
