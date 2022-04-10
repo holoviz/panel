@@ -12,7 +12,8 @@ from .base import Widget
 
 class Ace(Widget):
     """
-    The Ace widget allows displaying and editing code in the powerful Ace editor.
+    The Ace widget allows displaying and editing code in the powerful
+    Ace editor.
 
     Reference: https://panel.holoviz.org/reference/widgets/Ace.html
 
