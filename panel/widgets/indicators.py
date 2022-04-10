@@ -62,10 +62,9 @@ class BooleanStatus(BooleanIndicator):
     """
 
     color = param.ObjectSelector(default='dark', objects=[
-        'primary', 'secondary', 'success', 'info', 'danger', 'warning',
-        'light', 'dark'], doc="""
-            The color of the circle, one of 'primary', 'secondary', 'success', 'info', 'warn',
-            'danger', 'light', 'dark'""")
+        'primary', 'secondary', 'success', 'info', 'danger', 'warning', 'light', 'dark'], doc="""
+        The color of the circle, one of 'primary', 'secondary', 'success', 'info', 'danger',
+        'warning', 'light', 'dark'""")
 
     height = param.Integer(default=20, doc="""
         height of the circle.""")
@@ -93,10 +92,10 @@ class BooleanStatus(BooleanIndicator):
 
 
 class LoadingSpinner(BooleanIndicator):
-    """The LoadingSpinner is a boolean indicator providing a visual representation of the loading
+    """The `LoadingSpinner` is a boolean indicator providing a visual representation of the loading
     status. 
     
-    If the value is set to True the spinner will rotate while setting it to False will disable the
+    If the value is set to `True` the spinner will rotate while setting it to `False` will disable the
     rotating segment.
 
     Reference: https://panel.holoviz.org/reference/indicators/LoadingSpinner.html#indicators-gallery-loadingspinner
@@ -154,8 +153,8 @@ class Progress(ValueIndicator):
     """The `Progress` widget displays the progress towards some target based on the current `value`
     and the `max` value. 
     
-    If no `value` is set, the Progress widget is in indeterminate mode and will animate depending on
-    whether it is `active` or not. A more beautiful indicator for this use case is the
+    If no `value` is set, the `Progress` widget is in indeterminate mode and will animate depending
+    on whether it is `active` or not. A more beautiful indicator for this use case is the
     `LoadingSpinner`.
 
     Reference: https://panel.holoviz.org/reference/indicators/Progress.html#indicators-gallery-progress
