@@ -48,13 +48,14 @@ class BooleanIndicator(Indicator):
 
 
 class BooleanStatus(BooleanIndicator):
-    """The `BooleanStatus` is a boolean indicator providing a visual representation of a boolean
-    status as filled or non-filled circle.
+    """
+    The `BooleanStatus` is a boolean indicator providing a visual
+    representation of a boolean status as filled or non-filled circle.
     
-    If the value is set to `True` the indicator will be filled while setting it to `False` will
-    cause it to be non-filled.
+    If the value is set to `True` the indicator will be filled while
+    setting it to `False` will cause it to be non-filled.
 
-    Reference: https://panel.holoviz.org/reference/indicators/BooleanStatus.html#indicators-gallery-booleanstatus
+    Reference: https://panel.holoviz.org/reference/indicators/BooleanStatus.html
 
     :Example:
 
@@ -92,13 +93,14 @@ class BooleanStatus(BooleanIndicator):
 
 
 class LoadingSpinner(BooleanIndicator):
-    """The `LoadingSpinner` is a boolean indicator providing a visual representation of the loading
-    status. 
+    """
+    The `LoadingSpinner` is a boolean indicator providing a visual
+    representation of the loading status.
     
-    If the value is set to `True` the spinner will rotate while setting it to `False` will disable the
-    rotating segment.
+    If the value is set to `True` the spinner will rotate while
+    setting it to `False` will disable the rotating segment.
 
-    Reference: https://panel.holoviz.org/reference/indicators/LoadingSpinner.html#indicators-gallery-loadingspinner
+    Reference: https://panel.holoviz.org/reference/indicators/LoadingSpinner.html
 
     :Example:
 
@@ -150,14 +152,16 @@ class ValueIndicator(Indicator):
 
 
 class Progress(ValueIndicator):
-    """The `Progress` widget displays the progress towards some target based on the current `value`
-    and the `max` value. 
+    """
+    The `Progress` widget displays the progress towards some target
+    based on the current `value` and the `max` value.
     
-    If no `value` is set, the `Progress` widget is in indeterminate mode and will animate depending
-    on whether it is `active` or not. A more beautiful indicator for this use case is the
+    If no `value` is set, the `Progress` widget is in indeterminate
+    mode and will animate depending on whether it is `active` or
+    not. A more beautiful indicator for this use case is the
     `LoadingSpinner`.
 
-    Reference: https://panel.holoviz.org/reference/indicators/Progress.html#indicators-gallery-progress
+    Reference: https://panel.holoviz.org/reference/indicators/Progress.html
 
     :Example:
 
@@ -194,10 +198,10 @@ class Progress(ValueIndicator):
 
 class Number(ValueIndicator):
     """
-    The `Number` indicator renders the `value` as text optionally colored
-    according to the `colors` thresholds.
+    The `Number` indicator renders the `value` as text optionally
+    colored according to the `colors` thresholds.
 
-    Reference: https://panel.holoviz.org/reference/indicators/Number.html#indicators-gallery-number
+    Reference: https://panel.holoviz.org/reference/indicators/Number.html
 
     :Example:
 
@@ -303,7 +307,7 @@ class Gauge(ValueIndicator):
     speedometer or gauge. It is similar to a `Dial` but visually a lot
     busier.
 
-    Reference: https://panel.holoviz.org/reference/indicators/Gauge.html#indicators-gallery-gauge
+    Reference: https://panel.holoviz.org/reference/indicators/Gauge.html
 
     :Example:
 
@@ -426,9 +430,10 @@ class Gauge(ValueIndicator):
 class Dial(ValueIndicator):
     """
     A `Dial` represents a value in some range as a position on an
-    annular dial. It is similar to a `Gauge` but more minimal visually.
+    annular dial. It is similar to a `Gauge` but more minimal
+    visually.
 
-    Reference: https://panel.holoviz.org/reference/indicators/Dial.html#indicators-gallery-dial
+    Reference: https://panel.holoviz.org/reference/indicators/Dial.html
 
     :Example:
 
@@ -654,14 +659,15 @@ class Dial(ValueIndicator):
 
 class Trend(SyncableData, Indicator):
     """
-    The `Trend` indicator enables the user to display a dashboard kpi card.
+    The `Trend` indicator enables the user to display a dashboard kpi
+    card.
 
     The card can be layout out as:
 
-    * a column (text and plot on top of each other) or
-    * a row (text and plot after each other)
+    * a column (text and plot on top of each other) or a row (text and
+    * plot after each other)
 
-    Reference: https://panel.holoviz.org/reference/indicators/Trend.html#indicators-gallery-trend
+    Reference: https://panel.holoviz.org/reference/indicators/Trend.html
 
     :Example:
 
@@ -798,10 +804,11 @@ class ptqdm(_tqdm):
 
 class Tqdm(Indicator):
     """
-    The `Tqdm` indicator wraps the well known `tqdm` progress indicator and displays the progress
-    towards some target in your Panel app.
+    The `Tqdm` indicator wraps the well known `tqdm` progress
+    indicator and displays the progress towards some target in your
+    Panel app.
 
-    Reference: https://panel.holoviz.org/reference/indicators/Tqdm.html#indicators-gallery-tqdm
+    Reference: https://panel.holoviz.org/reference/indicators/Tqdm.html
 
     :Example:
 
