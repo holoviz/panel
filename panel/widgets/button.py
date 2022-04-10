@@ -1,6 +1,6 @@
 """
-Defines the Button and button-like widgets which allow triggering events
-or merely toggling between on-off states.
+Defines the Button and button-like widgets which allow triggering
+events or merely toggling between on-off states.
 """
 from functools import partial
 
@@ -20,8 +20,9 @@ BUTTON_TYPES = ['default', 'primary', 'success', 'warning', 'danger','light']
 class _ButtonBase(Widget):
 
     button_type = param.ObjectSelector(default='default', objects=BUTTON_TYPES, doc="""
-        A button theme; should be one of 'default' (white), 'primary' (blue), 'success' (green), 
-        'info' (yellow), 'light' (light), or 'danger' (red).""")
+        A button theme; should be one of 'default' (white), 'primary'
+        (blue), 'success' (green), 'info' (yellow), 'light' (light),
+        or 'danger' (red).""")
 
     _rename = {'name': 'label'}
 
@@ -91,13 +92,15 @@ class _ClickButton(_ButtonBase):
 
 
 class Button(_ClickButton):
-    """The `Button` widget allows triggering events when the button is clicked.
-    
-    The Button provides a `value` parameter, which will toggle from `False` to `True`
-    while the click event is being processed
-    
-    It also provides an additional `clicks` parameter, that can be watched to subscribe to click
-    events.
+    """
+    The `Button` widget allows triggering events when the button is
+    clicked.
+
+    The Button provides a `value` parameter, which will toggle from
+    `False` to `True` while the click event is being processed
+
+    It also provides an additional `clicks` parameter, that can be
+    watched to subscribe to click events.
 
     Reference: https://panel.holoviz.org/reference/widgets/Button.html#widgets-gallery-button
 
@@ -137,7 +140,7 @@ class Button(_ClickButton):
         Register a callback to be executed when the `Button` is clicked.
 
         The callback is given an `Event` argument declaring the number of clicks
-        
+
         Arguments
         ---------
         callback: (callable)
@@ -148,16 +151,16 @@ class Button(_ClickButton):
 
 class Toggle(_ButtonBase):
     """The `Toggle` widget allows toggling a single condition between `True`/`False` states.
-    
+
     This widget is interchangeable with the `Checkbox` widget.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/Toggle.html
 
     :Example:
 
     >>> Toggle(name='Toggle', button_type='success')
     """
-    
+
     value = param.Boolean(default=False, doc="""
         Whether the button is currently toggled.""")
 
@@ -173,12 +176,15 @@ class Toggle(_ButtonBase):
 
 
 class MenuButton(_ClickButton):
-    """The `MenuButton` widget allows specifying a list of menu items to select from triggering
-    events when the button is clicked. 
-    
-    Unlike other widgets, it does not have a `value` parameter. Instead it has a `clicked` parameter
-    that can be watched to trigger events and which reports the last clicked menu item.
-    
+    """
+    The `MenuButton` widget allows specifying a list of menu items to
+    select from triggering events when the button is clicked.
+
+    Unlike other widgets, it does not have a `value`
+    parameter. Instead it has a `clicked` parameter that can be
+    watched to trigger events and which reports the last clicked menu
+    item.
+
     Reference: https://panel.holoviz.org/reference/widgets/MenuButton.html
 
     :Example:
@@ -215,7 +221,7 @@ class MenuButton(_ClickButton):
         Register a callback to be executed when the button is clicked.
 
         The callback is given an `Event` argument declaring the number of clicks
-        
+
         Arguments
         ---------
         callback: (callable)
