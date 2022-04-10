@@ -16,8 +16,8 @@ from .logging import LOG_PERIODIC_START, LOG_PERIODIC_END
 
 from .state import state
 
+log = logging.getLogger('panel.callbacks')
 _periodic_logger = logging.getLogger(f'{__name__}.PeriodicCallback')
-
 
 class PeriodicCallback(param.Parameterized):
     """
@@ -119,6 +119,9 @@ class PeriodicCallback(param.Parameterized):
             cb = self._exec_callback()
             if inspect.isawaitable(cb):
                 await cb
+        except Exception:
+            log.exception('Periodic callback failed.')
+            raise
         finally:
             self._post_callback()
 

@@ -88,12 +88,15 @@ export class TerminalView extends PanelHTMLBoxView {
   }
 
   fit(): void {
-    const width = this.layout.inner_bbox.width
-    const height = this.layout.inner_bbox.height
+    const sizing = this.box_sizing()
+    const vert_margin = sizing.margin == null ? 0 : sizing.margin.top + sizing.margin.bottom
+    const horz_margin = sizing.margin == null ? 0 : sizing.margin.left + sizing.margin.right
+    const width = (this.layout.inner_bbox.width || this.model.width || 0) - horz_margin
+    const height = (this.layout.inner_bbox.height || this.model.height || 0) - vert_margin
     const renderer = this.term._core._renderService
-    const cell_width = renderer.dimensions.actualCellWidth
-    const cell_height = renderer.dimensions.actualCellHeight
-    if (cell_width === 0 || cell_height === 0)
+    const cell_width = renderer.dimensions.actualCellWidth || 9
+    const cell_height = renderer.dimensions.actualCellHeight || 18
+    if (width == null || height == null || width <= 0 || height <= 0)
       return
     const cols = Math.max(2, Math.floor(width / cell_width))
     const rows = Math.max(1, Math.floor(height / cell_height))

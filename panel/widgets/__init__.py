@@ -51,5 +51,6 @@ from .select import ( # noqa
 from .speech_to_text import SpeechToText, Grammar, GrammarList # noqa
 from .tables import DataFrame, Tabulator  # noqa
 from .terminal import Terminal # noqa
+from .debugger import Debugger # noqa
 from .text_to_speech import TextToSpeech, Utterance, Voice # noqa
 from .texteditor import TextEditor # noqa

@@ -6,6 +6,7 @@ models rendered on the frontend.
 
 import difflib
 import datetime as dt
+import logging
 import re
 import sys
 import textwrap
@@ -19,6 +20,7 @@ import param
 
 from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
+from pprint import pformat
 
 from .io.document import unlocked
 from .io.model import hold
@@ -29,6 +31,8 @@ from .models.reactive_html import (
 )
 from .util import edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable
+
+log = logging.getLogger('panel.reactive')
 
 LinkWatcher = namedtuple("Watcher", Watcher._fields+('target', 'links', 'transformed', 'bidirectional_watcher'))
 
@@ -271,6 +275,15 @@ class Syncable(Renderable):
                     obj = getattr(obj, sp)
                 with edit_readonly(obj):
                     obj.param.update(**{p: v})
+        except Exception:
+            if len(events)>1:
+                msg_end = f" changing properties {pformat(events)} \n"
+            elif len(events)==1:
+                msg_end = f" changing property {pformat(events)} \n"
+            else:
+                msg_end = "\n"
+            log.exception(f'Callback failed for object named "{self.name}"{msg_end}')
+            raise
         finally:
             self._log('finished processing events %s', events)
             with edit_readonly(state):
