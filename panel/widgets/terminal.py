@@ -217,6 +217,14 @@ class Terminal(Widget):
     The Terminal widget renders a live terminal in the browser using
     the xterm.js library making it possible to display logs or even
     provide an interactive terminal in a Panel application.
+
+    Reference: https://panel.holoviz.org/reference/widgets/Terminal.html
+
+    :Example:
+
+    >>> Terminal(
+    ...     "Welcome to the Panel Terminal!", options={"cursorBlink": True}
+    ... )
     """
 
     clear = param.Action(doc="Clears the Terminal.", constant=True)
