@@ -1,9 +1,11 @@
 """Panel is a high level app and dashboarding framework
-====================================================
+=======================================================
 
 Panel is an open-source Python library that lets you create custom
 interactive web apps and dashboards by connecting user-defined widgets
 to plots, images, tables, or text.
+
+Docs: https://panel.holoviz.org/
 
 Panel works with the tools you know and ❤️.
 
@@ -11,6 +13,31 @@ Panel works with the tools you know and ❤️.
    :alt: Panel Dashboard
 
    Panel Dashboard
+
+How to develop a Panel app in 3 simple steps:
+
+1. Write the app
+
+>>> import panel as pn
+>>> pn.extension(sizing_mode="stretch_width", template="fast")
+>>> pn.panel(some_python_object).servable()
+
+2. Run your app
+
+$ panel serve my_script.py --autoreload --show
+
+or
+
+$ panel serve my_notebook.ipynb --autoreload --show
+
+The app will be available in your browser!
+
+3. Change your code and save it
+
+The app will reload with your changes!
+
+For more info check out the Getting Started guide
+https://panel.holoviz.org/getting_started/index.html
 """
 from . import layout # noqa
 from . import links # noqa
