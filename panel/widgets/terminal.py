@@ -214,7 +214,7 @@ class TerminalSubprocess(param.Parameterized):
 
 class Terminal(Widget):
     """
-    The Terminal widget renders a live terminal in the browser using
+    The `Terminal` widget renders a live terminal in the browser using
     the xterm.js library making it possible to display logs or even
     provide an interactive terminal in a Panel application.
 
