@@ -28,6 +28,15 @@ from ..models import DatetimePicker as _bkDatetimePicker
 
 
 class TextInput(Widget):
+    """
+    The `TextInput` widget allows entering any string using a text input box.
+
+    Reference: https://panel.holoviz.org/reference/widgets/TextInput.html
+
+    :Example:
+
+    >>> TextInput(name='Name', placeholder='Enter your name here ...')
+    """
 
     max_length = param.Integer(default=5000, doc="""
       Max count of characters in the input field.""")
@@ -45,16 +54,58 @@ class TextInput(Widget):
 
 
 class PasswordInput(TextInput):
+    """
+    The `PasswordInput` allows entering any string using an obfuscated text
+    input box.
+
+    Reference: https://panel.holoviz.org/reference/widgets/PasswordInput.html
+
+    :Example:
+
+    >>> PasswordInput(
+    ...     name='Password', placeholder='Enter your password here...'
+    ... )
+    """
 
     _widget_type = _BkPasswordInput
 
 
 class TextAreaInput(TextInput):
+    """
+    The `TextAreaInput` allows entering any multiline string using a text input
+    box.
+    
+    Lines are joined with the newline character `\n`.
+
+    Reference: https://panel.holoviz.org/reference/widgets/TextAreaInput.html
+
+    :Example:
+
+    >>> TextAreaInput(
+    ...     name='Description', placeholder='Enter your description here...'
+    ... )
+    """
 
     _widget_type = _BkTextAreaInput
 
 
 class FileInput(Widget):
+    """
+    The `FileInput` allows the user to upload one or more files to the server.
+    
+    It makes the filename, MIME type and (bytes) content available in Python.
+    
+    Please note 
+    
+    - you can in fact *drag and drop* files onto the `FileInput`.
+    - you easily save the files using the `save` method.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/FileInput.html
+
+    :Example:
+
+    >>> FileInput(accept='.png,.jpeg', multiple=True)
+    """
 
     accept = param.String(default=None)
 
@@ -131,11 +182,22 @@ class FileInput(Widget):
 
 
 class StaticText(Widget):
+    """
+    The `StaticText` widget displays a text value, but does not allow editing
+    it.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/StaticText.html
+
+    :Example:
+
+    >>> StaticText(name='Model', value='animagen2')
+    """
 
     style = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
 
-    value = param.Parameter(default=None)
+    value = param.Parameter(default=None, doc="""
+        The current value""")
 
     _format = '<b>{title}</b>: {value}'
 
@@ -159,12 +221,29 @@ class StaticText(Widget):
 
 
 class DatePicker(Widget):
+    """
+    The `DatePicker` allows selecting selecting a `date` value using a text box
+    and a date-picking utility.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/DatePicker.html
 
-    value = param.CalendarDate(default=None)
+    :Example:
 
-    start = param.CalendarDate(default=None)
+    >>> DatePicker(
+    ...     value=date(2025,1,1),
+    ...     start=date(2025,1,1), end=date(2025,12,31),
+    ...     name='Date'
+    ... )
+    """
 
-    end = param.CalendarDate(default=None)
+    value = param.CalendarDate(default=None, doc="""
+        The current value""")
+
+    start = param.CalendarDate(default=None, doc="""
+        Inclusive lower bound of the allowed date selection""")
+
+    end = param.CalendarDate(default=None, doc="""
+        Inclusive upper bound of the allowed date selection""")
 
     disabled_dates = param.List(default=None, class_=(date, str))
 
@@ -250,6 +329,21 @@ class _DatetimePickerBase(Widget):
 
 
 class DatetimePicker(_DatetimePickerBase):
+    """
+    The `DatetimePicker` allows selecting selecting a `datetime` value using a
+    textbox and a datetime-picking utility.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/DatetimePicker.html
+
+    :Example:
+
+    >>> DatetimePicker(
+    ...    value=datetime(2025,1,1,22,0),
+    ...    start=date(2025,1,1), end=date(2025,12,31),
+    ...    military_time=True, name='Date and time'
+    ... )
+    """
+
 
     value = param.Date(default=None)
 
@@ -275,8 +369,23 @@ class DatetimePicker(_DatetimePickerBase):
 
 
 class DatetimeRangePicker(_DatetimePickerBase):
+    """
+    The `DatetimeRangePicker` allows selecting selecting a `datetime` range
+    using a text box and a datetime-range-picking utility.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/DatetimeRangePicker.html
 
-    value = param.DateRange(default=None)
+    :Example:
+
+    >>> DatetimeRangePicker(
+    ...    value=(datetime(2025,1,1,22,0), datetime(2025,1,2,22,0)),
+    ...    start=date(2025,1,1), end=date(2025,12,31),
+    ...    military_time=True, name='Datetime Range'
+    ... )
+    """
+
+    value = param.DateRange(default=None, doc="""
+        The current value""")
 
     mode = param.String('range', constant=True)
 
@@ -309,6 +418,16 @@ class DatetimeRangePicker(_DatetimePickerBase):
 
 
 class ColorPicker(Widget):
+    """
+    The `ColorPicker` widget allows selecting a hexidecimal RGB color value
+    using the browser’s color-picking widget.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/ColorPicker.html
+
+    :Example:
+
+    >>> ColorPicker(name='Color', value='#99ef78')
+    """
 
     value = param.Color(default=None, doc="""
         The selected color""")
@@ -321,7 +440,7 @@ class ColorPicker(Widget):
 class _NumericInputBase(Widget):
 
     value = param.Number(default=0, allow_None=True, doc="""
-        The initial value of the spinner.""")
+        The current value of the spinner.""")
 
     placeholder = param.String(default='0', doc="""
         Placeholder for empty input field.""")
@@ -345,7 +464,7 @@ class _NumericInputBase(Widget):
 class _IntInputBase(_NumericInputBase):
 
     value = param.Integer(default=0, allow_None=True, doc="""
-        The initial value of the spinner.""")
+        The current value of the spinner.""")
 
     start = param.Integer(default=None, allow_None=True, doc="""
         Optional minimum allowable value.""")
@@ -362,7 +481,7 @@ class _IntInputBase(_NumericInputBase):
 class _FloatInputBase(_NumericInputBase):
 
     value = param.Number(default=0, allow_None=True, doc="""
-        The initial value of the spinner.""")
+        The current value of the spinner.""")
 
     start = param.Number(default=None, allow_None=True, doc="""
         Optional minimum allowable value.""")
@@ -426,17 +545,48 @@ class _SpinnerBase(_NumericInputBase):
 
 
 class IntInput(_SpinnerBase, _IntInputBase):
+    """
+    The `IntInput` allows selecting an integer value using a spinbox.
+    
+    It behaves like a slider except that lower and upper bounds are optional
+    and a specific value can be entered. The value can be changed using the
+    keyboard (up, down, page up, page down), mouse wheel and arrow buttons.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/IntInput.html
 
-    step = param.Integer(default=1)
+    :Example:
 
-    value_throttled = param.Integer(default=None, constant=True)
+    >>> IntInput(name='Value', value=100, start=0, end=1000, step=10)
+    """
+
+    step = param.Integer(default=1, doc="""
+        The step size.""")
+
+    value_throttled = param.Integer(default=None, constant=True, doc="""
+        The current value. Updates only on `<enter>` or when the widget looses focus.""")
 
 
 class FloatInput(_SpinnerBase, _FloatInputBase):
+    """
+    The `FloatInput` allows selecting a floating point value using a spinbox.
+    
+    It behaves like a slider except that the lower and upper bounds are
+    optional and a specific value can be entered. The value can be changed
+    using the keyboard (up, down, page up, page down), mouse wheel and arrow
+    buttons.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/FloatInput.html
 
-    step = param.Number(default=0.1)
+    :Example:
 
-    value_throttled = param.Number(default=None, constant=True)
+    >>> FloatInput(name='Value', value=5., step=1e-1, start=0, end=10)
+    """
+
+    step = param.Number(default=0.1, doc="""
+        The step size.""")
+
+    value_throttled = param.Number(default=None, constant=True, doc="""
+        The current value. Updates only on `<enter>` or when the widget looses focus.""")
 
 
 class NumberInput(_SpinnerBase):
@@ -455,8 +605,20 @@ Spinner = NumberInput
 
 class LiteralInput(Widget):
     """
-    LiteralInput allows declaring Python literals using a text
-    input widget. Optionally a type may be declared.
+    The `LiteralInput` allows declaring Python literals using a text
+    input widget. 
+    
+    A *literal* is some specific primitive value of type `str`
+    , `int`, `float`, `bool` etc or a `dict`, `list`, `tuple`, `set` etc of
+    primitive values.
+    
+    Optionally the literal `type` may be declared.
+
+    Reference: https://panel.holoviz.org/reference/widgets/LiteralInput.html
+
+    :Example:
+
+    >>> LiteralInput(name='Dictionary', value={'key': [1, 2, 3]}, type=dict)
     """
 
     serializer = param.ObjectSelector(default='ast', objects=['ast', 'json'], doc="""
@@ -546,9 +708,17 @@ class LiteralInput(Widget):
 
 class ArrayInput(LiteralInput):
     """
-    ArrayInput allows rendering and editing NumPy arrays in a text
-    input widget. Arrays larger than the `max_array_size` will be
-    summarized and editing will be disbaled.
+    The `ArrayInput` allows rendering and editing NumPy arrays in a text
+    input widget.
+    
+    Arrays larger than the `max_array_size` will be summarized and editing
+    will be disabled.
+
+    Reference: https://panel.holoviz.org/reference/widgets/ArrayInput.html
+
+    :Example:
+
+    >>> To be determined ...
     """
 
     max_array_size = param.Number(default=1000, doc="""
@@ -605,18 +775,29 @@ class ArrayInput(LiteralInput):
 
 class DatetimeInput(LiteralInput):
     """
-    DatetimeInput allows declaring Python literals using a text
-    input widget. Optionally a type may be declared.
+    The `DatetimeInput` allows specifying Python `datetime` like values using
+    a text input widget.
+    
+    An optional `type` may be declared.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/DatetimeInput.html
+
+    :Example:
+
+    >>> DatetimeInput(name='Datetime', value=datetime(2019, 2, 8))
     """
+
+    value = param.Date(default=None, doc="""
+        The current value""")
+
+    start = param.Date(default=None, doc="""
+        Inclusive lower bound of the allowed date selection""")
+
+    end = param.Date(default=None, doc="""
+        Inclusive upper bound of the allowed date selection""")
 
     format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
         Datetime format used for parsing and formatting the datetime.""")
-
-    value = param.Date(default=None)
-
-    start = param.Date(default=None)
-
-    end = param.Date(default=None)
 
     type = datetime
 
@@ -677,12 +858,29 @@ class DatetimeInput(LiteralInput):
 
 
 class DatetimeRangeInput(CompositeWidget):
+    """
+    The `DatetimeRangeInput` widget allows selecting a `datetime` range using
+    two `DatetimeInput` widgets, which return a `tuple` range.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/DatetimeRangeInput.html
 
-    value = param.Tuple(default=(None, None), length=2)
+    :Example:
 
-    start = param.Date(default=None)
+    >>> DatetimeRangeInput(
+    ...     name='Datetime Range',
+    ...     value=(datetime(2017, 1, 1), datetime(2018, 1, 10)),
+    ...     start=datetime(2017, 1, 1), end=datetime(2019, 1, 1),
+    ... )
+    """
 
-    end = param.Date(default=None)
+    value = param.Tuple(default=(None, None), length=2, doc="""
+        The current value""")
+
+    start = param.Date(default=None, doc="""
+        Inclusive lower bound of the allowed date selection""")
+
+    end = param.Date(default=None, doc="""
+        Inclusive upper bound of the allowed date selection""")
 
     format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
         Datetime format used for parsing and formatting the datetime.""")
@@ -744,8 +942,21 @@ class DatetimeRangeInput(CompositeWidget):
 
 
 class Checkbox(Widget):
+    """
+    The `Checkbox` allows toggling a single condition between `True`/`False`
+    states by ticking a checkbox.
+    
+    This widget is interchangeable with the `Toggle` widget.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/Checkbox.html
 
-    value = param.Boolean(default=False)
+    :Example:
+
+    >>> Checkbox(name='Works with the tools you know and love', value=True)
+    """
+
+    value = param.Boolean(default=False, doc="""
+        The current value""")
 
     _supports_embed = True
 
