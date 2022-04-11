@@ -36,7 +36,7 @@ The app will be available in your browser!
 
 The app will reload with your changes!
 
-For more info check out the Getting Started guide
+For more detail check out the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
 from . import layout # noqa
