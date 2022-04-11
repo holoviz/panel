@@ -127,9 +127,10 @@ class SingleSelectBase(SelectBase):
 class Select(SingleSelectBase):
     """
     The `Select` widget allows selecting a value from a list or dictionary of
-    `options` by selecting it from a dropdown menu or selection area. It falls
-    into the broad category of single-value, option-selection widgets that
-    provide a compatible API and include the `RadioBoxGroup`,
+    `options` by selecting it from a dropdown menu or selection area. 
+    
+    It falls into the broad category of single-value, option-selection widgets
+    that provide a compatible API and include the `RadioBoxGroup`,
     `AutocompleteInput` and `DiscreteSlider` widgets.
 
     Reference: https://panel.holoviz.org/reference/widgets/Select.html
@@ -699,7 +700,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
     by moving them between two lists. Supports filtering values by
     name to select them in bulk.
 
-     Reference: https://panel.holoviz.org/reference/widgets/CrossSelector.html
+    Reference: https://panel.holoviz.org/reference/widgets/CrossSelector.html
 
     :Example:
 
