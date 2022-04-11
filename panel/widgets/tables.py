@@ -704,6 +704,22 @@ class BaseTable(ReactiveData, Widget):
 
 
 class DataFrame(BaseTable):
+    """
+    The `DataFrame` widget allows displaying and editing a pandas DataFrame.
+    
+    Note that editing is not possible for multi-indexed DataFrames, in which
+    case you will need to reduce the DataFrame to a single index. 
+    
+    Also note that the `DataFrame` widget will eventually be replaced with the
+    `Tabulator` widget, and so new code should be written to use `Tabulator`
+    instead.
+
+    Reference: https://panel.holoviz.org/reference/widgets/DataFrame.html
+
+    :Example:
+
+    >>> DataFrame(df, name='DataFrame')
+    """
 
     auto_edit = param.Boolean(default=False, doc="""
         Whether clicking on a table cell automatically starts edit mode.""")
@@ -847,8 +863,14 @@ class DataFrame(BaseTable):
 
 class Tabulator(BaseTable):
     """
-    The Tabulator Pane wraps the [Tabulator](http://tabulator.info/)
-    table to provide a full-featured interactive table.
+    The `Tabulator` widget wraps the [Tabulator js](http://tabulator.info/)
+    table to provide a full-featured, very powerful interactive table.
+
+    Reference: https://panel.holoviz.org/reference/widgets/Tabulator.html
+
+    :Example:
+
+    >>> Tabulator(df, theme='site', pagination='remote', page_size=25)
     """
 
     buttons = param.Dict(default={}, doc="""
