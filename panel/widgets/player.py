@@ -50,10 +50,16 @@ class PlayerBase(Widget):
 
 class Player(PlayerBase):
     """
-    The Player provides controls to play and skip through a number of
+    The `Player` provides controls to play and skip through a number of
     frames defined by explicit start and end values.  The speed at
-    which the widget plays is defined by the interval, but it is also
-    possible to skip frames using the step parameter.
+    which the widget plays is defined by the `interval`, but it is also
+    possible to skip frames using the `step` parameter.
+
+    Reference: https://panel.holoviz.org/reference/widgets/Player.html
+
+    :Example:
+
+    >>> Player(name='Player', start=0, end=100, value=32, loop_policy='loop')
     """
 
     start = param.Integer(default=0, doc="Lower bound on the slider value")
@@ -84,15 +90,25 @@ class Player(PlayerBase):
 
 class DiscretePlayer(PlayerBase, SelectBase):
     """
-    The DiscretePlayer provides controls to iterate through a list of
+    The `DiscretePlayer` provides controls to iterate through a list of
     discrete options.  The speed at which the widget plays is defined
-    by the interval, but it is also possible to skip items using the
-    step parameter.
+    by the `interval`, but it is also possible to skip items using the
+    `step` parameter.
+
+    Reference: https://panel.holoviz.org/reference/widgets/DiscretePlayer.html
+
+    :Example:
+
+    >>> DiscretePlayer(
+    ...     name='Discrete Player',
+    ...     options=[2, 4, 8, 16, 32, 64, 128], value=32,
+    ...     loop_policy='loop'
+    ... )
     """
 
     interval = param.Integer(default=500, doc="Interval between updates")
 
-    value = param.Parameter()
+    value = param.Parameter(doc="Current player value")
 
     _rename = {'name': None, 'options': None}
 
