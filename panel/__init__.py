@@ -21,6 +21,7 @@ How to develop a Panel app in 3 simple steps
 
 >>> import panel as pn
 >>> pn.extension(sizing_mode="stretch_width", template="fast")
+>>> pn.state.template.param.update(title="My Data App")
 >>> pn.panel(some_python_object).servable()
 
 - Run your app
