@@ -11,11 +11,10 @@ Matplotlib and Plotly panes.
 Check out the panel gallery of panes
 https://panel.holoviz.org/reference/index.html#panes for inspiration.
 
-
 How to use Panel panes in 2 simple steps
 ----------------------------------------
 
-1. Define your Python object
+1. Define your Python objects
 
 >>> some_python_object = ...
 >>> another_python_object = ...
