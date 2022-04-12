@@ -1,5 +1,5 @@
 """
-Defines a TextEditor widget based on quill.js.
+Defines a WYSIWYG TextEditor widget based on quill.js.
 """
 import param
 
@@ -11,7 +11,16 @@ from .base import Widget
 
 class TextEditor(Widget):
     """
-    TextEditor widget allow editing text using the quill.js library.
+    The `TextEditor` widget provides a WYSIWYG
+    (what-you-see-is-what-you-get) rich text editor which outputs HTML.
+    
+    The editor is built on top of the [Quill.js](https://quilljs.com/) library.
+
+    Reference: https://panel.holoviz.org/reference/widgets/TextEditor.html
+
+    :Example:
+
+    >>> TextEditor(placeholder='Enter some text')
     """
 
     disabled = param.Boolean(default=False, doc="""
