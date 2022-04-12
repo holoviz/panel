@@ -38,7 +38,10 @@ The app will be available in your browser!
 
 The app will reload with your changes!
 
-For more detail check out the Getting Started Guide
+You can also add automatic reload to jupyterlab. Check out
+https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews
+
+To learn more about Panel check out
 https://panel.holoviz.org/getting_started/index.html
 """
 from . import layout # noqa
