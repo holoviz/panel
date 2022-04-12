@@ -20,6 +20,16 @@ from .indicators import Progress # noqa
 
 
 class VideoStream(Widget):
+    """
+    The `VideoStream` displays a video from a local stream (for example from a webcam) and allows
+    accessing the streamed video data from Python.
+
+    Reference: https://panel.holoviz.org/reference/widgets/VideoStream.html
+
+    :Example:
+
+    >>> VideoStream(name='Video Stream', timeout=100)
+    """
 
     format = param.ObjectSelector(default='png', objects=['png', 'jpeg'],
                                   doc="""
@@ -51,6 +61,18 @@ class VideoStream(Widget):
 
 
 class FileDownload(Widget):
+    """
+    The `FileDownload` widget allows a user to download a file.
+
+    It works either by sending the file data to the browser on initialization
+    (`embed`=True), or when the button is clicked.
+
+    Reference: https://panel.holoviz.org/reference/widgets/FileDownload.html
+
+    :Example:
+
+    >>> FileDownload(file='IntroductionToPanel.ipynb', filename='intro.ipynb')
+    """
 
     auto = param.Boolean(default=True, doc="""
         Whether to download on the initial click or allow for
@@ -204,6 +226,24 @@ class FileDownload(Widget):
 
 
 class JSONEditor(Widget):
+    """
+    The `JSONEditor` provides a visual editor for JSON-serializable
+    datastructures, e.g. Python dictionaries and lists, with functionality for
+    different editing modes, inserting objects and validation using JSON
+    Schema.
+
+    Reference: https://panel.holoviz.org/reference/widgets/JSONEditor.html
+
+    :Example:
+
+    >>> JSONEditor(value={
+    ...     'dict'  : {'key': 'value'},
+    ...     'float' : 3.14,
+    ...     'int'   : 1,
+    ...     'list'  : [1, 2, 3],
+    ...     'string': 'A string',
+    ... }, mode='code')
+    """
 
     menu = param.Boolean(default=True, doc="""
         Adds main menu bar - Contains format, sort, transform, search
