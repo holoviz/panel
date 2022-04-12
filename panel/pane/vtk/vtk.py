@@ -144,9 +144,19 @@ class SyncHelpers:
 
 class VTK:
     """
-    Class factory: allows to switch between VTKJS, VTKRenderWindow, and
-    VTKRenderWindowSynchronized pane in function of the object type and
-    when the serialisation of the vtkRenderWindow occurs.
+    The VTK pane renders a VTK scene inside a panel, making it possible to
+    interact with complex geometries in 3D.
+    
+    Reference: https://panel.holoviz.org/reference/panes/VTK.html
+
+    :Example:
+
+    >>> VTK(some_vtk_object, width=500, height=500)
+    
+    This is a Class factory and allows to switch between VTKJS,
+    VTKRenderWindow, and VTKRenderWindowSynchronized pane as a function of the
+    object type and when the serialisation of the vtkRenderWindow occurs.
+    
     Once a pane is returned by this class (inst = VTK(object)), one can
     use pn.help(inst) to see parameters available for the current pane
     """
@@ -502,6 +512,23 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
 
 
 class VTKVolume(AbstractVTK):
+    """
+    The `VTKVolume` pane renders 3d volumetric data defined on regular grids.
+    It may be constructed from a 3D NumPy array or a vtkVolume.
+    
+    The pane provides a number of interactive control which can be set either
+    through callbacks from Python or Javascript callbacks.
+
+    Reference: https://panel.holoviz.org/reference/panes/VTKVolume.html
+
+    :Example:
+
+    >>> VTKVolume(
+    ...    data_matrix, spacing=(3,2,1), interpolation='nearest',
+    ...    edge_gradient=0, sampling=0,
+    ...    sizing_mode='stretch_width', height=400,
+    ... )
+    """
 
     ambient = param.Number(default=0.2, step=1e-2, doc="""
         Value to control the ambient lighting. It is the light an
@@ -745,7 +772,17 @@ class VTKVolume(AbstractVTK):
 
 class VTKJS(AbstractVTK):
     """
-    VTK panes allow rendering vtk scene stored in a vtkjs.
+    The VTKJS pane allow rendering a vtk scene stored in a vtkjs.
+    
+    Reference: https://panel.holoviz.org/reference/panes/VTKJS.html
+
+    :Example:
+
+    >>> VTK(
+    ...    'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs',
+    ...     sizing_mode='stretch_width', height=400, enable_keybindings=True,
+    ...     orientation_widget=True
+    ... )
     """
 
     enable_keybindings = param.Boolean(default=False, doc="""
