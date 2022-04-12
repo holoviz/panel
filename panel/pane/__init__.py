@@ -8,7 +8,7 @@ images, equations etc.
 For example Panel contains Bokeh, HoloViews,
 Matplotlib and Plotly panes.
 
-Check out the panel gallery of panes
+Check out the Panel gallery of panes
 https://panel.holoviz.org/reference/index.html#panes for inspiration.
 
 How to use Panel panes in 2 simple steps
