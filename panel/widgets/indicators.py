@@ -7,7 +7,7 @@ import numpy as np
 import param
 
 from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, FixedTicker
 from tqdm.asyncio import tqdm as _tqdm
 
 from ..layout import Column, Row
@@ -178,7 +178,7 @@ class Progress(ValueIndicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    value = param.Integer(default=-1, bounds=(-1, None), doc="""
+    value = param.Integer(default=-1, bounds=(-1, None), allow_None=True, doc="""
         The current value of the progress bar. If set to -1 the progress
         bar will be indeterminate and animate depending on the active
         parameter.""")
@@ -190,6 +190,13 @@ class Progress(ValueIndicator):
     @param.depends('max', watch=True)
     def _update_value_bounds(self):
         self.param.value.bounds = (-1, self.max)
+
+    @param.depends('value', watch=True)
+    def _warn_deprecation(self):
+        if self.value is None:
+            self.value = -1
+            warnings.warn('Setting the progress value to None is deprecated, use -1 instead.',
+                          FutureWarning,  stacklevel=2)
 
     def __init__(self,**params):
         super().__init__(**params)
@@ -660,11 +667,21 @@ class Dial(ValueIndicator):
 class LinearGauge(ValueIndicator):
     """
     A LinearGauge represents a value in some range as a position on an
-    linear scale. It is similar to a Dial/Gauge but more minimal visually.
+    linear scale. It is similar to a Dial/Gauge but visually more
+    compact.
+
+    Reference: https://panel.holoviz.org/reference/indicators/LinearGauge.html
+
+    :Example:
+
+    >>> LinearGauge(value=30, default_color='red', bounds=(0, 100))
     """
 
     bounds = param.Range(default=(0, 100), doc="""
       The upper and lower bound of the gauge.""")
+
+    default_color = param.String(default='lightblue', doc="""
+      Color of the radial annulus if not color thresholds are supplied.""")
 
     colors = param.Parameter(default=None, doc="""
       Color thresholds for the gauge, specified as a list of tuples
@@ -675,43 +692,55 @@ class LinearGauge(ValueIndicator):
 
     height = param.Integer(default=300, bounds=(1, None))
 
-    horizontal = param.Boolean(default=False)
+    horizontal = param.Boolean(default=False, doc="""
+      Whether to display the linear gauge horizontally.""")
 
     nan_format = param.String(default='-', doc="""
       How to format nan values.""")
 
     needle_color = param.String(default='black', doc="""
-      Color of the Dial needle.""")
+      Color of the gauge needle.""")
 
-    needle_width = param.Number(default=0.1, doc="""
-      Radial width of the needle.""")
+    show_boundaries = param.Boolean(default=False, doc="""
+      Whether to show the boundaries between colored regions.""")
+
+    unfilled_alpha = param.Magnitude(default=0.1, doc="""
+      Alpha of the unfilled region of the LinearGauge.""")
 
     unfilled_color = param.String(default='whitesmoke', doc="""
-      Color of the unfilled region of the LinearGauge.""")    
+      Color of the unfilled region of the LinearGauge.""")
 
-    title_size = param.String(default='16pt', doc="""
-      Font size of the Dial title.""")
+    title_size = param.String(default='15pt', doc="""
+      Font size of the gauge title.""")
 
     value_size = param.String(default='12pt', doc="""
-      Font size of the Dial value label.""")
+      Font size of the gauge value label.""")
 
     value = param.Number(default=25, allow_None=True, doc="""
       Value to indicate on the dial a value within the declared bounds.""")
 
-    width = param.Integer(default=150, bounds=(1, None))
+    width = param.Integer(default=150, bounds=(100, None))
 
     _manual_params = [
-        'value', 'bounds', 'format', 'background', 'needle_width',
-        'title_size', 'value_size', 'horizontal',
-        'height', 'colors', 'title_size', 'unfilled_color',
-        'width', 'nan_format', 'needle_color'
+        'value', 'bounds', 'format', 'title_size', 'value_size',
+        'horizontal', 'height', 'colors', 'title_size',
+        'unfilled_color', 'width', 'nan_format', 'needle_color',
+        'unfilled_alpha'
     ]
 
-    _data_params = _manual_params
-    
+    _data_params = [
+        'value', 'bounds', 'format', 'format', 'unfilled_alpha',
+        'needle_color', 'colors'
+    ]
+
     _rerender_params = ['horizontal']
 
-    _rename = {'background': 'background_fill_color'}
+    _rename = {
+        'background': 'background_fill_color', 'show_boundaries': None,
+        'default_color': None
+    }
+
+    _updates = False
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -721,90 +750,173 @@ class LinearGauge(ValueIndicator):
     def _update_value_bounds(self):
         self.param.value.bounds = self.bounds
 
+    @property
+    def _color_intervals(self):
+        vmin, vmax = self.bounds
+        value = self.value
+        ncolors = len(self.colors) if self.colors else 1
+        interval = (vmax-vmin)
+        fraction = value / interval
+        idx = round(fraction * (ncolors-1))
+        if not self.colors:
+            intervals = [
+                (fraction, self.default_color)
+            ]
+        elif self.show_boundaries:
+            intervals = [
+                c if isinstance(c, tuple) else ((i+1)/(ncolors), c)
+                for i, c in enumerate(self.colors)
+            ]
+        else:
+            intervals = [
+                self.colors[idx] if isinstance(self.colors[0], tuple)
+                else (fraction, self.colors[idx])
+            ]
+        intervals.append((1, self.unfilled_color))
+        return intervals
+
     def _get_data(self):
         vmin, vmax = self.bounds
-        vs = np.linspace(vmin, vmax, num=len(self.colors)+1)
         value = self.value
-        
+        interval = (vmax-vmin)
+        colors, values = [], [vmin]
+        above = False
+        for (v, color) in self._color_intervals:
+            if v*interval > value:
+                if not above:
+                    colors.append(color)
+                    values.append(value)
+                    above = True
+                color = self.unfilled_color
+            colors.append(color)
+            values.append(v*interval)
         value = self.format.format(value=value).replace('nan', self.nan_format)
-        center = -np.pi/2 if self.horizontal else np.pi
-        needle_start = center-(self.needle_width/2.)
-        needle_end = center+(self.needle_width/2.)
-        needle_data = {
-            'y':      np.array([self.value]),
-            'start':  np.array([needle_start]),
-            'end':    np.array([needle_end]),
-            'radius': np.array([8]),
-            'text':   np.array([value])
-        }
-        return {'y0': vs[:-1], 'y1': vs[1:], 'color': list(self.colors)}, needle_data
+        return (
+            {'y0': values[:-1], 'y1': values[1:], 'color': colors},
+            {'y': [self.value], 'text': [value]}
+        )
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         params = self._process_param_change(self._init_params())
-        if self.horizontal:
-            params.update(
-                width=self.height, height=self.width,
-                x_axis_location='above', x_axis_label=self.name,
-                y_range=(-0.7, 0.5), x_range=tuple(self.bounds)
-            )
-        else:
-            params.update(
-                width=self.width, height=self.height,
-                y_axis_location='right', y_axis_label=self.name,
-                x_range=(-0.75, 0.5), y_range=tuple(self.bounds)
-            )
         model = figure(
-            outline_line_color=None, toolbar_location=None, **params
+            outline_line_color=None, toolbar_location=None, tools=[],
+            x_axis_location='above', y_axis_location='right', **params
         )
         model.grid.visible = False
-        
-        data, needle_data = self._get_data()
-        bar_source = ColumnDataSource(data=data, name='bar_source')
-        needle_source = ColumnDataSource(data=needle_data, name='needle_source')
-        if self.horizontal:
-            model.xaxis.axis_label_text_font_size = self.title_size
-            model.yaxis.visible = False
-            model.hbar(y=0, left='y0', right='y1', height=1, color='color', source=bar_source)
-            wedge_params = {'y': -.25, 'x': 'y'}
-            text_params = {'y': -0.2, 'x': 'y', 'text_align': 'center', 'text_baseline': 'bottom'}
-        else:
-            model.xaxis.visible = False
-            model.yaxis.axis_label_text_font_size = self.title_size
-            model.vbar(x=0, bottom='y0', top='y1', width=1, color='color', source=bar_source)
-            wedge_params = {'x': -0.25, 'y': 'y'}
-            text_params = {'x': -0.2, 'y': 'y', 'text_align': 'left', 'text_baseline': 'middle'}
-        model.wedge(
-            radius='radius', start_angle='start', end_angle='end',
-            fill_color=self.needle_color, line_color=self.needle_color,
-            source=needle_source, name='needle_renderer', **wedge_params
-        )
-        model.text(
-            text='text', source=needle_source, text_font_size=self.value_size, **text_params
-        )
+        self._update_name(model)
+        self._update_title_size(model)
+        self._update_figure(model)
+        self._update_axes(model)
+        self._update_renderers(model)
+        self._update_bounds(model)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
         return model
 
+    def _update_name(self, model):
+        model.xaxis.axis_label = self.name
+        model.yaxis.axis_label = self.name
+
+    def _update_title_size(self, model):
+        model.xaxis.axis_label_text_font_size = self.title_size
+        model.yaxis.axis_label_text_font_size = self.title_size
+
+    def _update_renderers(self, model):
+        model.renderers = []
+        data, needle_data = self._get_data()
+        bar_source = ColumnDataSource(data=data, name='bar_source')
+        needle_source = ColumnDataSource(data=needle_data, name='needle_source')
+        if self.horizontal:
+            model.hbar(
+                y=0, left='y0', right='y1', height=1, color='color',
+                source=bar_source
+            )
+            wedge_params = {'y': 0.5, 'x': 'y', 'angle': np.deg2rad(180)}
+            text_params = {
+                'y': -0.5, 'x': 0, 'text_align': 'left',
+                'text_baseline': 'top'
+            }
+        else:
+            model.vbar(
+                x=0, bottom='y0', top='y1', width=1, color='color',
+                source=bar_source
+            )
+            wedge_params = {'x': 0.5, 'y': 'y', 'angle': np.deg2rad(90)}
+            text_params = {
+                'x': -0.5, 'y': 0, 'text_align': 'left',
+                'text_baseline': 'bottom', 'angle': np.deg2rad(90)
+            }
+        model.scatter(
+            fill_color=self.needle_color, line_color=self.needle_color,
+            source=needle_source, name='needle_renderer', marker='triangle',
+            size=20, level='overlay', **wedge_params
+        )
+        model.text(
+            text='text', source=needle_source, text_font_size=self.value_size,
+            **text_params
+        )
+
+    def _update_bounds(self, model):
+        if self.horizontal:
+            x_range, y_range = tuple(self.bounds), (-0.8, 0.5)
+        else:
+            x_range, y_range = (-0.8, 0.5), tuple(self.bounds)
+        model.x_range.update(start=x_range[0], end=x_range[1])
+        model.y_range.update(start=y_range[0], end=y_range[1])
+
+    def _update_axes(self, model):
+        vmin, vmax = self.bounds
+        interval = (vmax-vmin)
+        if self.show_boundaries:
+            ticks = [vmin] + [v*interval for (v, _) in self._color_intervals]
+        else:
+            ticks = [vmin, vmax]
+        ticker = FixedTicker(ticks=ticks)
+        if self.horizontal:
+            model.xaxis.visible = True
+            model.xaxis.ticker = ticker
+            model.yaxis.visible = False
+        else:
+            model.xaxis.visible = False
+            model.yaxis.visible = True
+            model.yaxis.ticker = ticker
+
+    def _update_figure(self, model):
+        params = self._process_param_change(self._init_params())
+        if self.horizontal:
+            params.update(width=self.height, height=self.width)
+        else:
+            params.update(width=self.width, height=self.height)
+        model.update(**params)
+
     def _manual_update(self, events, model, doc, root, parent, comm):
         update_data = False
         for event in events:
             if event.name in ('width', 'height'):
-                model.update(**{event.name: event.new})
-            if event.name == 'bounds':
-                model.y_range.update(start=event.new[0], end=event.new[0])
-            if event.name in self._data_params:
+                self._update_figure(model)
+            elif event.name == 'bounds':
+                self._update_bounds(model)
+                self._update_renderers(model)
+            elif event.name in self._data_params:
                 update_data = True
             elif event.name == 'needle_color':
                 needle_r = model.select(name='needle_renderer')
                 needle_r.glyph.line_color = event.new
                 needle_r.glyph.fill_color = event.new
+            elif event.name == 'horizontal':
+                self._update_bounds(model)
+                self._update_figure(model)
+                self._update_axes(model)
+                self._update_renderers(model)
+            elif event.name == 'name':
+                self._update_name(model)
         if not update_data:
             return
         data, needle_data = self._get_data()
         model.select(name='bar_source').data.update(data)
         model.select(name='needle_source').data.update(needle_data)
-        
+
 
 class Trend(SyncableData, Indicator):
     """
@@ -965,7 +1077,6 @@ class Tqdm(Indicator):
     >>> for i in tqdm(range(0,10), desc="My loop", leave=True, colour='#666666'):
     ...     time.sleep(timeout)
     """
-
 
     value = param.Integer(default=0, bounds=(-1, None), doc="""
         The current value of the progress bar. If set to -1 the progress
