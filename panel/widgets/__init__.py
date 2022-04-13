@@ -40,6 +40,7 @@ from .indicators import ( # noqa
     BooleanStatus,
     Dial,
     Gauge,
+    LinearGauge,
     LoadingSpinner,
     Number,
     Progress,
