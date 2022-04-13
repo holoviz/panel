@@ -151,6 +151,7 @@ class VTK:
 
     :Example:
 
+    >>> pn.extension('vtk')
     >>> VTK(some_vtk_object, width=500, height=500)
     
     This is a Class factory and allows to switch between VTKJS,
@@ -523,6 +524,7 @@ class VTKVolume(AbstractVTK):
 
     :Example:
 
+    >>> pn.extension('vtk')
     >>> VTKVolume(
     ...    data_matrix, spacing=(3,2,1), interpolation='nearest',
     ...    edge_gradient=0, sampling=0,
@@ -778,6 +780,7 @@ class VTKJS(AbstractVTK):
 
     :Example:
 
+    >>> pn.extension('vtk')
     >>> VTK(
     ...    'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs',
     ...     sizing_mode='stretch_width', height=400, enable_keybindings=True,

@@ -47,7 +47,14 @@ def _wrap_callback(cb, wrapped, doc, comm, callbacks):
 
 class Bokeh(PaneBase):
     """
-    Bokeh panes allow including any Bokeh model in a panel.
+    The Bokeh pane allows displaying any displayable Bokeh model inside a
+    Panel app.
+    
+    Reference: https://panel.holoviz.org/reference/panes/Bokeh.html
+
+    :Example:
+
+    >>> Bokeh(some_bokeh_figure)
     """
 
     theme = param.ClassSelector(default=None, class_=(Theme, str), doc="""
@@ -127,11 +134,20 @@ class Bokeh(PaneBase):
 
 class Matplotlib(PNG, IPyWidget):
     """
-    A Matplotlib pane renders a matplotlib figure to png and wraps the
-    base64 encoded data in a bokeh Div model. The size of the image in
-    pixels is determined by scaling the size of the figure in inches
-    by a dpi of 72, increasing the dpi therefore controls the
-    resolution of the image not the displayed size.
+    The `Matplotlib` pane allows displaying any displayable Matplotlib figure
+    inside a Panel app.
+    
+    - It will render the plot to PNG at the declared DPI and then embed it.
+    - If you find the figure to be clipped on the edges, you can set `tight=True`
+    to automatically resize objects to fit within the pane.
+    - If you have installed `ipympl` you will also be able to use the
+    interactive backend.
+    
+    Reference: https://panel.holoviz.org/reference/panes/Matplotlib.html
+
+    :Example:
+
+    >>> Matplotlib(some_matplotlib_figure, dpi=144)
     """
 
     dpi = param.Integer(default=144, bounds=(1, None), doc="""

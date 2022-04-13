@@ -24,8 +24,17 @@ from .plotly import Plotly
 
 class HoloViews(PaneBase):
     """
-    HoloViews panes render any HoloViews object to a corresponding
-    Bokeh model while respecting the currently selected backend.
+    `HoloViews` panes render any `HoloViews` object using the
+    currently selected backend ('bokeh' (default), 'matplotlib' or 'plotly').
+
+    To be able to use the `plotly` backend you must add `plotly` to
+    `pn.extension`.
+    
+    Reference: https://panel.holoviz.org/reference/panes/HoloViews.html
+
+    :Example:
+
+    >>> HoloViews(some_holoviews_object)
     """
 
     backend = param.ObjectSelector(
@@ -37,7 +46,7 @@ class HoloViews(PaneBase):
         Whether to center the plot.""")
 
     linked_axes = param.Boolean(default=True, doc="""
-        Whether to use link the axes of bokeh plots inside this pane
+        Whether to link the axes of bokeh plots inside this pane
         across a panel layout.""")
 
     renderer = param.Parameter(default=None, doc="""

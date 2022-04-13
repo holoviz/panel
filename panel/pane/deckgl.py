@@ -70,7 +70,21 @@ def recurse_data(data):
 
 class DeckGL(PaneBase):
     """
-    DeckGL panes allow rendering Deck.Gl/ PyDeck plots in Panel.
+    The `DeckGL` pane renders the Deck.gl
+    JSON specification as well as PyDeck plots inside a panel.
+
+    Deck.gl is a very powerful WebGL-powered framework for visual exploratory
+    data analysis of large datasets.
+
+    Reference: https://panel.holoviz.org/reference/panes/DeckGL.html
+
+    :Example:
+
+    >>> pn.extension('deckgl')
+    >>> DeckGL(
+    ...    some_deckgl_dict_or_pydeck_object,
+    ...    mapbox_api_key=MAPBOX_KEY, height=600
+    ... )
     """
 
     mapbox_api_key = param.String(default=None, doc="""

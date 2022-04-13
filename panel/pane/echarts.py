@@ -11,7 +11,14 @@ from .base import PaneBase
 
 class ECharts(PaneBase):
     """
-    ECharts panes allow rendering echarts.js plots.
+    ECharts panes allow rendering echarts.js dictionaries and pyecharts plots.
+
+    Reference: https://panel.holoviz.org/reference/panes/ECharts.html
+
+    :Example:
+
+    >>> pn.extension('echarts')
+    >>> ECharts(some_echart_dict_or_pyecharts_object, height=480, width=640)
     """
 
     object = param.Parameter(default=None, doc="""

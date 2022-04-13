@@ -61,11 +61,24 @@ class Selection(param.Parameterized):
 
 class Vega(PaneBase):
     """
-    Vega panes allow rendering Vega plots and traces.
+    The Vega pane renders Vega-lite based plots (including those from Altair)
+    inside a panel.
+    
+    Note
+    
+    - to use the `Vega` pane, the Panel `extension` has to be
+    loaded with 'vega' as an argument to ensure that vega.js is initialized.
+    - it supports selection events
+    - it optimizes the plot rendering by using binary serialization for any
+    array data found on the Vega/Altair object, providing huge speedups over
+    the standard JSON serialization employed by Vega natively.
+    
+    Reference: https://panel.holoviz.org/reference/panes/Vega.html
 
-    For efficiency any array objects found inside a Figure are added
-    to a ColumnDataSource which allows using binary transport to sync
-    the figure on bokeh server and via Comms.
+    :Example:
+
+    >>> pn.extension('vega')
+    >>> Vega(some_vegalite_dict_or_altair_object, height=240)
     """
 
     debounce = param.ClassSelector(default=20, class_=(int, dict), doc="""

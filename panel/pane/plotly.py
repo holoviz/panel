@@ -15,11 +15,22 @@ from ..viewable import Layoutable
 
 class Plotly(PaneBase):
     """
-    Plotly panes allow rendering plotly Figures and traces.
+    The `Plotly` pane renders Plotly plots inside a panel.
+    
+    Note that
+    
+    - the Panel `extension` has to be loaded with `plotly` as an argument to
+    ensure that Plotly.js is initialized.
+    - it supports click, hover and selection events.
+    - it optimizes the plot rendering by using binary serialization for any
+    array data found on the Plotly object.
+    
+    Reference: https://panel.holoviz.org/reference/panes/Plotly.html
 
-    For efficiency any array objects found inside a Figure are added
-    to a ColumnDataSource which allows using binary transport to sync
-    the figure on bokeh server and via Comms.
+    :Example:
+
+    >>> pn.extension('plotly')
+    >>> Plotly(some_plotly_figure, width=500, height=500)
     """
 
     click_data = param.Dict(doc="Click callback data")
