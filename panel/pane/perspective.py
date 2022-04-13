@@ -255,7 +255,14 @@ def deconstruct_pandas(data, kwargs=None):
 
 class Perspective(PaneBase, ReactiveData):
     """
-    The Perspective widget enables exploring large tables of data.
+    The `Perspective` pane provides an interactive visualization component for
+    large, real-time datasets built on the Perspective project.
+    
+    Reference: https://panel.holoviz.org/reference/panes/Perspective.html
+
+    :Example:
+
+    >>> Perspective(df, plugin='hypergrid', theme='material-dark')
     """
 
     aggregates = param.Dict(None, doc="""
