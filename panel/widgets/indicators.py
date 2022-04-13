@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 
@@ -704,33 +705,32 @@ class LinearGauge(ValueIndicator):
     show_boundaries = param.Boolean(default=False, doc="""
       Whether to show the boundaries between colored regions.""")
 
-    unfilled_alpha = param.Magnitude(default=0.1, doc="""
-      Alpha of the unfilled region of the LinearGauge.""")
-
     unfilled_color = param.String(default='whitesmoke', doc="""
       Color of the unfilled region of the LinearGauge.""")
 
-    title_size = param.String(default='15pt', doc="""
+    title_size = param.String(default=None, doc="""
       Font size of the gauge title.""")
 
-    value_size = param.String(default='12pt', doc="""
+    tick_size = param.String(default=None, doc="""
+      Font size of the gauge tick labels.""")
+
+    value_size = param.String(default=None, doc="""
       Font size of the gauge value label.""")
 
     value = param.Number(default=25, allow_None=True, doc="""
       Value to indicate on the dial a value within the declared bounds.""")
 
-    width = param.Integer(default=150, bounds=(100, None))
+    width = param.Integer(default=125, bounds=(1, None))
 
     _manual_params = [
         'value', 'bounds', 'format', 'title_size', 'value_size',
-        'horizontal', 'height', 'colors', 'title_size',
-        'unfilled_color', 'width', 'nan_format', 'needle_color',
-        'unfilled_alpha'
+        'horizontal', 'height', 'colors', 'tick_size',
+        'unfilled_color', 'width', 'nan_format', 'needle_color'
     ]
 
     _data_params = [
-        'value', 'bounds', 'format', 'format', 'unfilled_alpha',
-        'needle_color', 'colors'
+        'value', 'bounds', 'format', 'nan_format', 'needle_color',
+        'colors'
     ]
 
     _rerender_params = ['horizontal']
@@ -756,12 +756,17 @@ class LinearGauge(ValueIndicator):
         value = self.value
         ncolors = len(self.colors) if self.colors else 1
         interval = (vmax-vmin)
-        fraction = value / interval
-        idx = round(fraction * (ncolors-1))
+        if math.isfinite(value):
+            fraction = value / interval
+            idx = round(fraction * (ncolors-1))
+        else:
+            fraction = 0
+            idx = 0
         if not self.colors:
             intervals = [
                 (fraction, self.default_color)
             ]
+            intervals.append((1, self.unfilled_color))
         elif self.show_boundaries:
             intervals = [
                 c if isinstance(c, tuple) else ((i+1)/(ncolors), c)
@@ -772,7 +777,7 @@ class LinearGauge(ValueIndicator):
                 self.colors[idx] if isinstance(self.colors[0], tuple)
                 else (fraction, self.colors[idx])
             ]
-        intervals.append((1, self.unfilled_color))
+            intervals.append((1, self.unfilled_color))
         return intervals
 
     def _get_data(self):
@@ -781,15 +786,20 @@ class LinearGauge(ValueIndicator):
         interval = (vmax-vmin)
         colors, values = [], [vmin]
         above = False
+        prev = None
         for (v, color) in self._color_intervals:
-            if v*interval > value:
+            val = v*interval
+            if val == prev:
+                continue
+            elif val > value:
                 if not above:
                     colors.append(color)
                     values.append(value)
                     above = True
                 color = self.unfilled_color
             colors.append(color)
-            values.append(v*interval)
+            values.append(val)
+            prev = val
         value = self.format.format(value=value).replace('nan', self.nan_format)
         return (
             {'y0': values[:-1], 'y1': values[1:], 'color': colors},
@@ -803,8 +813,13 @@ class LinearGauge(ValueIndicator):
             x_axis_location='above', y_axis_location='right', **params
         )
         model.grid.visible = False
+        model.xaxis.major_label_standoff = 2
+        model.yaxis.major_label_standoff = 2
+        model.xaxis.axis_label_standoff = 2
+        model.yaxis.axis_label_standoff = 2
         self._update_name(model)
         self._update_title_size(model)
+        self._update_tick_size(model)
         self._update_figure(model)
         self._update_axes(model)
         self._update_renderers(model)
@@ -819,8 +834,14 @@ class LinearGauge(ValueIndicator):
         model.yaxis.axis_label = self.name
 
     def _update_title_size(self, model):
-        model.xaxis.axis_label_text_font_size = self.title_size
-        model.yaxis.axis_label_text_font_size = self.title_size
+        title_size = self.title_size or f'{self.width/6}px'
+        model.xaxis.axis_label_text_font_size = title_size
+        model.yaxis.axis_label_text_font_size = title_size
+
+    def _update_tick_size(self, model):
+        tick_size = self.tick_size or f'{self.width/9}px'
+        model.xaxis.major_label_text_font_size = tick_size
+        model.yaxis.major_label_text_font_size = tick_size
 
     def _update_renderers(self, model):
         model.renderers = []
@@ -829,31 +850,32 @@ class LinearGauge(ValueIndicator):
         needle_source = ColumnDataSource(data=needle_data, name='needle_source')
         if self.horizontal:
             model.hbar(
-                y=0, left='y0', right='y1', height=1, color='color',
+                y=0.1, left='y0', right='y1', height=1, color='color',
                 source=bar_source
             )
             wedge_params = {'y': 0.5, 'x': 'y', 'angle': np.deg2rad(180)}
             text_params = {
-                'y': -0.5, 'x': 0, 'text_align': 'left',
+                'y': -0.4, 'x': 0, 'text_align': 'left',
                 'text_baseline': 'top'
             }
         else:
             model.vbar(
-                x=0, bottom='y0', top='y1', width=1, color='color',
+                x=0.1, bottom='y0', top='y1', width=0.9, color='color',
                 source=bar_source
             )
             wedge_params = {'x': 0.5, 'y': 'y', 'angle': np.deg2rad(90)}
             text_params = {
-                'x': -0.5, 'y': 0, 'text_align': 'left',
+                'x': -0.4, 'y': 0, 'text_align': 'left',
                 'text_baseline': 'bottom', 'angle': np.deg2rad(90)
             }
         model.scatter(
             fill_color=self.needle_color, line_color=self.needle_color,
             source=needle_source, name='needle_renderer', marker='triangle',
-            size=20, level='overlay', **wedge_params
+            size=int(self.width/8), level='overlay', **wedge_params
         )
+        value_size = self.value_size or f'{self.width/8}px'
         model.text(
-            text='text', source=needle_source, text_font_size=self.value_size,
+            text='text', source=needle_source, text_font_size=value_size,
             **text_params
         )
 
@@ -911,6 +933,10 @@ class LinearGauge(ValueIndicator):
                 self._update_renderers(model)
             elif event.name == 'name':
                 self._update_name(model)
+            elif event.name == 'tick_size':
+                self._update_tick_size(model)
+            elif event.name == 'title_size':
+                self._update_title_size(model)
         if not update_data:
             return
         data, needle_data = self._get_data()
