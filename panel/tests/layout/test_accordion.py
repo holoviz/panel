@@ -168,3 +168,11 @@ def test_accordion_set_card_collapsed_toggle(document, comm, accordion):
     assert accordion.active == [1]
 
     assert len(events) == 2
+
+
+def test_accordion_active(document, comm):
+    combinations = [[0], [1], [0, 1]]
+    for combination in combinations:
+        accordion = Accordion("1", "2", active=combination)
+        accordion.get_root(document, comm=comm)
+        assert accordion.active == combination
