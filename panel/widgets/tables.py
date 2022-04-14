@@ -1645,27 +1645,3 @@ class Tabulator(BaseTable):
         if column not in self._on_click_callbacks:
             self._on_click_callbacks[column] = []
         self._on_click_callbacks[column].append(callback)
-
-    def on_button_click(self, callback, column=None):
-        """
-        Register a callback to be executed when a cell corresponding
-        to a column declared in the `buttons` parameter is clicked.
-        The callback is given a CellClickEvent declaring the column
-        and row of the cell that was clicked.
-
-        Arguments
-        ---------
-        callback: (callable)
-            The callback to run on edit events.
-        column: (str)
-            Optional argument restricting the callback to a specific
-            column.
-        """
-        self.param.warning(
-            "DeprecationWarning: The on_button_click callbacks will be "
-            "removed before the 0.13.0 release, please use the generic "
-            "on_click callback instead."
-        )
-        if column not in self._on_click_callbacks:
-            self._on_click_callbacks[column] = []
-        self._on_click_callbacks[column].append(callback)
