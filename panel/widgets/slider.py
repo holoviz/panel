@@ -917,14 +917,20 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             self.param.update(**{event.name: event.new})
 
     def _sync_start_value(self, event):
-        end = self.value[1] if event.name == 'value' else self.value_throttled[1]
+        if event.name == 'value':
+            end = self.value[1] if self.value else self.end
+        else:
+            end = self.value_throttled[1] if self.value_throttled else self.end
         with param.edit_constant(self):
             self.param.update(
                 **{event.name: (event.new, end)}
             )
 
     def _sync_end_value(self, event):
-        start = self.value[0] if event.name == 'value' else self.value_throttled[0]
+        if event.name == 'value':
+            start = self.value[0] if self.value else self.start
+        else:
+            start = self.value_throttled[0] if self.value_throttled else self.start
         with param.edit_constant(self):
             self.param.update(
                 **{event.name: (start, event.new)}
