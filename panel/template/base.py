@@ -708,11 +708,13 @@ class BasicTemplate(BaseTemplate):
                 del self._render_items[ref]
 
         new = event.new if isinstance(event.new, list) else event.new.values()
+        theme = self._get_theme()
+        bk_theme = theme.bokeh_theme
         for o in new:
             if o not in old:
                 for hvpane in o.select(HoloViews):
-                    if self.theme.bokeh_theme:
-                        hvpane.theme = self.theme.bokeh_theme
+                    if bk_theme:
+                        hvpane.theme = bk_theme
 
         labels = {}
         for obj in new:
