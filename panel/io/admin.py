@@ -136,7 +136,10 @@ def get_timeline(doc=None):
         if 'finished processing events' in new.msg:
             msg = new.getMessage()
             etype = 'processing'
-            index = cds.data['msg'].index(msg.replace('finished processing', 'received'))
+            try:
+                index = cds.data['msg'].index(msg.replace('finished processing', 'received'))
+            except Exception:
+                return
             patch = {
                 'x1': [(index, new.created*1000)],
                 'color': [(index, EVENT_TYPES[etype])],
