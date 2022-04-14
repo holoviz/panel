@@ -1054,6 +1054,7 @@ class Tabulator(BaseTable):
                 event.old = self._old[event.column].iloc[event.row]
             for cb in self._on_edit_callbacks:
                 cb(event)
+            self._update_style()
         else:
             for cb in self._on_click_callbacks.get(None, []):
                 cb(event)
