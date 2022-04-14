@@ -1177,7 +1177,7 @@ class Tabulator(BaseTable):
             self._apply_update([], msg, m, ref)
 
     def _get_children(self, old={}):
-        if self.row_content is None:
+        if self.row_content is None or self.value is None:
             return {}
         from ..pane import panel
         df = self._processed
