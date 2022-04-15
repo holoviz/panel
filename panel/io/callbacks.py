@@ -141,11 +141,14 @@ class PeriodicCallback(param.Parameterized):
         immediately when the previous iteration finished.
         """
         while True:
-            self._cb = asyncio.gather(
-                func(), asyncio.sleep(self.period/1000.),
-            )
+            start = time.monotonic()
+            self._cb = asyncio.ensure_future(func())
             await self._cb
-        
+            timeout = (self.period/1000.) - (time.monotonic()-start)
+            if timeout > 0:
+                self._cb = asyncio.ensure_future(asyncio.sleep(timeout))
+                await self._cb
+
     def _cleanup(self, session_context):
         self.stop()
 
