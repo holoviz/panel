@@ -44,8 +44,6 @@ class QuillInput(HTMLBox):
 
     placeholder = String()
 
-    readonly = Bool(False)
-
     text = String()
 
     toolbar = Either(List(Any), Bool)
