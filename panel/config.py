@@ -468,6 +468,12 @@ class panel_extension(_pyviz_extension):
         }
         for arg in args:
             if arg in self._imports:
+                try:
+                    if (arg == 'ipywidgets' and get_ipython() and
+                        not "PANEL_IPYWIDGET" in os.environ): # noqa (get_ipython)
+                        continue
+                except Exception:
+                    pass
                 __import__(self._imports[arg])
             elif arg in reactive_exts:
                 ReactiveHTMLMetaclass._loaded_extensions.add(arg)
