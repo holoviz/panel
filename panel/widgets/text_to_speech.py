@@ -167,9 +167,15 @@ class Utterance(param.Parameterized):
 
 class TextToSpeech(Utterance, Widget):
     """
-    The TextToSpeech widget wraps the HTML5 SpeechSynthesis API
+    The `TextToSpeech` widget wraps the HTML5 SpeechSynthesis API
 
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis
+
+    Reference: https://panel.holoviz.org/reference/widgets/TextToSpeech.html
+
+    :Example:
+
+    >>> TextToSpeech(name="Speech Synthesis", value="Data apps are nice")
     """
 
     auto_speak = param.Boolean(default=True, doc="""

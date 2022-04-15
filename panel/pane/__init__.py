@@ -1,9 +1,35 @@
 """
-The pane module contains PaneBase objects which may render any type of
-object as a bokeh model so it can be embedded in a panel. The pane
-objects are one of three main components in panel the other two being
-layouts and widgets. Panes may render anything including plots, text,
+Panel panes renders the Python objects you know and love ❤️
+===========================================================
+
+Panes may render anything including plots, text,
 images, equations etc.
+
+For example Panel contains Bokeh, HoloViews,
+Matplotlib and Plotly panes.
+
+Check out the Panel gallery of panes
+https://panel.holoviz.org/reference/index.html#panes for inspiration.
+
+How to use Panel panes in 2 simple steps
+----------------------------------------
+
+1. Define your Python objects
+
+>>> some_python_object = ...
+>>> another_python_object = ...
+
+2. Define your panes
+
+>>> pn.pane.SomePane(some_python_object).servable()
+>>> pn.pane.AnotherPane(another_python_object).servable()
+
+Most often you don't have to wrap your Python object into a specific
+pane. Just add your Python object to `pn.panel`, `pn.Column`, `pn.Row` or
+other layouts, then Panel will automatically wrap it in the right pane.
+
+For more detail see the Getting Started Guide
+https://panel.holoviz.org/getting_started/index.html
 """
 from .alert import Alert # noqa
 from .base import PaneBase, Pane, panel # noqa

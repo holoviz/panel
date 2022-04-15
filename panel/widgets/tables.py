@@ -87,6 +87,15 @@ class BaseTable(ReactiveData, Widget):
         self._filters = []
         super().__init__(value=value, **params)
 
+    @param.depends('value', watch=True, on_init=True)
+    def _compute_renamed_cols(self):
+        if self.value is None:
+            self._renamed_cols.clear()
+            return
+        self._renamed_cols = {
+            str(col) if str(col) != col else col: col for col in self._get_fields()
+        }
+
     def _validate(self, *events):
         if self.value is None:
             return
@@ -177,9 +186,6 @@ class BaseTable(ReactiveData, Widget):
                 if isinstance(formatter, CellFormatter):
                     formatter = clone_model(formatter)
 
-            if str(col) != col:
-                self._renamed_cols[str(col)] = col
-
             if isinstance(self.widths, int):
                 col_kwargs['width'] = self.widths
             elif str(col) in self.widths and isinstance(self.widths.get(str(col)), int):
@@ -254,10 +260,16 @@ class BaseTable(ReactiveData, Widget):
     def _sort_df(self, df):
         if not self.sorters:
             return df
-        return df.sort_values(
-            [s['field'] for s in self.sorters],
-            ascending=[s['dir'] == 'asc' for s in self.sorters]
-        )
+        fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
+        ascending = [s['dir'] == 'asc' for s in self.sorters]
+        rename = 'index' in fields and df.index.name is None
+        if rename:
+            df.index.name = 'index'
+        df_sorted = df.sort_values(fields, ascending=ascending)
+        if rename:
+            df.index.name = None
+            df_sorted.index.name = None
+        return df_sorted
 
     def _filter_dataframe(self, df):
         """
@@ -692,6 +704,22 @@ class BaseTable(ReactiveData, Widget):
 
 
 class DataFrame(BaseTable):
+    """
+    The `DataFrame` widget allows displaying and editing a pandas DataFrame.
+    
+    Note that editing is not possible for multi-indexed DataFrames, in which
+    case you will need to reduce the DataFrame to a single index. 
+    
+    Also note that the `DataFrame` widget will eventually be replaced with the
+    `Tabulator` widget, and so new code should be written to use `Tabulator`
+    instead.
+
+    Reference: https://panel.holoviz.org/reference/widgets/DataFrame.html
+
+    :Example:
+
+    >>> DataFrame(df, name='DataFrame')
+    """
 
     auto_edit = param.Boolean(default=False, doc="""
         Whether clicking on a table cell automatically starts edit mode.""")
@@ -835,8 +863,14 @@ class DataFrame(BaseTable):
 
 class Tabulator(BaseTable):
     """
-    The Tabulator Pane wraps the [Tabulator](http://tabulator.info/)
-    table to provide a full-featured interactive table.
+    The `Tabulator` widget wraps the [Tabulator js](http://tabulator.info/)
+    table to provide a full-featured, very powerful interactive table.
+
+    Reference: https://panel.holoviz.org/reference/widgets/Tabulator.html
+
+    :Example:
+
+    >>> Tabulator(df, theme='site', pagination='remote', page_size=25)
     """
 
     buttons = param.Dict(default={}, doc="""
@@ -978,10 +1012,11 @@ class Tabulator(BaseTable):
         """
         if self.value is None or self._explicit_pagination:
             return
-        if len(self.value) > self._MAX_ROW_LIMITS[0]:
-            self.pagination = 'local'
-        elif len(self.value) > self._MAX_ROW_LIMITS[1]:
-            self.pagination = 'remote'
+        with param.parameterized.discard_events(self):
+            if self._MAX_ROW_LIMITS[0] < len(self.value) <= self._MAX_ROW_LIMITS[1]:
+                self.pagination = 'local'
+            elif len(self.value) > self._MAX_ROW_LIMITS[1]:
+                self.pagination = 'remote'
         self._explicit_pagination = False
 
     @param.depends('pagination', watch=True)
@@ -1019,6 +1054,7 @@ class Tabulator(BaseTable):
                 event.old = self._old[event.column].iloc[event.row]
             for cb in self._on_edit_callbacks:
                 cb(event)
+            self._update_style()
         else:
             for cb in self._on_click_callbacks.get(None, []):
                 cb(event)
@@ -1142,7 +1178,7 @@ class Tabulator(BaseTable):
             self._apply_update([], msg, m, ref)
 
     def _get_children(self, old={}):
-        if self.row_content is None:
+        if self.row_content is None or self.value is None:
             return {}
         from ..pane import panel
         df = self._processed
@@ -1240,7 +1276,11 @@ class Tabulator(BaseTable):
         self._update_selectable()
 
     def _update_cds(self, *events):
+        page_events = ('page', 'page_size', 'sorters', 'filters')
         if self._updating:
+            return
+        elif (events and all(e.name in page_events for e in events) and not self.pagination):
+            self._processed, _ = self._get_data()
             return
         recompute = not all(
             e.name in ('page', 'page_size', 'pagination') for e in events
@@ -1602,30 +1642,6 @@ class Tabulator(BaseTable):
             Optional argument restricting the callback to a specific
             column.
         """
-        if column not in self._on_click_callbacks:
-            self._on_click_callbacks[column] = []
-        self._on_click_callbacks[column].append(callback)
-
-    def on_button_click(self, callback, column=None):
-        """
-        Register a callback to be executed when a cell corresponding
-        to a column declared in the `buttons` parameter is clicked.
-        The callback is given a CellClickEvent declaring the column
-        and row of the cell that was clicked.
-
-        Arguments
-        ---------
-        callback: (callable)
-            The callback to run on edit events.
-        column: (str)
-            Optional argument restricting the callback to a specific
-            column.
-        """
-        self.param.warning(
-            "DeprecationWarning: The on_button_click callbacks will be "
-            "removed before the 0.13.0 release, please use the generic "
-            "on_click callback instead."
-        )
         if column not in self._on_click_callbacks:
             self._on_click_callbacks[column] = []
         self._on_click_callbacks[column].append(callback)

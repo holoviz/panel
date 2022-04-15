@@ -34,6 +34,22 @@ def _spawn_threaded_event_loop(coro):
 
 
 class IDOM(PaneBase):
+    """
+    The `IDOM` pane renders any IDOM component both in the notebook and in a
+    deployed server.
+    
+    IDOM defines an API for defining and controlling interactive HTML
+    components directly from Python.
+    
+    Note that in the notebook the IDOM support for loading external modules
+    relies on Panel’s Jupyter serverextension.
+    
+    Reference: https://panel.holoviz.org/reference/panes/IDOM.html
+
+    :Example:
+
+    >>> IDOM(ClickCount, width=300)
+    """
 
     priority = None
 

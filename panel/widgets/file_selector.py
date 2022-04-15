@@ -54,6 +54,16 @@ def scan_path(path, file_pattern='*'):
 
 
 class FileSelector(CompositeWidget):
+    """
+    The `FileSelector` widget allows browsing the filesystem on the
+    server and selecting one or more files in a directory.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/FileSelector.html
+
+    :Example:
+
+    >>> FileSelector(directory='~', file_pattern='*.png')
+    """
 
     directory = param.String(default=os.getcwd(), doc="""
         The directory to explore.""")

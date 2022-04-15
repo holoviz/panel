@@ -22,6 +22,23 @@ def is_sympy_expr(obj):
 
 
 class LaTeX(DivPaneBase):
+    """
+    The `LaTeX` pane allows rendering LaTeX equations. It uses either
+    `MathJax` or `KaTeX` depending on the defined renderer. 
+    
+    By default it will use the renderer loaded in the extension
+    (e.g. `pn.extension('katex')`), defaulting to `KaTeX`.
+
+    Reference: https://panel.holoviz.org/reference/panes/LaTeX.html
+
+    :Example:
+
+    >>> pn.extension('katex')
+    >>> LaTeX(
+    ...     'The LaTeX pane supports two delimiters: $LaTeX$ and \(LaTeX\)', 
+    ...     style={'font-size': '18pt'}, width=800
+    ... )
+    """
 
     renderer = param.ObjectSelector(default=None, allow_None=True,
                                     objects=['katex', 'mathjax'], doc="""

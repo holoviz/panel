@@ -19,8 +19,8 @@ def test_perspective_int_cols():
     model = psp.get_root()
     assert '0' in model.source.data
     assert model.columns == ['0']
-    assert model.row_pivots == ['0']
-    assert model.column_pivots == ['0']
+    assert model.group_by == ['0']
+    assert model.split_by == ['0']
     assert model.aggregates == {'0': 'mean'}
     assert model.filters == [['0', '==', 'None']]
     assert model.sort == [['0', 'desc']]
@@ -29,8 +29,8 @@ def test_perspective_int_cols():
 
     psp2._process_events({
         'columns': ['0'],
-        'row_pivots': ['0'],
-        'column_pivots': ['0'],
+        'group_by': ['0'],
+        'split_by': ['0'],
         'aggregates': {'0': 'mean'},
         'filters': [['0', '==', 'None']],
         'sort': [['0', 'desc']]

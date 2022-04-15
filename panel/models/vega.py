@@ -28,8 +28,8 @@ class VegaPlot(LayoutDOM):
 
     __javascript_raw__ = [
         "https://cdn.jsdelivr.net/npm/vega@5",
-        'https://cdn.jsdelivr.net/npm/vega-lite@4',
-        'https://cdn.jsdelivr.net/npm/vega-embed@6'
+        "https://cdn.jsdelivr.net/npm/vega-lite@5",
+        "https://cdn.jsdelivr.net/npm/vega-embed@6"
     ]
 
     @classproperty
@@ -47,7 +47,7 @@ class VegaPlot(LayoutDOM):
     __js_require__ = {
         'paths': {
             "vega-embed":  "https://cdn.jsdelivr.net/npm/vega-embed@6/build/vega-embed.min",
-            "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@4/build/vega-lite.min",
+            "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@5/build/vega-lite.min",
             "vega": "https://cdn.jsdelivr.net/npm/vega@5/build/vega.min"
         },
         'exports': {'vega-embed': 'vegaEmbed', 'vega': 'vega', 'vega-lite': 'vl'}

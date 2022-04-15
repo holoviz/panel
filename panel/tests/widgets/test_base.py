@@ -5,15 +5,15 @@ from panel.io import block_comm
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.widgets import (
-    CompositeWidget, Dial, FileDownload, FloatSlider, TextInput,
-    Terminal, ToggleGroup, Tqdm, Widget
+    CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge,
+    TextInput, Terminal, ToggleGroup, Tqdm, Widget
 )
 from panel.widgets.tables import BaseTable
 from panel.tests.util import check_layoutable_properties
 
 excluded = (
-    BaseTable, CompositeWidget, Dial, FileDownload, ToggleGroup, Terminal,
-    Tqdm
+    BaseTable, CompositeWidget, Dial, FileDownload, LinearGauge,
+    ToggleGroup, Terminal, Tqdm 
 )
 
 all_widgets = [

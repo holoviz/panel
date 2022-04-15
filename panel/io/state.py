@@ -425,7 +425,10 @@ class _state(param.Parameterized):
             return
         if self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
-            self.curdoc.on_event('document_ready', self._schedule_on_load)
+            try:
+                self.curdoc.on_event('document_ready', self._schedule_on_load)
+            except AttributeError:
+                pass # Document already cleaned up
         self._onload[self.curdoc].append(callback)
 
     def on_session_created(self, callback):

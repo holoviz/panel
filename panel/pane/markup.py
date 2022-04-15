@@ -48,11 +48,19 @@ class DivPaneBase(PaneBase):
 
 class HTML(DivPaneBase):
     """
-    HTML panes wrap HTML text in a Panel HTML model. The
-    provided object can either be a text string, or an object that
-    has a `_repr_html_` method that can be called to get the HTML
-    text string.  The height and width can optionally be specified, to
+    `HTML` panes renders HTML strings and objects with a `_repr_html_` method.
+    
+    The `height` and `width` can optionally be specified, to
     allow room for whatever is being wrapped.
+    
+    Reference: https://panel.holoviz.org/reference/panes/HTML.html
+
+    :Example:
+
+    >>> HTML(
+    ...     "<h1>This is a HTML pane</h1>",
+    ...     style={'background-color': '#F6F6F6'}
+    ... )
     """
 
     disable_math = param.Boolean(default=True, doc="""
@@ -83,9 +91,17 @@ class HTML(DivPaneBase):
 
 class DataFrame(HTML):
     """
-    DataFrame renders pandas, dask and streamz DataFrame types using
-    their custom HTML repr. In the case of a streamz DataFrame the
-    rendered data will update periodically.
+    The `DataFrame` pane renders pandas, dask and streamz DataFrame types using
+    their custom HTML repr. 
+    
+    In the case of a streamz DataFrame the rendered data will update
+    periodically.
+    
+    Reference: https://panel.holoviz.org/reference/panes/DataFrame.html
+
+    :Example:
+
+    >>> DataFrame(df, index=False, max_rows=25, width=400)
     """
 
     bold_rows = param.Boolean(default=True, doc="""
@@ -229,11 +245,22 @@ class DataFrame(HTML):
 
 class Str(DivPaneBase):
     """
-    A Str pane renders any object for which `str()` can be called,
-    escaping any HTML markup and then wrapping the resulting string in
-    a bokeh Div model.  Set to a low priority because generally one
-    will want a better representation, but allows arbitrary objects to
-    be used as a Pane (numbers, arrays, objects, etc.).
+    The `Str` pane allows rendering arbitrary text and objects in a panel.
+    
+    Unlike Markdown and HTML, a `Str` is interpreted as a raw string without
+    applying any markup and is displayed in a fixed-width font by default.
+    
+    The pane will render any text, and if given an object will display the
+    object’s Python `repr`.
+
+    Reference: https://panel.holoviz.org/reference/panes/Str.html
+
+    :Example:
+
+    >>> Str(
+    ...    'This raw string will not be formatted, except for the applied style.',
+    ...    style={'font-size': '12pt'}
+    ... )
     """
 
     priority = 0
@@ -257,10 +284,16 @@ class Str(DivPaneBase):
 
 class Markdown(DivPaneBase):
     """
-    A Markdown pane renders the markdown markup language to HTML and
-    displays it inside a bokeh Div model. It has no explicit
-    priority since it cannot be easily be distinguished from a
-    standard string, therefore it has to be invoked explicitly.
+    The `Markdown` pane allows rendering arbitrary markdown strings in a panel.
+    
+    It renders strings containing valid Markdown as well as objects with a
+    `_repr_markdown_` method, and may define custom CSS styles.
+    
+    Reference: https://panel.holoviz.org/reference/panes/Markdown.html
+
+    :Example:
+
+    >>> Markdown("# This is a header")
     """
 
     dedent = param.Boolean(default=True, doc="""
@@ -309,6 +342,16 @@ class Markdown(DivPaneBase):
 
 
 class JSON(DivPaneBase):
+    """
+    The `JSON` pane allows rendering arbitrary JSON strings, dicts and other
+    json serializable objects in a panel.
+    
+    Reference: https://panel.holoviz.org/reference/panes/JSON.html
+
+    :Example:
+
+    >>> JSON(json_obj, theme='light', height=300, width=500)
+    """
 
     depth = param.Integer(default=1, bounds=(-1, None), doc="""
         Depth to which the JSON tree will be expanded on initialization.""")

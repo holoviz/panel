@@ -10,6 +10,20 @@ from .base import PaneBase
 
 
 class IPyWidget(PaneBase):
+    """
+    The IPyWidget pane renders any ipywidgets model both in the notebook and
+    in a deployed server.
+    
+    When rendering ipywidgets on the server you must add `ipywidgets` to
+    `pn.extension`. You must not do this in Jupyterlab as this may render
+    Jupyterlab unusable.
+    
+    Reference: https://panel.holoviz.org/reference/panes/IPyWidget.html
+
+    :Example:
+
+    >>> IPyWidget(some_ipywidget)
+    """
 
     priority = 0.6
 

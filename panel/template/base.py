@@ -594,6 +594,7 @@ class BasicTemplate(BaseTemplate):
                 tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
                 if css in tmpl_css:
                     tmpl_name = cls.__name__.lower()
+
             css_file = os.path.basename(css)
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
@@ -618,9 +619,8 @@ class BasicTemplate(BaseTemplate):
             elif isurl(js):
                 js_files[f'base_{js_name}'] = js
             elif resolve_custom_path(self, js):
-                js_files[f'base_{js_name}' ] = component_resource_path(self, '_js', js)
+                js_files[f'base_{js_name}'] = component_resource_path(self, '_js', js)
 
-    
         theme = self._get_theme()
         if not theme:
             return resource_types
@@ -708,11 +708,13 @@ class BasicTemplate(BaseTemplate):
                 del self._render_items[ref]
 
         new = event.new if isinstance(event.new, list) else event.new.values()
+        theme = self._get_theme()
+        bk_theme = theme.bokeh_theme
         for o in new:
             if o not in old:
                 for hvpane in o.select(HoloViews):
-                    if self.theme.bokeh_theme:
-                        hvpane.theme = self.theme.bokeh_theme
+                    if bk_theme:
+                        hvpane.theme = bk_theme
 
         labels = {}
         for obj in new:

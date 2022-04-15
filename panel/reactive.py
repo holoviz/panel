@@ -6,6 +6,7 @@ models rendered on the frontend.
 
 import difflib
 import datetime as dt
+import logging
 import re
 import sys
 import textwrap
@@ -19,6 +20,7 @@ import param
 
 from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
+from pprint import pformat
 
 from .io.document import unlocked
 from .io.model import hold
@@ -29,6 +31,8 @@ from .models.reactive_html import (
 )
 from .util import edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable
+
+log = logging.getLogger('panel.reactive')
 
 LinkWatcher = namedtuple("Watcher", Watcher._fields+('target', 'links', 'transformed', 'bidirectional_watcher'))
 
@@ -212,14 +216,22 @@ class Syncable(Renderable):
             doc.add_next_tick_callback(cb)
 
     def _update_model(self, events, msg, root, model, doc, comm):
-        self._changing[root.ref['id']] = [
+        ref = root.ref['id']
+        self._changing[ref] = attrs = [
             attr for attr, value in msg.items()
             if not model.lookup(attr).property.matches(getattr(model, attr), value)
         ]
         try:
             model.update(**msg)
         finally:
-            del self._changing[root.ref['id']]
+            changing = [
+                attr for attr in self._changing.get(ref, [])
+                if attr not in attrs
+            ]
+            if changing:
+                self._changing[ref] = changing
+            elif ref in self._changing:
+                del self._changing[ref]
 
     def _cleanup(self, root):
         super()._cleanup(root)
@@ -271,8 +283,29 @@ class Syncable(Renderable):
                     obj = getattr(obj, sp)
                 with edit_readonly(obj):
                     obj.param.update(**{p: v})
+        except Exception:
+            if len(events)>1:
+                msg_end = f" changing properties {pformat(events)} \n"
+            elif len(events)==1:
+                msg_end = f" changing property {pformat(events)} \n"
+            else:
+                msg_end = "\n"
+            log.exception(f'Callback failed for object named "{self.name}"{msg_end}')
+            raise
         finally:
             self._log('finished processing events %s', events)
+            with edit_readonly(state):
+                state.busy = busy
+
+    def _process_bokeh_event(self, event):
+        self._log('received bokeh event %s', event)
+        busy = state.busy
+        with edit_readonly(state):
+            state.busy = True
+        try:
+            self._process_event(event)
+        finally:
+            self._log('finished processing bokeh event %s', event)
             with edit_readonly(state):
                 state.busy = busy
 
@@ -285,10 +318,10 @@ class Syncable(Renderable):
 
     async def _event_coroutine(self, event, doc):
         if state._thread_pool:
-            state._thread_pool.submit(self._process_event, event)
+            state._thread_pool.submit(self._process_bokeh_event, event)
         else:
             with set_curdoc(doc):
-                self._process_event(event)
+                self._process_bokeh_event(event)
 
     def _change_event(self, doc=None):
         try:
@@ -318,9 +351,9 @@ class Syncable(Renderable):
 
     def _comm_event(self, event):
         if state._thread_pool:
-            state._thread_pool.submit(self._process_event, event)
+            state._thread_pool.submit(self._process_bokeh_event, event)
         else:
-            self._process_event(event)
+            self._process_bokeh_event(event)
 
     def _server_event(self, doc, event):
         if doc.session_context and not state._unblocked(doc):

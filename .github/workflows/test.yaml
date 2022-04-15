@@ -64,7 +64,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install "pip<21.2.1" "setuptools<61" 
+          conda install "pip<21.2.1" "toml" 
           conda list
           doit develop_install -o examples -o recommended -o tests -o build
           pip install pyecharts idom

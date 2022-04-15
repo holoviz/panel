@@ -1,6 +1,7 @@
 """
 Utilities for creating bokeh Server instances.
 """
+import asyncio
 import datetime as dt
 import gc
 import html
@@ -13,6 +14,7 @@ import sys
 import traceback
 import threading
 import uuid
+import warnings
 
 from collections import OrderedDict
 from contextlib import contextmanager
@@ -23,6 +25,7 @@ from urllib.parse import urljoin, urlparse
 import param
 import bokeh
 import bokeh.command.util
+import tornado
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
@@ -352,7 +355,7 @@ class ComponentResourceHandler(StaticFileHandler):
 
         if isinstance(resources, dict):
             resources = list(resources.values())
-        elif isinstance(resources, str):
+        elif isinstance(resources, (str, pathlib.PurePath)):
             resources = [resources]
         resources = [
             component_rel_path(component, resource).replace(os.path.sep, '/')
@@ -489,6 +492,16 @@ def create_static_handler(prefix, key, app):
     return (route, StaticHandler, {})
 
 bokeh.server.tornado.create_static_handler = create_static_handler
+
+# Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
+# support the WindowsProactorEventLoopPolicy so we restore it.
+if (
+    sys.platform == 'win32' and
+    sys.version_info[:3] >= (3, 8, 0) and
+    tornado.version_info >= (6, 1) and
+    type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy
+):
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 #---------------------------------------------------------------------
 # Public API
@@ -784,6 +797,11 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
             server.io_loop.start()
         except RuntimeError:
             pass
+        except TypeError:
+            warnings.warn(
+                "IOLoop couldn't be started. Ensure it is started by "
+                "process invoking the panel.io.server.serve."
+            )
     return server
 
 
