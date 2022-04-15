@@ -65,7 +65,7 @@ jobs:
           conda install "pip<21.2.1" 
           conda list
           doit develop_install -o doc -o examples
-          pip install pyecharts idom
+          pip install pyecharts idom==0.24
       - name: temporarily pin jinja2
         run: |
           eval "$(conda shell.bash hook)"
