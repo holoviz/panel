@@ -1,3 +1,4 @@
+import {undisplay} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {build_views} from "@bokehjs/core/build_views"
@@ -231,15 +232,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   tabulator: any;
   _tabulator_cell_updating: boolean=false
   _updating_page: boolean = true
+  _updating_sort: boolean = false
   _relayouting: boolean = false
-  _selection_updating: boolean =false
+  _selection_updating: boolean = false
   _initializing: boolean
+  _lastVerticalScrollbarTopPosition: number = 0;
+  _timeout_queue: any[] = []
 
   connect_signals(): void {
     super.connect_signals()
 
     const {configuration, layout, columns, theme, groupby} = this.model.properties;
-    this.on_change([configuration, layout, columns, groupby], () => this.render())
+    this.on_change([configuration, layout, columns, groupby], debounce(() => this.render(), 20, false))
 
     this.on_change([theme], () => this.setCSS())
 
@@ -257,7 +261,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }
     })
 
-    this.connect(this.model.properties.styles.change, () => this.setStyles())
+    this.connect(this.model.properties.styles.change, () => this.redraw())
     this.connect(this.model.properties.hidden_columns.change, () => this.setHidden())
     this.connect(this.model.properties.page_size.change, () => this.setPageSize())
     this.connect(this.model.properties.page.change, () => {
@@ -266,21 +270,44 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     })
     this.connect(this.model.properties.max_page.change, () => this.setMaxPage())
     this.connect(this.model.properties.frozen_rows.change, () => this.setFrozen())
+    this.connect(this.model.properties.sorters.change, () => this.setSorters())
     this.connect(this.model.source.properties.data.change, () => this.setData())
     this.connect(this.model.source.streaming, () => this.addData())
-    this.connect(this.model.source.patching, () => this.updateOrAddData())
+    this.connect(this.model.source.patching, () => {
+      const inds = this.model.source.selected.indices
+      this.updateOrAddData();
+      this.tabulator.rowManager.element.scrollTop = this._lastVerticalScrollbarTopPosition;
+      // Restore indices since updating data may have reset checkbox column 
+      this.model.source.selected.indices = inds;
+    })
     this.connect(this.model.source.selected.change, () => this.setSelection())
     this.connect(this.model.source.selected.properties.indices.change, () => this.setSelection())
+  }
+
+  get sorters(): any[] {
+    const sorters = []
+    for (const sort of this.model.sorters) {
+      if (sort.column === undefined)
+	sort.column = sort.field
+      sorters.push(sort)
+    }
+    return sorters
   }
 
   renderComplete(): void {
     // Only have to set up styles after initial render subsequent
     // styling is handled by change event on styles property
+    if (this._timeout_queue.length) {
+      const timeout = this._timeout_queue.shift()
+      clearTimeout(timeout)
+    }
+
     if (this._initializing) {
       this.setStyles()
       this.setSelection()
-      this._initializing = false
       this.relayout()
+      this._initializing = false
+      this.redraw()
     }
   }
 
@@ -327,6 +354,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.setFrozen()
 
     this.el.appendChild(container)
+
+    // Ensure renderComplete is run eventually
+    this._timeout_queue.push(setTimeout(() => this.renderComplete(), 500))
   }
 
   /*
@@ -426,10 +456,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.invalidate_layout()
       const parent = (this as any).root._parent
       if (parent != null && parent.relayout != null)
-	parent.relayout()
+        parent.relayout()
     } else if ((this as any)._parent != null) { // HACK: Support ReactiveHTML
       if ((this as any)._parent.relayout != null)
-	(this as any)._parent.relayout()
+        (this as any)._parent.relayout()
       else
         (this as any)._parent.invalidate_layout()
     }
@@ -440,7 +470,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     return new Promise((resolve: any, reject: any) => {
       try {
         if (page != null && sorters != null) {
+	  this._updating_sort = true
           this.model.sorters = sorters
+	  this._updating_sort = false
           this._updating_page = true
           try {
             this.model.page = page || 1
@@ -482,6 +514,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       movableColumns: false,
       selectable: selectable,
       columns: this.getColumns(),
+      dataSorting: (sorters: any[]) => {
+	const sorts = []
+	for (const s of sorters) {
+	  sorts.push({field: s.field, dir: s.dir})
+	}
+	if (this.model.pagination !== 'remote') {
+	  this._updating_sort = true
+	  this.model.sorters = sorts
+	  this._updating_sort = false
+	}
+      },
+      initialSort: this.sorters,
       layout: this.getLayout(),
       pagination: this.model.pagination,
       paginationSize: this.model.page_size,
@@ -499,6 +543,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         return  cell.getColumn().getField() + ": " + cell.getValue();
       },
       scrollVertical: debounce(() => {
+        this._lastVerticalScrollbarTopPosition = this.tabulator.rowManager.element.scrollTop;
         this.setStyles()
       }, 50, false),
       rowFormatter: (row: any) => this._render_row(row),
@@ -583,8 +628,15 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const exp_index = expanded.indexOf(index)
     if (exp_index < 0)
       expanded.push(index)
-    else
-      expanded.splice(exp_index, 1)
+    else {
+      const removed = expanded.splice(exp_index, 1)[0]
+      if (removed in this.model.children) {
+	const model = this.model.children[removed]
+	const view = this._child_views.get(model)
+	if (view !== undefined && view.el != null)
+	  undisplay(view.el)
+      }
+    }
     this.model.expanded = expanded
     if (expanded.indexOf(index) < 0)
       return
@@ -719,6 +771,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           tab_column.headerFilterParams = tab_column.editorParams
         }
       }
+      for (const sort of this.model.sorters) {
+	if (tab_column.field === sort.field)
+	  tab_column.headerSortStartingDir = sort.dir
+      }
+      tab_column.cellClick = (_: any, cell: any) => {
+	const index = cell._cell.row.data._index;
+	this.model.trigger_event(new CellClickEvent(column.field, index))
+      }
       if (config_columns == null)
         columns.push(tab_column)
     }
@@ -822,6 +882,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       return groups.join(', ')
     }
     this.tabulator.setGroupBy(groupby)
+  }
+
+  setSorters(): void {
+    if (this._updating_sort)
+      return
+    this.tabulator.setSort(this.sorters)
   }
 
   setCSS(): boolean {
@@ -931,11 +997,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this._selection_updating = true
     this.tabulator.deselectRow()
     this.tabulator.selectRow(indices)
-    // This actually places the selected row at the top of the table
     for (const index of indices) {
       const row = this.tabulator.rowManager.findRow(index)
       if (row)
-        this.tabulator.scrollToRow(index, "bottom", false).catch(() => {})
+        this.tabulator.scrollToRow(index, "center", false).catch(() => {})
     }
     this._selection_updating = false
   }
@@ -1070,7 +1135,7 @@ export class DataTabulator extends HTMLBox {
       children:       [ Any,                     {} ],
       configuration:  [ Any,                     {} ],
       columns:        [ Array(Ref(TableColumn)), [] ],
-      download:       [ Boolean,               true ],
+      download:       [ Boolean,              false ],
       editable:       [ Boolean,               true ],
       expanded:       [ Array(Number),           [] ],
       filename:       [ String,         "table.csv" ],

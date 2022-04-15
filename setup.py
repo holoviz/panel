@@ -151,14 +151,22 @@ extras_require = {
         'ipyleaflet',
         'xarray',
         'pyinstrument >=4.0',
-        'aiohttp'
+        'aiohttp',
+        'croniter',
+        'graphviz',
+        'networkx>=2.5',
+        'pygraphviz'
     ],
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite >=0.7.0a4',
+        'nbsite >=0.7.1',
         'graphviz',
-        'lxml'
+        'lxml',
+        'python-graphviz',
+        'pydata-sphinx-theme',
+        'sphinx-copybutton',
+        'pydeck',
     ]
 }
 
@@ -172,7 +180,7 @@ extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 extras_require['build'] = [
     'param >=1.9.2',
     'pyct >=0.4.4',
-    'setuptools >=30.3.0',
+    'setuptools >=42',
     'bokeh >=2.0.0',
     'pyviz_comms >=0.6.0',
     'bleach',
@@ -194,14 +202,17 @@ setup_args = dict(
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://panel.holoviz.org',
+    project_urls={
+        'Source': 'https://github.com/holoviz/panel',
+    },
     cmdclass=_COMMANDS,
     packages=find_packages(),
     include_package_data=True,
     data_files=[
         # like `jupyter serverextension enable --sys-prefix`
         (
-            "etc/jupyter/jupyter_notebook_config.d",
-            ["jupyter-config/jupyter_notebook_config.d/panel-client-jupyter.json"],
+            "etc/jupyter/jupyter_server_config.d",
+            ["jupyter-config/jupyter_server_config.d/panel-client-jupyter.json"],
         ),
     ],
     classifiers=[
@@ -211,6 +222,8 @@ setup_args = dict(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",

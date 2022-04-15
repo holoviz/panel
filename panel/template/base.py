@@ -21,7 +21,9 @@ from pyviz_comms import JupyterCommManager as _JupyterCommManager
 from ..config import _base_config, config, panel_extension
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
-from ..io.resources import CDN_DIST, LOCAL_DIST, BUNDLE_DIR
+from ..io.resources import (
+    CDN_DIST, LOCAL_DIST, BUNDLE_DIR, component_resource_path, resolve_custom_path
+)
 from ..io.save import save
 from ..io.state import state
 from ..layout import Column, ListLike, GridSpec
@@ -29,7 +31,7 @@ from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..pane.image import ImageBase
 from ..reactive import ReactiveHTML
-from ..util import url_path
+from ..util import isurl, url_path
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
@@ -142,12 +144,14 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         doc = doc or _curdoc()
         self._documents.append(doc)
-        title = title or 'Panel Application'
         if location and self.location:
             loc = self._add_location(doc, location)
             doc.on_session_destroyed(loc._server_destroy)
         doc.on_session_destroyed(self._server_destroy)
-        doc.title = title
+
+        if title or doc.title == 'Bokeh Application':
+            title = title or 'Panel Application'
+            doc.title = title
 
         # Initialize fake root. This is needed to ensure preprocessors
         # which assume that all models are owned by a single root can
@@ -507,7 +511,7 @@ class BasicTemplate(BaseTemplate):
         self.modal.param.trigger('objects')
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
-        title = title or self.title
+        title = self.title if self.title != self.param.title.default else title
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
         self._update_vars()
@@ -525,12 +529,16 @@ class BasicTemplate(BaseTemplate):
             root.document.theme = theme.bokeh_theme
 
     def _get_theme(self):
-        return self.theme.find_theme(type(self))()
+        for cls in type(self).__mro__:
+            try:
+                return self.theme.find_theme(cls)()
+            except Exception:
+                pass
 
     def _template_resources(self):
-        name = type(self).__name__.lower()
-        resources = _settings.resources(default="server")
-        if resources == 'server':
+        clsname = type(self).__name__
+        name = clsname.lower()
+        if _settings.resources(default="server") == 'server':
             if state.rel_path:
                 dist_path = f'{state.rel_path}/{self._LOCAL}'
             else:
@@ -539,25 +547,27 @@ class BasicTemplate(BaseTemplate):
             dist_path = self._CDN
 
         # External resources
-        css_files = dict(self._resources.get('css', {}))
-        for cssname, css in css_files.items():
-            css_path = url_path(css)
-            if (BUNDLE_DIR / 'css' / css_path.replace('/', os.path.sep)).is_file():
-                css_files[cssname] = dist_path + f'bundled/css/{css_path}'
-        js_files = dict(self._resources.get('js', {}))
-        for jsname, js in js_files.items():
-            js_path = url_path(js)
-            if (BUNDLE_DIR / 'js' / js_path.replace('/', os.path.sep)).is_file():
-                js_files[jsname] = dist_path + f'bundled/js/{js_path}'
-        js_modules = dict(self._resources.get('js_modules', {}))
-        for jsname, js in js_modules.items():
-            js_path = url_path(js)
-            if jsname in self._resources.get('tarball', {}):
-                js_path += '/index.mjs'
-            else:
-                js_path += '.mjs'
-            if os.path.isfile(BUNDLE_DIR / js_path.replace('/', os.path.sep)):
-                js_modules[jsname] = dist_path + f'bundled/js/{js_path}'
+        css_files, js_files, js_modules = {}, {}, {}
+        resource_types = {'css': css_files, 'js': js_files, 'js_modules': js_modules}
+        for resource_type, files in self._resources.items():
+            if resource_type not in resource_types:
+                continue
+            resource_files = resource_types[resource_type]
+            for rname, resource in files.items():
+                resource_path = url_path(resource)
+                if rname in self._resources.get('tarball', {}):
+                    resource_path += '/index.mjs'
+                else:
+                    resource_path += '.mjs'
+                if (BUNDLE_DIR / rname / resource_path.replace('/', os.path.sep)).is_file():
+                    resource_files[rname] = dist_path + f'bundled/{resource_type}/{resource_path}'
+                elif isurl(resource):
+                    resource_files[rname] = resource
+                elif resolve_custom_path(self, resource):
+                    resource_files[rname] = component_resource_path(
+                        self, f'_resources/{resource_type}', resource
+                    )
+
         for name, js in self.config.js_files.items():
             if not '//' in js and state.rel_path:
                 js = f'{state.rel_path}/{js}'
@@ -566,12 +576,13 @@ class BasicTemplate(BaseTemplate):
             if not '//' in js and state.rel_path:
                 js = f'{state.rel_path}/{js}'
             js_modules[name] = js
-        extra_css = []
+
+        resource_types['extra_css'] = extra_css = []
         for css in list(self.config.css_files):
             if not '//' in css and state.rel_path:
                 css = f'{state.rel_path}/{css}'
             extra_css.append(css)
-        raw_css = list(self.config.raw_css)
+        resource_types['raw_css'] = list(self.config.raw_css)
 
         # CSS files
         base_css = self._css
@@ -583,12 +594,14 @@ class BasicTemplate(BaseTemplate):
                 tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
                 if css in tmpl_css:
                     tmpl_name = cls.__name__.lower()
+
             css_file = os.path.basename(css)
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
-            else:
-                with open(css, encoding='utf-8') as f:
-                    raw_css.append(f.read())
+            elif isurl(css):
+                css_files[f'base_{css_file}'] = css
+            elif resolve_custom_path(self, css):
+                css_files[f'base_{css_file}' ] = component_resource_path(self, '_css', css)
 
         # JS files
         base_js = self._js
@@ -600,36 +613,36 @@ class BasicTemplate(BaseTemplate):
                 tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
                 if js in tmpl_js:
                     tmpl_name = cls.__name__.lower()
-            js = os.path.basename(js)
-            if (BUNDLE_DIR / tmpl_name / js).is_file():
-                js_files[f'base_{js}'] = dist_path + f'bundled/{tmpl_name}/{js}'
+            js_name = os.path.basename(js)
+            if (BUNDLE_DIR / tmpl_name / js_name).is_file():
+                js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
+            elif isurl(js):
+                js_files[f'base_{js_name}'] = js
+            elif resolve_custom_path(self, js):
+                js_files[f'base_{js_name}'] = component_resource_path(self, '_js', js)
 
-        if self.theme:
-            theme = self.theme.find_theme(type(self))
-            if theme:
-                if theme.base_css:
-                    basename = os.path.basename(theme.base_css)
-                    owner = theme.param.base_css.owner.__name__.lower()
-                    if (BUNDLE_DIR / owner / basename).is_file():
-                        css_files['theme_base'] = dist_path + f'bundled/{owner}/{basename}'
-                    else:
-                        with open(theme.base_css, encoding='utf-8') as f:
-                            raw_css.append(f.read())
-                if theme.css:
-                    basename = os.path.basename(theme.css)
-                    if (BUNDLE_DIR / name / basename).is_file():
-                        css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
-                    else:
-                        with open(theme.css, encoding='utf-8') as f:
-                            raw_css.append(f.read())
-
-        return {
-            'css': css_files,
-            'extra_css': extra_css,
-            'raw_css': raw_css,
-            'js': js_files,
-            'js_modules': js_modules
-        }
+        theme = self._get_theme()
+        if not theme:
+            return resource_types
+        if theme.base_css:
+            basename = os.path.basename(theme.base_css)
+            owner = type(theme).param.base_css.owner
+            owner_name = owner.__name__.lower()
+            if (BUNDLE_DIR / owner_name / basename).is_file():
+                css_files['theme_base'] = dist_path + f'bundled/{owner_name}/{basename}'
+            elif isurl(theme.base_css):
+                css_files['theme_base'] = theme.base_css
+            elif resolve_custom_path(theme, theme.base_css):
+                css_files['theme_base'] = component_resource_path(owner, 'base_css', theme.base_css)
+        if theme.css:
+            basename = os.path.basename(theme.css)
+            if (BUNDLE_DIR / name / basename).is_file():
+                css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
+            elif isurl(theme.css):
+                css_files['theme'] = theme.css
+            elif resolve_custom_path(theme, theme.css):
+                css_files['theme'] = component_resource_path(theme, 'css', theme.css)
+        return resource_types
 
     def _update_vars(self, *args):
         self._render_variables['app_title'] = self.title
@@ -695,11 +708,13 @@ class BasicTemplate(BaseTemplate):
                 del self._render_items[ref]
 
         new = event.new if isinstance(event.new, list) else event.new.values()
+        theme = self._get_theme()
+        bk_theme = theme.bokeh_theme
         for o in new:
             if o not in old:
                 for hvpane in o.select(HoloViews):
-                    if self.theme.bokeh_theme:
-                        hvpane.theme = self.theme.bokeh_theme
+                    if bk_theme:
+                        hvpane.theme = bk_theme
 
         labels = {}
         for obj in new:

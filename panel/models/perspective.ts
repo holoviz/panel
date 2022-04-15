@@ -5,37 +5,44 @@ import {DocumentEvent} from "@bokehjs/document/events"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
-const PERSPECTIVE_VIEWER_CLASSES = [
-  "perspective-viewer-material",
-  "perspective-viewer-material-dark",
-  "perspective-viewer-material-dense",
-  "perspective-viewer-material-dense-dark",
-  "perspective-viewer-vaporwave",
-]
 
-function is_not_perspective_class(item: any) {
-  return !PERSPECTIVE_VIEWER_CLASSES.includes(item)
+const THEMES: any = {
+  'material-dark': 'Material Dark',
+  'material': 'Material Light',
+  'material-dense': 'Material Light',
+  'material-dense-dark': 'Material Dark',
+  'vaporwave': 'Vaporwave',
+  'solarized': 'Solarized',
+  'solarized-dark': 'Solarized Dark',
+  'monokai': 'Monokai'
 }
 
-function theme_to_class(theme: string): string {
-  return "perspective-viewer-" + theme
+const PLUGINS: any = {
+  'datagrid': 'Datagrid',
+  'd3_x_bar': 'X Bar',
+  'd3_y_bar': 'Y Bar',
+  'd3_xy_line': 'X/Y Line',
+  'd3_y_line': 'Y Line',
+  'd3_y_area': 'Y Area',
+  'd3_y_scatter': 'Y Scatter',
+  'd3_xy_scatter': 'X/Y Scatter',
+  'd3_treemap': 'Treemap',
+  'd3_candlestick': 'Candlestick',
+  'd3_sunburst': 'Sunburst',
+  'd3_heatmap': 'Heatmap',
+  'd3_ohlc': 'OHLC'
 }
 
-/** Helper function used to incrementally build a html element string
- *
- *  For example toAttribute("columns", ['x','y']) returns ' columns="['x','y']"
- *  For example toAttribute("columns", null) returns ""
- *
- * @param attribute
- * @param value
- */
-function toAttribute(attribute: string, value: any): string {
-  if (value == null)
-    return ""
-  else if (typeof value !== "string")
-    value = JSON.stringify(value)
-  return " " + attribute + "='" + value + "'"
+function objectFlip(obj: any) {
+  const ret: any = {};
+  Object.keys(obj).forEach(key => {
+    ret[obj[key]] = key;
+  });
+  return ret;
 }
+
+const PLUGINS_REVERSE = objectFlip(PLUGINS)
+const THEMES_REVERSE = objectFlip(THEMES)
 
 export class PerspectiveView extends PanelHTMLBoxView {
   model: Perspective
@@ -44,6 +51,7 @@ export class PerspectiveView extends PanelHTMLBoxView {
   worker: any
   _updating: boolean = false
   _config_listener: any = null
+  _current_config: any = null
   _event_listener: any = null
   _loaded: boolean = false
 
@@ -56,37 +64,38 @@ export class PerspectiveView extends PanelHTMLBoxView {
       this.fix_layout()
     })
     this.connect(this.model.properties.columns.change, () => {
-      this.updateAttribute("columns", this.model.columns, true)
+      this.perspective_element.restore({"columns": this.model.columns})
     })
-    this.connect(this.model.properties.computed_columns.change, () => {
-      this.updateAttribute("computed-columns", this.model.computed_columns, true)
+    this.connect(this.model.properties.expressions.change, () => {
+      this.perspective_element.restore({"expressions": this.model.expressions})
     })
-    this.connect(this.model.properties.column_pivots.change, () => {
-      this.updateAttribute("column-pivots", this.model.column_pivots, true)
+    this.connect(this.model.properties.split_by.change, () => {
+      this.perspective_element.restore({"split_by": this.model.split_by})
     })
-    this.connect(this.model.properties.row_pivots.change, () => {
-      this.updateAttribute("row-pivots", this.model.row_pivots, true)
+    this.connect(this.model.properties.group_by.change, () => {
+      this.perspective_element.restore({"group_by": this.model.group_by})
     })
     this.connect(this.model.properties.aggregates.change, () => {
-      this.updateAttribute("aggregates",this.model.aggregates, true)
+      this.perspective_element.restore({"aggregates":this.model.aggregates})
     })
     this.connect(this.model.properties.filters.change, () => {
-      this.updateAttribute("filters", this.model.filters, true)
+      this.perspective_element.restore({"filter": this.model.filters})
     })
     this.connect(this.model.properties.sort.change, () => {
-      this.updateAttribute("sort", this.model.sort, true)
+      this.perspective_element.restore({"sort": this.model.sort})
     })
     this.connect(this.model.properties.plugin.change, () => {
-      this.updateAttribute("plugin",this.model.plugin, false)
+      this.perspective_element.restore({"plugin": PLUGINS[this.model.plugin as any]})
     })
     this.connect(this.model.properties.selectable.change, () => {
-      this.updateAttribute("selectable",this.model.selectable, true)
+      this.perspective_element.restore({"plugin_config": {...this._current_config, selectable: this.model.selectable}})
     })
     this.connect(this.model.properties.editable.change, () => {
-      this.updateAttribute("editable",this.model.editable, true)
+      this.perspective_element.restore({"plugin_config": {...this._current_config, editable: this.model.editable}})
     })
-    this.connect(this.model.properties.theme.change, () => this.updateTheme())
-
+    this.connect(this.model.properties.theme.change, () => {
+      this.perspective_element.restore({"theme": THEMES[this.model.theme as string]}).catch(() => {})
+    })
     if (this.model.document != null) {
       this._event_listener = (event: DocumentEvent) => this.on_event(event)
       this.model.document.on_change(this._event_listener)
@@ -103,10 +112,10 @@ export class PerspectiveView extends PanelHTMLBoxView {
     super.disconnect_signals()
   }
 
-  render(): void {
+  async render(): Promise<void> {
     super.render()
     this.worker = (window as any).perspective.worker();
-    this.table = this.worker.table(this.model.schema);
+    this.table = await this.worker.table(this.model.schema);
     this.table.update(this.data);
     const container = div({
       class: "pnx-perspective-viewer",
@@ -115,18 +124,39 @@ export class PerspectiveView extends PanelHTMLBoxView {
       }
     })
     set_size(container, this.model)
-    container.innerHTML = this.getInnerHTML();
+    container.innerHTML = "<perspective-viewer style='height:100%; width:100%;'></perspective-viewer>";
     this.perspective_element = container.children[0]
+    this.perspective_element.resetThemes([...Object.values(THEMES)]).catch(() => {})
     set_size(this.perspective_element, this.model)
     this.el.appendChild(container)
-    this.perspective_element.load(this.table).then(() => {
-      this.update_config()
-      this._config_listener = () => this.sync_config()
-      if (this.model.toggle_config)
-	this.perspective_element.toggleConfig()
-      this.perspective_element.addEventListener("perspective-config-update", this._config_listener)
-      this._loaded = true
-    })
+    this.perspective_element.load(this.table)
+
+    const plugin_config = {
+      ...this.model.plugin_config,
+      editable: this.model.editable,
+      selectable: this.model.selectable
+    }
+
+    this.perspective_element.restore({
+      aggregates: this.model.aggregates,
+      columns: this.model.columns,
+      expressions: this.model.expressions,
+      filter: this.model.filters,
+      split_by: this.model.split_by,
+      group_by: this.model.group_by,
+      plugin: PLUGINS[this.model.plugin as any],
+      plugin_config: plugin_config,
+      sort: this.model.sort,
+      theme: THEMES[this.model.theme as any]
+    }).catch(() => {})
+
+    this._config_listener = () => this.sync_config()
+    this._current_config = await this.perspective_element.save();
+    if (this.model.toggle_config)
+      this.perspective_element.toggleConfig()
+    this.perspective_element.addEventListener("perspective-config-update", this._config_listener)
+    this._loaded = true
+    this.fix_layout()
   }
 
   fix_layout(): void {
@@ -135,38 +165,29 @@ export class PerspectiveView extends PanelHTMLBoxView {
     this.invalidate_layout()
   }
 
-  sync_config(): void {
+  sync_config(): boolean {
     if (this._updating)
-      return
-    const config = this.perspective_element.save();
-    const props: any =  {}
-    for (const option in config) {
-      const prop = option.replace('-', '_')
-      const value = config[option]
-      if (value === undefined || (prop == 'plugin' && value === "debug"))
-        continue
-      props[prop] = value
-    }
-    this._updating = true
-    this.model.setv(props)
-    this._updating = false
-  }
-
-  update_config(): void {
-    if (this._updating)
-      return
-    const config = this.perspective_element.save();
-    for (const option in config) {
-      const prop: string = option.replace('-', '_')
-      let value = this.model.property(prop).get_value()
-      if (config[option] !== value) {
-	this._updating = true
-	if (prop !== 'plugin')
-	  value = JSON.stringify(value)
-	this.perspective_element.setAttribute(option, value)
-	this._updating = false
+      return true
+    this.perspective_element.save().then( (config: any) => {
+      this._current_config = config
+      const props: any =  {}
+      for (let option in config) {
+	let value = config[option]
+	if (value === undefined || (option == 'plugin' && value === "debug") || option === 'settings')
+          continue
+	if (option === 'filter')
+	  option = 'filters'
+	else if (option === 'plugin')
+	  value = PLUGINS_REVERSE[value as any]
+	else if (option === 'theme')
+	  value = THEMES_REVERSE[value as any]
+	props[option] = value
       }
-    }
+      this._updating = true
+      this.model.setv(props)
+      this._updating = false
+    })
+    return true
   }
 
   on_event(event: any): void {
@@ -199,57 +220,9 @@ export class PerspectiveView extends PanelHTMLBoxView {
     this.table.replace(this.data)
   }
 
-  private getInnerHTML() {
-    let innerHTML = "<perspective-viewer style='height:100%;width:100%;'"
-    innerHTML += toAttribute("class", theme_to_class(this.model.theme))
-    innerHTML += "></perspective-viewer>"
-    return innerHTML
-  }
-
   setData(): void {
     if (this._loaded)
       this.table.load(this.data)
-  }
-
-  updateAttribute(attribute: string, value: any, stringify: boolean): void {
-    if (this._updating)
-      return
-
-    const config = this.perspective_element.save();
-    const old_value = config[attribute]
-    if (value == old_value)
-      return
-
-    if (stringify)
-      value = JSON.stringify(value)
-
-    this._updating = true
-    this.perspective_element.setAttribute(attribute, value)
-    this._updating = false
-  }
-
-  updateTheme(): void {
-    // When you update the class attribute you have to be careful
-    // For example when the user is dragging an element then 'dragging' is a part of the class attribute
-    let old_class = this.perspective_element.getAttribute("class")
-    let new_class = this.toNewClassAttribute(old_class, this.model.theme)
-    this.perspective_element.setAttribute("class", new_class)
-  }
-
-  /** Helper function to generate the new class attribute string
-   *
-   * If old_class = 'perspective-viewer-material dragging' and theme = 'material-dark'
-   * then 'perspective-viewer-material-dark dragging' is returned
-   *
-   * @param old_class For example 'perspective-viewer-material' or 'perspective-viewer-material dragging'
-   * @param theme The name of the new theme. For example 'material-dark'
-   */
-  private toNewClassAttribute(old_class: any, theme: string): string {
-    let new_classes = [];
-    if (old_class != null)
-      new_classes = old_class.split(" ").filter(is_not_perspective_class)
-    new_classes.push(theme_to_class(theme));
-    return new_classes.join(" ")
   }
 }
 
@@ -257,14 +230,14 @@ export namespace Perspective {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     aggregates: p.Property<any>
-    column_pivots: p.Property<any[] | null>
+    split_by: p.Property<any[] | null>
     columns: p.Property<any[]>
-    computed_columns: p.Property<any[] | null>
+    expressions: p.Property<any[] | null>
     editable: p.Property<boolean | null>
     filters: p.Property<any[] | null>
+    group_by: p.Property<any[] | null>
     plugin: p.Property<any>
     plugin_config: p.Property<any>
-    row_pivots: p.Property<any[] | null>
     selectable: p.Property<boolean | null>
     toggle_config: p.Property<boolean>
     schema: p.Property<any>
@@ -290,14 +263,14 @@ export class Perspective extends HTMLBox {
 
     this.define<Perspective.Props>(({Any, Array, Boolean, Ref, Nullable, String}) => ({
       aggregates:       [ Any,                     ],
-      column_pivots:    [ Nullable(Array(String)), ],
-      columns:          [ Array(String),           ],
-      computed_columns: [ Nullable(Array(String)), ],
+      columns:          [ Array(Nullable(String)), ],
+      expressions:      [ Nullable(Array(String)), ],
+      split_by:         [ Nullable(Array(String)), ],
       editable:         [ Nullable(Boolean),       ],
       filters:          [ Nullable(Array(Any)),    ],
+      group_by:         [ Nullable(Array(String)), ],
       plugin:           [ String,                  ],
       plugin_config:    [ Any,                     ],
-      row_pivots:       [ Nullable(Array(String)), ],
       selectable:       [ Nullable(Boolean),       ],
       schema:           [ Any,                  {} ],
       toggle_config:    [ Boolean,            true ],

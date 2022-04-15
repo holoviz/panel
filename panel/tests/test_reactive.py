@@ -1,14 +1,37 @@
+import unittest.mock
+
 from functools import partial
 
 import bokeh.core.properties as bp
 import param
 import pytest
 
+from bokeh.document import Document
+from bokeh.io.doc import patch_curdoc
 from bokeh.models import Div
 from panel.layout import Tabs, WidgetBox
 from panel.reactive import Reactive, ReactiveHTML
 from panel.viewable import Viewable
 from panel.widgets import Checkbox, StaticText, TextInput, IntInput
+
+
+def test_reactive_default_title():
+    doc = ReactiveHTML().server_doc()
+
+    assert doc.title == 'Panel Application'
+
+
+def test_reactive_servable_title():
+    doc = Document()
+
+    session_context = unittest.mock.Mock()
+
+    with patch_curdoc(doc):
+        doc._session_context = lambda: session_context
+        ReactiveHTML().servable(title='A')
+        ReactiveHTML().servable(title='B')
+
+    assert doc.title == 'B'
 
 
 def test_link():
@@ -169,12 +192,11 @@ def test_reactive_html_basic():
     assert isinstance(float_prop.property, bp.Float)
     assert float_prop.class_default(data_model) == 3.14
 
-    assert Test._attrs == {'div': [('width', ['int'], '{int}')]}
     assert Test._node_callbacks == {}
-
 
     test = Test()
     root = test.get_root()
+    assert test._attrs == {'div': [('width', ['int'], '{int}')]}
     assert root.callbacks == {}
     assert root.events == {}
 
@@ -226,11 +248,11 @@ def test_reactive_html_dom_events():
     assert isinstance(float_prop.property, bp.Float)
     assert float_prop.class_default(data_model) == 3.14
 
-    assert TestDOMEvents._attrs == {'div': [('width', ['int'], '{int}')]}
     assert TestDOMEvents._node_callbacks == {}
 
     test = TestDOMEvents()
     root = test.get_root()
+    assert test._attrs == {'div': [('width', ['int'], '{int}')]}
     assert root.callbacks == {}
     assert root.events == {'div': {'change': True}}
 
@@ -255,17 +277,17 @@ def test_reactive_html_inline():
     assert isinstance(int_prop.property, bp.Int)
     assert int_prop.class_default(data_model) == 3
 
-    assert TestInline._attrs == {
-        'div': [
-            ('onchange', [], '{_div_change}'),
-            ('width', ['int'], '{int}')
-        ]
-    }
     assert TestInline._node_callbacks == {'div': [('onchange', '_div_change')]}
     assert TestInline._inline_callbacks == [('div', 'onchange', '_div_change')]
 
     test = TestInline()
     root = test.get_root()
+    assert test._attrs == {
+        'div': [
+            ('onchange', [], '{_div_change}'),
+            ('width', ['int'], '{int}')
+        ]
+    }
     assert root.callbacks == {'div': [('onchange', '_div_change')]}
     assert root.events == {}
 
@@ -281,7 +303,6 @@ def test_reactive_html_children():
 
         _template = '<div id="div">${children}</div>'
 
-    assert TestChildren._attrs == {}
     assert TestChildren._node_callbacks == {}
     assert TestChildren._inline_callbacks == []
     assert TestChildren._parser.children == {'div': 'children'}
@@ -289,6 +310,7 @@ def test_reactive_html_children():
     widget = TextInput()
     test = TestChildren(children=[widget])
     root = test.get_root()
+    assert test._attrs == {}
     assert root.children == {'div': [widget._models[root.ref['id']][0]]}
     assert len(widget._models) == 1
     assert test._panes == {'children': [widget]}
@@ -318,7 +340,6 @@ def test_reactive_html_templated_children():
         </div>
         """
 
-    assert TestTemplatedChildren._attrs == {}
     assert TestTemplatedChildren._node_callbacks == {}
     assert TestTemplatedChildren._inline_callbacks == []
     assert TestTemplatedChildren._parser.children == {'option': 'children'}
@@ -326,6 +347,7 @@ def test_reactive_html_templated_children():
     widget = TextInput()
     test = TestTemplatedChildren(children=[widget])
     root = test.get_root()
+    assert test._attrs == {}
     assert root.looped == ['option']
     assert root.children == {'option': [widget._models[root.ref['id']][0]]}
     assert test._panes == {'children': [widget]}
@@ -351,7 +373,6 @@ def test_reactive_html_templated_dict_children():
         </div>
         """
 
-    assert TestTemplatedChildren._attrs == {}
     assert TestTemplatedChildren._node_callbacks == {}
     assert TestTemplatedChildren._inline_callbacks == []
     assert TestTemplatedChildren._parser.children == {'option': 'children'}
@@ -359,6 +380,7 @@ def test_reactive_html_templated_dict_children():
     widget = TextInput()
     test = TestTemplatedChildren(children={'test': widget})
     root = test.get_root()
+    assert test._attrs == {}
     assert root.looped == ['option']
     assert root.children == {'option': [widget._models[root.ref['id']][0]]}
     assert test._panes == {'children': [widget]}
@@ -390,14 +412,13 @@ def test_reactive_html_templated_children_add_loop_id():
         </select>
         """
 
-    assert TestTemplatedChildren._attrs == {}
     assert TestTemplatedChildren._node_callbacks == {}
     assert TestTemplatedChildren._inline_callbacks == []
     assert TestTemplatedChildren._parser.children == {'option': 'children'}
 
     test = TestTemplatedChildren(children=['A', 'B', 'C'])
 
-    assert test._get_template() == """
+    assert test._get_template()[0] == """
         <select id="select-${id}">
         
           <option id="option-0-${id}"></option>
@@ -410,6 +431,7 @@ def test_reactive_html_templated_children_add_loop_id():
         """
 
     model = test.get_root()
+    assert test._attrs == {}
     assert model.looped == ['option']
 
 
@@ -427,14 +449,13 @@ def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
         </select>
         """
 
-    assert TestTemplatedChildren._attrs == {}
     assert TestTemplatedChildren._node_callbacks == {}
     assert TestTemplatedChildren._inline_callbacks == []
     assert TestTemplatedChildren._parser.children == {'option': 'children'}
 
     test = TestTemplatedChildren(children=['A', 'B', 'C'])
 
-    assert test._get_template() == """
+    assert test._get_template()[0] == """
         <select id="select-${id}">
         
           <option id="option-0-${id}"></option>
@@ -446,6 +467,7 @@ def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
         </select>
         """
     model = test.get_root()
+    assert test._attrs == {}
     assert model.looped == ['option']
 
 

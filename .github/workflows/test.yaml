@@ -60,7 +60,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install "pip<21.2.1" 
+          conda install "pip<21.2.1"  "toml"
       - name: doit develop_install < 3.10
         if: matrix.python-version < '3.10'
         run: |

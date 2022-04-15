@@ -1,5 +1,7 @@
 import param
 
+from param.parameterized import iscoroutinefunction
+
 from .widgets import Widget
 
 ipywidget_classes = {}
@@ -148,8 +150,7 @@ def _param_bind(function, *args, watch=False, **kwargs):
         elif isinstance(p, param.Parameter):
             dependencies[kw] = p
 
-    @depends(**dependencies, watch=watch)
-    def wrapped(*wargs, **wkwargs):
+    def combine_arguments(wargs, wkwargs):
         combined_args = []
         for arg in args:
             if hasattr(arg, '_dinfo'):
@@ -169,5 +170,16 @@ def _param_bind(function, *args, watch=False, **kwargs):
             if kw.startswith('__arg') or kw.startswith('__kwarg'):
                 continue
             combined_kwargs[kw] = arg
-        return function(*combined_args, **combined_kwargs)
+        return combined_args, combined_kwargs
+
+    if iscoroutinefunction(function):
+        @depends(**dependencies, watch=watch)
+        async def wrapped(*wargs, **wkwargs):
+            combined_args, combined_kwargs = combine_arguments(wargs, wkwargs)
+            return await function(*combined_args, **combined_kwargs)
+    else:
+        @depends(**dependencies, watch=watch)
+        def wrapped(*wargs, **wkwargs):
+            combined_args, combined_kwargs = combine_arguments(wargs, wkwargs)
+            return function(*combined_args, **combined_kwargs)
     return wrapped

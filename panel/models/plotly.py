@@ -18,7 +18,7 @@ class PlotlyPlot(LayoutDOM):
 
     __javascript_raw__ = [
         JS_URLS['jQuery'],
-        'https://cdn.plot.ly/plotly-latest.min.js'
+        'https://cdn.plot.ly/plotly-2.10.1.min.js'
     ]
 
     @classproperty
@@ -31,7 +31,7 @@ class PlotlyPlot(LayoutDOM):
 
     __js_require__ = {
         'paths': {
-            'plotly': 'https://cdn.plot.ly/plotly-latest.min'
+            'plotly': 'https://cdn.plot.ly/plotly-2.10.1.min'
         },
         'exports': {'plotly': 'Plotly'}
     }

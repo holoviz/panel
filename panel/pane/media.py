@@ -112,6 +112,22 @@ class _MediaBase(PaneBase):
 
 
 class Audio(_MediaBase):
+    """
+    The `Audio` pane displays an audio player given a local or remote audio
+    file or numpy array.
+    
+    The pane also allows access and control over the player state including
+    toggling of playing/paused and loop state, the current time, and the
+    volume.
+    
+    The audio player supports ogg, mp3, and wav files as well as numpy arrays.
+    
+    Reference: https://panel.holoviz.org/reference/panes/Audio.html
+
+    :Example:
+
+    >>> Audio('http://ccrma.stanford.edu/~jos/mp3/pno-cs.mp3', name='Audio')
+    """
 
     object = param.ClassSelector(default='', class_=(str, np.ndarray,),
                                  allow_None=True, doc="""
@@ -135,6 +151,26 @@ class Audio(_MediaBase):
 
 
 class Video(_MediaBase):
+    """
+    The `Video` Pane displays a video player given a local or remote video
+    file.
+    
+    The widget also allows access and control over the player state including
+    toggling of playing/paused and loop state, the current time, and the
+    volume.
+    
+    Depending on the browser the video player supports mp4, webm, and ogg
+    containers and a variety of codecs.
+    
+    Reference: https://panel.holoviz.org/reference/panes/Video.html
+
+    :Example:
+
+    >>> Video(
+    ...     'https://file-examples-com.github.io/uploads/2017/04/file_example_MP4_640_3MG.mp4',
+    ...     width=640, height=360, loop=True
+    ... )
+    """
 
     _bokeh_model = _BkVideo
 

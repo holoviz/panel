@@ -1,16 +1,76 @@
 """
 Defines Links which allow declaring links between bokeh properties.
 """
-import param
-import weakref
+import difflib
 import sys
+import weakref
 
-from bokeh.models import CustomJS, Model as BkModel
+import param
+
+from bokeh.models import CustomJS, Model as BkModel, LayoutDOM
 
 from .io.datamodel import create_linked_datamodel
 from .models import ReactiveHTML
 from .reactive import Reactive
 from .viewable import Viewable
+
+
+def assert_source_syncable(source, properties):
+    for prop in properties:
+        if prop.startswith('event:'):
+            continue
+        elif hasattr(source, 'object') and isinstance(source.object, LayoutDOM):
+            current = source.object
+            for attr in prop.split('.'):
+                if hasattr(current, attr):
+                    current = getattr(current, attr)
+                    continue
+                raise ValueError(
+                    f"Could not resolve {prop} on {source.object} model. "
+                    "Ensure you jslink an attribute that exists on the "
+                    "bokeh model."
+                )
+        elif (prop not in source.param and prop not in list(source._rename.values())):
+            matches = difflib.get_close_matches(prop, list(source.param))
+            if matches:
+                matches = f' Similar parameters include: {matches!r}'
+            else:
+                matches = ''
+            raise ValueError(
+                f"Could not jslink {prop!r} parameter (or property) "
+                f"on {type(source).__name__} object because it was not "
+                "found.{matches}."
+            )
+        elif (source._source_transforms.get(prop, False) is None or
+              source._rename.get(prop, False) is None):
+            raise ValueError(
+                f"Cannot jslink {prop!r} parameter on {type(source).__name__} "
+                "object, the parameter requires a live Python kernel "
+                "to have an effect."
+            )
+
+def assert_target_syncable(source, target, properties):
+    for k, p in properties.items():
+        if k.startswith('event:'):
+            continue
+        elif p not in target.param and p not in list(target._rename.values()):
+            matches = difflib.get_close_matches(p, list(target.param))
+            if matches:
+                matches = ' Similar parameters include: %r' % matches
+            else:
+                matches = ''
+            raise ValueError(
+                f"Could not jslink {p!r} parameter (or property) "
+                f"on {type(source).__name__} object because it was not "
+                "found. Similar parameters include: {matches}"
+            )
+        elif (target._source_transforms.get(p, False) is None or
+              target._rename.get(p, False) is None):
+            raise ValueError(
+                f"Cannot jslink {k!r} parameter on {type(source).__name__} "
+                f"object to {p!r} parameter on {type(target).__name__}. "
+                "It requires a live Python kernel to have an effect."
+            )
 
 
 class Callback(param.Parameterized):
@@ -102,7 +162,12 @@ class Callback(param.Parameterized):
 
         arg_overrides = {}
         if 'holoviews' in sys.modules:
+            from holoviews.core.dimension import Dimensioned
             from .pane.holoviews import HoloViews, generate_panel_bokeh_map
+            found = [
+                (link, src, tgt) for (link, src, tgt) in found
+                if not (isinstance(src, Dimensioned) or isinstance(tgt, Dimensioned))
+            ]
             hv_views = root_view.select(HoloViews)
             map_hve_bk = generate_panel_bokeh_map(root_model, hv_views)
             for src in linkable:
@@ -276,7 +341,8 @@ class CallbackGenerator(object):
 
         src_model = self._resolve_model(root_model, source, src_spec[0])
         ref = root_model.ref['id']
-        link_id = id(link)
+
+        link_id = (id(link), src_spec, tgt_spec)
         if (any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs) or
             any(link_id in cb.tags for cbs in src_model.js_event_callbacks.values() for cb in cbs)):
             # Skip registering callback if already registered

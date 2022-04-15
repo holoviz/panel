@@ -1,5 +1,6 @@
 import datetime as dt
 import sys
+import warnings
 
 from enum import Enum
 
@@ -21,8 +22,13 @@ THEMES_MAP = {
     "material-dense": "perspective-viewer-material-dense",
     "material-dense-dark": "perspective-viewer-material-dense-dark",
     "vaporwave": "perspective-viewer-vaporwave",
+    "solarized": "solarized",
+    "solarized-dark": "solarized-dark",
+    "monokai": "monokai"
 }
+
 THEMES = [*THEMES_MAP.keys()]
+
 # Hack: When the user drags some of the columns, then the class attribute contains "dragging" also.
 CSS_CLASS_MAP = {v: k for k, v in THEMES_MAP.items()}
 DEFAULT_CSS_CLASS = THEMES_MAP[DEFAULT_THEME]
@@ -36,6 +42,7 @@ class Plugin(Enum):
     GRID = "datagrid"  # hypergrid
     YBAR_D3 = "d3_y_bar"  # d3fc
     XBAR_D3 = "d3_x_bar"  # d3fc
+    XYLINE_D3 = "d3_xy_line"  # d3fc
     YLINE_D3 = "d3_y_line"  # d3fc
     YAREA_D3 = "d3_y_area"  # d3fc
     YSCATTER_D3 = "d3_y_scatter"  # d3fc
@@ -82,11 +89,11 @@ def deconstruct_pandas(data, kwargs=None):
       A flattened version of the DataFrame
     kwargs: dict
       A dictionary containing optional members `columns`,
-      `row_pivots`, and `column_pivots`.
+      `group_by`, and `split_by`.
     """
     import pandas as pd
     kwargs = kwargs or {}
-    kwargs = {"columns": [], "row_pivots": [], "column_pivots": []}
+    kwargs = {"columns": [], "group_by": [], "split_by": []}
 
     if isinstance(data.index, pd.PeriodIndex):
         data.index = data.index.to_timestamp()
@@ -103,7 +110,7 @@ def deconstruct_pandas(data, kwargs=None):
         and isinstance(data.index, pd.MultiIndex)
     ):
         # Row and col pivots
-        kwargs["row_pivots"].extend([str(c) for c in data.index.names])
+        kwargs["group_by"].extend([str(c) for c in data.index.names])
 
         # Two strategies
         if None in data.columns.names:
@@ -118,13 +125,13 @@ def deconstruct_pandas(data, kwargs=None):
             #  US     Region 1
             #
             # We need to transform this to:
-            # row_pivots = ['Country', 'Region']
-            # column_pivots = ['State', 'Quantity']
+            # group_by = ['Country', 'Region']
+            # split_by = ['State', 'Quantity']
             # columns = ['Discount', 'Sales']
-            existent = kwargs["row_pivots"] + data.columns.names
+            existent = kwargs["group_by"] + data.columns.names
             for c in data.columns.names:
                 if c is not None:
-                    kwargs["column_pivots"].append(c)
+                    kwargs["split_by"].append(c)
                     data = data.stack()
             data = pd.DataFrame(data).reset_index()
 
@@ -134,7 +141,7 @@ def deconstruct_pandas(data, kwargs=None):
         else:
             # In this case, we have no need as the values is just a single entry
             # e.g. pt = pd.pivot_table(df, values = 'Discount', index=['Country','Region'], columns = ['Category', 'Segment'])
-            for _ in kwargs["row_pivots"]:
+            for _ in kwargs["group_by"]:
                 # unstack row pivots
                 data = data.unstack()
             data = pd.DataFrame(data)
@@ -149,10 +156,10 @@ def deconstruct_pandas(data, kwargs=None):
             if val is None:
                 new_names[j] = "index" if i == 0 else "index-{}".format(i)
                 i += 1
-                # kwargs['row_pivots'].append(str(new_names[j]))
+                # kwargs['group_by'].append(str(new_names[j]))
             else:
-                if str(val) not in kwargs["row_pivots"]:
-                    kwargs["column_pivots"].append(str(val))
+                if str(val) not in kwargs["group_by"]:
+                    kwargs["split_by"].append(str(val))
 
         # Finally, remap any values columns to have column name 'value'
         data.index.names = new_names
@@ -161,8 +168,8 @@ def deconstruct_pandas(data, kwargs=None):
             str(c)
             if c
             in ["index"]
-            + kwargs["row_pivots"]
-            + kwargs["column_pivots"]
+            + kwargs["group_by"]
+            + kwargs["split_by"]
             + kwargs["columns"]
             else "value"
             for c in data.columns
@@ -173,15 +180,15 @@ def deconstruct_pandas(data, kwargs=None):
                 for c in data.columns
                 if c
                 not in ["index"]
-                + kwargs["row_pivots"]
-                + kwargs["column_pivots"]
+                + kwargs["group_by"]
+                + kwargs["split_by"]
                 + kwargs["columns"]
             ]
         )
     elif isinstance(data, pd.DataFrame) and isinstance(data.columns, pd.MultiIndex):
         # Col pivots
         if data.index.name:
-            kwargs["row_pivots"].append(str(data.index.name))
+            kwargs["group_by"].append(str(data.index.name))
             push_row_pivot = False
         else:
             push_row_pivot = True
@@ -195,15 +202,15 @@ def deconstruct_pandas(data, kwargs=None):
                 new_names[j] = "index" if i == 0 else "index-{}".format(i)
                 i += 1
                 if push_row_pivot:
-                    kwargs["row_pivots"].append(str(new_names[j]))
+                    kwargs["group_by"].append(str(new_names[j]))
             else:
-                if str(val) not in kwargs["row_pivots"]:
-                    kwargs["column_pivots"].append(str(val))
+                if str(val) not in kwargs["group_by"]:
+                    kwargs["split_by"].append(str(val))
 
         data.index.names = new_names
         data.columns = [
             str(c)
-            if c in ["index"] + kwargs["row_pivots"] + kwargs["column_pivots"]
+            if c in ["index"] + kwargs["group_by"] + kwargs["split_by"]
             else "value"
             for c in data.columns
         ]
@@ -211,13 +218,13 @@ def deconstruct_pandas(data, kwargs=None):
             [
                 "value"
                 for c in data.columns
-                if c not in ["index"] + kwargs["row_pivots"] + kwargs["column_pivots"]
+                if c not in ["index"] + kwargs["group_by"] + kwargs["split_by"]
             ]
         )
 
     elif isinstance(data, pd.DataFrame) and isinstance(data.index, pd.MultiIndex):
         # Row pivots
-        kwargs["row_pivots"].extend(list(data.index.names))
+        kwargs["group_by"].extend(list(data.index.names))
         data = data.reset_index()  # copy
 
     if isinstance(data, pd.DataFrame):
@@ -248,7 +255,14 @@ def deconstruct_pandas(data, kwargs=None):
 
 class Perspective(PaneBase, ReactiveData):
     """
-    The Perspective widget enables exploring large tables of data.
+    The `Perspective` pane provides an interactive visualization component for
+    large, real-time datasets built on the Perspective project.
+    
+    Reference: https://panel.holoviz.org/reference/panes/Perspective.html
+
+    :Example:
+
+    >>> Perspective(df, plugin='hypergrid', theme='material-dark')
     """
 
     aggregates = param.Dict(None, doc="""
@@ -257,20 +271,33 @@ class Perspective(PaneBase, ReactiveData):
     columns = param.List(default=None, doc="""
         A list of source columns to show as columns. For example ["x", "y"]""")
 
-    computed_columns = param.List(default=None, doc="""
-      A list of computed columns. For example [""x"+"index""]""")
+    computed_columns = param.List(default=None, precedence=-1, doc="""
+      Deprecated alias for expressions.""")
 
-    column_pivots = param.List(None, doc="""
+    expressions = param.List(default=None, doc="""
+      A list of expressions computing new columns from existing columns.
+      For example [""x"+"index""]""")
+
+    column_pivots = param.List(None, precedence=-1, doc="""
+      Deprecated alias of split_by.""")
+
+    split_by = param.List(None, doc="""
       A list of source columns to pivot by. For example ["x", "y"]""")
 
     filters = param.List(default=None, doc="""
       How to filter. For example [["x", "<", 3],["y", "contains", "abc"]]""")
 
+    min_width = param.Integer(default=420, bounds=(0, None), doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""")
+
     object = param.Parameter(doc="""
       The plot data declared as a dictionary of arrays or a DataFrame.""")
 
-    row_pivots = param.List(default=None, doc="""
+    group_by = param.List(default=None, doc="""
       A list of source columns to group by. For example ["x", "y"]""")
+
+    row_pivots = param.List(default=None, precedence=-1, doc="""
+      Deprecated alias of group_by.""")
 
     selectable = param.Boolean(default=True, allow_None=True, doc="""
       Whether items are selectable.""")
@@ -287,18 +314,41 @@ class Perspective(PaneBase, ReactiveData):
     theme = param.ObjectSelector(default=DEFAULT_THEME, objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example material-dark""")
 
+    priority = None
+
     _data_params = ['object']
 
     _rerender_params = ['object']
 
+    _rename = {
+        'computed_columns': None,
+        'row_pivots': None,
+        'column_pivots': None,
+        'selection': None,
+    }
+
     _updates = True
 
+    _deprecations = {
+        'computed_columns': 'expressions',
+        'column_pivots': 'split_by',
+        'row_pivots': 'group_by'
+    }
+
+    def __init__(self, object=None, **params):
+        super().__init__(object=object, **params)
+        self.param.watch(self._deprecated_warning, ['computed_columns', 'column_pivots', 'row_pivots'])
+        ps = [deprecation for deprecation in self._deprecations if deprecation in params]
+        self.param.trigger(*ps)
+
+    @classmethod
     def applies(cls, object):
-        if isinstance(object, dict):
-            return True
+        if isinstance(object, dict) and all(isinstance(v, (list, np.ndarray)) for v in object.values()):
+            return 0.2
         elif 'pandas' in sys.modules:
             import pandas as pd
-            return isinstance(object, pd.DataFrame)
+            if isinstance(object, pd.DataFrame):
+                return 0
         return False
 
     def _get_data(self):
@@ -321,6 +371,17 @@ class Perspective(PaneBase, ReactiveData):
             raise ValueError("Integer columns must be unique when "
                              "converted to strings.")
         return df, {str(k): v for k, v in data.items()}
+
+    def _deprecated_warning(self, *events):
+        updates = {}
+        for event in events:
+            renamed = self._deprecations[event.name]
+            warnings.warn(
+                f'The {event.name!r} parameter is deprecated use {renamed!r} parameter instead.',
+                DeprecationWarning
+            )
+            updates[renamed] = event.new
+        self.param.update(**updates)
 
     def _filter_properties(self, properties):
         ignored = list(Viewable.param)
@@ -365,9 +426,9 @@ class Perspective(PaneBase, ReactiveData):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
-        for p in ('columns', 'row_pivots', 'column_pivots'):
+        for p in ('columns', 'group_by', 'split_by'):
             if msg.get(p):
-                msg[p] = [str(col) for col in msg[p]]
+                msg[p] = [None if col is None else str(col) for col in msg[p]]
         if msg.get('sort'):
             msg['sort'] = [[str(col), *args] for col, *args in msg['sort']]
         if msg.get('filters'):
@@ -377,9 +438,7 @@ class Perspective(PaneBase, ReactiveData):
         return msg
 
     def _as_digit(self, col):
-        if self._processed is None:
-            return col
-        elif col in self._processed:
+        if self._processed is None or col in self._processed or col is None:
             return col
         elif col.isdigit() and int(col) in self._processed:
             return int(col)
@@ -387,9 +446,16 @@ class Perspective(PaneBase, ReactiveData):
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
-        for prop in ('columns', 'row_pivots', 'column_pivots'):
-            if msg.get(prop):
-                msg[prop] = [self._as_digit(col) for col in msg[prop]]
+        for prop in ('columns', 'group_by', 'split_by'):
+            if prop not in msg:
+                continue
+            msg[prop] = [self._as_digit(col) for col in msg[prop]]
+            if prop == 'group_by':
+                msg['row_pivots'] = msg['group_by']
+            if prop == 'split_by':
+                msg['column_pivots'] = msg['split_by']
+        if 'expressions' in msg:
+            msg['computed_columns'] = msg['expressions']
         if msg.get('sort'):
             msg['sort'] = [[self._as_digit(col), *args] for col, *args in msg['sort']]
         if msg.get('filters'):
@@ -408,7 +474,7 @@ class Perspective(PaneBase, ReactiveData):
         model = Perspective(**properties)
         if root is None:
             root = model
-        synced = list(set(self.param) ^ (set(PaneBase.param) | set(ReactiveData.param)))
+        synced = list(set([p for p in self.param if (self.param[p].precedence or 0) > -1]) ^ (set(PaneBase.param) | set(ReactiveData.param)))
         self._link_props(model, synced, doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model

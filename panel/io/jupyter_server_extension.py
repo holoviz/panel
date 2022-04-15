@@ -21,7 +21,7 @@ from bokeh.util.token import get_session_id
 from tornado.web import StaticFileHandler
 
 from ..config import config
-from ..util import edit_readonly
+from ..util import edit_readonly, fullpath
 from .state import state
 from .resources import DIST_DIR, Resources
 
@@ -75,10 +75,11 @@ class ServerApplicationProxy:
         may be different from the root dir.
         Reference: https://github.com/holoviz/panel/issues/3170
         """
-        return self._app.settings['server_root_dir']
+        return fullpath(self._app.settings['server_root_dir'])
 
     def __getattr__(self, key):
         return getattr(self._app, key)
+
 
 
 class PanelHandler(DocHandler):
@@ -93,7 +94,7 @@ class PanelHandler(DocHandler):
         pass
 
     async def get(self, path, *args, **kwargs):
-        path = os.path.join(self.application.root_dir, path)
+        path = os.path.join(self.application.root_dir, fullpath(path))
         if path in _APPS:
             app, context = _APPS[path]
         else:
@@ -135,7 +136,7 @@ class PanelWSHandler(WSHandler):
         pass
 
     async def open(self, path, *args, **kwargs):
-        path = os.path.join(self.application.root_dir, path)
+        path = os.path.join(self.application.root_dir, fullpath(path))
         _, context = _APPS[path]
 
         token = self._token

@@ -73,6 +73,7 @@ class Accordion(NamedListPanel):
 
         ref = root.ref['id']
         current_objects = list(self)
+        self._updating_active = True
         for i, (name, pane) in enumerate(zip(self._names, self)):
             params.update(self._apply_style(i))
             if id(pane) in self._panels:
@@ -97,6 +98,9 @@ class Accordion(NamedListPanel):
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
             new_models.append(panel)
+
+        self._updating_active = False
+        self._set_active()
         self._update_cards()
         self._update_active()
         return new_models
@@ -120,7 +124,7 @@ class Accordion(NamedListPanel):
             return
         self._updating_active = True
         try:
-            if self.toggle and not events[0].new:
+            if self.toggle and events and not events[0].new:
                 active = [list(self._panels.values()).index(events[0].obj)]
             else:
                 active = []

@@ -8,7 +8,7 @@ from panel.template.fast.list import FastListDarkTheme, FastListTemplate
 from panel.tests.template.fast.test_fast_grid_template import (
     INFO, _create_hvplot, _fast_button_card, _sidebar_items)
 
-ACCENT_COLOR = "purple"
+ACCENT_COLOR = "#D2386C"
 
 opts.defaults(opts.Ellipse(line_width=3, color=ACCENT_COLOR))
 
@@ -35,9 +35,7 @@ def test_app():
     app = FastListTemplate(
         title="FastListTemplate w. #ORSOME colors",
         site="Panel",
-        accent_base_color=ACCENT_COLOR,
-        header_background=ACCENT_COLOR,
-        header_accent_base_color="#FFFFFF",
+        accent=ACCENT_COLOR,
         main_layout="",
         shadow=True,
     )
@@ -50,6 +48,12 @@ def test_app():
     app.sidebar.extend(_sidebar_items())
 
     return app
+
+def test_accent():
+    accent = "yellow"
+    template = pn.template.FastListTemplate(accent=accent)
+    assert template.accent_base_color==accent
+    assert template.header_background==accent
 
 
 if __name__.startswith("bokeh"):

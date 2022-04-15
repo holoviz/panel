@@ -12,6 +12,8 @@ include panel/models/vtk/*.ts
 include panel/_templates/*.css
 include panel/_templates/*.js
 include panel/_templates/*.html
+include panel/tests/assets/*.css
+include panel/tests/assets/*.js
 include panel/tests/test_data/*.png
 include panel/tests/pane/assets/*.mp3
 include panel/tests/pane/assets/*.mp4

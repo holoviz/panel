@@ -36,7 +36,6 @@ from ..compiler import require_components
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import PANEL_DIR, Bundle, Resources, _env, bundle_resources
-from .server import _server_url, _origin_url, get_server
 from .state import state
 
 
@@ -285,6 +284,7 @@ def show_server(panel, notebook_url, port):
     server: bokeh.server.Server
     """
     from IPython.display import publish_display_data
+    from .server import _server_url, _origin_url, get_server
 
     if callable(notebook_url):
         origin = notebook_url(None)

@@ -18,11 +18,10 @@ import param
 from param.parameterized import classlist, discard_events
 
 from .io import init_doc, state
-from .io.server import async_execute
 from .layout import Column, Panel, Row, Spacer, Tabs
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
-    abbreviated_repr, classproperty, full_groupby, get_method_owner,
+    abbreviated_repr, classproperty, full_groupby, fullpath, get_method_owner,
     is_parameterized, param_name, recursive_parameterized
 )
 from .reactive import Reactive
@@ -416,13 +415,13 @@ class Param(PaneBase):
 
         if hasattr(p_obj, 'get_range'):
             options = p_obj.get_range()
-            if not options and value is not None:
-                options = [value]
             # This applies to widgets whose `options` Parameter is a List type,
             # such as AutoCompleteInput.
             if ('options' in widget_class.param
                 and isinstance(widget_class.param['options'], param.List)):
                 options = list(options.values())
+            if not options and value is not None:
+                options = [value]
             kw['options'] = options
         if hasattr(p_obj, 'get_soft_bounds'):
             bounds = p_obj.get_soft_bounds()
@@ -790,7 +789,7 @@ class ParamMethod(ReplacementPane):
                 else:
                     new_object = self.eval(self.object)
                 if inspect.isawaitable(new_object):
-                    async_execute(partial(self._eval_async, new_object))
+                    param.parameterized.async_executor(partial(self._eval_async, new_object))
                     return
                 self._update_inner(new_object)
             finally:
@@ -944,7 +943,8 @@ class JSONInit(param.Parameterized):
         if self.json_file or env_var.endswith('.json'):
             try:
                 fname = self.json_file if self.json_file else env_var
-                spec = json.load(open(os.path.abspath(fname), 'r'))
+                with open(fullpath(fname), 'r') as f:
+                    spec = json.load(f)
             except Exception:
                 warnobj.warning('Could not load JSON file %r' % spec)
         else:

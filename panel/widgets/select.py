@@ -125,6 +125,20 @@ class SingleSelectBase(SelectBase):
 
 
 class Select(SingleSelectBase):
+    """
+    The `Select` widget allows selecting a value from a list or dictionary of
+    `options` by selecting it from a dropdown menu or selection area. 
+    
+    It falls into the broad category of single-value, option-selection widgets
+    that provide a compatible API and include the `RadioBoxGroup`,
+    `AutocompleteInput` and `DiscreteSlider` widgets.
+
+    Reference: https://panel.holoviz.org/reference/widgets/Select.html
+
+    :Example:
+
+    >>> Select(name='Study', options=['Biology', 'Chemistry', 'Physics'])
+    """
 
     disabled_options = param.List(default=[], doc="""
         Optional list of ``options`` that are disabled, i.e. unusable and
@@ -303,6 +317,23 @@ class _MultiSelectBase(SingleSelectBase):
 
 
 class MultiSelect(_MultiSelectBase):
+    """
+    The `MultiSelect` widget allows selecting multiple values from a list of
+    `options`.
+    
+    It falls into the broad category of multi-value, option-selection widgets
+    that provide a compatible API and include the`CrossSelector`,
+    `CheckBoxGroup` and `CheckButtonGroup` widgets.
+
+    Reference: https://panel.holoviz.org/reference/widgets/MultiSelect.html
+
+    :Example:
+
+    >>> MultiSelect(
+    ...     name='Frameworks', value=['Bokeh', 'Panel'],
+    ...     options=['Bokeh', 'Dash', 'Panel', 'Streamlit', 'Voila'], size=8
+    ... )
+    """
 
     size = param.Integer(default=4, doc="""
         The number of items displayed at once (i.e. determines the
@@ -312,6 +343,27 @@ class MultiSelect(_MultiSelectBase):
 
 
 class MultiChoice(_MultiSelectBase):
+    """
+    The `MultiChoice` widget allows selecting multiple values from a list of
+    `options`. 
+    
+    It falls into the broad category of multi-value, option-selection widgets
+    that provide a compatible API and include the `MultiSelect`,
+    `CrossSelector`, `CheckBoxGroup` and `CheckButtonGroup` widgets.
+    
+    The `MultiChoice` widget provides a much more compact UI than
+    `MultiSelect`.
+
+    Reference: https://panel.holoviz.org/reference/widgets/MultiChoice.html
+
+    :Example:
+
+    >>> MultiChoice(
+    ...     name='Favourites', value=['Panel', 'hvPlot'],
+    ...     options=['Panel', 'hvPlot', 'HoloViews', 'GeoViews', 'Datashader', 'Param', 'Colorcet'],
+    ...     max_items=2
+    ... )
+    """
 
     delete_button = param.Boolean(default=True, doc="""
         Whether to display a button to delete a selected option.""")
@@ -338,6 +390,26 @@ _AutocompleteInput_rename = {'name': 'title', 'options': 'completions'}
 
 
 class AutocompleteInput(Widget):
+    """
+    The `MultiChoice` widget allows selecting multiple values from a list of
+    `options`. 
+    
+    It falls into the broad category of multi-value, option-selection widgets
+    that provide a compatible API and include the `MultiSelect`,
+    `CrossSelector`, `CheckBoxGroup` and `CheckButtonGroup` widgets.
+    
+    The `MultiChoice` widget provides a much more compact UI than
+    `MultiSelect`.
+
+    Reference: https://panel.holoviz.org/reference/widgets/AutocompleteInput.html
+
+    :Example:
+
+    >>> AutocompleteInput(
+    ...     name='Study', options=['Biology', 'Chemistry', 'Physics'],
+    ...     placeholder='Write your study here ...'
+    ... )
+    """
 
     case_sensitive = param.Boolean(default=True, doc="""
         Enable or disable case sensitivity.""")
@@ -429,6 +501,23 @@ class _RadioGroupBase(SingleSelectBase):
 
 
 class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
+    """
+    The `RadioButtonGroup` widget allows selecting from a list or dictionary
+    of values using a set of toggle buttons. 
+    
+    It falls into the broad category of single-value, option-selection widgets
+    that provide a compatible API and include the `RadioBoxGroup`, `Select`,
+    and `DiscreteSlider` widgets.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/RadioButtonGroup.html
+
+    :Example:
+
+    >>> RadioButtonGroup(
+    ...     name='Plotting library', options=['Matplotlib', 'Bokeh', 'Plotly'],
+    ...     button_type='success'
+    ... )
+    """
 
     orientation = param.Selector(default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
@@ -441,6 +530,22 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
 
 
 class RadioBoxGroup(_RadioGroupBase):
+    """
+    The `RadioBoxGroup` widget allows selecting from a list or dictionary of
+    values using a set of checkboxes.
+    
+    It falls into the broad category of single-value, option-selection widgets
+    that provide a compatible API and include the `RadioButtonGroup`, `Select`
+    and `DiscreteSlider` widgets.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/RadioBoxGroup.html
+
+    :Example:
+
+    >>> RadioBoxGroup(
+    ...     name='Sponsor', options=['Anaconda', 'Blackstone'], inline=True
+    ... )
+    """
 
     inline = param.Boolean(default=False, doc="""
         Whether the items be arrange vertically (``False``) or
@@ -491,6 +596,23 @@ class _CheckGroupBase(SingleSelectBase):
 
 
 class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
+    """
+    The `CheckButtonGroup` widget allows selecting between a list of options
+    by toggling the corresponding buttons.
+    
+    It falls into the broad category of multi-option selection widgets that
+    provide a compatible API and include the `MultiSelect`, `CrossSelector`
+    and `CheckBoxGroup` widgets.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/CheckButtonGroup.html
+
+    :Example:
+
+    >>> CheckButtonGroup(
+    ...     name='Regression Models', value=['Lasso', 'Ridge'],
+    ...     options=['Lasso', 'Linear', 'Ridge', 'Polynomial']
+    ... )
+    """
 
     orientation = param.Selector(default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
@@ -500,6 +622,23 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
 
 
 class CheckBoxGroup(_CheckGroupBase):
+    """
+    The `CheckBoxGroup` widget allows selecting between a list of options by
+    ticking the corresponding checkboxes.
+    
+    It falls into the broad category of multi-option selection widgets that
+    provide a compatible API and include the `MultiSelect`, `CrossSelector`
+    and `CheckButtonGroup` widgets.
+    
+    Reference: https://panel.holoviz.org/reference/widgets/CheckBoxGroup.html
+
+    :Example:
+
+    >>> CheckBoxGroup(
+    ...     name='Fruits', value=['Apple', 'Pear'], options=['Apple', 'Banana', 'Pear', 'Strawberry'],
+    ...     inline=True
+    ... )
+    """
 
     inline = param.Boolean(default=False, doc="""
         Whether the items be arrange vertically (``False``) or
@@ -560,6 +699,15 @@ class CrossSelector(CompositeWidget, MultiSelect):
     A composite widget which allows selecting from a list of items
     by moving them between two lists. Supports filtering values by
     name to select them in bulk.
+
+    Reference: https://panel.holoviz.org/reference/widgets/CrossSelector.html
+
+    :Example:
+
+    >>> CrossSelector(
+    ...     name='Fruits', value=['Apple', 'Pear'], 
+    ...     options=['Apple', 'Banana', 'Pear', 'Strawberry']
+    ... )
     """
 
     width = param.Integer(default=600, allow_None=True, doc="""
@@ -635,6 +783,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
 
         self._selections = {False: [], True: []}
         self._query = {False: '', True: ''}
+
+        self._update_disabled()
 
     @param.depends('size', watch=True)
     def _update_size(self):

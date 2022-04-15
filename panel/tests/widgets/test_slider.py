@@ -236,11 +236,63 @@ def test_discrete_slider_label_update(document, comm):
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
                                      options=[0.1, 1, 10, 100])
 
+    box = discrete_slider.get_root(document, comm=comm)
+
     discrete_slider.value = 100
+
+    assert box.children[0].text == 'DiscreteSlider: <b>100</b>'
+
+
+def test_discrete_slider_name_update(document, comm):
+    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+                                     options=[0.1, 1, 10, 100])
+
 
     box = discrete_slider.get_root(document, comm=comm)
 
-    assert box.children[0].text == 'DiscreteSlider: <b>100</b>'
+    discrete_slider.name = 'Blah'
+
+    assert box.children[0].text == 'Blah: <b>1</b>'
+
+
+def test_discrete_slider_no_options(document, comm):
+    discrete_slider = DiscreteSlider(name='DiscreteSlider')
+
+
+    box = discrete_slider.get_root(document, comm=comm)
+
+    assert box.children[0].text == 'DiscreteSlider: <b>-</b>'
+    assert box.children[1].disabled
+    assert box.children[1].start == 0
+    assert box.children[1].end == 1
+
+
+    discrete_slider.options = [0, 1]
+
+    assert box.children[0].text == 'DiscreteSlider: <b>0</b>'
+    assert not box.children[1].disabled
+    assert box.children[1].start == 0
+    assert box.children[1].end == 1
+
+
+def test_discrete_slider_single_option(document, comm):
+    discrete_slider = DiscreteSlider(name='DiscreteSlider', options=[0])
+
+
+    box = discrete_slider.get_root(document, comm=comm)
+
+    assert box.children[0].text == 'DiscreteSlider: <b>0</b>'
+    assert box.children[1].disabled
+    assert box.children[1].start == 0
+    assert box.children[1].end == 1
+
+
+    discrete_slider.options = [0, 1]
+
+    assert box.children[0].text == 'DiscreteSlider: <b>0</b>'
+    assert not box.children[1].disabled
+    assert box.children[1].start == 0
+    assert box.children[1].end == 1
 
 
 def test_discrete_date_slider(document, comm):
@@ -348,7 +400,7 @@ def test_editable_float_slider(document, comm,
     assert slider_widget.start == start
     assert slider_widget.end == end
     assert slider_widget.value == val1
-    
+
     assert isinstance(row, BkRow)
 
     static_widget, input_widget = row.children
@@ -378,4 +430,4 @@ def test_editable_float_slider(document, comm,
 
     slider.name = 'New Slider'
 
-    assert static_widget.text == 'New Slider:' 
+    assert static_widget.text == 'New Slider:'

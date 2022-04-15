@@ -4,6 +4,7 @@ resources via the panel.config object.
 """
 import copy
 import glob
+import importlib
 import json
 import os
 
@@ -21,9 +22,11 @@ from bokeh.embed.bundle import (
 
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
-from jinja2 import Environment, Markup, FileSystemLoader
+from markupsafe import Markup
+from jinja2.environment import Environment
+from jinja2.loaders import FileSystemLoader
 
-from ..util import url_path
+from ..util import isurl, url_path
 from .state import state
 
 
@@ -56,6 +59,7 @@ DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
 CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
 LOCAL_DIST = "static/extensions/panel/"
+COMPONENT_PATH = "components/"
 
 CSS_URLS = {
     'font-awesome': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css',
@@ -81,6 +85,46 @@ def set_resource_mode(mode):
         RESOURCE_MODE = old_mode
         _settings.resources.set_value(old_resources)
 
+def resolve_custom_path(obj, path):
+    """
+    Attempts to resolve a path relative to some component.
+    """
+    if not path:
+        return
+    path = str(path)
+    if path.startswith(os.path.sep):
+        return os.path.isfile(path)
+    try:
+        mod = importlib.import_module(obj.__module__)
+        return (Path(mod.__file__).parent / path).is_file()
+    except Exception:
+        return None
+
+def component_rel_path(component, path):
+    """
+    Computes the absolute to a component resource.
+    """
+    if not isinstance(component, type):
+        component = type(component)
+    mod = importlib.import_module(component.__module__)
+    rel_dir = Path(mod.__file__).parent
+    if os.path.isabs(path):
+        abs_path = path
+    else:
+        abs_path = os.path.abspath(os.path.join(rel_dir, path))
+    return os.path.relpath(abs_path, rel_dir)
+
+def component_resource_path(component, attr, path):
+    """
+    Generates a canonical URL for a component resource.
+    """
+    if not isinstance(component, type):
+        component = type(component)
+    component_path = COMPONENT_PATH
+    if state.rel_path:
+        component_path = f"{state.rel_path}/{component_path}"
+    rel_path = component_rel_path(component, path).replace(os.path.sep, '/')
+    return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def loading_css():
     from ..config import config
@@ -93,7 +137,6 @@ def loading_css():
       background-size: auto calc(min(50%, {config.loading_max_height}px));
     }}
     """
-
 
 def bundled_files(model, file_type='javascript'):
     bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
@@ -108,7 +151,6 @@ def bundled_files(model, file_type='javascript'):
         else:
             files.append(url)
     return files
-
 
 def bundle_resources(roots, resources):
     from ..config import panel_extension as ext
@@ -163,17 +205,62 @@ def bundle_resources(roots, resources):
 class Resources(BkResources):
 
     @classmethod
-    def from_bokeh(cls, bkr):
+    def from_bokeh(cls, bkr, absolute=False):
         kwargs = {}
         if bkr.mode.startswith("server"):
             kwargs['root_url'] = bkr.root_url
-        return cls(
+        inst = cls(
             mode=bkr.mode, version=bkr.version, minified=bkr.minified,
             legacy=bkr.legacy, log_level=bkr.log_level,
             path_versioner=bkr.path_versioner,
             components=bkr._components, base_dir=bkr.base_dir,
             root_dir=bkr.root_dir, **kwargs
         )
+        inst.absolute = absolute
+        return inst
+
+    def extra_resources(self, resources, resource_type):
+        """
+        Adds resources for ReactiveHTML components.
+        """
+        from ..reactive import ReactiveHTML
+        for model in param.concrete_descendents(ReactiveHTML).values():
+            if not (getattr(model, resource_type, None) and model._loaded()):
+                continue
+            for resource in getattr(model, resource_type, []):
+                if not isurl(resource) and not resource.startswith('static/extensions'):
+                    resource = component_resource_path(model, resource_type, resource)
+                if resource not in resources:
+                    resources.append(resource)
+
+    def adjust_paths(self, resources):
+        """
+        Computes relative and absolute paths for resources.
+        """
+        new_resources = []
+        for resource in resources:
+            if (resource.startswith(state.base_url) or resource.startswith('static/')):
+                if resource.startswith(state.base_url):
+                    resource = resource[len(state.base_url):]
+                if state.rel_path:
+                    resource = f'{state.rel_path}/{resource}'
+                elif self.absolute and self.mode == 'server':
+                    resource = f'{self.root_url}{resource}'
+            new_resources.append(resource)
+        return new_resources
+
+    @property
+    def dist_dir(self):
+        if self.mode == 'server':
+            if state.rel_path:
+                dist_dir = f'{state.rel_path}/{LOCAL_DIST}'
+            else:
+                dist_dir = LOCAL_DIST
+            if self.absolute:
+                dist_dir = f'{self.root_url}{dist_dir}'
+        else:
+            dist_dir = CDN_DIST
+        return dist_dir
 
     @property
     def css_raw(self):
@@ -201,35 +288,16 @@ class Resources(BkResources):
     @property
     def js_files(self):
         from ..config import config
-        from ..reactive import ReactiveHTML
 
         files = super(Resources, self).js_files
+        self.extra_resources(files, '__javascript__')
 
-        for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__javascript__'):
-                for jsfile in model.__javascript__:
-                    if jsfile not in files:
-                        files.append(jsfile)
-
-        js_files = []
-        for js_file in files:
-            if (js_file.startswith(state.base_url) or js_file.startswith('static/')):
-                if js_file.startswith(state.base_url):
-                    js_file = js_file[len(state.base_url):]
-                if state.rel_path:
-                    js_file = f'{state.rel_path}/{js_file}'
-            js_files.append(js_file)
+        js_files = self.adjust_paths(files)
         js_files += list(config.js_files.values())
 
         # Load requirejs last to avoid interfering with other libraries
+        dist_dir = self.dist_dir
         require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
-        if self.mode == 'server':
-            if state.rel_path:
-                dist_dir = f'{state.rel_path}/{LOCAL_DIST}'
-            else:
-                dist_dir = LOCAL_DIST
-        else:
-            dist_dir = CDN_DIST
         if require_index:
             requirejs = js_files.pop(require_index[0])
             if any('ace' in jsf for jsf in js_files):
@@ -237,49 +305,38 @@ class Resources(BkResources):
             js_files.append(requirejs)
             if any('ace' in jsf for jsf in js_files):
                 js_files.append(dist_dir + 'post_require.js')
+
         return js_files
 
     @property
     def js_modules(self):
         from ..config import config
-        from ..reactive import ReactiveHTML
         modules = list(config.js_modules.values())
-        for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__javascript_modules__'):
-                for jsmodule in model.__javascript_modules__:
-                    if jsmodule not in modules:
-                        modules.append(jsmodule)
+        self.extra_resources(modules, '__javascript_modules__')
+        
+        
         return modules
 
     @property
     def css_files(self):
         from ..config import config
-        from ..reactive import ReactiveHTML
 
         files = super(Resources, self).css_files
-
-        for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__css__'):
-                for css_file in model.__css__:
-                    if css_file not in files:
-                        files.append(css_file)
+        self.extra_resources(files, '__css__')
+        css_files = self.adjust_paths(files)
 
         for cssf in config.css_files:
             if os.path.isfile(cssf) or cssf in files:
                 continue
-            files.append(cssf)
-        if self.mode == 'server':
-            if state.rel_path:
-                dist_dir = f'{state.rel_path}/{LOCAL_DIST}'
-            else:
-                dist_dir = LOCAL_DIST
-        else:
-            dist_dir = CDN_DIST
+            css_files.append(cssf)
+
+        dist_dir = self.dist_dir
         for cssf in glob.glob(str(DIST_DIR / 'css' / '*.css')):
             if self.mode == 'inline':
                 break
-            files.append(dist_dir + f'css/{os.path.basename(cssf)}')
-        return files
+            css_files.append(dist_dir + f'css/{os.path.basename(cssf)}')
+
+        return css_files
 
     @property
     def render_js(self):
@@ -296,7 +353,7 @@ class Bundle(BkBundle):
         from ..reactive import ReactiveHTML
         js_modules = list(config.js_modules.values())
         for model in param.concrete_descendents(ReactiveHTML).values():
-            if hasattr(model, '__javascript_modules__'):
+            if getattr(model, '__javascript_modules__', None) and model._loaded():
                 for js_module in model.__javascript_modules__:
                     if js_module not in js_modules:
                         js_modules.append(js_module)
@@ -310,20 +367,11 @@ class Bundle(BkBundle):
             js_raw=bk_bundle.js_raw,
             css_files=bk_bundle.css_files,
             css_raw=bk_bundle.css_raw,
-            hashes=bk_bundle.hashes
+            hashes=bk_bundle.hashes,
         )
 
     def _render_js(self):
-        js_files = []
-        for js_file in self.js_files:
-            if (js_file.startswith(state.base_url) or js_file.startswith('static/')):
-                if js_file.startswith(state.base_url):
-                    js_file = js_file[len(state.base_url):]
-                
-                if state.rel_path:
-                    js_file = f'{state.rel_path}/{js_file}'
-            js_files.append(js_file)
         return JS_RESOURCES.render(
-            js_raw=self.js_raw, js_files=js_files,
+            js_raw=self.js_raw, js_files=self.js_files,
             js_modules=self.js_modules, hashes=self.hashes
         )

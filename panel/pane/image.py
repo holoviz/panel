@@ -3,6 +3,7 @@ Contains Image panes including renderers for PNG, SVG, GIF and JPG
 file types.
 """
 import base64
+
 from pathlib import PurePath
 
 from io import BytesIO
@@ -38,6 +39,8 @@ class FileBase(DivPaneBase):
         filetype = cls.filetype
         if hasattr(obj, '_repr_{}_'.format(filetype)):
             return True
+        if isinstance(obj, PurePath):
+            obj = str(obj.absolute())
         if isinstance(obj, str):
             if isfile(obj) and obj.endswith('.'+filetype):
                 return True
@@ -163,6 +166,21 @@ class ImageBase(FileBase):
 
 
 class PNG(ImageBase):
+    """
+    The `PNG` pane embeds a .png image file in a panel if provided a local
+    path, or will link to a remote image if provided a URL.
+    
+    Reference: https://panel.holoviz.org/reference/panes/PNG.html
+
+    :Example:
+
+    >>> PNG(
+    ...     'https://panel.holoviz.org/_static/logo_horizontal.png',
+    ...     alt_text='The Panel Logo',
+    ...     link_url='https://panel.holoviz.org/index.html',
+    ...     width=500
+    ... )
+    """
 
     filetype = 'png'
 
@@ -174,6 +192,21 @@ class PNG(ImageBase):
 
 
 class GIF(ImageBase):
+    """
+    The `GIF` pane embeds a .gif image file in a panel if provided a local
+    path, or will link to a remote image if provided a URL.
+    
+    Reference: https://panel.holoviz.org/reference/panes/GIF.html
+
+    :Example:
+
+    >>> GIF(
+    ...     'https://upload.wikimedia.org/wikipedia/commons/b/b1/Loading_icon.gif',
+    ...     alt_text='A loading spinner',
+    ...     link_url='https://commons.wikimedia.org/wiki/File:Loading_icon.gif',
+    ...     width=500
+    ... )
+    """
 
     filetype = 'gif'
 
@@ -185,6 +218,21 @@ class GIF(ImageBase):
 
 
 class ICO(ImageBase):
+    """
+    The `ICO` pane embeds an .ico image file in a panel if provided a local
+    path, or will link to a remote image if provided a URL.
+    
+    Reference: https://panel.holoviz.org/reference/panes/ICO.html
+
+    :Example:
+
+    >>> ICO(
+    ...     some_url,
+    ...     alt_text='An .ico file',
+    ...     link_url='https://en.wikipedia.org/wiki/ICO_(file_format)',
+    ...     width=50
+    ...
+    """
 
     filetype = 'ico'
 
@@ -196,6 +244,21 @@ class ICO(ImageBase):
 
 
 class JPG(ImageBase):
+    """
+    The `JPG` pane embeds a .jpg or .jpeg image file in a panel if provided a
+    local path, or will link to a remote image if provided a URL.
+    
+    Reference: https://panel.holoviz.org/reference/panes/JPG.html
+
+    :Example:
+
+    >>> JPG(
+    ...     'https://www.gstatic.com/webp/gallery/4.sm.jpg',
+    ...     alt_text='A nice tree',
+    ...     link_url='https://en.wikipedia.org/wiki/JPEG',
+    ...     width=500
+    ... )
+    """
 
     filetype = 'jpg'
 
@@ -219,6 +282,21 @@ class JPG(ImageBase):
 
 
 class SVG(ImageBase):
+    """
+    The `SVG` pane embeds a .svg image file in a panel if provided a
+    local path, or will link to a remote image if provided a URL.
+    
+    Reference: https://panel.holoviz.org/reference/panes/SVG.html
+
+    :Example:
+
+    >>> SVG(
+    ...     'https://upload.wikimedia.org/wikipedia/commons/6/6b/Bitmap_VS_SVG.svg',
+    ...     alt_text='A gif vs svg comparison',
+    ...     link_url='https://en.wikipedia.org/wiki/SVG',
+    ...     width=300, height=400
+    ... )
+    """
 
     encode = param.Boolean(default=False, doc="""
         Whether to enable base64 encoding of the SVG, base64 encoded
@@ -276,6 +354,19 @@ class SVG(ImageBase):
 
 
 class PDF(FileBase):
+    """
+    The `PDF` pane embeds a .pdf image file in a panel if provided a
+    local path, or will link to a remote image if provided a URL.
+    
+    Reference: https://panel.holoviz.org/reference/panes/PDF.html
+
+    :Example:
+
+    >>> PDF(
+    ...     'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    ...     width=300, height=410
+    ... )
+    """
 
     filetype = 'pdf'
 

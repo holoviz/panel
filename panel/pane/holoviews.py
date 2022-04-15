@@ -24,8 +24,17 @@ from .plotly import Plotly
 
 class HoloViews(PaneBase):
     """
-    HoloViews panes render any HoloViews object to a corresponding
-    Bokeh model while respecting the currently selected backend.
+    `HoloViews` panes render any `HoloViews` object using the
+    currently selected backend ('bokeh' (default), 'matplotlib' or 'plotly').
+
+    To be able to use the `plotly` backend you must add `plotly` to
+    `pn.extension`.
+    
+    Reference: https://panel.holoviz.org/reference/panes/HoloViews.html
+
+    :Example:
+
+    >>> HoloViews(some_holoviews_object)
     """
 
     backend = param.ObjectSelector(
@@ -37,7 +46,7 @@ class HoloViews(PaneBase):
         Whether to center the plot.""")
 
     linked_axes = param.Boolean(default=True, doc="""
-        Whether to use link the axes of bokeh plots inside this pane
+        Whether to link the axes of bokeh plots inside this pane
         across a panel layout.""")
 
     renderer = param.Parameter(default=None, doc="""
@@ -334,6 +343,23 @@ class HoloViews(PaneBase):
         from holoviews.core.dimension import Dimensioned
         from holoviews.plotting.plot import Plot
         return isinstance(obj, Dimensioned) or isinstance(obj, Plot)
+
+    def jslink(self, target, code=None, args=None, bidirectional=False, **links):
+        if links and code:
+            raise ValueError('Either supply a set of properties to '
+                             'link as keywords or a set of JS code '
+                             'callbacks, not both.')
+        elif not links and not code:
+            raise ValueError('Declare parameters to link or a set of '
+                             'callbacks, neither was defined.')
+        if args is None:
+            args = {}
+
+        from ..links import Link
+        return Link(self, target, properties=links, code=code, args=args,
+                    bidirectional=bidirectional)
+
+    jslink.__doc__ = PaneBase.jslink.__doc__
 
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual'):

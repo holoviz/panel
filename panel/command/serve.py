@@ -9,6 +9,7 @@ import logging # isort:skip
 import os
 
 from glob import glob
+from types import ModuleType
 
 from bokeh.command.subcommands.serve import Serve as _BkServe
 from bokeh.command.util import build_single_handler_applications
@@ -22,6 +23,7 @@ from tornado.web import StaticFileHandler
 
 from ..auth import OAuthProvider
 from ..config import config
+from ..util import fullpath
 from ..io.rest import REST_PROVIDERS
 from ..io.reload import record_modules, watch
 from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
@@ -185,8 +187,27 @@ class Serve(_BkServe):
             type    = int,
             help    = "Whether to start a thread pool which events are dispatched to.",
             default = None
+        )),
+        ('--setup', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Path to a setup script to run before server starts.",
+            default = None
         ))
     )
+
+    # Supported file extensions
+    _extensions = ['.py']
+
+    def customize_applications(self, args, applications):
+        if args.index and not args.index.endswith('.html'):
+            index = args.index.split(os.path.sep)[-1]
+            for ext in self._extensions:
+                if index.endswith(ext):
+                    index = index[:-len(ext)]
+            if f'/{index}' in applications:
+                applications['/'] = applications[f'/{index}']
+        return super().customize_applications(args, applications)
 
     def customize_kwargs(self, args, server_kwargs):
         '''Allows subclasses to customize ``server_kwargs``.
@@ -200,9 +221,8 @@ class Serve(_BkServe):
         # Handle tranquilized functions in the supplied functions
         kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
 
-        if args.static_dirs:
-            static_dirs = parse_vars(args.static_dirs)
-            patterns += get_static_routes(static_dirs)
+        static_dirs = parse_vars(args.static_dirs) if args.static_dirs else {}
+        patterns += get_static_routes(static_dirs)
 
         files = []
         for f in args.files:
@@ -211,12 +231,20 @@ class Serve(_BkServe):
             else:
                 files.append(f)
 
-        if args.index and not args.index.endswith('.html') and not any(f.endswith(args.index) for f in files):
-            raise ValueError("The --index argument must either specify a jinja2 "
-                             "template with a .html file extension or select one "
-                             "of the applications being served as the default. "
-                             f"The specified application {args.index!r} could "
-                             "not be found.")
+        if args.index and not args.index.endswith('.html'):
+            found = False
+            for ext in self._extensions:
+                index = args.index if args.index.endswith(ext) else f'{args.index}{ext}'
+                if any(f.endswith(index) for f in files):
+                    found = True
+            if not found:
+                raise ValueError(
+                    "The --index argument must either specify a jinja2 "
+                    "template with a .html file extension or select one "
+                    "of the applications being served as the default. "
+                    f"The specified application {index!r} could not be "
+                    "found."
+                )
 
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:
@@ -230,6 +258,18 @@ class Serve(_BkServe):
         if config.autoreload:
             for f in files:
                 watch(f)
+
+        if args.setup:
+            setup_path = args.setup
+            with open(setup_path) as f:
+                setup_source = f.read()
+            nodes = ast.parse(setup_source, os.fspath(setup_path))
+            code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)
+            module_name = 'panel_setup_module'
+            module = ModuleType(module_name)
+            module.__dict__['__file__'] = fullpath(setup_path)
+            exec(code, module.__dict__)
+            state._setup_module = module
 
         if args.warm or args.autoreload:
             argvs = {f: args.args for f in files}

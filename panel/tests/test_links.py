@@ -82,8 +82,7 @@ def test_widget_link_no_target_transform_error():
 
     with pytest.raises(ValueError) as excinfo:
         t2.jslink(t1, value='value')
-    assert ("Cannot jslink \'value\' parameter on TextInput object "
-            "to \'value\' parameter on DatetimeInput object") in str(excinfo)
+    assert ("Cannot jslink 'value' parameter on TextInput object to 'value' parameter on DatetimeInput") in str(excinfo)
 
     
 @hv_available

@@ -10,6 +10,20 @@ from .base import PaneBase
 
 
 class IPyWidget(PaneBase):
+    """
+    The IPyWidget pane renders any ipywidgets model both in the notebook and
+    in a deployed server.
+    
+    When rendering ipywidgets on the server you must add `ipywidgets` to
+    `pn.extension`. You must not do this in Jupyterlab as this may render
+    Jupyterlab unusable.
+    
+    Reference: https://panel.holoviz.org/reference/panes/IPyWidget.html
+
+    :Example:
+
+    >>> IPyWidget(some_ipywidget)
+    """
 
     priority = 0.6
 
@@ -24,6 +38,12 @@ class IPyWidget(PaneBase):
             import ipykernel
             from ipywidgets_bokeh.widget import IPyWidget
             from ..io.ipywidget import PanelKernel
+
+            # Patch font-awesome CSS
+            IPyWidget.__css__ = [
+                "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.css"
+            ]
+            
             if not isinstance(ipykernel.kernelbase.Kernel._instance, PanelKernel):
                 kernel = PanelKernel(document=doc, key=str(id(doc)).encode('utf-8'))
                 for w in obj.widgets.values():
