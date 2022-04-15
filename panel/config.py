@@ -469,8 +469,8 @@ class panel_extension(_pyviz_extension):
         for arg in args:
             if arg in self._imports:
                 try:
-                    if (arg == 'ipywidgets' and get_ipython() and
-                        not "PANEL_IPYWIDGET" in os.environ): # noqa (get_ipython)
+                    if (arg == 'ipywidgets' and get_ipython() and # noqa (get_ipython)
+                        not "PANEL_IPYWIDGET" in os.environ):
                         continue
                 except Exception:
                     pass
