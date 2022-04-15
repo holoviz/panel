@@ -1,0 +1,23 @@
+name: downstream_tests
+
+on:
+  # Run this workflow after the build workflow has completed.
+  workflow_run:
+    workflows: [packages]
+    types: [completed]
+  # Or by triggering it manually via Github's UI
+  workflow_dispatch:
+    inputs:
+      manual:
+        description: don't change me!
+        type: boolean
+        required: true
+        default: true
+
+jobs:
+  downstream_tests:
+    uses: pyviz-dev/holoviz_tasks/.github/workflows/run_downstream_tests.yaml@main
+    with:
+      downstream_repos_as_json: "{\"downstream_repo\":[\"holoviews\", \"lumen\"]}"
+    secrets:
+      ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
