@@ -28,7 +28,7 @@ Blog post: https://blog.holoviz.org/panel_0.13.0.html
 
 #### Components
 
-- Editable sliders' `name` can be changed ([#2678](https://github.com/holoviz/panel/pulls/2678))
+- Editable sliders `name` can be changed ([#2678](https://github.com/holoviz/panel/pulls/2678))
 - Make `Plotly` pane resize when window resizes ([#2704](https://github.com/holoviz/panel/pulls/2704))
 - `Viewer` objects can now be used with `pn.serve` ([#2769](https://github.com/holoviz/panel/pulls/2769))
 - `VTK` improvement for NaN handling ([#2826](https://github.com/holoviz/panel/pulls/2826))
@@ -43,7 +43,6 @@ Blog post: https://blog.holoviz.org/panel_0.13.0.html
 - Expose the `orientation` parameter of the button group widgets ([#3083](https://github.com/holoviz/panel/pulls/3083))
 - Add support for rendering pandas styler objects ([#3152](https://github.com/holoviz/panel/pulls/3152))
 - `Viewer` now better at working with `depends` functions ([#3159](https://github.com/holoviz/panel/pulls/3159))
-- Make `Param.mapping` public ([#3173](https://github.com/holoviz/panel/pulls/3173))
 - Improve support for jinja2 loops in `ReactiveHTML` ([#3236](https://github.com/holoviz/panel/pulls/3236))
 - Add ability to require explicit load of ReactiveHTML extension ([#3254](https://github.com/holoviz/panel/pulls/3254))
 - Improve datetime handling of sliders ([#3276](https://github.com/holoviz/panel/pulls/3276))
@@ -171,7 +170,9 @@ Blog post: https://blog.holoviz.org/panel_0.13.0.html
 
 ### API Changes
 
-- Switch DatetimePicker `start`/`end` to param.Date ([#3202](https://github.com/holoviz/panel/pulls/3202))
+- Make `Param.mapping` public ([#3173](https://github.com/holoviz/panel/pulls/3173))
+- Switch `DatetimePicker` `start`/`end` to `param.Date` ([#3202](https://github.com/holoviz/panel/pulls/3202))
+- `Perspective` parameters renamed: `row_pivots` -> `split_by`, `column_pivots` -> `group_by` and `computed_columns` -> `expressions` ([#3318](https://github.com/holoviz/panel/pulls/3318))
 
 ## Version 0.12.7
 
