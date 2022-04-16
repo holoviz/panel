@@ -47,7 +47,6 @@ https://panel.holoviz.org/getting_started/index.html
 from . import layout # noqa
 from . import links # noqa
 from . import pane # noqa
-from . import param # noqa
 from . import pipeline # noqa
 from . import reactive # noqa
 from . import viewable # noqa
