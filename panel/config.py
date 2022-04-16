@@ -420,8 +420,29 @@ config = _config(**{k: None if p.allow_None else getattr(_config, k)
 
 class panel_extension(_pyviz_extension):
     """
-    Initializes the pyviz notebook extension to allow plotting with
-    bokeh and enable comms.
+    Initializes and configures Panel. You should always run `pn.extension`.
+    This will
+
+    - Initialize the `pyviz` notebook extension to enable bi-directional
+    communication and for example plot with Bokeh.
+    - Load `.js` libraries (arguments).
+    - Update the global configuration `pn.config`
+    (keyword arguments).
+
+    Reference: https://github.com/holoviz/panel/issues/3404
+
+    :Example:
+
+    >>> import panel as pn
+    >>> pn.extension("plotly", sizing_mode="stretch_width", template="fast")
+    
+    This will 
+
+    - Initialize the `pyviz` notebook extension.
+    - Enable you to use the `Plotly` pane by loading `plotly.js`.
+    - Set the default `sizing_mode` to `stretch_width` instead of `fixed`.
+    - Set the global configuration `pn.config.template` to `fast`, i.e. you
+    will be using the `FastListTemplate`.
     """
 
     _loaded = False
