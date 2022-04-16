@@ -71,16 +71,24 @@ class _base_config(param.Parameterized):
 
 class _config(_base_config):
     """
-    Holds global configuration options for Panel. The options can be
-    set directly on the global config instance, via keyword arguments
-    in the extension or via environment variables. For example to set
-    the embed option the following approaches can be used:
+    Holds global configuration options for Panel.
+    
+    The options can be set directly on the global config instance, via
+    keyword arguments in the extension or via environment variables.
+    
+    For example to set the embed option the following approaches can be used:
 
         pn.config.embed = True
 
         pn.extension(embed=True)
 
         os.environ['PANEL_EMBED'] = 'True'
+
+    Reference: TBD
+
+    :Example:
+
+    >>> pn.config.loading_spinner = 'bar'
     """
 
     apply_signatures = param.Boolean(default=True, doc="""
