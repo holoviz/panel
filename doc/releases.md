@@ -6,7 +6,7 @@ See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual sum
 
 Date: 2022-04-15
 
-Blog post: https://blog.holoviz.org/panel_0.13.0.html
+Blog post: [https://blog.holoviz.org/panel_0.13.0.html](https://blog.holoviz.org/panel_0.13.0.html)
 
 ### Features
 
