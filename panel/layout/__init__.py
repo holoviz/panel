@@ -2,7 +2,7 @@
 Layout
 ======
 
-Layouts can layout your python objects, widgets and panes.
+Layouts can layout your python objects and panel components.
 
 Most layouts behave as the Python containers you already know. For example
 `Column` and `Row` behaves as lists. I.e. they have a list-like API with
