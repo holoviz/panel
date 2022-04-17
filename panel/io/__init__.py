@@ -23,3 +23,5 @@ else:
     from .server import serve # noqa
     if 'django' in sys.modules:
         from . import django # noqa
+
+__all__ = []

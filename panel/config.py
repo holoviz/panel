@@ -650,3 +650,5 @@ def _cleanup_server(server_id):
 panel_extension.add_delete_action(_cleanup_panel)
 if hasattr(panel_extension, 'add_server_delete_action'):
     panel_extension.add_server_delete_action(_cleanup_server)
+
+__all__ = []

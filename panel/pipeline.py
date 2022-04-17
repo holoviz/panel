@@ -626,3 +626,7 @@ class Pipeline(Viewer):
             self.stage[:] = [self._init_stage()]
         self._update_progress()
         self._update_button()
+
+__all__ = [
+    "Pipeline"
+]

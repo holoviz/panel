@@ -19,3 +19,17 @@ templates = {
 
 _config.param.template.names = templates
 _config.param.template.objects = list(templates)
+
+__all__ = [
+    "BaseTemplate",
+    "BootstrapTemplate",
+    "DarkTheme",
+    "DefaultTheme",
+    "FastGridTemplate",
+    "FastListTemplate",
+    "GoldenTemplate",
+    "MaterialTemplate",
+    "ReactTemplate",
+    "Template",
+    "VanillaTemplate",
+]

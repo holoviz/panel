@@ -7,7 +7,7 @@ from .gridstack import GridStack # noqa
 from .spacer import Divider, HSpacer, Spacer, VSpacer # noqa
 from .tabs import Tabs # noqa
 
-__all__=[
+__all__ = [
     "Accordion",
     "Card",
     "Column",

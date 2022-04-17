@@ -183,3 +183,5 @@ def _param_bind(function, *args, watch=False, **kwargs):
             combined_args, combined_kwargs = combine_arguments(wargs, wkwargs)
             return function(*combined_args, **combined_kwargs)
     return wrapped
+
+__all__ = []

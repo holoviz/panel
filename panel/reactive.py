@@ -1680,3 +1680,5 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         events = self._get_events()
         for ref, (model, _) in self._models.items():
             self._apply_update([], {'events': events}, model, ref)
+
+__all__ = ["ReactiveHTML",]
