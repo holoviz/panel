@@ -6,8 +6,17 @@ from .base import Column, Row, ListPanel
 
 class Card(Column):
     """
-    A Card layout allows arranging multiple panel objects in a
+    A `Card` layout allows arranging multiple panel objects in a
     collapsible, vertical container with a header bar.
+    
+    Reference: https://panel.holoviz.org/reference/layouts/Card.html
+
+    :Example:
+
+    >>> pn.Card(
+    ...     some_widget, some_pane, some_python_object,
+    ...     title='Card', background='WhiteSmoke'
+    ... )
     """
 
     active_header_background = param.String(doc="""

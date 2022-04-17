@@ -10,8 +10,25 @@ from .grid import GridSpec
 
 class GridStack(ReactiveHTML, GridSpec):
     """
-    The GridStack layout builds on the GridSpec component and
-    gridstack.js to allow resizing and dragging items in the grid.
+    The `GridStack` layout allows arranging multiple Panel objects in a grid
+    using a simple API to assign objects to individual grid cells or to a grid
+    span.
+    
+    Other layout containers function like lists, but a `GridSpec` has an API
+    similar to a 2D array, making it possible to use 2D assignment to populate,
+    index, and slice the grid.
+    
+    Reference: https://panel.holoviz.org/reference/layouts/GridStack.html
+
+    :Example:
+    
+    >>> pn.extension('gridstack')
+    >>> gstack = GridStack(sizing_mode='stretch_both')
+    >>> gstack[ : , 0: 3] = pn.Spacer(background='red',    margin=0)
+    >>> gstack[0:2, 3: 9] = pn.Spacer(background='green',  margin=0)
+    >>> gstack[2:4, 6:12] = pn.Spacer(background='orange', margin=0)
+    >>> gstack[4:6, 3:12] = pn.Spacer(background='blue',   margin=0)
+    >>> gstack[0:2, 9:12] = pn.Spacer(background='purple', margin=0)
     """
 
     allow_resize = param.Boolean(default=True, doc="""

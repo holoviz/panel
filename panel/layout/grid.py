@@ -18,8 +18,21 @@ from .base import _col, _row, ListPanel, Panel
 
 class GridBox(ListPanel):
     """
-    List-like Grid which wraps depending on the specified number of
-    rows or columns.
+    The `GridBox` is a list-like layout (unlike `GridSpec`) that wraps objects
+    into a grid according to the specified `nrows` and `ncols` parameters.
+    
+    It has a list-like API with methods to `append`, `extend`, `clear`,
+    `insert`, `pop`, `remove` and `__setitem__`, which makes it possible to
+    interactively update and modify the layout. 
+    
+    Reference: https://panel.holoviz.org/reference/layouts/GridBox.html
+
+    :Example:
+    
+    >>> pn.GridBox(
+    ...    python_object_1, python_object_2, ..., 
+    ...    python_object_24, ncols=6
+    ... )
     """
 
     nrows = param.Integer(default=None, bounds=(0, None), doc="""
