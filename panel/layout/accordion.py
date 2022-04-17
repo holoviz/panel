@@ -7,6 +7,23 @@ from .card import Card
 
 
 class Accordion(NamedListPanel):
+    """
+    The `Accordion` layout is a type of `Card` layout that allows switching
+    between multiple objects by clicking on the corresponding card header.
+    
+    The labels for each card will default to the `name` parameter of the card’s
+    contents, but may also be defined explicitly as part of a tuple.
+    
+    Like `Column` and `Row`, `Accordion` has a list-like API that allows
+    interactively updating and modifying the cards using the methods `append`,
+    `extend`, `clear`, `insert`, `pop`, `remove` and `__setitem__`.
+
+    Reference: https://panel.holoviz.org/reference/layouts/Accordion.html
+
+    :Example:
+
+    >>> pn.Accordion(some_pane_with_a_name, ("Plot", some_plot))
+    """
     
     active_header_background = param.String(default='#ccc', doc="""
         Color for currently active headers.""")
