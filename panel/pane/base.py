@@ -32,7 +32,7 @@ def panel(obj, **kwargs):
     and returning a corresponding Panel.
 
     If you provide a "reactive function" as `obj` and set
-    `loading_indicator=True`, then the Panel will display a loading indicator
+    `loading_indicator=True`, then Panel will display a loading indicator
     when invoking the function.
 
     Reference: https://panel.holoviz.org/user_guide/Components.html#panes

@@ -84,7 +84,7 @@ class _config(_base_config):
 
         os.environ['PANEL_EMBED'] = 'True'
 
-    Reference: TBD
+    Reference: Currently none
 
     :Example:
 
