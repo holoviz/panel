@@ -31,8 +31,8 @@ export class QuillInputView extends PanelHTMLBoxView {
       this.quill.enable(!this.model.disabled)
       this._editing = false
     })
-    const {mode, toolbar} = this.model.properties
-    this.on_change([mode, toolbar], () => {
+    const {mode, toolbar, placeholder} = this.model.properties
+    this.on_change([mode, toolbar, placeholder], () => {
       this.render()
       this._layout_toolbar()
     })
