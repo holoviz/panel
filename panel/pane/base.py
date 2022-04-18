@@ -31,6 +31,14 @@ def panel(obj, **kwargs):
     Creates a panel from any supplied object by wrapping it in a pane
     and returning a corresponding Panel.
 
+    If you provide a "reactive function" as `obj` and set
+    `loading_indicator=True`, then the Panel will display a loading indicator
+    when invoking the function.
+
+    Reference: https://panel.holoviz.org/user_guide/Components.html#panes
+
+    >>> pn.panel(some_python_object, width=500, background="whitesmoke")
+
     Arguments
     ---------
     obj: object

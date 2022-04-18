@@ -518,6 +518,8 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
     each app is served, e.g. `serve({'app': panel1, 'app2': panel2})`
     will serve apps at /app and /app2 on the server.
 
+    Reference: https://panel.holoviz.org/user_guide/Deploy_and_Export.html#serving-multiple-apps
+
     Arguments
     ---------
     panel: Viewable, function or {str: Viewable or function}
