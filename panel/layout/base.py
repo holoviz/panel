@@ -680,7 +680,18 @@ class NamedListPanel(NamedListLike, Panel):
 
 class Row(ListPanel):
     """
-    Horizontal layout of Viewables.
+    The `Row` layout allows arranging multiple panel objects in a horizontal
+    container.
+    
+    It has a list-like API with methods to `append`, `extend`, `clear`,
+    `insert`, `pop`, `remove` and `__setitem__`, which makes it possible to
+    interactively update and modify the layout.
+    
+    Reference: https://panel.holoviz.org/reference/layouts/Row.html
+
+    :Example:
+
+    >>> pn.Row(some_widget, some_pane, some_python_object)
     """
 
     col_sizing = param.Parameter()
@@ -692,7 +703,18 @@ class Row(ListPanel):
 
 class Column(ListPanel):
     """
-    Vertical layout of Viewables.
+    The `Column` layout allows arranging multiple panel objects in a vertical
+    container.
+    
+    It has a list-like API with methods to `append`, `extend`, `clear`,
+    `insert`, `pop`, `remove` and `__setitem__`, which makes it possible to
+    interactively update and modify the layout.
+    
+    Reference: https://panel.holoviz.org/reference/layouts/Column.html
+
+    :Example:
+
+    >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
     row_sizing = param.Parameter()
@@ -704,7 +726,21 @@ class Column(ListPanel):
 
 class WidgetBox(ListPanel):
     """
-    Vertical layout of widgets.
+    The `WidgetBox` layout allows arranging multiple panel objects in a
+    vertical (or horizontal) container.
+
+    It is largely identical to the `Column` layout, but has some default
+    styling that makes widgets be clearly grouped together visually.
+    
+    It has a list-like API with methods to `append`, `extend`, `clear`,
+    `insert`, `pop`, `remove` and `__setitem__`, which make it possible to
+    interactively update and modify the layout.
+    
+    Reference: https://panel.holoviz.org/reference/layouts/WidgetBox.html
+
+    :Example:
+
+    >>> pn.WidgetBox(some_widget, another_widget)
     """
 
     css_classes = param.List(default=['panel-widget-box'], doc="""

@@ -16,7 +16,21 @@ from .base import NamedListPanel
 
 class Tabs(NamedListPanel):
     """
-    Panel of Viewables to be displayed in separate tabs.
+    The `Tabs` layout allows switching between multiple objects by clicking
+    on the corresponding tab header.
+    
+    Tab labels may be defined explicitly as part of a tuple or will be
+    inferred from the `name` parameter of the tab’s contents.
+    
+    Like `Column` and `Row`, `Tabs` has a list-like API with methods to
+    `append`, `extend`, `clear`, `insert`, `pop`, `remove` and `__setitem__`,
+    which make it possible to interactively update and modify the tabs.
+    
+    Reference: https://panel.holoviz.org/reference/layouts/Tabs.html
+
+    :Example:
+    
+    >>> pn.Tabs(('Scatter', plot1), some_pane_with_a_name)
     """
 
     closable = param.Boolean(default=False, doc="""
