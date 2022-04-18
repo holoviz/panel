@@ -432,8 +432,8 @@ class panel_extension(_pyviz_extension):
     This will
 
     - Initialize the `pyviz` notebook extension to enable bi-directional
-    communication and for example plot with Bokeh.
-    - Load `.js` libraries (arguments).
+    communication and for example plotting with Bokeh.
+    - Load `.js` libraries (positional arguments).
     - Update the global configuration `pn.config`
     (keyword arguments).
 
