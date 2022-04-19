@@ -86,7 +86,7 @@ __all__ = [
     "pane",
     "Pane",
     "panel",
-    # "param",
+    "param",
     "Param",
     "pipeline",
     "reactive",
