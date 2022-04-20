@@ -656,10 +656,10 @@ Link.register_callback(callback=JSLinkCallbackGenerator)
 
 Viewable._preprocessing_hooks.append(Callback._process_callbacks)
 
-__all__ = [
+__all__ = (
     "Callback",
     "CallbackGenerator",
     "JSCallbackGenerator",
     "JSLinkCallbackGenerator",
-    "Link",
-]
+    "Link"
+)

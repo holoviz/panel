@@ -528,4 +528,4 @@ class fixed(param.Parameterized):
         """
         return self.value
 
-__all__ = []
+__all__ = ["fixed", "interact", "interact_manual", "interactive"]

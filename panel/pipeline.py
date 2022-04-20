@@ -627,6 +627,7 @@ class Pipeline(Viewer):
         self._update_progress()
         self._update_button()
 
-__all__ = [
-    "Pipeline"
-]
+
+__all__ = (
+    "Pipeline",
+)

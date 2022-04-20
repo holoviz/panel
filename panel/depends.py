@@ -184,4 +184,4 @@ def _param_bind(function, *args, watch=False, **kwargs):
             return function(*combined_args, **combined_kwargs)
     return wrapped
 
-__all__ = []
+__all__ = ["bind", "depends"]

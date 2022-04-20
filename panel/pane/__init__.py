@@ -49,7 +49,7 @@ from .streamz import Streamz # noqa
 from .vega import Vega # noqa
 from .vtk import VTKVolume, VTK # noqa
 
-__all__ = [
+__all__ = (
     "Alert",
     "Audio",
     "Bokeh",
@@ -83,5 +83,5 @@ __all__ = [
     "Video",
     "VTK",
     "VTKVolume",
-    "YT",
-]
+    "YT"
+)

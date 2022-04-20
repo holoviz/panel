@@ -86,7 +86,7 @@ from .debugger import Debugger # noqa
 from .text_to_speech import TextToSpeech, Utterance, Voice # noqa
 from .texteditor import TextEditor# noqa
 
-__all__ = [
+__all__ = (
     "Ace",
     "ArrayInput",
     "AutocompleteInput",
@@ -157,4 +157,4 @@ __all__ = [
     "VideoStream",
     "Voice",
     "Widget",
-]
+)

@@ -1,5 +1,6 @@
-"""Panel is a high level app and dashboarding framework
-=======================================================
+"""
+Panel is a high level app and dashboarding framework
+====================================================
 
 Panel is an open-source Python library that lets you create custom
 interactive web apps and dashboards by connecting user-defined widgets
@@ -66,37 +67,37 @@ from .param import Param # noqa
 from .template import Template # noqa
 from .widgets import indicators # noqa
 
-__all__ = [
+__all__ = (
     "__version__",
     "Accordion",
-    "bind",
     "Card",
     "Column",
-    "config",
-    "depends",
-    "extension",
     "FlexBox",
     "GridBox",
     "GridSpec",
+    "Pane", # deprecated
+    "Param",
+    "Row",
+    "Spacer",
+    "Tabs",
+    "Template",
+    "WidgetBox",
+    "bind",
+    "config",
+    "depends",
+    "extension",
     "indicators",
     "interact",
     "ipywidget",
     "layout",
     "links",
     "pane",
-    "Pane",
     "panel",
     "param",
-    "Param",
     "pipeline",
     "reactive",
-    "Row",
     "serve",
-    "Spacer",
     "state",
-    "Tabs",
-    "Template",
     "viewable",
-    "WidgetBox",
     "widgets",
-]
+)

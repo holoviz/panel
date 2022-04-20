@@ -192,8 +192,6 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     const tooltip = this.model.tooltip
     const data = this.getData()
 
-    console.log(data)
-
     if ((window as any).deck.createDeck) {
       this.deckGL = (window as any).deck.createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
