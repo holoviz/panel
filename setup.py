@@ -104,7 +104,8 @@ install_requires = [
     'requests',
     'tqdm >=4.48.0',
     'pyct >=0.4.4',
-    'bleach'
+    'bleach',
+    'setuptools',
 ]
 
 _recommended = [
