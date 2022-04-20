@@ -37,6 +37,11 @@ class TableEditEvent(ModelEvent):
         self.old = old
         super().__init__(model=model)
 
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}(column={self.column}, row={self.row}, '
+            f'value={self.value}, old={self.old})'
+        )
 
 class CellClickEvent(ModelEvent):
 
@@ -48,6 +53,11 @@ class CellClickEvent(ModelEvent):
         self.value = value
         super().__init__(model=model)
 
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}(column={self.column}, row={self.row}, '
+            f'value={self.value})'
+        )
 
 def _get_theme_url(url, theme):
     if 'bootstrap' in theme:
