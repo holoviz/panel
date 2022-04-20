@@ -851,3 +851,10 @@ class Viewer(param.Parameterized):
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         return self._create_view()._repr_mimebundle_(include, exclude)
+
+
+__all__ = (
+    "Layoutable",
+    "Viewable",
+    "Viewer"
+)
