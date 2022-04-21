@@ -475,6 +475,7 @@ class panel_extension(_pyviz_extension):
                 except Exception:
                     pass
                 __import__(self._imports[arg])
+                self._loaded_extensions.append(arg)
             elif arg in reactive_exts:
                 ReactiveHTMLMetaclass._loaded_extensions.add(arg)
             else:
