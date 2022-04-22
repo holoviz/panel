@@ -52,8 +52,8 @@ Google Colab
 
 In Google Colaboratory, rendering for each notebook cell is isolated, which means that every cell must reload the Panel extension code separately. Panel can do this automatically when you first load the extension if you declare that you are running in Colab: ``pn.extension(comms='colab')``. Otherwise you will need to put ``pn.extension()`` in each cell where you want to display Panel output. Either way, you should be able to have access to all of Panel's functionality, though with a larger notebook size than with other notebook technologies that allow display code to be shared across cells.
 
-VSCode
-======
+VSCode notebook
+===============
 
 Visual Studio Code (VSCode) versions 2020.4.74986 and later support ipywidgets, and Panel objects can be used as ipywidgets since Panel 0.10 thanks to ``jupyter_bokeh``, which means that you can now use Panel components interactively in VSCode. Ensure you install ``jupyter_bokeh`` with ``pip install jupyter_bokeh`` or ``conda install -c bokeh jupyter_bokeh`` and then enable the extension with ``pn.extension(comms='vscode')``.
 
