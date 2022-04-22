@@ -4,10 +4,10 @@ Custom bokeh Markup models.
 from bokeh.core.properties import (
     Bool, Dict, Either, Float, Int, List, Null, String
 )
-from bokeh.models.widgets import Markup
+from bokeh.models.widgets import Markup, Div
 
 
-class HTML(Markup):
+class HTML(Div):
     """
     A bokeh model to render HTML markup including embedded script tags.
     """
