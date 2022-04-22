@@ -17,7 +17,7 @@ from .notebook import ( # noqa
     load_notebook, push, push_notebook
 )
 
-if '_pyodide' in sys.modules:
+if state._is_pyodide:
     from .pyodide import serve
 else:
     from .server import serve # noqa
