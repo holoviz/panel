@@ -432,7 +432,7 @@
   border-bottom: 4px solid transparent;
 }
 
-.bk-root button {
+.bk-root .bk-btn {
   -moz-user-select: none;
   -ms-user-select: none;
   -webkit-user-select: none;
@@ -452,21 +452,21 @@
   vertical-align: middle;
   white-space: nowrap;
 }
-.bk-root button:hover {
+.bk-root .bk-btn:hover {
   background-color:  var(--neutral-fill-hover);
   color: var(--neutral-foreground-rest);
   border: none;
 }
-.bk button.bk-active {
+.bk .bk-btn.bk-active {
   background-color:  var(--neutral-fill-active);
   color: var(--neutral-foreground-rest);
   border: none;
 }
-.bk-root button[disabled],
-.bk-root button[disabled]:hover,
-.bk-root button[disabled]:focus,
-.bk-root button[disabled]:active,
-.bk-root button[disabled].bk-active {
+.bk-root .bk-btn[disabled],
+.bk-root .bk-btn[disabled]:hover,
+.bk-root .bk-btn[disabled]:focus,
+.bk-root .bk-btn[disabled]:active,
+.bk-root .bk-btn[disabled].bk-active {
   cursor: not-allowed;
   pointer-events: none !important;
   background-color: var(--neutral-fill-rest);
