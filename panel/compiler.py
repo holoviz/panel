@@ -155,8 +155,7 @@ def bundle_resources():
     bundle_dir = pathlib.Path(__file__).parent.joinpath('dist', 'bundled')
 
     # Extract Model dependencies
-    js_files = {}
-    css_files = {}
+    js_files, css_files, resource_files = {}, {}, {}
     reactive = param.concrete_descendents(ReactiveHTML).values()
     models = (
         list(Model.model_class_reverse_map.items()) +
@@ -187,6 +186,15 @@ def bundle_resources():
                 css_files[prev_cls.__name__] = prev_cssfiles
                 break
             prev_cls = cls
+        prev_resources = getattr(model, '__resources__', None)
+        prev_cls = model
+        for cls in model.__mro__[1:]:
+            resources = getattr(cls, '__resources__', None)
+            if ((resources is None and prev_resources is not None) or
+                (resources is not None and resources != prev_resources)):
+                resource_files[prev_cls.__name__] = prev_resources
+                break
+            prev_cls = cls
 
     # Bundle Model dependencies
     for name, jsfiles in js_files.items():
@@ -197,6 +205,9 @@ def bundle_resources():
 
     for name, cssfiles in css_files.items():
         write_bundled_files(name, cssfiles, bundle_dir)
+
+    for name, res_files in resource_files.items():
+        write_bundled_files(name, res_files, bundle_dir)
 
     # Bundle Template resources
     for name, template in param.concrete_descendents(BasicTemplate).items():
