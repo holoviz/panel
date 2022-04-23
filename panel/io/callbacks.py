@@ -6,7 +6,6 @@ import asyncio
 import inspect
 import logging
 import time
-import sys
 
 import param
 
