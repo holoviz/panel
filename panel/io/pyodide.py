@@ -9,7 +9,7 @@ import param
 
 from bokeh import __version__
 from bokeh.document import Document
-from bokeh.embed.util import standalone_docs_json
+from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.protocol.messages.patch_doc import process_document_events
 
 from . import resources
@@ -40,7 +40,9 @@ def _doc_json(model, target):
     doc = Document()
     model.server_doc(doc=doc)
     model = doc.roots[0]
-    docs_json = standalone_docs_json([model])
+    docs_json, _ = standalone_docs_json_and_render_items(
+        [model], suppress_callback_warning=True
+    )
 
     doc_json = list(docs_json.values())[0]
     root_id = doc_json['roots']['root_ids'][0]

@@ -6,7 +6,6 @@ import asyncio
 import inspect
 import logging
 import time
-import sys
 
 import param
 
@@ -165,7 +164,7 @@ class PeriodicCallback(param.Parameterized):
             finally:
                 self._updating = False
         self._start_time = time.time()
-        if '_pyodide' in sys.modules:
+        if state._is_pyodide:
             event_loop = asyncio.get_running_loop()
             task = asyncio.create_task(
                 self._async_repeat(self._periodic_callback)
@@ -195,7 +194,7 @@ class PeriodicCallback(param.Parameterized):
                 self._updating = False
         self._counter = 0
         self._timeout = None
-        if '_pyodide' in sys.modules:
+        if state._is_pyodide:
             self._cb.cancel()
         elif self._doc:
             if self._doc._session_context:
