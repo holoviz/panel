@@ -672,9 +672,7 @@ class _state(param.Parameterized):
     @property
     def notifications(self):
         from ..config import config
-        if not config.notifications:
-            return None
-        if self.curdoc and self.curdoc not in self._notifications:
+        if config.notifications and self.curdoc and self.curdoc not in self._notifications:
             from .notifications import NotificationArea
             self._notifications[self.curdoc] = notifications = NotificationArea()
             return notifications

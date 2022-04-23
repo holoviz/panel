@@ -20,6 +20,7 @@ from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
 from ..config import _base_config, config, panel_extension
 from ..io.model import add_to_doc
+from ..io.notifications import NotificationArea
 from ..io.notebook import render_template
 from ..io.resources import (
     CDN_DIST, LOCAL_DIST, BUNDLE_DIR, component_resource_path, resolve_custom_path
@@ -385,6 +386,11 @@ class BasicTemplate(BaseTemplate):
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the modal""")
 
+    notifications = param.ClassSelector(class_=NotificationArea, constant=True, doc="""
+        The NotificationArea instance attached to this template.
+        Automatically added if config.notifications is set, but may
+        also be provided explicitly.""")
+
     logo = param.String(doc="""
         URI of logo to add to the header (if local file, logo is
         base64 encoded as URI). Default is '', i.e. not shown.""")
@@ -491,14 +497,16 @@ class BasicTemplate(BaseTemplate):
             params['theme'] = THEMES[params['theme']]
         if 'favicon' in params and isinstance(params['favicon'], PurePath):
             params['favicon'] = str(params['favicon'])
+        if 'notifications' not in params and config.notifications:
+            params['notifications'] = state.notifications if state.curdoc else NotificationArea() 
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
         if 'embed(roots.js_area)' in template:
             self._render_items['js_area'] = (self._js_area, [])
         if 'embed(roots.actions)' in template:
             self._render_items['actions'] = (self._actions, [])
-        if 'embed(roots.notifications)' in template and config.notifications:
-            self._render_items['notifications'] = (state.notifications, [])
+        if 'embed(roots.notifications)' in template and self.notifications:
+            self._render_items['notifications'] = (self.notifications, [])
             self._render_variables['notifications'] = True
         self._update_busy()
         self.main.param.watch(self._update_render_items, ['objects'])
@@ -516,6 +524,9 @@ class BasicTemplate(BaseTemplate):
             state.sync_busy(self.busy_indicator)
         self._update_vars()
         doc = super()._init_doc(doc, comm, title, notebook, location)
+        print('.>>>', doc, self.notifications)
+        if self.notifications:
+            state._notifications[doc] = self.notifications
         if self.theme:
             theme = self._get_theme()
             if theme and theme.bokeh_theme:
