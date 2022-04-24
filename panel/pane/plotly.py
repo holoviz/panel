@@ -251,7 +251,7 @@ class Plotly(PaneBase):
         params['data'] = json.get('data', [])
         params['data_sources'] = sources
         params['layout'] = layout = json.get('layout', {})
-        params['frames'] = frames = json.get('frames', {})
+        params['frames'] = json.get('frames', {})
         if layout.get('autosize') and self.sizing_mode is self.param.sizing_mode.default:
             params['sizing_mode'] = 'stretch_both'
         return params
