@@ -45,6 +45,10 @@ class JSONEditor(HTMLBox):
         'https://cdn.jsdelivr.net/npm/jsoneditor@9.1.9/dist/jsoneditor.min.css'
     ]
 
+    __resources__ = [
+        'https://cdn.jsdelivr.net/npm/jsoneditor@9.1.9/dist/img/jsoneditor-icons.svg'
+    ]
+
     @classproperty
     def __javascript__(cls):
         return bundled_files(cls)
