@@ -38,7 +38,11 @@ Development
 Editor + Server
 ===============
 
-You can edit your Panel code as a .py file in any text editor, marking the objects you want to render as ``.servable()``, then launch a server with ``panel serve my_script.py --show`` to open a browser tab showing your app or dashboard and backed by a live Python process.
+You can edit your Panel code as a .py file in any text editor, marking the objects you want to render as ``.servable()``, then launch a server with:
+
+  panel serve my_script.py --show --autoreload
+  
+to open a browser tab showing your app or dashboard and backed by a live Python process.
 
 JupyterLab and Classic notebook
 ===============================
