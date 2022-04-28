@@ -1,4 +1,4 @@
-django==2.1.7
+django==2.2.28
 channels==2.2.0
 panel==0.9.3
 bokeh==2.0.2
