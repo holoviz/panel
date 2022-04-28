@@ -2,7 +2,6 @@
 .bk-root, .bk-root .bk:before, .bk-root .bk:after {
   font-family: var(--body-font);
   font-size: var(--type-ramp-base-font-size);
-  /* background: var(--background-color); */
   color: var(--neutral-foreground-rest);
 }
 
@@ -436,10 +435,9 @@
   -moz-user-select: none;
   -ms-user-select: none;
   -webkit-user-select: none;
-  background-color:  var(--neutral-fill-hover);
+  background-color:  var(--neutral-fill-rest);
   border-radius: calc(var(--corner-radius) * 1px);
-  border: 1px solid transparent;
-  border: none;
+  border: transparent;
   color: var(--neutral-foreground-rest);
   cursor: pointer;
   display: inline-block;
@@ -453,14 +451,12 @@
   white-space: nowrap;
 }
 .bk-root .bk-btn:hover {
-  background-color:  var(--neutral-fill-hover);
-  color: var(--neutral-foreground-rest);
-  border: none;
+  background-color: var(--neutral-fill-hover);
 }
 .bk .bk-btn.bk-active {
-  background-color:  var(--neutral-fill-active);
-  color: var(--neutral-foreground-rest);
-  border: none;
+  background-color: var(--neutral-fill-active);
+  border: 1px solid var(--accent-fill-active);
+  filter: brightness(0.9);
 }
 .bk-root .bk-btn[disabled],
 .bk-root .bk-btn[disabled]:hover,
@@ -469,9 +465,6 @@
 .bk-root .bk-btn[disabled].bk-active {
   cursor: not-allowed;
   pointer-events: none !important;
-  background-color: var(--neutral-fill-rest);
-  color: var(--neutral-foreground-rest);
-  border: none;
 }
 
 .bk-root *.bk-btn {
@@ -483,7 +476,6 @@
   cursor: pointer;
   padding: 6px 12px;
   font-size: 12px;
-  border: 1px solid transparent;
   border-radius: calc(var(--corner-radius) * 1px);
   outline: 0;
   user-select: none;
@@ -511,12 +503,10 @@
 .bk-root *.bk-btn-default[disabled]:hover {
   color: var(--neutral-foreground-rest);
   background-color: var(--neutral-fill-rest);
-  border: none;
 }
 .bk-root *.bk-btn-default:hover {
   background-color:  var(--neutral-fill-hover);
   color: var(--neutral-foreground-rest);
-  border: none;
 }
 .bk-root *.bk-btn-default.bk-active,
 .bk-root *.bk-btn-default:active,
