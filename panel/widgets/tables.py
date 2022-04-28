@@ -213,8 +213,8 @@ class BaseTable(ReactiveData, Widget):
             indexes = list(self._processed.index)
             selection = []
             for sel in self.selection:
-                iv = old_processed.index[sel]
                 try:
+                    iv = old_processed.index[sel]
                     idx = indexes.index(iv)
                     selection.append(idx)
                 except Exception:
