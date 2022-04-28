@@ -1043,7 +1043,7 @@ class Tabulator(BaseTable):
     def _process_event(self, event):
         if self.pagination == 'remote':
             nrows = self.page_size
-            event.row = (self.page-1)*nrows
+            event.row = event.row+(self.page-1)*nrows
         if event.column not in self.buttons:
             if event.column not in self._processed.columns:
                 event.value = self._processed.index[event.row]
