@@ -53,11 +53,18 @@ Panel can be used in a wide range of development environments:
 
 ### Editor + Server
 
-You can edit your Panel code as a .py file in any text editor, marking the objects you want to render as `.servable()`, then launch a server with `panel serve my_script.py --show` to open a browser tab showing your app or dashboard and backed by a live Python process. If you want the server to automatically reload when you save code changes during development, then you should use `panel serve my_script.py --auto --show`.
+
+You can edit your Panel code as a `.py` file in any text editor, marking the objects you want to render as ``.servable()``, then launch a server with:
+
+```bash
+panel serve my_script.py --show --autoreload
+```
+
+to open a browser tab showing your app or dashboard and backed by a live Python process. The `--autoreload` flag ensures that the app reloads whenever you make a change to the Python source.
 
 ### JupyterLab and Classic notebook
 
-In the classic Jupyter notebook environment and JupyterLab, first make sure to load the `pn.extension()`. Panel objects will then render themselves if they are the last item in a notebook cell. Note that for versions of `jupyterlab<3.0`, you must manually install the JupyterLab extension with:
+In the classic Jupyter notebook environment and JupyterLab, first make sure to load the ``pn.extension()``. Panel objects will then render themselves if they are the last item in a notebook cell. For versions of ``jupyterlab>=3.0`` the necessary extension is automatically bundled in the ``pyviz_comms`` package, which must be >=2.0. However note that for version of ``jupyterlab<3.0`` you must also manually install the JupyterLab extension with:
 
 ```bash
 jupyter labextension install @pyviz/jupyterlab_pyviz
@@ -67,7 +74,7 @@ jupyter labextension install @pyviz/jupyterlab_pyviz
 
 In the Google Colaboratory notebook, first make sure to load the `pn.extension()`. Panel objects will then render themselves if they are the last item in a notebook cell. Please note that in Colab rendering for each notebook cell is isolated, which means that every cell must reload the Panel extension code separately. This will result in somewhat slower and larger notebook than with other notebook technologies.
 
-### VSCode
+### VSCode notebook
 
 Visual Studio Code (VSCode) versions 2020.4.74986 and later support ipywidgets, and Panel objects can be used as ipywidgets since Panel 0.10 thanks to `jupyter_bokeh`, which means that you can now use Panel components interactively in VSCode. Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh` and then enable the extension with `pn.extension()`.
 
