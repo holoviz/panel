@@ -291,6 +291,11 @@ progress:not([value])::before {
   border-style: solid;
   border-radius: calc(var(--corner-radius) * 1px);
 }
+
 .tabulator .tabulator-header {
   border-bottom-color: var(--accent-fill-rest);
+}
+
+.bk-root .bk .ql-container.ql-snow {
+  border: 1px solid #ccc;
 }
