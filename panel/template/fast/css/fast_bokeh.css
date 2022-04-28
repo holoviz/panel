@@ -539,13 +539,13 @@
 .bk-root *.bk-btn-primary,
 .bk-root *.bk-btn-primary[disabled],
 .bk-root *.bk-btn-primary[disabled]:hover {
-  color: color(--accent-foreground-cut-rest);
+  color: var(--accent-foreground-cut-rest);
   background: var(--accent-fill-rest);
   border: none;
 }
 .bk-root *.bk-btn-primary:hover {
   color: white;
-  color: color(--accent-foreground-cut-rest);
+  color: var(--accent-foreground-cut-rest);
   background-color: var(--accent-fill-hover);
   border: none;
 }
@@ -553,7 +553,7 @@
 .bk-root *.bk-btn-primary:active,
 .bk-root *.bk-btn-primary.bk-active[disabled],
 .bk-root *.bk-btn-primary.bk-active[disabled]:hover {
-  color: color(--accent-foreground-cut-rest);
+  color: var(--accent-foreground-cut-rest);
   background-color: var(--accent-fill-active);
   border: none;
 }
