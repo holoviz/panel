@@ -160,6 +160,9 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     this.connect(this.model.properties._render_count.change, () => {
       this.plot()
     });
+    this.connect(this.model.properties.frames.change, () => {
+      this.plot(true)
+    });
     this.connect(this.model.properties.viewport.change, () => this._updateViewportFromProperty());
     this.connect(this.model.properties.visibility.change, () => {
       this.el.style.visibility = this.model.visibility ? 'visible' : 'hidden'
@@ -262,13 +265,20 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     });
   }
 
-  async plot(): Promise<void> {
+  async plot(new_plot: boolean=false): Promise<void> {
     if (!(window as any).Plotly)
       return
     const data = this._trace_data()
     const newLayout = this._layout_data()
     this._reacting = true
-    await (window as any).Plotly.react(this._layout_wrapper, data, newLayout, this.model.config)
+    if (new_plot) {
+      const obj = {data: data, layout: newLayout, config: this.model.config, frames: this.model.frames}
+      await (window as any).Plotly.newPlot(this._layout_wrapper, obj)
+    } else {
+      await (window as any).Plotly.react(this._layout_wrapper, data, newLayout, this.model.config)
+      if (this.model.frames != null)
+	await (window as any).Plotly.addFrames(this._layout_wrapper, this.model.frames)
+    }
     this._updateSetViewportFunction()
     this._updateViewportProperty()
     if (!this._plotInitialized)
@@ -379,6 +389,7 @@ export namespace PlotlyPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     data: p.Property<any[]>
+    frames: p.Property<any[] | null>
     layout: p.Property<any>
     config: p.Property<any>
     data_sources: p.Property<any[]>
@@ -416,6 +427,7 @@ export class PlotlyPlot extends HTMLBox {
       data: [ Array(Any), [] ],
       layout: [ Any, {} ],
       config: [ Any, {} ],
+      frames: [ Array(Any), null ],
       data_sources: [ Array(Ref(ColumnDataSource)), [] ],
       relayout: [ Nullable(Any), {} ],
       restyle: [ Nullable(Any), {} ],

@@ -39,6 +39,8 @@ class PlotlyPlot(LayoutDOM):
     data = List(Any)
 
     layout = Dict(String, Any)
+    
+    frames = List(Any)
 
     config = Dict(String, Any)
 

@@ -251,6 +251,7 @@ class Plotly(PaneBase):
         params['data'] = json.get('data', [])
         params['data_sources'] = sources
         params['layout'] = layout = json.get('layout', {})
+        params['frames'] = json.get('frames', [])
         if layout.get('autosize') and self.sizing_mode is self.param.sizing_mode.default:
             params['sizing_mode'] = 'stretch_both'
         return params
@@ -273,6 +274,7 @@ class Plotly(PaneBase):
         fig = self._to_figure(self.object)
         json = self._plotly_json_wrapper(fig)
         layout = json.get('layout')
+        frames = json.get('frames')
 
         traces = json['data']
         new_sources = []
@@ -286,6 +288,7 @@ class Plotly(PaneBase):
 
             update_sources = self._update_data_sources(cds, trace) or update_sources
 
+        # Determine if layout needs update
         try:
             update_layout = model.layout != layout
         except Exception:
@@ -307,6 +310,12 @@ class Plotly(PaneBase):
                 if update_data:
                     break
 
+        # Determine if frames needs update
+        try:
+            update_frames = model.frames != frames
+        except Exception:
+            update_frames = True
+
         updates = {}
         if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
             autosize = layout.get('autosize')
@@ -323,6 +332,9 @@ class Plotly(PaneBase):
 
         if update_layout:
             updates['layout'] = layout
+
+        if update_frames:
+            updates['frames'] = frames or []
 
         if updates:
             model.update(**updates)
