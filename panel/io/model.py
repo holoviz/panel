@@ -2,18 +2,61 @@
 Utilities for manipulating bokeh models.
 """
 import textwrap
+
 from contextlib import contextmanager
 
+import numpy as np
+
 from bokeh.document import Document
-from bokeh.document.events import ColumnDataChangedEvent
+from bokeh.document.events import ModelChangedEvent, ColumnDataChangedEvent
+from bokeh.model import DataModel
 from bokeh.models import Box, ColumnDataSource, Model
 from bokeh.protocol import Protocol
 
 from .state import state
 
+
+#---------------------------------------------------------------------
+# Private API
+#---------------------------------------------------------------------
+
+
+class comparable_array(np.ndarray):
+    """
+    Array subclass that allows comparisons.
+    """
+
+    def __eq__(self, other):
+        return super().__eq__(other).all().item()
+
+    def __ne__(self, other):
+        return super().__ne__(other).all().item()
+
+
+def patch_events(events):
+    """
+    Patch events applies patches to events that are to be dispatched
+    avoiding various issues in Bokeh.
+    """
+    for e in events:
+        # Patch ColumnDataChangedEvents which reference non-existing columns
+        if (hasattr(e, 'hint') and isinstance(e.hint, ColumnDataChangedEvent)
+            and e.hint.cols is not None):
+            e.hint.cols = None
+        # Patch ModelChangedEvents which change an array property (see https://github.com/bokeh/bokeh/issues/11735)
+        elif (isinstance(e, ModelChangedEvent) and isinstance(e.model, DataModel) and
+              isinstance(e.new, np.ndarray)):
+                new_array = comparable_array(e.new.shape, e.new.dtype, e.new)
+                e.new = new_array
+                e.serializable_new = new_array
+
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
+
+
+
 
 def diff(doc, binary=True, events=None):
     """
@@ -25,11 +68,7 @@ def diff(doc, binary=True, events=None):
     if not events or state._hold:
         return None
 
-    # Patch ColumnDataChangedEvents which reference non-existing columns
-    for e in events:
-        if (hasattr(e, 'hint') and isinstance(e.hint, ColumnDataChangedEvent)
-            and e.hint.cols is not None):
-            e.hint.cols = None
+    patch_events(events)
     msg = Protocol().create("PATCH-DOC", events, use_buffers=binary)
     doc.callbacks._held_events = [e for e in doc.callbacks._held_events if e not in events]
     return msg
