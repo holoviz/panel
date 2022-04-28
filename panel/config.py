@@ -71,16 +71,24 @@ class _base_config(param.Parameterized):
 
 class _config(_base_config):
     """
-    Holds global configuration options for Panel. The options can be
-    set directly on the global config instance, via keyword arguments
-    in the extension or via environment variables. For example to set
-    the embed option the following approaches can be used:
+    Holds global configuration options for Panel.
+    
+    The options can be set directly on the global config instance, via
+    keyword arguments in the extension or via environment variables.
+    
+    For example to set the embed option the following approaches can be used:
 
         pn.config.embed = True
 
         pn.extension(embed=True)
 
         os.environ['PANEL_EMBED'] = 'True'
+
+    Reference: Currently none
+
+    :Example:
+
+    >>> pn.config.loading_spinner = 'bar'
     """
 
     apply_signatures = param.Boolean(default=True, doc="""
@@ -420,8 +428,29 @@ config = _config(**{k: None if p.allow_None else getattr(_config, k)
 
 class panel_extension(_pyviz_extension):
     """
-    Initializes the pyviz notebook extension to allow plotting with
-    bokeh and enable comms.
+    Initializes and configures Panel. You should always run `pn.extension`.
+    This will
+
+    - Initialize the `pyviz` notebook extension to enable bi-directional
+    communication and for example plotting with Bokeh.
+    - Load `.js` libraries (positional arguments).
+    - Update the global configuration `pn.config`
+    (keyword arguments).
+
+    Reference: https://github.com/holoviz/panel/issues/3404
+
+    :Example:
+
+    >>> import panel as pn
+    >>> pn.extension("plotly", sizing_mode="stretch_width", template="fast")
+    
+    This will 
+
+    - Initialize the `pyviz` notebook extension.
+    - Enable you to use the `Plotly` pane by loading `plotly.js`.
+    - Set the default `sizing_mode` to `stretch_width` instead of `fixed`.
+    - Set the global configuration `pn.config.template` to `fast`, i.e. you
+    will be using the `FastListTemplate`.
     """
 
     _loaded = False

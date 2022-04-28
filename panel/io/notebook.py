@@ -353,8 +353,9 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
 
 def ipywidget(obj, **kwargs):
     """
-    Creates a root model from the Panel object and wraps it in
-    a jupyter_bokeh ipywidget BokehModel.
+    Returns an ipywidget model which renders the Panel object.
+
+    Requires `jupyter_bokeh` to be installed.
 
     Arguments
     ---------

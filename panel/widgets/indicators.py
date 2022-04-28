@@ -1,3 +1,20 @@
+"""
+Indicators
+==========
+
+Indicators can be used to indicate status or progress
+
+Check out the Panel gallery of indicators
+https://panel.holoviz.org/reference/index.html#indicators for inspiration.
+
+How to use indicators
+---------------------
+
+>>> pn.indicators.Number(
+...    name='Rate', value=72, format='{value}%',
+...    colors=[(80, 'green'), (100, 'red')]
+... )
+"""
 import math
 import os
 import sys
