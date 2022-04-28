@@ -69,9 +69,12 @@
   font-weight: 500px;
 }
 
-.bk-root .slick-header-column:hover,
+.bk-root .slick-header-column:hover {
+  filter: brightness(0.98);
+}
+
 .bk-root .slick-header-column-active {
-  background: transparent url('images/header-columns-over-bg.gif') repeat-x center bottom;
+  filter: brightness(0.9);
 }
 
 .bk-root .slick-headerrow {
