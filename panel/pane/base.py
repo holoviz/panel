@@ -2,6 +2,8 @@
 Defines the PaneBase class defining the API for panes which convert
 objects to a visual representation expressed as a bokeh model.
 """
+import warnings
+
 from functools import partial
 
 import param
@@ -21,6 +23,10 @@ def Pane(obj, **kwargs):
     """
     Converts any object to a Pane if a matching Pane class exists.
     """
+    warnings.warn(
+        'panel.Pane(...) is deprecated, use panel.panel(...) instead.',
+        DeprecationWarning
+    )
     if isinstance(obj, Viewable):
         return obj
     return PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
