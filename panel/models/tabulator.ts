@@ -294,16 +294,19 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     return sorters
   }
 
+  invalidate_render(): void {
+    this.render()
+  }
+
   renderComplete(): void {
-    // Only have to set up styles after initial render subsequent
-    // styling is handled by change event on styles property
     if (this._timeout_queue.length) {
       const timeout = this._timeout_queue.shift()
       clearTimeout(timeout)
     }
 
+    // Only have to set up styles after initial render subsequent
+    // styling is handled by change event on styles property
     if (this._initializing) {
-      this.setStyles()
       this.setSelection()
       this.relayout()
       this._initializing = false
