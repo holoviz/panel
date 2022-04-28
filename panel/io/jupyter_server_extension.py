@@ -94,7 +94,9 @@ class PanelHandler(DocHandler):
         pass
 
     async def get(self, path, *args, **kwargs):
+        origpath = path
         path = os.path.join(self.application.root_dir, fullpath(path))
+        raise ValueError(f"{path} {origpath} {self.application.root_dir} {fullpath(origpath)}")
         if path in _APPS:
             app, context = _APPS[path]
         else:
