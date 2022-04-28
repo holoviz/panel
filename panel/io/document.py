@@ -8,6 +8,7 @@ from functools import partial, wraps
 from bokeh.document.events import ModelChangedEvent
 from bokeh.io import curdoc
 
+from .model import patch_events
 from .state import set_curdoc, state
 
 
@@ -96,10 +97,12 @@ def unlocked():
                 locked = True
                 break
 
-        events = []
-        for event in curdoc.callbacks._held_events:
+        events = curdoc.callbacks._held_events
+        patch_events(events)
+        remaining_events = []
+        for event in events:
             if not isinstance(event, ModelChangedEvent) or event in old_events or locked:
-                events.append(event)
+                remaining_events.append(event)
                 continue
             for conn in connections:
                 socket = conn._socket
@@ -114,11 +117,11 @@ def unlocked():
                 for header, payload in msg._buffers:
                     WebSocketHandler.write_message(socket, header)
                     WebSocketHandler.write_message(socket, payload, binary=True)
-        curdoc.callbacks._held_events = events
+        curdoc.callbacks._held_events = remaining_events
     finally:
         if hold:
             return
         try:
             curdoc.unhold()
         except RuntimeError:
-            curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, events))
+            curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, remaining_events))
