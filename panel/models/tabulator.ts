@@ -243,7 +243,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     super.connect_signals()
 
     const {configuration, layout, columns, theme, groupby} = this.model.properties;
-    this.on_change([configuration, layout, columns, groupby], debounce(() => this.render(), 20, false))
+    this.on_change([configuration, layout, columns, groupby], debounce(() => this.invalidate_render(), 20, false))
 
     this.on_change([theme], () => this.setCSS())
 
@@ -308,6 +308,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.relayout()
       this._initializing = false
       this.redraw()
+      if (this._lastVerticalScrollbarTopPosition)
+	this.tabulator.rowManager.element.scrollTop = this._lastVerticalScrollbarTopPosition;
     }
   }
 
