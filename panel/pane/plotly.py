@@ -334,7 +334,7 @@ class Plotly(PaneBase):
             updates['layout'] = layout
 
         if update_frames:
-            updates['frames'] = frames
+            updates['frames'] = frames or []
 
         if updates:
             model.update(**updates)
