@@ -55,6 +55,12 @@ export class VegaPlotView extends HTMLBoxView {
   }
 
   _dispatch_event(name: string, value: any): void {
+    if ('vlPoint' in value && value.vlPoint.or != null) {
+      const indexes = []
+      for (const index of value.vlPoint.or)
+	indexes.push(index._vgsid_)
+      value = indexes
+    }
     this.model.trigger_event(new VegaEvent({type: name, value: value}))
   }
 
@@ -110,9 +116,9 @@ export class VegaPlotView extends HTMLBoxView {
       if (this.vega_view._viewHeight <= 0 || this.vega_view._viewWidth <= 0) {
 	(window as any).dispatchEvent(new Event('resize'));
       }
+      const callback = (name: string, value: any) => this._dispatch_event(name, value)
       for (const event of this.model.events) {
 	this._callbacks.push(event)
-	const callback = (name: string, value: any) => this._dispatch_event(name, value)
 	const timeout = this.model.throttle[event] || 20
 	this.vega_view.addSignalListener(event, debounce(callback, timeout, false))
       }

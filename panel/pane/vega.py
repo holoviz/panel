@@ -37,26 +37,28 @@ def _isin(obj, attr):
     else:
         return hasattr(obj, attr)
 
+def _get_type(spec):
+    if isinstance(spec, dict):
+        return spec.get('type', 'interval')
+    else:
+        return getattr(spec, 'type', 'interval')
+
 
 def _get_selections(obj):
-    selections = []
+    selections = {}
     if _isin(obj, 'selection'):
         try:
-            selections += obj['selection']
-        except TypeError:
+            selections.update({
+                name: _get_type(spec)
+                for name, spec in obj['selection'].items()
+            })
+        except (AttributeError, TypeError):
             pass
     for c in _containers:
         if _isin(obj, c):
             for subobj in obj[c]:
-                selections += _get_selections(subobj)
+                selections.update(_get_selections(subobj))
     return selections
-
-
-class Selection(param.Parameterized):
-    """
-    The Events object is dynamically updated to allow listening to
-    selection events.
-    """
 
 
 class Vega(PaneBase):
@@ -90,7 +92,7 @@ class Vega(PaneBase):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    selection = param.ClassSelector(class_=Selection, doc="""
+    selection = param.ClassSelector(class_=param.Parameterized, doc="""
         The Selection object reflects any selections available on the
         supplied vega plot into Python.""")
 
@@ -129,9 +131,11 @@ class Vega(PaneBase):
         return throttle
 
     def _update_selections(self, *args):
-        self.selection = Selection()
-        for e in self._selections:
-            self.selection.param._add_parameter(e, param.Dict())
+        params = {
+            e: param.Dict() if stype == 'interval' else param.List()
+            for e, stype in self._selections.items()
+        }
+        self.selection = type('Selection', (param.Parameterized,), params)()
 
     @classmethod
     def is_altair(cls, obj):
@@ -225,7 +229,12 @@ class Vega(PaneBase):
             props['sizing_mode'] = 'stretch_height'
 
     def _process_event(self, event):
-        self.selection.param.update(**{event.data['type']: event.data['value']})
+        name = event.data['type']
+        stype = self._selections.get(name)
+        value = event.data['value']
+        if stype != 'interval':
+            value = list(value)
+        self.selection.param.update(**{name: value})
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         VegaPlot = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root)
@@ -238,7 +247,7 @@ class Vega(PaneBase):
         props = self._process_param_change(self._init_params())
         self._get_dimensions(json, props)
         model = VegaPlot(
-            data=json, data_sources=sources, events=self._selections,
+            data=json, data_sources=sources, events=list(self._selections),
             throttle=self._throttle, **props
         )
         if comm:
@@ -259,7 +268,7 @@ class Vega(PaneBase):
         props = {p : getattr(self, p) for p in list(Layoutable.param)
                  if getattr(self, p) is not None}
         props['throttle'] = self._throttle
-        props['events'] = self._selections
+        props['events'] = list(self._selections)
         self._get_dimensions(json, props)
         props['data'] = json
         model.update(**props)
