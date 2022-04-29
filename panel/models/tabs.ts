@@ -146,6 +146,7 @@ export class TabsView extends BkTabsView {
         display(this.scroll_el)
         this.do_scroll(this.model.active)
       } else {
+        this.headers_el.style.left = '0px'
         this.wrapper_el.style.maxWidth = ""
         undisplay(this.scroll_el)
       }
@@ -156,6 +157,7 @@ export class TabsView extends BkTabsView {
         display(this.scroll_el)
         this.do_scroll(this.model.active)
       } else {
+        this.headers_el.style.top = '0px'
         this.wrapper_el.style.maxHeight = ""
         undisplay(this.scroll_el)
       }
