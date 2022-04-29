@@ -1011,9 +1011,15 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   // Update model
-
   rowClicked(e: any, row: any) {
-    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'string' || this.model.select_mode === false || this.model.configuration.dataTree)
+    if (
+        this._selection_updating ||
+	this._initializing ||
+	(typeof this.model.select_mode) === 'string' ||
+	this.model.select_mode === false ||  // selection disabled
+	this.model.configuration.dataTree || // dataTree does not support selection
+	e.srcElement?.innerText === "►"      // expand button
+    )
       return
     let indices: number[] = []
     const selected = this.model.source.selected
@@ -1059,7 +1065,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   rowSelectionChanged(data: any, _: any): void {
-    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean' || (typeof this.model.select_mode) === 'number' || this.model.configuration.dataTree)
+    if (
+        this._selection_updating ||
+	this._initializing ||
+	(typeof this.model.select_mode) === 'boolean' ||
+	(typeof this.model.select_mode) === 'number' ||
+	this.model.configuration.dataTree
+    )
       return
     const indices: number[] = data.map((row: any) => row._index)
     const filtered = this._filter_selected(indices)
