@@ -10,16 +10,19 @@ import logging
 import re
 import sys
 import textwrap
+
 from collections import Counter, defaultdict, namedtuple
 from functools import partial
 from pprint import pformat
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Set, Tuple, Union
+)
 
 import bleach
 import numpy as np
-from bokeh.model import DataModel
+import param # type: ignore
 
-import param
+from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
 
 from .io.document import unlocked
@@ -39,7 +42,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger('panel.reactive')
 
-LinkWatcher: Tuple = namedtuple("Watcher", Watcher._fields+('target', 'links', 'transformed', 'bidirectional_watcher'))
+LinkWatcher: Tuple = namedtuple("Watcher", tuple(Watcher._fields+('target', 'links', 'transformed', 'bidirectional_watcher')))
 
 class Syncable(Renderable):
     """
@@ -57,28 +60,28 @@ class Syncable(Renderable):
     """
 
     # Timeout if a notebook comm message is swallowed
-    _timeout = 20000
+    _timeout: int = 20000
 
     # Timeout before the first event is processed
-    _debounce = 50
+    _debounce: int = 50
 
     # Property changes which should not be debounced
-    _priority_changes = []
+    _priority_changes: List[str] = []
 
     # Any parameters that require manual updates handling for the models
     # e.g. parameters which affect some sub-model
-    _manual_params = []
+    _manual_params: List[str] = []
 
     # Mapping from parameter name to bokeh model property name
-    _rename = {}
+    _rename: Mapping[str, Union[str, None]] = {}
 
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
-    _js_transforms = {}
+    _js_transforms: Mapping[str, str] = {}
 
     # Transforms from input value to bokeh property value
-    _source_transforms = {}
-    _target_transforms = {}
+    _source_transforms: Mapping[str, str] = {}
+    _target_transforms: Mapping[str, str] = {}
 
     __abstract = True
 
@@ -625,9 +628,9 @@ class SyncableData(Reactive):
         The currently selected rows in the data.""")
 
     # Parameters which when changed require an update of the data
-    _data_params = []
+    _data_params: List[str] = []
 
-    _rename = {'selection': None}
+    _rename: Mapping[str, Union[str, None]] = {'selection': None}
 
     __abstract = True
 
@@ -923,8 +926,8 @@ class SyncableData(Reactive):
         else:
             pd = None
         data = getattr(self, self._data_params[0])
+        patch_value_dict: Mapping[str, Union[List[Any], pd.Series]] = {}
         if pd and isinstance(patch_value, pd.DataFrame):
-            patch_value_dict = {}
             for column in patch_value.columns:
                 patch_value_dict[column] = []
                 for index in patch_value.index:
@@ -973,7 +976,7 @@ class ReactiveData(SyncableData):
     def _update_selection(self, indices: List[int]):
         self.selection = indices
 
-    def _convert_column(self, values, old_values):
+    def _convert_column(self, values: np.ndarray, old_values: np.ndarray):
         dtype = old_values.dtype
         if dtype.kind == 'M':
             if values.dtype.kind in 'if':
@@ -1065,11 +1068,11 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
     HTML attributes.
     """
 
-    _loaded_extensions = set()
+    _loaded_extensions: Set[str] = set()
 
-    _name_counter = Counter()
+    _name_counter: Counter = Counter()
 
-    _script_regex = r"script\([\"|'](.*)[\"|']\)"
+    _script_regex: str = r"script\([\"|'](.*)[\"|']\)"
 
     def __init__(mcs, name, bases, dict_):
         from .io.datamodel import PARAM_MAPPING, construct_data_model
@@ -1291,17 +1294,17 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 `input` node in the example above.
     """
 
-    _child_config = {}
+    _child_config: Mapping[str, str] = {}
 
-    _dom_events = {}
+    _dom_events: Mapping[str, List[str]] = {}
 
     _extension_name: Optional[str] = None
 
-    _template = ""
+    _template: str = ""
 
-    _scripts = {}
+    _scripts: Mapping[str, str] = {}
 
-    _script_assignment = r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
+    _script_assignment: str = r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
 
     __abstract = True
 
@@ -1338,7 +1341,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
 
     @classmethod
-    def _loaded(cls):
+    def _loaded(cls) -> bool:
         """
         Whether the component has been loaded.
         """
@@ -1347,7 +1350,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions
         )
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: LayoutDOM) -> None:
         for child, panes in self._panes.items():
             for pane in panes:
                 pane._cleanup(root)
@@ -1417,7 +1420,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     node_events[e] = False
         return events
 
-    def _get_children(self, doc, root, model, comm):
+    def _get_children(self, doc: Document, root: LayoutDOM, model: Model, comm: Optional[Comm]):
         from .pane import panel
         old_models = model.children
         new_models = {parent: [] for parent in self._parser.children}
@@ -1549,7 +1552,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 html = html.replace('${%s}' % child_name, '')
         return html, parser.nodes, p_attrs
 
-    def _linked_properties(self):
+    def _linked_properties(self) -> List[str]:
         linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
         for scripts in self._scripts.values():
             if not isinstance(scripts, list):

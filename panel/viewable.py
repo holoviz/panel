@@ -248,7 +248,7 @@ class ServableMixin(object):
     Mixin to define methods shared by objects which can served.
     """
 
-    def _modify_doc(self, server_id: str, title: str, doc: Document, location: Optional[Location]) -> Document:
+    def _modify_doc(self, server_id: str, title: str, doc: Document, location: Optional['Location']) -> Document:
         """
         Callback to handle FunctionHandler document creation.
         """
@@ -256,7 +256,7 @@ class ServableMixin(object):
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc, title, location) # type: ignore
 
-    def _add_location(self, doc: Document, location: Union[Location, bool, None], root: Optional[LayoutDOM] = None) -> Location:
+    def _add_location(self, doc: Document, location: Union['Location', bool, None], root: Optional[LayoutDOM] = None) -> 'Location':
         from .io.location import Location
         if isinstance(location, Location):
             loc = location
@@ -315,7 +315,7 @@ class ServableMixin(object):
     # Public API
     #----------------------------------------------------------------
 
-    def servable(self, title: Optional[str] = None, location: Union[Location, bool] = True, area: str = 'main') -> 'ServableMixin':
+    def servable(self, title: Optional[str] = None, location: Union['Location', bool] = True, area: str = 'main') -> 'ServableMixin':
         """
         Serves the object if in a `panel serve` context and returns
         the Panel object to allow it to display itself in a notebook
@@ -358,7 +358,7 @@ class ServableMixin(object):
 
     def show(self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
              websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
-             open: bool = True, location: Union[bool, Location]=True, **kwargs) -> Union[threading.Thread, Server]:
+             open: bool = True, location: Union[bool, 'Location']=True, **kwargs) -> Union[threading.Thread, Server]:
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -794,7 +794,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
                     progress, embed_states, as_png, **kwargs)
 
     def server_doc(self, doc: Optional[Document] = None, title: Optional[str] = None,
-                   location: Union[bool, Location] = True) -> Document:
+                   location: Union[bool, 'Location'] = True) -> Document:
         """
         Returns a serveable bokeh Document with the panel attached
 
