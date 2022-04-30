@@ -3,11 +3,10 @@ Defines the PaneBase class defining the API for panes which convert
 objects to a visual representation expressed as a bokeh model.
 """
 import warnings
-
 from functools import partial
+from typing import Callable, List, Optional, Union, TYPE_CHECKING, Any, TypeVar, Type
 
 import param
-
 from bokeh.models.layouts import GridBox as _BkGridBox
 
 from ..io import init_doc, push, state, unlocked
@@ -15,11 +14,14 @@ from ..layout import Panel, Row
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
-from ..viewable import Layoutable, Viewable, Viewer
 from ..util import param_reprs
+from ..viewable import Layoutable, Viewable, Viewer
 
+if TYPE_CHECKING:
+    import bokeh
+    import pyviz_comms
 
-def Pane(obj, **kwargs):
+def Pane(obj: Any, **kwargs) -> 'PaneBase':
     """
     Converts any object to a Pane if a matching Pane class exists.
     """
@@ -32,7 +34,7 @@ def Pane(obj, **kwargs):
     return PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
 
 
-def panel(obj, **kwargs):
+def panel(obj: Any, **kwargs) -> Viewable:
     """
     Creates a panel from any supplied object by wrapping it in a pane
     and returning a corresponding Panel.
@@ -76,13 +78,16 @@ class RerenderError(RuntimeError):
     Error raised when a pane requests re-rendering during initial render.
     """
 
+T = TypeVar('T', bound='PaneBase')
 
 class PaneBase(Reactive):
     """
     PaneBase is the abstract baseclass for all atomic displayable units
-    in the panel library. Pane defines an extensible interface for
+    in the panel library. We call any child class of `PaneBase` a `Pane`.
+    
+    Panes defines an extensible interface for
     wrapping arbitrary objects and transforming them into Bokeh models.
-
+    
     Panes are reactive in the sense that when the object they are
     wrapping is changed any dashboard containing the pane will update
     in response.
@@ -104,7 +109,7 @@ class PaneBase(Reactive):
     # numerical priority is selected. The default is an intermediate value.
     # If set to None, applies method will be called to get a priority
     # value for a specific object type.
-    priority = 0.5
+    priority: Optional[Union[float, bool]] = 0.5
 
     # Whether applies requires full set of keywords
     _applies_kw = False
@@ -232,21 +237,24 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> Optional[Union[float, bool]]:
         """
-        Given the object return a boolean indicating whether the Pane
-        can render the object. If the priority of the pane is set to
-        None, this method may also be used to define a priority
+        Returns boolean or float indicating whether the Pane
+        can render the object.
+        
+        If the priority of the pane is set to
+        `None`, this method may also be used to define a float priority
         depending on the object being rendered.
         """
         return None
 
-    def clone(self, object=None, **params):
+    def clone(self: T, object: Optional[Any]=None, **params) -> T:
         """
         Makes a copy of the Pane sharing the same parameters.
 
         Arguments
         ---------
+        object: Optional new object to render
         params: Keyword arguments override the parameters on the clone.
 
         Returns
@@ -259,17 +267,18 @@ class PaneBase(Reactive):
             object = old_object
         return type(self)(object, **params)
 
-    def get_root(self, doc=None, comm=None, preprocess=True):
+    def get_root(self, doc: Optional['bokeh.document.Document']=None,
+        comm: Optional['pyviz_comms.Comm']=None, preprocess: bool=True):
         """
         Returns the root model and applies pre-processing hooks
 
         Arguments
         ---------
-        doc: bokeh.Document
-          Bokeh document the bokeh model will be attached to.
+        doc: bokeh.document.Document
+          Optional Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
           Optional pyviz_comms when working in notebook
-        preprocess: boolean (default=True)
+        preprocess: bool (default=True)
           Whether to run preprocessing hooks
 
         Returns
@@ -288,7 +297,7 @@ class PaneBase(Reactive):
         return root
 
     @classmethod
-    def get_pane_type(cls, obj, **kwargs):
+    def get_pane_type(cls, obj: Any, **kwargs) -> Type['PaneBase']:
         """
         Returns the applicable Pane type given an object by resolving
         the precedence of all types whose applies method declares that
@@ -296,7 +305,7 @@ class PaneBase(Reactive):
 
         Arguments
         ---------
-        obj (object): The object type to return a Pane for
+        obj (object): The object type to return a Pane type for
 
         Returns
         -------
@@ -349,7 +358,7 @@ class ReplacementPane(PaneBase):
 
     __abstract = True
 
-    def __init__(self, object=None, **params):
+    def __init__(self, object: Any=None, **params):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.param}
         super().__init__(object, **params)
@@ -441,14 +450,14 @@ class ReplacementPane(PaneBase):
         self._inner_layout._cleanup(root)
         super()._cleanup(root)
 
-    def select(self, selector=None):
+    def select(self, selector: Union[type, Callable, None]=None) -> List[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
         Arguments
         ---------
-        selector: type or callable or None
+        selector: (type | callable | None)
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.
 
