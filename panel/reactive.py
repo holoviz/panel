@@ -17,8 +17,9 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
 import bleach
 import numpy as np
-import param
 from bokeh.model import DataModel
+
+import param
 from param.parameterized import ParameterizedMetaclass, Watcher
 
 from .io.document import unlocked
@@ -32,6 +33,9 @@ from .viewable import Layoutable, Renderable, Viewable
 
 if TYPE_CHECKING:
     import pandas as pd
+
+    from .layout.base import Panel
+    from .links import Callback, Link
 
 log = logging.getLogger('panel.reactive')
 
@@ -401,7 +405,7 @@ class Reactive(Syncable, Viewable):
 
     def link(self, target: param.Parameterized,
         callbacks: Optional[Dict[str, Union[str, Callable]]]=None,
-        bidirectional: bool=False,  **links):
+        bidirectional: bool=False,  **links) -> Watcher:
         """
         Links the parameters on this `Reactive` object to attributes on the
         target `Parameterized` object.
@@ -474,7 +478,7 @@ class Reactive(Syncable, Viewable):
         self._links.append(link)
         return cb
 
-    def controls(self, parameters: List[str]=[], jslink: bool=True, **kwargs):
+    def controls(self, parameters: List[str]=[], jslink: bool=True, **kwargs) -> Panel:
         """
         Creates a set of widgets which allow manipulating the parameters
         on this instance. By default all parameters which support
@@ -533,7 +537,7 @@ class Reactive(Syncable, Viewable):
             return controls.layout[0]
         return style.layout[0]
 
-    def jscallback(self, args: Dict={}, **callbacks):
+    def jscallback(self, args: Dict={}, **callbacks) -> Callback:
         """
         Allows defining a JS callback to be triggered when a property
         changes on the source object. The keyword arguments define the
@@ -560,7 +564,7 @@ class Reactive(Syncable, Viewable):
         return Callback(self, code=callbacks, args=args)
 
     def jslink(self, target, code: Dict[str,str]=None,
-        args: Optional[Dict]=None, bidirectional=False, **links):
+        args: Optional[Dict]=None, bidirectional=False, **links) -> Link:
         """
         Links properties on the this Reactive object to those on the
         target Reactive object in JS code.
@@ -755,7 +759,7 @@ class SyncableData(Reactive):
         super()._update_manual(*processed_events)
 
     def stream(self, stream_value: Union[pd.DataFrame, pd.Series, Dict],
-        rollover: Optional[int]=None, reset_index: bool=True):
+        rollover: Optional[int]=None, reset_index: bool=True) -> None:
         """
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
@@ -862,7 +866,7 @@ class SyncableData(Reactive):
         else:
             raise ValueError("The stream value provided is not a DataFrame, Series or Dict!")
 
-    def patch(self, patch_value: Union[pd.DataFrame, pd.Series, Dict]):
+    def patch(self, patch_value: Union[pd.DataFrame, pd.Series, Dict]) -> None:
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
 
@@ -1666,7 +1670,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         self._set_on_model(model_msg, root, model)
         self._set_on_model(data_msg, root, model.data)
 
-    def on_event(self, node: str, event: str, callback: Callable):
+    def on_event(self, node: str, event: str, callback: Callable) -> None:
         """
         Registers a callback to be executed when the specified DOM
         event is triggered on the named node. Note that the named node
