@@ -41,8 +41,8 @@ from .util import escape, param_reprs
 
 if TYPE_CHECKING:
     from bokeh.application import SessionContext
-    from bokeh.layout import LayoutDOM
     from bokeh.model import Model
+    from bokeh.models import LayoutDOM
     from bokeh.server import Server
 
     from .io.location import Location

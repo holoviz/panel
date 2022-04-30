@@ -5,11 +5,18 @@ parameters.
 """
 import math
 
+from typing import TYPE_CHECKING, List
+
 import param
 
 from ..layout import Row
 from ..reactive import Reactive
 from ..viewable import Layoutable
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from bokeh.models import LayoutDOM
 
 
 class Widget(Reactive):
@@ -54,7 +61,7 @@ class Widget(Reactive):
         super().__init__(**params)
 
     @classmethod
-    def from_param(cls, parameter, **params):
+    def from_param(cls, parameter: param.Parameter, **params):
         """
         Construct a widget from a Parameter and link the two
         bi-directionally.
@@ -77,7 +84,8 @@ class Widget(Reactive):
         )
         return layout[0]
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(self, doc: Document, root: Optional[LayoutDOM] = None,
+                   parent: Optional[LayoutDOM] = None, comm: Optional[Comm] = None) -> Model:
         model = self._widget_type(**self._process_param_change(self._init_params()))
         if root is None:
             root = model
@@ -88,11 +96,11 @@ class Widget(Reactive):
         self._link_props(model, properties, doc, root, comm)
         return model
 
-    def _filter_properties(self, properties):
+    def _filter_properties(self, properties: List[str]):
         ignored = list(Layoutable.param)+['loading']
         return [p for p in properties if p not in ignored]
 
-    def _get_embed_state(self, root, values=None, max_opts=3):
+    def _get_embed_state(self, root: LayoutDOM, values: Optional[List[Any]] = None, max_opts: int = 3):
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -144,11 +152,11 @@ class CompositeWidget(Widget):
         self._models = self._composite._models
         self.param.watch(self._update_layout_params, layout_params)
 
-    def _update_layout_params(self, *events):
+    def _update_layout_params(self, *events) -> None:
         updates = {event.name: event.new for event in events}
         self._composite.param.update(**updates)
 
-    def select(self, selector=None):
+    def select(self, selector=None): List[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
@@ -168,20 +176,21 @@ class CompositeWidget(Widget):
             objects += obj.select(selector)
         return objects
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: LayoutDOM) -> None:
         self._composite._cleanup(root)
         super()._cleanup(root)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(self, doc: Document, root: Optional[LayoutDOM] = None,
+                   parent: Optional[LayoutDOM] = None, comm: Optional[Comm] = None) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
         if root is None:
             root = parent = model
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def __contains__(self, object):
+    def __contains__(self, object: Any) -> bool:
         return object in self._composite.objects
 
     @property
-    def _synced_params(self):
+    def _synced_params(self) -> List[str]:
         return []
