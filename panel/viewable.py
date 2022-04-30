@@ -256,7 +256,7 @@ class ServableMixin(object):
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc, title, location) # type: ignore
 
-    def _add_location(self, doc: Document, location: Union['Location', bool, None], root: Optional[LayoutDOM] = None) -> 'Location':
+    def _add_location(self, doc: Document, location: Union['Location', bool, None], root: Optional['LayoutDOM'] = None) -> 'Location':
         from .io.location import Location
         if isinstance(location, Location):
             loc = location
@@ -358,7 +358,7 @@ class ServableMixin(object):
 
     def show(self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
              websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
-             open: bool = True, location: Union[bool, 'Location']=True, **kwargs) -> Union[threading.Thread, Server]:
+             open: bool = True, location: Union[bool, 'Location']=True, **kwargs) -> Union[threading.Thread, 'Server']:
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -422,8 +422,8 @@ class Renderable(param.Parameterized):
     def _log(self, msg: str, *args, level: str = 'debug') -> None:
         getattr(self._logger, level)(f'Session %s {msg}', id(state.curdoc), *args)
 
-    def _get_model(self, doc: Document, root: Optional[LayoutDOM] = None,
-                   parent: Optional[LayoutDOM] = None, comm: Optional[Comm] = None) -> Model:
+    def _get_model(self, doc: Document, root: Optional['LayoutDOM'] = None,
+                   parent: Optional['LayoutDOM'] = None, comm: Optional[Comm] = None) -> 'Model':
         """
         Converts the objects being wrapped by the viewable into a
         bokeh model that can be composed in a bokeh layout.
@@ -445,7 +445,7 @@ class Renderable(param.Parameterized):
         """
         raise NotImplementedError
 
-    def _cleanup(self, root: LayoutDOM) -> None:
+    def _cleanup(self, root: 'LayoutDOM') -> None:
         """
         Clean up method which is called when a Viewable is destroyed.
 
@@ -458,7 +458,7 @@ class Renderable(param.Parameterized):
         if ref in state._handles:
             del state._handles[ref]
 
-    def _preprocess(self, root: LayoutDOM) -> None:
+    def _preprocess(self, root: 'LayoutDOM') -> None:
         """
         Applies preprocessing hooks to the model.
         """
@@ -466,7 +466,7 @@ class Renderable(param.Parameterized):
         for hook in hooks:
             hook(self, root)
 
-    def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> Model:
+    def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
         if doc is None:
             doc = Document()
         if comm is None:
@@ -487,7 +487,7 @@ class Renderable(param.Parameterized):
     def _init_params(self) -> Mapping[str, Any]:
         return {k: v for k, v in self.param.values().items() if v is not None}
 
-    def _server_destroy(self, session_context: SessionContext) -> None:
+    def _server_destroy(self, session_context: 'SessionContext') -> None:
         """
         Server lifecycle hook triggered when session is destroyed.
         """
@@ -511,7 +511,7 @@ class Renderable(param.Parameterized):
             loc._cleanup(root)
             del state._locations[doc]
 
-    def get_root(self, doc: Optional[Document] = None, comm: Optional[Comm] = None, preprocess: bool = True) -> Model:
+    def get_root(self, doc: Optional[Document] = None, comm: Optional[Comm] = None, preprocess: bool = True) -> 'Model':
         """
         Returns the root model and applies pre-processing hooks
 
@@ -551,7 +551,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Whether or not the Viewable is loading. If True a loading spinner
         is shown on top of the Viewable.""")
 
-    _preprocessing_hooks: List[Callable[['Viewable', Model], None]] = []
+    _preprocessing_hooks: List[Callable[['Viewable', 'Model'], None]] = []
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])

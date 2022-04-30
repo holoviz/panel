@@ -37,6 +37,10 @@ from .viewable import Layoutable, Renderable, Viewable
 if TYPE_CHECKING:
     import pandas as pd
 
+    from bokeh.document import Document
+    from bokeh.models import LayoutDOM
+    from pyviz_comms import Comm
+
     from .layout.base import Panel
     from .links import Callback, Link
 
@@ -1350,7 +1354,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions
         )
 
-    def _cleanup(self, root: LayoutDOM) -> None:
+    def _cleanup(self, root: 'LayoutDOM') -> None:
         for child, panes in self._panes.items():
             for pane in panes:
                 pane._cleanup(root)
@@ -1420,7 +1424,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     node_events[e] = False
         return events
 
-    def _get_children(self, doc: Document, root: LayoutDOM, model: Model, comm: Optional[Comm]):
+    def _get_children(self, doc: 'Document', root: 'LayoutDOM', model: 'Model', comm: Optional['Comm']):
         from .pane import panel
         old_models = model.children
         new_models = {parent: [] for parent in self._parser.children}

@@ -5,18 +5,21 @@ parameters.
 """
 import math
 
-from typing import TYPE_CHECKING, List
+from typing import (
+    TYPE_CHECKING, Any, Callable, List, Mapping, Optional, Tuple, Union
+)
 
-import param
+import param # type: ignore
 
 from ..layout import Row
 from ..reactive import Reactive
-from ..viewable import Layoutable
+from ..viewable import Layoutable, Viewable
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from bokeh.models import LayoutDOM
+    from pyviz_comms import Comm
 
 
 class Widget(Reactive):
@@ -39,13 +42,13 @@ class Widget(Reactive):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    _rename = {'name': 'title'}
-    
+    _rename: Mapping[str, Union[str, None]] = {'name': 'title'}
+
     # Whether the widget supports embedding
-    _supports_embed = False
+    _supports_embed: bool = False
 
     # Declares the Bokeh model type of the widget
-    _widget_type = None
+    _widget_type: 'Model' = None
 
     __abstract = True
 
@@ -61,7 +64,7 @@ class Widget(Reactive):
         super().__init__(**params)
 
     @classmethod
-    def from_param(cls, parameter: param.Parameter, **params):
+    def from_param(cls, parameter: param.Parameter, **params) -> Viewable:
         """
         Construct a widget from a Parameter and link the two
         bi-directionally.
@@ -84,8 +87,8 @@ class Widget(Reactive):
         )
         return layout[0]
 
-    def _get_model(self, doc: Document, root: Optional[LayoutDOM] = None,
-                   parent: Optional[LayoutDOM] = None, comm: Optional[Comm] = None) -> Model:
+    def _get_model(self, doc: 'Document', root: Optional['LayoutDOM'] = None,
+                   parent: Optional['LayoutDOM'] = None, comm: Optional['Comm'] = None) -> 'Model':
         model = self._widget_type(**self._process_param_change(self._init_params()))
         if root is None:
             root = model
@@ -100,7 +103,9 @@ class Widget(Reactive):
         ignored = list(Layoutable.param)+['loading']
         return [p for p in properties if p not in ignored]
 
-    def _get_embed_state(self, root: LayoutDOM, values: Optional[List[Any]] = None, max_opts: int = 3):
+    def _get_embed_state(
+            self, root: 'LayoutDOM', values: Optional[List[Any]] = None, max_opts: int = 3
+    ) -> Tuple['Widget', 'Model', List[Any], Callable[['Model'], Any], str, str]:
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -156,7 +161,7 @@ class CompositeWidget(Widget):
         updates = {event.name: event.new for event in events}
         self._composite.param.update(**updates)
 
-    def select(self, selector=None): List[Viewable]:
+    def select(self, selector: Union[type, Callable[['Viewable'], bool], None] = None) -> List[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
@@ -176,12 +181,12 @@ class CompositeWidget(Widget):
             objects += obj.select(selector)
         return objects
 
-    def _cleanup(self, root: LayoutDOM) -> None:
+    def _cleanup(self, root: 'LayoutDOM') -> None:
         self._composite._cleanup(root)
         super()._cleanup(root)
 
-    def _get_model(self, doc: Document, root: Optional[LayoutDOM] = None,
-                   parent: Optional[LayoutDOM] = None, comm: Optional[Comm] = None) -> Model:
+    def _get_model(self, doc: 'Document', root: Optional['LayoutDOM'] = None,
+                   parent: Optional['LayoutDOM'] = None, comm: Optional['Comm'] = None) -> 'Model':
         model = self._composite._get_model(doc, root, parent, comm)
         if root is None:
             root = parent = model
