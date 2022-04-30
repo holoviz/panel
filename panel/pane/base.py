@@ -3,10 +3,14 @@ Defines the PaneBase class defining the API for panes which convert
 objects to a visual representation expressed as a bokeh model.
 """
 import warnings
+
 from functools import partial
-from typing import Callable, List, Optional, Union, TYPE_CHECKING, Any, TypeVar, Type
+from typing import (
+    TYPE_CHECKING, Any, Callable, List, Optional, TypeVar, Type, Union
+)
 
 import param
+
 from bokeh.models.layouts import GridBox as _BkGridBox
 
 from ..io import init_doc, push, state, unlocked
@@ -18,8 +22,11 @@ from ..util import param_reprs
 from ..viewable import Layoutable, Viewable, Viewer
 
 if TYPE_CHECKING:
-    import bokeh
-    import pyviz_comms
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from bokeh.models import LayoutDOM
+    from pyviz_comms import Comm
+
 
 def Pane(obj: Any, **kwargs) -> 'PaneBase':
     """
@@ -115,13 +122,13 @@ class PaneBase(Reactive):
     _applies_kw = False
 
     # Whether the Pane layout can be safely unpacked
-    _unpack = True
+    _unpack: bool = True
 
     # Declares whether Pane supports updates to the Bokeh model
-    _updates = False
+    _updates: bool = False
 
     # List of parameters that trigger a rerender of the Bokeh model
-    _rerender_params = ['object']
+    _rerender_params: List[str] = ['object']
 
     __abstract = True
 
@@ -158,15 +165,15 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
 
     @property
-    def _linkable_params(self):
+    def _linkable_params(self) -> List[str]:
         return [p for p in self._synced_params if self._rename.get(p, False) is not None]
 
     @property
-    def _synced_params(self):
+    def _synced_params(self) -> List[str]:
         ignored_params = ['name', 'default_layout', 'loading']+self._rerender_params
         return [p for p in self.param if p not in ignored_params]
 
-    def _update_object(self, ref, doc, root, parent, comm):
+    def _update_object(self, ref: str, doc: 'Document', root: 'LayoutDOM', parent: 'LayoutDOM', comm: Optional['Comm']) -> None:
         old_model = self._models[ref][0]
         if self._updates:
             self._update(ref, old_model)
@@ -207,7 +214,7 @@ class PaneBase(Reactive):
         if ref in state._views:
             state._views[ref][0]._preprocess(root)
 
-    def _update_pane(self, *events):
+    def _update_pane(self, *events) -> None:
         for ref, (_, parent) in self._models.items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
@@ -224,7 +231,7 @@ class PaneBase(Reactive):
                 else:
                     cb()
 
-    def _update(self, ref=None, model=None):
+    def _update(self, ref: Optional[str] = None, model: Optional['Model'] = None) -> None:
         """
         If _updates=True this method is used to update an existing
         Bokeh model instead of replacing the model entirely. The
@@ -267,8 +274,10 @@ class PaneBase(Reactive):
             object = old_object
         return type(self)(object, **params)
 
-    def get_root(self, doc: Optional['bokeh.document.Document']=None,
-        comm: Optional['pyviz_comms.Comm']=None, preprocess: bool=True):
+    def get_root(
+            self, doc: Optional['Document'] = None,
+            comm: Optional['Comm'] = None, preprocess: bool = True
+    ) -> 'Model':
         """
         Returns the root model and applies pre-processing hooks
 
@@ -354,7 +363,7 @@ class ReplacementPane(PaneBase):
     on.
     """
 
-    _updates = True
+    _updates: bool = True
 
     __abstract = True
 
@@ -379,7 +388,7 @@ class ReplacementPane(PaneBase):
         """
 
     @classmethod
-    def _update_from_object(cls, object, old_object, was_internal, **kwargs):
+    def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, **kwargs):
         pane_type = cls.get_pane_type(object)
         try:
             links = Link.registry.get(object)
@@ -422,7 +431,7 @@ class ReplacementPane(PaneBase):
                 internal = object is not old_object
         return pane, internal
 
-    def _update_inner(self, new_object):
+    def _update_inner(self, new_object: Any) -> None:
         kwargs = dict(self.param.values(), **self._kwargs)
         del kwargs['object']
         new_pane, internal = self._update_from_object(
@@ -435,7 +444,10 @@ class ReplacementPane(PaneBase):
         self._inner_layout[0] = self._pane
         self._internal = internal
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+            self, doc: 'Document', root: Optional['LayoutDOM'] = None,
+            parent: Optional['LayoutDOM'] = None, comm: Optional['Comm'] = None
+    ) -> 'Model':
         if root:
             ref = root.ref['id']
             if ref in self._models:
@@ -446,11 +458,11 @@ class ReplacementPane(PaneBase):
         self._models[ref] = (model, parent)
         return model
 
-    def _cleanup(self, root=None):
+    def _cleanup(self, root: Optional['LayoutDOM'] = None) -> None:
         self._inner_layout._cleanup(root)
         super()._cleanup(root)
 
-    def select(self, selector: Union[type, Callable, None]=None) -> List[Viewable]:
+    def select(self, selector: Union[type, Callable, None] = None) -> List[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
