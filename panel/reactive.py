@@ -478,7 +478,7 @@ class Reactive(Syncable, Viewable):
         self._links.append(link)
         return cb
 
-    def controls(self, parameters: List[str]=[], jslink: bool=True, **kwargs) -> Panel:
+    def controls(self, parameters: List[str]=[], jslink: bool=True, **kwargs) -> 'Panel':
         """
         Creates a set of widgets which allow manipulating the parameters
         on this instance. By default all parameters which support
@@ -537,7 +537,7 @@ class Reactive(Syncable, Viewable):
             return controls.layout[0]
         return style.layout[0]
 
-    def jscallback(self, args: Dict={}, **callbacks) -> Callback:
+    def jscallback(self, args: Dict={}, **callbacks) -> 'Callback':
         """
         Allows defining a JS callback to be triggered when a property
         changes on the source object. The keyword arguments define the
@@ -564,7 +564,7 @@ class Reactive(Syncable, Viewable):
         return Callback(self, code=callbacks, args=args)
 
     def jslink(self, target, code: Dict[str,str]=None,
-        args: Optional[Dict]=None, bidirectional=False, **links) -> Link:
+        args: Optional[Dict]=None, bidirectional=False, **links) -> 'Link':
         """
         Links properties on the this Reactive object to those on the
         target Reactive object in JS code.
@@ -758,7 +758,7 @@ class SyncableData(Reactive):
             processed_events.append(e)
         super()._update_manual(*processed_events)
 
-    def stream(self, stream_value: Union[pd.DataFrame, pd.Series, Dict],
+    def stream(self, stream_value: Union['pd.DataFrame', 'pd.Series', Dict],
         rollover: Optional[int]=None, reset_index: bool=True) -> None:
         """
         Streams (appends) the `stream_value` provided to the existing
@@ -866,7 +866,7 @@ class SyncableData(Reactive):
         else:
             raise ValueError("The stream value provided is not a DataFrame, Series or Dict!")
 
-    def patch(self, patch_value: Union[pd.DataFrame, pd.Series, Dict]) -> None:
+    def patch(self, patch_value: Union['pd.DataFrame', 'pd.Series', Dict]) -> None:
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
 
