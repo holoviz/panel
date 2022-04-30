@@ -38,6 +38,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from bokeh.document import Document
+    from bokeh.model import Model
     from bokeh.models import LayoutDOM
     from pyviz_comms import Comm
 
