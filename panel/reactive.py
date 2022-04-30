@@ -4,38 +4,38 @@ for Panel components which sync their state with one or more bokeh
 models rendered on the frontend.
 """
 
-import difflib
 import datetime as dt
+import difflib
 import logging
 import re
 import sys
 import textwrap
-
 from collections import Counter, defaultdict, namedtuple
 from functools import partial
+from pprint import pformat
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
 import bleach
 import numpy as np
 import param
-
 from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
-from pprint import pformat
 
 from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
 from .io.state import set_curdoc, state
-from .models.reactive_html import (
-    ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser
-)
+from .models.reactive_html import ReactiveHTML as _BkReactiveHTML
+from .models.reactive_html import ReactiveHTMLParser
 from .util import edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable
 
+if TYPE_CHECKING:
+    import pandas as pd
+
 log = logging.getLogger('panel.reactive')
 
-LinkWatcher = namedtuple("Watcher", Watcher._fields+('target', 'links', 'transformed', 'bidirectional_watcher'))
-
+LinkWatcher: Tuple = namedtuple("Watcher", Watcher._fields+('target', 'links', 'transformed', 'bidirectional_watcher'))
 
 class Syncable(Renderable):
     """
@@ -399,22 +399,26 @@ class Reactive(Syncable, Viewable):
     # Public API
     #----------------------------------------------------------------
 
-    def link(self, target, callbacks=None, bidirectional=False,  **links):
+    def link(self, target: param.Parameterized,
+        callbacks: Optional[Dict[str, Union[str, Callable]]]=None,
+        bidirectional: bool=False,  **links):
         """
-        Links the parameters on this object to attributes on another
-        object in Python. Supports two modes, either specify a mapping
-        between the source and target object parameters as keywords or
+        Links the parameters on this `Reactive` object to attributes on the
+        target `Parameterized` object.
+        
+        Supports two modes, either specify a
+        mapping between the source and target object parameters as keywords or
         provide a dictionary of callbacks which maps from the source
         parameter to a callback which is triggered when the parameter
         changes.
 
         Arguments
         ---------
-        target: object
+        target: param.Parameterized
           The target object of the link.
-        callbacks: dict
+        callbacks: dict | None
           Maps from a parameter in the source object to a callback.
-        bidirectional: boolean
+        bidirectional: bool
           Whether to link source and target bi-directionally
         **links: dict
           Maps between parameters on this object to the parameters
@@ -470,7 +474,7 @@ class Reactive(Syncable, Viewable):
         self._links.append(link)
         return cb
 
-    def controls(self, parameters=[], jslink=True, **kwargs):
+    def controls(self, parameters: List[str]=[], jslink: bool=True, **kwargs):
         """
         Creates a set of widgets which allow manipulating the parameters
         on this instance. By default all parameters which support
@@ -492,8 +496,8 @@ class Reactive(Syncable, Viewable):
         -------
         A layout of the controls
         """
-        from .param import Param
         from .layout import Tabs, WidgetBox
+        from .param import Param
         from .widgets import LiteralInput
 
         if parameters:
@@ -529,7 +533,7 @@ class Reactive(Syncable, Viewable):
             return controls.layout[0]
         return style.layout[0]
 
-    def jscallback(self, args={}, **callbacks):
+    def jscallback(self, args: Dict={}, **callbacks):
         """
         Allows defining a JS callback to be triggered when a property
         changes on the source object. The keyword arguments define the
@@ -555,10 +559,13 @@ class Reactive(Syncable, Viewable):
             callbacks[k] = self._rename.get(v, v)
         return Callback(self, code=callbacks, args=args)
 
-    def jslink(self, target, code=None, args=None, bidirectional=False, **links):
+    def jslink(self, target, code: Dict[str,str]=None,
+        args: Optional[Dict]=None, bidirectional=False, **links):
         """
-        Links properties on the source object to those on the target
-        object in JS code. Supports two modes, either specify a
+        Links properties on the this Reactive object to those on the
+        target Reactive object in JS code.
+        
+        Supports two modes, either specify a
         mapping between the source and target model properties as
         keywords or provide a dictionary of JS code snippets which
         maps from the source parameter to a JS code snippet which is
@@ -571,6 +578,8 @@ class Reactive(Syncable, Viewable):
         code: dict
           Custom code which will be executed when the widget value
           changes.
+        args: dict
+          A mapping of objects to make available to the JS callback
         bidirectional: boolean
           Whether to link source and target bi-directionally
         **links: dict
@@ -608,7 +617,7 @@ class SyncableData(Reactive):
     with the frontend via a ColumnDataSource.
     """
 
-    selection = param.List(default=[], doc="""
+    selection = param.List(default=[], class_=int, doc="""
         The currently selected rows in the data.""")
 
     # Parameters which when changed require an update of the data
@@ -745,7 +754,8 @@ class SyncableData(Reactive):
             processed_events.append(e)
         super()._update_manual(*processed_events)
 
-    def stream(self, stream_value, rollover=None, reset_index=True):
+    def stream(self, stream_value: Union[pd.DataFrame, pd.Series, Dict],
+        rollover: Optional[int]=None, reset_index: bool=True):
         """
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
@@ -754,7 +764,7 @@ class SyncableData(Reactive):
         ---------
         stream_value: (Union[pd.DataFrame, pd.Series, Dict])
           The new value(s) to append to the existing value.
-        rollover: int
+        rollover: (int | None, default=None)
            A maximum column size, above which data from the start of
            the column begins to be discarded. If None, then columns
            will continue to grow unbounded.
@@ -852,7 +862,7 @@ class SyncableData(Reactive):
         else:
             raise ValueError("The stream value provided is not a DataFrame, Series or Dict!")
 
-    def patch(self, patch_value):
+    def patch(self, patch_value: Union[pd.DataFrame, pd.Series, Dict]):
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
 
@@ -956,7 +966,7 @@ class ReactiveData(SyncableData):
         super().__init__(**params)
         self._old = None
     
-    def _update_selection(self, indices):
+    def _update_selection(self, indices: List[int]):
         self.selection = indices
 
     def _convert_column(self, values, old_values):
@@ -1281,7 +1291,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _dom_events = {}
 
-    _extension_name = None
+    _extension_name: Optional[str] = None
 
     _template = ""
 
@@ -1291,9 +1301,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     __abstract = True
 
-    __css__ = None
-    __javascript__ = None
-    __javascript_modules__ = None
+    __css__: Optional[List[str]] = None
+    __javascript__: Optional[List[str]] = None
+    __javascript_modules__: Optional[List[str]] = None
 
     def __init__(self, **params):
         from .pane import panel
@@ -1656,7 +1666,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         self._set_on_model(model_msg, root, model)
         self._set_on_model(data_msg, root, model.data)
 
-    def on_event(self, node, event, callback):
+    def on_event(self, node: str, event: str, callback: Callable):
         """
         Registers a callback to be executed when the specified DOM
         event is triggered on the named node. Note that the named node
