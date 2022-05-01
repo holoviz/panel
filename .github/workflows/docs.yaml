@@ -15,8 +15,11 @@ on:
         options:
         - dev
         - main
+        - dryrun
         required: true
-        default: dev
+        default: dryrun
+  schedule:
+    - cron: '0 19 * * SUN'
 
 jobs:
   build_docs:
