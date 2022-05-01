@@ -6,6 +6,10 @@ on:
     - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
     - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
     - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+  # Dry-run only
+  workflow_dispatch:
+  schedule:
+    - cron: '0 19 * * SUN'
 
 jobs:
   conda_build:
@@ -56,14 +60,14 @@ jobs:
           npm whoami
           npm -v
       - name: dev deploy
-        if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
+        if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           doit package_upload --token=${{ secrets.CONDA_UPLOAD_TOKEN }} --label=dev
           python setup.py develop
           cd ./panel
           npm publish --tag dev
       - name: main deploy
-        if: (!(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           doit package_upload --token=${{ secrets.CONDA_UPLOAD_TOKEN }} --label=dev --label=main
           python setup.py develop
@@ -125,6 +129,7 @@ jobs:
           git status
           git diff
       - name: pip upload
+        if: github.event_name == 'push'
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment

@@ -6,6 +6,9 @@ on:
   pull_request:
     branches:
     - '*'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 19 * * SUN'
 
 jobs:
   test_suite:
