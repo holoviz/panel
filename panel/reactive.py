@@ -17,7 +17,7 @@ from functools import partial
 from pprint import pformat
 from typing import (
     TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Mapping,
-    Optional, Set, Tuple, Type
+    Optional, Set, Tuple, Type, Union
 )
 
 import bleach
@@ -651,7 +651,7 @@ class Reactive(Syncable, Viewable):
                     bidirectional=bidirectional)
 
 
-TData = ('pd.DataFrame' | 'DataDict')
+TData = Union['pd.DataFrame', 'DataDict']
 
 
 class SyncableData(Reactive):
