@@ -10,14 +10,14 @@ from typing import Callable, List, Optional
 
 from bokeh.document.document import Document
 from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
-from bokeh.io import curdoc
+from bokeh.io import curdoc as _curdoc
 
 from .model import patch_events
 from .state import set_curdoc, state
 
 
 def init_doc(doc: Optional[Document]) -> Document:
-    curdoc = doc or curdoc()
+    curdoc = doc or _curdoc()
     if not curdoc.session_context:
         return curdoc
 
