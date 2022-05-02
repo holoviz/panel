@@ -26,7 +26,6 @@ from ..viewable import Layoutable, Viewable, Viewer
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
-    from bokeh.models import LayoutDOM
     from pyviz_comms import Comm
 
 
@@ -175,7 +174,9 @@ class PaneBase(Reactive):
         ignored_params = ['name', 'default_layout', 'loading']+self._rerender_params
         return [p for p in self.param if p not in ignored_params]
 
-    def _update_object(self, ref: str, doc: 'Document', root: 'LayoutDOM', parent: 'LayoutDOM', comm: Optional['Comm']) -> None:
+    def _update_object(
+        self, ref: str, doc: 'Document', root: 'Model', parent: 'Model', comm: Optional['Comm']
+    ) -> None:
         old_model = self._models[ref][0]
         if self._updates:
             self._update(ref, old_model)
@@ -259,7 +260,7 @@ class PaneBase(Reactive):
         """
         return None
 
-    def clone(self: T, object: Optional[Any]=None, **params) -> T:
+    def clone(self: T, object: Optional[Any] = None, **params) -> T:
         """
         Makes a copy of the Pane sharing the same parameters.
 
@@ -279,8 +280,8 @@ class PaneBase(Reactive):
         return type(self)(object, **params)
 
     def get_root(
-            self, doc: Optional['Document'] = None,
-            comm: Optional['Comm'] = None, preprocess: bool = True
+        self, doc: Optional['Document'] = None, comm: Optional['Comm'] = None,
+        preprocess: bool = True
     ) -> 'Model':
         """
         Returns the root model and applies pre-processing hooks
