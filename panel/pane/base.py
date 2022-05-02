@@ -2,11 +2,13 @@
 Defines the PaneBase class defining the API for panes which convert
 objects to a visual representation expressed as a bokeh model.
 """
+from __future__ import annotations
+
 import warnings
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, List, Optional, TypeVar, Type, Union
+    TYPE_CHECKING, Any, Callable, List, Optional, TypeVar, Type
 )
 
 import param
@@ -116,7 +118,7 @@ class PaneBase(Reactive):
     # numerical priority is selected. The default is an intermediate value.
     # If set to None, applies method will be called to get a priority
     # value for a specific object type.
-    priority: Optional[Union[float, bool]] = 0.5
+    priority: float | bool | None = 0.5
 
     # Whether applies requires full set of keywords
     _applies_kw = False
@@ -181,8 +183,10 @@ class PaneBase(Reactive):
             new_model = self._get_model(doc, root, parent, comm)
             try:
                 if isinstance(parent, _BkGridBox):
-                    indexes = [i for i, child in enumerate(parent.children)
-                               if child[0] is old_model]
+                    indexes = [
+                        i for i, child in enumerate(parent.children)
+                        if child[0] is old_model
+                    ]
                     if indexes:
                         index = indexes[0]
                     else:
@@ -244,7 +248,7 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj: Any) -> Optional[Union[float, bool]]:
+    def applies(cls, obj: Any) -> float | bool | None:
         """
         Returns boolean or float indicating whether the Pane
         can render the object.
@@ -394,7 +398,7 @@ class ReplacementPane(PaneBase):
             links = Link.registry.get(object)
         except TypeError:
             links = []
-        custom_watchers = False
+        custom_watchers = []
         if isinstance(object, Reactive):
             watchers = [
                 w for pwatchers in object._param_watchers.values()
@@ -445,8 +449,8 @@ class ReplacementPane(PaneBase):
         self._internal = internal
 
     def _get_model(
-            self, doc: 'Document', root: Optional['LayoutDOM'] = None,
-            parent: Optional['LayoutDOM'] = None, comm: Optional['Comm'] = None
+        self, doc: 'Document', root: Optional['Model'] = None,
+        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
     ) -> 'Model':
         if root:
             ref = root.ref['id']
@@ -458,11 +462,11 @@ class ReplacementPane(PaneBase):
         self._models[ref] = (model, parent)
         return model
 
-    def _cleanup(self, root: Optional['LayoutDOM'] = None) -> None:
+    def _cleanup(self, root: 'Model' | None = None) -> None:
         self._inner_layout._cleanup(root)
         super()._cleanup(root)
 
-    def select(self, selector: Union[type, Callable, None] = None) -> List[Viewable]:
+    def select(self, selector: type | Callable | None = None) -> List[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.

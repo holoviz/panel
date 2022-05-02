@@ -3,10 +3,12 @@ Defines the Widget base class which provides bi-directional
 communication between the rendered dashboard and the Widget
 parameters.
 """
+from __future__ import annotations
+
 import math
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, List, Mapping, Optional, Tuple, Union
+    TYPE_CHECKING, Any, Callable, List, Mapping, Optional, Tuple
 )
 
 import param # type: ignore
@@ -18,8 +20,9 @@ from ..viewable import Layoutable, Viewable
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
-    from bokeh.models import LayoutDOM
     from pyviz_comms import Comm
+
+    from ..layout import Panel
 
 
 class Widget(Reactive):
@@ -42,7 +45,7 @@ class Widget(Reactive):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    _rename: Mapping[str, Union[str, None]] = {'name': 'title'}
+    _rename: Mapping[str, str | None] = {'name': 'title'}
 
     # Whether the widget supports embedding
     _supports_embed: bool = False
@@ -87,8 +90,10 @@ class Widget(Reactive):
         )
         return layout[0]
 
-    def _get_model(self, doc: 'Document', root: Optional['LayoutDOM'] = None,
-                   parent: Optional['LayoutDOM'] = None, comm: Optional['Comm'] = None) -> 'Model':
+    def _get_model(
+        self, doc: 'Document', root: Optional['Model'] = None,
+        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
+    ) -> 'Model':
         model = self._widget_type(**self._process_param_change(self._init_params()))
         if root is None:
             root = model
@@ -99,12 +104,12 @@ class Widget(Reactive):
         self._link_props(model, properties, doc, root, comm)
         return model
 
-    def _filter_properties(self, properties: List[str]):
+    def _filter_properties(self, properties: List[str]) -> List[str]:
         ignored = list(Layoutable.param)+['loading']
         return [p for p in properties if p not in ignored]
 
     def _get_embed_state(
-            self, root: 'LayoutDOM', values: Optional[List[Any]] = None, max_opts: int = 3
+        self, root: 'LayoutDOM', values: Optional[List[Any]] = None, max_opts: int = 3
     ) -> Tuple['Widget', 'Model', List[Any], Callable[['Model'], Any], str, str]:
         """
         Returns the bokeh model and a discrete set of value states
@@ -142,9 +147,9 @@ class CompositeWidget(Widget):
     widgets
     """
 
-    __abstract = True
+    _composite_type: 'Panel' = Row
 
-    _composite_type = Row
+    __abstract = True
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -157,11 +162,13 @@ class CompositeWidget(Widget):
         self._models = self._composite._models
         self.param.watch(self._update_layout_params, layout_params)
 
-    def _update_layout_params(self, *events) -> None:
+    def _update_layout_params(self, *events: param.parameterized.Event) -> None:
         updates = {event.name: event.new for event in events}
         self._composite.param.update(**updates)
 
-    def select(self, selector: Union[type, Callable[['Viewable'], bool], None] = None) -> List[Viewable]:
+    def select(
+        self, selector: Optional[type | Callable[['Viewable'], bool]] = None
+    ) -> List[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
@@ -181,12 +188,14 @@ class CompositeWidget(Widget):
             objects += obj.select(selector)
         return objects
 
-    def _cleanup(self, root: 'LayoutDOM') -> None:
+    def _cleanup(self, root: 'Model') -> None:
         self._composite._cleanup(root)
         super()._cleanup(root)
 
-    def _get_model(self, doc: 'Document', root: Optional['LayoutDOM'] = None,
-                   parent: Optional['LayoutDOM'] = None, comm: Optional['Comm'] = None) -> 'Model':
+    def _get_model(
+        self, doc: 'Document', root: Optional['Model'] = None,
+        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
+    ) -> 'Model':
         model = self._composite._get_model(doc, root, parent, comm)
         if root is None:
             root = parent = model

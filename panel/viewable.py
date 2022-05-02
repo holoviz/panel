@@ -19,7 +19,7 @@ import uuid
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, IO, List, Mapping, Optional, Union
+    TYPE_CHECKING, Any, Callable, IO, List, Mapping, Optional
 )
 
 import param # type: ignore
@@ -249,7 +249,9 @@ class ServableMixin(object):
     Mixin to define methods shared by objects which can served.
     """
 
-    def _modify_doc(self, server_id: str, title: str, doc: Document, location: Optional['Location']) -> Document:
+    def _modify_doc(
+        self, server_id: str, title: str, doc: Document, location: Optional['Location']
+    ) -> Document:
         """
         Callback to handle FunctionHandler document creation.
         """
@@ -257,7 +259,10 @@ class ServableMixin(object):
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc, title, location) # type: ignore
 
-    def _add_location(self, doc: Document, location: Union['Location', bool, None], root: Optional['Model'] = None) -> 'Location':
+    def _add_location(
+        self, doc: Document, location: Optional['Location' | bool],
+        root: Optional['Model'] = None
+    ) -> 'Location':
         from .io.location import Location
         if isinstance(location, Location):
             loc = location
@@ -316,7 +321,9 @@ class ServableMixin(object):
     # Public API
     #----------------------------------------------------------------
 
-    def servable(self, title: Optional[str] = None, location: Union['Location', bool] = True, area: str = 'main') -> 'ServableMixin':
+    def servable(
+        self, title: Optional[str] = None, location: bool | 'Location' = True, area: str = 'main'
+    ) -> 'ServableMixin':
         """
         Serves the object if in a `panel serve` context and returns
         the Panel object to allow it to display itself in a notebook
@@ -357,9 +364,11 @@ class ServableMixin(object):
                 self.server_doc(title=title, location=location) # type: ignore
         return self
 
-    def show(self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
-             websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
-             open: bool = True, location: Union[bool, 'Location']=True, **kwargs) -> Union[threading.Thread, 'Server']:
+    def show(
+        self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
+        websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
+        open: bool = True, location: bool | 'Location' = True, **kwargs
+    ) -> threading.Thread | 'Server':
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -678,7 +687,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         print(self)
 
-    def select(self, selector: Union[type, Callable[['Viewable'], bool], None] = None) -> List['Viewable']:
+    def select(
+        self, selector: Optional[type | Callable[['Viewable'], bool]] = None
+    ) -> List['Viewable']:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
@@ -713,9 +724,11 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         return show_server(self, notebook_url, port)
 
-    def embed(self, max_states: int = 1000, max_opts: int = 3, json: bool = False,
-              json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
-              progress: bool = False, states={}) -> None:
+    def embed(
+        self, max_states: int = 1000, max_opts: int = 3, json: bool = False,
+        json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
+        progress: bool = False, states={}
+    ) -> None:
         """
         Renders a static version of a panel in a notebook by evaluating
         the set of states defined by the widgets in the model. Note
@@ -746,7 +759,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             load_path, progress, states
         )
 
-    def save(self, filename: Union[str, IO], title: Optional[str] = None,
+    def save(self, filename: str | IO, title: Optional[str] = None,
              resources=None, template=None,
              template_variables=None, embed=False, max_states=1000,
              max_opts=3, embed_json=False, json_prefix='', save_path='./',
@@ -794,8 +807,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
                     embed_json, json_prefix, save_path, load_path,
                     progress, embed_states, as_png, **kwargs)
 
-    def server_doc(self, doc: Optional[Document] = None, title: Optional[str] = None,
-                   location: Union[bool, 'Location'] = True) -> Document:
+    def server_doc(
+        self, doc: Optional[Document] = None, title: Optional[str] = None,
+        location: bool | 'Location' = True
+    ) -> Document:
         """
         Returns a serveable bokeh Document with the panel attached
 

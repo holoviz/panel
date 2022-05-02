@@ -17,7 +17,7 @@ from functools import partial
 from pprint import pformat
 from typing import (
     TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Mapping,
-    Optional, Set, Tuple, Type, Union
+    Optional, Set, Tuple, Type
 )
 
 import bleach
@@ -84,7 +84,7 @@ class Syncable(Renderable):
     _manual_params: List[str] = []
 
     # Mapping from parameter name to bokeh model property name
-    _rename: Mapping[str, Union[str, None]] = {}
+    _rename: Mapping[str, str | None] = {}
 
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
@@ -177,7 +177,7 @@ class Syncable(Renderable):
             self._callbacks.append(watcher)
 
     def _link_props(
-        self, model: Union['DataModel', 'Model'], properties: Union[List[str], List[Tuple[str, str]]],
+        self, model: 'Model', properties: List[str] | List[Tuple[str, str]],
         doc: 'Document', root: 'Model', comm: Optional['Comm'] = None
     ) -> None:
         from .config import config
@@ -263,7 +263,7 @@ class Syncable(Renderable):
             elif ref in self._changing:
                 del self._changing[ref]
 
-    def _cleanup(self, root: 'Model') -> None:
+    def _cleanup(self, root: 'Model' | None) -> None:
         super()._cleanup(root)
         ref = root.ref['id']
         self._models.pop(ref, None)
@@ -436,7 +436,7 @@ class Reactive(Syncable, Viewable):
     #----------------------------------------------------------------
 
     def link(
-        self, target: param.Parameterized, callbacks: Optional[Dict[str, Union[str, Callable]]]=None,
+        self, target: param.Parameterized, callbacks: Optional[Dict[str, str | Callable]]=None,
         bidirectional: bool=False, **links: str
     ) -> Watcher:
         """
@@ -651,7 +651,7 @@ class Reactive(Syncable, Viewable):
                     bidirectional=bidirectional)
 
 
-TData = Union['pd.DataFrame', 'DataDict']
+TData = ('pd.DataFrame' | 'DataDict')
 
 
 class SyncableData(Reactive):
@@ -666,7 +666,7 @@ class SyncableData(Reactive):
     # Parameters which when changed require an update of the data
     _data_params: List[str] = []
 
-    _rename: Mapping[str, Union[str, None]] = {'selection': None}
+    _rename: Mapping[str, str | None] = {'selection': None}
 
     __abstract = True
 
@@ -700,7 +700,7 @@ class SyncableData(Reactive):
           ColumnDataSource
         """
 
-    def _update_column(self, column: str, array: Union[np.ndarray, List]) -> None:
+    def _update_column(self, column: str, array: np.ndarray | List) -> None:
         """
         Implemented by subclasses converting changes in columns to
         changes in the data parameter.
@@ -803,7 +803,7 @@ class SyncableData(Reactive):
         super()._update_manual(*processed_events)
 
     def stream(
-        self, stream_value: Union['pd.DataFrame', 'pd.Series', Dict],
+        self, stream_value: 'pd.DataFrame' | 'pd.Series' | Dict,
         rollover: Optional[int] = None, reset_index: bool = True
     ) -> None:
         """
@@ -812,7 +812,7 @@ class SyncableData(Reactive):
 
         Arguments
         ---------
-        stream_value: (Union[pd.DataFrame, pd.Series, Dict])
+        stream_value: (pd.DataFrame | pd.Series | Dict)
           The new value(s) to append to the existing value.
         rollover: (int | None, default=None)
            A maximum column size, above which data from the start of
@@ -912,13 +912,13 @@ class SyncableData(Reactive):
         else:
             raise ValueError("The stream value provided is not a DataFrame, Series or Dict!")
 
-    def patch(self, patch_value: Union['pd.DataFrame', 'pd.Series', Dict]) -> None:
+    def patch(self, patch_value: 'pd.DataFrame' | 'pd.Series' | Dict) -> None:
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
 
         Arguments
         ---------
-        patch_value: (Union[pd.DataFrame, pd.Series, Dict])
+        patch_value: (pd.DataFrame | pd.Series | Dict)
           The value(s) to patch the existing value with.
 
         Raises
@@ -1019,9 +1019,11 @@ class ReactiveData(SyncableData):
     def _update_selection(self, indices: List[int]) -> None:
         self.selection = indices
 
-    def _convert_column(self, values: np.ndarray, old_values: np.ndarray | 'pd.Series') -> Union[np.ndarray, List]:
+    def _convert_column(
+        self, values: np.ndarray, old_values: np.ndarray | 'pd.Series'
+    ) -> np.ndarray | List:
         dtype = old_values.dtype
-        converted: Optional[Union[List, np.ndarray]] = None
+        converted: List | np.ndarray | None = None
         if dtype.kind == 'M':
             if values.dtype.kind in 'if':
                 converted = (values * 10e5).astype(dtype)
@@ -1040,7 +1042,7 @@ class ReactiveData(SyncableData):
             converted = values.astype(dtype)
         return values if converted is None else converted
 
-    def _process_data(self, data: Mapping[str, Union[List, Dict[int, Any], np.ndarray]]) -> None:
+    def _process_data(self, data: Mapping[str, List | Dict[int, Any] | np.ndarray]) -> None:
         if self._updating:
             return
 
@@ -1346,7 +1348,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _template: str = ""
 
-    _scripts: Mapping[str, Union[str, List[str]]] = {}
+    _scripts: Mapping[str, str | List[str]] = {}
 
     _script_assignment: str = r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
 
@@ -1394,7 +1396,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions
         )
 
-    def _cleanup(self, root: 'Model') -> None:
+    def _cleanup(self, root: 'Model' | None) -> None:
         for child, panes in self._panes.items():
             for pane in panes:
                 pane._cleanup(root)
@@ -1409,9 +1411,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         return {}
 
     def _process_children(
-        self, doc: 'Document', root: 'Model', model: 'Model',
-        comm: Optional['Comm'], children: Mapping[str, Union[str, List['Model'], 'Model']]
-    ) -> Mapping[str, Union[str, List['Model'], 'Model']]:
+        self, doc: 'Document', root: 'Model', model: 'Model', comm: Optional['Comm'],
+        children: Mapping[str, str | 'Model' | List['Model']]
+    ) -> Mapping[str, str | 'Model' | List['Model']]:
         return children
 
     def _init_params(self) -> Dict[str, Any]:
@@ -1469,12 +1471,12 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     def _get_children(
         self, doc: 'Document', root: 'Model', model: 'Model', comm: Optional['Comm']
-    ) -> Mapping[str, Union[str, List['Model'], 'Model']]:
+    ) -> Mapping[str, str | 'Model' | List['Model']]:
         from .pane import panel
         old_models = model.children
         new_models: Dict[str, List['Model']] = {parent: [] for parent in self._parser.children}
-        new_panes: Dict[str, Optional[Union[List[Viewable], Dict[str, Viewable]]]] = {}
-        internal_panes: Dict[str, Optional[List[Viewable]]] = {}
+        new_panes: Dict[str, List[Viewable] | Dict[str, Viewable] | None] = {}
+        internal_panes: Dict[str, List[Viewable] | None] = {}
 
         for parent, children_param in self._parser.children.items():
             mode = self._child_config.get(children_param, 'model')
