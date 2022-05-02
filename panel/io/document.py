@@ -5,6 +5,7 @@ import threading
 from contextlib import contextmanager
 from functools import partial, wraps
 
+from bokeh.document.document import Document
 from bokeh.document.events import ModelChangedEvent
 from bokeh.io import curdoc
 
@@ -12,7 +13,7 @@ from .model import patch_events
 from .state import set_curdoc, state
 
 
-def init_doc(doc):
+def init_doc(doc: Optional[Document]) -> Document:
     doc = doc or curdoc()
     if not doc.session_context:
         return doc

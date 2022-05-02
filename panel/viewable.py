@@ -8,6 +8,8 @@ and become viewable including:
 * Viewable: Defines methods to view the component in the
   notebook, on the server or in static exports
 """
+from __future__ import annotations
+
 import datetime as dt
 import logging
 import sys
@@ -40,10 +42,9 @@ from .io.state import state
 from .util import escape, param_reprs
 
 if TYPE_CHECKING:
-    from bokeh.application import SessionContext
     from bokeh.model import Model
-    from bokeh.models import LayoutDOM
-    from bokeh.server import Server
+    from bokeh.server.contexts import BokehSessionContext
+    from bokeh.server.server import Server
 
     from .io.location import Location
 
@@ -256,7 +257,7 @@ class ServableMixin(object):
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc, title, location) # type: ignore
 
-    def _add_location(self, doc: Document, location: Union['Location', bool, None], root: Optional['LayoutDOM'] = None) -> 'Location':
+    def _add_location(self, doc: Document, location: Union['Location', bool, None], root: Optional['Model'] = None) -> 'Location':
         from .io.location import Location
         if isinstance(location, Location):
             loc = location
@@ -422,8 +423,8 @@ class Renderable(param.Parameterized):
     def _log(self, msg: str, *args, level: str = 'debug') -> None:
         getattr(self._logger, level)(f'Session %s {msg}', id(state.curdoc), *args)
 
-    def _get_model(self, doc: Document, root: Optional['LayoutDOM'] = None,
-                   parent: Optional['LayoutDOM'] = None, comm: Optional[Comm] = None) -> 'Model':
+    def _get_model(self, doc: Document, root: Optional['Model'] = None,
+                   parent: Optional['Model'] = None, comm: Optional[Comm] = None) -> 'Model':
         """
         Converts the objects being wrapped by the viewable into a
         bokeh model that can be composed in a bokeh layout.
@@ -445,7 +446,7 @@ class Renderable(param.Parameterized):
         """
         raise NotImplementedError
 
-    def _cleanup(self, root: 'LayoutDOM') -> None:
+    def _cleanup(self, root: 'Model') -> None:
         """
         Clean up method which is called when a Viewable is destroyed.
 
@@ -458,7 +459,7 @@ class Renderable(param.Parameterized):
         if ref in state._handles:
             del state._handles[ref]
 
-    def _preprocess(self, root: 'LayoutDOM') -> None:
+    def _preprocess(self, root: 'Model') -> None:
         """
         Applies preprocessing hooks to the model.
         """
@@ -487,7 +488,7 @@ class Renderable(param.Parameterized):
     def _init_params(self) -> Mapping[str, Any]:
         return {k: v for k, v in self.param.values().items() if v is not None}
 
-    def _server_destroy(self, session_context: 'SessionContext') -> None:
+    def _server_destroy(self, session_context: 'BokehSessionContext') -> None:
         """
         Server lifecycle hook triggered when session is destroyed.
         """
@@ -597,7 +598,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
                     'model_id': widget._model_id
                 }
             if config.comms == 'vscode':
-                from IPython.display import display
+                from IPython.display import display # type: ignore
                 display(data, raw=True)
                 return {'text/html': '<div style="display: none"></div>'}, {}
             return data, {}
@@ -614,7 +615,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             load_notebook(config.inline)
 
         try:
-            from IPython import get_ipython
+            from IPython import get_ipython # type: ignore
             assert get_ipython().kernel is not None
             state._comm_manager = JupyterCommManager
         except Exception:
@@ -820,7 +821,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             doc.title = title
         model = self.get_root(doc)
         if hasattr(doc, 'on_session_destroyed'):
-            doc.on_session_destroyed(self._server_destroy)
+            doc.on_session_destroyed(self._server_destroy) # type: ignore
             self._documents[doc] = model
         add_to_doc(model, doc)
         if location: self._add_location(doc, location, model)
