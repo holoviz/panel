@@ -109,7 +109,7 @@ class Widget(Reactive):
         return [p for p in properties if p not in ignored]
 
     def _get_embed_state(
-        self, root: 'LayoutDOM', values: Optional[List[Any]] = None, max_opts: int = 3
+        self, root: 'Model', values: Optional[List[Any]] = None, max_opts: int = 3
     ) -> Tuple['Widget', 'Model', List[Any], Callable[['Model'], Any], str, str]:
         """
         Returns the bokeh model and a discrete set of value states
