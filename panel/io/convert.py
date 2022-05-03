@@ -5,33 +5,126 @@ import dataclasses
 import os
 
 from textwrap import dedent
-from typing import Dict, List, Literal
+from typing import List, Literal, Optional
 
 from bokeh.application.application import SessionContext
-from bokeh.command.subcommand import Subcommand
 from bokeh.command.util import build_single_handler_application
+from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import FILE, MACROS, _env
 from bokeh.document import Document
+from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem, standalone_docs_json_and_render_items
+from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.settings import settings as _settings
+from bokeh.util.serialization import make_id
 
-from .. import __version__
-from .resources import BASE_TEMPLATE, DEFAULT_TITLE, _env as _pn_env, bundle_resources, Resources
+from .. import __version__, config
+from ..util import escape
+from .resources import bundle_resources, Resources
 from .state import state, set_curdoc
 
 PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />'
 PYSCRIPT_JS = '<script defer src="https://pyscript.net/alpha/pyscript.js"></script>'
+PYODIDE_JS = '<script src="https://cdn.jsdelivr.net/pyodide/v0.20.0/full/pyodide.js"></script>'
 
 PRE = """
 import asyncio
 
-from panel.io.pyodide import init_doc, write_doc
+from bokeh.document import Document
+from panel.io.pyodide import _link_docs #init_doc, write_doc
+from bokeh.embed.util import standalone_docs_json_and_render_items
+import dataclasses
+from bokeh.application.application import SessionContext
+from bokeh.io.doc import set_curdoc
+from panel.io.state import state
+import json
+
+from panel.config import config
+
+
+@dataclasses.dataclass
+class Request:
+    headers : dict
+    cookies : dict
+    arguments : dict
+
+
+class MockSessionContext(SessionContext):
+
+    def __init__(self, *args, document=None, **kwargs):
+        self._document = document
+        super().__init__(*args, server_context=None, session_id=None, **kwargs)
+
+    def with_locked_document(self, *args):
+        return
+
+    @property
+    def destroyed(self) -> bool:
+        return False
+
+    @property
+    def request(self):
+        return Request(headers={}, cookies={}, arguments={})
+
+
+def _doc_json(doc):
+    from js import document
+    docs_json, render_items = standalone_docs_json_and_render_items(
+        doc.roots, suppress_callback_warning=True
+    )
+    render_items = [item.to_json() for item in render_items]
+    root_ids = [m.id for m in doc.roots]
+    root_els = document.getElementsByClassName('bk-root')
+    for el in root_els:
+        el.innerHTML = ''
+    root_data = sorted([(int(el.getAttribute('data-root-id')), el.id) for el in root_els])
+    render_items[0].update({
+        'roots': {model_id: elid for (_, elid), model_id in zip(root_data, root_ids)},
+        'root_ids': root_ids
+    })
+
+    return json.dumps(docs_json), json.dumps(render_items)
+
+def init_doc() -> None:
+    doc = Document()
+    set_curdoc(doc)
+    doc._session_context = lambda: MockSessionContext(document=doc)
+    state._curdoc = doc
+
+async def write_doc(doc=None) -> None:
+    from js import Bokeh, JSON, document
+
+    body = document.getElementsByTagName('body')[0]
+    body.classList.remove("bk", "pn-loading", config.loading_spinner)
+
+    doc = doc or state.curdoc
+    docs_json, render_items = _doc_json(doc)
+    views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
+    jsdoc = views[0][0].model.document
+    doc._session_context = None
+    _link_docs(doc, jsdoc)
 
 init_doc()
 """
 
 POST = """
 await write_doc()
+"""
+
+PYODIDE_SCRIPT = """
+<script type="text/javascript">
+async function main() {
+  let pyodide = await loadPyodide();
+  await pyodide.loadPackage("micropip");
+  await pyodide.runPythonAsync(`
+    import micropip
+    await micropip.install({{ env_spec }});
+  `);
+  code = `{{ code }}`
+  await pyodide.runPythonAsync(code);
+}
+main();
+</script>
 """
 
 @dataclasses.dataclass
@@ -99,8 +192,8 @@ def find_imports(code: str) -> List[str]:
 
 def script_to_html(
     filename: str, requirements: Literal['auto'] | List[str] = 'auto',
-    js_resources: List[str] = [PYSCRIPT_JS], css_resources: List[str] = [PYSCRIPT_CSS],
-    runtime: Literal['pyodide', 'pyscript'] = 'pyscript'
+    js_resources: List[str] = 'auto', css_resources: List[str] = 'auto',
+    runtime: Literal['pyodide', 'pyscript'] = 'pyscript', prerender=True
 ) -> str:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
@@ -129,12 +222,6 @@ def script_to_html(
     if requirements == 'auto':
         requirements = find_imports(source)
 
-    render_item = RenderItem(
-        token = '',
-        roots = document.roots,
-        use_for_title = False
-    )
-
     # Environment
     pn_version = '.'.join(__version__.split('.')[:3])
     reqs = [f'panel=={pn_version}'] + [req for req in requirements if req != 'panel']
@@ -142,10 +229,37 @@ def script_to_html(
     # Execution
     code = '\n'.join([PRE, source, POST])
     if runtime == 'pyscript':
+        if js_resources == 'auto':
+            js_resources = [PYSCRIPT_JS]
+        if css_resources == 'auto':
+            css_resources = [PYSCRIPT_CSS]
         pyenv = '\n'.join([f'- {req}' for req in reqs])
         plot_script = f'<py-env>\n{pyenv}\n</py-env>\n<py-script>{code}</py-script>'
     else:
-        pass
+        if js_resources == 'auto':
+            js_resources = [PYODIDE_JS]
+        if css_resources == 'auto':
+            css_resources = []
+        script_template = _env.from_string(PYODIDE_SCRIPT)
+        plot_script = script_template.render({
+            'env_spec': ', '.join([repr(req) for req in reqs]),
+            'code': code.replace('`', '\`')
+        })
+
+    if prerender:
+        json_id = make_id()
+        docs_json, render_items = standalone_docs_json_and_render_items(document)
+        render_item = render_items[0]
+        json = escape(serialize_json(docs_json), quote=False)
+        plot_script += wrap_in_script_tag(json, "application/json", json_id)
+        plot_script += wrap_in_script_tag(script_for_render_items(json_id, render_items))
+    else:
+        render_item = RenderItem(
+            token = '',
+            roots = document.roots,
+            use_for_title = False
+        )
+        render_items = [render_item]
 
     # Collect resources
     resources = Resources(mode='cdn')
@@ -162,7 +276,7 @@ def script_to_html(
         bokeh_js = bokeh_js,
         bokeh_css = bokeh_css,
         plot_script = plot_script,
-        docs = [render_item],
+        docs = render_items,
         base = FILE,
         macros = MACROS,
         doc = render_item,
@@ -175,6 +289,9 @@ def script_to_html(
     elif isinstance(template, str):
         template = _env.from_string("{% extends base %}\n" + template)
     html = template.render(context)
+    html = (html
+        .replace('<body>', f'<body class="bk pn-loading {config.loading_spinner}">')
+    )
 
     _settings.resources.unset_value()
     return html
