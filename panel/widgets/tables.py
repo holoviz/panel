@@ -494,7 +494,7 @@ class BaseTable(ReactiveData, Widget):
 
         Arguments
         ---------
-        stream_value: (Union[pd.DataFrame, pd.Series, Dict])
+        stream_value: (pd.DataFrame | pd.Series | Dict)
           The new value(s) to append to the existing value.
         rollover: int
            A maximum column size, above which data from the start of
@@ -598,7 +598,7 @@ class BaseTable(ReactiveData, Widget):
 
         Arguments
         ---------
-        patch_value: (Union[pd.DataFrame, pd.Series, Dict])
+        patch_value: (pd.DataFrame | pd.Series | Dict)
           The value(s) to patch the existing value with.
         as_index: boolean
           Whether to treat the patch index as DataFrame indexes (True)

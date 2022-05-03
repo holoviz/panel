@@ -2,9 +2,14 @@
 Defines the PaneBase class defining the API for panes which convert
 objects to a visual representation expressed as a bokeh model.
 """
+from __future__ import annotations
+
 import warnings
 
 from functools import partial
+from typing import (
+    TYPE_CHECKING, Any, Callable, List, Optional, TypeVar, Type
+)
 
 import param
 
@@ -15,11 +20,16 @@ from ..layout import Panel, Row
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
-from ..viewable import Layoutable, Viewable, Viewer
 from ..util import param_reprs
+from ..viewable import Layoutable, Viewable, Viewer
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
-def Pane(obj, **kwargs):
+def Pane(obj: Any, **kwargs) -> 'PaneBase':
     """
     Converts any object to a Pane if a matching Pane class exists.
     """
@@ -32,7 +42,7 @@ def Pane(obj, **kwargs):
     return PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
 
 
-def panel(obj, **kwargs):
+def panel(obj: Any, **kwargs) -> Viewable:
     """
     Creates a panel from any supplied object by wrapping it in a pane
     and returning a corresponding Panel.
@@ -76,13 +86,16 @@ class RerenderError(RuntimeError):
     Error raised when a pane requests re-rendering during initial render.
     """
 
+T = TypeVar('T', bound='PaneBase')
 
 class PaneBase(Reactive):
     """
     PaneBase is the abstract baseclass for all atomic displayable units
-    in the panel library. Pane defines an extensible interface for
+    in the panel library. We call any child class of `PaneBase` a `Pane`.
+    
+    Panes defines an extensible interface for
     wrapping arbitrary objects and transforming them into Bokeh models.
-
+    
     Panes are reactive in the sense that when the object they are
     wrapping is changed any dashboard containing the pane will update
     in response.
@@ -104,19 +117,19 @@ class PaneBase(Reactive):
     # numerical priority is selected. The default is an intermediate value.
     # If set to None, applies method will be called to get a priority
     # value for a specific object type.
-    priority = 0.5
+    priority: float | bool | None = 0.5
 
     # Whether applies requires full set of keywords
     _applies_kw = False
 
     # Whether the Pane layout can be safely unpacked
-    _unpack = True
+    _unpack: bool = True
 
     # Declares whether Pane supports updates to the Bokeh model
-    _updates = False
+    _updates: bool = False
 
     # List of parameters that trigger a rerender of the Bokeh model
-    _rerender_params = ['object']
+    _rerender_params: List[str] = ['object']
 
     __abstract = True
 
@@ -153,15 +166,17 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
 
     @property
-    def _linkable_params(self):
+    def _linkable_params(self) -> List[str]:
         return [p for p in self._synced_params if self._rename.get(p, False) is not None]
 
     @property
-    def _synced_params(self):
+    def _synced_params(self) -> List[str]:
         ignored_params = ['name', 'default_layout', 'loading']+self._rerender_params
         return [p for p in self.param if p not in ignored_params]
 
-    def _update_object(self, ref, doc, root, parent, comm):
+    def _update_object(
+        self, ref: str, doc: 'Document', root: 'Model', parent: 'Model', comm: Optional['Comm']
+    ) -> None:
         old_model = self._models[ref][0]
         if self._updates:
             self._update(ref, old_model)
@@ -169,8 +184,10 @@ class PaneBase(Reactive):
             new_model = self._get_model(doc, root, parent, comm)
             try:
                 if isinstance(parent, _BkGridBox):
-                    indexes = [i for i, child in enumerate(parent.children)
-                               if child[0] is old_model]
+                    indexes = [
+                        i for i, child in enumerate(parent.children)
+                        if child[0] is old_model
+                    ]
                     if indexes:
                         index = indexes[0]
                     else:
@@ -202,7 +219,7 @@ class PaneBase(Reactive):
         if ref in state._views:
             state._views[ref][0]._preprocess(root)
 
-    def _update_pane(self, *events):
+    def _update_pane(self, *events) -> None:
         for ref, (_, parent) in self._models.items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
@@ -219,7 +236,7 @@ class PaneBase(Reactive):
                 else:
                     cb()
 
-    def _update(self, ref=None, model=None):
+    def _update(self, ref: Optional[str] = None, model: Optional['Model'] = None) -> None:
         """
         If _updates=True this method is used to update an existing
         Bokeh model instead of replacing the model entirely. The
@@ -232,21 +249,24 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         """
-        Given the object return a boolean indicating whether the Pane
-        can render the object. If the priority of the pane is set to
-        None, this method may also be used to define a priority
+        Returns boolean or float indicating whether the Pane
+        can render the object.
+        
+        If the priority of the pane is set to
+        `None`, this method may also be used to define a float priority
         depending on the object being rendered.
         """
         return None
 
-    def clone(self, object=None, **params):
+    def clone(self: T, object: Optional[Any] = None, **params) -> T:
         """
         Makes a copy of the Pane sharing the same parameters.
 
         Arguments
         ---------
+        object: Optional new object to render
         params: Keyword arguments override the parameters on the clone.
 
         Returns
@@ -259,17 +279,20 @@ class PaneBase(Reactive):
             object = old_object
         return type(self)(object, **params)
 
-    def get_root(self, doc=None, comm=None, preprocess=True):
+    def get_root(
+        self, doc: Optional['Document'] = None, comm: Optional['Comm'] = None,
+        preprocess: bool = True
+    ) -> 'Model':
         """
         Returns the root model and applies pre-processing hooks
 
         Arguments
         ---------
-        doc: bokeh.Document
-          Bokeh document the bokeh model will be attached to.
+        doc: bokeh.document.Document
+          Optional Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
           Optional pyviz_comms when working in notebook
-        preprocess: boolean (default=True)
+        preprocess: bool (default=True)
           Whether to run preprocessing hooks
 
         Returns
@@ -288,7 +311,7 @@ class PaneBase(Reactive):
         return root
 
     @classmethod
-    def get_pane_type(cls, obj, **kwargs):
+    def get_pane_type(cls, obj: Any, **kwargs) -> Type['PaneBase']:
         """
         Returns the applicable Pane type given an object by resolving
         the precedence of all types whose applies method declares that
@@ -296,7 +319,7 @@ class PaneBase(Reactive):
 
         Arguments
         ---------
-        obj (object): The object type to return a Pane for
+        obj (object): The object type to return a Pane type for
 
         Returns
         -------
@@ -345,11 +368,11 @@ class ReplacementPane(PaneBase):
     on.
     """
 
-    _updates = True
+    _updates: bool = True
 
     __abstract = True
 
-    def __init__(self, object=None, **params):
+    def __init__(self, object: Any=None, **params):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.param}
         super().__init__(object, **params)
@@ -370,13 +393,13 @@ class ReplacementPane(PaneBase):
         """
 
     @classmethod
-    def _update_from_object(cls, object, old_object, was_internal, **kwargs):
+    def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, **kwargs):
         pane_type = cls.get_pane_type(object)
         try:
             links = Link.registry.get(object)
         except TypeError:
             links = []
-        custom_watchers = False
+        custom_watchers = []
         if isinstance(object, Reactive):
             watchers = [
                 w for pwatchers in object._param_watchers.values()
@@ -413,7 +436,7 @@ class ReplacementPane(PaneBase):
                 internal = object is not old_object
         return pane, internal
 
-    def _update_inner(self, new_object):
+    def _update_inner(self, new_object: Any) -> None:
         kwargs = dict(self.param.values(), **self._kwargs)
         del kwargs['object']
         new_pane, internal = self._update_from_object(
@@ -426,7 +449,10 @@ class ReplacementPane(PaneBase):
         self._inner_layout[0] = self._pane
         self._internal = internal
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: 'Document', root: Optional['Model'] = None,
+        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
+    ) -> 'Model':
         if root:
             ref = root.ref['id']
             if ref in self._models:
@@ -437,18 +463,18 @@ class ReplacementPane(PaneBase):
         self._models[ref] = (model, parent)
         return model
 
-    def _cleanup(self, root=None):
+    def _cleanup(self, root: 'Model' | None = None) -> None:
         self._inner_layout._cleanup(root)
         super()._cleanup(root)
 
-    def select(self, selector=None):
+    def select(self, selector: type | Callable | None = None) -> List[Viewable]:
         """
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
         Arguments
         ---------
-        selector: type or callable or None
+        selector: (type | callable | None)
           The selector allows selecting a subset of Viewables by
           declaring a type or callable function to filter by.
 

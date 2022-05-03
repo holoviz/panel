@@ -1,39 +1,43 @@
+from __future__ import annotations
+
 import datetime as dt
 import inspect
 import threading
 
 from contextlib import contextmanager
 from functools import partial, wraps
+from typing import Callable, List, Optional
 
-from bokeh.document.events import ModelChangedEvent
-from bokeh.io import curdoc
+from bokeh.document.document import Document
+from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
+from bokeh.io import curdoc as _curdoc
 
 from .model import patch_events
 from .state import set_curdoc, state
 
 
-def init_doc(doc):
-    doc = doc or curdoc()
-    if not doc.session_context:
-        return doc
+def init_doc(doc: Optional[Document]) -> Document:
+    curdoc = doc or _curdoc()
+    if not curdoc.session_context:
+        return curdoc
 
     thread = threading.current_thread()
     if thread:
-        with set_curdoc(doc):
+        with set_curdoc(curdoc):
             state._thread_id = thread.ident
 
-    session_id = doc.session_context.id
+    session_id = curdoc.session_context.id
     sessions = state.session_info['sessions']
     if session_id not in sessions:
-        return doc
+        return curdoc
 
     sessions[session_id].update({
         'started': dt.datetime.now().timestamp()
     })
-    doc.on_event('document_ready', state._init_session)
-    return doc
+    curdoc.on_event('document_ready', state._init_session)
+    return curdoc
 
-def with_lock(func):
+def with_lock(func: Callable) -> Callable:
     """
     Wrap a callback function to execute with a lock allowing the
     function to modify bokeh models directly.
@@ -56,10 +60,10 @@ def with_lock(func):
         @wraps(func)
         def wrapper(*args, **kw):
             return func(*args, **kw)
-    wrapper.lock = True
+    wrapper.lock = True # type: ignore
     return wrapper
 
-def _dispatch_events(doc, events):
+def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
     """
     Handles dispatch of events which could not be processed in
     unlocked decorator.
