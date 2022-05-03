@@ -22,7 +22,10 @@ if state._is_pyodide:
 else:
     from .server import serve # noqa
     if 'django' in sys.modules:
-        from . import django # noqa
+        try:
+            from . import django # noqa
+        except ImportError:
+            pass
 
 __all__ = (
     "PeriodicCallback",
