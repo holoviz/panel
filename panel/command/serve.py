@@ -237,6 +237,12 @@ class Serve(_BkServe):
                 index = args.index if args.index.endswith(ext) else f'{args.index}{ext}'
                 if any(f.endswith(index) for f in files):
                     found = True
+            # Check for directory style applications
+            for f in files:
+                if '.' in os.path.basename(f): # Skip files with extension
+                    continue
+                if args.index == os.path.basename(f) or args.index == f:
+                    found = True
             if not found:
                 raise ValueError(
                     "The --index argument must either specify a jinja2 "
