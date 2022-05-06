@@ -163,7 +163,7 @@ extras_require = {
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite >=0.7.1',
+        'nbsite >=0.7.2rc2',
         'graphviz',
         'lxml',
         'python-graphviz',
