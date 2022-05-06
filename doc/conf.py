@@ -108,7 +108,14 @@ nbsite_gallery_conf = {
                 'global',
                 'indicators',
                 'widgets',
-            ]
+            ],
+            'titles': {
+                'Vega': 'Altair & Vega',
+                'DeckGL': 'PyDeck & Deck.gl',
+                'ECharts': 'PyEcharts & ECharts',
+                'IPyWidget': 'ipywidgets'
+            },
+            'normalize_titles': False
         }
     },
     'thumbnail_url': 'https://assets.holoviews.org/panel/thumbnails',
