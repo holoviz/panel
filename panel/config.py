@@ -165,6 +165,10 @@ class _config(_base_config):
 
     _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
 
+    _admin_log_level = param.Selector(
+        default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        doc="Log level of the Admin Panel logger")
+
     _comms = param.ObjectSelector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
@@ -325,6 +329,11 @@ class _config(_base_config):
     def _update_log_level(self):
         panel_log_handler.setLevel(self._log_level)
 
+    @param.depends('_admin_log_level', watch=True)
+    def _update_admin_log_level(self):
+        from .io.admin import log_handler as admin_log_handler
+        admin_log_handler.setLevel(self._log_level)
+
     def __getattribute__(self, attr):
         """
         Ensures that configuration parameters that are defined per
@@ -366,6 +375,10 @@ class _config(_base_config):
     @property
     def _doc_build(self):
         return os.environ.get('PANEL_DOC_BUILD')
+
+    def admin_log_level(self):
+        admin_log_level = os.environ.get('PANEL_ADMIN_LOG_LEVEL', self._admin_log_level)
+        return admin_log_level.upper() if admin_log_level else None
 
     @property
     def console_output(self):
