@@ -524,7 +524,6 @@ class BasicTemplate(BaseTemplate):
             state.sync_busy(self.busy_indicator)
         self._update_vars()
         doc = super()._init_doc(doc, comm, title, notebook, location)
-        print('.>>>', doc, self.notifications)
         if self.notifications:
             state._notifications[doc] = self.notifications
         if self.theme:
