@@ -175,8 +175,8 @@ class Serve(_BkServe):
         ('--admin-log-level', dict(
             action  = 'store',
             default = None,
-            choices = ('debug', 'info', 'warning', 'error', 'critical', None),
-            help    = "One of: debug, info, warning, error or critical",
+            choices = ('debug', 'info', 'warning', 'error', 'critical'),
+            help    = "One of: debug (default), info, warning, error or critical",
         )),
         ('--profiler', dict(
             action  = 'store',
