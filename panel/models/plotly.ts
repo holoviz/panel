@@ -427,7 +427,7 @@ export class PlotlyPlot extends HTMLBox {
       data: [ Array(Any), [] ],
       layout: [ Any, {} ],
       config: [ Any, {} ],
-      frames: [ Array(Any), null ],
+      frames: [ Nullable(Array(Any)), null ],
       data_sources: [ Array(Ref(ColumnDataSource)), [] ],
       relayout: [ Nullable(Any), {} ],
       restyle: [ Nullable(Any), {} ],
