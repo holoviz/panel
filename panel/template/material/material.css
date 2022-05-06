@@ -85,7 +85,7 @@ img.app-logo {
 
 .main-content {
   overflow-y: scroll;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 #header {
