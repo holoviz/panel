@@ -3,19 +3,23 @@ Defines the Button and button-like widgets which allow triggering
 events or merely toggling between on-off states.
 """
 from functools import partial
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional
 
 import param
-
-from bokeh.models import (
-    Button as _BkButton, Toggle as _BkToggle, Dropdown as _BkDropdown
-)
-
-from bokeh.events import MenuItemClick, ButtonClick
+from bokeh.events import ButtonClick, MenuItemClick
+from bokeh.models import Button as _BkButton
+from bokeh.models import Dropdown as _BkDropdown
+from bokeh.models import Toggle as _BkToggle
+from panel.links import Callback, UnknownType
 
 from .base import Widget
 
+if TYPE_CHECKING:
+    from panel.reactive import JSLinkTarget
 
-BUTTON_TYPES = ['default', 'primary', 'success', 'warning', 'danger','light']
+    from ..links import Link
+
+BUTTON_TYPES: List[str] = ['default', 'primary', 'success', 'warning', 'danger','light']
 
 class _ButtonBase(Widget):
 
@@ -43,7 +47,7 @@ class _ClickButton(_ButtonBase):
             model.on_event(self._event, partial(self._server_event, doc))
         return model
 
-    def js_on_click(self, args={}, code=""):
+    def js_on_click(self, args: Dict[str, UnknownType]={}, code: str="") -> Callback:
         """
         Allows defining a JS callback to be triggered when the button
         is clicked.
@@ -63,9 +67,9 @@ class _ClickButton(_ButtonBase):
         from ..links import Callback
         return Callback(self, code={'event:'+self._event: code}, args=args)
 
-    def jscallback(self, args={}, **callbacks):
+    def jscallback(self, args: Dict[str, UnknownType]={}, **callbacks: str) -> Callback:
         """
-        Allows defining a JS callback to be triggered when a property
+        Allows defining a Javascript (JS) callback to be triggered when a property
         changes on the source object. The keyword arguments define the
         properties that trigger a callback and the JS code that gets
         executed.
@@ -125,17 +129,46 @@ class Button(_ClickButton):
     def _linkable_params(self):
         return super()._linkable_params + ['value']
 
-    def jslink(self, target, code=None, args=None, bidirectional=False, **links):
+    def jslink(self, target: 'JSLinkTarget', code: Dict[str, str]=None, args: Optional[Dict]=None, bidirectional: bool=False, **links: str) -> 'Link':
+        """
+        Links properties on the this Button to those on the
+        `target` object in Javascript (JS) code.
+        
+        Supports two modes, either specify a
+        mapping between the source and target model properties as
+        keywords or provide a dictionary of JS code snippets which
+        maps from the source parameter to a JS code snippet which is
+        executed when the property changes.
+
+        Arguments
+        ----------
+        target: panel.viewable.Viewable | bokeh.model.Model | holoviews.core.dimension.Dimensioned 
+          The target to link the value(s) to.
+        code: dict
+          Custom code which will be executed when the widget value
+          changes.
+        args: dict
+          A mapping of objects to make available to the JS callback
+        bidirectional: boolean
+          Whether to link source and target bi-directionally. Default is `False`.
+        **links: dict[str,str]
+          A mapping between properties on the source model and the
+          target model property to link it to.
+
+        Returns
+        -------
+        Link
+          The Link can be used unlink the widget and the target model.
+        """
         links = {'event:'+self._event if p == 'value' else p: v for p, v in links.items()}
         super().jslink(target, code, args, bidirectional, **links)
-
-    jslink.__doc__ = Widget.jslink.__doc__
 
     def _process_event(self, event):
         self.param.trigger('value')
         self.clicks += 1
 
-    def on_click(self, callback):
+    def on_click(self,
+    callback: Callable[[param.parameterized.Event], None]) -> param.parameterized.Watcher:
         """
         Register a callback to be executed when the `Button` is clicked.
 
@@ -143,10 +176,15 @@ class Button(_ClickButton):
 
         Arguments
         ---------
-        callback: (callable)
+        callback: (Callable[[param.parameterized.Event], None])
             The function to run on click events. Must accept a positional `Event` argument
+
+        Returns
+        -------
+        watcher: param.Parameterized.Watcher
+          A `Watcher` that executes the callback when the button is clicked.
         """
-        self.param.watch(callback, 'clicks', onlychanged=False)
+        return self.param.watch(callback, 'clicks', onlychanged=False)
 
 
 class Toggle(_ButtonBase):
@@ -216,7 +254,8 @@ class MenuButton(_ClickButton):
             item = self.name
         self.clicked = item
 
-    def on_click(self, callback):
+    def on_click(self,
+    callback: Callable[[param.parameterized.Event], None]) -> param.parameterized.Watcher:
         """
         Register a callback to be executed when the button is clicked.
 
@@ -224,7 +263,12 @@ class MenuButton(_ClickButton):
 
         Arguments
         ---------
-        callback: (callable)
+        callback: (Callable[[param.parameterized.Event], None])
             The function to run on click events. Must accept a positional `Event` argument
+
+        Returns
+        -------
+        watcher: param.Parameterized.Watcher
+          A `Watcher` that executes the callback when the MenuButton is clicked.
         """
-        self.param.watch(callback, 'clicked', onlychanged=False)
+        return self.param.watch(callback, 'clicked', onlychanged=False)

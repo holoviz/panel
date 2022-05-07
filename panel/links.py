@@ -4,10 +4,12 @@ Defines Links which allow declaring links between bokeh properties.
 import difflib
 import sys
 import weakref
+from typing import Any, Dict
+
+from bokeh.models import CustomJS, LayoutDOM
+from bokeh.models import Model as BkModel
 
 import param
-
-from bokeh.models import CustomJS, Model as BkModel, LayoutDOM
 
 from .io.datamodel import create_linked_datamodel
 from .models import ReactiveHTML
@@ -72,7 +74,7 @@ def assert_target_syncable(source, target, properties):
                 "It requires a live Python kernel to have an effect."
             )
 
-
+UnknownType = Any
 class Callback(param.Parameterized):
     """
     A Callback defines some callback to be triggered when a property
@@ -100,12 +102,29 @@ class Callback(param.Parameterized):
     # Whether the link requires a target
     _requires_target = False
 
-    def __init__(self, source, target=None, **params):
+    def __init__(self, source: UnknownType, target: UnknownType=None, args: Dict[str, UnknownType]=None, code: Dict[str, str]=None):
+        """A Callback defines some callback to be triggered when a property
+        changes on the source object. A Callback can execute arbitrary
+        Javascript code and will make all objects referenced in the args
+        available in the JS namespace.
+
+        Args:
+            source (UnknownType): The source object
+            target (UnknownType, optional): _description_. Defaults to None.
+            args (Dict[str, UnknownType], optional): A `value` object can be referenced by the 
+                `key` name on the JS side. Defaults to None.
+            code (Dict[str, str], optional): _description_. Defaults to None.
+
+        Raises:
+            ValueError: _description_
+        """
         if source is None:
             raise ValueError('%s must define a source' % type(self).__name__)
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
-        super().__init__(**params)
+        if not args:
+            args={}
+        super().__init__(args=args, code=code)
         self.init()
 
     def init(self):
@@ -163,6 +182,7 @@ class Callback(param.Parameterized):
         arg_overrides = {}
         if 'holoviews' in sys.modules:
             from holoviews.core.dimension import Dimensioned
+
             from .pane.holoviews import HoloViews, generate_panel_bokeh_map
             found = [
                 (link, src, tgt) for (link, src, tgt) in found
