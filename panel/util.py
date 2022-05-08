@@ -11,19 +11,20 @@ import os
 import re
 import sys
 import urllib.parse as urlparse
-
-from collections.abc import MutableSequence, MutableMapping
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
+from collections.abc import MutableMapping, MutableSequence
 from contextlib import contextmanager
 from datetime import datetime
 from functools import partial
-from html import escape # noqa
+from html import escape  # noqa
 from importlib import import_module
-from packaging.version import Version
+from typing import AnyStr, Union
 
 import bokeh
-import param
 import numpy as np
+from packaging.version import Version
+
+import param
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
@@ -414,7 +415,7 @@ def parse_timedelta(time_str):
     return dt.timedelta(**time_params)
 
 
-def fullpath(path):
+def fullpath(path: Union[AnyStr, os.PathLike[AnyStr]]) -> Union[AnyStr, os.PathLike[AnyStr]]:
     """Expanduser and then abspath for a given path
     """
     return os.path.abspath(os.path.expanduser(path))
