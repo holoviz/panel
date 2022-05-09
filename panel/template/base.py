@@ -15,7 +15,6 @@ import param
 from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
 from bokeh.settings import settings as _settings
-from jinja2.environment import Template as _Template
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
 from ..config import _base_config, config, panel_extension
