@@ -360,6 +360,9 @@ class ServableMixin(object):
                     template.modal.append(self)
                 elif area == 'header':
                     template.header.append(self)
+            elif state._is_pyodide and hasattr(sys.stdout, '_out'):
+                from .io.pyodide import write
+                write(sys.stdout._out, self)
             else:
                 self.server_doc(title=title, location=location) # type: ignore
         return self
@@ -867,13 +870,18 @@ class Viewer(param.Parameterized):
 
         return view
 
-    def servable(self, title=None, location=True):
-        return self._create_view().servable(title, location)
+    def servable(
+        self, title: Optional[str]=None, location: bool | 'Location' = True, area: str='main'
+    ) -> 'Viewer':
+        return self._create_view().servable(title, location, area)
 
     servable.__doc__ = ServableMixin.servable.__doc__
 
-    def show(self, title=None, port=0, address=None, websocket_origin=None,
-             threaded=False, verbose=True, open=True, location=True, **kwargs):
+    def show(
+        self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
+        websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
+        open: bool = True, location: bool | 'Location' = True, **kwargs
+    ) -> threading.Thread | 'Server':
         return self._create_view().show(
             title, port, address, websocket_origin, threaded,
             verbose, open, location, **kwargs

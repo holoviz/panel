@@ -44,6 +44,8 @@ def conffilter(value):
     return json.dumps(OrderedDict(value)).replace('"', '\'')
 
 _env = get_env()
+_env.trim_blocks = True
+_env.lstrip_blocks = True
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import dataclasses
 import inspect
 import threading
 
@@ -8,6 +9,7 @@ from contextlib import contextmanager
 from functools import partial, wraps
 from typing import Callable, List, Optional
 
+from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
 from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
 from bokeh.io import curdoc as _curdoc
@@ -15,6 +17,47 @@ from bokeh.io import curdoc as _curdoc
 from .model import patch_events
 from .state import set_curdoc, state
 
+
+#---------------------------------------------------------------------
+# Private API
+#---------------------------------------------------------------------
+
+@dataclasses.dataclass
+class Request:
+    headers : dict
+    cookies : dict
+    arguments : dict
+
+
+class MockSessionContext(SessionContext):
+
+    def __init__(self, *args, document=None, **kwargs):
+        self._document = document
+        super().__init__(*args, server_context=None, session_id=None, **kwargs)
+
+    def with_locked_document(self, *args):
+        return
+
+    @property
+    def destroyed(self) -> bool:
+        return False
+
+    @property
+    def request(self):
+        return Request(headers={}, cookies={}, arguments={})
+
+
+def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
+    """
+    Handles dispatch of events which could not be processed in
+    unlocked decorator.
+    """
+    for event in events:
+        doc.callbacks.trigger_on_change(event)
+
+#---------------------------------------------------------------------
+# Public API
+#---------------------------------------------------------------------
 
 def init_doc(doc: Optional[Document]) -> Document:
     curdoc = doc or _curdoc()
@@ -62,14 +105,6 @@ def with_lock(func: Callable) -> Callable:
             return func(*args, **kw)
     wrapper.lock = True # type: ignore
     return wrapper
-
-def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
-    """
-    Handles dispatch of events which could not be processed in
-    unlocked decorator.
-    """
-    for event in events:
-        doc.callbacks.trigger_on_change(event)
 
 @contextmanager
 def unlocked():
