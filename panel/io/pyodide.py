@@ -62,9 +62,9 @@ def _doc_json(doc):
     )
     render_items = [item.to_json() for item in render_items]
     root_ids = [m.id for m in doc.roots]
+    root_els = document.getElementsByClassName('bk-root')
     for el in root_els:
         el.innerHTML = ''
-    root_els = document.getElementsByClassName('bk-root')
     root_data = sorted([(int(el.getAttribute('data-root-id')), el.id) for el in root_els])
     render_items[0].update({
         'roots': {model_id: elid for (_, elid), model_id in zip(root_data, root_ids)},
