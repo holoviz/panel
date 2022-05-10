@@ -64,8 +64,6 @@ def _doc_json(doc):
     )
     render_items = [item.to_json() for item in render_items]
     root_ids = [m.id for m in doc.roots]
-    for el in root_els:
-        el.innerHTML = ''
     root_els = document.getElementsByClassName('bk-root')
     for el in root_els:
         el.innerHTML = ''
@@ -163,7 +161,6 @@ async def show(obj, target):
         Object to render into the DOM node
     target: str
         Target ID of the DOM node to render the object into.
-<<<<<<< HEAD
     """
     from js import console
     console.log('panel.io.pyodide.show is deprecated in favor of panel.io.pyodide.write')
@@ -180,39 +177,13 @@ async def write(target, obj):
     obj: Viewable
         Object to render into the DOM node
     """
-=======
-    """
-    from js import console
-    console.log('panel.io.pyodide.show is deprecated in favor of panel.io.pyodide.write')
-    write(target, obj)
-
-async def write(target, obj):
-    """
-    Renders the object into a DOM node specified by the target.
-
-    Arguments
-    ---------
-    target: str
-        Target ID of the DOM node to render the object into.
-    obj: Viewable
-        Object to render into the DOM node
-    """
->>>>>>> Add support for converting Panel apps to pyscript/pyodide
 
     from js import Bokeh
 
     from ..pane import panel as as_panel
 
     obj = as_panel(obj)
-<<<<<<< HEAD
-<<<<<<< HEAD
     pydoc, model_json = _model_json(obj, target)
-=======
-    pydoc, model_json = _model_json(model, target)
->>>>>>> Add support for converting Panel apps to pyscript/pyodide
-=======
-    pydoc, model_json = _model_json(obj, target)
->>>>>>> Improvements for conversion
     views = await Bokeh.embed.embed_item(JSON.parse(model_json))
     jsdoc = views[0].model.document
     _link_docs(pydoc, jsdoc)
@@ -227,15 +198,10 @@ async def write_doc(doc: Optional['Document'] = None) -> None:
     ---------
     doc: Document
     """
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Improvements for conversion
     from js import Bokeh, document
 
     body = document.getElementsByTagName('body')[0]
     body.classList.remove("bk", "pn-loading", config.loading_spinner)
-<<<<<<< HEAD
 
     doc = doc or state.curdoc
     docs_json, render_items = _doc_json(doc)
@@ -243,20 +209,3 @@ async def write_doc(doc: Optional['Document'] = None) -> None:
     jsdoc = views[0][0].model.document
     doc._session_context = None
     _link_docs(doc, jsdoc)
-=======
-    from js import Bokeh
-    from panel.pane import panel as as_panel
-=======
->>>>>>> Improvements for conversion
-
-    doc = doc or state.curdoc
-    docs_json, render_items = _doc_json(doc)
-    views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
-    jsdoc = views[0][0].model.document
-    doc._session_context = None
-<<<<<<< HEAD
-    _link_docs(obj, jsdoc)
->>>>>>> Add support for converting Panel apps to pyscript/pyodide
-=======
-    _link_docs(doc, jsdoc)
->>>>>>> Improvements for conversion
