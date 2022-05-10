@@ -372,6 +372,7 @@ class ServableMixin(object):
             else:
                 self.server_doc(title=title, location=location) # type: ignore
         elif state._is_pyodide:
+            from asyncio
             from .io.pyodide import write
             if target:
                 out = target
