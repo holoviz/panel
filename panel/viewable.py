@@ -322,7 +322,8 @@ class ServableMixin(object):
     #----------------------------------------------------------------
 
     def servable(
-        self, title: Optional[str] = None, location: bool | 'Location' = True, area: str = 'main'
+        self, title: Optional[str] = None, location: bool | 'Location' = True,
+        area: str = 'main', target: Optional[str] = None
     ) -> 'ServableMixin':
         """
         Serves the object if in a `panel serve` context and returns
@@ -335,9 +336,14 @@ class ServableMixin(object):
         location : boolean or panel.io.location.Location
           Whether to create a Location component to observe and
           set the URL location.
-        area: str
+        area: str (deprecated)
           The area of a template to add the component too. Only has an
           effect if pn.config.template has been set.
+        target: str
+          Target area to write to. If a template has been configured
+          on pn.config.template this refers to the target area in the
+          template while in pyodide this refers to the ID of the DOM
+          node to write to.
 
         Returns
         -------
@@ -349,6 +355,7 @@ class ServableMixin(object):
                 if isinstance(handler, logging.StreamHandler):
                     handler.setLevel(logging.WARN)
             if config.template:
+                area = target or area or 'main'
                 template = state.template
                 if template.title == template.param.title.default and title:
                     template.title = title
@@ -360,9 +367,15 @@ class ServableMixin(object):
                     template.modal.append(self)
                 elif area == 'header':
                     template.header.append(self)
-            elif state._is_pyodide and hasattr(sys.stdout, '_out'):
+            elif state._is_pyodide:
                 from .io.pyodide import write
-                write(sys.stdout._out, self)
+                if target:
+                    out = target
+                elif hasattr(sys.stdout, '_out'):
+                    out = sys.stdout._out
+                else:
+                    raise ValueError("Could not determine target node to write to.")
+                write(out, self)
             else:
                 self.server_doc(title=title, location=location) # type: ignore
         return self
@@ -871,9 +884,10 @@ class Viewer(param.Parameterized):
         return view
 
     def servable(
-        self, title: Optional[str]=None, location: bool | 'Location' = True, area: str='main'
+        self, title: Optional[str]=None, location: bool | 'Location' = True,
+        area: str = 'main', target: Optional[str] = None
     ) -> 'Viewer':
-        return self._create_view().servable(title, location, area)
+        return self._create_view().servable(title, location, area, target)
 
     servable.__doc__ = ServableMixin.servable.__doc__
 
