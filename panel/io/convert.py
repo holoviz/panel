@@ -20,7 +20,7 @@ from bokeh.util.serialization import make_id
 
 from .. import __version__, config
 from ..util import escape
-from .resources import bundle_resources, Resources
+from .resources import bundle_resources, INDEX_TEMPLATE, Resources
 from .state import state, set_curdoc
 
 PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />'
@@ -118,6 +118,11 @@ def find_imports(code: str) -> List[str]:
     return list(sorted(imports))
 
 
+def make_index(files):
+    items = ['/'+os.path.basename(f) for f in files]
+    return INDEX_TEMPLATE.render({'items': items, 'sorted': sorted})
+
+
 def script_to_html(
     filename: str, requirements: Literal['auto'] | List[str] = 'auto',
     js_resources: List[str] = 'auto', css_resources: List[str] = 'auto',
@@ -133,7 +138,7 @@ def script_to_html(
       The filename of the Panel/Bokeh application to convert
     requirements: 'auto' | list(str)
       The list of requirements to include (in addition to Panel).
-    
+
     """
     # Configure resources
     _settings.resources.set_value('cdn')

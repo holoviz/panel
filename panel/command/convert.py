@@ -3,7 +3,7 @@ import os
 
 from bokeh.command.subcommand import Argument, Subcommand
 
-from ..io.convert import script_to_html
+from ..io.convert import script_to_html, make_index
 
 
 class Convert(Subcommand):
@@ -28,7 +28,18 @@ class Convert(Subcommand):
             type    = str,
             help    = "The format to convert to.",
         )),
+        ('--out', dict(
+            action  = 'store',
+            type    = str,
+            help    = "The directory to write the file to.",
+        )),
         ('--prerender', dict(
+            action  = 'store',
+            type    = bool,
+            default = True,
+            help    = "The format to convert to.",
+        )),
+        ('--index', dict(
             action  = 'store',
             type    = bool,
             default = True,
@@ -48,12 +59,27 @@ class Convert(Subcommand):
         if runtime not in self._targets:
             raise ValueError(f'Supported conversion targets include: {self._targets!r}') 
 
+        if args.out:
+            os.makedirs(args.out, exist_ok=True)
         requirements = args.requirements or 'auto'
+        files = []
         for f in args.files:
-            html = script_to_html(
-                f, requirements=requirements, runtime=runtime, prerender=args.prerender
-            )
+            try:
+                html = script_to_html(
+                    f, requirements=requirements, runtime=runtime, prerender=args.prerender
+                )
+            except:
+                print(f'Failed toconvert {f} to {runtime} target.')
+                continue
             filename = os.path.basename(f).split('.')[0]+'.html'
+            files.append(filename)
+            if args.out:
+                filename = os.path.join(args.out, filename)
             with open(filename, 'w') as out:
                 out.write(html)
-            print(f'Successfully converted {f} to {runtime} target and wrote output to {filename}.') 
+            print(f'Successfully converted {f} to {runtime} target and wrote output to {filename}.')
+        if args.index:
+            index = make_index(files)
+            index_file = os.path.join(args.out, 'index.html') if args.out else 'index.html'
+            with open(index_file, 'w') as f:
+                f.write(index)

@@ -54,6 +54,7 @@ PANEL_DIR = Path(__file__).parent.parent
 DIST_DIR = PANEL_DIR / 'dist'
 BUNDLE_DIR = DIST_DIR / 'bundled'
 ASSETS_DIR = PANEL_DIR / 'assets'
+INDEX_TEMPLATE = _env.get_template('index.html')
 BASE_TEMPLATE = _env.get_template('base.html')
 ERROR_TEMPLATE = _env.get_template('error.html')
 DEFAULT_TITLE = "Panel Application"
