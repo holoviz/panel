@@ -379,7 +379,7 @@ class ServableMixin(object):
                 out = sys.stdout._out
             else:
                 raise ValueError("Could not determine target node to write to.")
-            write(out, self)
+            param.parameterized.async_executor(asyncio.create_task(write(out, self)))
         return self
 
     def show(
