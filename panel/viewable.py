@@ -322,12 +322,15 @@ class ServableMixin(object):
     #----------------------------------------------------------------
 
     def servable(
-        self, title: Optional[str] = None, location: bool | 'Location' = True, area: str = 'main'
+        self, title: Optional[str] = None, location: bool | 'Location' = True,
+        area: str = 'main', target: Optional[str] = None
     ) -> 'ServableMixin':
         """
-        Serves the object if in a `panel serve` context and returns
-        the Panel object to allow it to display itself in a notebook
-        context.
+        Serves the object or adds it to the configured
+        pn.state.template if in a `panel serve` context, writes to the
+        DOM if in a pyodide context and returns the Panel object to
+        allow it to display itself in a notebook context.
+
         Arguments
         ---------
         title : str
@@ -335,9 +338,14 @@ class ServableMixin(object):
         location : boolean or panel.io.location.Location
           Whether to create a Location component to observe and
           set the URL location.
-        area: str
+        area: str (deprecated)
           The area of a template to add the component too. Only has an
           effect if pn.config.template has been set.
+        target: str
+          Target area to write to. If a template has been configured
+          on pn.config.template this refers to the target area in the
+          template while in pyodide this refers to the ID of the DOM
+          node to write to.
 
         Returns
         -------
@@ -349,6 +357,7 @@ class ServableMixin(object):
                 if isinstance(handler, logging.StreamHandler):
                     handler.setLevel(logging.WARN)
             if config.template:
+                area = target or area or 'main'
                 template = state.template
                 if template.title == template.param.title.default and title:
                     template.title = title
@@ -362,6 +371,15 @@ class ServableMixin(object):
                     template.header.append(self)
             else:
                 self.server_doc(title=title, location=location) # type: ignore
+        elif state._is_pyodide:
+            from .io.pyodide import write
+            if target:
+                out = target
+            elif hasattr(sys.stdout, '_out'):
+                out = sys.stdout._out
+            else:
+                raise ValueError("Could not determine target node to write to.")
+            write(out, self)
         return self
 
     def show(
@@ -867,13 +885,19 @@ class Viewer(param.Parameterized):
 
         return view
 
-    def servable(self, title=None, location=True):
-        return self._create_view().servable(title, location)
+    def servable(
+        self, title: Optional[str]=None, location: bool | 'Location' = True,
+        area: str = 'main', target: Optional[str] = None
+    ) -> 'Viewer':
+        return self._create_view().servable(title, location, area, target)
 
     servable.__doc__ = ServableMixin.servable.__doc__
 
-    def show(self, title=None, port=0, address=None, websocket_origin=None,
-             threaded=False, verbose=True, open=True, location=True, **kwargs):
+    def show(
+        self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
+        websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
+        open: bool = True, location: bool | 'Location' = True, **kwargs
+    ) -> threading.Thread | 'Server':
         return self._create_view().show(
             title, port, address, websocket_origin, threaded,
             verbose, open, location, **kwargs

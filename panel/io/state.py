@@ -633,7 +633,7 @@ class _state(param.Parameterized):
         except Exception:
             return None
         try:
-            if doc.session_context:
+            if doc.session_context or self._is_pyodide:
                 return doc
         except Exception:
             return None
@@ -644,11 +644,11 @@ class _state(param.Parameterized):
 
     @property
     def cookies(self):
-        return self.curdoc.session_context.request.cookies if self.curdoc else {}
+        return self.curdoc.session_context.request.cookies if self.curdoc and self.curdoc.session_context else {}
 
     @property
     def headers(self):
-        return self.curdoc.session_context.request.headers if self.curdoc else {}
+        return self.curdoc.session_context.request.headers if self.curdoc and self.curdoc.session_context else {}
 
     @property
     def location(self):
@@ -692,7 +692,7 @@ class _state(param.Parameterized):
 
     @property
     def session_args(self):
-        return self.curdoc.session_context.request.arguments if self.curdoc else {}
+        return self.curdoc.session_context.request.arguments if self.curdoc and self.curdoc.session_context else {}
 
     @property
     def template(self):
