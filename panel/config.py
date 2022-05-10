@@ -119,7 +119,7 @@ class _config(_base_config):
         Whether to enable notifications functionality.""")
 
     profiler = param.Selector(default=None, allow_None=True, objects=[
-        'pyinstrument', 'snakeviz'], doc="""
+        'pyinstrument', 'snakeviz', 'memray'], doc="""
         The profiler engine to enable.""")
 
     safe_embed = param.Boolean(default=False, doc="""
