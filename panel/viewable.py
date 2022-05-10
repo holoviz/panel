@@ -326,9 +326,11 @@ class ServableMixin(object):
         area: str = 'main', target: Optional[str] = None
     ) -> 'ServableMixin':
         """
-        Serves the object if in a `panel serve` context and returns
-        the Panel object to allow it to display itself in a notebook
-        context.
+        Serves the object or adds it to the configured
+        pn.state.template if in a `panel serve` context, writes to the
+        DOM if in a pyodide context and returns the Panel object to
+        allow it to display itself in a notebook context.
+
         Arguments
         ---------
         title : str
@@ -367,17 +369,17 @@ class ServableMixin(object):
                     template.modal.append(self)
                 elif area == 'header':
                     template.header.append(self)
-            elif state._is_pyodide:
-                from .io.pyodide import write
-                if target:
-                    out = target
-                elif hasattr(sys.stdout, '_out'):
-                    out = sys.stdout._out
-                else:
-                    raise ValueError("Could not determine target node to write to.")
-                write(out, self)
             else:
                 self.server_doc(title=title, location=location) # type: ignore
+        elif state._is_pyodide:
+            from .io.pyodide import write
+            if target:
+                out = target
+            elif hasattr(sys.stdout, '_out'):
+                out = sys.stdout._out
+            else:
+                raise ValueError("Could not determine target node to write to.")
+            write(out, self)
         return self
 
     def show(
