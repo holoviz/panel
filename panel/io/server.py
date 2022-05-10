@@ -1,6 +1,8 @@
 """
 Utilities for creating bokeh Server instances.
 """
+from __future__ import annotations
+
 import asyncio
 import datetime as dt
 import gc
@@ -20,6 +22,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
 from types import FunctionType, MethodType
+from typing import TYPE_CHECKING, Callable, Dict, Mapping, Optional, Union
 from urllib.parse import urljoin, urlparse
 
 import param
@@ -61,24 +64,36 @@ from .state import set_curdoc, state
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.server.contexts import BokehSessionContext
+    from bokeh.server.session import ServerSession
+
+    from ..template.base import BaseTemplate
+    from ..viewable import Viewable, Viewer
+    from .location import Location
+
+    TViewable = Union[Viewable, Viewer, BaseTemplate]
+    TViewableOrFunc = Union[TViewable, Callable[[], TViewable]]
+
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
 
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
 
-def _origin_url(url):
+def _origin_url(url: str) -> str:
     if url.startswith("http"):
         url = url.split("//")[1]
     return url
 
-def _server_url(url, port):
+def _server_url(url: str, port: int) -> str:
     if url.startswith("http"):
         return '%s:%d%s' % (url.rsplit(':', 1)[0], port, "/")
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
-def _eval_panel(panel, server_id, title, location, doc):
+def _eval_panel(panel: 'TViewableOrFunc', server_id: str, title: str, location, doc: 'Document'):
     from ..template import BaseTemplate
     from ..pane import panel as as_panel
 
@@ -91,14 +106,14 @@ def _eval_panel(panel, server_id, title, location, doc):
             doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
         return doc
 
-def async_execute(func):
+def async_execute(func: Callable[..., None]) -> None:
     """
     Wrap async event loop scheduling to ensure that with_lock flag
     is propagated from function to partial wrapping it.
     """
     if not state.curdoc or not state.curdoc.session_context:
         ioloop = IOLoop.current()
-        event_loop = ioloop.asyncio_loop
+        event_loop = ioloop.asyncio_loop # type: ignore
         if event_loop.is_running():
             ioloop.add_callback(func)
         else:
@@ -106,7 +121,7 @@ def async_execute(func):
         return
 
     if isinstance(func, partial) and hasattr(func.func, 'lock'):
-        unlock = not func.func.lock
+        unlock = not func.func.lock # type: ignore
     else:
         unlock = not getattr(func, 'lock', False)
     curdoc = state.curdoc
@@ -115,12 +130,12 @@ def async_execute(func):
         with set_curdoc(curdoc):
             return await func(*args, **kw)
     if unlock:
-        wrapper.nolock = True
+        wrapper.nolock = True # type: ignore
     state.curdoc.add_next_tick_callback(wrapper)
 
 param.parameterized.async_executor = async_execute
 
-def _initialize_session_info(session_context):
+def _initialize_session_info(session_context: 'BokehSessionContext'):
     from ..config import config
     session_id = session_context.id
     sessions = state.session_info['sessions']
@@ -148,8 +163,11 @@ state.on_session_created(_initialize_session_info)
 # Bokeh patches
 #---------------------------------------------------------------------
 
-def server_html_page_for_session(session, resources, title, template=BASE_TEMPLATE,
-                                 template_variables=None):
+def server_html_page_for_session(
+    session: 'ServerSession', resources: 'Resources', title: str,
+    template: str | Template = BASE_TEMPLATE,
+    template_variables: Optional[Dict[str, Any]] = None
+) -> str:
     render_item = RenderItem(
         token = session.token,
         roots = session.document.roots,
@@ -208,7 +226,7 @@ class Application(BkApplication):
             template = state._templates[doc]
             template.server_doc(title=template.title, location=True, doc=doc)
 
-bokeh.command.util.Application = Application
+bokeh.command.util.Application = Application # type: ignore
 
 
 class SessionPrefixHandler:
@@ -267,7 +285,7 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
 
     '''
 
-    async def get(self, *args, **kwargs):
+    async def get(self, *args, **kwargs) -> None:
         element_id = self.get_argument("bokeh-autoload-element", default=None)
         if not element_id:
             self.send_error(status_code=400, reason='No bokeh-autoload-element query parameter')
@@ -314,20 +332,20 @@ class ComponentResourceHandler(StaticFileHandler):
         '_css', '_js', 'base_css', 'css'
     ]
 
-    def initialize(self, path=None, default_filename=None):
+    def initialize(self, path: Optional[str] = None, default_filename: Optional[str] = None):
         self.root = path
         self.default_filename = default_filename
 
-    def parse_url_path(self, path):
+    def parse_url_path(self, path: str) -> str:
         """
         Resolves the resource the URL pattern refers to.
         """
         parts = path.split('/')
         if len(parts) < 4:
             raise HTTPError(400, 'Malformed URL')
-        module, cls, rtype, *subpath = parts
+        mod, cls, rtype, *subpath = parts
         try:
-            module = importlib.import_module(module)
+            module = importlib.import_module(mod)
         except ModuleNotFoundError:
             raise HTTPError(404, 'Module not found')
         try:
@@ -369,12 +387,16 @@ class ComponentResourceHandler(StaticFileHandler):
         if rel_path not in resources:
             raise HTTPError(403, 'Requested resource was not listed.')
 
-        return pathlib.Path(module.__file__).parent / rel_path
+        if not module.__file__:
+            raise HTTPError(404, 'Requested module does not reference a file.')
 
-    def get_absolute_path(self, root, path):
+        return str(pathlib.Path(module.__file__).parent / rel_path)
+
+    @classmethod
+    def get_absolute_path(cls, root: str, path: str) -> str:
         return path
 
-    def validate_absolute_path(self, root, absolute_path):
+    def validate_absolute_path(self, root: str, absolute_path: str) -> str:
         if not os.path.exists(absolute_path):
             raise HTTPError(404)
         if not os.path.isfile(absolute_path):
@@ -382,7 +404,7 @@ class ComponentResourceHandler(StaticFileHandler):
         return absolute_path
 
 
-def modify_document(self, doc):
+def modify_document(self, doc: 'Document'):
     from bokeh.io.doc import set_curdoc as bk_set_curdoc
     from ..config import config
 
@@ -464,7 +486,7 @@ def modify_document(self, doc):
             logger.info(LOG_SESSION_DESTROYED, id(doc))
 
         doc.on_session_destroyed(_log_session_destroyed)
-        doc.destroy = partial(destroy_document, doc)
+        doc.destroy = partial(destroy_document, doc) # type: ignore
     finally:
         state._launching.remove(doc)
         if config.profiler:
@@ -476,7 +498,7 @@ def modify_document(self, doc):
                 pass
         bk_set_curdoc(old_doc)
 
-CodeHandler.modify_document = modify_document
+CodeHandler.modify_document = modify_document # type: ignore
 
 # Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
 def create_static_handler(prefix, key, app):
@@ -505,9 +527,13 @@ if (
 # Public API
 #---------------------------------------------------------------------
 
-def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
-          show=True, start=True, title=None, verbose=True, location=True,
-          threaded=False, **kwargs):
+def serve(
+    panels: 'TViewableOrFunc' | Mapping[str, 'TViewableOrFunc'], port: int = 0,
+    address: Optional[str] = None, websocket_origin: Optional[str | list[str]] = None,
+    loop: Optional[IOLoop] = None, show: bool = True, start: bool = True,
+    title: Optional[str] = None, verbose: bool = True, location: bool = True,
+    threaded: bool = False, **kwargs
+) -> threading.Thread | 'Server':
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
@@ -559,7 +585,6 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
         location=location
     ))
     if threaded:
-        from tornado.ioloop import IOLoop
         kwargs['loop'] = loop = IOLoop() if loop is None else loop
         server = StoppableThread(
             target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
@@ -568,7 +593,7 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
         state._threads[server_id] = server
         server.start()
     else:
-        server = get_server(panels, **kwargs)
+        return get_server(panels, **kwargs)
     return server
 
 
@@ -612,13 +637,17 @@ def get_static_routes(static_dirs):
     ))
     return patterns
 
-
-def get_server(panel, port=0, address=None, websocket_origin=None,
-               loop=None, show=False, start=False, title=None,
-               verbose=False, location=True, static_dirs={},
-               oauth_provider=None, oauth_key=None, oauth_secret=None,
-               oauth_extra_params={}, cookie_secret=None,
-               oauth_encryption_key=None, session_history=None, **kwargs):
+def get_server(
+    panel: 'TViewableOrFunc' | Mapping[str, 'TViewableOrFunc'], port: int = 0,
+    address: Optional[str] = None, websocket_origin: Optional[str | list[str]] = None,
+    loop: Optional[IOLoop] = None, show: bool = False, start: bool = False,
+    title: bool = None, verbose: bool = False, location: bool | Location = True,
+    static_dirs: Mapping[str, str] = {}, oauth_provider: Optional[str] = None,
+    oauth_key: Optional[str] = None, oauth_secret: Optional[str] = None,
+    oauth_extra_params: Mapping[str, str] = {}, cookie_secret: Optional[str] = None,
+    oauth_encryption_key: Optional[str] = None, session_history: Optional[int] = None,
+    **kwargs
+) -> Server:
     """
     Returns a Server instance with this panel attached as the root
     app.
@@ -757,14 +786,14 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
     from ..config import config
     if oauth_provider:
         from ..auth import OAuthProvider
-        config.oauth_provider = oauth_provider
+        config.oauth_provider = oauth_provider # type: ignore
         opts['auth_provider'] = OAuthProvider()
     if oauth_key:
-        config.oauth_key = oauth_key
+        config.oauth_key = oauth_key # type: ignore
     if oauth_extra_params:
-        config.oauth_extra_params = oauth_extra_params
+        config.oauth_extra_params = oauth_extra_params # type: ignore
     if cookie_secret:
-        config.cookie_secret = cookie_secret
+        config.cookie_secret = cookie_secret # type: ignore
     opts['cookie_secret'] = config.cookie_secret
 
     server = Server(apps, port=port, **opts)
@@ -808,15 +837,15 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method."""
 
-    def __init__(self, io_loop=None, **kwargs):
+    def __init__(self, io_loop: IOLoop, **kwargs):
         super().__init__(**kwargs)
         self.io_loop = io_loop
 
-    def run(self):
+    def run(self) -> None:
         if hasattr(self, '_target'):
-            target, args, kwargs = self._target, self._args, self._kwargs
+            target, args, kwargs = self._target, self._args, self._kwargs # type: ignore
         else:
-            target, args, kwargs = self._Thread__target, self._Thread__args, self._Thread__kwargs
+            target, args, kwargs = self._Thread__target, self._Thread__args, self._Thread__kwargs # type: ignore
         if not target:
             return
         bokeh_server = None
@@ -829,9 +858,9 @@ class StoppableThread(threading.Thread):
                 except Exception:
                     pass
             if hasattr(self, '_target'):
-                del self._target, self._args, self._kwargs
+                del self._target, self._args, self._kwargs # type: ignore
             else:
-                del self._Thread__target, self._Thread__args, self._Thread__kwargs
+                del self._Thread__target, self._Thread__args, self._Thread__kwargs # type: ignore
 
-    def stop(self):
+    def stop(self) -> None:
         self.io_loop.add_callback(self.io_loop.stop)

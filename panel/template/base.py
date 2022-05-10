@@ -2,6 +2,8 @@
 Templates allow multiple Panel objects to be embedded into custom HTML
 documents.
 """
+from __future__ import annotations
+
 import os
 import sys
 import uuid
@@ -9,6 +11,7 @@ import uuid
 from collections import OrderedDict
 from functools import partial
 from pathlib import PurePath
+from typing import TYPE_CHECKING, Any, Callable, List, Optional
 
 import param
 
@@ -38,12 +41,18 @@ from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
 from .theme import THEMES, DefaultTheme, Theme
 
-_server_info = (
+if TYPE_CHECKING:
+    from bokeh.server.contexts import BokehSessionContext
+
+    from ..viewable import Viewable
+
+
+_server_info: str = (
     '<b>Running server:</b> <a target="_blank" href="https://localhost:{port}">'
     'https://localhost:{port}</a>'
 )
 
-FAVICON_URL = "/static/extensions/panel/icons/favicon.ico"
+FAVICON_URL: str = "/static/extensions/panel/icons/favicon.ico"
 
 
 class BaseTemplate(param.Parameterized, ServableMixin):
@@ -59,7 +68,10 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
     __abstract = True
 
-    def __init__(self, template=None, items=None, nb_template=None, **params):
+    def __init__(
+        self, template: Optional[str | _Template] = None, items=None,
+        nb_template: Optional[str | _Template] = None, **params
+    ):
         super().__init__(**params)
         if isinstance(template, str):
             self._code = template
@@ -76,7 +88,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         self._server = None
         self._layout = self._build_layout()
 
-    def _build_layout(self):
+    def _build_layout(self) -> Column:
         str_repr = Str(repr(self))
         server_info = HTML('')
         button = Button(name='Launch server')
@@ -93,7 +105,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         button.param.watch(launch, 'clicks')
         return Column(str_repr, server_info, button)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cls = type(self).__name__
         spacer = '\n    '
         objs = ['[%s] %s' % (name, obj[0].__repr__(1))
@@ -104,13 +116,13 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
 
     @classmethod
-    def _apply_hooks(cls, viewable, root):
+    def _apply_hooks(cls, viewable: Viewable, root: Model) -> None:
         ref = root.ref['id']
         for o in viewable.select():
             cls._apply_modifiers(o, ref)
 
     @classmethod
-    def _apply_modifiers(cls, viewable, mref):
+    def _apply_modifiers(cls, viewable: Viewable, mref: str) -> None:
         if mref not in viewable._models:
             return
         model, _ = viewable._models[mref]
@@ -133,16 +145,20 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         props = viewable._process_param_change(params)
         model.update(**props)
 
-    def _apply_root(self, name, viewable, tags):
+    def _apply_root(self, name: str, viewable: Viewable, tags: List[str]) -> None:
         pass
 
-    def _server_destroy(self, session_context):
+    def _server_destroy(self, session_context: BokehSessionContext):
         doc = session_context._document
         self._documents.remove(doc)
         if doc in state._locations:
             del state._locations[doc]
 
-    def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
+    def _init_doc(
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        title: Optional[str] = None, notebook: bool = False,
+        location: bool | Location=True
+    ):
         doc = doc or _curdoc()
         self._documents.append(doc)
         if location and self.location:
@@ -202,7 +218,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         doc._template_variables.update(self._render_variables)
         return doc
 
-    def _repr_mimebundle_(self, include=None, exclude=None):
+    def _repr_mimebundle_(self, include=None, exclude=None) -> Dict[str, str]:
         loaded = panel_extension._loaded
         if not loaded and 'holoviews' in sys.modules:
             import holoviews as hv
@@ -249,9 +265,12 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     # Public API
     #----------------------------------------------------------------
 
-    def save(self, filename, title=None, resources=None, embed=False,
-             max_states=1000, max_opts=3, embed_json=False,
-             json_prefix='', save_path='./', load_path=None):
+    def save(
+        self, filename: str | IO, title: Optional[str] = None,
+        resources=None, embed: bool = False, max_states: int = 1000,
+        max_opts: int = 3, embed_json: bool = False, json_prefix: str='',
+        save_path: str='./', load_path: Optional[str] = None
+    ) -> None:
         """
         Saves Panel objects to file.
 
@@ -285,7 +304,10 @@ class BaseTemplate(param.Parameterized, ServableMixin):
                     self._render_variables, embed, max_states, max_opts,
                     embed_json, json_prefix, save_path, load_path)
 
-    def server_doc(self, doc=None, title=None, location=True):
+    def server_doc(
+        self, doc: Optional[Document] = None, title: str = None,
+        location: bool | Location = True
+    ) -> Document:
         """
         Returns a servable bokeh Document with the panel attached
 
@@ -456,20 +478,20 @@ class BasicTemplate(BaseTemplate):
     #############
 
     # Resource locations for bundled resources
-    _CDN = CDN_DIST
-    _LOCAL = LOCAL_DIST
+    _CDN: str = CDN_DIST
+    _LOCAL: str = LOCAL_DIST
 
     # pathlib.Path pointing to local CSS file(s)
-    _css = None
+    _css: str | None = None
 
     # pathlib.Path pointing to local JS file(s)
-    _js = None
+    _js: str | None = None
 
     # pathlib.Path pointing to local Jinja2 template
     _template = None
 
     # External resources
-    _resources = {'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}}
+    _resources: Dict[str, Dict[str, str]] = {'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}}
 
     _modifiers = {}
 
@@ -498,7 +520,7 @@ class BasicTemplate(BaseTemplate):
         if 'favicon' in params and isinstance(params['favicon'], PurePath):
             params['favicon'] = str(params['favicon'])
         if 'notifications' not in params and config.notifications:
-            params['notifications'] = state.notifications if state.curdoc else NotificationArea() 
+            params['notifications'] = state.notifications if state.curdoc else NotificationArea()
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
         if 'embed(roots.js_area)' in template:
@@ -518,7 +540,10 @@ class BasicTemplate(BaseTemplate):
         self.header.param.trigger('objects')
         self.modal.param.trigger('objects')
 
-    def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
+    def _init_doc(
+        self, doc: Optional[Document] = None, comm: Optional['Comm'] = None,
+        title: Optional[str]=None, notebook: bool = False, location: bool | Location = True
+    ) -> Document:
         title = self.title if self.title != self.param.title.default else title
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
@@ -532,20 +557,20 @@ class BasicTemplate(BaseTemplate):
                 doc.theme = theme.bokeh_theme
         return doc
 
-    def _apply_hooks(self, viewable, root):
+    def _apply_hooks(self, viewable: Viewable, root: Model):
         super()._apply_hooks(viewable, root)
         theme = self._get_theme()
         if theme and theme.bokeh_theme and root.document:
             root.document.theme = theme.bokeh_theme
 
-    def _get_theme(self):
+    def _get_theme(self) -> Theme:
         for cls in type(self).__mro__:
             try:
                 return self.theme.find_theme(cls)()
             except Exception:
                 pass
 
-    def _template_resources(self):
+    def _template_resources(self) -> Dict[str, Dict[str, str] | List[str]]:
         clsname = type(self).__name__
         name = clsname.lower()
         if _settings.resources(default="server") == 'server':
@@ -654,7 +679,7 @@ class BasicTemplate(BaseTemplate):
                 css_files['theme'] = component_resource_path(theme, 'css', theme.css)
         return resource_types
 
-    def _update_vars(self, *args):
+    def _update_vars(self, *args) -> None:
         self._render_variables['app_title'] = self.title
         self._render_variables['meta_name'] = self.title
         self._render_variables['site_title'] = self.site
@@ -692,14 +717,14 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['main_max_width'] = self.main_max_width
         self._render_variables['sidebar_width'] = self.sidebar_width
 
-    def _update_busy(self):
+    def _update_busy(self) -> None:
         if self.busy_indicator:
             self._render_items['busy_indicator'] = (self.busy_indicator, [])
         elif 'busy_indicator' in self._render_items:
             del self._render_items['busy_indicator']
         self._render_variables['busy'] = self.busy_indicator is not None
 
-    def _update_render_items(self, event):
+    def _update_render_items(self, event: param.parameterized.Event) -> None:
         if event.obj is self and event.name == 'busy_indicator':
             return self._update_busy()
         if event.obj is self.main:
@@ -739,25 +764,25 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['header'] = any('header' in ts for ts in tags)
         self._render_variables['root_labels'] = labels
 
-    def _server_destroy(self, session_context):
+    def _server_destroy(self, session_context: BokehSessionContext):
         super()._server_destroy(session_context)
         if not self._documents and self.busy_indicator in state._indicators:
             state._indicators.remove(self.busy_indicator)
 
-    def open_modal(self):
+    def open_modal(self) -> None:
         """
         Opens the modal area
         """
         self._actions.open_modal += 1
 
-    def close_modal(self):
+    def close_modal(self) -> None:
         """
         Closes the modal area
         """
         self._actions.close_modal += 1
 
     @staticmethod
-    def _get_favicon_type(favicon):
+    def _get_favicon_type(favicon) -> str:
         if not favicon:
             return ""
         elif favicon.endswith(".png"):
@@ -828,7 +853,10 @@ class Template(BaseTemplate):
     served as a standalone server and when used in the notebook.
     """
 
-    def __init__(self, template=None, nb_template=None, items=None, **params):
+    def __init__(
+        self, template: str | _Template = None, nb_template: str | _Template = None,
+        items: Optional[Dict[str, Any]] = None, **params
+    ):
         super().__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items
         for name, item in items.items():
@@ -838,7 +866,7 @@ class Template(BaseTemplate):
     # Public API
     #----------------------------------------------------------------
 
-    def add_panel(self, name, panel, tags=[]):
+    def add_panel(self, name: str, panel: Viewable, tags: List[str] = []) -> None:
         """
         Add panels to the Template, which may then be referenced by
         the given name using the jinja2 embed macro.
@@ -858,7 +886,7 @@ class Template(BaseTemplate):
         self._render_items[name] = (_panel(panel), tags)
         self._layout[0].object = repr(self)
 
-    def add_variable(self, name, value):
+    def add_variable(self, name: str, value: Any) -> None:
         """
         Add parameters to the template, which may then be referenced
         by the given name in the Jinja2 template.

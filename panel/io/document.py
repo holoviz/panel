@@ -107,7 +107,7 @@ def with_lock(func: Callable) -> Callable:
     return wrapper
 
 @contextmanager
-def unlocked():
+def unlocked() -> None:
     """
     Context manager which unlocks a Document and dispatches
     ModelChangedEvents triggered in the context body to all sockets
