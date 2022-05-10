@@ -68,7 +68,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             self._code = None
         self.template = template
         if isinstance(nb_template, str):
-            nb_template = _env.from_string(template)
+            nb_template = _env.from_string(nb_template)
         self.nb_template = nb_template or template
         self._render_items = OrderedDict()
         self._render_variables = {}
