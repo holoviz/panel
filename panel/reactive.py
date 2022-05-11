@@ -1621,7 +1621,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _get_model(
         self, doc: 'Document', root: Optional['Model'] = None,
         parent: Optional['Model'] = None, comm: Optional['Comm'] = None
-    ):
+    ) -> 'Model':
         properties = self._process_param_change(self._init_params())
         model = _BkReactiveHTML(**properties)
         if comm and not self._loaded():

@@ -34,6 +34,7 @@ from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 _state_logger = logging.getLogger('panel.state')
 
 if TYPE_CHECKING:
+    from bokeh.document.locking import UnlockedDocumentProxy
     from bokeh.server.contexts import BokehSessionContext
     from tornado.ioloop import IOLoop
 
@@ -45,7 +46,7 @@ if TYPE_CHECKING:
 
 
 @contextmanager
-def set_curdoc(doc: Document):
+def set_curdoc(doc: Document | 'UnlockedDocumentProxy'):
     orig_doc = state._curdoc
     state.curdoc = doc
     yield
@@ -53,7 +54,7 @@ def set_curdoc(doc: Document):
 
 class _Undefined: pass
 
-Tat = Union[dt.datetime, Callable[dt.datetime, dt.datetime], Iterator[dt.datetime]]
+Tat = Union[dt.datetime, Callable[[dt.datetime], dt.datetime], Iterator[dt.datetime]]
 
 class _state(param.Parameterized):
     """
@@ -98,7 +99,7 @@ class _state(param.Parameterized):
     _hold: bool = False
 
     # Used to ensure that events are not scheduled from the wrong thread
-    _thread_id_: WeakKeyDictionary[Document, str] = WeakKeyDictionary()
+    _thread_id_: WeakKeyDictionary[Document, int] = WeakKeyDictionary()
     _thread_pool = None
 
     _comm_manager = _CommManager
@@ -175,11 +176,11 @@ class _state(param.Parameterized):
         return '_pyodide' in sys.modules
 
     @property
-    def _thread_id(self) -> str | None:
+    def _thread_id(self) -> int | None:
         return self._thread_id_.get(self.curdoc) if self.curdoc else None
 
     @_thread_id.setter
-    def _thread_id(self, thread_id: str) -> None:
+    def _thread_id(self, thread_id: int) -> None:
         self._thread_id_[self.curdoc] = thread_id
 
     def _unblocked(self, doc: Document) -> bool:

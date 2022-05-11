@@ -539,7 +539,10 @@ class Renderable(param.Parameterized):
             loc._cleanup(root)
             del state._locations[doc]
 
-    def get_root(self, doc: Optional[Document] = None, comm: Optional[Comm] = None, preprocess: bool = True) -> 'Model':
+    def get_root(
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        preprocess: bool = True
+    ) -> 'Model':
         """
         Returns the root model and applies pre-processing hooks
 
