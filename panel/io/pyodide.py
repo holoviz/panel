@@ -30,7 +30,7 @@ os.environ['BOKEH_RESOURCES'] = 'cdn'
 def async_execute(func):
     event_loop = asyncio.get_running_loop()
     if event_loop.is_running():
-        event_loop.call_soon(func)
+        asyncio.create_task(func())
     else:
         event_loop.run_until_complete(func())
     return
