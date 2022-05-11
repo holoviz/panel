@@ -163,7 +163,6 @@ class PeriodicCallback(param.Parameterized):
                 self._updating = False
         self._start_time = time.time()
         if state._is_pyodide:
-            event_loop = asyncio.get_running_loop()
             self._cb = asyncio.create_task(
                 self._async_repeat(self._periodic_callback)
             )
