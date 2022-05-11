@@ -17,7 +17,8 @@ from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
+    TYPE_CHECKING, Any, Callable, Dict, Iterator as TIterator, List,
+    Optional, Tuple, Union
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -60,7 +61,7 @@ def set_curdoc(doc: Document | 'UnlockedDocumentProxy'):
 
 class _Undefined: pass
 
-Tat = Union[dt.datetime, Callable[[dt.datetime], dt.datetime], Iterator[dt.datetime]]
+Tat = Union[dt.datetime, Callable[[dt.datetime], dt.datetime], TIterator[dt.datetime]]
 
 class _state(param.Parameterized):
     """
