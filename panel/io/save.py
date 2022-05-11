@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import io
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional
 
 import bokeh
 
@@ -28,7 +28,9 @@ from .state import state
 
 if TYPE_CHECKING:
     from bokeh.embed.standalone import ThemeLike
-    from bokeh.model import Model
+    from jinja2 import Template
+
+    from ..viewable import Viewable
 
 #---------------------------------------------------------------------
 # Private API
@@ -135,7 +137,7 @@ def _title_from_models(models: Iterable[Model], title: str) -> str:
 def file_html(
     models: Model | Document | List[Model], resources: Resources | None,
     title: Optional[str] = None, template: Template | str = BASE_TEMPLATE,
-    template_variables: Dict[Str, Any] = {}, theme: ThemeLike = None,
+    template_variables: Dict[str, Any] = {}, theme: ThemeLike = None,
     _always_new: bool = False
 ):
     models_seq = []

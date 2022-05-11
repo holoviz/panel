@@ -11,7 +11,7 @@ import sys
 from contextlib import contextmanager
 from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, Any, Dict, List, Iterator, Literal, Optional, Tuple
+    TYPE_CHECKING, Any, Dict, List, Iterator, Optional, Tuple
 )
 
 import bokeh
@@ -40,10 +40,8 @@ from .resources import PANEL_DIR, Bundle, Resources, _env, bundle_resources
 from .state import state
 
 if TYPE_CHECKING:
-    from bokeh.document import Document
     from bokeh.server.server import Server
     from jinja2 import Template
-    from pyviz_comms import Comm
 
     from ..models.comm_manager import CommManager
     from ..widgets.base import Widget

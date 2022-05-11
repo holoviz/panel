@@ -22,7 +22,9 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
 from types import FunctionType, MethodType
-from typing import TYPE_CHECKING, Callable, Dict, Mapping, Optional, Union
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union
+)
 from urllib.parse import urljoin, urlparse
 
 import param
@@ -68,6 +70,7 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.session import ServerSession
+    from jinja2 import Template
 
     from ..template.base import BaseTemplate
     from ..viewable import Viewable, Viewer

@@ -17,7 +17,7 @@ from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+    TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -35,14 +35,20 @@ _state_logger = logging.getLogger('panel.state')
 
 if TYPE_CHECKING:
     from bokeh.document.locking import UnlockedDocumentProxy
+    from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
+    from bokeh.server.server import Server
+    from IPython.display import DisplayHandle
+    from pyviz_comms import Comm
     from tornado.ioloop import IOLoop
 
+    from ..viewable import Viewable
     from ..widgets.indicators import BooleanIndicator
     from ..template.base import BaseTemplate
     from .callbacks import PeriodicCallback
     from .location import Location
     from .notifications import NotificationArea
+    from .server import StoppableThread
 
 
 @contextmanager

@@ -11,7 +11,7 @@ import uuid
 from collections import OrderedDict
 from functools import partial
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Any, Callable, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, IO, List, Optional
 
 import param
 
@@ -42,9 +42,13 @@ from ..widgets.indicators import BooleanIndicator, LoadingSpinner
 from .theme import THEMES, DefaultTheme, Theme
 
 if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
+    from jinja2 import Template as _Template
+    from pyviz_comms import Comm
 
-    from ..viewable import Viewable
+    from ..io.location import Location
 
 
 _server_info: str = (
@@ -266,7 +270,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     #----------------------------------------------------------------
 
     def save(
-        self, filename: str | IO, title: Optional[str] = None,
+        self, filename: str | os.PathLike | IO, title: Optional[str] = None,
         resources=None, embed: bool = False, max_states: int = 1000,
         max_opts: int = 3, embed_json: bool = False, json_prefix: str='',
         save_path: str='./', load_path: Optional[str] = None
