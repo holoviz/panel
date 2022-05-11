@@ -124,7 +124,7 @@ async def show(obj, target):
     """
     from js import console
     console.log('panel.io.pyodide.show is deprecated in favor of panel.io.pyodide.write')
-    write(target, obj)
+    await write(target, obj)
 
 async def write(target, obj):
     """

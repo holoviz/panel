@@ -141,12 +141,10 @@ class PeriodicCallback(param.Parameterized):
         """
         while True:
             start = time.monotonic()
-            self._cb = asyncio.ensure_future(func())
-            await self._cb
+            await func()
             timeout = (self.period/1000.) - (time.monotonic()-start)
             if timeout > 0:
-                self._cb = asyncio.ensure_future(asyncio.sleep(timeout))
-                await self._cb
+                await asyncio.sleep(timeout)
 
     def _cleanup(self, session_context):
         self.stop()
@@ -166,10 +164,9 @@ class PeriodicCallback(param.Parameterized):
         self._start_time = time.time()
         if state._is_pyodide:
             event_loop = asyncio.get_running_loop()
-            task = asyncio.create_task(
+            self._cb = asyncio.create_task(
                 self._async_repeat(self._periodic_callback)
             )
-            event_loop.call_soon(task)
         elif state.curdoc:
             self._doc = state.curdoc
             self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
