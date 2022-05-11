@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import io
 
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, IO, Iterable, List, Optional
 
 import bokeh
 
@@ -165,7 +165,7 @@ def file_html(
 #---------------------------------------------------------------------
 
 def save(
-    panel: Viewable, filename: str, title: Optional[str]=None,
+    panel: Viewable, filename: str | IO, title: Optional[str]=None,
     resources=None, template: Template | str = None,
     template_variables: Dict[str, Any] = None, embed: bool = False,
     max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,

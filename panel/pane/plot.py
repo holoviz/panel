@@ -100,7 +100,7 @@ class Bokeh(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:
-            return self._get_root(doc, comm)
+            return self.get_root(doc, comm)
 
         if self.object is None:
             model = BkSpacer()

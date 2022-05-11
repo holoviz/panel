@@ -265,6 +265,8 @@ class Syncable(Renderable):
 
     def _cleanup(self, root: 'Model' | None) -> None:
         super()._cleanup(root)
+        if root is None:
+            return
         ref = root.ref['id']
         self._models.pop(ref, None)
         comm, client_comm = self._comms.pop(ref, (None, None))
