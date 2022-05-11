@@ -30,7 +30,7 @@ os.environ['BOKEH_RESOURCES'] = 'cdn'
 def async_execute(func):
     event_loop = asyncio.get_running_loop()
     if event_loop.is_running():
-        event_loop.call_soon(func)
+        asyncio.create_task(func())
     else:
         event_loop.run_until_complete(func())
     return
@@ -124,7 +124,7 @@ async def show(obj, target):
     """
     from js import console
     console.log('panel.io.pyodide.show is deprecated in favor of panel.io.pyodide.write')
-    write(target, obj)
+    await write(target, obj)
 
 async def write(target, obj):
     """
