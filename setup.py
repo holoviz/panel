@@ -106,6 +106,7 @@ install_requires = [
     'pyct >=0.4.4',
     'bleach',
     'setuptools',
+    'typing_extensions'
 ]
 
 _recommended = [

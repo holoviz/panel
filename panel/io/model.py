@@ -7,8 +7,9 @@ import textwrap
 
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, List, Iterable, Literal, Optional
+    TYPE_CHECKING, Any, List, Iterable, Optional
 )
+from typing_extensions import Literal
 
 import numpy as np
 
