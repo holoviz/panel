@@ -409,7 +409,10 @@ def modify_document(self, doc):
     sys.modules[module.__name__] = module
     doc.modules._modules.append(module)
 
-    old_doc = curdoc()
+    try:
+        old_doc = curdoc()
+    except RuntimeError:
+        old_doc = None
     bk_set_curdoc(doc)
 
     if config.autoreload:
@@ -474,7 +477,8 @@ def modify_document(self, doc):
                 state.param.trigger('_profiles')
             except Exception:
                 pass
-        bk_set_curdoc(old_doc)
+        if old_doc is not None:
+            bk_set_curdoc(old_doc)
 
 CodeHandler.modify_document = modify_document
 
