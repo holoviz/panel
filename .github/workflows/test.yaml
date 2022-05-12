@@ -18,14 +18,14 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: "1"
-      - name: pre-commit
-        uses: pre-commit/action@v2.0.3
       - name: set PY
         run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
       - uses: actions/cache@v1
         with:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: pre-commit
+        uses: pre-commit/action@v2.0.3
   test_suite:
     name: Pytest on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
