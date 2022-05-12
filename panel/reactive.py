@@ -24,6 +24,7 @@ import bleach
 import numpy as np
 import param # type: ignore
 
+from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
 
@@ -247,10 +248,16 @@ class Syncable(Renderable):
         doc: 'Document', comm: Optional['Comm']
     ) -> None:
         ref = root.ref['id']
-        self._changing[ref] = attrs = [
-            attr for attr, value in msg.items()
-            if not model.lookup(attr).property.matches(getattr(model, attr), value)
-        ]
+        self._changing[ref] = attrs = []
+        for attr, value in msg.items():
+            # Bokeh raises UnsetValueError if the value is Undefined.
+            try:
+                model_val = getattr(model, attr)
+            except UnsetValueError:
+                attrs.append(attr)
+                continue
+            if not model.lookup(attr).property.matches(model_val, value):
+                attrs.append(attr)
         try:
             model.update(**msg)
         finally:
