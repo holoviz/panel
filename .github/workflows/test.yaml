@@ -20,6 +20,12 @@ jobs:
           fetch-depth: "1"
       - name: pre-commit
         uses: pre-commit/action@v2.0.3
+      - name: set PY
+        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+      - uses: actions/cache@v1
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
   test_suite:
     name: Pytest on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
@@ -93,11 +99,6 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
-      - name: doit test_flakes
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit test_flakes
       - name: doit test_unit
         run: |
           eval "$(conda shell.bash hook)"
