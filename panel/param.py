@@ -364,7 +364,7 @@ class Param(PaneBase):
                                  **kwargs)
                     layout[layout.objects.index(existing[0])] = pane
                 else:
-                    layout.pop(existing[0])
+                    layout.remove(existing[0])
 
             watchers = [selector.param.watch(update_pane, 'value')]
             if toggle:
@@ -495,7 +495,7 @@ class Param(PaneBase):
                     self._rerender()
                 elif (change.new < self.display_threshold and
                       widget in self._widget_box.objects):
-                    self._widget_box.pop(widget)
+                    self._widget_box.remove(widget)
                 elif change.new >= self.display_threshold:
                     self._rerender()
                 return
@@ -824,8 +824,8 @@ class ParamMethod(ReplacementPane):
                             p.name in w.parameter_names):
                             obj = p.cls if p.inst is None else p.inst
                             obj.param.unwatch(w)
-                            watchers.pop(watchers.index(w))
-                    deps.pop(deps.index(p))
+                            watchers.remove(w)
+                    deps.remove(p)
 
                 new_deps = [dep for dep in new_deps if dep not in deps]
                 for _, params in full_groupby(new_deps, lambda x: (x.inst or x.cls, x.what)):

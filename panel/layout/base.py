@@ -363,7 +363,7 @@ class NamedListLike(param.Parameterized):
 
     _preprocess_params = ['objects']
 
-    def __init__(self, *items, **params):
+    def __init__(self, *items: List[Any, Tuple[str, Any]], **params: Any):
         if 'objects' in params:
             if items:
                 raise ValueError('%s objects should be supplied either '
