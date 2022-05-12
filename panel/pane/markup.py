@@ -49,10 +49,10 @@ class DivPaneBase(PaneBase):
 class HTML(DivPaneBase):
     """
     `HTML` panes renders HTML strings and objects with a `_repr_html_` method.
-    
+
     The `height` and `width` can optionally be specified, to
     allow room for whatever is being wrapped.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/HTML.html
 
     :Example:
@@ -92,11 +92,11 @@ class HTML(DivPaneBase):
 class DataFrame(HTML):
     """
     The `DataFrame` pane renders pandas, dask and streamz DataFrame types using
-    their custom HTML repr. 
-    
+    their custom HTML repr.
+
     In the case of a streamz DataFrame the rendered data will update
     periodically.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/DataFrame.html
 
     :Example:
@@ -246,10 +246,10 @@ class DataFrame(HTML):
 class Str(DivPaneBase):
     """
     The `Str` pane allows rendering arbitrary text and objects in a panel.
-    
+
     Unlike Markdown and HTML, a `Str` is interpreted as a raw string without
     applying any markup and is displayed in a fixed-width font by default.
-    
+
     The pane will render any text, and if given an object will display the
     object’s Python `repr`.
 
@@ -285,10 +285,10 @@ class Str(DivPaneBase):
 class Markdown(DivPaneBase):
     """
     The `Markdown` pane allows rendering arbitrary markdown strings in a panel.
-    
+
     It renders strings containing valid Markdown as well as objects with a
     `_repr_markdown_` method, and may define custom CSS styles.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/Markdown.html
 
     :Example:
@@ -345,7 +345,7 @@ class JSON(DivPaneBase):
     """
     The `JSON` pane allows rendering arbitrary JSON strings, dicts and other
     json serializable objects in a panel.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/JSON.html
 
     :Example:

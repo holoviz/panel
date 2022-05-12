@@ -123,8 +123,8 @@ export namespace Terminal {
   export type Props = HTMLBox.Props & {
     options: p.Property<any>
     output: p.Property<string>
-    ncols: p.Property<number>  
-    nrows: p.Property<number>  
+    ncols: p.Property<number>
+    nrows: p.Property<number>
     _clears: p.Property<number>
   }
 }

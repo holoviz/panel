@@ -13,7 +13,7 @@ class TextEditor(Widget):
     """
     The `TextEditor` widget provides a WYSIWYG
     (what-you-see-is-what-you-get) rich text editor which outputs HTML.
-    
+
     The editor is built on top of the [Quill.js](https://quilljs.com/) library.
 
     Reference: https://panel.holoviz.org/reference/widgets/TextEditor.html

@@ -141,7 +141,7 @@ class Button(_ClickButton):
         """
         Links properties on the this Button to those on the
         `target` object in Javascript (JS) code.
-        
+
         Supports two modes, either specify a
         mapping between the source and target model properties as
         keywords or provide a dictionary of JS code snippets which
@@ -150,7 +150,7 @@ class Button(_ClickButton):
 
         Arguments
         ----------
-        target: panel.viewable.Viewable | bokeh.model.Model | holoviews.core.dimension.Dimensioned 
+        target: panel.viewable.Viewable | bokeh.model.Model | holoviews.core.dimension.Dimensioned
           The target to link the value(s) to.
         code: dict
           Custom code which will be executed when the widget value

@@ -124,16 +124,16 @@ def test_bind_bound_function_to_arg():
 
     def divide(value):
         return value / 2
-    
+
     bound_function = bind(divide, bind(add1, widget.param.value))
 
     assert bound_function() == 1
 
     widget.value = 3
-    
+
     assert bound_function() == 2
 
-    
+
 def test_bind_bound_function_to_kwarg():
     widget = IntSlider(value=1)
 
@@ -142,11 +142,11 @@ def test_bind_bound_function_to_kwarg():
 
     def divide(divisor=2, value=0):
         return value / divisor
-    
+
     bound_function = bind(divide, value=bind(add1, widget.param.value))
 
     assert bound_function() == 1
 
     widget.value = 3
-    
+
     assert bound_function() == 2

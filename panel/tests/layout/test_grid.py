@@ -243,7 +243,7 @@ def test_gridspec_stretch_with_replacement_pane(document, comm):
     assert row.children[0] is not div2
     assert row.children[0].sizing_mode == 'stretch_width'
     assert row.children[0].height == 300
-    
+
 
 
 def test_gridbox_ncols(document, comm):

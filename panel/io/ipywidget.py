@@ -20,7 +20,7 @@ class MessageSentEventPatched(MessageSentEvent):
     """
     Patches MessageSentEvent with fix that ensures MessageSent event
     does not define msg_data (which is an assumption in BokehJS
-    Document.apply_json_patch.) 
+    Document.apply_json_patch.)
     """
 
     def generate(self, references, buffers):

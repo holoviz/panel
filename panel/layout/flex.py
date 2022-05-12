@@ -9,19 +9,19 @@ from .base import ListLike
 class FlexBox(ListLike, ReactiveHTML):
     """
     The `FlexBox` is a list-like layout (unlike `GridSpec`) that wraps objects
-    into a CSS flex container. 
-    
+    into a CSS flex container.
+
     It has a list-like API with methods to `append`, `extend`, `clear`,
     `insert`, `pop`, `remove` and `__setitem__`, which makes it possible to
     interactively update and modify the layout. It exposes all the CSS options
     for controlling the behavior and layout of the flex box.
-    
+
     Reference: https://panel.holoviz.org/reference/layouts/FlexBox.html
 
     :Example:
 
     >>> pn.FlexBox(
-    ...    some_python_object, another_python_object, ..., 
+    ...    some_python_object, another_python_object, ...,
     ...    the_last_python_object
     ... )
     """

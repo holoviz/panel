@@ -127,8 +127,8 @@ class SingleSelectBase(SelectBase):
 class Select(SingleSelectBase):
     """
     The `Select` widget allows selecting a value from a list or dictionary of
-    `options` by selecting it from a dropdown menu or selection area. 
-    
+    `options` by selecting it from a dropdown menu or selection area.
+
     It falls into the broad category of single-value, option-selection widgets
     that provide a compatible API and include the `RadioBoxGroup`,
     `AutocompleteInput` and `DiscreteSlider` widgets.
@@ -320,7 +320,7 @@ class MultiSelect(_MultiSelectBase):
     """
     The `MultiSelect` widget allows selecting multiple values from a list of
     `options`.
-    
+
     It falls into the broad category of multi-value, option-selection widgets
     that provide a compatible API and include the`CrossSelector`,
     `CheckBoxGroup` and `CheckButtonGroup` widgets.
@@ -345,12 +345,12 @@ class MultiSelect(_MultiSelectBase):
 class MultiChoice(_MultiSelectBase):
     """
     The `MultiChoice` widget allows selecting multiple values from a list of
-    `options`. 
-    
+    `options`.
+
     It falls into the broad category of multi-value, option-selection widgets
     that provide a compatible API and include the `MultiSelect`,
     `CrossSelector`, `CheckBoxGroup` and `CheckButtonGroup` widgets.
-    
+
     The `MultiChoice` widget provides a much more compact UI than
     `MultiSelect`.
 
@@ -373,10 +373,10 @@ class MultiChoice(_MultiSelectBase):
 
     option_limit = param.Integer(default=None, bounds=(1, None), doc="""
         Maximum number of options to display at once.""")
-    
+
     search_option_limit = param.Integer(default=None, bounds=(1, None), doc="""
         Maximum number of options to display at once if search string is entered.""")
-    
+
     placeholder = param.String(default='', doc="""
         String displayed when no selection has been made.""")
 
@@ -392,12 +392,12 @@ _AutocompleteInput_rename = {'name': 'title', 'options': 'completions'}
 class AutocompleteInput(Widget):
     """
     The `MultiChoice` widget allows selecting multiple values from a list of
-    `options`. 
-    
+    `options`.
+
     It falls into the broad category of multi-value, option-selection widgets
     that provide a compatible API and include the `MultiSelect`,
     `CrossSelector`, `CheckBoxGroup` and `CheckButtonGroup` widgets.
-    
+
     The `MultiChoice` widget provides a much more compact UI than
     `MultiSelect`.
 
@@ -503,12 +503,12 @@ class _RadioGroupBase(SingleSelectBase):
 class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
     """
     The `RadioButtonGroup` widget allows selecting from a list or dictionary
-    of values using a set of toggle buttons. 
-    
+    of values using a set of toggle buttons.
+
     It falls into the broad category of single-value, option-selection widgets
     that provide a compatible API and include the `RadioBoxGroup`, `Select`,
     and `DiscreteSlider` widgets.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/RadioButtonGroup.html
 
     :Example:
@@ -533,11 +533,11 @@ class RadioBoxGroup(_RadioGroupBase):
     """
     The `RadioBoxGroup` widget allows selecting from a list or dictionary of
     values using a set of checkboxes.
-    
+
     It falls into the broad category of single-value, option-selection widgets
     that provide a compatible API and include the `RadioButtonGroup`, `Select`
     and `DiscreteSlider` widgets.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/RadioBoxGroup.html
 
     :Example:
@@ -599,11 +599,11 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
     """
     The `CheckButtonGroup` widget allows selecting between a list of options
     by toggling the corresponding buttons.
-    
+
     It falls into the broad category of multi-option selection widgets that
     provide a compatible API and include the `MultiSelect`, `CrossSelector`
     and `CheckBoxGroup` widgets.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/CheckButtonGroup.html
 
     :Example:
@@ -625,11 +625,11 @@ class CheckBoxGroup(_CheckGroupBase):
     """
     The `CheckBoxGroup` widget allows selecting between a list of options by
     ticking the corresponding checkboxes.
-    
+
     It falls into the broad category of multi-option selection widgets that
     provide a compatible API and include the `MultiSelect`, `CrossSelector`
     and `CheckButtonGroup` widgets.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/CheckBoxGroup.html
 
     :Example:
@@ -705,7 +705,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
     :Example:
 
     >>> CrossSelector(
-    ...     name='Fruits', value=['Apple', 'Pear'], 
+    ...     name='Fruits', value=['Apple', 'Pear'],
     ...     options=['Apple', 'Banana', 'Pear', 'Strawberry']
     ... )
     """

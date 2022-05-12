@@ -13,7 +13,7 @@ class Streamz(ReplacementPane):
     The `Streamz` pane renders streamz `Stream` objects emitting arbitrary
     objects, unlike the DataFrame pane which specifically handles streamz
     DataFrame and Series objects and exposes various formatting objects.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/Streamz.html
 
     :Example:

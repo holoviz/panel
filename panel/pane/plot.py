@@ -49,7 +49,7 @@ class Bokeh(PaneBase):
     """
     The Bokeh pane allows displaying any displayable Bokeh model inside a
     Panel app.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/Bokeh.html
 
     :Example:
@@ -136,13 +136,13 @@ class Matplotlib(PNG, IPyWidget):
     """
     The `Matplotlib` pane allows displaying any displayable Matplotlib figure
     inside a Panel app.
-    
+
     - It will render the plot to PNG at the declared DPI and then embed it.
     - If you find the figure to be clipped on the edges, you can set `tight=True`
     to automatically resize objects to fit within the pane.
     - If you have installed `ipympl` you will also be able to use the
     interactive backend.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/Matplotlib.html
 
     :Example:

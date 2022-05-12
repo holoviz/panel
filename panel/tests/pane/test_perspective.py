@@ -74,4 +74,3 @@ def test_perspective_can_sort_desc():
     actual = Perspective()._process_property_change(msg)
     # Then
     assert actual == msg
-

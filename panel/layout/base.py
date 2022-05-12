@@ -139,7 +139,7 @@ class Panel(Reactive):
         parent: Optional['Model'] = None, comm: Optional[Comm] = None
     ) -> 'Model':
         if self._bokeh_model is None:
-            raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.') 
+            raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
         model = self._bokeh_model()
         if root is None:
             root = model
@@ -688,11 +688,11 @@ class Row(ListPanel):
     """
     The `Row` layout allows arranging multiple panel objects in a horizontal
     container.
-    
+
     It has a list-like API with methods to `append`, `extend`, `clear`,
     `insert`, `pop`, `remove` and `__setitem__`, which makes it possible to
     interactively update and modify the layout.
-    
+
     Reference: https://panel.holoviz.org/reference/layouts/Row.html
 
     :Example:
@@ -711,11 +711,11 @@ class Column(ListPanel):
     """
     The `Column` layout allows arranging multiple panel objects in a vertical
     container.
-    
+
     It has a list-like API with methods to `append`, `extend`, `clear`,
     `insert`, `pop`, `remove` and `__setitem__`, which makes it possible to
     interactively update and modify the layout.
-    
+
     Reference: https://panel.holoviz.org/reference/layouts/Column.html
 
     :Example:
@@ -737,11 +737,11 @@ class WidgetBox(ListPanel):
 
     It is largely identical to the `Column` layout, but has some default
     styling that makes widgets be clearly grouped together visually.
-    
+
     It has a list-like API with methods to `append`, `extend`, `clear`,
     `insert`, `pop`, `remove` and `__setitem__`, which make it possible to
     interactively update and modify the layout.
-    
+
     Reference: https://panel.holoviz.org/reference/layouts/WidgetBox.html
 
     :Example:

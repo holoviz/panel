@@ -178,4 +178,3 @@ class DataTabulator(HTMLBox):
             'moment': 'moment'
         }
     }
-

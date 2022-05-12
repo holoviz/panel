@@ -16,15 +16,15 @@ from ..viewable import Layoutable
 class Plotly(PaneBase):
     """
     The `Plotly` pane renders Plotly plots inside a panel.
-    
+
     Note that
-    
+
     - the Panel `extension` has to be loaded with `plotly` as an argument to
     ensure that Plotly.js is initialized.
     - it supports click, hover and selection events.
     - it optimizes the plot rendering by using binary serialization for any
     array data found on the Plotly object.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/Plotly.html
 
     :Example:

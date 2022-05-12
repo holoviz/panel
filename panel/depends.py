@@ -34,9 +34,9 @@ def depends(*args, **kwargs):
     Parameter values. This means that the "reactive" function can
     (or will if `watch=True`) be automatically invoked whenever the underlying
     parameter values change.
-    
+
     See also `pn.bind`.
-    
+
     Reference: https://panel.holoviz.org/user_guide/APIs.html#reactive-functions
 
     :Example:
@@ -51,7 +51,7 @@ def depends(*args, **kwargs):
     decorator, but extended so that if widgets are provided as
     dependencies, the underlying `value` Parameter of the widget is
     extracted as the actual dependency.
-    
+
     This extension is solely for syntactic convenience, allowing the widget to
     be passed in as a synonym for the underlying parameter. Apart from that
     extension, this decorator otherwise behaves the same as the underlying
@@ -77,7 +77,7 @@ def bind(function, *args, watch=False, **kwargs):
     Parameter values. This means that the "reactive" function can
     (or will if `watch=True`) be automatically invoked whenever the underlying
     parameter values change.
-    
+
     Reference: https://panel.holoviz.org/user_guide/APIs.html#reactive-functions
 
     :Example:

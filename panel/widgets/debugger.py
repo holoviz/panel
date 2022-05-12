@@ -99,7 +99,7 @@ class CheckFilter(logging.Filter):
             widget_session_ids = set(m.document.session_context.id
                                      for m in sum(self.debugger._models.values(),
                                                   tuple()) if m.document.session_context)
-            
+
             print('>>>', session_id, widget_session_ids)
             if session_id not in widget_session_ids:
                 return False
@@ -189,7 +189,7 @@ class Debugger(Card):
         default={'fmt':"%(asctime)s [%(name)s - %(levelname)s]: %(message)s"},
         precedence=-1,
         doc="""
-        Arguments to pass to the logging formatter. See 
+        Arguments to pass to the logging formatter. See
         the standard python logging libraries."""
         )
 

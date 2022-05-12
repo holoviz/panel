@@ -65,13 +65,13 @@ def test_file_download_file():
 
     with pytest.raises(ValueError):
         FileDownload(embed=True)
-    
+
     with pytest.raises(FileNotFoundError):
         FileDownload("nofile", embed=True)
 
     with pytest.raises(ValueError):
         FileDownload(666, embed=True)
-    
+
     file_download = FileDownload("nofile")
     with pytest.raises(FileNotFoundError):
         file_download._clicks += 1
@@ -82,9 +82,9 @@ def test_file_download_callback():
 
     with pytest.raises(ValueError):
         file_download._clicks += 1
-    
+
     file_download = FileDownload(callback=lambda: StringIO("data"), filename="abc.py")
-    
+
     assert file_download.data is None
 
     file_download._clicks += 1

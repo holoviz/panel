@@ -31,7 +31,7 @@ Panel makes it simple to:
 - Support deep interactivity by communicating client-side interactions and events to Python
 - Stream data large and small to the frontend
 - Add authentication to your application using the inbuilt OAuth providers
-  
+
 The `Getting Started <getting_started>`_ will provide a quick introduction to the panel API and get you started while the `User Guide <user_guide>`_ provides a more detailed guide on how to use Panel.
 
 For usage questions or technical assistance, please head over to `Discourse <https://discourse.holoviz.org/>`_. If you have any `issues <https://github.com/holoviz/panel/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/holoviz/panel>`_.
@@ -52,7 +52,7 @@ or using PyPI::
 Usage
 -----
 
-Panel can be used in a wide range of development environments from a simple Python REPL, in a notebook or your favorite IDE such as VSCode. Visit the `Getting Started Guide <getting_started#installation>`_ to discover how to get set up in your favorite development environment. 
+Panel can be used in a wide range of development environments from a simple Python REPL, in a notebook or your favorite IDE such as VSCode. Visit the `Getting Started Guide <getting_started#installation>`_ to discover how to get set up in your favorite development environment.
 
 Sponsors
 --------

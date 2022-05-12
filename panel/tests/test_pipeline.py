@@ -81,7 +81,7 @@ def test_find_route():
     assert find_route(graph, 'A', 'I') == ['C', 'D', 'G', 'I']
     assert find_route(graph, 'B', 'I') is None
     assert find_route(graph, 'D', 'H') == ['F', 'H']
-    
+
 
 def test_pipeline_from_classes():
     pipeline = Pipeline([('Stage 1', Stage1), ('Stage 2', Stage2)])
@@ -302,7 +302,7 @@ def test_pipeline_error_condition():
     pipeline._next()
 
     assert isinstance(pipeline.error[0], Button)
-    
+
     stage2b.root = 2
 
     pipeline._next()
@@ -329,11 +329,11 @@ def test_pipeline_previous_follows_initial_path():
     pipeline._next()
 
     assert pipeline._route == ['Stage 1', 'Stage 2b']
-    
+
     pipeline._next()
 
     assert pipeline._route == ['Stage 1', 'Stage 2b', 'Stage 3']
-    
+
     pipeline._previous()
 
     assert pipeline._stage == 'Stage 2b'

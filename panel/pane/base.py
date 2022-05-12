@@ -92,10 +92,10 @@ class PaneBase(Reactive):
     """
     PaneBase is the abstract baseclass for all atomic displayable units
     in the panel library. We call any child class of `PaneBase` a `Pane`.
-    
+
     Panes defines an extensible interface for
     wrapping arbitrary objects and transforming them into Bokeh models.
-    
+
     Panes are reactive in the sense that when the object they are
     wrapping is changed any dashboard containing the pane will update
     in response.
@@ -253,7 +253,7 @@ class PaneBase(Reactive):
         """
         Returns boolean or float indicating whether the Pane
         can render the object.
-        
+
         If the priority of the pane is set to
         `None`, this method may also be used to define a float priority
         depending on the object being rendered.

@@ -37,7 +37,7 @@ export class LocationView extends View {
   remove(): void {
     super.remove()
     window.removeEventListener('hashchange', this._hash_listener)
-  }    
+  }
 
   update(change: string): void {
     if (!this.model.reload || (change === 'reload')) {

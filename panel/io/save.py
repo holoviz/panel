@@ -225,7 +225,7 @@ def save(
         doc = panel
     else:
         doc = Document()
-        
+
     if resources is None:
         resources = CDN
         mode = 'cdn'

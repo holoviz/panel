@@ -115,7 +115,7 @@ export namespace AcePlot {
     filename: p.Property<string>
     theme: p.Property<string>
     annotations: p.Property<any[]>
-    print_margin: p.Property<boolean> 
+    print_margin: p.Property<boolean>
     readonly: p.Property<boolean>
   }
 }

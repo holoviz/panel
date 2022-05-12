@@ -451,7 +451,7 @@ class Reactive(Syncable, Viewable):
         """
         Links the parameters on this `Reactive` object to attributes on the
         target `Parameterized` object.
-        
+
         Supports two modes, either specify a
         mapping between the source and target object parameters as keywords or
         provide a dictionary of callbacks which maps from the source
@@ -613,7 +613,7 @@ class Reactive(Syncable, Viewable):
         """
         Links properties on the this Reactive object to those on the
         target Reactive object in JS code.
-        
+
         Supports two modes, either specify a
         mapping between the source and target model properties as
         keywords or provide a dictionary of JS code snippets which
@@ -622,7 +622,7 @@ class Reactive(Syncable, Viewable):
 
         Arguments
         ----------
-        target: panel.viewable.Viewable | bokeh.model.Model | holoviews.core.dimension.Dimensioned 
+        target: panel.viewable.Viewable | bokeh.model.Model | holoviews.core.dimension.Dimensioned
           The target to link the value to.
         code: dict
           Custom code which will be executed when the widget value
@@ -1024,7 +1024,7 @@ class ReactiveData(SyncableData):
     def __init__(self, **params):
         super().__init__(**params)
         self._old = None
-    
+
     def _update_selection(self, indices: List[int]) -> None:
         self.selection = indices
 

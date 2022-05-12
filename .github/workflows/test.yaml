@@ -25,7 +25,7 @@ jobs:
     timeout-minutes: 60
     defaults:
       run:
-        shell: bash -l {0} 
+        shell: bash -l {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
@@ -67,7 +67,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install "pip<21.2.1" "toml" 
+          conda install "pip<21.2.1" "toml"
           conda list
           doit develop_install -o examples -o recommended -o tests -o build
           pip install pyecharts idom

@@ -29,7 +29,7 @@ class HoloViews(PaneBase):
 
     To be able to use the `plotly` backend you must add `plotly` to
     `pn.extension`.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/HoloViews.html
 
     :Example:
@@ -394,7 +394,7 @@ class HoloViews(PaneBase):
             return [], {}
 
         nframes = 1
-        values = dict() if dynamic else dict(zip(dims, zip(*keys)))
+        values = {} if dynamic else dict(zip(dims, zip(*keys)))
         dim_values = OrderedDict()
         widgets = []
         dims = [d for d in dims if values.get(d) is not None or
@@ -697,7 +697,7 @@ def link_axes(root_view, root_model):
                     if 'y_range' in changed:
                         sp.handles['y_range'] = p.handles['y_range']
                     callback.reset()
-                    callback.initialize(plot_id=p.id) 
+                    callback.initialize(plot_id=p.id)
 
 
 Viewable._preprocessing_hooks.append(link_axes)

@@ -257,7 +257,7 @@ class Perspective(PaneBase, ReactiveData):
     """
     The `Perspective` pane provides an interactive visualization component for
     large, real-time datasets built on the Perspective project.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/Perspective.html
 
     :Example:

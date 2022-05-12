@@ -74,7 +74,7 @@ class TextAreaInput(TextInput):
     """
     The `TextAreaInput` allows entering any multiline string using a text input
     box.
-    
+
     Lines are joined with the newline character `\n`.
 
     Reference: https://panel.holoviz.org/reference/widgets/TextAreaInput.html
@@ -92,14 +92,14 @@ class TextAreaInput(TextInput):
 class FileInput(Widget):
     """
     The `FileInput` allows the user to upload one or more files to the server.
-    
+
     It makes the filename, MIME type and (bytes) content available in Python.
-    
-    Please note 
-    
+
+    Please note
+
     - you can in fact *drag and drop* files onto the `FileInput`.
     - you easily save the files using the `save` method.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/FileInput.html
 
     :Example:
@@ -185,7 +185,7 @@ class StaticText(Widget):
     """
     The `StaticText` widget displays a text value, but does not allow editing
     it.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/StaticText.html
 
     :Example:
@@ -224,7 +224,7 @@ class DatePicker(Widget):
     """
     The `DatePicker` allows selecting selecting a `date` value using a text box
     and a date-picking utility.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/DatePicker.html
 
     :Example:
@@ -332,7 +332,7 @@ class DatetimePicker(_DatetimePickerBase):
     """
     The `DatetimePicker` allows selecting selecting a `datetime` value using a
     textbox and a datetime-picking utility.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/DatetimePicker.html
 
     :Example:
@@ -372,7 +372,7 @@ class DatetimeRangePicker(_DatetimePickerBase):
     """
     The `DatetimeRangePicker` allows selecting selecting a `datetime` range
     using a text box and a datetime-range-picking utility.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/DatetimeRangePicker.html
 
     :Example:
@@ -421,7 +421,7 @@ class ColorPicker(Widget):
     """
     The `ColorPicker` widget allows selecting a hexidecimal RGB color value
     using the browser’s color-picking widget.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/ColorPicker.html
 
     :Example:
@@ -547,11 +547,11 @@ class _SpinnerBase(_NumericInputBase):
 class IntInput(_SpinnerBase, _IntInputBase):
     """
     The `IntInput` allows selecting an integer value using a spinbox.
-    
+
     It behaves like a slider except that lower and upper bounds are optional
     and a specific value can be entered. The value can be changed using the
     keyboard (up, down, page up, page down), mouse wheel and arrow buttons.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/IntInput.html
 
     :Example:
@@ -569,12 +569,12 @@ class IntInput(_SpinnerBase, _IntInputBase):
 class FloatInput(_SpinnerBase, _FloatInputBase):
     """
     The `FloatInput` allows selecting a floating point value using a spinbox.
-    
+
     It behaves like a slider except that the lower and upper bounds are
     optional and a specific value can be entered. The value can be changed
     using the keyboard (up, down, page up, page down), mouse wheel and arrow
     buttons.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/FloatInput.html
 
     :Example:
@@ -606,12 +606,12 @@ Spinner = NumberInput
 class LiteralInput(Widget):
     """
     The `LiteralInput` allows declaring Python literals using a text
-    input widget. 
-    
+    input widget.
+
     A *literal* is some specific primitive value of type `str`
     , `int`, `float`, `bool` etc or a `dict`, `list`, `tuple`, `set` etc of
     primitive values.
-    
+
     Optionally the literal `type` may be declared.
 
     Reference: https://panel.holoviz.org/reference/widgets/LiteralInput.html
@@ -710,7 +710,7 @@ class ArrayInput(LiteralInput):
     """
     The `ArrayInput` allows rendering and editing NumPy arrays in a text
     input widget.
-    
+
     Arrays larger than the `max_array_size` will be summarized and editing
     will be disabled.
 
@@ -777,9 +777,9 @@ class DatetimeInput(LiteralInput):
     """
     The `DatetimeInput` allows specifying Python `datetime` like values using
     a text input widget.
-    
+
     An optional `type` may be declared.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/DatetimeInput.html
 
     :Example:
@@ -861,7 +861,7 @@ class DatetimeRangeInput(CompositeWidget):
     """
     The `DatetimeRangeInput` widget allows selecting a `datetime` range using
     two `DatetimeInput` widgets, which return a `tuple` range.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/DatetimeRangeInput.html
 
     :Example:
@@ -945,9 +945,9 @@ class Checkbox(Widget):
     """
     The `Checkbox` allows toggling a single condition between `True`/`False`
     states by ticking a checkbox.
-    
+
     This widget is interchangeable with the `Toggle` widget.
-    
+
     Reference: https://panel.holoviz.org/reference/widgets/Checkbox.html
 
     :Example:

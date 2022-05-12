@@ -72,10 +72,10 @@ class _base_config(param.Parameterized):
 class _config(_base_config):
     """
     Holds global configuration options for Panel.
-    
+
     The options can be set directly on the global config instance, via
     keyword arguments in the extension or via environment variables.
-    
+
     For example to set the embed option the following approaches can be used:
 
         pn.config.embed = True
@@ -370,7 +370,7 @@ class _config(_base_config):
     @property
     def nthreads(self):
         nthreads = os.environ.get('PANEL_NUM_THREADS', self._nthreads)
-        return None if nthreads is None else int(nthreads) 
+        return None if nthreads is None else int(nthreads)
 
     @property
     def oauth_provider(self):
@@ -443,8 +443,8 @@ class panel_extension(_pyviz_extension):
 
     >>> import panel as pn
     >>> pn.extension("plotly", sizing_mode="stretch_width", template="fast")
-    
-    This will 
+
+    This will
 
     - Initialize the `pyviz` notebook extension.
     - Enable you to use the `Plotly` pane by loading `plotly.js`.

@@ -11,7 +11,7 @@ def test_card_model_cache_cleanup(document, comm):
 
     model = l.get_root(document, comm)
     ref = model.ref['id']
-    
+
     assert ref in l._models
     assert l._models[ref] == (model, None)
     assert ref in html._models

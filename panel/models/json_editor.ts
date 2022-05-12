@@ -47,7 +47,7 @@ export class JSONEditorView extends PanelHTMLBoxView {
     super.remove()
     this.editor.destroy()
   }
-    
+
   render(): void {
     super.render();
     const mode = this.model.disabled ? 'view': this.model.mode;
@@ -76,7 +76,7 @@ export namespace JSONEditor {
     mode: p.Property<string>
     search: p.Property<boolean>
     selection: p.Property<any[]>
-    schema: p.Property<any>  
+    schema: p.Property<any>
     templates: p.Property<any[]>
   }
 }

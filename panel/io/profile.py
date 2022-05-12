@@ -113,7 +113,7 @@ def profile_ctx(engine='pyinstrument'):
     Arguments
     ---------
     engine: str
-      The profiling engine, e.g. 'pyinstrument' or 'snakeviz' 
+      The profiling engine, e.g. 'pyinstrument' or 'snakeviz'
 
     Returns
     -------
@@ -152,7 +152,7 @@ def profile(name, engine='pyinstrument'):
     name: str
       A unique name for the profiling session.
     engine: str
-      The profiling engine, e.g. 'pyinstrument' or 'snakeviz' 
+      The profiling engine, e.g. 'pyinstrument' or 'snakeviz'
     """
     if not isinstance(name, str):
         raise ValueError("Profiler must be given a name.")

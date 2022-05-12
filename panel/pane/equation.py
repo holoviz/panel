@@ -24,8 +24,8 @@ def is_sympy_expr(obj):
 class LaTeX(DivPaneBase):
     """
     The `LaTeX` pane allows rendering LaTeX equations. It uses either
-    `MathJax` or `KaTeX` depending on the defined renderer. 
-    
+    `MathJax` or `KaTeX` depending on the defined renderer.
+
     By default it will use the renderer loaded in the extension
     (e.g. `pn.extension('katex')`), defaulting to `KaTeX`.
 
@@ -35,7 +35,7 @@ class LaTeX(DivPaneBase):
 
     >>> pn.extension('katex')
     >>> LaTeX(
-    ...     'The LaTeX pane supports two delimiters: $LaTeX$ and \(LaTeX\)', 
+    ...     'The LaTeX pane supports two delimiters: $LaTeX$ and \(LaTeX\)',
     ...     style={'font-size': '18pt'}, width=800
     ... )
     """

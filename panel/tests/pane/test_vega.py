@@ -147,7 +147,7 @@ def test_vega_pane(document, comm):
 
     assert dict(model.data, **blank_schema) == dict(expected, **blank_schema)
     cds_data = model.data_sources['data'].data
-    assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E'])) 
+    assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E']))
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     point_example = dict(vega_example, mark='point')
@@ -156,7 +156,7 @@ def test_vega_pane(document, comm):
     point_example['data'].pop('values')
     assert model.data == point_example
     cds_data = model.data_sources['data'].data
-    assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E'])) 
+    assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E']))
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     pane._cleanup(model)
@@ -186,7 +186,7 @@ def test_vega_pane_inline(document, comm):
 
     pane._cleanup(model)
     assert pane._models == {}
-    
+
 
 def altair_example():
     import altair as alt
@@ -221,7 +221,7 @@ def test_altair_pane(document, comm):
     assert dict(model.data, **blank_schema) == dict(expected, **blank_schema)
 
     cds_data = model.data_sources['data'].data
-    assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E'])) 
+    assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E']))
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     chart = altair_example()
@@ -233,7 +233,7 @@ def test_altair_pane(document, comm):
         point_example['config'] = vega4_config
     assert dict(model.data, **blank_schema) == dict(point_example, **blank_schema)
     cds_data = model.data_sources['data'].data
-    assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E'])) 
+    assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E']))
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     pane._cleanup(model)

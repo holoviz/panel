@@ -324,7 +324,7 @@ def test_reactive_html_children():
     test._cleanup(root)
     assert len(test._models) == 0
     assert len(widget_new._models) == 0
-    
+
 
 def test_reactive_html_templated_children():
 
@@ -420,13 +420,13 @@ def test_reactive_html_templated_children_add_loop_id():
 
     assert test._get_template()[0] == """
         <select id="select-${id}">
-        
+
           <option id="option-0-${id}"></option>
-        
+
           <option id="option-1-${id}"></option>
-        
+
           <option id="option-2-${id}"></option>
-        
+
         </select>
         """
 
@@ -457,13 +457,13 @@ def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
 
     assert test._get_template()[0] == """
         <select id="select-${id}">
-        
+
           <option id="option-0-${id}"></option>
-        
+
           <option id="option-1-${id}"></option>
-        
+
           <option id="option-2-${id}"></option>
-        
+
         </select>
         """
     model = test.get_root()

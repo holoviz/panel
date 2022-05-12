@@ -430,7 +430,7 @@ def test_layout_clone_objects_in_kwargs(panel):
     div2 = Div()
     layout = panel(div1, div2)
     clone = layout.clone(
-        objects=(div2, div1), 
+        objects=(div2, div1),
         width=400, sizing_mode='stretch_height'
     )
 

@@ -706,10 +706,10 @@ class BaseTable(ReactiveData, Widget):
 class DataFrame(BaseTable):
     """
     The `DataFrame` widget allows displaying and editing a pandas DataFrame.
-    
+
     Note that editing is not possible for multi-indexed DataFrames, in which
-    case you will need to reduce the DataFrame to a single index. 
-    
+    case you will need to reduce the DataFrame to a single index.
+
     Also note that the `DataFrame` widget will eventually be replaced with the
     `Tabulator` widget, and so new code should be written to use `Tabulator`
     instead.

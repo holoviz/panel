@@ -8,7 +8,7 @@ class Card(Column):
     """
     A `Card` layout allows arranging multiple panel objects in a
     collapsible, vertical container with a header bar.
-    
+
     Reference: https://panel.holoviz.org/reference/layouts/Card.html
 
     :Example:
@@ -60,7 +60,7 @@ class Card(Column):
         by the header if defined.""")
 
     _bokeh_model = BkCard
-    
+
     _linked_props = ['collapsed']
 
     _rename = dict(Column._rename, title=None, header=None, title_css_classes=None)

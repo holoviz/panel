@@ -45,7 +45,7 @@ export class TrendIndicatorView extends HTMLBoxView {
   }
 
   connect_signals(): void {
-    super.connect_signals()    
+    super.connect_signals()
 
     const {pos_color, neg_color} = this.model.properties
     this.on_change([pos_color, neg_color], () => this.updateValueChange())
@@ -238,7 +238,7 @@ export class TrendIndicator extends HTMLBox {
   properties: TrendIndicator.Props
 
   constructor(attrs?: Partial<TrendIndicator.Attrs>) {
-    super(attrs)    
+    super(attrs)
   }
 
   static __module__ = "panel.models.trend"

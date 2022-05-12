@@ -210,4 +210,3 @@ def create_linked_datamodel(obj, root=None):
     obj.param.watch(cb_param, list(set(properties) & set(obj.param)))
 
     return model
-

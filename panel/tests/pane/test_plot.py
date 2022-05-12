@@ -57,5 +57,3 @@ def test_matplotlib_pane(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
-
-
