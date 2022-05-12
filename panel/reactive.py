@@ -16,7 +16,7 @@ from collections import Counter, defaultdict, namedtuple
 from functools import partial
 from pprint import pformat
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Mapping, Optional,
+    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional,
     Set, Tuple, Type, Union
 )
 

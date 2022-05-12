@@ -511,7 +511,7 @@ class NamedListLike(param.Parameterized):
             overrides = tuple(zip(self._names, self.objects))
         p = dict(self.param.values(), **params)
         del p['objects']
-        return type(self)(*objects, **params)
+        return type(self)(*overrides, **params)
 
     def append(self, pane: Any) -> None:
         """
