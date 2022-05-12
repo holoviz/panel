@@ -101,7 +101,7 @@ class FileSelector(CompositeWidget):
 
     _composite_type = Column
 
-    def __init__(self, directory: Union[AnyStr, os.PathLike[AnyStr]]=None, **params):
+    def __init__(self, directory: Union[AnyStr, os.PathLike]=None, **params):
         from ..pane import Markdown
         if directory is not None:
             params['directory'] = fullpath(directory)
