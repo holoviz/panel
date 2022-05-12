@@ -28,6 +28,7 @@ jobs:
         uses: pre-commit/action@v2.0.3
   test_suite:
     name: Pytest on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
