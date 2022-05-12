@@ -3,12 +3,12 @@ Defines a FileSelector widget which allows selecting files and
 directories on the server.
 """
 import os
+
 from collections import OrderedDict
 from fnmatch import fnmatch
 from typing import AnyStr, List, Tuple, Union
 
 import param
-from _typeshed import StrPath
 
 from ..io import PeriodicCallback
 from ..layout import Column, Divider, Row
@@ -20,7 +20,7 @@ from .input import TextInput
 from .select import CrossSelector
 
 
-def _scan_path(path: StrPath, file_pattern='*') -> Tuple[List[str], List[str]]:
+def _scan_path(path: str, file_pattern='*') -> Tuple[List[str], List[str]]:
     """
     Scans the supplied path for files and directories and optionally
     filters the files with the file keyword, returning a list of sorted
