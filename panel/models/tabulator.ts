@@ -296,6 +296,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   invalidate_render(): void {
     this.render()
+    if (this.model.expanded.length)
+      this.relayout()
   }
 
   renderComplete(): void {

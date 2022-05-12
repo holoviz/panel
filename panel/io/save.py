@@ -1,7 +1,11 @@
 """
 Defines utilities to save panel objects to files as HTML or PNG.
 """
+from __future__ import annotations
+
 import io
+
+from typing import TYPE_CHECKING, Any, Dict, IO, Iterable, List, Optional
 
 import bokeh
 
@@ -21,6 +25,12 @@ from .resources import (
     set_resource_mode
 )
 from .state import state
+
+if TYPE_CHECKING:
+    from bokeh.embed.standalone import ThemeLike
+    from jinja2 import Template
+
+    from ..viewable import Viewable
 
 #---------------------------------------------------------------------
 # Private API
@@ -43,7 +53,10 @@ else
 
 bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
 
-def save_png(model, filename, resources=CDN, template=None, template_variables=None, timeout=5):
+def save_png(
+    model: Model, filename: str, resources=CDN, template=None,
+    template_variables=None, timeout: int = 5
+) -> None:
     """
     Saves a bokeh model to png
 
@@ -53,6 +66,8 @@ def save_png(model, filename, resources=CDN, template=None, template_variables=N
       Model to save to png
     filename: str
       Filename to save to
+    resources: str
+      Resources
     template:
       template file, as used by bokeh.file_html. If None will use bokeh defaults
     template_variables:
@@ -105,7 +120,7 @@ def save_png(model, filename, resources=CDN, template=None, template_variables=N
         if template:
             bokeh.io.export.get_layout_html = old_layout_fn
 
-def _title_from_models(models, title):
+def _title_from_models(models: Iterable[Model], title: str) -> str:
     if title is not None:
         return title
 
@@ -119,8 +134,12 @@ def _title_from_models(models, title):
 
     return DEFAULT_TITLE
 
-def file_html(models, resources, title=None, template=BASE_TEMPLATE,
-              template_variables={}, theme=None, _always_new=False):
+def file_html(
+    models: Model | Document | List[Model], resources: Resources | None,
+    title: Optional[str] = None, template: Template | str = BASE_TEMPLATE,
+    template_variables: Dict[str, Any] = {}, theme: ThemeLike = None,
+    _always_new: bool = False
+):
     models_seq = []
     if isinstance(models, Model):
         models_seq = [models]
@@ -145,11 +164,15 @@ def file_html(models, resources, title=None, template=BASE_TEMPLATE,
 # Public API
 #---------------------------------------------------------------------
 
-def save(panel, filename, title=None, resources=None, template=None,
-         template_variables=None, embed=False, max_states=1000,
-         max_opts=3, embed_json=False, json_prefix='', save_path='./',
-         load_path=None, progress=True, embed_states={}, as_png=None,
-         **kwargs):
+def save(
+    panel: Viewable, filename: str | IO, title: Optional[str]=None,
+    resources=None, template: Template | str = None,
+    template_variables: Dict[str, Any] = None, embed: bool = False,
+    max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
+    json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
+    progress: bool = True, embed_states={}, as_png=None,
+    **kwargs
+) -> None:
     """
     Saves Panel objects to file.
 

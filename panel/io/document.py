@@ -1,23 +1,67 @@
 from __future__ import annotations
 
 import datetime as dt
+import dataclasses
 import inspect
 import threading
 
 from contextlib import contextmanager
 from functools import partial, wraps
-from typing import Callable, List, Optional
+from typing import Callable, Iterator, List, Optional
 
+from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
 from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
 from bokeh.io import curdoc as _curdoc
 
-from .model import patch_events
+from .model import monkeypatch_events
 from .state import set_curdoc, state
 
+#---------------------------------------------------------------------
+# Private API
+#---------------------------------------------------------------------
+
+@dataclasses.dataclass
+class Request:
+    headers : dict
+    cookies : dict
+    arguments : dict
+
+
+class MockSessionContext(SessionContext):
+
+    def __init__(self, *args, document=None, **kwargs):
+        self._document = document
+        super().__init__(*args, server_context=None, session_id=None, **kwargs)
+
+    def with_locked_document(self, *args):
+        return
+
+    @property
+    def destroyed(self) -> bool:
+        return False
+
+    @property
+    def request(self):
+        return Request(headers={}, cookies={}, arguments={})
+
+
+def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
+    """
+    Handles dispatch of events which could not be processed in
+    unlocked decorator.
+    """
+    for event in events:
+        doc.callbacks.trigger_on_change(event)
+
+#---------------------------------------------------------------------
+# Public API
+#---------------------------------------------------------------------
 
 def init_doc(doc: Optional[Document]) -> Document:
     curdoc = doc or _curdoc()
+    if not isinstance(curdoc, Document):
+        curdoc = curdoc._doc
     if not curdoc.session_context:
         return curdoc
 
@@ -63,27 +107,21 @@ def with_lock(func: Callable) -> Callable:
     wrapper.lock = True # type: ignore
     return wrapper
 
-def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
-    """
-    Handles dispatch of events which could not be processed in
-    unlocked decorator.
-    """
-    for event in events:
-        doc.callbacks.trigger_on_change(event)
-
 @contextmanager
-def unlocked():
+def unlocked() -> Iterator:
     """
     Context manager which unlocks a Document and dispatches
     ModelChangedEvents triggered in the context body to all sockets
     on current sessions.
     """
     curdoc = state.curdoc
-    if curdoc is None or curdoc.session_context is None or curdoc.session_context.session is None:
+    session_context = getattr(curdoc, 'session_context', None)
+    session = getattr(session_context, 'session', None)
+    if (curdoc is None or session_context is None or session is None):
         yield
         return
     from tornado.websocket import WebSocketHandler
-    connections = curdoc.session_context.session._subscribed_connections
+    connections = session._subscribed_connections
 
     hold = curdoc.callbacks.hold_value
     if hold:
@@ -102,7 +140,7 @@ def unlocked():
                 break
 
         events = curdoc.callbacks._held_events
-        patch_events(events)
+        monkeypatch_events(events)
         remaining_events = []
         for event in events:
             if not isinstance(event, ModelChangedEvent) or event in old_events or locked:
@@ -112,7 +150,7 @@ def unlocked():
                 socket = conn._socket
                 ws_conn = getattr(socket, 'ws_connection', False)
                 if (not hasattr(socket, 'write_message') or
-                    ws_conn is None or (ws_conn and ws_conn.is_closing())):
+                    ws_conn is None or (ws_conn and ws_conn.is_closing())): # type: ignore
                     continue
                 msg = conn.protocol.create('PATCH-DOC', [event])
                 WebSocketHandler.write_message(socket, msg.header_json)

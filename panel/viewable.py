@@ -10,6 +10,7 @@ and become viewable including:
 """
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import logging
 import sys
@@ -272,7 +273,7 @@ class ServableMixin(object):
             loc = Location()
         state._locations[doc] = loc
         if root is None:
-            loc_model = loc._get_root(doc)
+            loc_model = loc.get_root(doc)
         else:
             loc_model = loc._get_model(doc, root)
         loc_model.name = 'location'
@@ -288,7 +289,7 @@ class ServableMixin(object):
         held = doc.callbacks.hold_value
         patch = manager.assemble(msg)
         doc.hold()
-        patch.apply_to_document(doc, comm.id)
+        patch.apply_to_document(doc, comm.id if comm else None)
         doc.unhold()
         if held:
             doc.hold(held)
@@ -322,12 +323,15 @@ class ServableMixin(object):
     #----------------------------------------------------------------
 
     def servable(
-        self, title: Optional[str] = None, location: bool | 'Location' = True, area: str = 'main'
+        self, title: Optional[str] = None, location: bool | 'Location' = True,
+        area: str = 'main', target: Optional[str] = None
     ) -> 'ServableMixin':
         """
-        Serves the object if in a `panel serve` context and returns
-        the Panel object to allow it to display itself in a notebook
-        context.
+        Serves the object or adds it to the configured
+        pn.state.template if in a `panel serve` context, writes to the
+        DOM if in a pyodide context and returns the Panel object to
+        allow it to display itself in a notebook context.
+
         Arguments
         ---------
         title : str
@@ -335,9 +339,14 @@ class ServableMixin(object):
         location : boolean or panel.io.location.Location
           Whether to create a Location component to observe and
           set the URL location.
-        area: str
+        area: str (deprecated)
           The area of a template to add the component too. Only has an
           effect if pn.config.template has been set.
+        target: str
+          Target area to write to. If a template has been configured
+          on pn.config.template this refers to the target area in the
+          template while in pyodide this refers to the ID of the DOM
+          node to write to.
 
         Returns
         -------
@@ -349,7 +358,9 @@ class ServableMixin(object):
                 if isinstance(handler, logging.StreamHandler):
                     handler.setLevel(logging.WARN)
             if config.template:
+                area = target or area or 'main'
                 template = state.template
+                assert template is not None
                 if template.title == template.param.title.default and title:
                     template.title = title
                 if area == 'main':
@@ -362,6 +373,15 @@ class ServableMixin(object):
                     template.header.append(self)
             else:
                 self.server_doc(title=title, location=location) # type: ignore
+        elif state._is_pyodide:
+            from .io.pyodide import write
+            if target:
+                out = target
+            elif hasattr(sys.stdout, '_out'):
+                out = sys.stdout._out # type: ignore
+            else:
+                raise ValueError("Could not determine target node to write to.")
+            asyncio.create_task(write(out, self))
         return self
 
     def show(
@@ -455,7 +475,7 @@ class Renderable(param.Parameterized):
         """
         raise NotImplementedError
 
-    def _cleanup(self, root: 'Model') -> None:
+    def _cleanup(self, root: 'Model' | None) -> None:
         """
         Clean up method which is called when a Viewable is destroyed.
 
@@ -464,6 +484,8 @@ class Renderable(param.Parameterized):
         root: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
+        if root is None:
+            return
         ref = root.ref['id']
         if ref in state._handles:
             del state._handles[ref]
@@ -521,7 +543,10 @@ class Renderable(param.Parameterized):
             loc._cleanup(root)
             del state._locations[doc]
 
-    def get_root(self, doc: Optional[Document] = None, comm: Optional[Comm] = None, preprocess: bool = True) -> 'Model':
+    def get_root(
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        preprocess: bool = True
+    ) -> 'Model':
         """
         Returns the root model and applies pre-processing hooks
 
@@ -711,7 +736,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         else:
             return []
 
-    def app(self, notebook_url: str = "localhost:8888", port: int = 0) -> None:
+    def app(self, notebook_url: str = "localhost:8888", port: int = 0) -> 'Server':
         """
         Displays a bokeh server app inline in the notebook.
 
@@ -867,13 +892,19 @@ class Viewer(param.Parameterized):
 
         return view
 
-    def servable(self, title=None, location=True):
-        return self._create_view().servable(title, location)
+    def servable(
+        self, title: Optional[str]=None, location: bool | 'Location' = True,
+        area: str = 'main', target: Optional[str] = None
+    ) -> 'Viewer':
+        return self._create_view().servable(title, location, area, target)
 
     servable.__doc__ = ServableMixin.servable.__doc__
 
-    def show(self, title=None, port=0, address=None, websocket_origin=None,
-             threaded=False, verbose=True, open=True, location=True, **kwargs):
+    def show(
+        self, title: Optional[str] = None, port: int = 0, address: Optional[str] = None,
+        websocket_origin: Optional[str] = None, threaded: bool = False, verbose: bool = True,
+        open: bool = True, location: bool | 'Location' = True, **kwargs
+    ) -> threading.Thread | 'Server':
         return self._create_view().show(
             title, port, address, websocket_origin, threaded,
             verbose, open, location, **kwargs
