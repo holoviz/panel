@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections import defaultdict, namedtuple
 from typing import (
     TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping,
-    Optional, Type
+    Optional, Tuple, Type
 )
 
 import param

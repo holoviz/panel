@@ -27,7 +27,7 @@ def test_viewable_signature(viewable):
     assert 'params' in parameters
     try:
         assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD, annotation='Any')
-    except:
+    except Exception:
         assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD)
 
 
