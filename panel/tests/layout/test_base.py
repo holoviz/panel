@@ -114,7 +114,7 @@ def test_layout_add_error(panel, document, comm):
     div2 = Div()
     layout = panel(div1, div2)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         layout + 1
 
 

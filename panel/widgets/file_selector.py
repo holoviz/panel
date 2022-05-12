@@ -6,20 +6,21 @@ import os
 
 from collections import OrderedDict
 from fnmatch import fnmatch
+from typing import AnyStr, List, Tuple, Union
 
 import param
 
 from ..io import PeriodicCallback
 from ..layout import Column, Divider, Row
-from ..viewable import Layoutable
 from ..util import fullpath
+from ..viewable import Layoutable
 from .base import CompositeWidget
 from .button import Button
 from .input import TextInput
 from .select import CrossSelector
 
 
-def scan_path(path, file_pattern='*'):
+def _scan_path(path: str, file_pattern='*') -> Tuple[List[str], List[str]]:
     """
     Scans the supplied path for files and directories and optionally
     filters the files with the file keyword, returning a list of sorted
@@ -34,7 +35,7 @@ def scan_path(path, file_pattern='*'):
 
     Returns
     -------
-    A sorted list of paths
+    A sorted list of directory paths, A sorted list of files
     """
     paths = [os.path.join(path, p) for p in os.listdir(path)]
     dirs = [p for p in paths if os.path.isdir(p)]
@@ -100,7 +101,7 @@ class FileSelector(CompositeWidget):
 
     _composite_type = Column
 
-    def __init__(self, directory=None, **params):
+    def __init__(self, directory: Union[AnyStr, os.PathLike]=None, **params):
         from ..pane import Markdown
         if directory is not None:
             params['directory'] = fullpath(directory)
@@ -207,7 +208,7 @@ class FileSelector(CompositeWidget):
             self._back.disabled = False
 
         selected = self.value
-        dirs, files = scan_path(path, self.file_pattern)
+        dirs, files = _scan_path(path, self.file_pattern)
         for s in selected:
             check = os.path.realpath(s) if os.path.islink(s) else s
             if os.path.isdir(check):
@@ -228,7 +229,7 @@ class FileSelector(CompositeWidget):
         is not in the current working directory then it is removed
         from the blacklist.
         """
-        dirs, files = scan_path(self._cwd, self.file_pattern)
+        dirs, files = _scan_path(self._cwd, self.file_pattern)
         paths = [('📁' if p in dirs else '')+os.path.relpath(p, self._cwd) for p in dirs+files]
         blacklist = self._selector._lists[False]
         options = OrderedDict(self._selector._items)

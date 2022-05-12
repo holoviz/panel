@@ -1,6 +1,8 @@
 """
 Various general utilities used in the panel codebase.
 """
+from __future__ import annotations
+
 import ast
 import base64
 import datetime as dt
@@ -12,25 +14,29 @@ import re
 import sys
 import urllib.parse as urlparse
 
-from collections.abc import MutableSequence, MutableMapping
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
+from collections.abc import MutableMapping, MutableSequence
 from contextlib import contextmanager
 from datetime import datetime
 from functools import partial
-from html import escape # noqa
+from html import escape  # noqa
 from importlib import import_module
-from packaging.version import Version
+from typing import (
+    Any, AnyStr, Dict, Iterable, Iterator, List, Optional, Union
+)
 
 import bokeh
-import param
 import numpy as np
+import param
+
+from packaging.version import Version
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
 bokeh_version = Version(bokeh.__version__)
 
 
-def isfile(path):
+def isfile(path: str) -> bool:
     """Safe version of os.path.isfile robust to path length issues on Windows"""
     try:
         return os.path.isfile(path)
@@ -38,7 +44,7 @@ def isfile(path):
         return False
 
 
-def isurl(obj, formats=None):
+def isurl(obj: Any, formats: Optional[Iterable[str]] = None) -> bool:
     if not isinstance(obj, str):
         return False
     lower_string = obj.lower().split('?')[0].split('#')[0]
@@ -48,14 +54,14 @@ def isurl(obj, formats=None):
     ) and (formats is None or any(lower_string.endswith('.'+fmt) for fmt in formats))
 
 
-def is_dataframe(obj):
+def is_dataframe(obj) -> bool:
     if 'pandas' not in sys.modules:
         return False
     import pandas as pd
     return isinstance(obj, pd.DataFrame)
 
 
-def is_series(obj):
+def is_series(obj) -> bool:
     if 'pandas' not in sys.modules:
         return False
     import pandas as pd
@@ -103,7 +109,7 @@ def indexOf(obj, objs):
     raise ValueError('%s not in list' % obj)
 
 
-def param_name(name):
+def param_name(name: str) -> str:
     """
     Removes the integer id from a Parameterized class name.
     """
@@ -111,7 +117,7 @@ def param_name(name):
     return name[:name.index(match[0])] if match else name
 
 
-def recursive_parameterized(parameterized, objects=None):
+def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> List[param.Parameterized]:
     """
     Recursively searches a Parameterized object for other Parmeterized
     objects.
@@ -209,7 +215,7 @@ def get_method_owner(meth):
         return meth.__self__
 
 
-def is_parameterized(obj):
+def is_parameterized(obj) -> bool:
     """
     Whether an object is a Parameterized class or instance.
     """
@@ -217,16 +223,18 @@ def is_parameterized(obj):
             (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
 
 
-def isdatetime(value):
+def isdatetime(value) -> bool:
     """
     Whether the array or scalar is recognized datetime type.
     """
     if is_series(value) and len(value):
         return isinstance(value.iloc[0], datetime_types)
     elif isinstance(value, np.ndarray):
-        return (value.dtype.kind == "M" or
-                (value.dtype.kind == "O" and len(value) and
-                 isinstance(value[0], datetime_types)))
+        return (
+            value.dtype.kind == "M" or
+            (value.dtype.kind == "O" and len(value) != 0 and
+             isinstance(value[0], datetime_types))
+        )
     elif isinstance(value, list):
         return all(isinstance(d, datetime_types) for d in value)
     else:
@@ -256,7 +264,7 @@ def datetime_as_utctimestamp(value):
     return value.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
 
 
-def is_number(s):
+def is_number(s: Any) -> bool:
     try:
         float(s)
         return True
@@ -264,25 +272,28 @@ def is_number(s):
         return False
 
 
-def parse_query(query):
+def parse_query(query: str) -> Dict[str, Any]:
     """
     Parses a url query string, e.g. ?a=1&b=2.1&c=string, converting
     numeric strings to int or float types.
     """
-    query = dict(urlparse.parse_qsl(query[1:]))
-    for k, v in list(query.items()):
+    query_dict = dict(urlparse.parse_qsl(query[1:]))
+    parsed_query: Dict[str, Any] = {}
+    for k, v in query_dict.items():
         if v.isdigit():
-            query[k] = int(v)
+            parsed_query[k] = int(v)
         elif is_number(v):
-            query[k] = float(v)
+            parsed_query[k] = float(v)
         elif v.startswith('[') or v.startswith('{'):
             try:
-                query[k] = json.loads(v)
+                parsed_query[k] = json.loads(v)
             except Exception:
-                query[k] = ast.literal_eval(v)
+                parsed_query[k] = ast.literal_eval(v)
         elif v.lower() in ("true", "false"):
-            query[k] = v.lower() == "true"
-    return query
+            parsed_query[k] = v.lower() == "true"
+        else:
+            parsed_query[k] = v
+    return parsed_query
 
 
 def base64url_encode(input):
@@ -314,7 +325,7 @@ class classproperty(object):
         return self.f(owner)
 
 
-def url_path(url):
+def url_path(url: str) -> str:
     """
     Strips the protocol and domain from a URL returning just the path.
     """
@@ -325,7 +336,7 @@ def url_path(url):
 # This functionality should be contributed to param
 # See https://github.com/holoviz/param/issues/379
 @contextmanager
-def edit_readonly(parameterized):
+def edit_readonly(parameterized: param.Parameterized) -> Iterator:
     """
     Temporarily set parameters on Parameterized object to readonly=False
     to allow editing them.
@@ -389,7 +400,7 @@ def clone_model(bokeh_model, include_defaults=False, include_undefined=False):
     return type(bokeh_model)(**properties)
 
 
-def function_name(func):
+def function_name(func) -> str:
     """
     Returns the name of a function (or its string repr)
     """
@@ -402,19 +413,19 @@ def function_name(func):
 
 _period_regex = re.compile(r'((?P<weeks>\d+?)w)?((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?\.?\d*?)s)?')
 
-def parse_timedelta(time_str):
+def parse_timedelta(time_str: str) -> dt.timedelta | None:
     parts = _period_regex.match(time_str)
     if not parts:
-        return
-    parts = parts.groupdict()
+        return None
+    parts_dict = parts.groupdict()
     time_params = {}
-    for (name, p) in parts.items():
+    for (name, p) in parts_dict.items():
         if p:
             time_params[name] = float(p)
     return dt.timedelta(**time_params)
 
 
-def fullpath(path):
+def fullpath(path: Union[AnyStr, os.PathLike]) -> Union[AnyStr, os.PathLike]:
     """Expanduser and then abspath for a given path
     """
     return os.path.abspath(os.path.expanduser(path))

@@ -25,7 +25,10 @@ def test_viewable_signature(viewable):
     from inspect import Parameter, signature
     parameters = signature(viewable).parameters
     assert 'params' in parameters
-    assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD)
+    try:
+        assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD, annotation='Any')
+    except Exception:
+        assert parameters['params'] == Parameter('params', Parameter.VAR_KEYWORD)
 
 
 def test_Viewer_not_initialized():
