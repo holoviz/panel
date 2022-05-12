@@ -1,16 +1,27 @@
 """
 Defines the Location  widget which allows changing the href of the window.
 """
+from __future__ import annotations
 
 import json
 import urllib.parse as urlparse
+
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional
+)
 
 import param
 
 from ..models.location import Location as _BkLocation
 from ..reactive import Syncable
 from ..util import parse_query
+from .document import init_doc
 from .state import state
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class Location(Syncable):
@@ -55,7 +66,10 @@ class Location(Syncable):
         self._syncing = False
         self.param.watch(self._update_synced, ['search'])
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: 'Document', root: Optional['Model'] = None,
+        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
+    ) -> 'Model':
         model = _BkLocation(**self._process_param_change(self._init_params()))
         root = root or model
         values = self.param.values()
@@ -64,22 +78,28 @@ class Location(Syncable):
         self._link_props(model, properties, doc, root, comm)
         return model
 
-    def _get_root(self, doc=None, comm=None):
+    def get_root(
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None, preprocess: bool = True
+    ) -> 'Model':
+        doc = init_doc(doc)
         root = self._get_model(doc, comm=comm)
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)
         self._documents[doc] = root
         return root
 
-    def _cleanup(self, root):
-        if root.document in self._documents:
-            del self._documents[root.document]
-        ref = root.ref['id']
+    def _cleanup(self, root: Optional['Model']) -> None:
+        if root:
+            if root.document in self._documents:
+                del self._documents[root.document]
+            ref = root.ref['id']
+        else:
+            ref = None
         super()._cleanup(root)
         if ref in state._views:
             del state._views[ref]
 
-    def _update_synced(self, event=None):
+    def _update_synced(self, event: param.parameterized.Event = None) -> None:
         if self._syncing:
             return
         query_params = self.query_params
@@ -106,7 +126,9 @@ class Location(Syncable):
                 if on_error:
                     on_error(mapped)
 
-    def _update_query(self, *events, query=None):
+    def _update_query(
+        self, *events: param.parameterized.Event, query: Optional[Dict[str, Any]] = None
+    ) -> None:
         if self._syncing:
             return
         serialized = query or {}
@@ -129,15 +151,18 @@ class Location(Syncable):
             self._syncing = False
 
     @property
-    def query_params(self):
+    def query_params(self) -> Dict[str, Any]:
         return parse_query(self.search)
 
-    def update_query(self, **kwargs):
+    def update_query(self, **kwargs: Mapping[str, Any]) -> None:
         query = self.query_params
         query.update(kwargs)
         self.search = '?' + urlparse.urlencode(query)
 
-    def sync(self, parameterized, parameters=None, on_error=None):
+    def sync(
+        self, parameterized: param.Parameterized, parameters: Optional[List[str] | Dict[str, str]] = None,
+        on_error: Optional[Callable[[Dict[str, Any]], None]] = None
+    ) -> None:
         """
         Syncs the parameters of a Parameterized object with the query
         parameters in the URL. If no parameters are supplied all
@@ -177,7 +202,7 @@ class Location(Syncable):
             query[name] = v
         self._update_query(query=query)
 
-    def unsync(self, parameterized, parameters=None):
+    def unsync(self, parameterized: param.Parameterized, parameters: Optional[List[str]] = None) -> None:
         """
         Unsyncs the parameters of the Parameterized with the query
         params in the URL. If no parameters are supplied all
@@ -187,7 +212,7 @@ class Location(Syncable):
         ---------
         parameterized (param.Parameterized):
           The Parameterized object to unsync query parameters with
-        parameters (list or dict):
+        parameters (list):
           A list of parameters to unsync.
         """
         matches = [s for s in self._synced if s[0] is parameterized]

@@ -273,7 +273,7 @@ class ServableMixin(object):
             loc = Location()
         state._locations[doc] = loc
         if root is None:
-            loc_model = loc._get_root(doc)
+            loc_model = loc.get_root(doc)
         else:
             loc_model = loc._get_model(doc, root)
         loc_model.name = 'location'
@@ -289,7 +289,7 @@ class ServableMixin(object):
         held = doc.callbacks.hold_value
         patch = manager.assemble(msg)
         doc.hold()
-        patch.apply_to_document(doc, comm.id)
+        patch.apply_to_document(doc, comm.id if comm else None)
         doc.unhold()
         if held:
             doc.hold(held)
@@ -360,6 +360,7 @@ class ServableMixin(object):
             if config.template:
                 area = target or area or 'main'
                 template = state.template
+                assert template is not None
                 if template.title == template.param.title.default and title:
                     template.title = title
                 if area == 'main':
@@ -377,7 +378,7 @@ class ServableMixin(object):
             if target:
                 out = target
             elif hasattr(sys.stdout, '_out'):
-                out = sys.stdout._out
+                out = sys.stdout._out # type: ignore
             else:
                 raise ValueError("Could not determine target node to write to.")
             asyncio.create_task(write(out, self))
@@ -474,7 +475,7 @@ class Renderable(param.Parameterized):
         """
         raise NotImplementedError
 
-    def _cleanup(self, root: 'Model') -> None:
+    def _cleanup(self, root: 'Model' | None) -> None:
         """
         Clean up method which is called when a Viewable is destroyed.
 
@@ -483,6 +484,8 @@ class Renderable(param.Parameterized):
         root: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
+        if root is None:
+            return
         ref = root.ref['id']
         if ref in state._handles:
             del state._handles[ref]
@@ -540,7 +543,10 @@ class Renderable(param.Parameterized):
             loc._cleanup(root)
             del state._locations[doc]
 
-    def get_root(self, doc: Optional[Document] = None, comm: Optional[Comm] = None, preprocess: bool = True) -> 'Model':
+    def get_root(
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        preprocess: bool = True
+    ) -> 'Model':
         """
         Returns the root model and applies pre-processing hooks
 
@@ -730,7 +736,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         else:
             return []
 
-    def app(self, notebook_url: str = "localhost:8888", port: int = 0) -> None:
+    def app(self, notebook_url: str = "localhost:8888", port: int = 0) -> 'Server':
         """
         Displays a bokeh server app inline in the notebook.
 

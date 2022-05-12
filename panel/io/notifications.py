@@ -22,12 +22,12 @@ class Notification(param.Parameterized):
 
     _destroyed = param.Boolean(default=False)
 
-    def destroy(self):
+    def destroy(self) -> None:
         from .notebook import push_on_root
         self._destroyed = True
         for ref in self.notification_area._models:
             push_on_root(ref)
-        
+
 
 class NotificationAreaBase(ReactiveHTML):
 
@@ -74,7 +74,7 @@ class NotificationAreaBase(ReactiveHTML):
 
     def info(self, message, duration=3000):
         return self.send(message, duration, type='info')
-    
+
     def success(self, message, duration=3000):
         return self.send(message, duration, type='success')
 
@@ -197,7 +197,7 @@ class NotificationArea(NotificationAreaBase):
         """
         from ..layout import Column
         from ..widgets import Button, ColorPicker, NumberInput, Select, TextInput
-        
+
         msg = TextInput(name='Message', value='This is a message')
         duration = NumberInput(name='Duration', value=0, end=10000)
         ntype = Select(
