@@ -11,31 +11,35 @@ import logging
 import re
 import sys
 import textwrap
+
 from collections import Counter, defaultdict, namedtuple
 from functools import partial
 from pprint import pformat
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
-                    Mapping, Optional, Set, Tuple, Type, Union)
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Mapping, Optional,
+    Set, Tuple, Type, Union
+)
 
 import bleach
 import numpy as np
-from bokeh.model import DataModel
+import param
 
-import param  # type: ignore
+from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
 
 from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
 from .io.state import set_curdoc, state
-from .models.reactive_html import DOMEvent
-from .models.reactive_html import ReactiveHTML as _BkReactiveHTML
-from .models.reactive_html import ReactiveHTMLParser
+from .models.reactive_html import (
+    DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser
+)
 from .util import edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable
 
 if TYPE_CHECKING:
     import pandas as pd
+
     from bokeh.document import Document
     from bokeh.events import Event
     from bokeh.model import Model

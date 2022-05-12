@@ -5,16 +5,16 @@ events or merely toggling between on-off states.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 import param
 
 from bokeh.events import ButtonClick, MenuItemClick
-from bokeh.models import Button as _BkButton
-from bokeh.models import Dropdown as _BkDropdown
-from bokeh.models import Toggle as _BkToggle
-from panel.links import Callback
+from bokeh.models import (
+    Button as _BkButton, Dropdown as _BkDropdown, Toggle as _BkToggle
+)
 
+from ..links import Callback
 from .base import Widget
 
 if TYPE_CHECKING:
@@ -92,7 +92,6 @@ class _ClickButton(_ButtonBase):
         callback: Callback
           The Callback which can be used to disable the callback.
         """
-        from ..links import Callback
         for k, v in list(callbacks.items()):
             if k == 'clicks':
                 k = 'event:'+self._event
@@ -170,7 +169,7 @@ class Button(_ClickButton):
           The Link can be used unlink the widget and the target model.
         """
         links = {'event:'+self._event if p == 'value' else p: v for p, v in links.items()}
-        super().jslink(target, code, args, bidirectional, **links)
+        return super().jslink(target, code, args, bidirectional, **links)
 
     def _process_event(self, event: param.parameterized.Event) -> None:
         self.param.trigger('value')
