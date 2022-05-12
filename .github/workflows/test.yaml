@@ -11,6 +11,12 @@ on:
     - cron: '0 19 * * SUN'
 
 jobs:
+  pre_commit:
+    name: Run pre-commit hooks
+    runs-on: 'ubuntu-latest'
+    steps:
+    - name: pre-commit
+      uses: pre-commit/action@v2.0.3
   test_suite:
     name: Pytest on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
