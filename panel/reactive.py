@@ -40,14 +40,10 @@ if TYPE_CHECKING:
     from bokeh.events import Event
     from bokeh.model import Model
     from bokeh.models.sources import DataDict, Patches
-    from holoviews.core.dimension import Dimensioned
     from pyviz_comms import Comm
 
     from .layout.base import Panel
-    from .links import Callback, Link
-
-    # Type Alias
-    JSLinkTarget=Union[Viewable, Model, 'Dimensioned']
+    from .links import Callback, JSLinkTarget, Link
 
 log = logging.getLogger('panel.reactive')
 
