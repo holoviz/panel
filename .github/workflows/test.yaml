@@ -15,8 +15,11 @@ jobs:
     name: Run pre-commit hooks
     runs-on: 'ubuntu-latest'
     steps:
-    - name: pre-commit
-      uses: pre-commit/action@v2.0.3
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "1"
+      - name: pre-commit
+        uses: pre-commit/action@v2.0.3
   test_suite:
     name: Pytest on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
