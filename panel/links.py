@@ -414,7 +414,7 @@ class CallbackGenerator(object):
             list(src_model.js_event_callbacks.values()) # type: ignore
         )
         # Skip registering callback if already registered
-        if any(link_id in cb.tags for cb in callbacks):
+        if any(link_id in cb.tags for cbs in callbacks for cb in cbs):
             return
 
         references['source'] = src_model

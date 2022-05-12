@@ -452,8 +452,10 @@ class Renderable(param.Parameterized):
     def _log(self, msg: str, *args, level: str = 'debug') -> None:
         getattr(self._logger, level)(f'Session %s {msg}', id(state.curdoc), *args)
 
-    def _get_model(self, doc: Document, root: Optional['Model'] = None,
-                   parent: Optional['Model'] = None, comm: Optional[Comm] = None) -> 'Model':
+    def _get_model(
+        self, doc: Document, root: Optional['Model'] = None,
+        parent: Optional['Model'] = None, comm: Optional[Comm] = None
+    ) -> 'Model':
         """
         Converts the objects being wrapped by the viewable into a
         bokeh model that can be composed in a bokeh layout.

@@ -230,9 +230,9 @@ def isdatetime(value) -> bool:
     if is_series(value) and len(value):
         return isinstance(value.iloc[0], datetime_types)
     elif isinstance(value, np.ndarray):
-        return bool(
+        return (
             value.dtype.kind == "M" or
-            (value.dtype.kind == "O" and len(value) and
+            (value.dtype.kind == "O" and len(value) != 0 and
              isinstance(value[0], datetime_types))
         )
     elif isinstance(value, list):

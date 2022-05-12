@@ -91,8 +91,8 @@ class Syncable(Renderable):
     _js_transforms: Mapping[str, str] = {}
 
     # Transforms from input value to bokeh property value
-    _source_transforms: Mapping[str, str] = {}
-    _target_transforms: Mapping[str, str] = {}
+    _source_transforms: Mapping[str, str | None] = {}
+    _target_transforms: Mapping[str, str | None] = {}
 
     __abstract = True
 
@@ -121,7 +121,7 @@ class Syncable(Renderable):
     # Model API
     #----------------------------------------------------------------
 
-    def _process_property_change(self, msg: Mapping[str, Any]) -> Dict[str, Any]:
+    def _process_property_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         """
         Transform bokeh model property changes into parameter updates.
         Should be overridden to provide appropriate mapping between
@@ -132,7 +132,7 @@ class Syncable(Renderable):
         inverted = {v: k for k, v in self._rename.items()}
         return {inverted.get(k, k): v for k, v in msg.items()}
 
-    def _process_param_change(self, msg: Mapping[str, Any]) -> Dict[str, Any]:
+    def _process_param_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         """
         Transform parameter changes into bokeh model property updates.
         Should be overridden to provide appropriate mapping between
@@ -227,7 +227,7 @@ class Syncable(Renderable):
                     cb()
 
     def _apply_update(
-        self, events: Iterable[param.parameterized.Event], msg: Mapping[str, Any],
+        self, events: Dict[str, param.parameterized.Event], msg: Mapping[str, Any],
         model: 'Model', ref: str
     ) -> None:
         if ref not in state._views or ref in state._fake_roots:
@@ -243,8 +243,8 @@ class Syncable(Renderable):
             doc.add_next_tick_callback(cb)
 
     def _update_model(
-        self, events, msg: Mapping[str, Any], root: 'Model', model: 'Model',
-        doc: 'Document', comm: Optional['Comm']
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: 'Model', model: 'Model', doc: 'Document', comm: Optional['Comm']
     ) -> None:
         ref = root.ref['id']
         self._changing[ref] = attrs = [
@@ -1696,7 +1696,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 del self._changing[root.ref['id']]
 
     def _update_model(
-        self, events, msg, root: 'Model', model: 'Model', doc: 'Document', comm: Optional['Comm']
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: 'Model', model: 'Model', doc: 'Document', comm: Optional['Comm']
     ) -> None:
         child_params = self._parser.children.values()
         new_children, model_msg, data_msg  = {}, {}, {}
