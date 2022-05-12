@@ -8,4 +8,3 @@ from django.shortcuts import render
 def gbm(request: HttpRequest) -> HttpResponse:
     script = server_document(request.build_absolute_uri())
     return render(request, "gbm/gbm.html", dict(script=script))
-

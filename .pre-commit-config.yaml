@@ -20,3 +20,4 @@ repos:
     hooks:
     -   id: flake8  # See 'setup.cfg' for args
         args: [panel]
+        files: panel/
