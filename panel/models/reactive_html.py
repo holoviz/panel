@@ -11,10 +11,10 @@ from bokeh.model import DataModel
 from bokeh.events import ModelEvent
 
 
-endfor = '{% endfor %}'
-list_iter_re = r'{% for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*) %}'
-items_iter_re = r'{% for \s*[A-Za-z_]\w*\s*, (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.items\(\) %}'
-values_iter_re = r'{% for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.values\(\) %}'
+endfor = '{%-? endfor -?%}'
+list_iter_re = r'{%-? for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*) -?%}'
+items_iter_re = r'{%-? for \s*[A-Za-z_]\w*\s*, (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.items\(\) -?%}'
+values_iter_re = r'{%-? for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.values\(\) -?%}'
 
 
 class ReactiveHTMLParser(HTMLParser):
@@ -106,6 +106,7 @@ class ReactiveHTMLParser(HTMLParser):
         values_loop = re.findall(values_iter_re, data)
         items_loop = re.findall(items_iter_re, data)
         nloops = len(list_loop) + len(values_loop) + len(items_loop)
+        print(list_loop)
         if nloops > 1 and nloops and self._open_for:
             raise ValueError('Nested for loops currently not supported in templates.')
         elif nloops:
@@ -117,9 +118,11 @@ class ReactiveHTMLParser(HTMLParser):
                                  f'template section:\n\n{data}')
             self.loop_map[var] = obj
 
-        if '{% for ' in data:
+        open_for = re.search(r'{%-? for', data)
+        end_for = re.search(endfor, data)
+        if open_for:
             self._open_for = True
-        if endfor in data and (not nloops or data.index(endfor) > data.index('{% for ')):
+        if end_for and (not nloops or end_for.start() > open_for.start()):
             self._open_for = False
 
         if not (self._current_node and matches):

@@ -406,9 +406,9 @@ def test_reactive_html_templated_children_add_loop_id():
 
         _template = """
         <select id="select">
-        {% for option in children %}
+        {%- for option in children %}
           <option id="option">${children[{{ loop.index0 }}]}</option>
-        {% endfor %}
+        {%- endfor %}
         </select>
         """
 
@@ -420,13 +420,9 @@ def test_reactive_html_templated_children_add_loop_id():
 
     assert test._get_template()[0] == """
         <select id="select-${id}">
-
           <option id="option-0-${id}"></option>
-
           <option id="option-1-${id}"></option>
-
           <option id="option-2-${id}"></option>
-
         </select>
         """
 
@@ -443,9 +439,9 @@ def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
 
         _template = """
         <select id="select">
-        {% for option in children %}
+        {%- for option in children %}
           <option id="option">${option}</option>
-        {% endfor %}
+        {%- endfor %}
         </select>
         """
 
@@ -457,13 +453,9 @@ def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
 
     assert test._get_template()[0] == """
         <select id="select-${id}">
-
           <option id="option-0-${id}"></option>
-
           <option id="option-1-${id}"></option>
-
           <option id="option-2-${id}"></option>
-
         </select>
         """
     model = test.get_root()
