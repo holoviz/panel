@@ -11,8 +11,24 @@ on:
     - cron: '0 19 * * SUN'
 
 jobs:
+  pre_commit:
+    name: Run pre-commit hooks
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "1"
+      - name: set PY
+        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+      - uses: actions/cache@v1
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: pre-commit
+        uses: pre-commit/action@v2.0.3
   test_suite:
     name: Pytest on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -25,7 +41,7 @@ jobs:
     timeout-minutes: 60
     defaults:
       run:
-        shell: bash -l {0} 
+        shell: bash -l {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
@@ -67,7 +83,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install "pip<21.2.1" "toml" 
+          conda install "pip<21.2.1" "toml"
           conda list
           doit develop_install -o examples -o recommended -o tests -o build
           pip install pyecharts idom
@@ -84,11 +100,6 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
-      - name: doit test_flakes
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit test_flakes
       - name: doit test_unit
         run: |
           eval "$(conda shell.bash hook)"

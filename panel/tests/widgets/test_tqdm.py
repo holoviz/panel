@@ -13,7 +13,7 @@ def test_tqdm():
     assert tqdm.value == 3
     assert tqdm.max == 3
     assert tqdm.text.startswith('100% 3/3')
-    
+
     assert isinstance(tqdm.progress, pn.widgets.indicators.Progress)
     assert isinstance(tqdm.text_pane, pn.pane.Str)
     assert isinstance(tqdm.layout, pn.Row)

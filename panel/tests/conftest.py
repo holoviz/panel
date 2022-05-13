@@ -156,7 +156,7 @@ def with_curdoc():
         yield
     finally:
         state.curdoc = old_curdoc
-        
+
 
 @contextmanager
 def set_env_var(env_var, value):

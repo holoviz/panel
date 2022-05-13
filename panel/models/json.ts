@@ -42,7 +42,7 @@ export namespace JSON {
   export type Attrs = p.AttrsOf<Props>
   export type Props = Markup.Props & {
     depth: p.Property<number | null>
-    hover_preview: p.Property<boolean> 
+    hover_preview: p.Property<boolean>
     theme: p.Property<typeof JSONTheme["__type__"]>
   }
 }

@@ -6,4 +6,3 @@ app_name = 'gbm'
 urlpatterns = [
     path('', views.gbm, name='gbm'),
 ]
-

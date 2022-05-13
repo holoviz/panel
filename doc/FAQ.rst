@@ -84,7 +84,7 @@ When using the pandas plotting API we create the figure and axes in the same way
 
 **Q: How can I deploy a Panel app for others to use?**
 
-**A:** There are many options available; see the Deployment section of the user manual. The basic idea is if you can log into a machine and launch a web server process, you can use ``panel serve`` there 
+**A:** There are many options available; see the Deployment section of the user manual. The basic idea is if you can log into a machine and launch a web server process, you can use ``panel serve`` there
 
 
 **Q: Is Panel 'Shiny for Python'?**
@@ -202,7 +202,7 @@ The `Comparisons page <about/comparisons.html>`__ describes some of these differ
 |                                      | Voila           |                      | Voila           |                    |                        |                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 
-Each of these libraries are free, open-source software packages, but all of them can be used with the commercial 
-`Anaconda Enterprise (AE5) <https://www.anaconda.com/enterprise/>`__ server product, and some can be used with other commercial servers 
+Each of these libraries are free, open-source software packages, but all of them can be used with the commercial
+`Anaconda Enterprise (AE5) <https://www.anaconda.com/enterprise/>`__ server product, and some can be used with other commercial servers
 (Shiny, with `Shiny Server <https://www.rstudio.com/products/shiny-server-pro>`__, Streamlit, with `Streamlit Teams`, and Dash, with
 `Dash Enterprise <https://plot.ly/dash>`__), to provide on-premises authenticated deployment within a private network.  Most of the servers (including Jupyter, Bokeh Server, Voila, and Dash) can be also deployed on the public sites `mybinder.org <https://mybinder.org>`__ or `heroku <https://www.heroku.com>`__.

@@ -76,7 +76,7 @@ def poly_data_builder(state, zf, register):
             fill_array(cell_data_arr, state['properties'][cell_type], zf)
             cell_arr.ImportLegacyFormat(cell_data_arr)
             getattr(instance, 'Set' + capitalize(cell_type))(cell_arr)
-    
+
     # datasets
     fields = state['properties']['fields']
     for dataset in fields:
@@ -131,7 +131,7 @@ def generic_builder(state, zf, register=None):
         for array_meta in arrays:
             vtk_array = ARRAY_TYPES[array_meta['dataType']]()
             fill_array(vtk_array, array_meta, zf)
-            location = (instance 
+            location = (instance
                 if 'location' not in array_meta
                 else getattr(instance, 'Get'+capitalize(array_meta['location']))())
             getattr(location, capitalize(array_meta['registration']))(vtk_array)

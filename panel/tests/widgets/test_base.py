@@ -13,7 +13,7 @@ from panel.tests.util import check_layoutable_properties
 
 excluded = (
     BaseTable, CompositeWidget, Dial, FileDownload, LinearGauge,
-    ToggleGroup, Terminal, Tqdm 
+    ToggleGroup, Terminal, Tqdm
 )
 
 all_widgets = [
@@ -183,4 +183,3 @@ def test_widget_from_param_instance_with_kwargs():
 
     widget.value = 4.3
     assert test.a == 4.3
-

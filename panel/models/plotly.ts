@@ -404,7 +404,7 @@ export namespace PlotlyPlot {
     viewport: p.Property<any>
     viewport_update_policy: p.Property<string>
     viewport_update_throttle: p.Property<number>
-    visibility: p.Property<boolean>  
+    visibility: p.Property<boolean>
     _render_count: p.Property<number>
   }
 }

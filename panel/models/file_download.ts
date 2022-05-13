@@ -31,7 +31,7 @@ export class FileDownloadView extends InputWidgetView {
   anchor_el: HTMLAnchorElement
   _downloadable: boolean = false
   _click_listener: any
-  _embed: boolean = false 
+  _embed: boolean = false
   _prev_href: string | null = ""
   _prev_download: string | null = ""
 
@@ -128,7 +128,7 @@ export class FileDownloadView extends InputWidgetView {
     }
 
     this._make_link_downloadable()
- 
+
     if ( !this._embed && this.model.auto ) {
       // Temporarily removing the event listener to emulate a click
       // event on the anchor link which will trigger a download.
@@ -197,7 +197,7 @@ export namespace FileDownload {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = InputWidget.Props & {
-    auto: p.Property<boolean> 
+    auto: p.Property<boolean>
     button_type: p.Property<ButtonType>
     clicks: p.Property<number>
     data: p.Property<string | null>

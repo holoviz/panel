@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from urllib.parse import urlparse, urljoin 
+from urllib.parse import urlparse, urljoin
 
 from bokeh.server.django.consumers import DocConsumer, AutoloadJsConsumer
 
@@ -7,7 +7,7 @@ from ..util import edit_readonly
 from .resources import Resources
 from .state import state
 from .server import (
-    autoload_js_script, server_html_page_for_session, 
+    autoload_js_script, server_html_page_for_session,
 )
 
 async def doc_handle(self, body):
@@ -45,7 +45,7 @@ def _session_prefix(consumer):
         with edit_readonly(state):
             state.base_url = old_url
             state.rel_path = old_rel
-    
+
 
 async def autoload_handle(self, body):
     with _session_prefix(self):

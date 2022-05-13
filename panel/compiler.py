@@ -141,7 +141,7 @@ def write_bundled_tarball(name, tarball, bundle_dir, module=False):
             f.write(content)
     tar_obj.close()
 
-            
+
 def bundle_resources():
     from .config import panel_extension
     from .reactive import ReactiveHTML

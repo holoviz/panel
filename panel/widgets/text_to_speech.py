@@ -229,7 +229,7 @@ class TextToSpeech(Utterance, Widget):
     }
 
     def _process_param_change(self, msg):
-        speak = msg.get('speak') or ('value' in msg and self.auto_speak) 
+        speak = msg.get('speak') or ('value' in msg and self.auto_speak)
         msg = super()._process_param_change(msg)
         if speak:
             msg['speak'] = self.to_dict()

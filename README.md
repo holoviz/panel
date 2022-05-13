@@ -16,7 +16,7 @@
 
 ## What is it?
 
-[Panel](https://panel.holoviz.org/) provides tools for easily composing widgets, plots, tables, and other viewable objects and controls into custom analysis tools, apps, and dashboards. Panel works with visualizations from [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [HoloViews](https://holoviews.org), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [PyVista](https://docs.pyvista.org/) and many other Python plotting libraries, making them instantly viewable either individually or when combined with interactive widgets that control them.  
+[Panel](https://panel.holoviz.org/) provides tools for easily composing widgets, plots, tables, and other viewable objects and controls into custom analysis tools, apps, and dashboards. Panel works with visualizations from [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [HoloViews](https://holoviews.org), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [PyVista](https://docs.pyvista.org/) and many other Python plotting libraries, making them instantly viewable either individually or when combined with interactive widgets that control them.
 
 Panel works equally well in [Jupyter Notebooks](http://jupyter.org), for creating quick data-exploration tools, or as standalone deployed apps and dashboards, and allows you to easily switch between those contexts as needed.
 

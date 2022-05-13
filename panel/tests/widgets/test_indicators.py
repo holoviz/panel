@@ -57,7 +57,7 @@ def test_dial_none(document, comm):
 
     assert list(cds.data['starts']) == [9.861110273767961, 9.861110273767961]
     assert list(cds.data['ends']) == [9.861110273767961, 5.846852994181004]
-    
+
     text_cds = model.select(name='label_source')
 
     assert text_cds.data['text'] == ['Value', '-%', '0%', '100%']
@@ -66,7 +66,7 @@ def test_dial_none(document, comm):
 
     assert text_cds.data['text'] == ['Value', 'nan%', '0%', '100%']
 
-    
+
 def test_dial_thresholds_with_bounds(document, comm):
     dial = Dial(value=25, colors=[(0.33, 'green'), (0.66, 'yellow'), (1, 'red')],
                 bounds=(25, 75))

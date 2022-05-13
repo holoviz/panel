@@ -282,7 +282,7 @@ class SpeechToText(Widget):
     :Example:
 
     >>> SpeechToText(button_type="light")
-    
+
     This functionality is **experimental** and only supported by
     Chrome and a few other browsers.  Checkout
     https://caniuse.com/speech-recognition for a up to date list of

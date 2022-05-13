@@ -317,8 +317,8 @@ class Resources(BkResources):
         from ..config import config
         modules = list(config.js_modules.values())
         self.extra_resources(modules, '__javascript_modules__')
-        
-        
+
+
         return modules
 
     @property

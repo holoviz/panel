@@ -1076,7 +1076,7 @@ def test_tabulator_patch_with_sorters_and_pagination(document, comm):
             np.testing.assert_array_equal(
                 table.value[col].values, expected_df[col]
             )
-            
+
 def test_tabulator_patch_ranges(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)

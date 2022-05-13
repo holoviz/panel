@@ -277,7 +277,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       const inds = this.model.source.selected.indices
       this.updateOrAddData();
       this.tabulator.rowManager.element.scrollTop = this._lastVerticalScrollbarTopPosition;
-      // Restore indices since updating data may have reset checkbox column 
+      // Restore indices since updating data may have reset checkbox column
       this.model.source.selected.indices = inds;
     })
     this.connect(this.model.source.selected.change, () => this.setSelection())

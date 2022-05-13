@@ -375,7 +375,7 @@ def test_tabs_iadd(document, comm, tabs):
     assert tab3.child is div4
     assert tab4.child is div3
 
-    
+
 def test_tabs_extend_uses_object_name(document, comm, tabs):
     model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs

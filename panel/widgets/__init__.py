@@ -2,7 +2,7 @@
 Panel widgets makes your data exploration and apps interactive
 ==============================================================
 
-Panel provides a long range of basic and specialized widgets. 
+Panel provides a long range of basic and specialized widgets.
 
 Check out the widget gallery
 https://panel.holoviz.org/reference/index.html#widgets for inspiration.

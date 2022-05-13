@@ -35,7 +35,7 @@ class _MediaBase(PaneBase):
         The volume of the media player.""")
 
     autoplay = param.Boolean(default=False, doc="""
-        When True, it specifies that the output will play automatically. 
+        When True, it specifies that the output will play automatically.
         In Chromium browsers this requires the user to click play once.""")
 
     muted = param.Boolean(default=False, doc="""
@@ -115,13 +115,13 @@ class Audio(_MediaBase):
     """
     The `Audio` pane displays an audio player given a local or remote audio
     file or numpy array.
-    
+
     The pane also allows access and control over the player state including
     toggling of playing/paused and loop state, the current time, and the
     volume.
-    
+
     The audio player supports ogg, mp3, and wav files as well as numpy arrays.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/Audio.html
 
     :Example:
@@ -146,7 +146,7 @@ class Audio(_MediaBase):
 
     @classmethod
     def applies(cls, obj):
-        return (super().applies(obj) or 
+        return (super().applies(obj) or
                 (isinstance(obj, np.ndarray) and obj.ndim==1 and obj.dtype in [np.int16, np.uint16]))
 
 
@@ -154,14 +154,14 @@ class Video(_MediaBase):
     """
     The `Video` Pane displays a video player given a local or remote video
     file.
-    
+
     The widget also allows access and control over the player state including
     toggling of playing/paused and loop state, the current time, and the
     volume.
-    
+
     Depending on the browser the video player supports mp4, webm, and ogg
     containers and a variety of codecs.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/Video.html
 
     :Example:
@@ -179,4 +179,3 @@ class Video(_MediaBase):
     _formats = ['mp4', 'webm', 'ogg']
 
     _media_type = 'video'
-

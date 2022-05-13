@@ -69,7 +69,7 @@ class BooleanStatus(BooleanIndicator):
     """
     The `BooleanStatus` is a boolean indicator providing a visual
     representation of a boolean status as filled or non-filled circle.
-    
+
     If the value is set to `True` the indicator will be filled while
     setting it to `False` will cause it to be non-filled.
 
@@ -114,7 +114,7 @@ class LoadingSpinner(BooleanIndicator):
     """
     The `LoadingSpinner` is a boolean indicator providing a visual
     representation of the loading status.
-    
+
     If the value is set to `True` the spinner will rotate while
     setting it to `False` will disable the rotating segment.
 
@@ -173,7 +173,7 @@ class Progress(ValueIndicator):
     """
     The `Progress` widget displays the progress towards some target
     based on the current `value` and the `max` value.
-    
+
     If no `value` is set, the `Progress` widget is in indeterminate
     mode and will animate depending on whether it is `active` or
     not. A more beautiful indicator for this use case is the
@@ -1072,7 +1072,7 @@ MARGIN = {
 
 
 class ptqdm(_tqdm):
-    
+
     def __init__(self, *args, **kwargs):
         self._indicator = kwargs.pop('indicator')
         super().__init__(*args, **kwargs)

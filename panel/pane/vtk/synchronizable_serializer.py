@@ -525,7 +525,7 @@ def extractRequiredFields(extractedFields, parent, dataset, context, requestedFi
             arrayMeta['location'] = 'pointData'
             arrayMeta['registration'] = 'setScalars'
             extractedFields.append(arrayMeta)
-        
+
     if parent.IsA("vtkGlyph3DMapper") and not context.serializeAllDataArrays:
         scaleArrayName = parent.GetInputArrayInformation(parent.SCALE).Get(vtkDataObject.FIELD_NAME())
         if scaleArrayName is not None and scaleArrayName not in [field['name'] for field in extractedFields]:
@@ -573,7 +573,7 @@ def annotationSerializer(parent, prop, propId, context, depth):
 
     context.addAnnotation(parent, prop, propId)
 
-    return None 
+    return None
 
 def genericPropSerializer(parent, prop, popId, context, depth):
     # This kind of actor has two "children" of interest, a property and a

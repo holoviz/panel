@@ -14,7 +14,7 @@ Panel and Bokeh can both be used to create dashboards in Python, but are intende
 - Bokeh focuses on providing lower-level primitives that can be used to create any dashboard with enough effort, while Panel focuses on making common data-science tasks and making typical types of apps easier.
 
 
-  
+
 Comparing Panel and Dash
 ------------------------
 
@@ -73,7 +73,7 @@ Panel takes a different approach, in that output from a notebook cell needs to b
 Comparing Panel and streamlit
 -----------------------------
 
-streamlit is an alternative to all of the above packages. Like Jupyter, streamlit provides an interactive, incremental way to build apps. streamlit works with Python text files written in a separate editor, while Jupyter uses a web-based notebook cell editor. Although a web-based editor makes it simple to work locally on remote files, using a local Python text file allows users to maximize their productivity by choosing their own favorite editor. Dash, Panel, and Bokeh all also support bare Python files developed in a local editor, and like streamlit they can all also watch that file and automatically re-run the file when you change it in the editor (e.g. for Panel or Bokeh, launch ``bokeh serve file.py --dev`` to watch the Python file and re-launch the served app on any changes). 
+streamlit is an alternative to all of the above packages. Like Jupyter, streamlit provides an interactive, incremental way to build apps. streamlit works with Python text files written in a separate editor, while Jupyter uses a web-based notebook cell editor. Although a web-based editor makes it simple to work locally on remote files, using a local Python text file allows users to maximize their productivity by choosing their own favorite editor. Dash, Panel, and Bokeh all also support bare Python files developed in a local editor, and like streamlit they can all also watch that file and automatically re-run the file when you change it in the editor (e.g. for Panel or Bokeh, launch ``bokeh serve file.py --dev`` to watch the Python file and re-launch the served app on any changes).
 
 Streamlit's key difference from those other tools is that with streamlit, the entire Python source file is effectively re-run *every time a widget changes value*, which has the advantage of not allowing confusing out-of-order execution of notebook cells, and also can make it simpler to reason about state in general. However, for this approach to be practical, it requires all lengthy computations to be made cacheable, which is not always straightforward and can introduce its own highly complicated reasoning about state. Moreover, the streamlit approach has similar downsides as for Dash's lack of server-side state, in that it becomes difficult to generate responsive apps for complex situations that need a precise mapping between a widget event and a specific small bit of Python code. Panel thus has better support for fully reactive applications, where each widget or component of a plot is explicitly and specifically tied to a bit of computation, re-running only the tiniest bit of code that is needed for that particular action.
 

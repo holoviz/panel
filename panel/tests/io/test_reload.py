@@ -7,7 +7,7 @@ from panel.io.reload import (
 )
 from panel.io.state import state
 
-    
+
 def test_record_modules_not_stdlib():
     with record_modules():
         import audioop # noqa

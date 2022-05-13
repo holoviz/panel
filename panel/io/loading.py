@@ -58,4 +58,3 @@ def stop_loading_spinner(*objects):
     for item in objects:
         if hasattr(item, "css_classes"):
             _remove_css_classes(item, css_classes)
-

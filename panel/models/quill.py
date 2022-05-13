@@ -14,7 +14,7 @@ class QuillInput(HTMLBox):
         'https://cdn.quilljs.com/1.3.6/quill.bubble.css',
         'https://cdn.quilljs.com/1.3.6/quill.snow.css'
     ]
-    
+
     __javascript_raw__ = [
         'https://cdn.quilljs.com/1.3.6/quill.js',
     ]

@@ -1,5 +1,5 @@
 """
-Vanilla template 
+Vanilla template
 """
 import pathlib
 

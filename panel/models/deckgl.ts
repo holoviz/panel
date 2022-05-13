@@ -239,7 +239,7 @@ export class DeckGLPlot extends HTMLBox {
   static __module__ = "panel.models.deckgl"
 
   static init_DeckGLPlot(): void {
-    this.prototype.default_view = DeckGLPlotView;      
+    this.prototype.default_view = DeckGLPlotView;
 
     this.define<DeckGLPlot.Props>(({Any, Array, String, Ref}) => ({
       data:             [ Any                              ],

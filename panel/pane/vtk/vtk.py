@@ -146,18 +146,18 @@ class VTK:
     """
     The VTK pane renders a VTK scene inside a panel, making it possible to
     interact with complex geometries in 3D.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/VTK.html
 
     :Example:
 
     >>> pn.extension('vtk')
     >>> VTK(some_vtk_object, width=500, height=500)
-    
+
     This is a Class factory and allows to switch between VTKJS,
     VTKRenderWindow, and VTKRenderWindowSynchronized pane as a function of the
     object type and when the serialisation of the vtkRenderWindow occurs.
-    
+
     Once a pane is returned by this class (inst = VTK(object)), one can
     use pn.help(inst) to see parameters available for the current pane
     """
@@ -516,7 +516,7 @@ class VTKVolume(AbstractVTK):
     """
     The `VTKVolume` pane renders 3d volumetric data defined on regular grids.
     It may be constructed from a 3D NumPy array or a vtkVolume.
-    
+
     The pane provides a number of interactive control which can be set either
     through callbacks from Python or Javascript callbacks.
 
@@ -775,7 +775,7 @@ class VTKVolume(AbstractVTK):
 class VTKJS(AbstractVTK):
     """
     The VTKJS pane allow rendering a vtk scene stored in a vtkjs.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/VTKJS.html
 
     :Example:

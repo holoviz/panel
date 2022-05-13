@@ -1,7 +1,7 @@
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-import {DocumentEvent} from "@bokehjs/document/events" 
+import {DocumentEvent} from "@bokehjs/document/events"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {PanelHTMLBoxView, set_size} from "./layout"
 

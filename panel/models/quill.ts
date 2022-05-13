@@ -104,7 +104,7 @@ export class QuillInput extends HTMLBox {
   }
 
   static __module__ = "panel.models.quill"
-  
+
   static init_QuillInput(): void {
     this.prototype.default_view = QuillInputView
 

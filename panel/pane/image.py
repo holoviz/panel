@@ -169,7 +169,7 @@ class PNG(ImageBase):
     """
     The `PNG` pane embeds a .png image file in a panel if provided a local
     path, or will link to a remote image if provided a URL.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/PNG.html
 
     :Example:
@@ -195,7 +195,7 @@ class GIF(ImageBase):
     """
     The `GIF` pane embeds a .gif image file in a panel if provided a local
     path, or will link to a remote image if provided a URL.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/GIF.html
 
     :Example:
@@ -221,7 +221,7 @@ class ICO(ImageBase):
     """
     The `ICO` pane embeds an .ico image file in a panel if provided a local
     path, or will link to a remote image if provided a URL.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/ICO.html
 
     :Example:
@@ -247,7 +247,7 @@ class JPG(ImageBase):
     """
     The `JPG` pane embeds a .jpg or .jpeg image file in a panel if provided a
     local path, or will link to a remote image if provided a URL.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/JPG.html
 
     :Example:
@@ -285,7 +285,7 @@ class SVG(ImageBase):
     """
     The `SVG` pane embeds a .svg image file in a panel if provided a
     local path, or will link to a remote image if provided a URL.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/SVG.html
 
     :Example:
@@ -357,7 +357,7 @@ class PDF(FileBase):
     """
     The `PDF` pane embeds a .pdf image file in a panel if provided a
     local path, or will link to a remote image if provided a URL.
-    
+
     Reference: https://panel.holoviz.org/reference/panes/PDF.html
 
     :Example:

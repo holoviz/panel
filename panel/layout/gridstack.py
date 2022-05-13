@@ -13,15 +13,15 @@ class GridStack(ReactiveHTML, GridSpec):
     The `GridStack` layout allows arranging multiple Panel objects in a grid
     using a simple API to assign objects to individual grid cells or to a grid
     span.
-    
+
     Other layout containers function like lists, but a `GridSpec` has an API
     similar to a 2D array, making it possible to use 2D assignment to populate,
     index, and slice the grid.
-    
+
     Reference: https://panel.holoviz.org/reference/layouts/GridStack.html
 
     :Example:
-    
+
     >>> pn.extension('gridstack')
     >>> gstack = GridStack(sizing_mode='stretch_both')
     >>> gstack[ : , 0: 3] = pn.Spacer(background='red',    margin=0)

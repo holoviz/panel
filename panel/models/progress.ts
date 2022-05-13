@@ -62,7 +62,7 @@ export class ProgressView extends HTMLBoxView {
     if (this.model.max != null)
       this.progressEl.max = this.model.max
   }
-  
+
   _update_layout(): void {
     let changed = ((this._prev_sizing_mode !== undefined) &&
                    (this._prev_sizing_mode !== this.model.sizing_mode))

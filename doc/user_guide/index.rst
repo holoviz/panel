@@ -68,8 +68,8 @@ when needed.
 
 `Profiling and Debugging <Performance_and_Debugging.html>`_
  Learn how to speed up your application and find issues.
- 
- 
+
+
 Supplementary guides
 --------------------
 

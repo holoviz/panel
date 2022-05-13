@@ -151,7 +151,7 @@ def test_template_server_title():
         doc = tmpl.server_doc(title='Ignored title')
 
     assert doc.title == 'Main title'
-    
+
 
 def test_react_template(document, comm):
     tmplt = ReactTemplate(title='BasicTemplate', header_background='blue', header_color='red')

@@ -53,7 +53,7 @@ export class TextToSpeechView extends HTMLBoxView {
       speechSynthesis.onvoiceschanged = populateVoiceList
   }
 
-  
+
   remove(): void {
     if (this._callback != null)
       clearInterval(this._callback)

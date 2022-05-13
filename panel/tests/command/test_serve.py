@@ -112,4 +112,3 @@ def test_autoreload_app(py_file):
         r2 = requests.get(f"http://localhost:{port}/{app_name}")
         assert r2.status_code == 200
         assert "<title>B</title>" in r2.content.decode('utf-8')
-
