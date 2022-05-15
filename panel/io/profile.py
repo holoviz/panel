@@ -43,7 +43,7 @@ def render_snakeviz(name, sessions):
     return escape(rendered), "background-color: white;"
 
 def render_memray(name, sessions, show_memory_leaks=True, merge_threads=True, reporter='tree'):
-    from memray import FileReader, Tracker
+    from memray import FileReader
     from memray.reporters.flamegraph import FlameGraphReporter
     from memray.reporters.stats import StatsReporter
     from memray.reporters.table import TableReporter
