@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 19 * * SUN'
-    
+
 env:
   CACHE_VERSION: 1
 
