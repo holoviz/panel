@@ -406,7 +406,7 @@ class Serve(_BkServe):
                         "base64-encoded bytes."
                     )
                 config.oauth_encryption_key = encryption_key
-            else:
+            elif not config.oauth_encryption_key:
                 print("WARNING: OAuth has not been configured with an "
                       "encryption key and will potentially leak "
                       "credentials in cookies and a JWT token embedded "
@@ -435,7 +435,7 @@ class Serve(_BkServe):
                 )
             elif args.cookie_secret:
                 config.cookie_secret = args.cookie_secret
-            else:
+            elif not config.cookie_secret:
                 raise ValueError(
                     "When enabling an OAuth provider you must supply "
                     "a valid cookie_secret either using the --cookie-secret "
