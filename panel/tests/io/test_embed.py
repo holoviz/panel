@@ -456,7 +456,6 @@ def test_embed_merged_sliders(document, comm):
     assert len(cbs) == 5
 
     ref1, ref2 = model.children[2].ref['id'], model.children[3].ref['id']
-    print(model.children)
     ref3 = model.children[0].children[0].ref['id']
     ref4 = model.children[1].children[0].ref['id']
     state0 = json.loads(state_model.state[0]['content'])['events']
