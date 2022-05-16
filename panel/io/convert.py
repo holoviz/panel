@@ -5,7 +5,7 @@ import dataclasses
 import os
 
 from textwrap import dedent
-from typing import List, Literal, Optional
+from typing import List, Literal
 
 from bokeh.application.application import SessionContext
 from bokeh.command.util import build_single_handler_application

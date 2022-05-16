@@ -57,7 +57,7 @@ class Convert(Subcommand):
     def invoke(self, args: argparse.Namespace) -> None:
         runtime = args.to
         if runtime not in self._targets:
-            raise ValueError(f'Supported conversion targets include: {self._targets!r}') 
+            raise ValueError(f'Supported conversion targets include: {self._targets!r}')
 
         if args.out:
             os.makedirs(args.out, exist_ok=True)
@@ -68,7 +68,9 @@ class Convert(Subcommand):
                 html = script_to_html(
                     f, requirements=requirements, runtime=runtime, prerender=args.prerender
                 )
-            except:
+            except KeyboardInterrupt:
+                return
+            except Exception:
                 print(f'Failed toconvert {f} to {runtime} target.')
                 continue
             filename = os.path.basename(f).split('.')[0]+'.html'

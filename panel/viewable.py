@@ -898,16 +898,11 @@ class Viewer(param.Parameterized):
 
         return view
 
-<<<<<<< HEAD
     def servable(
         self, title: Optional[str]=None, location: bool | 'Location' = True,
         area: str = 'main', target: Optional[str] = None
     ) -> 'Viewer':
         return self._create_view().servable(title, location, area, target)
-=======
-    def servable(self, title=None, location=True, area='main'):
-        return self._create_view().servable(title, location, area)
->>>>>>> Allow writing to py-script using servable
 
     servable.__doc__ = ServableMixin.servable.__doc__
 
