@@ -106,7 +106,6 @@ class ReactiveHTMLParser(HTMLParser):
         values_loop = re.findall(values_iter_re, data)
         items_loop = re.findall(items_iter_re, data)
         nloops = len(list_loop) + len(values_loop) + len(items_loop)
-        print(list_loop)
         if nloops > 1 and nloops and self._open_for:
             raise ValueError('Nested for loops currently not supported in templates.')
         elif nloops:
