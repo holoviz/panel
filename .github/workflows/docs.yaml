@@ -57,6 +57,7 @@ jobs:
           echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: conda setup
         run: |
+          conda config --prepend channels bokeh/label/dev
           conda create -n test-environment python=3.8 pyctdev
       - uses: actions/setup-node@v2
         with:
