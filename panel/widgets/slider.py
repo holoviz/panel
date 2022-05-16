@@ -574,10 +574,10 @@ class IntRangeSlider(RangeSlider):
         return msg
 
 
-class DateRangeSlider(_RangeSliderBase):
+class DateRangeSlider(_SliderBase):
     """
     The DateRangeSlider widget allows selecting a date range using a
-    slider with two handles. Supports datetime.datetime, datetime.data
+    slider with two handles. Supports datetime.datetime, datetime.date
     and np.datetime64 ranges.
 
     Reference: https://panel.holoviz.org/reference/widgets/DateRangeSlider.html
@@ -594,8 +594,8 @@ class DateRangeSlider(_RangeSliderBase):
     ... )
     """
 
-    value = param.Tuple(default=(None, None), length=2, doc=
-        """The selected range as a tuple of values. Updated when one of the handles is
+    value = param.DateRange(default=None, doc="""
+        The selected range as a tuple of values. Updated when one of the handles is
         dragged. Supports datetime.datetime, datetime.date, and np.datetime64 ranges.""")
 
     value_start = param.Date(default=None, readonly=True, doc="""
@@ -624,9 +624,35 @@ class DateRangeSlider(_RangeSliderBase):
 
     _widget_type = _BkDateRangeSlider
 
+    def __init__(self, **params):
+        if 'value' not in params:
+            value_to_None = False
+            for attr in ['start', 'end']:
+                if params.get(attr, getattr(self, attr)):
+                    continue
+                self.param.warning(
+                    f'Parameter {attr!r} must be set for the widget to be rendered.'
+                )
+                value_to_None = True
+            if value_to_None:
+                params['value'] = None
+            else:
+                params['value'] = (params.get('start', self.start),
+                                params.get('end', self.end))
+        if params['value'] is not None:
+            params['value_start'], params['value_end'] = params['value']
+        with edit_readonly(self):
+            super().__init__(**params)
+
+    @param.depends('value', watch=True)
+    def _sync_values(self):
+        vs, ve = self.value
+        with edit_readonly(self):
+            self.param.update(value_start=vs, value_end=ve)
+
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
-        if msg.get('value') == (None, None):
+        if msg.get('value', 'unchanged') is None:
             del msg['value']
         elif 'value' in msg:
             v1, v2 = msg['value']
@@ -635,7 +661,7 @@ class DateRangeSlider(_RangeSliderBase):
             if isinstance(v2, dt.datetime):
                 v2 = datetime_as_utctimestamp(v2)
             msg['value'] = (v1, v2)
-        if msg.get('value_throttled') == (None, None):
+        if msg.get('value_throttled', 'unchanged') is None:
             del msg['value_throttled']
         return msg
 
