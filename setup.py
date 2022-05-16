@@ -122,7 +122,7 @@ _tests = [
     'parameterized',
     'pytest',
     'scipy',
-    'nbsmoke >=0.2.0',
+    'nbval',
     'pytest-cov',
     'codecov',
     'folium',
