@@ -784,6 +784,11 @@ class DataFrame(BaseTable):
 
     _source_transforms = {'hierarchical': None}
 
+    _rename = {
+        'disabled': 'editable', 'selection': None, 'sorters': None,
+        'text_align': None
+    }
+
     @property
     def _widget_type(self):
         return DataCube if self.hierarchical else DataTable
