@@ -57,12 +57,16 @@ class Bokeh(PaneBase):
     >>> Bokeh(some_bokeh_figure)
     """
 
+    autodispatch = param.Boolean(default=True, doc="""
+        Whether to automatically dispatch events inside bokeh on_change
+        and on_event callbacks in the notebook.""")
+
     theme = param.ClassSelector(default=None, class_=(Theme, str), doc="""
         Bokeh theme to apply to the plot.""")
 
     priority = 0.8
 
-    _rename = {'theme': None}
+    _rename = {'autodispatch': None, 'theme': None}
 
     @classmethod
     def applies(cls, obj):
@@ -114,7 +118,7 @@ class Bokeh(PaneBase):
                 continue
             properties[p] = value
         model.update(**properties)
-        if comm:
+        if comm and self.autodispatch:
             self._wrap_bokeh_callbacks(root, model, doc, comm)
 
         ref = root.ref['id']

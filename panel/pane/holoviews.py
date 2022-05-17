@@ -281,8 +281,11 @@ class HoloViews(PaneBase):
 
     def _get_pane(self, backend, state, **kwargs):
         pane_type = self._panes.get(backend, Pane)
-        if isinstance(pane_type, type) and issubclass(pane_type, Matplotlib):
-            kwargs['tight'] = True
+        if isinstance(pane_type, type):
+            if issubclass(pane_type, Matplotlib):
+                kwargs['tight'] = True
+            if issubclass(pane_type, Bokeh):
+                kwargs['autodispatch'] = False
         return pane_type(state, **kwargs)
 
     def _render(self, doc, comm, root):
