@@ -13,7 +13,9 @@ from typing import (
 
 import param
 
-from bokeh.models.layouts import GridBox as _BkGridBox
+from bokeh.models.layouts import (
+    GridBox as _BkGridBox, Tabs as _BkTabs, Panel as _BkPanel
+)
 
 from ..io import init_doc, push, state, unlocked
 from ..layout import Panel, Row
@@ -200,6 +202,8 @@ class PaneBase(Reactive):
                             new_models = list(children)
                             new_models[index] = new_model
                             break
+                elif isinstance(parent, _BkTabs):
+                    index = [tab.child for tab in parent.tabs].index(old_model)
                 else:
                     index = parent.children.index(old_model)
             except ValueError:
@@ -211,6 +215,10 @@ class PaneBase(Reactive):
             else:
                 if isinstance(parent, _BkReactiveHTML):
                     parent.children[node] = new_models
+                elif isinstance(parent, _BkTabs):
+                    old_tab = parent.tabs[index]
+                    props = dict(old_tab.properties_with_values(), child=new_model)
+                    parent.tabs[index] = _BkPanel(**props)
                 else:
                     parent.children[index] = new_model
 
