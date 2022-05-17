@@ -604,7 +604,7 @@ class DateRangeSlider(_SliderBase):
     value_end = param.Date(default=None, readonly=True, doc="""
         The upper value of the selected range.""")
 
-    value_throttled = param.Tuple(default=None, length=2, constant=True, doc="""
+    value_throttled = param.DateRange(default=None, constant=True, doc="""
         The selected range as a tuple of values. Updated one of the handles is released. Supports
         datetime.datetime, datetime.date and np.datetime64 ranges""")
 
