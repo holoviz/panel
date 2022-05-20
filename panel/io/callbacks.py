@@ -37,6 +37,9 @@ class PeriodicCallback(param.Parameterized):
         Number of times the callback will be executed, by default
         this is unlimited.""")
 
+    log = param.Boolean(default=True, doc="""
+        Whether the periodic callback should log its actions.""")
+
     period = param.Integer(default=500, doc="""
         Period in milliseconds at which the callback is executed.""")
 
@@ -86,7 +89,7 @@ class PeriodicCallback(param.Parameterized):
 
     def _post_callback(self):
         cbname = function_name(self.callback)
-        if self._doc:
+        if self._doc and self.log:
             _periodic_logger.info(
                 LOG_PERIODIC_END, id(self._doc), cbname, self._counter
             )
@@ -104,7 +107,7 @@ class PeriodicCallback(param.Parameterized):
         with edit_readonly(state):
             state.busy = True
         cbname = function_name(self.callback)
-        if self._doc:
+        if self._doc and self.log:
             _periodic_logger.info(
                 LOG_PERIODIC_START, id(self._doc), cbname, self._counter
             )
@@ -173,10 +176,6 @@ class PeriodicCallback(param.Parameterized):
             from tornado.ioloop import PeriodicCallback
             self._cb = PeriodicCallback(lambda: asyncio.create_task(self._periodic_callback()), self.period)
             self._cb.start()
-        try:
-            state.on_session_destroyed(self._cleanup)
-        except Exception:
-            pass
 
     def stop(self):
         """

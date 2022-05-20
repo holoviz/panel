@@ -123,7 +123,6 @@ class _state(param.Parameterized):
     _template: BaseTemplate | None = None
     _templates: WeakKeyDictionary[Document, BaseTemplate] = WeakKeyDictionary() # Server templates indexed by document
 
-
     # An index of all currently active views
     _views: Dict[str, Tuple[Viewable, Model, Document, Comm | None]] = {}
 
@@ -146,6 +145,7 @@ class _state(param.Parameterized):
 
     # Scheduled callbacks
     _scheduled: Dict[str, Tuple[Iterator[int], Callable[[], None]]] = {}
+    _periodic: WeakKeyDictionary[Document, List[PeriodicCallback]] = WeakKeyDictionary()
 
     # Indicators listening to the busy state
     _indicators: List[BooleanIndicator] = []
@@ -214,6 +214,42 @@ class _state(param.Parameterized):
             'rendered': dt.datetime.now().timestamp()
         })
         self.param.trigger('session_info')
+
+    def _destroy_session(self, session_context):
+        session_id = session_context.id
+        sessions = self.session_info['sessions']
+        if session_id in sessions and sessions[session_id]['ended'] is None:
+            session = sessions[session_id]
+            if session['rendered'] is not None:
+                self.session_info['live'] -= 1
+            session['ended'] = dt.datetime.now().timestamp()
+            self.param.trigger('session_info')
+        doc = session_context._document
+
+        # Cleanup periodic callbacks
+        if doc in self._periodic:
+            for cb in self._periodic[doc]:
+                try:
+                    cb._cleanup(session_context)
+                except Exception:
+                    pass
+            del self._periodic[doc]
+
+        # Cleanup Locations
+        if doc in self._locations:
+            loc = state._locations[doc]
+            loc._server_destroy(session_context)
+            del state._locations[doc]
+
+        # Cleanup Notifications
+        if doc in self._notifications:
+            notification = self._notifications[doc]
+            notification._server_destroy(session_context)
+            del state._notifications[doc]
+
+        # Clean up templates
+        if doc in self._templates:
+            del self._templates[doc]
 
     def _get_callback(self, endpoint: str):
         _updating: Dict[int, bool] = {}
@@ -373,6 +409,10 @@ class _state(param.Parameterized):
                     self.curdoc.add_next_tick_callback(cb.start)
                     return cb
             cb.start()
+        if self.curdoc:
+            if self.curdoc not in self._periodic:
+                self._periodic[self.curdoc] = []
+            self._periodic[self.curdoc].append(cb)
         return cb
 
     def cancel_task(self, name: str, wait: bool=False):

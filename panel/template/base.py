@@ -155,8 +155,6 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     def _server_destroy(self, session_context: BokehSessionContext):
         doc = session_context._document
         self._documents.remove(doc)
-        if doc in state._locations:
-            del state._locations[doc]
 
     def _init_doc(
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
@@ -166,8 +164,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         doc = doc or _curdoc()
         self._documents.append(doc)
         if location and self.location:
-            loc = self._add_location(doc, location)
-            doc.on_session_destroyed(loc._server_destroy)
+            self._add_location(doc, location)
+        doc.on_session_destroyed(state._destroy_session)
         doc.on_session_destroyed(self._server_destroy)
 
         if title or doc.title == 'Bokeh Application':
