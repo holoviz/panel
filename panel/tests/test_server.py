@@ -240,6 +240,7 @@ def test_server_session_info():
 
     state.curdoc = None
     html._server_destroy(session_context)
+    state._destroy_session(session_context)
     assert state.session_info['live'] == 0
 
 
