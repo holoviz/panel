@@ -1373,7 +1373,8 @@ class Tabulator(BaseTable):
             'hidden_columns': self.hidden_columns,
             'editable': not self.disabled,
             'select_mode': selectable,
-            'selectable_rows': self._get_selectable()
+            'selectable_rows': self._get_selectable(),
+            'sorters': self.sorters
         })
         process = {'theme': self.theme, 'frozen_rows': self.frozen_rows}
         props.update(self._process_param_change(process))
