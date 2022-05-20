@@ -237,7 +237,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   _selection_updating: boolean = false
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0;
-  _timeout_queue: any[] = []
+  _applied_styles: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
@@ -261,7 +261,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }
     })
 
-    this.connect(this.model.properties.styles.change, () => this.redraw())
+    this.connect(this.model.properties.styles.change, () => {
+      if (this._applied_styles)
+	this.tabulator.redraw(true)
+      this.setStyles()
+    })
     this.connect(this.model.properties.hidden_columns.change, () => this.setHidden())
     this.connect(this.model.properties.page_size.change, () => this.setPageSize())
     this.connect(this.model.properties.page.change, () => {
@@ -295,24 +299,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   invalidate_render(): void {
+    this.tabulator.destroy()
     this.render()
-    if (this.model.expanded.length)
-      this.relayout()
+    this.relayout()
   }
 
   renderComplete(): void {
-    if (this._timeout_queue.length) {
-      const timeout = this._timeout_queue.shift()
-      clearTimeout(timeout)
-    }
-
     // Only have to set up styles after initial render subsequent
     // styling is handled by change event on styles property
     if (this._initializing) {
       this.setSelection()
       this.relayout()
       this._initializing = false
-      this.redraw()
       if (this._lastVerticalScrollbarTopPosition)
 	this.tabulator.rowManager.element.scrollTop = this._lastVerticalScrollbarTopPosition;
     }
@@ -361,9 +359,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.setFrozen()
 
     this.el.appendChild(container)
-
-    // Ensure renderComplete is run eventually
-    this._timeout_queue.push(setTimeout(() => this.renderComplete(), 500))
   }
 
   /*
@@ -457,7 +452,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       return
     this._relayouting = true
     this.tabulator.rowManager.adjustTableSize()
-    this.update_layout()
     this.compute_layout()
     if (this.root !== this) {
       this.invalidate_layout()
@@ -944,6 +938,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   setStyles(): void {
     if (this.tabulator == null || this.tabulator.getDataCount() == 0)
       return
+    this._applied_styles = false
     for (const r in this.model.styles.data) {
       const row_style = this.model.styles.data[r]
       const row = this.tabulator.getRow(r)
@@ -965,6 +960,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           else
             [prop, value] = s.split(':')
           element.style.setProperty(prop, value.trimLeft())
+	  this._applied_styles = true
         }
       }
     }
