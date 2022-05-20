@@ -11,7 +11,6 @@ and become viewable including:
 from __future__ import annotations
 
 import asyncio
-import datetime as dt
 import logging
 import sys
 import threading
@@ -525,25 +524,15 @@ class Renderable(param.Parameterized):
         """
         Server lifecycle hook triggered when session is destroyed.
         """
-        session_id = session_context.id
-        sessions = state.session_info['sessions']
-        if session_id in sessions and sessions[session_id]['ended'] is None:
-            session = sessions[session_id]
-            if session['rendered'] is not None:
-                state.session_info['live'] -= 1
-            session['ended'] = dt.datetime.now().timestamp()
-            state.param.trigger('session_info')
         doc = session_context._document
+        if doc not in self._documents:
+            return
         root = self._documents[doc]
         ref = root.ref['id']
         self._cleanup(root)
         del self._documents[doc]
         if ref in state._views:
             del state._views[ref]
-        if doc in state._locations:
-            loc = state._locations[doc]
-            loc._cleanup(root)
-            del state._locations[doc]
 
     def get_root(
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
@@ -862,11 +851,12 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             title = title or 'Panel Application'
             doc.title = title
         model = self.get_root(doc)
-        if hasattr(doc, 'on_session_destroyed'):
-            doc.on_session_destroyed(self._server_destroy) # type: ignore
-            self._documents[doc] = model
+        doc.on_session_destroyed(state._destroy_session)
+        doc.on_session_destroyed(self._server_destroy) # type: ignore
+        self._documents[doc] = model
         add_to_doc(model, doc)
-        if location: self._add_location(doc, location, model)
+        if location:
+            self._add_location(doc, location, model)
         return doc
 
 

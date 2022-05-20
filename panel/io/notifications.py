@@ -1,9 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
+
 import param
 
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .datamodel import _DATA_MODELS, construct_data_model
 from .resources import bundled_files, CSS_URLS
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class Notification(param.Parameterized):
@@ -53,6 +62,13 @@ class NotificationAreaBase(ReactiveHTML):
     def __init__(self, **params):
         super().__init__(**params)
         self._notification_watchers = {}
+
+    def get_root(
+        self, doc: Optional['Document'] = None, comm: Optional['Comm'] = None, preprocess: bool = True
+    ) -> 'Model':
+        root = super().get_root(doc, comm, preprocess)
+        self._documents[doc] = root
+        return root
 
     def send(self, message, duration=3000, type=None, background=None, icon=None):
         """

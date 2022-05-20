@@ -266,8 +266,12 @@ def get_process_info():
     )
     def update_memory(): memory.stream(get_mem())
     def update_cpu(): cpu.stream(get_cpu())
-    state.add_periodic_callback(update_memory, period=1000)
-    state.add_periodic_callback(update_cpu, period=1000)
+    mem_cb = state.add_periodic_callback(update_memory, period=1000, start=False)
+    cpu_cb = state.add_periodic_callback(update_cpu, period=1000, start=False)
+    mem_cb.log = False
+    cpu_cb.log = False
+    mem_cb.start()
+    cpu_cb.start()
     return memory, cpu
 
 def get_session_data():
