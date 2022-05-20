@@ -1,5 +1,47 @@
 # Releases
 
+## Version 0.13.1
+
+Date: 2022-05-20
+
+### Enhancements
+
+- Add repr to cell and edit events ([#3434](https://github.com/holoviz/panel/pull/3534))
+- Improvements for pyodide handling ([#3444](https://github.com/holoviz/panel/pull/3444), [#3508](https://github.com/holoviz/panel/pull/3508), [#3511](https://github.com/holoviz/panel/pull/3511))
+- Add support for Plotly animation frames ([#3449](https://github.com/holoviz/panel/pull/3499))
+- Implement single and multi-selection in Vega pane ([#3470](https://github.com/holoviz/panel/pull/3470), [#3499](https://github.com/holoviz/panel/pull/3499), [#3505](https://github.com/holoviz/panel/pull/3505))
+- Add typehints to help developers and users ([#3476](https://github.com/holoviz/panel/pull/3476))
+
+### Bug fixes
+
+- Fix pyodide array buffer conversion ([#3409](https://github.com/holoviz/panel/pull/3409))
+- Allow `placeholder` to be updated on `TextEditor` ([#3427](https://github.com/holoviz/panel/pull/3427))
+- Ensure bokeh correctly detects whether `HTML`/`Markdown` contains latex ([#3438](https://github.com/holoviz/panel/pull/3438))
+- Ensure notifications work on server created with `pn.serve` and `.show` ([#3445](https://github.com/holoviz/panel/pull/3445))
+- Replace slickgrid background image in custom `FastTemplate` CSS ([#3461](https://github.com/holoviz/panel/pull/3461))
+- Ensure `param.Array` is synced correctly in `ReactiveHTML` ([#3456](https://github.com/holoviz/panel/pull/3456))
+- Ensure selection on filtered `Tabulator` does not raise out-of-bounds error ([#3462](https://github.com/holoviz/panel/pull/3462))
+- Ensure updating `Tabulator` does not reset scroll position ([#3450](https://github.com/holoviz/panel/issues/3450))
+- Various fixes for `FastTemplate` CSS ([#3464](https://github.com/holoviz/panel/pull/3464))
+- Ensure `Tabulator` `on_click` and `on_edit` events return correct row when paginated ([#3410](https://github.com/holoviz/panel/pull/3410))
+- Fix broken JupyterLab preview ([#3469](https://github.com/holoviz/panel/pull/3469))
+- Skip `Tabulator` row selection when clicking on expand button ([#3474](https://github.com/holoviz/panel/pull/3474))
+- Ensure overflow in `MaterialTemplate` is not clipped ([#3492](https://github.com/holoviz/panel/pull/3492))
+- Allow providing `--index` for directory style apps ([#3493](https://github.com/holoviz/panel/pull/3493))
+- Ensure Tabulator expanded rows are sized correctly after re-render ([#3507](https://github.com/holoviz/panel/pull/3507))
+- Make CodeHandler robust to document that has been destroyed ([#3510](https://github.com/holoviz/panel/pull/3510))
+- Do not sync `DataFrame` widget `sorters` parameter with bokeh model ([#3527](https://github.com/holoviz/panel/pull/3527))
+- Ensure that HoloViews callback events are not auto-dispatched ([#3528](https://github.com/holoviz/panel/pull/3528))
+- Ensure non-updateable `Pane` can be updated inside `Tabs` ([#3532](https://github.com/holoviz/panel/pull/3532))
+- Fix slowdown of JupyterLab on Windows ([#3531](https://github.com/holoviz/panel/pull/3531))
+- Ensure `Tabulator` has correct layout after re-render ([#3536](https://github.com/holoviz/panel/pull/3536))
+
+### Documentation
+
+- Adds docstrings to layouts ([#3417](https://github.com/holoviz/panel/pull/3417))
+- Show how to filter categorical and temporal data from `Altair`/VegaLite ([#3401](https://github.com/holoviz/panel/pull/3401))
+- Document how to make a `Tabulator` column non-editable ([#3489](https://github.com/holoviz/panel/pull/3489))
+
 ## Version 0.13.0
 
 Date: 2022-04-15
