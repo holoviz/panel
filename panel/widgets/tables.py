@@ -447,7 +447,6 @@ class BaseTable(ReactiveData, Widget):
     def _get_data(self):
         import pandas as pd
         df = self._filter_dataframe(self.value)
-        df = self._sort_df(df)
         if df is None:
             return [], {}
         if isinstance(self.value.index, pd.MultiIndex):
@@ -690,7 +689,8 @@ class BaseTable(ReactiveData, Widget):
         Returns the current view of the table after filtering and
         sorting are applied.
         """
-        return self._processed
+        df = self._processed
+        return self._sort_df(df)
 
     @property
     def selected_dataframe(self):
@@ -698,9 +698,8 @@ class BaseTable(ReactiveData, Widget):
         Returns a DataFrame of the currently selected rows.
         """
         if not self.selection:
-            return self._processed.iloc[:0]
-        return self._processed.iloc[self.selection]
-
+            return self.current_view.iloc[:0]
+        return self.current_view.iloc[self.selection]
 
 
 class DataFrame(BaseTable):
@@ -1645,3 +1644,14 @@ class Tabulator(BaseTable):
         if column not in self._on_click_callbacks:
             self._on_click_callbacks[column] = []
         self._on_click_callbacks[column].append(callback)
+
+    @property
+    def current_view(self):
+        """
+        Returns the current view of the table after filtering and
+        sorting are applied.
+        """
+        df = self._processed
+        if self.pagination == 'remote':
+            return df
+        return self._sort_df(df)
