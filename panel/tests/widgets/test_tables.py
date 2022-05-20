@@ -1020,14 +1020,14 @@ def test_tabulator_patch_with_sorters(document, comm):
                       dtype='datetime64[ns]')
     }
     expected_src = {
-        'index': np.array([3, 0, 2, 1, 4]),
-        'A': np.array([3, 2, 2, 1, 1]),
-        'B': np.array([1, 0, 0, 1, 0]),
-        'C': np.array(['foo4', 'foo0', 'foo3', 'foo2', 'foo5']),
-        'D': np.array(['2009-01-06T00:00:00.000000000',
-                       '2009-01-01T00:00:00.000000000',
-                       '2009-01-05T00:00:00.000000000',
+        'index': np.array([0, 1, 2, 3, 4]),
+        'A': np.array([2., 1., 2., 3., 1.]),
+        'B': np.array([0., 1., 0., 1., 0.]),
+        'C': np.array(['foo0', 'foo2', 'foo3', 'foo4', 'foo5']),
+        'D': np.array(['2009-01-01T00:00:00.000000000',
                        '2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
                       dtype='datetime64[ns]').astype(np.int64) / 10e5
     }
