@@ -290,7 +290,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   get sorters(): any[] {
     const sorters = []
-    for (const sort of this.model.sorters) {
+    if (this.model.sorters.length)
+      sorters.push({column: '_index', dir: 'asc'})
+    for (const sort of this.model.sorters.reverse()) {
       if (sort.column === undefined)
 	sort.column = sort.field
       sorters.push(sort)
@@ -474,7 +476,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       try {
         if (page != null && sorters != null) {
 	  this._updating_sort = true
-          this.model.sorters = sorters
+	  const sorts = []
+	  for (const s of sorters) {
+	    if (s.field !== '_index')
+	      sorts.push({field: s.field, dir: s.dir})
+	  }
+          this.model.sorters = sorts
 	  this._updating_sort = false
           this._updating_page = true
           try {
@@ -520,7 +527,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       dataSorting: (sorters: any[]) => {
 	const sorts = []
 	for (const s of sorters) {
-	  sorts.push({field: s.field, dir: s.dir})
+	  if (s.field !== '_index')
+	    sorts.push({field: s.field, dir: s.dir})
 	}
 	if (this.model.pagination !== 'remote') {
 	  this._updating_sort = true
@@ -664,6 +672,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   getColumns(): any {
     const config_columns: (any[] | undefined) = this.model.configuration?.columns;
     let columns = []
+    columns.push({field: '_index'})
     if (config_columns != null) {
       for (const column of config_columns)
         if (column.columns != null) {
@@ -970,7 +979,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   setHidden(): void {
     for (const column of this.tabulator.getColumns()) {
-      if (this.model.hidden_columns.indexOf(column._column.field) > -1)
+      const col = column._column
+      if ((col.field == '_index') || (this.model.hidden_columns.indexOf(col.field) > -1))
         column.hide()
       else
         column.show()
@@ -1093,6 +1103,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this._tabulator_cell_updating = false
     }
     this.model.trigger_event(new TableEditEvent(field, index))
+    this.setSorters()
+    this.tabulator.scrollToRow(index, "top", false)
   }
 }
 
