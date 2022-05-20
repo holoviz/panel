@@ -286,7 +286,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   get sorters(): any[] {
     const sorters = []
-    for (const sort of this.model.sorters) {
+    if (this.model.sorters.length && (this.model.source.columns().indexOf('index') > -1))
+      sorters.push({column: 'index', dir: 'asc'})
+    for (const sort of this.model.sorters.reverse()) {
       if (sort.column === undefined)
 	sort.column = sort.field
       sorters.push(sort)
