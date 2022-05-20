@@ -286,8 +286,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   get sorters(): any[] {
     const sorters = []
-    if (this.model.sorters.length && (this.model.source.columns().indexOf('index') > -1))
-      sorters.push({column: 'index', dir: 'asc'})
+    if (this.model.sorters.length)
+      sorters.push({column: '_index', dir: 'asc'})
     for (const sort of this.model.sorters.reverse()) {
       if (sort.column === undefined)
 	sort.column = sort.field
@@ -478,7 +478,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       try {
         if (page != null && sorters != null) {
 	  this._updating_sort = true
-          this.model.sorters = sorters
+          this.model.sorters = sorters.slice(1)
 	  this._updating_sort = false
           this._updating_page = true
           try {
@@ -528,7 +528,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 	}
 	if (this.model.pagination !== 'remote') {
 	  this._updating_sort = true
-	  this.model.sorters = sorts
+	  this.model.sorters = sorts.slice(1)
 	  this._updating_sort = false
 	}
       },
@@ -668,6 +668,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   getColumns(): any {
     const config_columns: (any[] | undefined) = this.model.configuration?.columns;
     let columns = []
+    columns.push({field: '_index'})
     if (config_columns != null) {
       for (const column of config_columns)
         if (column.columns != null) {
@@ -972,7 +973,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   setHidden(): void {
     for (const column of this.tabulator.getColumns()) {
-      if (this.model.hidden_columns.indexOf(column._column.field) > -1)
+      const col = column._column
+      if ((col.field == '_index') || (this.model.hidden_columns.indexOf(col.field) > -1))
         column.hide()
       else
         column.show()
