@@ -300,6 +300,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   invalidate_render(): void {
     this.tabulator.destroy()
+    this.tabulator = null
     this.render()
     this.relayout()
   }
@@ -452,6 +453,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       return
     this._relayouting = true
     this.tabulator.rowManager.adjustTableSize()
+    this.update_layout()
     this.compute_layout()
     if (this.root !== this) {
       this.invalidate_layout()
