@@ -691,7 +691,7 @@ def test_tabulator_sorters_unnamed_index(document, comm):
     table.sorters = [{'field': 'index', 'dir': 'desc'}]
 
     pd.testing.assert_frame_equal(
-        table._processed,
+        table.current_view,
         df.sort_index(ascending=False)
     )
 
@@ -702,7 +702,7 @@ def test_tabulator_sorters_int_name_column(document, comm):
     table.sorters = [{'field': '0', 'dir': 'desc'}]
 
     pd.testing.assert_frame_equal(
-        table._processed,
+        table.current_view,
         df.sort_values([0], ascending=False)
     )
 
