@@ -1046,24 +1046,25 @@ class Tabulator(BaseTable):
         super()._cleanup(root)
 
     def _process_event(self, event):
+        event_col = self._renamed_cols.get(event.column, event.column)
         if self.pagination == 'remote':
             nrows = self.page_size
             event.row = event.row+(self.page-1)*nrows
-        if event.column not in self.buttons:
-            if event.column not in self._processed.columns:
+        if event_col not in self.buttons:
+            if event_col not in self._processed.columns:
                 event.value = self._processed.index[event.row]
             else:
-                event.value = self._processed[event.column].iloc[event.row]
+                event.value = self._processed[event_col].iloc[event.row]
         if event.event_name == 'table-edit':
             if self._old is not None:
-                event.old = self._old[event.column].iloc[event.row]
+                event.old = self._old[event_col].iloc[event.row]
             for cb in self._on_edit_callbacks:
                 cb(event)
             self._update_style()
         else:
             for cb in self._on_click_callbacks.get(None, []):
                 cb(event)
-            for cb in self._on_click_callbacks.get(event.column, []):
+            for cb in self._on_click_callbacks.get(event_col, []):
                 cb(event)
 
     def _get_theme(self, theme, resources=None):
