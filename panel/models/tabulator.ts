@@ -478,7 +478,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       try {
         if (page != null && sorters != null) {
 	  this._updating_sort = true
-          this.model.sorters = sorters.slice(1)
+	  const sorts = []
+	  for (const s of sorters) {
+	    if (s.field !== '_index')
+	      sorts.push({field: s.field, dir: s.dir})
+	  }
+          this.model.sorters = sorts
 	  this._updating_sort = false
           this._updating_page = true
           try {
@@ -524,11 +529,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       dataSorting: (sorters: any[]) => {
 	const sorts = []
 	for (const s of sorters) {
-	  sorts.push({field: s.field, dir: s.dir})
+	  if (s.field !== '_index')
+	    sorts.push({field: s.field, dir: s.dir})
 	}
 	if (this.model.pagination !== 'remote') {
 	  this._updating_sort = true
-	  this.model.sorters = sorts.slice(1)
+	  this.model.sorters = sorts
 	  this._updating_sort = false
 	}
       },
