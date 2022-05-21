@@ -30,7 +30,7 @@ html_theme = "pydata_sphinx_theme"
 html_logo = "_static/logo_horizontal.png"
 html_favicon = "_static/favicon.ico"
 
-html_theme_options.update({
+html_theme_options = {
     "github_url": "https://github.com/holoviz/panel",
     "icon_links": [
         {
@@ -44,8 +44,12 @@ html_theme_options.update({
             "icon": "fab fa-discourse",
         },
     ],
+    "footer_items": [
+        "copyright",
+        "last-updated",
+    ],
     "google_analytics_id": "UA-154795830-2",
-})
+}
 
 extensions += [
     'sphinx.ext.napoleon',
@@ -122,8 +126,8 @@ nbsite_gallery_conf = {
     'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
 }
 
-templates_path += [
-    '_templates',
+templates_path = [
+    '_templates'
 ]
 
 html_context.update({

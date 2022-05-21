@@ -69,7 +69,7 @@ def write_file(name, text, opts):
 
 def format_heading(level, text):
     """Create a heading of <level> [1, 2 or 3 supported]."""
-    underlining = ['*', '-', '~', ][level-1] * len(text)
+    underlining = ['=', '-', '~', ][level-1] * len(text)
     return '%s\n%s\n\n' % (text, underlining)
 
 def format_directive(module, package=None):
