@@ -1,6 +1,5 @@
-**********
 User Guide
-**********
+==========
 
 The Panel user guide introduces the main concepts required for
 building interactive apps and dashboards using Panel, and gives
@@ -75,7 +74,6 @@ Supplementary guides
 
 `Django Apps <Django_Apps.html>`_
  How to embed a Panel/Bokeh app inside a Django web-server deployment.
-
 
 .. toctree::
     :titlesonly:

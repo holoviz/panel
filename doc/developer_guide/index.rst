@@ -171,5 +171,5 @@ Useful Links
     :hidden:
     :maxdepth: 2
 
-    Getting Set up <index>
+    Getting Set up <self>
     Testing <testing>
