@@ -207,6 +207,7 @@ def _param_bind(function, *args, watch=False, **kwargs):
         def wrapped(*wargs, **wkwargs):
             combined_args, combined_kwargs = combine_arguments(wargs, wkwargs)
             return function(*combined_args, **combined_kwargs)
+    wrapped.__bound_function__ = function
     return wrapped
 
 __all__ = ["bind", "depends"]

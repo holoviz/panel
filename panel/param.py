@@ -745,17 +745,16 @@ class ParamMethod(ReplacementPane):
         if not dependencies or not dependencies.get('watch'):
             return
         fn_type = 'method' if type(self) is ParamMethod else 'function'
-        self.param.warning(f"The {fn_type} supplied for Panel to display "
-                           "was declared with `watch=True`, which will "
-                           f"cause the {fn_type} to be called twice for "
-                           "any change in a dependent Parameter. "
-                           "`watch` should be False when Panel is "
-                           "responsible for displaying the result "
-                           f"of the {fn_type} call, while `watch=True` "
-                           f"should be reserved for {fn_type}s that work "
-                           "via side-effects, e.g. by modifying internal  "
-                           "state of a class or global state in an "
-                           "application's namespace.")
+        self.param.warning(
+            f"The {fn_type} supplied for Panel to display was declared "
+            f"with `watch=True`, which will cause the {fn_type} to be "
+            "called twice for any change in a dependent Parameter. "
+            "`watch` should be False when Panel is responsible for "
+            f"displaying the result of the {fn_type} call, while "
+            f"`watch=True` should be reserved for {fn_type}s that work "
+            "via side-effects, e.g. by modifying internal state of a "
+            "class or global state in an application's namespace."
+        )
 
     #----------------------------------------------------------------
     # Callback API
@@ -811,6 +810,32 @@ class ParamMethod(ReplacementPane):
         parameterized = get_method_owner(self.object)
         params = parameterized.param.method_dependencies(self.object.__name__)
         deps = params
+        if not deps:
+            fn = getattr(self.object, '__bound_function__', self.object)
+            obj_name = type(parameterized).__name__
+            fn_name = getattr(fn, '__name__', repr(self.object))
+            try:
+                sig = inspect.signature(fn)
+                if str(sig) == '()':
+                    sig = '(self)'
+            except Exception:
+                sig = '(...)'
+            msg = (
+                f"The method {obj_name}.{fn_name} does not have any dependencies "
+                "and will never update. Are you sure you did not intend "
+                "to depend on or bind a parameter or widget to this method? "
+                "If not simply call the method before passing it to Panel. "
+                f"Otherwise use panel.bind({fn_name}, ...) or decorate the "
+                f"method like this: \n\n@panel.depends(...)\ndef {fn_name}{sig}:\n"
+                "    ...\n\nIn place of the ... you can pass one or more "
+                "positional or keyword arguments referencing parameters on "
+                f"the {obj_name} instance by name (when using panel.depends) "
+                "or widget/parameter objects (when using panel.bind). When passing "
+                "a parameter to panel.bind ensure you reference the actual "
+                "parameter object not the current value, i.e. use "
+                "object.param.parameter not object.parameter."
+            )
+            self.param.warning(msg)
 
         def update_pane(*events):
             # Update nested dependencies if parameterized object events
@@ -878,6 +903,27 @@ class ParamFunction(ParamMethod):
     def _link_object_params(self):
         deps = getattr(self.object, '_dinfo', {})
         dep_params = list(deps.get('dependencies', [])) + list(deps.get('kw', {}).values())
+        if not dep_params:
+            fn = getattr(self.object, '__bound_function__', self.object)
+            fn_name = getattr(fn, '__name__', repr(self.object))
+            try:
+                sig = inspect.signature(fn)
+            except Exception:
+                sig = '(...)'
+            msg = (
+                f"The function {fn_name!r} does not have any dependencies "
+                "and will never update. Are you sure you did not intend "
+                "to depend on or bind a parameter or widget to this function? "
+                "If not simply call the function before passing it to Panel. "
+                f"Otherwise use panel.bind({fn_name}, ...) or decorate the "
+                f"function like this: \n\n@panel.depends(...)\ndef {fn_name}{sig}:\n"
+                "    ...\n\nIn place of the ... you can pass one or more "
+                "positional or keyword arguments with either a widget "
+                "or parameter as its value. When passing a parameter as an argument "
+                "ensure you reference the actual parameter object not the current "
+                "value, i.e. use object.param.parameter not object.parameter."
+            )
+            self.param.warning(msg)
         grouped = defaultdict(list)
         for dep in dep_params:
             grouped[id(dep.owner)].append(dep)
