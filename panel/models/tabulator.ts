@@ -672,7 +672,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   getColumns(): any {
     const config_columns: (any[] | undefined) = this.model.configuration?.columns;
     let columns = []
-    columns.push({field: '_index'})
+    columns.push({field: '_index', frozen: true})
     if (config_columns != null) {
       for (const column of config_columns)
         if (column.columns != null) {
