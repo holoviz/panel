@@ -814,26 +814,15 @@ class ParamMethod(ReplacementPane):
             fn = getattr(self.object, '__bound_function__', self.object)
             obj_name = type(parameterized).__name__
             fn_name = getattr(fn, '__name__', repr(self.object))
-            try:
-                sig = inspect.signature(fn)
-                if str(sig) == '()':
-                    sig = '(self)'
-            except Exception:
-                sig = '(...)'
             msg = (
                 f"The method {obj_name}.{fn_name} does not have any dependencies "
                 "and will never update. Are you sure you did not intend "
                 "to depend on or bind a parameter or widget to this method? "
                 "If not simply call the method before passing it to Panel. "
-                f"Otherwise use panel.bind({fn_name}, ...) or decorate the "
-                f"method like this: \n\n@panel.depends(...)\ndef {fn_name}{sig}:\n"
-                "    ...\n\nIn place of the ... you can pass one or more "
-                "positional or keyword arguments referencing parameters on "
-                f"the {obj_name} instance by name (when using panel.depends) "
-                "or widget/parameter objects (when using panel.bind). When passing "
-                "a parameter to panel.bind ensure you reference the actual "
-                "parameter object not the current value, i.e. use "
-                "object.param.parameter not object.parameter."
+                "Otherwise ensure you pass at least one parameter by name "
+                "(if using param.depends) or if using panel.bind ensure you "
+                "reference the actual parameter object not the current "
+                "value, i.e. use object.param.parameter not object.parameter."
             )
             self.param.warning(msg)
 
@@ -906,24 +895,16 @@ class ParamFunction(ParamMethod):
         if not dep_params:
             fn = getattr(self.object, '__bound_function__', self.object)
             fn_name = getattr(fn, '__name__', repr(self.object))
-            try:
-                sig = inspect.signature(fn)
-            except Exception:
-                sig = '(...)'
-            msg = (
+            self.param.warning(
                 f"The function {fn_name!r} does not have any dependencies "
                 "and will never update. Are you sure you did not intend "
                 "to depend on or bind a parameter or widget to this function? "
                 "If not simply call the function before passing it to Panel. "
-                f"Otherwise use panel.bind({fn_name}, ...) or decorate the "
-                f"function like this: \n\n@panel.depends(...)\ndef {fn_name}{sig}:\n"
-                "    ...\n\nIn place of the ... you can pass one or more "
-                "positional or keyword arguments with either a widget "
-                "or parameter as its value. When passing a parameter as an argument "
-                "ensure you reference the actual parameter object not the current "
-                "value, i.e. use object.param.parameter not object.parameter."
+                "Otherwise, when passing a parameter as an argument, "
+                "ensure you pass at least one parameter and reference the "
+                "actual parameter object not the current value, i.e. use "
+                "object.param.parameter not object.parameter."
             )
-            self.param.warning(msg)
         grouped = defaultdict(list)
         for dep in dep_params:
             grouped[id(dep.owner)].append(dep)
