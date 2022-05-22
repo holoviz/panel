@@ -72,9 +72,9 @@ jobs:
           conda install "pyctdev>=0.5"
           conda install "nodejs=15.3.0"
           doit env_create --python=${{ matrix.python-version }}
-          conda config --set experimental_solver libmamba
           conda activate test-environment
           conda install conda-libmamba-solver
+          conda config --set experimental_solver libmamba
       - name: nix_opengl
         if: contains(matrix.os, 'ubuntu')
         run: |
