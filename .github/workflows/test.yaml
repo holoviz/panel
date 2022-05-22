@@ -67,7 +67,7 @@ jobs:
         run: git fetch --prune --tags --unshallow
       - name: conda setup
         run: |
-          conda install conda_libmamba_solver
+          conda update conda
           conda config --set experimental_solver libmamba
           conda install "pyctdev>=0.5"
           conda install "nodejs=15.3.0"
