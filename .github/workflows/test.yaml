@@ -74,6 +74,7 @@ jobs:
       - name: configure libmamba
         run: |
           eval "$(conda shell.bash hook)"
+          conda install -n test conda-libmamba-solver
           conda install -n test-environment conda-libmamba-solver
           conda config --set experimental_solver libmamba
       - name: nix_opengl
