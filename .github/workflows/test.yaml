@@ -68,13 +68,13 @@ jobs:
       - name: conda setup
         run: |
           conda update -n base conda
+          conda install -n base conda-libmamba-solver
           conda install "pyctdev>=0.5"
           conda install "nodejs=15.3.0"
-          conda config --prepend channels bokeh/label/dev
+          conda config --set experimental_solver libmamba
           doit env_create --python=${{ matrix.python-version }}
           conda activate test-environment
           conda install conda-libmamba-solver
-          conda config --set experimental_solver libmamba
       - name: nix_opengl
         if: contains(matrix.os, 'ubuntu')
         run: |
