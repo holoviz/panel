@@ -71,8 +71,8 @@ jobs:
           conda install conda-libmamba-solver
           conda install "pyctdev>=0.5"
           conda install "nodejs=15.3.0"
-          conda config --set experimental_solver libmamba
           doit env_create --python=${{ matrix.python-version }}
+          conda config --set experimental_solver libmamba
           conda activate test-environment
           conda install conda-libmamba-solver
       - name: nix_opengl
