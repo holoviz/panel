@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import functools
 import inspect
 import json
 import logging
@@ -433,6 +434,29 @@ class _state(param.Parameterized):
         else:
             del self._scheduled[name]
 
+    def execute(self, callback: Callable([], None)) -> None:
+        """
+        Executes both synchronous and asynchronous callbacks
+        appropriately depending on the context the application is
+        running in. When running on the server callbacks are scheduled
+        on the event loop ensuring the Bokeh Document lock is acquired
+        and models can be modified directly.
+
+        Arguments
+        ---------
+        callback: callable
+          Callback to execute
+        """
+        cb = callback
+        while isinstance(cb, functools.partial):
+            cb = cb.func
+        if param.parameterized.iscoroutinefunction(cb):
+            param.parameterized.async_executor(callback)
+        elif self.curdoc:
+            self.curdoc.add_next_tick_callback(callback)
+        else:
+            callback()
+
     def get_profile(self, profile: str):
         """
         Returns the requested profiling output.
@@ -552,6 +576,7 @@ class _state(param.Parameterized):
             cb = self._get_callback(endpoint)
             self._rest_endpoints[endpoint] = ([parameterized], parameters, cb)
         parameterized.param.watch(cb, parameters)
+
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,

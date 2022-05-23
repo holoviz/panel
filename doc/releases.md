@@ -13,7 +13,10 @@ Date: 2022-05-20
 - Add support for Plotly animation frames ([#3449](https://github.com/holoviz/panel/pull/3499))
 - Implement single and multi-selection in Vega pane ([#3470](https://github.com/holoviz/panel/pull/3470), [#3499](https://github.com/holoviz/panel/pull/3499), [#3505](https://github.com/holoviz/panel/pull/3505))
 - Add typehints to help developers and users ([#3476](https://github.com/holoviz/panel/pull/3476))
+- Add `pn.state.execute` method to run callbacks in the right context ([#3550](https://github.com/holoviz/panel/pull/3550))
+- Add support for asynchronous `on_edit`/`on_click` Tabulator callbacks ([#3550](https://github.com/holoviz/panel/pull/3550))
 - Add `DatetimeRangeSlider` widget ([#3548](https://github.com/holoviz/panel/pull/3548))
+
 
 ### Bug fixes
 
