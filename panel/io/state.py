@@ -435,10 +435,11 @@ class _state(param.Parameterized):
 
     def execute(self, callback: Callable([], None)) -> None:
         """
-        Executes both synchronous and asynchronous callbacks appropriately depending on
-        the context the application is running in. When running on the server callbacks are
-        scheduled on the event loop ensuring the Bokeh Document lock is acquired and
-        models can be modified directly.
+        Executes both synchronous and asynchronous callbacks
+        appropriately depending on the context the application is
+        running in. When running on the server callbacks are scheduled
+        on the event loop ensuring the Bokeh Document lock is acquired
+        and models can be modified directly.
 
         Arguments
         ---------
