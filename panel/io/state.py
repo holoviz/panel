@@ -564,7 +564,6 @@ class _state(param.Parameterized):
           Callback to execute
         """
         if param.parameterized.iscoroutinefunction(callback):
-            print(param.parameterized.async_executor.__module__)
             param.parameterized.async_executor(callback)
         elif self.curdoc:
             self.curdoc.add_next_tick_callback(callback)
