@@ -553,6 +553,24 @@ class _state(param.Parameterized):
             self._rest_endpoints[endpoint] = ([parameterized], parameters, cb)
         parameterized.param.watch(cb, parameters)
 
+    def run_callback(self, callback: Callable([], None)) -> None:
+        """
+        Run a synchronous callback immediately or schedule an asynchronous
+        callback on the event loop.
+
+        Arguments
+        ---------
+        callback: callable
+          Callback to execute
+        """
+        if param.parameterized.iscoroutinefunction(callback):
+            print(param.parameterized.async_executor.__module__)
+            param.parameterized.async_executor(callback)
+        elif self.curdoc:
+            self.curdoc.add_next_tick_callback(callback)
+        else:
+            callback()
+
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
         period: str | dt.timedelta = None, cron: Optional[str] = None
