@@ -70,9 +70,9 @@ from .input import (  # noqa
 from .misc import FileDownload, JSONEditor, VideoStream # noqa
 from .player import DiscretePlayer, Player # noqa
 from .slider import ( # noqa
-    DateSlider, DateRangeSlider, DiscreteSlider, EditableRangeSlider,
-    EditableFloatSlider, EditableIntSlider, FloatSlider, IntSlider,
-    IntRangeSlider, RangeSlider
+    DateSlider, DateRangeSlider, DatetimeRangeSlider, DiscreteSlider,
+    EditableRangeSlider, EditableFloatSlider, EditableIntSlider,
+    FloatSlider, IntSlider, IntRangeSlider, RangeSlider
 )
 from .select import ( # noqa
     AutocompleteInput, CheckBoxGroup, CheckButtonGroup, CrossSelector,
@@ -84,7 +84,7 @@ from .tables import DataFrame, Tabulator  # noqa
 from .terminal import Terminal # noqa
 from .debugger import Debugger # noqa
 from .text_to_speech import TextToSpeech, Utterance, Voice # noqa
-from .texteditor import TextEditor# noqa
+from .texteditor import TextEditor # noqa
 
 __all__ = (
     "Ace",
@@ -101,6 +101,7 @@ __all__ = (
     "DataFrame",
     "DatePicker",
     "DateRangeSlider",
+    "DatetimeRangeSlider",
     "DateSlider",
     "DatetimeInput",
     "DatetimePicker",

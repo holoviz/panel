@@ -676,6 +676,37 @@ class DateRangeSlider(_SliderBase):
         return msg
 
 
+
+class DatetimeRangeSlider(DateRangeSlider):
+
+    """
+    The DatetimeRangeSlider widget allows selecting a datetime range
+    using a slider with two handles. Supports datetime.datetime and
+    np.datetime64 ranges.
+
+    Reference: https://panel.holoviz.org/reference/widgets/DatetimeRangeSlider.html
+
+    :Example:
+
+    >>> import datetime as dt
+    >>> DatetimeRangeSlider(
+    ...     value=(dt.datetime(2025, 1, 9), dt.datetime(2025, 1, 16)),
+    ...     start=dt.datetime(2025, 1, 1),
+    ...     end=dt.datetime(2025, 1, 31),
+    ...     step=10000,
+    ...     name="A tuple of datetimes"
+    ... )
+    """
+
+    @property
+    def _widget_type(self):
+        try:
+            from bokeh.models import DatetimeRangeSlider
+        except Exception:
+            raise ValueError("DatetimeRangeSlider requires bokeh >= 2.4.3")
+        return DatetimeRangeSlider
+
+
 class _EditableContinuousSlider(CompositeWidget):
     """
     The EditableFloatSlider extends the FloatSlider by adding a text

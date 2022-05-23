@@ -8,9 +8,10 @@ Date: 2022-05-20
 
 - Add repr to cell and edit events ([#3434](https://github.com/holoviz/panel/pull/3534))
 - Improvements for pyodide handling ([#3444](https://github.com/holoviz/panel/pull/3444), [#3508](https://github.com/holoviz/panel/pull/3508), [#3511](https://github.com/holoviz/panel/pull/3511))
-- Add support for Plotly animation frames ([#3449](https://github.com/holoviz/panel/pull/3499))
+- Add support for `Plotly` animation frames ([#3449](https://github.com/holoviz/panel/pull/3499))
 - Implement single and multi-selection in Vega pane ([#3470](https://github.com/holoviz/panel/pull/3470), [#3499](https://github.com/holoviz/panel/pull/3499), [#3505](https://github.com/holoviz/panel/pull/3505))
 - Add typehints to help developers and users ([#3476](https://github.com/holoviz/panel/pull/3476))
+- Add `DatetimeRangeSlider` widget ([#3548](https://github.com/holoviz/panel/pull/3548))
 
 ### Bug fixes
 
