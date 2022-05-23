@@ -12,6 +12,7 @@ from collections.abc import Callable
 from collections import OrderedDict, defaultdict, namedtuple
 from contextlib import contextmanager
 from functools import partial
+from packaging.version import Version
 
 import param
 
@@ -21,17 +22,18 @@ from .io import init_doc, state
 from .layout import Column, Panel, Row, Spacer, Tabs
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
-    abbreviated_repr, classproperty, full_groupby, fullpath, get_method_owner,
-    is_parameterized, param_name, recursive_parameterized
+    abbreviated_repr, bokeh_version, classproperty, full_groupby,
+    fullpath, get_method_owner, is_parameterized, param_name,
+    recursive_parameterized
 )
 from .reactive import Reactive
 from .viewable import Layoutable, Viewable
 from .widgets import (
     ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
-    DatetimeInput, DateRangeSlider, DiscreteSlider, FileSelector,
-    FloatSlider, IntInput, IntSlider, LiteralInput, MultiSelect,
-    RangeSlider, Select, FloatInput, StaticText, TextInput, Toggle,
-    Widget
+    DatetimeInput, DatetimeRangeSlider, DateRangeSlider,
+    DiscreteSlider, FileSelector, FloatSlider, IntInput, IntSlider,
+    LiteralInput, MultiSelect, RangeSlider, Select, FloatInput,
+    StaticText, TextInput, Toggle, Widget
 )
 from .widgets.button import _ButtonBase
 
@@ -177,6 +179,9 @@ class Param(PaneBase):
 
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
+
+    if bokeh_version >= Version('2.4.3'):
+        mapping[param.DateRange] = DatetimeRangeSlider
 
     priority = 0.1
 
