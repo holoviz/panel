@@ -1060,13 +1060,13 @@ class Tabulator(BaseTable):
             if self._old is not None:
                 event.old = self._old[event_col].iloc[event.row]
             for cb in self._on_edit_callbacks:
-                cb(event)
+                state.run_callback(partial(cb, event))
             self._update_style()
         else:
             for cb in self._on_click_callbacks.get(None, []):
-                cb(event)
+                state.run_callback(partial(cb, event))
             for cb in self._on_click_callbacks.get(event_col, []):
-                cb(event)
+                state.run_callback(partial(cb, event))
 
     def _get_theme(self, theme, resources=None):
         from ..io.resources import RESOURCE_MODE
