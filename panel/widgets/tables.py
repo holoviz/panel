@@ -1152,7 +1152,7 @@ class Tabulator(BaseTable):
             styler = self._computed_styler
         if styler is None:
             return {}
-        offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
+        offset = 1 + len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
         if self.pagination == 'remote':
             start = (self.page-1)*self.page_size
             end = start + self.page_size
