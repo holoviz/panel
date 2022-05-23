@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import functools
 import inspect
 import json
 import logging
@@ -446,7 +447,10 @@ class _state(param.Parameterized):
         callback: callable
           Callback to execute
         """
-        if param.parameterized.iscoroutinefunction(callback):
+        cb = callback
+        while isinstance(cb, functools.partial):
+            cb = cb.func
+        if param.parameterized.iscoroutinefunction(cb):
             param.parameterized.async_executor(callback)
         elif self.curdoc:
             self.curdoc.add_next_tick_callback(callback)
