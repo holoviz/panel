@@ -433,6 +433,25 @@ class _state(param.Parameterized):
         else:
             del self._scheduled[name]
 
+    def execute(self, callback: Callable([], None)) -> None:
+        """
+        Execute a callback.
+        
+        Scheduled on the event loop in a server context or executed
+        immediately in a notebook context.
+
+        Arguments
+        ---------
+        callback: callable
+          Callback to execute
+        """
+        if param.parameterized.iscoroutinefunction(callback):
+            param.parameterized.async_executor(callback)
+        elif self.curdoc:
+            self.curdoc.add_next_tick_callback(callback)
+        else:
+            callback()
+
     def get_profile(self, profile: str):
         """
         Returns the requested profiling output.
@@ -553,22 +572,6 @@ class _state(param.Parameterized):
             self._rest_endpoints[endpoint] = ([parameterized], parameters, cb)
         parameterized.param.watch(cb, parameters)
 
-    def run_callback(self, callback: Callable([], None)) -> None:
-        """
-        Run a synchronous callback immediately or schedule an asynchronous
-        callback on the event loop.
-
-        Arguments
-        ---------
-        callback: callable
-          Callback to execute
-        """
-        if param.parameterized.iscoroutinefunction(callback):
-            param.parameterized.async_executor(callback)
-        elif self.curdoc:
-            self.curdoc.add_next_tick_callback(callback)
-        else:
-            callback()
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
