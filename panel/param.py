@@ -810,21 +810,6 @@ class ParamMethod(ReplacementPane):
         parameterized = get_method_owner(self.object)
         params = parameterized.param.method_dependencies(self.object.__name__)
         deps = params
-        if not deps:
-            fn = getattr(self.object, '__bound_function__', self.object)
-            obj_name = type(parameterized).__name__
-            fn_name = getattr(fn, '__name__', repr(self.object))
-            msg = (
-                f"The method {obj_name}.{fn_name} does not have any dependencies "
-                "and will never update. Are you sure you did not intend "
-                "to depend on or bind a parameter or widget to this method? "
-                "If not simply call the method before passing it to Panel. "
-                "Otherwise ensure you pass at least one parameter by name "
-                "(if using param.depends) or if using panel.bind ensure you "
-                "reference the actual parameter object not the current "
-                "value, i.e. use object.param.parameter not object.parameter."
-            )
-            self.param.warning(msg)
 
         def update_pane(*events):
             # Update nested dependencies if parameterized object events
