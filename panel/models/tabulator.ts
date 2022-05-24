@@ -649,6 +649,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }
     }
     this.model.expanded = expanded
+    const icon = expanded.indexOf(index) < 0 ? "\u25ba" : "\u25bc"
+    cell._cell.element.innerText = icon
     if (expanded.indexOf(index) < 0)
       return
     let ready = true
