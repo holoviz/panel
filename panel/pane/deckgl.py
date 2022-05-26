@@ -4,7 +4,7 @@ bokeh model.
 """
 import json
 from collections import defaultdict
-from typing import Mapping
+from typing import Mapping, Union
 
 import numpy as np
 import param
@@ -105,7 +105,7 @@ class DeckGL(PaneBase):
         Throttling timeout (in milliseconds) for view state and hover
         events sent from the frontend.""")
 
-    _rename: Mapping[str, str | None] = {
+    _rename: Mapping[str, Union[str, None]] = {
         'click_state': 'clickState', 'hover_state': 'hoverState',
         'view_state': 'viewState', 'tooltips': 'tooltip'
     }

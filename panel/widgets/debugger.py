@@ -3,7 +3,7 @@ The Debugger Widget is an uneditable Card that gives you feedback on errors
 thrown by your Panel callbacks.
 """
 import logging
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 
@@ -203,7 +203,7 @@ class Debugger(Card):
         Loggers which will be prompted in the debugger terminal."""
     )
 
-    _rename: Mapping[str, str | None] = Card._rename.copy()
+    _rename: Mapping[str, Union[str, None]] = Card._rename.copy()
 
     _rename.update({
         '_number_of_errors': None,

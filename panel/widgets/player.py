@@ -1,7 +1,7 @@
 """
 Defines Player widgets which offer media-player like controls.
 """
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 
@@ -35,7 +35,7 @@ class PlayerBase(Widget):
 
     _widget_type = _BkPlayer
 
-    _rename: Mapping[str, str | None] = {'name': None}
+    _rename: Mapping[str, Union[str, None]] = {'name': None}
 
     __abstract = True
 
@@ -112,7 +112,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     value = param.Parameter(doc="Current player value")
 
-    _rename: Mapping[str, str | None] = {'name': None, 'options': None}
+    _rename: Mapping[str, Union[str, None]] = {'name': None, 'options': None}
 
     _source_transforms = {'value': None}
 

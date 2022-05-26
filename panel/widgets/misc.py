@@ -3,7 +3,7 @@ Miscellaneous widgets which do not fit into the other main categories.
 """
 import os
 from base64 import b64encode
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 from pyviz_comms import JupyterComm
@@ -44,7 +44,7 @@ class VideoStream(Widget):
 
     _widget_type = _BkVideoStream
 
-    _rename: Mapping[str, str | None] = {'name': None}
+    _rename: Mapping[str, Union[str, None]] = {'name': None}
 
     def snapshot(self):
         """
@@ -127,7 +127,7 @@ class FileDownload(Widget):
 
     _widget_type = _BkFileDownload
 
-    _rename: Mapping[str, str | None] = {
+    _rename: Mapping[str, Union[str, None]] = {
         'callback': None, 'embed': None, 'file': None,
         '_clicks': 'clicks', 'name': 'title'
     }
@@ -282,7 +282,7 @@ class JSONEditor(Widget):
     value = param.Parameter(default={}, doc="""
         JSON data to be edited.""")
 
-    _rename: Mapping[str, str | None] = {'value': 'data'}
+    _rename: Mapping[str, Union[str, None]] = {'value': 'data'}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:

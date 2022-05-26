@@ -8,7 +8,7 @@ The term *utterance* is used throughout the API. It is the smallest
 unit of speech in spoken language analysis.
 """
 import uuid
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 from panel.widgets import Widget
@@ -216,7 +216,7 @@ class TextToSpeech(Utterance, Widget):
 
     _widget_type = _BkTextToSpeech
 
-    _rename: Mapping[str, str | None] = {
+    _rename: Mapping[str, Union[str, None]] = {
         "auto_speak": None,
         "lang": None,
         "pitch": None,

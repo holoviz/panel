@@ -85,7 +85,7 @@ class Syncable(Renderable):
     _manual_params: List[str] = []
 
     # Mapping from parameter name to bokeh model property name
-    _rename: Mapping[str, str | None] = {}
+    _rename: Mapping[str, Union[str, None]] = {}
 
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
@@ -675,7 +675,7 @@ class SyncableData(Reactive):
     # Parameters which when changed require an update of the data
     _data_params: List[str] = []
 
-    _rename: Mapping[str, str | None] = {'selection': None}
+    _rename: Mapping[str, Union[str, None]] = {'selection': None}
 
     __abstract = True
 

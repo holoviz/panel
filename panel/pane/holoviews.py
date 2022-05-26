@@ -5,7 +5,7 @@ objects and their widgets and support for Links
 import sys
 from collections import OrderedDict, defaultdict
 from functools import partial
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 from bokeh.models import Range1d
@@ -81,7 +81,7 @@ class HoloViews(PaneBase):
 
     _panes = {'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly}
 
-    _rename: Mapping[str, str | None] = {
+    _rename: Mapping[str, Union[str, None]] = {
         'backend': None, 'center': None, 'linked_axes': None,
         'renderer': None, 'theme': None, 'widgets': None,
         'widget_layout': None, 'widget_location': None,

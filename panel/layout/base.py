@@ -5,14 +5,12 @@ in flexible ways to build complex dashboards.
 from __future__ import annotations
 
 from collections import defaultdict, namedtuple
-from typing import (
-    TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping,
-    Optional, Tuple, Type
-)
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, Iterator, List,
+                    Mapping, Optional, Tuple, Type, Union)
 
 import param
-
-from bokeh.models import Column as BkColumn, Row as BkRow
+from bokeh.models import Column as BkColumn
+from bokeh.models import Row as BkRow
 
 from ..io.model import hold
 from ..io.state import state
@@ -112,7 +110,7 @@ class Panel(Reactive):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from ..pane.base import panel, RerenderError
+        from ..pane.base import RerenderError, panel
         new_models = []
         for i, pane in enumerate(self.objects):
             pane = panel(pane)
@@ -704,7 +702,7 @@ class Row(ListPanel):
 
     _bokeh_model: Type['Model'] = BkRow
 
-    _rename: Mapping[str, str | None] = dict(ListPanel._rename, col_sizing='cols')
+    _rename: Mapping[str, Union[str, None]] = dict(ListPanel._rename, col_sizing='cols')
 
 
 class Column(ListPanel):
@@ -727,7 +725,7 @@ class Column(ListPanel):
 
     _bokeh_model: Type['Model'] = BkColumn
 
-    _rename: Mapping[str, str | None] = dict(ListPanel._rename, row_sizing='rows')
+    _rename: Mapping[str, Union[str, None]] = dict(ListPanel._rename, row_sizing='rows')
 
 
 class WidgetBox(ListPanel):
@@ -766,7 +764,7 @@ class WidgetBox(ListPanel):
 
     _source_transforms = {'disabled': None, 'horizontal': None}
 
-    _rename: Mapping[str, str | None] = {'objects': 'children', 'horizontal': None}
+    _rename: Mapping[str, Union[str, None]] = {'objects': 'children', 'horizontal': None}
 
     @property
     def _bokeh_model(self) -> Type['Model']: # type: ignore

@@ -5,7 +5,7 @@ from a list of options.
 import itertools
 import re
 from collections import OrderedDict
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 from bokeh.models.widgets import AutocompleteInput as _BkAutocompleteInput
@@ -387,7 +387,7 @@ class MultiChoice(_MultiSelectBase):
     _widget_type = _BkMultiChoice
 
 
-_AutocompleteInput_rename: Mapping[str, str | None] = {'name': 'title', 'options': 'completions'}
+_AutocompleteInput_rename: Mapping[str, Union[str, None]] = {'name': 'title', 'options': 'completions'}
 
 
 class AutocompleteInput(Widget):
@@ -438,7 +438,7 @@ class AutocompleteInput(Widget):
 
     _widget_type = _BkAutocompleteInput
 
-    _rename: Mapping[str, str | None] = _AutocompleteInput_rename
+    _rename: Mapping[str, Union[str, None]] = _AutocompleteInput_rename
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -452,7 +452,7 @@ class _RadioGroupBase(SingleSelectBase):
 
     _supports_embed = False
 
-    _rename: Mapping[str, str | None] = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: Mapping[str, Union[str, None]] = {'name': None, 'options': 'labels', 'value': 'active'}
 
     _source_transforms = {'value': "source.labels[value]"}
 
@@ -562,7 +562,7 @@ class _CheckGroupBase(SingleSelectBase):
 
     value = param.List(default=[])
 
-    _rename: Mapping[str, str | None] = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: Mapping[str, Union[str, None]] = {'name': None, 'options': 'labels', 'value': 'active'}
 
     _source_transforms = {'value': "value.map((index) => source.labels[index])"}
 

@@ -3,7 +3,7 @@ Renders objects representing equations including LaTeX strings and
 SymPy objects.
 """
 import sys
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 from pyviz_comms import JupyterComm
@@ -47,7 +47,7 @@ class LaTeX(DivPaneBase):
     # Priority is dependent on the data type
     priority = None
 
-    _rename: Mapping[str, str | None] = {"renderer": None}
+    _rename: Mapping[str, Union[str, None]] = {"renderer": None}
 
     @classmethod
     def applies(cls, obj):

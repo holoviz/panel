@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 from bokeh.models import Column as BkColumn
@@ -44,7 +44,7 @@ class Accordion(NamedListPanel):
 
     _bokeh_model = BkColumn
 
-    _rename: Mapping[str, str | None] = {'active': None, 'active_header_background': None,
+    _rename: Mapping[str, Union[str, None]] = {'active': None, 'active_header_background': None,
                'header_background': None, 'objects': 'children',
                'dynamic': None, 'toggle': None, 'header_color': None}
 

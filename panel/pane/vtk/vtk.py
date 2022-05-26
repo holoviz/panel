@@ -6,7 +6,7 @@ import json
 import sys
 import zipfile
 from abc import abstractmethod
-from typing import Mapping
+from typing import Mapping, Union
 from urllib.request import urlopen
 
 import numpy as np
@@ -223,7 +223,7 @@ class BaseVTKRenderWindow(AbstractVTK):
 
     _applies_kw = True
 
-    _rename: Mapping[str, str | None] = {'serialize_on_instantiation': None, 'serialize_all_data_arrays': None}
+    _rename: Mapping[str, Union[str, None]] = {'serialize_on_instantiation': None, 'serialize_all_data_arrays': None}
 
     __abstract = True
 
@@ -409,7 +409,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
 
     _one_time_reset = param.Boolean(default=False)
 
-    _rename: Mapping[str, str | None] = dict(_one_time_reset='one_time_reset',
+    _rename: Mapping[str, Union[str, None]] = dict(_one_time_reset='one_time_reset',
                    **BaseVTKRenderWindow._rename)
 
     _updates = True
@@ -623,7 +623,7 @@ class VTKVolume(AbstractVTK):
 
     _serializers = {}
 
-    _rename: Mapping[str, str | None] = {'max_data_size': None, 'spacing': None, 'origin': None}
+    _rename: Mapping[str, Union[str, None]] = {'max_data_size': None, 'spacing': None, 'origin': None}
 
     _updates = True
 

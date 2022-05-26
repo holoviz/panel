@@ -2,7 +2,7 @@
 Renders Streamz Stream objects.
 """
 import sys
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 
@@ -28,7 +28,7 @@ class Streamz(ReplacementPane):
     rate_limit = param.Number(default=0.1, bounds=(0, None), doc="""
         The minimum interval between events.""")
 
-    _rename: Mapping[str, str | None] = {'rate_limit': None, 'always_watch': None}
+    _rename: Mapping[str, Union[str, None]] = {'rate_limit': None, 'always_watch': None}
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)

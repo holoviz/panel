@@ -1,6 +1,6 @@
 import unittest.mock
 from functools import partial
-from typing import Mapping
+from typing import Mapping, Union
 
 import bokeh.core.properties as bp
 import param
@@ -56,7 +56,7 @@ def test_param_rename():
 
         a = param.Parameter()
 
-        _rename: Mapping[str, str | None] = {'a': 'b'}
+        _rename: Mapping[str, Union[str, None]] = {'a': 'b'}
 
     obj = ReactiveRename()
 

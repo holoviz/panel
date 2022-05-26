@@ -2,7 +2,7 @@ import datetime as dt
 import sys
 import warnings
 from enum import Enum
-from typing import Mapping
+from typing import Mapping, Union
 
 import numpy as np
 import param
@@ -319,7 +319,7 @@ class Perspective(PaneBase, ReactiveData):
 
     _rerender_params = ['object']
 
-    _rename: Mapping[str, str | None] = {
+    _rename: Mapping[str, Union[str, None]] = {
         'computed_columns': None,
         'row_pivots': None,
         'column_pivots': None,

@@ -4,7 +4,7 @@ Layout components to lay out objects in a grid.
 import math
 from collections import OrderedDict, namedtuple
 from functools import partial
-from typing import Mapping
+from typing import Mapping, Union
 
 import numpy as np
 import param
@@ -42,7 +42,7 @@ class GridBox(ListPanel):
 
     _bokeh_model = BkGridBox
 
-    _rename: Mapping[str, str | None] = {'objects': 'children', 'nrows': None, 'ncols': None}
+    _rename: Mapping[str, Union[str, None]] = {'objects': 'children', 'nrows': None, 'ncols': None}
 
     _source_transforms = {'scroll': None, 'objects': None}
 
@@ -201,7 +201,7 @@ class GridSpec(Panel):
 
     _source_transforms = {'objects': None, 'mode': None}
 
-    _rename: Mapping[str, str | None] = {'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None}
+    _rename: Mapping[str, Union[str, None]] = {'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None}
 
     _preprocess_params = ['objects']
 

@@ -1,6 +1,6 @@
 import sys
 from functools import partial
-from typing import Mapping
+from typing import Mapping, Union
 
 import numpy as np
 import param
@@ -104,7 +104,7 @@ class Vega(PaneBase):
 
     priority = 0.8
 
-    _rename: Mapping[str, str | None] = {'selection': None, 'debounce': None}
+    _rename: Mapping[str, Union[str, None]] = {'selection': None, 'debounce': None}
 
     _updates = True
 

@@ -4,7 +4,7 @@ Pane class which render plots from different libraries
 import sys
 from contextlib import contextmanager
 from io import BytesIO
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 from bokeh.models import CustomJS, LayoutDOM, Model
@@ -65,7 +65,7 @@ class Bokeh(PaneBase):
 
     priority = 0.8
 
-    _rename: Mapping[str, str | None] = {'autodispatch': None, 'theme': None}
+    _rename: Mapping[str, Union[str, None]] = {'autodispatch': None, 'theme': None}
 
     @classmethod
     def applies(cls, obj):
@@ -163,7 +163,7 @@ class Matplotlib(PNG, IPyWidget):
         Automatically adjust the figure size to fit the
         subplots and other artist elements.""")
 
-    _rename: Mapping[str, str | None] = {'object': 'text', 'interactive': None, 'dpi': None,  'tight': None}
+    _rename: Mapping[str, Union[str, None]] = {'object': 'text', 'interactive': None, 'dpi': None,  'tight': None}
 
     _rerender_params = PNG._rerender_params + ['object', 'dpi', 'tight']
 

@@ -6,7 +6,7 @@ moving one or more handle(s).
 - The `value_throttled`will update when a handle is released.
 """
 import datetime as dt
-from typing import Mapping
+from typing import Mapping, Union
 
 import numpy as np
 import param
@@ -156,7 +156,7 @@ class FloatSlider(ContinuousSlider):
     step = param.Number(default=0.1, doc="""
         The step size.""")
 
-    _rename: Mapping[str, str | None] = {'name': 'title'}
+    _rename: Mapping[str, Union[str, None]] = {'name': 'title'}
 
 
 class IntSlider(ContinuousSlider):
@@ -186,7 +186,7 @@ class IntSlider(ContinuousSlider):
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The value of the slider. Updated when the handle is released""")
 
-    _rename: Mapping[str, str | None] = {'name': 'title'}
+    _rename: Mapping[str, Union[str, None]] = {'name': 'title'}
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -234,7 +234,7 @@ class DateSlider(_SliderBase):
     as_datetime = param.Boolean(default=False, doc="""
         Whether to store the date as a datetime.""")
 
-    _rename: Mapping[str, str | None] = {'name': 'title', 'as_datetime': None}
+    _rename: Mapping[str, Union[str, None]] = {'name': 'title', 'as_datetime': None}
 
     _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
 
@@ -296,7 +296,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     _source_transforms = {'value': None, 'value_throttled': None, 'options': None}
 
-    _rename: Mapping[str, str | None] = {'formatter': None}
+    _rename: Mapping[str, Union[str, None]] = {'formatter': None}
 
     _supports_embed = True
 
@@ -527,7 +527,7 @@ class RangeSlider(_RangeSliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A format string or bokeh TickFormatter.""")
 
-    _rename: Mapping[str, str | None] = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename: Mapping[str, Union[str, None]] = {'name': 'title', 'value_start': None, 'value_end': None}
 
     _widget_type = _BkRangeSlider
 
@@ -619,7 +619,7 @@ class DateRangeSlider(_SliderBase):
     _source_transforms = {'value': None, 'value_throttled': None,
                          'start': None, 'end': None, 'step': None}
 
-    _rename: Mapping[str, str | None] = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename: Mapping[str, Union[str, None]] = {'name': 'title', 'value_start': None, 'value_end': None}
 
     _widget_type = _BkDateRangeSlider
 

@@ -11,7 +11,7 @@ import signal
 import subprocess
 import sys
 from functools import partial
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 from pyviz_comms import JupyterComm
@@ -252,7 +252,7 @@ class Terminal(Widget):
 
     _output = param.String(default="")
 
-    _rename: Mapping[str, str | None] = {
+    _rename: Mapping[str, Union[str, None]] = {
         "clear": None,
         "output": None,
         "_output": "output",

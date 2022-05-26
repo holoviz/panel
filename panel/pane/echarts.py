@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 from pyviz_comms import JupyterComm
@@ -32,7 +32,7 @@ class ECharts(PaneBase):
 
     priority = None
 
-    _rename: Mapping[str, str | None] = {"object": "data"}
+    _rename: Mapping[str, Union[str, None]] = {"object": "data"}
 
     _rerender_params = []
 

@@ -4,7 +4,7 @@ Markdown, and also regular strings.
 """
 import json
 import textwrap
-from typing import Mapping
+from typing import Mapping, Union
 
 import param
 
@@ -27,7 +27,7 @@ class DivPaneBase(PaneBase):
 
     _bokeh_model = _BkHTML
 
-    _rename: Mapping[str, str | None] = {'object': 'text'}
+    _rename: Mapping[str, Union[str, None]] = {'object': 'text'}
 
     _updates = True
 
@@ -376,7 +376,7 @@ class JSON(DivPaneBase):
 
     _applies_kw = True
     _bokeh_model = _BkJSON
-    _rename: Mapping[str, str | None] = {"name": None, "object": "text", "encoder": None}
+    _rename: Mapping[str, Union[str, None]] = {"name": None, "object": "text", "encoder": None}
 
     _rerender_params = ['object', 'depth', 'encoder', 'hover_preview', 'theme']
 
