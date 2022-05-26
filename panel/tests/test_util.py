@@ -4,7 +4,7 @@ from bokeh.models import Div
 
 from panel.io.notebook import render_mimebundle
 from panel.pane import PaneBase
-from panel.util import get_method_owner, abbreviated_repr, parse_query
+from panel.util import abbreviated_repr, get_method_owner, parse_query
 
 
 def test_get_method_owner_class():

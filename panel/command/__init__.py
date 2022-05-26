@@ -1,8 +1,8 @@
 """
 Commandline interface to Panel
 """
-import sys
 import argparse
+import sys
 
 from bokeh.__main__ import main as bokeh_entry_point
 from bokeh.command.subcommands.serve import Serve as BkServe
@@ -10,8 +10,8 @@ from bokeh.command.util import die
 from bokeh.util.string import nice_join
 
 from .. import __version__
-from .serve import Serve
 from .oauth_secret import OAuthSecret
+from .serve import Serve
 
 
 def transform_cmds(argv):

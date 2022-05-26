@@ -1,14 +1,13 @@
 from contextlib import contextmanager
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urljoin, urlparse
 
-from bokeh.server.django.consumers import DocConsumer, AutoloadJsConsumer
+from bokeh.server.django.consumers import AutoloadJsConsumer, DocConsumer
 
 from ..util import edit_readonly
 from .resources import Resources
+from .server import autoload_js_script, server_html_page_for_session
 from .state import state
-from .server import (
-    autoload_js_script, server_html_page_for_session,
-)
+
 
 async def doc_handle(self, body):
     session = await self._get_session()

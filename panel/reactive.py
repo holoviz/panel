@@ -16,8 +16,8 @@ from collections import Counter, defaultdict, namedtuple
 from functools import partial
 from pprint import pformat
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional,
-    Set, Tuple, Type, Union
+    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Set, Tuple,
+    Type, Union
 )
 
 import bleach

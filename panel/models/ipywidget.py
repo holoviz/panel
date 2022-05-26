@@ -7,7 +7,7 @@ class IPyWidget(HTMLBox):
     bundle = Any()
 
     def __init__(self, widget, **kwargs):
-        from ipywidgets import embed, Widget
+        from ipywidgets import Widget, embed
         super().__init__(**kwargs)
         spec = widget.get_view_spec()
         state = Widget.get_manager_state(widgets=[])

@@ -1,5 +1,6 @@
-from enum import Enum
 from collections import namedtuple
+from enum import Enum
+
 
 class TextPosition(Enum):
     LowerLeft = 0

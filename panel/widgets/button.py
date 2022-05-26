@@ -5,7 +5,9 @@ events or merely toggling between on-off states.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, List, Optional
+)
 
 import param
 

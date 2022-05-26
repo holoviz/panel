@@ -11,7 +11,7 @@ from typing import (
     TYPE_CHECKING, Any, Callable, List, Mapping, Optional, Tuple
 )
 
-import param # type: ignore
+import param  # type: ignore
 
 from ..layout import Row
 from ..reactive import Reactive

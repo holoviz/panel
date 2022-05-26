@@ -1,6 +1,7 @@
-import panel as pn
-import numpy as np
 import holoviews as hv
+import numpy as np
+
+import panel as pn
 
 LOGO = "https://panel.holoviz.org/_static/logo_horizontal.png"
 

@@ -1,5 +1,5 @@
+from bokeh.core.properties import Int, String
 from bokeh.models import Model
-from bokeh.core.properties import String, Int
 from bokeh.protocol import Protocol
 
 

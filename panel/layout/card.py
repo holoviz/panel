@@ -1,7 +1,7 @@
 import param
 
 from ..models import Card as BkCard
-from .base import Column, Row, ListPanel
+from .base import Column, ListPanel, Row
 
 
 class Card(Column):

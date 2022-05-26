@@ -4,14 +4,13 @@ file types.
 """
 import base64
 
-from pathlib import PurePath
-
 from io import BytesIO
+from pathlib import PurePath
 
 import param
 
-from .markup import escape, DivPaneBase
 from ..util import isfile, isurl
+from .markup import DivPaneBase, escape
 
 
 class FileBase(DivPaneBase):

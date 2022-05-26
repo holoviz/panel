@@ -2,14 +2,14 @@ import sys
 
 from functools import partial
 
-import param
 import numpy as np
+import param
 
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..viewable import Layoutable
 from ..util import lazy_load
+from ..viewable import Layoutable
 from .base import PaneBase
 
 

@@ -79,6 +79,7 @@ class TerminalSubprocess(param.Parameterized):
         Runs a subprocess command.
         """
         import pty
+
         # Inspiration: https://github.com/cs01/pyxtermjs
         # Inspiration: https://github.com/jupyter/terminado
         if not args:
@@ -134,9 +135,9 @@ class TerminalSubprocess(param.Parameterized):
     def _set_winsize(self):
         if self._fd is None:
             return
-        import termios
-        import struct
         import fcntl
+        import struct
+        import termios
         winsize = struct.pack("HHHH", self._terminal.nrows, self._terminal.ncols, 0, 0)
         fcntl.ioctl(self._fd, termios.TIOCSWINSZ, winsize)
 

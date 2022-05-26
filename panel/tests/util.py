@@ -1,7 +1,7 @@
-from packaging.version import Version
-
 import numpy as np
 import pytest
+
+from packaging.version import Version
 
 try:
     import holoviews as hv

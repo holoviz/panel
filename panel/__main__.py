@@ -1,5 +1,6 @@
 import sys
 
+
 def main():
     from panel.command import main as _main
 

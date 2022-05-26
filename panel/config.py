@@ -537,7 +537,7 @@ class panel_extension(_pyviz_extension):
 
         if 'holoviews' in sys.modules:
             import holoviews as hv
-            import holoviews.plotting.bokeh # noqa
+            import holoviews.plotting.bokeh  # noqa
             loaded = loaded or getattr(hv.extension, '_loaded', False)
 
             if hv.Store.current_backend in hv.Store.renderers:
@@ -596,7 +596,7 @@ class panel_extension(_pyviz_extension):
 
         # Try to detect environment so that we can enable comms
         try:
-            import google.colab # noqa
+            import google.colab  # noqa
             config.comms = "colab"
             return
         except ImportError:
@@ -614,6 +614,7 @@ class panel_extension(_pyviz_extension):
 
     def _apply_signatures(self):
         from inspect import Parameter, Signature
+
         from .viewable import Viewable
 
         descendants = param.concrete_descendents(Viewable)

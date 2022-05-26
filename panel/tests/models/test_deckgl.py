@@ -3,7 +3,9 @@
 import json
 
 import pytest
+
 from panel.models.deckgl import DeckGLPlot
+
 
 @pytest.fixture
 def json_input():

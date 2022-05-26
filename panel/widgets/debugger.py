@@ -2,13 +2,14 @@
 The Debugger Widget is an uneditable Card that gives you feedback on errors
 thrown by your Panel callbacks.
 """
-import param
 import logging
 
+import param
+
+from ..io.state import state
+from ..layout import HSpacer, Row
 from ..layout.card import Card
 from ..reactive import ReactiveHTML
-from ..io.state import state
-from ..layout import Row, HSpacer
 from .terminal import Terminal
 
 

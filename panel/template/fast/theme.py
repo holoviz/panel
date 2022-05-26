@@ -2,6 +2,7 @@
 Functionality for styling according to Fast.design
 """
 import pathlib
+
 import param
 
 from bokeh.themes import Theme as _BkTheme

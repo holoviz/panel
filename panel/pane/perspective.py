@@ -4,8 +4,8 @@ import warnings
 
 from enum import Enum
 
-import param
 import numpy as np
+import param
 
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm

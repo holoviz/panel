@@ -11,7 +11,9 @@ import uuid
 from collections import OrderedDict
 from functools import partial
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Any, Dict, IO, List, Optional
+from typing import (
+    IO, TYPE_CHECKING, Any, Dict, List, Optional
+)
 
 import param
 
@@ -22,17 +24,19 @@ from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
 from ..config import _base_config, config, panel_extension
 from ..io.model import add_to_doc
-from ..io.notifications import NotificationArea
 from ..io.notebook import render_template
+from ..io.notifications import NotificationArea
 from ..io.resources import (
-    CDN_DIST, LOCAL_DIST, BUNDLE_DIR, _env, component_resource_path,
+    BUNDLE_DIR, CDN_DIST, LOCAL_DIST, _env, component_resource_path,
     resolve_custom_path
 )
 from ..io.save import save
 from ..io.state import state
-from ..layout import Column, ListLike, GridSpec
+from ..layout import Column, GridSpec, ListLike
 from ..models.comm_manager import CommManager
-from ..pane import panel as _panel, HTML, Str, HoloViews
+from ..pane import (
+    HTML, HoloViews, Str, panel as _panel
+)
 from ..pane.image import ImageBase
 from ..reactive import ReactiveHTML
 from ..util import isurl, url_path

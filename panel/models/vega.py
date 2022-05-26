@@ -5,7 +5,7 @@ from bokeh.core.properties import (
     Any, Bool, Dict, Enum, Instance, Int, List, Nullable, String
 )
 from bokeh.events import ModelEvent
-from bokeh.models import LayoutDOM, ColumnDataSource
+from bokeh.models import ColumnDataSource, LayoutDOM
 
 from ..io.resources import bundled_files
 from ..util import classproperty

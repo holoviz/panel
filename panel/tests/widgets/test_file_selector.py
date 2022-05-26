@@ -7,6 +7,7 @@ import pytest
 
 from panel.widgets import FileSelector
 
+
 @pytest.fixture
 def test_dir():
     test_dir = os.path.expanduser(os.path.join('~','test_dir'))

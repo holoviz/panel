@@ -1,11 +1,11 @@
 from datetime import date
 
-from bokeh.models import Div as BkDiv, Column as BkColumn
+from bokeh.models import Column as BkColumn, Div as BkDiv
 
+from panel import widgets
 from panel.interact import interactive
 from panel.models import HTML as BkHTML
 from panel.pane import HTML
-from panel import widgets
 
 
 def test_interact_title():

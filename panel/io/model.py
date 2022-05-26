@@ -7,9 +7,8 @@ import textwrap
 
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, List, Iterable, Optional
+    TYPE_CHECKING, Any, Iterable, List, Optional
 )
-from typing_extensions import Literal
 
 import numpy as np
 
@@ -20,6 +19,7 @@ from bokeh.document.events import (
 from bokeh.model import DataModel
 from bokeh.models import Box, ColumnDataSource, Model
 from bokeh.protocol import Protocol
+from typing_extensions import Literal
 
 from .state import state
 

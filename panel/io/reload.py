@@ -6,9 +6,9 @@ import types
 from contextlib import contextmanager
 from functools import partial
 
+from ..util import fullpath
 from .callbacks import PeriodicCallback
 from .state import state
-from ..util import fullpath
 
 _watched_files = set()
 _modules = set()
