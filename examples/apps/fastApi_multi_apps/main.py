@@ -1,10 +1,10 @@
-import panel as pn
 from bokeh.embed import server_document
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
-
-from sliders.pn_app import createApp
 from sliders2.pn_app import createApp2
+from sliders.pn_app import createApp
+
+import panel as pn
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")

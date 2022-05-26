@@ -14,15 +14,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+import gbm.pn_app as gbm_app
+import sliders.pn_app as sliders_app
+import stockscreener.pn_app as stockscreener_app
+
 from bokeh.server.django import autoload, static_extensions
 from django.apps import apps
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.urls import path, include
-
-import sliders.pn_app as sliders_app
-import gbm.pn_app as gbm_app
-import stockscreener.pn_app as stockscreener_app
+from django.urls import include, path
 
 from .themes import plot_themes
 

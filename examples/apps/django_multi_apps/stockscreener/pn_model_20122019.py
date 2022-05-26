@@ -2,12 +2,12 @@
 # https://stackoverflow.com/questions/55743958/panel-widgets-do-not-update-plot
 import datetime as dt
 
-import panel as pn
-import param
 import holoviews as hv
 import hvplot
 import hvplot.pandas
+import param
 
+import panel as pn
 
 # # initialization
 # pn.widgets.DatetimeInput.format = '%d %B %Y'
