@@ -12,7 +12,7 @@ from collections import OrderedDict
 from functools import partial
 from pathlib import PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, Dict, List, Optional
+    IO, TYPE_CHECKING, Any, Dict, List, Optional,
 )
 
 import param
@@ -28,14 +28,14 @@ from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
     BUNDLE_DIR, CDN_DIST, LOCAL_DIST, _env, component_resource_path,
-    resolve_custom_path
+    resolve_custom_path,
 )
 from ..io.save import save
 from ..io.state import state
 from ..layout import Column, GridSpec, ListLike
 from ..models.comm_manager import CommManager
 from ..pane import (
-    HTML, HoloViews, Str, panel as _panel
+    HTML, HoloViews, Str, panel as _panel,
 )
 from ..pane.image import ImageBase
 from ..reactive import ReactiveHTML

@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from bokeh.core.properties import (
-    Any, Dict, Int, String
+    Any, Dict, Int, String,
 )
 from bokeh.events import ModelEvent
 from bokeh.models import HTMLBox

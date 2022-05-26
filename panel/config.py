@@ -16,7 +16,7 @@ from weakref import WeakKeyDictionary
 import param
 
 from pyviz_comms import (
-    JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension
+    JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
 
 from .io.logging import panel_log_handler

@@ -6,20 +6,20 @@ from bokeh.models import (
     AutocompleteInput as BkAutocompleteInput, Button, CheckboxGroup,
     Column as BkColumn, Div, MultiSelect, RangeSlider as BkRangeSlider,
     Row as BkRow, Select, Slider, Tabs as BkTabs, TextInput,
-    TextInput as BkTextInput, Toggle
+    TextInput as BkTextInput, Toggle,
 )
 
 from panel.layout import Row, Tabs
 from panel.pane import (
-    HTML, Bokeh, Matplotlib, Pane, PaneBase
+    HTML, Bokeh, Matplotlib, Pane, PaneBase,
 )
 from panel.param import (
-    JSONInit, Param, ParamFunction, ParamMethod
+    JSONInit, Param, ParamFunction, ParamMethod,
 )
 from panel.tests.util import mpl_available, mpl_figure
 from panel.widgets import (
     AutocompleteInput, DatePicker, DatetimeInput, LiteralInput, NumberInput,
-    RangeSlider
+    RangeSlider,
 )
 
 

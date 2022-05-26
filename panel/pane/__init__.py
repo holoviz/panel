@@ -39,16 +39,16 @@ from .equation import LaTeX  # noqa
 from .holoviews import HoloViews, Interactive  # noqa
 from .idom import IDOM  # noqa0
 from .image import (  # noqa
-    GIF, ICO, JPG, PDF, PNG, SVG
+    GIF, ICO, JPG, PDF, PNG, SVG,
 )
 from .ipywidget import IPyWidget  # noqa
 from .markup import (  # noqa
-    HTML, JSON, DataFrame, Markdown, Str
+    HTML, JSON, DataFrame, Markdown, Str,
 )
 from .media import Audio, Video  # noqa
 from .perspective import Perspective  # noqa
 from .plot import (  # noqa
-    YT, Bokeh, Matplotlib, RGGPlot
+    YT, Bokeh, Matplotlib, RGGPlot,
 )
 from .plotly import Plotly  # noqa
 from .streamz import Streamz  # noqa

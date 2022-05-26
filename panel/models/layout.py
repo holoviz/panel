@@ -1,5 +1,5 @@
 from bokeh.core.properties import (
-    Bool, List, Nullable, String
+    Bool, List, Nullable, String,
 )
 from bokeh.models import Column
 

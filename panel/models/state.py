@@ -1,5 +1,5 @@
 from bokeh.core.properties import (
-    Any, Bool, Dict, List
+    Any, Bool, Dict, List,
 )
 from bokeh.models import Model
 

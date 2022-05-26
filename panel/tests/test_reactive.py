@@ -14,7 +14,7 @@ from panel.layout import Tabs, WidgetBox
 from panel.reactive import Reactive, ReactiveHTML
 from panel.viewable import Viewable
 from panel.widgets import (
-    Checkbox, IntInput, StaticText, TextInput
+    Checkbox, IntInput, StaticText, TextInput,
 )
 
 

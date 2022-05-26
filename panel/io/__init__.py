@@ -11,7 +11,7 @@ from .logging import panel_logger  # noqa
 from .model import add_to_doc, diff, remove_root  # noqa
 from .notebook import (  # noqa
     _jupyter_server_extension_paths, block_comm, ipywidget, load_notebook,
-    push, push_notebook
+    push, push_notebook,
 )
 from .profile import profile  # noqa
 from .resources import Resources  # noqa

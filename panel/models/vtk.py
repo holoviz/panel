@@ -5,7 +5,7 @@ from bokeh.core.enums import enumeration
 from bokeh.core.has_props import abstract
 from bokeh.core.properties import (
     Any, Bool, Dict, Enum, Float, Instance, Int, List, Nullable, Override,
-    PositiveInt, String
+    PositiveInt, String,
 )
 from bokeh.models import ColorMapper, HTMLBox, Model
 

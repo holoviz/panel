@@ -69,7 +69,7 @@ def get_sessions(allow=None, deny=None):
 
 def profiling_tabs(state, allow=None, deny=[]):
     from ..layout import (
-        Accordion, Column, Row, Tabs
+        Accordion, Column, Row, Tabs,
     )
     from ..widgets import Checkbox
     tabs = Tabs(

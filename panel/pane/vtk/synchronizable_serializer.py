@@ -8,7 +8,7 @@ import zipfile
 from vtk.vtkCommonCore import vtkTypeInt32Array, vtkTypeUInt32Array
 from vtk.vtkCommonDataModel import vtkDataObject
 from vtk.vtkFiltersGeometry import (
-    vtkCompositeDataGeometryFilter, vtkGeometryFilter
+    vtkCompositeDataGeometryFilter, vtkGeometryFilter,
 )
 from vtk.vtkRenderingCore import vtkColorTransferFunction
 

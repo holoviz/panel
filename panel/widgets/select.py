@@ -14,7 +14,7 @@ from bokeh.models.widgets import (
     CheckboxButtonGroup as _BkCheckboxButtonGroup,
     CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
     MultiSelect as _BkMultiSelect, RadioButtonGroup as _BkRadioButtonGroup,
-    RadioGroup as _BkRadioBoxGroup
+    RadioGroup as _BkRadioBoxGroup,
 )
 
 from ..layout import Column, VSpacer

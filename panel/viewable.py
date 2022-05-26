@@ -19,7 +19,7 @@ import uuid
 
 from functools import partial
 from typing import (
-    IO, TYPE_CHECKING, Any, Callable, List, Mapping, Optional
+    IO, TYPE_CHECKING, Any, Callable, List, Mapping, Optional,
 )
 
 import param  # type: ignore
@@ -35,7 +35,7 @@ from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
-    ipywidget, render_mimebundle, render_model, show_embed, show_server
+    ipywidget, render_mimebundle, render_model, show_embed, show_server,
 )
 from .io.save import save
 from .io.state import state

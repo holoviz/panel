@@ -39,7 +39,7 @@ from .pane.base import ReplacementPane
 from .viewable import Viewable
 from .widgets import (
     Button, Checkbox, DiscreteSlider, FloatSlider, IntSlider, Select,
-    TextInput, Widget
+    TextInput, Widget,
 )
 
 

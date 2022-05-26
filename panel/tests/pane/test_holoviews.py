@@ -13,7 +13,7 @@ except Exception:
 from bokeh.models import (
     Column as BkColumn, ColumnDataSource, GlyphRenderer, GridBox, Line,
     Row as BkRow, Scatter, Select as BkSelect, Slider as BkSlider,
-    Spacer as BkSpacer
+    Spacer as BkSpacer,
 )
 from bokeh.plotting import Figure
 

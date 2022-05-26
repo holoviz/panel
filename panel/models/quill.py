@@ -1,5 +1,5 @@
 from bokeh.core.properties import (
-    Any, Bool, Either, Enum, List, String
+    Any, Bool, Either, Enum, List, String,
 )
 from bokeh.models import HTMLBox
 

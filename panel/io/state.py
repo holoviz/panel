@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Callable, Dict, Iterator as TIterator, List, Optional,
-    Tuple, Union
+    Tuple, Union,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary

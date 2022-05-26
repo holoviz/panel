@@ -102,7 +102,7 @@ class PanelHandler(DocHandler):
         else:
             if path.endswith('yml') or path.endswith('.yaml'):
                 from lumen.command import (
-                    build_single_handler_application as build_lumen
+                    build_single_handler_application as build_lumen,
                 )
                 from lumen.config import config
                 config.dev = True

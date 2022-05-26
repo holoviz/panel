@@ -7,14 +7,14 @@ import textwrap
 
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Iterable, List, Optional
+    TYPE_CHECKING, Any, Iterable, List, Optional,
 )
 
 import numpy as np
 
 from bokeh.document import Document
 from bokeh.document.events import (
-    ColumnDataChangedEvent, DocumentPatchedEvent, ModelChangedEvent
+    ColumnDataChangedEvent, DocumentPatchedEvent, ModelChangedEvent,
 )
 from bokeh.model import DataModel
 from bokeh.models import Box, ColumnDataSource, Model

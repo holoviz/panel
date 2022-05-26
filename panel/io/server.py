@@ -23,7 +23,7 @@ from contextlib import contextmanager
 from functools import partial, wraps
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union
+    TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union,
 )
 from urllib.parse import urljoin, urlparse
 
@@ -35,28 +35,28 @@ import tornado
 # Bokeh imports
 from bokeh.application import Application as BkApplication
 from bokeh.application.handlers.code import (
-    CodeHandler, _monkeypatch_io, patch_curdoc
+    CodeHandler, _monkeypatch_io, patch_curdoc,
 )
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.core.templates import AUTOLOAD_JS
 from bokeh.embed.bundle import Script
 from bokeh.embed.elements import (
-    html_page_for_render_items, script_for_render_items
+    html_page_for_render_items, script_for_render_items,
 )
 from bokeh.embed.util import RenderItem
 from bokeh.io import curdoc
 from bokeh.server.server import Server
 from bokeh.server.urls import per_app_patterns
 from bokeh.server.views.autoload_js_handler import (
-    AutoloadJsHandler as BkAutoloadJsHandler
+    AutoloadJsHandler as BkAutoloadJsHandler,
 )
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.static_handler import StaticHandler
 # Tornado imports
 from tornado.ioloop import IOLoop
 from tornado.web import (
-    HTTPError, RequestHandler, StaticFileHandler, authenticated
+    HTTPError, RequestHandler, StaticFileHandler, authenticated,
 )
 from tornado.wsgi import WSGIContainer
 
@@ -64,13 +64,13 @@ from tornado.wsgi import WSGIContainer
 from ..util import edit_readonly, fullpath
 from .document import init_doc, unlocked, with_lock  # noqa
 from .logging import (
-    LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
+    LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
 )
 from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import (
     BASE_TEMPLATE, COMPONENT_PATH, Resources, bundle_resources,
-    component_rel_path
+    component_rel_path,
 )
 from .state import set_curdoc, state
 

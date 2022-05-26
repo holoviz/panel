@@ -4,7 +4,7 @@ import pytest
 from bokeh.models import Column as BkColumn, Div, Row as BkRow
 
 from panel.layout import (
-    Accordion, Card, Column, Row, Spacer, Tabs, WidgetBox
+    Accordion, Card, Column, Row, Spacer, Tabs, WidgetBox,
 )
 from panel.layout.base import ListPanel, NamedListPanel
 from panel.pane import Bokeh

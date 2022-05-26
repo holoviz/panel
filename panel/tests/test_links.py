@@ -12,7 +12,7 @@ from panel.links import Link
 from panel.pane import Bokeh, HoloViews
 from panel.tests.util import hv_available
 from panel.widgets import (
-    ColorPicker, DatetimeInput, FloatSlider, RangeSlider, TextInput
+    ColorPicker, DatetimeInput, FloatSlider, RangeSlider, TextInput,
 )
 
 

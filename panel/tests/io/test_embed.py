@@ -14,7 +14,7 @@ from panel.io.embed import embed_state
 from panel.pane import Str
 from panel.param import Param
 from panel.widgets import (
-    Checkbox, FloatSlider, IntSlider, Select, StaticText
+    Checkbox, FloatSlider, IntSlider, Select, StaticText,
 )
 
 

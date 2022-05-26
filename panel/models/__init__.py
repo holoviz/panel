@@ -17,5 +17,5 @@ from .tabs import Tabs  # noqa
 from .trend import TrendIndicator  # noqa
 from .widgets import (  # noqa
     Audio, CustomSelect, FileDownload, Player, Progress, SingleSelect, Video,
-    VideoStream
+    VideoStream,
 )

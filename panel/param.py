@@ -20,20 +20,20 @@ from param.parameterized import classlist, discard_events
 
 from .io import init_doc, state
 from .layout import (
-    Column, Panel, Row, Spacer, Tabs
+    Column, Panel, Row, Spacer, Tabs,
 )
 from .pane.base import PaneBase, ReplacementPane
 from .reactive import Reactive
 from .util import (
     abbreviated_repr, bokeh_version, classproperty, full_groupby, fullpath,
-    get_method_owner, is_parameterized, param_name, recursive_parameterized
+    get_method_owner, is_parameterized, param_name, recursive_parameterized,
 )
 from .viewable import Layoutable, Viewable
 from .widgets import (
     ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
     DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
     FileSelector, FloatInput, FloatSlider, IntInput, IntSlider, LiteralInput,
-    MultiSelect, RangeSlider, Select, StaticText, TextInput, Toggle, Widget
+    MultiSelect, RangeSlider, Select, StaticText, TextInput, Toggle, Widget,
 )
 from .widgets.button import _ButtonBase
 

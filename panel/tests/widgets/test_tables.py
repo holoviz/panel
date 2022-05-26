@@ -11,7 +11,7 @@ try:
     import pandas as pd
 
     from pandas._testing import (
-        makeCustomDataframe, makeMixedDataFrame, makeTimeDataFrame
+        makeCustomDataframe, makeMixedDataFrame, makeTimeDataFrame,
     )
 except ImportError:
     pytestmark = pytest.mark.skip('pandas not available')
@@ -19,7 +19,7 @@ except ImportError:
 from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, DataCube, DateFormatter, IntEditor,
     MinAggregator, NumberEditor, NumberFormatter, SelectEditor,
-    StringFormatter, SumAggregator
+    StringFormatter, SumAggregator,
 )
 
 from panel.depends import bind

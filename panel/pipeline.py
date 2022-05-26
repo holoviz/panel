@@ -7,7 +7,7 @@ from collections import OrderedDict, defaultdict
 import param
 
 from .layout import (
-    Column, HSpacer, Row, VSpacer
+    Column, HSpacer, Row, VSpacer,
 )
 from .pane import HoloViews, Markdown, Pane
 from .param import Param

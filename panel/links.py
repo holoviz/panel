@@ -10,7 +10,7 @@ import weakref
 
 from typing import (
     TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type,
-    Union
+    Union,
 )
 
 import param

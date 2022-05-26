@@ -5,7 +5,7 @@ from panel.interact import interactive
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.pane import (
-    IDOM, Bokeh, HoloViews, Interactive, IPyWidget, Pane, PaneBase, Vega
+    IDOM, Bokeh, HoloViews, Interactive, IPyWidget, Pane, PaneBase, Vega,
 )
 from panel.param import ParamMethod
 from panel.tests.util import check_layoutable_properties

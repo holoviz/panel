@@ -17,7 +17,7 @@ import param
 
 from bokeh.embed.bundle import (
     Bundle as BkBundle, _bundle_extensions, _use_mathjax, bundle_models,
-    extension_dirs
+    extension_dirs,
 )
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings

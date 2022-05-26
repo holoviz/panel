@@ -39,25 +39,25 @@ from .debugger import Debugger  # noqa
 from .file_selector import FileSelector  # noqa
 from .indicators import (  # noqa
     BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number, Progress,
-    Tqdm, Trend
+    Tqdm, Trend,
 )
 from .input import (  # noqa
     ArrayInput, Checkbox, ColorPicker, DatePicker, DatetimeInput,
     DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, FileInput,
     FloatInput, IntInput, LiteralInput, NumberInput, PasswordInput, Spinner,
-    StaticText, TextAreaInput, TextInput
+    StaticText, TextAreaInput, TextInput,
 )
 from .misc import FileDownload, JSONEditor, VideoStream  # noqa
 from .player import DiscretePlayer, Player  # noqa
 from .select import (  # noqa
     AutocompleteInput, CheckBoxGroup, CheckButtonGroup, CrossSelector,
     MultiChoice, MultiSelect, RadioBoxGroup, RadioButtonGroup, Select,
-    ToggleGroup
+    ToggleGroup,
 )
 from .slider import (  # noqa
     DateRangeSlider, DateSlider, DatetimeRangeSlider, DiscreteSlider,
     EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatSlider,
-    IntRangeSlider, IntSlider, RangeSlider
+    IntRangeSlider, IntSlider, RangeSlider,
 )
 from .speech_to_text import Grammar, GrammarList, SpeechToText  # noqa
 from .tables import DataFrame, Tabulator  # noqa

@@ -9,7 +9,7 @@ from panel import config
 from panel.widgets import (
     ArrayInput, Checkbox, DatePicker, DatetimeInput, DatetimePicker,
     DatetimeRangeInput, DatetimeRangePicker, FileInput, FloatInput, IntInput,
-    LiteralInput, StaticText, TextInput
+    LiteralInput, StaticText, TextInput,
 )
 
 

@@ -17,7 +17,7 @@ from bokeh.models.widgets import (
     DatePicker as _BkDatePicker, Div as _BkDiv, FileInput as _BkFileInput,
     NumericInput as _BkNumericInput, PasswordInput as _BkPasswordInput,
     Spinner as _BkSpinner, TextAreaInput as _BkTextAreaInput,
-    TextInput as _BkTextInput
+    TextInput as _BkTextInput,
 )
 
 from ..config import config

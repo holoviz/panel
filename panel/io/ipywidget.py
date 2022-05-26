@@ -7,7 +7,7 @@ from bokeh.document.json import Literal, MessageSent, TypedDict
 from bokeh.util.serialization import make_id
 from ipykernel.comm import CommManager
 from ipywidgets_bokeh.kernel import (
-    BokehKernel, SessionWebsocket, WebsocketStream
+    BokehKernel, SessionWebsocket, WebsocketStream,
 )
 from tornado.ioloop import IOLoop
 

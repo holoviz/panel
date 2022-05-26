@@ -8,7 +8,7 @@ import threading
 from contextlib import contextmanager
 from functools import partial, wraps
 from typing import (
-    Callable, Iterator, List, Optional
+    Callable, Iterator, List, Optional,
 )
 
 from bokeh.application.application import SessionContext

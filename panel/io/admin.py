@@ -16,7 +16,7 @@ from bokeh.plotting import ColumnDataSource, figure
 
 from ..config import config
 from ..layout import (
-    Accordion, Column, FlexBox, Row, Tabs
+    Accordion, Column, FlexBox, Row, Tabs,
 )
 from ..models import terminal  # noqa
 from ..pane import HTML, Bokeh
@@ -25,7 +25,7 @@ from ..widgets import MultiSelect, Terminal, TextInput
 from ..widgets.indicators import Trend
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
-    panel_logger
+    panel_logger,
 )
 from .notebook import push_notebook
 from .profile import profiling_tabs

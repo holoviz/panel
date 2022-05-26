@@ -1,7 +1,7 @@
 from bokeh.models import Div, Row as BkRow
 
 from panel.pane import (
-    Bokeh, Matplotlib, Pane, PaneBase
+    Bokeh, Matplotlib, Pane, PaneBase,
 )
 from panel.tests.util import mpl_available, mpl_figure
 

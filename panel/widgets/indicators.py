@@ -30,7 +30,7 @@ from tqdm.asyncio import tqdm as _tqdm
 
 from ..layout import Column, Row
 from ..models import (
-    HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator
+    HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator,
 )
 from ..pane.markup import Str
 from ..reactive import SyncableData

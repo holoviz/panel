@@ -9,7 +9,7 @@ from io import BytesIO
 import param
 
 from bokeh.models import (
-    CustomJS, LayoutDOM, Model, Spacer as BkSpacer
+    CustomJS, LayoutDOM, Model, Spacer as BkSpacer,
 )
 from bokeh.themes import Theme
 

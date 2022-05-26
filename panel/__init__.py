@@ -57,11 +57,11 @@ from .config import __version__, config, panel_extension as extension  # noqa
 from .depends import bind, depends  # noqa
 from .interact import interact  # noqa
 from .io import (  # noqa
-    _jupyter_server_extension_paths, ipywidget, serve, state
+    _jupyter_server_extension_paths, ipywidget, serve, state,
 )
 from .layout import (  # noqa
     Accordion, Card, Column, FlexBox, GridBox, GridSpec, Row, Spacer, Tabs,
-    WidgetBox
+    WidgetBox,
 )
 from .pane import Pane, panel  # noqa
 from .param import Param  # noqa

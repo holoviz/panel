@@ -1,7 +1,7 @@
 import pytest
 
 from panel.widgets.indicators import (
-    Dial, Gauge, Number, Tqdm
+    Dial, Gauge, Number, Tqdm,
 )
 
 

@@ -13,7 +13,7 @@ from types import ModuleType
 
 from bokeh.application import Application
 from bokeh.application.handlers.document_lifecycle import (
-    DocumentLifecycleHandler
+    DocumentLifecycleHandler,
 )
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.subcommands.serve import Serve as _BkServe

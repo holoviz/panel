@@ -7,7 +7,7 @@ import os
 from collections import OrderedDict
 from fnmatch import fnmatch
 from typing import (
-    AnyStr, List, Tuple, Union
+    AnyStr, List, Tuple, Union,
 )
 
 import param

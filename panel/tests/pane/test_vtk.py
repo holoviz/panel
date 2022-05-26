@@ -20,11 +20,11 @@ except Exception:
 from bokeh.models import ColorBar
 
 from panel.models.vtk import (
-    VTKAxes, VTKJSPlot, VTKSynchronizedPlot, VTKVolumePlot
+    VTKAxes, VTKJSPlot, VTKSynchronizedPlot, VTKVolumePlot,
 )
 from panel.pane import VTK, PaneBase, VTKVolume
 from panel.pane.vtk.vtk import (
-    VTKJS, VTKRenderWindow, VTKRenderWindowSynchronized
+    VTKJS, VTKRenderWindow, VTKRenderWindowSynchronized,
 )
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")

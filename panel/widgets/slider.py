@@ -14,7 +14,7 @@ from bokeh.models import CustomJS
 from bokeh.models.formatters import TickFormatter
 from bokeh.models.widgets import (
     DateRangeSlider as _BkDateRangeSlider, DateSlider as _BkDateSlider,
-    RangeSlider as _BkRangeSlider, Slider as _BkSlider
+    RangeSlider as _BkRangeSlider, Slider as _BkSlider,
 )
 
 from ..config import config
@@ -22,7 +22,7 @@ from ..io import state
 from ..layout import Column, Row
 from ..util import (
     datetime_as_utctimestamp, edit_readonly, param_reprs, value_as_date,
-    value_as_datetime
+    value_as_datetime,
 )
 from ..viewable import Layoutable
 from .base import CompositeWidget, Widget

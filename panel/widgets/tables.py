@@ -12,7 +12,7 @@ from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CellFormatter, CheckboxEditor, DataCube,
     DataTable, DateEditor, DateFormatter, GroupingInfo, IntEditor,
     MaxAggregator, MinAggregator, NumberEditor, NumberFormatter, RowAggregator,
-    StringEditor, StringFormatter, SumAggregator, TableColumn
+    StringEditor, StringFormatter, SumAggregator, TableColumn,
 )
 from bokeh.util.serialization import convert_datetime_array
 from pyviz_comms import JupyterComm
@@ -22,7 +22,7 @@ from ..io.resources import LOCAL_DIST, set_resource_mode
 from ..io.state import state
 from ..reactive import ReactiveData
 from ..util import (
-    clone_model, isdatetime, lazy_load, updating
+    clone_model, isdatetime, lazy_load, updating,
 )
 from ..viewable import Layoutable
 from .base import Widget

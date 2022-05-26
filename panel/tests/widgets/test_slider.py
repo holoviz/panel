@@ -4,13 +4,13 @@ from datetime import date, datetime
 import pytest
 
 from bokeh.models import (
-    Column as BkColumn, Div as BkDiv, Row as BkRow, Slider as BkSlider
+    Column as BkColumn, Div as BkDiv, Row as BkRow, Slider as BkSlider,
 )
 
 from panel import config
 from panel.widgets import (
     DateRangeSlider, DateSlider, DiscreteSlider, EditableFloatSlider,
-    EditableIntSlider, FloatSlider, IntSlider, RangeSlider, StaticText
+    EditableIntSlider, FloatSlider, IntSlider, RangeSlider, StaticText,
 )
 
 

@@ -12,7 +12,7 @@ And now DeckGL provides Python bindings. See
 from collections import OrderedDict
 
 from bokeh.core.properties import (
-    Any, Bool, Dict, Either, Instance, Int, List, Override, String
+    Any, Bool, Dict, Either, Instance, Int, List, Override, String,
 )
 from bokeh.models import ColumnDataSource, HTMLBox
 

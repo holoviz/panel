@@ -15,7 +15,7 @@ from packaging.version import Version
 
 from ..io import state, unlocked
 from ..layout import (
-    Column, HSpacer, Row, VSpacer, WidgetBox
+    Column, HSpacer, Row, VSpacer, WidgetBox,
 )
 from ..viewable import Layoutable, Viewable
 from ..widgets import Player
@@ -373,14 +373,14 @@ class HoloViews(PaneBase):
         from holoviews.core.options import SkipRendering
         from holoviews.core.traversal import unique_dimkeys
         from holoviews.core.util import (
-            datetime_types, isnumeric, unique_iterator
+            datetime_types, isnumeric, unique_iterator,
         )
         from holoviews.plotting.plot import GenericCompositePlot, Plot
         from holoviews.plotting.util import get_dynamic_mode
 
         from ..widgets import (
             DatetimeInput, DiscreteSlider, FloatSlider, IntSlider, Select,
-            Widget
+            Widget,
         )
 
         if widget_types is None:
@@ -549,7 +549,7 @@ def is_bokeh_element_plot(plot):
     with the bokeh backend.
     """
     from holoviews.plotting.plot import (
-        GenericElementPlot, GenericOverlayPlot, Plot
+        GenericElementPlot, GenericOverlayPlot, Plot,
     )
     if not isinstance(plot, Plot):
         return False

@@ -7,7 +7,7 @@ from panel.links import CallbackGenerator
 from panel.tests.util import check_layoutable_properties
 from panel.widgets import (
     CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge, Terminal,
-    TextInput, ToggleGroup, Tqdm, Widget
+    TextInput, ToggleGroup, Tqdm, Widget,
 )
 from panel.widgets.tables import BaseTable
 

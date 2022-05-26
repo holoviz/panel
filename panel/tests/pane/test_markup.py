@@ -4,7 +4,7 @@ import json
 import numpy as np
 
 from panel.pane import (
-    HTML, JSON, DataFrame, Markdown, Pane, PaneBase, Str
+    HTML, JSON, DataFrame, Markdown, Pane, PaneBase, Str,
 )
 from panel.tests.util import pd_available, streamz_available
 

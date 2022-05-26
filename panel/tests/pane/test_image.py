@@ -5,7 +5,7 @@ from io import BytesIO, StringIO
 from pathlib import Path
 
 from panel.pane import (
-    GIF, ICO, JPG, PDF, PNG, SVG
+    GIF, ICO, JPG, PDF, PNG, SVG,
 )
 from panel.pane.markup import escape
 

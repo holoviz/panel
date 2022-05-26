@@ -11,7 +11,7 @@ import uuid
 from collections import OrderedDict
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
+    TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple,
 )
 
 import bokeh
@@ -29,7 +29,7 @@ from bokeh.resources import CDN, INLINE
 from bokeh.settings import _Unset, settings
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
-    PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js
+    PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js,
 )
 
 from ..compiler import require_components
@@ -37,7 +37,7 @@ from ..util import escape
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    PANEL_DIR, Bundle, Resources, _env, bundle_resources
+    PANEL_DIR, Bundle, Resources, _env, bundle_resources,
 )
 from .state import state
 

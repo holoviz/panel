@@ -213,7 +213,7 @@ class NotificationArea(NotificationAreaBase):
         """
         from ..layout import Column
         from ..widgets import (
-            Button, ColorPicker, NumberInput, Select, TextInput
+            Button, ColorPicker, NumberInput, Select, TextInput,
         )
 
         msg = TextInput(name='Message', value='This is a message')

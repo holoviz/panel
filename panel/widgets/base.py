@@ -8,7 +8,7 @@ from __future__ import annotations
 import math
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, List, Mapping, Optional, Tuple
+    TYPE_CHECKING, Any, Callable, List, Mapping, Optional, Tuple,
 )
 
 import param  # type: ignore
