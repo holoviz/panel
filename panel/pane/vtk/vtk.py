@@ -1,23 +1,23 @@
 """
 Defines a VTKPane which renders a vtk plot using VTKPlot bokeh model.
 """
-import sys
-import json
 import base64
+import json
+import sys
 import zipfile
 
 from abc import abstractmethod
 from urllib.request import urlopen
 
-import param
 import numpy as np
+import param
 
-from bokeh.util.serialization import make_globally_unique_id
 from bokeh.models import LinearColorMapper
+from bokeh.util.serialization import make_globally_unique_id
 from pyviz_comms import JupyterComm
 
 from ...util import isfile, lazy_load
-from ..base import PaneBase, Pane
+from ..base import Pane, PaneBase
 from .enums import PRESET_CMAPS
 
 base64encode = lambda x: base64.b64encode(x).decode('utf-8')
@@ -278,7 +278,7 @@ class BaseVTKRenderWindow(AbstractVTK):
     def _construct_colorbars(self, color_mappers=None):
         if not color_mappers:
             color_mappers = self.color_mappers
-        from bokeh.models import Plot, ColorBar, FixedTicker
+        from bokeh.models import ColorBar, FixedTicker, Plot
         cbs = []
         for color_mapper in color_mappers:
             ticks = np.linspace(color_mapper.low, color_mapper.high, 5)
@@ -733,6 +733,7 @@ class VTKVolume(AbstractVTK):
             available_serializer = [v for k, v in VTKVolume._serializers.items() if isinstance(self.object, k)]
             if not available_serializer:
                 import vtk
+
                 from vtk.util import numpy_support
 
                 def volume_serializer(inst):

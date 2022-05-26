@@ -1,5 +1,6 @@
 from bokeh.command.subcommand import Subcommand
 
+
 class OAuthSecret(Subcommand):
     ''' Subcommand to generate a new encryption key.
 

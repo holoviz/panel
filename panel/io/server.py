@@ -13,8 +13,8 @@ import os
 import pathlib
 import signal
 import sys
-import traceback
 import threading
+import traceback
 import uuid
 import warnings
 
@@ -23,44 +23,54 @@ from contextlib import contextmanager
 from functools import partial, wraps
 from types import FunctionType, MethodType
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union
+    TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union,
 )
 from urllib.parse import urljoin, urlparse
 
-import param
 import bokeh
 import bokeh.command.util
+import param
 import tornado
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
-from bokeh.application.handlers.code import CodeHandler, _monkeypatch_io, patch_curdoc
+from bokeh.application.handlers.code import (
+    CodeHandler, _monkeypatch_io, patch_curdoc,
+)
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.core.templates import AUTOLOAD_JS
 from bokeh.embed.bundle import Script
-from bokeh.embed.elements import html_page_for_render_items, script_for_render_items
+from bokeh.embed.elements import (
+    html_page_for_render_items, script_for_render_items,
+)
 from bokeh.embed.util import RenderItem
 from bokeh.io import curdoc
 from bokeh.server.server import Server
 from bokeh.server.urls import per_app_patterns
-from bokeh.server.views.autoload_js_handler import AutoloadJsHandler as BkAutoloadJsHandler
+from bokeh.server.views.autoload_js_handler import (
+    AutoloadJsHandler as BkAutoloadJsHandler,
+)
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.static_handler import StaticHandler
-
 # Tornado imports
 from tornado.ioloop import IOLoop
-from tornado.web import HTTPError, RequestHandler, StaticFileHandler, authenticated
+from tornado.web import (
+    HTTPError, RequestHandler, StaticFileHandler, authenticated,
+)
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from ..util import edit_readonly, fullpath
-from .document import init_doc, with_lock, unlocked # noqa
-from .logging import LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
+from .document import init_doc, unlocked, with_lock  # noqa
+from .logging import (
+    LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
+)
 from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import (
-    BASE_TEMPLATE, COMPONENT_PATH, Resources, bundle_resources, component_rel_path
+    BASE_TEMPLATE, COMPONENT_PATH, Resources, bundle_resources,
+    component_rel_path,
 )
 from .state import set_curdoc, state
 
@@ -97,8 +107,8 @@ def _server_url(url: str, port: int) -> str:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
 def _eval_panel(panel: 'TViewableOrFunc', server_id: str, title: str, location, doc: 'Document'):
-    from ..template import BaseTemplate
     from ..pane import panel as as_panel
+    from ..template import BaseTemplate
 
     with set_curdoc(doc):
         if isinstance(panel, (FunctionType, MethodType)):
@@ -409,6 +419,7 @@ class ComponentResourceHandler(StaticFileHandler):
 
 def modify_document(self, doc: 'Document'):
     from bokeh.io.doc import set_curdoc as bk_set_curdoc
+
     from ..config import config
 
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
@@ -461,6 +472,7 @@ def modify_document(self, doc: 'Document'):
 
         def handle_exception(handler, e):
             from bokeh.application.handlers.handler import handle_exception
+
             from ..pane import HTML
 
             # Clean up

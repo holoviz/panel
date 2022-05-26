@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from panel.widgets import (
-    CrossSelector, MultiChoice, MultiSelect, Select, ToggleGroup
+    CrossSelector, MultiChoice, MultiSelect, Select, ToggleGroup,
 )
 
 

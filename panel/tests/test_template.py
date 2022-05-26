@@ -21,7 +21,7 @@ from panel.layout import GridSpec, Row
 from panel.pane import HoloViews, Markdown
 from panel.template import (
     BootstrapTemplate, GoldenTemplate, MaterialTemplate, ReactTemplate,
-    Template, VanillaTemplate
+    Template, VanillaTemplate,
 )
 from panel.template.base import BasicTemplate
 from panel.widgets import FloatSlider

@@ -12,11 +12,11 @@ from pyviz_comms import JupyterComm
 from ..io.notebook import push
 from ..io.state import state
 from ..models import (
-    VideoStream as _BkVideoStream, FileDownload as _BkFileDownload
+    FileDownload as _BkFileDownload, VideoStream as _BkVideoStream,
 )
 from ..util import lazy_load
 from .base import Widget
-from .indicators import Progress # noqa
+from .indicators import Progress  # noqa
 
 
 class VideoStream(Widget):

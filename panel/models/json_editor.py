@@ -1,7 +1,9 @@
 """
 Custom bokeh Markup models.
 """
-from bokeh.core.properties import Any, Bool, Dict, Enum, List, Nullable, String
+from bokeh.core.properties import (
+    Any, Bool, Dict, Enum, List, Nullable, String,
+)
 from bokeh.events import ModelEvent
 from bokeh.models import HTMLBox
 

@@ -45,27 +45,28 @@ https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews
 To learn more about Panel check out
 https://panel.holoviz.org/getting_started/index.html
 """
-from . import layout # noqa
-from . import links # noqa
-from . import pane # noqa
-from . import param # noqa
-from . import pipeline # noqa
-from . import reactive # noqa
-from . import viewable # noqa
-from . import widgets # noqa
-
-from .config import config, panel_extension as extension, __version__ # noqa
-from .depends import bind, depends # noqa
-from .interact import interact # noqa
-from .io import _jupyter_server_extension_paths, ipywidget, serve, state # noqa
-from .layout import ( # noqa
-    Accordion, Card, Column, GridSpec, GridBox, FlexBox, Tabs, Row,
-    Spacer, WidgetBox
+from . import layout  # noqa
+from . import links  # noqa
+from . import pane  # noqa
+from . import param  # noqa
+from . import pipeline  # noqa
+from . import reactive  # noqa
+from . import viewable  # noqa
+from . import widgets  # noqa
+from .config import __version__, config, panel_extension as extension  # noqa
+from .depends import bind, depends  # noqa
+from .interact import interact  # noqa
+from .io import (  # noqa
+    _jupyter_server_extension_paths, ipywidget, serve, state,
 )
-from .pane import panel, Pane # noqa
-from .param import Param # noqa
-from .template import Template # noqa
-from .widgets import indicators # noqa
+from .layout import (  # noqa
+    Accordion, Card, Column, FlexBox, GridBox, GridSpec, Row, Spacer, Tabs,
+    WidgetBox,
+)
+from .pane import Pane, panel  # noqa
+from .param import Param  # noqa
+from .template import Template  # noqa
+from .widgets import indicators  # noqa
 
 __all__ = (
     "__version__",

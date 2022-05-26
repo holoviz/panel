@@ -5,29 +5,30 @@ ways.
 
 import ast
 import base64
-import logging # isort:skip
+import logging
 import os
 
 from glob import glob
 from types import ModuleType
 
+from bokeh.application import Application
+from bokeh.application.handlers.document_lifecycle import (
+    DocumentLifecycleHandler,
+)
+from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.subcommands.serve import Serve as _BkServe
 from bokeh.command.util import build_single_handler_applications
-
-from bokeh.application import Application
-from bokeh.application.handlers.document_lifecycle import DocumentLifecycleHandler
-from bokeh.application.handlers.function import FunctionHandler
 from bokeh.server.contexts import ApplicationContext
-from tornado.ioloop import PeriodicCallback, IOLoop
+from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.web import StaticFileHandler
 
 from ..auth import OAuthProvider
 from ..config import config
-from ..util import fullpath
-from ..io.rest import REST_PROVIDERS
 from ..io.reload import record_modules, watch
+from ..io.rest import REST_PROVIDERS
 from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
 from ..io.state import state
+from ..util import fullpath
 
 log = logging.getLogger(__name__)
 

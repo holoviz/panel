@@ -2,9 +2,9 @@
 Custom bokeh Markup models.
 """
 from bokeh.core.properties import (
-    Bool, Dict, Either, Float, Int, List, Null, String
+    Bool, Dict, Either, Float, Int, List, Null, String,
 )
-from bokeh.models.widgets import Markup, Div
+from bokeh.models.widgets import Div, Markup
 
 
 class HTML(Div):

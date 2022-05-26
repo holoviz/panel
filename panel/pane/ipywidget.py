@@ -36,7 +36,9 @@ class IPyWidget(PaneBase):
             IPyWidget = _BkIPyWidget
         else:
             import ipykernel
+
             from ipywidgets_bokeh.widget import IPyWidget
+
             from ..io.ipywidget import PanelKernel
 
             # Patch font-awesome CSS

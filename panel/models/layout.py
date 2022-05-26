@@ -1,6 +1,8 @@
-from bokeh.core.properties import Bool, List, Nullable, String
-
+from bokeh.core.properties import (
+    Bool, List, Nullable, String,
+)
 from bokeh.models import Column
+
 
 class Card(Column):
 

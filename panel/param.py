@@ -8,32 +8,32 @@ import json
 import os
 import types
 
-from collections.abc import Callable
 from collections import OrderedDict, defaultdict, namedtuple
+from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
-from packaging.version import Version
 
 import param
 
+from packaging.version import Version
 from param.parameterized import classlist, discard_events
 
 from .io import init_doc, state
-from .layout import Column, Panel, Row, Spacer, Tabs
-from .pane.base import PaneBase, ReplacementPane
-from .util import (
-    abbreviated_repr, bokeh_version, classproperty, full_groupby,
-    fullpath, get_method_owner, is_parameterized, param_name,
-    recursive_parameterized
+from .layout import (
+    Column, Panel, Row, Spacer, Tabs,
 )
+from .pane.base import PaneBase, ReplacementPane
 from .reactive import Reactive
+from .util import (
+    abbreviated_repr, bokeh_version, classproperty, full_groupby, fullpath,
+    get_method_owner, is_parameterized, param_name, recursive_parameterized,
+)
 from .viewable import Layoutable, Viewable
 from .widgets import (
     ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
-    DatetimeInput, DatetimeRangeSlider, DateRangeSlider,
-    DiscreteSlider, FileSelector, FloatSlider, IntInput, IntSlider,
-    LiteralInput, MultiSelect, RangeSlider, Select, FloatInput,
-    StaticText, TextInput, Toggle, Widget
+    DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
+    FileSelector, FloatInput, FloatSlider, IntInput, IntSlider, LiteralInput,
+    MultiSelect, RangeSlider, Select, StaticText, TextInput, Toggle, Widget,
 )
 from .widgets.button import _ButtonBase
 

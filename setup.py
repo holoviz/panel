@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
+import json
 import os
 import shutil
 import sys
-import json
 
-from setuptools import setup, find_packages
+import pyct.build
+
+from setuptools import find_packages, setup
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 from setuptools.command.sdist import sdist
-
-import pyct.build
 
 
 def get_setup_version(reponame):
@@ -35,6 +35,7 @@ def get_setup_version(reponame):
 
 def _build_paneljs():
     from bokeh.ext import build
+
     from panel.compiler import bundle_resources
     print("Building custom models:")
     panel_dir = os.path.join(os.path.dirname(__file__), "panel")

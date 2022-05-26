@@ -6,11 +6,14 @@ except ImportError:
 import pytest
 
 from bokeh.plotting import figure
+
 from panel.layout import Row
 from panel.links import Link
 from panel.pane import Bokeh, HoloViews
-from panel.widgets import FloatSlider, RangeSlider, ColorPicker, TextInput, DatetimeInput
 from panel.tests.util import hv_available
+from panel.widgets import (
+    ColorPicker, DatetimeInput, FloatSlider, RangeSlider, TextInput,
+)
 
 
 def test_widget_link_bidirectional():

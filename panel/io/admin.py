@@ -15,15 +15,17 @@ from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
 from ..config import config
-from ..models import terminal # noqa
-from ..pane import Bokeh, HTML
-from ..layout import Accordion, Column, Row, Tabs, FlexBox
+from ..layout import (
+    Accordion, Column, FlexBox, Row, Tabs,
+)
+from ..models import terminal  # noqa
+from ..pane import HTML, Bokeh
 from ..template import FastListTemplate
 from ..widgets import MultiSelect, Terminal, TextInput
 from ..widgets.indicators import Trend
 from .logging import (
-    LOG_SESSION_CREATED, LOG_SESSION_LAUNCHING, LOG_SESSION_DESTROYED,
-    panel_logger
+    LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
+    panel_logger,
 )
 from .notebook import push_notebook
 from .profile import profiling_tabs

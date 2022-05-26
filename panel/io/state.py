@@ -13,13 +13,13 @@ import sys
 import threading
 import time
 
-from collections.abc import Iterator
 from collections import OrderedDict, defaultdict
+from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Iterator as TIterator, List,
-    Optional, Tuple, Union
+    TYPE_CHECKING, Any, Callable, Dict, Iterator as TIterator, List, Optional,
+    Tuple, Union,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -44,9 +44,9 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
     from tornado.ioloop import IOLoop
 
+    from ..template.base import BaseTemplate
     from ..viewable import Viewable
     from ..widgets.indicators import BooleanIndicator
-    from ..template.base import BaseTemplate
     from .callbacks import PeriodicCallback
     from .location import Location
     from .notifications import NotificationArea
@@ -705,6 +705,7 @@ class _state(param.Parameterized):
     @property
     def access_token(self) -> str | None:
         from tornado.web import decode_signed_value
+
         from ..config import config
         access_token = self.cookies.get('access_token')
         if access_token is None:
@@ -811,6 +812,7 @@ class _state(param.Parameterized):
     @property
     def user(self) -> str | None:
         from tornado.web import decode_signed_value
+
         from ..config import config
         user = self.cookies.get('user')
         if user is None or config.cookie_secret is None:
@@ -820,6 +822,7 @@ class _state(param.Parameterized):
     @property
     def user_info(self) -> Dict[str, Any] | None:
         from tornado.web import decode_signed_value
+
         from ..config import config
         id_token = self.cookies.get('id_token')
         if id_token is None or config.cookie_secret is None:

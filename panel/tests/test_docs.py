@@ -7,6 +7,7 @@ import os
 from inspect import isclass
 
 import pytest
+
 import panel as pn
 
 here = os.path.abspath(os.path.dirname(__file__))

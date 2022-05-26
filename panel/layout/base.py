@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from collections import defaultdict, namedtuple
 from typing import (
-    TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping,
-    Optional, Tuple, Type
+    TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping, Optional,
+    Tuple, Type,
 )
 
 import param
@@ -112,7 +112,7 @@ class Panel(Reactive):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from ..pane.base import panel, RerenderError
+        from ..pane.base import RerenderError, panel
         new_models = []
         for i, pane in enumerate(self.objects):
             pane = panel(pane)

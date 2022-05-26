@@ -2,15 +2,15 @@ import os
 
 from panel.io.location import Location
 from panel.io.reload import (
-     _check_file, _modules, _reload_on_update, _watched_files,
-    in_blacklist, record_modules, watch
+    _check_file, _modules, _reload_on_update, _watched_files, in_blacklist,
+    record_modules, watch,
 )
 from panel.io.state import state
 
 
 def test_record_modules_not_stdlib():
     with record_modules():
-        import audioop # noqa
+        import audioop  # noqa
     assert (_modules == set() or _modules == set('audioop'))
     _modules.clear()
 

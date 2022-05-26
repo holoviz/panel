@@ -6,7 +6,7 @@ import ast
 import json
 
 from base64 import b64decode
-from datetime import datetime, date
+from datetime import date, datetime
 
 import numpy as np
 import param
@@ -14,17 +14,17 @@ import param
 from bokeh.models.formatters import TickFormatter
 from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
-    DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
-    PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
-    FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput,
-    NumericInput as _BkNumericInput
+    DatePicker as _BkDatePicker, Div as _BkDiv, FileInput as _BkFileInput,
+    NumericInput as _BkNumericInput, PasswordInput as _BkPasswordInput,
+    Spinner as _BkSpinner, TextAreaInput as _BkTextAreaInput,
+    TextInput as _BkTextInput,
 )
 
 from ..config import config
 from ..layout import Column
-from ..util import param_reprs
-from .base import Widget, CompositeWidget
 from ..models import DatetimePicker as _bkDatetimePicker
+from ..util import param_reprs
+from .base import CompositeWidget, Widget
 
 
 class TextInput(Widget):

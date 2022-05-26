@@ -5,10 +5,12 @@ import struct
 import time
 import zipfile
 
-from vtk.vtkCommonCore import vtkTypeUInt32Array, vtkTypeInt32Array
-from vtk.vtkFiltersGeometry import vtkCompositeDataGeometryFilter, vtkGeometryFilter
-from vtk.vtkRenderingCore import vtkColorTransferFunction
+from vtk.vtkCommonCore import vtkTypeInt32Array, vtkTypeUInt32Array
 from vtk.vtkCommonDataModel import vtkDataObject
+from vtk.vtkFiltersGeometry import (
+    vtkCompositeDataGeometryFilter, vtkGeometryFilter,
+)
+from vtk.vtkRenderingCore import vtkColorTransferFunction
 
 from .enums import TextPosition
 

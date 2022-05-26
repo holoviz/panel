@@ -1,12 +1,13 @@
-import panel as pn
-
 from bokeh.document import Document
 from holoviews import opts
+
+import panel as pn
 
 from panel.pane import HoloViews, Markdown
 from panel.template.fast.list import FastListDarkTheme, FastListTemplate
 from panel.tests.template.fast.test_fast_grid_template import (
-    INFO, _create_hvplot, _fast_button_card, _sidebar_items)
+    INFO, _create_hvplot, _fast_button_card, _sidebar_items,
+)
 
 ACCENT_COLOR = "#D2386C"
 

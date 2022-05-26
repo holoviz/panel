@@ -1,5 +1,6 @@
-import panel as pn
 import param
+
+import panel as pn
 
 
 class CustomExample(param.Parameterized):

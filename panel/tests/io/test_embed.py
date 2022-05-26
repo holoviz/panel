@@ -1,9 +1,10 @@
-import os
-import json
 import glob
-import pytest
+import json
+import os
 
 from io import StringIO
+
+import pytest
 
 from bokeh.models import CustomJS
 
@@ -12,7 +13,9 @@ from panel.config import config
 from panel.io.embed import embed_state
 from panel.pane import Str
 from panel.param import Param
-from panel.widgets import IntSlider, Select, FloatSlider, Checkbox, StaticText
+from panel.widgets import (
+    Checkbox, FloatSlider, IntSlider, Select, StaticText,
+)
 
 
 def test_embed_param_jslink(document, comm):

@@ -1,14 +1,17 @@
-from datetime import datetime, date
 from collections import OrderedDict
+from datetime import date, datetime
 
-from bokeh.models import (
-    Div as BkDiv, Slider as BkSlider, Column as BkColumn, Row as BkRow)
 import pytest
 
+from bokeh.models import (
+    Column as BkColumn, Div as BkDiv, Row as BkRow, Slider as BkSlider,
+)
+
 from panel import config
-from panel.widgets import (DateSlider, DateRangeSlider, DiscreteSlider,
-                           FloatSlider, IntSlider, RangeSlider,
-                           EditableFloatSlider, EditableIntSlider, StaticText)
+from panel.widgets import (
+    DateRangeSlider, DateSlider, DiscreteSlider, EditableFloatSlider,
+    EditableIntSlider, FloatSlider, IntSlider, RangeSlider, StaticText,
+)
 
 
 def test_float_slider(document, comm):

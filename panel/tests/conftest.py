@@ -6,18 +6,17 @@ import re
 import shutil
 import tempfile
 
-import pytest
-
 from contextlib import contextmanager
 
-from bokeh.document import Document
+import pytest
+
 from bokeh.client import pull_session
+from bokeh.document import Document
 from pyviz_comms import Comm
 
-from panel import config
-from panel.pane import HTML, Markdown
+from panel import config, serve
 from panel.io import state
-from panel import serve
+from panel.pane import HTML, Markdown
 
 
 @pytest.fixture

@@ -1,5 +1,7 @@
 """Bokeh Model of the Panel SpeechToText widget"""
-from bokeh.core.properties import Any, Bool, Dict, Int, List, String
+from bokeh.core.properties import (
+    Any, Bool, Dict, Int, List, String,
+)
 from bokeh.models.widgets.widget import Widget
 
 

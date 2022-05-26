@@ -19,14 +19,14 @@ import uuid
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, IO, List, Mapping, Optional
+    IO, TYPE_CHECKING, Any, Callable, List, Mapping, Optional,
 )
 
-import param # type: ignore
+import param  # type: ignore
 
 from bokeh.document import Document
 from bokeh.io import curdoc as _curdoc
-from pyviz_comms import Comm, JupyterCommManager # type: ignore
+from pyviz_comms import Comm, JupyterCommManager  # type: ignore
 
 from .config import config, panel_extension
 from .io import serve
@@ -35,7 +35,7 @@ from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
-    ipywidget, render_mimebundle, render_model, show_embed, show_server
+    ipywidget, render_mimebundle, render_model, show_embed, show_server,
 )
 from .io.save import save
 from .io.state import state
@@ -603,7 +603,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     def _repr_mimebundle_(self, include=None, exclude=None):
         loaded = panel_extension._loaded
         if not loaded and 'holoviews' in sys.modules:
-            import holoviews as hv # type: ignore
+            import holoviews as hv  # type: ignore
             loaded = hv.extension._loaded
 
         if config.comms in ('vscode', 'ipywidgets'):
@@ -623,7 +623,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
                     'model_id': widget._model_id
                 }
             if config.comms == 'vscode':
-                from IPython.display import display # type: ignore
+                from IPython.display import display  # type: ignore
                 display(data, raw=True)
                 return {'text/html': '<div style="display: none"></div>'}, {}
             return data, {}
@@ -640,7 +640,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             load_notebook(config.inline)
 
         try:
-            from IPython import get_ipython # type: ignore
+            from IPython import get_ipython  # type: ignore
             assert get_ipython().kernel is not None
             state._comm_manager = JupyterCommManager
         except Exception:
@@ -654,6 +654,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             location = None
 
         from IPython.display import display
+
         from .models.comm_manager import CommManager
 
         doc = Document()

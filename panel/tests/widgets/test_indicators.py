@@ -1,6 +1,9 @@
 import pytest
 
-from panel.widgets.indicators import Dial, Gauge, Number, Tqdm
+from panel.widgets.indicators import (
+    Dial, Gauge, Number, Tqdm,
+)
+
 
 def test_number_none(document, comm):
     number = Number(value=None, name='Value')

@@ -1,10 +1,10 @@
-import numpy as np
-import pandas as pd
-
-import param
-import panel as pn
 import hvplot
 import hvplot.pandas
+import numpy as np
+import pandas as pd
+import param
+
+import panel as pn
 
 
 class GBM(param.Parameterized):

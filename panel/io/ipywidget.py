@@ -3,12 +3,13 @@ import logging
 import param
 
 from bokeh.document.events import MessageSentEvent
-from bokeh.document.json import MessageSent, Literal, TypedDict
+from bokeh.document.json import Literal, MessageSent, TypedDict
 from bokeh.util.serialization import make_id
-
 from ipykernel.comm import CommManager
+from ipywidgets_bokeh.kernel import (
+    BokehKernel, SessionWebsocket, WebsocketStream,
+)
 from tornado.ioloop import IOLoop
-from ipywidgets_bokeh.kernel import BokehKernel, SessionWebsocket, WebsocketStream
 
 
 class MessageSentBuffers(TypedDict):

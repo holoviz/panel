@@ -24,13 +24,13 @@ from math import pi
 import numpy as np
 import param
 
-from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource, FixedTicker
+from bokeh.plotting import figure
 from tqdm.asyncio import tqdm as _tqdm
 
 from ..layout import Column, Row
 from ..models import (
-    HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator
+    HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator,
 )
 from ..pane.markup import Str
 from ..reactive import SyncableData

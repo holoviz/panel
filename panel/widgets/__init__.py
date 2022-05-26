@@ -33,58 +33,37 @@ For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
 from .ace import Ace  # noqa
-from .base import Widget, CompositeWidget  # noqa
+from .base import CompositeWidget, Widget  # noqa
 from .button import Button, MenuButton, Toggle  # noqa
+from .debugger import Debugger  # noqa
 from .file_selector import FileSelector  # noqa
-from .indicators import ( # noqa
-    BooleanStatus,
-    Dial,
-    Gauge,
-    LinearGauge,
-    LoadingSpinner,
-    Number,
-    Progress,
-    Trend,
-    Tqdm,
+from .indicators import (  # noqa
+    BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number, Progress,
+    Tqdm, Trend,
 )
 from .input import (  # noqa
-    ArrayInput,
-    ColorPicker,
-    Checkbox,
-    DatetimeInput,
-    DatePicker,
-    DatetimePicker,
-    DatetimeRangeInput,
-    DatetimeRangePicker,
-    FileInput,
-    LiteralInput,
-    StaticText,
-    TextInput,
-    IntInput,
-    FloatInput,
-    NumberInput,
-    Spinner,
-    PasswordInput,
-    TextAreaInput,
+    ArrayInput, Checkbox, ColorPicker, DatePicker, DatetimeInput,
+    DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, FileInput,
+    FloatInput, IntInput, LiteralInput, NumberInput, PasswordInput, Spinner,
+    StaticText, TextAreaInput, TextInput,
 )
-from .misc import FileDownload, JSONEditor, VideoStream # noqa
-from .player import DiscretePlayer, Player # noqa
-from .slider import ( # noqa
-    DateSlider, DateRangeSlider, DatetimeRangeSlider, DiscreteSlider,
-    EditableRangeSlider, EditableFloatSlider, EditableIntSlider,
-    FloatSlider, IntSlider, IntRangeSlider, RangeSlider
-)
-from .select import ( # noqa
+from .misc import FileDownload, JSONEditor, VideoStream  # noqa
+from .player import DiscretePlayer, Player  # noqa
+from .select import (  # noqa
     AutocompleteInput, CheckBoxGroup, CheckButtonGroup, CrossSelector,
-    MultiChoice, MultiSelect, RadioButtonGroup, RadioBoxGroup, Select,
-    ToggleGroup
+    MultiChoice, MultiSelect, RadioBoxGroup, RadioButtonGroup, Select,
+    ToggleGroup,
 )
-from .speech_to_text import SpeechToText, Grammar, GrammarList # noqa
+from .slider import (  # noqa
+    DateRangeSlider, DateSlider, DatetimeRangeSlider, DiscreteSlider,
+    EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatSlider,
+    IntRangeSlider, IntSlider, RangeSlider,
+)
+from .speech_to_text import Grammar, GrammarList, SpeechToText  # noqa
 from .tables import DataFrame, Tabulator  # noqa
-from .terminal import Terminal # noqa
-from .debugger import Debugger # noqa
-from .text_to_speech import TextToSpeech, Utterance, Voice # noqa
-from .texteditor import TextEditor # noqa
+from .terminal import Terminal  # noqa
+from .text_to_speech import TextToSpeech, Utterance, Voice  # noqa
+from .texteditor import TextEditor  # noqa
 
 __all__ = (
     "Ace",

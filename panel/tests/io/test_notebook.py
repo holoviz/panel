@@ -3,6 +3,7 @@ from panel.pane import Str
 
 from ..util import jb_available
 
+
 @jb_available
 def test_ipywidget():
     pane = Str('A')

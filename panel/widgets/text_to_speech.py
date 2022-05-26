@@ -11,8 +11,9 @@ import uuid
 
 import param
 
-from ..models.text_to_speech import TextToSpeech as _BkTextToSpeech
 from panel.widgets import Widget
+
+from ..models.text_to_speech import TextToSpeech as _BkTextToSpeech
 
 
 class Voice(param.Parameterized):

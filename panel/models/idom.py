@@ -1,4 +1,6 @@
-from bokeh.core.properties import Any, Dict, Either, String, Null, Tuple
+from bokeh.core.properties import (
+    Any, Dict, Either, Null, String, Tuple,
+)
 from bokeh.models import HTMLBox
 
 

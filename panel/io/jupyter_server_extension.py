@@ -1,7 +1,8 @@
+import os
+
 from urllib.parse import urljoin
 
 import tornado
-import os
 
 from bokeh.command.util import build_single_handler_application
 from bokeh.embed.bundle import extension_dirs
@@ -9,6 +10,7 @@ from bokeh.embed.server import server_html_page_for_session
 from bokeh.protocol import Protocol
 from bokeh.protocol.exceptions import ProtocolError
 from bokeh.protocol.receiver import Receiver
+from bokeh.server.auth_provider import NullAuth
 from bokeh.server.connection import ServerConnection
 from bokeh.server.contexts import ApplicationContext
 from bokeh.server.protocol_handler import ProtocolHandler
@@ -16,14 +18,13 @@ from bokeh.server.views.doc_handler import DocHandler
 from bokeh.server.views.multi_root_static_handler import MultiRootStaticHandler
 from bokeh.server.views.static_handler import StaticHandler
 from bokeh.server.views.ws import WSHandler
-from bokeh.server.auth_provider import NullAuth
 from bokeh.util.token import get_session_id
 from tornado.web import StaticFileHandler
 
 from ..config import config
 from ..util import edit_readonly, fullpath
-from .state import state
 from .resources import DIST_DIR, Resources
+from .state import state
 
 _RESOURCES = None
 
@@ -100,8 +101,10 @@ class PanelHandler(DocHandler):
             app, context = _APPS[path]
         else:
             if path.endswith('yml') or path.endswith('.yaml'):
+                from lumen.command import (
+                    build_single_handler_application as build_lumen,
+                )
                 from lumen.config import config
-                from lumen.command import build_single_handler_application as build_lumen
                 config.dev = True
                 app = build_lumen(path, argv=None)
             else:

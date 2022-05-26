@@ -10,8 +10,8 @@ from .state import state
 
 
 def render_pyinstrument(sessions, timeline=False, show_all=False):
-    from pyinstrument.session import Session
     from pyinstrument.renderers import HTMLRenderer
+    from pyinstrument.session import Session
     r = HTMLRenderer(timeline=timeline, show_all=show_all)
     session = sessions[0]
     if not timeline:
@@ -21,9 +21,10 @@ def render_pyinstrument(sessions, timeline=False, show_all=False):
 
 
 def render_snakeviz(name, sessions):
+    from pstats import Stats
+
     import snakeviz
 
-    from pstats import Stats
     from snakeviz.stats import json_stats, table_rows
     from tornado.template import Template
 
@@ -67,7 +68,9 @@ def get_sessions(allow=None, deny=None):
 
 
 def profiling_tabs(state, allow=None, deny=[]):
-    from ..layout import Accordion, Column, Row, Tabs
+    from ..layout import (
+        Accordion, Column, Row, Tabs,
+    )
     from ..widgets import Checkbox
     tabs = Tabs(
         *get_profiles(get_sessions(allow, deny)),

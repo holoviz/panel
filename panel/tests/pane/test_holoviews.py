@@ -1,24 +1,26 @@
 import datetime as dt
+
 from collections import OrderedDict
 
-import pytest
 import numpy as np
+import pytest
 
 try:
     import holoviews as hv
 except Exception:
     hv = None
 
-from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
-                          Scatter, Line, GridBox, Select as BkSelect,
-                          Slider as BkSlider, Spacer as BkSpacer,
-                          ColumnDataSource)
+from bokeh.models import (
+    Column as BkColumn, ColumnDataSource, GlyphRenderer, GridBox, Line,
+    Row as BkRow, Scatter, Select as BkSelect, Slider as BkSlider,
+    Spacer as BkSpacer,
+)
 from bokeh.plotting import Figure
 
 from panel.layout import Column, FlexBox, Row
-from panel.pane import Pane, PaneBase, HoloViews
-from panel.widgets import FloatSlider, DiscreteSlider, Select
+from panel.pane import HoloViews, Pane, PaneBase
 from panel.tests.util import hv_available, mpl_available
+from panel.widgets import DiscreteSlider, FloatSlider, Select
 
 
 @hv_available

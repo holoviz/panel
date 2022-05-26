@@ -1,12 +1,13 @@
 from collections import OrderedDict
 
-from bokeh.core.properties import Any, Dict, Int, String
+from bokeh.core.properties import (
+    Any, Dict, Int, String,
+)
 from bokeh.events import ModelEvent
 from bokeh.models import HTMLBox
 
 from ..io.resources import bundled_files
 from ..util import classproperty
-
 
 XTERM_JS = "https://unpkg.com/xterm@4.14.1/lib/xterm.js"
 XTERM_LINKS_JS = "https://unpkg.com/xterm-addon-web-links@0.4.0/lib/xterm-addon-web-links.js"

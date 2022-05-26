@@ -12,8 +12,9 @@ import param
 from bokeh.models import Box as BkBox, GridBox as BkGridBox
 
 from ..io.model import hold
-from .base import _col, _row, ListPanel, Panel
-
+from .base import (
+    ListPanel, Panel, _col, _row,
+)
 
 
 class GridBox(ListPanel):

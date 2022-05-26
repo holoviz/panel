@@ -1,9 +1,9 @@
+import param
+import pytest
+
 from packaging.version import Version
 
-import pytest
-import param
-
-from panel.layout import Row, Column
+from panel.layout import Column, Row
 from panel.pane import HoloViews
 from panel.param import ParamMethod
 from panel.pipeline import Pipeline, find_route

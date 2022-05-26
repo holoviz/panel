@@ -7,10 +7,9 @@ import numpy as np
 
 from bokeh.resources import Resources
 
-from panel.pane import Alert, Vega
 from panel.models.vega import VegaPlot
+from panel.pane import Alert, Vega
 from panel.tests.util import hv_available
-
 
 vega_example = {
     'config': {

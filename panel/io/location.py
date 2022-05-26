@@ -7,7 +7,7 @@ import json
 import urllib.parse as urlparse
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional
+    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional,
 )
 
 import param

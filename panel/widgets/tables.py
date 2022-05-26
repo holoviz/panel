@@ -9,11 +9,10 @@ import param
 
 from bokeh.models import ColumnDataSource
 from bokeh.models.widgets.tables import (
-    AvgAggregator, CellEditor, CellFormatter, CheckboxEditor,
-    DataCube, DataTable, DateEditor, DateFormatter, GroupingInfo,
-    IntEditor, MaxAggregator, MinAggregator, NumberEditor,
-    NumberFormatter, RowAggregator, StringEditor, StringFormatter,
-    SumAggregator, TableColumn
+    AvgAggregator, CellEditor, CellFormatter, CheckboxEditor, DataCube,
+    DataTable, DateEditor, DateFormatter, GroupingInfo, IntEditor,
+    MaxAggregator, MinAggregator, NumberEditor, NumberFormatter, RowAggregator,
+    StringEditor, StringFormatter, SumAggregator, TableColumn,
 )
 from bokeh.util.serialization import convert_datetime_array
 from pyviz_comms import JupyterComm
@@ -22,8 +21,10 @@ from ..depends import param_value_if_widget
 from ..io.resources import LOCAL_DIST, set_resource_mode
 from ..io.state import state
 from ..reactive import ReactiveData
+from ..util import (
+    clone_model, isdatetime, lazy_load, updating,
+)
 from ..viewable import Layoutable
-from ..util import clone_model, isdatetime, lazy_load, updating
 from .base import Widget
 from .button import Button
 from .input import TextInput
@@ -1070,7 +1071,7 @@ class Tabulator(BaseTable):
 
     def _get_theme(self, theme, resources=None):
         from ..io.resources import RESOURCE_MODE
-        from ..models.tabulator import _get_theme_url, THEME_PATH, THEME_URL
+        from ..models.tabulator import THEME_PATH, THEME_URL, _get_theme_url
         if RESOURCE_MODE == 'server' and resources in (None, 'server'):
             theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
             if state.rel_path:

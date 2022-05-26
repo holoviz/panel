@@ -4,7 +4,7 @@ Defines Player widgets which offer media-player like controls.
 import param
 
 from ..models.widgets import Player as _BkPlayer
-from ..util import isIn, indexOf
+from ..util import indexOf, isIn
 from .base import Widget
 from .select import SelectBase
 

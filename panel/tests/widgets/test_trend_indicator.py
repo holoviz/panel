@@ -1,8 +1,10 @@
 import random
 
-from panel import Column, Param, Row, WidgetBox, state
+from panel import (
+    Column, Param, Row, WidgetBox, state,
+)
 from panel.pane import HTML
-from panel.widgets import Trend, IntSlider
+from panel.widgets import IntSlider, Trend
 
 
 def test_constructor():

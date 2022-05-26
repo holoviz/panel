@@ -1,14 +1,15 @@
-from datetime import datetime, date
+from datetime import date, datetime
 
 import numpy as np
 import pytest
 
 from bokeh.models.widgets import FileInput as BkFileInput
+
 from panel import config
 from panel.widgets import (
     ArrayInput, Checkbox, DatePicker, DatetimeInput, DatetimePicker,
-    DatetimeRangeInput, DatetimeRangePicker, FileInput, LiteralInput,
-    TextInput, StaticText, IntInput, FloatInput
+    DatetimeRangeInput, DatetimeRangePicker, FileInput, FloatInput, IntInput,
+    LiteralInput, StaticText, TextInput,
 )
 
 

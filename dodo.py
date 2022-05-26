@@ -1,8 +1,10 @@
 import os
+
 if "PYCTDEV_ECOSYSTEM" not in os.environ:
     os.environ["PYCTDEV_ECOSYSTEM"] = "conda"
 
 from pyctdev import *  # noqa: api
+
 
 def task_pip_on_conda():
     """Experimental: provide pip build env via conda"""

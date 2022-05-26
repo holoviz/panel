@@ -67,8 +67,12 @@ def test_run_list_args():
     subprocess = terminal.subprocess
     subprocess.args = ["ls", "-l"]
     subprocess.run()
-    time.sleep(0.5)
+    count = 0
+    while not subprocess.running and count < 10:
+        time.sleep(0.1)
+        count += 1
     assert subprocess.running
+    subprocess.kill()
 
 
 def test_cannot_assign_string_args_with_spaces():

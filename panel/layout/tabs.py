@@ -5,9 +5,7 @@ from collections import defaultdict
 
 import param
 
-from bokeh.models import (
-    Spacer as BkSpacer, Panel as BkPanel
-)
+from bokeh.models import Panel as BkPanel, Spacer as BkSpacer
 
 from ..models import Tabs as BkTabs
 from ..viewable import Layoutable

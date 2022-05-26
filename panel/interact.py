@@ -12,16 +12,16 @@ import types
 
 from collections import OrderedDict
 from inspect import getcallargs
-from numbers import Real, Integral
+from numbers import Integral, Real
 
 try:  # Python >= 3.3
-    from inspect import signature, Parameter
     from collections.abc import Iterable, Mapping
+    from inspect import Parameter, signature
     empty = Parameter.empty
 except ImportError:
     from collections import Iterable, Mapping
     try:
-        from IPython.utils.signatures import signature, Parameter
+        from IPython.utils.signatures import Parameter, signature
         empty = Parameter.empty
     except Exception:
         signature, Parameter, empty = None, None, None
@@ -33,12 +33,14 @@ except ImportError:
 
 import param
 
-from .layout import Panel, Column, Row
-from .pane import PaneBase, HTML, panel
+from .layout import Column, Panel, Row
+from .pane import HTML, PaneBase, panel
 from .pane.base import ReplacementPane
 from .viewable import Viewable
-from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
-                      Select, DiscreteSlider, Button)
+from .widgets import (
+    Button, Checkbox, DiscreteSlider, FloatSlider, IntSlider, Select,
+    TextInput, Widget,
+)
 
 
 def _get_min_max_value(min, max, value=None, step=None):

@@ -1,5 +1,6 @@
 from panel.command import transform_cmds
 
+
 def test_transformation():
     args = ['panel', 'serve', '.',
             '--anaconda-project-host', 'host.examplehost.com',

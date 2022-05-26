@@ -2,26 +2,27 @@
 Defines various Select widgets which allow choosing one or more items
 from a list of options.
 """
+import itertools
 import re
 
 from collections import OrderedDict
-import itertools
 
 import param
 
 from bokeh.models.widgets import (
-    AutocompleteInput as _BkAutocompleteInput, CheckboxGroup as _BkCheckboxGroup,
-    CheckboxButtonGroup as _BkCheckboxButtonGroup, MultiSelect as _BkMultiSelect,
-    RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
-    MultiChoice as _BkMultiChoice
+    AutocompleteInput as _BkAutocompleteInput,
+    CheckboxButtonGroup as _BkCheckboxButtonGroup,
+    CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
+    MultiSelect as _BkMultiSelect, RadioButtonGroup as _BkRadioButtonGroup,
+    RadioGroup as _BkRadioBoxGroup,
 )
 
 from ..layout import Column, VSpacer
-from ..models import SingleSelect as _BkSingleSelect, CustomSelect
-from ..util import isIn, indexOf
-from .base import Widget, CompositeWidget
-from .button import _ButtonBase, Button
-from .input import TextInput, TextAreaInput
+from ..models import CustomSelect, SingleSelect as _BkSingleSelect
+from ..util import indexOf, isIn
+from .base import CompositeWidget, Widget
+from .button import Button, _ButtonBase
+from .input import TextAreaInput, TextInput
 
 
 class SelectBase(Widget):
