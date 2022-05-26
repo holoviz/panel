@@ -1,10 +1,11 @@
-import sys
-import shutil
 import asyncio
-
+import shutil
+import sys
 from functools import partial
-from threading import Thread
 from queue import Queue as SyncQueue
+from threading import Thread
+from typing import Union
+
 from packaging.version import Version
 
 from ..io.notebook import push_on_root
@@ -12,7 +13,6 @@ from ..io.resources import DIST_DIR, LOCAL_DIST
 from ..io.state import state
 from ..models import IDOM as _BkIDOM
 from .base import PaneBase
-
 
 _IDOM_MIN_VER = "0.23"
 _IDOM_MAX_VER = "0.24"
@@ -51,7 +51,7 @@ class IDOM(PaneBase):
     >>> IDOM(ClickCount, width=300)
     """
 
-    priority: float | bool | None = None
+    priority: Union[float, bool, None] = None
 
     _updates = True
 
@@ -90,8 +90,8 @@ class IDOM(PaneBase):
         self._idom_loop = _spawn_threaded_event_loop(self._idom_layout_render_loop())
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        from idom.core.layout import LayoutUpdate
         from idom.config import IDOM_CLIENT_IMPORT_SOURCE_URL
+        from idom.core.layout import LayoutUpdate
 
         # let the client determine import source location
         IDOM_CLIENT_IMPORT_SOURCE_URL.set("./")
@@ -209,6 +209,7 @@ class IDOM(PaneBase):
         An idom state value which is updated when the parameter changes.
         """
         import idom
+
         from ..depends import param_value_if_widget
         parameter = param_value_if_widget(parameter)
         initial = getattr(parameter.owner, parameter.name)

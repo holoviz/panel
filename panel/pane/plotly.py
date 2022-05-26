@@ -2,15 +2,16 @@
 Defines a PlotlyPane which renders a plotly plot using PlotlyPlot
 bokeh model.
 """
+from typing import Union
+
 import numpy as np
 import param
-
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from .base import PaneBase
 from ..util import isdatetime, lazy_load
 from ..viewable import Layoutable
+from .base import PaneBase
 
 
 class Plotly(PaneBase):
@@ -66,7 +67,7 @@ class Plotly(PaneBase):
     _render_count = param.Integer(default=0, doc="""
         Number of renders, increment to trigger re-render""")
 
-    priority: float | bool | None = 0.8
+    priority: Union[float, bool, None] = 0.8
 
     _updates = True
 

@@ -1,8 +1,8 @@
-import sys
 import json
+import sys
+from typing import Union
 
 import param
-
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
@@ -30,7 +30,7 @@ class ECharts(PaneBase):
     theme = param.ObjectSelector(default="default", objects=["default", "light", "dark"], doc="""
        Theme to apply to plots.""")
 
-    priority: float | bool | None = None
+    priority: Union[float, bool, None] = None
 
     _rename = {"object": "data"}
 

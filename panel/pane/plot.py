@@ -2,14 +2,13 @@
 Pane class which render plots from different libraries
 """
 import sys
-
-from io import BytesIO
-
 from contextlib import contextmanager
+from io import BytesIO
+from typing import Union
 
 import param
-
-from bokeh.models import CustomJS, LayoutDOM, Model, Spacer as BkSpacer
+from bokeh.models import CustomJS, LayoutDOM, Model
+from bokeh.models import Spacer as BkSpacer
 from bokeh.themes import Theme
 
 from ..io import remove_root
@@ -17,9 +16,9 @@ from ..io.notebook import push
 from ..util import escape
 from ..viewable import Layoutable
 from .base import PaneBase
+from .image import PNG
 from .ipywidget import IPyWidget
 from .markup import HTML
-from .image import PNG
 
 FOLIUM_BEFORE = '<div style="width:100%;"><div style="position:relative;width:100%;height:0;padding-bottom:60%;">'
 FOLIUM_AFTER = '<div style="width:100%;height:100%"><div style="position:relative;width:100%;height:100%;padding-bottom:0%;">'
@@ -64,7 +63,7 @@ class Bokeh(PaneBase):
     theme = param.ClassSelector(default=None, class_=(Theme, str), doc="""
         Bokeh theme to apply to the plot.""")
 
-    priority: float | bool | None = 0.8
+    priority: Union[float, bool, None] = 0.8
 
     _rename = {'autodispatch': None, 'theme': None}
 
@@ -187,7 +186,7 @@ class Matplotlib(PNG, IPyWidget):
         import matplotlib.backends
         old_backend = getattr(matplotlib.backends, 'backend', 'agg')
 
-        from ipympl.backend_nbagg import FigureManager, Canvas, is_interactive
+        from ipympl.backend_nbagg import Canvas, FigureManager, is_interactive
         from matplotlib._pylab_helpers import Gcf
 
         matplotlib.use(old_backend)
@@ -272,8 +271,8 @@ class RGGPlot(PNG):
         return type(obj).__name__ == 'GGPlot' and hasattr(obj, 'r_repr')
 
     def _img(self):
-        from rpy2.robjects.lib import grdevices
         from rpy2 import robjects
+        from rpy2.robjects.lib import grdevices
         with grdevices.render_to_bytesio(grdevices.png,
                  type="cairo-png", width=self.width, height=self.height,
                  res=self.dpi, antialias="subpixel") as b:
@@ -289,7 +288,7 @@ class YT(HTML):
     provide additional space.
     """
 
-    priority: float | bool | None = 0.5
+    priority: Union[float, bool, None] = 0.5
 
     @classmethod
     def applies(cls, obj):
@@ -326,7 +325,7 @@ class Folium(HTML):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    priority: float | bool | None = 0.6
+    priority: Union[float, bool, None] = 0.6
 
     @classmethod
     def applies(cls, obj):

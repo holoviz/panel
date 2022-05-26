@@ -3,9 +3,9 @@ Renders objects representing equations including LaTeX strings and
 SymPy objects.
 """
 import sys
+from typing import Union
 
 import param
-
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
@@ -45,7 +45,7 @@ class LaTeX(DivPaneBase):
         The JS renderer used to render the LaTeX expression.""")
 
     # Priority is dependent on the data type
-    priority: float | bool | None = None
+    priority: Union[float, bool, None] = None
 
     _rename = {"renderer": None}
 

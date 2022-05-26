@@ -1,12 +1,11 @@
 import datetime as dt
 import sys
 import warnings
-
 from enum import Enum
+from typing import Union
 
-import param
 import numpy as np
-
+import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
@@ -314,7 +313,7 @@ class Perspective(PaneBase, ReactiveData):
     theme = param.ObjectSelector(default=DEFAULT_THEME, objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example material-dark""")
 
-    priority: float | bool | None = None
+    priority: Union[float, bool, None] = None
 
     _data_params = ['object']
 

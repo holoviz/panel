@@ -1,15 +1,14 @@
 import sys
-
 from functools import partial
+from typing import Union
 
-import param
 import numpy as np
-
+import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..viewable import Layoutable
 from ..util import lazy_load
+from ..viewable import Layoutable
 from .base import PaneBase
 
 
@@ -103,7 +102,7 @@ class Vega(PaneBase):
         'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
         'latimes', 'urbaninstitute', 'googlecharts'])
 
-    priority: float | bool | None = 0.8
+    priority: Union[float, bool, None] = 0.8
 
     _rename = {'selection': None, 'debounce': None}
 

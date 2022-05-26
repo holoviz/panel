@@ -4,10 +4,12 @@ Markdown, and also regular strings.
 """
 import json
 import textwrap
+from typing import Union
 
 import param
 
-from ..models import HTML as _BkHTML, JSON as _BkJSON
+from ..models import HTML as _BkHTML
+from ..models import JSON as _BkJSON
 from ..util import escape
 from ..viewable import Layoutable
 from .base import PaneBase
@@ -68,7 +70,7 @@ class HTML(DivPaneBase):
         strings escaped with $$ delimiters.""")
 
     # Priority is dependent on the data type
-    priority: float | bool | None = None
+    priority: Union[float, bool, None] = None
 
     @classmethod
     def applies(cls, obj):
@@ -263,7 +265,7 @@ class Str(DivPaneBase):
     ... )
     """
 
-    priority: float | bool | None = 0
+    priority: Union[float, bool, None] = 0
 
     _target_transforms = {'object': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
 
@@ -308,7 +310,7 @@ class Markdown(DivPaneBase):
         Markdown extension to apply when transforming markup.""")
 
     # Priority depends on the data type
-    priority: float | bool | None = None
+    priority: Union[float, bool, None] = None
 
     _target_transforms = {'object': None}
 
@@ -370,7 +372,7 @@ class JSON(DivPaneBase):
     theme = param.ObjectSelector(default="dark", objects=["light", "dark"], doc="""
         Whether the JSON tree view is expanded by default.""")
 
-    priority: float | bool | None = None
+    priority: Union[float, bool, None] = None
 
     _applies_kw = True
     _bokeh_model = _BkJSON

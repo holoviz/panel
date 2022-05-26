@@ -3,12 +3,11 @@ Defines a PyDeck Pane which renders a PyDeck plot using a PyDeckPlot
 bokeh model.
 """
 import json
-
 from collections import defaultdict
+from typing import Union
 
 import numpy as np
 import param
-
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
@@ -113,7 +112,7 @@ class DeckGL(PaneBase):
 
     _updates = True
 
-    priority: float | bool | None = None
+    priority: Union[float, bool, None] = None
 
     @classmethod
     def applies(cls, obj):

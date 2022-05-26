@@ -5,17 +5,14 @@ objects to a visual representation expressed as a bokeh model.
 from __future__ import annotations
 
 import warnings
-
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, Callable, List, Optional, TypeVar, Type
-)
+from typing import (TYPE_CHECKING, Any, Callable, List, Optional, Type,
+                    TypeVar, Union)
 
 import param
-
-from bokeh.models.layouts import (
-    GridBox as _BkGridBox, Tabs as _BkTabs, Panel as _BkPanel
-)
+from bokeh.models.layouts import GridBox as _BkGridBox
+from bokeh.models.layouts import Panel as _BkPanel
+from bokeh.models.layouts import Tabs as _BkTabs
 
 from ..io import init_doc, push, state, unlocked
 from ..layout import Panel, Row
@@ -119,7 +116,7 @@ class PaneBase(Reactive):
     # numerical priority is selected. The default is an intermediate value.
     # If set to None, applies method will be called to get a priority
     # value for a specific object type.
-    priority: float | bool | None = 0.5
+    priority: Union[float, bool, None] = 0.5
 
     # Whether applies requires full set of keywords
     _applies_kw = False

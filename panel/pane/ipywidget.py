@@ -1,7 +1,7 @@
 import os
+from typing import Union
 
 import param
-
 from pyviz_comms import JupyterComm
 
 from ..config import config
@@ -25,7 +25,7 @@ class IPyWidget(PaneBase):
     >>> IPyWidget(some_ipywidget)
     """
 
-    priority: float | bool | None = 0.6
+    priority: Union[float, bool, None] = 0.6
 
     @classmethod
     def applies(cls, obj):
@@ -37,6 +37,7 @@ class IPyWidget(PaneBase):
         else:
             import ipykernel
             from ipywidgets_bokeh.widget import IPyWidget
+
             from ..io.ipywidget import PanelKernel
 
             # Patch font-awesome CSS
@@ -68,7 +69,7 @@ class IPyLeaflet(IPyWidget):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    priority: float | bool | None = 0.7
+    priority: Union[float, bool, None] = 0.7
 
     @classmethod
     def applies(cls, obj):

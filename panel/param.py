@@ -7,34 +7,31 @@ import itertools
 import json
 import os
 import types
-
-from collections.abc import Callable
 from collections import OrderedDict, defaultdict, namedtuple
+from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
+from typing import Union
+
 from packaging.version import Version
 
 import param
-
 from param.parameterized import classlist, discard_events
 
 from .io import init_doc, state
 from .layout import Column, Panel, Row, Spacer, Tabs
 from .pane.base import PaneBase, ReplacementPane
-from .util import (
-    abbreviated_repr, bokeh_version, classproperty, full_groupby,
-    fullpath, get_method_owner, is_parameterized, param_name,
-    recursive_parameterized
-)
 from .reactive import Reactive
+from .util import (abbreviated_repr, bokeh_version, classproperty,
+                   full_groupby, fullpath, get_method_owner, is_parameterized,
+                   param_name, recursive_parameterized)
 from .viewable import Layoutable, Viewable
-from .widgets import (
-    ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
-    DatetimeInput, DatetimeRangeSlider, DateRangeSlider,
-    DiscreteSlider, FileSelector, FloatSlider, IntInput, IntSlider,
-    LiteralInput, MultiSelect, RangeSlider, Select, FloatInput,
-    StaticText, TextInput, Toggle, Widget
-)
+from .widgets import (ArrayInput, Button, Checkbox, ColorPicker, DataFrame,
+                      DatePicker, DateRangeSlider, DatetimeInput,
+                      DatetimeRangeSlider, DiscreteSlider, FileSelector,
+                      FloatInput, FloatSlider, IntInput, IntSlider,
+                      LiteralInput, MultiSelect, RangeSlider, Select,
+                      StaticText, TextInput, Toggle, Widget)
 from .widgets.button import _ButtonBase
 
 
@@ -183,7 +180,7 @@ class Param(PaneBase):
     if bokeh_version >= Version('2.4.3'):
         mapping[param.DateRange] = DatetimeRangeSlider
 
-    priority: float | bool | None = 0.1
+    priority: Union[float, bool, None] = 0.1
 
     _unpack = True
 
@@ -877,7 +874,7 @@ class ParamFunction(ParamMethod):
     a widget to some other output.
     """
 
-    priority: float | bool | None = 0.6
+    priority: Union[float, bool, None] = 0.6
 
     def _link_object_params(self):
         deps = getattr(self.object, '_dinfo', {})

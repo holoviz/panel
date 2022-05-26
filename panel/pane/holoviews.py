@@ -3,21 +3,21 @@ HoloViews integration for Panel including a Pane to render HoloViews
 objects and their widgets and support for Links
 """
 import sys
-
 from collections import OrderedDict, defaultdict
-from packaging.version import Version
 from functools import partial
+from typing import Union
 
 import param
-
-from bokeh.models import Spacer as _BkSpacer, Range1d
+from bokeh.models import Range1d
+from bokeh.models import Spacer as _BkSpacer
 from bokeh.themes.theme import Theme
+from packaging.version import Version
 
 from ..io import state, unlocked
-from ..layout import Column, WidgetBox, HSpacer, VSpacer, Row
+from ..layout import Column, HSpacer, Row, VSpacer, WidgetBox
 from ..viewable import Layoutable, Viewable
 from ..widgets import Player
-from .base import PaneBase, Pane, RerenderError
+from .base import Pane, PaneBase, RerenderError
 from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
 
@@ -77,7 +77,7 @@ class HoloViews(PaneBase):
         A mapping from dimension name to a widget instance which will
         be used to override the default widgets.""")
 
-    priority: float | bool | None = 0.8
+    priority: Union[float, bool, None] = 0.8
 
     _panes = {'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly}
 
@@ -290,7 +290,8 @@ class HoloViews(PaneBase):
 
     def _render(self, doc, comm, root):
         import holoviews as hv
-        from holoviews import Store, renderer as load_renderer
+        from holoviews import Store
+        from holoviews import renderer as load_renderer
 
         if self.renderer:
             renderer = self.renderer
@@ -368,11 +369,14 @@ class HoloViews(PaneBase):
     def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual'):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
-        from holoviews.core.util import isnumeric, datetime_types, unique_iterator
         from holoviews.core.traversal import unique_dimkeys
-        from holoviews.plotting.plot import Plot, GenericCompositePlot
+        from holoviews.core.util import (datetime_types, isnumeric,
+                                         unique_iterator)
+        from holoviews.plotting.plot import GenericCompositePlot, Plot
         from holoviews.plotting.util import get_dynamic_mode
-        from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput, IntSlider
+
+        from ..widgets import (DatetimeInput, DiscreteSlider, FloatSlider,
+                               IntSlider, Select, Widget)
 
         if widget_types is None:
             widget_types = {}
@@ -487,7 +491,7 @@ class HoloViews(PaneBase):
 
 class Interactive(PaneBase):
 
-    priority: float | bool | None = None
+    priority: Union[float, bool, None] = None
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -539,7 +543,8 @@ def is_bokeh_element_plot(plot):
     Checks whether plotting instance is a HoloViews ElementPlot rendered
     with the bokeh backend.
     """
-    from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot, Plot
+    from holoviews.plotting.plot import (GenericElementPlot,
+                                         GenericOverlayPlot, Plot)
     if not isinstance(plot, Plot):
         return False
     return (plot.renderer.backend == 'bokeh' and isinstance(plot, GenericElementPlot)
@@ -577,8 +582,8 @@ def find_links(root_view, root_model):
         return
 
     try:
-        from holoviews.plotting.links import Link
         from holoviews.plotting.bokeh.callbacks import LinkCallback
+        from holoviews.plotting.links import Link
     except Exception:
         return
 
@@ -624,7 +629,7 @@ def link_axes(root_view, root_model):
         return
 
     from holoviews.core.options import Store
-    from holoviews.core.util import unique_iterator, max_range
+    from holoviews.core.util import max_range, unique_iterator
     from holoviews.plotting.bokeh.element import ElementPlot
 
     ref = root_model.ref['id']
