@@ -10,7 +10,7 @@ import uuid
 
 from collections import OrderedDict
 from functools import partial
-from pathlib import PurePath
+from pathlib import Path, PurePath
 from typing import (
     IO, TYPE_CHECKING, Any, Dict, List, Optional,
 )
@@ -488,13 +488,13 @@ class BasicTemplate(BaseTemplate):
     _LOCAL: str = LOCAL_DIST
 
     # pathlib.Path pointing to local CSS file(s)
-    _css: str | None = None
+    _css: Union[Path, str, List[Union[Path, str]], None] = None
 
     # pathlib.Path pointing to local JS file(s)
-    _js: str | None = None
+    _js: Union[Path, str, List[Union[Path, str]], None] = None
 
     # pathlib.Path pointing to local Jinja2 template
-    _template = None
+    _template: Union[Path, str, List[Union[Path, str]], None] = None
 
     # External resources
     _resources: Dict[str, Dict[str, str]] = {'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}}
