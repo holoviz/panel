@@ -483,14 +483,14 @@ def test_server_thread_pool_bokeh_event(threads):
     doc = model.document
     event = TableEditEvent(model, 'A', 0)
     with set_curdoc(doc):
-        for _ in range(2):
+        for _ in range(3):
             tabulator._server_event(doc, event)
 
     # Wait for callbacks to be scheduled
     time.sleep(1)
 
     # Checks whether Tabulator on_edit callback was executed concurrently
-    assert max(counts) == 2
+    assert max(counts) > 1
 
 
 def test_server_thread_pool_periodic(threads):
