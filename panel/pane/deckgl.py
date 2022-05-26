@@ -113,7 +113,7 @@ class DeckGL(PaneBase):
 
     _updates = True
 
-    priority = None
+    priority: float | bool | None = None
 
     @classmethod
     def applies(cls, obj):

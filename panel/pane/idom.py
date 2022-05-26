@@ -51,7 +51,7 @@ class IDOM(PaneBase):
     >>> IDOM(ClickCount, width=300)
     """
 
-    priority = None
+    priority: float | bool | None = None
 
     _updates = True
 

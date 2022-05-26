@@ -64,7 +64,7 @@ class Bokeh(PaneBase):
     theme = param.ClassSelector(default=None, class_=(Theme, str), doc="""
         Bokeh theme to apply to the plot.""")
 
-    priority = 0.8
+    priority: float | bool | None = 0.8
 
     _rename = {'autodispatch': None, 'theme': None}
 
@@ -289,7 +289,7 @@ class YT(HTML):
     provide additional space.
     """
 
-    priority = 0.5
+    priority: float | bool | None = 0.5
 
     @classmethod
     def applies(cls, obj):
@@ -326,7 +326,7 @@ class Folium(HTML):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    priority = 0.6
+    priority: float | bool | None = 0.6
 
     @classmethod
     def applies(cls, obj):

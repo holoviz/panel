@@ -30,7 +30,7 @@ class ECharts(PaneBase):
     theme = param.ObjectSelector(default="default", objects=["default", "light", "dark"], doc="""
        Theme to apply to plots.""")
 
-    priority = None
+    priority: float | bool | None = None
 
     _rename = {"object": "data"}
 

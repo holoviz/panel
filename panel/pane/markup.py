@@ -68,7 +68,7 @@ class HTML(DivPaneBase):
         strings escaped with $$ delimiters.""")
 
     # Priority is dependent on the data type
-    priority = None
+    priority: float | bool | None = None
 
     @classmethod
     def applies(cls, obj):
@@ -263,7 +263,7 @@ class Str(DivPaneBase):
     ... )
     """
 
-    priority = 0
+    priority: float | bool | None = 0
 
     _target_transforms = {'object': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
 
@@ -308,7 +308,7 @@ class Markdown(DivPaneBase):
         Markdown extension to apply when transforming markup.""")
 
     # Priority depends on the data type
-    priority = None
+    priority: float | bool | None = None
 
     _target_transforms = {'object': None}
 
@@ -370,7 +370,7 @@ class JSON(DivPaneBase):
     theme = param.ObjectSelector(default="dark", objects=["light", "dark"], doc="""
         Whether the JSON tree view is expanded by default.""")
 
-    priority = None
+    priority: float | bool | None = None
 
     _applies_kw = True
     _bokeh_model = _BkJSON

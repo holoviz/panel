@@ -103,7 +103,7 @@ class Vega(PaneBase):
         'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
         'latimes', 'urbaninstitute', 'googlecharts'])
 
-    priority = 0.8
+    priority: float | bool | None = 0.8
 
     _rename = {'selection': None, 'debounce': None}
 

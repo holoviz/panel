@@ -45,7 +45,7 @@ class LaTeX(DivPaneBase):
         The JS renderer used to render the LaTeX expression.""")
 
     # Priority is dependent on the data type
-    priority = None
+    priority: float | bool | None = None
 
     _rename = {"renderer": None}
 

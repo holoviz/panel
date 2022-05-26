@@ -314,7 +314,7 @@ class Perspective(PaneBase, ReactiveData):
     theme = param.ObjectSelector(default=DEFAULT_THEME, objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example material-dark""")
 
-    priority = None
+    priority: float | bool | None = None
 
     _data_params = ['object']
 

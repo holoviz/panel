@@ -24,7 +24,7 @@ class Alert(Markdown):
 
     alert_type = param.ObjectSelector("primary", objects=ALERT_TYPES)
 
-    priority = 0
+    priority: float | bool | None = 0
 
     _rename = dict(Markdown._rename, alert_type=None)
 

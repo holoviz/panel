@@ -25,7 +25,7 @@ class IPyWidget(PaneBase):
     >>> IPyWidget(some_ipywidget)
     """
 
-    priority = 0.6
+    priority: float | bool | None = 0.6
 
     @classmethod
     def applies(cls, obj):
@@ -68,7 +68,7 @@ class IPyLeaflet(IPyWidget):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    priority = 0.7
+    priority: float | bool | None = 0.7
 
     @classmethod
     def applies(cls, obj):

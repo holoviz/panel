@@ -77,7 +77,7 @@ class HoloViews(PaneBase):
         A mapping from dimension name to a widget instance which will
         be used to override the default widgets.""")
 
-    priority = 0.8
+    priority: float | bool | None = 0.8
 
     _panes = {'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly}
 
@@ -487,7 +487,7 @@ class HoloViews(PaneBase):
 
 class Interactive(PaneBase):
 
-    priority = None
+    priority: float | bool | None = None
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)

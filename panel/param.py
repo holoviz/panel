@@ -183,7 +183,7 @@ class Param(PaneBase):
     if bokeh_version >= Version('2.4.3'):
         mapping[param.DateRange] = DatetimeRangeSlider
 
-    priority = 0.1
+    priority: float | bool | None = 0.1
 
     _unpack = True
 
@@ -877,7 +877,7 @@ class ParamFunction(ParamMethod):
     a widget to some other output.
     """
 
-    priority = 0.6
+    priority: float | bool | None = 0.6
 
     def _link_object_params(self):
         deps = getattr(self.object, '_dinfo', {})

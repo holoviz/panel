@@ -66,7 +66,7 @@ class Plotly(PaneBase):
     _render_count = param.Integer(default=0, doc="""
         Number of renders, increment to trigger re-render""")
 
-    priority = 0.8
+    priority: float | bool | None = 0.8
 
     _updates = True
 
