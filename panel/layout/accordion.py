@@ -1,6 +1,8 @@
-import param
+from typing import Mapping
 
-from bokeh.models import Column as BkColumn, CustomJS
+import param
+from bokeh.models import Column as BkColumn
+from bokeh.models import CustomJS
 
 from .base import NamedListPanel
 from .card import Card
@@ -42,7 +44,7 @@ class Accordion(NamedListPanel):
 
     _bokeh_model = BkColumn
 
-    _rename = {'active': None, 'active_header_background': None,
+    _rename: Mapping[str, str | None] = {'active': None, 'active_header_background': None,
                'header_background': None, 'objects': 'children',
                'dynamic': None, 'toggle': None, 'header_color': None}
 

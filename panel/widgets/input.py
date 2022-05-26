@@ -4,27 +4,29 @@ a text field or similar.
 """
 import ast
 import json
-
 from base64 import b64decode
-from datetime import datetime, date
+from datetime import date, datetime
+from typing import Mapping
 
 import numpy as np
 import param
-
 from bokeh.models.formatters import TickFormatter
-from bokeh.models.widgets import (
-    CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
-    DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
-    PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
-    FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput,
-    NumericInput as _BkNumericInput
-)
+from bokeh.models.widgets import CheckboxGroup as _BkCheckboxGroup
+from bokeh.models.widgets import ColorPicker as _BkColorPicker
+from bokeh.models.widgets import DatePicker as _BkDatePicker
+from bokeh.models.widgets import Div as _BkDiv
+from bokeh.models.widgets import FileInput as _BkFileInput
+from bokeh.models.widgets import NumericInput as _BkNumericInput
+from bokeh.models.widgets import PasswordInput as _BkPasswordInput
+from bokeh.models.widgets import Spinner as _BkSpinner
+from bokeh.models.widgets import TextAreaInput as _BkTextAreaInput
+from bokeh.models.widgets import TextInput as _BkTextInput
 
 from ..config import config
 from ..layout import Column
-from ..util import param_reprs
-from .base import Widget, CompositeWidget
 from ..models import DatetimePicker as _bkDatetimePicker
+from ..util import param_reprs
+from .base import CompositeWidget, Widget
 
 
 class TextInput(Widget):
@@ -123,7 +125,7 @@ class FileInput(Widget):
 
     _source_transforms = {'value': "'data:' + source.mime_type + ';base64,' + value"}
 
-    _rename = {'name': None, 'filename': None}
+    _rename: Mapping[str, str | None] = {'name': None, 'filename': None}
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -201,7 +203,7 @@ class StaticText(Widget):
 
     _format = '<b>{title}</b>: {value}'
 
-    _rename = {'name': None, 'value': 'text'}
+    _rename: Mapping[str, str | None] = {'name': None, 'value': 'text'}
 
     _target_transforms = {'value': 'target.text.split(": ")[0]+": "+value'}
 
@@ -251,7 +253,7 @@ class DatePicker(Widget):
 
     _source_transforms = {}
 
-    _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+    _rename: Mapping[str, str | None] = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
     _widget_type = _BkDatePicker
 
@@ -292,7 +294,7 @@ class _DatetimePickerBase(Widget):
 
     _source_transforms = {'value': None, 'start': None, 'end': None, 'mode': None}
 
-    _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+    _rename: Mapping[str, str | None] = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
     _widget_type = _bkDatetimePicker
 
@@ -434,7 +436,7 @@ class ColorPicker(Widget):
 
     _widget_type = _BkColorPicker
 
-    _rename = {'value': 'color', 'name': 'title'}
+    _rename: Mapping[str, str | None] = {'value': 'color', 'name': 'title'}
 
 
 class _NumericInputBase(Widget):
@@ -454,7 +456,7 @@ class _NumericInputBase(Widget):
     end = param.Parameter(default=None, allow_None=True, doc="""
         Optional maximum allowable value.""")
 
-    _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
+    _rename: Mapping[str, str | None] = {'name': 'title', 'start': 'low', 'end': 'high'}
 
     _widget_type = _BkNumericInput
 
@@ -631,7 +633,7 @@ class LiteralInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _rename = {'name': 'title', 'type': None, 'serializer': None}
+    _rename: Mapping[str, str | None] = {'name': 'title', 'type': None, 'serializer': None}
 
     _source_transforms = {'value': """JSON.parse(value.replace(/'/g, '"'))"""}
 
@@ -728,7 +730,7 @@ class ArrayInput(LiteralInput):
         restriction helps avoid overwhelming the browser and lets
         other widgets remain usable.""")
 
-    _rename = dict(LiteralInput._rename, max_array_size=None)
+    _rename: Mapping[str, str | None] = dict(LiteralInput._rename, max_array_size=None)
 
     _source_transforms = {'value': None}
 
@@ -803,7 +805,7 @@ class DatetimeInput(LiteralInput):
 
     _source_transforms = {'value': None, 'start': None, 'end': None}
 
-    _rename = {'format': None, 'type': None, 'name': 'title',
+    _rename: Mapping[str, str | None] = {'format': None, 'type': None, 'name': 'title',
                'start': None, 'end': None, 'serializer': None}
 
     def __init__(self, **params):
@@ -960,7 +962,7 @@ class Checkbox(Widget):
 
     _supports_embed = True
 
-    _rename = {'value': 'active', 'name': 'labels'}
+    _rename: Mapping[str, str | None] = {'value': 'active', 'name': 'labels'}
 
     _source_transforms = {'value': "value.indexOf(0) >= 0", 'name': "value[0]"}
 

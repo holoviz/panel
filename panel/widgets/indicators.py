@@ -18,20 +18,19 @@ How to use indicators
 import math
 import os
 import sys
-
 from math import pi
+from typing import Mapping
 
 import numpy as np
 import param
-
-from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource, FixedTicker
+from bokeh.plotting import figure
 from tqdm.asyncio import tqdm as _tqdm
 
 from ..layout import Column, Row
-from ..models import (
-    HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator
-)
+from ..models import HTML
+from ..models import Progress as _BkProgress
+from ..models import TrendIndicator as _BkTrendIndicator
 from ..pane.markup import Str
 from ..reactive import SyncableData
 from ..util import escape, updating
@@ -94,7 +93,7 @@ class BooleanStatus(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename = {}
+    _rename: Mapping[str, str | None] = {}
 
     _source_transforms = {'value': None, 'color': None}
 
@@ -140,7 +139,7 @@ class LoadingSpinner(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename = {}
+    _rename: Mapping[str, str | None] = {}
 
     _source_transforms = {'value': None, 'color': None, 'bgcolor': None}
 
@@ -201,7 +200,7 @@ class Progress(ValueIndicator):
         bar will be indeterminate and animate depending on the active
         parameter.""")
 
-    _rename = {'name': None}
+    _rename: Mapping[str, str | None] = {'name': None}
 
     _widget_type = _BkProgress
 
@@ -245,7 +244,7 @@ class Number(ValueIndicator):
     title_size = param.String(default='18pt', doc="""
         The size of the title given by the name.""")
 
-    _rename = {}
+    _rename: Mapping[str, str | None] = {}
 
     _source_transforms = {
         'value': None, 'colors': None, 'default_color': None,
@@ -296,7 +295,7 @@ class String(ValueIndicator):
     value = param.String(default=None, allow_None=True, doc="""
         The string to display""")
 
-    _rename = {}
+    _rename: Mapping[str, str | None] = {}
 
     _source_transforms = {
         'value': None, 'default_color': None, 'font_size': None, 'title_size': None
@@ -376,7 +375,7 @@ class Gauge(ValueIndicator):
 
     width = param.Integer(default=300, bounds=(0, None))
 
-    _rename = {}
+    _rename: Mapping[str, str | None] = {}
 
     _source_transforms = {
         'annulus_width': None, 'bounds': None, 'colors': None,
@@ -518,7 +517,7 @@ class Dial(ValueIndicator):
 
     _data_params = _manual_params
 
-    _rename = {'background': 'background_fill_color'}
+    _rename: Mapping[str, str | None] = {'background': 'background_fill_color'}
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -745,7 +744,7 @@ class LinearGauge(ValueIndicator):
 
     _rerender_params = ['horizontal']
 
-    _rename = {
+    _rename: Mapping[str, str | None] = {
         'background': 'background_fill_color', 'show_boundaries': None,
         'default_color': None
     }
@@ -1007,7 +1006,7 @@ class Trend(SyncableData, Indicator):
 
     _manual_params = ['data']
 
-    _rename = {'data': None, 'selection': None}
+    _rename: Mapping[str, str | None] = {'data': None, 'selection': None}
 
     _widget_type = _BkTrendIndicator
 
@@ -1147,7 +1146,7 @@ class Tqdm(Indicator):
 
     _layouts = {Row: 'row', Column: 'column'}
 
-    _rename = {'value': None, 'min': None, 'max': None, 'text': None}
+    _rename: Mapping[str, str | None] = {'value': None, 'min': None, 'max': None, 'text': None}
 
     def __init__(self, **params):
         layout = params.pop('layout', 'column')

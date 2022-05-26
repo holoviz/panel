@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Mapping
 
 import param
 
@@ -128,7 +129,7 @@ class GridStack(ReactiveHTML, GridSpec):
             'GridStack': cls.__javascript__[0:1],
         }
 
-    _rename = {}
+    _rename: Mapping[str, str | None] = {}
 
     @classproperty
     def __javascript__(cls):

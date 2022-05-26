@@ -1,8 +1,9 @@
 """
 Defines the Ace code editor widget.
 """
-import param
+from typing import Mapping
 
+import param
 from pyviz_comms import JupyterComm
 
 from ..models.enums import ace_themes
@@ -40,7 +41,7 @@ class Ace(Widget):
 
     value = param.String(doc="State of the current code in the editor")
 
-    _rename = {"value": "code", "name": None}
+    _rename: Mapping[str, str | None] = {"value": "code", "name": None}
 
     def __init__(self, **params):
         if 'readonly' in params:

@@ -1,15 +1,14 @@
 import sys
-
 from functools import partial
+from typing import Mapping
 
-import param
 import numpy as np
-
+import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..viewable import Layoutable
 from ..util import lazy_load
+from ..viewable import Layoutable
 from .base import PaneBase
 
 
@@ -105,7 +104,7 @@ class Vega(PaneBase):
 
     priority = 0.8
 
-    _rename = {'selection': None, 'debounce': None}
+    _rename: Mapping[str, str | None] = {'selection': None, 'debounce': None}
 
     _updates = True
 

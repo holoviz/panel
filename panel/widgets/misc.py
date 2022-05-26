@@ -2,21 +2,19 @@
 Miscellaneous widgets which do not fit into the other main categories.
 """
 import os
-
 from base64 import b64encode
+from typing import Mapping
 
 import param
-
 from pyviz_comms import JupyterComm
 
 from ..io.notebook import push
 from ..io.state import state
-from ..models import (
-    VideoStream as _BkVideoStream, FileDownload as _BkFileDownload
-)
+from ..models import FileDownload as _BkFileDownload
+from ..models import VideoStream as _BkVideoStream
 from ..util import lazy_load
 from .base import Widget
-from .indicators import Progress # noqa
+from .indicators import Progress  # noqaf
 
 
 class VideoStream(Widget):
@@ -46,7 +44,7 @@ class VideoStream(Widget):
 
     _widget_type = _BkVideoStream
 
-    _rename = {'name': None}
+    _rename: Mapping[str, str | None] = {'name': None}
 
     def snapshot(self):
         """
@@ -129,7 +127,7 @@ class FileDownload(Widget):
 
     _widget_type = _BkFileDownload
 
-    _rename = {
+    _rename: Mapping[str, str | None] = {
         'callback': None, 'embed': None, 'file': None,
         '_clicks': 'clicks', 'name': 'title'
     }
@@ -284,7 +282,7 @@ class JSONEditor(Widget):
     value = param.Parameter(default={}, doc="""
         JSON data to be edited.""")
 
-    _rename = {'value': 'data'}
+    _rename: Mapping[str, str | None] = {'value': 'data'}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:

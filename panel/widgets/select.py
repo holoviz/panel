@@ -2,26 +2,27 @@
 Defines various Select widgets which allow choosing one or more items
 from a list of options.
 """
-import re
-
-from collections import OrderedDict
 import itertools
+import re
+from collections import OrderedDict
+from typing import Mapping
 
 import param
-
-from bokeh.models.widgets import (
-    AutocompleteInput as _BkAutocompleteInput, CheckboxGroup as _BkCheckboxGroup,
-    CheckboxButtonGroup as _BkCheckboxButtonGroup, MultiSelect as _BkMultiSelect,
-    RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
-    MultiChoice as _BkMultiChoice
-)
+from bokeh.models.widgets import AutocompleteInput as _BkAutocompleteInput
+from bokeh.models.widgets import CheckboxButtonGroup as _BkCheckboxButtonGroup
+from bokeh.models.widgets import CheckboxGroup as _BkCheckboxGroup
+from bokeh.models.widgets import MultiChoice as _BkMultiChoice
+from bokeh.models.widgets import MultiSelect as _BkMultiSelect
+from bokeh.models.widgets import RadioButtonGroup as _BkRadioButtonGroup
+from bokeh.models.widgets import RadioGroup as _BkRadioBoxGroup
 
 from ..layout import Column, VSpacer
-from ..models import SingleSelect as _BkSingleSelect, CustomSelect
-from ..util import isIn, indexOf
-from .base import Widget, CompositeWidget
-from .button import _ButtonBase, Button
-from .input import TextInput, TextAreaInput
+from ..models import CustomSelect
+from ..models import SingleSelect as _BkSingleSelect
+from ..util import indexOf, isIn
+from .base import CompositeWidget, Widget
+from .button import Button, _ButtonBase
+from .input import TextAreaInput, TextInput
 
 
 class SelectBase(Widget):
@@ -386,7 +387,7 @@ class MultiChoice(_MultiSelectBase):
     _widget_type = _BkMultiChoice
 
 
-_AutocompleteInput_rename = {'name': 'title', 'options': 'completions'}
+_AutocompleteInput_rename: Mapping[str, str | None] = {'name': 'title', 'options': 'completions'}
 
 
 class AutocompleteInput(Widget):
@@ -437,7 +438,7 @@ class AutocompleteInput(Widget):
 
     _widget_type = _BkAutocompleteInput
 
-    _rename = _AutocompleteInput_rename
+    _rename: Mapping[str, str | None] = _AutocompleteInput_rename
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -451,7 +452,7 @@ class _RadioGroupBase(SingleSelectBase):
 
     _supports_embed = False
 
-    _rename = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: Mapping[str, str | None] = {'name': None, 'options': 'labels', 'value': 'active'}
 
     _source_transforms = {'value': "source.labels[value]"}
 
@@ -561,7 +562,7 @@ class _CheckGroupBase(SingleSelectBase):
 
     value = param.List(default=[])
 
-    _rename = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: Mapping[str, str | None] = {'name': None, 'options': 'labels', 'value': 'active'}
 
     _source_transforms = {'value': "value.map((index) => source.labels[index])"}
 

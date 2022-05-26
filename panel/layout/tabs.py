@@ -2,12 +2,11 @@
 Layout component to lay out objects in a set of tabs.
 """
 from collections import defaultdict
+from typing import Mapping
 
 import param
-
-from bokeh.models import (
-    Spacer as BkSpacer, Panel as BkPanel
-)
+from bokeh.models import Panel as BkPanel
+from bokeh.models import Spacer as BkSpacer
 
 from ..models import Tabs as BkTabs
 from ..viewable import Layoutable
@@ -59,7 +58,7 @@ class Tabs(NamedListPanel):
 
     _manual_params = ['closable']
 
-    _rename = {'name': None, 'objects': 'tabs', 'dynamic': None}
+    _rename: Mapping[str, str | None] = {'name': None, 'objects': 'tabs', 'dynamic': None}
 
     _source_transforms = {'dynamic': None, 'objects': None}
 

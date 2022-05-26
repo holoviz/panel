@@ -10,11 +10,10 @@ import shlex
 import signal
 import subprocess
 import sys
-
 from functools import partial
+from typing import Mapping
 
 import param
-
 from pyviz_comms import JupyterComm
 
 from ..io.callbacks import PeriodicCallback
@@ -79,6 +78,7 @@ class TerminalSubprocess(param.Parameterized):
         Runs a subprocess command.
         """
         import pty
+
         # Inspiration: https://github.com/cs01/pyxtermjs
         # Inspiration: https://github.com/jupyter/terminado
         if not args:
@@ -134,9 +134,9 @@ class TerminalSubprocess(param.Parameterized):
     def _set_winsize(self):
         if self._fd is None:
             return
-        import termios
-        import struct
         import fcntl
+        import struct
+        import termios
         winsize = struct.pack("HHHH", self._terminal.nrows, self._terminal.ncols, 0, 0)
         fcntl.ioctl(self._fd, termios.TIOCSWINSZ, winsize)
 
@@ -252,7 +252,7 @@ class Terminal(Widget):
 
     _output = param.String(default="")
 
-    _rename = {
+    _rename: Mapping[str, str | None] = {
         "clear": None,
         "output": None,
         "_output": "output",

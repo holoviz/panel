@@ -1,23 +1,22 @@
 """
 Defines a VTKPane which renders a vtk plot using VTKPlot bokeh model.
 """
-import sys
-import json
 import base64
+import json
+import sys
 import zipfile
-
 from abc import abstractmethod
+from typing import Mapping
 from urllib.request import urlopen
 
-import param
 import numpy as np
-
-from bokeh.util.serialization import make_globally_unique_id
+import param
 from bokeh.models import LinearColorMapper
+from bokeh.util.serialization import make_globally_unique_id
 from pyviz_comms import JupyterComm
 
 from ...util import isfile, lazy_load
-from ..base import PaneBase, Pane
+from ..base import Pane, PaneBase
 from .enums import PRESET_CMAPS
 
 base64encode = lambda x: base64.b64encode(x).decode('utf-8')
@@ -224,7 +223,7 @@ class BaseVTKRenderWindow(AbstractVTK):
 
     _applies_kw = True
 
-    _rename = {'serialize_on_instantiation': None, 'serialize_all_data_arrays': None}
+    _rename: Mapping[str, str | None] = {'serialize_on_instantiation': None, 'serialize_all_data_arrays': None}
 
     __abstract = True
 
@@ -278,7 +277,7 @@ class BaseVTKRenderWindow(AbstractVTK):
     def _construct_colorbars(self, color_mappers=None):
         if not color_mappers:
             color_mappers = self.color_mappers
-        from bokeh.models import Plot, ColorBar, FixedTicker
+        from bokeh.models import ColorBar, FixedTicker, Plot
         cbs = []
         for color_mapper in color_mappers:
             ticks = np.linspace(color_mapper.low, color_mapper.high, 5)
@@ -410,7 +409,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
 
     _one_time_reset = param.Boolean(default=False)
 
-    _rename = dict(_one_time_reset='one_time_reset',
+    _rename: Mapping[str, str | None] = dict(_one_time_reset='one_time_reset',
                    **BaseVTKRenderWindow._rename)
 
     _updates = True
@@ -624,7 +623,7 @@ class VTKVolume(AbstractVTK):
 
     _serializers = {}
 
-    _rename = {'max_data_size': None, 'spacing': None, 'origin': None}
+    _rename: Mapping[str, str | None] = {'max_data_size': None, 'spacing': None, 'origin': None}
 
     _updates = True
 

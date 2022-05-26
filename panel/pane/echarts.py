@@ -1,8 +1,8 @@
-import sys
 import json
+import sys
+from typing import Mapping
 
 import param
-
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
@@ -32,7 +32,7 @@ class ECharts(PaneBase):
 
     priority = None
 
-    _rename = {"object": "data"}
+    _rename: Mapping[str, str | None] = {"object": "data"}
 
     _rerender_params = []
 

@@ -704,7 +704,7 @@ class Row(ListPanel):
 
     _bokeh_model: Type['Model'] = BkRow
 
-    _rename = dict(ListPanel._rename, col_sizing='cols')
+    _rename: Mapping[str, str | None] = dict(ListPanel._rename, col_sizing='cols')
 
 
 class Column(ListPanel):
@@ -727,7 +727,7 @@ class Column(ListPanel):
 
     _bokeh_model: Type['Model'] = BkColumn
 
-    _rename = dict(ListPanel._rename, row_sizing='rows')
+    _rename: Mapping[str, str | None] = dict(ListPanel._rename, row_sizing='rows')
 
 
 class WidgetBox(ListPanel):
@@ -766,7 +766,7 @@ class WidgetBox(ListPanel):
 
     _source_transforms = {'disabled': None, 'horizontal': None}
 
-    _rename = {'objects': 'children', 'horizontal': None}
+    _rename: Mapping[str, str | None] = {'objects': 'children', 'horizontal': None}
 
     @property
     def _bokeh_model(self) -> Type['Model']: # type: ignore

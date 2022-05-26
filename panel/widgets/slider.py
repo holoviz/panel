@@ -6,26 +6,25 @@ moving one or more handle(s).
 - The `value_throttled`will update when a handle is released.
 """
 import datetime as dt
+from typing import Mapping
 
-import param
 import numpy as np
-
+import param
 from bokeh.models import CustomJS
 from bokeh.models.formatters import TickFormatter
-from bokeh.models.widgets import (
-    DateSlider as _BkDateSlider, DateRangeSlider as _BkDateRangeSlider,
-    RangeSlider as _BkRangeSlider, Slider as _BkSlider)
+from bokeh.models.widgets import DateRangeSlider as _BkDateRangeSlider
+from bokeh.models.widgets import DateSlider as _BkDateSlider
+from bokeh.models.widgets import RangeSlider as _BkRangeSlider
+from bokeh.models.widgets import Slider as _BkSlider
 
 from ..config import config
 from ..io import state
-from ..util import (
-    datetime_as_utctimestamp, edit_readonly, param_reprs,
-    value_as_datetime, value_as_date
-)
-from ..viewable import Layoutable
 from ..layout import Column, Row
-from .base import Widget, CompositeWidget
-from .input import IntInput, FloatInput, StaticText
+from ..util import (datetime_as_utctimestamp, edit_readonly, param_reprs,
+                    value_as_date, value_as_datetime)
+from ..viewable import Layoutable
+from .base import CompositeWidget, Widget
+from .input import FloatInput, IntInput, StaticText
 
 
 class _SliderBase(Widget):
@@ -157,7 +156,7 @@ class FloatSlider(ContinuousSlider):
     step = param.Number(default=0.1, doc="""
         The step size.""")
 
-    _rename = {'name': 'title'}
+    _rename: Mapping[str, str | None] = {'name': 'title'}
 
 
 class IntSlider(ContinuousSlider):
@@ -187,7 +186,7 @@ class IntSlider(ContinuousSlider):
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The value of the slider. Updated when the handle is released""")
 
-    _rename = {'name': 'title'}
+    _rename: Mapping[str, str | None] = {'name': 'title'}
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -235,7 +234,7 @@ class DateSlider(_SliderBase):
     as_datetime = param.Boolean(default=False, doc="""
         Whether to store the date as a datetime.""")
 
-    _rename = {'name': 'title', 'as_datetime': None}
+    _rename: Mapping[str, str | None] = {'name': 'title', 'as_datetime': None}
 
     _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
 
@@ -297,7 +296,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     _source_transforms = {'value': None, 'value_throttled': None, 'options': None}
 
-    _rename = {'formatter': None}
+    _rename: Mapping[str, str | None] = {'formatter': None}
 
     _supports_embed = True
 
@@ -528,7 +527,7 @@ class RangeSlider(_RangeSliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A format string or bokeh TickFormatter.""")
 
-    _rename = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename: Mapping[str, str | None] = {'name': 'title', 'value_start': None, 'value_end': None}
 
     _widget_type = _BkRangeSlider
 
@@ -620,7 +619,7 @@ class DateRangeSlider(_SliderBase):
     _source_transforms = {'value': None, 'value_throttled': None,
                          'start': None, 'end': None, 'step': None}
 
-    _rename = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename: Mapping[str, str | None] = {'name': 'title', 'value_start': None, 'value_end': None}
 
     _widget_type = _BkDateRangeSlider
 
