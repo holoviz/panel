@@ -61,6 +61,8 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
           channel-priority: strict
           channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
       - name: Fetch unshallow
@@ -70,26 +72,17 @@ jobs:
           conda update -n base conda
           conda install "pyctdev>=0.5"
           conda install "nodejs=15.3.0"
-          doit env_create --python=${{ matrix.python-version }}
-      - name: configure libmamba
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda install -n test conda-libmamba-solver
-          conda install -n test-environment conda-libmamba-solver
+          conda install conda-libmamba-solver
           conda config --set experimental_solver libmamba
       - name: nix_opengl
         if: contains(matrix.os, 'ubuntu')
         run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
           sudo apt-get install libglu1-mesa
           conda install mesalib
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
           sleep 3
       - name: doit develop_install
         run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
           conda install "pip<21.2.1" "toml"
           conda list
           doit develop_install -o examples -o recommended -o tests -o build
@@ -104,21 +97,13 @@ jobs:
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
           doit env_capture
       - name: doit test_unit
         run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
           doit test_unit
       - name: test examples
         run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
           doit test_examples
       - name: codecov
         run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
           codecov
