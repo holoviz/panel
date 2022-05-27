@@ -70,8 +70,9 @@ jobs:
       - name: conda setup
         run: |
           conda update -n base conda
-          conda install "pyctdev>=0.5"  "nodejs=15.3.0" conda-libmamba-solver  "pip<21.2.1" "toml"
+          conda install -n base conda-libmamba-solver
           conda config --set experimental_solver libmamba
+          conda install "pyctdev>=0.5"  "nodejs=15.3.0"  "pip<21.2.1" "toml"
           conda info
           conda list
       - name: nix_opengl
