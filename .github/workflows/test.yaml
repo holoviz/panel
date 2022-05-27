@@ -85,6 +85,8 @@ jobs:
           sleep 3
       - name: doit develop_install
         run: |
+          conda info
+          conda install conda-libmamba-solver
           doit develop_install -o examples -o recommended -o tests -o build
           pip install pyecharts idom
           bokeh sampledata
