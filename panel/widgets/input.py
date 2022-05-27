@@ -4,23 +4,22 @@ a text field or similar.
 """
 import ast
 import json
+
 from base64 import b64decode
 from datetime import date, datetime
 from typing import Mapping, Union
 
 import numpy as np
 import param
+
 from bokeh.models.formatters import TickFormatter
-from bokeh.models.widgets import CheckboxGroup as _BkCheckboxGroup
-from bokeh.models.widgets import ColorPicker as _BkColorPicker
-from bokeh.models.widgets import DatePicker as _BkDatePicker
-from bokeh.models.widgets import Div as _BkDiv
-from bokeh.models.widgets import FileInput as _BkFileInput
-from bokeh.models.widgets import NumericInput as _BkNumericInput
-from bokeh.models.widgets import PasswordInput as _BkPasswordInput
-from bokeh.models.widgets import Spinner as _BkSpinner
-from bokeh.models.widgets import TextAreaInput as _BkTextAreaInput
-from bokeh.models.widgets import TextInput as _BkTextInput
+from bokeh.models.widgets import (
+    CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
+    DatePicker as _BkDatePicker, Div as _BkDiv, FileInput as _BkFileInput,
+    NumericInput as _BkNumericInput, PasswordInput as _BkPasswordInput,
+    Spinner as _BkSpinner, TextAreaInput as _BkTextAreaInput,
+    TextInput as _BkTextInput,
+)
 
 from ..config import config
 from ..layout import Column

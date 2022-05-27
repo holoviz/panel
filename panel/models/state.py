@@ -1,4 +1,6 @@
-from bokeh.core.properties import Bool, Dict, Any, List
+from bokeh.core.properties import (
+    Any, Bool, Dict, List,
+)
 from bokeh.models import Model
 
 

@@ -1,1 +1,1 @@
-from .vtk import VTKVolume, VTK # noqa
+from .vtk import VTK, VTKVolume  # noqa

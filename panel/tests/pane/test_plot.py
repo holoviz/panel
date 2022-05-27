@@ -1,8 +1,9 @@
 from bokeh.models import Div, Row as BkRow
 
-from panel.pane import Bokeh, Pane, PaneBase, Matplotlib
-from panel.tests.util import mpl_figure, mpl_available
-
+from panel.pane import (
+    Bokeh, Matplotlib, Pane, PaneBase,
+)
+from panel.tests.util import mpl_available, mpl_figure
 
 
 def test_get_bokeh_pane_type():

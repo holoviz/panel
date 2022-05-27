@@ -4,7 +4,6 @@ import logging
 import panel as pn
 
 
-
 def test_debugger_constructor():
     debugger = pn.widgets.Debugger()
 

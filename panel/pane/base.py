@@ -8,16 +8,18 @@ import warnings
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, List, Optional, TypeVar, Type
+    TYPE_CHECKING, Any, Callable, List, Optional, Type, TypeVar,
 )
 
 import param
 
 from bokeh.models.layouts import (
-    GridBox as _BkGridBox, Tabs as _BkTabs, Panel as _BkPanel
+    GridBox as _BkGridBox, Panel as _BkPanel, Tabs as _BkTabs,
 )
 
-from ..io import init_doc, push, state, unlocked
+from ..io import (
+    init_doc, push, state, unlocked,
+)
 from ..layout import Panel, Row
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML

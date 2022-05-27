@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-import datetime as dt
 import dataclasses
+import datetime as dt
 import inspect
 import threading
 
 from contextlib import contextmanager
 from functools import partial, wraps
-from typing import Callable, Iterator, List, Optional
+from typing import (
+    Callable, Iterator, List, Optional,
+)
 
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document

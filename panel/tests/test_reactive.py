@@ -8,10 +8,13 @@ import pytest
 from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
 from bokeh.models import Div
+
 from panel.layout import Tabs, WidgetBox
 from panel.reactive import Reactive, ReactiveHTML
 from panel.viewable import Viewable
-from panel.widgets import Checkbox, IntInput, StaticText, TextInput
+from panel.widgets import (
+    Checkbox, IntInput, StaticText, TextInput,
+)
 
 
 def test_reactive_default_title():

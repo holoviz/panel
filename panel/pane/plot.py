@@ -2,13 +2,16 @@
 Pane class which render plots from different libraries
 """
 import sys
+
 from contextlib import contextmanager
 from io import BytesIO
 from typing import Mapping, Union
 
 import param
-from bokeh.models import CustomJS, LayoutDOM, Model
-from bokeh.models import Spacer as BkSpacer
+
+from bokeh.models import (
+    CustomJS, LayoutDOM, Model, Spacer as BkSpacer,
+)
 from bokeh.themes import Theme
 
 from ..io import remove_root

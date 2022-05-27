@@ -1,6 +1,6 @@
-from packaging.version import Version
-
 import pytest
+
+from packaging.version import Version
 
 try:
     import altair as alt

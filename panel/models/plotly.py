@@ -2,9 +2,9 @@
 Defines a custom PlotlyPlot bokeh model to render Plotly plots.
 """
 from bokeh.core.properties import (
-    Any, Bool, Dict, Either, Enum, Int, Instance, List, Null, Nullable, String
+    Any, Bool, Dict, Either, Enum, Instance, Int, List, Null, Nullable, String,
 )
-from bokeh.models import LayoutDOM, ColumnDataSource
+from bokeh.models import ColumnDataSource, LayoutDOM
 
 from ..io.resources import JS_URLS, bundled_files
 from ..util import classproperty

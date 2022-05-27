@@ -1,4 +1,5 @@
 import os
+
 import param
 
 param.parameterized.docstring_signature = False
@@ -13,6 +14,7 @@ copyright = copyright_fmt.format(**copyright_years)
 description = 'High-level dashboarding for python visualization libraries'
 
 import panel
+
 version = release = base_version(panel.__version__)
 
 # For the interactivity warning box created by nbsite to point to the right

@@ -1,11 +1,13 @@
 import os
 
 from base64 import b64decode, b64encode
+from io import BytesIO, StringIO
 from pathlib import Path
 
-from panel.pane import GIF, ICO, JPG, PDF, PNG, SVG
+from panel.pane import (
+    GIF, ICO, JPG, PDF, PNG, SVG,
+)
 from panel.pane.markup import escape
-from io import BytesIO, StringIO
 
 
 def test_svg_pane(document, comm):

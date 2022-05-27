@@ -1,15 +1,16 @@
 """
 Various utilities for recording and embedding state in a rendered app.
 """
-import os
 import json
-import uuid
-import param
+import os
 import sys
+import uuid
 
 from collections import defaultdict
 from contextlib import contextmanager
 from itertools import product
+
+import param
 
 from bokeh.core.property.bases import Property
 from bokeh.models import CustomJS
@@ -89,7 +90,7 @@ def param_to_jslink(model, widget):
     Converts Param pane widget links into JS links if possible.
     """
     from ..reactive import Reactive
-    from ..widgets import Widget, LiteralInput
+    from ..widgets import LiteralInput, Widget
 
     param_pane = widget._param_pane
     pobj = param_pane.object
@@ -129,7 +130,7 @@ def link_to_jslink(model, source, src_spec, target, tgt_spec):
         # that they apply Python transforms
         return
 
-    from ..links import Link, JSLinkCallbackGenerator
+    from ..links import JSLinkCallbackGenerator, Link
     properties = dict(value=target._rename.get(tgt_spec, tgt_spec))
     link = Link(source, target, bidirectional=True, properties=properties)
     JSLinkCallbackGenerator(model, link, source, target)
@@ -215,7 +216,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     from ..links import Link
     from ..models.state import State
     from ..pane import PaneBase
-    from ..widgets import Widget, DiscreteSlider
+    from ..widgets import DiscreteSlider, Widget
 
     ref = model.ref['id']
     if isinstance(panel, PaneBase) and ref in panel.layout._models:

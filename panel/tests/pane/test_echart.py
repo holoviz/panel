@@ -21,8 +21,8 @@ def test_echart():
     return pane
 
 def get_pyechart():
-    from pyecharts.charts import Bar
     from pyecharts import options as opts
+    from pyecharts.charts import Bar
 
     bar = (
         Bar()
@@ -37,6 +37,7 @@ def get_pyechart():
 
 def get_pyechart2():
     from pyecharts.charts import Bar
+
     import panel as pn
 
     bar1 = pn.widgets.IntSlider(start=1, end=100, value=50)

@@ -18,20 +18,22 @@ How to use indicators
 import math
 import os
 import sys
+
 from math import pi
 from typing import Mapping, Union
 
 import numpy as np
 import param
+
 from bokeh.models import ColumnDataSource, FixedTicker
 from bokeh.plotting import figure
 from tqdm.asyncio import tqdm as _tqdm
 
 from ..layout import Column, Row
-from ..models import HTML
-from ..models import Progress as _BkProgress
-from ..models import TrendIndicator as _BkTrendIndicator
-from ..pane.markup import Str
+from ..models import (
+    HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator,
+)
+from ..pane import Str
 from ..reactive import SyncableData
 from ..util import escape, updating
 from ..viewable import Viewable

@@ -1,16 +1,14 @@
-import pytest
-
 import param
+import pytest
 
 from panel.interact import interactive
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.pane import (
-    Bokeh, HoloViews, IPyWidget, Interactive, IDOM, Pane, PaneBase, Vega
+    IDOM, Bokeh, HoloViews, Interactive, IPyWidget, Pane, PaneBase, Vega,
 )
 from panel.param import ParamMethod
 from panel.tests.util import check_layoutable_properties
-
 
 SKIP_PANES = (Bokeh, HoloViews, ParamMethod, interactive, IPyWidget, Interactive, IDOM, Vega)
 

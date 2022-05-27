@@ -2,6 +2,7 @@ from bokeh.models import ColumnDataSource
 
 from panel.io.model import patch_cds_msg
 
+
 def test_patch_cds_typed_array():
     cds = ColumnDataSource()
     msg = {

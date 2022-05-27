@@ -732,6 +732,7 @@ class VTKVolume(AbstractVTK):
             available_serializer = [v for k, v in VTKVolume._serializers.items() if isinstance(self.object, k)]
             if not available_serializer:
                 import vtk
+
                 from vtk.util import numpy_support
 
                 def volume_serializer(inst):

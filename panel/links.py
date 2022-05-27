@@ -9,13 +9,13 @@ import warnings
 import weakref
 
 from typing import (
-    TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
+    TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type,
+    Union,
 )
 
-from bokeh.models import CustomJS, LayoutDOM
-from bokeh.models import Model as BkModel
-
 import param
+
+from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 
 from .io.datamodel import create_linked_datamodel
 from .models import ReactiveHTML

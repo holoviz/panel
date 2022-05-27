@@ -2,19 +2,22 @@
 Miscellaneous widgets which do not fit into the other main categories.
 """
 import os
+
 from base64 import b64encode
 from typing import Mapping, Union
 
 import param
+
 from pyviz_comms import JupyterComm
 
 from ..io.notebook import push
 from ..io.state import state
-from ..models import FileDownload as _BkFileDownload
-from ..models import VideoStream as _BkVideoStream
+from ..models import (
+    FileDownload as _BkFileDownload, VideoStream as _BkVideoStream,
+)
 from ..util import lazy_load
 from .base import Widget
-from .indicators import Progress  # noqaf
+from .indicators import Progress  # noqa
 
 
 class VideoStream(Widget):

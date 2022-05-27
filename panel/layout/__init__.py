@@ -28,14 +28,18 @@ How to use layouts in 2 simple steps
 For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
-from .accordion import Accordion # noqa
-from .base import Column, ListLike, ListPanel, Panel, Row, WidgetBox # noqa
-from .card import Card # noqa
-from .flex import FlexBox # noqa
-from .grid import GridBox, GridSpec # noqa
-from .gridstack import GridStack # noqa
-from .spacer import Divider, HSpacer, Spacer, VSpacer # noqa
-from .tabs import Tabs # noqa
+from .accordion import Accordion  # noqa
+from .base import (  # noqa
+    Column, ListLike, ListPanel, Panel, Row, WidgetBox,
+)
+from .card import Card  # noqa
+from .flex import FlexBox  # noqa
+from .grid import GridBox, GridSpec  # noqa
+from .gridstack import GridStack  # noqa
+from .spacer import (  # noqa
+    Divider, HSpacer, Spacer, VSpacer,
+)
+from .tabs import Tabs  # noqa
 
 __all__ = (
     "Accordion",

@@ -1,11 +1,11 @@
 import json
-import zipfile
-import vtk
 import re
 import struct
+import zipfile
+
+import vtk
 
 from .synchronizable_serializer import arrayTypesMapping
-
 
 METHODS_RENAME = {
     "AddTexture": "SetTexture",

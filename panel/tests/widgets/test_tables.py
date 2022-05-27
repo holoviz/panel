@@ -1,24 +1,25 @@
 import datetime as dt
 import time
 
-from packaging.version import Version
-
 import numpy as np
 import pytest
 import requests
 
+from packaging.version import Version
+
 try:
     import pandas as pd
+
     from pandas._testing import (
-        makeCustomDataframe, makeMixedDataFrame, makeTimeDataFrame
+        makeCustomDataframe, makeMixedDataFrame, makeTimeDataFrame,
     )
 except ImportError:
     pytestmark = pytest.mark.skip('pandas not available')
 
 from bokeh.models.widgets.tables import (
-    NumberFormatter, IntEditor, NumberEditor, StringFormatter,
-    SelectEditor, DateFormatter, DataCube, CellEditor,
-    SumAggregator, AvgAggregator, MinAggregator
+    AvgAggregator, CellEditor, DataCube, DateFormatter, IntEditor,
+    MinAggregator, NumberEditor, NumberFormatter, SelectEditor,
+    StringFormatter, SumAggregator,
 )
 
 from panel.depends import bind

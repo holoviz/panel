@@ -1,5 +1,5 @@
 from bokeh.core.properties import (
-    Any, Bool, Dict, Either, Instance, List, Null, Nullable, String
+    Any, Bool, Dict, Either, Instance, List, Null, Nullable, String,
 )
 from bokeh.models import ColumnDataSource, HTMLBox
 

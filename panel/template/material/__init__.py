@@ -9,7 +9,7 @@ from bokeh.themes import Theme as _BkTheme
 
 from ...layout import Card
 from ..base import BasicTemplate, TemplateActions
-from ..theme import DefaultTheme, DarkTheme
+from ..theme import DarkTheme, DefaultTheme
 
 
 class MaterialTemplateActions(TemplateActions):

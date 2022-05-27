@@ -4,11 +4,11 @@ import re
 import subprocess
 import sys
 
-import pytest
-import requests
-
 from queue import Empty, Queue
 from threading import Thread
+
+import pytest
+import requests
 
 not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
 

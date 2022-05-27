@@ -5,8 +5,8 @@ from collections import defaultdict
 from typing import Mapping, Union
 
 import param
-from bokeh.models import Panel as BkPanel
-from bokeh.models import Spacer as BkSpacer
+
+from bokeh.models import Panel as BkPanel, Spacer as BkSpacer
 
 from ..models import Tabs as BkTabs
 from ..viewable import Layoutable

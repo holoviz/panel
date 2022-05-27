@@ -6,31 +6,36 @@ moving one or more handle(s).
 - The `value_throttled`will update when a handle is released.
 """
 import datetime as dt
+
 from typing import Mapping, Union
 
 import numpy as np
 import param
+
+from base import Widget
 from bokeh.models import CustomJS
 from bokeh.models.formatters import TickFormatter
-from bokeh.models.widgets import DateRangeSlider as _BkDateRangeSlider
-from bokeh.models.widgets import DateSlider as _BkDateSlider
-from bokeh.models.widgets import RangeSlider as _BkRangeSlider
-from bokeh.models.widgets import Slider as _BkSlider
+from bokeh.models.widgets import (
+    DateRangeSlider as _BkDateRangeSlider, DateSlider as _BkDateSlider,
+    RangeSlider as _BkRangeSlider, Slider as _BkSlider,
+)
 
 from ..config import config
 from ..io import state
 from ..layout import Column, Row
-from ..util import (datetime_as_utctimestamp, edit_readonly, param_reprs,
-                    value_as_date, value_as_datetime)
+from ..util import (
+    datetime_as_utctimestamp, edit_readonly, param_reprs, value_as_date,
+    value_as_datetime,
+)
 from ..viewable import Layoutable
-from .base import CompositeWidget, Widget
-from .input import FloatInput, IntInput, StaticText
+from ..widgets import FloatInput, IntInput
+from .base import CompositeWidget
+from .input import StaticText
 
 
 class _SliderBase(Widget):
 
-    bar_color = param.Color(default="#e6e6e6", doc="""
-        Color of the slider bar as a hexidecimal RGB value.""")
+    bar_color = param.Color(default="#e6e6e6", doc="""""")
 
     direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'], doc="""
         Whether the slider should go from left-to-right ('ltr') or

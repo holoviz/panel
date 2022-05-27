@@ -8,9 +8,9 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from .base import PaneBase
 from ..util import isdatetime, lazy_load
 from ..viewable import Layoutable
+from .base import PaneBase
 
 
 class Plotly(PaneBase):

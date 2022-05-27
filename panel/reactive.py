@@ -16,8 +16,8 @@ from collections import Counter, defaultdict, namedtuple
 from functools import partial
 from pprint import pformat
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional,
-    Set, Tuple, Type, Union
+    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Set, Tuple,
+    Type, Union,
 )
 
 import bleach
@@ -33,7 +33,7 @@ from .io.model import hold
 from .io.notebook import push
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
-    DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser
+    DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable

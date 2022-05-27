@@ -2,25 +2,23 @@ import codecs
 import json
 import logging
 import os
-import pkg_resources
 import re
+import urllib.parse as urlparse
 import uuid
 
-
-import urllib.parse as urlparse
-
+import pkg_resources
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
 from jinja2 import Environment, FileSystemLoader
 from tornado.auth import OAuth2Mixin
-from tornado.httpclient import HTTPRequest, HTTPError
+from tornado.httpclient import HTTPError, HTTPRequest
 from tornado.httputil import url_concat
 
 from .config import config
 from .io import state
 from .io.resources import ERROR_TEMPLATE
-from .util import base64url_encode, base64url_decode
+from .util import base64url_decode, base64url_encode
 
 log = logging.getLogger(__name__)
 

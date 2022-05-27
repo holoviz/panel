@@ -5,13 +5,13 @@ inside the Jupyter notebook.
 from __future__ import annotations
 
 import json
-import uuid
 import sys
+import uuid
 
-from contextlib import contextmanager
 from collections import OrderedDict
+from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Dict, List, Iterator, Optional, Tuple
+    TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple,
 )
 
 import bokeh
@@ -26,17 +26,19 @@ from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.models import LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
-from bokeh.settings import settings, _Unset
+from bokeh.settings import _Unset, settings
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
-    PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js
+    PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js,
 )
 
 from ..compiler import require_components
 from ..util import escape
 from .embed import embed_state
 from .model import add_to_doc, diff
-from .resources import PANEL_DIR, Bundle, Resources, _env, bundle_resources
+from .resources import (
+    PANEL_DIR, Bundle, Resources, _env, bundle_resources,
+)
 from .state import state
 
 if TYPE_CHECKING:
@@ -44,8 +46,8 @@ if TYPE_CHECKING:
     from jinja2 import Template
 
     from ..models.comm_manager import CommManager
-    from ..widgets.base import Widget
     from ..viewable import Viewable
+    from ..widgets.base import Widget
     from .location import Location
 
 #---------------------------------------------------------------------
@@ -291,7 +293,8 @@ def show_server(panel: Any, notebook_url: str, port: int = 0) -> 'Server':
     server: bokeh.server.Server
     """
     from IPython.display import publish_display_data
-    from .server import _server_url, _origin_url, get_server
+
+    from .server import _origin_url, _server_url, get_server
 
     if callable(notebook_url):
         origin = notebook_url(None)
@@ -349,6 +352,7 @@ def show_embed(
       A dictionary specifying the widget values to embed for each widget
     """
     from IPython.display import publish_display_data
+
     from ..config import config
 
     doc = Document()
@@ -378,6 +382,7 @@ def ipywidget(obj: Any, **kwargs: Any):
     Returns an ipywidget model which renders the Panel object.
     """
     from jupyter_bokeh.widgets import BokehModel
+
     from ..pane import panel
     model = panel(obj, **kwargs).get_root()
     widget = BokehModel(model, combine_events=True)

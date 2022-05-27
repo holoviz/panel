@@ -5,8 +5,10 @@ in flexible ways to build complex dashboards.
 from __future__ import annotations
 
 from collections import defaultdict, namedtuple
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, Iterator, List,
-                    Mapping, Optional, Tuple, Type, Union)
+from typing import (
+    TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping, Optional,
+    Tuple, Type,
+)
 
 import param
 from bokeh.models import Column as BkColumn

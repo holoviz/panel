@@ -5,14 +5,16 @@ events or merely toggling between on-off states.
 from __future__ import annotations
 
 from functools import partial
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
-                    Optional, Union)
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Union,
+)
 
 import param
+
 from bokeh.events import ButtonClick, MenuItemClick
-from bokeh.models import Button as _BkButton
-from bokeh.models import Dropdown as _BkDropdown
-from bokeh.models import Toggle as _BkToggle
+from bokeh.models import (
+    Button as _BkButton, Dropdown as _BkDropdown, Toggle as _BkToggle,
+)
 
 from ..links import Callback
 from .base import Widget

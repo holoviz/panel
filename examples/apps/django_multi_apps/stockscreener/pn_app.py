@@ -1,6 +1,7 @@
 import os
 
 import pandas as pd
+
 import panel as pn
 
 from .pn_model import StockScreener

@@ -3,19 +3,24 @@ import os
 import param
 
 from bokeh.models import (
-    Div, Slider, Select, RangeSlider as BkRangeSlider, MultiSelect,
-    Row as BkRow, CheckboxGroup, Toggle, Button, TextInput as
-    BkTextInput,Tabs as BkTabs, Column as BkColumn, TextInput,
-    AutocompleteInput as BkAutocompleteInput,
+    AutocompleteInput as BkAutocompleteInput, Button, CheckboxGroup,
+    Column as BkColumn, Div, MultiSelect, RangeSlider as BkRangeSlider,
+    Row as BkRow, Select, Slider, Tabs as BkTabs, TextInput,
+    TextInput as BkTextInput, Toggle,
 )
-from panel.pane import Pane, PaneBase, Matplotlib, Bokeh, HTML
-from panel.layout import Tabs, Row
-from panel.param import Param, ParamMethod, ParamFunction, JSONInit
-from panel.widgets import (
-    AutocompleteInput, DatePicker, DatetimeInput, LiteralInput,
-    NumberInput, RangeSlider
+
+from panel.layout import Row, Tabs
+from panel.pane import (
+    HTML, Bokeh, Matplotlib, Pane, PaneBase,
+)
+from panel.param import (
+    JSONInit, Param, ParamFunction, ParamMethod,
 )
 from panel.tests.util import mpl_available, mpl_figure
+from panel.widgets import (
+    AutocompleteInput, DatePicker, DatetimeInput, LiteralInput, NumberInput,
+    RangeSlider,
+)
 
 
 def test_instantiate_from_class():

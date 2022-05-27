@@ -1,6 +1,8 @@
-import panel as pn
 import holoviews as hv
 import hvplot
+
+import panel as pn
+
 # import hvplot.pandas
 
 

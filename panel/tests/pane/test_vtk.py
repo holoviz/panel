@@ -1,10 +1,11 @@
-import os
 import base64
+import os
+
 from io import BytesIO
 from zipfile import ZipFile
 
-import pytest
 import numpy as np
+import pytest
 
 try:
     import vtk
@@ -18,9 +19,13 @@ except Exception:
 
 from bokeh.models import ColorBar
 
-from panel.models.vtk import VTKJSPlot, VTKVolumePlot, VTKAxes, VTKSynchronizedPlot
-from panel.pane import PaneBase, VTKVolume, VTK
-from panel.pane.vtk.vtk import VTKJS, VTKRenderWindowSynchronized, VTKRenderWindow
+from panel.models.vtk import (
+    VTKAxes, VTKJSPlot, VTKSynchronizedPlot, VTKVolumePlot,
+)
+from panel.pane import VTK, PaneBase, VTKVolume
+from panel.pane.vtk.vtk import (
+    VTKJS, VTKRenderWindow, VTKRenderWindowSynchronized,
+)
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
 pyvista_available = pytest.mark.skipif(pv is None, reason="requires pyvista")
@@ -318,6 +323,7 @@ def test_vtkvol_pane_from_np_array(document, comm):
 
     pane.object = np.ones((10,10,10))
     from operator import eq
+
     # Create pane
     assert isinstance(model, VTKVolumePlot)
     assert pane._models[model.ref['id']][0] is model
@@ -358,6 +364,7 @@ def test_vtkvol_pane_from_image_data(document, comm):
     image_data = make_image_data()
     pane = VTKVolume(image_data)
     from operator import eq
+
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, VTKVolumePlot)

@@ -5,13 +5,17 @@ from __future__ import annotations
 
 import io
 
-from typing import TYPE_CHECKING, Any, Dict, IO, Iterable, List, Optional
+from typing import (
+    IO, TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
+)
 
 import bokeh
 
 from bokeh.document.document import Document
 from bokeh.embed.elements import html_page_for_render_items
-from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
+from bokeh.embed.util import (
+    OutputDocumentFor, standalone_docs_json_and_render_items,
+)
 from bokeh.io.export import get_screenshot_as_png
 from bokeh.model import Model
 from bokeh.resources import CDN, INLINE, Resources as BkResources
@@ -22,7 +26,7 @@ from .embed import embed_state
 from .model import add_to_doc
 from .resources import (
     BASE_TEMPLATE, DEFAULT_TITLE, Bundle, Resources, bundle_resources,
-    set_resource_mode
+    set_resource_mode,
 )
 from .state import state
 

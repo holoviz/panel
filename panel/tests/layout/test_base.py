@@ -1,17 +1,16 @@
-import pytest
-
 import param
+import pytest
 
 from bokeh.models import Column as BkColumn, Div, Row as BkRow
 
 from panel.layout import (
-    Accordion, Card, Column, Row, Tabs, Spacer, WidgetBox
+    Accordion, Card, Column, Row, Spacer, Tabs, WidgetBox,
 )
 from panel.layout.base import ListPanel, NamedListPanel
-from panel.widgets import Debugger
-from panel.param import Param
 from panel.pane import Bokeh
+from panel.param import Param
 from panel.tests.util import check_layoutable_properties
+from panel.widgets import Debugger
 
 excluded = (NamedListPanel, Debugger)
 all_panels = [w for w in param.concrete_descendents(ListPanel).values()

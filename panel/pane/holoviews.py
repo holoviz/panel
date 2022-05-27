@@ -8,13 +8,15 @@ from functools import partial
 from typing import Mapping, Union
 
 import param
-from bokeh.models import Range1d
-from bokeh.models import Spacer as _BkSpacer
+
+from bokeh.models import Range1d, Spacer as _BkSpacer
 from bokeh.themes.theme import Theme
 from packaging.version import Version
 
 from ..io import state, unlocked
-from ..layout import Column, HSpacer, Row, VSpacer, WidgetBox
+from ..layout import (
+    Column, HSpacer, Row, VSpacer, WidgetBox,
+)
 from ..viewable import Layoutable, Viewable
 from ..widgets import Player
 from .base import Pane, PaneBase, RerenderError
@@ -290,8 +292,8 @@ class HoloViews(PaneBase):
 
     def _render(self, doc, comm, root):
         import holoviews as hv
-        from holoviews import Store
-        from holoviews import renderer as load_renderer
+
+        from holoviews import Store, renderer as load_renderer
 
         if self.renderer:
             renderer = self.renderer
@@ -370,13 +372,16 @@ class HoloViews(PaneBase):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
         from holoviews.core.traversal import unique_dimkeys
-        from holoviews.core.util import (datetime_types, isnumeric,
-                                         unique_iterator)
+        from holoviews.core.util import (
+            datetime_types, isnumeric, unique_iterator,
+        )
         from holoviews.plotting.plot import GenericCompositePlot, Plot
         from holoviews.plotting.util import get_dynamic_mode
 
-        from ..widgets import (DatetimeInput, DiscreteSlider, FloatSlider,
-                               IntSlider, Select, Widget)
+        from ..widgets import (
+            DatetimeInput, DiscreteSlider, FloatSlider, IntSlider, Select,
+            Widget,
+        )
 
         if widget_types is None:
             widget_types = {}
@@ -543,8 +548,9 @@ def is_bokeh_element_plot(plot):
     Checks whether plotting instance is a HoloViews ElementPlot rendered
     with the bokeh backend.
     """
-    from holoviews.plotting.plot import (GenericElementPlot,
-                                         GenericOverlayPlot, Plot)
+    from holoviews.plotting.plot import (
+        GenericElementPlot, GenericOverlayPlot, Plot,
+    )
     if not isinstance(plot, Plot):
         return False
     return (plot.renderer.backend == 'bokeh' and isinstance(plot, GenericElementPlot)

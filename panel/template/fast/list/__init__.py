@@ -8,7 +8,7 @@ import pathlib
 import param
 
 from ..base import FastBaseTemplate
-from ..theme import FastDefaultTheme, FastDarkTheme
+from ..theme import FastDarkTheme, FastDefaultTheme
 
 
 class FastListTemplate(FastBaseTemplate):

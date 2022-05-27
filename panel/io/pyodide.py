@@ -1,18 +1,18 @@
 import asyncio
 import json
-import pyodide
 import os
 
-from js import JSON
 from typing import Optional
 
 import param
+import pyodide
 
 from bokeh import __version__
 from bokeh.document import Document
-from bokeh.io.doc import set_curdoc
 from bokeh.embed.util import standalone_docs_json_and_render_items
+from bokeh.io.doc import set_curdoc
 from bokeh.protocol.messages.patch_doc import process_document_events
+from js import JSON
 
 from ..config import config
 from . import resources
@@ -139,6 +139,7 @@ async def write(target, obj):
     """
 
     from js import Bokeh
+
     from ..pane import panel as as_panel
 
     obj = as_panel(obj)

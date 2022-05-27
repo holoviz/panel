@@ -6,12 +6,14 @@ from collections import OrderedDict, defaultdict
 
 import param
 
-from .layout import Row, Column, HSpacer, VSpacer
-from .pane import HoloViews, Pane, Markdown
-from .widgets import Button, Select
+from .layout import (
+    Column, HSpacer, Row, VSpacer,
+)
+from .pane import HoloViews, Markdown, Pane
 from .param import Param
 from .util import param_reprs
 from .viewable import Viewer
+from .widgets import Button, Select
 
 
 class PipelineError(RuntimeError):
@@ -467,7 +469,7 @@ class Pipeline(Viewer):
 
     def _make_progress(self):
         import holoviews as hv
-        import holoviews.plotting.bokeh # noqa
+        import holoviews.plotting.bokeh  # noqa
 
         if self._graph:
             root = get_root(self._graph)

@@ -1,7 +1,9 @@
 from typing import Any, Dict, List
 
-import panel as pn
 import pytest
+
+import panel as pn
+
 from panel.widgets import TextToSpeech, Utterance, Voice
 
 TEXT = """By Aesop

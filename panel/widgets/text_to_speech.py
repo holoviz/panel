@@ -8,9 +8,11 @@ The term *utterance* is used throughout the API. It is the smallest
 unit of speech in spoken language analysis.
 """
 import uuid
+
 from typing import Mapping, Union
 
 import param
+
 from panel.widgets import Widget
 
 from ..models.text_to_speech import TextToSpeech as _BkTextToSpeech

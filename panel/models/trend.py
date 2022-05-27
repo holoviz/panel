@@ -1,8 +1,10 @@
 """
 A Bokeh model indicating trends.
 """
-from bokeh.core.properties import Instance, Float, String
-from bokeh.models import HTMLBox, NumeralTickFormatter, TickFormatter, BasicTickFormatter
+from bokeh.core.properties import Float, Instance, String
+from bokeh.models import (
+    BasicTickFormatter, HTMLBox, NumeralTickFormatter, TickFormatter,
+)
 from bokeh.models.sources import ColumnDataSource
 
 

@@ -16,19 +16,17 @@ from pathlib import Path
 import param
 
 from bokeh.embed.bundle import (
-    Bundle as BkBundle, _bundle_extensions, extension_dirs,
-    bundle_models, _use_mathjax
+    Bundle as BkBundle, _bundle_extensions, _use_mathjax, bundle_models,
+    extension_dirs,
 )
-
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
-from markupsafe import Markup
 from jinja2.environment import Environment
 from jinja2.loaders import FileSystemLoader
+from markupsafe import Markup
 
 from ..util import isurl, url_path
 from .state import state
-
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
@@ -48,6 +46,7 @@ _env.trim_blocks = True
 _env.lstrip_blocks = True
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
+_env.filters['sorted'] = sorted
 
 # Handle serving of the panel extension before session is loaded
 RESOURCE_MODE = 'server'

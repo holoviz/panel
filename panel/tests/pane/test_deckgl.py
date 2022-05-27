@@ -9,7 +9,7 @@ except Exception:
 pydeck_available = pytest.mark.skipif(pydeck is None, reason="requires pydeck")
 
 from panel.models.deckgl import DeckGLPlot
-from panel.pane import Pane, PaneBase, DeckGL
+from panel.pane import DeckGL, Pane, PaneBase
 
 
 @pydeck_available

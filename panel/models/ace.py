@@ -1,7 +1,9 @@
 """
 Defines custom AcePlot bokeh model to render Ace editor.
 """
-from bokeh.core.properties import String, Override, Dict, Any, List, Bool, Enum, Nullable
+from bokeh.core.properties import (
+    Any, Bool, Dict, Enum, List, Nullable, Override, String,
+)
 from bokeh.models import HTMLBox
 
 from ..io.resources import bundled_files

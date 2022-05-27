@@ -1,7 +1,11 @@
-import panel as pn
 import pytest
+
+import panel as pn
+
 from panel.widgets import Grammar, GrammarList, SpeechToText
-from panel.widgets.speech_to_text import RecognitionAlternative, RecognitionResult
+from panel.widgets.speech_to_text import (
+    RecognitionAlternative, RecognitionResult,
+)
 
 CLASSES = [
     Grammar,

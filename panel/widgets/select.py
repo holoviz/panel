@@ -4,21 +4,22 @@ from a list of options.
 """
 import itertools
 import re
+
 from collections import OrderedDict
 from typing import Mapping, Union
 
 import param
-from bokeh.models.widgets import AutocompleteInput as _BkAutocompleteInput
-from bokeh.models.widgets import CheckboxButtonGroup as _BkCheckboxButtonGroup
-from bokeh.models.widgets import CheckboxGroup as _BkCheckboxGroup
-from bokeh.models.widgets import MultiChoice as _BkMultiChoice
-from bokeh.models.widgets import MultiSelect as _BkMultiSelect
-from bokeh.models.widgets import RadioButtonGroup as _BkRadioButtonGroup
-from bokeh.models.widgets import RadioGroup as _BkRadioBoxGroup
+
+from bokeh.models.widgets import (
+    AutocompleteInput as _BkAutocompleteInput,
+    CheckboxButtonGroup as _BkCheckboxButtonGroup,
+    CheckboxGroup as _BkCheckboxGroup, MultiChoice as _BkMultiChoice,
+    MultiSelect as _BkMultiSelect, RadioButtonGroup as _BkRadioButtonGroup,
+    RadioGroup as _BkRadioBoxGroup,
+)
 
 from ..layout import Column, VSpacer
-from ..models import CustomSelect
-from ..models import SingleSelect as _BkSingleSelect
+from ..models import CustomSelect, SingleSelect as _BkSingleSelect
 from ..util import indexOf, isIn
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase

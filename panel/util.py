@@ -22,7 +22,7 @@ from functools import partial
 from html import escape  # noqa
 from importlib import import_module
 from typing import (
-    Any, AnyStr, Dict, Iterable, Iterator, List, Optional, Union
+    Any, AnyStr, Dict, Iterable, Iterator, List, Optional, Union,
 )
 
 import bokeh

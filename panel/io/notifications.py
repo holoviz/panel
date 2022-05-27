@@ -7,7 +7,7 @@ import param
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .datamodel import _DATA_MODELS, construct_data_model
-from .resources import bundled_files, CSS_URLS
+from .resources import CSS_URLS, bundled_files
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -212,7 +212,9 @@ class NotificationArea(NotificationAreaBase):
         Generates a layout which allows demoing the component.
         """
         from ..layout import Column
-        from ..widgets import Button, ColorPicker, NumberInput, Select, TextInput
+        from ..widgets import (
+            Button, ColorPicker, NumberInput, Select, TextInput,
+        )
 
         msg = TextInput(name='Message', value='This is a message')
         duration = NumberInput(name='Duration', value=0, end=10000)

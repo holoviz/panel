@@ -6,10 +6,9 @@ from html.parser import HTMLParser
 
 import bokeh.core.properties as bp
 
-from bokeh.models import HTMLBox, LayoutDOM
-from bokeh.model import DataModel
 from bokeh.events import ModelEvent
-
+from bokeh.model import DataModel
+from bokeh.models import HTMLBox, LayoutDOM
 
 endfor = '{%-? endfor -?%}'
 list_iter_re = r'{%-? for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*) -?%}'

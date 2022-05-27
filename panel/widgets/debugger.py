@@ -3,13 +3,13 @@ The Debugger Widget is an uneditable Card that gives you feedback on errors
 thrown by your Panel callbacks.
 """
 import logging
+
 from typing import Mapping, Union
 
 import param
 
 from ..io.state import state
-from ..layout import HSpacer, Row
-from ..layout.card import Card
+from ..layout import Card, HSpacer, Row
 from ..reactive import ReactiveHTML
 from .terminal import Terminal
 

@@ -5,7 +5,6 @@ import pytest
 
 from panel import config, state
 from panel.pane import HTML
-
 from panel.tests.conftest import set_env_var
 
 

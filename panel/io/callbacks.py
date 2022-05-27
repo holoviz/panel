@@ -12,8 +12,7 @@ import param
 from bokeh.io import curdoc as _curdoc
 
 from ..util import edit_readonly, function_name
-from .logging import LOG_PERIODIC_START, LOG_PERIODIC_END
-
+from .logging import LOG_PERIODIC_END, LOG_PERIODIC_START
 from .state import state
 
 log = logging.getLogger('panel.callbacks')

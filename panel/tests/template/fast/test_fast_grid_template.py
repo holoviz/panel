@@ -8,9 +8,9 @@ from holoviews import opts
 
 from panel.config import config
 from panel.layout import Column
-from panel.pane import HoloViews, HTML, Markdown
+from panel.pane import HTML, HoloViews, Markdown
 from panel.param import Param
-from panel.template.fast.grid import FastGridTemplate, FastGridDarkTheme
+from panel.template.fast.grid import FastGridDarkTheme, FastGridTemplate
 from panel.widgets import Button
 
 hv.extension("bokeh")

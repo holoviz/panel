@@ -1,15 +1,15 @@
 import json
 import os
-import pkg_resources
 import tempfile
 import traceback
 
+from runpy import run_path
 from unittest.mock import MagicMock
 from urllib.parse import parse_qs
 
 import param
+import pkg_resources
 
-from runpy import run_path
 from tornado import web
 from tornado.wsgi import WSGIContainer
 
@@ -82,8 +82,8 @@ class ParamHandler(BaseHandler):
 
 
 def build_tranquilize_application(files):
-    from tranquilizer.handler import ScriptHandler, NotebookHandler
-    from tranquilizer.main import make_app, UnsupportedFileType
+    from tranquilizer.handler import NotebookHandler, ScriptHandler
+    from tranquilizer.main import UnsupportedFileType, make_app
 
     functions = []
     for filename in files:
@@ -92,7 +92,7 @@ def build_tranquilize_application(files):
             source = ScriptHandler(filename)
         elif extension == 'ipynb':
             try:
-                import nbconvert # noqa
+                import nbconvert  # noqa
             except ImportError as e: # pragma no cover
                 raise ImportError("Please install nbconvert to serve Jupyter Notebooks.") from e
 
@@ -150,7 +150,7 @@ def param_rest_provider(files, endpoint):
                 param.main.warning("Could not run app script on REST server startup.")
         elif extension == 'ipynb':
             try:
-                import nbconvert # noqa
+                import nbconvert  # noqa
             except ImportError:
                 raise ImportError("Please install nbconvert to serve Jupyter Notebooks.")
             from nbconvert import ScriptExporter

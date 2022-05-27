@@ -1,6 +1,5 @@
 import json
 import sys
-from typing import Mapping, Union
 
 import param
 from pyviz_comms import JupyterComm

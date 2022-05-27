@@ -2,7 +2,7 @@ from io import StringIO
 
 import pytest
 
-from panel.widgets import __file__ as wfile, FileDownload, Progress
+from panel.widgets import FileDownload, Progress, __file__ as wfile
 
 
 def test_progress_bounds():
