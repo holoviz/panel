@@ -494,7 +494,7 @@ class BasicTemplate(BaseTemplate):
     _js: ClassVar[Path | str | List[Path, str] | None] = None
 
     # pathlib.Path pointing to local Jinja2 template
-    _template: ClassVar[Path] | None = None
+    _template: ClassVar[Path | None] = None
 
     # External resources
     _resources: Dict[str, Dict[str, str]] = {'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}}
