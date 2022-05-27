@@ -69,10 +69,8 @@ jobs:
         run: git fetch --prune --tags --unshallow
       - name: conda setup
         run: |
-          conda update -n base conda
-          conda install "pyctdev>=0.5"
-          conda install "nodejs=15.3.0"
-          conda install conda-libmamba-solver
+          conda update -n base conda conda-libmamba-solver
+          conda install "pyctdev>=0.5"  "nodejs=15.3.0" conda-libmamba-solver
           conda config --set experimental_solver libmamba
       - name: nix_opengl
         if: contains(matrix.os, 'ubuntu')
