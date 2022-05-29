@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import ClassVar, Mapping, Union
+from typing import ClassVar, Mapping
 
 import param
 

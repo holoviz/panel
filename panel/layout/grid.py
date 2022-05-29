@@ -7,7 +7,7 @@ import math
 
 from collections import OrderedDict, namedtuple
 from functools import partial
-from typing import ClassVar, Mapping, Union
+from typing import ClassVar, Mapping
 
 import numpy as np
 import param
