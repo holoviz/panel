@@ -60,7 +60,6 @@ html_theme_options = {
 
 extensions += [
     'sphinx.ext.napoleon',
-    'sphinx_design',
     'nbsite.gallery',
     'sphinx_copybutton',
 ]
