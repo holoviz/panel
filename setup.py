@@ -171,6 +171,7 @@ extras_require = {
         'python-graphviz',
         'pydata-sphinx-theme',
         'sphinx-copybutton',
+        'sphinx-design',
         'pydeck',
     ]
 }
