@@ -28,7 +28,7 @@ class FastListTemplate(FastBaseTemplate):
 
     Some *accent* colors that work well are #A01346 (Fast), #00A170 (Mint), #DAA520 (Golden Rod),
     #2F4F4F (Dark Slate Grey), #F08080 (Light Coral) and #4099da (Summer Sky).
-    
+
     You can also use the `FastListTemplate` as shown below
 
     >>> pn.extension(..., template="fast")
