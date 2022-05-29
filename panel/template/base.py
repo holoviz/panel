@@ -488,10 +488,10 @@ class BasicTemplate(BaseTemplate):
     _LOCAL: str = LOCAL_DIST
 
     # pathlib.Path pointing to local CSS file(s)
-    _css: ClassVar[Path | str | List[Path, str] | None] = None
+    _css: ClassVar[Path | str | List[Path | str] | None] = None
 
     # pathlib.Path pointing to local JS file(s)
-    _js: ClassVar[Path | str | List[Path, str] | None] = None
+    _js: ClassVar[Path | str | List[Path | str] | None] = None
 
     # pathlib.Path pointing to local Jinja2 template
     _template: ClassVar[Path | None] = None
