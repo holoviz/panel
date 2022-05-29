@@ -25,12 +25,14 @@ html_static_path += ['_static']
 
 html_css_files = [
     'nbsite.css',
-    'css/custom.css'
+    'css/custom.css',
+    'css/dataframe.css',
 ]
 
 html_theme = "pydata_sphinx_theme"
 html_logo = "_static/logo_horizontal.png"
 html_favicon = "_static/favicon.ico"
+
 
 html_theme_options = {
     "github_url": "https://github.com/holoviz/panel",
@@ -50,15 +52,21 @@ html_theme_options = {
         "copyright",
         "last-updated",
     ],
+    #"navbar_end": ["navbar-icon-links"],
     "google_analytics_id": "UA-154795830-2",
+    "pygment_light_style": "monokai",
+    "pygment_dark_style": "monokai"
 }
 
 extensions += [
     'sphinx.ext.napoleon',
+    'sphinx_design',
     'nbsite.gallery',
     'sphinx_copybutton',
 ]
 napoleon_numpy_docstring = True
+
+myst_enable_extensions = ["colon_fence"]
 
 nbsite_gallery_conf = {
     'github_org': 'holoviz',
@@ -136,6 +144,7 @@ html_context.update({
     "last_release": f"v{release}",
     "github_user": "holoviz",
     "github_repo": "panel",
+    "default_mode": "light"
 })
 
 nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]

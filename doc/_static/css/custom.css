@@ -71,3 +71,22 @@ button.toggle-button {
 .toggle-hidden + .cell_output {
     margin-top: 0 !important;
 }
+
+/* Improve styling */
+
+div.cell div.cell_input {
+    border: none;
+}
+
+html[data-theme="light"] .highlight {
+    background-color: rgb(38 39 48);
+    color: #f8f8f2;
+}
+
+pre[id^='codecell'] {
+    background-color: unset;
+    border: none;
+    border-radius: 0.5em;
+    box-shadow: none;
+    padding: 1.5em;
+}
