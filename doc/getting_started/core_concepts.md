@@ -6,7 +6,7 @@ Getting started with Panel is pretty straightforward, open your editor, IDE or n
 panel serve your_script.py --autoreload --show
 ```
 
-Once you run that command Panel will launch a server that will serve your app, open a tab in your default browser (`--show`) and update the application whenever you update the code. 
+Once you run that command Panel will launch a server that will serve your app, open a tab in your default browser (`--show`) and update the application whenever you update the code.
 
 ## Iterating
 
@@ -215,7 +215,7 @@ x = pn.widgets.IntSlider(name='x', start=0, end=100)
 
 def square(x):
     return f'{x} squared is {x**2}'
-	
+
 pn.Row(pn.bind(square, x))
 ```
 

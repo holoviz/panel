@@ -147,8 +147,8 @@ alt: Blackstone Logo
 :::
 
 ::::
-		
-		
+
+
 ```{toctree}
 :titlesonly:
 :hidden:

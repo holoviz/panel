@@ -16,7 +16,7 @@ Before you can get started with Panel you are going to need a couple of things:
 
 Setting up Python
 ------------------
-   
+
 The recommended way to install Panel on all operating systems is using the `conda <http://conda.pydata.org/docs/>`_ command provided by `Anaconda <http://docs.continuum.io/anaconda/install>`_ or `Miniconda <http://conda.pydata.org/miniconda.html>`_. If you are not familiar with command line interfaces we recommend you use the `Anaconda <http://docs.continuum.io/anaconda/install>`_ installer and use `Anaconda Navigator <https://docs.anaconda.com/anaconda/navigator>`_.
 
 Alternatively you can also set up your own Python installation and manage your environment using a different environment management tool such as:
