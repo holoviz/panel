@@ -13,7 +13,23 @@ from ..theme import FastDarkTheme, FastDefaultTheme
 
 class FastGridTemplate(FastGridBaseTemplate):
     """
-    The FastGridTemplate is build on top of Fast.design and the React Grid Layout.
+    The `FastGridTemplate` is a grid based Template with a header, sidebar and main area. It is
+    based on the fast.design style and works well in both default (light) and dark mode.
+
+    Reference: https://panel.holoviz.org/reference/templates/FastGridTemplate.html
+
+    Example:
+
+    >>> template = pn.template.FastGridTemplate(
+    ...     site="Panel", title="FastGridTemplate", accent="#A01346",
+    ...     sidebar=[pn.pane.Markdown("## Settings"), some_slider],
+    ... ).servable()
+    >>> template.main[0:6,:]=some_python_object
+
+    Some *accent* colors that work well are #A01346 (Fast), #00A170 (Mint), #DAA520 (Golden Rod),
+    #2F4F4F (Dark Slate Grey), #F08080 (Light Coral) and #4099da (Summer Sky).
+
+    Please note the `FastListTemplate` cannot display in a notebook output cell.
     """
 
     _css = FastGridBaseTemplate._css + [
