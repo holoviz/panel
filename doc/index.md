@@ -12,7 +12,7 @@ width: 125
 
 <h2 style="margin-top: 0.3em;">A high-level app and dashboarding solution for Python</h2>
 
-::::{grid} 5
+::::{grid} 2 2 5 5
 :gutter: 1
 
 :::{grid-item-card} Attractors
