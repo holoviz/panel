@@ -1,16 +1,20 @@
 """
 Defines a VTKPane which renders a vtk plot using VTKPlot bokeh model.
 """
+from __future__ import annotations
+
 import base64
 import json
 import sys
 import zipfile
+
 from abc import abstractmethod
-from typing import Mapping, Union
+from typing import ClassVar, Mapping
 from urllib.request import urlopen
 
 import numpy as np
 import param
+
 from bokeh.models import LinearColorMapper
 from bokeh.util.serialization import make_globally_unique_id
 from pyviz_comms import JupyterComm
@@ -223,7 +227,7 @@ class BaseVTKRenderWindow(AbstractVTK):
 
     _applies_kw = True
 
-    _rename: Mapping[str, Union[str, None]] = {'serialize_on_instantiation': None, 'serialize_all_data_arrays': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'serialize_on_instantiation': None, 'serialize_all_data_arrays': None}
 
     __abstract = True
 
@@ -409,7 +413,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
 
     _one_time_reset = param.Boolean(default=False)
 
-    _rename: Mapping[str, Union[str, None]] = dict(_one_time_reset='one_time_reset',
+    _rename: ClassVar[Mapping[str, str | None]] = dict(_one_time_reset='one_time_reset',
                    **BaseVTKRenderWindow._rename)
 
     _updates = True
@@ -623,7 +627,7 @@ class VTKVolume(AbstractVTK):
 
     _serializers = {}
 
-    _rename: Mapping[str, Union[str, None]] = {'max_data_size': None, 'spacing': None, 'origin': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'max_data_size': None, 'spacing': None, 'origin': None}
 
     _updates = True
 

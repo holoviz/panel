@@ -16,8 +16,8 @@ from collections import Counter, defaultdict, namedtuple
 from functools import partial
 from pprint import pformat
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Set, Tuple,
-    Type, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Set,
+    Tuple, Type, Union,
 )
 
 import bleach
@@ -85,7 +85,7 @@ class Syncable(Renderable):
     _manual_params: List[str] = []
 
     # Mapping from parameter name to bokeh model property name
-    _rename: Mapping[str, Union[str, None]] = {}
+    _rename: ClassVar[Mapping[str, str | None]] = {}
 
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
@@ -675,7 +675,7 @@ class SyncableData(Reactive):
     # Parameters which when changed require an update of the data
     _data_params: List[str] = []
 
-    _rename: Mapping[str, Union[str, None]] = {'selection': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'selection': None}
 
     __abstract = True
 

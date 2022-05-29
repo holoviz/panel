@@ -2,12 +2,16 @@
 Defines a PyDeck Pane which renders a PyDeck plot using a PyDeckPlot
 bokeh model.
 """
+from __future__ import annotations
+
 import json
+
 from collections import defaultdict
-from typing import Mapping, Union
+from typing import ClassVar, Mapping
 
 import numpy as np
 import param
+
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
@@ -105,7 +109,7 @@ class DeckGL(PaneBase):
         Throttling timeout (in milliseconds) for view state and hover
         events sent from the frontend.""")
 
-    _rename: Mapping[str, Union[str, None]] = {
+    _rename: ClassVar[Mapping[str, str | None]] = {
         'click_state': 'clickState', 'hover_state': 'hoverState',
         'view_state': 'viewState', 'tooltips': 'tooltip'
     }

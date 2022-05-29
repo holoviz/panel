@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 import unittest.mock
+
 from functools import partial
-from typing import Mapping, Union
+from typing import ClassVar, Mapping
 
 import bokeh.core.properties as bp
 import param
 import pytest
+
 from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
 from bokeh.models import Div
@@ -59,7 +63,7 @@ def test_param_rename():
 
         a = param.Parameter()
 
-        _rename: Mapping[str, Union[str, None]] = {'a': 'b'}
+        _rename: ClassVar[Mapping[str, str | None]] = {'a': 'b'}
 
     obj = ReactiveRename()
 

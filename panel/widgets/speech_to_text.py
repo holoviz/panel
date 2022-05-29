@@ -18,7 +18,9 @@ offline. Whether this is secure and confidential enough for your use
 case is up to you to evaluate.
 """
 
-from typing import Mapping, Union
+from __future__ import annotations
+
+from typing import ClassVar, Mapping
 
 import param
 
@@ -388,7 +390,7 @@ class SpeechToText(Widget):
 
     _widget_type = _BkSpeechToText
 
-    _rename: Mapping[str, Union[str, None]] = {
+    _rename: ClassVar[Mapping[str, str | None]] = {
         "value": None,
         "grammars": None,
         "_grammars": "grammars",

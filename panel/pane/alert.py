@@ -3,9 +3,12 @@ Bootstrap inspired Alerts
 
 See https://getbootstrap.com/docs/4.0/components/alerts/
 """
-from typing import Mapping, Union
+from __future__ import annotations
+
+from typing import ClassVar, Mapping
 
 import param
+
 from panel.pane.markup import Markdown
 
 ALERT_TYPES = ["primary", "secondary", "success", "danger", "warning", "info", "light", "dark"]
@@ -27,7 +30,7 @@ class Alert(Markdown):
 
     priority = 0
 
-    _rename: Mapping[str, Union[str, None]] = dict(Markdown._rename, alert_type=None)
+    _rename: ClassVar[Mapping[str, str | None]] = dict(Markdown._rename, alert_type=None)
 
     @classmethod
     def applies(cls, obj):

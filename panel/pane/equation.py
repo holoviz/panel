@@ -2,10 +2,14 @@
 Renders objects representing equations including LaTeX strings and
 SymPy objects.
 """
+from __future__ import annotations
+
 import sys
-from typing import Mapping, Union
+
+from typing import ClassVar, Mapping
 
 import param
+
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
@@ -47,7 +51,7 @@ class LaTeX(DivPaneBase):
     # Priority is dependent on the data type
     priority = None
 
-    _rename: Mapping[str, Union[str, None]] = {"renderer": None}
+    _rename: ClassVar[Mapping[str, str | None]] = {"renderer": None}
 
     @classmethod
     def applies(cls, obj):

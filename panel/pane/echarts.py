@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import json
 import sys
 
+from typing import ClassVar, Mapping
+
 import param
+
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
@@ -31,7 +36,7 @@ class ECharts(PaneBase):
 
     priority = None
 
-    _rename: Mapping[str, Union[str, None]] = {"object": "data"}
+    _rename: ClassVar[Mapping[str, str | None]] = {"object": "data"}
 
     _rerender_params = []
 

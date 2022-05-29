@@ -2,12 +2,14 @@
 The input widgets generally allow entering arbitrary information into
 a text field or similar.
 """
+from __future__ import annotations
+
 import ast
 import json
 
 from base64 import b64decode
 from datetime import date, datetime
-from typing import Mapping, Union
+from typing import ClassVar, Mapping
 
 import numpy as np
 import param
@@ -124,7 +126,7 @@ class FileInput(Widget):
 
     _source_transforms = {'value': "'data:' + source.mime_type + ';base64,' + value"}
 
-    _rename: Mapping[str, Union[str, None]] = {'name': None, 'filename': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'filename': None}
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -202,7 +204,7 @@ class StaticText(Widget):
 
     _format = '<b>{title}</b>: {value}'
 
-    _rename: Mapping[str, Union[str, None]] = {'name': None, 'value': 'text'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'text'}
 
     _target_transforms = {'value': 'target.text.split(": ")[0]+": "+value'}
 
@@ -252,7 +254,7 @@ class DatePicker(Widget):
 
     _source_transforms = {}
 
-    _rename: Mapping[str, Union[str, None]] = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
     _widget_type = _BkDatePicker
 
@@ -293,7 +295,7 @@ class _DatetimePickerBase(Widget):
 
     _source_transforms = {'value': None, 'start': None, 'end': None, 'mode': None}
 
-    _rename: Mapping[str, Union[str, None]] = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
     _widget_type = _bkDatetimePicker
 
@@ -435,7 +437,7 @@ class ColorPicker(Widget):
 
     _widget_type = _BkColorPicker
 
-    _rename: Mapping[str, Union[str, None]] = {'value': 'color', 'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'color', 'name': 'title'}
 
 
 class _NumericInputBase(Widget):
@@ -455,7 +457,7 @@ class _NumericInputBase(Widget):
     end = param.Parameter(default=None, allow_None=True, doc="""
         Optional maximum allowable value.""")
 
-    _rename: Mapping[str, Union[str, None]] = {'name': 'title', 'start': 'low', 'end': 'high'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'start': 'low', 'end': 'high'}
 
     _widget_type = _BkNumericInput
 
@@ -632,7 +634,7 @@ class LiteralInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _rename: Mapping[str, Union[str, None]] = {'name': 'title', 'type': None, 'serializer': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'type': None, 'serializer': None}
 
     _source_transforms = {'value': """JSON.parse(value.replace(/'/g, '"'))"""}
 
@@ -729,7 +731,7 @@ class ArrayInput(LiteralInput):
         restriction helps avoid overwhelming the browser and lets
         other widgets remain usable.""")
 
-    _rename: Mapping[str, Union[str, None]] = dict(LiteralInput._rename, max_array_size=None)
+    _rename: ClassVar[Mapping[str, str | None]] = dict(LiteralInput._rename, max_array_size=None)
 
     _source_transforms = {'value': None}
 
@@ -804,7 +806,7 @@ class DatetimeInput(LiteralInput):
 
     _source_transforms = {'value': None, 'start': None, 'end': None}
 
-    _rename: Mapping[str, Union[str, None]] = {'format': None, 'type': None, 'name': 'title',
+    _rename: ClassVar[Mapping[str, str | None]] = {'format': None, 'type': None, 'name': 'title',
                'start': None, 'end': None, 'serializer': None}
 
     def __init__(self, **params):
@@ -961,7 +963,7 @@ class Checkbox(Widget):
 
     _supports_embed = True
 
-    _rename: Mapping[str, Union[str, None]] = {'value': 'active', 'name': 'labels'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'labels'}
 
     _source_transforms = {'value': "value.indexOf(0) >= 0", 'name': "value[0]"}
 
