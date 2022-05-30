@@ -91,3 +91,16 @@ pre[id^='codecell'] {
     box-shadow: none;
     padding: 1.5em;
 }
+
+button.copybtn {
+    background-color: rgb(38 39 48);
+}
+
+button.copybtn:hover {
+    background-color: rgb(38 39 48);
+    color: #f8f8f2;
+}
+
+.o-tooltip--left:after {
+    background: none;
+}
