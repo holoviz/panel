@@ -431,8 +431,6 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                 end = len(self.options) - 1
             style['end'] = end
         self._slider.param.update(**style)
-        print(events, style)
-
 
     def _sync_value(self, event):
         """
