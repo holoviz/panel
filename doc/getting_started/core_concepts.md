@@ -8,7 +8,7 @@ panel serve your_script.py --autoreload --show
 
 Once you run that command Panel will launch a server that will serve your app, open a tab in your default browser (`--show`) and update the application whenever you update the code.
 
-## Iterating
+## Development flow
 
 Depending on whether you are using a classical editor/IDE or a notebook environment we recommend two slightly different approaches to working. Both are suited to quick iteration but provide quite different modes of working.
 
@@ -246,7 +246,49 @@ The first thing you will not is how much more verbose this is, which should make
 
 ## Templates
 
-WIP
+Once you have started to build an application you will probably want to make it look nicer, this is where templates come in. Whenever you mark an object as `.servable` you are inserting it into a template. By default Panel uses a completely blank template but it is very simple to change that, by setting `pn.config.template` you can enable different templates. Here you will have a few options based on different frameworks, including `'bootstrap'`, `'material'` and `'fast'`.
+
+```python
+pn.config.template = 'fast'
+```
+
+
+:::{admonition} Note
+:class: info
+
+The `pn.config` object provides a range of options that will allow you to configure your application, however as a shortcut you may also provide options for the `config` object as keywords to the `pn.extension`. In other words `pn.extension(template='fast')` is equivalent to `pn.config.template = 'fast'`. This provides a clean way to set multiple config options at once.
+:::
+
+Once you have configured a template you can control where to render your components using the `target` argument of the `.servable()` method. Most templates have multiple targets including 'main', 'sidebar', 'header' and 'modal'. As an example you might want to render your widgets into the sidebar and your plots into the main area:
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+import panel as pn
+
+pn.extension(template='fast')
+
+freq = pn.widgets.FloatSlider(
+    name='Frequency', start=0, end=10, value=5
+).servable(target='sidebar')
+
+ampl = pn.widgets.FloatSlider(
+    name='Amplitude', start=0, end=1, value=0.5
+).servable(target='sidebar')
+
+def plot(freq, ampl):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    xs = np.linspace(0, 1)
+    ys = np.sin(xs*freq)*ampl
+    ax.plot(xs, ys)
+    return fig
+
+pn.Column(
+    '# Sine curve',
+    pn.bind(plot, freq, ampl),
+).servable(target='main')
+```
 
 ## Get help
 
