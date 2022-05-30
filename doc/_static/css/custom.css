@@ -104,3 +104,7 @@ button.copybtn:hover {
 .o-tooltip--left:after {
     background: none;
 }
+
+ul.current.nav.bd-sidenav {
+    padding: 0;
+}
