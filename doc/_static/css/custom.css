@@ -1,6 +1,6 @@
 :root {
-    --pst-color-primary: 47,47,47;
-    --pst-color-link: 0,170,65;
+    --pst-color-primary: rgb(47, 47, 47);
+    --pst-color-link: rgb(0, 170, 65);
 }
 
 .nav-link {
