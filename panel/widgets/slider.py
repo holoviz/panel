@@ -347,14 +347,14 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         else:
             value = values.index(self.value)
             label = labels[value]
-        self.disabled = True if len(values) in (0, 1) else self.disabled
-        end = 1 if self.disabled else len(self.options)-1
+        disabled = True if len(values) in (0, 1) else self.disabled
+        end = 1 if disabled else len(self.options)-1
 
         self._slider = IntSlider(
             start=0, end=end, value=value, tooltips=False,
             show_value=False, margin=(0, 5, 5, 5),
-            _supports_embed=False,
-            **{p: getattr(self, p) for p in self._slider_style_params}
+            _supports_embed=False, disabled=disabled,
+            **{p: getattr(self, p) for p in self._slider_style_params if p != 'disabled'}
         )
         self._update_style()
         js_code = self._text_link.format(
