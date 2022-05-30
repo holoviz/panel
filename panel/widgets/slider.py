@@ -309,6 +309,10 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     _style_params = [p for p in list(Layoutable.param) if p != 'name'] + ['orientation']
 
+    _slider_style_params = [
+        'bar_color', 'direction', 'disabled', 'orientation'
+    ]
+
     def __init__(self, **params):
         self._syncing = False
         super().__init__(**params)
@@ -343,14 +347,14 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         else:
             value = values.index(self.value)
             label = labels[value]
-        disabled = len(values) in (0, 1)
-        end = 1 if disabled else len(self.options)-1
+        self.disabled = True if len(values) in (0, 1) else self.disabled
+        end = 1 if self.disabled else len(self.options)-1
 
         self._slider = IntSlider(
             start=0, end=end, value=value, tooltips=False,
             show_value=False, margin=(0, 5, 5, 5),
-            orientation=self.orientation,
-            _supports_embed=False, disabled=disabled
+            _supports_embed=False,
+            **{p: getattr(self, p) for p in self._slider_style_params}
         )
         self._update_style()
         js_code = self._text_link.format(
@@ -359,6 +363,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._jslink = self._slider.jslink(self._text, code={'value': js_code})
         self._slider.param.watch(self._sync_value, 'value')
         self._slider.param.watch(self._sync_value, 'value_throttled')
+        self.param.watch(self._update_slider_params, self._slider_style_params)
         self._text.value = label
         self._composite[1] = self._slider
 
@@ -411,6 +416,23 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         col_style = {k: v for k, v in style.items()
                      if k != 'orientation'}
         self._composite.param.update(**col_style)
+
+    def _update_slider_params(self, *events):
+        style = {e.name: e.new for e in events}
+        disabled = style.get('disabled', None)
+        if disabled is False:
+            if len(self.values) in (0, 1):
+                self.param.warning(
+                    'A DiscreteSlider can only be disabled if it has more than 1 option.'
+                )
+                end = 1
+                del style['disabled']
+            else:
+                end = len(self.options) - 1
+            style['end'] = end
+        self._slider.param.update(**style)
+        print(events, style)
+
 
     def _sync_value(self, event):
         """
