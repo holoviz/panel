@@ -162,15 +162,15 @@ class FileInput(Widget):
                 "filename was given. Please provide a list of filenames or "
                 "file-like objects."
             )
-        elif not isinstance(filename, list) and isinstance(value, list):
+        if not isinstance(filename, list) and isinstance(value, list):
             raise TypeError(
                 "FileInput contains a single files but a list of "
                 "filenames was given. Please provide a single filename "
                 "or file-like object."
             )
-        elif not isinstance(value, list):
+        if not isinstance(value, list):
             value = [self.value]
-        elif not isinstance(filename, list):
+        if not isinstance(filename, list):
             filename = [filename]
 
         for val, fn in zip(value, filename):
