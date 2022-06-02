@@ -162,7 +162,7 @@ class FileInput(Widget):
                 "filename was given. Please provide a list of filenames or "
                 "file-like objects."
             )
-        if not isinstance(filename, list) and isinstance(value, list):
+        elif not isinstance(filename, list) and isinstance(value, list):
             raise TypeError(
                 "FileInput contains a single files but a list of "
                 "filenames was given. Please provide a single filename "
