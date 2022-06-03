@@ -209,7 +209,7 @@ class PaneBase(Reactive):
                 else:
                     index = parent.children.index(old_model)
             except ValueError:
-                self.warning('%s pane model %s could not be replaced '
+                self.param.warning('%s pane model %s could not be replaced '
                              'with new model %s, ensure that the '
                              'parent is not modified at the same '
                              'time the panel is being updated.' %
