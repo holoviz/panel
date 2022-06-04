@@ -11,7 +11,9 @@ from .select import SelectBase
 
 class PlayerBase(Widget):
 
-    interval = param.Integer(default=500, doc="Interval between updates, in milliseconds. Default is 500, i.e. two updates per second")
+    interval = param.Integer(default=500, doc="""
+        Interval between updates, in milliseconds. Default is 500, i.e. 
+        two updates per second.""")
 
     loop_policy = param.ObjectSelector(default='once',
                                        objects=['once', 'loop', 'reflect'], doc="""
