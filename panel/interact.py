@@ -200,7 +200,7 @@ class interactive(PaneBase):
             if isinstance(abbrev, fixed):
                 widget_obj = abbrev
             else:
-                widget_obj = widget(name, abbrev, default=default)
+                widget_obj = widget(abbrev, name=name, default=default)
             if not (isinstance(widget_obj, Widget) or isinstance(widget_obj, fixed)):
                 if widget_obj is None:
                     continue
