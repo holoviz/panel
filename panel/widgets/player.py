@@ -11,7 +11,9 @@ from .select import SelectBase
 
 class PlayerBase(Widget):
 
-    interval = param.Integer(default=500, doc="Interval between updates")
+    interval = param.Integer(default=500, doc="""
+        Interval between updates, in milliseconds. Default is 500, i.e. 
+        two updates per second.""")
 
     loop_policy = param.ObjectSelector(default='once',
                                        objects=['once', 'loop', 'reflect'], doc="""
@@ -52,7 +54,7 @@ class Player(PlayerBase):
     """
     The `Player` provides controls to play and skip through a number of
     frames defined by explicit start and end values.  The speed at
-    which the widget plays is defined by the `interval`, but it is also
+    which the widget plays is defined by the `interval` (in milliseconds), but it is also
     possible to skip frames using the `step` parameter.
 
     Reference: https://panel.holoviz.org/reference/widgets/Player.html
@@ -92,7 +94,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
     """
     The `DiscretePlayer` provides controls to iterate through a list of
     discrete options.  The speed at which the widget plays is defined
-    by the `interval`, but it is also possible to skip items using the
+    by the `interval` (in milliseconds), but it is also possible to skip items using the
     `step` parameter.
 
     Reference: https://panel.holoviz.org/reference/widgets/DiscretePlayer.html
