@@ -209,11 +209,11 @@ class PaneBase(Reactive):
                 else:
                     index = parent.children.index(old_model)
             except ValueError:
-                self.param.warning('%s pane model %s could not be replaced '
-                             'with new model %s, ensure that the '
-                             'parent is not modified at the same '
-                             'time the panel is being updated.' %
-                             (type(self).__name__, old_model, new_model))
+                self.param.warning(
+                    f'{type(self).__name__} pane model {old_model!r} could not be '
+                    f'replaced with new model {new_model!r}, ensure that the parent '
+                    'is not modified at the same time the panel is being updated.'
+                )
             else:
                 if isinstance(parent, _BkReactiveHTML):
                     parent.children[node] = new_models
