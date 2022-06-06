@@ -51,6 +51,9 @@ jobs:
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
+      # Allows libmamba to operate even when it thinks it is running in
+      # the base env
+      PYTEST_CURRENT_TEST: 1
     steps:
       - uses: actions/checkout@v2
         with:
@@ -70,7 +73,7 @@ jobs:
       - name: conda setup
         run: |
           conda update -n base conda
-          conda install -n base conda-libmamba-solver
+          conda install conda-libmamba-solver
           conda config --set experimental_solver libmamba
           conda install "pyctdev>=0.5"  "nodejs=15.3.0"  "pip<21.2.1" "toml"
           conda info
@@ -78,15 +81,12 @@ jobs:
       - name: nix_opengl
         if: contains(matrix.os, 'ubuntu')
         run: |
-          conda info
           sudo apt-get install libglu1-mesa
           conda install mesalib
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
           sleep 3
       - name: doit develop_install
         run: |
-          conda info
-          conda install conda-libmamba-solver
           doit develop_install -o examples -o recommended -o tests -o build
           pip install pyecharts idom
           bokeh sampledata
