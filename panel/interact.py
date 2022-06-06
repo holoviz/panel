@@ -13,21 +13,11 @@ from __future__ import annotations
 import types
 
 from collections import OrderedDict
+from collections.abc import Iterable, Mapping
 from inspect import getcallargs
-from numbers import Integral, Real
 from typing import TYPE_CHECKING
 
-try:  # Python >= 3.3
-    from collections.abc import Iterable, Mapping
-    from inspect import Parameter, signature
-    empty = Parameter.empty
-except ImportError:
-    from collections import Iterable, Mapping
-    try:
-        from IPython.utils.signatures import Parameter, signature
-        empty = Parameter.empty
-    except Exception:
-        signature, Parameter, empty = None, None, None
+empty = Parameter.empty
 
 try:
     from inspect import getfullargspec as check_argspec
@@ -40,48 +30,11 @@ from .layout import Column, Panel, Row
 from .pane import HTML, PaneBase, panel
 from .pane.base import ReplacementPane
 from .viewable import Viewable
-from .widgets import (
-    Button, Checkbox, DiscreteSlider, FloatSlider, IntSlider, Select,
-    TextInput, Widget,
-)
+from .widgets import Button, Widget
+from .widgets.widget import fixed, widget
 
 if TYPE_CHECKING:
     from bokeh.model import Model
-
-
-def _get_min_max_value(min, max, value=None, step=None):
-    """Return min, max, value given input values with possible None."""
-    # Either min and max need to be given, or value needs to be given
-    if value is None:
-        if min is None or max is None:
-            raise ValueError('unable to infer range, value from: ({0}, {1}, {2})'.format(min, max, value))
-        diff = max - min
-        value = min + (diff / 2)
-        # Ensure that value has the same type as diff
-        if not isinstance(value, type(diff)):
-            value = min + (diff // 2)
-    else:  # value is not None
-        if not isinstance(value, Real):
-            raise TypeError('expected a real number, got: %r' % value)
-        # Infer min/max from value
-        if value == 0:
-            # This gives (0, 1) of the correct type
-            vrange = (value, value + 1)
-        elif value > 0:
-            vrange = (-value, 3*value)
-        else:
-            vrange = (3*value, -value)
-        if min is None:
-            min = vrange[0]
-        if max is None:
-            max = vrange[1]
-    if step is not None:
-        # ensure value is on a step
-        tick = int((value - min) / step)
-        value = min + tick * step
-    if not min <= value <= max:
-        raise ValueError('value must be between min and max (min={0}, value={1}, max={2})'.format(min, value, max))
-    return min, max, value
 
 
 def _yield_abbreviations_for_parameter(parameter, kwargs):
@@ -110,14 +63,6 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
         for k, v in kwargs.copy().items():
             kwargs.pop(k)
             yield k, v, empty
-
-
-def _matches(o, pattern):
-    """Match a pattern of types in a sequence."""
-    if not len(o) == len(pattern):
-        return False
-    comps = zip(o,pattern)
-    return all(isinstance(obj,kind) for obj,kind in comps)
 
 
 class interactive(PaneBase):
@@ -190,7 +135,7 @@ class interactive(PaneBase):
         else:
             widgets = self._widgets.items()
 
-        for name, widget in widgets:
+        for name, widget_obj in widgets:
             def update_pane(change):
                 # Try updating existing pane
                 new_object = self.object(**self.kwargs)
@@ -205,13 +150,13 @@ class interactive(PaneBase):
                 self._inner_layout[0] = new_pane
                 self._internal = internal
 
-            if self.throttled and hasattr(widget, 'value_throttled'):
+            if self.throttled and hasattr(widget_obj, 'value_throttled'):
                 v = 'value_throttled'
             else:
                 v = 'value'
 
             pname = 'clicks' if name == 'manual' else v
-            watcher = widget.param.watch(update_pane, pname)
+            watcher = widget_obj.param.watch(update_pane, pname)
             self._callbacks.append(watcher)
 
     def _cleanup(self, root: Model | None = None) -> None:
@@ -253,126 +198,20 @@ class interactive(PaneBase):
         result = []
         for name, abbrev, default in seq:
             if isinstance(abbrev, fixed):
-                widget = abbrev
+                widget_obj = abbrev
             else:
-                widget = self.widget_from_abbrev(abbrev, name, default)
-            if not (isinstance(widget, Widget) or isinstance(widget, fixed)):
-                if widget is None:
+                widget_obj = widget(name, abbrev, default=default)
+            if not (isinstance(widget_obj, Widget) or isinstance(widget_obj, fixed)):
+                if widget_obj is None:
                     continue
                 else:
                     raise TypeError("{!r} is not a ValueWidget".format(widget))
-            result.append((name, widget))
+            result.append((name, widget_obj))
         return result
 
     @classmethod
     def applies(cls, object):
         return isinstance(object, types.FunctionType)
-
-    @classmethod
-    def widget_from_abbrev(cls, abbrev, name, default=empty):
-        """Build a ValueWidget instance given an abbreviation or Widget."""
-        if isinstance(abbrev, Widget):
-            return abbrev
-
-        if isinstance(abbrev, tuple):
-            widget = cls.widget_from_tuple(abbrev, name, default)
-            if default is not empty:
-                try:
-                    widget.value = default
-                except Exception:
-                    # ignore failure to set default
-                    pass
-            return widget
-
-        # Try single value
-        widget = cls.widget_from_single_value(abbrev, name)
-        if widget is not None:
-            return widget
-
-        # Something iterable (list, dict, generator, ...). Note that str and
-        # tuple should be handled before, that is why we check this case last.
-        if isinstance(abbrev, Iterable):
-            widget = cls.widget_from_iterable(abbrev, name)
-            if default is not empty:
-                try:
-                    widget.value = default
-                except Exception:
-                    # ignore failure to set default
-                    pass
-            return widget
-
-        # No idea...
-        return fixed(abbrev)
-
-    @staticmethod
-    def widget_from_single_value(o, name):
-        """Make widgets from single values, which can be used as parameter defaults."""
-        if isinstance(o, str):
-            return TextInput(value=str(o), name=name)
-        elif isinstance(o, bool):
-            return Checkbox(value=o, name=name)
-        elif isinstance(o, Integral):
-            min, max, value = _get_min_max_value(None, None, o)
-            return IntSlider(value=o, start=min, end=max, name=name)
-        elif isinstance(o, Real):
-            min, max, value = _get_min_max_value(None, None, o)
-            return FloatSlider(value=o, start=min, end=max, name=name)
-        else:
-            return None
-
-    @staticmethod
-    def widget_from_tuple(o, name, default=empty):
-        """Make widgets from a tuple abbreviation."""
-        int_default = (default is empty or isinstance(default, int))
-        if _matches(o, (Real, Real)):
-            min, max, value = _get_min_max_value(o[0], o[1])
-            if all(isinstance(_, Integral) for _ in o) and int_default:
-                cls = IntSlider
-            else:
-                cls = FloatSlider
-            return cls(value=value, start=min, end=max, name=name)
-        elif _matches(o, (Real, Real, Real)):
-            step = o[2]
-            if step <= 0:
-                raise ValueError("step must be >= 0, not %r" % step)
-            min, max, value = _get_min_max_value(o[0], o[1], step=step)
-            if all(isinstance(_, Integral) for _ in o) and int_default:
-                cls = IntSlider
-            else:
-                cls = FloatSlider
-            return cls(value=value, start=min, end=max, step=step, name=name)
-        elif _matches(o, (Real, Real, Real, Real)):
-            step = o[2]
-            if step <= 0:
-                raise ValueError("step must be >= 0, not %r" % step)
-            min, max, value = _get_min_max_value(o[0], o[1], value=o[3], step=step)
-            if all(isinstance(_, Integral) for _ in o):
-                cls = IntSlider
-            else:
-                cls = FloatSlider
-            return cls(value=value, start=min, end=max, step=step, name=name)
-        elif len(o) == 4:
-            min, max, value = _get_min_max_value(o[0], o[1], value=o[3])
-            if all(isinstance(_, Integral) for _ in [o[0], o[1], o[3]]):
-                cls = IntSlider
-            else:
-                cls = FloatSlider
-            return cls(value=value, start=min, end=max, name=name)
-
-    @staticmethod
-    def widget_from_iterable(o, name):
-        """Make widgets from an iterable. This should not be done for
-        a string or tuple."""
-        # Select expects a dict or list, so we convert an arbitrary
-        # iterable to either of those.
-        values = list(o.values()) if isinstance(o, Mapping) else list(o)
-        widget_type = DiscreteSlider if all(param._is_number(v) for v in values) else Select
-        if isinstance(o, (list, dict)):
-            return widget_type(options=o, name=name)
-        elif isinstance(o, Mapping):
-            return widget_type(options=list(o.items()), name=name)
-        else:
-            return widget_type(options=list(o), name=name)
 
     # Return a factory for interactive functions
     @classmethod
@@ -521,19 +360,4 @@ interact = interactive.factory()
 interact_manual = interact.options(manual_update=True, manual_name="Run Interact")
 
 
-class fixed(param.Parameterized):
-    """A pseudo-widget whose value is fixed and never synced to the client."""
-    value = param.Parameter(doc="Any Python object")
-    description = param.String(default='')
-
-    def __init__(self, value, **kwargs):
-        super().__init__(value=value, **kwargs)
-
-    def get_interact_value(self):
-        """Return the value for this widget which should be passed to
-        interactive functions. Custom widgets can change this method
-        to process the raw value ``self.value``.
-        """
-        return self.value
-
-__all__ = ["fixed", "interact", "interact_manual", "interactive"]
+__all__ = ["interact", "interact_manual", "interactive"]
