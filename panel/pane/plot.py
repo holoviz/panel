@@ -158,8 +158,11 @@ class Matplotlib(PNG, IPyWidget):
     dpi = param.Integer(default=144, bounds=(1, None), doc="""
         Scales the dpi of the matplotlib figure.""")
 
+    high_dpi = param.Boolean(default=True, doc="""
+        Whether to optimize output for high-dpi displays.""")
+
     interactive = param.Boolean(default=False, constant=True, doc="""
-    """)
+        Whether to render interactive matplotlib plot with ipympl.""")
 
     tight = param.Boolean(default=False, doc="""
         Automatically adjust the figure size to fit the
@@ -206,20 +209,28 @@ class Matplotlib(PNG, IPyWidget):
         canvas.mpl_connect('close_event', closer)
         return manager
 
+    def _update_dimensions(self):
+        w, h = self.object.get_size_inches()
+        dpi = self.dpi / 2. if self.high_dpi else self.dpi
+        self.width = self.width or int(dpi * w)
+        self.height = self.height or int(dpi * h)
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
+        self._update_dimensions()
         if not self.interactive:
-            return PNG._get_model(self, doc, root, parent, comm)
+            model = PNG._get_model(self, doc, root, parent, comm)
+            return model
         self.object.set_dpi(self.dpi)
         manager = self._get_widget(self.object)
         props = self._process_param_change(self._init_params())
         kwargs = {k: v for k, v in props.items()
                   if k not in self._rerender_params+['interactive']}
-        w, h = self.object.get_size_inches()
-        kwargs['width'] = self.width or int(self.dpi * w)
-        kwargs['height'] = self.height or int(self.dpi * h)
+        kwargs['width'] = self.width
+        kwargs['height'] = self.height
         kwargs['sizing_mode'] = self.sizing_mode
-        model = self._get_ipywidget(manager.canvas, doc, root, comm,
-                                    **kwargs)
+        model = self._get_ipywidget(
+            manager.canvas, doc, root, comm, **kwargs
+        )
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
@@ -228,6 +239,7 @@ class Matplotlib(PNG, IPyWidget):
 
     def _update(self, ref=None, model=None):
         if not self.interactive:
+            self._update_dimensions()
             model.update(**self._get_properties())
             return
         manager = self._managers[ref]
