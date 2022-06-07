@@ -11,8 +11,7 @@ import uuid
 from functools import partial
 from pathlib import Path, PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Optional, Tuple,
-    Type,
+    IO, TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple, Type,
 )
 
 import param
@@ -50,7 +49,7 @@ if TYPE_CHECKING:
     from bokeh.server.contexts import BokehSessionContext
     from jinja2 import Template as _Template
     from pyviz_comms import Comm
-    from typing_extensions import TypedDict
+    from typing_extensions import Literal, TypedDict
 
     from ..io.location import Location
 
