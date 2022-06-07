@@ -8,11 +8,10 @@ import os
 import sys
 import uuid
 
-from collections import OrderedDict
 from functools import partial
 from pathlib import Path, PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Dict, List, Optional,
+    IO, TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple,
 )
 
 import param
@@ -40,7 +39,7 @@ from ..pane import (
 from ..pane.image import ImageBase
 from ..reactive import ReactiveHTML
 from ..util import isurl, url_path
-from ..viewable import ServableMixin, Viewable
+from ..viewable import Renderable, ServableMixin, Viewable
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
 from .theme import THEMES, DefaultTheme, Theme
@@ -71,8 +70,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         either insert all available roots or explicitly embed
         the location root with : {{ embed(roots.location) }}.""")
 
-    # Dictionary of property overrides by bokeh Model type
-    _modifiers = {}
+    # Dictionary of property overrides by Viewable type
+    _modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
 
     __abstract = True
 
@@ -82,7 +81,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     ):
         super().__init__(**params)
         if isinstance(template, str):
-            self._code = template
+            self._code: str | None = template
             template = _env.from_string(template)
         else:
             self._code = None
@@ -90,9 +89,9 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         if isinstance(nb_template, str):
             nb_template = _env.from_string(nb_template)
         self.nb_template = nb_template or template
-        self._render_items = OrderedDict()
-        self._render_variables = {}
-        self._documents = []
+        self._render_items: Dict[str, Tuple[Renderable, List[str]]]  = {}
+        self._render_variables: Dict[str, Any] = {}
+        self._documents: List[_Document] = []
         self._server = None
         self._layout = self._build_layout()
 
@@ -123,11 +122,10 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         return template.format(
             cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
 
-    @classmethod
-    def _apply_hooks(cls, viewable: Viewable, root: Model) -> None:
+    def _apply_hooks(self, viewable: Viewable, root: Model) -> None:
         ref = root.ref['id']
         for o in viewable.select():
-            cls._apply_modifiers(o, ref)
+            self._apply_modifiers(o, ref)
 
     @classmethod
     def _apply_modifiers(cls, viewable: Viewable, mref: str) -> None:
@@ -153,7 +151,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         props = viewable._process_param_change(params)
         model.update(**props)
 
-    def _apply_root(self, name: str, viewable: Viewable, tags: List[str]) -> None:
+    def _apply_root(self, name: str, model: Model, tags: List[str]) -> None:
         pass
 
     def _server_destroy(self, session_context: BokehSessionContext):
@@ -165,22 +163,22 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         title: Optional[str] = None, notebook: bool = False,
         location: bool | Location=True
     ):
-        doc = doc or _curdoc()
-        self._documents.append(doc)
+        document: _Document = document or _curdoc()
+        self._documents.append(document)
         if location and self.location:
-            self._add_location(doc, location)
-        doc.on_session_destroyed(state._destroy_session)
-        doc.on_session_destroyed(self._server_destroy)
+            self._add_location(document, location)
+        document.on_session_destroyed(state._destroy_session)
+        document.on_session_destroyed(self._server_destroy)
 
-        if title or doc.title == 'Bokeh Application':
+        if title or document.title == 'Bokeh Application':
             title = title or 'Panel Application'
-            doc.title = title
+            document.title = title
 
         # Initialize fake root. This is needed to ensure preprocessors
         # which assume that all models are owned by a single root can
         # link objects across multiple roots in a template.
         col = Column()
-        preprocess_root = col.get_root(doc, comm)
+        preprocess_root = col.get_root(document, comm)
         col._hooks.append(self._apply_hooks)
         ref = preprocess_root.ref['id']
         objs, models = [], []
@@ -189,9 +187,9 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             if self._apply_hooks not in obj._hooks:
                 obj._hooks.append(self._apply_hooks)
             # We skip preprocessing on the individual roots
-            model = obj.get_root(doc, comm, preprocess=False)
+            model = obj.get_root(document, comm, preprocess=False)
             mref = model.ref['id']
-            doc.on_session_destroyed(obj._server_destroy)
+            document.on_session_destroyed(obj._server_destroy)
             for sub in obj.select(Viewable):
                 submodel = sub._models.get(mref)
                 if submodel is None:
@@ -199,32 +197,34 @@ class BaseTemplate(param.Parameterized, ServableMixin):
                 sub._models[ref] = submodel
                 if isinstance(sub, HoloViews) and mref in sub._plots:
                     sub._plots[ref] = sub._plots.get(mref)
-            obj._documents[doc] = model
+            obj._documents[document] = model
             model.name = name
             model.tags = tags
             self._apply_root(name, model, tags)
-            add_to_doc(model, doc, hold=bool(comm))
+            add_to_doc(model, document, hold=bool(comm))
             objs.append(obj)
             models.append(model)
 
         # Here we ensure that the preprocessor is run across all roots
         # and set up session cleanup hooks for the fake root.
         state._fake_roots.append(ref) # Ensure no update is run
-        state._views[ref] = (col, preprocess_root, doc, comm)
+        state._views[ref] = (col, preprocess_root, document, comm)
         col.objects = objs
         preprocess_root.children[:] = models
         col._preprocess(preprocess_root)
-        col._documents[doc] = preprocess_root
-        doc.on_session_destroyed(col._server_destroy)
+        col._documents[document] = preprocess_root
+        document.on_session_destroyed(col._server_destroy)
 
         if notebook:
-            doc.template = self.nb_template
+            document.template = self.nb_template
         else:
-            doc.template = self.template
-        doc._template_variables.update(self._render_variables)
-        return doc
+            document.template = self.template
+        document._template_variables.update(self._render_variables)
+        return document
 
-    def _repr_mimebundle_(self, include=None, exclude=None) -> Dict[str, str]:
+    def _repr_mimebundle_(
+        self, include=None, exclude=None
+    ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
         loaded = panel_extension._loaded
         if not loaded and 'holoviews' in sys.modules:
             import holoviews as hv
@@ -369,9 +369,9 @@ class TemplateActions(ReactiveHTML):
 
     margin = param.Integer(default=0)
 
-    _template = ""
+    _template: ClassVar[str] = ""
 
-    _scripts = {
+    _scripts: ClassVar[Dict[str, List[str] | str]] = {
         'open_modal': ["document.getElementById('pn-Modal').style.display = 'block'"],
         'close_modal': ["document.getElementById('pn-Modal').style.display = 'none'"],
     }
@@ -484,8 +484,8 @@ class BasicTemplate(BaseTemplate):
     #############
 
     # Resource locations for bundled resources
-    _CDN: str = CDN_DIST
-    _LOCAL: str = LOCAL_DIST
+    _CDN: ClassVar[str] = CDN_DIST
+    _LOCAL: ClassVar[str] = LOCAL_DIST
 
     # pathlib.Path pointing to local CSS file(s)
     _css: ClassVar[Path | str | List[Path | str] | None] = None
@@ -497,9 +497,11 @@ class BasicTemplate(BaseTemplate):
     _template: ClassVar[Path | None] = None
 
     # External resources
-    _resources: Dict[str, Dict[str, str]] = {'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}}
+    _resources: ClassVar[Dict[str, Dict[str, str]]] = {
+        'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}
+    }
 
-    _modifiers = {}
+    _modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
 
     __abstract = True
 
@@ -554,27 +556,29 @@ class BasicTemplate(BaseTemplate):
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
         self._update_vars()
-        doc = super()._init_doc(doc, comm, title, notebook, location)
+        document = super()._init_doc(doc, comm, title, notebook, location)
         if self.notifications:
-            state._notifications[doc] = self.notifications
+            state._notifications[document] = self.notifications
         if self.theme:
             theme = self._get_theme()
             if theme and theme.bokeh_theme:
-                doc.theme = theme.bokeh_theme
-        return doc
+                document.theme = theme.bokeh_theme
+        return document
 
     def _apply_hooks(self, viewable: Viewable, root: Model):
         super()._apply_hooks(viewable, root)
         theme = self._get_theme()
         if theme and theme.bokeh_theme and root.document:
             root.document.theme = theme.bokeh_theme
+        return
 
-    def _get_theme(self) -> Theme:
+    def _get_theme(self) -> Theme | None:
         for cls in type(self).__mro__:
             try:
                 return self.theme.find_theme(cls)()
             except Exception:
                 pass
+        return None
 
     def _template_resources(self) -> Dict[str, Dict[str, str] | List[str]]:
         clsname = type(self).__name__
@@ -588,7 +592,9 @@ class BasicTemplate(BaseTemplate):
             dist_path = self._CDN
 
         # External resources
-        css_files, js_files, js_modules = {}, {}, {}
+        css_files: Dict[str, str] = {}
+        js_files: Dict[str, str] = {}
+        js_modules: Dict[str, str] = {}
         resource_types = {'css': css_files, 'js': js_files, 'js_modules': js_modules}
         for resource_type, files in self._resources.items():
             if resource_type not in resource_types:
@@ -632,6 +638,8 @@ class BasicTemplate(BaseTemplate):
         for css in base_css:
             tmpl_name = name
             for cls in type(self).__mro__[1:-5]:
+                if not isinstance(cls, BasicTemplate):
+                    continue
                 tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
                 if css in tmpl_css:
                     tmpl_name = cls.__name__.lower()
@@ -651,6 +659,8 @@ class BasicTemplate(BaseTemplate):
         for js in base_js:
             tmpl_name = name
             for cls in type(self).__mro__[1:-5]:
+                if not isinstance(cls, BasicTemplate):
+                    continue
                 tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
                 if js in tmpl_js:
                     tmpl_name = cls.__name__.lower()
@@ -860,7 +870,7 @@ class Template(BaseTemplate):
     """
 
     def __init__(
-        self, template: str | _Template = None, nb_template: str | _Template = None,
+        self, template: str | _Template | None = None, nb_template: str | _Template | None = None,
         items: Optional[Dict[str, Any]] = None, **params
     ):
         super().__init__(template=template, nb_template=nb_template, items=items, **params)
