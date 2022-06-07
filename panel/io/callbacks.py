@@ -9,11 +9,9 @@ import time
 
 import param
 
-from bokeh.io import curdoc as _curdoc
-
 from ..util import edit_readonly, function_name
 from .logging import LOG_PERIODIC_END, LOG_PERIODIC_START
-from .state import state
+from .state import curdoc_locked, state
 
 log = logging.getLogger('panel.callbacks')
 _periodic_logger = logging.getLogger(f'{__name__}.PeriodicCallback')
@@ -198,7 +196,7 @@ class PeriodicCallback(param.Parameterized):
         elif self._cb:
             self._cb.stop()
         self._cb = None
-        doc = self._doc or _curdoc()
+        doc = self._doc or curdoc_locked()
         if doc:
             doc.callbacks.session_destroyed_callbacks = {
                 cb for cb in doc.callbacks.session_destroyed_callbacks

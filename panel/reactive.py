@@ -16,8 +16,8 @@ from collections import Counter, defaultdict, namedtuple
 from functools import partial
 from pprint import pformat
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Set, Tuple,
-    Type, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Set,
+    Tuple, Type, Union,
 )
 
 import bleach
@@ -1349,23 +1349,23 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 `input` node in the example above.
     """
 
-    _child_config: Mapping[str, str] = {}
+    _child_config: ClassVar[Mapping[str, str]] = {}
 
-    _dom_events: Mapping[str, List[str]] = {}
+    _dom_events: ClassVar[Mapping[str, List[str]]] = {}
 
-    _extension_name: Optional[str] = None
+    _extension_name: ClassVar[Optional[str]] = None
 
-    _template: str = ""
+    _template: ClassVar[str] = ""
 
-    _scripts: Mapping[str, str | List[str]] = {}
+    _scripts: ClassVar[Mapping[str, str | List[str]]] = {}
 
-    _script_assignment: str = r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
+    _script_assignment: ClassVar[str] = r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
 
     __abstract = True
 
-    __css__: Optional[List[str]] = None
-    __javascript__: Optional[List[str]] = None
-    __javascript_modules__: Optional[List[str]] = None
+    __css__: ClassVar[Optional[List[str]]] = None
+    __javascript__: ClassVar[Optional[List[str]]] = None
+    __javascript_modules__: ClassVar[Optional[List[str]]] = None
 
     def __init__(self, **params):
         from .pane import panel
