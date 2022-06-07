@@ -4,6 +4,7 @@ Defines utilities to save panel objects to files as HTML or PNG.
 from __future__ import annotations
 
 import io
+import os
 
 from typing import (
     IO, TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
@@ -169,8 +170,8 @@ def file_html(
 #---------------------------------------------------------------------
 
 def save(
-    panel: Viewable, filename: str | IO, title: Optional[str]=None,
-    resources=None, template: Template | str = None,
+    panel: Viewable, filename: str | os.PathLike | IO, title: Optional[str]=None,
+    resources=None, template: Template | str | None = None,
     template_variables: Dict[str, Any] = None, embed: bool = False,
     max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
     json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,

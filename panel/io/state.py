@@ -27,6 +27,7 @@ from weakref import WeakKeyDictionary
 import param
 
 from bokeh.document import Document
+from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
@@ -36,7 +37,6 @@ from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 _state_logger = logging.getLogger('panel.state')
 
 if TYPE_CHECKING:
-    from bokeh.document.locking import UnlockedDocumentProxy
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.server import Server
@@ -54,11 +54,17 @@ if TYPE_CHECKING:
 
 
 @contextmanager
-def set_curdoc(doc: Document | 'UnlockedDocumentProxy'):
+def set_curdoc(doc: Document):
     orig_doc = state._curdoc
     state.curdoc = doc
     yield
     state.curdoc = orig_doc
+
+def curdoc_locked() -> Document:
+    doc = _curdoc()
+    if isinstance(doc, UnlockedDocumentProxy):
+        doc = doc._doc
+    return doc
 
 class _Undefined: pass
 
@@ -536,7 +542,7 @@ class _state(param.Parameterized):
         """
         Callback that is triggered when a session is destroyed.
         """
-        doc = self._curdoc or _curdoc()
+        doc = self._curdoc or curdoc_locked()
         if doc:
             doc.on_session_destroyed(callback)
         else:
@@ -728,7 +734,7 @@ class _state(param.Parameterized):
         if self._curdoc:
             return self._curdoc
         try:
-            doc = _curdoc()
+            doc = curdoc_locked()
         except Exception:
             return None
         try:

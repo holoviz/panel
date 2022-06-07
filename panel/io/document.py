@@ -14,10 +14,9 @@ from typing import (
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
 from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
-from bokeh.io import curdoc as _curdoc
 
 from .model import monkeypatch_events
-from .state import set_curdoc, state
+from .state import curdoc_locked, set_curdoc, state
 
 #---------------------------------------------------------------------
 # Private API
@@ -61,7 +60,7 @@ def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
 #---------------------------------------------------------------------
 
 def init_doc(doc: Optional[Document]) -> Document:
-    curdoc = doc or _curdoc()
+    curdoc = doc or curdoc_locked()
     if not isinstance(curdoc, Document):
         curdoc = curdoc._doc
     if not curdoc.session_context:

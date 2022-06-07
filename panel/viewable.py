@@ -25,7 +25,6 @@ from typing import (
 import param  # type: ignore
 
 from bokeh.document import Document
-from bokeh.io import curdoc as _curdoc
 from pyviz_comms import Comm, JupyterCommManager  # type: ignore
 
 from .config import config, panel_extension
@@ -38,7 +37,7 @@ from .io.notebook import (
     ipywidget, render_mimebundle, render_model, show_embed, show_server,
 )
 from .io.save import save
-from .io.state import state
+from .io.state import curdoc_locked, state
 from .util import escape, param_reprs
 
 if TYPE_CHECKING:
@@ -351,7 +350,7 @@ class ServableMixin(object):
         -------
         The Panel object itself
         """
-        if _curdoc().session_context:
+        if curdoc_locked().session_context:
             logger = logging.getLogger('bokeh')
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler):
