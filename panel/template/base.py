@@ -16,7 +16,7 @@ from typing import (
 
 import param
 
-from bokeh.document.document import Document as _Document
+from bokeh.document.document import Document
 from bokeh.settings import settings as _settings
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
@@ -44,7 +44,6 @@ from ..widgets.indicators import BooleanIndicator, LoadingSpinner
 from .theme import THEMES, DefaultTheme, Theme
 
 if TYPE_CHECKING:
-    from bokeh.document import Document
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
     from jinja2 import Template as _Template
@@ -99,7 +98,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             self.nb_template = nb_template or self.template
         self._render_items: Dict[str, Tuple[Renderable, List[str]]]  = {}
         self._render_variables: Dict[str, Any] = {}
-        self._documents: List[_Document] = []
+        self._documents: List[Document] = []
         self._server = None
         self._layout = self._build_layout()
 
@@ -170,7 +169,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         title: Optional[str] = None, notebook: bool = False,
         location: bool | Location=True
     ):
-        document: _Document = document or curdoc_locked()
+        document: Document = doc or curdoc_locked()
         self._documents.append(document)
         if location and self.location:
             self._add_location(document, location)
@@ -253,7 +252,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
         from IPython.display import display
 
-        doc = _Document()
+        doc = Document()
         comm = state._comm_manager.get_server_comm()
         self._init_doc(doc, comm, notebook=True)
         ref = doc.roots[0].ref['id']
