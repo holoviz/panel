@@ -14,16 +14,14 @@ def test_update_markdown_pane(page):
     port = 7001
     serve(md, port=port, threaded=True, show=False)
 
-    time.sleep(0.5)
+    time.sleep(0.2)
 
     page.goto(f"http://localhost:{port}")
 
-    locator = page.locator(".bk.markdown")
-
-    locator.all_text_contents() == ['Initial']
+    assert page.text_content(".bk.markdown") == 'Initial'
 
     md.object = 'Updated'
 
-    time.sleep(0.2)
+    time.sleep(0.1)
 
-    assert locator.all_text_contents() == ['Updated']
+    assert page.text_content(".bk.markdown") == 'Updated'
