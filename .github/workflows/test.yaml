@@ -27,7 +27,7 @@ jobs:
       - name: pre-commit
         uses: pre-commit/action@v2.0.3
   test_suite:
-    name: Pytest on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -117,7 +117,7 @@ jobs:
           conda activate test-environment
           codecov
   visual_test_suite:
-    name: Pytest on ${{ matrix.os }} with Python 3.9
+    name: Visual tests on ${{ matrix.os }} with Python 3.9
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -148,7 +148,7 @@ jobs:
         with:
           miniconda-version: "latest"
           channel-priority: strict
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,microsoft,nodefaults
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
       - name: conda setup
