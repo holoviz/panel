@@ -1,4 +1,4 @@
-import time
+import asyncio
 
 import pytest
 
@@ -20,7 +20,7 @@ async def test_update_markdown_pane():
     port = 7001
     serve(md, port=port, threaded=True, show=False)
 
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     async with async_playwright() as p:
         browser = await p.chromium.launch()
@@ -32,6 +32,8 @@ async def test_update_markdown_pane():
         assert (await locator.all_text_contents()) == ['Initial']
 
         md.object = 'Updated'
+
+        await asyncio.sleep(0.2)
 
         assert (await locator.all_text_contents()) == ['Updated']
 
