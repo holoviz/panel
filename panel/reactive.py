@@ -25,6 +25,7 @@ import numpy as np
 import param
 
 from bokeh.core.property.descriptors import UnsetValueError
+from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass, Watcher
 
 from .io.document import unlocked
@@ -42,7 +43,7 @@ if TYPE_CHECKING:
 
     from bokeh.document import Document
     from bokeh.events import Event
-    from bokeh.model import DataModel, Model
+    from bokeh.model import Model
     from bokeh.models.sources import DataDict, Patches
     from pyviz_comms import Comm
 
