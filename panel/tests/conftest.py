@@ -23,8 +23,10 @@ def pytest_addoption(parser):
     parser.addoption('--ui', action='store_true', dest="ui",
                  default=False, help="enable UI tests")
 
-
 def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "ui: mark as UI test"
+    )
     if config.option.ui:
         if getattr(config.option, 'markexpr', None):
             config.option.markexpr += ' and not ui'
