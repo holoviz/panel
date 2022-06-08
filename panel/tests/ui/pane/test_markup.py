@@ -1,11 +1,6 @@
-import asyncio
+import time
 
 import pytest
-
-try:
-    from playwright.async_api import async_playwright
-except Exception:
-    pytest.mark.skip('playwright not available')
 
 pytestmark = pytest.mark.ui
 
@@ -13,28 +8,22 @@ from panel.io.server import serve
 from panel.pane import Markdown
 
 
-@pytest.mark.asyncio
-async def test_update_markdown_pane():
+def test_update_markdown_pane(page):
     md = Markdown('Initial')
 
     port = 7001
     serve(md, port=port, threaded=True, show=False)
 
-    await asyncio.sleep(1)
+    time.sleep(0.5)
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page()
-        await page.goto(f"http://localhost:{port}")
+    page.goto(f"http://localhost:{port}")
 
-        locator = page.locator(".bk.markdown")
+    locator = page.locator(".bk.markdown")
 
-        assert (await locator.all_text_contents()) == ['Initial']
+    locator.all_text_contents() == ['Initial']
 
-        md.object = 'Updated'
+    md.object = 'Updated'
 
-        await asyncio.sleep(0.2)
+    time.sleep(0.2)
 
-        assert (await locator.all_text_contents()) == ['Updated']
-
-        await browser.close()
+    assert locator.all_text_contents() == ['Updated']

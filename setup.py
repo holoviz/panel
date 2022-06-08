@@ -136,7 +136,7 @@ _tests = [
 
 _ui = [
     'playwright',
-    'pytest-asyncio'
+    'pytest-playwright'
 ]
 
 extras_require = {

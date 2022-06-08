@@ -161,7 +161,7 @@ jobs:
           conda install "pip<21.2.1" "toml"
           conda list
           doit develop_install -o recommended -o tests -o build
-          pip install playwright pytest-asyncio
+          pip install playwright pytest-playwright
           echo "-----"
           git describe
       - name: doit env_capture
