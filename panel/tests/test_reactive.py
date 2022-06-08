@@ -466,17 +466,17 @@ def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
     assert model.looped == ['option']
 
 
-@pytest.mark.parametrize('operator', ['', '+', '-', '*', '\\', '%', '**', '>>', '<<', '>>>', '&', '^', '&&', '||', '??'])
+def test_reactive_html_scripts_linked_properties_assignment_operator():
 
-@pytest.mark.parametrize('sep', [' ', ''])
-def test_reactive_html_scripts_linked_properties_assignment_operator(operator, sep):
+    for operator in ['', '+', '-', '*', '\\', '%', '**', '>>', '<<', '>>>', '&', '^', '&&', '||', '??']:
+        for sep in [' ', '']:
 
-    class TestScripts(ReactiveHTML):
+            class TestScripts(ReactiveHTML):
 
-        clicks = param.Integer()
+                clicks = param.Integer()
 
-        _template = "<div id='test'></div>"
+                _template = "<div id='test'></div>"
 
-        _scripts = {'render': f'test.onclick = () => {{ data.clicks{sep}{operator}= 1 }}'}
+                _scripts = {'render': f'test.onclick = () => {{ data.clicks{sep}{operator}= 1 }}'}
 
-    assert TestScripts()._linked_properties() == ['clicks']
+            assert TestScripts()._linked_properties() == ['clicks']

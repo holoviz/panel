@@ -11,7 +11,7 @@ from panel.io.state import state
 def test_record_modules_not_stdlib():
     with record_modules():
         import audioop  # noqa
-    assert (_modules == set() or _modules == set('audioop'))
+    assert ((_modules == set()) or (_modules == set('audioop')))
     _modules.clear()
 
 def test_check_file():
