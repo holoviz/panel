@@ -72,28 +72,28 @@ class Syncable(Renderable):
     """
 
     # Timeout if a notebook comm message is swallowed
-    _timeout: int = 20000
+    _timeout: ClassVar[int] = 20000
 
     # Timeout before the first event is processed
-    _debounce: int = 50
+    _debounce: ClassVar[int] = 50
 
     # Property changes which should not be debounced
-    _priority_changes: List[str] = []
+    _priority_changes: ClassVar[List[str]] = []
 
     # Any parameters that require manual updates handling for the models
     # e.g. parameters which affect some sub-model
-    _manual_params: List[str] = []
+    _manual_params: ClassVar[List[str]] = []
 
     # Mapping from parameter name to bokeh model property name
-    _rename: Mapping[str, str | None] = {}
+    _rename: ClassVar[Mapping[str, str | None]] = {}
 
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
-    _js_transforms: Mapping[str, str] = {}
+    _js_transforms: ClassVar[Mapping[str, str]] = {}
 
     # Transforms from input value to bokeh property value
-    _source_transforms: Mapping[str, str | None] = {}
-    _target_transforms: Mapping[str, str | None] = {}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {}
+    _target_transforms: ClassVar[Mapping[str, str | None]] = {}
 
     __abstract = True
 
@@ -178,8 +178,8 @@ class Syncable(Renderable):
             self._callbacks.append(watcher)
 
     def _link_props(
-        self, model: 'Model', properties: List[str] | List[Tuple[str, str]],
-        doc: 'Document', root: 'Model', comm: Optional['Comm'] = None
+        self, model: Model, properties: List[str] | List[Tuple[str, str]],
+        doc: Document, root: Model, comm: Optional[Comm] = None
     ) -> None:
         from .config import config
         ref = root.ref['id']
@@ -202,8 +202,8 @@ class Syncable(Renderable):
                 m.on_change(p, partial(self._server_change, doc, ref, subpath))
 
     def _manual_update(
-        self, events: Tuple[param.parameterized.Event, ...], model: 'Model', doc: 'Document',
-        root: 'Model', parent: Optional['Model'], comm: Optional['Comm']
+        self, events: Tuple[param.parameterized.Event, ...], model: Model, doc: Document,
+        root: Model, parent: Optional[Model], comm: Optional[Comm]
     ) -> None:
         """
         Method for handling any manual update events, i.e. events triggered
@@ -228,8 +228,8 @@ class Syncable(Renderable):
                     cb()
 
     def _apply_update(
-        self, events: Dict[str, param.parameterized.Event], msg: Mapping[str, Any],
-        model: 'Model', ref: str
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        model: Model, ref: str
     ) -> None:
         if ref not in state._views or ref in state._fake_roots:
             return
@@ -245,7 +245,7 @@ class Syncable(Renderable):
 
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
-        root: 'Model', model: 'Model', doc: 'Document', comm: Optional['Comm']
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         ref = root.ref['id']
         self._changing[ref] = attrs = []
@@ -270,7 +270,7 @@ class Syncable(Renderable):
             elif ref in self._changing:
                 del self._changing[ref]
 
-    def _cleanup(self, root: 'Model' | None) -> None:
+    def _cleanup(self, root: Model | None) -> None:
         super()._cleanup(root)
         if root is None:
             return
@@ -336,7 +336,7 @@ class Syncable(Renderable):
             with edit_readonly(state):
                 state.busy = busy
 
-    def _process_bokeh_event(self, event: 'Event') -> None:
+    def _process_bokeh_event(self, event: Event) -> None:
         self._log('received bokeh event %s', event)
         busy = state.busy
         with edit_readonly(state):
@@ -348,21 +348,21 @@ class Syncable(Renderable):
             with edit_readonly(state):
                 state.busy = busy
 
-    async def _change_coroutine(self, doc: Optional['Document'] = None) -> None:
+    async def _change_coroutine(self, doc: Document) -> None:
         if state._thread_pool:
             state._thread_pool.submit(self._change_event, doc)
         else:
             with set_curdoc(doc):
                 self._change_event(doc)
 
-    async def _event_coroutine(self, event, doc: 'Document') -> None:
+    async def _event_coroutine(self, event, doc: Document) -> None:
         if state._thread_pool:
             state._thread_pool.submit(self._process_bokeh_event, event)
         else:
             with set_curdoc(doc):
                 self._process_bokeh_event(event)
 
-    def _change_event(self, doc: Optional['Document'] = None) -> None:
+    def _change_event(self, doc: Document = None) -> None:
         try:
             state.curdoc = doc
             events = self._events
@@ -371,12 +371,12 @@ class Syncable(Renderable):
         finally:
             state.curdoc = None
 
-    def _schedule_change(self, doc: Optional['Document'], comm: Optional['Comm']) -> None:
+    def _schedule_change(self, doc: Document, comm: Comm | None) -> None:
         with hold(doc, comm=comm):
             self._change_event(doc)
 
     def _comm_change(
-        self, doc: 'Document', ref: str, comm: Optional['Comm'], subpath: str,
+        self, doc: Document, ref: str, comm: Comm | None, subpath: str,
         attr: str, old: Any, new: Any
     ) -> None:
         if subpath:
@@ -391,22 +391,22 @@ class Syncable(Renderable):
         else:
             self._schedule_change(doc, comm)
 
-    def _comm_event(self, event: 'Event') -> None:
+    def _comm_event(self, event: Event) -> None:
         if state._thread_pool:
             state._thread_pool.submit(self._process_bokeh_event, event)
         else:
             self._process_bokeh_event(event)
 
-    def _server_event(self, doc: 'Document', event: 'Event') -> None:
+    def _server_event(self, doc: Document, event: Event) -> None:
         if doc.session_context and not state._unblocked(doc):
             doc.add_next_tick_callback(
-                partial(self._event_coroutine, event, doc)
+                partial(self._event_coroutine, event, doc) # type: ignore
             )
         else:
             self._comm_event(event)
 
     def _server_change(
-        self, doc: 'Document', ref: str, subpath: str, attr: str,
+        self, doc: Document, ref: str, subpath: str, attr: str,
         old: Any, new: Any
     ) -> None:
         if subpath:
@@ -423,9 +423,9 @@ class Syncable(Renderable):
         if doc.session_context:
             cb = partial(self._change_coroutine, doc)
             if attr in self._priority_changes:
-                doc.add_next_tick_callback(cb)
+                doc.add_next_tick_callback(cb) # type: ignore
             else:
-                doc.add_timeout_callback(cb, self._debounce)
+                doc.add_timeout_callback(cb, self._debounce) # type: ignore
         else:
             self._change_event(doc)
 
@@ -579,7 +579,7 @@ class Reactive(Syncable, Viewable):
             return controls.layout[0]
         return style.layout[0]
 
-    def jscallback(self, args: Mapping[str, Any]={}, **callbacks: str) -> 'Callback':
+    def jscallback(self, args: Dict[str, Any]={}, **callbacks: str) -> Callback:
         """
         Allows defining a JS callback to be triggered when a property
         changes on the source object. The keyword arguments define the
@@ -599,17 +599,13 @@ class Reactive(Syncable, Viewable):
         callback: Callback
           The Callback which can be used to disable the callback.
         """
-
         from .links import Callback
-        renamed = {
-            k: self._rename.get(v, v) for k, v in callbacks.items()
-        }
-        return Callback(self, code=renamed, args=args)
+        return Callback(self, code=callbacks, args=args)
 
     def jslink(
-        self, target: 'JSLinkTarget' , code: Dict[str, str] = None, args: Optional[Dict] = None,
+        self, target: JSLinkTarget , code: Dict[str, str] = None, args: Optional[Dict] = None,
         bidirectional: bool = False, **links: str
-    ) -> 'Link':
+    ) -> Link:
         """
         Links properties on the this Reactive object to those on the
         target Reactive object in JS code.
@@ -673,9 +669,9 @@ class SyncableData(Reactive):
         The currently selected rows in the data.""")
 
     # Parameters which when changed require an update of the data
-    _data_params: List[str] = []
+    _data_params: ClassVar[List[str]] = []
 
-    _rename: Mapping[str, str | None] = {'selection': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'selection': None}
 
     __abstract = True
 
@@ -730,8 +726,8 @@ class SyncableData(Reactive):
         self.param.update(**{self._data_params[0]: data})
 
     def _manual_update(
-        self, events: Tuple[param.parameterized.Event, ...], model: 'Model',
-        doc: 'Document', root: 'Model', parent: Optional['Model'], comm: 'Comm'
+        self, events: Tuple[param.parameterized.Event, ...], model: Model,
+        doc: Document, root: Model, parent: Optional[Model], comm: Comm
     ) -> None:
         for event in events:
             if event.type == 'triggered' and self._updating:
@@ -743,8 +739,9 @@ class SyncableData(Reactive):
     def _update_cds(self, *events: param.parameterized.Event) -> None:
         self._processed, self._data = self._get_data()
         msg = {'data': self._data}
+        named_events = {event.name: event for event in events}
         for ref, (m, _) in self._models.items():
-            self._apply_update(events, msg, m.source, ref)
+            self._apply_update(named_events, msg, m.source, ref)
 
     @updating
     def _update_selected(
@@ -752,10 +749,11 @@ class SyncableData(Reactive):
     ) -> None:
         indices = self.selection if indices is None else indices
         msg = {'indices': indices}
+        named_events = {event.name: event for event in events}
         for ref, (m, _) in self._models.items():
-            self._apply_update(events, msg, m.source.selected, ref)
+            self._apply_update(named_events, msg, m.source.selected, ref)
 
-    def _apply_stream(self, ref: str, model: 'Model', stream: 'DataDict', rollover: Optional[int]) -> None:
+    def _apply_stream(self, ref: str, model: Model, stream: 'DataDict', rollover: Optional[int]) -> None:
         self._changing[ref] = ['data']
         try:
             model.source.stream(stream, rollover)
@@ -778,7 +776,7 @@ class SyncableData(Reactive):
                 cb = partial(self._apply_stream, ref, m, stream, rollover)
                 doc.add_next_tick_callback(cb)
 
-    def _apply_patch(self, ref: str, model: 'Model', patch: 'Patches') -> None:
+    def _apply_patch(self, ref: str, model: Model, patch: 'Patches') -> None:
         self._changing[ref] = ['data']
         try:
             model.source.patch(patch)
@@ -978,7 +976,7 @@ class SyncableData(Reactive):
         else:
             pd = None # type: ignore
         data = getattr(self, self._data_params[0])
-        patch_value_dict: 'Patches' = {}
+        patch_value_dict: Patches = {}
         if pd and isinstance(patch_value, pd.DataFrame):
             for column in patch_value.columns:
                 patch_value_dict[column] = []
@@ -1123,11 +1121,11 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
     HTML attributes.
     """
 
-    _loaded_extensions: Set[str] = set()
+    _loaded_extensions: ClassVar[Set[str]] = set()
 
-    _name_counter: Counter = Counter()
+    _name_counter: ClassVar[Counter] = Counter()
 
-    _script_regex: str = r"script\([\"|'](.*)[\"|']\)"
+    _script_regex: ClassVar[str] = r"script\([\"|'](.*)[\"|']\)"
 
     def __init__(mcs, name: str, bases: Tuple[Type, ...], dict_: Mapping[str, Any]):
         from .io.datamodel import PARAM_MAPPING, construct_data_model
@@ -1359,13 +1357,15 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     _scripts: ClassVar[Mapping[str, str | List[str]]] = {}
 
-    _script_assignment: ClassVar[str] = r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
-
-    __abstract = True
+    _script_assignment: ClassVar[str] = (
+        r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
+    )
 
     __css__: ClassVar[Optional[List[str]]] = None
     __javascript__: ClassVar[Optional[List[str]]] = None
     __javascript_modules__: ClassVar[Optional[List[str]]] = None
+
+    __abstract = True
 
     def __init__(self, **params):
         from .pane import panel
@@ -1405,7 +1405,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions
         )
 
-    def _cleanup(self, root: 'Model' | None) -> None:
+    def _cleanup(self, root: Model | None) -> None:
         for child, panes in self._panes.items():
             for pane in panes:
                 pane._cleanup(root)
@@ -1420,9 +1420,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         return {}
 
     def _process_children(
-        self, doc: 'Document', root: 'Model', model: 'Model', comm: Optional['Comm'],
-        children: Mapping[str, str | 'Model' | List['Model']]
-    ) -> Mapping[str, str | 'Model' | List['Model']]:
+        self, doc: Document, root: Model, model: Model, comm: Optional[Comm],
+        children: Dict[str, List[Model]]
+    ) -> Dict[str, List[Model]]:
         return children
 
     def _init_params(self) -> Dict[str, Any]:
@@ -1479,11 +1479,11 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         return events
 
     def _get_children(
-        self, doc: 'Document', root: 'Model', model: 'Model', comm: Optional['Comm']
-    ) -> Mapping[str, str | 'Model' | List['Model']]:
+        self, doc: Document, root: Model, model: Model, comm: Optional[Comm]
+    ) -> Dict[str, List[Model]]:
         from .pane import panel
         old_models = model.children
-        new_models: Dict[str, List['Model']] = {parent: [] for parent in self._parser.children}
+        new_models: Dict[str, List[Model]] = {parent: [] for parent in self._parser.children}
         new_panes: Dict[str, List[Viewable] | Dict[str, Viewable] | None] = {}
         internal_panes: Dict[str, List[Viewable] | None] = {}
 
@@ -1628,9 +1628,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         return linked_properties
 
     def _get_model(
-        self, doc: 'Document', root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
-    ) -> 'Model':
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         properties = self._process_param_change(self._init_params())
         model = _BkReactiveHTML(**properties)
         if comm and not self._loaded():
@@ -1653,17 +1653,18 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         if not root:
             root = model
 
-        for p, v in model.data.properties_with_values().items():
+        data_model: DataModel = model.data # type: ignore
+        for p, v in data_model.properties_with_values().items():
             if isinstance(v, DataModel):
                 v.tags.append(f"__ref:{root.ref['id']}")
-        model.children = self._get_children(doc, root, model, comm)
+        model.update(children=self._get_children(doc, root, model, comm))
 
         if comm:
             model.on_event('dom_event', self._comm_event)
         else:
             model.on_event('dom_event', partial(self._server_event, doc))
 
-        self._link_props(model.data, self._linked_properties(), doc, root, comm)
+        self._link_props(data_model, self._linked_properties(), doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -1686,7 +1687,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         for cb in event_cbs:
             cb(event)
 
-    def _set_on_model(self, msg: Mapping[str, Any], root: 'Model', model: 'Model') -> None:
+    def _set_on_model(self, msg: Mapping[str, Any], root: Model, model: Model) -> None:
         if not msg:
             return
         old = self._changing.get(root.ref['id'], [])
@@ -1704,7 +1705,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
-        root: 'Model', model: 'Model', doc: 'Document', comm: Optional['Comm']
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         child_params = self._parser.children.values()
         new_children, model_msg, data_msg  = {}, {}, {}
@@ -1765,7 +1766,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         self._event_callbacks[node][event].append(callback)
         events = self._get_events()
         for ref, (model, _) in self._models.items():
-            self._apply_update([], {'events': events}, model, ref)
+            self._apply_update({}, {'events': events}, model, ref)
 
 __all__ = (
     "Reactive",
