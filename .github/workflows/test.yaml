@@ -162,7 +162,7 @@ jobs:
           conda activate test-environment
           conda install "pip<21.2.1" "toml"
           conda list
-          doit develop_install -o examples -o recommended -o tests -o build -o visual
+          doit develop_install -o recommended -o tests -o build -o visual
           echo "-----"
           git describe
       - name: doit env_capture
