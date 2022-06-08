@@ -153,7 +153,7 @@ jobs:
       - name: conda setup
         run: |
           conda install "pyctdev>=0.5" "nodejs=15.3.0"
-          doit env_create --python=${{ matrix.python-version }}
+          doit env_create --python=3.9
       - name: doit develop_install
         run: |
           eval "$(conda shell.bash hook)"
