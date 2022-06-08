@@ -212,8 +212,9 @@ class Matplotlib(PNG, IPyWidget):
     def _update_dimensions(self):
         w, h = self.object.get_size_inches()
         dpi = self.dpi / 2. if self.high_dpi else self.dpi
-        self.width = self.width or int(dpi * w)
-        self.height = self.height or int(dpi * h)
+        with param.discard_events(self):
+            self.width = self.width or int(dpi * w)
+            self.height = self.height or int(dpi * h)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         self._update_dimensions()
