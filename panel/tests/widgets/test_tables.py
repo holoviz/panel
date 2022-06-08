@@ -1695,17 +1695,15 @@ def test_tabulator_patch_event():
             table._process_event(event)
             assert values[-1] == (col, row, df[col].iloc[row])
 
-
-
-def test_server_edit_event():
+def test_server_edit_event(port):
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
-    serve(table, port=7001, threaded=True, show=False)
+    serve(table, port=port, threaded=True, show=False)
 
     time.sleep(0.5)
 
-    requests.get('http://localhost:7001')
+    requests.get(f'http://localhost:{port}')
 
     assert table._models
     ref, (model, _) = list(table._models.items())[0]
@@ -1739,7 +1737,7 @@ def test_tabulator_cell_click_event():
             table._process_event(event)
             assert values[-1] == (col, row, data[col].iloc[row])
 
-def test_server_cell_click_async_event():
+def test_server_cell_click_async_event(port):
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
@@ -1753,7 +1751,6 @@ def test_server_cell_click_async_event():
 
     table.on_click(cb)
 
-    port = 7002
     serve(table, port=port, threaded=True, show=False)
 
     # Wait for server to start

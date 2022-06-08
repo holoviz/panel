@@ -8,7 +8,7 @@ from panel.io.server import serve
 from panel.widgets import Button
 
 
-def test_button_click(page):
+def test_button_click(page, port):
     button = Button(name='Click')
 
     events = []
@@ -16,7 +16,6 @@ def test_button_click(page):
         events.append(event)
     button.on_click(cb)
 
-    port = 7003
     serve(button, port=port, threaded=True, show=False)
 
     time.sleep(0.2)

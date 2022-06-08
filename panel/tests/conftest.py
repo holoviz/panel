@@ -35,6 +35,7 @@ def pytest_configure(config):
     else:
         setattr(config.option, 'markexpr', 'not ui')
 
+PORT = [6000]
 
 @pytest.fixture
 def document():
@@ -44,6 +45,12 @@ def document():
 @pytest.fixture
 def comm():
     return Comm()
+
+
+@pytest.fixture
+def port():
+    PORT[0] += 1
+    return PORT[0]
 
 
 @pytest.fixture

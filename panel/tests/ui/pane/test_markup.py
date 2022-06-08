@@ -8,10 +8,9 @@ from panel.io.server import serve
 from panel.pane import Markdown
 
 
-def test_update_markdown_pane(page):
+def test_update_markdown_pane(page, port):
     md = Markdown('Initial')
 
-    port = 7001
     serve(md, port=port, threaded=True, show=False)
 
     time.sleep(0.2)
