@@ -390,10 +390,6 @@ class MultiChoice(_MultiSelectBase):
     _widget_type = _BkMultiChoice
 
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
-
-_AutocompleteInput_rename = {'name': 'title', 'options': 'completions'}
-
 class AutocompleteInput(Widget):
     """
     The `MultiChoice` widget allows selecting multiple values from a list of
@@ -442,7 +438,7 @@ class AutocompleteInput(Widget):
 
     _widget_type = _BkAutocompleteInput
 
-    _rename: ClassVar[Mapping[str, str | None]] = _AutocompleteInput_rename
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
