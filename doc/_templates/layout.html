@@ -2,7 +2,7 @@
 
 {% block docs_navbar %}
 <nav class="navbar navbar-dark navbar-expand-lg bg-dark fixed-top bd-navbar" id="navbar-main">
-  {%- include "docs-navbar.html" %}
+    {%- include "sections/header.html" %}
 </nav>
 {% endblock %}
 
@@ -40,14 +40,16 @@
 {% else %}
 {% set content_col_class = "col-md-11 col-xl-8" %}
 {% endif %}
-<main class="col-12 {{ content_col_class }} py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+<div class="bd-content col-12 {{ content_col_class }}" role="main">
   {% block docs_body %}
-  <div>
+  <article class="bd-article" role="main">
     {% block body %} {% endblock %}
-  </div>
+  </article>
   {% endblock %}
   {% if theme_show_prev_next %}
-  {% include "prev-next.html" %}
+  <footer class="bd-footer-article">
+    {% include "sections/footer-article.html" %}
+  </footer>
   {% endif %}
-</main>
+</div>
 {% endblock %}

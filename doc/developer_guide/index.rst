@@ -1,7 +1,7 @@
 .. _devguide_setup:
 
-Getting Set Up
-==============
+Developer Guide
+===============
 
 The Panel library is a complex project which provides a wide range
 of data interfaces and an extensible set of plotting backends, which
@@ -171,5 +171,5 @@ Useful Links
     :hidden:
     :maxdepth: 2
 
-    Getting Set up <self>
+    Developer Guide <self>
     Testing <testing>

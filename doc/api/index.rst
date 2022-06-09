@@ -1,6 +1,6 @@
-********************
-API Reference Manual
-********************
+*************
+API Reference
+*************
 
 The Panel API Reference Manual provides a comprehensive reference for
 all methods and parameters on Panel components. For more information
