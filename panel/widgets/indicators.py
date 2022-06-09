@@ -35,7 +35,7 @@ from ..layout import Column, Row
 from ..models import (
     HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator,
 )
-from ..pane import Str
+from ..pane.markup import Str
 from ..reactive import SyncableData
 from ..util import escape, updating
 from ..viewable import Viewable
