@@ -8,7 +8,7 @@ from __future__ import annotations
 import math
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, List, Mapping, Optional, Tuple,
+    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional, Tuple,
 )
 
 import param  # type: ignore
@@ -45,7 +45,7 @@ class Widget(Reactive):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    _rename: Mapping[str, str | None] = {'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     # Whether the widget supports embedding
     _supports_embed: bool = False

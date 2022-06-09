@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, List, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
 )
 
 import param
@@ -35,7 +35,7 @@ class _ButtonBase(Widget):
         (blue), 'success' (green), 'info' (yellow), 'light' (light),
         or 'danger' (red).""")
 
-    _rename = {'name': 'label'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label'}
 
     __abstract = True
 
@@ -125,7 +125,7 @@ class Button(_ClickButton):
     value = param.Event(doc="""
         Toggles from False to True while the event is being processed.""")
 
-    _rename = {'clicks': None, 'name': 'label', 'value': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'clicks': None, 'name': 'label', 'value': None}
 
     _target_transforms = {'event:button_click': None, 'value': None}
 
@@ -213,7 +213,7 @@ class Toggle(_ButtonBase):
     value = param.Boolean(default=False, doc="""
         Whether the button is currently toggled.""")
 
-    _rename = {'value': 'active', 'name': 'label'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
 
     _supports_embed = True
 
@@ -254,7 +254,7 @@ class MenuButton(_ClickButton):
 
     _widget_type = _BkDropdown
 
-    _rename = {'name': 'label', 'items': 'menu', 'clicked': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'items': 'menu', 'clicked': None}
 
     _event = 'menu_item_click'
 

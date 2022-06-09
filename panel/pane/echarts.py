@@ -1,5 +1,9 @@
+from __future__ import annotations
+
 import json
 import sys
+
+from typing import ClassVar, Mapping
 
 import param
 
@@ -32,7 +36,7 @@ class ECharts(PaneBase):
 
     priority = None
 
-    _rename = {"object": "data"}
+    _rename: ClassVar[Mapping[str, str | None]] = {"object": "data"}
 
     _rerender_params = []
 

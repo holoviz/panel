@@ -2,13 +2,16 @@
 The Debugger Widget is an uneditable Card that gives you feedback on errors
 thrown by your Panel callbacks.
 """
+from __future__ import annotations
+
 import logging
+
+from typing import ClassVar, Mapping
 
 import param
 
 from ..io.state import state
-from ..layout import HSpacer, Row
-from ..layout.card import Card
+from ..layout import Card, HSpacer, Row
 from ..reactive import ReactiveHTML
 from .terminal import Terminal
 
@@ -202,7 +205,7 @@ class Debugger(Card):
         Loggers which will be prompted in the debugger terminal."""
     )
 
-    _rename = Card._rename.copy()
+    _rename: ClassVar[Mapping[str, str | None]] = Card._rename.copy()
 
     _rename.update({
         '_number_of_errors': None,

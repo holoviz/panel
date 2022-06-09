@@ -7,7 +7,7 @@ import json
 import urllib.parse as urlparse
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
 )
 
 import param
@@ -58,7 +58,7 @@ class Location(Syncable):
         should be set to False""")
 
     # Mapping from parameter name to bokeh model property name
-    _rename = {"name": None}
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": None}
 
     def __init__(self, **params):
         super().__init__(**params)

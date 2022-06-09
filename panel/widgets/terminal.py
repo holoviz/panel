@@ -4,6 +4,8 @@ The Terminal Widget makes it easy to create Panel Applications with Terminals.
 - For example apps which streams the output of processes or logs.
 - For example apps which provide interactive bash, python or ipython terminals
 """
+from __future__ import annotations
+
 import os
 import select
 import shlex
@@ -12,6 +14,7 @@ import subprocess
 import sys
 
 from functools import partial
+from typing import ClassVar, Mapping
 
 import param
 
@@ -253,7 +256,7 @@ class Terminal(Widget):
 
     _output = param.String(default="")
 
-    _rename = {
+    _rename: ClassVar[Mapping[str, str | None]] = {
         "clear": None,
         "output": None,
         "_output": "output",

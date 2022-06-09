@@ -1,6 +1,10 @@
 """
 Defines a WYSIWYG TextEditor widget based on quill.js.
 """
+from __future__ import annotations
+
+from typing import ClassVar, Mapping
+
 import param
 
 from pyviz_comms import JupyterComm
@@ -37,7 +41,7 @@ class TextEditor(Widget):
 
     value = param.String(doc="State of the current text in the editor")
 
-    _rename = {"value": "text"}
+    _rename: ClassVar[Mapping[str, str | None]] = {"value": "text"}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:

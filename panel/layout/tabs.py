@@ -1,7 +1,10 @@
 """
 Layout component to lay out objects in a set of tabs.
 """
+from __future__ import annotations
+
 from collections import defaultdict
+from typing import ClassVar, Mapping
 
 import param
 
@@ -57,7 +60,7 @@ class Tabs(NamedListPanel):
 
     _manual_params = ['closable']
 
-    _rename = {'name': None, 'objects': 'tabs', 'dynamic': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'objects': 'tabs', 'dynamic': None}
 
     _source_transforms = {'dynamic': None, 'objects': None}
 

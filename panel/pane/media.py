@@ -1,10 +1,13 @@
 """
 Contains Media panes including renderers for Audio and Video content.
 """
+from __future__ import annotations
+
 import os
 
 from base64 import b64encode
 from io import BytesIO
+from typing import ClassVar, Mapping
 
 import numpy as np
 import param
@@ -47,7 +50,7 @@ class _MediaBase(PaneBase):
 
     _media_type = None
 
-    _rename = {'name': None, 'sample_rate': None, 'object': 'value'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'sample_rate': None, 'object': 'value'}
 
     _rerender_params = []
 

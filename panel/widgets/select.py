@@ -2,10 +2,13 @@
 Defines various Select widgets which allow choosing one or more items
 from a list of options.
 """
+from __future__ import annotations
+
 import itertools
 import re
 
 from collections import OrderedDict
+from typing import ClassVar, Mapping
 
 import param
 
@@ -387,9 +390,6 @@ class MultiChoice(_MultiSelectBase):
     _widget_type = _BkMultiChoice
 
 
-_AutocompleteInput_rename = {'name': 'title', 'options': 'completions'}
-
-
 class AutocompleteInput(Widget):
     """
     The `MultiChoice` widget allows selecting multiple values from a list of
@@ -438,7 +438,7 @@ class AutocompleteInput(Widget):
 
     _widget_type = _BkAutocompleteInput
 
-    _rename = _AutocompleteInput_rename
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -452,7 +452,7 @@ class _RadioGroupBase(SingleSelectBase):
 
     _supports_embed = False
 
-    _rename = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
 
     _source_transforms = {'value': "source.labels[value]"}
 
@@ -562,7 +562,7 @@ class _CheckGroupBase(SingleSelectBase):
 
     value = param.List(default=[])
 
-    _rename = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
 
     _source_transforms = {'value': "value.map((index) => source.labels[index])"}
 

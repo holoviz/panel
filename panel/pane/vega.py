@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import sys
 
 from functools import partial
+from typing import ClassVar, Mapping
 
 import numpy as np
 import param
@@ -105,7 +108,7 @@ class Vega(PaneBase):
 
     priority = 0.8
 
-    _rename = {'selection': None, 'debounce': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'selection': None, 'debounce': None}
 
     _updates = True
 

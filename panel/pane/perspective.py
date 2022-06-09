@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import datetime as dt
 import sys
 import warnings
 
 from enum import Enum
+from typing import ClassVar, Mapping
 
 import numpy as np
 import param
@@ -320,7 +323,7 @@ class Perspective(PaneBase, ReactiveData):
 
     _rerender_params = ['object']
 
-    _rename = {
+    _rename: ClassVar[Mapping[str, str | None]] = {
         'computed_columns': None,
         'row_pivots': None,
         'column_pivots': None,

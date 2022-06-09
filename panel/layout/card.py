@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import ClassVar, Mapping
+
 import param
 
 from ..models import Card as BkCard
@@ -63,7 +67,7 @@ class Card(Column):
 
     _linked_props = ['collapsed']
 
-    _rename = dict(Column._rename, title=None, header=None, title_css_classes=None)
+    _rename: ClassVar[Mapping[str, str | None]] = dict(Column._rename, title=None, header=None, title_css_classes=None)
 
     def __init__(self, *objects, **params):
         self._header_layout = Row(css_classes=['card-header-row'],

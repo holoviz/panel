@@ -7,7 +7,11 @@ See https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis
 The term *utterance* is used throughout the API. It is the smallest
 unit of speech in spoken language analysis.
 """
+from __future__ import annotations
+
 import uuid
+
+from typing import ClassVar, Mapping
 
 import param
 
@@ -216,7 +220,7 @@ class TextToSpeech(Utterance, Widget):
 
     _widget_type = _BkTextToSpeech
 
-    _rename = {
+    _rename: ClassVar[Mapping[str, str | None]] = {
         "auto_speak": None,
         "lang": None,
         "pitch": None,

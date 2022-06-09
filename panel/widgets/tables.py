@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import datetime as dt
 import uuid
 
 from functools import partial
 from types import FunctionType, MethodType
+from typing import ClassVar, Mapping
 
 import numpy as np
 import param
@@ -79,7 +82,7 @@ class BaseTable(ReactiveData, Widget):
 
     _manual_params = ['formatters', 'editors', 'widths', 'titles', 'value', 'show_index']
 
-    _rename = {'disabled': 'editable', 'selection': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'disabled': 'editable', 'selection': None}
 
     __abstract = True
 
@@ -784,7 +787,7 @@ class DataFrame(BaseTable):
 
     _source_transforms = {'hierarchical': None}
 
-    _rename = {
+    _rename: ClassVar[Mapping[str, str | None]] = {
         'disabled': 'editable', 'selection': None, 'sorters': None,
         'text_align': None
     }
@@ -981,7 +984,7 @@ class Tabulator(BaseTable):
 
     _priority_changes = ['data']
 
-    _rename = {
+    _rename: ClassVar[Mapping[str, str | None]] = {
         'disabled': 'editable', 'selection': None, 'selectable': 'select_mode',
         'row_content': None
     }

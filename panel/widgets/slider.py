@@ -5,7 +5,11 @@ moving one or more handle(s).
 - The `value` will update when a handle is dragged.
 - The `value_throttled`will update when a handle is released.
 """
+from __future__ import annotations
+
 import datetime as dt
+
+from typing import ClassVar, Mapping
 
 import numpy as np
 import param
@@ -25,14 +29,14 @@ from ..util import (
     value_as_datetime,
 )
 from ..viewable import Layoutable
+from ..widgets import FloatInput, IntInput
 from .base import CompositeWidget, Widget
-from .input import FloatInput, IntInput, StaticText
+from .input import StaticText
 
 
 class _SliderBase(Widget):
 
-    bar_color = param.Color(default="#e6e6e6", doc="""
-        Color of the slider bar as a hexidecimal RGB value.""")
+    bar_color = param.Color(default="#e6e6e6", doc="""""")
 
     direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'], doc="""
         Whether the slider should go from left-to-right ('ltr') or
@@ -158,7 +162,7 @@ class FloatSlider(ContinuousSlider):
     step = param.Number(default=0.1, doc="""
         The step size.""")
 
-    _rename = {'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
 
 class IntSlider(ContinuousSlider):
@@ -188,7 +192,7 @@ class IntSlider(ContinuousSlider):
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The value of the slider. Updated when the handle is released""")
 
-    _rename = {'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -236,7 +240,7 @@ class DateSlider(_SliderBase):
     as_datetime = param.Boolean(default=False, doc="""
         Whether to store the date as a datetime.""")
 
-    _rename = {'name': 'title', 'as_datetime': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'as_datetime': None}
 
     _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
 
@@ -298,7 +302,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     _source_transforms = {'value': None, 'value_throttled': None, 'options': None}
 
-    _rename = {'formatter': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'formatter': None}
 
     _supports_embed = True
 
@@ -549,7 +553,7 @@ class RangeSlider(_RangeSliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A format string or bokeh TickFormatter.""")
 
-    _rename = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None}
 
     _widget_type = _BkRangeSlider
 
@@ -641,7 +645,7 @@ class DateRangeSlider(_SliderBase):
     _source_transforms = {'value': None, 'value_throttled': None,
                          'start': None, 'end': None, 'step': None}
 
-    _rename = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None}
 
     _widget_type = _BkDateRangeSlider
 

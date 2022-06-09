@@ -1,6 +1,10 @@
 """
 Defines Player widgets which offer media-player like controls.
 """
+from __future__ import annotations
+
+from typing import ClassVar, Mapping
+
 import param
 
 from ..models.widgets import Player as _BkPlayer
@@ -35,7 +39,7 @@ class PlayerBase(Widget):
 
     _widget_type = _BkPlayer
 
-    _rename = {'name': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
     __abstract = True
 
@@ -112,7 +116,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     value = param.Parameter(doc="Current player value")
 
-    _rename = {'name': None, 'options': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': None}
 
     _source_transforms = {'value': None}
 

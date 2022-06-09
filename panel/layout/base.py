@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from collections import defaultdict, namedtuple
 from typing import (
-    TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping, Optional,
-    Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, Iterable, Iterator, List, Mapping,
+    Optional, Tuple, Type,
 )
 
 import param
@@ -704,7 +704,7 @@ class Row(ListPanel):
 
     _bokeh_model: Type['Model'] = BkRow
 
-    _rename = dict(ListPanel._rename, col_sizing='cols')
+    _rename: ClassVar[Mapping[str, str | None]] = dict(ListPanel._rename, col_sizing='cols')
 
 
 class Column(ListPanel):
@@ -727,7 +727,7 @@ class Column(ListPanel):
 
     _bokeh_model: Type['Model'] = BkColumn
 
-    _rename = dict(ListPanel._rename, row_sizing='rows')
+    _rename: ClassVar[Mapping[str, str | None]] = dict(ListPanel._rename, row_sizing='rows')
 
 
 class WidgetBox(ListPanel):
@@ -766,7 +766,7 @@ class WidgetBox(ListPanel):
 
     _source_transforms = {'disabled': None, 'horizontal': None}
 
-    _rename = {'objects': 'children', 'horizontal': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'objects': 'children', 'horizontal': None}
 
     @property
     def _bokeh_model(self) -> Type['Model']: # type: ignore

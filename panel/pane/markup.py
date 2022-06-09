@@ -2,8 +2,12 @@
 Pane class which render various markup languages including HTML,
 Markdown, and also regular strings.
 """
+from __future__ import annotations
+
 import json
 import textwrap
+
+from typing import ClassVar, Mapping
 
 import param
 
@@ -25,7 +29,7 @@ class DivPaneBase(PaneBase):
 
     _bokeh_model = _BkHTML
 
-    _rename = {'object': 'text'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
 
     _updates = True
 
@@ -374,7 +378,7 @@ class JSON(DivPaneBase):
 
     _applies_kw = True
     _bokeh_model = _BkJSON
-    _rename = {"name": None, "object": "text", "encoder": None}
+    _rename: ClassVar[Mapping[str, str | None]] = {"name": None, "object": "text", "encoder": None}
 
     _rerender_params = ['object', 'depth', 'encoder', 'hover_preview', 'theme']
 
