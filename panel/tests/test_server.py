@@ -50,11 +50,10 @@ def test_server_change_io_state(html_server_session):
     html._server_change(session.document, None, None, 'text', '<h1>Title</h1>', '<h1>New Title</h1>')
 
 
-def test_server_static_dirs():
+def test_server_static_dirs(port):
     html = Markdown('# Title')
 
     static = {'tests': os.path.dirname(__file__)}
-    port = 6000
     serve(html, port=port, threaded=True, static_dirs=static, show=False)
 
     # Wait for server to start
@@ -65,10 +64,9 @@ def test_server_static_dirs():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-def test_server_template_static_resources():
+def test_server_template_static_resources(port):
     template = BootstrapTemplate()
 
-    port = 6001
     serve({'template': template}, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -79,10 +77,9 @@ def test_server_template_static_resources():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-def test_server_template_static_resources_with_prefix():
+def test_server_template_static_resources_with_prefix(port):
     template = BootstrapTemplate()
 
-    port = 6002
     serve({'template': template}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
@@ -93,10 +90,9 @@ def test_server_template_static_resources_with_prefix():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-def test_server_template_static_resources_with_prefix_relative_url():
+def test_server_template_static_resources_with_prefix_relative_url(port):
     template = BootstrapTemplate()
 
-    port = 6003
     serve({'template': template}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
@@ -107,10 +103,9 @@ def test_server_template_static_resources_with_prefix_relative_url():
     assert 'href="static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in content
 
 
-def test_server_template_static_resources_with_subpath_and_prefix_relative_url():
+def test_server_template_static_resources_with_subpath_and_prefix_relative_url(port):
     template = BootstrapTemplate()
 
-    port = 6004
     serve({'/subpath/template': template}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
@@ -121,10 +116,9 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
     assert 'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in content
 
 
-def test_server_extensions_on_root():
+def test_server_extensions_on_root(port):
     html = Markdown('# Title')
 
-    port = 6005
     serve(html, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -134,9 +128,8 @@ def test_server_extensions_on_root():
     assert r.ok
 
 
-def test_autoload_js():
+def test_autoload_js(port):
     html = Markdown('# Title')
-    port = 6006
     app_name = 'test'
     serve({app_name: html}, port=port, threaded=True, show=False)
 
@@ -150,7 +143,7 @@ def test_autoload_js():
     assert f"http://localhost:{port}/static/extensions/panel/css/alerts.css" in r.content.decode('utf-8')
 
 
-def test_server_async_callbacks():
+def test_server_async_callbacks(port):
     button = Button(name='Click')
 
     counts = []
@@ -164,7 +157,6 @@ def test_server_async_callbacks():
 
     button.on_click(cb)
 
-    port = 6007
     serve(button, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -193,7 +185,7 @@ def test_serve_config_per_session_state():
         config.raw_css = [CSS2]
 
 
-    port1, port2 = 6008, 6009
+    port1, port2 = 7001, 7002
     serve(app1, port=port1, threaded=True, show=False)
     serve(app2, port=port2, threaded=True, show=False)
 
@@ -211,11 +203,10 @@ def test_serve_config_per_session_state():
     assert CSS2 in r2
 
 
-def test_server_session_info():
+def test_server_session_info(port):
     with config.set(session_history=-1):
         html = Markdown('# Title')
 
-        port = 6010
         serve(html, port=port, threaded=True, show=False)
 
         # Wait for server to start
@@ -244,7 +235,7 @@ def test_server_session_info():
     assert state.session_info['live'] == 0
 
 
-def test_server_schedule_repeat():
+def test_server_schedule_repeat(port):
     state.cache['count'] = 0
     def periodic_cb():
         state.cache['count'] += 1
@@ -253,7 +244,6 @@ def test_server_schedule_repeat():
         state.schedule_task('periodic', periodic_cb, period='0.5s')
         return '# state.schedule test'
 
-    port = 6011
     server = serve(app, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -269,7 +259,7 @@ def test_server_schedule_repeat():
     server.stop()
 
 
-def test_server_schedule_at():
+def test_server_schedule_at(port):
     def periodic_cb():
         state.cache['at'] = dt.datetime.now()
 
@@ -279,7 +269,6 @@ def test_server_schedule_at():
         state.schedule_task('periodic', periodic_cb, at=scheduled)
         return '# state.schedule test'
 
-    port = 6012
     server = serve(app, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -298,7 +287,7 @@ def test_server_schedule_at():
     server.stop()
 
 
-def test_server_schedule_at_iterator():
+def test_server_schedule_at_iterator(port):
     state.cache['at'] = []
     def periodic_cb():
         state.cache['at'].append(dt.datetime.now())
@@ -314,7 +303,6 @@ def test_server_schedule_at_iterator():
         state.schedule_task('periodic', periodic_cb, at=schedule())
         return '# state.schedule test'
 
-    port = 6013
     server = serve(app, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -334,7 +322,7 @@ def test_server_schedule_at_iterator():
     server.stop()
 
 
-def test_server_schedule_at_callable():
+def test_server_schedule_at_callable(port):
     state.cache['at'] = []
     def periodic_cb():
         state.cache['at'].append(dt.datetime.now())
@@ -352,7 +340,6 @@ def test_server_schedule_at_callable():
         state.schedule_task('periodic', periodic_cb, at=schedule)
         return '# state.schedule test'
 
-    port = 6014
     server = serve(app, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -417,7 +404,7 @@ def test_serve_can_serve_bokeh_app_from_file():
     assert "/bk-app" in server._tornado.applications
 
 
-def test_server_thread_pool_change_event(threads):
+def test_server_thread_pool_change_event(threads, port):
     button = Button(name='Click')
     button2 = Button(name='Click')
 
@@ -433,7 +420,6 @@ def test_server_thread_pool_change_event(threads):
     button2.on_click(cb)
     layout = Row(button, button2)
 
-    port = 6015
     serve(layout, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -454,7 +440,7 @@ def test_server_thread_pool_change_event(threads):
     assert max(counts) == 2
 
 
-def test_server_thread_pool_bokeh_event(threads):
+def test_server_thread_pool_bokeh_event(threads, port):
     import pandas as pd
 
     df = pd.DataFrame([[1, 1], [2, 2]], columns=['A', 'B'])
@@ -471,7 +457,6 @@ def test_server_thread_pool_bokeh_event(threads):
 
     tabulator.on_edit(cb)
 
-    port = 6016
     serve(tabulator, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -493,7 +478,7 @@ def test_server_thread_pool_bokeh_event(threads):
     assert max(counts) > 1
 
 
-def test_server_thread_pool_periodic(threads):
+def test_server_thread_pool_periodic(threads, port):
     button = Button(name='Click')
 
     counts = []
@@ -504,7 +489,6 @@ def test_server_thread_pool_periodic(threads):
         time.sleep(0.5)
         count[0] -= 1
 
-    port = 6017
     serve(button, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -523,7 +507,7 @@ def test_server_thread_pool_periodic(threads):
     assert max(counts) >= 2
 
 
-def test_server_thread_pool_onload(threads):
+def test_server_thread_pool_onload(threads, port):
     counts = []
 
     def app(count=[0]):
@@ -543,7 +527,6 @@ def test_server_thread_pool_onload(threads):
 
         return button
 
-    port = 6018
     serve(app, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -563,10 +546,9 @@ class CustomBootstrapTemplate(BootstrapTemplate):
     _css = './assets/custom.css'
 
 
-def test_server_template_custom_resources():
+def test_server_template_custom_resources(port):
     template = CustomBootstrapTemplate()
 
-    port = 6019
     serve({'template': template}, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -577,10 +559,9 @@ def test_server_template_custom_resources():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-def test_server_template_custom_resources_with_prefix():
+def test_server_template_custom_resources_with_prefix(port):
     template = CustomBootstrapTemplate()
 
-    port = 6020
     serve({'template': template}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
@@ -591,10 +572,9 @@ def test_server_template_custom_resources_with_prefix():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-def test_server_template_custom_resources_with_prefix_relative_url():
+def test_server_template_custom_resources_with_prefix_relative_url(port):
     template = CustomBootstrapTemplate()
 
-    port = 6021
     serve({'template': template}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
@@ -605,10 +585,9 @@ def test_server_template_custom_resources_with_prefix_relative_url():
     assert 'href="components/panel.tests.test_server/CustomBootstrapTemplate/_css/assets/custom.css"' in content
 
 
-def test_server_template_custom_resources_with_subpath_and_prefix_relative_url():
+def test_server_template_custom_resources_with_subpath_and_prefix_relative_url(port):
     template = CustomBootstrapTemplate()
 
-    port = 6022
     serve({'/subpath/template': template}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
@@ -624,10 +603,9 @@ class CustomComponent(ReactiveHTML):
     __css__ = ['./assets/custom.css']
 
 
-def test_server_component_custom_resources():
+def test_server_component_custom_resources(port):
     component = CustomComponent()
 
-    port = 6023
     serve({'component': component}, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -638,10 +616,9 @@ def test_server_component_custom_resources():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-def test_server_component_custom_resources_with_prefix():
+def test_server_component_custom_resources_with_prefix(port):
     component = CustomComponent()
 
-    port = 6024
     serve({'component': component}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
@@ -652,10 +629,9 @@ def test_server_component_custom_resources_with_prefix():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-def test_server_component_custom_resources_with_prefix_relative_url():
+def test_server_component_custom_resources_with_prefix_relative_url(port):
     component = CustomComponent()
 
-    port = 6025
     serve({'component': component}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
@@ -666,10 +642,9 @@ def test_server_component_custom_resources_with_prefix_relative_url():
     assert 'href="components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"' in content
 
 
-def test_server_component_custom_resources_with_subpath_and_prefix_relative_url():
+def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(port):
     component = CustomComponent()
 
-    port = 6026
     serve({'/subpath/component': component}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start
@@ -680,10 +655,9 @@ def test_server_component_custom_resources_with_subpath_and_prefix_relative_url(
     assert 'href="../components/panel.tests.test_server/CustomComponent/__css__/assets/custom.css"' in content
 
 
-def test_server_component_css_with_prefix_relative_url():
+def test_server_component_css_with_prefix_relative_url(port):
     component = Terminal()
 
-    port = 6027
     serve({'component': component}, port=port, threaded=True, show=False)
 
     # Wait for server to start
@@ -694,10 +668,9 @@ def test_server_component_css_with_prefix_relative_url():
     assert 'href="static/extensions/panel/bundled/terminal/xterm@4.11.0/css/xterm.css' in content
 
 
-def test_server_component_css_with_subpath_and_prefix_relative_url():
+def test_server_component_css_with_subpath_and_prefix_relative_url(port):
     component = Terminal()
 
-    port = 6028
     serve({'/subpath/component': component}, port=port, threaded=True, show=False, prefix='prefix')
 
     # Wait for server to start

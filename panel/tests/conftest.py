@@ -19,6 +19,24 @@ from panel.io import state
 from panel.pane import HTML, Markdown
 
 
+def pytest_addoption(parser):
+    parser.addoption('--ui', action='store_true', dest="ui",
+                 default=False, help="enable UI tests")
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "ui: mark as UI test"
+    )
+    if config.option.ui:
+        if getattr(config.option, 'markexpr', None):
+            config.option.markexpr += ' and not ui'
+        else:
+            setattr(config.option, 'markexpr', 'ui')
+    else:
+        setattr(config.option, 'markexpr', 'not ui')
+
+PORT = [6000]
+
 @pytest.fixture
 def document():
     return Document()
@@ -27,6 +45,12 @@ def document():
 @pytest.fixture
 def comm():
     return Comm()
+
+
+@pytest.fixture
+def port():
+    PORT[0] += 1
+    return PORT[0]
 
 
 @pytest.fixture
