@@ -1,7 +1,7 @@
+import {classes, content_size, extents, sized} from "@bokehjs/core/dom"
+import {color2css} from "@bokehjs/core/util/color"
 import {VariadicBox} from "@bokehjs/core/layout/html"
 import {Size, SizeHint, Sizeable} from "@bokehjs/core/layout/types"
-import {sized, content_size, extents} from "@bokehjs/core/dom"
-
 import {MarkupView} from "@bokehjs/models/widgets/markup"
 import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
@@ -112,6 +112,49 @@ export class PanelMarkupView extends MarkupView {
 
 export class PanelHTMLBoxView extends HTMLBoxView {
   _prev_sizing_mode: string | null
+  _prev_css_classes: string[]
+
+  connect_signals(): void {
+    super.connect_signals()
+
+    // Note due to on_change hack properties must be defined in this order.
+    const {css_classes, background} = this.model.properties
+    this._prev_css_classes = this.model.css_classes
+    this.on_change([css_classes, background], () => {
+      // Note: This ensures that changes in the background and changes
+      // to the loading parameter in Panel do NOT trigger a full re-render
+      const css = []
+      let skip = false
+      for (const cls of this.model.css_classes) {
+	if (cls === 'pn-loading')
+	  skip = true
+	else if (skip)
+	  skip = false
+	else
+	  css.push(cls)
+      }
+      const prev = this._prev_css_classes
+      if (JSON.stringify(css) === JSON.stringify(prev)) {
+	const {background} = this.model
+	this.el.style.backgroundColor = background != null ? color2css(background) : ""
+	classes(this.el).clear().add(...this.css_classes())
+      } else {
+	this.invalidate_render()
+      }
+      this._prev_css_classes = css
+    })
+  }
+
+  on_change(properties: any, fn: () => void): void {
+    // HACKALERT: LayoutDOMView triggers re-renders whenever css_classes change
+    // which is very expensive so we do not connect this signal and handle it
+    // ourself
+    const p = this.model.properties
+    if (properties.length === 2 && properties[0] === p.background && properties[1] === p.css_classes) {
+      return
+    }
+    super.on_change(properties, fn)
+  }
 
   _update_layout(): void {
     let changed = ((this._prev_sizing_mode !== undefined) &&
