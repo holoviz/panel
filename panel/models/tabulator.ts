@@ -1,5 +1,4 @@
-import {classes, undisplay} from "@bokehjs/core/dom"
-import {color2css} from "@bokehjs/core/util/color"
+import {undisplay} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {build_views} from "@bokehjs/core/build_views"
@@ -244,15 +243,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     super.connect_signals()
 
     const p = this.model.properties
-    const {configuration, layout, columns, theme, groupby, css_classes, background} = p;
+    const {configuration, layout, columns, theme, groupby} = p;
     this.on_change([configuration, layout, columns, groupby], debounce(() => this.invalidate_render(), 20, false))
-
-    // Note due to on_change hack properties must be defined in this order.
-    this.on_change([css_classes, background], () => {
-      const {background} = this.model
-      this.el.style.backgroundColor = background != null ? color2css(background) : ""
-      classes(this.el).clear().add(...this.css_classes())
-    })
 
     this.on_change([theme], () => this.setCSS())
 
@@ -295,16 +287,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     })
     this.connect(this.model.source.selected.change, () => this.setSelection())
     this.connect(this.model.source.selected.properties.indices.change, () => this.setSelection())
-  }
-
-  on_change(properties: any, fn: () => void): void {
-    // HACKALERT: LayoutDOMView triggers re-renders whenever css_classes change
-    // which is very expensive so we do not connect this signal and handle it
-    // ourself
-    const p = this.model.properties
-    if (properties.length === 2 && properties[0] === p.background && properties[1] === p.css_classes)
-      return
-    super.on_change(properties, fn)
   }
 
   get sorters(): any[] {
