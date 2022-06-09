@@ -1,4 +1,5 @@
-import {undisplay} from "@bokehjs/core/dom"
+import {classes, undisplay} from "@bokehjs/core/dom"
+import {color2css} from "@bokehjs/core/util/color"
 import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {build_views} from "@bokehjs/core/build_views"
@@ -6,10 +7,10 @@ import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties";
-import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
+import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {TableColumn} from "@bokehjs/models/widgets/tables"
 
-import {debounce} from  "debounce"
+import {debounce} from "debounce"
 
 import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
@@ -242,39 +243,47 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   connect_signals(): void {
     super.connect_signals()
 
-    const {configuration, layout, columns, theme, groupby} = this.model.properties;
+    const p = this.model.properties
+    const {configuration, layout, columns, theme, groupby, css_classes, background} = p;
     this.on_change([configuration, layout, columns, groupby], debounce(() => this.invalidate_render(), 20, false))
+
+    // Note due to on_change hack properties must be defined in this order.
+    this.on_change([css_classes, background], () => {
+      const {background} = this.model
+      this.el.style.backgroundColor = background != null ? color2css(background) : ""
+      classes(this.el).clear().add(...this.css_classes())
+    })
 
     this.on_change([theme], () => this.setCSS())
 
-    this.connect(this.model.properties.download.change, () => {
+    this.connect(p.download.change, () => {
       const ftype = this.model.filename.endsWith('.json') ? "json" : "csv"
       this.tabulator.download(ftype, this.model.filename)
     })
 
-    this.connect(this.model.properties.children.change, () => this.renderChildren())
+    this.connect(p.children.change, () => this.renderChildren())
 
-    this.connect(this.model.properties.expanded.change, () => {
+    this.connect(p.expanded.change, () => {
       for (const row of this.tabulator.rowManager.getRows()) {
         if (row.cells.length > 0)
           row.cells[0].layoutElement()
       }
     })
 
-    this.connect(this.model.properties.styles.change, () => {
+    this.connect(p.styles.change, () => {
       if (this._applied_styles)
 	this.tabulator.redraw(true)
       this.setStyles()
     })
-    this.connect(this.model.properties.hidden_columns.change, () => this.setHidden())
-    this.connect(this.model.properties.page_size.change, () => this.setPageSize())
-    this.connect(this.model.properties.page.change, () => {
+    this.connect(p.hidden_columns.change, () => this.setHidden())
+    this.connect(p.page_size.change, () => this.setPageSize())
+    this.connect(p.page.change, () => {
       if (!this._updating_page)
         this.setPage()
     })
-    this.connect(this.model.properties.max_page.change, () => this.setMaxPage())
-    this.connect(this.model.properties.frozen_rows.change, () => this.setFrozen())
-    this.connect(this.model.properties.sorters.change, () => this.setSorters())
+    this.connect(p.max_page.change, () => this.setMaxPage())
+    this.connect(p.frozen_rows.change, () => this.setFrozen())
+    this.connect(p.sorters.change, () => this.setSorters())
     this.connect(this.model.source.properties.data.change, () => this.setData())
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => {
@@ -286,6 +295,16 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     })
     this.connect(this.model.source.selected.change, () => this.setSelection())
     this.connect(this.model.source.selected.properties.indices.change, () => this.setSelection())
+  }
+
+  on_change(properties: any, fn: () => void): void {
+    // HACKALERT: LayoutDOMView triggers re-renders whenever css_classes change
+    // which is very expensive so we do not connect this signal and handle it
+    // ourself
+    const p = this.model.properties
+    if (properties.length === 2 && properties[0] === p.background && properties[1] === p.css_classes)
+      return
+    super.on_change(properties, fn)
   }
 
   get sorters(): any[] {
