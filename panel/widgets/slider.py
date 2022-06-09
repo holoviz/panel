@@ -14,7 +14,6 @@ from typing import ClassVar, Mapping
 import numpy as np
 import param
 
-from base import Widget
 from bokeh.models import CustomJS
 from bokeh.models.formatters import TickFormatter
 from bokeh.models.widgets import (
@@ -31,7 +30,7 @@ from ..util import (
 )
 from ..viewable import Layoutable
 from ..widgets import FloatInput, IntInput
-from .base import CompositeWidget
+from .base import CompositeWidget, Widget
 from .input import StaticText
 
 
