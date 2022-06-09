@@ -6,7 +6,7 @@ Getting started with Panel is pretty straightforward, open your editor, IDE or n
 panel serve your_script.py --autoreload --show
 ```
 
-Once you run that command Panel will launch a server that will serve your app, open a tab in your default browser (`--show`) and update the application whenever you update the code.
+Once you run that command Panel will launch a server that will serve your app, open a tab in your default browser (`--show`) and update the application whenever you update the code (`--autoreload`).
 
 ## Development flow
 
@@ -26,7 +26,7 @@ Now you are ready to go, all Panel components will render themselves. In other w
 :::{admonition} Tip
 :class: success
 
-When working in JupyterLab you will see a little Panel icon in your toolbar. This will let you preview the application you are building quickly and easily.
+When working in JupyterLab you will see a little Panel icon (<img src="/_static/favicon.ico" alt="Panel Icon" width="20px"/>) in your toolbar. This will let you preview the application you are building quickly and easily.
 :::
 
 ### Editor/IDE
