@@ -18,8 +18,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Iterator as TIterator, List, Optional,
-    Tuple, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterator as TIterator, List,
+    Optional, Tuple, Union,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -27,6 +27,7 @@ from weakref import WeakKeyDictionary
 import param
 
 from bokeh.document import Document
+from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
@@ -36,7 +37,6 @@ from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 _state_logger = logging.getLogger('panel.state')
 
 if TYPE_CHECKING:
-    from bokeh.document.locking import UnlockedDocumentProxy
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.server import Server
@@ -54,11 +54,17 @@ if TYPE_CHECKING:
 
 
 @contextmanager
-def set_curdoc(doc: Document | 'UnlockedDocumentProxy'):
+def set_curdoc(doc: Document):
     orig_doc = state._curdoc
     state.curdoc = doc
     yield
     state.curdoc = orig_doc
+
+def curdoc_locked() -> Document:
+    doc = _curdoc()
+    if isinstance(doc, UnlockedDocumentProxy):
+        doc = doc._doc
+    return doc
 
 class _Undefined: pass
 
@@ -104,52 +110,52 @@ class _state(param.Parameterized):
         processed.""")
 
     # Whether to hold comm events
-    _hold: bool = False
+    _hold: ClassVar[bool] = False
 
     # Used to ensure that events are not scheduled from the wrong thread
-    _thread_id_: WeakKeyDictionary[Document, int] = WeakKeyDictionary()
+    _thread_id_: ClassVar[WeakKeyDictionary[Document, int]] = WeakKeyDictionary()
     _thread_pool = None
 
     _comm_manager = _CommManager
 
     # Locations
-    _location: Location | None = None # Global location, e.g. for notebook context
-    _locations: WeakKeyDictionary[Document, Location] = WeakKeyDictionary() # Server locations indexed by document
+    _location: ClassVar[Location | None] = None # Global location, e.g. for notebook context
+    _locations: ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
 
     # Locations
-    _notification: NotificationArea | None = None # Global location, e.g. for notebook context
-    _notifications: WeakKeyDictionary[Document, NotificationArea] = WeakKeyDictionary() # Server locations indexed by document
+    _notification: ClassVar[NotificationArea | None] = None # Global location, e.g. for notebook context
+    _notifications: ClassVar[WeakKeyDictionary[Document, NotificationArea]] = WeakKeyDictionary() # Server locations indexed by document
 
     # Templates
-    _template: BaseTemplate | None = None
-    _templates: WeakKeyDictionary[Document, BaseTemplate] = WeakKeyDictionary() # Server templates indexed by document
+    _template: ClassVar[BaseTemplate | None] = None
+    _templates: ClassVar[WeakKeyDictionary[Document, BaseTemplate]] = WeakKeyDictionary() # Server templates indexed by document
 
     # An index of all currently active views
-    _views: Dict[str, Tuple[Viewable, Model, Document, Comm | None]] = {}
+    _views: ClassVar[Dict[str, Tuple[Viewable, Model, Document, Comm | None]]] = {}
 
     # For templates to keep reference to their main root
-    _fake_roots: List[str] = []
+    _fake_roots: ClassVar[List[str]] = []
 
     # An index of all currently active servers
-    _servers: Dict[str, Tuple[Server, Viewable | BaseTemplate, List[Document]]] = {}
-    _threads: Dict[str, StoppableThread] = {}
+    _servers: ClassVar[Dict[str, Tuple[Server, Viewable | BaseTemplate, List[Document]]]] = {}
+    _threads: ClassVar[Dict[str, StoppableThread]] = {}
 
     # Jupyter display handles
-    _handles: Dict[str, [DisplayHandle, List[str]]] = {}
+    _handles: ClassVar[Dict[str, [DisplayHandle, List[str]]]] = {}
 
     # Dictionary of callbacks to be triggered on app load
-    _onload: Dict[Document, Callable[[], None]] = WeakKeyDictionary()
-    _on_session_created: List[Callable[[BokehSessionContext], []]] = []
+    _onload: ClassVar[Dict[Document, Callable[[], None]]] = WeakKeyDictionary()
+    _on_session_created: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
 
     # Module that was run during setup
     _setup_module = None
 
     # Scheduled callbacks
-    _scheduled: Dict[str, Tuple[Iterator[int], Callable[[], None]]] = {}
-    _periodic: WeakKeyDictionary[Document, List[PeriodicCallback]] = WeakKeyDictionary()
+    _scheduled: ClassVar[Dict[str, Tuple[Iterator[int], Callable[[], None]]]] = {}
+    _periodic: ClassVar[WeakKeyDictionary[Document, List[PeriodicCallback]]] = WeakKeyDictionary()
 
     # Indicators listening to the busy state
-    _indicators: List[BooleanIndicator] = []
+    _indicators: ClassVar[List[BooleanIndicator]] = []
 
     # Profilers
     _launching = []
@@ -159,7 +165,7 @@ class _state(param.Parameterized):
     _rest_endpoints = {}
 
     # Locks
-    _cache_locks: Dict[str, threading.Lock] = {'main': threading.Lock()}
+    _cache_locks: ClassVar[Dict[str, threading.Lock]] = {'main': threading.Lock()}
 
     def __repr__(self) -> str:
         server_info = []
@@ -536,7 +542,7 @@ class _state(param.Parameterized):
         """
         Callback that is triggered when a session is destroyed.
         """
-        doc = self._curdoc or _curdoc()
+        doc = self._curdoc or curdoc_locked()
         if doc:
             doc.on_session_destroyed(callback)
         else:
@@ -728,7 +734,7 @@ class _state(param.Parameterized):
         if self._curdoc:
             return self._curdoc
         try:
-            doc = _curdoc()
+            doc = curdoc_locked()
         except Exception:
             return None
         try:

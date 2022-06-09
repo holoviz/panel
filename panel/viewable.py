@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import sys
 import threading
 import traceback
@@ -19,13 +20,14 @@ import uuid
 
 from functools import partial
 from typing import (
-    IO, TYPE_CHECKING, Any, Callable, List, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
 )
 
 import param  # type: ignore
 
 from bokeh.document import Document
-from bokeh.io import curdoc as _curdoc
+from bokeh.resources import Resources
+from jinja2 import Template
 from pyviz_comms import Comm, JupyterCommManager  # type: ignore
 
 from .config import config, panel_extension
@@ -38,7 +40,7 @@ from .io.notebook import (
     ipywidget, render_mimebundle, render_model, show_embed, show_server,
 )
 from .io.save import save
-from .io.state import state
+from .io.state import curdoc_locked, state
 from .util import escape, param_reprs
 
 if TYPE_CHECKING:
@@ -55,8 +57,7 @@ class Layoutable(param.Parameterized):
     for all Panel components with a visual representation.
     """
 
-    align = param.ClassSelector(default='start',
-                                class_=(str, tuple), doc="""
+    align = param.ClassSelector(default='start', class_=(str, tuple), doc="""
         Whether the object should be aligned with the start, end or
         center of its container. If set as a tuple it will declare
         (vertical, horizontal) alignment.""")
@@ -168,7 +169,6 @@ class Layoutable(param.Parameterized):
     sizing_mode = param.ObjectSelector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
-
         How the component should size itself.
 
         This is a high-level setting for maintaining width and height
@@ -351,7 +351,7 @@ class ServableMixin(object):
         -------
         The Panel object itself
         """
-        if _curdoc().session_context:
+        if curdoc_locked().session_context:
             logger = logging.getLogger('bokeh')
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler):
@@ -577,7 +577,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Whether or not the Viewable is loading. If True a loading spinner
         is shown on top of the Viewable.""")
 
-    _preprocessing_hooks: List[Callable[['Viewable', 'Model'], None]] = []
+    _preprocessing_hooks: ClassVar[List[Callable[['Viewable', 'Model'], None]]] = []
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
@@ -776,18 +776,21 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             load_path, progress, states
         )
 
-    def save(self, filename: str | IO, title: Optional[str] = None,
-             resources=None, template=None,
-             template_variables=None, embed=False, max_states=1000,
-             max_opts=3, embed_json=False, json_prefix='', save_path='./',
-             load_path=None, progress=True, embed_states={}, as_png=None,
-             **kwargs):
+    def save(
+        self, filename: str | os.PathLike | IO, title: Optional[str] = None,
+        resources: Resources | None = None, template: str | Template | None = None,
+        template_variables: Dict[str, Any] = {}, embed: bool = False,
+        max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
+        json_prefix: str='', save_path: str='./', load_path: Optional[str] = None,
+        progress: bool = True, embed_states: Dict[Any, Any] = {},
+        as_png: bool | None = None, **kwargs
+    ) -> None:
         """
         Saves Panel objects to file.
 
         Arguments
         ---------
-        filename: string or file-like object
+        filename: str or file-like object
            Filename to save the plot to
         title: string
            Optional title for the plot
@@ -815,14 +818,16 @@ class Viewable(Renderable, Layoutable, ServableMixin):
           Whether to report progress
         embed_states: dict (default={})
           A dictionary specifying the widget values to embed for each widget
-        save_png: boolean (default=None)
+        as_png: boolean (default=None)
           To save as a .png. If None save_png will be true if filename is
           string and ends with png.
         """
-        return save(self, filename, title, resources, template,
-                    template_variables, embed, max_states, max_opts,
-                    embed_json, json_prefix, save_path, load_path,
-                    progress, embed_states, as_png, **kwargs)
+        return save(
+            self, filename, title, resources, template,
+            template_variables, embed, max_states, max_opts,
+            embed_json, json_prefix, save_path, load_path, progress,
+            embed_states, as_png, **kwargs
+        )
 
     def server_doc(
         self, doc: Optional[Document] = None, title: Optional[str] = None,

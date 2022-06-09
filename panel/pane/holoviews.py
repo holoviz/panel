@@ -591,7 +591,10 @@ def find_links(root_view, root_model):
         return
 
     try:
-        from holoviews.plotting.bokeh.callbacks import LinkCallback
+        try:
+            from holoviews.plotting.bokeh.links import LinkCallback
+        except Exception:
+            from holoviews.plotting.bokeh.callbacks import LinkCallback
         from holoviews.plotting.links import Link
     except Exception:
         return
@@ -601,6 +604,7 @@ def find_links(root_view, root_model):
 
     potentials = [(LinkCallback.find_link(plot), root_plot)
                   for plot, root_plot in plots]
+
     source_links = [p for p in potentials if p[0] is not None]
     found = []
     for (plot, links), root_plot in source_links:

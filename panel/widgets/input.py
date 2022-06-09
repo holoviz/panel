@@ -171,9 +171,9 @@ class FileInput(Widget):
                 "filenames was given. Please provide a single filename "
                 "or file-like object."
             )
-        elif not isinstance(value, list):
+        if not isinstance(value, list):
             value = [self.value]
-        elif not isinstance(filename, list):
+        if not isinstance(filename, list):
             filename = [filename]
 
         for val, fn in zip(value, filename):

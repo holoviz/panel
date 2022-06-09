@@ -298,6 +298,36 @@ def test_discrete_slider_single_option(document, comm):
     assert box.children[1].end == 1
 
 
+def test_discrete_slider_disabled(document, comm):
+    # Check that the widget can be disabled on instantiation
+    discrete_slider = DiscreteSlider(name='DiscreteSlider', options=[0, 1], disabled=True)
+
+    box = discrete_slider.get_root(document, comm=comm)
+
+    # Check that the widget
+    assert box.children[0].text == 'DiscreteSlider: <b>0</b>'
+    assert box.children[1].disabled
+    assert box.children[1].start == 0
+    assert box.children[1].end == 1
+
+    # Check that the widget can be enabled after instantiation
+    discrete_slider.disabled = False
+
+    assert box.children[0].text == 'DiscreteSlider: <b>0</b>'
+    assert not box.children[1].disabled
+    assert box.children[1].start == 0
+    assert box.children[1].end == 1
+
+    # Widget can't be disabled if it has 0 or 1 option only.
+    discrete_slider.options = [0]
+    discrete_slider.disabled = True
+
+    assert box.children[0].text == 'DiscreteSlider: <b>0</b>'
+    assert box.children[1].disabled
+    assert box.children[1].start == 0
+    assert box.children[1].end == 1
+
+
 def test_discrete_date_slider(document, comm):
     dates = OrderedDict([('2016-01-0%d' % i, datetime(2016, 1, i)) for i in range(1, 4)])
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=dates['2016-01-02'],

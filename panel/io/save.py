@@ -4,6 +4,7 @@ Defines utilities to save panel objects to files as HTML or PNG.
 from __future__ import annotations
 
 import io
+import os
 
 from typing import (
     IO, TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
@@ -169,8 +170,8 @@ def file_html(
 #---------------------------------------------------------------------
 
 def save(
-    panel: Viewable, filename: str | IO, title: Optional[str]=None,
-    resources=None, template: Template | str = None,
+    panel: Viewable, filename: str | os.PathLike | IO, title: Optional[str]=None,
+    resources: BkResources | None = None, template: Template | str | None = None,
     template_variables: Dict[str, Any] = None, embed: bool = False,
     max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
     json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
@@ -184,15 +185,15 @@ def save(
     ---------
     panel: Viewable
       The Panel Viewable to save to file
-    filename: string or file-like object
+    filename: str or file-like object
       Filename to save the plot to
-    title: string
+    title: str
       Optional title for the plot
-    resources: bokeh resources
+    resources: bokeh.resources.Resources
       One of the valid bokeh.resources (e.g. CDN or INLINE)
-    template:
+    template: jinja2.Template | str
       template file, as used by bokeh.file_html. If None will use bokeh defaults
-    template_variables:
+    template_variables: Dict[str, Any]
       template_variables file dict, as used by bokeh.file_html
     embed: bool
       Whether the state space should be embedded in the saved file.
@@ -212,7 +213,7 @@ def save(
       Whether to report progress
     embed_states: dict (default={})
       A dictionary specifying the widget values to embed for each widget
-    save_png: boolean (default=None)
+    as_png: boolean (default=None)
         To save as a .png. If None save_png will be true if filename is
         string and ends with png.
     """
