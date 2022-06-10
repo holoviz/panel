@@ -64,6 +64,7 @@ def test_subprocess():
 
 
 @not_windows
+@not_osx
 def test_run_list_args():
     terminal = pn.widgets.Terminal()
     subprocess = terminal.subprocess
