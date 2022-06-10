@@ -7,7 +7,9 @@ import sys
 
 from contextlib import contextmanager
 from io import BytesIO
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+)
 
 import param
 
@@ -24,6 +26,10 @@ from .base import PaneBase
 from .image import PNG
 from .ipywidget import IPyWidget
 from .markup import HTML
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from pyviz_comms import Comm
 
 FOLIUM_BEFORE = '<div style="width:100%;"><div style="position:relative;width:100%;height:0;padding-bottom:60%;">'
 FOLIUM_AFTER = '<div style="width:100%;height:100%"><div style="position:relative;width:100%;height:100%;padding-bottom:0%;">'
@@ -68,12 +74,12 @@ class Bokeh(PaneBase):
     theme = param.ClassSelector(default=None, class_=(Theme, str), doc="""
         Bokeh theme to apply to the plot.""")
 
-    priority = 0.8
+    priority: ClassVar[float | bool | None] = 0.8
 
     _rename: ClassVar[Mapping[str, str | None]] = {'autodispatch': None, 'theme': None}
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         return isinstance(obj, LayoutDOM)
 
     @classmethod
@@ -106,7 +112,10 @@ class Bokeh(PaneBase):
                     for cb in cbs
                 ]
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         if root is None:
             return self.get_root(doc, comm)
 
@@ -178,7 +187,7 @@ class Matplotlib(PNG, IPyWidget):
     _rerender_params = PNG._rerender_params + ['object', 'dpi', 'tight']
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         if 'matplotlib' not in sys.modules:
             return False
         from matplotlib.figure import Figure
@@ -221,7 +230,10 @@ class Matplotlib(PNG, IPyWidget):
             self.width = self.width or int(dpi * w)
             self.height = self.height or int(dpi * h)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         self._update_dimensions()
         if not self.interactive:
             model = PNG._get_model(self, doc, root, parent, comm)
@@ -243,7 +255,7 @@ class Matplotlib(PNG, IPyWidget):
         self._managers[root.ref['id']] = manager
         return model
 
-    def _update(self, ref=None, model=None):
+    def _update(self, ref: str, model: Model) -> None:
         if not self.interactive:
             self._update_dimensions()
             model.update(**self._get_properties())
@@ -287,7 +299,7 @@ class RGGPlot(PNG):
     _rerender_params = PNG._rerender_params + ['object', 'dpi', 'width', 'height']
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         return type(obj).__name__ == 'GGPlot' and hasattr(obj, 'r_repr')
 
     def _img(self):
@@ -308,10 +320,10 @@ class YT(HTML):
     provide additional space.
     """
 
-    priority = 0.5
+    priority: ClassVar[float | bool | None] = 0.5
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: bool) -> float | bool | None:
         return (getattr(obj, '__module__', '').startswith('yt.') and
                 hasattr(obj, "plots") and
                 hasattr(obj, "_repr_html_"))
@@ -345,10 +357,10 @@ class Folium(HTML):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    priority = 0.6
+    priority: ClassVar[float | bool | None] = 0.6
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         return (getattr(obj, '__module__', '').startswith('folium.') and
                 hasattr(obj, "_repr_html_"))
 

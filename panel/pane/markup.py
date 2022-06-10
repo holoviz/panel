@@ -7,7 +7,9 @@ from __future__ import annotations
 import json
 import textwrap
 
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Type,
+)
 
 import param
 
@@ -15,6 +17,11 @@ from ..models import HTML as _BkHTML, JSON as _BkJSON
 from ..util import escape
 from ..viewable import Layoutable
 from .base import PaneBase
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class DivPaneBase(PaneBase):
@@ -27,11 +34,11 @@ class DivPaneBase(PaneBase):
     style = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
 
-    _bokeh_model = _BkHTML
+    _bokeh_model: ClassVar[Model] = _BkHTML
 
     _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
 
-    _updates = True
+    _updates: ClassVar[bool] = True
 
     __abstract = True
 
@@ -39,14 +46,17 @@ class DivPaneBase(PaneBase):
         return {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
                 if getattr(self, p) is not None}
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         model = self._bokeh_model(**self._get_properties())
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update(self, ref=None, model=None):
+    def _update(self, ref: str, model: Model) -> None:
         model.update(**self._get_properties())
 
 
@@ -72,10 +82,10 @@ class HTML(DivPaneBase):
         strings escaped with $$ delimiters.""")
 
     # Priority is dependent on the data type
-    priority = None
+    priority: ClassVar[float | bool | None] = None
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         module, name = getattr(obj, '__module__', ''), type(obj).__name__
         if ((any(m in module for m in ('pandas', 'dask')) and
             name in ('DataFrame', 'Series')) or hasattr(obj, '_repr_html_')):
@@ -173,9 +183,9 @@ class DataFrame(HTML):
 
     _object = param.Parameter(default=None, doc="""Hidden parameter.""")
 
-    _dask_params = ['max_rows']
+    _dask_params: ClassVar[List[str]] = ['max_rows']
 
-    _rerender_params = [
+    _rerender_params: ClassVar[List[str]] = [
         'object', '_object', 'bold_rows', 'border', 'classes',
         'col_space', 'decimal', 'escape', 'float_format', 'formatters',
         'header', 'index', 'index_names', 'justify', 'max_rows',
@@ -189,7 +199,7 @@ class DataFrame(HTML):
         self._setup_stream()
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         module = getattr(obj, '__module__', '')
         name = type(obj).__name__
         if (any(m in module for m in ('pandas', 'dask', 'streamz')) and
@@ -211,13 +221,16 @@ class DataFrame(HTML):
         self._stream = self.object.stream.latest().rate_limit(0.5).gather()
         self._stream.sink(self._set_object)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._setup_stream()
         return model
 
-    def _cleanup(self, model):
-        super()._cleanup(model)
+    def _cleanup(self, root: Model | None = None) -> None:
+        super()._cleanup(root)
         if not self._models and self._stream:
             self._stream.destroy()
             self._stream = None
@@ -267,14 +280,16 @@ class Str(DivPaneBase):
     ... )
     """
 
-    priority = 0
+    priority: ClassVar[float | bool | None] = 0
 
-    _target_transforms = {'object': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
+    _bokeh_model: ClassVar[Type[Model]] = _BkHTML
 
-    _bokeh_model = _BkHTML
+    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+        'object': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""
+    }
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> bool:
         return True
 
     def _get_properties(self):
@@ -312,14 +327,16 @@ class Markdown(DivPaneBase):
         Markdown extension to apply when transforming markup.""")
 
     # Priority depends on the data type
-    priority = None
+    priority: ClassVar[float | bool | None] = None
 
-    _target_transforms = {'object': None}
+    _target_transforms: ClassVar[Mapping[str, str | None]] = {'object': None}
 
-    _rerender_params = ['object', 'dedent', 'extensions', 'css_classes']
+    _rerender_params: ClassVar[List[str]] = [
+        'object', 'dedent', 'extensions', 'css_classes'
+    ]
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         if hasattr(obj, '_repr_markdown_'):
             return 0.3
         elif isinstance(obj, str):
@@ -374,16 +391,22 @@ class JSON(DivPaneBase):
     theme = param.ObjectSelector(default="dark", objects=["light", "dark"], doc="""
         Whether the JSON tree view is expanded by default.""")
 
-    priority = None
+    priority: ClassVar[float | bool | None] = None
 
-    _applies_kw = True
-    _bokeh_model = _BkJSON
-    _rename: ClassVar[Mapping[str, str | None]] = {"name": None, "object": "text", "encoder": None}
+    _applies_kw: ClassVar[bool] = True
 
-    _rerender_params = ['object', 'depth', 'encoder', 'hover_preview', 'theme']
+    _bokeh_model: ClassVar[Model] = _BkJSON
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        "name": None, "object": "text", "encoder": None
+    }
+
+    _rerender_params: ClassVar[List[str]] = [
+        'object', 'depth', 'encoder', 'hover_preview', 'theme'
+    ]
 
     @classmethod
-    def applies(cls, obj, **params):
+    def applies(cls, obj: Any, **params) -> float | bool | None:
         if isinstance(obj, (list, dict)):
             try:
                 json.dumps(obj, cls=params.get('encoder', cls.encoder))

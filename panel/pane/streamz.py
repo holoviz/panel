@@ -5,11 +5,18 @@ from __future__ import annotations
 
 import sys
 
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+)
 
 import param
 
 from .base import ReplacementPane
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class Streamz(ReplacementPane):
@@ -50,12 +57,15 @@ class Streamz(ReplacementPane):
             self._stream = self.object.latest().rate_limit(self.rate_limit).gather()
             self._stream.sink(self._update_inner)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._setup_stream()
         return model
 
-    def _cleanup(self, root=None):
+    def _cleanup(self, root: Model | None = None):
         super()._cleanup(root)
         if not self._pane._models and self._stream:
             self._stream.destroy()
@@ -66,7 +76,7 @@ class Streamz(ReplacementPane):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         if 'streamz' in sys.modules:
             from streamz import Stream
             return isinstance(obj, Stream)

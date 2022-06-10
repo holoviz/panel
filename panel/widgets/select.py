@@ -8,7 +8,9 @@ import itertools
 import re
 
 from collections import OrderedDict
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, ClassVar, Mapping, Type,
+)
 
 import param
 
@@ -26,6 +28,9 @@ from ..util import indexOf, isIn
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
 from .input import TextAreaInput, TextInput
+
+if TYPE_CHECKING:
+    from bokeh.model import Model
 
 
 class SelectBase(Widget):
@@ -55,7 +60,7 @@ class SingleSelectBase(SelectBase):
 
     value = param.Parameter(default=None)
 
-    _supports_embed = True
+    _supports_embed: ClassVar[bool] = True
 
     __abstract = True
 
@@ -160,7 +165,9 @@ class Select(SingleSelectBase):
         If set to 1 displays options as dropdown otherwise displays
         scrollable area.""")
 
-    _source_transforms = {'size': None, 'groups': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'size': None, 'groups': None
+    }
 
     @property
     def _widget_type(self):
@@ -295,7 +302,7 @@ class _MultiSelectBase(SingleSelectBase):
 
     value = param.List(default=[])
 
-    _supports_embed = False
+    _supports_embed: ClassVar[bool] = False
 
     def _process_param_change(self, msg):
         msg = super(SingleSelectBase, self)._process_param_change(msg)
@@ -343,7 +350,7 @@ class MultiSelect(_MultiSelectBase):
         The number of items displayed at once (i.e. determines the
         widget height).""")
 
-    _widget_type = _BkMultiSelect
+    _widget_type: ClassVar[Type[Model]] = _BkMultiSelect
 
 
 class MultiChoice(_MultiSelectBase):
@@ -387,7 +394,7 @@ class MultiChoice(_MultiSelectBase):
     solid = param.Boolean(default=True, doc="""
         Whether to display widget with solid or light style.""")
 
-    _widget_type = _BkMultiChoice
+    _widget_type: ClassVar[Type[Model]] = _BkMultiChoice
 
 
 class AutocompleteInput(Widget):
@@ -436,9 +443,9 @@ class AutocompleteInput(Widget):
     value_input = param.String(default='', allow_None=True, doc="""
       Initial or entered text value updated on every key press.""")
 
-    _widget_type = _BkAutocompleteInput
-
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
+
+    _widget_type: ClassVar[Type[Model]] = _BkAutocompleteInput
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -524,9 +531,9 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
-    _widget_type = _BkRadioButtonGroup
+    _supports_embed: ClassVar[bool] = True
 
-    _supports_embed = True
+    _widget_type: ClassVar[Type[Model]] = _BkRadioButtonGroup
 
 
 
@@ -552,9 +559,9 @@ class RadioBoxGroup(_RadioGroupBase):
         Whether the items be arrange vertically (``False``) or
         horizontally in-line (``True``).""")
 
-    _supports_embed = True
+    _supports_embed: ClassVar[bool] = True
 
-    _widget_type = _BkRadioBoxGroup
+    _widget_type: ClassVar[Type[Model]] = _BkRadioBoxGroup
 
 
 
@@ -619,7 +626,7 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
 
-    _widget_type = _BkCheckboxButtonGroup
+    _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup
 
 
 class CheckBoxGroup(_CheckGroupBase):
@@ -645,7 +652,7 @@ class CheckBoxGroup(_CheckGroupBase):
         Whether the items be arrange vertically (``False``) or
         horizontally in-line (``True``).""")
 
-    _widget_type = _BkCheckboxGroup
+    _widget_type: ClassVar[Type[Model]] = _BkCheckboxGroup
 
 
 

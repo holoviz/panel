@@ -9,7 +9,9 @@ import sys
 import zipfile
 
 from abc import abstractmethod
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+)
 from urllib.request import urlopen
 
 import numpy as np
@@ -22,6 +24,11 @@ from pyviz_comms import JupyterComm
 from ...util import isfile, lazy_load
 from ..base import Pane, PaneBase
 from .enums import PRESET_CMAPS
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 base64encode = lambda x: base64.b64encode(x).decode('utf-8')
 
@@ -72,7 +79,10 @@ class AbstractVTK(PaneBase):
             msg['axes'] = VTKAxes(**axes)
         return msg
 
-    def _update_model(self, events, msg, root, model, doc, comm):
+    def _update_model(
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+    ) -> None:
         if 'axes' in msg and msg['axes'] is not None:
             VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
             axes = msg['axes']
@@ -367,9 +377,12 @@ class VTKRenderWindow(BaseVTKRenderWindow):
         super(VTKRenderWindow, self).__init__(object, **params)
         if object is not None:
             self.color_mappers = self.get_color_mappers()
-            self._update()
+            self._update(None, None)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         VTKSynchronizedPlot = lazy_load(
             'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm), root
         )
@@ -386,7 +399,7 @@ class VTKRenderWindow(BaseVTKRenderWindow):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update(self, ref=None, model=None):
+    def _update(self, ref: str, model: Model) -> None:
         import panel.pane.vtk.synchronizable_serializer as rws
         context = rws.SynchronizationContext(
             id_root=make_globally_unique_id(),
@@ -429,7 +442,10 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         super().__init__(object, **params)
         self._contexts = {}
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         VTKSynchronizedPlot = lazy_load(
             'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm), root
         )
@@ -455,12 +471,12 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: Model | None = None) -> None:
         ref = root.ref['id']
         self._contexts.pop(ref, None)
         super()._cleanup(root)
 
-    def _update(self, ref=None, model=None):
+    def _update(self, ref: str, model: Model) -> None:
         context = self._contexts[model.id]
         scene, arrays, annotations = self._serialize_ren_win(
             self.object,
@@ -634,10 +650,10 @@ class VTKVolume(AbstractVTK):
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._sub_spacing = self.spacing
-        self._update()
+        self._update(None, None)
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         if ((isinstance(obj, np.ndarray) and obj.ndim == 3) or
             any([isinstance(obj, k) for k in cls._serializers.keys()])):
             return True
@@ -647,7 +663,10 @@ class VTKVolume(AbstractVTK):
             import vtk
             return isinstance(obj, vtk.vtkImageData)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         VTKVolumePlot = lazy_load(
             'panel.models.vtk', 'VTKVolumePlot', isinstance(comm, JupyterComm), root
         )
@@ -696,7 +715,7 @@ class VTKVolume(AbstractVTK):
                     msg[k] = int(np.round(v * ori_dim[index] / sub_dim[index]))
         return msg
 
-    def _update(self, ref=None, model=None):
+    def _update(self, ref: str, model: Model) -> None:
         self._volume_data = self._get_volume_data()
         if self._volume_data is not None:
             self._orginal_dimensions = self._get_object_dimensions()
@@ -809,11 +828,14 @@ class VTKJS(AbstractVTK):
         self._vtkjs = None
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         if isinstance(obj, str) and obj.endswith('.vtkjs'):
             return True
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         """
         Should return the bokeh model to be rendered.
         """
@@ -843,7 +865,7 @@ class VTKJS(AbstractVTK):
             self._vtkjs = vtkjs
         return self._vtkjs
 
-    def _update(self, ref=None, model=None):
+    def _update(self, ref: str, model: Model) -> None:
         self._vtkjs = None
         vtkjs = self._get_vtkjs()
         model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs

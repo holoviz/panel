@@ -9,7 +9,9 @@ import json
 
 from base64 import b64decode
 from datetime import date, datetime
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional, Type,
+)
 
 import numpy as np
 import param
@@ -24,10 +26,15 @@ from bokeh.models.widgets import (
 )
 
 from ..config import config
-from ..layout import Column
+from ..layout import Column, Panel
 from ..models import DatetimePicker as _bkDatetimePicker
 from ..util import param_reprs
 from .base import CompositeWidget, Widget
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class TextInput(Widget):
@@ -53,7 +60,7 @@ class TextInput(Widget):
     value_input = param.String(default='', allow_None=True, doc="""
       Initial or entered text value updated on every key press.""")
 
-    _widget_type = _BkTextInput
+    _widget_type: ClassVar[Type[Model]] = _BkTextInput
 
 
 class PasswordInput(TextInput):
@@ -70,7 +77,7 @@ class PasswordInput(TextInput):
     ... )
     """
 
-    _widget_type = _BkPasswordInput
+    _widget_type: ClassVar[Type[Model]] = _BkPasswordInput
 
 
 class TextAreaInput(TextInput):
@@ -89,7 +96,7 @@ class TextAreaInput(TextInput):
     ... )
     """
 
-    _widget_type = _BkTextAreaInput
+    _widget_type: ClassVar[Type[Model]] = _BkTextAreaInput
 
 
 class FileInput(Widget):
@@ -122,11 +129,13 @@ class FileInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _widget_type = _BkFileInput
-
-    _source_transforms = {'value': "'data:' + source.mime_type + ';base64,' + value"}
-
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'filename': None}
+
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': "'data:' + source.mime_type + ';base64,' + value"
+    }
+
+    _widget_type: ClassVar[Type[Model]] = _BkFileInput
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -202,15 +211,19 @@ class StaticText(Widget):
     value = param.Parameter(default=None, doc="""
         The current value""")
 
-    _format = '<b>{title}</b>: {value}'
+    _format: ClassVar[str] = '<b>{title}</b>: {value}'
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'text'}
 
-    _target_transforms = {'value': 'target.text.split(": ")[0]+": "+value'}
+    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': 'target.text.split(": ")[0]+": "+value'
+    }
 
-    _source_transforms = {'value': 'value.split(": ")[1]'}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': 'value.split(": ")[1]'
+    }
 
-    _widget_type = _BkDiv
+    _widget_type: ClassVar[Type[Model]] = _BkDiv
 
     def _process_param_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -252,11 +265,13 @@ class DatePicker(Widget):
 
     enabled_dates = param.List(default=None, class_=(date, str))
 
-    _source_transforms = {}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {}
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'start': 'min_date', 'end': 'max_date', 'name': 'title'
+    }
 
-    _widget_type = _BkDatePicker
+    _widget_type: ClassVar[Type[Model]] = _BkDatePicker
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -293,11 +308,15 @@ class _DatetimePickerBase(Widget):
       the parameter accepts datetimes the time portion of the range
       is ignored.""")
 
-    _source_transforms = {'value': None, 'start': None, 'end': None, 'mode': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': None, 'start': None, 'end': None, 'mode': None
+    }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'start': 'min_date', 'end': 'max_date', 'name': 'title'
+    }
 
-    _widget_type = _bkDatetimePicker
+    _widget_type: ClassVar[Type[Model]] = _bkDatetimePicker
 
     __abstract = True
 
@@ -435,7 +454,7 @@ class ColorPicker(Widget):
     value = param.Color(default=None, doc="""
         The selected color""")
 
-    _widget_type = _BkColorPicker
+    _widget_type: ClassVar[Type[Model]] = _BkColorPicker
 
     _rename: ClassVar[Mapping[str, str | None]] = {'value': 'color', 'name': 'title'}
 
@@ -459,7 +478,7 @@ class _NumericInputBase(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'start': 'low', 'end': 'high'}
 
-    _widget_type = _BkNumericInput
+    _widget_type: ClassVar[Type[Model]] = _BkNumericInput
 
     __abstract = True
 
@@ -508,7 +527,7 @@ class _SpinnerBase(_NumericInputBase):
         Defines the debounce time in ms before updating `value_throttled` when
         the mouse wheel is used to change the input.""")
 
-    _widget_type = _BkSpinner
+    _widget_type: ClassVar[Type[Model]] = _BkSpinner
 
     __abstract = True
 
@@ -525,7 +544,10 @@ class _SpinnerBase(_NumericInputBase):
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
 
-    def _update_model(self, events, msg, root, model, doc, comm):
+    def _update_model(
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+    ) -> None:
         if 'value_throttled' in msg:
             del msg['value_throttled']
 
@@ -634,13 +656,19 @@ class LiteralInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'type': None, 'serializer': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'title', 'type': None, 'serializer': None
+    }
 
-    _source_transforms = {'value': """JSON.parse(value.replace(/'/g, '"'))"""}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': """JSON.parse(value.replace(/'/g, '"'))"""
+    }
 
-    _target_transforms = {'value': """JSON.stringify(value).replace(/,/g, ",").replace(/:/g, ": ")"""}
+    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': """JSON.stringify(value).replace(/,/g, ",").replace(/:/g, ": ")"""
+    }
 
-    _widget_type = _BkTextInput
+    _widget_type: ClassVar[Type[Model]] = _BkTextInput
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -733,7 +761,7 @@ class ArrayInput(LiteralInput):
 
     _rename: ClassVar[Mapping[str, str | None]] = dict(LiteralInput._rename, max_array_size=None)
 
-    _source_transforms = {'value': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None}
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -804,10 +832,14 @@ class DatetimeInput(LiteralInput):
 
     type = datetime
 
-    _source_transforms = {'value': None, 'start': None, 'end': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': None, 'start': None, 'end': None
+    }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'format': None, 'type': None, 'name': 'title',
-               'start': None, 'end': None, 'serializer': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'format': None, 'type': None, 'name': 'title', 'start': None,
+        'end': None, 'serializer': None
+    }
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -888,7 +920,7 @@ class DatetimeRangeInput(CompositeWidget):
     format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
         Datetime format used for parsing and formatting the datetime.""")
 
-    _composite_type = Column
+    _composite_type: ClassVar[Type[Panel]] = Column
 
     def __init__(self, **params):
         self._text = StaticText(margin=(5, 0, 0, 0), style={'white-space': 'nowrap'})
@@ -961,15 +993,19 @@ class Checkbox(Widget):
     value = param.Boolean(default=False, doc="""
         The current value""")
 
-    _supports_embed = True
+    _supports_embed: ClassVar[bool] = True
 
     _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'labels'}
 
-    _source_transforms = {'value': "value.indexOf(0) >= 0", 'name': "value[0]"}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': "value.indexOf(0) >= 0", 'name': "value[0]"
+    }
 
-    _target_transforms = {'value': "value ? [0] : []", 'name': "[value]"}
+    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': "value ? [0] : []", 'name': "[value]"
+    }
 
-    _widget_type = _BkCheckboxGroup
+    _widget_type: ClassVar[Type[Model]] = _BkCheckboxGroup
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)

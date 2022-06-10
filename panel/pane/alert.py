@@ -5,7 +5,7 @@ See https://getbootstrap.com/docs/4.0/components/alerts/
 """
 from __future__ import annotations
 
-from typing import ClassVar, Mapping
+from typing import Any, ClassVar, Mapping
 
 import param
 
@@ -28,12 +28,12 @@ class Alert(Markdown):
 
     alert_type = param.ObjectSelector("primary", objects=ALERT_TYPES)
 
-    priority = 0
+    priority: ClassVar[float | bool | None] = 0
 
     _rename: ClassVar[Mapping[str, str | None]] = dict(Markdown._rename, alert_type=None)
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         priority = Markdown.applies(obj)
         return 0 if priority else False
 

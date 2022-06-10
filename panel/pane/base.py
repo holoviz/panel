@@ -8,7 +8,7 @@ import warnings
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, List, Optional, Type, TypeVar,
+    TYPE_CHECKING, Any, Callable, ClassVar, List, Optional, Type, TypeVar,
 )
 
 import param
@@ -121,19 +121,19 @@ class PaneBase(Reactive):
     # numerical priority is selected. The default is an intermediate value.
     # If set to None, applies method will be called to get a priority
     # value for a specific object type.
-    priority: float | bool | None = 0.5
+    priority: ClassVar[float | bool | None] = 0.5
 
     # Whether applies requires full set of keywords
-    _applies_kw = False
+    _applies_kw: ClassVar[bool] = False
 
     # Whether the Pane layout can be safely unpacked
-    _unpack: bool = True
+    _unpack: ClassVar[bool] = True
 
     # Declares whether Pane supports updates to the Bokeh model
-    _updates: bool = False
+    _updates: ClassVar[bool] = False
 
     # List of parameters that trigger a rerender of the Bokeh model
-    _rerender_params: List[str] = ['object']
+    _rerender_params: ClassVar[List[str]] = ['object']
 
     __abstract = True
 
@@ -179,7 +179,7 @@ class PaneBase(Reactive):
         return [p for p in self.param if p not in ignored_params]
 
     def _update_object(
-        self, ref: str, doc: 'Document', root: 'Model', parent: 'Model', comm: Optional['Comm']
+        self, ref: str, doc: 'Document', root: Model, parent: Model, comm: Optional[Comm]
     ) -> None:
         old_model = self._models[ref][0]
         if self._updates:
@@ -246,7 +246,7 @@ class PaneBase(Reactive):
                 else:
                     cb()
 
-    def _update(self, ref: Optional[str] = None, model: Optional['Model'] = None) -> None:
+    def _update(self, ref: str, model: Model) -> None:
         """
         If _updates=True this method is used to update an existing
         Bokeh model instead of replacing the model entirely. The
@@ -290,9 +290,9 @@ class PaneBase(Reactive):
         return type(self)(object, **params)
 
     def get_root(
-        self, doc: Optional['Document'] = None, comm: Optional['Comm'] = None,
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
         preprocess: bool = True
-    ) -> 'Model':
+    ) -> Model:
         """
         Returns the root model and applies pre-processing hooks
 
@@ -460,9 +460,9 @@ class ReplacementPane(PaneBase):
         self._internal = internal
 
     def _get_model(
-        self, doc: 'Document', root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
-    ) -> 'Model':
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         if root:
             ref = root.ref['id']
             if ref in self._models:
@@ -473,7 +473,7 @@ class ReplacementPane(PaneBase):
         self._models[ref] = (model, parent)
         return model
 
-    def _cleanup(self, root: 'Model' | None = None) -> None:
+    def _cleanup(self, root: Model | None = None) -> None:
         self._inner_layout._cleanup(root)
         super()._cleanup(root)
 

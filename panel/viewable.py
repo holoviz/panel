@@ -476,7 +476,7 @@ class Renderable(param.Parameterized):
         """
         raise NotImplementedError
 
-    def _cleanup(self, root: 'Model' | None) -> None:
+    def _cleanup(self, root: Model | None = None) -> None:
         """
         Clean up method which is called when a Viewable is destroyed.
 
@@ -537,7 +537,7 @@ class Renderable(param.Parameterized):
     def get_root(
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
         preprocess: bool = True
-    ) -> 'Model':
+    ) -> Model:
         """
         Returns the root model and applies pre-processing hooks
 

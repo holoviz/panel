@@ -8,11 +8,14 @@ code were copied directly from ipywidgets:
 Copyright (c) Jupyter Development Team and PyViz Development Team.
 Distributed under the terms of the Modified BSD License.
 """
+from __future__ import annotations
+
 import types
 
 from collections import OrderedDict
 from inspect import getcallargs
 from numbers import Integral, Real
+from typing import TYPE_CHECKING
 
 try:  # Python >= 3.3
     from collections.abc import Iterable, Mapping
@@ -41,6 +44,9 @@ from .widgets import (
     Button, Checkbox, DiscreteSlider, FloatSlider, IntSlider, Select,
     TextInput, Widget,
 )
+
+if TYPE_CHECKING:
+    from bokeh.model import Model
 
 
 def _get_min_max_value(min, max, value=None, step=None):
@@ -208,7 +214,7 @@ class interactive(PaneBase):
             watcher = widget.param.watch(update_pane, pname)
             self._callbacks.append(watcher)
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: Model | None = None) -> None:
         self._inner_layout._cleanup(root)
         super()._cleanup(root)
 

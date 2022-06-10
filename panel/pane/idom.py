@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import shutil
 import sys
@@ -5,6 +7,7 @@ import sys
 from functools import partial
 from queue import Queue as SyncQueue
 from threading import Thread
+from typing import TYPE_CHECKING, Optional
 
 from packaging.version import Version
 
@@ -13,6 +16,11 @@ from ..io.resources import DIST_DIR, LOCAL_DIST
 from ..io.state import state
 from ..models import IDOM as _BkIDOM
 from .base import PaneBase
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 _IDOM_MIN_VER = "0.23"
 _IDOM_MAX_VER = "0.24"
@@ -89,7 +97,10 @@ class IDOM(PaneBase):
             self._idom_layout = Layout(self.object())
         self._idom_loop = _spawn_threaded_event_loop(self._idom_layout_render_loop())
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         from idom.config import IDOM_CLIENT_IMPORT_SOURCE_URL
         from idom.core.layout import LayoutUpdate
 
@@ -118,7 +129,7 @@ class IDOM(PaneBase):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: Model | None = None) -> None:
         super()._cleanup(root)
         if not self._models:
             # Clean up loop when no views are shown

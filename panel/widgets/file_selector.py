@@ -2,18 +2,22 @@
 Defines a FileSelector widget which allows selecting files and
 directories on the server.
 """
+from __future__ import annotations
+
 import os
 
 from collections import OrderedDict
 from fnmatch import fnmatch
 from typing import (
-    AnyStr, List, Tuple, Union,
+    AnyStr, ClassVar, List, Optional, Tuple, Type,
 )
 
 import param
 
 from ..io import PeriodicCallback
-from ..layout import Column, Divider, Row
+from ..layout import (
+    Column, Divider, ListPanel, Row,
+)
 from ..util import fullpath
 from ..viewable import Layoutable
 from .base import CompositeWidget
@@ -101,9 +105,9 @@ class FileSelector(CompositeWidget):
     value = param.List(default=[], doc="""
         List of selected files.""")
 
-    _composite_type = Column
+    _composite_type: ClassVar[Type[ListPanel]] = Column
 
-    def __init__(self, directory: Union[AnyStr, os.PathLike]=None, **params):
+    def __init__(self, directory: AnyStr | os.PathLike | None = None, **params):
         from ..pane import Markdown
         if directory is not None:
             params['directory'] = fullpath(directory)
@@ -158,7 +162,7 @@ class FileSelector(CompositeWidget):
         if self.refresh_period:
             self._periodic.start()
 
-    def _update_periodic(self, event):
+    def _update_periodic(self, event: param.parameterized.Event):
         if event.new:
             self._periodic.period = event.new
             if not self._periodic.running:
@@ -170,12 +174,12 @@ class FileSelector(CompositeWidget):
     def _root_directory(self):
         return self.root_directory or self.directory
 
-    def _update_value(self, event):
+    def _update_value(self, event: param.parameterized.Event):
         value = [v for v in event.new if not self.only_files or os.path.isfile(v)]
         self._selector.value = value
         self.value = value
 
-    def _dir_change(self, event):
+    def _dir_change(self, event: param.parameterized.Event):
         path = fullpath(self._directory.value)
         if not path.startswith(self._root_directory):
             self._directory.value = self._root_directory
@@ -187,7 +191,9 @@ class FileSelector(CompositeWidget):
     def _refresh(self):
         self._update_files(refresh=True)
 
-    def _update_files(self, event=None, refresh=False):
+    def _update_files(
+        self, event: Optional[param.parameterized.Event] = None, refresh: bool = False
+    ):
         path = fullpath(self._directory.value)
         refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
         if refresh:
@@ -225,7 +231,7 @@ class FileSelector(CompositeWidget):
         self._selector.options = options
         self._selector.value = selected
 
-    def _filter_blacklist(self, event):
+    def _filter_blacklist(self, event: param.parameterized.Event):
         """
         Ensure that if unselecting a currently selected path and it
         is not in the current working directory then it is removed
@@ -241,7 +247,7 @@ class FileSelector(CompositeWidget):
         ])
         blacklist.options = [o for o in blacklist.options if o in paths]
 
-    def _select(self, event):
+    def _select(self, event: param.parameterized.Event):
         if len(event.new) != 1:
             self._directory.value = self._cwd
             return
@@ -253,7 +259,7 @@ class FileSelector(CompositeWidget):
         else:
             self._directory.value = self._cwd
 
-    def _go_back(self, event):
+    def _go_back(self, event: param.parameterized.Event):
         self._position -= 1
         self._directory.value = self._stack[self._position]
         self._update_files()
@@ -261,12 +267,12 @@ class FileSelector(CompositeWidget):
         if self._position == 0:
             self._back.disabled = True
 
-    def _go_forward(self, event):
+    def _go_forward(self, event: param.parameterized.Event):
         self._position += 1
         self._directory.value = self._stack[self._position]
         self._update_files()
 
-    def _go_up(self, event=None):
+    def _go_up(self, event: Optional[param.parameterized.Event] = None):
         path = self._cwd.split(os.path.sep)
         self._directory.value = os.path.sep.join(path[:-1]) or os.path.sep
         self._update_files(True)

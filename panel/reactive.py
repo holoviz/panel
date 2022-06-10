@@ -1405,7 +1405,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions
         )
 
-    def _cleanup(self, root: Model | None) -> None:
+    def _cleanup(self, root: Model | None = None) -> None:
         for child, panes in self._panes.items():
             for pane in panes:
                 pane._cleanup(root)
