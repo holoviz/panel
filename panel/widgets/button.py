@@ -7,6 +7,7 @@ from __future__ import annotations
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    Type,
 )
 
 import param
@@ -20,9 +21,11 @@ from ..links import Callback
 from .base import Widget
 
 if TYPE_CHECKING:
-    from panel.reactive import JSLinkTarget
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
-    from ..links import Link
+    from ..links import JSLinkTarget, Link
 
 
 BUTTON_TYPES: List[str] = ['default', 'primary', 'success', 'warning', 'danger','light']
@@ -44,9 +47,12 @@ class _ClickButton(_ButtonBase):
 
     __abstract = True
 
-    _event = 'button_click'
+    _event: ClassVar[str] = 'button_click'
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         if comm:
             model.on_event(self._event, self._comm_event)
@@ -97,7 +103,9 @@ class _ClickButton(_ButtonBase):
         for k, v in list(callbacks.items()):
             if k == 'clicks':
                 k = 'event:'+self._event
-            callbacks[k] = self._rename.get(v, v)
+            val = self._rename.get(v, v)
+            if val is not None:
+                callbacks[k] = val
         return Callback(self, code=callbacks, args=args)
 
 
@@ -127,19 +135,21 @@ class Button(_ClickButton):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'clicks': None, 'name': 'label', 'value': None}
 
-    _target_transforms = {'event:button_click': None, 'value': None}
+    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+        'event:button_click': None, 'value': None
+    }
 
-    _widget_type = _BkButton
+    _widget_type: ClassVar[Type[Model]] = _BkButton
 
     @property
-    def _linkable_params(self):
+    def _linkable_params(self) -> List[str]:
         return super()._linkable_params + ['value']
 
     def jslink(
-        self, target: 'JSLinkTarget', code: Optional[Dict[str, str]] = None,
+        self, target: JSLinkTarget, code: Optional[Dict[str, str]] = None,
         args: Optional[Dict[str, Any]] = None, bidirectional: bool = False,
         **links: str
-    ) -> 'Link':
+    ) -> Link:
         """
         Links properties on the this Button to those on the
         `target` object in Javascript (JS) code.
@@ -215,9 +225,9 @@ class Toggle(_ButtonBase):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
 
-    _supports_embed = True
+    _supports_embed: ClassVar[bool] = True
 
-    _widget_type = _BkToggle
+    _widget_type: ClassVar[Type[Model]] = _BkToggle
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         return (self, self._models[root.ref['id']][0], [False, True],
@@ -252,11 +262,11 @@ class MenuButton(_ClickButton):
     split = param.Boolean(default=False, doc="""
       Whether to add separate dropdown area to button.""")
 
-    _widget_type = _BkDropdown
+    _event: ClassVar[str] = 'menu_item_click'
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'items': 'menu', 'clicked': None}
 
-    _event = 'menu_item_click'
+    _widget_type: ClassVar[Type[Model]] = _BkDropdown
 
     def _process_event(self, event):
         if isinstance(event, MenuItemClick):

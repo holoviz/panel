@@ -7,7 +7,9 @@ import math
 
 from collections import OrderedDict, namedtuple
 from functools import partial
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+)
 
 import numpy as np
 import param
@@ -18,6 +20,11 @@ from ..io.model import hold
 from .base import (
     ListPanel, Panel, _col, _row,
 )
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class GridBox(ListPanel):
@@ -155,7 +162,10 @@ class GridBox(ListPanel):
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
 
-    def _update_model(self, events, msg, root, model, doc, comm=None):
+    def _update_model(
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+    ) -> None:
         from ..io import state
 
         msg = dict(msg)
@@ -327,7 +337,7 @@ class GridSpec(Panel):
                     grid[y, x] = {((y0, x0, y1, x1), obj)}
         return grid
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: Model | None = None) -> None:
         super()._cleanup(root)
         for p in self.objects.values():
             p._cleanup(root)

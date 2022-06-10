@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar, Mapping
+from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import param
 
@@ -8,6 +8,9 @@ from bokeh.models import Column as BkColumn, CustomJS
 
 from .base import NamedListPanel
 from .card import Card
+
+if TYPE_CHECKING:
+    from bokeh.model import Model
 
 
 class Accordion(NamedListPanel):
@@ -126,7 +129,7 @@ class Accordion(NamedListPanel):
         self._update_active()
         return new_models
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: Model | None = None) -> None:
         for panel in self._panels.values():
             panel._cleanup(root)
         super()._cleanup(root)

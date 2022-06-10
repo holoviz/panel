@@ -8,7 +8,9 @@ import sys
 
 from collections import OrderedDict, defaultdict
 from functools import partial
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Type,
+)
 
 import param
 
@@ -25,6 +27,11 @@ from ..widgets import Player
 from .base import Pane, PaneBase, RerenderError
 from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class HoloViews(PaneBase):
@@ -82,9 +89,11 @@ class HoloViews(PaneBase):
         A mapping from dimension name to a widget instance which will
         be used to override the default widgets.""")
 
-    priority = 0.8
+    priority: ClassVar[float | bool | None] = 0.8
 
-    _panes = {'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly}
+    _panes: ClassVar[Mapping[str, Type[PaneBase]]] = {
+        'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly
+    }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'backend': None, 'center': None, 'linked_axes': None,
@@ -234,7 +243,10 @@ class HoloViews(PaneBase):
     # Model API
     #----------------------------------------------------------------
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         from holoviews.plotting.plot import Plot
         if root is None:
             return self.get_root(doc, comm)
@@ -329,16 +341,17 @@ class HoloViews(PaneBase):
 
         return renderer.get_plot(self.object, **kwargs)
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: Model | None = None) -> None:
         """
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
-        old_plot, old_pane = self._plots.pop(root.ref['id'], (None, None))
-        if old_plot:
-            old_plot.cleanup()
-        if old_pane:
-            old_pane._cleanup(root)
+        if root:
+            old_plot, old_pane = self._plots.pop(root.ref['id'], (None, None))
+            if old_plot:
+                old_plot.cleanup()
+            if old_pane:
+                old_pane._cleanup(root)
         super()._cleanup(root)
 
     #----------------------------------------------------------------
@@ -346,7 +359,7 @@ class HoloViews(PaneBase):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         if 'holoviews' not in sys.modules:
             return False
         from holoviews.core.dimension import Dimensioned
@@ -499,7 +512,7 @@ class HoloViews(PaneBase):
 
 class Interactive(PaneBase):
 
-    priority = None
+    priority: ClassVar[float | bool | None] = None
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -507,7 +520,7 @@ class Interactive(PaneBase):
         self.param.watch(self._update_layout_properties, list(Layoutable.param))
 
     @classmethod
-    def applies(cls, object):
+    def applies(cls, object: Any) -> float | bool | None:
         if 'hvplot.interactive' not in sys.modules:
             return False
         from hvplot.interactive import Interactive
@@ -528,7 +541,10 @@ class Interactive(PaneBase):
             return
         self._layout_panel.param.update(**{e.name: e.new for e in events})
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         if root is None:
             return self.get_root(doc, comm)
         if self._layout_panel is None:
@@ -540,7 +556,7 @@ class Interactive(PaneBase):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: Model | None = None) -> None:
         if self._layout_panel is not None:
             self._layout_panel._cleanup(root)
         super()._cleanup(root)

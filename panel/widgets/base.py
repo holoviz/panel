@@ -9,11 +9,12 @@ import math
 
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional, Tuple,
+    Type,
 )
 
 import param  # type: ignore
 
-from ..layout import Row
+from ..layout.base import Row
 from ..reactive import Reactive
 from ..viewable import Layoutable, Viewable
 
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
-    from ..layout import Panel
+    from ..layout.base import ListPanel
 
 
 class Widget(Reactive):
@@ -48,10 +49,10 @@ class Widget(Reactive):
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
     # Whether the widget supports embedding
-    _supports_embed: bool = False
+    _supports_embed: ClassVar[bool] = False
 
     # Declares the Bokeh model type of the widget
-    _widget_type: 'Model' = None
+    _widget_type: ClassVar[Type[Model]]
 
     __abstract = True
 
@@ -91,9 +92,9 @@ class Widget(Reactive):
         return layout[0]
 
     def _get_model(
-        self, doc: 'Document', root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
-    ) -> 'Model':
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         model = self._widget_type(**self._process_param_change(self._init_params()))
         if root is None:
             root = model
@@ -147,7 +148,7 @@ class CompositeWidget(Widget):
     widgets
     """
 
-    _composite_type: 'Panel' = Row
+    _composite_type: ClassVar[Type[ListPanel]] = Row
 
     __abstract = True
 
@@ -188,14 +189,14 @@ class CompositeWidget(Widget):
             objects += obj.select(selector)
         return objects
 
-    def _cleanup(self, root: 'Model') -> None:
+    def _cleanup(self, root: Model | None = None) -> None:
         self._composite._cleanup(root)
         super()._cleanup(root)
 
     def _get_model(
-        self, doc: 'Document', root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional['Comm'] = None
-    ) -> 'Model':
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
         if root is None:
             root = parent = model

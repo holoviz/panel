@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import datetime as dt
 
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Type,
+)
 
 import numpy as np
 import param
@@ -23,7 +25,7 @@ from bokeh.models.widgets import (
 
 from ..config import config
 from ..io import state
-from ..layout import Column, Row
+from ..layout import Column, Panel, Row
 from ..util import (
     datetime_as_utctimestamp, edit_readonly, param_reprs, value_as_date,
     value_as_datetime,
@@ -32,6 +34,11 @@ from ..viewable import Layoutable
 from ..widgets import FloatInput, IntInput
 from .base import CompositeWidget, Widget
 from .input import StaticText
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class _SliderBase(Widget):
@@ -57,7 +64,7 @@ class _SliderBase(Widget):
     tooltips = param.Boolean(default=True, doc="""
         Whether the slider handle should display tooltips.""")
 
-    _widget_type = _BkSlider
+    _widget_type: ClassVar[Type[Model]] = _BkSlider
 
     __abstract = True
 
@@ -78,7 +85,10 @@ class _SliderBase(Widget):
                 msg["value"] = msg["value_throttled"]
         return super()._process_property_change(msg)
 
-    def _update_model(self, events, msg, root, model, doc, comm):
+    def _update_model(
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+    ) -> None:
         if 'value_throttled' in msg:
             del msg['value_throttled']
 
@@ -90,7 +100,7 @@ class ContinuousSlider(_SliderBase):
     format = param.ClassSelector(class_=(str, TickFormatter,), doc="""
         A custom format string or Bokeh TickFormatter.""")
 
-    _supports_embed = True
+    _supports_embed: ClassVar[bool] = True
 
     __abstract = True
 
@@ -240,11 +250,15 @@ class DateSlider(_SliderBase):
     as_datetime = param.Boolean(default=False, doc="""
         Whether to store the date as a datetime.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'as_datetime': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'title', 'as_datetime': None
+    }
 
-    _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': None, 'value_throttled': None, 'start': None, 'end': None
+    }
 
-    _widget_type = _BkDateSlider
+    _widget_type: ClassVar[Type[Model]] = _BkDateSlider
 
     def __init__(self, **params):
         if 'value' not in params:
@@ -300,22 +314,27 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         A custom format string. Separate from format parameter since
         formatting is applied in Python, not via the bokeh TickFormatter.""")
 
-    _source_transforms = {'value': None, 'value_throttled': None, 'options': None}
 
     _rename: ClassVar[Mapping[str, str | None]] = {'formatter': None}
 
-    _supports_embed = True
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': None, 'value_throttled': None, 'options': None
+    }
+
+    _supports_embed: ClassVar[bool] = True
+
+    _style_params: ClassVar[List[str]] = [
+        p for p in list(Layoutable.param) if p != 'name'
+    ] + ['orientation']
+
+    _slider_style_params: ClassVar[List[str]] = [
+        'bar_color', 'direction', 'disabled', 'orientation'
+    ]
 
     _text_link = """
     var labels = {labels}
     target.text = labels[source.value]
     """
-
-    _style_params = [p for p in list(Layoutable.param) if p != 'name'] + ['orientation']
-
-    _slider_style_params = [
-        'bar_color', 'direction', 'disabled', 'orientation'
-    ]
 
     def __init__(self, **params):
         self._syncing = False
@@ -555,7 +574,7 @@ class RangeSlider(_RangeSliderBase):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None}
 
-    _widget_type = _BkRangeSlider
+    _widget_type: ClassVar[Type[Model]] = _BkRangeSlider
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -642,12 +661,16 @@ class DateRangeSlider(_SliderBase):
     step = param.Number(default=1, doc="""
         The step size. Default is 1 (day).""")
 
-    _source_transforms = {'value': None, 'value_throttled': None,
-                         'start': None, 'end': None, 'step': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': None, 'value_throttled': None, 'start': None, 'end': None,
+        'step': None
+    }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'value_start': None, 'value_end': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'title', 'value_start': None, 'value_end': None
+    }
 
-    _widget_type = _BkDateRangeSlider
+    _widget_type: ClassVar[Type[Model]] = _BkDateRangeSlider
 
     def __init__(self, **params):
         if 'value' not in params:
@@ -745,9 +768,9 @@ class _EditableContinuousSlider(CompositeWidget):
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
 
-    _composite_type = Column
-    _slider_widget = None
-    _input_widget = None
+    _composite_type: ClassVar[Type[Panel]] = Column
+    _slider_widget: ClassVar[Type[Widget]]
+    _input_widget: ClassVar[Type[Widget]]
     __abstract = True
 
     def __init__(self, **params):
@@ -842,8 +865,8 @@ class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
     ... )
     """
 
-    _slider_widget = FloatSlider
-    _input_widget = FloatInput
+    _slider_widget: ClassVar[Type[Widget]] = FloatSlider
+    _input_widget: ClassVar[Type[Widget]] = FloatInput
 
 
 class EditableIntSlider(_EditableContinuousSlider, IntSlider):
@@ -861,8 +884,8 @@ class EditableIntSlider(_EditableContinuousSlider, IntSlider):
     ... )
     """
 
-    _slider_widget = IntSlider
-    _input_widget = IntInput
+    _slider_widget: ClassVar[Type[Widget]] = IntSlider
+    _input_widget: ClassVar[Type[Widget]] = IntInput
 
 
 class EditableRangeSlider(CompositeWidget, _SliderBase):
@@ -900,7 +923,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
 
-    _composite_type = Column
+    _composite_type: ClassVar[Type[Panel]] = Column
 
     def __init__(self, **params):
         if not 'width' in params and not 'sizing_mode' in params:

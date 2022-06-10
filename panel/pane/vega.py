@@ -3,7 +3,9 @@ from __future__ import annotations
 import sys
 
 from functools import partial
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+)
 
 import numpy as np
 import param
@@ -14,6 +16,11 @@ from pyviz_comms import JupyterComm
 from ..util import lazy_load
 from ..viewable import Layoutable
 from .base import PaneBase
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 def ds_as_cds(dataset):
@@ -106,11 +113,11 @@ class Vega(PaneBase):
         'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
         'latimes', 'urbaninstitute', 'googlecharts'])
 
-    priority = 0.8
+    priority: ClassVar[float | bool | None] = 0.8
 
     _rename: ClassVar[Mapping[str, str | None]] = {'selection': None, 'debounce': None}
 
-    _updates = True
+    _updates: ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -148,7 +155,7 @@ class Vega(PaneBase):
         return False
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         if isinstance(obj, dict) and 'vega' in obj.get('$schema', '').lower():
             return True
         return cls.is_altair(obj)
@@ -239,7 +246,10 @@ class Vega(PaneBase):
             value = list(value)
         self.selection.param.update(**{name: value})
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         VegaPlot = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root)
         sources = {}
         if self.object is None:
@@ -262,7 +272,7 @@ class Vega(PaneBase):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update(self, ref=None, model=None):
+    def _update(self, ref: str, model: Model) -> None:
         if self.object is None:
             json = None
         else:

@@ -3,7 +3,9 @@ Defines a WYSIWYG TextEditor widget based on quill.js.
 """
 from __future__ import annotations
 
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, ClassVar, Mapping, Optional,
+)
 
 import param
 
@@ -11,6 +13,11 @@ from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
 from .base import Widget
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class TextEditor(Widget):
@@ -43,7 +50,10 @@ class TextEditor(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {"value": "text"}
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         if self._widget_type is None:
             self._widget_type = lazy_load(
                 'panel.models.quill', 'QuillInput', isinstance(comm, JupyterComm), root
