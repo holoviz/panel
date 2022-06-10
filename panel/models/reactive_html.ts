@@ -288,7 +288,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     serialized.type = attr
     for (const key in serialized) {
       if (serialized[key] === undefined)
-	delete serialized[key]
+        delete serialized[key]
     }
     this.model.trigger_event(new DOMEvent(elname, serialized))
   }

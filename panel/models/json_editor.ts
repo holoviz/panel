@@ -55,10 +55,10 @@ export class JSONEditorView extends PanelHTMLBoxView {
       menu: this.model.menu,
       mode: mode,
       onChangeJSON: (json: any) => {
-	this.model.data = json
+        this.model.data = json
       },
       onSelectionChange: (start: any, end: any) => {
-	this.model.selection = [start, end]
+        this.model.selection = [start, end]
       },
       search: this.model.search,
       schema: this.model.schema,

@@ -264,7 +264,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     this.connect(p.styles.change, () => {
       if (this._applied_styles)
-	this.tabulator.redraw(true)
+     this.tabulator.redraw(true)
       this.setStyles()
     })
     this.connect(p.hidden_columns.change, () => this.setHidden())
@@ -295,7 +295,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       sorters.push({column: '_index', dir: 'asc'})
     for (const sort of this.model.sorters.reverse()) {
       if (sort.column === undefined)
-	sort.column = sort.field
+        sort.column = sort.field
       sorters.push(sort)
     }
     return sorters
@@ -316,7 +316,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.relayout()
       this._initializing = false
       if (this._lastVerticalScrollbarTopPosition)
-	this.tabulator.rowManager.element.scrollTop = this._lastVerticalScrollbarTopPosition;
+        this.tabulator.rowManager.element.scrollTop = this._lastVerticalScrollbarTopPosition;
     }
   }
 
@@ -476,14 +476,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     return new Promise((resolve: any, reject: any) => {
       try {
         if (page != null && sorters != null) {
-	  this._updating_sort = true
-	  const sorts = []
-	  for (const s of sorters) {
-	    if (s.field !== '_index')
-	      sorts.push({field: s.field, dir: s.dir})
-	  }
+          this._updating_sort = true
+          const sorts = []
+          for (const s of sorters) {
+            if (s.field !== '_index')
+              sorts.push({field: s.field, dir: s.dir})
+          }
           this.model.sorters = sorts
-	  this._updating_sort = false
+          this._updating_sort = false
           this._updating_page = true
           try {
             this.model.page = page || 1
@@ -526,16 +526,16 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       selectable: selectable,
       columns: this.getColumns(),
       dataSorting: (sorters: any[]) => {
-	const sorts = []
-	for (const s of sorters) {
-	  if (s.field !== '_index')
-	    sorts.push({field: s.field, dir: s.dir})
-	}
-	if (this.model.pagination !== 'remote') {
-	  this._updating_sort = true
-	  this.model.sorters = sorts
-	  this._updating_sort = false
-	}
+        const sorts = []
+        for (const s of sorters) {
+          if (s.field !== '_index')
+            sorts.push({field: s.field, dir: s.dir})
+        }
+        if (this.model.pagination !== 'remote') {
+          this._updating_sort = true
+          this.model.sorters = sorts
+          this._updating_sort = false
+        }
       },
       initialSort: this.sorters,
       layout: this.getLayout(),
@@ -614,7 +614,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     let viewEl = rowEl.children[rowEl.children.length-1]
     if (viewEl.className === 'bk') {
       if (viewEl.children.length)
-	return
+        return
     } else {
       viewEl = null
     }
@@ -643,10 +643,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     else {
       const removed = expanded.splice(exp_index, 1)[0]
       if (removed in this.model.children) {
-	const model = this.model.children[removed]
-	const view = this._child_views.get(model)
-	if (view !== undefined && view.el != null)
-	  undisplay(view.el)
+        const model = this.model.children[removed]
+        const view = this._child_views.get(model)
+        if (view !== undefined && view.el != null)
+          undisplay(view.el)
       }
     }
     this.model.expanded = expanded
@@ -787,27 +787,27 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         }
       }
       for (const sort of this.model.sorters) {
-	if (tab_column.field === sort.field)
-	  tab_column.headerSortStartingDir = sort.dir
+        if (tab_column.field === sort.field)
+          tab_column.headerSortStartingDir = sort.dir
       }
       tab_column.cellClick = (_: any, cell: any) => {
-	const index = cell._cell.row.data._index;
-	this.model.trigger_event(new CellClickEvent(column.field, index))
+        const index = cell._cell.row.data._index;
+        this.model.trigger_event(new CellClickEvent(column.field, index))
       }
       if (config_columns == null)
         columns.push(tab_column)
     }
     for (const col in this.model.buttons) {
       const button_formatter = () => {
-	return this.model.buttons[col];
+        return this.model.buttons[col];
       };
       const button_column = {
-	formatter: button_formatter,
-	hozAlign: "center",
-	cellClick: (_: any, cell: any) => {
-	  const index = cell._cell.row.data._index;
-	  this.model.trigger_event(new CellClickEvent(col, index))
-	}
+        formatter: button_formatter,
+        hozAlign: "center",
+        cellClick: (_: any, cell: any) => {
+          const index = cell._cell.row.data._index;
+          this.model.trigger_event(new CellClickEvent(col, index))
+        }
       }
       columns.push(button_column)
     }
@@ -974,7 +974,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           else
             [prop, value] = s.split(':')
           element.style.setProperty(prop, value.trimLeft())
-	  this._applied_styles = true
+          this._applied_styles = true
         }
       }
     }
@@ -1027,11 +1027,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   rowClicked(e: any, row: any) {
     if (
         this._selection_updating ||
-	this._initializing ||
-	(typeof this.model.select_mode) === 'string' ||
-	this.model.select_mode === false ||  // selection disabled
-	this.model.configuration.dataTree || // dataTree does not support selection
-	e.srcElement?.innerText === "►"      // expand button
+        this._initializing ||
+        (typeof this.model.select_mode) === 'string' ||
+        this.model.select_mode === false ||  // selection disabled
+        this.model.configuration.dataTree || // dataTree does not support selection
+        e.srcElement?.innerText === "►"      // expand button
     )
       return
     let indices: number[] = []
@@ -1080,10 +1080,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   rowSelectionChanged(data: any, _: any): void {
     if (
         this._selection_updating ||
-	this._initializing ||
-	(typeof this.model.select_mode) === 'boolean' ||
-	(typeof this.model.select_mode) === 'number' ||
-	this.model.configuration.dataTree
+        this._initializing ||
+        (typeof this.model.select_mode) === 'boolean' ||
+        (typeof this.model.select_mode) === 'number' ||
+        this.model.configuration.dataTree
     )
       return
     const indices: number[] = data.map((row: any) => row._index)
