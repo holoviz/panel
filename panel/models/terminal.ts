@@ -48,7 +48,7 @@ export class TerminalView extends PanelHTMLBoxView {
 
     this.term.onRender(() => {
       if (!this._rendered)
-	this.fit()
+        this.fit()
     })
 
     this.write()

@@ -42,7 +42,7 @@ export class SingleSelectView extends InputWidgetView {
       name: this.model.name,
       disabled: this.model.disabled,
     }, options)
-	this.select_el.style.backgroundImage = 'none';
+    this.select_el.style.backgroundImage = 'none';
 
     this.select_el.addEventListener("change", () => this.change_input())
     this.group_el.appendChild(this.select_el)
@@ -54,7 +54,7 @@ export class SingleSelectView extends InputWidgetView {
     const selected = this.model.value
 
     for (const el of this.el.querySelectorAll('option'))
-	  if (el.value === selected)
+      if (el.value === selected)
         el.selected = true
 
     // Note that some browser implementations might not reduce
@@ -69,8 +69,8 @@ export class SingleSelectView extends InputWidgetView {
     for (const el of this.el.querySelectorAll('option')) {
       if (el.selected) {
         value = el.value
-		break
-	  }
+        break
+      }
     }
 
     this.model.value = value

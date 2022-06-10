@@ -35,8 +35,8 @@ export class VegaPlotView extends HTMLBoxView {
         if (this._callbacks.indexOf(event) > -1)
           continue
         this._callbacks.push(event)
-	const callback = (name: string, value: any) => this._dispatch_event(name, value)
-	const timeout = this.model.throttle[event] || 20
+        const callback = (name: string, value: any) => this._dispatch_event(name, value)
+        const timeout = this.model.throttle[event] || 20
         this.vega_view.addSignalListener(event, debounce(callback, timeout, false))
       }
     })
@@ -58,7 +58,7 @@ export class VegaPlotView extends HTMLBoxView {
     if ('vlPoint' in value && value.vlPoint.or != null) {
       const indexes = []
       for (const index of value.vlPoint.or)
-	indexes.push(index._vgsid_)
+        indexes.push(index._vgsid_)
       value = indexes
     }
     this.model.trigger_event(new VegaEvent({type: name, value: value}))
@@ -114,13 +114,13 @@ export class VegaPlotView extends HTMLBoxView {
       this.vega_view = result.view
       this.relayout()
       if (this.vega_view._viewHeight <= 0 || this.vega_view._viewWidth <= 0) {
-	(window as any).dispatchEvent(new Event('resize'));
+        (window as any).dispatchEvent(new Event('resize'));
       }
       const callback = (name: string, value: any) => this._dispatch_event(name, value)
       for (const event of this.model.events) {
-	this._callbacks.push(event)
-	const timeout = this.model.throttle[event] || 20
-	this.vega_view.addSignalListener(event, debounce(callback, timeout, false))
+        this._callbacks.push(event)
+        const timeout = this.model.throttle[event] || 20
+        this.vega_view.addSignalListener(event, debounce(callback, timeout, false))
       }
     })
   }
@@ -138,9 +138,9 @@ export class VegaPlotView extends HTMLBoxView {
     const sizing = super.box_sizing()
     if (this.vega_view != null) {
       if (sizing.height_policy === "fixed")
-	sizing.height = this.vega_view._viewHeight
+        sizing.height = this.vega_view._viewHeight
       if (sizing.width_policy === "fixed")
-	sizing.width = this.vega_view._viewWidth
+        sizing.width = this.vega_view._viewWidth
     }
     return sizing
   }
