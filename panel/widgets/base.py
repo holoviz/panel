@@ -52,7 +52,7 @@ class Widget(Reactive):
     _supports_embed: ClassVar[bool] = False
 
     # Declares the Bokeh model type of the widget
-    _widget_type: ClassVar[Type[Model]]
+    _widget_type: ClassVar[Type[Model] | None] = None
 
     __abstract = True
 

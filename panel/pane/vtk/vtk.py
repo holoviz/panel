@@ -377,7 +377,7 @@ class VTKRenderWindow(BaseVTKRenderWindow):
         super(VTKRenderWindow, self).__init__(object, **params)
         if object is not None:
             self.color_mappers = self.get_color_mappers()
-            self._update()
+            self._update(None, None)
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -650,7 +650,7 @@ class VTKVolume(AbstractVTK):
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._sub_spacing = self.spacing
-        self._update()
+        self._update(None, None)
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
