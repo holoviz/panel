@@ -56,6 +56,18 @@ def test_accent():
     assert template.accent_base_color==accent
     assert template.header_background==accent
 
+def test_maximize_panels():
+    template = pn.template.FastListTemplate(maximize_panels=True)
+    assert template.maximize_panels
+    template._update_vars()
+    style = template._render_variables["style"]
+    assert style.maximize_panels
+    
+    template.maximize_panels = False
+    template._update_vars()
+    style = template._render_variables["style"]
+    assert not style.maximize_panels
+
 
 if __name__.startswith("bokeh"):
     pn.extension(sizing_mode="stretch_width")
