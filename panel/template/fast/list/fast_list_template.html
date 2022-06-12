@@ -54,6 +54,11 @@
       box-shadow: 2px 2px 10px silver;
   }
   {% endif %}
+  {% if style.maximize_panels %}
+  .bk-root {
+    height: calc( 100vh - 100px ) !important;
+  }
+  {% endif %}
 </style>
 
 <!-- Template JS -->

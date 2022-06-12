@@ -52,6 +52,7 @@ class FastStyle(param.Parameterized):
     font_url = param.String(default=FONT_URL)
     corner_radius = param.Integer(default=3)
     shadow = param.Boolean(default=True)
+    maximize_panels = param.Boolean(default=False)
 
     def create_bokeh_theme(self):
         """Returns a custom bokeh theme based on the style parameters

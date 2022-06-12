@@ -33,6 +33,12 @@ class FastBaseTemplate(BasicTemplate):
     header_accent_base_color = param.String(doc="""
         Optional header accent color override.""")
 
+    maximize_panels = param.Boolean(doc="""
+        If `True`, the root container for each panel added to the main area will be maximized.
+        Additionally you will have to add sizing_mode='stretch_both' to all panels to force them to
+        take up the available window space.
+        """)
+
     neutral_color = param.String(doc="""
         Optional body neutral color override.""")
 
@@ -110,6 +116,8 @@ class FastBaseTemplate(BasicTemplate):
             self.font = theme.style.font
         if "font_url" not in params:
             self.font_url = theme.style.font_url
+        if "maximize_panels" not in params:
+            self.maximize_panels = theme.style.maximize_panels
         if "shadow" not in params:
             self.shadow = theme.style.shadow
 
@@ -134,6 +142,7 @@ class FastBaseTemplate(BasicTemplate):
         style.corner_radius = self.corner_radius
         style.font = self.font
         style.font_url = self.font_url
+        style.maximize_panels = self.maximize_panels
         style.shadow = self.shadow
         self._render_variables["style"] = style
         self._render_variables["theme_toggle"] = self.theme_toggle
