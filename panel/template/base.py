@@ -653,7 +653,7 @@ class BasicTemplate(BaseTemplate):
         for css in base_css:
             tmpl_name = name
             for cls in type(self).__mro__[1:-5]:
-                if not isinstance(cls, BasicTemplate):
+                if not issubclass(cls, BasicTemplate):
                     continue
                 elif cls._css is None:
                     break
@@ -676,7 +676,7 @@ class BasicTemplate(BaseTemplate):
         for js in base_js:
             tmpl_name = name
             for cls in type(self).__mro__[1:-5]:
-                if not isinstance(cls, BasicTemplate):
+                if not issubclass(cls, BasicTemplate):
                     continue
                 elif cls._js is None:
                     break
