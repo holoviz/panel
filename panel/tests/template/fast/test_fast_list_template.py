@@ -62,7 +62,7 @@ def test_maximize_panels():
     template._update_vars()
     style = template._render_variables["style"]
     assert style.maximize_panels
-    
+
     template.maximize_panels = False
     template._update_vars()
     style = template._render_variables["style"]
