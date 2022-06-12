@@ -26,3 +26,11 @@ def test_fast_list_template_no_console_errors(page, port):
 
     assert len(msgs) == 1
     assert msgs[0].text == "[bokeh] setting log level to: 'info'"
+
+    assert page.text_content(".bk.markdown") == 'Initial'
+
+    md.object = 'Updated'
+
+    time.sleep(0.1)
+
+    assert page.text_content(".bk.markdown") == 'Updated'
