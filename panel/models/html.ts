@@ -44,6 +44,11 @@ export class HTMLView extends PanelMarkupView {
     })
   }
 
+  protected rerender() {
+    this.render()
+    this.invalidate_layout()
+  }
+
   render(): void {
     super.render()
     const html = this.process_tex()
