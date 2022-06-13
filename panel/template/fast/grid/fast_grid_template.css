@@ -92,7 +92,7 @@ img.app-logo {
 #sidebar {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
-  height: 100vh;
+  height: calc(100vh - 56px);
   overflow-y: scroll;
   padding: 10px;
   margin-right: 12px;
