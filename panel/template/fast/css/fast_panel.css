@@ -40,12 +40,11 @@ p.bk.card-button {
 .bk.pn-loading:hover:before {
   cursor: progress;
 }
-.card-margin {
-  margin: 1em;
-}
 fast-card {
   margin: 0px;
   padding: 1em;
+  flex: none;
+  height: fit-content;
 }
 canvas, img {
   border-radius: calc(var(--corner-radius) * 1px);

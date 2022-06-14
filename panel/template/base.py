@@ -188,6 +188,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         col._hooks.append(self._apply_hooks)
         ref = preprocess_root.ref['id']
         objs, models = [], []
+        expand_height, expand_width = {}, {}
 
         for name, (obj, tags) in self._render_items.items():
             if self._apply_hooks not in obj._hooks:
@@ -206,6 +207,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             obj._documents[document] = model
             model.name = name
             model.tags = tags
+            expand_height[mref] = model.sizing_mode in ('stretch_both', 'stretch_height')
+            expand_width[mref] = model.sizing_mode in ('stretch_both', 'stretch_width')
             self._apply_root(name, model, tags)
             add_to_doc(model, document, hold=bool(comm))
             objs.append(obj)
@@ -226,6 +229,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         else:
             document.template = self.template
         document._template_variables.update(self._render_variables)
+        document._template_variables['expand_height'] = expand_height
+        document._template_variables['expand_width'] = expand_width
         return document
 
     def _repr_mimebundle_(

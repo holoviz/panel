@@ -107,10 +107,12 @@ img.app-logo {
 #main {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   width: 100%;
-  height: calc(100vh - 76px);
-  padding: 10px;
-  padding-right: 25px;
+  height: calc(100vh - 112px);
+  padding: 1.5em;
   overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
+  row-gap: 1.5em;
 }
 
 #sidebarCollapse {
