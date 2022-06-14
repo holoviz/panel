@@ -29,7 +29,7 @@ This will create a ``panel`` directory at your file system location. This ``pane
 ## Create a development environment
 
 Since Panel interfaces with a large range of different libraries the full test suite requires a wide range of dependencies. To make it easier to install and run different parts of the test suite across
-different platforms Panel uses a library called `pyctdev` to make things more consistent and general. To start with `cd` into the panel directory and then set up conda using the following commands:
+different platforms Panel uses a library called `pyctdev` to make things more consistent and general. To start with `cd` into the panel directory and set up conda using the following commands:
 
 ```bash
 cd panel
@@ -100,6 +100,5 @@ You will likely want to check out the :ref:`devguide_testing` guide. Meanwhile, 
 :hidden:
 :maxdepth: 2
 
-self
 testing
 ```
