@@ -207,8 +207,9 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             obj._documents[document] = model
             model.name = name
             model.tags = tags
-            expand_height[mref] = model.sizing_mode in ('stretch_both', 'stretch_height')
-            expand_width[mref] = model.sizing_mode in ('stretch_both', 'stretch_width')
+            msize = model.sizing_mode or ''
+            expand_height[mref] = 'height' in msize or 'both' in msize
+            expand_width[mref] = 'width' in msize or 'both' in msize
             self._apply_root(name, model, tags)
             add_to_doc(model, document, hold=bool(comm))
             objs.append(obj)
