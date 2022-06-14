@@ -34,7 +34,6 @@ different platforms Panel uses a library called `pyctdev` to make things more co
 ```bash
 cd panel
 conda install -c pyviz "pyctdev>0.5.0"
-doit ecosystem_setup
 ```
 
 Once pyctdev is available and you are in the cloned panel repository you can set up an environment with:
