@@ -14,15 +14,10 @@ import types
 
 from collections import OrderedDict
 from collections.abc import Iterable, Mapping
-from inspect import getcallargs
+from inspect import (
+    Parameter, getcallargs, getfullargspec as check_argspec, signature,
+)
 from typing import TYPE_CHECKING
-
-empty = Parameter.empty
-
-try:
-    from inspect import getfullargspec as check_argspec
-except ImportError:
-    from inspect import getargspec as check_argspec # py2
 
 import param
 
@@ -35,6 +30,8 @@ from .widgets.widget import fixed, widget
 
 if TYPE_CHECKING:
     from bokeh.model import Model
+
+empty = Parameter.empty
 
 
 def _yield_abbreviations_for_parameter(parameter, kwargs):
