@@ -66,7 +66,7 @@ from .layout import (  # noqa
 from .pane import Pane, panel  # noqa
 from .param import Param  # noqa
 from .template import Template  # noqa
-from .widgets import indicators  # noqa
+from .widgets import indicators, widget  # noqa
 
 __all__ = (
     "__version__",
@@ -101,4 +101,5 @@ __all__ = (
     "state",
     "viewable",
     "widgets",
+    "widget"
 )
