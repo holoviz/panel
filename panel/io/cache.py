@@ -5,6 +5,7 @@ import functools
 import hashlib
 import inspect
 import io
+import os
 import pickle
 import sys
 import threading
@@ -262,7 +263,10 @@ def compute_hash(func, hash_funcs, args, kwargs):
     return hash_value
 
 
-def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
+def cache(
+    func=None, hash_funcs=None, max_items=None, policy='LRU',
+    ttl=None, to_disk=False, cache_path='./cache'
+):
     """
     Decorator to memoize functions with options to configure the
     caching behavior
@@ -280,9 +284,13 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
           - FIFO: First in - First out
           - LRU: Least recently used
           - LFU: Least frequently used
-    ttl : float or None
+    ttl: float or None
         The number of seconds to keep an item in the cache, or None if
         the cache should not expire. The default is None.
+    to_disk: bool
+        Whether to cache to disk using diskcache.
+    cache_dir: str
+        Directory to cache to on disk.
     """
 
     hash_funcs = hash_funcs or {}
@@ -291,7 +299,9 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
             func=f,
             hash_funcs=hash_funcs,
             max_items=max_items,
-            ttl=ttl
+            ttl=ttl,
+            to_disk=to_disk,
+            cache_path=cache_path
         )
     func_hash = None
 
@@ -301,19 +311,16 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
     def wrapped_func(*args, **kwargs):
         global func_hash
         # Handle param.depends method by adding parameters to arguments
+        func_name = func.__name__
+        is_method = (
+            args and isinstance(args[0], object) and
+            getattr(type(args[0]), func_name, None) is wrapped_func
+        )
         hash_args, hash_kwargs = args, kwargs
-        if (
-            args and
-            isinstance(args[0], param.Parameterized) and
-            getattr(type(args[0]), func.__name__) is wrapped_func
-        ):
-            is_method = True
+        if (is_method and isinstance(args[0], param.Parameterized)):
             dinfo = getattr(wrapped_func, '_dinfo')
             hash_args = tuple(getattr(args[0], d) for d in dinfo['dependencies']) + args[1:]
             hash_kwargs = dict(dinfo['kw'], **kwargs)
-        else:
-            is_method = False
-
         hash_value = compute_hash(func, hash_funcs, hash_args, hash_kwargs)
 
         time = _TIME_FN()
@@ -321,18 +328,21 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
         # If the function is defined inside a bokeh/panel application
         # it is recreated for each session, therefore we cache by
         # filen, class and function name
-        if func.__module__.startswith('bokeh_app_'):
-            fname = sys.modules[func.__module__].__file__
-            if is_method:
-                func_hash = (fname, type(args[0]).__name__, func.__name__)
-            else:
-                func_hash = (fname, func.__name__)
+        fname = sys.modules[func.__module__].__file__
+        if is_method:
+            func_hash = (fname, type(args[0]).__name__, func.__name__)
         else:
-            func_hash = func
+            func_hash = (fname, func.__name__)
+        func_hash = hashlib.sha256(_generate_hash(func_hash)).hexdigest()
 
         func_cache = state._memoize_cache.get(func_hash)
         if func_cache is None:
-            state._memoize_cache[func_hash] = func_cache = {}
+            if to_disk:
+                from diskcache import Index
+                cache = Index(os.path.join(cache_path, func_hash))
+            else:
+                cache = {}
+            state._memoize_cache[func_hash] = func_cache = cache
         elif hash_value in func_cache:
             with lock:
                 ret, ts, count, _ = func_cache[hash_value]
