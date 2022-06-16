@@ -57,7 +57,8 @@ from .config import __version__, config, panel_extension as extension  # noqa
 from .depends import bind, depends  # noqa
 from .interact import interact  # noqa
 from .io import (  # noqa
-    _jupyter_server_extension_paths, cache, clear_cache, ipywidget, serve, state,
+    _jupyter_server_extension_paths, cache, clear_cache, ipywidget, serve,
+    state,
 )
 from .layout import (  # noqa
     Accordion, Card, Column, FlexBox, GridBox, GridSpec, Row, Spacer, Tabs,

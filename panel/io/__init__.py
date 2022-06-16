@@ -4,7 +4,7 @@ model state, and rendering panel objects.
 """
 import sys
 
-from .cache import cache, clear_cache # noqa
+from .cache import cache, clear_cache  # noqa
 from .callbacks import PeriodicCallback  # noqa
 from .document import init_doc, unlocked, with_lock  # noqa
 from .embed import embed_state  # noqa

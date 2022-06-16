@@ -10,9 +10,8 @@ import pickle
 import threading
 import time
 import unittest
-import weakref
-
 import unittest.mock
+import weakref
 
 import param
 
@@ -26,7 +25,7 @@ _CYCLE_PLACEHOLDER = b"panel-93KZ39Q-floatingdangeroushomechose-CYCLE"
 
 _FFI_TYPE_NAMES = ("_cffi_backend.FFI", "builtins.CompiledFFI",)
 
-_HASH_MAP = dict()
+_HASH_MAP = {}
 
 _HASH_STACKS = weakref.WeakKeyDictionary()
 
