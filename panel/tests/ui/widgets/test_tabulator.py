@@ -3,7 +3,10 @@ import time
 
 import pytest
 
-from playwright.sync_api import expect
+try:
+    from playwright.sync_api import expect
+except ImportError:
+    pass
 
 pytestmark = pytest.mark.ui
 
