@@ -36,7 +36,7 @@ def wait_until(fn, timeout=5000, interval=100):
 
 
 def get_ctrl_modifier():
-    if sys.platform == 'linux':
+    if sys.platform in ['linux', 'win32']:
         return 'Control'
     elif sys.platform == 'darwin':
         return 'Meta'
