@@ -1,7 +1,13 @@
+import datetime as dt
 import sys
 import time
 
 import pytest
+
+from bokeh.models.widgets.tables import (
+    BooleanFormatter, DateFormatter, HTMLTemplateFormatter, NumberFormatter,
+    ScientificFormatter, StringFormatter,
+)
 
 try:
     from playwright.sync_api import expect
@@ -11,7 +17,12 @@ except ImportError:
 pytestmark = pytest.mark.ui
 
 try:
-    from pandas._testing import makeMixedDataFrame
+    import numpy as np
+except ImportError:
+    pytestmark = pytest.mark.skip('numpy not available')
+
+try:
+    import pandas as pd
 except ImportError:
     pytestmark = pytest.mark.skip('pandas not available')
 
@@ -22,8 +33,14 @@ from panel.widgets import Tabulator
 
 @pytest.fixture
 def df_mixed():
-    df = makeMixedDataFrame()
-    df.index = [f'idx{i}' for i in range(len(df))]
+    df = pd.DataFrame({
+        'int': [1, 2, 3, 4],
+        'float': [3.14, 6.28, 9.42, -2.45],
+        'str': ['A', 'B', 'C', 'D'],
+        'bool': [True, True, True, False],
+        'date': [dt.date(2019, 1, 1), dt.date(2020, 1, 1), dt.date(2020, 1, 10), dt.date(2019, 1, 10)],
+        'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
+    }, index=['idx0', 'idx1', 'idx2', 'idx3'])
     return df
 
 
@@ -62,7 +79,7 @@ def test_tabulator_default(page, port, df_mixed):
     # Check that the whole table content is on the page
     table = page.locator('.bk.pnx-tabulator.tabulator')
     expect(table).to_have_text(
-        'index\nA\nB\nC\nD\nidx0\n0.0\n0.0\nfoo1\n2009-01-01 00:00:00\nidx1\n1.0\n1.0\nfoo2\n2009-01-02 00:00:00\nidx2\n2.0\n0.0\nfoo3\n2009-01-05 00:00:00\nidx3\n3.0\n1.0\nfoo4\n2009-01-06 00:00:00\nidx4\n4.0\n0.0\nfoo5\n2009-01-07 00:00:00',  # noqa
+        'index\nint\nfloat\nstr\nbool\ndate\ndatetime\nidx0\n1\n3.14\nA\ntrue\n2019-01-01\n2019-01-01 10:00:00\nidx1\n2\n6.28\nB\ntrue\n2020-01-01\n2020-01-01 12:00:00\nidx2\n3\n9.42\nC\ntrue\n2020-01-10\n2020-01-10 13:00:00\nidx3\n4\n-2.45\nD\nfalse\n2019-01-10\n2020-01-15 13:00:00',  # noqa
         use_inner_text=True
     )
 
@@ -147,8 +164,154 @@ def test_tabulator_buttons_event(page, port, df_mixed):
     assert wait_until(lambda: state == expected_state)
 
 
-def test_tabulator_formatters():
-    pass
+def test_tabulator_formatters_bokeh_bool(page, port, df_mixed):
+    s = [True] * len(df_mixed)
+    s[-1] = False
+    df_mixed['bool'] = s
+    widget = Tabulator(df_mixed, formatters={'bool': BooleanFormatter()})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # The BooleanFormatter renders with svg icons.
+    cells = page.locator(".tabulator-cell", has=page.locator("svg"))
+    expect(cells).to_have_count(len(df_mixed))
+
+    for i in range(len(df_mixed) - 1):
+        assert cells.nth(i).get_attribute('aria-checked') == 'true'
+    assert cells.last.get_attribute('aria-checked') == 'false'
+
+
+def test_tabulator_formatters_bokeh_date(page, port, df_mixed):
+    widget = Tabulator(
+        df_mixed,
+        formatters={
+            'date': DateFormatter(format='COOKIE'),
+            'datetime': DateFormatter(format='%H:%M'),
+        },
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator('text="10:00"')).to_have_count(1)
+    assert page.locator('text="Tue, 01 Jan 2019"').count() == 1
+
+
+@pytest.mark.xfail(
+    reason='NaNs not well handled by the DateFormatter with datetime.date objects.'
+           ' See https://github.com/bokeh/bokeh/issues/12187'
+)
+def test_tabulator_formatters_bokeh_date_with_nan(page, port, df_mixed):
+    df_mixed.loc['idx1', 'date'] = np.nan
+    df_mixed.loc['idx1', 'datetime'] = np.nan
+    widget = Tabulator(
+        df_mixed,
+        formatters={
+            'date': DateFormatter(format='COOKIE', nan_format='nan-date'),
+            'datetime': DateFormatter(format='%H:%M', nan_format= 'nan-datetime'),
+        },
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator('text="10:00"')).to_have_count(1)
+    assert page.locator('text="Tue, 01 Jan 2019"').count() == 1  # This should fail
+    assert page.locator('text="nan-date"').count() == 1
+    assert page.locator('text="nan-datetime"').count() == 1
+
+
+def test_tabulator_formatters_bokeh_number(page, port, df_mixed):
+    df_mixed.loc['idx1', 'int'] = np.nan
+    df_mixed.loc['idx1', 'float'] = np.nan
+    widget = Tabulator(
+        df_mixed,
+        formatters={
+            'int': NumberFormatter(format='0.000', nan_format='nan-int'),
+            'float': NumberFormatter(format='0.000', nan_format='nan-float'),
+        },
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator('text="1.000"')).to_have_count(1)
+    assert page.locator('text="3.140"').count() == 1
+    assert page.locator('text="nan-int"').count() == 1
+    assert page.locator('text="nan-float"').count() == 1
+
+
+def test_tabulator_formatters_bokeh_string(page, port, df_mixed):
+    widget = Tabulator(
+        df_mixed,
+        formatters={
+            'str': StringFormatter(font_style='bold', text_align='center', text_color='red'),
+        },
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator('text="A"')).to_have_attribute(
+        "style",
+        "font-weight: bold; text-align: center; color: rgb(255, 0, 0);"
+    )
+
+
+def test_tabulator_formatters_bokeh_html(page, port, df_mixed):
+    widget = Tabulator(
+        df_mixed,
+        formatters={
+            'str': HTMLTemplateFormatter(template='<p style="font-weight: bold;"><%= value %></p>'),
+        },
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator('text="A"')).to_have_attribute(
+        "style",
+        "font-weight: bold;"
+    )
+
+
+def test_tabulator_formatters_bokeh_scientific(page, port, df_mixed):
+    df_mixed['float'] = df_mixed['float'] * 1e6
+    df_mixed.loc['idx1', 'float'] = np.nan
+    widget = Tabulator(
+        df_mixed,
+        formatters={
+            'float': ScientificFormatter(precision=3, nan_format='nan-float'),
+        },
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator('text="3.140e+6"')).to_have_count(1)
+    assert page.locator('text="nan-float"').count() == 1
 
 
 def test_tabulator_editors():
