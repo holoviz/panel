@@ -44,6 +44,18 @@ def df_mixed():
     return df
 
 
+@pytest.fixture
+def df_multiindex(df_mixed):
+    df_mi = df_mixed.copy()
+    df_mi.index = pd.MultiIndex.from_tuples([
+        ('group0', 'subgroup0'),
+        ('group0', 'subgroup1'),
+        ('group1', 'subgroup0'),
+        ('group1', 'subgroup1'),
+    ], names=['groups', 'subgroups'])
+    return df_mi
+
+
 def wait_until(fn, timeout=5000, interval=100):
     while timeout > 0:
         if fn():
@@ -62,6 +74,23 @@ def get_ctrl_modifier():
         return 'Meta'
     else:
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
+
+
+def count_per_page(count: int, page_size: int):
+    """
+    >>> count_per_page(12, 7)
+    [7, 5]
+    """
+    original_count = count
+    count_per_page = []
+    while True:
+        page_count = min(count, page_size)
+        count_per_page.append(page_count)
+        count -= page_count
+        if count == 0:
+            break
+    assert sum(count_per_page) == original_count
+    return count_per_page
 
 
 def test_tabulator_default(page, port, df_mixed):
@@ -107,6 +136,39 @@ def test_tabulator_default(page, port, df_mixed):
     # And that none of them is sorted on start
     for i in range(expected_ncols):
         assert cols.nth(i).get_attribute('aria-sort') == 'none'
+
+
+def test_tabulator_value_changed(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    df_mixed.loc['idx0', 'str'] = 'AA'
+    # Need to trigger the value as the dataframe was modified
+    # in place which is not detected.
+    widget.param.trigger('value')
+    changed_cell = page.locator('text="AA"')
+    expect(changed_cell).to_have_count(1)
+
+
+def test_tabulator_disabled(page, port, df_mixed):
+    widget = Tabulator(df_mixed, disabled=True)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="A"')
+    cell.click()
+    # If the cell was editable then this input element should
+    # be found.
+    expect(page.locator('input[type="text"]')).to_have_count(0)
 
 
 def test_tabulator_buttons_display(page, port, df_mixed):
@@ -314,7 +376,19 @@ def test_tabulator_formatters_bokeh_scientific(page, port, df_mixed):
     assert page.locator('text="nan-float"').count() == 1
 
 
-def test_tabulator_editors():
+def test_tabulator_formatters_tabulator():
+    pass
+
+
+def test_tabulator_editors_bokeh():
+    pass
+
+
+def test_tabulator_editors_tabulator():
+    pass
+
+
+def test_tabulator_column_layouts():
     pass
 
 
@@ -612,5 +686,287 @@ def test_tabulator_selection_selectable_toggle(page, port, df_mixed):
     assert wait_until(lambda: widget.selection == [0])
 
 
-def test_tabulator_selection_selectable_rows():
+def test_tabulator_selection_selectable_rows(page, port, df_mixed):
+    widget = Tabulator(df_mixed, selectable_rows=lambda df: [1])
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    rows = page.locator('.tabulator-row')
+    # Click on the first row of the index column to select the row
+    c1 = page.locator('text="idx1"')
+    c1.wait_for()
+    c1.click()
+    assert wait_until(lambda: widget.selection == [1])
+    # Click on the first row with CTRL pressed should add that row to the selection
+    modifier = get_ctrl_modifier()
+    page.locator("text=idx0").click(modifiers=[modifier])
+    time.sleep(0.2)
+    assert widget.selection == [1]
+    for i in range(rows.count()):
+        if i == 1:
+            assert 'tabulator-selected' in rows.nth(i).get_attribute('class')
+        else:
+            assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
+
+
+def test_tabulator_selection_row_content(page, port, df_mixed):
+    widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    openables = page.locator('text="►"')
+    expect(openables).to_have_count(len(df_mixed))
+
+    expected_expanded = []
+    for i in range(len(df_mixed)):
+        openables = page.locator('text="►"')
+        openables.first.click()
+        row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
+        expect(row_content).to_have_count(1)
+        closables = page.locator('text="▼"')
+        expect(closables).to_have_count(i + 1)
+        assert row_content.is_visible()
+        expected_expanded.append(i)
+        wait_until(lambda: widget.expanded == expected_expanded)
+
+    for i in range(len(df_mixed)):
+        closables = page.locator('text="▼"')
+        closables.first.click()
+        row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
+        expect(row_content).to_have_count(0)  # timeout here?
+        expected_expanded.remove(i)
+        wait_until(lambda: widget.expanded == expected_expanded)
+
+
+def test_tabulator_selection_row_content_expand_from_python_init(page, port, df_mixed):
+    widget = Tabulator(
+        df_mixed,
+        row_content=lambda i: f"{i['str']}-row-content",
+        expanded = [0, 2],
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    for i in range(len(df_mixed)):
+        row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
+        if i in widget.expanded:
+            expect(row_content).to_have_count(1)
+        else:
+            expect(row_content).to_have_count(0)
+
+    openables = page.locator('text="►"')
+    closables = page.locator('text="▼"')
+    assert closables.count() == len(widget.expanded)
+    assert openables.count() == len(df_mixed) - len(widget.expanded)
+
+
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3646')
+def test_tabulator_selection_row_content_expand_from_python_after(page, port, df_mixed):
+    widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Expanding the rows after the server is launched
+    widget.expanded = [0, 2]
+
+    for i in range(len(df_mixed)):
+        row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
+        if i in widget.expanded:
+            expect(row_content).to_have_count(1)
+        else:
+            expect(row_content).to_have_count(0)
+
+    openables = page.locator('text="►"')
+    closables = page.locator('text="▼"')
+    # Error here
+    assert closables.count() == len(widget.expanded)
+    assert openables.count() == len(df_mixed) - len(widget.expanded)
+    # End of error
+
+    widget.expanded = []
+
+    openables = page.locator('text="►"')
+    closables = page.locator('text="▼"')
+    assert closables.count() == 0
+    assert openables.count() == len(df_mixed)
+
+
+def test_tabulator_grouping():
     pass
+
+
+def test_tabulator_groupby():
+    pass
+
+
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3564')
+def test_tabulator_hierarchical(page, port, df_multiindex):
+    widget = Tabulator(df_multiindex, hierarchical=True)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator('text="Index: groups | subgroups"')).to_have_count(1)
+
+    for i in range(len(df_multiindex.index.get_level_values(0).unique())):
+        gr = page.locator(f'text="group{i}"')
+        expect(gr).to_have_count(1)
+        assert gr.is_visible()
+    for i in range(len(df_multiindex.index.get_level_values(1).unique())):
+        subgr = page.locator(f'text="subgroup{i}"')
+        expect(subgr).to_have_count(0)
+
+    page.locator("text=group1 >> div").first.click()
+
+    for i in range(len(df_multiindex.index.get_level_values(1).unique())):
+        subgr = page.locator(f'text="subgroup{i}"')
+        expect(subgr).to_have_count(1)
+        assert subgr.is_visible()
+
+
+def test_tabulator_cell_click_event(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    values = []
+    widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    page.locator('text="idx0"').click()
+    wait_until(lambda: values[0] == ('index', 0, 'idx0'))
+    page.locator('text="A"').click()
+    wait_until(lambda: values[0] == ('str', 0, 'A'))
+
+
+def test_tabulator_edit_event(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    values = []
+    widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="A"')
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("AA")
+    editable_cell.press('Enter')
+
+    wait_until(lambda: values[0] == ('str', 0, 'A', 'AA'))
+    assert df_mixed.at['idx0', 'str'] == 'AA'
+
+@pytest.mark.parametrize(
+    'pagination',
+    [
+        'remote',
+        pytest.param('local', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3647')),
+    ],
+)
+def test_tabulator_pagination(page, port, df_mixed, pagination):
+    page_size = 2
+    widget = Tabulator(df_mixed, pagination=pagination, page_size=page_size)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    counts = count_per_page(len(df_mixed), page_size)
+    i = 0
+    while True:
+        wait_until(lambda: widget.page == i + 1)
+        rows = page.locator('.tabulator-row')
+        expect(rows).to_have_count(counts[i])
+        assert page.locator(f'[aria-label="Show Page {i+1}"]').count() == 1
+        df_page = df_mixed.iloc[i * page_size: (i + 1) * page_size]
+        for idx in df_page.index:
+            assert page.locator(f'text="{idx}"').count() == 1
+        if i < len(counts) - 1:
+            page.locator(f'[aria-label="Show Page {i+2}"]').click()
+            i += 1
+        else:
+            break
+
+
+def test_tabulator_filter_constant_scalar(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    widget.add_filter('A', 'str')
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Check the table has the right number of rows
+    expect(page.locator('.tabulator-row')).to_have_count(1)
+
+    assert page.locator('text="A"').count() == 1
+    assert page.locator('text="B"').count() == 0
+
+
+def test_tabulator_filter_constant_list(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    widget.add_filter(['A', 'B'], 'str')
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Check the table has the right number of rows
+    expect(page.locator('.tabulator-row')).to_have_count(2)
+
+    assert page.locator('text="A"').count() == 1
+    assert page.locator('text="B"').count() == 1
+    assert page.locator('text="C"').count() == 0
+
+
+def test_tabulator_filter_constant_tuple_range(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    widget.add_filter((1, 2), 'int')
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Check the table has the right number of rows
+    expect(page.locator('.tabulator-row')).to_have_count(2)
+
+    assert page.locator('text="A"').count() == 1
+    assert page.locator('text="B"').count() == 1
+    assert page.locator('text="C"').count() == 0

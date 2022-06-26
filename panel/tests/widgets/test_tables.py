@@ -568,6 +568,20 @@ def test_tabulator_selectable_rows(document, comm):
     assert model.selectable_rows == [3, 4]
 
 
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3644')
+def test_tabulator_selectable_rows_nonallowed_selection_error(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, selectable_rows=lambda df: [1])
+
+    model = table.get_root(document, comm)
+
+    assert model.selectable_rows == [1]
+
+    #
+    with pytest.raises(ValueError):
+        table.selection = [0]
+
+
 def test_tabulator_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, pagination='remote', page_size=2)
@@ -1557,13 +1571,23 @@ def test_tabulator_function_filter(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-def test_tabulator_constant_tuple_filter(document, comm):
+
+@pytest.mark.parametrize(
+    'col',
+    [
+        'A',
+        pytest.param('B', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
+        pytest.param('C', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
+        pytest.param('D', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
+    ],
+)
+def test_tabulator_constant_tuple_filter(document, comm, col):
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
     model = table.get_root(document, comm)
 
-    table.add_filter((2, 3), 'A')
+    table.add_filter((2, 3), col)
 
     expected = {
         'index': np.array([2, 3]),
@@ -1576,6 +1600,7 @@ def test_tabulator_constant_tuple_filter(document, comm):
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
+
 
 def test_tabulator_stream_dataframe_with_filter(document, comm):
     df = makeMixedDataFrame()
