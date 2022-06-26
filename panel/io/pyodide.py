@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import sys
 
 from typing import Optional
 
@@ -9,7 +10,9 @@ import pyodide
 
 from bokeh import __version__
 from bokeh.document import Document
+from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
+from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.io.doc import set_curdoc
 from bokeh.protocol.messages.patch_doc import process_document_events
 from js import JSON
@@ -92,9 +95,41 @@ def _link_docs(pydoc, jsdoc):
 
     pydoc.on_change(pysync)
 
+async def _link_model(ref, doc):
+    from js import Bokeh
+    rendered = Bokeh.index.object_keys()
+    if ref not in rendered:
+        await asyncio.sleep(0.1)
+        await _link_model(ref, doc)
+        return
+    views = Bokeh.index.object_values()
+    view = views[rendered.indexOf(ref)]
+    _link_docs(doc, view.model.document)
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
+
+def render_html(obj):
+    from js import document
+
+    from ..pane import panel as as_panel
+
+    if hasattr(sys.stdout, '_out'):
+        target = sys.stdout._out # type: ignore
+    else:
+        raise ValueError("Could not determine target node to write to.")
+    doc = Document()
+    as_panel(obj).server_doc(doc, location=False)
+    docs_json, [render_item,] = standalone_docs_json_and_render_items(
+        doc.roots, suppress_callback_warning=True
+    )
+    for root in doc.roots:
+        render_item.roots._roots[root] = target
+    document.getElementById(target).classList.add('bk-root')
+    script = script_for_render_items(docs_json, [render_item])
+    asyncio.create_task(_link_model(doc.roots[0].ref['id'], doc))
+    return {'text/html': wrap_in_script_tag(script)}, {}
 
 def serve(*args, **kwargs):
     """

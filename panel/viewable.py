@@ -601,6 +601,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         return self.__repr__()
 
     def _repr_mimebundle_(self, include=None, exclude=None):
+        if state._is_pyodide:
+            from .io.pyodide import render_html
+            return render_html(self)
+
         loaded = panel_extension._loaded
         if not loaded and 'holoviews' in sys.modules:
             import holoviews as hv  # type: ignore
