@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-import sys
 
 from typing import Optional
 
@@ -110,15 +109,21 @@ async def _link_model(ref, doc):
 # Public API
 #---------------------------------------------------------------------
 
-def render_html(obj):
+def render_script(obj, target):
+    """
+    Generates a script to render the supplied object to the target.
+
+    Arguments
+    ---------
+    obj: Viewable
+        Object to render into the DOM node
+    target: str
+        Target ID of the DOM node to render the object into.
+    """
     from js import document
 
     from ..pane import panel as as_panel
 
-    if hasattr(sys.stdout, '_out'):
-        target = sys.stdout._out # type: ignore
-    else:
-        raise ValueError("Could not determine target node to write to.")
     doc = Document()
     as_panel(obj).server_doc(doc, location=False)
     docs_json, [render_item,] = standalone_docs_json_and_render_items(
@@ -129,7 +134,7 @@ def render_html(obj):
     document.getElementById(target).classList.add('bk-root')
     script = script_for_render_items(docs_json, [render_item])
     asyncio.create_task(_link_model(doc.roots[0].ref['id'], doc))
-    return {'text/html': wrap_in_script_tag(script)}, {}
+    return wrap_in_script_tag(script)
 
 def serve(*args, **kwargs):
     """
