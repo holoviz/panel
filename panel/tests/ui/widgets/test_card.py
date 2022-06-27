@@ -183,7 +183,7 @@ def test_card_custom_css(page, port):
 
     card_widget = page.locator(f'.bk.card.{additional_css_class}')
     assert card_widget.count() == 1
-    card_header = page.locator(f'.bk.card.{additional_header_css_class}')
+    card_header = page.locator(f'.bk.card-header.{additional_header_css_class}')
     assert card_header.count() == 1
-    card_button = page.locator(f'.bk.card.{additional_button_css_class}')
+    card_button = page.locator(f'.bk.card-button.{additional_button_css_class}')
     assert card_button.count() == 1
