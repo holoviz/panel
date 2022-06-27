@@ -48,8 +48,20 @@ export class CommManager extends Model {
       console.log("Could not find comm manager on window.PyViz, ensure the extension is loaded.")
     else {
       this.ns = (window as any).PyViz
-      this.ns.comm_manager.register_target(this.plot_id, this.comm_id, (msg: any) => this.msg_handler(msg))
+      this.ns.comm_manager.register_target(this.plot_id, this.comm_id, (msg: any) => {
+	for (const view of this.ns.shared_views.get(this.plot_id)) {
+	  if (view !== this)
+	    view.msg_handler(msg)
+	}
+	this.msg_handler(msg)
+      })
       this._client_comm = this.ns.comm_manager.get_client_comm(this.plot_id, this.client_comm_id, (msg: any) => this.on_ack(msg));
+      if (this.ns.shared_views == null)
+	this.ns.shared_views = new Map()
+      if (this.ns.shared_views.has(this.plot_id))
+	this.ns.shared_views.get(this.plot_id).push(this)
+      else
+	this.ns.shared_views.set(this.plot_id, [this])
     }
   }
 
@@ -87,6 +99,15 @@ export class CommManager extends Model {
     this._event_buffer = [];
     const message = Message.create('PATCH-DOC', {}, patch)
     this._client_comm.send(message)
+    for (const view of this.ns.shared_views.get(this.plot_id)) {
+      if (view !== this)
+	view.document.apply_json_patch(patch, [], this.id)
+    }
+  }
+
+  disconnect_signals(): void {
+    super.disconnect_signals()
+    this.ns.shared_views.shared_views.delete(this.plot_id)
   }
 
   on_ack(msg: any) {
