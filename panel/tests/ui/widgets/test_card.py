@@ -8,6 +8,7 @@ from panel.widgets import FloatSlider, TextInput
 
 pytestmark = pytest.mark.ui
 
+
 @pytest.fixture
 def card_components():
     # widgets with mock css classes for easy search for elements in the Card
