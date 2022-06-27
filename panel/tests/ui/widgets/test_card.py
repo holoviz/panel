@@ -1,10 +1,10 @@
-import pytest
 import time
+
+import pytest
 
 from panel import Card
 from panel.io.server import serve
 from panel.widgets import FloatSlider, TextInput
-
 
 pytestmark = pytest.mark.ui
 
