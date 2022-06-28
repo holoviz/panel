@@ -12,7 +12,7 @@ from bokeh.models.widgets.tables import (
 try:
     from playwright.sync_api import expect
 except ImportError:
-    pass
+    pytestmark = pytest.mark.skip('playwright not available')
 
 pytestmark = pytest.mark.ui
 
@@ -26,7 +26,7 @@ try:
 except ImportError:
     pytestmark = pytest.mark.skip('pandas not available')
 
-
+from panel import state
 from panel.io.server import serve
 from panel.widgets import Tabulator
 
@@ -169,6 +169,33 @@ def test_tabulator_disabled(page, port, df_mixed):
     # If the cell was editable then this input element should
     # be found.
     expect(page.locator('input[type="text"]')).to_have_count(0)
+
+
+def test_tabulator_show_index_disabled(page, port, df_mixed):
+    widget = Tabulator(df_mixed, show_index=False)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator('text="index"')).to_have_count(0)
+
+
+def test_tabulator_titles(page, port, df_mixed):
+    titles = {col: col.upper() for col in df_mixed.columns}
+    widget = Tabulator(df_mixed, titles=titles)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    for col in df_mixed.columns:
+        expected_title = titles[col]
+        expect(page.locator(f'text="{expected_title}"')).to_have_count(1)
 
 
 def test_tabulator_buttons_display(page, port, df_mixed):
@@ -396,12 +423,41 @@ def test_tabulator_alignment():
     pass
 
 
-def test_tabulator_styling():
+def test_tabulator_frozen_columns():
     pass
 
 
-def test_tabulator_theming():
-    pass
+@pytest.mark.parametrize('theme', Tabulator.param['theme'].objects)
+def test_tabulator_theming(page, port, df_mixed, theme):
+    # Subscribe the reponse events to check that the CSS is loaded
+    responses = []
+    page.on("response", lambda response: responses.append(response))
+    widget = Tabulator(df_mixed, theme=theme)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Check that the whole table content is on the page
+    table = page.locator('.bk.pnx-tabulator.tabulator')
+    expect(table).to_have_text(
+        'index\nint\nfloat\nstr\nbool\ndate\ndatetime\nidx0\n1\n3.14\nA\ntrue\n2019-01-01\n2019-01-01 10:00:00\nidx1\n2\n6.28\nB\ntrue\n2020-01-01\n2020-01-01 12:00:00\nidx2\n3\n9.42\nC\ntrue\n2020-01-10\n2020-01-10 13:00:00\nidx3\n4\n-2.45\nD\nfalse\n2019-01-10\n2020-01-15 13:00:00',  # noqa
+        use_inner_text=True
+    )
+    found = False
+    for response in responses:
+        base = response.url.split('/')[-1]
+        if base == f'tabulator_{theme}.min.css':
+            found = True
+            break
+        # default theme
+        elif base == 'tabulator.min.css':
+            found = True
+            break
+    assert found
+    assert response.status
 
 
 def test_tabulator_selection_selectable_by_default(page, port, df_mixed):
@@ -835,7 +891,8 @@ def test_tabulator_hierarchical(page, port, df_multiindex):
         subgr = page.locator(f'text="subgroup{i}"')
         expect(subgr).to_have_count(0)
 
-    page.locator("text=group1 >> div").first.click()
+    # This fails
+    page.locator("text=group1 >> div").first.click(timeout=2000)
 
     for i in range(len(df_multiindex.index.get_level_values(1).unique())):
         subgr = page.locator(f'text="subgroup{i}"')
@@ -856,9 +913,9 @@ def test_tabulator_cell_click_event(page, port, df_mixed):
     page.goto(f"http://localhost:{port}")
 
     page.locator('text="idx0"').click()
-    wait_until(lambda: values[0] == ('index', 0, 'idx0'))
+    wait_until(lambda: values[-1] == ('index', 0, 'idx0'))
     page.locator('text="A"').click()
-    wait_until(lambda: values[0] == ('str', 0, 'A'))
+    wait_until(lambda: values[-1] == ('str', 0, 'A'))
 
 
 def test_tabulator_edit_event(page, port, df_mixed):
@@ -919,7 +976,8 @@ def test_tabulator_pagination(page, port, df_mixed, pagination):
 def test_tabulator_filter_constant_scalar(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    widget.add_filter('A', 'str')
+    fltr, col = 'A', 'str'
+    widget.add_filter(fltr, col)
 
     serve(widget, port=port, threaded=True, show=False)
 
@@ -933,11 +991,15 @@ def test_tabulator_filter_constant_scalar(page, port, df_mixed):
     assert page.locator('text="A"').count() == 1
     assert page.locator('text="B"').count() == 0
 
+    expected_current_view = df_mixed.loc[ df_mixed[col] == fltr, :]
+    assert widget.current_view.equals(expected_current_view)
+
 
 def test_tabulator_filter_constant_list(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    widget.add_filter(['A', 'B'], 'str')
+    fltr, col = ['A', 'B'], 'str'
+    widget.add_filter(fltr, col)
 
     serve(widget, port=port, threaded=True, show=False)
 
@@ -951,12 +1013,16 @@ def test_tabulator_filter_constant_list(page, port, df_mixed):
     assert page.locator('text="A"').count() == 1
     assert page.locator('text="B"').count() == 1
     assert page.locator('text="C"').count() == 0
+
+    expected_current_view = df_mixed.loc[df_mixed[col].isin(fltr), :]
+    assert widget.current_view.equals(expected_current_view)
 
 
 def test_tabulator_filter_constant_tuple_range(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    widget.add_filter((1, 2), 'int')
+    fltr, col = (1, 2), 'int'
+    widget.add_filter(fltr, col)
 
     serve(widget, port=port, threaded=True, show=False)
 
@@ -970,3 +1036,378 @@ def test_tabulator_filter_constant_tuple_range(page, port, df_mixed):
     assert page.locator('text="A"').count() == 1
     assert page.locator('text="B"').count() == 1
     assert page.locator('text="C"').count() == 0
+
+    expected_current_view = df_mixed.loc[(df_mixed[col] >= fltr[0]) & (df_mixed[col] <= fltr[1]), : ]
+    assert widget.current_view.equals(expected_current_view)
+
+
+@pytest.mark.parametrize(
+    'cols',
+    [
+        ['int', 'float', 'str', 'bool'],
+        pytest.param(['date', 'datetime'], marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3655')),
+    ],
+)
+def test_tabulator_header_filters_default(page, port, df_mixed, cols):
+    df_mixed = df_mixed[cols]
+    widget = Tabulator(df_mixed, header_filters=True)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Check that all the columns have a header filter, including the index column
+    expect(page.locator('.tabulator-header-filter')).to_have_count(len(cols) + 1)
+
+    # Check the table has the right number of rows, i.e. no filter is applied by default
+    assert page.locator('.tabulator-row').count() == len(df_mixed)
+
+    assert widget.filters == []
+    assert widget.current_view.equals(df_mixed)
+
+
+@pytest.mark.parametrize(
+    ('index', 'expected_selector'),
+    (
+        (['idx0', 'idx1'], 'input[type="search"]'),
+        ([0, 1], 'input[type="number"]'),
+        (np.array([0, 1], dtype=np.uint64), 'input[type="number"]'),
+        ([0.1, 1.1], 'input[type="number"]'),
+        # ([True, False], 'input[type="checkbox"]'),  # Pandas cannot have boolean indexes apparently
+    ),
+)
+def test_tabulator_header_filters_default_index(page, port, index, expected_selector):
+    df = pd.DataFrame(index=index)
+    widget = Tabulator(df, header_filters=True)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # The number columns (unit, int and float) are expected to have a number input
+    expect(page.locator(expected_selector)).to_have_count(1)
+
+
+def test_tabulator_header_filters_init_from_editors(page, port, df_mixed):
+    df_mixed = df_mixed[['float']]
+    editors = {
+        'float': {'type': 'number', 'step': 0.5},
+        'str': {'type': 'autocomplete', 'values': True}
+    }
+    widget = Tabulator(df_mixed, header_filters=True, editors=editors)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    number_header = page.locator('input[type="number"]')
+    expect(number_header).to_have_count(1)
+    assert number_header.get_attribute('step') == '0.5'
+
+
+def test_tabulator_header_filters_init_explicitely(page, port, df_mixed):
+    header_filters = {
+        'float': {'type': 'number', 'func': '>=', 'placeholder': 'Placeholder float'},
+        'str': {'type': 'input', 'func': 'like', 'placeholder': 'Placeholder str'},
+    }
+    widget = Tabulator(df_mixed, header_filters=header_filters)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Check that only the columns explicitely given a header filter spec have a header filter
+    expect(page.locator('.tabulator-header-filter')).to_have_count(len(header_filters))
+
+    number_header = page.locator('input[type="number"]')
+    expect(number_header).to_have_count(1)
+    assert number_header.get_attribute('placeholder') == 'Placeholder float'
+    str_header = page.locator('input[type="search"]')
+    expect(str_header).to_have_count(1)
+    assert str_header.get_attribute('placeholder') == 'Placeholder str'
+
+
+def test_tabulator_header_filters_set_from_client(page, port, df_mixed):
+    header_filters = {
+        'float': {'type': 'number', 'func': '>=', 'placeholder': 'Placeholder float'},
+        'str': {'type': 'input', 'func': 'like', 'placeholder': 'Placeholder str'},
+    }
+    widget = Tabulator(df_mixed, header_filters=header_filters)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    number_header = page.locator('input[type="number"]')
+    number_header.click()
+    val, cmp, col = '0', '>=', 'float'
+    number_header.fill(val)
+    number_header.press('Enter')
+    query1 = f'{col} {cmp} {val}'
+    expected_filter_df = df_mixed.query(query1)
+    expected_filter1 = {'field': col, 'type': cmp, 'value': val}
+    expect(page.locator('.tabulator-row')).to_have_count(len(expected_filter_df))
+    wait_until(lambda: widget.filters == [expected_filter1])
+    assert widget.current_view.equals(expected_filter_df)
+
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    val, cmp, col = 'A', 'like', 'str'
+    str_header.fill(val)
+    str_header.press('Enter')
+    query2 = f'{col} == {val!r}'
+    expected_filter_df = df_mixed.query(f'{query1} and {query2}')
+    expected_filter2 = {'field': col, 'type': cmp, 'value': val}
+    expect(page.locator('.tabulator-row')).to_have_count(len(expected_filter_df))
+    wait_until(lambda: widget.filters == [expected_filter1, expected_filter2])
+    assert widget.current_view.equals(expected_filter_df)
+
+
+def test_tabulator_downloading():
+    pass
+
+def test_tabulator_streaming_default(page, port):
+    df = pd.DataFrame(np.random.random((3, 2)), columns=['A', 'B'])
+    widget = Tabulator(df)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator('.tabulator-row')).to_have_count(len(df))
+
+    height_start = page.locator('.bk.pnx-tabulator.tabulator').bounding_box()['height']
+
+
+    def stream_data():
+        widget.stream(df)  # follow is True by default
+
+    repetitions = 3
+    state.add_periodic_callback(stream_data, period=100, count=repetitions)
+
+    expected_len = len(df) * (repetitions + 1)
+    expect(page.locator('.tabulator-row')).to_have_count(expected_len)
+    assert len(widget.value) == expected_len
+    assert widget.current_view.equals(widget.value)
+
+    assert page.locator('.bk.pnx-tabulator.tabulator').bounding_box()['height'] > height_start
+
+
+def test_tabulator_streaming_no_follow(page, port):
+    nrows1 = 10
+    arr = np.random.randint(10, 20, (nrows1, 2))
+    val = [-1]
+    arr[0, :] = val[0]
+    df = pd.DataFrame(arr, columns=['A', 'B'])
+    widget = Tabulator(df, height=100)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator('.tabulator-row')).to_have_count(len(df))
+    assert page.locator('text="-1"').count() == 2
+
+    height_start = page.locator('.bk.pnx-tabulator.tabulator').bounding_box()['height']
+
+    recs = []
+    nrows2 = 5
+    def stream_data():
+        arr = np.random.randint(10, 20, (nrows2, 2))
+        val[0] = val[0] - 1
+        arr[-1, :] = val[0]
+        recs.append(val[0])
+        new_df = pd.DataFrame(arr, columns=['A', 'B'])
+        widget.stream(new_df, follow=False)
+
+    repetitions = 3
+    state.add_periodic_callback(stream_data, period=100, count=repetitions)
+
+    # Explicit wait to make sure the periodic callback has completed
+    page.wait_for_timeout(500)
+
+    expect(page.locator('text="-1"')).to_have_count(2)
+    # As we're not in follow mode the last row isn't visible
+    # and seems to be out of reach to the selector. How visibility
+    # is used here seems brittle though, may need to be revisited.
+    expect(page.locator(f'text="{val[0]}"')).to_have_count(0)
+
+    assert len(widget.value) == nrows1 + repetitions * nrows2
+    assert widget.current_view.equals(widget.value)
+
+    assert page.locator('.bk.pnx-tabulator.tabulator').bounding_box()['height'] == height_start
+
+
+def test_tabulator_patching(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    new_vals = {
+        'str': ['AA', 'BB'],
+        'int': [100, 101],
+    }
+
+    widget.patch({
+        'str': [(0, new_vals['str'][0]), (1, new_vals['str'][1])],
+        'int': [(slice(0, 2), new_vals['int'])]
+    }, as_index=False)
+
+    for v in new_vals:
+        expect(page.locator(f'text="{v}"')).to_have_count(1)
+
+    assert list(widget.value['str'].iloc[[0, 1]]) == new_vals['str']
+    assert list(widget.value['int'].iloc[0 : 2]) == new_vals['int']
+    assert df_mixed.equals(widget.current_view)
+    assert df_mixed.equals(widget.value)
+
+
+def test_tabulator_patching_no_event(page, port, df_mixed):
+    # Patching should not emit emit any event when watching `value`
+    widget = Tabulator(df_mixed)
+
+    events = []
+    widget.param.watch(lambda e: events.append(e), 'value')
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    new_vals = {
+        'str': ['AA', 'BB'],
+    }
+
+    widget.patch({
+        'str': [(0, new_vals['str'][0]), (1, new_vals['str'][1])],
+    }, as_index=False)
+
+    for v in new_vals:
+        expect(page.locator(f'text="{v}"')).to_have_count(1)
+
+    assert list(widget.value['str'].iloc[[0, 1]]) == new_vals['str']
+    assert df_mixed.equals(widget.value)
+
+    assert len(events) == 0
+
+
+def color_false(val):
+    color = 'red' if not val else 'black'
+    return 'color: %s' % color
+
+def highlight_max(s):
+    is_max = s == s.max()
+    return ['background-color: yellow' if v else '' for v in is_max]
+
+# Playwright returns the colors as RGB
+_color_mapping = {
+    'red': 'rgb(255, 0, 0)',
+    'black': 'rgb(0, 0, 0)',
+    'yellow': 'rgb(255, 255, 0)',
+}
+
+def test_tabulator_styling_init(page, port, df_mixed):
+    df_styled = (
+        df_mixed.style
+        .apply(highlight_max, subset=['int'])
+        .applymap(color_false, subset=['bool'])
+    )
+    widget = Tabulator(df_styled)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    max_int = df_mixed['int'].max()
+    max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
+    expect(max_cell).to_have_count(1)
+    expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
+    expect(page.locator('text="false"')).to_have_css('color', _color_mapping['red'])
+
+
+def test_tabulator_patching_and_styling(page, port, df_mixed):
+    df_styled = df_mixed.style.apply(highlight_max, subset=['int'])
+    widget = Tabulator(df_styled)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Changing the highest value in the int column should
+    # update the style so that this cell gets a yellow background
+    widget.patch({'int': [(0, 100)]}, as_index=False)
+
+    max_int = df_mixed['int'].max()
+    max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
+    expect(max_cell).to_have_count(1)
+    expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
+
+
+def test_tabulator_configuration(page, port, df_mixed):
+    # By default the Tabulator widget has sortable columns.
+    # Pass a configuration property to disable this behaviour.
+    widget = Tabulator(df_mixed, configuration={'headerSort': False})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator(".tabulator-sortable")).to_have_count(0)
+
+
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3620')
+def test_tabulator_editor_datetime_nan(page, port, df_mixed):
+    df_mixed.at['idx0', 'datetime'] = np.nan
+    widget = Tabulator(df_mixed, configuration={'headerSort': False})
+
+    events = []
+    def callback(e):
+        events.append(e)
+
+    widget.on_edit(callback)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Doesn't trigger a table edit event
+    cell = page.locator('text="-"')
+    cell.wait_for()
+    cell.click()
+    page.locator('input[type="date"]').press("Escape")
+
+    # Error: these two triggers a table edit event, i.e. hit Enter
+    # or click away
+    page.locator('text="-"').click()
+    page.locator('input[type="date"]').press("Enter")
+    page.locator('text="-"').click()
+    page.locator("html").click()
+
+    wait_until(lambda: len(events) == 0)

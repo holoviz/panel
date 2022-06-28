@@ -1514,13 +1514,24 @@ def test_tabulator_widget_scalar_filter(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-def test_tabulator_constant_list_filter(document, comm):
+@pytest.mark.parametrize(
+    'col',
+    [
+        'A',
+        pytest.param('B', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
+        'C',
+        'D'
+    ],
+)
+def test_tabulator_constant_list_filter(document, comm, col):
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
     model = table.get_root(document, comm)
 
-    table.add_filter(['foo3', 'foo5'], 'C')
+    values = list(df.iloc[[2, 4], :][col])
+
+    table.add_filter(values, col)
 
     expected = {
         'index': np.array([2, 4]),
