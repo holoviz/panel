@@ -7,6 +7,8 @@ import re
 import urllib.parse as urlparse
 import uuid
 
+from typing import List, Tuple, Type
+
 import pkg_resources
 import tornado
 
@@ -15,6 +17,7 @@ from jinja2 import Environment, FileSystemLoader
 from tornado.auth import OAuth2Mixin
 from tornado.httpclient import HTTPError, HTTPRequest
 from tornado.httputil import url_concat
+from tornado.web import RequestHandler
 
 from .config import config
 from .io import state
@@ -270,11 +273,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         next_arg = self.get_argument('next', {})
         if next_arg:
             next_arg = urlparse.parse_qs(next_arg)
+            next_arg = {arg.split('?')[-1]: value for arg, value in next_arg.items()}
         code = self.get_argument('code', extract_urlparam(next_arg, 'code'))
         url_state = self.get_argument('state', extract_urlparam(next_arg, 'state'))
 
         # Handle authentication error
         error = self.get_argument('error', extract_urlparam(next_arg, 'error'))
+
         if error is not None:
             error_msg = self.get_argument(
                 'error_description', extract_urlparam(next_arg, 'error_description'))
@@ -788,8 +793,25 @@ class OAuthProvider(AuthProvider):
         return get_user
 
     @property
+    def endpoints(self) -> List[Tuple[str, Type[RequestHandler]]]:
+        ''' URL patterns for login/logout endpoints.
+
+        '''
+        endpoints: List[Tuple[str, Type[RequestHandler]]] = []
+        if self.login_handler:
+            assert self.login_url is not None
+            endpoints.append(('/login', self.login_handler))
+        if self.logout_handler:
+            assert self.logout_url is not None
+            endpoints.append(('/logout', self.logout_handler))
+        return endpoints
+
+    @property
     def login_url(self):
-        return '/login'
+        if config.oauth_redirect_uri is None:
+            return '/login'
+        else:
+            return urlparse.urlparse(config.oauth_redirect_uri).path + '/login'
 
     @property
     def login_handler(self):
