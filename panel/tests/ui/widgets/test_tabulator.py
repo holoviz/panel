@@ -913,9 +913,11 @@ def test_tabulator_cell_click_event(page, port, df_mixed):
     page.goto(f"http://localhost:{port}")
 
     page.locator('text="idx0"').click()
-    wait_until(lambda: values[-1] == ('index', 0, 'idx0'))
+    wait_until(lambda: len(values) >= 1)
+    assert values[-1] == ('index', 0, 'idx0')
     page.locator('text="A"').click()
-    wait_until(lambda: values[-1] == ('str', 0, 'A'))
+    wait_until(lambda: len(values) >= 2)
+    assert values[-1] == ('str', 0, 'A')
 
 
 def test_tabulator_edit_event(page, port, df_mixed):
@@ -936,7 +938,8 @@ def test_tabulator_edit_event(page, port, df_mixed):
     editable_cell.fill("AA")
     editable_cell.press('Enter')
 
-    wait_until(lambda: values[0] == ('str', 0, 'A', 'AA'))
+    wait_until(lambda: len(values) >= 1)
+    assert values[0] == ('str', 0, 'A', 'AA')
     assert df_mixed.at['idx0', 'str'] == 'AA'
 
 @pytest.mark.parametrize(
