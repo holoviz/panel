@@ -37,8 +37,8 @@ def pytest_configure(config):
 
 @pytest.fixture
 def context(context):
-    # Reduce the default timeout to 5 secs
-    context.set_default_timeout(5000)
+    # Reduce the default timeout to 10 secs
+    context.set_default_timeout(10_000)
     yield context
 
 PORT = [6000]
