@@ -1,3 +1,4 @@
+import base64
 import codecs
 import json
 import logging
@@ -62,6 +63,28 @@ def extract_urlparam(args, key):
     Extracts a request argument from a urllib.parse.parse_qs dict.
     """
     return args.get(key, args.get(f'/?{key}', [None]))[0]
+
+
+def _serialize_state(state):
+    """Serialize OAuth state to a base64 string after passing through JSON"""
+    json_state = json.dumps(state)
+    return base64.urlsafe_b64encode(json_state.encode('utf8')).decode('ascii')
+
+
+def _deserialize_state(b64_state):
+    """Deserialize OAuth state as serialized in _serialize_state"""
+    if isinstance(b64_state, str):
+        b64_state = b64_state.encode('ascii')
+    try:
+        json_state = base64.urlsafe_b64decode(b64_state).decode('utf8')
+    except ValueError:
+        log.error("Failed to b64-decode state: %r", b64_state)
+        return {}
+    try:
+        return json.loads(json_state)
+    except ValueError:
+        log.error("Failed to json-decode state: %r", json_state)
+        return {}
 
 
 class OAuthLoginHandler(tornado.web.RequestHandler):
@@ -211,6 +234,25 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             STATE_COOKIE_NAME, state, expires_days=config.oauth_expiry, httponly=True
         )
 
+    def get_state(self):
+        next_url = original_next_url = self.get_argument('next', None)
+        if next_url:
+            # avoid browsers treating \ as /
+            next_url = next_url.replace('\\', urlparse.quote('\\'))
+            # disallow hostname-having urls,
+            # force absolute path redirect
+            urlinfo = urlparse.urlparse(next_url)
+            next_url = urlinfo._replace(
+                scheme='', netloc='', path='/' + urlinfo.path.lstrip('/')
+            ).geturl()
+            if next_url != original_next_url:
+                log.warning(
+                    "Ignoring next_url %r, using %r", original_next_url, next_url
+                )
+        return _serialize_state(
+            {'state_id': uuid.uuid4().hex, 'next_url': next_url}
+        )
+
     async def get(self):
         log.debug("%s received login request", type(self).__name__)
         if config.oauth_redirect_uri:
@@ -253,6 +295,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
                 log.warning("OAuth state mismatch: %s != %s", cookie_state, url_state)
                 raise HTTPError(400, "OAuth state mismatch")
 
+            state = _deserialize_state(url_state)
             # For security reason, the state value (cross-site token) will be
             # retrieved from the query string.
             params.update({
@@ -264,11 +307,10 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             if user is None:
                 raise HTTPError(403)
             log.debug("%s authorized user, redirecting to app.", type(self).__name__)
-            self.redirect('/')
+            self.redirect(state.get('next_url', '/'))
         else:
             # Redirect for user authentication
-            state = uuid.uuid4().hex
-            params['state'] = state
+            params['state'] = state = self.get_state()
             self.set_state_cookie(state)
             await self.get_authenticated_user(**params)
 
