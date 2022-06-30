@@ -46,6 +46,7 @@ p.bk.card-button {
 fast-card {
   margin: 0px;
   padding: 1em;
+  overflow: auto;
 }
 canvas, img {
   border-radius: calc(var(--corner-radius) * 1px);
