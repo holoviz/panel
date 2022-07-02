@@ -387,6 +387,9 @@ def admin_panel(doc):
         ('User Profiling', profiling_tabs(state, None, r'^\/.*')),
         ('Logs', log_component())
     ])
+    tabs.extend([
+        (name, plugin()) for name, plugin in config.admin_plugins
+    ])
     template.main.append(tabs)
     with set_curdoc(doc):
         template.server_doc(doc)
