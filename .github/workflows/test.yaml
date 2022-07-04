@@ -26,95 +26,95 @@ jobs:
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: pre-commit
         uses: pre-commit/action@v2.0.3
-  test_suite:
-    name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
-    needs: [pre_commit]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: [3.7, 3.8, 3.9]
-        exclude:
-          - os: windows-latest
-            python-version: 3.8
-    timeout-minutes: 60
-    defaults:
-      run:
-        shell: bash -l {0}
-    env:
-      DESC: "Python ${{ matrix.python-version }} tests"
-      PYTHON_VERSION: ${{ matrix.python-version }}
-      DISPLAY: ":99.0"
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Without this env var `doit env_create ...` uses by default
-      # the `pyviz` channel, except that we don't want to configure
-      # it as one of the sources.
-      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: "100"
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          channel-priority: strict
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow
-      - name: conda setup
-        run: |
-          conda install "pyctdev>=0.5"
-          conda install "nodejs=15.3.0"
-          doit env_create --python=${{ matrix.python-version }}
-      - name: nix_opengl
-        if: contains(matrix.os, 'ubuntu')
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          sudo apt-get install libglu1-mesa
-          conda install mesalib
-          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
-          sleep 3
-      - name: doit develop_install
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install "pip<21.2.1" "toml"
-          conda list
-          doit develop_install -o examples -o recommended -o tests -o build
-          pip install pyecharts idom
-          bokeh sampledata
-          echo "-----"
-          git describe
-      - name: windows_opengl
-        if: contains(matrix.os, 'windows')
-        run: |
-          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
-          powershell gl-ci-helpers/appveyor/install_opengl.ps1
-      - name: doit env_capture
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit env_capture
-      - name: doit test_unit
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit test_unit
-      - name: test examples
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit test_examples
-      - name: codecov
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          codecov
+#  test_suite:
+#    name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+#    needs: [pre_commit]
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+#        python-version: [3.7, 3.8, 3.9]
+#        exclude:
+#          - os: windows-latest
+#            python-version: 3.8
+#    timeout-minutes: 60
+#    defaults:
+#      run:
+#        shell: bash -l {0}
+#    env:
+#      DESC: "Python ${{ matrix.python-version }} tests"
+#      PYTHON_VERSION: ${{ matrix.python-version }}
+#      DISPLAY: ":99.0"
+#      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      # Without this env var `doit env_create ...` uses by default
+#      # the `pyviz` channel, except that we don't want to configure
+#      # it as one of the sources.
+#      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          fetch-depth: "100"
+#      - uses: actions/setup-python@v2
+#        with:
+#          python-version: ${{ matrix.python-version }}
+#      - uses: conda-incubator/setup-miniconda@v2
+#        with:
+#          miniconda-version: "latest"
+#          channel-priority: strict
+#          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
+#      - name: Fetch unshallow
+#        run: git fetch --prune --tags --unshallow
+#      - name: conda setup
+#        run: |
+#          conda install "pyctdev>=0.5"
+#          conda install "nodejs=15.3.0"
+#          doit env_create --python=${{ matrix.python-version }}
+#      - name: nix_opengl
+#        if: contains(matrix.os, 'ubuntu')
+#        run: |
+#          eval "$(conda shell.bash hook)"
+#          conda activate test-environment
+#          sudo apt-get install libglu1-mesa
+#          conda install mesalib
+#          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
+#          sleep 3
+#      - name: doit develop_install
+#        run: |
+#          eval "$(conda shell.bash hook)"
+#          conda activate test-environment
+#          conda install "pip<21.2.1" "toml"
+#          conda list
+#          doit develop_install -o examples -o recommended -o tests -o build
+#          pip install pyecharts idom
+#          bokeh sampledata
+#          echo "-----"
+#          git describe
+#      - name: windows_opengl
+#        if: contains(matrix.os, 'windows')
+#        run: |
+#          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
+#          powershell gl-ci-helpers/appveyor/install_opengl.ps1
+#      - name: doit env_capture
+#        run: |
+#          eval "$(conda shell.bash hook)"
+#          conda activate test-environment
+#          doit env_capture
+#      - name: doit test_unit
+#        run: |
+#          eval "$(conda shell.bash hook)"
+#          conda activate test-environment
+#          doit test_unit
+#      - name: test examples
+#        run: |
+#          eval "$(conda shell.bash hook)"
+#          conda activate test-environment
+#          doit test_examples
+#      - name: codecov
+#        run: |
+#          eval "$(conda shell.bash hook)"
+#          conda activate test-environment
+#          codecov
   ui_test_suite:
     name: UI tests on ${{ matrix.os }} with Python 3.9
     needs: [pre_commit]
@@ -123,6 +123,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        python-version: [3.7, 3.8, 3.9]
     timeout-minutes: 60
     defaults:
       run:
@@ -153,7 +154,7 @@ jobs:
       - name: conda setup
         run: |
           conda install "pyctdev>=0.5" "nodejs=15.3.0"
-          doit env_create --python=3.9
+          doit env_create --python=${{ matrix.python-version }}
       - name: doit develop_install
         run: |
           eval "$(conda shell.bash hook)"
