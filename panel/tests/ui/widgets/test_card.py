@@ -6,6 +6,11 @@ from panel import Card
 from panel.io.server import serve
 from panel.widgets import FloatSlider, TextInput
 
+try:
+    from playwright.sync_api import expect
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
+
 pytestmark = pytest.mark.ui
 
 
@@ -25,9 +30,10 @@ def test_card_default(page, port, card_components):
     page.goto(f"http://localhost:{port}")
 
     card_elements = page.locator('.bk.card > .bk')
-    num_elements = card_elements.count()
     # the card is expanded as default and includes a header and its inner objects
-    assert num_elements == len(card) + 1
+    expect(card_elements).to_have_count(len(card) + 1)
+    # num_elements = card_elements.count()
+    # assert num_elements == len(card) + 1
     # order of the elements
     card_header = card_elements.nth(0)
     w1_object = card_elements.nth(1)
@@ -93,7 +99,8 @@ def test_card_hide_header(page, port, card_components):
     assert card_header.count() == 0
     # only inner card objects
     card_elements = page.locator('.bk.card > .bk')
-    assert card_elements.count() == len(card)
+    expect(card_elements).to_have_count(len(card))
+    # assert card_elements.count() == len(card)
 
 
 def test_card_objects(page, port, card_components):
@@ -108,8 +115,9 @@ def test_card_objects(page, port, card_components):
     card.objects = new_objects
 
     card_elements = page.locator('.bk.card > .bk')
-    num_elements = card_elements.count()
-    assert num_elements == len(new_objects) + 1
+    expect(card_elements).to_have_count(len(new_objects) + 1)
+    # num_elements = card_elements.count()
+    # assert num_elements == len(new_objects) + 1
     card_header = card_elements.nth(0)
     w2_object = card_elements.nth(1)
     assert 'card-header' in card_header.get_attribute('class')
