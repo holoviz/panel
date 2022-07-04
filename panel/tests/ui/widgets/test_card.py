@@ -32,8 +32,6 @@ def test_card_default(page, port, card_components):
     card_elements = page.locator('.bk.card > .bk')
     # the card is expanded as default and includes a header and its inner objects
     expect(card_elements).to_have_count(len(card) + 1)
-    # num_elements = card_elements.count()
-    # assert num_elements == len(card) + 1
     # order of the elements
     card_header = card_elements.nth(0)
     w1_object = card_elements.nth(1)
@@ -63,12 +61,12 @@ def test_card_collapsed(page, port, card_components):
     card_button.click()
     assert card_button.inner_text() == "\u25ba"
     # only show the card header, other elements are hidden
-    assert card_elements.count() == 1
+    expect(card_elements).to_have_count(1)
 
     # expand the card again
     card_button.wait_for()
     card_button.click()
-    assert card_elements.count() == len(card) + 1
+    expect(card_elements).to_have_count(len(card) + 1)
     assert card_button.inner_text() == "\u25bc"
 
 
@@ -81,10 +79,10 @@ def test_card_not_collapsible(page, port, card_components):
 
     # no card button to disable collapsing the card
     card_button = page.locator('.bk.card-button')
-    assert card_button.count() == 0
+    expect(card_button).to_have_count(0)
     # card header and other inner objects
     card_elements = page.locator('.bk.card > .bk')
-    assert card_elements.count() == len(card) + 1
+    expect(card_elements).to_have_count(len(card) + 1)
 
 
 def test_card_hide_header(page, port, card_components):
@@ -96,11 +94,10 @@ def test_card_hide_header(page, port, card_components):
 
     # no card header
     card_header = page.locator('.bk.card-header')
-    assert card_header.count() == 0
+    expect(card_header).to_have_count(0)
     # only inner card objects
     card_elements = page.locator('.bk.card > .bk')
     expect(card_elements).to_have_count(len(card))
-    # assert card_elements.count() == len(card)
 
 
 def test_card_objects(page, port, card_components):
@@ -116,8 +113,7 @@ def test_card_objects(page, port, card_components):
 
     card_elements = page.locator('.bk.card > .bk')
     expect(card_elements).to_have_count(len(new_objects) + 1)
-    # num_elements = card_elements.count()
-    # assert num_elements == len(new_objects) + 1
+
     card_header = card_elements.nth(0)
     w2_object = card_elements.nth(1)
     assert 'card-header' in card_header.get_attribute('class')
@@ -190,8 +186,10 @@ def test_card_custom_css(page, port):
     page.goto(f"http://localhost:{port}")
 
     card_widget = page.locator(f'.bk.card.{additional_css_class}')
-    assert card_widget.count() == 1
+    expect(card_widget).to_have_count(1)
+
     card_header = page.locator(f'.bk.card-header.{additional_header_css_class}')
-    assert card_header.count() == 1
+    expect(card_header).to_have_count(1)
+
     card_button = page.locator(f'.bk.card-button.{additional_button_css_class}')
-    assert card_button.count() == 1
+    expect(card_button).to_have_count(1)
