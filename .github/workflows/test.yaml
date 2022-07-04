@@ -116,7 +116,7 @@ jobs:
 #          conda activate test-environment
 #          codecov
   ui_test_suite:
-    name: UI tests on ${{ matrix.os }} with Python 3.9
+    name: UI tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
