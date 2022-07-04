@@ -2,6 +2,7 @@ import datetime as dt
 import sys
 import time
 
+import param
 import pytest
 
 from bokeh.models.widgets.tables import (
@@ -42,6 +43,47 @@ def df_mixed():
         'datetime': [dt.datetime(2019, 1, 1, 10), dt.datetime(2020, 1, 1, 12), dt.datetime(2020, 1, 10, 13), dt.datetime(2020, 1, 15, 13)]
     }, index=['idx0', 'idx1', 'idx2', 'idx3'])
     return df
+
+
+@pytest.fixture(scope='session')
+def df_mixed_as_string():
+    return """
+        index
+        int
+        float
+        str
+        bool
+        date
+        datetime
+        idx0
+        1
+        3.14
+        A
+        true
+        2019-01-01
+        2019-01-01 10:00:00
+        idx1
+        2
+        6.28
+        B
+        true
+        2020-01-01
+        2020-01-01 12:00:00
+        idx2
+        3
+        9.42
+        C
+        true
+        2020-01-10
+        2020-01-10 13:00:00
+        idx3
+        4
+        -2.45
+        D
+        false
+        2019-01-10
+        2020-01-15 13:00:00
+    """
 
 
 @pytest.fixture
@@ -144,7 +186,7 @@ def count_per_page(count: int, page_size: int):
     return count_per_page
 
 
-def test_tabulator_default(page, port, df_mixed):
+def test_tabulator_default(page, port, df_mixed, df_mixed_as_string):
     nrows, ncols = df_mixed.shape
     widget = Tabulator(df_mixed)
 
@@ -159,7 +201,7 @@ def test_tabulator_default(page, port, df_mixed):
     # Check that the whole table content is on the page
     table = page.locator('.bk.pnx-tabulator.tabulator')
     expect(table).to_have_text(
-        'index\nint\nfloat\nstr\nbool\ndate\ndatetime\nidx0\n1\n3.14\nA\ntrue\n2019-01-01\n2019-01-01 10:00:00\nidx1\n2\n6.28\nB\ntrue\n2020-01-01\n2020-01-01 12:00:00\nidx2\n3\n9.42\nC\ntrue\n2020-01-10\n2020-01-10 13:00:00\nidx3\n4\n-2.45\nD\nfalse\n2019-01-10\n2020-01-15 13:00:00',  # noqa
+        df_mixed_as_string,
         use_inner_text=True
     )
 
@@ -454,8 +496,66 @@ def test_tabulator_formatters_bokeh_scientific(page, port, df_mixed):
     assert page.locator('text="nan-float"').count() == 1
 
 
-def test_tabulator_formatters_tabulator():
-    pass
+def test_tabulator_formatters_tabulator_str(page, port, df_mixed):
+    widget = Tabulator(
+        df_mixed,
+        formatters={'int': 'star'},
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # The star formatter renders with svg icons.
+    cells = page.locator(".tabulator-cell", has=page.locator("svg"))
+    expect(cells).to_have_count(len(df_mixed))
+
+
+def test_tabulator_formatters_tabulator_dict(page, port, df_mixed):
+    nstars = 10
+    widget = Tabulator(
+        df_mixed,
+        formatters={'int': {'type': 'star', 'stars': nstars}},
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # The star formatter renders with svg icons.
+    cells = page.locator(".tabulator-cell", has=page.locator("svg"))
+    expect(cells).to_have_count(len(df_mixed))
+
+    stars = page.locator('svg')
+    assert stars.count() == len(df_mixed) * nstars
+
+
+def test_tabulator_formatters_after_init(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Wait until the table is rendered
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
+
+    # Formatters can be set after initialization, the table should be
+    # updated accordingly
+    widget.formatters = {
+        'str': HTMLTemplateFormatter(template='<p style="font-weight: bold;"><%= value %></p>'),
+    }
+
+    expect(page.locator('text="A"')).to_have_attribute(
+        "style",
+        "font-weight: bold;"
+    )
 
 
 def test_tabulator_editors_bokeh():
@@ -466,20 +566,324 @@ def test_tabulator_editors_tabulator():
     pass
 
 
-def test_tabulator_column_layouts():
-    pass
+@pytest.mark.parametrize('layout', Tabulator.param['layout'].objects)
+def test_tabulator_column_layouts(page, port, df_mixed, layout):
+    widget = Tabulator(df_mixed, layout=layout)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    layout_mapping = {
+        "fit_data": "fitData",
+        "fit_data_fill": "fitDataFill",
+        "fit_data_stretch": "fitDataStretch",
+        "fit_data_table": "fitDataTable",
+        "fit_columns": "fitColumns",
+    }
+
+    expected_layout = layout_mapping[layout]
+
+    expect(page.locator('.pnx-tabulator')).to_have_attribute('tabulator-layout', expected_layout)
 
 
-def test_tabulator_alignment():
-    pass
+def test_tabulator_alignment_header_default(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # The default header alignment is left
+    for col in df_mixed.columns:
+        expect(page.locator(f'text="{col}"')).to_have_css('text-align', 'left')
 
 
-def test_tabulator_frozen_columns():
-    pass
+def test_tabulator_alignment_text_default(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    findex = df_mixed.index[0]
+    cell = page.locator(f'text="{findex}"')
+    # Indexes are left aligned
+    expect(cell).to_have_css('text-align', 'left')
+
+    val = df_mixed.at[findex, 'int']
+    # Selecting the visible 1 as there's a non displayed 1 in the hidden index
+    cell = page.locator(f'text="{val}" >> visible=true')
+    # Integers are right aligned
+    expect(cell).to_have_css('text-align', 'right')
+
+    val = df_mixed.at[findex, 'float']
+    cell = page.locator(f'text="{val}"')
+    # Floats are right aligned
+    expect(cell).to_have_css('text-align', 'right')
+
+    val = df_mixed.at[findex, 'bool']
+    val = 'true' if val else 'false'
+    cell = page.locator(f'text="{val}"').first
+    # Booleans are centered
+    expect(cell).to_have_css('text-align', 'center')
+
+    val = df_mixed.at[findex, 'datetime']
+    val = val.strftime('%Y-%m-%d %H:%M:%S')
+    cell = page.locator(f'text="{val}"')
+    # Datetimes are right aligned
+    expect(cell).to_have_css('text-align', 'right')
+
+    val = df_mixed.at[findex, 'str']
+    cell = page.locator(f'text="{val}"')
+    # Other types are left aligned
+    expect(cell).to_have_css('text-align', 'left')
+
+
+def test_tabulator_alignment_header_str(page, port, df_mixed):
+    halign = 'center'
+    widget = Tabulator(df_mixed, header_align=halign)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    for col in df_mixed.columns:
+        expect(page.locator(f'text="{col}"')).to_have_css('text-align', halign)
+
+
+def test_tabulator_alignment_header_dict(page, port, df_mixed):
+    halign = {'int': 'left'}
+    widget = Tabulator(df_mixed, header_align=halign)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # for col in df_mixed.columns:
+    for col, align in halign.items():
+        expect(page.locator(f'text="{col}"')).to_have_css('text-align', align)
+
+
+def test_tabulator_alignment_text_str(page, port, df_mixed):
+    talign = 'center'
+    widget = Tabulator(df_mixed, text_align=talign)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cells = page.locator('.tabulator-cell:visible')
+
+    expect(cells).to_have_count(len(df_mixed) * (df_mixed.shape[1] + 1))
+
+    for i in range(cells.count()):
+        expect(cells.nth(i)).to_have_css('text-align', talign)
+
+
+def test_tabulator_frozen_columns(page, port, df_mixed):
+    widths = 50
+    width = int(((df_mixed.shape[1] + 1) * widths) / 2)
+    frozen_cols = ['float', 'int']
+    widget = Tabulator(df_mixed, frozen_columns=frozen_cols, width=width, widths=widths)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expected_text = """
+    float
+    int
+    index
+    str
+    bool
+    date
+    datetime
+    3.14
+    1
+    idx0
+    A
+    true
+    2019-01-01
+    2019-01-01 10:00:00
+    6.28
+    2
+    idx1
+    B
+    true
+    2020-01-01
+    2020-01-01 12:00:00
+    9.42
+    3
+    idx2
+    C
+    true
+    2020-01-10
+    2020-01-10 13:00:00
+    -2.45
+    4
+    idx3
+    D
+    false
+    2019-01-10
+    2020-01-15 13:00:00
+    """
+    # Check that the whole table content is on the page, it is not in the
+    # same order as if the table was displayed without frozen columns
+    table = page.locator('.bk.pnx-tabulator.tabulator')
+    expect(table).to_have_text(
+        expected_text,
+        use_inner_text=True
+    )
+
+    float_bb = page.locator('text="float"').bounding_box()
+    int_bb = page.locator('text="int"').bounding_box()
+    bool_bb = page.locator('text="bool"').bounding_box()
+
+    # Check that the float column is rendered before the int column
+    assert float_bb['x'] < int_bb['x']
+
+    # Might be a little brittle, setting the mouse somewhere in the table
+    # and scroll right
+    page.mouse.move(x=int(width/2), y=40)
+    page.mouse.wheel(delta_x=int(width*10), delta_y=0)
+    # Give it time to scroll
+    page.wait_for_timeout(100)
+
+    # Check that the two frozen columns haven't moved after scrolling right
+    assert float_bb == page.locator('text="float"').bounding_box()
+    assert int_bb == page.locator('text="int"').bounding_box()
+    # But check that the position of one of the non frozen columns has indeed moved
+    assert bool_bb['x'] > page.locator('text="bool"').bounding_box()['x']
+
+
+
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3669')
+def test_tabulator_patch_no_horizontal_rescroll(page, port, df_mixed):
+    widths = 50
+    width = int(((df_mixed.shape[1] + 1) * widths) / 2)
+    df_mixed['tomodify'] = 'target'
+    widget = Tabulator(df_mixed, width=width, widths=widths)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Might be a little brittle, setting the mouse somewhere in the table
+    # and scroll right
+    page.mouse.move(x=int(width/2), y=40)
+    page.mouse.wheel(delta_x=int(width * 10), delta_y=0)
+    # Give it time to scroll
+    page.wait_for_timeout(100)
+
+    bb = page.locator('text="tomodify"').bounding_box()
+    # Patch a cell in the latest column
+    widget.patch({'tomodify': [(0, 'target-modified')]}, as_index=False)
+
+    # The table should keep the same scroll position, this fails
+    assert bb == page.locator('text="tomodify"').bounding_box()
+
+
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3249')
+def test_tabulator_patch_no_vertical_rescroll(page, port):
+    size = 100
+    arr = np.random.choice(list('abcd'), size=size)
+
+    target, new_val = 'X', 'Y'
+    arr[-1] = target
+    df = pd.DataFrame({'col': arr})
+    height, width = 100, 200
+    widget = Tabulator(df, height=100, width=width)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Might be a little brittle, setting the mouse somewhere in the table
+    # and scroll down
+    page.mouse.move(x=int(width/2), y=int(height/2))
+    page.mouse.wheel(delta_x=0, delta_y=10000)
+    # Give it time to scroll
+    page.wait_for_timeout(200)
+
+    bb = page.locator(f'text="{target}"').bounding_box()
+    # Patch a cell in the latest row
+    widget.patch({'col': [(size-1, new_val)]})
+
+    # Wait for a potential rescroll
+    page.wait_for_timeout(200)
+    # The table should keep the same scroll position, this fails
+    assert bb == page.locator(f'text="{new_val}"').bounding_box()
+
+
+@pytest.mark.parametrize(
+    'pagination',
+    (
+        pytest.param('local', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3553')),
+        pytest.param('remote', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3553')),
+        None,
+    )
+)
+def test_tabulator_header_filter_no_horizontal_rescroll(page, port, df_mixed, pagination):
+    widths = 100
+    width = int(((df_mixed.shape[1] + 1) * widths) / 2)
+    col_name = 'newcol'
+    df_mixed[col_name] = 'on'
+    widget = Tabulator(
+        df_mixed,
+        width=width,
+        widths=widths,
+        header_filters={col_name: {'type': 'input', 'func': 'like'}},
+        pagination=pagination
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Might be a little brittle, setting the mouse somewhere in the table
+    # and scroll right
+    page.mouse.move(x=int(width/2), y=80)
+    page.mouse.wheel(delta_x=int(width * 10), delta_y=0)
+    # Give it time to scroll
+    page.wait_for_timeout(200)
+
+    bb = page.locator(f'text="{col_name}"').bounding_box()
+
+    header = page.locator('input[type="search"]')
+    header.click()
+    header.fill('off')
+    header.press('Enter')
+
+    # Give it time to scroll
+    page.wait_for_timeout(200)
+
+    # The table should keep the same scroll position, this fails
+    assert bb == page.locator(f'text="{col_name}"').bounding_box()
 
 
 @pytest.mark.parametrize('theme', Tabulator.param['theme'].objects)
-def test_tabulator_theming(page, port, df_mixed, theme):
+def test_tabulator_theming(page, port, df_mixed, df_mixed_as_string, theme):
     # Subscribe the reponse events to check that the CSS is loaded
     responses = []
     page.on("response", lambda response: responses.append(response))
@@ -494,7 +898,7 @@ def test_tabulator_theming(page, port, df_mixed, theme):
     # Check that the whole table content is on the page
     table = page.locator('.bk.pnx-tabulator.tabulator')
     expect(table).to_have_text(
-        'index\nint\nfloat\nstr\nbool\ndate\ndatetime\nidx0\n1\n3.14\nA\ntrue\n2019-01-01\n2019-01-01 10:00:00\nidx1\n2\n6.28\nB\ntrue\n2020-01-01\n2020-01-01 12:00:00\nidx2\n3\n9.42\nC\ntrue\n2020-01-10\n2020-01-10 13:00:00\nidx3\n4\n-2.45\nD\nfalse\n2019-01-10\n2020-01-15 13:00:00',  # noqa
+        df_mixed_as_string,
         use_inner_text=True
     )
     found = False
@@ -1126,6 +1530,40 @@ def test_tabulator_filter_constant_tuple_range(page, port, df_mixed):
     assert widget.current_view.equals(expected_current_view)
 
 
+def test_tabulator_filter_param(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    class P(param.Parameterized):
+        s = param.String()
+
+    filt_val, filt_col = 'A', 'str'
+    p = P(s=filt_val)
+    widget.add_filter(p.param['s'], column=filt_col)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    df_filtered = df_mixed.loc[df_mixed[filt_col] == filt_val, :]
+
+    wait_until(page, lambda: widget.current_view.equals(df_filtered))
+
+    # Check the table has the right number of rows
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))
+
+    for filt_val in ['B', 'NOT']:
+        p.s = filt_val
+        page.wait_for_timeout(200)
+        df_filtered = df_mixed.loc[df_mixed[filt_col] == filt_val, :]
+
+        wait_until(page, lambda: widget.current_view.equals(df_filtered))
+
+        # Check the table has the right number of rows
+        expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))
+
+
 @pytest.mark.parametrize(
     'cols',
     [
@@ -1693,6 +2131,7 @@ def test_tabulator_edit_event_and_header_filters(page, port):
     assert widget.value.equals(df)
     assert widget.current_view.equals(widget.value)
 
+
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
 @pytest.mark.parametrize('pagination', ['remote', 'local', 'no_pagination'])
@@ -1771,11 +2210,14 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pa
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
+@pytest.mark.parametrize('header_filter', ['no_header_filter'])  # TODO: add header_filter
 @pytest.mark.parametrize('pagination', ['remote', 'local', 'no_pagination'])
-def test_tabulator_click_event_integrations(page, port, sorter, python_filter, pagination):
+def test_tabulator_click_event_selection_integrations(page, port, sorter, python_filter, header_filter, pagination):
     sorter_col = 'col3'
     python_filter_col = 'col2'
     python_filter_val = 'd'
+    header_filter_col = 'col1'
+    header_filter_val = 'Y'
     target_col = 'col4'
     target_val = 'F'
 
@@ -1790,9 +2232,10 @@ def test_tabulator_click_event_integrations(page, port, sorter, python_filter, p
 
     kwargs = {}
     if pagination != 'no_pagination':
-        kwargs = dict(pagination=pagination, page_size=2)
-
-    widget = Tabulator(df, **kwargs)
+        kwargs.update(dict(pagination=pagination, page_size=2))
+    if header_filter == 'header_filter':
+        kwargs.update(dict(header_filters={header_filter_col: {'type': 'input', 'func': 'like'}}))
+    widget = Tabulator(df, disabled=True, **kwargs)
 
     if python_filter == 'python_filter':
         widget.add_filter(python_filter_val, python_filter_col)
@@ -1819,7 +2262,14 @@ def test_tabulator_click_event_integrations(page, port, sorter, python_filter, p
         page.locator('text="Last"').click()
         page.wait_for_timeout(100)
 
-    # Change the cell concent
+    if header_filter == 'header_filter':
+        str_header = page.locator('input[type="search"]')
+        str_header.click()
+        str_header.fill(header_filter_val)
+        str_header.press('Enter')
+        page.wait_for_timeout(100)
+
+    # Click on the cell
     cell = page.locator(f'text="{target_val}"')
     cell.click()
 
@@ -1830,3 +2280,94 @@ def test_tabulator_click_event_integrations(page, port, sorter, python_filter, p
         if pagination == 'remote' and sorter == 'sorter':
             pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3663')
     assert values[0] == (target_col, target_index, target_val)
+    wait_until(page, lambda: widget.selection == [target_index])
+    if pagination in ['local', 'no_pagination'] and python_filter == 'no_python_filter' and sorter == 'sorter':
+        pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
+    expected_selected = df.iloc[[target_index], :]
+    assert widget.selected_dataframe.equals(expected_selected)
+
+
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
+def test_tabulator_selection_sorters_on_init(page, port, df_mixed):
+    widget = Tabulator(df_mixed, sorters=[{'field': 'int', 'dir': 'desc'}])
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Click on the last index cell to select it
+    last_index = df_mixed.index[-1]
+    cell = page.locator(f'text="{last_index}"')
+    cell.click()
+
+    wait_until(page, lambda: widget.selection == [len(df_mixed) - 1])
+    expected_selected = df_mixed.loc[[last_index], :]
+    assert widget.selected_dataframe.equals(expected_selected)  # This fails
+
+
+@pytest.mark.xfail(reason='https://github.com/holoviz/panel/issues/3664')
+def test_tabulator_selection_header_filter_unchanged(page, port):
+    df = pd.DataFrame({
+        'col1': list('XYYYYY'),
+        'col2': list('abcddd'),
+        'col3': list('ABCDEF')
+    })
+    selection = [2, 3]
+    widget = Tabulator(
+        df,
+        selection=selection,
+        header_filters={'col1': {'type': 'input', 'func': 'like'}}
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    str_header.fill('Y')
+    str_header.press('Enter')
+    page.wait_for_timeout(100)
+
+    assert widget.selection == selection
+    expected_selected = df.iloc[selection, :]
+    assert widget.selected_dataframe.equals(expected_selected)
+
+
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3670')
+def test_tabulator_selection_header_filter_changed(page, port):
+    df = pd.DataFrame({
+        'col1': list('XYYYYY'),
+        'col2': list('abcddd'),
+        'col3': list('ABCDEF')
+    })
+    selection = [0, 3]
+    widget = Tabulator(
+        df,
+        selection=selection,
+        header_filters={'col1': {'type': 'input', 'func': 'like'}}
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    str_header.fill('Y')
+    str_header.press('Enter')
+    page.wait_for_timeout(100)
+
+    assert widget.selection == selection
+    expected_selected = df.iloc[selection, :]
+    assert widget.selected_dataframe.equals(expected_selected)
+
+
+def test_tabulator_loading():
+    pass
