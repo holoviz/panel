@@ -91,6 +91,10 @@ class _config(_base_config):
     >>> pn.config.loading_spinner = 'bar'
     """
 
+    admin_plugins = param.List([], item_type=tuple, doc="""
+        A list of tuples containing a title and a function that returns
+        an additional panel to be rendered into the admin page.""")
+
     apply_signatures = param.Boolean(default=True, doc="""
         Whether to set custom Signature which allows tab-completion
         in some IDEs and environments.""")
@@ -209,11 +213,12 @@ class _config(_base_config):
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
+    # Global parameters that are shared across all sessions
     _globals = [
-        'autoreload', 'comms', 'cookie_secret', 'nthreads',
-        'oauth_provider', 'oauth_expiry', 'oauth_key', 'oauth_secret',
-        'oauth_jwt_user', 'oauth_redirect_uri','oauth_encryption_key',
-        'oauth_extra_params'
+        'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
+        'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
+        'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
+        'oauth_encryption_key', 'oauth_extra_params',
     ]
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -293,6 +298,12 @@ class _config(_base_config):
         panel_log_handler.setLevel(self._log_level)
 
     def __getattribute__(self, attr):
+        """
+        Ensures that configuration parameters that are defined per
+        session are stored in a per-session dictionary. This is to
+        ensure that even on first access mutable parameters do not
+        end up being modified.
+        """
         from .io.state import state
         init = super().__getattribute__('initialized')
         global_params = super().__getattribute__('_globals')
