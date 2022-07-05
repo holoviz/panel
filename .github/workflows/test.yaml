@@ -113,6 +113,8 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
+          files: ./coverage.xml
+          flags: unit-tests/example-tests
           fail_ci_if_error: false # optional (default = false)
       # - name: codecov
       #   run: |
@@ -186,6 +188,8 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
+          files: ./coverage.xml
+          flags: ui-tests
           fail_ci_if_error: false # optional (default = false)
       # - name: codecov
       #   run: |
