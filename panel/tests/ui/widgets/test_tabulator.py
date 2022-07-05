@@ -822,14 +822,14 @@ def test_tabulator_patch_no_vertical_rescroll(page, port):
     page.mouse.move(x=int(width/2), y=int(height/2))
     page.mouse.wheel(delta_x=0, delta_y=10000)
     # Give it time to scroll
-    page.wait_for_timeout(200)
+    page.wait_for_timeout(400)
 
     bb = page.locator(f'text="{target}"').bounding_box()
     # Patch a cell in the latest row
     widget.patch({'col': [(size-1, new_val)]})
 
     # Wait for a potential rescroll
-    page.wait_for_timeout(200)
+    page.wait_for_timeout(400)
     # The table should keep the same scroll position, this fails
     assert bb == page.locator(f'text="{new_val}"').bounding_box()
 
