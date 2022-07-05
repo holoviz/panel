@@ -822,7 +822,7 @@ def test_tabulator_patch_no_vertical_rescroll(page, port):
     page.mouse.move(x=int(width/2), y=int(height/2))
     page.mouse.wheel(delta_x=0, delta_y=10000)
     # Give it time to scroll
-    page.wait_for_timeout(400)
+    page.wait_for_timeout(800)
 
     bb = page.locator(f'text="{target}"').bounding_box()
     # Patch a cell in the latest row
@@ -866,7 +866,7 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, port, df_mixed, pa
     page.mouse.move(x=int(width/2), y=80)
     page.mouse.wheel(delta_x=int(width * 10), delta_y=0)
     # Give it time to scroll
-    page.wait_for_timeout(200)
+    page.wait_for_timeout(400)
 
     bb = page.locator(f'text="{col_name}"').bounding_box()
 
@@ -876,7 +876,7 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, port, df_mixed, pa
     header.press('Enter')
 
     # Give it time to scroll
-    page.wait_for_timeout(200)
+    page.wait_for_timeout(400)
 
     # The table should keep the same scroll position, this fails
     assert bb == page.locator(f'text="{col_name}"').bounding_box()
@@ -2175,13 +2175,13 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pa
         s.click()
         # Having to wait when pagination is set to remote before the next click,
         # maybe there's a better way.
-        page.wait_for_timeout(100)
+        page.wait_for_timeout(200)
         s.click()
-        page.wait_for_timeout(100)
+        page.wait_for_timeout(200)
 
     if pagination != 'no_pagination' and sorter == 'no_sorter':
         page.locator('text="Last"').click()
-        page.wait_for_timeout(100)
+        page.wait_for_timeout(200)
 
     # Change the cell concent
     cell = page.locator(f'text="{target_val}"')
