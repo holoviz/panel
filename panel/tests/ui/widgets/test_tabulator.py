@@ -6,8 +6,10 @@ import param
 import pytest
 
 from bokeh.models.widgets.tables import (
-    BooleanFormatter, DateFormatter, HTMLTemplateFormatter, NumberFormatter,
-    ScientificFormatter, StringFormatter,
+    BooleanFormatter, CheckboxEditor, DateEditor, DateFormatter,
+    HTMLTemplateFormatter, IntEditor, NumberEditor, NumberFormatter,
+    ScientificFormatter, SelectEditor, StringEditor, StringFormatter,
+    TextEditor,
 )
 
 try:
@@ -291,6 +293,42 @@ def test_tabulator_titles(page, port, df_mixed):
         expect(page.locator(f'text="{expected_title}"')).to_have_count(1)
 
 
+def test_tabulator_hidden_columns(page, port, df_mixed):
+    widget = Tabulator(df_mixed, hidden_columns=['float', 'date', 'datetime'])
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expected_text = """
+        index
+        int
+        str
+        bool
+        idx0
+        1
+        A
+        true
+        idx1
+        2
+        B
+        true
+        idx2
+        3
+        C
+        true
+        idx3
+        4
+        D
+        false
+    """
+    # Check that the whole table content is on the page
+    table = page.locator('.bk.pnx-tabulator.tabulator')
+    expect(table).to_have_text(expected_text, use_inner_text=True)
+
+
 def test_tabulator_buttons_display(page, port, df_mixed):
     nrows, ncols = df_mixed.shape
     icon_text = 'icon'
@@ -558,12 +596,257 @@ def test_tabulator_formatters_after_init(page, port, df_mixed):
     )
 
 
-def test_tabulator_editors_bokeh():
-    pass
+def test_tabulator_editors_bokeh_string(page, port, df_mixed):
+    widget = Tabulator(df_mixed, editors={'str': StringEditor()})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="A"')
+    cell.click()
+    # A StringEditor is turned into an input text tabulator editor
+    expect(page.locator('input[type="text"]')).to_have_count(1)
 
 
-def test_tabulator_editors_tabulator():
-    pass
+def test_tabulator_editors_bokeh_string_completions(page, port, df_mixed):
+    widget = Tabulator(df_mixed, editors={'str': StringEditor(completions=['AAA'])})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="A"')
+    cell.click()
+    # A StringEditor with completions is turned into an autocomplete
+    # tabulator editor.
+    expect(page.locator('text="AAA"')).to_have_count(1)
+
+
+def test_tabulator_editors_bokeh_text(page, port, df_mixed):
+    widget = Tabulator(df_mixed, editors={'str': TextEditor()})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="A"')
+    cell.click()
+    # A TextEditor with completions is turned into a textarea
+    # tabulator editor.
+    expect(page.locator('textarea')).to_have_count(1)
+
+
+def test_tabulator_editors_bokeh_int(page, port, df_mixed):
+    step = 2
+    widget = Tabulator(df_mixed, editors={'int': IntEditor(step=step)})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="1" >> visible=true')
+    cell.click()
+    # An IntEditor with step is turned into a number tabulator editor
+    # with step respected
+    input = page.locator('input[type="number"]')
+    expect(input).to_have_count(1)
+    assert int(input.get_attribute('step')) == step
+
+
+def test_tabulator_editors_bokeh_number(page, port, df_mixed):
+    step = 0.1
+    widget = Tabulator(df_mixed, editors={'float': NumberEditor(step=step)})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="3.14"')
+    cell.click()
+    # A NumberEditor with step is turned into a number tabulator editor
+    # with step respected
+    input = page.locator('input[type="number"]')
+    expect(input).to_have_count(1)
+    assert input.get_attribute('step') == str(step)
+
+
+def test_tabulator_editors_bokeh_checkbox(page, port, df_mixed):
+    widget = Tabulator(df_mixed, editors={'bool': CheckboxEditor()})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="true"').first
+    cell.click()
+    # A CheckboxEditor is turned into a tickCross tabulator editor
+    input = page.locator('input[type="checkbox"]')
+    expect(input).to_have_count(1)
+    assert input.get_attribute('value') == "true"
+
+
+def test_tabulator_editors_bokeh_date(page, port, df_mixed):
+    widget = Tabulator(df_mixed, editors={'date': DateEditor()})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="2019-01-01"')
+    cell.click()
+    # A DateEditor is turned into a Panel date editor
+    expect(page.locator('input[type="date"]')).to_have_count(1)
+
+
+def test_tabulator_editors_bokeh_select(page, port, df_mixed):
+    widget = Tabulator(df_mixed, editors={'str': SelectEditor(options=['option1'])})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="A"')
+    cell.click()
+    # A SelectEditor with options is turned into a select tabulator editor.
+    expect(page.locator('text="option1"')).to_have_count(1)
+
+
+def test_tabulator_editors_panel_date(page, port, df_mixed):
+    widget = Tabulator(df_mixed, editors={'date': 'date'})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="2019-01-01"')
+    cell.click()
+    # A date editor is turned into an date input
+    cell_edit = page.locator('input[type="date"]')
+    new_date = "1980-01-01"
+    cell_edit.fill(new_date)
+    # Need to Enter to validate the change
+    page.locator('input[type="date"]').press('Enter')
+    expect(page.locator(f'text="{new_date}"')).to_have_count(1)
+    new_date = dt.datetime.strptime(new_date, '%Y-%m-%d').date()
+    assert new_date in widget.value['date'].tolist()
+
+    cell = page.locator(f'text="{new_date}"')
+    cell.click()
+    cell_edit = page.locator('input[type="date"]')
+    new_date2 = "1990-01-01"
+    cell_edit.fill(new_date2)
+    # Escape invalidates the change
+    page.locator('input[type="date"]').press('Escape')
+    expect(page.locator(f'text="{new_date2}"')).to_have_count(0)
+    new_date2 = dt.datetime.strptime(new_date2, '%Y-%m-%d').date()
+    assert new_date2 not in widget.value['date'].tolist()
+
+
+def test_tabulator_editors_panel_datetime(page, port, df_mixed):
+    widget = Tabulator(df_mixed, editors={'datetime': 'datetime'})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="2019-01-01 10:00:00"')
+    cell.click()
+    # A date editor is turned into an date input
+    cell_edit = page.locator('input[type="datetime-local"]')
+    new_datetime = dt.datetime(1980, 11, 30, 4, 51, 0)
+    time_to_fill = new_datetime.isoformat()
+    # Somehow the seconds don't seem to be handled by datetime-local
+    time_to_fill = time_to_fill[:-3]
+    cell_edit.fill(time_to_fill)
+    # Need to Enter to validate the change
+    page.locator('input[type="datetime-local"]').press('Enter')
+    new_datetime_display = new_datetime.strftime('%Y-%m-%d %H:%M:%S')
+    expect(page.locator(f'text="{new_datetime_display}"')).to_have_count(1)
+    assert new_datetime in widget.value['datetime'].tolist()
+
+    cell = page.locator(f'text="{new_datetime_display}"')
+    cell.click()
+    cell_edit = page.locator('input[type="datetime-local"]')
+    new_datetime2 = dt.datetime(1990, 3, 31, 12, 45, 0)
+    time_to_fill2 = new_datetime2.isoformat()
+    time_to_fill2 = time_to_fill2[:-3]
+    cell_edit.fill(time_to_fill2)
+    # Escape invalidates the change
+    page.locator('input[type="datetime-local"]').press('Escape')
+    new_datetime_display2 = new_datetime2.strftime('%Y-%m-%d %H:%M:%S')
+    expect(page.locator(f'text="{new_datetime_display2}"')).to_have_count(0)
+    assert new_datetime2 not in widget.value['datetime'].tolist()
+
+
+def test_tabulator_editors_tabulator_disable_one(page, port, df_mixed):
+    widget = Tabulator(
+        df_mixed,
+        editors={'float': None},
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    page.locator('text="3.14"').click()
+    page.wait_for_timeout(200)
+    expect(page.locator('input[type="number"]')).to_have_count(0)
+
+
+def test_tabulator_editors_tabulator_str(page, port, df_mixed):
+    widget = Tabulator(df_mixed, editors={'str': 'textarea'})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="A"')
+    cell.click()
+    expect(page.locator('textarea')).to_have_count(1)
+
+
+def test_tabulator_editors_tabulator_dict(page, port, df_mixed):
+    widget = Tabulator(
+        df_mixed,
+        editors={'str': {'type': 'textarea', 'elementAttributes': {'maxlength': '10'}}}
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="A"')
+    cell.click()
+    textarea = page.locator('textarea')
+    expect(textarea).to_have_count(1)
+    assert textarea.get_attribute('maxlength') == "10"
 
 
 @pytest.mark.parametrize('layout', Tabulator.param['layout'].objects)
@@ -774,7 +1057,7 @@ def test_tabulator_frozen_columns(page, port, df_mixed):
 
 @pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3669')
 def test_tabulator_patch_no_horizontal_rescroll(page, port, df_mixed):
-    widths = 50
+    widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
     df_mixed['tomodify'] = 'target'
     widget = Tabulator(df_mixed, width=width, widths=widths)
@@ -785,31 +1068,31 @@ def test_tabulator_patch_no_horizontal_rescroll(page, port, df_mixed):
 
     page.goto(f"http://localhost:{port}")
 
-    # Might be a little brittle, setting the mouse somewhere in the table
-    # and scroll right
-    page.mouse.move(x=int(width/2), y=40)
-    page.mouse.wheel(delta_x=int(width * 10), delta_y=0)
-    # Give it time to scroll
-    page.wait_for_timeout(100)
-
+    cell = page.locator('text="target"').first
+    # Scroll to the right
+    cell.scroll_into_view_if_needed()
+    page.wait_for_timeout(200)
     bb = page.locator('text="tomodify"').bounding_box()
     # Patch a cell in the latest column
     widget.patch({'tomodify': [(0, 'target-modified')]}, as_index=False)
 
-    # The table should keep the same scroll position, this fails
+    # Catch a potential rescroll
+    page.wait_for_timeout(400)
+    # The table should keep the same scroll position
+    # This fails
     assert bb == page.locator('text="tomodify"').bounding_box()
 
 
 @pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3249')
 def test_tabulator_patch_no_vertical_rescroll(page, port):
-    size = 100
+    size = 10
     arr = np.random.choice(list('abcd'), size=size)
 
     target, new_val = 'X', 'Y'
     arr[-1] = target
     df = pd.DataFrame({'col': arr})
     height, width = 100, 200
-    widget = Tabulator(df, height=100, width=width)
+    widget = Tabulator(df, height=height, width=width)
 
     serve(widget, port=port, threaded=True, show=False)
 
@@ -817,20 +1100,27 @@ def test_tabulator_patch_no_vertical_rescroll(page, port):
 
     page.goto(f"http://localhost:{port}")
 
+    # Scroll to the bottom
+    target_cell = page.locator(f'text="{target}"')
+    target_cell.scroll_into_view_if_needed()
+    page.wait_for_timeout(400)
+    # Unfortunately that doesn't scroll down quite enough, it's missing
+    # a little scroll down so we do it manually which is more brittle.
     # Might be a little brittle, setting the mouse somewhere in the table
     # and scroll down
     page.mouse.move(x=int(width/2), y=int(height/2))
     page.mouse.wheel(delta_x=0, delta_y=10000)
     # Give it time to scroll
-    page.wait_for_timeout(800)
+    page.wait_for_timeout(400)
 
     bb = page.locator(f'text="{target}"').bounding_box()
     # Patch a cell in the latest row
     widget.patch({'col': [(size-1, new_val)]})
 
-    # Wait for a potential rescroll
+    # Wait to catch a potential rescroll
     page.wait_for_timeout(400)
-    # The table should keep the same scroll position, this fails
+    # The table should keep the same scroll position
+    # This fails
     assert bb == page.locator(f'text="{new_val}"').bounding_box()
 
 
@@ -861,25 +1151,23 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, port, df_mixed, pa
 
     page.goto(f"http://localhost:{port}")
 
-    # Might be a little brittle, setting the mouse somewhere in the table
-    # and scroll right
-    page.mouse.move(x=int(width/2), y=80)
-    page.mouse.wheel(delta_x=int(width * 10), delta_y=0)
-    # Give it time to scroll
-    page.wait_for_timeout(400)
-
-    bb = page.locator(f'text="{col_name}"').bounding_box()
+    header = page.locator(f'text="{col_name}"')
+    # Scroll to the right
+    header.scroll_into_view_if_needed()
+    bb = header.bounding_box()
 
     header = page.locator('input[type="search"]')
     header.click()
     header.fill('off')
     header.press('Enter')
 
-    # Give it time to scroll
+    # Wait to catch a potential rescroll
     page.wait_for_timeout(400)
-
+    header = page.locator(f'text="{col_name}"')
+    header.wait_for()
     # The table should keep the same scroll position, this fails
-    assert bb == page.locator(f'text="{col_name}"').bounding_box()
+    assert bb == header.bounding_box()
+    # assert bb == page.locator(f'text="{col_name}"').bounding_box()
 
 
 @pytest.mark.parametrize('theme', Tabulator.param['theme'].objects)
@@ -1901,14 +2189,6 @@ def test_tabulator_configuration(page, port, df_mixed):
     page.goto(f"http://localhost:{port}")
 
     expect(page.locator(".tabulator-sortable")).to_have_count(0)
-
-
-def test_tabulator_editor_datetime():
-    pass
-
-
-def test_tabulator_editor_date():
-    pass
 
 
 @pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3620')
