@@ -386,7 +386,7 @@ class ReplacementPane(PaneBase):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.param}
         super().__init__(object, **params)
-        self._pane = Pane(None)
+        self._pane = panel(None)
         self._internal = True
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
         self.param.watch(self._update_inner_layout, list(Layoutable.param))
