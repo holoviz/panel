@@ -114,7 +114,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml
-          flags: unit-tests/example-tests
+          flags: unitexamples-tests
           fail_ci_if_error: false # optional (default = false)
       # - name: codecov
       #   run: |
