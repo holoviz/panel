@@ -2611,10 +2611,11 @@ def test_tabulator_selection_header_filter_unchanged(page, port):
     str_header.click()
     str_header.fill('Y')
     str_header.press('Enter')
-    page.wait_for_timeout(100)
+    page.wait_for_timeout(300)
 
     assert widget.selection == selection
     expected_selected = df.iloc[selection, :]
+    # This fails
     assert widget.selected_dataframe.equals(expected_selected)
 
 
@@ -2642,10 +2643,11 @@ def test_tabulator_selection_header_filter_changed(page, port):
     str_header.click()
     str_header.fill('Y')
     str_header.press('Enter')
-    page.wait_for_timeout(100)
+    page.wait_for_timeout(300)
 
     assert widget.selection == selection
     expected_selected = df.iloc[selection, :]
+    # This fails
     assert widget.selected_dataframe.equals(expected_selected)
 
 
