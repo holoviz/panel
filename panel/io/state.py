@@ -207,6 +207,9 @@ class _state(param.Parameterized):
     # Locks
     _cache_locks: ClassVar[Dict[str, threading.Lock]] = {'main': threading.Lock()}
 
+    # Sessions
+    _sessions = {}
+
     def __repr__(self) -> str:
         server_info = []
         for server, panel, docs in self._servers.values():

@@ -54,6 +54,9 @@ from bokeh.server.views.autoload_js_handler import (
 )
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.static_handler import StaticHandler
+from bokeh.util.token import (
+    generate_jwt_token, generate_session_id, get_token_payload,
+)
 # Tornado imports
 from tornado.ioloop import IOLoop
 from tornado.web import (
@@ -194,9 +197,9 @@ state.on_session_created(_initialize_session_info)
 #---------------------------------------------------------------------
 
 def server_html_page_for_session(
-    session: 'ServerSession', resources: 'Resources', title: str,
+    session: 'ServerSession', resources: 'Resources', title: str, token: str,
     template: str | Template = BASE_TEMPLATE,
-    template_variables: Optional[Dict[str, Any]] = None
+    template_variables: Optional[Dict[str, Any]] = None,
 ) -> str:
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
@@ -214,7 +217,7 @@ def server_html_page_for_session(
         patch_model_css(root, dist_url=dist_url)
 
     render_item = RenderItem(
-        token = session.token,
+        token = token,
         roots = session.document.roots,
         use_for_title = False,
     )
@@ -348,33 +351,54 @@ class SessionPrefixHandler:
 class DocHandler(BkDocHandler, SessionPrefixHandler):
 
     @authenticated
+    async def get_session(self, force=False, session_id=None):
+        from ..config import config
+        if config.reuse_sessions and self.request.uri in state._sessions and not force:
+            session = state._sessions[self.request.uri]
+        else:
+            session = await super().get_session()
+        if config.reuse_sessions:
+            state._sessions[self.request.uri] = session
+        return session
+
+    @authenticated
     async def get(self, *args, **kwargs):
+        from ..config import config
+        gen_session = config.reuse_sessions and self.request.uri in state._sessions
+        app = self.application
         with self._session_prefix():
             session = await self.get_session()
+            if gen_session:
+                session_id = generate_session_id(
+                    secret_key=self.application.secret_key,
+                    signed=self.application.sign_sessions
+                )
+                payload = get_token_payload(session.token)
+                token = generate_jwt_token(
+                    session_id,
+                    secret_key=app.secret_key,
+                    signed=app.sign_sessions,
+                    expiration=app.session_token_expiration,
+                    extra_payload=payload
+                )
+            else:
+                token = session.token
+            state.curdoc = session.document
             logger.info(LOG_SESSION_CREATED, id(session.document))
-            with set_curdoc(session.document):
-                if config.authorize_callback and not config.authorize_callback(state.user_info):
-                    if config.auth_template:
-                        with open(config.auth_template) as f:
-                            template = _env.from_string(f.read())
-                    else:
-                        template = ERROR_TEMPLATE
-                    page = template.render(
-                        npm_cdn=config.npm_cdn,
-                        title='Panel: Authorization Error',
-                        error_type='Authorization Error',
-                        error='User is not authorized.',
-                        error_msg=f'{state.user} is not authorized to access this application.'
-                    )
-                else:
-                    resources = Resources.from_bokeh(self.application.resources())
-                    page = server_html_page_for_session(
-                        session, resources=resources, title=session.document.title,
-                        template=session.document.template,
-                        template_variables=session.document.template_variables
-                    )
+            try:
+                resources = Resources.from_bokeh(self.application.resources())
+                page = server_html_page_for_session(
+                    session, resources=resources, title=session.document.title,
+                    token=token, template=session.document.template,
+                    template_variables=session.document.template_variables,
+                )
+            finally:
+                state.curdoc = None
         self.set_header("Content-Type", 'text/html')
         self.write(page)
+        if gen_session:
+            self.set_header('Bokeh-Session-Id', session_id)
+            asyncio.create_task(self.get_session(force=True))
 
 per_app_patterns[0] = (r'/?', DocHandler)
 

@@ -151,6 +151,13 @@ class _config(_base_config):
         'pyinstrument', 'snakeviz', 'memray'], doc="""
         The profiler engine to enable.""")
 
+    reuse_sessions = param.Boolean(default=False, doc="""
+        Whether to reuse a session for the initial request to speed up
+        the initial page render. Note that if the initial page differs
+        between sessions, e.g. because it uses query parameters to modify
+        the rendered content, then this option will result in the wrong
+        content being rendered.""")
+
     safe_embed = param.Boolean(default=False, doc="""
         Ensure all bokeh property changes trigger events which are
         embedded. Useful when only partial updates are made in an
