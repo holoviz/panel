@@ -351,24 +351,22 @@ class SessionPrefixHandler:
 class DocHandler(BkDocHandler, SessionPrefixHandler):
 
     @authenticated
-    async def get_session(self, force=False, session_id=None):
+    async def get_session(self):
         from ..config import config
-        if config.reuse_sessions and self.request.uri in state._sessions and not force:
+        if config.reuse_sessions and self.request.uri in state._sessions:
             session = state._sessions[self.request.uri]
         else:
             session = await super().get_session()
-        if config.reuse_sessions:
-            state._sessions[self.request.uri] = session
+            if config.reuse_sessions:
+                state._sessions[self.request.uri] = session
         return session
 
     @authenticated
     async def get(self, *args, **kwargs):
-        from ..config import config
-        gen_session = config.reuse_sessions and self.request.uri in state._sessions
         app = self.application
         with self._session_prefix():
             session = await self.get_session()
-            if gen_session:
+            if state._sessions.get(self.request.uri) is session:
                 session_id = generate_session_id(
                     secret_key=self.application.secret_key,
                     signed=self.application.sign_sessions
@@ -396,9 +394,6 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                 state.curdoc = None
         self.set_header("Content-Type", 'text/html')
         self.write(page)
-        if gen_session:
-            self.set_header('Bokeh-Session-Id', session_id)
-            asyncio.create_task(self.get_session(force=True))
 
 per_app_patterns[0] = (r'/?', DocHandler)
 
