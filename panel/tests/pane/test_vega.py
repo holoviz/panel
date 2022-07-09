@@ -13,8 +13,10 @@ altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
 
 import numpy as np
 
+import panel as pn
+
 from panel.models.vega import VegaPlot
-from panel.pane import Pane, PaneBase, Vega
+from panel.pane import PaneBase, Vega
 
 blank_schema = {'$schema': ''}
 
@@ -137,7 +139,7 @@ def test_get_vega_pane_type_from_dict():
 
 
 def test_vega_pane(document, comm):
-    pane = Pane(vega_example)
+    pane = pn.panel(vega_example)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -164,7 +166,7 @@ def test_vega_pane(document, comm):
 
 
 def test_vega_geometry_data(document, comm):
-    pane = Pane(gdf_example)
+    pane = pn.panel(gdf_example)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -175,7 +177,7 @@ def test_vega_geometry_data(document, comm):
 
 
 def test_vega_pane_inline(document, comm):
-    pane = Pane(vega_inline_example)
+    pane = pn.panel(vega_inline_example)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -209,7 +211,7 @@ def test_get_vega_pane_type_from_altair():
 
 @altair_available
 def test_altair_pane(document, comm):
-    pane = Pane(altair_example())
+    pane = pn.panel(altair_example())
 
     # Create pane
     model = pane.get_root(document, comm=comm)
