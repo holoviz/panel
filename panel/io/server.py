@@ -359,6 +359,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
             session = await super().get_session()
             if config.reuse_sessions:
                 state._sessions[self.request.uri] = session
+                session.block_expiration()
         return session
 
     @authenticated
