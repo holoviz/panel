@@ -1,3 +1,6 @@
+import sys
+import time
+
 import numpy as np
 import pytest
 
@@ -87,3 +90,78 @@ def check_layoutable_properties(layoutable, model):
 
     layoutable.height_policy = 'min'
     assert model.height_policy == 'min'
+
+
+def wait_until(page, fn, timeout=5000, interval=100):
+    """
+    Exercice a test function in a loop until it evaluates to True
+    or times out.
+
+    The function can either be a simple lambda that returns True or False:
+    >>> wait_until(page, lambda: x.values() == ['x'])
+
+    Or a defined function with an assert:
+    >>> def _()
+    >>>    assert x.values() == ['x']
+    >>> wait_until(page, _)
+
+    Parameters
+    ----------
+    page : playwright.sync_api.Page
+        Playwright page
+    fn : callable
+        Callback
+    timeout : int, optional
+        Total timeout in milliseconds, by default 5000
+    interval : int, optional
+        Waiting interval, by default 100
+
+    Adapted from pytest-qt.
+    """
+    # Hide this function traceback from the pytest output if the test fails
+    __tracebackhide__ = True
+
+    start = time.time()
+
+    def timed_out():
+        elapsed = time.time() - start
+        elapsed_ms = elapsed * 1000
+        return elapsed_ms > timeout
+
+    timeout_msg = f"wait_until timed out in {timeout} milliseconds"
+
+    while True:
+        try:
+            result = fn()
+        except AssertionError as e:
+            if timed_out():
+                raise TimeoutError(timeout_msg) from e
+        else:
+            if result not in (None, True, False):
+                raise ValueError(
+                    "`wait_until` callback must return None, True or "
+                    f"False, returned {result!r}"
+                )
+            # None is returned when the function has an assert
+            if result is None:
+                return
+            # When the function returns True or False
+            if result:
+                return
+            if timed_out():
+                raise TimeoutError(timeout_msg)
+        # Playwright recommends against using time.sleep
+        # https://playwright.dev/python/docs/intro#timesleep-leads-to-outdated-state
+        page.wait_for_timeout(interval)
+
+
+def get_ctrl_modifier():
+    """
+    Get the CTRL modifier on the current platform.
+    """
+    if sys.platform in ['linux', 'win32']:
+        return 'Control'
+    elif sys.platform == 'darwin':
+        return 'Meta'
+    else:
+        raise ValueError(f'No control modifier defined for platform {sys.platform}')
