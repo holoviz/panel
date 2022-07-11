@@ -906,7 +906,7 @@ def test_tabulator_alignment_text_str(page, port, df_mixed):
 
 
 def test_tabulator_frozen_columns(page, port, df_mixed):
-    widths = 50
+    widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
     frozen_cols = ['float', 'int']
     widget = Tabulator(df_mixed, frozen_columns=frozen_cols, width=width, widths=widths)
@@ -969,12 +969,9 @@ def test_tabulator_frozen_columns(page, port, df_mixed):
     # Check that the float column is rendered before the int column
     assert float_bb['x'] < int_bb['x']
 
-    # Might be a little brittle, setting the mouse somewhere in the table
-    # and scroll right
-    page.mouse.move(x=int(width/2), y=40)
-    page.mouse.wheel(delta_x=int(width*10), delta_y=0)
-    # Give it time to scroll
-    page.wait_for_timeout(100)
+    # Scroll to the right, and give it a little extra time
+    page.locator('text="2019-01-01 10:00:00"').scroll_into_view_if_needed()
+    page.wait_for_timeout(200)
 
     # Check that the two frozen columns haven't moved after scrolling right
     assert float_bb == page.locator('text="float"').bounding_box()
@@ -982,6 +979,66 @@ def test_tabulator_frozen_columns(page, port, df_mixed):
     # But check that the position of one of the non frozen columns has indeed moved
     assert bool_bb['x'] > page.locator('text="bool"').bounding_box()['x']
 
+
+def test_tabulator_frozen_rows(page, port):
+    arr = np.array(['a'] * 10)
+
+    arr[1] = 'X'
+    arr[-2] = 'Y'
+    arr[-1] = 'T'
+    df = pd.DataFrame({'col': arr})
+    height, width = 200, 200
+    widget = Tabulator(df, frozen_rows=[-2, 1], height=height, width=width)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expected_text = """
+    index
+    col
+    8
+    Y
+    1
+    X
+    0
+    a
+    2
+    a
+    3
+    a
+    4
+    a
+    5
+    a
+    6
+    a
+    7
+    a
+    9
+    T
+    """
+
+    expect(page.locator('.tabulator')).to_have_text(
+        expected_text,
+        use_inner_text=True
+    )
+
+    X_bb = page.locator('text="X"').bounding_box()
+    Y_bb = page.locator('text="Y"').bounding_box()
+
+    # Check that the Y row is rendered before the X column
+    assert Y_bb['y'] < X_bb['y']
+
+    # Scroll to the bottom, and give it a little extra time
+    page.locator('text="T"').scroll_into_view_if_needed()
+    page.wait_for_timeout(200)
+
+    # Check that the two frozen columns haven't moved after scrolling right
+    assert X_bb == page.locator('text="X"').bounding_box()
+    assert Y_bb == page.locator('text="Y"').bounding_box()
 
 
 @pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3669')
@@ -1566,12 +1623,125 @@ def test_tabulator_row_content_expand_from_python_after(page, port, df_mixed):
     assert openables.count() == len(df_mixed)
 
 
-def test_tabulator_grouping():
-    pass
+def test_tabulator_groups(page, port, df_mixed):
+    widget = Tabulator(
+        df_mixed,
+        groups={'Group1': ['int', 'float'], 'Group2': ['date', 'datetime']},
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expected_text = """
+    index
+    Group1
+    int
+    float
+    str
+    bool
+    Group2
+    date
+    datetime
+    idx0
+    1
+    3.14
+    A
+    true
+    2019-01-01
+    2019-01-01 10:00:00
+    idx1
+    2
+    6.28
+    B
+    true
+    2020-01-01
+    2020-01-01 12:00:00
+    idx2
+    3
+    9.42
+    C
+    true
+    2020-01-10
+    2020-01-10 13:00:00
+    idx3
+    4
+    -2.45
+    D
+    false
+    2019-01-10
+    2020-01-15 13:00:00
+    """
+
+    expect(page.locator('.tabulator')).to_have_text(
+        expected_text,
+        use_inner_text=True,
+    )
+
+    expect(page.locator('.tabulator-col-group')).to_have_count(2)
 
 
-def test_tabulator_groupby():
-    pass
+def test_tabulator_groupby(page, port):
+    df = pd.DataFrame({
+        'cat1': ['A', 'B', 'A', 'A', 'B', 'B', 'B'],
+        'cat2': ['X', 'X', 'X', 'X', 'Y', 'Y', 'Y'],
+        'value': list(range(7)),
+    })
+
+    widget = Tabulator(df, groupby=['cat1', 'cat2'])
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expected_text = """
+    index
+    cat1
+    cat2
+    value
+    cat1: A, cat2: X(3 items)
+    0
+    A
+    X
+    0
+    2
+    A
+    X
+    2
+    3
+    A
+    X
+    3
+    cat1: B, cat2: X(1 item)
+    1
+    B
+    X
+    1
+    cat1: B, cat2: Y(3 items)
+    4
+    B
+    Y
+    4
+    5
+    B
+    Y
+    5
+    6
+    B
+    Y
+    6
+    """
+
+    expect(page.locator('.tabulator')).to_have_text(
+        expected_text,
+        use_inner_text=True,
+    )
+
+    expect(page.locator('.tabulator-group')).to_have_count(3)
 
 
 @pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3564')
@@ -1913,8 +2083,40 @@ def test_tabulator_header_filters_set_from_client(page, port, df_mixed):
     assert widget.current_view.equals(expected_filter_df)
 
 
-def test_tabulator_downloading():
-    pass
+def test_tabulator_download(page, port, df_mixed, df_mixed_as_string):
+    widget = Tabulator(df_mixed)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Check that the whole table content is on the page, just
+    # to make sure the page is loaded before triggering the
+    # download.
+    table = page.locator('.tabulator')
+    expect(table).to_have_text(
+        df_mixed_as_string,
+        use_inner_text=True
+    )
+
+    # Start waiting for the download
+    with page.expect_download() as download_info:
+        widget.download()
+    download = download_info.value
+    # Wait for the download process to complete
+    path = download.path()
+
+    saved_df = pd.read_csv(path, index_col='index')
+    # Some transformations required to reform the dataframe as the original one.
+    saved_df['date'] = pd.to_datetime(saved_df['date'], unit='ms')
+    saved_df['date'] = saved_df['date'].astype(object)
+    saved_df['datetime'] = pd.to_datetime(saved_df['datetime'], unit='ms')
+    saved_df.index.name = None
+
+    pd.testing.assert_frame_equal(df_mixed, saved_df)
+
 
 def test_tabulator_streaming_default(page, port):
     df = pd.DataFrame(np.random.random((3, 2)), columns=['A', 'B'])
@@ -2463,20 +2665,20 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
         s.click()
         # Having to wait when pagination is set to remote before the next click,
         # maybe there's a better way.
-        page.wait_for_timeout(100)
+        page.wait_for_timeout(200)
         s.click()
-        page.wait_for_timeout(100)
+        page.wait_for_timeout(200)
 
     if pagination != 'no_pagination' and sorter == 'no_sorter':
         page.locator('text="Last"').click()
-        page.wait_for_timeout(100)
+        page.wait_for_timeout(200)
 
     if header_filter == 'header_filter':
         str_header = page.locator('input[type="search"]')
         str_header.click()
         str_header.fill(header_filter_val)
         str_header.press('Enter')
-        page.wait_for_timeout(100)
+        page.wait_for_timeout(200)
 
     # Click on the cell
     cell = page.locator(f'text="{target_val}"')
@@ -2580,5 +2782,59 @@ def test_tabulator_selection_header_filter_changed(page, port):
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-def test_tabulator_loading():
-    pass
+def test_tabulator_loading_no_horizontal_rescroll(page, port, df_mixed):
+    widths = 100
+    width = int(((df_mixed.shape[1] + 1) * widths) / 2)
+    df_mixed['Target'] = 'target'
+    widget = Tabulator(df_mixed, width=width, widths=widths)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="target"').first
+    # Scroll to the right
+    cell.scroll_into_view_if_needed()
+    page.wait_for_timeout(200)
+    bb = page.locator('text="Target"').bounding_box()
+
+    widget.loading = True
+    page.wait_for_timeout(200)
+    widget.loading = False
+
+    # To catch a potential rescroll
+    page.wait_for_timeout(400)
+    # The table should keep the same scroll position
+    assert bb == page.locator('text="Target"').bounding_box()
+
+
+def test_tabulator_loading_no_vertical_rescroll(page, port):
+    arr = np.array(['a'] * 10)
+
+    arr[-1] = 'T'
+    df = pd.DataFrame({'col': arr})
+    height, width = 200, 200
+    widget = Tabulator(df, height=height, width=width)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Scroll to the bottom, and give it a little extra time
+    page.locator('text="T"').scroll_into_view_if_needed()
+    page.wait_for_timeout(200)
+
+    bb = page.locator('text="T"').bounding_box()
+
+    widget.loading = True
+    page.wait_for_timeout(200)
+    widget.loading = False
+
+    # To catch a potential rescroll
+    page.wait_for_timeout(400)
+    # The table should keep the same scroll position
+    assert bb == page.locator('text="T"').bounding_box()
