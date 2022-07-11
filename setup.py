@@ -125,7 +125,6 @@ _tests = [
     'scipy',
     'nbval',
     'pytest-cov',
-    'codecov',
     'folium',
     'ipympl',
     'twine',

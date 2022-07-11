@@ -116,11 +116,6 @@ jobs:
           files: ./coverage.xml
           flags: unitexamples-tests
           fail_ci_if_error: false # optional (default = false)
-      # - name: codecov
-      #   run: |
-      #     eval "$(conda shell.bash hook)"
-      #     conda activate test-environment
-      #     codecov
   ui_test_suite:
     name: UI tests on ${{ matrix.os }} with Python 3.9
     needs: [pre_commit]
@@ -191,8 +186,3 @@ jobs:
           files: ./coverage.xml
           flags: ui-tests
           fail_ci_if_error: false # optional (default = false)
-      # - name: codecov
-      #   run: |
-      #     eval "$(conda shell.bash hook)"
-      #     conda activate test-environment
-      #     codecov
