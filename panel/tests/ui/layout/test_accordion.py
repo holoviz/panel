@@ -198,3 +198,35 @@ def test_accordion_clear(page, port, accordion_components):
     accordion.clear()
     # empty accordion
     expect(accordion_elements).to_have_count(0)
+
+
+def test_accordion_insert(page, port, accordion_components):
+    d0, d1 = accordion_components
+    accordion = Accordion(d0, d1)
+    serve(accordion, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    accordion_elements = page.locator('.bk.accordion')
+    expect(accordion_elements).to_have_count(len(accordion_components))
+
+    # order of the elements
+    d0_object = accordion_elements.nth(0)
+    d1_object = accordion_elements.nth(1)
+    # cards name
+    expect(d0_object).to_contain_text(d0.name)
+    expect(d1_object).to_contain_text(d1.name)
+
+    inserted_div = Div(name='Inserted Div', text='Inserted text', css_classes=['class_div_inserted'])
+    # insert new component
+    accordion.insert(index=1, pane=inserted_div)
+    expect(accordion_elements).to_have_count(len(accordion_components) + 1)
+
+    # order of the elements after insertion
+    d0_object = accordion_elements.nth(0)
+    inserted_object = accordion_elements.nth(1)
+    d1_object = accordion_elements.nth(2)
+    # cards name
+    expect(d0_object).to_contain_text(d0.name)
+    expect(inserted_object).to_contain_text(inserted_div.name)
+    expect(d1_object).to_contain_text(d1.name)
