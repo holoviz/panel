@@ -18,8 +18,8 @@ pytestmark = pytest.mark.ui
 @pytest.fixture
 def accordion_components():
     # divs with mock css classes for easy search for elements in the Accordion
-    d0 = Div(name='Div 0', text='Text 0', css_classes=['class_div0'])
-    d1 = Div(name='Div 1', text='Text 1', css_classes=['class_div1'])
+    d0 = Div(name='Div 0', text='Text 0')
+    d1 = Div(name='Div 1', text='Text 1')
     return d0, d1
 
 
@@ -65,6 +65,24 @@ def test_accordion_default(page, port, accordion_components):
     d1_object.click()
     assert is_expanded(card_object=d0_object, card_content=d0.text)
     assert is_expanded(card_object=d1_object, card_content=d1.text)
+
+
+def test_accordion_card_name(page, port, accordion_components):
+    d0, d1 = accordion_components
+    accordion = Accordion(
+        ('Card 0', d0),
+        ('Card 1', d1),
+    )
+    serve(accordion, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    accordion_elements = page.locator('.bk.accordion')
+    d0_object = accordion_elements.nth(0)
+    d1_object = accordion_elements.nth(1)
+    # cards name
+    expect(d0_object).to_contain_text('Card 0')
+    expect(d1_object).to_contain_text('Card 1')
 
 
 def test_accordion_active(page, port, accordion_components):
@@ -169,7 +187,7 @@ def test_accordion_extend(page, port, accordion_components):
     accordion_elements = page.locator('.bk.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))
 
-    d2 = Div(name='Div 2', text='Text 2', css_classes=['class_div2'])
+    d2 = Div(name='Div 2', text='Text 2')
     additional_list = [d2]
     # add new list of elements to the accordion
     accordion.extend(additional_list)
@@ -217,7 +235,7 @@ def test_accordion_insert(page, port, accordion_components):
     expect(d0_object).to_contain_text(d0.name)
     expect(d1_object).to_contain_text(d1.name)
 
-    inserted_div = Div(name='Inserted Div', text='Inserted text', css_classes=['class_div_inserted'])
+    inserted_div = Div(name='Inserted Div', text='Inserted text')
     # insert new component
     accordion.insert(index=1, pane=inserted_div)
     expect(accordion_elements).to_have_count(len(accordion_components) + 1)
@@ -229,4 +247,40 @@ def test_accordion_insert(page, port, accordion_components):
     # cards name
     expect(d0_object).to_contain_text(d0.name)
     expect(inserted_object).to_contain_text(inserted_div.name)
+    expect(d1_object).to_contain_text(d1.name)
+
+
+def test_accordion_pop(page, port, accordion_components):
+    d0, d1 = accordion_components
+    accordion = Accordion(d0, d1)
+    serve(accordion, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    accordion_elements = page.locator('.bk.accordion')
+    expect(accordion_elements).to_have_count(len(accordion_components))
+
+    # remove first component
+    accordion.pop(index=0)
+    expect(accordion_elements).to_have_count(len(accordion_components) - 1)
+    # only card d1 in the accordion
+    d1_object = accordion_elements.nth(0)
+    expect(d1_object).to_contain_text(d1.name)
+
+
+def test_accordion_remove(page, port, accordion_components):
+    d0, d1 = accordion_components
+    accordion = Accordion(d0, d1)
+    serve(accordion, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    accordion_elements = page.locator('.bk.accordion')
+    expect(accordion_elements).to_have_count(len(accordion_components))
+
+    # remove first component
+    accordion.remove(pane=accordion.objects[0])
+    expect(accordion_elements).to_have_count(len(accordion_components) - 1)
+    # only card d1 in the accordion
+    d1_object = accordion_elements.nth(0)
     expect(d1_object).to_contain_text(d1.name)
