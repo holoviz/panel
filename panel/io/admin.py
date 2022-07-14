@@ -413,6 +413,9 @@ def get_overview(doc=None):
 
 
 def log_component():
+    # Without this tabulator is empty after reload of website
+    log_terminal.param.trigger("value")
+
     return Column(
         Accordion(
             ('Filters & Download', Row(
