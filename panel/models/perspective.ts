@@ -172,16 +172,16 @@ export class PerspectiveView extends PanelHTMLBoxView {
       this._current_config = config
       const props: any =  {}
       for (let option in config) {
-	let value = config[option]
-	if (value === undefined || (option == 'plugin' && value === "debug") || option === 'settings')
+        let value = config[option]
+        if (value === undefined || (option == 'plugin' && value === "debug") || option === 'settings')
           continue
-	if (option === 'filter')
-	  option = 'filters'
-	else if (option === 'plugin')
-	  value = PLUGINS_REVERSE[value as any]
-	else if (option === 'theme')
-	  value = THEMES_REVERSE[value as any]
-	props[option] = value
+        if (option === 'filter')
+          option = 'filters'
+        else if (option === 'plugin')
+          value = PLUGINS_REVERSE[value as any]
+        else if (option === 'theme')
+          value = THEMES_REVERSE[value as any]
+        props[option] = value
       }
       this._updating = true
       this.model.setv(props)

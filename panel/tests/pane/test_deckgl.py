@@ -20,7 +20,7 @@ def test_get_pydeck_pane_type_from_deck():
 
 @pydeck_available
 def test_pydeck_pane_deck(document, comm):
-    deck = pydeck.Deck(tooltip=True, mapbox_key='ABC')
+    deck = pydeck.Deck(tooltip=True, api_keys={'mapbox': 'ABC'})
     pane = Pane(deck)
 
     # Create pane
@@ -28,8 +28,8 @@ def test_pydeck_pane_deck(document, comm):
     assert isinstance(model, DeckGLPlot)
     assert pane._models[model.ref["id"]][0] is model
     assert model.data == {
-        'description': None,
-        'mapStyle': 'mapbox://styles/mapbox/dark-v9',
+        'mapProvider': 'carto',
+        'mapStyle': 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
         'views': [{'@@type': 'MapView', 'controller': True}]
     }
     assert model.mapbox_api_key == deck.mapbox_key

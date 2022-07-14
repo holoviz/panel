@@ -2,10 +2,15 @@
 Contains Image panes including renderers for PNG, SVG, GIF and JPG
 file types.
 """
+from __future__ import annotations
+
 import base64
 
 from io import BytesIO
 from pathlib import PurePath
+from typing import (
+    Any, ClassVar, List, Mapping,
+)
 
 import param
 
@@ -18,7 +23,9 @@ class FileBase(DivPaneBase):
     embed = param.Boolean(default=True, doc="""
         Whether to embed the file as base64.""")
 
-    _rerender_params = ['embed', 'object', 'style', 'width', 'height']
+    _rerender_params: ClassVar[List[str]] = [
+        'embed', 'object', 'style', 'width', 'height'
+    ]
 
     __abstract = True
 
@@ -34,7 +41,7 @@ class FileBase(DivPaneBase):
         super()._type_error(object)
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         filetype = cls.filetype
         if hasattr(obj, '_repr_{}_'.format(filetype)):
             return True
@@ -98,11 +105,15 @@ class ImageBase(FileBase):
         A link URL to make the image clickable and link to some other
         website.""")
 
-    filetype = 'None'
+    filetype: ClassVar[str] = 'None'
 
-    _rerender_params = ['alt_text', 'link_url', 'embed', 'object', 'style', 'width', 'height']
+    _rerender_params: ClassVar[List[str]] = [
+        'alt_text', 'link_url', 'embed', 'object', 'style', 'width', 'height'
+    ]
 
-    _target_transforms = {'object': """'<img src="' + value + '"></img>'"""}
+    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+        'object': """'<img src="' + value + '"></img>'"""
+    }
 
     __abstract = True
 
@@ -181,7 +192,7 @@ class PNG(ImageBase):
     ... )
     """
 
-    filetype = 'png'
+    filetype: ClassVar[str] = 'png'
 
     @classmethod
     def _imgshape(cls, data):
@@ -207,7 +218,7 @@ class GIF(ImageBase):
     ... )
     """
 
-    filetype = 'gif'
+    filetype: ClassVar[str] = 'gif'
 
     @classmethod
     def _imgshape(cls, data):
@@ -233,7 +244,7 @@ class ICO(ImageBase):
     ...
     """
 
-    filetype = 'ico'
+    filetype: ClassVar[str] = 'ico'
 
     @classmethod
     def _imgshape(cls, data):
@@ -259,7 +270,7 @@ class JPG(ImageBase):
     ... )
     """
 
-    filetype = 'jpg'
+    filetype: ClassVar[str] = 'jpg'
 
     @classmethod
     def _imgshape(cls, data):
@@ -301,12 +312,12 @@ class SVG(ImageBase):
         Whether to enable base64 encoding of the SVG, base64 encoded
         SVGs do not support links.""")
 
-    filetype = 'svg'
+    filetype: ClassVar[str] = 'svg'
 
-    _rerender_params = ImageBase._rerender_params + ['encode']
+    _rerender_params: ClassVar[List[str]] = ImageBase._rerender_params + ['encode']
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         return (super().applies(obj) or
                 (isinstance(obj, str) and obj.lstrip().startswith('<svg')))
 
@@ -367,7 +378,7 @@ class PDF(FileBase):
     ... )
     """
 
-    filetype = 'pdf'
+    filetype: ClassVar[str] = 'pdf'
 
     def _get_properties(self):
         p = super()._get_properties()

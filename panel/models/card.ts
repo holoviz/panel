@@ -36,16 +36,16 @@ export class CardView extends ColumnView {
       const obbox = header.layout.bbox
       const ibbox = header.layout.inner_bbox
       if (obbox.x1 != 0) {
-	let offset: number
-	if (this.model.collapsible) {
-	  const icon_style = getComputedStyle(this.button_el.children[0])
-	  offset = (parseFloat(icon_style.width) + parseFloat(icon_style.marginLeft)) || 0
+        let offset: number
+        if (this.model.collapsible) {
+          const icon_style = getComputedStyle(this.button_el.children[0])
+          offset = (parseFloat(icon_style.width) + parseFloat(icon_style.marginLeft)) || 0
         } else {
-	  offset = 0
-	}
-	const outer = new BBox({x0: obbox.x0, x1: obbox.x1-offset, y0: obbox.y0, y1: obbox.y1})
-	const inner = new BBox({x0: ibbox.x0, x1: ibbox.x1-offset, y0: ibbox.y0, y1: ibbox.y1})
-	header.layout.set_geometry(outer, inner)
+          offset = 0
+        }
+        const outer = new BBox({x0: obbox.x0, x1: obbox.x1-offset, y0: obbox.y0, y1: obbox.y1})
+        const inner = new BBox({x0: ibbox.x0, x1: ibbox.x1-offset, y0: ibbox.y0, y1: ibbox.y1})
+        header.layout.set_geometry(outer, inner)
       }
     }
     super.update_position()

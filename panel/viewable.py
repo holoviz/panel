@@ -476,7 +476,7 @@ class Renderable(param.Parameterized):
         """
         raise NotImplementedError
 
-    def _cleanup(self, root: 'Model' | None) -> None:
+    def _cleanup(self, root: Model | None = None) -> None:
         """
         Clean up method which is called when a Viewable is destroyed.
 
@@ -537,7 +537,7 @@ class Renderable(param.Parameterized):
     def get_root(
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
         preprocess: bool = True
-    ) -> 'Model':
+    ) -> Model:
         """
         Returns the root model and applies pre-processing hooks
 
@@ -601,6 +601,14 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         return self.__repr__()
 
     def _repr_mimebundle_(self, include=None, exclude=None):
+        if state._is_pyodide:
+            from .io.pyodide import render_script
+            if hasattr(sys.stdout, '_out'):
+                target = sys.stdout._out # type: ignore
+            else:
+                raise ValueError("Could not determine target node to write to.")
+            return {'text/html': render_script(self, target)}, {}
+
         loaded = panel_extension._loaded
         if not loaded and 'holoviews' in sys.modules:
             import holoviews as hv  # type: ignore

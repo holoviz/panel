@@ -126,20 +126,20 @@ export class PanelHTMLBoxView extends HTMLBoxView {
       const css = []
       let skip = false
       for (const cls of this.model.css_classes) {
-	if (cls === 'pn-loading')
-	  skip = true
-	else if (skip)
-	  skip = false
-	else
-	  css.push(cls)
+        if (cls === 'pn-loading')
+          skip = true
+        else if (skip)
+          skip = false
+        else
+          css.push(cls)
       }
       const prev = this._prev_css_classes
       if (JSON.stringify(css) === JSON.stringify(prev)) {
-	const {background} = this.model
-	this.el.style.backgroundColor = background != null ? color2css(background) : ""
-	classes(this.el).clear().add(...this.css_classes())
+        const {background} = this.model
+        this.el.style.backgroundColor = background != null ? color2css(background) : ""
+        classes(this.el).clear().add(...this.css_classes())
       } else {
-	this.invalidate_render()
+        this.invalidate_render()
       }
       this._prev_css_classes = css
     })

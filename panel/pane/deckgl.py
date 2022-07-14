@@ -7,7 +7,9 @@ from __future__ import annotations
 import json
 
 from collections import defaultdict
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+)
 
 import numpy as np
 import param
@@ -19,9 +21,15 @@ from ..util import is_dataframe, lazy_load
 from ..viewable import Layoutable
 from .base import PaneBase
 
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
+
 
 def lower_camel_case_keys(attrs):
-    """Makes all the keys in a dictionary camel-cased and lower-case
+    """
+    Makes all the keys in a dictionary camel-cased and lower-case
 
     Parameters
     ----------
@@ -35,8 +43,9 @@ def lower_camel_case_keys(attrs):
         attrs[camel_key] = attrs.pop(snake_key)
 
 
-def to_camel_case(snake_case):
-    """Makes a snake case string into a camel case one
+def to_camel_case(snake_case: str) -> str:
+    """
+    Makes a snake case string into a camel case one
 
     Parameters
     -----------
@@ -54,7 +63,7 @@ def to_camel_case(snake_case):
     return output_str
 
 
-def lower_first_letter(s):
+def lower_first_letter(s: str) -> str:
     return s[:1].lower() + s[1:] if s else ''
 
 
@@ -114,12 +123,12 @@ class DeckGL(PaneBase):
         'view_state': 'viewState', 'tooltips': 'tooltip'
     }
 
-    _updates = True
+    _updates: ClassVar[bool] = True
 
-    priority = None
+    priority: ClassVar[float | bool | None] = None
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         if (hasattr(obj, "to_json") and hasattr(obj, "mapbox_key")
             and hasattr(obj, "deck_widget")):
             return 0.8
@@ -127,7 +136,7 @@ class DeckGL(PaneBase):
             return 0
         return False
 
-    def _get_properties(self, layout=True):
+    def _get_properties(self, layout: bool = True):
         if self.object is None:
             data, mapbox_api_key, tooltip = {}, self.mapbox_api_key, self.tooltips
         elif isinstance(self.object, (str, dict)):
@@ -213,7 +222,10 @@ class DeckGL(PaneBase):
                 sources.append(cds)
             layer['data'] = sources.index(cds)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         DeckGLPlot = lazy_load(
             'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm), root
         )
@@ -228,7 +240,7 @@ class DeckGL(PaneBase):
         self._models[root.ref["id"]] = (model, parent)
         return model
 
-    def _update(self, ref=None, model=None):
+    def _update(self, ref: str, model: Model) -> None:
         data, properties = self._get_properties(layout=False)
         self._update_sources(data, model.data_sources)
         properties['data'] = data

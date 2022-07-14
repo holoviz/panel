@@ -3,7 +3,9 @@ Defines the Ace code editor widget.
 """
 from __future__ import annotations
 
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, ClassVar, Mapping, Optional,
+)
 
 import param
 
@@ -12,6 +14,11 @@ from pyviz_comms import JupyterComm
 from ..models.enums import ace_themes
 from ..util import lazy_load
 from .base import Widget
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class Ace(Widget):
@@ -55,14 +62,17 @@ class Ace(Widget):
         self.param.watch(self._update_disabled, ['disabled', 'readonly'])
         self.jslink(self, readonly='disabled', bidirectional=True)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         if self._widget_type is None:
             self._widget_type = lazy_load(
                 'panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm), root
             )
         return super()._get_model(doc, root, parent, comm)
 
-    def _update_disabled(self, *events):
+    def _update_disabled(self, *events: param.parameterized.Event):
         for event in events:
             if event.name == 'disabled':
                 self.readonly = event.new

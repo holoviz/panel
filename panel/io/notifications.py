@@ -64,7 +64,8 @@ class NotificationAreaBase(ReactiveHTML):
         self._notification_watchers = {}
 
     def get_root(
-        self, doc: Optional['Document'] = None, comm: Optional['Comm'] = None, preprocess: bool = True
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        preprocess: bool = True
     ) -> 'Model':
         root = super().get_root(doc, comm, preprocess)
         self._documents[doc] = root

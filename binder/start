@@ -1,5 +1,5 @@
 #!/bin/bash
-export BOKEH_ALLOW_WS_ORIGIN=hub.gke2.mybinder.org
+export BOKEH_ALLOW_WS_ORIGIN=*
 echo '' >> panel/template/base.py
 echo 'BasicTemplate.param.site_url.default="./"' >> panel/template/base.py
 export DISPLAY=:99.0

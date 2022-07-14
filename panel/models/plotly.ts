@@ -12,7 +12,6 @@ import {deepCopy, isPlainObject, get, throttle} from "./util"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
 
-
 interface PlotlyHTMLElement extends HTMLDivElement {
     _fullLayout: any
     layout: any;
@@ -134,19 +133,19 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     this.on_change([data, data_sources, layout], () => {
       const render_count = this.model._render_count
       setTimeout(() => {
-	if (this.model._render_count === render_count)
-	  this.model._render_count += 1;
+        if (this.model._render_count === render_count)
+          this.model._render_count += 1;
       }, 250)
     });
     this.on_change([relayout], () => {
       if (this.model.relayout == null)
-	return
+        return
       (window as any).Plotly.relayout(this._layout_wrapper, this.model.relayout)
       this.model.relayout = null
     })
     this.on_change([restyle], () => {
       if (this.model.restyle == null)
-	return
+        return
       (window as any).Plotly.restyle(this._layout_wrapper, this.model.restyle.data, this.model.restyle.traces)
       this.model.restyle = null
     })
@@ -277,7 +276,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     } else {
       await (window as any).Plotly.react(this._layout_wrapper, data, newLayout, this.model.config)
       if (this.model.frames != null)
-	await (window as any).Plotly.addFrames(this._layout_wrapper, this.model.frames)
+        await (window as any).Plotly.addFrames(this._layout_wrapper, this.model.frames)
     }
     this._updateSetViewportFunction()
     this._updateViewportProperty()
@@ -338,7 +337,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
         this._settingViewport = true;
         (window as any).Plotly.relayout(this.el, clonedViewport).then(() => {
           this._settingViewport = false;
-	})
+        })
         return false
       } else {
         return true

@@ -5,7 +5,9 @@ import sys
 import warnings
 
 from enum import Enum
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, ClassVar, List, Mapping, Optional,
+)
 
 import numpy as np
 import param
@@ -17,6 +19,11 @@ from ..reactive import ReactiveData
 from ..util import lazy_load
 from ..viewable import Viewable
 from .base import PaneBase
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 DEFAULT_THEME = "material"
 THEMES_MAP = {
@@ -317,11 +324,11 @@ class Perspective(PaneBase, ReactiveData):
     theme = param.ObjectSelector(default=DEFAULT_THEME, objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example material-dark""")
 
-    priority = None
+    priority: ClassVar[float | bool | None] = None
 
-    _data_params = ['object']
+    _data_params: ClassVar[List[str]] = ['object']
 
-    _rerender_params = ['object']
+    _rerender_params: ClassVar[List[str]] = ['object']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'computed_columns': None,
@@ -330,7 +337,7 @@ class Perspective(PaneBase, ReactiveData):
         'selection': None,
     }
 
-    _updates = True
+    _updates: ClassVar[bool] = True
 
     _deprecations = {
         'computed_columns': 'expressions',
@@ -467,7 +474,10 @@ class Perspective(PaneBase, ReactiveData):
             msg['aggregates'] = {self._as_digit(col): agg for col, agg in msg['aggregates'].items()}
         return msg
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         Perspective = lazy_load('panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root)
         properties = self._process_param_change(self._init_params())
         if properties.get('toggle_config'):
@@ -482,5 +492,5 @@ class Perspective(PaneBase, ReactiveData):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update(self, ref, model):
+    def _update(self, ref: str, model: Model) -> None:
         pass

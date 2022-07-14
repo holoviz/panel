@@ -36,19 +36,19 @@ class Panel(Reactive):
     """
 
     # Used internally to optimize updates
-    _batch_update: bool = False
+    _batch_update: ClassVar[bool] = False
 
     # Bokeh model used to render this Panel
-    _bokeh_model: Type['Model'] | None = None
+    _bokeh_model: ClassVar[Type[Model]]
 
     # Properties that should sync JS -> Python
-    _linked_props: List[str] = []
+    _linked_props: ClassVar[List[str]] = []
 
     # Parameters which require the preprocessors to be re-run
-    _preprocess_params: List[str] = []
+    _preprocess_params: ClassVar[List[str]] = []
 
     # Parameter -> Bokeh property renaming
-    _rename: Dict[str, str | None] = {'objects': 'children'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'objects': 'children'}
 
     __abstract = True
 
@@ -77,7 +77,7 @@ class Panel(Reactive):
 
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
-        root: 'Model', model: 'Model', doc: 'Document', comm: Optional['Comm']
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         msg = dict(msg)
         inverse = {v: k for k, v in self._rename.items() if v is not None}
@@ -105,8 +105,8 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def _get_objects(
-        self, model: 'Model', old_objects: List['Viewable'], doc: 'Document',
-        root: 'Model', comm: Optional['Comm'] = None
+        self, model: Model, old_objects: List[Viewable], doc: Document,
+        root: Model, comm: Optional[Comm] = None
     ):
         """
         Returns new child models for the layout while reusing unchanged
@@ -135,9 +135,9 @@ class Panel(Reactive):
         return new_models
 
     def _get_model(
-        self, doc: Document, root: Optional['Model'] = None,
-        parent: Optional['Model'] = None, comm: Optional[Comm] = None
-    ) -> 'Model':
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         if self._bokeh_model is None:
             raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
         model = self._bokeh_model()
@@ -180,15 +180,15 @@ class ListLike(param.Parameterized):
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
 
-    _preprocess_params: List[str] = ['objects']
+    _preprocess_params: ClassVar[List[str]] = ['objects']
 
-    def __getitem__(self, index: int | slice) -> 'Viewable' | List['Viewable']:
+    def __getitem__(self, index: int | slice) -> Viewable | List[Viewable]:
         return self.objects[index]
 
     def __len__(self) -> int:
         return len(self.objects)
 
-    def __iter__(self) -> Iterator['Viewable']:
+    def __iter__(self) -> Iterator[Viewable]:
         for obj in self.objects:
             yield obj
 
@@ -210,7 +210,7 @@ class ListLike(param.Parameterized):
             other = list(other)
         return self.clone(*(other+self.objects))
 
-    def __contains__(self, obj: 'Viewable') -> bool:
+    def __contains__(self, obj: Viewable) -> bool:
         return obj in self.objects
 
     def __setitem__(self, index: int | slice, panes: Iterable[Any]) -> None:
@@ -322,7 +322,7 @@ class ListLike(param.Parameterized):
         new_objects.insert(index, panel(obj))
         self.objects = new_objects
 
-    def pop(self, index: int) -> 'Viewable':
+    def pop(self, index: int) -> Viewable:
         """
         Pops an item from the layout by index.
 
@@ -335,7 +335,7 @@ class ListLike(param.Parameterized):
         self.objects = new_objects
         return obj
 
-    def remove(self, obj: 'Viewable') -> None:
+    def remove(self, obj: Viewable) -> None:
         """
         Removes an object from the layout.
 
@@ -361,9 +361,9 @@ class NamedListLike(param.Parameterized):
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
 
-    _preprocess_params = ['objects']
+    _preprocess_params: ClassVar[List[str]] = ['objects']
 
-    def __init__(self, *items: List[Any, Tuple[str, Any]], **params: Any):
+    def __init__(self, *items: List[Any | Tuple[str, Any]], **params: Any):
         if 'objects' in params:
             if items:
                 raise ValueError('%s objects should be supplied either '
@@ -416,13 +416,13 @@ class NamedListLike(param.Parameterized):
     # Public API
     #----------------------------------------------------------------
 
-    def __getitem__(self, index) -> 'Viewable' | List['Viewable']:
+    def __getitem__(self, index) -> Viewable | List[Viewable]:
         return self.objects[index]
 
     def __len__(self) -> int:
         return len(self.objects)
 
-    def __iter__(self) -> Iterator['Viewable']:
+    def __iter__(self) -> Iterator[Viewable]:
         for obj in self.objects:
             yield obj
 
@@ -563,7 +563,7 @@ class NamedListLike(param.Parameterized):
         self._names.insert(index, new_name)
         self.objects = new_objects
 
-    def pop(self, index: int) -> 'Viewable':
+    def pop(self, index: int) -> Viewable:
         """
         Pops an item from the tabs by index.
 
@@ -577,7 +577,7 @@ class NamedListLike(param.Parameterized):
         self.objects = new_objects
         return obj
 
-    def remove(self, pane: 'Viewable') -> None:
+    def remove(self, pane: Viewable) -> None:
         """
         Removes an object from the tabs.
 
@@ -616,7 +616,7 @@ class ListPanel(ListLike, Panel):
         Whether to add scrollbars if the content overflows the size
         of the container.""")
 
-    _source_transforms: Mapping[str, str | None] = {'scroll': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
     __abstract = True
 
@@ -641,7 +641,7 @@ class ListPanel(ListLike, Panel):
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
-    def _cleanup(self, root: 'Model' | None):
+    def _cleanup(self, root: Model | None = None) -> None:
         if root is not None and root.ref['id'] in state._fake_roots:
             state._fake_roots.remove(root.ref['id'])
         super()._cleanup(root)
@@ -663,7 +663,7 @@ class NamedListPanel(NamedListLike, Panel):
         Whether to add scrollbars if the content overflows the size
         of the container.""")
 
-    _source_transforms: Dict[str, str | None] = {'scroll': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
     __abstract = True
 
@@ -676,7 +676,7 @@ class NamedListPanel(NamedListLike, Panel):
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
-    def _cleanup(self, root: 'Model' | None) -> None:
+    def _cleanup(self, root: Model | None = None) -> None:
         if root is not None and root.ref['id'] in state._fake_roots:
             state._fake_roots.remove(root.ref['id'])
         super()._cleanup(root)
@@ -702,7 +702,7 @@ class Row(ListPanel):
 
     col_sizing = param.Parameter()
 
-    _bokeh_model: Type['Model'] = BkRow
+    _bokeh_model: ClassVar[Type[Model]] = BkRow
 
     _rename: ClassVar[Mapping[str, str | None]] = dict(ListPanel._rename, col_sizing='cols')
 
@@ -725,7 +725,7 @@ class Column(ListPanel):
 
     row_sizing = param.Parameter()
 
-    _bokeh_model: Type['Model'] = BkColumn
+    _bokeh_model: ClassVar[Type[Model]] = BkColumn
 
     _rename: ClassVar[Mapping[str, str | None]] = dict(ListPanel._rename, row_sizing='rows')
 
@@ -764,12 +764,16 @@ class WidgetBox(ListPanel):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    _source_transforms = {'disabled': None, 'horizontal': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'disabled': None, 'horizontal': None
+    }
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'objects': 'children', 'horizontal': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'objects': 'children', 'horizontal': None
+    }
 
     @property
-    def _bokeh_model(self) -> Type['Model']: # type: ignore
+    def _bokeh_model(self) -> Type[Model]: # type: ignore
         return BkRow if self.horizontal else BkColumn
 
     @param.depends('disabled', 'objects', watch=True)

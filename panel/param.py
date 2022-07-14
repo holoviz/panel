@@ -2,6 +2,8 @@
 Defines the Param pane which converts Parameterized classes into a
 set of widgets.
 """
+from __future__ import annotations
+
 import inspect
 import itertools
 import json
@@ -12,6 +14,9 @@ from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional,
+)
 
 import param
 
@@ -37,8 +42,13 @@ from .widgets import (
 )
 from .widgets.button import _ButtonBase
 
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
-def SingleFileSelector(pobj):
+
+def SingleFileSelector(pobj: param.Parameter) -> Widget:
     """
     Determines whether to use a TextInput or Select widget for FileSelector
     """
@@ -48,7 +58,7 @@ def SingleFileSelector(pobj):
         return TextInput
 
 
-def LiteralInputTyped(pobj):
+def LiteralInputTyped(pobj: param.Parameter) -> Widget:
     if isinstance(pobj, param.Tuple):
         return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
@@ -151,7 +161,7 @@ class Param(PaneBase):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
-    mapping = {
+    mapping: ClassVar[Mapping[param.Parameter, Widget | Callable[[param.Parameter], Widget]]] = {
         param.Action:            Button,
         param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
@@ -183,11 +193,11 @@ class Param(PaneBase):
     if bokeh_version >= Version('2.4.3'):
         mapping[param.DateRange] = DatetimeRangeSlider
 
-    priority = 0.1
+    priority: ClassVar[float | bool | None] = 0.1
 
-    _unpack = True
+    _unpack: ClassVar[bool] = True
 
-    _rerender_params = []
+    _rerender_params: ClassVar[List[str]] = []
 
     def __init__(self, object=None, **params):
         if isinstance(object, param.Parameter):
@@ -647,12 +657,15 @@ class Param(PaneBase):
         widgets += [(pname, self.widget(pname)) for pname in self._ordered_params]
         return OrderedDict(widgets)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         model = self.layout._get_model(doc, root, parent, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: Model | None = None) -> None:
         self.layout._cleanup(root)
         super()._cleanup(root)
 
@@ -661,7 +674,7 @@ class Param(PaneBase):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         return (is_parameterized(obj) or
                 isinstance(obj, param.parameterized.Parameters) or
                 (isinstance(obj, param.Parameter) and obj.owner is not None))
@@ -694,7 +707,10 @@ class Param(PaneBase):
         """
         return super().select(selector) + self.layout.select(selector)
 
-    def get_root(self, doc=None, comm=None, preprocess=True):
+    def get_root(
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        preprocess: bool = True
+    ) -> Model:
         """
         Returns the root model and applies pre-processing hooks
 
@@ -853,7 +869,10 @@ class ParamMethod(ReplacementPane):
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks.append(watcher)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         if not self._evaled:
             self._replace_pane(force=True)
         return super()._get_model(doc, root, parent, comm)
@@ -863,7 +882,7 @@ class ParamMethod(ReplacementPane):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
 
 
@@ -877,7 +896,7 @@ class ParamFunction(ParamMethod):
     a widget to some other output.
     """
 
-    priority = 0.6
+    priority: ClassVar[float | bool | None] = 0.6
 
     def _link_object_params(self):
         deps = getattr(self.object, '_dinfo', {})
@@ -913,7 +932,7 @@ class ParamFunction(ParamMethod):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         if isinstance(obj, types.FunctionType):
             if hasattr(obj, '_dinfo'):
                 return True

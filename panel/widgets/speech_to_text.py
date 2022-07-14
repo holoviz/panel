@@ -20,13 +20,18 @@ case is up to you to evaluate.
 
 from __future__ import annotations
 
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, ClassVar, Mapping, Type,
+)
 
 import param
 
 from ..models.speech_to_text import SpeechToText as _BkSpeechToText
 from .base import Widget
 from .button import BUTTON_TYPES
+
+if TYPE_CHECKING:
+    from bokeh.model import Model
 
 BUTTON_TYPES = BUTTON_TYPES+['light', 'dark']
 
@@ -388,13 +393,13 @@ class SpeechToText(Widget):
         List used to transfer the serialized grammars from server to
         browser.""")
 
-    _widget_type = _BkSpeechToText
-
     _rename: ClassVar[Mapping[str, str | None]] = {
         "value": None,
         "grammars": None,
         "_grammars": "grammars",
     }
+
+    _widget_type: ClassVar[Type[Model]] = _BkSpeechToText
 
     def __init__(self, **params):
         super().__init__(**params)

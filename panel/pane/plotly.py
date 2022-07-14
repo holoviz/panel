@@ -2,6 +2,12 @@
 Defines a PlotlyPane which renders a plotly plot using PlotlyPlot
 bokeh model.
 """
+from __future__ import annotations
+
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Optional,
+)
+
 import numpy as np
 import param
 
@@ -11,6 +17,11 @@ from pyviz_comms import JupyterComm
 from ..util import isdatetime, lazy_load
 from ..viewable import Layoutable
 from .base import PaneBase
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class Plotly(PaneBase):
@@ -66,12 +77,12 @@ class Plotly(PaneBase):
     _render_count = param.Integer(default=0, doc="""
         Number of renders, increment to trigger re-render""")
 
-    priority = 0.8
+    priority: ClassVar[float | bool | None] = 0.8
 
-    _updates = True
+    _updates: ClassVar[bool] = True
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         return ((isinstance(obj, list) and obj and all(cls.applies(o) for o in obj)) or
                 hasattr(obj, 'to_plotly_json') or (isinstance(obj, dict)
                                                    and 'data' in obj and 'layout' in obj))
@@ -256,7 +267,10 @@ class Plotly(PaneBase):
             params['sizing_mode'] = 'stretch_both'
         return params
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         PlotlyPlot = lazy_load('panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root)
         model = PlotlyPlot(**self._init_params())
         if root is None:
@@ -265,7 +279,7 @@ class Plotly(PaneBase):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update(self, ref=None, model=None):
+    def _update(self, ref: str, model: Model) -> None:
         if self.object is None:
             model.update(data=[], layout={})
             model._render_count += 1

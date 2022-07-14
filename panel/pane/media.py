@@ -7,7 +7,9 @@ import os
 
 from base64 import b64encode
 from io import BytesIO
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional,
+)
 
 import numpy as np
 import param
@@ -15,6 +17,11 @@ import param
 from ..models import Audio as _BkAudio, Video as _BkVideo
 from ..util import isfile, isurl
 from .base import PaneBase
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class _MediaBase(PaneBase):
@@ -44,22 +51,23 @@ class _MediaBase(PaneBase):
     muted = param.Boolean(default=False, doc="""
         When True, it specifies that the output should be muted.""")
 
-    _default_mime = None
+    _default_mime: ClassVar[str]
 
-    _formats = []
+    _formats: ClassVar[List[str]]
 
-    _media_type = None
+    _media_type: ClassVar[str]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'sample_rate': None, 'object': 'value'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': None, 'sample_rate': None, 'object': 'value'}
 
-    _rerender_params = []
+    _rerender_params: ClassVar[List[str]] = []
 
-    _updates = True
+    _updates: ClassVar[bool] = True
 
     __abstract = True
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         if isinstance(obj, str):
             if isfile(obj) and any(obj.endswith('.'+fmt) for fmt in cls._formats):
                 return True
@@ -69,7 +77,10 @@ class _MediaBase(PaneBase):
             return True
         return False
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         props = self._process_param_change(self._init_params())
         model = self._bokeh_model(**props)
         if root is None:
@@ -148,7 +159,7 @@ class Audio(_MediaBase):
     _media_type = 'audio'
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         return (super().applies(obj) or
                 (isinstance(obj, np.ndarray) and obj.ndim==1 and obj.dtype in [np.int16, np.uint16]))
 

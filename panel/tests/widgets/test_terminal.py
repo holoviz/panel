@@ -10,6 +10,7 @@ import pytest
 import panel as pn
 
 not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
+not_osx = pytest.mark.skipif(sys.platform == 'darwin', reason="Sometimes fails on OSX")
 
 
 def test_terminal_constructor():
@@ -38,6 +39,7 @@ def test_terminal():
 
 
 @not_windows
+@not_osx
 def test_subprocess():
     args = "bash"
     terminal = pn.widgets.Terminal()
@@ -62,6 +64,7 @@ def test_subprocess():
 
 
 @not_windows
+@not_osx
 def test_run_list_args():
     terminal = pn.widgets.Terminal()
     subprocess = terminal.subprocess

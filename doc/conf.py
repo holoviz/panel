@@ -54,8 +54,8 @@ html_theme_options = {
     ],
     "navbar_end": ["navbar-icon-links"],
     "google_analytics_id": "UA-154795830-2",
-    "pygment_light_style": "monokai",
-    "pygment_dark_style": "monokai"
+    "pygment_light_style": "material",
+    "pygment_dark_style": "material"
 }
 
 extensions += [

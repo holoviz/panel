@@ -5,7 +5,10 @@ import uuid
 
 from functools import partial
 from types import FunctionType, MethodType
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    Tuple, Type, TypeVar,
+)
 
 import numpy as np
 import param
@@ -31,6 +34,20 @@ from ..viewable import Layoutable
 from .base import Widget
 from .button import Button
 from .input import TextInput
+
+if TYPE_CHECKING:
+    try:
+        import pandas as pd
+        DataFrameType = pd.DataFrame
+    except Exception:
+        DataFrameType = TypeVar('DataFrameType')
+
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from bokeh.models.sources import DataDict
+    from pyviz_comms import Comm
+
+    from ..models.tabulator import CellClickEvent, TableEditEvent
 
 
 class BaseTable(ReactiveData, Widget):
@@ -78,9 +95,11 @@ class BaseTable(ReactiveData, Widget):
 
     value = param.Parameter(default=None)
 
-    _data_params = ['value']
+    _data_params: ClassVar[List[str]] = ['value']
 
-    _manual_params = ['formatters', 'editors', 'widths', 'titles', 'value', 'show_index']
+    _manual_params: ClassVar[List[str]] = [
+        'formatters', 'editors', 'widths', 'titles', 'value', 'show_index'
+    ]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'disabled': 'editable', 'selection': None}
 
@@ -100,7 +119,7 @@ class BaseTable(ReactiveData, Widget):
             str(col) if str(col) != col else col: col for col in self._get_fields()
         }
 
-    def _validate(self, *events):
+    def _validate(self, *events: param.parameterized.Event):
         if self.value is None:
             return
         cols = self.value.columns
@@ -114,7 +133,7 @@ class BaseTable(ReactiveData, Widget):
             msg['editable'] = not msg.pop('editable') and len(self.indexes) <= 1
         return msg
 
-    def _get_fields(self):
+    def _get_fields(self) -> List[str]:
         indexes = self.indexes
         col_names = list(self.value.columns)
         if not self.hierarchical or len(indexes) == 1:
@@ -123,7 +142,7 @@ class BaseTable(ReactiveData, Widget):
             col_names = indexes[-1:] + col_names
         return col_names
 
-    def _get_columns(self):
+    def _get_columns(self) -> List[TableColumn]:
         if self.value is None:
             return []
 
@@ -132,7 +151,7 @@ class BaseTable(ReactiveData, Widget):
         df = self.value.reset_index() if len(indexes) > 1 else self.value
         return self._get_column_definitions(fields, df)
 
-    def _get_column_definitions(self, col_names, df):
+    def _get_column_definitions(self, col_names: List[str], df: DataFrameType) -> List[TableColumn]:
         import pandas as pd
         indexes = self.indexes
         columns = []
@@ -150,6 +169,8 @@ class BaseTable(ReactiveData, Widget):
 
             col_kwargs = {}
             kind = data.dtype.kind
+            editor: CellEditor
+            formatter: CellFormatter
             if kind == 'i':
                 formatter = NumberFormatter(text_align='right')
                 editor = IntEditor()
@@ -209,7 +230,7 @@ class BaseTable(ReactiveData, Widget):
         return columns
 
     @updating
-    def _update_cds(self, *events):
+    def _update_cds(self, *events: param.parameterized.Event):
         old_processed = self._processed
         self._processed, data = self._get_data()
         # If there is a selection we have to compute new index
@@ -229,9 +250,12 @@ class BaseTable(ReactiveData, Widget):
         for ref, (m, _) in self._models.items():
             self._apply_update(events, msg, m.source, ref)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         source = ColumnDataSource(data=self._data)
-        source.selected.indices = self.selection
+        source.selected.indices = self.selection # type: ignore
         properties = self._get_properties(source)
         model = self._widget_type(**properties)
         if root is None:
@@ -241,14 +265,17 @@ class BaseTable(ReactiveData, Widget):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update_columns(self, event, model):
+    def _update_columns(self, event: param.parameterized.Event, model: Model):
         if event.name == 'value' and [c.field for c in model.columns] == self._get_fields():
             # Skip column update if the data has changed but the columns
             # have not
             return
         model.columns = self._get_columns()
 
-    def _manual_update(self, events, model, doc, root, parent, comm):
+    def _manual_update(
+        self, events: Tuple[param.parameterized.Event, ...], model: Model, doc: Document,
+        root: Model, parent: Optional[Model], comm: Optional[Comm]
+    ) -> None:
         for event in events:
             if event.type == 'triggered' and self._updating:
                 continue
@@ -261,7 +288,7 @@ class BaseTable(ReactiveData, Widget):
             else:
                 self._update_columns(event, model)
 
-    def _sort_df(self, df):
+    def _sort_df(self, df: DataFrameType) -> DataFrameType:
         if not self.sorters:
             return df
         fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
@@ -275,7 +302,7 @@ class BaseTable(ReactiveData, Widget):
             df_sorted.index.name = None
         return df_sorted
 
-    def _filter_dataframe(self, df):
+    def _filter_dataframe(self, df: DataFrameType) -> DataFrameType:
         """
         Filter the DataFrame.
 
@@ -448,7 +475,7 @@ class BaseTable(ReactiveData, Widget):
             return [str(v) for v in values]
         return values
 
-    def _get_data(self):
+    def _get_data(self) -> Tuple[DataFrameType, DataDict]:
         import pandas as pd
         df = self._filter_dataframe(self.value)
         if df is None:
@@ -780,12 +807,12 @@ class DataFrame(BaseTable):
         return to natural order. Use Shift + click to sort multiple
         columns simultaneously.""")
 
-    _manual_params = BaseTable._manual_params + ['aggregators']
+    _manual_params: ClassVar[List[str]] = BaseTable._manual_params + ['aggregators']
 
     _aggregators = {'sum': SumAggregator, 'max': MaxAggregator,
                     'min': MinAggregator, 'mean': AvgAggregator}
 
-    _source_transforms = {'hierarchical': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {'hierarchical': None}
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'disabled': 'editable', 'selection': None, 'sorters': None,
@@ -793,7 +820,7 @@ class DataFrame(BaseTable):
     }
 
     @property
-    def _widget_type(self):
+    def _widget_type(self) -> Type[Model]:
         return DataCube if self.hierarchical else DataTable
 
     def _get_columns(self):
@@ -974,15 +1001,19 @@ class Tabulator(BaseTable):
         ], doc="""
         Tabulator CSS theme to apply to table.""")
 
-    _data_params = ['value', 'page', 'page_size', 'pagination', 'sorters', 'filters']
+    _data_params: ClassVar[List[str]] = [
+        'value', 'page', 'page_size', 'pagination', 'sorters', 'filters'
+    ]
 
-    _config_params = ['frozen_columns', 'groups', 'selectable', 'hierarchical']
+    _config_params: ClassVar[List[str]] = [
+        'frozen_columns', 'groups', 'selectable', 'hierarchical'
+    ]
 
-    _content_params = _data_params + ['expanded', 'row_content', 'embed_content']
+    _content_params: ClassVar[List[str]] = _data_params + ['expanded', 'row_content', 'embed_content']
 
-    _manual_params = BaseTable._manual_params + _config_params
+    _manual_params: ClassVar[List[str]] = BaseTable._manual_params + _config_params
 
-    _priority_changes = ['data']
+    _priority_changes: ClassVar[List[str]] = ['data']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'disabled': 'editable', 'selection': None, 'selectable': 'select_mode',
@@ -991,7 +1022,7 @@ class Tabulator(BaseTable):
 
     # Determines the maximum size limits beyond which (local, remote)
     # pagination is enabled
-    _MAX_ROW_LIMITS = (200, 10000)
+    _MAX_ROW_LIMITS: ClassVar[Tuple[int, int]] = (200, 10000)
 
     def __init__(self, value=None, **params):
         import pandas.io.formats.style
@@ -1045,7 +1076,7 @@ class Tabulator(BaseTable):
             except Exception:
                 pass
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: Model | None = None) -> None:
         for p in self._child_panels.values():
             p._cleanup(root)
         super()._cleanup(root)
@@ -1316,7 +1347,7 @@ class Tabulator(BaseTable):
         for ref, (model, _) in self._models.items():
             self._apply_update([], {'max_page': max_page}, model, ref)
 
-    def _update_selected(self, *events, indices=None):
+    def _update_selected(self, *events: param.parameterized.Event, indices=None):
         kwargs = {}
         if self.pagination == 'remote' and self.value is not None:
             index = self.value.iloc[self.selection].index
@@ -1333,7 +1364,7 @@ class Tabulator(BaseTable):
                                  if ind>=start and ind<end]
         super()._update_selected(*events, **kwargs)
 
-    def _update_column(self, column, array):
+    def _update_column(self, column: str, array: np.ndarray):
         if self.pagination != 'remote':
             index = self._processed.index.values
             self.value.loc[index, column] = array
@@ -1346,7 +1377,7 @@ class Tabulator(BaseTable):
         self.value[column].loc[index] = array
         self._processed[column].loc[index] = array
 
-    def _update_selection(self, indices):
+    def _update_selection(self, indices: List[int]):
         if self.pagination != 'remote':
             self.selection = indices
             return
@@ -1361,7 +1392,7 @@ class Tabulator(BaseTable):
                 continue
         self.selection = indices
 
-    def _get_properties(self, source):
+    def _get_properties(self, source: ColumnDataSource) -> Dict[str, Any]:
         props = {p : getattr(self, p) for p in list(Layoutable.param)
                  if getattr(self, p) is not None}
         columns = self._get_columns()
@@ -1399,7 +1430,10 @@ class Tabulator(BaseTable):
         props['indexes'] = self.indexes
         return props
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         if self._widget_type is None:
             self._widget_type = lazy_load(
                 'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
@@ -1424,14 +1458,17 @@ class Tabulator(BaseTable):
             model.on_event('cell-click', partial(self._server_event, doc))
         return model
 
-    def _update_model(self, events, msg, root, model, doc, comm):
+    def _update_model(
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+    ) -> None:
         if comm and 'theme_url' in msg:
             msg['theme_url'], msg['theme'] = self._get_theme(
                 msg.pop('theme'), 'inline'
             )
         super()._update_model(events, msg, root, model, doc, comm)
 
-    def _get_filter_spec(self, column):
+    def _get_filter_spec(self, column: TableColumn) -> Dict[str, Any]:
         fspec = {}
         if not self.header_filters or (isinstance(self.header_filters, dict) and
                                        column.field not in self.header_filters):
@@ -1474,7 +1511,7 @@ class Tabulator(BaseTable):
             fspec['headerFilterPlaceholder'] = filter_placeholder
         return fspec
 
-    def _config_columns(self, column_objs):
+    def _config_columns(self, column_objs: List[TableColumn]) -> List[Dict[str, Any]]:
         column_objs = list(column_objs)
         groups = {}
         columns = []
@@ -1559,7 +1596,7 @@ class Tabulator(BaseTable):
                 columns.append(col_dict)
         return columns
 
-    def _get_configuration(self, columns):
+    def _get_configuration(self, columns: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Returns the Tabulator configuration.
         """
@@ -1577,7 +1614,7 @@ class Tabulator(BaseTable):
             configuration['height'] = self.height
         return configuration
 
-    def download(self, filename='table.csv'):
+    def download(self, filename: str = 'table.csv'):
         """
         Triggers downloading of the table as a CSV or JSON.
 
@@ -1587,8 +1624,8 @@ class Tabulator(BaseTable):
             The filename to save the table as.
         """
         for ref, (model, _) in self._models.items():
-            self._apply_update([], {'filename': filename}, model, ref)
-            self._apply_update([], {'download': not model.download}, model, ref)
+            self._apply_update({}, {'filename': filename}, model, ref)
+            self._apply_update({}, {'download': not model.download}, model, ref)
 
     def download_menu(self, text_kwargs={}, button_kwargs={}):
         """
@@ -1626,7 +1663,7 @@ class Tabulator(BaseTable):
         """)
         return filename, button
 
-    def on_edit(self, callback):
+    def on_edit(self, callback: Callable[[TableEditEvent], None]):
         """
         Register a callback to be executed when a cell is edited.
         Whenever a cell is edited on_edit callbacks are called with
@@ -1640,7 +1677,7 @@ class Tabulator(BaseTable):
         """
         self._on_edit_callbacks.append(callback)
 
-    def on_click(self, callback, column=None):
+    def on_click(self, callback: Callable[[CellClickEvent], None], column: Optional[str] = None):
         """
         Register a callback to be executed when any cell is clicked.
         The callback is given a CellClickEvent declaring the column
@@ -1659,7 +1696,7 @@ class Tabulator(BaseTable):
         self._on_click_callbacks[column].append(callback)
 
     @property
-    def current_view(self):
+    def current_view(self) -> DataFrameType:
         """
         Returns the current view of the table after filtering and
         sorting are applied.

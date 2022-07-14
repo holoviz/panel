@@ -1,4 +1,10 @@
+from __future__ import annotations
+
 import os
+
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Optional,
+)
 
 import param
 
@@ -7,6 +13,11 @@ from pyviz_comms import JupyterComm
 from ..config import config
 from ..models import IPyWidget as _BkIPyWidget
 from .base import PaneBase
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
 
 class IPyWidget(PaneBase):
@@ -25,10 +36,10 @@ class IPyWidget(PaneBase):
     >>> IPyWidget(some_ipywidget)
     """
 
-    priority = 0.6
+    priority: ClassVar[float | bool | None] = 0.6
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         return (hasattr(obj, 'traits') and hasattr(obj, 'get_manager_state') and hasattr(obj, 'comm'))
 
     def _get_ipywidget(self, obj, doc, root, comm, **kwargs):
@@ -55,7 +66,10 @@ class IPyWidget(PaneBase):
         model = IPyWidget(widget=obj, **kwargs)
         return model
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
         if root is None:
             return self.get_root(doc, comm)
         kwargs = self._process_param_change(self._init_params())
@@ -70,8 +84,8 @@ class IPyLeaflet(IPyWidget):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    priority = 0.7
+    priority: float | bool | None = 0.7
 
     @classmethod
-    def applies(cls, obj):
+    def applies(cls, obj: Any) -> float | bool | None:
         return IPyWidget.applies(obj) and obj._view_module == 'jupyter-leaflet'

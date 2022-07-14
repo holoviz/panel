@@ -12,9 +12,11 @@ import pytest
 
 from bokeh.client import pull_session
 from bokeh.document import Document
+from bokeh.model import Model
 from pyviz_comms import Comm
 
 from panel import config, serve
+from panel.config import panel_extension
 from panel.io import state
 from panel.pane import HTML, Markdown
 
@@ -197,10 +199,23 @@ def set_env_var(env_var, value):
     else:
         os.environ[env_var] = old_value
 
+
+@pytest.fixture(autouse=True)
+def module_cleanup():
+    """
+    Cleanup Panel extensions after each test.
+    """
+    to_reset = list(panel_extension._imports.values())
+    Model.model_class_reverse_map = {
+        name: model for name, model in Model.model_class_reverse_map.items()
+        if not any(model.__module__.startswith(tr) for tr in to_reset)
+    }
+
+
 @pytest.fixture(autouse=True)
 def server_cleanup():
     """
-    Clean up after test fails
+    Clean up server state after each test.
     """
     try:
         yield

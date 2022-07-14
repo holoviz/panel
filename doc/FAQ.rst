@@ -26,11 +26,6 @@ If you want an even richer JavaScript-based representation where that's supporte
 For a detailed comparison between Panel and other dashboarding libraries see the `Comparisons page <about/comparisons.html>`__.
 
 
-**Q: What features are on the Panel Roadmap?**
-
-For an outline on any future plans for Panel see the `Roadmap <about/roadmap.html>`__.
-
-
 **Q: How does Panel relate to Bokeh?**
 
 **A:** Panel is built on infrastructure provided by Bokeh, specifically Bokeh's model base classes, layouts, widgets, and (optionally) its server. But Panel does not require using any of Bokeh's plotting support. This way you can make use of a solid, well supported low-level toolkit (Bokeh) to build apps and dashboards for your own plots from any supported library.

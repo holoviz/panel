@@ -28,7 +28,7 @@ export class TabsView extends BkTabsView {
     let view: any = this
     while (view != null) {
       if (view.model.type.endsWith('Tabs')) {
-	view.connect(view.model.properties.active.change, () => this.update_zindex())
+        view.connect(view.model.properties.active.change, () => this.update_zindex())
       }
       view = view.parent || view._parent // Handle ReactiveHTML
     }
@@ -39,8 +39,8 @@ export class TabsView extends BkTabsView {
     let current_view: any = this
     while (parent != null) {
       if (parent.model.type.endsWith('Tabs')) {
-	if (parent.child_views.indexOf(current_view) !== parent.model.active) {
-	  return false
+        if (parent.child_views.indexOf(current_view) !== parent.model.active) {
+          return false
         }
       }
       current_view = parent

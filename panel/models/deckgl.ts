@@ -127,7 +127,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     delete view_state.normalize
     for (const p in view_state) {
       if (p.startsWith('transition'))
-	delete view_state[p]
+        delete view_state[p]
     }
     const viewport = new (window as any).deck.WebMercatorViewport(view_state);
     view_state.nw = viewport.unproject([0, 0]);

@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-from typing import ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, ClassVar, List, Mapping, Type,
+)
 
 import param
 
 from ..models import Card as BkCard
 from .base import Column, ListPanel, Row
+
+if TYPE_CHECKING:
+    from bokeh.model import Model
 
 
 class Card(Column):
@@ -63,11 +68,13 @@ class Card(Column):
         A title to be displayed in the Card header, will be overridden
         by the header if defined.""")
 
-    _bokeh_model = BkCard
+    _bokeh_model: ClassVar[Type[Model]] = BkCard
 
-    _linked_props = ['collapsed']
+    _linked_props: ClassVar[List[str]] = ['collapsed']
 
-    _rename: ClassVar[Mapping[str, str | None]] = dict(Column._rename, title=None, header=None, title_css_classes=None)
+    _rename: ClassVar[Mapping[str, str | None]] = dict(
+        Column._rename, title=None, header=None, title_css_classes=None
+    )
 
     def __init__(self, *objects, **params):
         self._header_layout = Row(css_classes=['card-header-row'],
@@ -77,7 +84,7 @@ class Card(Column):
         self.param.watch(self._update_header, ['title', 'header', 'title_css_classes'])
         self._update_header()
 
-    def _cleanup(self, root):
+    def _cleanup(self, root: Model | None = None) -> None:
         super()._cleanup(root)
         self._header_layout._cleanup(root)
 

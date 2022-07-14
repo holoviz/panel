@@ -29,6 +29,7 @@ import bokeh
 import numpy as np
 import param
 
+from bokeh.model import Model
 from packaging.version import Version
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
@@ -360,7 +361,11 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
 
 def lazy_load(module, model, notebook=False, root=None):
     if module in sys.modules:
-        return getattr(sys.modules[module], model)
+        model_cls = getattr(sys.modules[module], model)
+        if model not in Model.model_class_reverse_map:
+            Model.model_class_reverse_map[model] = model_cls
+        return model_cls
+
     if notebook:
         ext = module.split('.')[-1]
         param.main.param.warning(
