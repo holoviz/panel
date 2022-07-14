@@ -92,22 +92,21 @@ class _LogTabulator(Tabulator):
         if data is None:
             return pd.DataFrame(columns=columns)
         else:
-            return pd.DataFrame(data, index=columns).T
+            return pd.Series(data, index=columns)
 
     def write(self, log):
         # Example of a log message:
         # '2022-07-13 14:38:04,803 INFO: panel.io.server - Session 140255299576448 launching\n'
         try:
             s = log.strip().split(" ")
-            datetime = dt.datetime.strptime(f"{s[0]} {s[1]}", r"%Y-%m-%d %H:%M:%S,%f")
             datetime = f"{s[0]} {s[1]}"
             level = s[2][:-1]
             app = s[3]
             session = int(s[6])
             message = " ".join(s[7:])
-            data = [datetime, level, app, session, message]
+            df = self._create_frame([datetime, level, app, session, message])
 
-            self.value = pd.concat([self.value, self._create_frame(data)], ignore_index=True)
+            self.stream(df, follow=False)
         except Exception:
             pass
 
