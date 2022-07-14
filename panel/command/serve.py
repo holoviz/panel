@@ -351,8 +351,14 @@ class Serve(_BkServe):
                 )
             config.nthreads = args.num_threads
 
+        if args.oauth_provider and config.oauth_provider:
+                raise ValueError(
+                    "Supply OAuth provider either using environment variable "
+                    "or via explicit argument, not both."
+                )
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
+        if config.oauth_provider:
             config.oauth_expiry = args.oauth_expiry_days
             if config.oauth_key and args.oauth_key:
                 raise ValueError(
