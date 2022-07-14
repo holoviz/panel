@@ -1296,7 +1296,7 @@ class Tabulator(BaseTable):
             nrows = self.page_size
             self.page = length//nrows + bool(length%nrows) or 1
         super().stream(stream_value, rollover, reset_index)
-        if self.pagination:
+        if follow and self.pagination:
             self._update_max_page()
 
     @updating
