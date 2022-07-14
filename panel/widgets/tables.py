@@ -476,8 +476,11 @@ class BaseTable(ReactiveData, Widget):
         return values
 
     def _get_data(self) -> Tuple[DataFrameType, DataDict]:
+        return self._get_data_any_df(self.value)
+
+    def _get_data_any_df(self, df: DataFrameType) -> Tuple[DataFrameType, DataDict]:
         import pandas as pd
-        df = self._filter_dataframe(self.value)
+        df = self._filter_dataframe(df)
         if df is None:
             return [], {}
         if isinstance(self.value.index, pd.MultiIndex):
@@ -595,10 +598,10 @@ class BaseTable(ReactiveData, Widget):
                 self.param.trigger('value')
             finally:
                 self._updating = False
-            stream_value = self._filter_dataframe(stream_value)
+            stream_value, stream_data = self._get_data_any_df(stream_value)
             try:
                 self._updating = True
-                self._stream(stream_value, rollover)
+                self._stream(stream_data, rollover)
             finally:
                 self._updating = False
         elif isinstance(stream_value, pd.Series):
@@ -606,10 +609,10 @@ class BaseTable(ReactiveData, Widget):
             if rollover is not None and len(self.value) > rollover:
                 with param.discard_events(self):
                     self.value = self.value.iloc[-rollover:]
-            stream_value = self._filter_dataframe(self.value.iloc[-1:])
+            stream_value, stream_data = self._get_data_any_df(self.value.iloc[-1:])
             try:
                 self._updating = True
-                self._stream(stream_value, rollover)
+                self._stream(stream_data, rollover)
             finally:
                 self._updating = False
         elif isinstance(stream_value, dict):
