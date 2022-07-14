@@ -674,7 +674,7 @@ class BaseTable(ReactiveData, Widget):
         {'x': [3, 4], 'y': ['c', 'd']}
         """
         if self.value is None:
-            raise ValueError("Cannot patch empty {type(self).__name__}.")
+            raise ValueError(f"Cannot patch empty {type(self).__name__}.")
 
         import pandas as pd
         if not isinstance(self.value, pd.DataFrame):
