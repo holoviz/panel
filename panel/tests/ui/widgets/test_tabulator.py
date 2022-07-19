@@ -2838,3 +2838,25 @@ def test_tabulator_loading_no_vertical_rescroll(page, port):
     page.wait_for_timeout(400)
     # The table should keep the same scroll position
     assert bb == page.locator('text="T"').bounding_box()
+
+
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3695')
+def test_tabulator_trigger_value_update(page, port):
+    # Checking that this issue is resolved:
+    # https://github.com/holoviz/panel/issues/3695
+    nrows = 25
+    df = pd.DataFrame(np.random.rand(nrows, 2), columns=['a', 'b'])
+    widget = Tabulator(df)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expect(page.locator('.tabulator-row')).to_have_count(nrows)
+    widget.param.trigger('value')
+    page.wait_for_timeout(200)
+    # This currently fails because of a Tabulator JS issue,
+    # it only displays the first 20 rows.
+    expect(page.locator('.tabulator-row')).to_have_count(nrows)
