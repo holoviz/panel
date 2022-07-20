@@ -1559,17 +1559,13 @@ def test_tabulator_widget_scalar_filter(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-@pytest.mark.parametrize(
-    'col',
-    [
-        'A',
-        pytest.param('B', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
-        'C',
-        'D'
-    ],
-)
+@pytest.mark.parametrize('col', ['A', 'B', 'C', 'D'])
 def test_tabulator_constant_list_filter(document, comm, col):
     df = makeMixedDataFrame()
+    # The mixed dataframe has duplicate number values in the B columns,
+    # simplify the test by setting the targetted valued before filtering.
+    df.at[2, 'B'] = 10.0
+    df.at[4, 'B'] = 20.0
     table = Tabulator(df)
 
     model = table.get_root(document, comm)
@@ -1581,7 +1577,7 @@ def test_tabulator_constant_list_filter(document, comm, col):
     expected = {
         'index': np.array([2, 4]),
         'A': np.array([2., 4.]),
-        'B': np.array([0., 0.]),
+        'B': np.array([10., 20.]),
         'C': np.array(['foo3', 'foo5']),
         'D': np.array(['2009-01-05T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
@@ -1627,23 +1623,13 @@ def test_tabulator_function_filter(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-
-@pytest.mark.parametrize(
-    'col',
-    [
-        'A',
-        pytest.param('B', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
-        pytest.param('C', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
-        pytest.param('D', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
-    ],
-)
-def test_tabulator_constant_tuple_filter(document, comm, col):
+def test_tabulator_constant_tuple_filter(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
     model = table.get_root(document, comm)
 
-    table.add_filter((2, 3), col)
+    table.add_filter((2, 3), 'A')
 
     expected = {
         'index': np.array([2, 3]),
@@ -1656,7 +1642,6 @@ def test_tabulator_constant_tuple_filter(document, comm, col):
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
-
 
 def test_tabulator_stream_dataframe_with_filter(document, comm):
     df = makeMixedDataFrame()
