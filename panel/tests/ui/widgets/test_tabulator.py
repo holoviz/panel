@@ -1815,13 +1815,8 @@ def test_tabulator_edit_event(page, port, df_mixed):
     assert values[0] == ('str', 0, 'A', 'AA')
     assert df_mixed.at['idx0', 'str'] == 'AA'
 
-@pytest.mark.parametrize(
-    'pagination',
-    [
-        'remote',
-        pytest.param('local', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3647')),
-    ],
-)
+
+@pytest.mark.parametrize('pagination', ['remote', 'local',])
 def test_tabulator_pagination(page, port, df_mixed, pagination):
     page_size = 2
     widget = Tabulator(df_mixed, pagination=pagination, page_size=page_size)
