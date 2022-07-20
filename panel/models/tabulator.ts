@@ -256,9 +256,20 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.connect(p.children.change, () => this.renderChildren())
 
     this.connect(p.expanded.change, () => {
+      // The first cell is the cell of the frozen _index column.
       for (const row of this.tabulator.rowManager.getRows()) {
-        if (row.cells.length > 0)
+        if (row.cells.length > 0) {
           row.cells[0].layoutElement()
+        }
+      }
+      // Make sure the expand icon is changed when expanded is
+      // changed from Python.
+      for (const row of this.tabulator.rowManager.getRows()) {
+        if (row.cells.length > 0) {
+          const index = row.data._index
+          const icon = this.model.expanded.indexOf(index) < 0 ? "►" : "▼"
+          row.cells[1].element.innerText = icon
+        }
       }
     })
 
@@ -630,7 +641,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   _expand_render(cell: any): string {
     const index = cell._cell.row.data._index
-    const icon = this.model.expanded.indexOf(index) < 0 ? "\u25ba" : "\u25bc"
+    const icon = this.model.expanded.indexOf(index) < 0 ? "►" : "▼"
     return "<i>" + icon + "</i>"
   }
 
@@ -650,8 +661,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }
     }
     this.model.expanded = expanded
-    const icon = expanded.indexOf(index) < 0 ? "\u25ba" : "\u25bc"
-    cell._cell.element.innerText = icon
     if (expanded.indexOf(index) < 0)
       return
     let ready = true
