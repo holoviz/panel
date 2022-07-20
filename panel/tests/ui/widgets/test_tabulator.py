@@ -1589,7 +1589,6 @@ def test_tabulator_row_content_expand_from_python_init(page, port, df_mixed):
     assert openables.count() == len(df_mixed) - len(widget.expanded)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3646')
 def test_tabulator_row_content_expand_from_python_after(page, port, df_mixed):
     widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
 
