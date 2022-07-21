@@ -75,15 +75,19 @@ class LogDataHandler(logging.StreamHandler):
 
 class _LogTabulator(Tabulator):
 
+    _update_defaults = {
+        "theme": "midnight",
+        "layout": "fit_data_stretch",
+        "show_index": False,
+        "sorters": [{'field': 'datetime', 'dir': 'dsc'}],
+        "disabled": True,
+        "pagination": "local",
+        "page_size": 18,
+    }
+
     def __init__(self, **params):
         params["value"] = self._create_frame()
-        params["theme"] = "midnight"
-        params["layout"] = "fit_data_stretch"
-        params["show_index"] = False
-        params["sorters"] = [{'field': 'datetime', 'dir': 'dsc'}]
-        params["disabled"] = True
-        params["pagination"] = "local"
-        params["page_size"] = 18
+        params = {**self._update_defaults, **params}
         super().__init__(**params)
 
     @staticmethod
