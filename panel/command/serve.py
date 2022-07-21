@@ -412,7 +412,7 @@ class Serve(_BkServe):
                       "encryption key and will potentially leak "
                       "credentials in cookies and a JWT token embedded "
                       "in the served website. Use at your own risk or "
-                      "generate a key with the `panel oauth-key` CLI "
+                      "generate a key with the `panel oauth-secret` CLI "
                       "command and then provide it to `panel serve` "
                       "using the PANEL_OAUTH_ENCRYPTION environment "
                       "variable or the --oauth-encryption-key CLI "

@@ -110,11 +110,12 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_examples
-      - name: codecov
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          codecov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          flags: unitexamples-tests
+          fail_ci_if_error: false # optional (default = false)
   ui_test_suite:
     name: UI tests on ${{ matrix.os }} with Python 3.9
     needs: [pre_commit]
@@ -173,9 +174,15 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          playwright install
+          playwright install chromium
       - name: doit test_ui
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit test_ui
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          flags: ui-tests
+          fail_ci_if_error: false # optional (default = false)

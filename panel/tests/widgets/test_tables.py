@@ -17,9 +17,9 @@ except ImportError:
     pytestmark = pytest.mark.skip('pandas not available')
 
 from bokeh.models.widgets.tables import (
-    AvgAggregator, CellEditor, DataCube, DateFormatter, IntEditor,
-    MinAggregator, NumberEditor, NumberFormatter, SelectEditor,
-    StringFormatter, SumAggregator,
+    AvgAggregator, CellEditor, CheckboxEditor, DataCube, DateEditor,
+    DateFormatter, IntEditor, MinAggregator, NumberEditor, NumberFormatter,
+    SelectEditor, StringEditor, StringFormatter, SumAggregator,
 )
 
 from panel.depends import bind
@@ -457,6 +457,51 @@ def test_tabulator_header_filters_column_config_dict(document, comm):
     ]
     assert model.configuration['selectable'] == True
 
+
+def test_tabulator_editors_default(document, comm):
+    df = pd.DataFrame({
+        'int': [1, 2],
+        'float': [3.14, 6.28],
+        'str': ['A', 'B'],
+        'date': [dt.date(2009, 1, 8), dt.date(2010, 1, 8)],
+        'datetime': [dt.datetime(2009, 1, 8), dt.datetime(2010, 1, 8)],
+        'bool': [True, False],
+    })
+    table = Tabulator(df)
+    model = table.get_root(document, comm)
+    assert isinstance(model.columns[1].editor, IntEditor)
+    assert isinstance(model.columns[2].editor, NumberEditor)
+    assert isinstance(model.columns[3].editor, StringEditor)
+    assert isinstance(model.columns[4].editor, DateEditor)
+    assert isinstance(model.columns[5].editor, DateEditor)
+    assert isinstance(model.columns[6].editor, CheckboxEditor)
+
+
+def test_tabulator_formatters_default(document, comm):
+    df = pd.DataFrame({
+        'int': [1, 2],
+        'float': [3.14, 6.28],
+        'str': ['A', 'B'],
+        'date': [dt.date(2009, 1, 8), dt.date(2010, 1, 8)],
+        'datetime': [dt.datetime(2009, 1, 8), dt.datetime(2010, 1, 8)],
+    })
+    table = Tabulator(df)
+    model = table.get_root(document, comm)
+    mformatter = model.columns[1].formatter
+    assert isinstance(mformatter, NumberFormatter)
+    mformatter = model.columns[2].formatter
+    assert isinstance(mformatter, NumberFormatter)
+    assert mformatter.format == '0,0.0[00000]'
+    mformatter = model.columns[3].formatter
+    assert isinstance(mformatter, StringFormatter)
+    mformatter = model.columns[4].formatter
+    assert isinstance(mformatter, DateFormatter)
+    assert mformatter.format == '%Y-%m-%d'
+    mformatter = model.columns[5].formatter
+    assert isinstance(mformatter, DateFormatter)
+    assert mformatter.format == '%Y-%m-%d %H:%M:%S'
+
+
 def test_tabulator_config_formatter_string(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, formatters={'B': 'tickCross'})
@@ -566,6 +611,20 @@ def test_tabulator_selectable_rows(document, comm):
     model = table.get_root(document, comm)
 
     assert model.selectable_rows == [3, 4]
+
+
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3644')
+def test_tabulator_selectable_rows_nonallowed_selection_error(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, selectable_rows=lambda df: [1])
+
+    model = table.get_root(document, comm)
+
+    assert model.selectable_rows == [1]
+
+    #
+    with pytest.raises(ValueError):
+        table.selection = [0]
 
 
 def test_tabulator_pagination(document, comm):
@@ -1500,13 +1559,24 @@ def test_tabulator_widget_scalar_filter(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-def test_tabulator_constant_list_filter(document, comm):
+@pytest.mark.parametrize(
+    'col',
+    [
+        'A',
+        pytest.param('B', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
+        'C',
+        'D'
+    ],
+)
+def test_tabulator_constant_list_filter(document, comm, col):
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
     model = table.get_root(document, comm)
 
-    table.add_filter(['foo3', 'foo5'], 'C')
+    values = list(df.iloc[[2, 4], :][col])
+
+    table.add_filter(values, col)
 
     expected = {
         'index': np.array([2, 4]),
@@ -1557,13 +1627,23 @@ def test_tabulator_function_filter(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-def test_tabulator_constant_tuple_filter(document, comm):
+
+@pytest.mark.parametrize(
+    'col',
+    [
+        'A',
+        pytest.param('B', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
+        pytest.param('C', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
+        pytest.param('D', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3650')),
+    ],
+)
+def test_tabulator_constant_tuple_filter(document, comm, col):
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
     model = table.get_root(document, comm)
 
-    table.add_filter((2, 3), 'A')
+    table.add_filter((2, 3), col)
 
     expected = {
         'index': np.array([2, 3]),
@@ -1576,6 +1656,7 @@ def test_tabulator_constant_tuple_filter(document, comm):
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
+
 
 def test_tabulator_stream_dataframe_with_filter(document, comm):
     df = makeMixedDataFrame()

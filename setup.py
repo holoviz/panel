@@ -125,7 +125,6 @@ _tests = [
     'nbval',
     'pytest-cov',
     'pre-commit',
-    'codecov',
     'folium',
     'ipympl',
     'scipy',

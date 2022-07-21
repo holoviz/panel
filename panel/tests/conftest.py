@@ -37,6 +37,12 @@ def pytest_configure(config):
     else:
         setattr(config.option, 'markexpr', 'not ui')
 
+@pytest.fixture
+def context(context):
+    # Set the default timeout to 20 secs
+    context.set_default_timeout(20_000)
+    yield context
+
 PORT = [6000]
 
 @pytest.fixture
