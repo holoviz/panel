@@ -101,4 +101,5 @@ You will likely want to check out the :ref:`devguide_testing` guide. Meanwhile, 
 :maxdepth: 2
 
 testing
+Developing custom models <Developing_Custom_Models>
 ```
