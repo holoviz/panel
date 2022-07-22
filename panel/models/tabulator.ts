@@ -315,8 +315,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.setSelection()
       this.relayout()
       this._initializing = false
-      if (this._lastVerticalScrollbarTopPosition)
-        this.tabulator.rowManager.element.scrollTop = this._lastVerticalScrollbarTopPosition;
+    }
+    if (this._lastVerticalScrollbarTopPosition) {
+      this.tabulator.rowManager.element.scrollTop = this._lastVerticalScrollbarTopPosition;
     }
   }
 
