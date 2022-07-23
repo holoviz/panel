@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterator as TIterator, List,
-    Optional, Tuple, Union,
+    Optional, Tuple, Union, Coroutine,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -379,8 +379,9 @@ class _state(param.Parameterized):
         return ret
 
     def add_periodic_callback(
-        self, callback: Callable[[], None], period: int=500,
-        count: Optional[int] = None, timeout: int = None, start: bool=True
+        self, callback: Callable[[], None] | Coroutine[Any, Any, None],
+        period: int=500, count: Optional[int] = None, timeout: int = None,
+        start: bool=True
     ) -> PeriodicCallback:
         """
         Schedules a periodic callback to be run at an interval set by
