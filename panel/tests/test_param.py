@@ -1335,3 +1335,29 @@ def test_sorted_func():
     assert input1.name=="cba"
     assert input2.name=="acb"
     assert input3.name=="bac"
+
+
+def test_paramfunction_bare_emits_warning(caplog):
+
+    def foo():
+        return 'bar'
+
+    # Emits a Param warning
+    ParamFunction(foo)
+
+    log_record = caplog.records[0]
+
+    assert log_record.levelname == 'WARNING'
+    assert "The function 'foo' does not have any dependencies and will never update" in log_record.message
+
+
+def test_paramfunction_bare_lazy_no_warning(caplog):
+
+    def foo():
+        return 'bar'
+
+    # No warning should be emitted when the ParamFunction is lazy
+    ParamFunction(foo, lazy=True)
+
+    for log_record in caplog.records:
+        assert "The function 'foo' does not have any dependencies and will never update" not in log_record.message
