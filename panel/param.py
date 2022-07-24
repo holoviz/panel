@@ -758,7 +758,7 @@ class ParamMethod(ReplacementPane):
         self._link_object_params()
         if object is not None:
             self._validate_object()
-            self._replace_pane(not self.lazy)
+            self._replace_pane()
 
     @param.depends('object', watch=True)
     def _validate_object(self):
