@@ -901,7 +901,7 @@ class ParamFunction(ParamMethod):
     def _link_object_params(self):
         deps = getattr(self.object, '_dinfo', {})
         dep_params = list(deps.get('dependencies', [])) + list(deps.get('kw', {}).values())
-        if not dep_params:
+        if not dep_params and not self.lazy:
             fn = getattr(self.object, '__bound_function__', self.object)
             fn_name = getattr(fn, '__name__', repr(self.object))
             self.param.warning(
