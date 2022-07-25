@@ -28,6 +28,5 @@ class JSON(Markup):
 
 
 class PDF(Div):
-    blob = String("")
-    file = String("")
-    start_page = Int(default=1, help="The start page of the pdf")
+    embed = Bool(True, help="Whether to embed the file")
+    start_page = Int(default=1, help="Start page of the pdf, by default the first page.")

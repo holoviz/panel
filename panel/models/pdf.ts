@@ -1,38 +1,18 @@
 import * as p from "@bokehjs/core/properties";
 import { Markup } from "@bokehjs/models/widgets/markup";
 import { PanelMarkupView } from "./layout";
-
-// TODO:
-// some kind of loading icon + placeholder for large files
-// better handling of nullvalues
-// resizeable
-// handle urls
+import { htmlDecode } from "./html";
 
 export class PDFView extends PanelMarkupView {
   model: PDF;
 
   connect_signals(): void {
     super.connect_signals();
-
-    // const p = this.model.properties;
-    // const { width, height, file } = p;
-
-    // this.on_change([width, height, file], () => {
-    //   this.update();
-    // });
-
-    this.connect(this.model.properties.file.change, () => {
-      this.update()
-    })
-
-    // this.connect(this.model.properties.width.change, () => {
-    //   this.render()
-    // })
-
-    // this does not seem to work
-    // this.connect(this.model.properties.width.change, () => {
-    //   this.update()
-    // })
+    const p = this.model.properties;
+    const { text, width, height, embed, start_page } = p;
+    this.on_change([text, width, height, embed, start_page], () => {
+      this.update();
+    });
   }
 
   render(): void {
@@ -41,14 +21,20 @@ export class PDFView extends PanelMarkupView {
   }
 
   update(): void {
-    const url = this.convert_base64_to_url();
-
-    // This seem very unelegant
-    this.markup_el.innerHTML = `<embed src="${url}#page=${this.model.start_page}" type="application/pdf" width="${this.model.width}" height="${this.model.height}"></embed>`;
+    if (this.model.embed) {
+      const blob = this.convert_base64_to_blob();
+      const url = URL.createObjectURL(blob);
+      const w = this.model.width || "100%";
+      const h = this.model.height || "100%";
+      this.markup_el.innerHTML = `<embed src="${url}#page=${this.model.start_page}" type="application/pdf" width="${w}" height="${h}"></embed>`;
+    } else {
+      const html = htmlDecode(this.model.text);
+      this.markup_el.innerHTML = html || "";
+    }
   }
 
-  protected convert_base64_to_url(): string {
-    const byteCharacters = atob(this.model.blob);
+  protected convert_base64_to_blob(): Blob {
+    const byteCharacters = atob(this.model.text);
     const sliceSize = 512;
     var byteArrays = [];
     for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
@@ -59,8 +45,7 @@ export class PDFView extends PanelMarkupView {
       }
       byteArrays.push(byteNumbers);
     }
-    const blob = new Blob(byteArrays, { type: "application/pdf" });
-    return URL.createObjectURL(blob);
+    return new Blob(byteArrays, { type: "application/pdf" });
   }
 }
 
@@ -68,8 +53,7 @@ export namespace PDF {
   export type Attrs = p.AttrsOf<Props>;
 
   export type Props = Markup.Props & {
-    blob: p.Property<string>;
-    file: p.Property<string>;
+    embed: p.Property<boolean>;
     start_page: p.Property<Number>;
   };
 }
@@ -87,9 +71,8 @@ export class PDF extends Markup {
 
   static init_PDF(): void {
     this.prototype.default_view = PDFView;
-    this.define<PDF.Props>(({ String, Number }) => ({
-      blob: [String, ""], // Nullable this
-      file: [String, ""], // Nullable this
+    this.define<PDF.Props>(({ Number, Boolean }) => ({
+      embed: [Boolean, true],
       start_page: [Number, 1],
     }));
   }

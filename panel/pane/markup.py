@@ -4,7 +4,6 @@ Markdown, and also regular strings.
 """
 from __future__ import annotations
 
-import base64
 import json
 import textwrap
 
@@ -14,7 +13,7 @@ from typing import (
 
 import param
 
-from ..models import HTML as _BkHTML, JSON as _BkJSON, PDF as _BkPDF
+from ..models import HTML as _BkHTML, JSON as _BkJSON
 from ..util import escape
 from ..viewable import Layoutable
 from .base import PaneBase
@@ -59,70 +58,6 @@ class DivPaneBase(PaneBase):
 
     def _update(self, ref: str, model: Model) -> None:
         model.update(**self._get_properties())
-
-
-class PDF(DivPaneBase):
-
-
-    # width = param.Number(800)
-
-    blob = param.String(None)
-    file = param.String(None)
-    start_page = param.Number(default=1)
-
-    _bokeh_model: ClassVar[Model] = _BkPDF
-
-    # _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
-
-    _updates: ClassVar[bool] = True
-
-    # _rerender_params: ClassVar[List[str]] = [
-    #     'object', 'style', 'width', 'height'
-    # ]
-
-    # _rename = {"file": None}
-    # def _get_properties(self):
-    #     "Convert parameters to properties"
-    #     return {}
-
-    def _get_properties(self):
-        return {p : getattr(self, p) for p in list(Layoutable.param) + ['style', 'blob', 'file', 'start_page']
-                if getattr(self, p) is not None}
-
-    # def _get_model(
-    #     self, doc: Document, root: Optional[Model] = None,
-    #     parent: Optional[Model] = None, comm: Optional[Comm] = None
-    # ) -> Model:
-    #     model = self._bokeh_model(**self._get_properties())
-    #     if root is None:
-    #         root = model
-    #     self._models[root.ref['id']] = (model, parent)
-    #     return model
-
-    # def _update(self, ref: str, model: Model) -> None:
-    #     model.update(**self._get_properties())
-
-    @param.depends("file", watch=True, on_init=True)
-    def _update_blob(self):
-        if self.file:
-            with open(self.file, "rb") as f:
-                raw = f.read()
-                self.blob = base64.b64encode(raw).decode()
-
-
-
-    # def _get_model(
-    #     self, doc: Document, root: Optional[Model] = None,
-    #     parent: Optional[Model] = None, comm: Optional[Comm] = None
-    # ) -> Model:
-    #     model = self._bokeh_model(**self._get_properties())
-    #     if root is None:
-    #         root = model
-    #     self._models[root.ref['id']] = (model, parent)
-    #     return model
-
-    # def _update(self, ref: str, model: Model) -> None:
-    #     model.update(**self._get_properties())
 
 
 class HTML(DivPaneBase):
