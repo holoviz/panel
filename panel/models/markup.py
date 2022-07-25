@@ -25,3 +25,9 @@ class JSON(Markup):
     hover_preview = Bool(default=False, help="Whether to show a hover preview for collapsed nodes.")
 
     theme = String(default='dark', help="Whether to expand all JSON nodes.")
+
+
+class PDF(Div):
+    blob = String("")
+    file = String("")
+    start_page = Int(default=1, help="The start page of the pdf")
