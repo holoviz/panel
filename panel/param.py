@@ -758,7 +758,7 @@ class ParamMethod(ReplacementPane):
         self._link_object_params()
         if object is not None:
             self._validate_object()
-            self._replace_pane(not self.lazy)
+            self._replace_pane()
 
     @param.depends('object', watch=True)
     def _validate_object(self):
@@ -901,7 +901,7 @@ class ParamFunction(ParamMethod):
     def _link_object_params(self):
         deps = getattr(self.object, '_dinfo', {})
         dep_params = list(deps.get('dependencies', [])) + list(deps.get('kw', {}).values())
-        if not dep_params:
+        if not dep_params and not self.lazy:
             fn = getattr(self.object, '__bound_function__', self.object)
             fn_name = getattr(fn, '__name__', repr(self.object))
             self.param.warning(
