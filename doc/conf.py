@@ -89,7 +89,7 @@ nbsite_gallery_conf = {
                  'description': 'How to leverage Panel layout components to achieve complex layouts.'},
                 {'path': 'dynamic',
                  'title': 'Dynamic UIs',
-                 'description': ('Examples demonstrating how to build dynamic UIs with components that'
+                 'description': ('Examples demonstrating how to build dynamic UIs with components that '
                                  'are added or removed interactively.')},
                 {'path': 'param',
                  'title': 'Param based apps',
