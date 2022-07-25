@@ -18,8 +18,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterator as TIterator, List,
-    Optional, Tuple, Union, Coroutine,
+    TYPE_CHECKING, Any, Callable, ClassVar, Coroutine, Dict,
+    Iterator as TIterator, List, Optional, Tuple, Union,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
