@@ -1881,17 +1881,25 @@ def test_tabulator_selection_with_selectable_rows():
 
     # This is available with selectable rows
     table.selection = []
+    assert table.selection == []
     table.selection = [0]
+    assert table.selection == [0]
 
     # This is not and should raise the error
     with pytest.raises(ValueError, match=err_msg):
         table.selection = [1]
+    assert table.selection == [0]
     with pytest.raises(ValueError, match=err_msg):
         table.selection = [0, 1]
+    assert table.selection == [0]
 
     # No selectable_rows everything should work
     table = Tabulator(df)
     table.selection = []
+    assert table.selection == []
     table.selection = [0]
+    assert table.selection == [0]
     table.selection = [1]
+    assert table.selection == [1]
     table.selection = [0, 1]
+    assert table.selection == [0, 1]
