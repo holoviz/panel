@@ -1868,3 +1868,30 @@ def test_tabulator_pagination_remote_cell_click_event():
                 event = CellClickEvent(model=None, column=col, row=row)
                 table._process_event(event)
                 assert values[-1] == (col, (p*2)+row, data[col].iloc[(p*2)+row])
+
+
+def test_tabulator_selection_with_selectable_rows():
+    err_msg = (
+        "Values in 'selection' must not have values "
+        "which are not available with 'selectable_rows'."
+    )
+
+    df = pd._testing.makeMixedDataFrame()
+    table = Tabulator(df, selectable_rows=lambda df: [0])
+
+    # This is available with selectable rows
+    table.selection = []
+    table.selection = [0]
+
+    # This is not and should raise the error
+    with pytest.raises(ValueError, match=err_msg):
+        table.selection = [1]
+    with pytest.raises(ValueError, match=err_msg):
+        table.selection = [0, 1]
+
+    # No selectable_rows everything should work
+    table = Tabulator(df)
+    table.selection = []
+    table.selection = [0]
+    table.selection = [1]
+    table.selection = [0, 1]
