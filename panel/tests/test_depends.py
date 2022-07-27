@@ -2,6 +2,7 @@ import pytest
 
 from panel.depends import bind, param_value_if_widget
 from panel.pane import panel
+from panel.param import ParamFunction
 from panel.widgets import IntSlider
 
 
@@ -158,16 +159,14 @@ def test_bind_bare_emits_warning(caplog):
     def foo():
         return 'bar'
 
-    from panel.param import ParamFunction
-
     ParamFunction(foo)
-
-    breakpoint()
 
     # Emits a Param warning
     panel(bind(foo))
 
-    log_record = caplog.records[0]
-
-    assert log_record.levelname == 'WARNING'
-    assert "The function 'foo' does not have any dependencies and will never update" in log_record.message
+    found = False
+    for log_record in caplog.records:
+        if (log_record.levelname == 'WARNING' and
+           "The function 'foo' does not have any dependencies and will never update" in log_record.message):
+            found = True
+    assert found
