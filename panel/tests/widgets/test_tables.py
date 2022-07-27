@@ -613,18 +613,42 @@ def test_tabulator_selectable_rows(document, comm):
     assert model.selectable_rows == [3, 4]
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3644')
 def test_tabulator_selectable_rows_nonallowed_selection_error(document, comm):
     df = makeMixedDataFrame()
-    table = Tabulator(df, selectable_rows=lambda df: [1])
+    table = Tabulator(df, selectable_rows=lambda df: [0])
 
     model = table.get_root(document, comm)
+    assert model.selectable_rows == [0]
 
-    assert model.selectable_rows == [1]
+    err_msg = (
+        "Values in 'selection' must not have values "
+        "which are not available with 'selectable_rows'."
+    )
 
-    #
-    with pytest.raises(ValueError):
-        table.selection = [0]
+    # This is available with selectable rows
+    table.selection = []
+    assert table.selection == []
+    table.selection = [0]
+    assert table.selection == [0]
+
+    # This is not and should raise the error
+    with pytest.raises(ValueError, match=err_msg):
+        table.selection = [1]
+    assert table.selection == [0]
+    with pytest.raises(ValueError, match=err_msg):
+        table.selection = [0, 1]
+    assert table.selection == [0]
+
+    # No selectable_rows everything should work
+    table = Tabulator(df)
+    table.selection = []
+    assert table.selection == []
+    table.selection = [0]
+    assert table.selection == [0]
+    table.selection = [1]
+    assert table.selection == [1]
+    table.selection = [0, 1]
+    assert table.selection == [0, 1]
 
 
 def test_tabulator_pagination(document, comm):
@@ -1868,38 +1892,3 @@ def test_tabulator_pagination_remote_cell_click_event():
                 event = CellClickEvent(model=None, column=col, row=row)
                 table._process_event(event)
                 assert values[-1] == (col, (p*2)+row, data[col].iloc[(p*2)+row])
-
-
-def test_tabulator_selection_with_selectable_rows():
-    err_msg = (
-        "Values in 'selection' must not have values "
-        "which are not available with 'selectable_rows'."
-    )
-
-    df = pd._testing.makeMixedDataFrame()
-    table = Tabulator(df, selectable_rows=lambda df: [0])
-
-    # This is available with selectable rows
-    table.selection = []
-    assert table.selection == []
-    table.selection = [0]
-    assert table.selection == [0]
-
-    # This is not and should raise the error
-    with pytest.raises(ValueError, match=err_msg):
-        table.selection = [1]
-    assert table.selection == [0]
-    with pytest.raises(ValueError, match=err_msg):
-        table.selection = [0, 1]
-    assert table.selection == [0]
-
-    # No selectable_rows everything should work
-    table = Tabulator(df)
-    table.selection = []
-    assert table.selection == []
-    table.selection = [0]
-    assert table.selection == [0]
-    table.selection = [1]
-    assert table.selection == [1]
-    table.selection = [0, 1]
-    assert table.selection == [0, 1]
