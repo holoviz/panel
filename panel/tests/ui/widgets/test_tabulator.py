@@ -2068,7 +2068,7 @@ def test_tabulator_header_filters_set_from_client(page, port, df_mixed):
     expected_filter1 = {'field': col, 'type': cmp, 'value': val}
     expect(page.locator('.tabulator-row')).to_have_count(len(expected_filter_df))
     wait_until(page, lambda: widget.filters == [expected_filter1])
-    assert widget.current_view.equals(expected_filter_df)
+    wait_until(page, lambda: widget.current_view.equals(expected_filter_df))
 
     str_header = page.locator('input[type="search"]')
     str_header.click()
@@ -2080,7 +2080,7 @@ def test_tabulator_header_filters_set_from_client(page, port, df_mixed):
     expected_filter2 = {'field': col, 'type': cmp, 'value': val}
     expect(page.locator('.tabulator-row')).to_have_count(len(expected_filter_df))
     wait_until(page, lambda: widget.filters == [expected_filter1, expected_filter2])
-    assert widget.current_view.equals(expected_filter_df)
+    wait_until(page, lambda: widget.current_view.equals(expected_filter_df))
 
 
 def test_tabulator_download(page, port, df_mixed, df_mixed_as_string):
