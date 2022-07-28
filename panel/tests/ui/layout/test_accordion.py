@@ -1,11 +1,9 @@
-import time
-
 import pytest
 
 from bokeh.models import Div
 
 from panel import Accordion
-from panel.io.server import serve
+from panel.tests.util import serve_panel_widget
 
 try:
     from playwright.sync_api import expect
@@ -38,9 +36,7 @@ def is_expanded(card_object, card_content):
 def test_accordion_default(page, port, accordion_components):
     d0, d1 = accordion_components
     accordion = Accordion(d0, d1)
-    serve(accordion, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_panel_widget(page, port, accordion)
 
     accordion_elements = page.locator('.bk.accordion')
     # there are 2 card in this accordion
@@ -73,9 +69,7 @@ def test_accordion_card_name(page, port, accordion_components):
         ('Card 0', d0),
         ('Card 1', d1),
     )
-    serve(accordion, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_panel_widget(page, port, accordion)
 
     accordion_elements = page.locator('.bk.accordion')
     d0_object = accordion_elements.nth(0)
@@ -88,9 +82,7 @@ def test_accordion_card_name(page, port, accordion_components):
 def test_accordion_active(page, port, accordion_components):
     d0, d1 = accordion_components
     accordion = Accordion(d0, d1, active=[0])
-    serve(accordion, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_panel_widget(page, port, accordion)
 
     accordion_elements = page.locator('.bk.accordion')
     # there are 2 card in this accordion
@@ -110,9 +102,7 @@ def test_accordion_active(page, port, accordion_components):
 def test_accordion_objects(page, port, accordion_components):
     d0, d1 = accordion_components
     accordion = Accordion(d0, d1)
-    serve(accordion, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_panel_widget(page, port, accordion)
 
     # change the entire list of objects in the accordion
     new_objects = [d0]
@@ -124,9 +114,7 @@ def test_accordion_objects(page, port, accordion_components):
 def test_accordion_toggle(page, port, accordion_components):
     d0, d1 = accordion_components
     accordion = Accordion(d0, d1, toggle=True)
-    serve(accordion, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_panel_widget(page, port, accordion)
 
     accordion_elements = page.locator('.bk.accordion')
     # there are 2 card in this accordion
@@ -151,9 +139,7 @@ def test_accordion_toggle(page, port, accordion_components):
 
 def test_accordion_append(page, port, accordion_components):
     accordion = Accordion()
-    serve(accordion, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_panel_widget(page, port, accordion)
 
     accordion_elements = page.locator('.bk.accordion')
     # empty accordion
@@ -180,9 +166,7 @@ def test_accordion_append(page, port, accordion_components):
 def test_accordion_extend(page, port, accordion_components):
     d0, d1 = accordion_components
     accordion = Accordion(d0, d1)
-    serve(accordion, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_panel_widget(page, port, accordion)
 
     accordion_elements = page.locator('.bk.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))
@@ -205,9 +189,7 @@ def test_accordion_extend(page, port, accordion_components):
 def test_accordion_clear(page, port, accordion_components):
     d0, d1 = accordion_components
     accordion = Accordion(d0, d1)
-    serve(accordion, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_panel_widget(page, port, accordion)
 
     accordion_elements = page.locator('.bk.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))
@@ -221,9 +203,7 @@ def test_accordion_clear(page, port, accordion_components):
 def test_accordion_insert(page, port, accordion_components):
     d0, d1 = accordion_components
     accordion = Accordion(d0, d1)
-    serve(accordion, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_panel_widget(page, port, accordion)
 
     accordion_elements = page.locator('.bk.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))
@@ -253,9 +233,7 @@ def test_accordion_insert(page, port, accordion_components):
 def test_accordion_pop(page, port, accordion_components):
     d0, d1 = accordion_components
     accordion = Accordion(d0, d1)
-    serve(accordion, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_panel_widget(page, port, accordion)
 
     accordion_elements = page.locator('.bk.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))
@@ -271,9 +249,7 @@ def test_accordion_pop(page, port, accordion_components):
 def test_accordion_remove(page, port, accordion_components):
     d0, d1 = accordion_components
     accordion = Accordion(d0, d1)
-    serve(accordion, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_panel_widget(page, port, accordion)
 
     accordion_elements = page.locator('.bk.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))

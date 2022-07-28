@@ -6,6 +6,8 @@ import pytest
 
 from packaging.version import Version
 
+from panel.io.server import serve
+
 try:
     import holoviews as hv
     hv_version = Version(hv.__version__)
@@ -165,3 +167,9 @@ def get_ctrl_modifier():
         return 'Meta'
     else:
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
+
+
+def serve_panel_widget(page, port, pn_widget, sleep=0.2):
+    serve(pn_widget, port=port, threaded=True, show=False)
+    time.sleep(sleep)
+    page.goto(f"http://localhost:{port}")
