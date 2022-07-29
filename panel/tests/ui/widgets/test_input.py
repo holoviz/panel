@@ -92,6 +92,17 @@ def disabled_dates():
     return active_date, disabled_list, disabled_str_list
 
 
+@pytest.fixture
+def enabled_dates():
+    enabled_list = [
+        datetime.date(2021, 3, 1),
+        datetime.date(2021, 3, 3),
+    ]
+    enabled_str_list = ['March 1, 2021', 'March 3, 2021']
+    active_date = datetime.datetime(2021, 3, 1)
+    return active_date, enabled_list, enabled_str_list
+
+
 def valid_prev_time(old_value, new_value, max_value, amount=1):
     current_value = int(old_value)
     prev_value = int(new_value)
@@ -384,10 +395,8 @@ def test_datetimepicker_start_end(page, port, march_2021, datetime_start_end):
     expect(disabled_days).to_have_count(num_days - len(selectable_dates))
 
 
-def test_datetimepicker_disabled_dates(page, port, march_2021, disabled_dates):
+def test_datetimepicker_disabled_dates(page, port, disabled_dates):
     active_date, disabled_list, disabled_str_list = disabled_dates
-
-    march_2021_str, num_days, num_prev_month_days, num_next_month_days = march_2021
 
     datetime_picker_widget = DatetimePicker(
         name='Datetime Picker', disabled_dates=disabled_list, value=active_date
@@ -400,12 +409,27 @@ def test_datetimepicker_disabled_dates(page, port, march_2021, disabled_dates):
     datetime_value = page.locator('.flatpickr-input')
     datetime_value.dblclick()
 
-    # days container contains all days of March and some days of previous month and next month
-    days_container = page.locator('.flatpickr-calendar .flatpickr-days .dayContainer')
-    expect(days_container).to_have_text(march_2021_str, use_inner_text=True)
-
     # disabled days
     disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
     expect(disabled_days).to_have_count(len(disabled_list))
     for i in range(len(disabled_list)):
         assert disabled_days.nth(i).get_attribute('aria-label') == disabled_str_list[i]
+
+
+def test_datetimepicker_enabled_dates(page, port, march_2021, enabled_dates):
+    active_date, enabled_list, enabled_str_list = enabled_dates
+    datetime_picker_widget = DatetimePicker(
+        name='Datetime Picker', enabled_dates=enabled_list, value=active_date
+    )
+    serve(datetime_picker_widget, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    # click to show the datetime picker container
+    datetime_value = page.locator('.flatpickr-input')
+    datetime_value.dblclick()
+
+    _, num_days, _, _ = march_2021
+    # num disabled days
+    disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
+    expect(disabled_days).to_have_count(num_days - len(enabled_list))
