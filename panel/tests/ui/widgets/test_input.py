@@ -1,3 +1,4 @@
+import datetime
 import time
 
 import pytest
@@ -47,22 +48,29 @@ def months_as_str():
 
 
 @pytest.fixture
-def months_mapper():
-    mapper = {
-        0: 'January',
-        1: 'February',
-        2: 'March',
-        3: 'April',
-        4: 'May',
-        5: 'June',
-        6: 'July',
-        7: 'August',
-        8: 'September',
-        9: 'October',
-        10: 'November',
-        11: 'December',
-    }
-    return mapper
+def march_2021():
+    march_2021_days = [
+        28, 1, 2, 3, 4, 5, 6,           # 1st week
+        7, 8, 9, 10, 11, 12, 13,        # 2nd week
+        14, 15, 16, 17, 18, 19, 20,     # 3rd week
+        21, 22, 23, 24, 25, 26, 27,     # 4th week
+        28, 29, 30, 31, 1, 2, 3,        # 5th week
+        4, 5, 6, 7, 8, 9, 10            # 6th week
+    ]
+    march_2021_str = '\n'.join([str(i) for i in march_2021_days])
+    num_prev_month_days = 1
+    num_current_month_days = 31
+    num_next_month_days = 10
+    return march_2021_str, num_prev_month_days, num_current_month_days, num_next_month_days
+
+
+@pytest.fixture
+def datetime_value_data():
+    year, month, day, hour, min, sec = 2021, 3, 2, 23, 55, 0
+    month_str = 'March'
+    date_str = 'March 2, 2021'
+    datetime_str = '2021-03-02 23:55:00'
+    return year, month, day, hour, min, sec, month_str, date_str, datetime_str
 
 
 def valid_prev_time(old_value, new_value, max_value, amount=1):
@@ -131,12 +139,14 @@ def test_datetimepicker_default(page, port, weekdays_as_str, months_as_str):
     prev_month_button = page.locator('.flatpickr-prev-month')
     next_month_button = page.locator('.flatpickr-next-month')
     month_dropdown = page.locator('.flatpickr-current-month select.flatpickr-monthDropdown-months')
+    all_months = page.locator('.flatpickr-calendar .flatpickr-monthDropdown-month')
     year_input = page.locator('.flatpickr-current-month .numInput.cur-year')
     year_up = page.locator('.flatpickr-current-month .arrowUp')
     year_down = page.locator('.flatpickr-current-month .arrowDown')
     expect(prev_month_button).to_have_count(1)
     expect(next_month_button).to_have_count(1)
     expect(month_dropdown).to_have_count(1)
+    expect(all_months).to_have_count(12)
     expect(prev_month_button).to_have_count(1)
     expect(year_input).to_have_count(1)
     expect(year_up).to_have_count(1)
@@ -259,3 +269,76 @@ def test_datetimepicker_default(page, port, weekdays_as_str, months_as_str):
     sec_up.click()
     sec_after_click = sec_input.input_value()
     assert valid_next_time(sec_before_click, sec_after_click, max_value=60, amount=5)
+
+
+def test_datetimepicker_value(page, port, march_2021, datetime_value_data):
+
+    year, month, day, hour, min, sec, month_str, date_str, datetime_str = datetime_value_data
+
+    march_2021_str, num_prev_month_days, num_current_month_days, num_next_month_days = march_2021
+
+    datetime_picker_widget = DatetimePicker(
+        name='Datetime Picker', value=datetime.datetime(year, month, day, hour, min, sec)
+    )
+    serve(datetime_picker_widget, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    datetime_value = page.locator('.flatpickr-input')
+    assert datetime_value.input_value() == datetime_str
+
+    # click to show the datetime picker container
+    datetime_value.dblclick()
+
+    year_input = page.locator('.flatpickr-current-month .numInput.cur-year')
+    assert int(year_input.input_value()) == year
+
+    # days container contains all days of March and some days of previous month and next month
+    days_container = page.locator('.flatpickr-calendar .flatpickr-days .dayContainer')
+    expect(days_container).to_have_text(march_2021_str, use_inner_text=True)
+
+    prev_month_days = page.locator('.flatpickr-calendar .flatpickr-day.prevMonthDay')
+    expect(prev_month_days).to_have_count(num_prev_month_days)
+
+    next_month_days = page.locator('.flatpickr-calendar .flatpickr-day.nextMonthDay')
+    expect(next_month_days).to_have_count(num_next_month_days)
+
+    all_days = page.locator('.flatpickr-calendar .flatpickr-day')
+    expect(all_days).to_have_count(
+        num_prev_month_days + num_current_month_days + num_next_month_days
+    )
+
+    # value of selected date
+    selected_day = page.locator('.flatpickr-calendar .flatpickr-day.selected')
+    assert selected_day.get_attribute('aria-label') == date_str
+
+    hour_input = page.locator('.flatpickr-calendar .flatpickr-time .numInput.flatpickr-hour')
+    assert int(hour_input.input_value()) == hour
+    min_input = page.locator('.flatpickr-calendar .flatpickr-time .numInput.flatpickr-minute')
+    assert int(min_input.input_value()) == min
+    sec_input = page.locator('.flatpickr-calendar .flatpickr-time .numInput.flatpickr-second')
+    assert int(sec_input.input_value()) == sec
+
+    time_up_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowUp')
+    time_down_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowDown')
+    hour_up = time_up_buttons.nth(0)
+    min_up = time_up_buttons.nth(1)
+    sec_down = time_down_buttons.nth(2)
+
+    # click up arrow button to increase hour: 23h -> 0h
+    hour_before_click = hour_input.input_value()
+    hour_up.click()
+    hour_after_click = hour_input.input_value()
+    assert valid_next_time(hour_before_click, hour_after_click, max_value=24, amount=1)
+
+    # click up arrow button to increase minutes: 55m -> 0m
+    min_before_click = min_input.input_value()
+    min_up.click()
+    min_after_click = min_input.input_value()
+    assert valid_next_time(min_before_click, min_after_click, max_value=60, amount=5)
+
+    # click down arrow button to decrease second: 0s -> 55s
+    sec_before_click = sec_input.input_value()
+    sec_down.click()
+    sec_after_click = sec_input.input_value()
+    assert valid_prev_time(sec_before_click, sec_after_click, max_value=60, amount=5)
