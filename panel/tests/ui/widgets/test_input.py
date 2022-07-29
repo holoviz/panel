@@ -142,7 +142,7 @@ def valid_next_month(old_month, new_month, old_year, new_year):
 
 
 def test_datetimepicker_default(page, port, weekdays_as_str, months_as_str):
-    datetime_picker_widget = DatetimePicker(name='Datetime Picker')
+    datetime_picker_widget = DatetimePicker()
     serve(datetime_picker_widget, port=port, threaded=True, show=False)
     time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
@@ -308,7 +308,7 @@ def test_datetimepicker_value(page, port, march_2021, datetime_value_data):
     march_2021_str, num_days, num_prev_month_days, num_next_month_days = march_2021
 
     datetime_picker_widget = DatetimePicker(
-        name='Datetime Picker', value=datetime.datetime(year, month, day, hour, min, sec)
+        value=datetime.datetime(year, month, day, hour, min, sec)
     )
     serve(datetime_picker_widget, port=port, threaded=True, show=False)
     time.sleep(0.2)
@@ -377,7 +377,7 @@ def test_datetimepicker_start_end(page, port, march_2021, datetime_start_end):
 
     march_2021_str, num_days, _, _ = march_2021
 
-    datetime_picker_widget = DatetimePicker(name='Datetime Picker', start=start, end=end)
+    datetime_picker_widget = DatetimePicker(start=start, end=end)
     serve(datetime_picker_widget, port=port, threaded=True, show=False)
     time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
@@ -399,7 +399,7 @@ def test_datetimepicker_disabled_dates(page, port, disabled_dates):
     active_date, disabled_list, disabled_str_list = disabled_dates
 
     datetime_picker_widget = DatetimePicker(
-        name='Datetime Picker', disabled_dates=disabled_list, value=active_date
+        disabled_dates=disabled_list, value=active_date
     )
     serve(datetime_picker_widget, port=port, threaded=True, show=False)
     time.sleep(0.2)
@@ -419,7 +419,7 @@ def test_datetimepicker_disabled_dates(page, port, disabled_dates):
 def test_datetimepicker_enabled_dates(page, port, march_2021, enabled_dates):
     active_date, enabled_list, enabled_str_list = enabled_dates
     datetime_picker_widget = DatetimePicker(
-        name='Datetime Picker', enabled_dates=enabled_list, value=active_date
+        enabled_dates=enabled_list, value=active_date
     )
     serve(datetime_picker_widget, port=port, threaded=True, show=False)
     time.sleep(0.2)
@@ -539,3 +539,30 @@ def test_datetimepicker_disable_editing(page, port):
 
     datetime_value = page.locator('.flatpickr-input')
     assert datetime_value.get_attribute('disabled') == 'true'
+
+
+def test_datetimepicker_visible(page, port):
+    # add css class to search for name more easily
+    datetime_picker_widget = DatetimePicker(
+        visible=False, css_classes=['invisible-datetimepicker']
+    )
+    serve(datetime_picker_widget, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    invisible_datetime_picker = page.locator('.invisible-datetimepicker')
+    expect(invisible_datetime_picker).to_have_css('display', 'none')
+
+
+def test_datetimepicker_name(page, port):
+    name = 'Datetime Picker'
+    # add css class to search for name more easily
+    datetime_picker_widget = DatetimePicker(
+        name=name, css_classes=['datetimepicker-with-name']
+    )
+    serve(datetime_picker_widget, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    datetime_picker_with_name = page.locator('.datetimepicker-with-name')
+    expect(datetime_picker_with_name).to_have_text(name)
