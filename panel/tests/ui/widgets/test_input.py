@@ -433,3 +433,99 @@ def test_datetimepicker_enabled_dates(page, port, march_2021, enabled_dates):
     # num disabled days
     disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
     expect(disabled_days).to_have_count(num_days - len(enabled_list))
+
+
+def test_datetimepicker_enable_time(page, port):
+    datetime_picker_widget = DatetimePicker(enable_time=False)
+    serve(datetime_picker_widget, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    # click to show the datetime picker container
+    datetime_value = page.locator('.flatpickr-input')
+    datetime_value.dblclick()
+
+    # no time editor
+    time_editor = page.locator('.flatpickr-calendar .flatpickr-time.time24hr.hasSeconds')
+    expect(time_editor).to_have_count(0)
+
+
+def test_datetimepicker_enable_seconds(page, port):
+    datetime_picker_widget = DatetimePicker(enable_seconds=False)
+    serve(datetime_picker_widget, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    # click to show the datetime picker container
+    datetime_value = page.locator('.flatpickr-input')
+    datetime_value.dblclick()
+
+    # no seconds in time editor
+    time_editor_with_sec = page.locator('.flatpickr-calendar .flatpickr-time.time24hr.hasSeconds')
+    expect(time_editor_with_sec).to_have_count(0)
+
+    # time editor
+    time_editor_with_sec = page.locator('.flatpickr-calendar .flatpickr-time.time24hr')
+    expect(time_editor_with_sec).to_have_count(1)
+
+    time_inputs = page.locator('.flatpickr-calendar .flatpickr-time .numInputWrapper')
+    time_up_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowUp')
+    time_down_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowDown')
+    # 2 inputs and up/down buttons for hour, min, no sec
+    expect(time_inputs).to_have_count(2)
+    expect(time_up_buttons).to_have_count(2)
+    expect(time_down_buttons).to_have_count(2)
+    # 1 separator `:` hour:min
+    time_separators = page.locator('.flatpickr-calendar .flatpickr-time .flatpickr-time-separator')
+    expect(time_separators).to_have_count(1)
+
+
+def test_datetimepicker_military_time(page, port):
+    datetime_picker_widget = DatetimePicker(military_time=False)
+    serve(datetime_picker_widget, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    # click to show the datetime picker container
+    datetime_value = page.locator('.flatpickr-input')
+    datetime_value.dblclick()
+
+    # no 24h format in time editor
+    time_editor_with_sec = page.locator('.flatpickr-calendar .flatpickr-time.time24hr.hasSeconds')
+    expect(time_editor_with_sec).to_have_count(0)
+
+    # time editor
+    time_editor_with_sec = page.locator('.flatpickr-calendar .flatpickr-time.hasSeconds')
+    expect(time_editor_with_sec).to_have_count(1)
+
+    time_inputs = page.locator('.flatpickr-calendar .flatpickr-time .numInputWrapper')
+    time_am_pm = page.locator('.flatpickr-calendar .flatpickr-time .flatpickr-am-pm')
+    time_up_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowUp')
+    time_down_buttons = page.locator('.flatpickr-calendar .flatpickr-time .arrowDown')
+    # 3 inputs and up/down buttons for hour, min, sec
+    expect(time_inputs).to_have_count(3)
+    expect(time_up_buttons).to_have_count(3)
+    expect(time_down_buttons).to_have_count(3)
+    # 1 am-pm toggle
+    expect(time_am_pm).to_have_count(1)
+    # 2 separators `:` hour:min:sec
+    time_separators = page.locator('.flatpickr-calendar .flatpickr-time .flatpickr-time-separator')
+    expect(time_separators).to_have_count(2)
+
+    hour_input = page.locator('.flatpickr-calendar .flatpickr-time .numInput.flatpickr-hour')
+    hour_up = time_up_buttons.nth(0)
+    hour_down = time_down_buttons.nth(0)
+
+    hour_before_click = hour_input.input_value()
+    # click down arrow button to decrease hour
+    hour_down.click()
+    hour_after_click = hour_input.input_value()
+    # check data are updated in 12h format
+    assert valid_prev_time(hour_before_click, hour_after_click, max_value=13, amount=1)
+
+    # click up arrow button to increase hour
+    hour_before_click = hour_input.input_value()
+    hour_up.click()
+    hour_after_click = hour_input.input_value()
+    # check data are updated in 12h format
+    assert valid_next_time(hour_before_click, hour_after_click, max_value=13, amount=1)
