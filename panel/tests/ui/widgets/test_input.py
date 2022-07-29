@@ -529,3 +529,13 @@ def test_datetimepicker_military_time(page, port):
     hour_after_click = hour_input.input_value()
     # check data are updated in 12h format
     assert valid_next_time(hour_before_click, hour_after_click, max_value=13, amount=1)
+
+
+def test_datetimepicker_disable_editing(page, port):
+    datetime_picker_widget = DatetimePicker(disabled=True)
+    serve(datetime_picker_widget, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    datetime_value = page.locator('.flatpickr-input')
+    assert datetime_value.get_attribute('disabled') == 'true'
