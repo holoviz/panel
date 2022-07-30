@@ -340,6 +340,11 @@ class _state(param.Parameterized):
 
         Note: Keyword arguments must be hashable.
 
+        Example:
+
+        >>> import seaborn as sns
+        >>> planets = pn.state.as_cached("seaborn-planets", sns.load_dataset, name='planets')
+
         Arguments
         ---------
         key: (str)
