@@ -955,19 +955,24 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         edit = Row(self._label, self._start_edit, sep, self._end_edit,
                    sizing_mode='stretch_width', margin=0)
         self._composite.extend([edit, self._slider])
-        self._slider.jscallback(args={'start': self._start_edit, 'end': self._end_edit}, value="""
-        let [min, max] = cb_obj.value
-        start.value = min
-        end.value = max
-        """)
-        self._start_edit.jscallback(args={'slider': self._slider}, value="""
+        self._start_edit.jscallback(args={'slider': self._slider, 'end': self._end_edit}, value="""
+        // start value always smaller than the end value
+        if (cb_obj.value >= end.value) {
+          cb_obj.value = end.value
+          return
+        }
         if (cb_obj.value < slider.start) {
           slider.start = cb_obj.value
         } else if (cb_obj.value > slider.end) {
           slider.end = cb_obj.value
         }
         """)
-        self._end_edit.jscallback(args={'slider': self._slider}, value="""
+        self._end_edit.jscallback(args={'slider': self._slider ,'start': self._start_edit}, value="""
+        // end value always larger than the start value
+        if (cb_obj.value <= start.value) {
+          cb_obj.value = start.value
+          return
+        }
         if (cb_obj.value < slider.start) {
           slider.start = cb_obj.value
         } else if (cb_obj.value > slider.end) {
