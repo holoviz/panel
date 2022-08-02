@@ -812,6 +812,7 @@ class _EditableContinuousSlider(CompositeWidget):
         self._update_name()
         self._update_slider()
         self._update_value()
+        self._update_bounds()
 
     @param.depends('width', 'height', 'sizing_mode', watch=True)
     def _update_layout(self):
@@ -858,6 +859,16 @@ class _EditableContinuousSlider(CompositeWidget):
         with param.edit_constant(self):
             self.param.update(**{event.name: event.new})
 
+    @param.depends("start", "end", "fixed_start", "fixed_end", watch=True)
+    def _update_bounds(self):
+        self.param.value.softbounds = (self.start, self.end)
+        self.param.value_throttled.softbounds = (self.start, self.end)
+        self.param.value.bounds = (self.fixed_start, self.fixed_end)
+        self.param.value_throttled.bounds = (self.fixed_start, self.fixed_end)
+
+        self._value_edit.start = self.fixed_start
+        self._value_edit.end = self.fixed_end
+
 
 class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
     """
@@ -873,6 +884,12 @@ class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
     ...     value=1.0, start=0.0, end=2.0, step=0.25, name="A float value"
     ... )
     """
+
+    fixed_start = param.Number(default=None, doc="""
+        A fixed lower bound for the slider and input.""")
+
+    fixed_end = param.Number(default=None, doc="""
+        A fixed upper bound for the slider and input.""")
 
     _slider_widget: ClassVar[Type[Widget]] = FloatSlider
     _input_widget: ClassVar[Type[Widget]] = FloatInput
@@ -892,6 +909,12 @@ class EditableIntSlider(_EditableContinuousSlider, IntSlider):
     ...     value=2, start=0, end=5, step=1, name="An integer value"
     ... )
     """
+
+    fixed_start = param.Integer(default=None, doc="""
+        A fixed lower bound for the slider and input.""")
+
+    fixed_end = param.Integer(default=None, doc="""
+       A fixed upper bound for the slider and input.""")
 
     _slider_widget: ClassVar[Type[Widget]] = IntSlider
     _input_widget: ClassVar[Type[Widget]] = IntInput
@@ -920,6 +943,12 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     start = param.Number(default=0., doc="Lower bound of the range.")
 
     end = param.Number(default=1., doc="Upper bound of the range.")
+
+    fixed_start = param.Integer(default=None, doc="""
+        A fixed lower bound for the slider and input.""")
+
+    fixed_end = param.Integer(default=None, doc="""
+        A fixed upper bound for the slider and input.""")
 
     step = param.Number(default=0.1, doc="Slider and number input step.")
 
@@ -984,6 +1013,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self._update_name()
         self._update_slider()
         self._update_value()
+        self._update_bounds()
 
     @param.depends('editable', watch=True)
     def _update_editable(self):
@@ -1054,3 +1084,20 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             self.param.update(
                 **{event.name: (start, event.new)}
             )
+
+    @param.depends("start", "end", "fixed_start", "fixed_end", watch=True)
+    def _update_bounds(self):
+        self.start = max(self.fixed_start or float('-inf'), min(self.value[0], self.start))
+        self.end = min(self.fixed_end or float('inf'), max(self.value[1], self.end))
+        self.param.trigger("value")
+
+        # with param.edit_constant
+        self.param.value.softbounds = (self.start, self.end)
+        self.param.value_throttled.softbounds = (self.start, self.end)
+        self.param.value.bounds = (self.fixed_start, self.fixed_end)
+        self.param.value_throttled.bounds = (self.fixed_start, self.fixed_end)
+
+        self._start_edit.start = self.fixed_start
+        self._start_edit.end = self.fixed_end
+        self._end_edit.start = self.fixed_start
+        self._end_edit.end = self.fixed_end
