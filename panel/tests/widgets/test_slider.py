@@ -10,7 +10,7 @@ from bokeh.models import (
 from panel import config
 from panel.widgets import (
     DateRangeSlider, DateSlider, DiscreteSlider, EditableFloatSlider,
-    EditableIntSlider, FloatSlider, IntSlider, RangeSlider, StaticText,
+    EditableIntSlider, EditableRangeSlider, FloatSlider, IntSlider, RangeSlider, StaticText,
 )
 
 
@@ -408,11 +408,11 @@ def test_discrete_slider_options_dict(document, comm):
     'editableslider,start,end,step,val1,val2,val3',
     [
         (EditableFloatSlider, 0.1, 0.5, 0.1, 0.4, 0.2, 0.5),
-        (EditableIntSlider, 1, 5, 1, 4, 2, 5)
+        (EditableIntSlider, 1, 5, 1, 4, 2, 5),
     ],
     ids=["EditableFloatSlider", "EditableIntSlider"]
 )
-def test_editable_float_slider(document, comm,
+def test_editable_slider(document, comm,
     editableslider, start, end, step, val1, val2, val3):
 
     slider = editableslider(start=start, end=end, value=val1, name='Slider')
@@ -464,3 +464,120 @@ def test_editable_float_slider(document, comm,
     slider.name = 'New Slider'
 
     assert static_widget.text == 'New Slider:'
+
+
+@pytest.mark.parametrize(
+    'editableslider,start,end,step,val1,val2,val3',
+    [
+        (EditableRangeSlider, 0.1, 0.5, 0.1, (0.2, 0.4), (0.2, 0.3), (0.1, 0.5)),
+    ],
+    ids=["EditableRangeSlider"]
+)
+def test_editable_rangeslider(document, comm,
+    editableslider, start, end, step, val1, val2, val3):
+
+    slider = editableslider(start=start, end=end, value=val1, name='Slider')
+
+    widget = slider.get_root(document, comm=comm)
+
+    assert isinstance(widget, BkColumn)
+
+    col_items = widget.children
+
+    assert len(col_items) == 2
+
+    row, slider_widget = col_items
+
+    assert slider_widget.title == ''
+    assert slider_widget.step == step
+    assert slider_widget.start == start
+    assert slider_widget.end == end
+    assert slider_widget.value == val1
+
+    assert isinstance(row, BkRow)
+
+    static_widget, input_widget_start, _, input_widget_end = row.children
+
+    assert input_widget_start.title == ''
+    assert input_widget_start.step == step
+    assert input_widget_start.value == val1[0]
+    assert input_widget_end.title == ''
+    assert input_widget_end.step == step
+    assert input_widget_end.value == val1[1]
+
+    slider._process_events({'value': val2})
+    assert slider.value == (input_widget_start.value, input_widget_end.value) == slider_widget.value == val2
+    slider._process_events({'value_throttled': val2})
+    assert slider.value_throttled == val2
+
+    # Testing throttled mode
+    with config.set(throttled=True):
+        slider._process_events({'value': val1})
+        assert slider.value == val2 # no change
+        slider._process_events({'value_throttled': val1})
+        assert slider.value == val1
+
+        slider.value = val3
+        assert (input_widget_start.value, input_widget_end.value) == slider_widget.value == val3
+
+    slider.name = 'New Slider'
+
+    assert static_widget.text == 'New Slider:'
+
+
+@pytest.mark.parametrize(
+    "editableslider",
+    [EditableFloatSlider, EditableIntSlider],
+)
+@pytest.mark.parametrize(
+    'start,end,fixed_start,fixed_end,val_init,val_update,fail_init,fail_update',
+    [
+        (1, 5, 0, None, 2, 3, False, False),
+        (1, 5, 0, None, 2, -1, False, True),
+        (1, 5, 0, None, -1, -1, True, True),
+        (1, 5, 0, None, 0, 100, False, False),
+    ],
+)
+def test_editable_slider_bounds(
+    editableslider,start,end,fixed_start,fixed_end,val_init,val_update,fail_init,fail_update):
+
+    try:
+        slider = editableslider(
+            start=start, end=end,
+            fixed_start=fixed_start, fixed_end=fixed_end,
+            value=val_init, name='Slider'
+        )
+    except Exception:
+        assert fail_init
+
+    try:
+        slider.value = val_update
+    except Exception:
+        assert fail_update
+
+
+@pytest.mark.parametrize(
+    'editableslider,start,end,fixed_start,fixed_end,val_init,val_update,fail_init,fail_update',
+    [
+        (EditableRangeSlider, 1, 5, 0, None, (2, 5), (3, 5), False, False),
+        (EditableRangeSlider, 1, 5, 0, None, (2, 5), (-1, 4), False, True),
+        (EditableRangeSlider, 1, 5, 0, None, (-1, 100), (-1, 200), True, True),
+        (EditableRangeSlider, 1, 5, 0, None, (1, 5), (0, 100), False, False),
+    ],
+)
+def test_editable_rangeslider_bounds(
+    editableslider,start,end,fixed_start,fixed_end,val_init,val_update,fail_init,fail_update):
+
+    try:
+        slider = editableslider(
+            start=start, end=end,
+            fixed_start=fixed_start, fixed_end=fixed_end,
+            value=val_init, name='Slider'
+        )
+    except Exception:
+        assert fail_init
+
+    try:
+        slider.value = val_update
+    except Exception:
+        assert fail_update
