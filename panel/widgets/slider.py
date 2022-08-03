@@ -1078,11 +1078,6 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
 
     @param.depends("start", "end", "fixed_start", "fixed_end", watch=True)
     def _update_bounds(self):
-        self.start = max(self.fixed_start or float('-inf'), min(self.value[0], self.start))
-        self.end = min(self.fixed_end or float('inf'), max(self.value[1], self.end))
-        self.param.trigger("value")
-
-        # with param.edit_constant
         self.param.value.softbounds = (self.start, self.end)
         self.param.value_throttled.softbounds = (self.start, self.end)
         self.param.value.bounds = (self.fixed_start, self.fixed_end)
