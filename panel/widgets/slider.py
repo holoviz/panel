@@ -104,12 +104,9 @@ class ContinuousSlider(_SliderBase):
 
     __abstract = True
 
-    _enforce_bounds: ClassVar[bool] = True
-
     def __init__(self, **params):
         if 'value' not in params:
             params['value'] = params.get('start', self.start)
-        self._enforce_bounds = params.pop("_enforce_bounds", self._enforce_bounds)
         super().__init__(**params)
 
     def _get_embed_state(self, root, values=None, max_opts=3):
@@ -145,12 +142,6 @@ class ContinuousSlider(_SliderBase):
         w_model.js_on_change('value', link)
 
         return (dw, w_model, values, lambda x: x.value, 'value', 'cb_obj.value')
-
-    @param.depends("start", "end", watch=True, on_init=True)
-    def _set_value_bounds(self):
-        if self._enforce_bounds:
-            self.param.value.bounds = (self.start, self.end)
-            self.param.value_throttled.bounds = (self.start, self.end)
 
 
 class FloatSlider(ContinuousSlider):
@@ -788,7 +779,7 @@ class _EditableContinuousSlider(CompositeWidget):
         super().__init__(**params)
         self._label = StaticText(margin=0, align='end')
         self._slider = self._slider_widget(
-            value=self.value, margin=(0, 0, 5, 0), sizing_mode='stretch_width', _enforce_bounds=False
+            value=self.value, margin=(0, 0, 5, 0), sizing_mode='stretch_width',
         )
         self._slider.param.watch(self._sync_value, 'value')
         self._slider.param.watch(self._sync_value, 'value_throttled')
