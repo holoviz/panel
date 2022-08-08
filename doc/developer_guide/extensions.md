@@ -11,7 +11,8 @@ Panel supports a number of entrypoint groups which can be used by external packa
 The `panel.auth` group should be used to register new authentication providers. The entrypoint should resolve to a subclass of `tornado.web.RequestHandler` that can handle auhtentication requests. The handler can be enabled for a given app by setting the `auth` config to to the name of the entrypoint.
 
 ### Rest plugins
-The `panel.io.rest` entrypoit group can be used to register rest providers that will be served along the panel app. The entrypoint should resolve to a callable with the following signature:
+
+The `panel.io.rest` entrypoint group can be used to register rest providers that will be served along the panel app. The entrypoint should resolve to a callable with the following signature:
 
 ```python
     from typing import List, Tuple
