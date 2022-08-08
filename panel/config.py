@@ -102,6 +102,9 @@ class _config(_base_config):
     autoreload = param.Boolean(default=False, doc="""
         Whether to autoreload server when script changes.""")
 
+    load_entry_points = param.Boolean(default=True, doc="""
+        Load entry points from external packages.""")
+
     loading_spinner = param.Selector(default='arcs', objects=[
         'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
         Loading indicator to use when component loading parameter is set.""")
@@ -143,9 +146,6 @@ class _config(_base_config):
 
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
-
-    load_entry_points = param.Boolean(default=True, doc="""
-        Load entry points from external packages.""")
 
     _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
 
@@ -625,7 +625,7 @@ class panel_extension(_pyviz_extension):
 
         if config.notifications:
             display(state.notifications) # noqa
-        
+
         if config.load_entry_points:
             self._load_entry_points()
 
