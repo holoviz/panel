@@ -131,7 +131,8 @@ _tests = [
     'twine',
     'pandas >=1.3',
     'ipython >=7.0',
-    'holoviews'
+    'holoviews',
+    'flaky',
 ]
 
 _ui = [

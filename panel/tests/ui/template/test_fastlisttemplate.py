@@ -9,6 +9,7 @@ from panel.pane import Markdown
 from panel.template import FastListTemplate
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_fast_list_template_no_console_errors(page, port):
     tmpl = FastListTemplate()
     md = Markdown('Initial')

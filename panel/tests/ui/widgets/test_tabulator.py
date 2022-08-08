@@ -1529,6 +1529,7 @@ def test_tabulator_selection_selectable_rows(page, port, df_mixed):
     assert widget.selected_dataframe.equals(expected_selected)
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_tabulator_row_content(page, port, df_mixed):
     widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
 
