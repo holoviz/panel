@@ -165,7 +165,8 @@ extras_require = {
         'croniter',
         'graphviz',
         'networkx >=2.5',
-        'pygraphviz'
+        'pygraphviz',
+        'seaborn',
     ],
     'tests': _tests,
     'recommended': _recommended,
