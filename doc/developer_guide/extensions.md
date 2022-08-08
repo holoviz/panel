@@ -8,7 +8,8 @@ Panel supports a number of entrypoint groups which can be used by external packa
  - panel.extension
 
 ### Authentication plugins
-The `panel.auth` group should be used to register new authentication providers. The entrypoint should resolve to a subclass of `tornado.web.RequestHandler` that can handle auhtentication requests. The handler can be enabled for a given app by setting the `auth` config to to the name of the entrypoint.
+
+The `panel.auth` group should be used to register new authentication providers. The entrypoint should resolve to a subclass of `tornado.web.RequestHandler` that can handle authentication requests. The handler can be enabled for a given app by setting the `auth` config to to the name of the entrypoint.
 
 ### Rest plugins
 
