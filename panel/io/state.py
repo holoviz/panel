@@ -344,8 +344,10 @@ class _state(param.Parameterized):
 
         Example:
 
-        >>> import seaborn as sns
-        >>> planets = pn.state.as_cached("seaborn-planets", sns.load_dataset, name='planets')
+        >>> def load_dataset(name):
+        >>>     # some slow operation that uses name to load a dataset....
+        >>>     return dataset
+        >>> penguins = pn.state.as_cached('dataset-penguins', load_dataset, name='penguins')
 
         Arguments
         ---------
