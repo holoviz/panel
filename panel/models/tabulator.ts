@@ -1106,7 +1106,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this._tabulator_cell_updating = false
     }
     this.model.trigger_event(new TableEditEvent(field, index))
-    this.setSorters()
     this.tabulator.scrollToRow(index, "top", false)
   }
 }
