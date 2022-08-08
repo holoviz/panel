@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 import time
 
@@ -115,6 +117,16 @@ def count_per_page(count: int, page_size: int):
             break
     assert sum(count_per_page) == original_count
     return count_per_page
+
+
+def tabulator_column_values(page, col_name: str) -> list[str]:
+    """Get the values of a column.
+
+    >>> tabulator_column_values(page, 'color')
+    ['blue', 'red']
+    """
+    cells = page.locator(f'[tabulator-field={col_name}][role=gridcell]')
+    return cells.all_inner_texts()
 
 
 def test_tabulator_default(page, port, df_mixed, df_mixed_as_string):
@@ -2501,6 +2513,35 @@ def test_tabulator_sorters_pagination(page, port, df_mixed, pagination):
 
     page.wait_for_timeout(200)
     wait_until(page, lambda: widget.current_view.equals(expected_sorted_df))
+
+
+def test_tabulator_edit_event_sorters_not_automatically_applied(page, port, df_mixed):
+    widget = Tabulator(df_mixed, sorters=[{'field': 'str', 'dir': 'desc'}])
+
+    values = []
+    widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    expected_vals = list(df_mixed['str'].sort_values(ascending=False))
+
+    wait_until(page, lambda: tabulator_column_values(page, 'str') == expected_vals)
+
+    # Chankge the cell that contains B to BB
+    cell = page.locator('text="B"')
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("Z")
+    editable_cell.press('Enter')
+
+    wait_until(page, lambda: len(values) == 1)
+
+    expected_vals = [item if item != 'B' else 'Z' for item in expected_vals]
+    wait_until(page, lambda: tabulator_column_values(page, 'str') == expected_vals)
 
 
 @pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3660')
