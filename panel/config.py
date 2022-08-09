@@ -102,6 +102,9 @@ class _config(_base_config):
     autoreload = param.Boolean(default=False, doc="""
         Whether to autoreload server when script changes.""")
 
+    load_entry_points = param.Boolean(default=True, doc="""
+        Load entry points from external packages.""")
+
     loading_spinner = param.Selector(default='arcs', objects=[
         'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
         Loading indicator to use when component loading parameter is set.""")
@@ -623,6 +626,9 @@ class panel_extension(_pyviz_extension):
         if config.notifications:
             display(state.notifications) # noqa
 
+        if config.load_entry_points:
+            self._load_entry_points()
+
     def _apply_signatures(self):
         from inspect import Parameter, Signature
 
@@ -660,6 +666,15 @@ class panel_extension(_pyviz_extension):
                 parameters, return_annotation=sig.return_annotation
             )
 
+    def _load_entry_points(self):
+        ''' Load entry points from external packages
+        Import is performed here so any importlib/pkg_resources
+        can be easily bypassed by switching off the configuration flag.
+        also, no reason to waste time on importing this module
+        if it wont be used.
+        '''
+        from .entry_points import load_entry_points
+        load_entry_points('panel.extension')
 
 #---------------------------------------------------------------------
 # Private API
