@@ -131,7 +131,8 @@ _tests = [
     'twine',
     'pandas >=1.3',
     'ipython >=7.0',
-    'holoviews'
+    'holoviews',
+    'flaky',
 ]
 
 _ui = [
@@ -165,7 +166,8 @@ extras_require = {
         'croniter',
         'graphviz',
         'networkx >=2.5',
-        'pygraphviz'
+        'pygraphviz',
+        'seaborn',
     ],
     'tests': _tests,
     'recommended': _recommended,
@@ -231,7 +233,6 @@ setup_args = dict(
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -252,7 +253,7 @@ setup_args = dict(
         "Topic :: Office/Business",
         "Topic :: Office/Business :: Financial",
         "Topic :: Software Development :: Libraries"],
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     entry_points={
         'console_scripts': [
             'panel = panel.command:main'
