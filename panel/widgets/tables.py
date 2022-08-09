@@ -1281,7 +1281,7 @@ class Tabulator(BaseTable):
         if self.pagination == 'remote':
             length = self._length
             nrows = self.page_size
-            max_page = length//nrows + bool(length%nrows) or 1
+            max_page = max(length//nrows + bool(length%nrows), 1)
             if self.page != max_page:
                 return
         super()._stream(stream, rollover)
@@ -1294,7 +1294,7 @@ class Tabulator(BaseTable):
         if follow and self.pagination:
             length = self._length
             nrows = self.page_size
-            self.page = length//nrows + bool(length%nrows) or 1
+            self.page = max(length//nrows + bool(length%nrows), 1)
         super().stream(stream_value, rollover, reset_index)
         if follow and self.pagination:
             self._update_max_page()
@@ -1347,7 +1347,7 @@ class Tabulator(BaseTable):
     def _update_max_page(self):
         length = self._length
         nrows = self.page_size
-        max_page = length//nrows + bool(length%nrows) or 1
+        max_page = max(length//nrows + bool(length%nrows), 1)
         self.param.page.bounds = (1, max_page)
         for ref, (model, _) in self._models.items():
             self._apply_update([], {'max_page': max_page}, model, ref)
@@ -1428,7 +1428,7 @@ class Tabulator(BaseTable):
         props.update(self._process_param_change(process))
         if self.pagination:
             length = 0 if self._processed is None else len(self._processed)
-            props['max_page'] = length//self.page_size + bool(length%self.page_size) or 1
+            props['max_page'] = max(length//self.page_size + bool(length%self.page_size), 1)
         if self.frozen_rows and 'height' not in props and 'sizing_mode' not in props:
             length = self.page_size+2 if self.pagination else self._length
             props['height'] = min([length * self.row_height + 30, 2000])
