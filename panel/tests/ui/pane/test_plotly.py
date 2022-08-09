@@ -48,7 +48,7 @@ def plotly_3d_plot():
         margin=dict(t=50, b=50, r=50, l=50)
     )
     fig = dict(data=[surface], layout=layout)
-    plot_3d = Plotly(fig)
+    plot_3d = Plotly(fig, width=500, height=500)
 
     return plot_3d, title
 
@@ -92,8 +92,30 @@ def test_plotly_3d_plot(page, port, plotly_3d_plot):
     plot_title = page.locator('.g-gtitle')
     expect(plot_title).to_have_count(1)
 
+    # actual plot
+    plot = page.locator('.js-plotly-plot .plot-container.plotly .gl-container #scene')
+    expect(plot).to_have_count(1)
+
     color_bar = page.locator('.colorbar')
     expect(color_bar).to_have_count(1)
 
     modebar = page.locator('.modebar-container')
     expect(modebar).to_have_count(1)
+
+
+@plotly_available
+def _test_plotly_click_data(page, port, plotly_3d_plot):
+    plot_3d, title = plotly_3d_plot
+    serve(plot_3d, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    plot = page.locator('.js-plotly-plot')
+    plot.click()
+    plot_bbox = plot.bounding_box()
+    print('plot_bbox', plot_bbox)
+    for i in range(0, plot_bbox['width'], 20):
+        for j in range(0, plot_bbox['height'], 20):
+            page.mouse.click(plot_bbox['x'] + i, plot_bbox['y'] + j)
+            page.wait_for_timeout(500)
+            print(i, j, plot_3d.click_data)
