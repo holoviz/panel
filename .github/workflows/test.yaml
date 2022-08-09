@@ -38,7 +38,7 @@ jobs:
         exclude:
           - os: windows-latest
             python-version: 3.8
-    timeout-minutes: 60
+    timeout-minutes: 90
     defaults:
       run:
         shell: bash -l {0}

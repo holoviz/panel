@@ -131,7 +131,8 @@ _tests = [
     'twine',
     'pandas >=1.3',
     'ipython >=7.0',
-    'holoviews'
+    'holoviews',
+    'flaky',
 ]
 
 _ui = [
@@ -165,7 +166,8 @@ extras_require = {
         'croniter',
         'graphviz',
         'networkx >=2.5',
-        'pygraphviz'
+        'pygraphviz',
+        'seaborn',
     ],
     'tests': _tests,
     'recommended': _recommended,
