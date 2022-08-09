@@ -406,15 +406,15 @@ def test_discrete_slider_options_dict(document, comm):
 
 
 @pytest.mark.parametrize(
-    'editableslider,start,end,step,val1,val2,val3',
+    'editableslider,start,end,step,val1,val2,val3,diff1',
     [
-        (EditableFloatSlider, 0.1, 0.5, 0.1, 0.4, 0.2, 0.5),
-        (EditableIntSlider, 1, 5, 1, 4, 2, 5),
+        (EditableFloatSlider, 0.1, 0.5, 0.1, 0.4, 0.2, 0.5, 0.1),
+        (EditableIntSlider, 1, 5, 1, 4, 2, 5, 1),
     ],
     ids=["EditableFloatSlider", "EditableIntSlider"]
 )
 def test_editable_slider(document, comm,
-    editableslider, start, end, step, val1, val2, val3):
+    editableslider, start, end, step, val1, val2, val3, diff1):
 
     slider = editableslider(start=start, end=end, value=val1, name='Slider')
 
@@ -466,16 +466,26 @@ def test_editable_slider(document, comm,
 
     assert static_widget.text == 'New Slider:'
 
+    # Testing update to fixed start
+    slider.fixed_start = slider.value + diff1
+    assert slider._slider.start == slider.fixed_start == slider_widget.start
+    slider.fixed_start = None
+
+    # Testing update to fixed end
+    slider.fixed_end = slider.value - diff1
+    assert slider._slider.end == slider.fixed_end == slider_widget.end
+    slider.fixed_end = None
+
 
 @pytest.mark.parametrize(
-    'editableslider,start,end,step,val1,val2,val3',
+    'editableslider,start,end,step,val1,val2,val3,diff1',
     [
-        (EditableRangeSlider, 0.1, 0.5, 0.1, (0.2, 0.4), (0.2, 0.3), (0.1, 0.5)),
+        (EditableRangeSlider, 0.1, 0.5, 0.1, (0.2, 0.4), (0.2, 0.3), (0.1, 0.5), 0.1),
     ],
     ids=["EditableRangeSlider"]
 )
 def test_editable_rangeslider(document, comm,
-    editableslider, start, end, step, val1, val2, val3):
+    editableslider, start, end, step, val1, val2, val3, diff1):
 
     slider = editableslider(start=start, end=end, value=val1, name='Slider')
 
@@ -524,6 +534,16 @@ def test_editable_rangeslider(document, comm,
     slider.name = 'New Slider'
 
     assert static_widget.text == 'New Slider:'
+
+    # Testing update to fixed start
+    slider.fixed_start = slider.value[0] + diff1
+    assert slider._slider.start == slider.fixed_start == slider_widget.start
+    slider.fixed_start = None
+
+    # Testing update to fixed end
+    slider.fixed_end = slider.value[1] - diff1
+    assert slider._slider.end == slider.fixed_end == slider_widget.end
+    slider.fixed_end = None
 
 
 @pytest.mark.parametrize(

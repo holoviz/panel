@@ -857,6 +857,14 @@ class _EditableContinuousSlider(CompositeWidget):
         self.param.value.bounds = (self.fixed_start, self.fixed_end)
         self.param.value_throttled.bounds = (self.fixed_start, self.fixed_end)
 
+        # First changing _slider and then _value_edit,
+        # because else _value_edit will change the _slider
+        # with the jscallback.
+        if self.fixed_start is not None:
+            self._slider.start = max(self.fixed_start, self.start)
+        if self.fixed_end is not None:
+            self._slider.end = min(self.fixed_end, self.end)
+
         self._value_edit.start = self.fixed_start
         self._value_edit.end = self.fixed_end
 
@@ -1082,6 +1090,14 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self.param.value_throttled.softbounds = (self.start, self.end)
         self.param.value.bounds = (self.fixed_start, self.fixed_end)
         self.param.value_throttled.bounds = (self.fixed_start, self.fixed_end)
+
+        # First changing _slider and then _value_edit,
+        # because else _value_edit will change the _slider
+        # with the jscallback.
+        if self.fixed_start is not None:
+            self._slider.start = max(self.fixed_start, self.start)
+        if self.fixed_end is not None:
+            self._slider.end = min(self.fixed_end, self.end)
 
         self._start_edit.start = self.fixed_start
         self._start_edit.end = self.fixed_end
