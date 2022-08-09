@@ -110,9 +110,10 @@ def _test_plotly_click_data(page, port, plotly_3d_plot):
     time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
 
-    plot = page.locator('.js-plotly-plot')
-    plot.click()
+    plot = page.locator('.js-plotly-plot .plot-container.plotly .gl-container #scene')
     plot_bbox = plot.bounding_box()
+
+    # TODO: clicking on plot updates data in Python
     print('plot_bbox', plot_bbox)
     for i in range(0, plot_bbox['width'], 20):
         for j in range(0, plot_bbox['height'], 20):
