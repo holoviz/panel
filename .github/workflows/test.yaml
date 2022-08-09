@@ -99,6 +99,7 @@ jobs:
           sleep 3
       - name: nix_opengl_conda
         if: contains(matrix.os, 'ubuntu') && steps.cache.outputs.cache-hit != 'true'
+        run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           conda install mesalib
