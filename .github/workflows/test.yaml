@@ -86,6 +86,11 @@ jobs:
           conda install "pyctdev>=0.5"
           conda install "nodejs=15.3.0"
           doit env_create --python=${{ matrix.python-version }}
+      - name: windows_opengl
+        if: contains(matrix.os, 'windows')
+        run: |
+          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
+          powershell gl-ci-helpers/appveyor/install_opengl.ps1
       - name: nix_opengl
         if: contains(matrix.os, 'ubuntu')
         run: |
@@ -106,14 +111,13 @@ jobs:
           conda list
           doit develop_install -o examples -o recommended -o tests -o build
           pip install pyecharts idom
-          bokeh sampledata
           echo "-----"
           git describe
-      - name: windows_opengl
-        if: contains(matrix.os, 'windows')
+      - name: bokeh_sampledata
         run: |
-          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
-          powershell gl-ci-helpers/appveyor/install_opengl.ps1
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          bokeh sampledata
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
