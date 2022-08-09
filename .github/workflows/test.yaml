@@ -80,6 +80,12 @@ jobs:
           path: ${{ matrix.path }}
           key: ${{ runner.os }}-conda-${{ matrix.python-version }}-${{ hashFiles('setup.py') }}-tests-${{ env.TODAY }}-${{ env.CACHE_VERSION }}
         id: cache
+      - name: rebuild panel on cache hit
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          pip install -e --no-deps --no-build-isolation
       - name: conda setup
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
