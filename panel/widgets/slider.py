@@ -935,10 +935,10 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
 
     end = param.Number(default=1., doc="Upper bound of the range.")
 
-    fixed_start = param.Integer(default=None, doc="""
+    fixed_start = param.Number(default=None, doc="""
         A fixed lower bound for the slider and input.""")
 
-    fixed_end = param.Integer(default=None, doc="""
+    fixed_end = param.Number(default=None, doc="""
         A fixed upper bound for the slider and input.""")
 
     step = param.Number(default=0.1, doc="Slider and number input step.")
