@@ -55,7 +55,7 @@ jobs:
       - uses: pyviz-dev/holoviz_tasks/install@master
         with:
           name: unit_test_suite
-          python_version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           envs: "-o examples -o recommended -o tests -o build"
           cache: true
@@ -111,7 +111,7 @@ jobs:
       - uses: pyviz-dev/holoviz_tasks/install@master
         with:
           name: ui_test_suite
-          python_version: 3.9
+          python-version: 3.9
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
           cache: true
