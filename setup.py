@@ -133,6 +133,7 @@ _tests = [
     'ipython >=7.0',
     'holoviews',
     'flaky',
+    'pytest-xdist',
 ]
 
 _ui = [
