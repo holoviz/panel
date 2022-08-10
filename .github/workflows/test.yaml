@@ -143,7 +143,7 @@ jobs:
         with:
           name: ui_test_suite
           python_version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           environments: -o examples -o recommended -o tests -o build
           cache: true
         id: install
