@@ -57,11 +57,11 @@ jobs:
           fetch-depth: "100"
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
-      - uses: pyviz-dev/actions@v0.1a6
+      - uses: pyviz-dev/actions@v0.1a7
         with:
           name: unit_test_suite
           python_version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           environments: -o examples -o recommended -o tests -o build
           cache: true
         id: install
@@ -139,7 +139,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: "100"
-      - uses: pyviz-dev/actions@v0.1a6
+      - uses: pyviz-dev/actions@v0.1a7
         with:
           name: ui_test_suite
           python_version: ${{ matrix.python-version }}
