@@ -52,11 +52,6 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: "100"
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow
       - uses: pyviz-dev/holoviz_tasks/install@master
         with:
           name: unit_test_suite
@@ -113,9 +108,6 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: "100"
       - uses: pyviz-dev/holoviz_tasks/install@master
         with:
           name: ui_test_suite
