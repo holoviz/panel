@@ -57,33 +57,17 @@ jobs:
           fetch-depth: "100"
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
-      - uses: pyviz-dev/actions@v0.1a10
+      - uses: pyviz-dev/actions@v0.1a11
         with:
           name: unit_test_suite
           python_version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
-          environments: -o examples -o recommended -o tests -o build
+          environments: "-o examples -o recommended -o tests -o build"
           cache: true
+          opengl: true
         id: install
-      - name: windows_opengl
-        if: contains(matrix.os, 'windows')
-        run: |
-          git clone --depth 1 https://github.com/pyvista/gl-ci-helpers.git
-          powershell gl-ci-helpers/appveyor/install_opengl.ps1
-      - name: nix_opengl
-        if: contains(matrix.os, 'ubuntu')
-        run: |
-          sudo apt-get install libglu1-mesa
-          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
-          sleep 3
-      - name: nix_opengl_conda
-        if: contains(matrix.os, 'ubuntu') && steps.install.outputs.cache-hit != 'true'
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install mesalib
       - name: doit develop_install
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.install.outputs.cache-hit != 'true'
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
@@ -93,11 +77,6 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           bokeh sampledata
-      - name: doit env_capture
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit env_capture
       - name: doit test_unit
         run: |
           eval "$(conda shell.bash hook)"
@@ -139,30 +118,15 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: "100"
-      - uses: pyviz-dev/actions@v0.1a10
+      - uses: pyviz-dev/actions@v0.1a11
         with:
           name: ui_test_suite
           python_version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
-          environments: -o examples -o recommended -o tests -o build
+          environments: "-o examples -o recommended -o tests -o build"
           cache: true
+          playwright: true
         id: install
-      - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          pip install playwright pytest-playwright
-      - name: doit env_capture
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          doit env_capture
-      - name: doit init_playwright
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          playwright install chromium
       - name: doit test_ui
         run: |
           eval "$(conda shell.bash hook)"
