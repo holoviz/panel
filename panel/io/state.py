@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Coroutine, Dict,
-    Iterator as TIterator, List, Optional, Tuple, Union,
+    Iterator as TIterator, List, Optional, Tuple, TypeVar, Union,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -51,6 +51,8 @@ if TYPE_CHECKING:
     from .location import Location
     from .notifications import NotificationArea
     from .server import StoppableThread
+
+    T = TypeVar("T")
 
 
 @contextmanager
@@ -333,12 +335,19 @@ class _state(param.Parameterized):
     # Public Methods
     #----------------------------------------------------------------
 
-    def as_cached(self, key: str, fn: Callable[[], None], ttl: int = None, **kwargs) -> None:
+    def as_cached(self, key: str, fn: Callable[[], T], ttl: int = None, **kwargs) -> T:
         """
         Caches the return value of a function, memoizing on the given
         key and supplied keyword arguments.
 
         Note: Keyword arguments must be hashable.
+
+        Example:
+
+        >>> def load_dataset(name):
+        >>>     # some slow operation that uses name to load a dataset....
+        >>>     return dataset
+        >>> penguins = pn.state.as_cached('dataset-penguins', load_dataset, name='penguins')
 
         Arguments
         ---------
