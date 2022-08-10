@@ -258,9 +258,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.connect(p.expanded.change, () => {
       // The first cell is the cell of the frozen _index column.
       for (const row of this.tabulator.rowManager.getRows()) {
-        if (row.cells.length > 0) {
+        if (row.cells.length > 0)
           row.cells[0].layoutElement()
-        }
       }
       // Make sure the expand icon is changed when expanded is
       // changed from Python.
