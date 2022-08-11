@@ -1,7 +1,9 @@
 import io
+import pathlib
 import time
 
 import numpy as np
+import pytest
 
 from panel.io.cache import _find_hash_func, cache
 from panel.tests.util import pd_available
@@ -167,30 +169,46 @@ def test_cache_clear():
     fn.clear()
     assert fn(0, 0) == 1
 
-def test_cache_lifo():
+def test_disk_cache():
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=2, policy='lifo')
+    fn = cache(function_with_args, to_disk=True)
+
+    assert fn(0, 0) == 0
+    assert pathlib.Path('./cache').exists()
+    assert list(pathlib.Path('./cache').glob('*'))
+    assert fn(0, 0) == 0
+    fn.clear()
+    assert fn(0, 0) == 1
+    assert not list(pathlib.Path('./cache').glob('*'))
+
+@pytest.mark.parametrize('to_disk', (True, False))
+def test_cache_lifo(to_disk):
+    global OFFSET
+    OFFSET.clear()
+    fn = cache(function_with_args, max_items=2, policy='lifo', to_disk=to_disk)
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
     assert fn(0, 0) == 0
     assert fn(0, 2) == 2 # (0, 0) should be evicted
     assert fn(0, 0) == 1
 
-def test_cache_lfu():
+@pytest.mark.parametrize('to_disk', (True, False))
+def test_cache_lfu(to_disk):
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=2, policy='lfu')
+    fn = cache(function_with_args, max_items=2, policy='lfu', to_disk=to_disk)
     assert fn(0, 0) == 0
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
     assert fn(0, 2) == 2 # (0, 1) should be evicted
     assert fn(0, 1) == 2
 
-def test_cache_lru():
+@pytest.mark.parametrize('to_disk', (True, False))
+def test_cache_lru(to_disk):
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=3, policy='lru')
+    fn = cache(function_with_args, max_items=3, policy='lru', to_disk=to_disk)
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
     assert fn(0, 2) == 2
@@ -198,10 +216,11 @@ def test_cache_lru():
     assert fn(0, 3) == 3 # (0, 1) should be evicted
     assert fn(0, 1) == 2
 
-def test_cache_ttl():
+@pytest.mark.parametrize('to_disk', (True, False))
+def test_cache_ttl(to_disk):
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, ttl=0.1)
+    fn = cache(function_with_args, ttl=0.1, to_disk=to_disk)
     assert fn(0, 0) == 0
     time.sleep(0.1)
     assert fn(0, 0) == 1

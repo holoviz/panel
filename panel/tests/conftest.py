@@ -232,7 +232,7 @@ def server_cleanup():
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():
-    state._memoize_cache.clear()
+    state.clear_caches()
 
 @pytest.fixture
 def py_file():
