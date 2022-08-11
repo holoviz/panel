@@ -552,6 +552,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       pagination: this.model.pagination,
       paginationSize: this.model.page_size,
       paginationInitialPage: 1,
+      pageLoaded: (pageno: number) => {
+        if (this.model.pagination === 'local')
+          this.model.page = pageno
+      },
       tableBuilding: function() { that.tableInit(that, this) },
       renderComplete: () => this.renderComplete(),
       rowSelectionChanged: (data: any, rows: any) => this.rowSelectionChanged(data, rows),
