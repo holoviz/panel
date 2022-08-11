@@ -2723,13 +2723,10 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
     wait_until(page, lambda: len(values) == 1)
     assert values[0] == (target_col, target_index, target_val)
     wait_until(page, lambda: widget.selection == [target_index])
-    if pagination in ['local', 'no_pagination'] and python_filter == 'no_python_filter' and sorter == 'sorter':
-        pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
     expected_selected = df.iloc[[target_index], :]
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
 def test_tabulator_selection_sorters_on_init(page, port, df_mixed):
     widget = Tabulator(df_mixed, sorters=[{'field': 'int', 'dir': 'desc'}])
 
@@ -2746,10 +2743,9 @@ def test_tabulator_selection_sorters_on_init(page, port, df_mixed):
 
     wait_until(page, lambda: widget.selection == [len(df_mixed) - 1])
     expected_selected = df_mixed.loc[[last_index], :]
-    assert widget.selected_dataframe.equals(expected_selected)  # This fails
+    assert widget.selected_dataframe.equals(expected_selected)
 
 
-@pytest.mark.xfail(reason='https://github.com/holoviz/panel/issues/3664')
 def test_tabulator_selection_header_filter_unchanged(page, port):
     df = pd.DataFrame({
         'col1': list('XYYYYY'),
@@ -2777,11 +2773,9 @@ def test_tabulator_selection_header_filter_unchanged(page, port):
 
     assert widget.selection == selection
     expected_selected = df.iloc[selection, :]
-    # This fails
     assert widget.selected_dataframe.equals(expected_selected)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3670')
 def test_tabulator_selection_header_filter_changed(page, port):
     df = pd.DataFrame({
         'col1': list('XYYYYY'),
@@ -2809,7 +2803,6 @@ def test_tabulator_selection_header_filter_changed(page, port):
 
     assert widget.selection == selection
     expected_selected = df.iloc[selection, :]
-    # This fails
     assert widget.selected_dataframe.equals(expected_selected)
 
 
