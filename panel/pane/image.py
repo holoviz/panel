@@ -381,7 +381,7 @@ class PDF(FileBase):
     ... )
     """
 
-    start_page = param.Number(1, doc="""
+    start_page = param.Integer(1, doc="""
         Start page of the pdf, by default the first page.""")
 
     filetype: ClassVar[str] = 'pdf'
