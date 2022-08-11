@@ -141,13 +141,16 @@ def find_imports(code: str) -> List[str]:
 
 def make_index(files):
     items = ['/'+os.path.basename(f) for f in files]
-    return INDEX_TEMPLATE.render({'items': items, 'sorted': sorted})
+    return INDEX_TEMPLATE.render({'items': items})
 
 
 def script_to_html(
-    filename: str, requirements: Literal['auto'] | List[str] = 'auto',
-    js_resources: List[str] = 'auto', css_resources: List[str] = 'auto',
-    runtime: Literal['pyodide', 'pyscript'] = 'pyscript', prerender: bool = True,
+    filename: str,
+    requirements: Literal['auto'] | List[str] = 'auto',
+    js_resources: Literal['auto'] | List[str] = 'auto',
+    css_resources: Literal['auto'] | List[str] | None = None,
+    runtime: Literal['pyodide', 'pyscript'] = 'pyscript',
+    prerender: bool = True,
     panel_version: Literal['auto'] | str = 'auto'
 ) -> str:
     """
@@ -162,7 +165,7 @@ def script_to_html(
       The list of requirements to include (in addition to Panel).
     js_resources: 'auto' | List[str]
       The list of JS resources to include in the exported HTML.
-    css_resources: 'auto' | List[str]
+    css_resources: 'auto' | List[str] | None
       The list of CSS resources to include in the exported HTML.
     runtime: 'pyodide' | 'pyscript'
       The runtime to use for running Python in the browser.
@@ -202,9 +205,12 @@ def script_to_html(
 
     # Execution
     code = '\n'.join([PRE, source, POST])
+    if css_resources is None:
+        css_resources = []
     if runtime == 'pyscript':
         if js_resources == 'auto':
             js_resources = [PYSCRIPT_JS]
+        css_resources = []
         if css_resources == 'auto':
             css_resources = [PYSCRIPT_CSS]
         pyenv = '\n'.join([f'- {req}' for req in reqs])

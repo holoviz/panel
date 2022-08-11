@@ -3,7 +3,7 @@ import os
 
 from bokeh.command.subcommand import Argument, Subcommand
 
-from ..io.convert import script_to_html, make_index
+from ..io.convert import make_index, script_to_html
 
 
 class Convert(Subcommand):
@@ -70,8 +70,8 @@ class Convert(Subcommand):
                 )
             except KeyboardInterrupt:
                 return
-            except Exception:
-                print(f'Failed toconvert {f} to {runtime} target.')
+            except Exception as e:
+                print(f'Failed to convert {f} to {runtime} target: {e}')
                 continue
             filename = os.path.basename(f).split('.')[0]+'.html'
             files.append(filename)
