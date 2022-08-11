@@ -1098,10 +1098,13 @@ class Tabulator(BaseTable):
         # Set the old attribute on a table edit event
         if event.event_name == 'table-edit' and self._old is not None:
             event.old = self._old[event_col].iloc[event.row]
-        # When Python filters are activated the front-end doesn't have access
+        # We want to return the index of the original `value` dataframe.
+        # However:
+        # - when Python filters are activated the front-end doesn't have access
         # to the whole dataframe and so returns the index of the filtered
-        # dataframe, while we want to return the index of the original dataframe.
-        if self._filters:
+        # dataframe
+        # - when pagination is remote and client-sorters are set (TODO)
+        if self._filters or (self.pagination == 'remote' and self.sorters):
             idx = self._processed.index[event.row]
             iloc = self.value.index.get_loc(idx)
             # get_loc can return a slice or a mask array when it finds more
