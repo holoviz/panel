@@ -173,6 +173,13 @@ def script_to_html(
         state._on_load(None)
     source = app._handlers[0]._runner.source
 
+    if not document.roots:
+        raise RuntimeError(
+            f'The file {filename} does not publish any Panel contents. '
+            'Ensure you have marked items as servable or added models to '
+            'the bokeh document manually.'
+        )
+
     if requirements == 'auto':
         requirements = find_imports(source)
 
