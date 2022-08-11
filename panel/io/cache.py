@@ -44,7 +44,10 @@ _PANDAS_ROWS_LARGE = 100_000
 
 _PANDAS_SAMPLE_SIZE = 100_000
 
-_TIME_FN = time.monotonic
+if sys.platform == 'win32':
+    _TIME_FN = time.perf_counter
+else:
+    _TIME_FN = time.monotonic
 
 class _Stack(object):
 
@@ -220,7 +223,6 @@ def _cleanup_cache(cache, policy, max_items, time):
     Deletes items in the cache if the exceed the number of items or
     their TTL (time-to-live) has expired.
     """
-    print(cache)
     while len(cache) >= max_items:
         if policy.lower() == 'lifo':
             key = list(cache.keys())[0]
