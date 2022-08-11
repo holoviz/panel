@@ -316,7 +316,7 @@ def test_editablerangeslider_button_start(page, port, widget):
 
 
 def test_editablerangeslider_no_overlap(page, port):
-    widget = EditableRangeSlider(value=(0, 1), step=1)
+    widget = EditableRangeSlider(value=(0, 2), step=1)
 
     serve(widget, port=port, threaded=True, show=False)
     time.sleep(0.2)
@@ -324,11 +324,14 @@ def test_editablerangeslider_no_overlap(page, port):
     page.goto(f"http://localhost:{port}")
 
     up_start = page.locator("button").nth(0)
+    down_start = page.locator("button").nth(1)
     down_end = page.locator("button").nth(3)
 
     up_start.click(click_count=3)
-    wait_until(page, lambda: widget.value == (1, 1))
+    wait_until(page, lambda: widget.value == (2, 2))
 
-    widget.value = (0, 1)
+    down_start.click()
+    wait_until(page, lambda: widget.value == (1, 2))
+
     down_end.click(click_count=3)
-    wait_until(page, lambda: widget.value == (0, 0))
+    wait_until(page, lambda: widget.value == (1, 1))
