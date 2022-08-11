@@ -26,8 +26,8 @@ from ..util import escape
 from .resources import INDEX_TEMPLATE, Resources, bundle_resources
 from .state import set_curdoc, state
 
-PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />'
-PYSCRIPT_JS = '<script defer src="https://pyscript.net/alpha/pyscript.js"></script>'
+PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />'
+PYSCRIPT_JS = '<script defer src="https://pyscript.net/latest/pyscript.js"></script>'
 PYODIDE_JS = '<script src="https://cdn.jsdelivr.net/pyodide/v0.20.0/full/pyodide.js"></script>'
 
 def _stdlibs():
