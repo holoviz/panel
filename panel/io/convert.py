@@ -3,6 +3,9 @@ from __future__ import annotations
 import ast
 import dataclasses
 import os
+import pathlib
+import pkgutil
+import sys
 
 from textwrap import dedent
 from typing import List, Literal
@@ -20,12 +23,26 @@ from bokeh.util.serialization import make_id
 
 from .. import __version__, config
 from ..util import escape
-from .resources import bundle_resources, INDEX_TEMPLATE, Resources
-from .state import state, set_curdoc
+from .resources import INDEX_TEMPLATE, Resources, bundle_resources
+from .state import set_curdoc, state
 
 PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />'
 PYSCRIPT_JS = '<script defer src="https://pyscript.net/alpha/pyscript.js"></script>'
 PYODIDE_JS = '<script src="https://cdn.jsdelivr.net/pyodide/v0.20.0/full/pyodide.js"></script>'
+
+def _stdlibs():
+    env_dir = str(pathlib.Path(sys.executable).parent.parent)
+    modules = list(sys.builtin_module_names)
+    for m in pkgutil.iter_modules():
+        mpath = m.module_finder.path
+        if mpath.startswith(env_dir) and not 'site-packages' in mpath:
+            modules.append(m.name)
+    return modules
+
+_STDLIBS = _stdlibs()
+_PACKAGE_MAP = {
+    'sklearn': 'scikit-learn'
+}
 
 PRE = """
 import asyncio
@@ -115,7 +132,11 @@ def find_imports(code: str) -> List[str]:
             if module_name is None:
                 continue
             imports.add(module_name.split(".")[0])
-    return list(sorted(imports))
+
+    packages = [_PACKAGE_MAP.get(pkg, pkg) for pkg in sorted(imports) if pkg not in _STDLIBS]
+    if 'bokeh.sampledata' in code and 'pandas' not in packages:
+        packages.append('pandas')
+    return packages
 
 
 def make_index(files):
