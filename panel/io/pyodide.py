@@ -93,6 +93,9 @@ def _link_docs(pydoc, jsdoc):
         jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.to_js(buffer_map), setter_id='js')
 
     pydoc.on_change(pysync)
+    pydoc.callbacks.trigger_json_event(
+        {'event_name': 'document_ready', 'event_values': {}
+    })
 
 async def _link_model(ref, doc):
     from js import Bokeh
