@@ -147,7 +147,8 @@ def make_index(files):
 def script_to_html(
     filename: str, requirements: Literal['auto'] | List[str] = 'auto',
     js_resources: List[str] = 'auto', css_resources: List[str] = 'auto',
-    runtime: Literal['pyodide', 'pyscript'] = 'pyscript', prerender=True
+    runtime: Literal['pyodide', 'pyscript'] = 'pyscript', prerender: bool = True,
+    panel_version: Literal['auto'] | str = 'auto'
 ) -> str:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
@@ -156,10 +157,19 @@ def script_to_html(
     Arguments
     ---------
     filename : str
-      The filename of the Panel/Bokeh application to convert
-    requirements: 'auto' | list(str)
+      The filename of the Panel/Bokeh application to convert.
+    requirements: 'auto' | List[str]
       The list of requirements to include (in addition to Panel).
-
+    js_resources: 'auto' | List[str]
+      The list of JS resources to include in the exported HTML.
+    css_resources: 'auto' | List[str]
+      The list of CSS resources to include in the exported HTML.
+    runtime: 'pyodide' | 'pyscript'
+      The runtime to use for running Python in the browser.
+    prerender: bool
+      Whether to pre-render the components so the page loads.
+    panel_version: 'auto' | str
+      The panel release version to use in the exported HTML.
     """
     # Configure resources
     _settings.resources.set_value('cdn')
@@ -184,8 +194,11 @@ def script_to_html(
         requirements = find_imports(source)
 
     # Environment
-    pn_version = '.'.join(__version__.split('.')[:3])
-    reqs = [f'panel=={pn_version}'] + [req for req in requirements if req != 'panel']
+    if panel_version == 'auto':
+        panel_version = '.'.join(__version__.split('.')[:3])
+    reqs = [f'panel=={panel_version}'] + [
+        req for req in requirements if req != 'panel'
+    ]
 
     # Execution
     code = '\n'.join([PRE, source, POST])
