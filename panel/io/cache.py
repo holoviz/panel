@@ -147,29 +147,33 @@ _hash_funcs = {
 for name in _FFI_TYPE_NAMES:
     _hash_funcs[name] = b'0'
 
-def _generate_hash_inner(obj, hash_funcs={}):
-
+def _find_hash_func(obj, hash_funcs={}):
     fqn_type = _get_fqn(obj)
     if fqn_type in hash_funcs:
-        hash_func = hash_funcs[fqn_type]
+        return hash_funcs[fqn_type]
+    elif fqn_type in _hash_funcs:
+        return _hash_funcs[fqn_type]
+    for otype, hash_func in _hash_funcs.items():
+        if isinstance(otype, str):
+            if otype == fqn_type:
+                return hash_func
+        elif inspect.isfunction(otype):
+            if otype(obj):
+                return hash_func
+        elif isinstance(obj, otype):
+            return hash_func
+
+def _generate_hash_inner(obj, hash_funcs={}):
+    hash_func = _find_hash_func(obj, hash_funcs)
+    if hash_func is not None:
         try:
             output = hash_func(obj)
         except BaseException as e:
             raise ValueError(
                 f'User hash function {hash_func!r} failed for input '
-                f'type {fqn_type} with following error: '
-                f'{type(e).__name__}("{e}").'
+                f'{obj!r} with following error: {type(e).__name__}("{e}").'
             )
-        return _generate_hash(output)
-    for otype, hash_func in _hash_funcs.items():
-        if isinstance(otype, str):
-            if otype == fqn_type:
-                return hash_func(obj)
-        elif inspect.isfunction(otype):
-            if otype(obj):
-                return hash_func(obj)
-        elif isinstance(obj, otype):
-            return hash_func(obj)
+        return output
     if hasattr(obj, '__reduce__'):
         h = hashlib.new("md5")
         try:
@@ -211,24 +215,28 @@ def _key(obj):
         return id(obj)
     return _INDETERMINATE
 
-def _cleanup_cache(cache, policy, max_items, ttl, time):
+def _cleanup_cache(cache, policy, max_items, time):
     """
     Deletes items in the cache if the exceed the number of items or
     their TTL (time-to-live) has expired.
     """
     while len(cache) >= max_items:
-        if policy.lower() == 'fifo':
+        if policy.lower() == 'lifo':
             key = list(cache.keys())[0]
         elif policy.lower() == 'lru':
-            key = sorted(((key, time-t) for k, (_, _, _, t) in cache.items()),
+            key = sorted(((k, -(time-t)) for k, (_, _, _, t) in cache.items()),
                          key=lambda o: o[1])[0][0]
         elif policy.lower() == 'lfu':
             key = sorted(cache.items(), key=lambda o: o[1][2])[0][0]
         del cache[key]
-    if ttl is not None:
-        for key, (_, ts, _, _) in list(cache.items()):
-            if (time-ts) > ttl:
-                del cache[key]
+
+def _cleanup_ttl(cache, ttl, time):
+    """
+    Deletes items in the cache if their TTL (time-to-live) has expired.
+    """
+    for key, (_, ts, _, _) in list(cache.items()):
+        if (time-ts) > ttl:
+            del cache[key]
 
 #---------------------------------------------------------------------
 # Public API
@@ -336,22 +344,27 @@ def cache(
         func_hash = hashlib.sha256(_generate_hash(func_hash)).hexdigest()
 
         func_cache = state._memoize_cache.get(func_hash)
-        if func_cache is None:
+
+        empty = func_cache is None
+        if empty:
             if to_disk:
                 from diskcache import Index
                 cache = Index(os.path.join(cache_path, func_hash))
             else:
                 cache = {}
             state._memoize_cache[func_hash] = func_cache = cache
-        elif hash_value in func_cache:
+
+        if ttl is not None:
+            _cleanup_ttl(func_cache, ttl, time)
+
+        if not empty and hash_value in func_cache:
             with lock:
                 ret, ts, count, _ = func_cache[hash_value]
                 func_cache[hash_value] = (ret, ts, count+1, time)
                 return ret
 
         if max_items is not None:
-            with lock:
-                _cleanup_cache(cache, policy, max_items, ttl, time)
+            _cleanup_cache(func_cache, policy, max_items, time)
 
         ret = func(*args, **kwargs)
         with lock:
@@ -359,9 +372,16 @@ def cache(
         return ret
 
     def clear():
+        global func_hash
         if func_hash is None:
             return
-        state._memoize_cache.get(func_hash, {}).clear()
+        if to_disk:
+            from diskcache import Index
+            cache = Index(os.path.join(cache_path, func_hash))
+            cache.clear()
+        else:
+            cache = state._memoize_cache.get(func_hash, {})
+        cache.clear()
     wrapped_func.clear = clear
 
     try:
