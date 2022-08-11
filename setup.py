@@ -119,12 +119,16 @@ _recommended = [
 ]
 
 _tests = [
+    # Test dependencies
     'flake8',
     'parameterized',
     'pytest',
     'nbval',
+    'flaky',
+    'pytest-xdist',
     'pytest-cov',
     'pre-commit',
+    # Libraries tested in unit tests
     'folium',
     'ipympl',
     'scipy',
@@ -132,8 +136,7 @@ _tests = [
     'pandas >=1.3',
     'ipython >=7.0',
     'holoviews',
-    'flaky',
-    'pytest-xdist',
+    'diskcache',
 ]
 
 _ui = [
