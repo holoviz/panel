@@ -1101,7 +1101,7 @@ class Tabulator(BaseTable):
         # When Python filters are activated the front-end doesn't have access
         # to the whole dataframe and so returns the index of the filtered
         # dataframe, while we want to return the index of the original dataframe.
-        if event.event_name in ['table-edit', 'cell-click'] and self._filters:
+        if self._filters:
             idx = self._processed.index[event.row]
             iloc = self.value.index.get_loc(idx)
             # get_loc can return a slice or a mask array when it finds more
