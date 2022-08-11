@@ -220,6 +220,7 @@ def _cleanup_cache(cache, policy, max_items, time):
     Deletes items in the cache if the exceed the number of items or
     their TTL (time-to-live) has expired.
     """
+    print(cache)
     while len(cache) >= max_items:
         if policy.lower() == 'lifo':
             key = list(cache.keys())[0]
