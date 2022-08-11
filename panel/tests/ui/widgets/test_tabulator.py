@@ -2643,9 +2643,6 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pa
     editable_cell.press('Enter')
 
     wait_until(page, lambda: len(values) == 1)
-    if python_filter != 'python_filter':
-        if pagination == 'remote' and sorter == 'sorter':
-            pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3663')
     assert values[0] == (target_col, target_index, target_val, new_val)
     assert df[target_col][target_index] == new_val
     assert widget.value.equals(df)
@@ -2724,9 +2721,6 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
     cell.click()
 
     wait_until(page, lambda: len(values) == 1)
-    if python_filter != 'python_filter':
-        if pagination == 'remote' and sorter == 'sorter':
-            pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3663')
     assert values[0] == (target_col, target_index, target_val)
     wait_until(page, lambda: widget.selection == [target_index])
     if pagination in ['local', 'no_pagination'] and python_filter == 'no_python_filter' and sorter == 'sorter':
