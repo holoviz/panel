@@ -732,8 +732,8 @@ class BaseTable(ReactiveData, Widget):
         Returns a DataFrame of the currently selected rows.
         """
         if not self.selection:
-            return self.current_view.iloc[:0]
-        return self.current_view.iloc[self.selection]
+            return self.value.iloc[:0]
+        return self.value.iloc[self.selection]
 
 
 class DataFrame(BaseTable):
@@ -1404,6 +1404,16 @@ class Tabulator(BaseTable):
 
     def _update_selection(self, indices: List[int]):
         if self.pagination != 'remote':
+            if self._filters:
+                print('In filters')
+                idx = self._processed.iloc[indices].index
+                indices = []
+                for v in idx.values:
+                    iloc = self.value.index.get_loc(v)
+                    if not isinstance(iloc, int):
+                        raise ValueError()
+                    indices.append(iloc)
+                print('In filters', indices)
             self.selection = indices
             return
         nrows = self.page_size
