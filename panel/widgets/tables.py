@@ -1095,9 +1095,25 @@ class Tabulator(BaseTable):
                 event.value = self._processed.index[event.row]
             else:
                 event.value = self._processed[event_col].iloc[event.row]
+        # Set the old attribute on a table edit event
+        if event.event_name == 'table-edit' and self._old is not None:
+            event.old = self._old[event_col].iloc[event.row]
+        # When Python filters are activated the front-end doesn't have access
+        # to the whole dataframe and so returns the index of the filtered
+        # dataframe, while we want to return the index of the original dataframe.
+        if event.event_name in ['table-edit', 'cell-click'] and self._filters:
+            idx = self._processed.index[event.row]
+            iloc = self.value.index.get_loc(idx)
+            # get_loc can return a slice or a mask array when it finds more
+            # than one locations.
+            if not isinstance(iloc, int):
+                raise ValueError(
+                    'The Tabulator widget expects the provided `value` Pandas DataFrame '
+                    'to have unique indexes, in particular when it has to deal with '
+                    'click or edit events. Found this duplicate index: {idx!r}'
+                )
+            event.row = iloc
         if event.event_name == 'table-edit':
-            if self._old is not None:
-                event.old = self._old[event_col].iloc[event.row]
             for cb in self._on_edit_callbacks:
                 state.execute(partial(cb, event))
             self._update_style()
