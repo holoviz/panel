@@ -456,6 +456,10 @@ class Param(PaneBase):
                         widget_class = LiteralInput
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
+            if hasattr(widget_class, 'fixed_start') and getattr(p_obj, 'bounds', None):
+                kw['fixed_start'] = p_obj.bounds[0]
+            if hasattr(widget_class, 'fixed_end') and getattr(p_obj, 'bounds', None):
+                kw['fixed_end'] = p_obj.bounds[1]
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
 

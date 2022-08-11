@@ -779,7 +779,7 @@ class _EditableContinuousSlider(CompositeWidget):
         super().__init__(**params)
         self._label = StaticText(margin=0, align='end')
         self._slider = self._slider_widget(
-            value=self.value, margin=(0, 0, 5, 0), sizing_mode='stretch_width'
+            value=self.value, margin=(0, 0, 5, 0), sizing_mode='stretch_width',
         )
         self._slider.param.watch(self._sync_value, 'value')
         self._slider.param.watch(self._sync_value, 'value_throttled')
@@ -803,6 +803,7 @@ class _EditableContinuousSlider(CompositeWidget):
         self._update_name()
         self._update_slider()
         self._update_value()
+        self._update_bounds()
 
     @param.depends('width', 'height', 'sizing_mode', watch=True)
     def _update_layout(self):
@@ -849,6 +850,24 @@ class _EditableContinuousSlider(CompositeWidget):
         with param.edit_constant(self):
             self.param.update(**{event.name: event.new})
 
+    @param.depends("start", "end", "fixed_start", "fixed_end", watch=True)
+    def _update_bounds(self):
+        self.param.value.softbounds = (self.start, self.end)
+        self.param.value_throttled.softbounds = (self.start, self.end)
+        self.param.value.bounds = (self.fixed_start, self.fixed_end)
+        self.param.value_throttled.bounds = (self.fixed_start, self.fixed_end)
+
+        # First changing _slider and then _value_edit,
+        # because else _value_edit will change the _slider
+        # with the jscallback.
+        if self.fixed_start is not None:
+            self._slider.start = max(self.fixed_start, self.start)
+        if self.fixed_end is not None:
+            self._slider.end = min(self.fixed_end, self.end)
+
+        self._value_edit.start = self.fixed_start
+        self._value_edit.end = self.fixed_end
+
 
 class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
     """
@@ -864,6 +883,12 @@ class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
     ...     value=1.0, start=0.0, end=2.0, step=0.25, name="A float value"
     ... )
     """
+
+    fixed_start = param.Number(default=None, doc="""
+        A fixed lower bound for the slider and input.""")
+
+    fixed_end = param.Number(default=None, doc="""
+        A fixed upper bound for the slider and input.""")
 
     _slider_widget: ClassVar[Type[Widget]] = FloatSlider
     _input_widget: ClassVar[Type[Widget]] = FloatInput
@@ -883,6 +908,12 @@ class EditableIntSlider(_EditableContinuousSlider, IntSlider):
     ...     value=2, start=0, end=5, step=1, name="An integer value"
     ... )
     """
+
+    fixed_start = param.Integer(default=None, doc="""
+        A fixed lower bound for the slider and input.""")
+
+    fixed_end = param.Integer(default=None, doc="""
+       A fixed upper bound for the slider and input.""")
 
     _slider_widget: ClassVar[Type[Widget]] = IntSlider
     _input_widget: ClassVar[Type[Widget]] = IntInput
@@ -911,6 +942,12 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     start = param.Number(default=0., doc="Lower bound of the range.")
 
     end = param.Number(default=1., doc="Upper bound of the range.")
+
+    fixed_start = param.Number(default=None, doc="""
+        A fixed lower bound for the slider and input.""")
+
+    fixed_end = param.Number(default=None, doc="""
+        A fixed upper bound for the slider and input.""")
 
     step = param.Number(default=0.1, doc="Slider and number input step.")
 
@@ -946,19 +983,24 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         edit = Row(self._label, self._start_edit, sep, self._end_edit,
                    sizing_mode='stretch_width', margin=0)
         self._composite.extend([edit, self._slider])
-        self._slider.jscallback(args={'start': self._start_edit, 'end': self._end_edit}, value="""
-        let [min, max] = cb_obj.value
-        start.value = min
-        end.value = max
-        """)
-        self._start_edit.jscallback(args={'slider': self._slider}, value="""
+        self._start_edit.jscallback(args={'slider': self._slider, 'end': self._end_edit}, value="""
+        // start value always smaller than the end value
+        if (cb_obj.value >= end.value) {
+          cb_obj.value = end.value
+          return
+        }
         if (cb_obj.value < slider.start) {
           slider.start = cb_obj.value
         } else if (cb_obj.value > slider.end) {
           slider.end = cb_obj.value
         }
         """)
-        self._end_edit.jscallback(args={'slider': self._slider}, value="""
+        self._end_edit.jscallback(args={'slider': self._slider ,'start': self._start_edit}, value="""
+        // end value always larger than the start value
+        if (cb_obj.value <= start.value) {
+          cb_obj.value = start.value
+          return
+        }
         if (cb_obj.value < slider.start) {
           slider.start = cb_obj.value
         } else if (cb_obj.value > slider.end) {
@@ -970,6 +1012,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self._update_name()
         self._update_slider()
         self._update_value()
+        self._update_bounds()
 
     @param.depends('editable', watch=True)
     def _update_editable(self):
@@ -1040,3 +1083,23 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             self.param.update(
                 **{event.name: (start, event.new)}
             )
+
+    @param.depends("start", "end", "fixed_start", "fixed_end", watch=True)
+    def _update_bounds(self):
+        self.param.value.softbounds = (self.start, self.end)
+        self.param.value_throttled.softbounds = (self.start, self.end)
+        self.param.value.bounds = (self.fixed_start, self.fixed_end)
+        self.param.value_throttled.bounds = (self.fixed_start, self.fixed_end)
+
+        # First changing _slider and then _value_edit,
+        # because else _value_edit will change the _slider
+        # with the jscallback.
+        if self.fixed_start is not None:
+            self._slider.start = max(self.fixed_start, self.start)
+        if self.fixed_end is not None:
+            self._slider.end = min(self.fixed_end, self.end)
+
+        self._start_edit.start = self.fixed_start
+        self._start_edit.end = self.fixed_end
+        self._end_edit.start = self.fixed_start
+        self._end_edit.end = self.fixed_end

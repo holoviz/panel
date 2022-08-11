@@ -1,6 +1,7 @@
 import os
 
 import param
+import pytest
 
 from bokeh.models import (
     AutocompleteInput as BkAutocompleteInput, Button, CheckboxGroup,
@@ -18,8 +19,8 @@ from panel.param import (
 )
 from panel.tests.util import mpl_available, mpl_figure
 from panel.widgets import (
-    AutocompleteInput, DatePicker, DatetimeInput, LiteralInput, NumberInput,
-    RangeSlider,
+    AutocompleteInput, DatePicker, DatetimeInput, EditableFloatSlider,
+    EditableRangeSlider, LiteralInput, NumberInput, RangeSlider,
 )
 
 
@@ -1361,3 +1362,33 @@ def test_paramfunction_bare_lazy_no_warning(caplog):
 
     for log_record in caplog.records:
         assert "The function 'foo' does not have any dependencies and will never update" not in log_record.message
+
+
+def test_param_editablefloatslider_with_bounds():
+    class Test(param.Parameterized):
+        i = param.Number(default=1, softbounds=(1, 5), bounds=(0, 10))
+
+
+    t = Test()
+    w = EditableFloatSlider.from_param(t.param.i)
+
+    msg = "Parameter 'value' must be at least 0, not -1"
+    with pytest.raises(ValueError, match=msg):
+        w.value = -1
+
+    assert w.value == 1
+
+
+def test_param_editablerangeslider_with_bounds():
+    class Test(param.Parameterized):
+        i = param.Range(default=(1, 2), softbounds=(1, 5), bounds=(0, 10))
+
+
+    t = Test()
+    w = EditableRangeSlider.from_param(t.param.i)
+
+    msg = "Range parameter 'value''s lower bound must be in range \[0, 10\]"
+    with pytest.raises(ValueError, match=msg):
+        w.value = (-1, 2)
+
+    assert w.value == (1, 2)
