@@ -7,7 +7,6 @@ import inspect
 import io
 import os
 import pickle
-import shutil
 import sys
 import threading
 import time
@@ -225,8 +224,8 @@ def _cleanup_cache(cache, policy, max_items, time):
         if policy.lower() == 'lifo':
             key = list(cache.keys())[0]
         elif policy.lower() == 'lru':
-            key = sorted(((k, -(time-t)) for k, (_, _, _, t) in cache.items()),
-                         key=lambda o: o[1])[0][0]
+            key = sorted(((k, time-t) for k, (_, _, _, t) in cache.items()),
+                         key=lambda o: o[1])[-1][0]
         elif policy.lower() == 'lfu':
             key = sorted(cache.items(), key=lambda o: o[1][2])[0][0]
         del cache[key]
@@ -380,10 +379,6 @@ def cache(
             from diskcache import Index
             cache = Index(os.path.join(cache_path, func_hash))
             cache.clear()
-            try:
-                shutil.rmtree(cache.directory)
-            except OSError:  # Windows wonkiness
-                pass
         else:
             cache = state._memoize_cache.get(func_hash, {})
         cache.clear()

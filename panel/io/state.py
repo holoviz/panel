@@ -474,6 +474,7 @@ class _state(param.Parameterized):
         for cache in self._memoize_cache.values():
             cache.clear()
             if hasattr(cache, 'directory'):
+                cache.cache.close()
                 try:
                     shutil.rmtree(cache.directory)
                 except OSError:  # Windows wonkiness

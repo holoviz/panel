@@ -180,7 +180,6 @@ def test_disk_cache():
     assert fn(0, 0) == 0
     fn.clear()
     assert fn(0, 0) == 1
-    assert not list(pathlib.Path('./cache').glob('*'))
 
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_lifo(to_disk):
@@ -214,6 +213,7 @@ def test_cache_lru(to_disk):
     assert fn(0, 2) == 2
     assert fn(0, 0) == 0
     assert fn(0, 3) == 3 # (0, 1) should be evicted
+    assert fn(0, 0) == 0
     assert fn(0, 1) == 2
 
 @pytest.mark.parametrize('to_disk', (True, False))
