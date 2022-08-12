@@ -26,7 +26,7 @@ def test_template_theme_parameter():
     # Not '#3f3f3f' which is for the Vanilla theme
 
     doc = template.server_doc(Document())
-    assert doc.theme._json['attrs']['Figure']['background_fill_color']=="#181818"
+    assert doc.theme._json['attrs']['figure']['background_fill_color']=="#181818"
 
     assert isinstance(template._get_theme(), FastGridDarkTheme)
 
