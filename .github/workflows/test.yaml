@@ -69,12 +69,23 @@ jobs:
           pip install pyecharts idom
       - name: bokeh_sampledata
         run: |
+<<<<<<< HEAD
           conda activate test-environment
           bokeh sampledata
       - name: Install bokeh v3 with holoviews
         run: |
           conda activate test-environment
           conda install bokeh=3.0.0dev11 -c bokeh/label/dev -y
+=======
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          bokeh sampledata
+      - name: Install bokeh 3.0 and holoviews compatibility branch
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda install "nodejs>16" "bokeh=3.0.0dev11" -c bokeh/label/dev -c conda-forge -y
+>>>>>>> Fix merge
           pip install "git+https://github.com/holoviz/holoviews.git@bokeh3.0"
       - name: doit env_capture
         run: |
