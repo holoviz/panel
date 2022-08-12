@@ -2,12 +2,12 @@ import {Grid, ContentBox, Sizeable} from "@bokehjs/core/layout"
 import {div, size, children, display, undisplay, position, scroll_size} from "@bokehjs/core/dom"
 import {sum, remove_at} from "@bokehjs/core/util/array"
 import * as p from "@bokehjs/core/properties"
-import {Tabs as  BkTabs, TabsView as BkTabsView} from "@bokehjs/models/layouts/tabs"
+import {Tabs as BkTabs, TabsView as BkTabsView} from "@bokehjs/models/layouts/tabs"
 import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 
 import * as tabs from "@bokehjs/styles/tabs.css"
 import * as buttons from "@bokehjs/styles/buttons.css"
-import * as menus from "@bokehjs/styles/menus.css"
+import * as caret from "@bokehjs/styles/caret.css"
 
 
 function show(element: HTMLElement): void {
@@ -208,8 +208,8 @@ export class TabsView extends BkTabsView {
     this.headers_el = div({class: [tabs.headers]}, headers)
     this.wrapper_el = div({class: tabs.headers_wrapper}, this.headers_el)
 
-    this.left_el = div({class: [buttons.btn, buttons.btn_default], disabled: ""}, div({class: [menus.caret, tabs.left]}))
-    this.right_el = div({class: [buttons.btn, buttons.btn_default]}, div({class: [menus.caret, tabs.right]}))
+    this.left_el = div({class: [buttons.btn, buttons.btn_default], disabled: ""}, div({class: [caret.caret, tabs.left]}))
+    this.right_el = div({class: [buttons.btn, buttons.btn_default]}, div({class: [caret.caret, tabs.right]}))
 
     this.left_el.addEventListener("click", () => this.do_scroll("left"))
     this.right_el.addEventListener("click", () => this.do_scroll("right"))
