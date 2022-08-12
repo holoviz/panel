@@ -1,7 +1,7 @@
 import flatpickr from "flatpickr"
 
 import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
-import {input} from "@bokehjs/core/dom"
+import {input, StyleSheetLike} from "@bokehjs/core/dom"
 import {CalendarPosition} from "@bokehjs/core/enums"
 import * as p from "@bokehjs/core/properties"
 import {isString} from "@bokehjs/core/util/types"
@@ -55,7 +55,7 @@ export class DatetimePickerView extends InputWidgetView {
     super.remove()
   }
 
-  styles(): string[] {
+  override styles(): StyleSheetLike[] {
     return [...super.styles(), flatpickr_css]
   }
 
