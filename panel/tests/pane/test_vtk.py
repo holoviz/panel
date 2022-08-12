@@ -1,5 +1,6 @@
 import base64
 import os
+import sys
 
 from io import BytesIO
 from zipfile import ZipFile
@@ -162,6 +163,7 @@ def test_vtkjs_pane(document, comm, tmp_path):
 
 
 @vtk_available
+@pytest.mark.skipif(sys.platform == "win32", reason="cache cleanup fails on windows")
 def test_vtk_pane_from_renwin(document, comm):
     renWin = make_render_window()
     pane = VTK(renWin)
@@ -179,6 +181,7 @@ def test_vtk_pane_from_renwin(document, comm):
     assert len(ctx.dataArrayCache.keys()) == 5
     # Force 0s for removing arrays
     ctx.checkForArraysToRelease(0)
+
     assert len(ctx.dataArrayCache.keys()) == 0
 
     # Cleanup

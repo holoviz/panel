@@ -45,6 +45,7 @@ jobs:
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
+      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Without this env var `doit env_create ...` uses by default
@@ -103,6 +104,7 @@ jobs:
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       # Without this env var `doit env_create ...` uses by default
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
