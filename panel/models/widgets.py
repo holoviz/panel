@@ -138,9 +138,7 @@ class Progress(HTMLBox):
 
     value = Nullable(Int, help="""Current value""")
 
-    style = Dict(String, Any, default={}, help="""
-    Raw CSS style declaration. Note this may be web browser dependent.
-    """)
+    # style = Override(default={})
 
 
 class FileDownload(InputWidget):

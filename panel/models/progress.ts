@@ -78,7 +78,7 @@ export namespace Progress {
   export type Props = HTMLBox.Props & {
     active: p.Property<boolean>
     bar_color: p.Property<string>
-    style: p.Property<{[key: string]: string}>
+    // style: p.Property<{[key: string]: string}>
     max: p.Property<number | null>
     value: p.Property<number | null>
   }
@@ -100,7 +100,7 @@ export class Progress extends HTMLBox {
     this.define<Progress.Props>(({Any, Boolean, Number, String}) => ({
       active:    [ Boolean, true ],
       bar_color: [ String, 'primary' ],
-      style:     [ Any, {} ],
+      // style:     [ Any, {} ],
       max:       [ Number, 100 ],
       value:     [ Any, null ],
     }))
