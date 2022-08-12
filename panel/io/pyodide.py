@@ -207,6 +207,9 @@ async def write_doc(doc: Optional['Document'] = None) -> None:
     body.classList.remove("bk", "pn-loading", config.loading_spinner)
 
     doc = doc or state.curdoc
+    if doc in state._templates:
+        template = state._templates[doc]
+        template.server_doc(title=template.title, location=True, doc=doc)
     docs_json, render_items = _doc_json(doc)
     views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
     jsdoc = views[0][0].model.document
