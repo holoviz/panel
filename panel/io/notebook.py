@@ -134,7 +134,7 @@ def render_template(
     document: 'Document', comm: Optional['Comm'] = None, manager: Optional['CommManager'] = None
 ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
     ref = document.roots[0].ref['id']
-    (docs_json, render_items) = standalone_docs_json_and_render_items(document, True)
+    (docs_json, render_items) = standalone_docs_json_and_render_items(document, suppress_callback_warning=True)
 
     # We do not want the CommManager to appear in the roots because
     # the custom template may not reference it
@@ -157,7 +157,7 @@ def render_model(
 
     target = model.ref['id']
 
-    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], True)
+    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], suppress_callback_warning=True)
     div = div_for_render_item(render_item)
     render_json = render_item.to_json()
     requirements = [pnext._globals[ext] for ext in pnext._loaded_extensions
