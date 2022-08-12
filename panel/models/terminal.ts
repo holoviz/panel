@@ -1,7 +1,8 @@
 import { HTMLBox } from "@bokehjs/models/layouts/html_box"
 import * as p from "@bokehjs/core/properties"
 import { div } from "@bokehjs/core/dom"
-import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import {Attrs} from "@bokehjs/core/types"
 
 import { PanelHTMLBoxView, set_size } from "./layout"
 
@@ -13,7 +14,7 @@ export class KeystrokeEvent extends ModelEvent {
     super()
   }
 
-  protected _to_json(): JSON {
+  protected get event_values(): Attrs {
     return {model: this.origin, key: this.key}
   }
 }

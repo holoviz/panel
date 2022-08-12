@@ -1,8 +1,9 @@
 import * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
-import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {PanelMarkupView} from "./layout"
 import {serializeEvent} from "./event-to-object";
+import {Attrs} from "@bokehjs/core/types"
 
 export class DOMEvent extends ModelEvent {
   event_name: string = "dom_event"
@@ -11,7 +12,7 @@ export class DOMEvent extends ModelEvent {
     super()
   }
 
-  protected _to_json(): JSON {
+  protected get event_values(): Attrs {
     return {model: this.origin, node: this.node, data: this.data}
   }
 }

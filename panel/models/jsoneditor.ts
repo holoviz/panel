@@ -1,7 +1,8 @@
 import * as p from "@bokehjs/core/properties"
-import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {PanelHTMLBoxView} from "./layout"
+import {Attrs} from "@bokehjs/core/types"
 
 export class JSONEditEvent extends ModelEvent {
   event_name: string = "json_edit"
@@ -10,7 +11,7 @@ export class JSONEditEvent extends ModelEvent {
     super()
   }
 
-  protected _to_json(): JSON {
+  protected get event_values(): Attrs {
     return {model: this.origin, data: this.data}
   }
 }

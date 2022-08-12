@@ -2,12 +2,13 @@ import {undisplay} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {build_views} from "@bokehjs/core/build_views"
-import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties";
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {TableColumn} from "@bokehjs/models/widgets/tables"
+import {Attrs} from "@bokehjs/core/types"
 
 import {debounce} from "debounce"
 
@@ -22,7 +23,7 @@ export class TableEditEvent extends ModelEvent {
     super()
   }
 
-  protected _to_json(): JSON {
+  protected get event_values(): Attrs {
     return {model: this.origin, column: this.column, row: this.row}
   }
 }
@@ -34,7 +35,7 @@ export class CellClickEvent extends ModelEvent {
     super()
   }
 
-  protected _to_json(): JSON {
+  protected get event_values(): Attrs {
     return {model: this.origin, column: this.column, row: this.row}
   }
 }
