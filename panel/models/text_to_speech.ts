@@ -150,7 +150,7 @@ export class TextToSpeech extends HTMLBox {
 
   static __module__ = "panel.models.text_to_speech"
 
-  static init_TextToSpeech(): void {
+  static {
     this.prototype.default_view = TextToSpeechView
 
     this.define<TextToSpeech.Props>(({Any, Array, Boolean}) => ({

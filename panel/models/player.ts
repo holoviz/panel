@@ -382,7 +382,7 @@ export class Player extends Widget {
 
   static __module__ = "panel.models.widgets"
 
-  static init_Player(): void {
+  static {
     this.prototype.default_view = PlayerView
 
     this.define<Player.Props>(({Boolean, Int}) => ({

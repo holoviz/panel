@@ -135,7 +135,7 @@ export class Card extends Column {
 
   static __module__ = "panel.models.layout"
 
-  static init_Card(): void {
+  static {
     this.prototype.default_view = CardView
 
     this.define<Card.Props>(({Array, Boolean, Nullable, String}) => ({

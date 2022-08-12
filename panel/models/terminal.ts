@@ -142,7 +142,7 @@ export class Terminal extends HTMLBox {
 
   static __module__ = "panel.models.terminal"
 
-  static init_Terminal(): void {
+  static {
     this.prototype.default_view = TerminalView;
 
     this.define<Terminal.Props>(({Any, Int, String}) => ({

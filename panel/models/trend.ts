@@ -243,7 +243,7 @@ export class TrendIndicator extends HTMLBox {
 
   static __module__ = "panel.models.trend"
 
-  static init_TrendIndicator(): void {
+  static {
     this.prototype.default_view = TrendIndicatorView;
 
     this.define<TrendIndicator.Props>(({Number, String, Ref}) => ({

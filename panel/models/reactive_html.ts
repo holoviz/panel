@@ -599,7 +599,7 @@ export class ReactiveHTML extends HTMLBox {
 
   static __module__ = "panel.models.reactive_html"
 
-  static init_ReactiveHTML(): void {
+  static {
     this.prototype.default_view = ReactiveHTMLView
     this.define<ReactiveHTML.Props>(({Array, Any, String}) => ({
       attrs:     [ Any,    {} ],

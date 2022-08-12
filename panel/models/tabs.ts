@@ -262,7 +262,7 @@ export class Tabs extends BkTabs {
 
   static __module__ = "panel.models.tabs"
 
-  static init_Tabs(): void {
+  static {
     this.prototype.default_view = TabsView
 
     this.define<Tabs.Props>(({}) => ({

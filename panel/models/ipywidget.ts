@@ -69,7 +69,7 @@ export class IPyWidget extends HTMLBox {
 
   static __module__ = "panel.models.ipywidget"
 
-  static init_IPyWidget(): void {
+  static {
     this.prototype.default_view = IPyWidgetView
 
     this.define<IPyWidget.Props>(({Any}) => ({

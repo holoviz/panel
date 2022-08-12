@@ -294,7 +294,7 @@ export class IDOM extends HTMLBox {
 
   static __module__ = "panel.models.idom"
 
-  static init_IDOM(): void {
+  static {
     this.prototype.default_view = IDOMView
     this.define<IDOM.Props>(({Any, String}) => ({
       event:           [ Any,    [] ],

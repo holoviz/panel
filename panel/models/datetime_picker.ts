@@ -125,7 +125,7 @@ export class DatetimePicker extends InputWidget {
 
   static __module__ = "panel.models.datetime_picker"
 
-  static init_DatetimePicker(): void {
+  static {
     this.prototype.default_view = DatetimePickerView
 
     this.define<DatetimePicker.Props>(({Boolean, String, Array, Tuple, Or, Nullable}) => {

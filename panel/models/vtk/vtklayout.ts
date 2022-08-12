@@ -508,7 +508,7 @@ export abstract class AbstractVTKPlot extends HTMLBox {
     return this.renderer_el.getRenderer().getActors()
   }
 
-  static init_AbstractVTKPlot(): void {
+  static {
     this.define<AbstractVTKPlot.Props>(({Any, Ref, Array, Boolean, Nullable}) => ({
       axes:                           [ Nullable(Ref(VTKAxes)),       null ],
       camera:                         [ Any                                ],

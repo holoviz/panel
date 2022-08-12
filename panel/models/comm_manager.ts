@@ -162,7 +162,7 @@ export class CommManager extends Model {
 
   static __module__ = "panel.models.comm_manager"
 
-  static init_CommManager(): void {
+  static {
     this.prototype.default_view = CommManagerView
 
     this.define<CommManager.Props>(({Int, String}) => ({

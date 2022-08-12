@@ -141,7 +141,7 @@ export class Audio extends HTMLBox {
 
   static __module__ = "panel.models.widgets"
 
-  static init_Audio(): void {
+  static {
     this.prototype.default_view = AudioView
 
     this.define<Audio.Props>(({Any, Boolean, Int, Number}) => ({

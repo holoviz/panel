@@ -146,7 +146,7 @@ export class HTML extends Markup {
 
   static __module__ = "panel.models.markup"
 
-  static init_HTML(): void {
+  static {
     this.prototype.default_view = HTMLView
     this.define<HTML.Props>(({Any}) => ({
       events: [ Any, {} ]

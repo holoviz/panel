@@ -209,7 +209,7 @@ export class SpeechToText extends HTMLBox {
 
   static __module__ = "panel.models.speech_to_text"
 
-  static init_SpeechToText(): void {
+  static {
     this.prototype.default_view = SpeechToTextView
 
     this.define<SpeechToText.Props>(({Array, Boolean, Number, String}) => ({

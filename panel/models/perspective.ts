@@ -258,7 +258,7 @@ export class Perspective extends HTMLBox {
 
   static __module__ = "panel.models.perspective"
 
-  static init_Perspective(): void {
+  static {
     this.prototype.default_view = PerspectiveView
 
     this.define<Perspective.Props>(({Any, Array, Boolean, Ref, Nullable, String}) => ({

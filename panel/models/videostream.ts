@@ -114,7 +114,7 @@ export class VideoStream extends HTMLBox {
 
   static __module__ = "panel.models.widgets"
 
-  static init_VideoStream(): void {
+  static {
     this.prototype.default_view = VideoStreamView
 
     this.define<VideoStream.Props>(({Any, Boolean, Int, Nullable, String}) => ({

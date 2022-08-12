@@ -149,7 +149,7 @@ export class Video extends HTMLBox {
 
   static __module__ = "panel.models.widgets"
 
-  static init_Video(): void {
+  static {
     this.prototype.default_view = VideoView
 
     this.define<Video.Props>(({Any, Boolean, Int, Number}) => ({

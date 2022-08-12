@@ -92,7 +92,7 @@ export class State extends Model {
 
   static __module__ = "panel.models.state"
 
-  static init_State(): void {
+  static {
     this.prototype.default_view = StateView
 
     this.define<State.Props>(({Any, Boolean}) => ({

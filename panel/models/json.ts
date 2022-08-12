@@ -58,7 +58,7 @@ export class JSON extends Markup {
 
   static __module__ = "panel.models.markup"
 
-  static init_JSON(): void {
+  static {
     this.prototype.default_view = JSONView
     this.define<JSON.Props>(({Boolean, Int, Nullable}) => ({
       depth:         [ Nullable(Int),  1 ],

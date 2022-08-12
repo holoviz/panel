@@ -95,7 +95,7 @@ export class Progress extends HTMLBox {
 
   static __module__ = "panel.models.widgets"
 
-  static init_Progress(): void {
+  static {
     this.prototype.default_view = ProgressView
     this.define<Progress.Props>(({Any, Boolean, Number, String}) => ({
       active:    [ Boolean, true ],

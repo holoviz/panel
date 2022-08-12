@@ -1189,7 +1189,7 @@ export class DataTabulator extends HTMLBox {
 
   static __module__ = "panel.models.tabulator"
 
-  static init_DataTabulator(): void {
+  static {
     this.prototype.default_view = DataTabulatorView;
 
     this.define<DataTabulator.Props>(({Any, Array, Boolean, Nullable, Number, Ref, String}) => ({

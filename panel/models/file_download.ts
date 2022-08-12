@@ -218,7 +218,7 @@ export class FileDownload extends InputWidget {
 
   static __module__ = "panel.models.widgets"
 
-  static init_FileDownload(): void {
+  static {
     this.prototype.default_view = FileDownloadView
 
     this.define<FileDownload.Props>(({Boolean, Int, Nullable, String}) => ({

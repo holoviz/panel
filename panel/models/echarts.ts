@@ -58,7 +58,7 @@ export class ECharts extends HTMLBox {
 
   static __module__ = "panel.models.echarts"
 
-  static init_ECharts(): void {
+  static {
     this.prototype.default_view = EChartsView
 
     this.define<ECharts.Props>(({Any, String}) => ({
