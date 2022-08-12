@@ -1,5 +1,6 @@
 import base64
 import os
+import time
 
 from io import BytesIO
 from zipfile import ZipFile
@@ -179,6 +180,9 @@ def test_vtk_pane_from_renwin(document, comm):
     assert len(ctx.dataArrayCache.keys()) == 5
     # Force 0s for removing arrays
     ctx.checkForArraysToRelease(0)
+
+    time.sleep(1)
+
     assert len(ctx.dataArrayCache.keys()) == 0
 
     # Cleanup
