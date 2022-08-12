@@ -2,7 +2,7 @@ import * as p from "@bokehjs/core/properties"
 
 import {div} from "@bokehjs/core/dom"
 import {clone} from "@bokehjs/core/util/object"
-import {isEqual} from "@bokehjs/core/util/eq"
+import {is_equal} from "@bokehjs/core/util/eq"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 
@@ -331,7 +331,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
 
     // Call relayout if viewport differs from fullLayout
     Object.keys(this.model.viewport).reduce((value: any, key: string) => {
-      if (!isEqual(get(fullLayout, key), value)) {
+      if (!is_equal(get(fullLayout, key), value)) {
         let clonedViewport = deepCopy(this.model.viewport)
         clonedViewport['_update_from_property'] = true
         this._settingViewport = true;
@@ -358,7 +358,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
         viewport[prop + '.range'] = deepCopy(fullLayout[prop].range)
     }
 
-    if (!isEqual(viewport, this.model.viewport))
+    if (!is_equal(viewport, this.model.viewport))
       this._setViewport(viewport)
   }
 

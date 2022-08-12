@@ -4,6 +4,7 @@ import {View} from "@bokehjs/core/view"
 import {Model} from "@bokehjs/model"
 import {Message} from "@bokehjs/protocol/message"
 import {Receiver} from "@bokehjs/protocol/receiver"
+import {Patch} from "@bokehjs/document"
 
 export const comm_settings: any = {
   debounce: true
@@ -79,7 +80,7 @@ export class CommManager extends Model {
       return
 
     // Filter out changes to attributes that aren't server-visible
-    if (event instanceof ModelChangedEvent && !(event.attr in event.model.serializable_attributes()))
+    if (event instanceof ModelChangedEvent && !(event.attr in event.model.syncable_properties()))
       return
 
     this._event_buffer.push(event);
@@ -152,8 +153,10 @@ export class CommManager extends Model {
         this._receiver.consume(content)
 
       const comm_msg = this._receiver.message
-      if ((comm_msg != null) && (Object.keys(comm_msg.content).length > 0) && this.document != null)
-        this.document.apply_json_patch(comm_msg.content, comm_msg.buffers, this.id)
+      if ((comm_msg != null) && (Object.keys(comm_msg.content as Patch).length > 0) && this.document != null){
+        const patch = comm_msg.content as Patch
+        this.document.apply_json_patch(patch, comm_msg.buffers) // , this.id)
+      }
     }
   }
 

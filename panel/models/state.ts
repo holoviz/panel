@@ -3,6 +3,7 @@ import {View} from "@bokehjs/core/view"
 import {copy} from "@bokehjs/core/util/array"
 import {Model} from "@bokehjs/model"
 import {Receiver} from "@bokehjs/protocol/receiver"
+import {Patch} from "@bokehjs/document"
 
 function get_json(file: string, callback: any): void {
   var xobj = new XMLHttpRequest();
@@ -52,7 +53,7 @@ export class State extends Model {
     this._receiver.consume(state.metadata)
     this._receiver.consume(state.content)
     if (this._receiver.message && this.document) {
-      this.document.apply_json_patch(this._receiver.message.content)
+      this.document.apply_json_patch(this._receiver.message.content as Patch)
     }
   }
 
