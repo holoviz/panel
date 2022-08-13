@@ -21,6 +21,8 @@ class Player(Widget):
 
     value = Int(0, help="Current value of the player app")
 
+    value_throttled = Int(0, help="Current throttled value of the player app")
+
     step = Int(1, help="Number of steps to advance the player by.")
 
     interval = Int(500, help="Interval between updates")
