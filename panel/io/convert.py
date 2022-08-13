@@ -63,7 +63,7 @@ async function main() {
   await pyodide.loadPackage("micropip");
   await pyodide.runPythonAsync(`
     import micropip
-    await micropip.install({{ env_spec }});
+    await micropip.install([{{ env_spec }}]);
   `);
   code = `{{ code }}`
   await pyodide.runPythonAsync(code);
