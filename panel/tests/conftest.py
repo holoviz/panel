@@ -230,6 +230,10 @@ def server_cleanup():
             state._thread_pool.shutdown(wait=False)
             state._thread_pool = None
 
+@pytest.fixture(autouse=True)
+def cache_cleanup():
+    state.clear_caches()
+
 @pytest.fixture
 def py_file():
     tf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
