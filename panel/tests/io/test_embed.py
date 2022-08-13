@@ -537,3 +537,13 @@ def test_save_embed_json(tmpdir):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % v
+
+def test_embed_widget_disabled(document, comm):
+    select = Select(options=['A', 'B', 'C'], disabled=True)
+    string = Str()
+    select.link(string, value='object')
+    string.param.watch(print, 'object')
+    panel = Row(select, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    assert embed_state(panel, model, document) is None
