@@ -3,6 +3,7 @@ from collections import OrderedDict
 import numpy as np
 import pytest
 
+from panel.pane import panel
 from panel.widgets import (
     CrossSelector, MultiChoice, MultiSelect, Select, ToggleGroup,
 )
@@ -57,6 +58,15 @@ def test_select(document, comm):
 
     select.value = opts['A']
     assert widget.value == str(opts['A'])
+
+
+def test_select_parameterized_option_labels():
+    c1 = panel("Value1", name="V1")
+    c2 = panel("Value2")
+    c3 = panel("Value3", name="V3")
+
+    select = Select(options=[c1, c2, c3], value=c1)
+    assert select.labels == ['V1', 'Markdown(str)', 'V3']
 
 
 def test_select_groups_list_options(document, comm):

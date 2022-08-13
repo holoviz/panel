@@ -24,7 +24,7 @@ from bokeh.models.widgets import (
 
 from ..layout import Column, VSpacer
 from ..models import CustomSelect, SingleSelect as _BkSingleSelect
-from ..util import indexOf, isIn
+from ..util import PARAM_NAME_PATTERN, indexOf, isIn
 from .base import CompositeWidget, Widget
 from .button import Button, _ButtonBase
 from .input import TextAreaInput, TextInput
@@ -41,7 +41,13 @@ class SelectBase(Widget):
 
     @property
     def labels(self):
-        return [str(o) for o in self.options]
+        labels = []
+        for o in self.options:
+            if isinstance(o, param.Parameterized) and not PARAM_NAME_PATTERN.match(o.name):
+                labels.append(o.name)
+            else:
+                labels.append(str(o))
+        return labels
 
     @property
     def values(self):
