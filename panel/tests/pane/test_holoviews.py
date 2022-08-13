@@ -11,7 +11,7 @@ except Exception:
     hv = None
 
 from bokeh.models import (
-    Column as BkColumn, ColumnDataSource, GlyphRenderer, GridBox, Line,
+    Column as BkColumn, ColumnDataSource, GlyphRenderer, GridPlot, Line,
     Row as BkRow, Scatter, Select as BkSelect, Slider as BkSlider,
     Spacer as BkSpacer,
 )
@@ -568,18 +568,15 @@ def test_holoviews_link_within_pane(document, comm):
     column = pane.get_root(document, comm=comm)
 
     assert len(column.children) == 1
-    subcolumn = column.children[0]
-    assert isinstance(subcolumn, BkColumn)
-    assert len(subcolumn.children) == 2
-    toolbar, subsubcolumn = subcolumn.children
-    assert isinstance(subsubcolumn, GridBox)
-    assert len(subsubcolumn.children) == 2
-    (p1, _, _), (p2, _, _) = subsubcolumn.children
+    grid_plot = column.children[0]
+    assert isinstance(grid_plot, GridPlot)
+    assert len(grid_plot.children) == 2
+    (p1, _, _), (p2, _, _) = grid_plot.children
 
     assert isinstance(p1, figure)
     assert isinstance(p2, figure)
 
-    range_tool = subsubcolumn.select_one({'type': RangeTool})
+    range_tool = grid_plot.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
 
