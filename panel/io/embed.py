@@ -230,7 +230,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     model.tags.append('embedded')
 
     def is_embeddable(object):
-        if not isinstance(object, Widget):
+        if not isinstance(object, Widget) or object.disabled:
             return False
         if isinstance(object, DiscreteSlider):
             return ref in object._composite[1]._models
