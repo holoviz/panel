@@ -275,9 +275,12 @@ class DatePicker(Widget):
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            if isinstance(msg['value'], str):
-                msg['value'] = datetime.date(datetime.strptime(msg['value'], '%Y-%m-%d'))
+        for p in ('start', 'end', 'value'):
+            if p not in msg:
+                continue
+            value = msg[p]
+            if isinstance(value, str):
+                msg[p] = datetime.date(datetime.strptime(value, '%Y-%m-%d'))
         return msg
 
 
