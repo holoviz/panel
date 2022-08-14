@@ -79,3 +79,10 @@
 .markdown strong { font-weight: 600 }
 .markdown a { color: -webkit-link }
 .markdown a { color: -moz-hyperlinkText }
+
+.markdown .codehilite {
+    padding: 1rem 1.25rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.25rem;
+}
