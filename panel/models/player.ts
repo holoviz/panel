@@ -81,7 +81,12 @@ export class PlayerView extends WidgetView {
     this.sliderEl.value = String(this.model.value)
     this.sliderEl.min = String(this.model.start)
     this.sliderEl.max = String(this.model.end)
-    this.sliderEl.onchange = (ev) => this.set_frame(parseInt((ev.target as HTMLInputElement).value))
+    this.sliderEl.addEventListener('input', (ev) => {
+      this.set_frame(parseInt((ev.target as HTMLInputElement).value), false)
+    })
+    this.sliderEl.addEventListener('change', (ev) => {
+      this.set_frame(parseInt((ev.target as HTMLInputElement).value))
+    })
 
     // Buttons
     const button_div = div() as any
@@ -211,9 +216,10 @@ export class PlayerView extends WidgetView {
     this.el.appendChild(this.groupEl)
   }
 
-  set_frame(frame: number): void {
-    if (this.model.value != frame)
-      this.model.value = frame;
+  set_frame(frame: number, throttled: boolean=true): void {
+    this.model.value = frame
+    if (throttled)
+      this.model.value_throttled = frame
     if (this.sliderEl.value != String(frame))
       this.sliderEl.value = String(frame);
   }
@@ -358,6 +364,7 @@ export namespace Player {
     step: p.Property<number>
     loop_policy: p.Property<typeof LoopPolicy["__type__"]>
     value: p.Property<any>
+    value_throttled: p.Property<any>
     show_loop_controls: p.Property<boolean>
   }
 }
@@ -386,6 +393,7 @@ export class Player extends Widget {
       step:               [ Int,             1 ],
       loop_policy:        [ LoopPolicy, "once" ],
       value:              [ Int,             0 ],
+      value_throttled:    [ Int,             0 ],
       show_loop_controls: [ Boolean,      true ],
     }))
 
