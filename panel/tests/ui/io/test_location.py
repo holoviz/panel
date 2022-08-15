@@ -31,7 +31,47 @@ def test_set_url_params_update_documment(page, port):
     serve_panel_widget(page, port, app)
     page.wait_for_timeout(200)
 
-    href = page.evaluate('() => document.location.href')
-    expected_params = '?slider_value=2&range_value=%5B1%2C+2%5D&text_value=Simple+Text'
-    document_params = href[href.find('?'):]
-    assert document_params == expected_params
+    expected_document_location = {
+        'href': 'http://localhost:6001/?slider_value=2&range_value=%5B1%2C+2%5D&text_value=Simple+Text',
+        'protocol': 'http:',
+        'hostname': 'localhost',
+        'port': '6001',
+        'pathname': '/',
+        'search': '?slider_value=2&range_value=%5B1%2C+2%5D&text_value=Simple+Text',
+        'hash': '',
+        'reload': None
+    }
+    document_location = page.evaluate('() => document.location')
+    for param in expected_document_location:
+        assert param in document_location
+        assert document_location[param] == expected_document_location[param]
+
+#
+# def test_set_hash_update_documment(page, port):
+#     def app():
+#         w1 = FloatSlider(name='Slider', start=0, end=10, css_classes=['float-slider'])
+#         w2 = TextInput(name='Text', css_classes=['text-input'])
+#         w3 = RangeSlider(name='RangeSlider', start=0, end=10, css_classes=['range-slider'])
+#         widgets = pn.Row(w1, w2, w3)
+#
+#         if pn.state.location:
+#             pn.state.location.sync(w1, {'value': 'slider_value'})
+#             pn.state.location.sync(w2, {'value': 'text_value'})
+#             pn.state.location.sync(w3, {'value': 'range_value'})
+#
+#         def cb():
+#             w1.value = 2
+#             w2.value = 'Simple Text'
+#             w3.value = (1, 2)
+#
+#         pn.state.onload(cb)
+#
+#         return widgets
+#
+#     serve_panel_widget(page, port, app)
+#     page.wait_for_timeout(200)
+#
+#     href = page.evaluate('() => document.location.href')
+#     expected_params = '?slider_value=2&range_value=%5B1%2C+2%5D&text_value=Simple+Text'
+#     document_params = href[href.find('?'):]
+#     assert document_params == expected_params
