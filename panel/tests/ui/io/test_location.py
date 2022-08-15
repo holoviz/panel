@@ -10,9 +10,9 @@ pytestmark = pytest.mark.ui
 
 def test_set_url_params_update_documment(page, port):
     def app():
-        w1 = FloatSlider(name='Slider', start=0, end=10, css_classes=['float-slider'])
-        w2 = TextInput(name='Text', css_classes=['text-input'])
-        w3 = RangeSlider(name='RangeSlider', start=0, end=10, css_classes=['range-slider'])
+        w1 = FloatSlider(name='Slider', start=0, end=10)
+        w2 = TextInput(name='Text')
+        w3 = RangeSlider(name='RangeSlider', start=0, end=10)
         widgets = pn.Row(w1, w2, w3)
 
         if pn.state.location:
@@ -49,7 +49,7 @@ def test_set_url_params_update_documment(page, port):
 
 def test_set_hash_update_documment(page, port):
     def app():
-        widget = TextInput(name='Text', css_classes=['text-input'])
+        widget = TextInput(name='Text')
         if pn.state.location:
             pn.state.location.sync(widget, {'value': 'text_value'})
 
