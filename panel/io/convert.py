@@ -8,7 +8,7 @@ import pkgutil
 import sys
 
 from textwrap import dedent
-from typing import List, Literal
+from typing import List
 
 from bokeh.application.application import SessionContext
 from bokeh.command.util import build_single_handler_application
@@ -20,6 +20,7 @@ from bokeh.embed.util import RenderItem, standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.settings import settings as _settings
 from bokeh.util.serialization import make_id
+from typing_extensions import Literal
 
 from .. import __version__, config
 from ..util import escape
