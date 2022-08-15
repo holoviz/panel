@@ -11,7 +11,7 @@ export const comm_settings: any = {
 }
 
 export class CommManagerView extends View {
-  model: CommManager
+  override model: CommManager
 
   renderTo(): void {
   }
@@ -31,7 +31,9 @@ export namespace CommManager {
 export interface CommManager extends CommManager.Attrs {}
 
 export class CommManager extends Model {
-  properties: CommManager.Props
+  override properties: CommManager.Props
+  override __view_type__: CommManagerView
+
   ns: any
   _receiver: Receiver
   _client_comm: any
@@ -41,6 +43,10 @@ export class CommManager extends Model {
 
   constructor(attrs?: Partial<CommManager.Attrs>) {
     super(attrs)
+  }
+
+  override initialize(): void {
+    super.initialize()
     this._receiver = new Receiver()
     this._event_buffer = []
     this._blocked = false
@@ -106,7 +112,7 @@ export class CommManager extends Model {
     }
   }
 
-  disconnect_signals(): void {
+  override disconnect_signals(): void {
     super.disconnect_signals()
     this.ns.shared_views.shared_views.delete(this.plot_id)
   }
@@ -165,10 +171,10 @@ export class CommManager extends Model {
   static {
     this.prototype.default_view = CommManagerView
 
-    this.define<CommManager.Props>(({Int, String}) => ({
-      plot_id:        [ String    ],
-      comm_id:        [ String    ],
-      client_comm_id: [ String    ],
+    this.define<CommManager.Props>(({Int, String, Nullable}) => ({
+      plot_id:        [ Nullable(String),  null ],
+      comm_id:        [ Nullable(String),  null ],
+      client_comm_id: [ Nullable(String),  null ],
       timeout:        [ Int, 5000 ],
       debounce:       [ Int,   50 ],
     }))
