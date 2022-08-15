@@ -27,6 +27,7 @@ class Convert(Subcommand):
             action  = 'store',
             type    = str,
             help    = "The format to convert to.",
+            default = 'pyodide'
         )),
         ('--out', dict(
             action  = 'store',
@@ -43,19 +44,18 @@ class Convert(Subcommand):
             action  = 'store',
             type    = bool,
             default = True,
-            help    = "The format to convert to.",
+            help    = "Whether to create an index if multiple files are served.",
         )),
         ('--requirements', dict(
             nargs='+',
             help=("Explicit requirements to add to the converted file.")
         )),
-
     )
 
-    _targets = ('pyscript', 'pyodide')
+    _targets = ('pyscript', 'pyodide', 'pyodide-worker')
 
     def invoke(self, args: argparse.Namespace) -> None:
-        runtime = args.to
+        runtime = args.to.lower()
         if runtime not in self._targets:
             raise ValueError(f'Supported conversion targets include: {self._targets!r}')
 
@@ -65,7 +65,7 @@ class Convert(Subcommand):
         files = []
         for f in args.files:
             try:
-                html = script_to_html(
+                html, js_worker = script_to_html(
                     f, requirements=requirements, runtime=runtime, prerender=args.prerender
                 )
             except KeyboardInterrupt:
@@ -73,14 +73,21 @@ class Convert(Subcommand):
             except Exception as e:
                 print(f'Failed to convert {f} to {runtime} target: {e}')
                 continue
-            filename = os.path.basename(f).split('.')[0]+'.html'
+            name = '.'.join(os.path.basename(f).split('.')[:-1])
+            filename = f'{name}.html'
             files.append(filename)
             if args.out:
                 filename = os.path.join(args.out, filename)
             with open(filename, 'w') as out:
                 out.write(html)
+            if runtime == 'pyodide-worker':
+                web_worker_path = f'{name}.js'
+                if args.out:
+                    web_worker_path = os.path.join(args.out, web_worker_path)
+                with open(web_worker_path, 'w') as out:
+                    out.write(js_worker)
             print(f'Successfully converted {f} to {runtime} target and wrote output to {filename}.')
-        if args.index:
+        if args.index and len(files) > 1:
             index = make_index(files)
             index_file = os.path.join(args.out, 'index.html') if args.out else 'index.html'
             with open(index_file, 'w') as f:

@@ -57,40 +57,36 @@ def _model_json(model, target):
         version   = __version__,
     ))
 
-def _doc_json(doc):
-    from js import document
+def _doc_json(doc, root_els=None):
     docs_json, render_items = standalone_docs_json_and_render_items(
         doc.roots, suppress_callback_warning=True
     )
     render_items = [item.to_json() for item in render_items]
     root_ids = [m.id for m in doc.roots]
-    root_els = document.getElementsByClassName('bk-root')
-    for el in root_els:
-        el.innerHTML = ''
-    root_data = sorted([(int(el.getAttribute('data-root-id')), el.id) for el in root_els])
-    render_items[0].update({
-        'roots': {model_id: elid for (_, elid), model_id in zip(root_data, root_ids)},
-        'root_ids': root_ids
-    })
-
-    return json.dumps(docs_json), json.dumps(render_items)
+    if root_els:
+        root_data = sorted([(int(el.getAttribute('data-root-id')), el.id) for el in root_els])
+        render_items[0].update({
+            'roots': {model_id: elid for (_, elid), model_id in zip(root_data, root_ids)},
+            'root_ids': root_ids
+        })
+    return json.dumps(docs_json), json.dumps(render_items), json.dumps(root_ids)
 
 def _link_docs(pydoc, jsdoc):
     def jssync(event):
         if (getattr(event, 'setter_id', None) is not None):
             return
         events = [event]
-        json_patch = jsdoc.create_json_patch_string(pyodide.to_js(events))
+        json_patch = jsdoc.create_json_patch_string(pyodide.ffi.to_js(events))
         pydoc.apply_json_patch(json.loads(json_patch))
 
-    jsdoc.on_change(pyodide.create_proxy(jssync), pyodide.to_js(False))
+    jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
 
     def pysync(event):
         json_patch, buffers = process_document_events([event], use_buffers=True)
         buffer_map = {}
         for (ref, buffer) in buffers:
-            buffer_map[ref['id']] = pyodide.to_js(buffer).buffer
-        jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.to_js(buffer_map), setter_id='js')
+            buffer_map[ref['id']] = pyodide.ffi.to_js(buffer).buffer
+        jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.ffi.to_js(buffer_map), setter_id='js')
 
     pydoc.on_change(pysync)
     pydoc.callbacks.trigger_json_event(
@@ -191,27 +187,51 @@ async def write(target, obj):
     jsdoc = views[0].model.document
     _link_docs(pydoc, jsdoc)
 
-async def write_doc(doc: Optional['Document'] = None) -> None:
-    """
-    Renders the contents of the Document into an existing template.
-    Note that this assumes that the HTML file this function runs in
-    was itself generated from the code being run.
-
-    Arguments
-    ---------
-    doc: Document
-    """
-    from js import Bokeh, document
+def hide_loader():
+    from js import document
 
     body = document.getElementsByTagName('body')[0]
     body.classList.remove("bk", "pn-loading", config.loading_spinner)
 
+async def write_doc(doc: Optional['Document'] = None) -> None:
+    """
+    Renders the contents of the Document into an existing template.
+    Note that this assumes that the HTML file this function runs in
+    was itself generated from the code being run. This function may
+    be used in the main browser thread or from within a WebWorker.
+    If invoked by a WebWorker the JSON return values can be sent
+    to the main thread for rendering.
+
+    Arguments
+    ---------
+    doc: Document
+
+    Returns
+    -------
+    docs_json: str
+    render_items: str
+    root_ids: str
+    """
     doc = doc or state.curdoc
     if doc in state._templates:
         template = state._templates[doc]
         template.server_doc(title=template.title, location=True, doc=doc)
-    docs_json, render_items = _doc_json(doc)
-    views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
-    jsdoc = views[0][0].model.document
+
+    # Test whether we have access to DOM
+    try:
+        from js import Bokeh, document
+        root_els = document.getElementsByClassName('bk-root')
+        for el in root_els:
+            el.innerHTML = ''
+    except Exception:
+        root_els = None
+    docs_json, render_items, root_ids = _doc_json(doc, root_els)
     doc._session_context = None
-    _link_docs(doc, jsdoc)
+
+    # If we have DOM access render and sync the document
+    if root_els is not None:
+        views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
+        jsdoc = views[0][0].model.document
+        _link_docs(doc, jsdoc)
+        hide_loader()
+    return docs_json, render_items, root_ids
