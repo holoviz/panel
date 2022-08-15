@@ -256,7 +256,7 @@ def script_to_html(
     # Environment
     if panel_version == 'auto':
         panel_version = '.'.join(__version__.split('.')[:3])
-    reqs = [f'panel=={panel_version}'] + [
+    reqs = [f'panel-lite=={panel_version}'] + [
         req for req in requirements if req != 'panel'
     ]
 

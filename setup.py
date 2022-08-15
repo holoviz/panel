@@ -11,6 +11,8 @@ from setuptools.command.develop import develop
 from setuptools.command.install import install
 from setuptools.command.sdist import sdist
 
+PANEL_LITE_BUILD = 'PANEL_LITE' in os.environ
+
 
 def get_setup_version(reponame):
     """
@@ -52,7 +54,8 @@ class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
 
     def run(self):
-        _build_paneljs()
+        if not PANEL_LITE_BUILD:
+            _build_paneljs()
         develop.run(self)
 
 
@@ -60,7 +63,8 @@ class CustomInstallCommand(install):
     """Custom installation for install mode."""
 
     def run(self):
-        _build_paneljs()
+        if not PANEL_LITE_BUILD:
+            _build_paneljs()
         install.run(self)
 
 
@@ -68,7 +72,8 @@ class CustomSdistCommand(sdist):
     """Custom installation for sdist mode."""
 
     def run(self):
-        _build_paneljs()
+        if not PANEL_LITE_BUILD:
+            _build_paneljs()
         sdist.run(self)
 
 
@@ -209,7 +214,7 @@ extras_require['build'] = [
 ]
 
 setup_args = dict(
-    name='panel',
+    name='panel-lite' if PANEL_LITE_BUILD else 'panel',
     version=get_setup_version("panel"),
     description='A high level app and dashboarding solution for Python.',
     long_description=open('README.md').read() if os.path.isfile('README.md') else 'Consult README.md',

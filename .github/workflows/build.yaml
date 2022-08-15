@@ -134,3 +134,58 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit ecosystem=pip package_upload -u ${{ secrets.PPU }} -p ${{ secrets.PPP }} -r $PYPI
+  pip_lite_build:
+    name: Build PyPI Packages
+    runs-on: 'ubuntu-latest'
+    defaults:
+      run:
+        shell: bash -l {0}
+    env:
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
+      PKG_TEST_PYTHON: "--test-python=py38"
+      PYTHON_VERSION: "3.8"
+      CHANS: "-c pyviz"
+      MPLBACKEND: "Agg"
+      PYPI: "https://upload.pypi.org/legacy/"
+      PANEL_LITE_BUILD: "1"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "100"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow -f
+      - name: conda setup
+        run: |
+          conda config --set always_yes True
+          conda install -c pyviz "pyctdev>=0.5"
+          doit ecosystem_setup
+          doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+      - name: env setup
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda install ${{ env.CHANS_DEV }} "pip<21.2.1"
+          doit develop_install $CHANS_DEV -o build
+          pip uninstall -y panel
+          doit pip_on_conda
+      - name: pip build
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=flakes
+      - name: git status
+        run: |
+          git status
+          git diff
+      - name: pip upload
+        if: github.event_name == 'push'
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit ecosystem=pip package_upload -u ${{ secrets.PPU }} -p ${{ secrets.PPP }} -r $PYPI
