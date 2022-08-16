@@ -2564,7 +2564,7 @@ def test_tabulator_edit_event_and_header_filters(page, port):
     str_header.fill('a')
     str_header.press('Enter')
 
-    # Chankge the cell that contains B to BB
+    # Change the cell that contains B to BB
     cell = page.locator('text="B"')
     cell.click()
     editable_cell = page.locator('input[type="text"]')
