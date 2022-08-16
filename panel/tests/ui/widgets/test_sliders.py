@@ -2,11 +2,6 @@ import time
 
 import pytest
 
-try:
-    import playwright  # noqa
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
-
 pytestmark = pytest.mark.ui
 
 from panel.io.server import serve
@@ -28,10 +23,7 @@ class _editable_text_input:
 
     @property
     def value(self):
-        # Needs reload of page to update attribute
-        # Should be reimplemented without the need for update
-        self.page.reload()
-        return self.text_input.get_attribute("value")
+        return self.text_input.input_value()
 
     @value.setter
     def value(self, value):
