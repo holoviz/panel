@@ -348,6 +348,17 @@ class BaseTable(ReactiveData, Widget):
                                  "tuple or list.")
             filters.append(mask)
 
+        filters.extend(self._get_header_filters(df))
+
+        if filters:
+            mask = filters[0]
+            for f in filters:
+                mask &= f
+            df = df[mask]
+        return df
+
+    def _get_header_filters(self, df):
+        filters = []
         for filt in getattr(self, 'filters', []):
             col_name = filt['field']
             op = filt['type']
@@ -405,12 +416,7 @@ class BaseTable(ReactiveData, Widget):
                 raise ValueError("Regex filtering not supported.")
             else:
                 raise ValueError(f"Filter type {op!r} not recognized.")
-        if filters:
-            mask = filters[0]
-            for f in filters:
-                mask &= f
-            df = df[mask]
-        return df
+        return filters
 
     def add_filter(self, filter, column=None):
         """
@@ -1165,6 +1171,29 @@ class Tabulator(BaseTable):
                 # update to config
                 return
         model.configuration = self._get_configuration(model.columns)
+
+    def _process_data(self, data):
+        # Extending _process_data to cover the case when header filters are
+        # active and a cell is edited. In that case the data received from the
+        # front-end is the full table, not just the filtered one. However the
+        # _processed data is already filtered, this made the comparison between
+        # the new data and old data wrong. This extension replicates the
+        # front-end filtering - if need be - to be able to correctly make the
+        # comparison and update the data hold by the backend.
+        if not self.filters:
+            return super()._process_data(data)
+        import pandas as pd
+        df = pd.DataFrame(data)
+        filters = self._get_header_filters(df)
+        if filters:
+            mask = filters[0]
+            for f in filters:
+                mask &= f
+            df = df[mask]
+        data = {
+            col: df[col].values for col in df.columns
+        }
+        return super()._process_data(data)
 
     def _get_data(self):
         if self.pagination != 'remote' or self.value is None:
