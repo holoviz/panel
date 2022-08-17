@@ -2538,7 +2538,6 @@ def test_tabulator_edit_event_sorters_not_automatically_applied(page, port, df_m
     wait_until(page, lambda: tabulator_column_values(page, 'str') == expected_vals)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3660')
 def test_tabulator_edit_event_and_header_filters(page, port):
     df = pd.DataFrame({
         'col1': list('aaabcd'),
@@ -2573,10 +2572,10 @@ def test_tabulator_edit_event_and_header_filters(page, port):
 
     wait_until(page, lambda: len(values) == 1)
     # This cell was at index 1 in col2 of the original dataframe
-    assert values[0] == ('col2', 1, 'B', 'BB')  # This fails
-    assert df['b'][1] == 'BB'
+    assert values[0] == ('col2', 1, 'B', 'BB')
+    assert df['col2'][1] == 'BB'
     assert widget.value.equals(df)
-    assert widget.current_view.equals(widget.value)
+    assert widget.current_view.equals(df.query('col1 == "a"'))
 
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
