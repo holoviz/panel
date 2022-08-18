@@ -64,12 +64,14 @@ from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
 from ..util import edit_readonly
-from .resources import DIST_DIR, Resources, _env as _pn_env
+from .resources import DIST_DIR, Resources, _env
 from .server import server_html_page_for_session
 from .state import set_curdoc, state
 
 KERNEL_TIMEOUT = 60 # Timeout for kernel startup (including app startup)
 CONNECTION_TIMEOUT = 30 # Timeout for WS connection to open
+
+KERNEL_ERROR_TEMPLATE = _env.get_template('kernel_error.html')
 
 async def ensure_async(obj: Union[Awaitable, Any]) -> Any:
     """Convert a non-awaitable object to a coroutine if needed,
@@ -234,7 +236,7 @@ class PanelExecutor(WSHandler):
         -------
         The code to be executed inside the kernel.
         """
-        execute_template = _pn_env.from_string(cls._code)
+        execute_template = _env.from_string(cls._code)
         return execute_template.render(path=path, token=token, root_url=root_url)
 
     async def write_message(
@@ -297,7 +299,7 @@ class PanelJupyterHandler(JupyterHandler):
                 raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
         return comm_id
 
-    async def _get_execute_result(self, msg_id, timeout=KERNEL_TIMEOUT):
+    async def _get_execute_result(self, msg_id, timeout=0):
         deadline = time.monotonic() + timeout
         while True:
             try:
@@ -324,6 +326,7 @@ class PanelJupyterHandler(JupyterHandler):
             return
 
         cwd = os.path.dirname(notebook_path)
+        root_url = url_path_join(self.base_url, 'panel-preview')
 
         # Compose reply
         self.set_header('Content-Type', 'text/html')
@@ -332,17 +335,30 @@ class PanelJupyterHandler(JupyterHandler):
         self.set_header('Expires', '0')
 
         # Provision a kernel with the desired kernelspec
-        if notebook_path.endswith('.ipynb'):
+        if self.request.arguments.get('kernel'):
+            requested_kernel = self.request.arguments.pop('kernel')[0].decode('utf-8')
+        elif notebook_path.endswith('.ipynb'):
             with open(notebook_path) as f:
                 nb = json.load(f)
-            kernelspec = nb.get('metadata', {}).get('kernelspec', {})
+            requested_kernel = nb.get('metadata', {}).get('kernelspec', {}).get('name')
         else:
-            kernelspec = {}
+            requested_kernel = None
+
+        if requested_kernel:
+            available_kernels = list(self.kernel_manager.kernel_spec_manager.find_kernel_specs())
+            if requested_kernel not in available_kernels:
+                html = KERNEL_ERROR_TEMPLATE.render(
+                    base_url=root_url,
+                    kernels=available_kernels,
+                    error=f'No such kernel {requested_kernel}',
+                )
+                self.finish(html)
+                return
         kernel_env = {**os.environ}
         kernel_id = await ensure_async(
             (
                 self.kernel_manager.start_kernel(
-                    kernel_name=kernelspec.get('name'),
+                    kernel_name=requested_kernel,
                     path=cwd,
                     env=kernel_env,
                 )
@@ -362,7 +378,6 @@ class PanelJupyterHandler(JupyterHandler):
             'cookies': dict(self.request.cookies.items())
         }
         token = generate_jwt_token(self.session_id, extra_payload=payload)
-        root_url = url_path_join(self.base_url, 'panel-preview')
         source = PanelExecutor.code(notebook_path, token, root_url)
         msg_id = self.kernel.execute(source)
 
@@ -374,7 +389,12 @@ class PanelJupyterHandler(JupyterHandler):
             )
         except (TimeoutError, RuntimeError) as e:
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
-            self.finish(f"<html><h2>{str(e)}</h2></html>")
+            html = KERNEL_ERROR_TEMPLATE.render(
+                base_url=root_url,
+                error=type(e).__name__,
+                error_msg=str(e)
+            )
+            self.finish(html)
         else:
             state._kernels[self.session_id] = (self.kernel, comm_id, kernel_id, False)
             loop = tornado.ioloop.IOLoop.current()
@@ -383,6 +403,8 @@ class PanelJupyterHandler(JupyterHandler):
             self.finish(html)
 
     async def _check_connected(self):
+        if self.session_id not in state._kernels:
+            return
         _, _, kernel_id, connected = state._kernels[self.session_id]
         if not connected:
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
