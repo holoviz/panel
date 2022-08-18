@@ -197,7 +197,7 @@ class PanelExecutor(WSHandler):
 
         # using private attr so users only have access to a read-only property
         session_context._request = _RequestProxy(
-            arguments=self.payload.get('arguments'),
+            arguments={k: [v.encode('utf-8') for v in vs] for k, vs in self.payload.get('arguments', {})},
             cookies=self.payload.get('cookies'),
             headers=self.payload.get('headers')
         )
@@ -299,7 +299,7 @@ class PanelJupyterHandler(JupyterHandler):
                 raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
         return comm_id
 
-    async def _get_execute_result(self, msg_id, timeout=0):
+    async def _get_execute_result(self, msg_id, timeout=KERNEL_TIMEOUT):
         deadline = time.monotonic() + timeout
         while True:
             try:
@@ -372,8 +372,12 @@ class PanelJupyterHandler(JupyterHandler):
 
         # Run PanelExecutor inside the kernel
         self.session_id = generate_session_id()
+        args = {
+            k: [v.decode('utf-8') for v in vs]
+            for k, vs in self.request.arguments.items()
+        }
         payload = {
-            'arguments': dict(self.request.arguments.items()),
+            'arguments': args,
             'headers': dict(self.request.headers.items()),
             'cookies': dict(self.request.cookies.items())
         }
