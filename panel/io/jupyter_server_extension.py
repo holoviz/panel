@@ -28,9 +28,11 @@ import datetime as dt
 import inspect
 import json
 import os
+import time
 import weakref
 
 from dataclasses import dataclass
+from queue import Empty
 from typing import (
     Any, Awaitable, Dict, List, Union,
 )
@@ -58,7 +60,6 @@ from ipykernel.comm import Comm
 from IPython.display import HTML
 from jupyter_server.base.handlers import JupyterHandler
 from tornado.web import StaticFileHandler
-from tornado.websocket import WebSocketHandler
 
 from ..config import config
 from ..util import edit_readonly
@@ -274,12 +275,36 @@ class PanelJupyterHandler(JupyterHandler):
         self.notebook_path = kwargs.pop('notebook_path', [])
         self.kernel_started = False
 
-    async def _get_execute_result(self, kc, msg_id, timeout=60):
+    async def _get_comm_id(self, kc, session_id, timeout=20):
+        deadline = time.monotonic() + timeout
         while True:
-            msg = await ensure_async(kc.iopub_channel.get_msg(timeout=None))
+            try:
+                msg = await ensure_async(kc.iopub_channel.get_msg(timeout=None))
+            except Empty:
+                if not await ensure_async(kc.is_alive()):
+                    raise RuntimeError("Kernel died before establishing Comm connection to Panel app.")
+                continue
+            if msg.get('header', {})['msg_type'] == 'comm_open' and msg['content']['target_name'] == session_id:
+                comm_id = msg['content']['comm_id']
+                break
+            if time.monotonic() > deadline:
+                raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
+        return comm_id
+
+    async def _get_execute_result(self, kc, msg_id, timeout=60):
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                msg = await ensure_async(kc.iopub_channel.get_msg(timeout=timeout))
+            except Empty:
+                if not await ensure_async(kc.is_alive()):
+                    raise RuntimeError("Kernel died while executing Panel application.")
+                continue
             if msg['parent_header'].get('msg_id') == msg_id:
                 if msg['header']['msg_type'] == 'execute_result':
                     break
+            if time.monotonic() > deadline:
+                raise TimeoutError('Timed out while waiting for Panel application to start.')
         return msg
 
     @tornado.web.authenticated
@@ -301,9 +326,12 @@ class PanelJupyterHandler(JupyterHandler):
         self.set_header('Expires', '0')
 
         # Provision a kernel with the desired kernelspec
-        with open(notebook_path) as f:
-            nb = json.load(f)
-        kernelspec = nb.get('metadata', {}).get('kernelspec', {})
+        if notebook_path.endswith('.ipynb'):
+            with open(notebook_path) as f:
+                nb = json.load(f)
+            kernelspec = nb.get('metadata', {}).get('kernelspec', {})
+        else:
+            kernelspec = {}
         kernel_env = {**os.environ}
         kernel_id = await ensure_async(
             (
@@ -332,26 +360,23 @@ class PanelJupyterHandler(JupyterHandler):
         source = PanelExecutor.code(notebook_path, token, root_url)
         msg_id = kc.execute(source)
 
-        # Wait for execution and for comm to open
-        while True:
-            msg = await ensure_async(kc.iopub_channel.get_msg(timeout=None))
-            if msg.get('header', {})['msg_type'] == 'comm_open' and msg['content']['target_name'] == session_id:
-                comm_id = msg['content']['comm_id']
-                break
-        state._kernels[session_id] = (kc, comm_id)
-        while True:
-            msg = await ensure_async(kc.shell_channel.get_msg(timeout=None))
-            if msg['parent_header'].get('msg_id') == msg_id:
-                break
-
-        # Render HTML returned by the kernel
-        msg = await self._get_execute_result(kc, msg_id)
-        html = msg['content']['data']['text/html']
-        self.finish(html)
+        # Wait for comm to open and rendered HTML to be returned by the kernel
+        try:
+            comm_id, msg = await asyncio.gather(
+                self._get_comm_id(kc, session_id),
+                self._get_execute_result(kc, msg_id)
+            )
+        except (TimeoutError, RuntimeError) as e:
+            await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
+            self.finish(f"<html><h2>{str(e)}</h2></html>")
+        else:
+            state._kernels[session_id] = (kc, comm_id, kernel_id)
+            html = msg['content']['data']['text/html']
+            self.finish(html)
 
 
 
-class PanelWSProxy(WSHandler, WebSocketHandler):
+class PanelWSProxy(WSHandler, JupyterHandler):
     """
     The PanelWSProxy serves as a proxy between the frontend and the
     Jupyter kernel that is running the Panel application. It send and
@@ -411,7 +436,7 @@ class PanelWSProxy(WSHandler, WebSocketHandler):
         self.session_id = get_session_id(token)
         if self.session_id not in state._kernels:
             self.close()
-        self.kernel, self.comm_id = state._kernels[self.session_id]
+        self.kernel, self.comm_id, self.kernel_id = state._kernels[self.session_id]
 
         msg = protocol.create('ACK')
         await self.send_message(msg)
@@ -420,7 +445,14 @@ class PanelWSProxy(WSHandler, WebSocketHandler):
 
     async def _check_for_message(self):
         while True:
-            msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=None))
+            if self.kernel is None:
+                break
+            try:
+                msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=None))
+            except Empty:
+                if not await ensure_async(self.kernel.is_alive()):
+                    raise RuntimeError("Kernel died before expected shutdown of Panel app.")
+                continue
             if not (
                 msg['header']['msg_type'] == 'comm_msg' and
                 msg['content']['comm_id'] == self.comm_id
@@ -451,7 +483,11 @@ class PanelWSProxy(WSHandler, WebSocketHandler):
         """
         Clean up when the connection is closed.
         """
-        pass
+        if self.session_id in state._kernels:
+            del state._kernels[self.session_id]
+        future = self.kernel_manager.shutdown_kernel(self.kernel_id, now=True)
+        asyncio.ensure_future(future)
+        self.kernel = None
 
 
 def _load_jupyter_server_extension(notebook_app):
