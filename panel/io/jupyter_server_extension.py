@@ -1,3 +1,25 @@
+"""
+The Panel jupyter_server_extension implements Jupyter RequestHandlers
+that allow a Panel application to run inside Jupyter kernels. This
+allows Panel applications to be served in the kernel (and therefore
+the environment) they were written for.
+
+The `PanelJupyterHandler` may be given the path to a notebook, .py
+file or Lumen .yaml file. It will then attempt to resolve the
+appropriate kernel based on the kernelspec or a query parameter. Once
+the kernel has been provisioned the handler will execute a code snippet
+on the kernel which creates a `PanelExecutor`. The `PanelExecutor`
+creates a `bokeh.server.session.ServerSession` and connects it to a
+Jupyter Comm. The `PanelJupyterHandler` will then serve the result of
+executor.render().
+
+Once the frontend has rendered the HTML it will send a request to open
+a WebSocket will be sent to the `PanelWSProxy`. This in turns forwards
+any messages it receives via the kernel.shell_channel and the Comm to
+the PanelExecutor. This way we proxy any WS messages being sent to and
+from the server to the kernel.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -8,8 +30,9 @@ import json
 import os
 import weakref
 
+from dataclasses import dataclass
 from typing import (
-    Any, Awaitable, Dict, List, Union, cast,
+    Any, Awaitable, Dict, List, Union,
 )
 from urllib.parse import urljoin
 
@@ -18,19 +41,16 @@ import tornado
 from bokeh.command.util import build_single_handler_application
 from bokeh.document import Document
 from bokeh.embed.bundle import extension_dirs
-from bokeh.protocol import Protocol, messages as msg
-from bokeh.protocol.exceptions import (
-    MessageError, ProtocolError, ValidationError,
-)
-from bokeh.protocol.message import Message
+from bokeh.protocol import Protocol
+from bokeh.protocol.exceptions import ProtocolError
 from bokeh.protocol.receiver import Receiver
-from bokeh.server.auth_provider import NullAuth
 from bokeh.server.connection import ServerConnection
 from bokeh.server.contexts import BokehSessionContext
 from bokeh.server.protocol_handler import ProtocolHandler
 from bokeh.server.session import ServerSession
 from bokeh.server.views.multi_root_static_handler import MultiRootStaticHandler
 from bokeh.server.views.static_handler import StaticHandler
+from bokeh.server.views.ws import WSHandler
 from bokeh.util.token import (
     generate_jwt_token, generate_session_id, get_session_id, get_token_payload,
 )
@@ -38,15 +58,13 @@ from ipykernel.comm import Comm
 from IPython.display import HTML
 from jupyter_server.base.handlers import JupyterHandler
 from tornado.web import StaticFileHandler
-from tornado.websocket import WebSocketClosedError, WebSocketHandler
+from tornado.websocket import WebSocketHandler
 
 from ..config import config
-from ..util import edit_readonly, fullpath
+from ..util import edit_readonly
 from .resources import DIST_DIR, Resources, _env as _pn_env
 from .server import server_html_page_for_session
 from .state import set_curdoc, state
-
-_RESOURCES = None
 
 
 async def ensure_async(obj: Union[Awaitable, Any]) -> Any:
@@ -65,7 +83,6 @@ async def ensure_async(obj: Union[Awaitable, Any]) -> Any:
     # obj doesn't need to be awaited
     return obj
 
-
 def url_path_join(*pieces):
     """Join components of url into a relative url
     Use to prevent double slash when joining subpath. This will leave the
@@ -81,63 +98,27 @@ def url_path_join(*pieces):
     return result
 
 
-class ServerApplicationProxy:
+@dataclass
+class _RequestProxy:
+
+    arguments: Dict[str, List[bytes]]
+    cookies: Dict[str, str]
+    headers: Dict[str, str | List[str]]
+
+
+class PanelExecutor(WSHandler):
     """
-    A wrapper around the jupyter_server.serverapp.ServerWebApplication
-    to make it compatible with the expected BokehTornado application
-    API.
+    The PanelExecutor is intended to be run inside a kernel where it
+    runs a Panel application renders the HTML and then establishes a
+    Jupyter Comm channel to communicate with the PanelWSProxy in order
+    to send and receive messages to and from the frontend.
     """
 
-    auth_provider = NullAuth()
-    generate_session_ids = True
-    sign_sessions = False
-    include_headers = None
-    include_cookies = None
-    exclude_headers = None
-    exclude_cookies = None
-    session_token_expiration = 300
-    secret_key = None
-    websocket_origins = '*'
-
-    def __init__(self, app, **kw):
-        self._app = app
-
-    @property
-    def root_dir(self):
-        """
-        Gets the root directory of the jupyter server app
-
-        This is useful as the path sent received by the handler
-        may be different from the root dir.
-        Reference: https://github.com/holoviz/panel/issues/3170
-        """
-        return fullpath(self._app.settings['server_root_dir'])
-
-    def __getattr__(self, key):
-        return getattr(self._app, key)
-
-
-class _RequestProxy():
-
-    def __init__(self, arguments=None, cookies=None, headers=None):
-        self._arguments = arguments
-        self._cookies = cookies
-        self._headers = headers
-
-    @property
-    def arguments(self):
-        return self._arguments
-
-    @property
-    def cookies(self):
-        return self._cookies
-
-    @property
-    def headers(self):
-        return self._headers
-
-
-class PanelExecutor():
+    _code = """
+    from panel.io.jupyter_server_extension import PanelExecutor
+    executor = PanelExecutor('{{ path }}', '{{ token }}', '{{ root_url }}')
+    executor.render()
+    """
 
     def __init__(self, path, token, root_url):
         self.path = path
@@ -160,7 +141,7 @@ class PanelExecutor():
         self.session = self._create_server_session()
         self.connection = ServerConnection(self.protocol, self, None, self.session)
 
-    def _get_payload(self, token):
+    def _get_payload(self, token: str) -> Dict[str, Any]:
         payload = get_token_payload(token)
         if ('cookies' in payload and 'headers' in payload
             and not 'Cookie' in payload['headers']):
@@ -175,35 +156,12 @@ class PanelExecutor():
             state.base_url = self.root_url + '/'
             state.rel_path = self.root_url
 
-    async def send_message(self, message) -> None:
-        ''' Send a Bokeh Server protocol message to the connected client.
-
-        Args:
-            message (Message) : a message to send
-
-        '''
-        try:
-            await message.send(self)
-        except Exception:
-            pass
-        return None
-
-    async def write_message(
-        self, message: Union[bytes, str, Dict[str, Any]],
-        binary: bool = False, locked: bool = True
-    ) -> None:
-        metadata = {'binary': binary}
-        if binary:
-            self.comm.send({}, metadata=metadata, buffers=[binary])
-        else:
-            self.comm.send(message, metadata=metadata)
-
-    def _receive_msg(self, msg):
+    def _receive_msg(self, msg) -> None:
         asyncio.ensure_future(self._receive_msg_async(msg))
 
-    async def _receive_msg_async(self, msg):
+    async def _receive_msg_async(self, msg) -> None:
         try:
-            message = await self._receive(msg)
+            message = await self._receive(msg['content']['data'])
         except Exception as e:
             # If you go look at self._receive, it's catching the
             # expected error types... here we have something weird.
@@ -213,52 +171,18 @@ class PanelExecutor():
         try:
             if message:
                 work = await self._handle(message)
-                print(work)
                 if work:
                     await self._schedule(work)
         except Exception as e:
             self._internal_error(f"server failed to handle a message: {e}")
 
-    async def _receive(self, msg):
-        print(msg)
-        try:
-            message = await self.receiver.consume(msg['content']['data'])
-            return message
-        except (MessageError, ProtocolError, ValidationError) as e:
-            self._protocol_error(str(e))
-            return None
-        return message
-
-    async def _handle(self, message) -> Any | None:
-        # Handle the message, possibly resulting in work to do
-        try:
-            work = await self.handler.handle(message, self)
-            return work
-        except (MessageError, ProtocolError, ValidationError) as e: # TODO (other exceptions?)
-            self._internal_error(str(e))
-            return None
-
-    async def _schedule(self, work: Any) -> None:
-        if isinstance(work, Message):
-            await self.send_message(cast(Message[Any], work))
-        else:
-            self._internal_error(f"expected a Message not {work!r}")
-
-        return None
-
-    def ok(self, message: Message[Any]) -> msg.ok:
-        return self.protocol.create('OK', message.header['msgid'])
-
-    def error(self, message: Message[Any], text: str) -> msg.error:
-        return self.protocol.create('ERROR', message.header['msgid'], text)
-
-    def _internal_error(self, msg):
+    def _internal_error(self, msg: str) -> None:
         self.comm.send(msg, {'status': 'internal_error'})
 
-    def _protocol_error(self, msg):
-                self.comm.send(msg, {'status': 'protocol_error'})
+    def _protocol_error(self, msg: str) -> None:
+        self.comm.send(msg, {'status': 'protocol_error'})
 
-    def _create_server_session(self):
+    def _create_server_session(self) -> ServerSession:
         doc = Document()
 
         session_context = BokehSessionContext(
@@ -286,7 +210,44 @@ class PanelExecutor():
         session_context._set_session(session)
         return session
 
-    def render(self):
+    @classmethod
+    def code(cls, path: str, token: str, root_url: str) -> str:
+        """
+        Generates the code to instantiate a PanelExecutor that is to
+        be be run on the kernel to start a server session.
+
+        Arguments
+        ---------
+        path: str
+            The path of the Panel application to execute.
+        token: str
+            The Bokeh JWT token containing the session_id, request arguments,
+            headers and cookies.
+        root_url: str
+            The root_url the server is running on.
+
+        Returns
+        -------
+        The code to be executed inside the kernel.
+        """
+        execute_template = _pn_env.from_string(cls._code)
+        return execute_template.render(path=path, token=token, root_url=root_url)
+
+    async def write_message(
+        self, message: Union[bytes, str, Dict[str, Any]],
+        binary: bool = False, locked: bool = True
+    ) -> None:
+        metadata = {'binary': binary}
+        if binary:
+            self.comm.send({}, metadata=metadata, buffers=[binary])
+        else:
+            self.comm.send(message, metadata=metadata)
+
+    def render(self) -> HTML:
+        """
+        Renders the application to an IPython.display.HTML object to
+        be served by the `PanelJupyterHandler`.
+        """
         return HTML(server_html_page_for_session(
             self.session,
             resources=self.resources,
@@ -296,13 +257,17 @@ class PanelExecutor():
         ))
 
 
-KERNEL_TEMPLATE = """
-from panel.io.jupyter_server_extension import PanelExecutor
-executor = PanelExecutor('{{ path }}', '{{ token }}', '{{ root_url }}')
-executor.render()
-"""
+class PanelJupyterHandler(JupyterHandler):
+    """
+    The PanelJupyterHandler expects to be given a path to a notebook,
+    .py file or Lumen .yaml file. Based on the kernelspec in the
+    notebook or the kernel query parameter it will then provision
+    a Jupyter kernel to run the Panel application in.
 
-class PanelHandler(JupyterHandler):
+    Once the kernel is launched it will instantiate a PanelExecutor
+    inside the kernel and serve the HTML returned by it. If successful
+    it will store the kernel and comm_id on `panel.state`.
+    """
 
     def initialize(self, **kwargs):
         super().initialize(**kwargs)
@@ -335,9 +300,9 @@ class PanelHandler(JupyterHandler):
         self.set_header('Pragma', 'no-cache')
         self.set_header('Expires', '0')
 
+        # Provision a kernel with the desired kernelspec
         with open(notebook_path) as f:
             nb = json.load(f)
-
         kernelspec = nb.get('metadata', {}).get('kernelspec', {})
         kernel_env = {**os.environ}
         kernel_id = await ensure_async(
@@ -350,12 +315,12 @@ class PanelHandler(JupyterHandler):
             )
         )
         kernel_future = self.kernel_manager.get_kernel(kernel_id)
-
         km = await ensure_async(kernel_future)
         kc = km.client()
         await ensure_async(kc.start_channels())
         await ensure_async(kc.wait_for_ready(timeout=None))
 
+        # Run PanelExecutor inside the kernel
         session_id = generate_session_id()
         payload = {
             'arguments': dict(self.request.arguments.items()),
@@ -363,14 +328,11 @@ class PanelHandler(JupyterHandler):
             'cookies': dict(self.request.cookies.items())
         }
         token = generate_jwt_token(session_id, extra_payload=payload)
-
-        execute_template = _pn_env.from_string(KERNEL_TEMPLATE)
-        source = execute_template.render(
-            path=notebook_path, token=token,
-            root_url=url_path_join(self.base_url, 'panel-preview')
-        )
-
+        root_url = url_path_join(self.base_url, 'panel-preview')
+        source = PanelExecutor.code(notebook_path, token, root_url)
         msg_id = kc.execute(source)
+
+        # Wait for execution and for comm to open
         while True:
             msg = await ensure_async(kc.iopub_channel.get_msg(timeout=None))
             if msg.get('header', {})['msg_type'] == 'comm_open' and msg['content']['target_name'] == session_id:
@@ -381,36 +343,39 @@ class PanelHandler(JupyterHandler):
             msg = await ensure_async(kc.shell_channel.get_msg(timeout=None))
             if msg['parent_header'].get('msg_id') == msg_id:
                 break
+
+        # Render HTML returned by the kernel
         msg = await self._get_execute_result(kc, msg_id)
         html = msg['content']['data']['text/html']
         self.finish(html)
 
 
-class PanelWSHandler(WebSocketHandler):
+
+class PanelWSProxy(WSHandler, WebSocketHandler):
+    """
+    The PanelWSProxy serves as a proxy between the frontend and the
+    Jupyter kernel that is running the Panel application. It send and
+    receives Bokeh protocol messages via a Jupyter Comm.
+    """
 
     def __init__(self, tornado_app, *args, **kw) -> None:
-        self.receiver = None
-        self.kernel = None
-        self.latest_pong = -1
-        self.session_id = None
-
-        # write_lock allows us to lock the connection to send multiple
-        # messages atomically.
-        self.write_lock = tornado.locks.Lock()
-        self._token = None
-
         # Note: tornado_app is stored as self.application
+        kw['application_context'] = None
         super().__init__(tornado_app, *args, **kw)
 
-    def initialize(self):
+    def initialize(self, *args, **kwargs):
         pass
 
-    def select_subprotocol(self, subprotocols: List[str]) -> str | None:
-        if not len(subprotocols) == 2:
-            return None
-        self._token = subprotocols[1]
-        return subprotocols[0]
+    async def prepare(self):
+        pass
 
+    def get_current_user(self):
+        return "default_user"
+
+    def check_origin(self, origin: str) -> bool:
+        return True
+
+    @tornado.web.authenticated
     async def open(self, path, *args, **kwargs) -> None:
         ''' Initialize a connection to a client.
 
@@ -460,7 +425,6 @@ class PanelWSHandler(WebSocketHandler):
                 msg['header']['msg_type'] == 'comm_msg' and
                 msg['content']['comm_id'] == self.comm_id
             ):
-                print(msg)
                 continue
             content, metadata = msg['content'], msg['metadata']
             status = metadata.get('status')
@@ -478,61 +442,16 @@ class PanelWSHandler(WebSocketHandler):
             if message:
                 await self.send_message(message)
 
-    async def _receive(self, fragment: str | bytes) -> Message[Any] | None:
-        # Receive fragments until a complete message is assembled
-        try:
-            message = await self.receiver.consume(fragment)
-            return message
-        except (MessageError, ProtocolError, ValidationError) as e:
-            self._protocol_error(str(e))
-            return None
-
     async def on_message(self, fragment: str | bytes) -> None:
         content = dict(data=fragment, comm_id=self.comm_id, target_name=self.session_id)
         msg = self.kernel.session.msg("comm_msg", content)
         self.kernel.shell_channel.send(msg)
 
-    def on_pong(self, data: bytes) -> None:
-        self.latest_pong = int(data.decode("utf-8"))
-
     def on_close(self) -> None:
-        ''' Clean up when the connection is closed.
-
-        '''
+        """
+        Clean up when the connection is closed.
+        """
         pass
-
-    async def send_message(self, message) -> None:
-        ''' Send a Bokeh Server protocol message to the connected client.
-
-        Args:
-            message (Message) : a message to send
-
-        '''
-        try:
-            await message.send(self)
-        except WebSocketClosedError:
-            pass
-        return None
-
-    async def write_message(self, message: Union[bytes, str, Dict[str, Any]],
-            binary: bool = False, locked: bool = True) -> None:
-        ''' Override parent write_message with a version that acquires a
-        write lock before writing.
-
-        '''
-        if locked:
-            with await self.write_lock.acquire():
-                await super().write_message(message, binary)
-        else:
-            await super().write_message(message, binary)
-
-    def _internal_error(self, message: str) -> None:
-        print("Bokeh Server internal error: %s, closing connection" %message)
-        self.close(10000, message)
-
-    def _protocol_error(self, message: str) -> None:
-        print("Bokeh Server protocol error: %s, closing connection" % message)
-        self.close(10001, message)
 
 
 def _load_jupyter_server_extension(notebook_app):
@@ -559,9 +478,9 @@ def _load_jupyter_server_extension(notebook_app):
             (urljoin(base_url, r"panel-preview/static/(.*)"),
              StaticHandler),
             (urljoin(base_url, r"panel-preview/render/(.*)/ws"),
-             PanelWSHandler),
+             PanelWSProxy),
             (urljoin(base_url, r"panel-preview/render/(.*)"),
-             PanelHandler, {}),
+             PanelJupyterHandler, {}),
             (urljoin(base_url, r"panel_dist/(.*)"),
              StaticFileHandler, dict(path=DIST_DIR))
         ]
