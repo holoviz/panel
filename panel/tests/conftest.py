@@ -5,8 +5,10 @@ import os
 import re
 import shutil
 import tempfile
+import time
 
 from contextlib import contextmanager
+from subprocess import PIPE, Popen
 
 import pytest
 
@@ -250,3 +252,29 @@ def threads():
         yield 4
     finally:
         config.nthreads = None
+
+@pytest.fixture
+def change_test_dir(request):
+    os.chdir(request.fspath.dirname)
+    yield
+    os.chdir(request.config.invocation_dir)
+
+@pytest.fixture
+def jupyter_server(port, change_test_dir):
+    process = Popen(['jupyter', 'server', '--port', str(port)], stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
+    os.set_blocking(process.stderr.fileno(), False)
+    while True:
+        for _ in range(2):
+            line = process.stderr.readline()
+        time.sleep(0.02)
+        if "http://127.0.0.1:" in line:
+            url = "http://127.0.0.1:"
+            break
+        if "http://localhost:" in line:
+            url = "http://localhost:"
+            break
+    port = int(line.split(url)[-1][:4])
+    PORT[0] = port
+    process.args[-1] = str(port)
+    yield process
+    process.kill()
