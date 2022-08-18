@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import json
 import os
 import shutil
@@ -141,7 +140,9 @@ _tests = [
 
 _ui = [
     'playwright',
-    'pytest-playwright'
+    'pytest-playwright',
+    # Libraries test in UI tests
+    'jupyter_server'
 ]
 
 extras_require = {
