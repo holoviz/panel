@@ -50,6 +50,7 @@ from bokeh.server.connection import ServerConnection
 from bokeh.server.contexts import BokehSessionContext
 from bokeh.server.protocol_handler import ProtocolHandler
 from bokeh.server.session import ServerSession
+from bokeh.server.tornado import DEFAULT_KEEP_ALIVE_MS
 from bokeh.server.views.multi_root_static_handler import MultiRootStaticHandler
 from bokeh.server.views.static_handler import StaticHandler
 from bokeh.server.views.ws import WSHandler
@@ -59,14 +60,16 @@ from bokeh.util.token import (
 from ipykernel.comm import Comm
 from IPython.display import HTML
 from jupyter_server.base.handlers import JupyterHandler
+from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
-from ..config import config
 from ..util import edit_readonly
 from .resources import DIST_DIR, Resources, _env as _pn_env
 from .server import server_html_page_for_session
 from .state import set_curdoc, state
 
+KERNEL_TIMEOUT = 60 # Timeout for kernel startup (including app startup)
+CONNECTION_TIMEOUT = 30 # Timeout for WS connection to open
 
 async def ensure_async(obj: Union[Awaitable, Any]) -> Any:
     """Convert a non-awaitable object to a coroutine if needed,
@@ -275,29 +278,32 @@ class PanelJupyterHandler(JupyterHandler):
         self.notebook_path = kwargs.pop('notebook_path', [])
         self.kernel_started = False
 
-    async def _get_comm_id(self, kc, session_id, timeout=20):
+    async def _get_comm_id(self, timeout=20):
         deadline = time.monotonic() + timeout
         while True:
             try:
-                msg = await ensure_async(kc.iopub_channel.get_msg(timeout=None))
+                msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=None))
             except Empty:
-                if not await ensure_async(kc.is_alive()):
+                if not await ensure_async(self.kernel.is_alive()):
                     raise RuntimeError("Kernel died before establishing Comm connection to Panel app.")
                 continue
-            if msg.get('header', {})['msg_type'] == 'comm_open' and msg['content']['target_name'] == session_id:
+            if (
+                msg['header']['msg_type'] == 'comm_open' and
+                msg['content']['target_name'] == self.session_id
+            ):
                 comm_id = msg['content']['comm_id']
                 break
             if time.monotonic() > deadline:
                 raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
         return comm_id
 
-    async def _get_execute_result(self, kc, msg_id, timeout=60):
+    async def _get_execute_result(self, msg_id, timeout=KERNEL_TIMEOUT):
         deadline = time.monotonic() + timeout
         while True:
             try:
-                msg = await ensure_async(kc.iopub_channel.get_msg(timeout=timeout))
+                msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=timeout))
             except Empty:
-                if not await ensure_async(kc.is_alive()):
+                if not await ensure_async(self.kernel.is_alive()):
                     raise RuntimeError("Kernel died while executing Panel application.")
                 continue
             if msg['parent_header'].get('msg_id') == msg_id:
@@ -344,35 +350,42 @@ class PanelJupyterHandler(JupyterHandler):
         )
         kernel_future = self.kernel_manager.get_kernel(kernel_id)
         km = await ensure_async(kernel_future)
-        kc = km.client()
-        await ensure_async(kc.start_channels())
-        await ensure_async(kc.wait_for_ready(timeout=None))
+        self.kernel = km.client()
+        await ensure_async(self.kernel.start_channels())
+        await ensure_async(self.kernel.wait_for_ready(timeout=None))
 
         # Run PanelExecutor inside the kernel
-        session_id = generate_session_id()
+        self.session_id = generate_session_id()
         payload = {
             'arguments': dict(self.request.arguments.items()),
             'headers': dict(self.request.headers.items()),
             'cookies': dict(self.request.cookies.items())
         }
-        token = generate_jwt_token(session_id, extra_payload=payload)
+        token = generate_jwt_token(self.session_id, extra_payload=payload)
         root_url = url_path_join(self.base_url, 'panel-preview')
         source = PanelExecutor.code(notebook_path, token, root_url)
-        msg_id = kc.execute(source)
+        msg_id = self.kernel.execute(source)
 
         # Wait for comm to open and rendered HTML to be returned by the kernel
         try:
             comm_id, msg = await asyncio.gather(
-                self._get_comm_id(kc, session_id),
-                self._get_execute_result(kc, msg_id)
+                self._get_comm_id(),
+                self._get_execute_result(msg_id)
             )
         except (TimeoutError, RuntimeError) as e:
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
             self.finish(f"<html><h2>{str(e)}</h2></html>")
         else:
-            state._kernels[session_id] = (kc, comm_id, kernel_id)
+            state._kernels[self.session_id] = (self.kernel, comm_id, kernel_id, False)
+            loop = tornado.ioloop.IOLoop.current()
+            loop.call_later(CONNECTION_TIMEOUT, self._check_connected)
             html = msg['content']['data']['text/html']
             self.finish(html)
+
+    async def _check_connected(self):
+        _, _, kernel_id, connected = state._kernels[self.session_id]
+        if not connected:
+            await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
 
 
 
@@ -389,7 +402,12 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         super().__init__(tornado_app, *args, **kw)
 
     def initialize(self, *args, **kwargs):
-        pass
+        self._ping_count = 0
+        self._ping_job = PeriodicCallback(self._keep_alive, DEFAULT_KEEP_ALIVE_MS)
+
+    def _keep_alive(self):
+        self.ping(str(self._ping_count).encode("utf-8"))
+        self._ping_count += 1
 
     async def prepare(self):
         pass
@@ -436,11 +454,14 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         self.session_id = get_session_id(token)
         if self.session_id not in state._kernels:
             self.close()
-        self.kernel, self.comm_id, self.kernel_id = state._kernels[self.session_id]
+        kernel_info = state._kernels[self.session_id]
+        self.kernel, self.comm_id, self.kernel_id, _ = kernel_info
+        state._kernels[self.session_id] = kernel_info[:-1] + (True,)
 
         msg = protocol.create('ACK')
         await self.send_message(msg)
 
+        self._ping_job.start()
         asyncio.create_task(self._check_for_message())
 
     async def _check_for_message(self):
@@ -485,25 +506,14 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         """
         if self.session_id in state._kernels:
             del state._kernels[self.session_id]
+        self._ping_job.stop()
         future = self.kernel_manager.shutdown_kernel(self.kernel_id, now=True)
         asyncio.ensure_future(future)
         self.kernel = None
 
 
 def _load_jupyter_server_extension(notebook_app):
-    global RESOURCES
-
     base_url = notebook_app.web_app.settings["base_url"]
-
-    # Configure Panel
-    RESOURCES = Resources(
-        mode="server", root_url=urljoin(base_url, 'panel-preview'),
-        path_versioner=StaticHandler.append_version
-    )
-    config.autoreload = True
-    with edit_readonly(state):
-        state.base_url = url_path_join(base_url, '/panel-preview/')
-        state.rel_path = url_path_join(base_url, '/panel-preview')
 
     # Set up handlers
     notebook_app.web_app.add_handlers(
