@@ -81,12 +81,8 @@ export class CommManager extends Model {
   }
 
   protected _document_changed(event: DocumentChangedEvent): void {
-    // Filter out events that were initiated by the ClientSession itself
-    if ((event as any).setter_id === this.id) // XXX: not all document events define this
-      return
-
     // Filter out changes to attributes that aren't server-visible
-    if (event instanceof ModelChangedEvent && !(event.attr in event.model.syncable_properties()))
+    if (event instanceof ModelChangedEvent && !event.model.properties[event.attr].syncable)
       return
 
     this._event_buffer.push(event);
@@ -108,7 +104,7 @@ export class CommManager extends Model {
     this._client_comm.send(message)
     for (const view of this.ns.shared_views.get(this.plot_id)) {
       if (view !== this && view.document != null)
-	view.document.apply_json_patch(patch, [], this.id)
+        view.document.apply_json_patch(patch, [], this.id)
     }
   }
 
@@ -161,7 +157,7 @@ export class CommManager extends Model {
       const comm_msg = this._receiver.message
       if ((comm_msg != null) && (Object.keys(comm_msg.content as Patch).length > 0) && this.document != null){
         const patch = comm_msg.content as Patch
-        this.document.apply_json_patch(patch, comm_msg.buffers) // , this.id)
+        this.document.apply_json_patch(patch, comm_msg.buffers)
       }
     }
   }
