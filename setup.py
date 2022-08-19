@@ -110,9 +110,9 @@ install_requires = [
 ]
 
 _recommended = [
-    'notebook >=5.4',
+    'jupyterlab',
     'holoviews >1.14.1',
-    'matplotlib <3.4',
+    'matplotlib',
     'pillow',
     'plotly'
 ]
@@ -142,7 +142,7 @@ _ui = [
     'playwright',
     'pytest-playwright',
     # Libraries test in UI tests
-    'jupyter_server'
+    'jupyter_serverc'
 ]
 
 extras_require = {
