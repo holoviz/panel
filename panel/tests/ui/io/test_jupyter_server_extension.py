@@ -9,7 +9,7 @@ not_windows = pytest.mark.skipif(sys.platform=='win32', reason="Does not work on
 
 @not_windows
 def test_jupyter_server(page, jupyter_server):
-    page.goto(f"{jupyter_server}/panel-preview/render/app.py", wait_until='domcontentloaded')
+    page.goto(f"{jupyter_server}/panel-preview/render/app.py")
 
     assert page.text_content('.bk.string') == '0'
 
@@ -25,7 +25,7 @@ def test_jupyter_server(page, jupyter_server):
 
 @not_windows
 def test_jupyter_server_kernel_error(page, jupyter_server):
-    page.goto(f"{jupyter_server}/panel-preview/render/app.py?kernel=blah", wait_until='domcontentloaded', timeout=30000)
+    page.goto(f"{jupyter_server}/panel-preview/render/app.py?kernel=blah")
 
     assert page.text_content('#subtitle') == "Kernel error: No such kernel 'blah'"
 
