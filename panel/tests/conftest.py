@@ -261,21 +261,25 @@ def change_test_dir(request):
     os.chdir(request.config.invocation_dir)
 
 @pytest.fixture
-def jupyter_server(port, change_test_dir):
-    process = Popen(['jupyter', 'server', '--port', str(port)], stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
+def jupyter_server(port, change_test_dir, timeout=15):
+    process = Popen(['jupyter', 'server', '--port', str(port), "--NotebookApp.token=''"], stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
     os.set_blocking(process.stderr.fileno(), False)
+    deadline = time.monotonic() + timeout
     while True:
         for _ in range(2):
             line = process.stderr.readline()
         time.sleep(0.02)
         if "http://127.0.0.1:" in line:
-            url = "http://127.0.0.1:"
+            host = "http://127.0.0.1:"
             break
         if "http://localhost:" in line:
-            url = "http://localhost:"
+            host = "http://localhost:"
             break
-    port = int(line.split(url)[-1][:4])
+        if time.monotonic() > deadline:
+            raise TimeoutError(
+                'jupyter server did not start within {timeout} seconds.'
+            )
+    port = int(line.split(host)[-1][:4])
     PORT[0] = port
-    process.args[-1] = str(port)
-    yield process
+    yield f"http://localhost:{port}"
     os.kill(process.pid, signal.SIGTERM)
