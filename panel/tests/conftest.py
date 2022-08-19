@@ -262,12 +262,12 @@ def change_test_dir(request):
 
 @pytest.fixture
 def jupyter_server(port, change_test_dir, timeout=15):
-    process = Popen(['jupyter', 'server', '--port', str(port), "--NotebookApp.token=''"], stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
+    args = ['jupyter', 'server', '--port', str(port), "--NotebookApp.token=''"]
+    process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
     os.set_blocking(process.stderr.fileno(), False)
     deadline = time.monotonic() + timeout
     while True:
-        for _ in range(2):
-            line = process.stderr.readline()
+        line = process.stderr.readline()
         time.sleep(0.02)
         if "http://127.0.0.1:" in line:
             host = "http://127.0.0.1:"
@@ -281,5 +281,6 @@ def jupyter_server(port, change_test_dir, timeout=15):
             )
     port = int(line.split(host)[-1][:4])
     PORT[0] = port
+    time.sleep(2)
     yield f"http://localhost:{port}"
     os.kill(process.pid, signal.SIGTERM)
