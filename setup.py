@@ -140,9 +140,7 @@ _tests = [
 
 _ui = [
     'playwright',
-    'pytest-playwright',
-    # Libraries test in UI tests
-    'jupyter_serverc'
+    'pytest-playwright'
 ]
 
 extras_require = {
