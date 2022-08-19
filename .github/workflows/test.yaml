@@ -120,6 +120,11 @@ jobs:
         run: |
           conda activate test-environment
           jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+        with:
+          limit-access-to-actor: true
+          limit-access-to-users: philippjfr
       - name: doit test_ui
         run: |
           conda activate test-environment
