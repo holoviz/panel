@@ -27,6 +27,7 @@ import calendar
 import datetime as dt
 import inspect
 import json
+import logging
 import os
 import time
 import weakref
@@ -69,6 +70,8 @@ from .resources import (
 )
 from .server import server_html_page_for_session
 from .state import set_curdoc, state
+
+logger = logging.getLogger(__name__)
 
 KERNEL_TIMEOUT = 60 # Timeout for kernel startup (including app startup)
 CONNECTION_TIMEOUT = 30 # Timeout for WS connection to open
@@ -347,6 +350,7 @@ class PanelJupyterHandler(JupyterHandler):
             requested_kernel = None
 
         if requested_kernel:
+            logger.error('Could not start server session, no such kernel %r.', requested_kernel)
             available_kernels = list(self.kernel_manager.kernel_spec_manager.find_kernel_specs())
             if requested_kernel not in available_kernels:
                 html = KERNEL_ERROR_TEMPLATE.render(
@@ -480,6 +484,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):
             protocol = Protocol()
             self.receiver = Receiver(protocol)
         except ProtocolError as e:
+            logger.error("Could not create new server session, reason: %s", e)
             self.close()
             raise e
 
@@ -536,6 +541,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         """
         Clean up when the connection is closed.
         """
+        logger.info('WebSocket connection closed: code=%s, reason=%r', self.close_code, self.close_reason)
         if self.session_id in state._kernels:
             del state._kernels[self.session_id]
         self._ping_job.stop()
