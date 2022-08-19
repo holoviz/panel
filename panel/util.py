@@ -37,7 +37,7 @@ datetime_types = (np.datetime64, dt.datetime, dt.date)
 bokeh_version = Version(bokeh.__version__)
 
 
-PARAM_NAME_PATTERN = re.compile('^.*\d{5}$')
+PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
 
 def isfile(path: str) -> bool:

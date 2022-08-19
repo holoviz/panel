@@ -25,7 +25,7 @@ def test_jupyter_server(page, jupyter_server):
 
 @not_windows
 def test_jupyter_server_kernel_error(page, jupyter_server):
-    page.goto(f"{jupyter_server}/panel-preview/render/app.py?kernel=blah", wait_until='domcontentloaded')
+    page.goto(f"{jupyter_server}/panel-preview/render/app.py?kernel=blah", wait_until='domcontentloaded', timeout=30000)
 
     assert page.text_content('#subtitle') == "Kernel error: No such kernel 'blah'"
 
