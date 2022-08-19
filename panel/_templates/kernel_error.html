@@ -1,120 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+{% extends "error.html" %}
 
-  <!-- Basic Page Needs
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <meta charset="utf-8">
-  <title>Panel: Kernel Error</title>
-
-  <!-- Mobile Specific Metas
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- FONT
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600&Lato|Work+Sans:400,700&display=swap" rel="stylesheet" type='text/css'>
-
-  <!-- Favicon
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <link rel="apple-touch-icon" sizes="180x180" href="https://static.bokeh.org/favicon/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="https://panel.holoviz.org/_static/favicon.ico">
-  <link rel="manifest" href="https://static.bokeh.org/favicon/site.webmanifest">
-  <meta name="msapplication-TileColor" content="#da532c">
-  <meta name="theme-color" content="#ffffff">
-  <script type="module" src="https://unpkg.com/@microsoft/fast-colors@5.1.0"></script>
-  <script type="module" src="https://unpkg.com/@microsoft/fast-components@1.13.0"></script>
-  <style>
-  html {
-      height:100%;
-  }
-  html, #body-design-provider {
-      min-height: 100vh;
-  }
-  body {
-      margin: 0px;
-      padding: 0;
-      font-style: normal;
-      font-variant-ligatures: normal;
-      font-variant-caps: normal;
-      font-variant-numeric: normal;
-      font-variant-east-asian: normal;
-      font-weight: normal;
-      font-stretch: normal;
-      font-size: 16px;
-      line-height: normal;
-      font-family: aktiv-grotesk, "Segoe UI", Arial, Helvetica, sans-serif;
-      overflow-y: scroll;
-  }
-  .header {
-    /* Photo by mnm.all on Unsplash */
-    background-image: url('{{ base_url }}/static/extensions/panel/images/index_background.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-  }
-  .header-grid {
-    /* Grid styles */
-    padding: 4rem 2rem;
-    display: grid;
-    align-items: center;
-    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
-  }
-  .header h1 {
-      margin-right: 1.0em;
-      padding-left: 1.0em;
-      padding-right: 1.0em;
-      opacity: 0.8;
-      color: black;
-  }
-  #title, #divider, #subtitle {
-      background: transparent;
-      font-size: 1.5em;
-      color: white;
-  }
-  .error-message {
-      text-align: center;
-  }
-  footer {
-      padding: .50rem;
-      text-align: center;
-      font-size: .75rem;
-  }
-  #panel-logo {
-    width: 300px;
-  }
+{% block extra_style %}
   #kernel-select {
       width: 200px;
       height: 40px;
       margin-bottom: 25px;
   }
-  </style>
-</head>
-<body>
-  <fast-design-system-provider id="body-design-provider" use-defaults background-color="#ffffff">
-    <fast-design-system-provider id="header-design-provider" use-defaults background-color="#000000">
-      <section class="header">
-        <div class="header-grid">
-          <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self"><img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/></fast-anchor>
-          <fast-tooltip anchor="title">Click to visit the Panel web site</fast-tooltip>
-          <h1>Kernel Error: {{ error }}</h1>
-        </div>
-      </section>
-    </fast-design-system-provider>
-    <section class="error-message">
-      {% if error_msg %}
-      <h2>{{ error_msg }}</h3>
-      {% else %}
-      <h2>Select a valid kernel</h3>
-      <select name="kernel" id="kernel-select" onchange="window.location.search = '?kernel='+event.target.value">
-	<option value="" disabled selected>-- Please choose an option --</option>
-	{% for kernel in kernels %}
-	<option value="{{ kernel }}">{{ kernel }}</option>
-	{% endfor %}
-      </select>
-      {% endif %}
-    </section>
-    <fast-divider></fast-divider>
-  </fast-design-system-provider>
-</body>
-</html>
+{% endblock %}
+
+
+{% block content %}
+<h2>Select a valid kernel</h3>
+<select name="kernel" id="kernel-select" onchange="window.location.search = '?kernel='+event.target.value">
+  <option value="" disabled selected>-- Please choose an option --</option>
+  {% for kernel in kernels %}
+  <option value="{{ kernel }}">{{ kernel }}</option>
+  {% endfor %}
+</select>
+{% endblock %}

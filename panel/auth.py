@@ -290,7 +290,12 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
                 type(self).__name__, error
             )
             self.set_header("Content-Type", 'text/html')
-            self.write(self._error_template.render(error=error, error_msg=error_msg))
+            self.write(self._error_template.render(
+                title='Panel: Authentication Error',
+                error_type='Authentication Error',
+                error=error,
+                error_msg=error_msg
+            ))
             return
 
         # Seek the authorization

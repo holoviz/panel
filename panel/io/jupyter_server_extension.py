@@ -64,7 +64,9 @@ from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
 from ..util import edit_readonly
-from .resources import DIST_DIR, Resources, _env
+from .resources import (
+    DIST_DIR, ERROR_TEMPLATE, Resources, _env,
+)
 from .server import server_html_page_for_session
 from .state import set_curdoc, state
 
@@ -348,9 +350,11 @@ class PanelJupyterHandler(JupyterHandler):
             available_kernels = list(self.kernel_manager.kernel_spec_manager.find_kernel_specs())
             if requested_kernel not in available_kernels:
                 html = KERNEL_ERROR_TEMPLATE.render(
-                    base_url=root_url,
+                    base_url=f'{root_url}/',
                     kernels=available_kernels,
-                    error=f'No such kernel {requested_kernel}',
+                    error_type='Kernel error',
+                    error=f"No such kernel '{requested_kernel}'",
+                    title='Panel: Kernel not found'
                 )
                 self.finish(html)
                 return
@@ -393,10 +397,12 @@ class PanelJupyterHandler(JupyterHandler):
             )
         except (TimeoutError, RuntimeError) as e:
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
-            html = KERNEL_ERROR_TEMPLATE.render(
+            html = ERROR_TEMPLATE.render(
                 base_url=root_url,
-                error=type(e).__name__,
-                error_msg=str(e)
+                error_type="Kernel error",
+                error="Failed to start kernel",
+                error_msg=str(e),
+                title="Panel: Kernel Error"
             )
             self.finish(html)
         else:
