@@ -115,7 +115,7 @@
 	cursor: pointer;
     }
     .header {
-	background-image: url('static/extensions/panel/images/index_background.png');
+	background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('{{base_url|default("", true) }}static/extensions/panel/images/index_background.png');
 	background-size: cover;
 	background-repeat: no-repeat;
 	background-position: center;
@@ -127,8 +127,11 @@
 	align-items: center;
 	grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
     }
+    #title {
+	background: transparent;
+    }
     #subtitle {
-	color: var(--neutral-fill-rest);
+	color: white;
 	font-size: 2em;
 	font-weight: bold;
 	margin-left: 2em;

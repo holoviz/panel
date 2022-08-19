@@ -27,7 +27,7 @@ def test_jupyter_server(page, jupyter_server):
 def test_jupyter_server_kernel_error(page, jupyter_server):
     page.goto(f"{jupyter_server}/panel-preview/render/app.py?kernel=blah")
 
-    assert page.text_content('h1') == 'Kernel Error: No such kernel blah'
+    assert page.text_content('#subtitle') == "Kernel error: No such kernel 'blah'"
 
     page.select_option('select#kernel-select', 'python3')
 
