@@ -4,9 +4,12 @@ A module containing testing utilities and fixtures.
 import os
 import re
 import shutil
+import signal
 import tempfile
+import time
 
 from contextlib import contextmanager
+from subprocess import PIPE, Popen
 
 import pytest
 
@@ -250,3 +253,34 @@ def threads():
         yield 4
     finally:
         config.nthreads = None
+
+@pytest.fixture
+def change_test_dir(request):
+    os.chdir(request.fspath.dirname)
+    yield
+    os.chdir(request.config.invocation_dir)
+
+@pytest.fixture
+def jupyter_server(port, change_test_dir, timeout=15):
+    args = ['jupyter', 'server', '--port', str(port), "--NotebookApp.token=''"]
+    process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
+    os.set_blocking(process.stderr.fileno(), False)
+    deadline = time.monotonic() + timeout
+    while True:
+        line = process.stderr.readline()
+        time.sleep(0.02)
+        if "http://127.0.0.1:" in line:
+            host = "http://127.0.0.1:"
+            break
+        if "http://localhost:" in line:
+            host = "http://localhost:"
+            break
+        if time.monotonic() > deadline:
+            raise TimeoutError(
+                'jupyter server did not start within {timeout} seconds.'
+            )
+    port = int(line.split(host)[-1][:4])
+    PORT[0] = port
+    time.sleep(2)
+    yield f"http://localhost:{port}"
+    os.kill(process.pid, signal.SIGTERM)

@@ -58,6 +58,20 @@ doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -o build -o test
 
 The above command installs Panel's dependencies using conda, then performs a pip editable install of Panel. If it fails, `nodejs>=14.0.0` may be missing from your environment, fix it with `conda install -c conda-forge nodejs` then rerun above command.
 
+## Enable the Jupyter extension
+
+If you are running UI tests or intend to use the Panel Preview feature in Jupyter you must enable the server extension. To enable the classic notebook server extension:
+
+```bash
+jupyter serverextension enable panel.io.jupyter_server_extension --sys-prefix
+```
+
+For Jupyter Server:
+
+```bash
+jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+```
+
 ## Setting up pre-commit
 
 Panel uses [pre-commit](https://pre-commit.com/) to automatically apply linting to Panel code. If you intend to contribute to Panel we recommend you enable it with:

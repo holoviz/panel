@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import json
 import os
 import shutil
@@ -111,9 +110,9 @@ install_requires = [
 ]
 
 _recommended = [
-    'notebook >=5.4',
+    'jupyterlab',
     'holoviews >1.14.1',
-    'matplotlib <3.4',
+    'matplotlib',
     'pillow',
     'plotly'
 ]
@@ -228,6 +227,11 @@ setup_args = dict(
     include_package_data=True,
     data_files=[
         # like `jupyter serverextension enable --sys-prefix`
+        (
+            "etc/jupyter/jupyter_notebook_config.d",
+            ["jupyter-config/jupyter_notebook_config.d/panel-client-jupyter.json"],
+        ),
+        # like `jupyter server extension enable --sys-prefix`
         (
             "etc/jupyter/jupyter_server_config.d",
             ["jupyter-config/jupyter_server_config.d/panel-client-jupyter.json"],

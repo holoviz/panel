@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
@@ -86,205 +85,195 @@
         }
     }
   </script>
+
   <style>
-  html {
-      height:100%;
-  }
-  html, #body-design-provider {
-      min-height: 100vh;
-  }
-  body {
-      margin: 0px;
-      padding: 0;
-      font-style: normal;
-      font-variant-ligatures: normal;
-      font-variant-caps: normal;
-      font-variant-numeric: normal;
-      font-variant-east-asian: normal;
-      font-weight: normal;
-      font-stretch: normal;
-      font-size: 16px;
-      line-height: normal;
-      font-family: aktiv-grotesk, "Segoe UI", Arial, Helvetica, sans-serif;
-      overflow-y: scroll;
-  }
-  .gallery-item:hover {
-      box-shadow: 0 1px 5px var(--neutral-focus);
-  }
-  .gallery-item {
-      cursor: pointer;
-  }
-  .header {
-    /* Photo by mnm.all on Unsplash */
-    background-image: url('static/extensions/panel/images/index_background.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-  }
-  .header-grid {
-    /* Grid styles */
-    padding: 4rem 2rem;
-    display: grid;
-    align-items: center;
-    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
-  }
-  .header article {
-      margin-right: 1.0em;
-      padding-left: 1.0em;
-      padding-right: 1.0em;
-      opacity: 0.8;
-  }
+    html {
+	height:100%;
+    }
+    html, #body-design-provider {
+	min-height: 100vh;
+    }
+    body {
+	margin: 0px;
+	padding: 0;
+	font-style: normal;
+	font-variant-ligatures: normal;
+	font-variant-caps: normal;
+	font-variant-numeric: normal;
+	font-variant-east-asian: normal;
+	font-weight: normal;
+	font-stretch: normal;
+	font-size: 16px;
+	line-height: normal;
+	font-family: aktiv-grotesk, "Segoe UI", Arial, Helvetica, sans-serif;
+	overflow-y: scroll;
+    }
+    .gallery-item:hover {
+	box-shadow: 0 1px 5px var(--neutral-focus);
+    }
+    .gallery-item {
+	cursor: pointer;
+    }
+    .header {
+	background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('{{base_url|default("", true) }}static/extensions/panel/images/index_background.png');
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-position: center;
+    }
+    .header-grid {
+	/* Grid styles */
+	padding: 4rem 2rem;
+	display: grid;
+	align-items: center;
+	grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    }
+    #title {
+	background: transparent;
+    }
+    #subtitle {
+	color: white;
+	font-size: 2em;
+	font-weight: bold;
+	margin-left: 2em;
+    }
+    #search-input {
+	margin-top: 1em;
+	margin-left:2em;
+	margin-bottom:0em;
+	width: calc(100% - 4em);
+    }
+    .theme-toggle-icon {
+	height: 25px;
+	width: 25px;
+	margin-top: 5px;
+    }
 
-  #title, #divider, #subtitle {
-      background: transparent;
-      font-size: 1.5em;
-      color: white;
-  }
+    /* The grid layout is inspired by
+       https://css-tricks.com/look-ma-no-media-queries-responsive-layouts-using-css-grid/
+       https://codepen.io/andybelldesign/pen/vMMYKJ */
+    /*
+      AUTO GRID
+      Set the minimum item size with `--cards-grid-min-size` and you'll
+      get a fully responsive grid with no media queries.
+   */
+    .cards-grid {
+	--cards-grid-min-size: 16rem;
 
-  #search-input {
-      margin-top: 1em;
-      margin-left:2em;
-      margin-bottom:0em;
-      width: calc(100% - 4em);
-  }
-  .theme-toggle-icon {
-      height: 25px;
-      width: 25px;
-      margin-top: 5px;
-  }
-
-  /* The grid layout is inspired by
-  https://css-tricks.com/look-ma-no-media-queries-responsive-layouts-using-css-grid/
-  https://codepen.io/andybelldesign/pen/vMMYKJ */
-  /*
-    AUTO GRID
-    Set the minimum item size with `--cards-grid-min-size` and you'll
-    get a fully responsive grid with no media queries.
-  */
-  .cards-grid {
-    --cards-grid-min-size: 16rem;
-
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--cards-grid-min-size), 1fr));
-    grid-gap: 2rem;
-    list-style: none;
-  }
-  /* Presentational styles */
-  .card {
-    padding: 0px;
-  }
-
-  .cards-grid {
-      margin: 2rem;
-      padding: 0px;
-  }
-
-  .avatar {
-      vertical-align: middle;
-      float: right;
-      width: 30px;
-      height: 30px;
-      margin-top: 5px;
-      border-radius: 50%;
-  }
-  .card-action svg {
-      vertical-align: middle;
-      float: right;
-      height: 20px;
-      color: white;
-      margin-top: 10px;
-      margin-right: 10px;
-      fill: var(--neutral-foreground-rest);
-  }
-
-  .card-image {
-      height: 100px;
-      width: 100%;
-      margin-top: 25px;
-  }
-  .card-content {
-      padding: 10px 10px 10px;
-      color: var(--neutral-foreground-rest);
-  }
-  .card-text {
-      height: 100px;
-  }
-  .card-header {
-      height: 2em;
-      text-align: center;
-  }
-
-  footer {
-      padding: .50rem;
-      text-align: center;
-      font-size: .75rem;
-  }
-  #panel-logo {
-    width: 300px;
-  }
-  .card-link {
-    text-decoration: none;
-    color: var(--neutral-foreground-rest);
-  }
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(var(--cards-grid-min-size), 1fr));
+	grid-gap: 2rem;
+	list-style: none;
+    }
+    /* Presentational styles */
+    .card {
+	padding: 0px;
+    }
+    .cards-grid {
+	margin: 2rem;
+	padding: 0px;
+    }
+    .avatar {
+	vertical-align: middle;
+	float: right;
+	width: 30px;
+	height: 30px;
+	margin-top: 5px;
+	border-radius: 50%;
+    }
+    .card-action svg {
+	vertical-align: middle;
+	float: right;
+	height: 20px;
+	color: white;
+	margin-top: 10px;
+	margin-right: 10px;
+	fill: var(--neutral-foreground-rest);
+    }
+    .card-image {
+	height: 100px;
+	width: 100%;
+	margin-top: 25px;
+    }
+    .card-content {
+	padding: 10px 10px 10px;
+	color: var(--neutral-foreground-rest);
+    }
+    .card-text {
+	height: 100px;
+    }
+    .card-header {
+	height: 2em;
+	text-align: center;
+    }
+    footer {
+	padding: .50rem;
+	text-align: center;
+	font-size: .75rem;
+    }
+    #panel-logo {
+	width: 300px;
+    }
+    .card-link {
+	text-decoration: none;
+	color: var(--neutral-foreground-rest);
+    }
   </style>
 </head>
 <body>
-      <fast-design-system-provider id="body-design-provider" use-defaults background-color="#ffffff">
-        <fast-design-system-provider id="header-design-provider" use-defaults background-color="#000000">
-        <section class="header">
+  <fast-design-system-provider id="body-design-provider" use-defaults background-color="#ffffff">
+    <fast-design-system-provider id="header-design-provider" use-defaults background-color="#000000">
+      <section class="header">
         <fast-switch id="theme-switch" style="float: right; padding-top: 1em; padding-right: 2em;" onChange="toggleLightDarkTheme()" checked>
-            <span slot="checked-message">
-                <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
-              </span>
-              <span slot="unchecked-message">
-                <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
-              </span>
+          <span slot="checked-message">
+            <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+          </span>
+          <span slot="unchecked-message">
+            <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
+          </span>
         </fast-switch>
         <fast-tooltip anchor="theme-switch">Click to toggle the Theme</fast-tooltip>
         <div class="header-grid">
-        <h1>
+          <h1>
             <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self"><img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/></fast-anchor>
             <fast-tooltip anchor="title">Click to visit the Panel web site</fast-tooltip>
-        </h1>
-        <article>
-            <h2>Applications running on the server</h2>
-        </article>
+          </h1>
+          <span id="subtitle">Applications running on the server</span>
         </div>
-        </section>
-        </fast-design-system-provider>
-        <section class="search">
-            <fast-text-field id="search-input" placeholder="search" onInput="hideCards(event.target.value)"></fast-text-field>
-        </section>
-        <section id="cards">
-        <ul class="cards-grid">
+      </section>
+    </fast-design-system-provider>
+    <section class="search">
+      <fast-text-field id="search-input" placeholder="search" onInput="hideCards(event.target.value)"></fast-text-field>
+    </section>
+    <section id="cards">
+      <ul class="cards-grid">
         {% for item in sorted(items, key=lambda item: item[1:].replace("_", " ").title()) %}
         <li class="card">
-            <a class="card-link" href=".{{ item }}" id="{{ item }}">
+          <a class="card-link" href=".{{ item }}" id="{{ item }}">
             <fast-card class="gallery-item">
-                <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
-                  <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
-                  <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
-                </svg>
-                <div class="card-content">
-                    <h2 class="card-header">{{ item[1:].replace("_", " ").title() }}</h2>
-                </div>
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">{{ item[1:].replace("_", " ").title() }}</h2>
+              </div>
             </fast-card>
             <fast-tooltip anchor="{{ item }}">Click to start the application</fast-tooltip>
-            </a>
+          </a>
         </li>
         {% end %}
-        </ul>
-        </section>
-        <section>
-        <fast-divider></fast-divider>
-        <footer>
-            <p>Made with &#x1f40d;, &#10084;&#65039;, <fast-anchor href="https://fast.design" appearance="hypertext" target="_blank">Fast</fast-anchor> and <fast-anchor href="https://panel.holoviz.org" appearance="hypertext" target="_blank">Panel</fast-anchor>.</p>
-        </footer>
-        </section>
-    </fast-design-system-provider>
-    <script type="text/javascript">
-        setSwitchFromParams()
-        setSearchFromParams()
-    </script>
+      </ul>
+    </section>
+    <section>
+      <fast-divider></fast-divider>
+      <footer>
+        <p>Made with &#x1f40d;, &#10084;&#65039;, <fast-anchor href="https://fast.design" appearance="hypertext" target="_blank">Fast</fast-anchor> and <fast-anchor href="https://panel.holoviz.org" appearance="hypertext" target="_blank">Panel</fast-anchor>.</p>
+      </footer>
+    </section>
+  </fast-design-system-provider>
+  <script type="text/javascript">
+    setSwitchFromParams()
+    setSearchFromParams()
+  </script>
 </body>
 </html>

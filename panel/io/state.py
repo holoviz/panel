@@ -122,7 +122,9 @@ class _state(param.Parameterized):
     _thread_id_: ClassVar[WeakKeyDictionary[Document, int]] = WeakKeyDictionary()
     _thread_pool = None
 
+    # Jupyter communication
     _comm_manager = _CommManager
+    _kernels = {}
 
     # Locations
     _location: ClassVar[Location | None] = None # Global location, e.g. for notebook context
