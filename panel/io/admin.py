@@ -15,13 +15,15 @@ from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
 from ..config import config
+from ..depends import bind
 from ..layout import (
     Accordion, Column, FlexBox, Row, Tabs,
 )
-from ..models import terminal  # noqa
 from ..pane import HTML, Bokeh
 from ..template import FastListTemplate
-from ..widgets import MultiSelect, Terminal, TextInput
+from ..widgets import (
+    Button, MultiSelect, Tabulator, TextInput,
+)
 from ..widgets.indicators import Trend
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
@@ -49,11 +51,7 @@ class LogFilter(logging.Filter):
         if session_id in log_sessions:
             return False
         elif session_id not in session_filter.options:
-            session_filter.options = session_filter.options + [session_id]
-        if session_filter.value and session_id not in session_filter.value:
-            return False
-        if name_filter.value and name_filter.value not in record.name:
-            return False
+            session_filter.options = [session_id] + session_filter.options
         return True
 
 
@@ -75,6 +73,48 @@ class LogDataHandler(logging.StreamHandler):
         self._data.param.trigger('data')
 
 
+class _LogTabulator(Tabulator):
+
+    _update_defaults = {
+        "theme": "midnight",
+        "layout": "fit_data_stretch",
+        "show_index": False,
+        "sorters": [{'field': 'datetime', 'dir': 'dsc'}],
+        "disabled": True,
+        "pagination": "local",
+        "page_size": 18,
+    }
+
+    def __init__(self, **params):
+        params["value"] = self._create_frame()
+        params = {**self._update_defaults, **params}
+        super().__init__(**params)
+
+    @staticmethod
+    def _create_frame(data=None):
+        columns=["datetime", "level", "app", "session", "message"]
+        if data is None:
+            return pd.DataFrame(columns=columns)
+        else:
+            return pd.Series(data, index=columns)
+
+    def write(self, log):
+        # Example of a log message:
+        # '2022-07-13 14:38:04,803 INFO: panel.io.server - Session 140255299576448 launching\n'
+        try:
+            s = log.strip().split(" ")
+            datetime = f"{s[0]} {s[1]}"
+            level = s[2][:-1]
+            app = s[3]
+            session = int(s[6])
+            message = " ".join(s[7:])
+            df = self._create_frame([datetime, level, app, session, message])
+
+            self.stream(df, follow=False)
+        except Exception:
+            pass
+
+
 # Set up logging
 data = Data()
 log_data_handler = LogDataHandler(data)
@@ -88,11 +128,41 @@ log_handler.addFilter(log_filter)
 log_data_handler.addFilter(log_filter)
 formatter = logging.Formatter('%(asctime)s %(levelname)s: %(name)s - %(message)s')
 log_handler.setFormatter(formatter)
-log_terminal = Terminal(sizing_mode='stretch_both', min_height=400)
+log_terminal = _LogTabulator(sizing_mode='stretch_both', min_height=400)
 log_handler.setStream(log_terminal)
 
 session_filter = MultiSelect(name='Filter by session', options=[])
-name_filter = TextInput(name='Filter by component')
+message_filter = TextInput(name='Filter by message')
+level_filter = MultiSelect(name="Filter by level", options=["DEBUG", "INFO", "WARNING", "ERROR"])
+app_filter = TextInput(name='Filter by app')
+
+def _textinput_filter(df, pattern, column):
+    if not pattern or df.empty:
+        return df
+    return df[df[column].str.contains(pattern)].copy()
+
+log_terminal.add_filter(level_filter, 'level')
+log_terminal.add_filter(bind(_textinput_filter, pattern=app_filter, column='app'))
+log_terminal.add_filter(session_filter, 'session')
+log_terminal.add_filter(bind(_textinput_filter, pattern=message_filter, column='message'))
+
+
+def _clear_log_filters(*events):
+    level_filter.value = []
+    app_filter.value = ""
+    session_filter.value = []
+    message_filter.value = ""
+
+
+reset_filter = Button(name="Clear filters")
+reset_filter.on_click(_clear_log_filters)
+
+
+download_filename, download_button = log_terminal.download_menu(
+    text_kwargs={'name': 'Enter filename for logfile', 'value': 'log.csv'},
+    button_kwargs={'name': 'Download logfile'}
+)
+
 
 EVENT_TYPES = {
     'initializing': 'MediumSeaGreen',
@@ -347,11 +417,21 @@ def get_overview(doc=None):
 
 
 def log_component():
+    # Without this tabulator is empty after reload of website
+    log_terminal.param.trigger("value")
+
     return Column(
         Accordion(
-            ('Filters', Row(
+            ('Filters & Download', Row(
+                level_filter,
+                app_filter,
                 session_filter,
-                name_filter,
+                message_filter,
+                Column(
+                    download_filename,
+                    download_button,
+                    reset_filter,
+                ),
                 sizing_mode='stretch_width'
             )),
             active=[],

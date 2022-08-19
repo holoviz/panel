@@ -476,8 +476,11 @@ class BaseTable(ReactiveData, Widget):
         return values
 
     def _get_data(self) -> Tuple[DataFrameType, DataDict]:
+        return self._process_df_and_convert_to_cds(self.value)
+
+    def _process_df_and_convert_to_cds(self, df: DataFrameType) -> Tuple[DataFrameType, DataDict]:
         import pandas as pd
-        df = self._filter_dataframe(self.value)
+        df = self._filter_dataframe(df)
         if df is None:
             return [], {}
         if isinstance(self.value.index, pd.MultiIndex):
@@ -595,10 +598,10 @@ class BaseTable(ReactiveData, Widget):
                 self.param.trigger('value')
             finally:
                 self._updating = False
-            stream_value = self._filter_dataframe(stream_value)
+            stream_value, stream_data = self._process_df_and_convert_to_cds(stream_value)
             try:
                 self._updating = True
-                self._stream(stream_value, rollover)
+                self._stream(stream_data, rollover)
             finally:
                 self._updating = False
         elif isinstance(stream_value, pd.Series):
@@ -606,10 +609,10 @@ class BaseTable(ReactiveData, Widget):
             if rollover is not None and len(self.value) > rollover:
                 with param.discard_events(self):
                     self.value = self.value.iloc[-rollover:]
-            stream_value = self._filter_dataframe(self.value.iloc[-1:])
+            stream_value, stream_data = self._process_df_and_convert_to_cds(self.value.iloc[-1:])
             try:
                 self._updating = True
-                self._stream(stream_value, rollover)
+                self._stream(stream_data, rollover)
             finally:
                 self._updating = False
         elif isinstance(stream_value, dict):
@@ -1278,7 +1281,7 @@ class Tabulator(BaseTable):
         if self.pagination == 'remote':
             length = self._length
             nrows = self.page_size
-            max_page = length//nrows + bool(length%nrows)
+            max_page = max(length//nrows + bool(length%nrows), 1)
             if self.page != max_page:
                 return
         super()._stream(stream, rollover)
@@ -1291,8 +1294,10 @@ class Tabulator(BaseTable):
         if follow and self.pagination:
             length = self._length
             nrows = self.page_size
-            self.page = length//nrows + bool(length%nrows)
+            self.page = max(length//nrows + bool(length%nrows), 1)
         super().stream(stream_value, rollover, reset_index)
+        if follow and self.pagination:
+            self._update_max_page()
 
     @updating
     def _patch(self, patch):
@@ -1342,7 +1347,7 @@ class Tabulator(BaseTable):
     def _update_max_page(self):
         length = self._length
         nrows = self.page_size
-        max_page = length//nrows + bool(length%nrows)
+        max_page = max(length//nrows + bool(length%nrows), 1)
         self.param.page.bounds = (1, max_page)
         for ref, (model, _) in self._models.items():
             self._apply_update([], {'max_page': max_page}, model, ref)
@@ -1423,7 +1428,7 @@ class Tabulator(BaseTable):
         props.update(self._process_param_change(process))
         if self.pagination:
             length = 0 if self._processed is None else len(self._processed)
-            props['max_page'] = length//self.page_size + bool(length%self.page_size)
+            props['max_page'] = max(length//self.page_size + bool(length%self.page_size), 1)
         if self.frozen_rows and 'height' not in props and 'sizing_mode' not in props:
             length = self.page_size+2 if self.pagination else self._length
             props['height'] = min([length * self.row_height + 30, 2000])
