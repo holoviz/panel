@@ -4,6 +4,7 @@ A module containing testing utilities and fixtures.
 import os
 import re
 import shutil
+import signal
 import tempfile
 import time
 
@@ -277,4 +278,4 @@ def jupyter_server(port, change_test_dir):
     PORT[0] = port
     process.args[-1] = str(port)
     yield process
-    process.kill()
+    os.kill(process.pid, signal.SIGTERM)
