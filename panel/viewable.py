@@ -617,7 +617,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if config.comms in ('vscode', 'ipywidgets'):
             widget = ipywidget(self)
             if hasattr(widget, '_repr_mimebundle_'):
-                return widget._repr_mimebundle_(include, exclude)
+                return widget._repr_mimebundle_(include=include, exclude=exclude)
             plaintext = repr(widget)
             if len(plaintext) > 110:
                 plaintext = plaintext[:110] + '…'
