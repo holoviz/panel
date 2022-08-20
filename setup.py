@@ -136,6 +136,8 @@ _tests = [
     'ipython >=7.0',
     'holoviews',
     'diskcache',
+    # Pins
+    'tornado <6.2' # Issues with jupyter_server (https://github.com/jupyterlab/jupyterlab/issues/12803)
 ]
 
 _ui = [
