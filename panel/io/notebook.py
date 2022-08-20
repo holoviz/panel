@@ -71,7 +71,9 @@ def push(doc: 'Document', comm: 'Comm', binary: bool = True) -> None:
     comm.send(msg.header_json)
     comm.send(msg.metadata_json)
     comm.send(msg.content_json)
-    for header, payload in msg.buffers:
+    for buffer in msg.buffers:
+        header = json.dumps(buffer.ref)
+        payload = buffer.to_bytes()
         comm.send(json.dumps(header))
         comm.send(buffers=[payload])
 

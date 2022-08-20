@@ -5,6 +5,7 @@ import dataclasses
 import datetime as dt
 import inspect
 import logging
+import json
 import threading
 
 from contextlib import contextmanager
@@ -151,7 +152,7 @@ def with_lock(func: Callable) -> Callable:
 def dispatch_tornado(conn, event):
     from tornado.websocket import WebSocketHandler
     socket = conn._socket
-    ws_conn = socket.ws_connection
+    ws_conn = getattr(socket, 'ws_connection', False)
     if not ws_conn or ws_conn.is_closing(): # type: ignore
         return []
     msg = conn.protocol.create('PATCH-DOC', [event])
@@ -161,6 +162,8 @@ def dispatch_tornado(conn, event):
         WebSocketHandler.write_message(socket, msg.content_json)
     ]
     for header, payload in msg._buffers:
+        header = json.dumps(buffer.ref)
+        payload = buffer.to_bytes()
         futures.extend([
             WebSocketHandler.write_message(socket, header),
             WebSocketHandler.write_message(socket, payload, binary=True)
