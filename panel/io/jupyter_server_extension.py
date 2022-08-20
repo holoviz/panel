@@ -29,6 +29,7 @@ import inspect
 import json
 import logging
 import os
+import pathlib
 import time
 import weakref
 
@@ -322,7 +323,7 @@ class PanelJupyterHandler(JupyterHandler):
 
     @tornado.web.authenticated
     async def get(self, path=None):
-        notebook_path = self.notebook_path or path
+        notebook_path = str(pathlib.Path(self.notebook_path or path).absolute())
 
         if (
             self.notebook_path and path

@@ -1,7 +1,9 @@
 """
 A module containing testing utilities and fixtures.
 """
+import atexit
 import os
+import pathlib
 import re
 import shutil
 import signal
@@ -23,22 +25,71 @@ from panel.config import panel_extension
 from panel.io import state
 from panel.pane import HTML, Markdown
 
+CUSTOM_MARKS = ('ui', 'jupyter')
+
+JUPYTER_PORT = 5001
+JUPYTER_TIMEOUT = 15 # s
+JUPYTER_PROCESS = None
+
+def start_jupyter():
+    global JUPYTER_PORT, JUPYTER_PROCESS
+    args = ['jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''"]
+    JUPYTER_PROCESS = process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
+    deadline = time.monotonic() + JUPYTER_TIMEOUT
+    while True:
+        line = process.stderr.readline()
+        time.sleep(0.02)
+        if "http://127.0.0.1:" in line:
+            host = "http://127.0.0.1:"
+            break
+        if "http://localhost:" in line:
+            host = "http://localhost:"
+            break
+        if time.monotonic() > deadline:
+            raise TimeoutError(
+                'jupyter server did not start within {timeout} seconds.'
+            )
+    JUPYTER_PORT = int(line.split(host)[-1][:4])
+
+def cleanup_jupyter():
+    if JUPYTER_PROCESS is not None:
+        os.kill(JUPYTER_PROCESS.pid, signal.SIGTERM)
+
+@pytest.fixture
+def jupyter_preview(request):
+    path = pathlib.Path(request.fspath.dirname)
+    rel = path.relative_to(pathlib.Path(request.config.invocation_dir).absolute())
+    return f'http://localhost:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
+
+atexit.register(cleanup_jupyter)
 
 def pytest_addoption(parser):
     parser.addoption('--ui', action='store_true', dest="ui",
                  default=False, help="enable UI tests")
+    parser.addoption('--jupyter', action='store_true', dest="jupyter",
+                 default=False, help="enable Jupyter tests")
+
 
 def pytest_configure(config):
     config.addinivalue_line(
         "markers", "ui: mark as UI test"
     )
-    if config.option.ui:
-        if getattr(config.option, 'markexpr', None):
-            config.option.markexpr += ' and not ui'
+    config.addinivalue_line(
+        "markers", "jupyter: mark as Jupyter test"
+    )
+    for mark in CUSTOM_MARKS:
+        if getattr(config.option, mark):
+            if getattr(config.option, 'markexpr', None):
+                config.option.markexpr += f' or {mark}'
+            else:
+                setattr(config.option, 'markexpr', mark)
+        elif getattr(config.option, 'markexpr', None):
+            config.option.markexpr += f' and not {mark}'
         else:
-            setattr(config.option, 'markexpr', 'ui')
-    else:
-        setattr(config.option, 'markexpr', 'not ui')
+            setattr(config.option, 'markexpr', f'not {mark}')
+    if getattr(config.option, 'jupyter'):
+        start_jupyter()
+        print("JUPYTER")
 
 @pytest.fixture
 def context(context):
@@ -259,28 +310,3 @@ def change_test_dir(request):
     os.chdir(request.fspath.dirname)
     yield
     os.chdir(request.config.invocation_dir)
-
-@pytest.fixture
-def jupyter_server(port, change_test_dir, timeout=15):
-    args = ['jupyter', 'server', '--port', str(port), "--NotebookApp.token=''"]
-    process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
-    os.set_blocking(process.stderr.fileno(), False)
-    deadline = time.monotonic() + timeout
-    while True:
-        line = process.stderr.readline()
-        time.sleep(0.02)
-        if "http://127.0.0.1:" in line:
-            host = "http://127.0.0.1:"
-            break
-        if "http://localhost:" in line:
-            host = "http://localhost:"
-            break
-        if time.monotonic() > deadline:
-            raise TimeoutError(
-                'jupyter server did not start within {timeout} seconds.'
-            )
-    port = int(line.split(host)[-1][:4])
-    PORT[0] = port
-    time.sleep(2)
-    yield f"http://localhost:{port}"
-    os.kill(process.pid, signal.SIGTERM)
