@@ -8,10 +8,9 @@ import re
 import shutil
 import signal
 import tempfile
-import time
 
 from contextlib import contextmanager
-from subprocess import PIPE, Popen
+from subprocess import Popen
 
 import pytest
 
@@ -32,24 +31,10 @@ JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
 
 def start_jupyter():
-    global JUPYTER_PORT, JUPYTER_PROCESS
-    args = ['jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''"]
-    JUPYTER_PROCESS = process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
-    deadline = time.monotonic() + JUPYTER_TIMEOUT
-    while True:
-        line = process.stderr.readline()
-        time.sleep(0.02)
-        if "http://127.0.0.1:" in line:
-            host = "http://127.0.0.1:"
-            break
-        if "http://localhost:" in line:
-            host = "http://localhost:"
-            break
-        if time.monotonic() > deadline:
-            raise TimeoutError(
-                'jupyter server did not start within {timeout} seconds.'
-            )
-    JUPYTER_PORT = int(line.split(host)[-1][:4])
+    global JUPYTER_PROCESS
+    JUPYTER_PROCESS = Popen([
+        'jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''"
+    ])
 
 def cleanup_jupyter():
     if JUPYTER_PROCESS is not None:
@@ -89,7 +74,6 @@ def pytest_configure(config):
             setattr(config.option, 'markexpr', f'not {mark}')
     if getattr(config.option, 'jupyter'):
         start_jupyter()
-        print("JUPYTER")
 
 @pytest.fixture
 def context(context):
