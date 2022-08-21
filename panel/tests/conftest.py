@@ -7,6 +7,7 @@ import pathlib
 import re
 import shutil
 import signal
+import socket
 import tempfile
 import time
 
@@ -27,9 +28,14 @@ from panel.pane import HTML, Markdown
 
 CUSTOM_MARKS = ('ui', 'jupyter')
 
-JUPYTER_PORT = 8888
+JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
+
+def port_open(port):
+    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    location = ("127.0.0.1", port)
+    return a_socket.connect_ex(location) == 0
 
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
@@ -87,6 +93,8 @@ def pytest_configure(config):
             config.option.markexpr += f' and not {mark}'
         else:
             setattr(config.option, 'markexpr', f'not {mark}')
+    if getattr(config.option, 'jupyter') and not port_open(port):
+        start_jupyter()
 
 
 @pytest.fixture
