@@ -315,16 +315,17 @@ class _config(_base_config):
         else:
             params = []
         session_config = super().__getattribute__('_session_config')
-        if state.curdoc and state.curdoc not in session_config:
-            session_config[state.curdoc] = {}
+        curdoc =state.curdoc
+        if curdoc and curdoc not in session_config:
+            session_config[curdoc] = {}
         if (attr in ('raw_css', 'css_files', 'js_files', 'js_modules') and
-            state.curdoc and attr not in session_config[state.curdoc]):
+            curdoc and attr not in session_config[curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
         if attr in global_params:
             return super().__getattribute__(attr)
-        elif state.curdoc and state.curdoc in session_config and attr in session_config[state.curdoc]:
-            return session_config[state.curdoc][attr]
+        elif curdoc and curdoc in session_config and attr in session_config[curdoc]:
+            return session_config[curdoc][attr]
         elif f'_{attr}' in params and getattr(self, f'_{attr}_') is not None:
             return super().__getattribute__(f'_{attr}_')
         return super().__getattribute__(attr)
