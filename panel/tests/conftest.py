@@ -27,7 +27,7 @@ from panel.pane import HTML, Markdown
 
 CUSTOM_MARKS = ('ui', 'jupyter')
 
-JUPYTER_PORT = 5001
+JUPYTER_PORT = 8888
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
 
@@ -87,8 +87,7 @@ def pytest_configure(config):
             config.option.markexpr += f' and not {mark}'
         else:
             setattr(config.option, 'markexpr', f'not {mark}')
-    if getattr(config.option, 'jupyter'):
-        start_jupyter()
+
 
 @pytest.fixture
 def context(context):
