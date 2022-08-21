@@ -93,7 +93,7 @@ def pytest_configure(config):
             config.option.markexpr += f' and not {mark}'
         else:
             setattr(config.option, 'markexpr', f'not {mark}')
-    if getattr(config.option, 'jupyter') and not port_open(port):
+    if getattr(config.option, 'jupyter') and not port_open(JUPYTER_PORT):
         start_jupyter()
 
 
