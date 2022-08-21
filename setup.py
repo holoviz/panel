@@ -135,9 +135,7 @@ _tests = [
     'pandas >=1.3',
     'ipython >=7.0',
     'holoviews',
-    'diskcache',
-    # Pins
-    'tornado <6.2' # Issues with jupyter_server (https://github.com/jupyterlab/jupyterlab/issues/12803)
+    'diskcache'
 ]
 
 _ui = [
@@ -200,7 +198,7 @@ extras_require['build'] = [
     'param >=1.9.2',
     'pyct >=0.4.4',
     'setuptools >=42',
-    'bokeh >=2.0.0',
+    'bokeh >=2.4.3',
     'pyviz_comms >=0.6.0',
     'bleach',
     'tqdm',
