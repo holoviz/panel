@@ -33,9 +33,11 @@ JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
 
 def port_open(port):
-    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    location = ("127.0.0.1", port)
-    return a_socket.connect_ex(location) == 0
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(1)
+    is_open = sock.connect_ex(("127.0.0.1", port)) == 0
+    sock.close()
+    return is_open
 
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
@@ -68,33 +70,43 @@ def jupyter_preview(request):
     return f'http://localhost:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
 
 atexit.register(cleanup_jupyter)
+optional_markers = {
+    "ui": {
+        "help": "<Command line help text for flag1...>",
+        "marker-descr": "UI test marker",
+        "skip-reason": "Test only runs with the --ui option."
+    },
+    "jupyter": {
+        "help": "Runs Jupyter related tests",
+        "marker-descr": "Jupyter test marker",
+        "skip-reason": "Test only runs with the --jupyter option."
+    }
+}
+
 
 def pytest_addoption(parser):
-    parser.addoption('--ui', action='store_true', dest="ui",
-                 default=False, help="enable UI tests")
-    parser.addoption('--jupyter', action='store_true', dest="jupyter",
-                 default=False, help="enable Jupyter tests")
+    for marker, info in optional_markers.items():
+        parser.addoption("--{}".format(marker), action="store_true",
+                         default=False, help=info['help'])
 
 
 def pytest_configure(config):
-    config.addinivalue_line(
-        "markers", "ui: mark as UI test"
-    )
-    config.addinivalue_line(
-        "markers", "jupyter: mark as Jupyter test"
-    )
-    for mark in CUSTOM_MARKS:
-        if getattr(config.option, mark):
-            if getattr(config.option, 'markexpr', None):
-                config.option.markexpr += f' or {mark}'
-            else:
-                setattr(config.option, 'markexpr', mark)
-        elif getattr(config.option, 'markexpr', None):
-            config.option.markexpr += f' and not {mark}'
-        else:
-            setattr(config.option, 'markexpr', f'not {mark}')
+    for marker, info in optional_markers.items():
+        config.addinivalue_line("markers",
+                                "{}: {}".format(marker, info['marker-descr']))
     if getattr(config.option, 'jupyter') and not port_open(JUPYTER_PORT):
         start_jupyter()
+
+
+def pytest_collection_modifyitems(config, items):
+    for marker, info in optional_markers.items():
+        if not config.getoption("--{}".format(marker)):
+            skip_test = pytest.mark.skip(
+                reason=info['skip-reason'].format(marker)
+            )
+            for item in items:
+                if marker in item.keywords:
+                    item.add_marker(skip_test)
 
 
 @pytest.fixture
