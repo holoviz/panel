@@ -554,7 +554,9 @@ if (
     sys.version_info[:3] >= (3, 8, 0) and
     tornado.version_info >= (6, 1) and
     type(asyncio.get_event_loop_policy()) is asyncio.WindowsSelectorEventLoopPolicy and
-    'jupyter_server' not in sys.modules
+    (('jupyter_server' not in sys.modules and
+      'jupyter_client' not in sys.modules) or
+     'pytest' in sys.modules)
 ):
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
