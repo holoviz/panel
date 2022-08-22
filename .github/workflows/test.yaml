@@ -116,10 +116,16 @@ jobs:
           cache: true
           playwright: true
         id: install
-      - name: enable extension
+      - name: launch jupyter
         run: |
           conda activate test-environment
           jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+          (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
+      - name: Wait for JupyterLab
+        uses: ifaxity/wait-on-action@v1
+        with:
+          resource: http-get://localhost:8887/lab
+          timeout: 180000
       - name: doit test_ui
         run: |
           conda activate test-environment

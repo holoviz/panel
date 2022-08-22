@@ -29,6 +29,7 @@ import inspect
 import json
 import logging
 import os
+import pathlib
 import time
 import weakref
 
@@ -322,7 +323,7 @@ class PanelJupyterHandler(JupyterHandler):
 
     @tornado.web.authenticated
     async def get(self, path=None):
-        notebook_path = self.notebook_path or path
+        notebook_path = str(pathlib.Path(self.notebook_path or path).absolute())
 
         if (
             self.notebook_path and path
@@ -350,9 +351,9 @@ class PanelJupyterHandler(JupyterHandler):
             requested_kernel = None
 
         if requested_kernel:
-            logger.error('Could not start server session, no such kernel %r.', requested_kernel)
             available_kernels = list(self.kernel_manager.kernel_spec_manager.find_kernel_specs())
             if requested_kernel not in available_kernels:
+                logger.error('Could not start server session, no such kernel %r.', requested_kernel)
                 html = KERNEL_ERROR_TEMPLATE.render(
                     base_url=f'{root_url}/',
                     kernels=available_kernels,
