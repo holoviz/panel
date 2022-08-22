@@ -350,16 +350,27 @@ class SessionPrefixHandler:
 # Patch Bokeh DocHandler URL
 class DocHandler(BkDocHandler, SessionPrefixHandler):
 
+    _session_key_funcs = {}
+
     @authenticated
     async def get_session(self):
         from ..config import config
-        if self.request.uri in state._sessions:
-            session = state._sessions[self.request.uri]
-        else:
+        path = self.request.path
+        session = None
+        if path in self._session_key_funcs:
+            key = self._session_key_funcs[path](self.request)
+            session = state._sessions.get(key)
+        if session is None:
             session = await super().get_session()
-            if config.reuse_sessions:
-                with set_curdoc(session.document):
-                    state._sessions[self.request.uri] = session
+            with set_curdoc(session.document):
+                if config.reuse_sessions:
+                    key_func = config.session_key_func or (lambda r: path)
+                    if key_func:
+                        self._session_key_funcs[path] = key_func
+                        key = key_func(self.request)
+                    else:
+                        key = path
+                    state._sessions[key] = session
                     session.block_expiration()
         return session
 
@@ -367,8 +378,13 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
     async def get(self, *args, **kwargs):
         app = self.application
         with self._session_prefix():
+            key_func = self._session_key_funcs.get(self.request.path)
+            if key_func:
+                old_request = key_func(self.request) in state._sessions
+            else:
+                old_request = False
             session = await self.get_session()
-            if state._sessions.get(self.request.uri) is session:
+            if old_request and state._sessions.get(key_func(self.request)) is session:
                 session_id = generate_session_id(
                     secret_key=self.application.secret_key,
                     signed=self.application.sign_sessions

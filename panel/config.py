@@ -156,7 +156,13 @@ class _config(_base_config):
         the initial page render. Note that if the initial page differs
         between sessions, e.g. because it uses query parameters to modify
         the rendered content, then this option will result in the wrong
-        content being rendered.""")
+        content being rendered. Define a session_key_func to ensure that
+        reused sessions are only reused when appropriate.""")
+
+    session_key_func = param.Callable(default=None, doc="""
+        Used in conjunction with the reuse_sessions option, the
+        session_key_func is given a tornado.httputil.HTTPServerRequest
+        and should return a key that uniquely captures a session.""")
 
     safe_embed = param.Boolean(default=False, doc="""
         Ensure all bokeh property changes trigger events which are
