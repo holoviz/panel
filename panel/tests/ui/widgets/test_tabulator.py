@@ -2656,11 +2656,14 @@ def test_tabulator_edit_event_and_header_filters(page, port):
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
+@pytest.mark.parametrize('header_filter', ['header_filter', 'no_header_filter'])
 @pytest.mark.parametrize('pagination', ['remote', 'local', 'no_pagination'])
-def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pagination):
+def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, header_filter, pagination):
     sorter_col = 'col3'
     python_filter_col = 'col2'
     python_filter_val = 'd'
+    header_filter_col = 'col1'
+    header_filter_val = 'Y'
     target_col = 'col4'
     target_val = 'F'
     new_val = 'FF'
@@ -2677,6 +2680,8 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pa
     kwargs = {}
     if pagination != 'no_pagination':
         kwargs = dict(pagination=pagination, page_size=2)
+    if header_filter == 'header_filter':
+        kwargs.update(dict(header_filters={header_filter_col: {'type': 'input', 'func': 'like'}}))
 
     widget = Tabulator(df, **kwargs)
 
@@ -2701,6 +2706,13 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pa
         s.click()
         page.wait_for_timeout(200)
 
+    if header_filter == 'header_filter':
+        str_header = page.locator('input[type="search"]')
+        str_header.click()
+        str_header.fill(header_filter_val)
+        str_header.press('Enter')
+        wait_until(page, lambda: len(widget.filters) == 1)
+
     if pagination != 'no_pagination' and sorter == 'no_sorter':
         page.locator('text="Last"').click()
         page.wait_for_timeout(200)
@@ -2722,6 +2734,8 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pa
         expected_current_view = widget.value
     if python_filter == 'python_filter':
         expected_current_view = expected_current_view.query(f'{python_filter_col} == @python_filter_val')
+    elif header_filter == 'header_filter':
+        expected_current_view = expected_current_view.query(f'{header_filter_col} == @header_filter_val')
     assert widget.current_view.equals(expected_current_view)
 
 
