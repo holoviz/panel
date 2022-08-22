@@ -406,7 +406,6 @@ class Pipeline(Viewer):
         self.stage.loading = True
         try:
             self.stage[0] = self._init_stage()
-            self.stage.loading = False
         except Exception as e:
             self._error = self._stage
             self._stage = prev_stage
@@ -428,6 +427,7 @@ class Pipeline(Viewer):
                 self._next()
         finally:
             self._update_progress()
+            self.stage.loading = False
 
     @param.depends('previous', watch=True)
     def _previous(self):
