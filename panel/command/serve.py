@@ -177,7 +177,7 @@ class Serve(_BkServe):
         ('--profiler', dict(
             action  = 'store',
             type    = str,
-            help    = "The profiler to use by default, e.g. pyinstrument or snakeviz."
+            help    = "The profiler to use by default, e.g. pyinstrument, snakeviz or memray."
         )),
         ('--autoreload', dict(
             action  = 'store_true',
