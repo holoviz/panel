@@ -1074,6 +1074,18 @@ class Tabulator(BaseTable):
     def _set_explicict_pagination(self):
         self._explicit_pagination = True
 
+    @staticmethod
+    def _validate_iloc(idx, iloc):
+        # Validate that the index returned by Pandas get_loc is a single int,
+        # as get_loc can return a slice or a mask array when it finds more
+        # than one locations.
+        if not isinstance(iloc, int):
+            raise ValueError(
+                'The Tabulator widget expects the provided `value` Pandas DataFrame '
+                'to have unique indexes, in particular when it has to deal with '
+                f'click or edit events. Found this duplicate index: {idx!r}'
+            )
+
     def _validate(self, *events):
         super()._validate(*events)
         if self.value is not None:
@@ -1108,22 +1120,10 @@ class Tabulator(BaseTable):
             old_processed = self._sort_df(self._old)
             event.old = old_processed[event_col].iloc[event_row]
         # We want to return the index of the original `value` dataframe.
-        # However:
-        # - when Python filters are activated the front-end doesn't have access
-        # to the whole dataframe and so returns the index of the filtered
-        # dataframe
-        # - when pagination is remote and client-sorters are set (TODO)
         if self._filters or self.filters or self.sorters:
             idx = processed.index[event.row]
             iloc = self.value.index.get_loc(idx)
-            # get_loc can return a slice or a mask array when it finds more
-            # than one locations.
-            if not isinstance(iloc, int):
-                raise ValueError(
-                    'The Tabulator widget expects the provided `value` Pandas DataFrame '
-                    'to have unique indexes, in particular when it has to deal with '
-                    'click or edit events. Found this duplicate index: {idx!r}'
-                )
+            self._validate_iloc(idx, iloc)
             event.row = iloc
         if event.event_name == 'table-edit':
             for cb in self._on_edit_callbacks:
@@ -1411,7 +1411,9 @@ class Tabulator(BaseTable):
             indices = []
             for v in index.values:
                 try:
-                    indices.append(self._processed.index.get_loc(v))
+                    iloc = self._processed.index.get_loc(v)
+                    self._validate_iloc(v ,iloc)
+                    indices.append(iloc)
                 except KeyError:
                     continue
             nrows = self.page_size
@@ -1442,8 +1444,7 @@ class Tabulator(BaseTable):
                 indices = []
                 for v in idx.values:
                     iloc = self.value.index.get_loc(v)
-                    if not isinstance(iloc, int):
-                        raise ValueError()
+                    self._processed.index.get_loc(v)
                     indices.append(iloc)
             self.selection = indices
             return
@@ -1453,7 +1454,9 @@ class Tabulator(BaseTable):
         indices = []
         for v in index.values:
             try:
-                indices.append(self.value.index.get_loc(v))
+                iloc = self.value.index.get_loc(v)
+                self._validate_iloc(v, iloc)
+                indices.append(iloc)
             except KeyError:
                 continue
         self.selection = indices

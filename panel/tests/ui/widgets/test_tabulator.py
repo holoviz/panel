@@ -2727,7 +2727,7 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pa
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
-@pytest.mark.parametrize('header_filter', ['header_filter', 'no_header_filter'])  # TODO: add header_filter
+@pytest.mark.parametrize('header_filter', ['header_filter', 'no_header_filter'])
 @pytest.mark.parametrize('pagination', ['remote', 'local', 'no_pagination'])
 def test_tabulator_click_event_selection_integrations(page, port, sorter, python_filter, header_filter, pagination):
     sorter_col = 'col3'
