@@ -353,13 +353,14 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
     @authenticated
     async def get_session(self):
         from ..config import config
-        if config.reuse_sessions and self.request.uri in state._sessions:
+        if self.request.uri in state._sessions:
             session = state._sessions[self.request.uri]
         else:
             session = await super().get_session()
             if config.reuse_sessions:
-                state._sessions[self.request.uri] = session
-                session.block_expiration()
+                with set_curdoc(session.document):
+                    state._sessions[self.request.uri] = session
+                    session.block_expiration()
         return session
 
     @authenticated
@@ -382,17 +383,14 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                 )
             else:
                 token = session.token
-            state.curdoc = session.document
-            logger.info(LOG_SESSION_CREATED, id(session.document))
-            try:
+            with set_curdoc(session.document):
+                logger.info(LOG_SESSION_CREATED, id(session.document))
                 resources = Resources.from_bokeh(self.application.resources())
                 page = server_html_page_for_session(
                     session, resources=resources, title=session.document.title,
                     token=token, template=session.document.template,
                     template_variables=session.document.template_variables,
                 )
-            finally:
-                state.curdoc = None
         self.set_header("Content-Type", 'text/html')
         self.write(page)
 
