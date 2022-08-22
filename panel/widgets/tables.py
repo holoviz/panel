@@ -1093,25 +1093,28 @@ class Tabulator(BaseTable):
 
     def _process_event(self, event):
         event_col = self._renamed_cols.get(event.column, event.column)
+        processed = self._sort_df(self._processed)
         if self.pagination == 'remote':
             nrows = self.page_size
             event.row = event.row+(self.page-1)*nrows
+        event_row = event.row
         if event_col not in self.buttons:
-            if event_col not in self._processed.columns:
-                event.value = self._processed.index[event.row]
+            if event_col not in processed.columns:
+                event.value = processed.index[event_row]
             else:
-                event.value = self._processed[event_col].iloc[event.row]
+                event.value = processed[event_col].iloc[event_row]
         # Set the old attribute on a table edit event
         if event.event_name == 'table-edit' and self._old is not None:
-            event.old = self._old[event_col].iloc[event.row]
+            old_processed = self._sort_df(self._old)
+            event.old = old_processed[event_col].iloc[event_row]
         # We want to return the index of the original `value` dataframe.
         # However:
         # - when Python filters are activated the front-end doesn't have access
         # to the whole dataframe and so returns the index of the filtered
         # dataframe
         # - when pagination is remote and client-sorters are set (TODO)
-        if self._filters or (self.pagination == 'remote' and self.sorters):
-            idx = self._processed.index[event.row]
+        if self._filters or self.filters or self.sorters:
+            idx = processed.index[event.row]
             iloc = self.value.index.get_loc(idx)
             # get_loc can return a slice or a mask array when it finds more
             # than one locations.
@@ -1433,16 +1436,15 @@ class Tabulator(BaseTable):
 
     def _update_selection(self, indices: List[int]):
         if self.pagination != 'remote':
-            if self._filters:
-                print('In filters')
-                idx = self._processed.iloc[indices].index
+            if self._filters or self.filters or self.sorters:
+                processed = self._sort_df(self._processed) if self.sorters else self._processed
+                idx = processed.iloc[indices].index
                 indices = []
                 for v in idx.values:
                     iloc = self.value.index.get_loc(v)
                     if not isinstance(iloc, int):
                         raise ValueError()
                     indices.append(iloc)
-                print('In filters', indices)
             self.selection = indices
             return
         nrows = self.page_size

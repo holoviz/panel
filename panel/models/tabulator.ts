@@ -803,8 +803,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           tab_column.headerSortStartingDir = sort.dir
       }
       tab_column.cellClick = (_: any, cell: any) => {
-        const index = cell._cell.row.data._index;
-        this.model.trigger_event(new CellClickEvent(column.field, index))
+        const index_processed = cell.getRow().getPosition(true)
+        this.model.trigger_event(new CellClickEvent(column.field, index_processed))
       }
       if (config_columns == null)
         columns.push(tab_column)
@@ -817,8 +817,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         formatter: button_formatter,
         hozAlign: "center",
         cellClick: (_: any, cell: any) => {
-          const index = cell._cell.row.data._index;
-          this.model.trigger_event(new CellClickEvent(col, index))
+          const index_processed = cell.getRow().getPosition(true)
+          this.model.trigger_event(new CellClickEvent(col, index_processed))
         }
       }
       columns.push(button_column)
@@ -1048,7 +1048,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       return
     let indices: number[] = []
     const selected = this.model.source.selected
-    const index: number = row._row.data._index
+    const index: number = row.getPosition(true)
     if (e.ctrlKey || e.metaKey) {
       indices = this.model.source.selected.indices
     } else if (e.shiftKey && selected.indices.length) {
@@ -1107,6 +1107,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   cellEdited(cell: any): void {
     const field = cell._cell.column.field;
+    // true to get the position of the filtered/sorted row index
+    const index_processed = cell.getRow().getPosition(true);
     const index = cell._cell.row.data._index;
     const value = cell._cell.value;
     this._tabulator_cell_updating = true
@@ -1117,7 +1119,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       comm_settings.debounce = true
       this._tabulator_cell_updating = false
     }
-    this.model.trigger_event(new TableEditEvent(field, index))
+    this.model.trigger_event(new TableEditEvent(field, index_processed))
     this.tabulator.scrollToRow(index, "top", false)
   }
 }

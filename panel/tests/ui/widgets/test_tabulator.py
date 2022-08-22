@@ -2538,6 +2538,82 @@ def test_tabulator_edit_event_sorters_not_automatically_applied(page, port, df_m
     wait_until(page, lambda: tabulator_column_values(page, 'str') == expected_vals)
 
 
+def test_tabulator_click_event_and_header_filters(page, port):
+    df = pd.DataFrame({
+        'col1': list('ABCDD'),
+        'col2': list('XXXXZ'),
+    })
+    widget = Tabulator(
+        df,
+        header_filters={'col1': {'type': 'input', 'func': 'like'}},
+    )
+
+    values = []
+    widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Set a filter on col1
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    str_header.fill('D')
+    str_header.press('Enter')
+    wait_until(page, lambda: len(widget.filters) == 1)
+
+    # Click on the last cell
+    cell = page.locator('text="Z"')
+    cell.click()
+
+    wait_until(page, lambda: len(values) == 1)
+    # This cell was at index 4 in col2 of the original dataframe
+    assert values[0] == ('col2', 4, 'Z')
+
+
+def test_tabulator_edit_event_and_header_filters_last_row(page, port):
+    df = pd.DataFrame({
+        'col1': list('ABCDD'),
+        'col2': list('XXXXZ'),
+    })
+    widget = Tabulator(
+        df,
+        header_filters={'col1': {'type': 'input', 'func': 'like'}},
+    )
+
+    values = []
+    widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Set a filter on col1
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    str_header.fill('D')
+    str_header.press('Enter')
+    wait_until(page, lambda: len(widget.filters) == 1)
+
+    # Click on the last cell
+    cell = page.locator('text="Z"')
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("ZZ")
+    editable_cell.press('Enter')
+
+    wait_until(page, lambda: len(values) == 1)
+    # This cell was at index 4 in col2 of the original dataframe
+    assert values[0] == ('col2', 4, 'Z', 'ZZ')
+    assert df['col2'].iloc[-1] == 'ZZ'
+    assert widget.value.equals(df)
+    assert widget.current_view.equals(df.query('col1 == "D"'))
+
+
 def test_tabulator_edit_event_and_header_filters(page, port):
     df = pd.DataFrame({
         'col1': list('aaabcd'),
@@ -2651,7 +2727,7 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pa
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
-@pytest.mark.parametrize('header_filter', ['no_header_filter'])  # TODO: add header_filter
+@pytest.mark.parametrize('header_filter', ['header_filter', 'no_header_filter'])  # TODO: add header_filter
 @pytest.mark.parametrize('pagination', ['remote', 'local', 'no_pagination'])
 def test_tabulator_click_event_selection_integrations(page, port, sorter, python_filter, header_filter, pagination):
     sorter_col = 'col3'
@@ -2699,15 +2775,15 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
         s.click()
         page.wait_for_timeout(200)
 
-    if pagination != 'no_pagination' and sorter == 'no_sorter':
-        page.locator('text="Last"').click()
-        page.wait_for_timeout(200)
-
     if header_filter == 'header_filter':
         str_header = page.locator('input[type="search"]')
         str_header.click()
         str_header.fill(header_filter_val)
         str_header.press('Enter')
+        wait_until(page, lambda: len(widget.filters) == 1)
+
+    if pagination != 'no_pagination' and sorter == 'no_sorter':
+        page.locator('text="Last"').click()
         page.wait_for_timeout(200)
 
     # Click on the cell
