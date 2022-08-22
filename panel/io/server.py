@@ -17,6 +17,7 @@ import threading
 import traceback
 import uuid
 import warnings
+import weakref
 
 from collections import OrderedDict
 from contextlib import contextmanager
@@ -221,6 +222,19 @@ def destroy_document(self, session):
     self.models.destroy()
     self.modules.destroy()
 
+    # Clear periodic callbacks
+    for cb in state._periodic.get(self, []):
+        cb.stop()
+
+    # Clean up pn.state to avoid tasks getting executed on dead session
+    for attr in dir(state):
+        if not attr.startswith('_'):
+            continue
+        state_obj = getattr(state, attr)
+        if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
+            del state_obj[self]
+
+    # Schedule GC
     at = dt.datetime.now() + dt.timedelta(seconds=5)
     state.schedule_task('gc.collect', gc.collect, at=at)
 
