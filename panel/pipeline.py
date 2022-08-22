@@ -9,7 +9,7 @@ import param
 from .layout import (
     Column, HSpacer, Row, VSpacer,
 )
-from .pane import HoloViews, Markdown, Pane
+from .pane import GIF, HoloViews, Markdown
 from .param import Param
 from .util import param_reprs
 from .viewable import Viewer
@@ -206,7 +206,7 @@ class Pipeline(Viewer):
             sizing_mode='stretch_width'
         )
         self.network.object = self._make_progress()
-        spinner = Pane(os.path.join(os.path.dirname(__file__), 'assets', 'spinner.gif'))
+        spinner = GIF(os.path.join(os.path.dirname(__file__), 'assets', 'spinner.gif'))
         self._spinner_layout = Row(
             HSpacer(),
             Column(VSpacer(), spinner, VSpacer()),
