@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import datetime as dt
 import inspect
+import logging
 import threading
 
 from contextlib import contextmanager
@@ -17,6 +19,8 @@ from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
 
 from .model import monkeypatch_events
 from .state import curdoc_locked, set_curdoc, state
+
+logger = logging.getLogger(__name__)
 
 #---------------------------------------------------------------------
 # Private API
@@ -121,7 +125,7 @@ def unlocked() -> Iterator:
     if (curdoc is None or session_context is None or session is None):
         yield
         return
-    from tornado.websocket import WebSocketHandler
+    from tornado.websocket import WebSocketClosedError, WebSocketHandler
     connections = session._subscribed_connections
 
     hold = curdoc.callbacks.hold_value
@@ -142,7 +146,7 @@ def unlocked() -> Iterator:
 
         events = curdoc.callbacks._held_events
         monkeypatch_events(events)
-        remaining_events = []
+        remaining_events, futures = [], []
         for event in events:
             if not isinstance(event, ModelChangedEvent) or event in old_events or locked:
                 remaining_events.append(event)
@@ -154,12 +158,26 @@ def unlocked() -> Iterator:
                     ws_conn is None or (ws_conn and ws_conn.is_closing())): # type: ignore
                     continue
                 msg = conn.protocol.create('PATCH-DOC', [event])
-                WebSocketHandler.write_message(socket, msg.header_json)
-                WebSocketHandler.write_message(socket, msg.metadata_json)
-                WebSocketHandler.write_message(socket, msg.content_json)
+                futures.extend([
+                    WebSocketHandler.write_message(socket, msg.header_json),
+                    WebSocketHandler.write_message(socket, msg.metadata_json),
+                    WebSocketHandler.write_message(socket, msg.content_json)
+                ])
                 for header, payload in msg._buffers:
-                    WebSocketHandler.write_message(socket, header)
-                    WebSocketHandler.write_message(socket, payload, binary=True)
+                    futures.extend([
+                        WebSocketHandler.write_message(socket, header),
+                        WebSocketHandler.write_message(socket, payload, binary=True)
+                    ])
+
+        # Ensure that all write_message calls are awaited and handled
+        async def handle_write_errors():
+            for future in futures:
+                try:
+                    await future
+                except WebSocketClosedError:
+                    logger.warning("Failed sending message as connection was closed")
+        asyncio.ensure_future(handle_write_errors())
+
         curdoc.callbacks._held_events = remaining_events
     finally:
         if hold:
