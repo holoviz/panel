@@ -60,23 +60,22 @@ def render_memray(name, sessions, show_memory_leaks=True, merge_threads=True, re
     with tempfile.NamedTemporaryFile() as nf:
         nf.write(session)
         reader = FileReader(nf.name)
-    if show_memory_leaks:
-        snapshot = reader.get_leaked_allocation_records(
-            merge_threads=merge_threads if merge_threads is not None else True
-        )
-    else:
-        snapshot = reader.get_high_watermark_allocation_records(
-            merge_threads=merge_threads if merge_threads is not None else True
-        )
-    memory_records = tuple(reader.get_memory_records())
+        if show_memory_leaks:
+            snapshot = reader.get_leaked_allocation_records(
+                merge_threads=merge_threads if merge_threads is not None else True
+            )
+        else:
+            snapshot = reader.get_high_watermark_allocation_records(
+                merge_threads=merge_threads if merge_threads is not None else True
+            )
 
-    kwargs = {'native_traces': reader.has_native_traces}
-    if reporter in ('flamegraph', 'table'):
-        kwargs['memory_records'] = memory_records
-    reporter_inst = reporter_cls.from_snapshot(
-        snapshot,
-        **kwargs
-    )
+        kwargs = {'native_traces': reader.metadata.has_native_traces}
+        if reporter in ('flamegraph', 'table'):
+            kwargs['memory_records'] = tuple(reader.get_memory_snapshots())
+        reporter_inst = reporter_cls.from_snapshot(
+            snapshot,
+            **kwargs
+        )
 
     out = io.StringIO()
     if reporter == 'flamegraph':
