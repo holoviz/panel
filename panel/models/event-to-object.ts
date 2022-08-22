@@ -26,7 +26,7 @@ export function serializeEvent(event: any): any {
   const data: any = {};
 
   // support for CustomEvents: the whole `detail` object is serialized
-  if (Object.getPrototypeOf(event).initCustomEvent !== undefined) {
+  if (event.detail !== undefined) {
     Object.assign(data, { detail: event.detail } );
   }
 
