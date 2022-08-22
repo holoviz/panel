@@ -21,8 +21,10 @@ from bokeh.models import LinearColorMapper
 from bokeh.util.serialization import make_globally_unique_id
 from pyviz_comms import JupyterComm
 
+from ...param import ParamMethod
 from ...util import isfile, lazy_load
-from ..base import Pane, PaneBase
+from ..base import PaneBase
+from ..plot import Bokeh
 from .enums import PRESET_CMAPS
 
 if TYPE_CHECKING:
@@ -308,10 +310,11 @@ class BaseVTKRenderWindow(AbstractVTK):
 
     def construct_colorbars(self, infer=True):
         if infer:
-            color_mappers = self.get_color_mappers(infer)
-            return Pane(self._construct_colorbars(color_mappers))
+            color_mappers = self.get_color_mappers(infer=True)
+            model = self._construct_colorbars(color_mappers)
+            return Bokeh(model)
         else:
-            return Pane(self._construct_colorbars)
+            return ParamMethod(self._construct_colorbars)
 
     def export_scene(self, filename='vtk_scene', all_data_arrays=False):
         if '.' not in filename:
