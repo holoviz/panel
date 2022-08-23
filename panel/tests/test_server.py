@@ -465,11 +465,9 @@ def test_server_thread_pool_bokeh_event(threads, port):
     requests.get(f"http://localhost:{port}/")
 
     model = list(tabulator._models.values())[0][0]
-    doc = model.document
     event = TableEditEvent(model, 'A', 0)
-    with set_curdoc(doc):
-        for _ in range(3):
-            tabulator._server_event(doc, event)
+    for _ in range(5):
+        tabulator._server_event(model.document, event)
 
     # Wait for callbacks to be scheduled
     time.sleep(1)
@@ -479,8 +477,6 @@ def test_server_thread_pool_bokeh_event(threads, port):
 
 
 def test_server_thread_pool_periodic(threads, port):
-    button = Button(name='Click')
-
     counts = []
 
     def cb(count=[0]):
@@ -489,16 +485,17 @@ def test_server_thread_pool_periodic(threads, port):
         time.sleep(0.5)
         count[0] -= 1
 
-    serve(button, port=port, threaded=True, show=False)
+    def app():
+        button = Button(name='Click')
+        state.add_periodic_callback(cb, 100)
+        return button
+
+    serve(app, port=port, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
 
     requests.get(f"http://localhost:{port}/")
-
-    doc = list(button._models.values())[0][0].document
-    with set_curdoc(doc):
-        state.add_periodic_callback(cb, 100)
 
     # Wait for callbacks to be scheduled
     time.sleep(1)
@@ -522,8 +519,8 @@ def test_server_thread_pool_onload(threads, port):
 
         # Simulate rendering
         def loaded():
-            state._schedule_on_load(None)
-        state.curdoc.add_next_tick_callback(loaded)
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
 
         return button
 

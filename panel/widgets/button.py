@@ -4,7 +4,6 @@ events or merely toggling between on-off states.
 """
 from __future__ import annotations
 
-from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
     Type,
@@ -54,10 +53,7 @@ class _ClickButton(_ButtonBase):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
-        if comm:
-            model.on_event(self._event, self._comm_event)
-        else:
-            model.on_event(self._event, partial(self._server_event, doc))
+        self._register_events(self._event, model=model, doc=doc, comm=comm)
         return model
 
     def js_on_click(self, args: Dict[str, Any] = {}, code: str = "") -> Callback:
