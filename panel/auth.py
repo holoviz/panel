@@ -13,7 +13,6 @@ import pkg_resources
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
-from jinja2 import Environment, FileSystemLoader
 from tornado.auth import OAuth2Mixin
 from tornado.httpclient import HTTPError, HTTPRequest
 from tornado.httputil import url_concat
@@ -21,7 +20,7 @@ from tornado.web import RequestHandler
 
 from .config import config
 from .io import state
-from .io.resources import ERROR_TEMPLATE
+from .io.resources import ERROR_TEMPLATE, _env
 from .util import base64url_decode, base64url_encode
 
 log = logging.getLogger(__name__)
@@ -783,12 +782,12 @@ class LogoutHandler(tornado.web.RequestHandler):
 
 class OAuthProvider(AuthProvider):
 
-    def __init__(self, error_template=None):
-        if error_template is None:
-            self._error_template = None
+    def __init__(self):
+        if config.auth_template is None:
+            self._error_template = ERROR_TEMPLATE
         else:
-            env = Environment(loader=FileSystemLoader(os.path.abspath('.')))
-            self._error_template = env.get_template(error_template)
+            with open(config.auth_template) as f:
+                self._error_template = _env.from_string(f.read())
         super().__init__()
 
     @property

@@ -7,6 +7,7 @@ import ast
 import base64
 import logging
 import os
+import pathlib
 
 from glob import glob
 from types import ModuleType
@@ -144,6 +145,11 @@ class Serve(_BkServe):
             type    = float,
             help    = "Expiry off the OAuth cookie in number of days.",
             default = 1
+        )),
+        ('--auth-template', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Template to serve when user is unauthenticated."
         )),
         ('--rest-provider', dict(
             action = 'store',
@@ -351,6 +357,14 @@ class Serve(_BkServe):
                 )
             config.nthreads = args.num_threads
 
+        if args.auth_template:
+            authpath = pathlib.Path(args.auth_template)
+            if not authpath.isfile():
+                raise ValueError(
+                    "The supplied auth-template {args.auth_template} does not "
+                    "exist, ensure you supply and existing Jinja2 template."
+                )
+            config.auth_template = str(authpath.absolute())
         if args.oauth_provider and config.oauth_provider:
                 raise ValueError(
                     "Supply OAuth provider either using environment variable "
