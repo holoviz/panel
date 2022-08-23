@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 import os
 import pathlib
@@ -149,7 +150,6 @@ def test_server_async_callbacks(port):
     counts = []
 
     async def cb(event, count=[0]):
-        import asyncio
         count[0] += 1
         counts.append(count[0])
         await asyncio.sleep(1)
@@ -175,6 +175,36 @@ def test_server_async_callbacks(port):
     # Ensure multiple callbacks started concurrently
     assert max(counts) > 1
 
+
+def test_server_async_local_state(port):
+    docs = {}
+
+    async def task():
+        curdoc = state.curdoc
+        await asyncio.sleep(0.5)
+        docs[curdoc] = []
+        for i in range(10):
+            await asyncio.sleep(0.1)
+            docs[curdoc].append(state.curdoc)
+
+    def app():
+        state.execute(task)
+        return 'My app'
+
+    serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    for i in range(5):
+        requests.get(f"http://localhost:{port}/")
+
+    # Wait for callbacks to be scheduled
+    time.sleep(2)
+
+    # Ensure state.curdoc was consistent despite asyncio context switching
+    assert len(docs) == 5
+    assert all([len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items()])
 
 def test_serve_config_per_session_state():
     CSS1 = 'body { background-color: red }'

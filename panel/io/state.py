@@ -325,10 +325,12 @@ class _state(param.Parameterized):
         from .profile import profile_ctx
         with set_curdoc(doc):
             if (doc and doc in self._launching) or not config.profiler:
-                for cb in callbacks: cb()
+                for cb in callbacks:
+                    self.execute(cb, schedule=False)
                 return
             with profile_ctx(config.profiler) as sessions:
-                for cb in callbacks: cb()
+                for cb in callbacks:
+                    self.execute(cb, schedule=False)
             path = doc.session_context.request.path
             self._profiles[(path+':on_load', config.profiler)] += sessions
             self.param.trigger('_profiles')
@@ -565,15 +567,20 @@ class _state(param.Parameterized):
             msg = LOG_USER_MSG.format(msg=msg)
         getattr(_state_logger, level.lower())(msg, *args)
 
-    def onload(self, callback):
+    def onload(self, callback: Callable[[], None] | Coroutine[Any, Any, None]):
         """
         Callback that is triggered when a session has been served.
+
+        Arguments
+        ---------
+        callback: Callable[[], None] | Coroutine[Any, Any, None]
+           Callback that is executed when the application is loaded
         """
         if self.curdoc is None:
             if self._thread_pool:
-                self._thread_pool.submit(callback)
+                self._thread_pool.submit(partial(self.execute, callback, schedule=False))
             else:
-                callback()
+                self.execute(callback, schedule=False)
             return
         if self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
@@ -802,23 +809,34 @@ class _state(param.Parameterized):
     def _curdoc(self) -> Document | None:
         """
         Required to make overrides to curdoc (e.g. using the
-        set_curdoc context manager) thread-safe. Otherwise two threads
-        may independently override the curdoc and end up in a confused
-        final state.
+        set_curdoc context manager) thread-safe and asyncio task
+        local. Otherwise two threads may independently override the
+        curdoc and end up in a confused final state.
         """
+        try:
+            task = asyncio.current_task()
+            task_id = id(task)
+        except Exception:
+            task_id = None
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
-        return self._curdoc_.get(thread_id)
+        return self._curdoc_.get((thread_id, task_id))
 
     @_curdoc.setter
     def _curdoc(self, doc: Document | None) -> None:
+        try:
+            task = asyncio.current_task()
+            task_id = id(task)
+        except Exception:
+            task_id = None
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
+        key = (thread_id, task_id)
         if doc is None:
-            if thread_id in self._curdoc_:
-                del self._curdoc_[thread_id]
+            if key in self._curdoc_:
+                del self._curdoc_[key]
         else:
-            self._curdoc_[thread_id] = doc
+            self._curdoc_[key] = doc
 
     @property
     def cookies(self) -> Dict[str, str]:
