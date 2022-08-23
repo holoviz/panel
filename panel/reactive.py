@@ -336,13 +336,14 @@ class Syncable(Renderable):
             with edit_readonly(state):
                 state.busy = busy
 
-    def _process_bokeh_event(self, event: Event) -> None:
+    def _process_bokeh_event(self, doc: Document, event: Event) -> None:
         self._log('received bokeh event %s', event)
         busy = state.busy
         with edit_readonly(state):
             state.busy = True
         try:
-            self._process_event(event)
+            with set_curdoc(doc):
+                self._process_event(event)
         finally:
             self._log('finished processing bokeh event %s', event)
             with edit_readonly(state):
@@ -357,19 +358,15 @@ class Syncable(Renderable):
 
     async def _event_coroutine(self, event, doc: Document) -> None:
         if state._thread_pool:
-            state._thread_pool.submit(self._process_bokeh_event, event)
+            state._thread_pool.submit(self._process_bokeh_event, doc, event)
         else:
-            with set_curdoc(doc):
-                self._process_bokeh_event(event)
+            self._process_bokeh_event(doc, event)
 
-    def _change_event(self, doc: Document = None) -> None:
-        try:
-            state.curdoc = doc
-            events = self._events
-            self._events = {}
+    def _change_event(self, doc: Document) -> None:
+        events = self._events
+        self._events = {}
+        with set_curdoc(doc):
             self._process_events(events)
-        finally:
-            state.curdoc = None
 
     def _schedule_change(self, doc: Document, comm: Comm | None) -> None:
         with hold(doc, comm=comm):
@@ -391,11 +388,16 @@ class Syncable(Renderable):
         else:
             self._schedule_change(doc, comm)
 
-    def _comm_event(self, event: Event) -> None:
+    def _comm_event(self, doc: Document, event: Event) -> None:
         if state._thread_pool:
-            state._thread_pool.submit(self._process_bokeh_event, event)
+            state._thread_pool.submit(self._process_bokeh_event, doc, event)
         else:
-            self._process_bokeh_event(event)
+            self._process_bokeh_event(doc, event)
+
+    def _register_events(self, *event_names: str, model: Model, doc: Document, comm: Comm | None) -> None:
+        for event_name in event_names:
+            method = self._comm_event if comm else self._server_event
+            model.on_event(event_name, partial(method, doc))
 
     def _server_event(self, doc: Document, event: Event) -> None:
         if doc.session_context and not state._unblocked(doc):
@@ -403,7 +405,7 @@ class Syncable(Renderable):
                 partial(self._event_coroutine, event, doc) # type: ignore
             )
         else:
-            self._comm_event(event)
+            self._comm_event(doc, event)
 
     def _server_change(
         self, doc: Document, ref: str, subpath: str, attr: str,
@@ -1658,12 +1660,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if isinstance(v, DataModel):
                 v.tags.append(f"__ref:{root.ref['id']}")
         model.update(children=self._get_children(doc, root, model, comm))
-
-        if comm:
-            model.on_event('dom_event', self._comm_event)
-        else:
-            model.on_event('dom_event', partial(self._server_event, doc))
-
+        self._register_events('dom_event', model=model, doc=doc, comm=comm)
         self._link_props(data_model, self._linked_properties(), doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
