@@ -27,7 +27,7 @@ export function serializeEvent(event: any): any {
 
   // support for CustomEvents: the whole `detail` object is serialized
   if (event.detail !== undefined) {
-    Object.assign(data, { detail: event.detail } );
+    Object.assign(data, { detail: JSON.parse(JSON.stringify(event.detail)) } );
   }
 
   if (event.type in eventTransforms) {
