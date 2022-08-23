@@ -568,6 +568,40 @@ def test_server_thread_pool_onload(threads, port):
     assert max(counts) >= 2
 
 
+def test_server_async_onload(threads, port):
+    counts = []
+
+    def app(count=[0]):
+        button = Button(name='Click')
+        async def onload():
+            count[0] += 1
+            counts.append(count[0])
+            await asyncio.sleep(2)
+            count[0] -= 1
+
+        state.onload(onload)
+
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+
+        return button
+
+    serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}/")
+    requests.get(f"http://localhost:{port}/")
+
+    time.sleep(1)
+
+    # Checks whether onload callbacks were executed concurrently
+    assert max(counts) >= 2
+
+
 class CustomBootstrapTemplate(BootstrapTemplate):
 
     _css = './assets/custom.css'
