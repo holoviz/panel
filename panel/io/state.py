@@ -309,11 +309,11 @@ class _state(param.Parameterized):
                             del _updating[id(obj)]
         return link
 
-    def _schedule_on_load(self, event) -> None:
+    def _schedule_on_load(self, doc: Document, event) -> None:
         if self._thread_pool:
-            self._thread_pool.submit(self._on_load, self.curdoc)
+            self._thread_pool.submit(self._on_load, doc)
         else:
-            self._on_load()
+            self._on_load(doc)
 
     def _on_load(self, doc: Optional[Document] = None) -> None:
         doc = doc or self.curdoc
@@ -578,7 +578,7 @@ class _state(param.Parameterized):
         if self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
             try:
-                self.curdoc.on_event('document_ready', self._schedule_on_load)
+                self.curdoc.on_event('document_ready', partial(self._schedule_on_load, self.curdoc))
             except AttributeError:
                 pass # Document already cleaned up
         self._onload[self.curdoc].append(callback)
