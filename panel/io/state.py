@@ -31,6 +31,7 @@ from bokeh.document import Document
 from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
+from typing_extensions import Literal
 
 from ..util import base64url_decode, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
@@ -61,7 +62,7 @@ def set_curdoc(doc: Document):
     orig_doc = state._curdoc
     state.curdoc = doc
     yield
-    state.curdoc = orig_doc
+    state._curdoc = orig_doc
 
 def curdoc_locked() -> Document:
     doc = _curdoc()
@@ -108,12 +109,11 @@ class _state(param.Parameterized):
     webdriver = param.Parameter(default=None, doc="""
       Selenium webdriver used to export bokeh models to pngs.""")
 
-    _curdoc = param.ClassSelector(class_=Document, doc="""
-        The bokeh Document for which a server event is currently being
-        processed.""")
-
     _memoize_cache = param.Dict(default={}, doc="""
        A dictionary used by the cache decorator.""")
+
+    # Holds temporary curdoc overrides per thread
+    _curdoc_ = {}
 
     # Whether to hold comm events
     _hold: ClassVar[bool] = False
@@ -483,7 +483,11 @@ class _state(param.Parameterized):
                     pass
         self._memoize_cache.clear()
 
-    def execute(self, callback: Callable([], None)) -> None:
+    def execute(
+        self,
+        callback: Callable([], None),
+        schedule: bool | Literal['auto'] = 'auto'
+    ) -> None:
         """
         Executes both synchronous and asynchronous callbacks
         appropriately depending on the context the application is
@@ -493,16 +497,20 @@ class _state(param.Parameterized):
 
         Arguments
         ---------
-        callback: callable
+        callback: Callable[[], None]
           Callback to execute
+        schedule: boolean | Literal['auto']
+          Whether to schedule synchronous callback on the event loop
+          or execute it immediately.
         """
         cb = callback
         while isinstance(cb, functools.partial):
             cb = cb.func
+        doc = self.curdoc
         if param.parameterized.iscoroutinefunction(cb):
             param.parameterized.async_executor(callback)
-        elif self.curdoc:
-            self.curdoc.add_next_tick_callback(callback)
+        elif doc and (schedule == True or (schedule == 'auto' and self._unblocked(doc))):
+            doc.add_next_tick_callback(callback)
         else:
             callback()
 
@@ -789,6 +797,28 @@ class _state(param.Parameterized):
     @curdoc.setter
     def curdoc(self, doc: Document) -> None:
         self._curdoc = doc
+
+    @property
+    def _curdoc(self) -> Document | None:
+        """
+        Required to make overrides to curdoc (e.g. using the
+        set_curdoc context manager) thread-safe. Otherwise two threads
+        may independently override the curdoc and end up in a confused
+        final state.
+        """
+        thread = threading.current_thread()
+        thread_id = thread.ident if thread else None
+        return self._curdoc_.get(thread_id)
+
+    @_curdoc.setter
+    def _curdoc(self, doc: Document | None) -> None:
+        thread = threading.current_thread()
+        thread_id = thread.ident if thread else None
+        if doc is None:
+            if thread_id in self._curdoc_:
+                del self._curdoc_[thread_id]
+        else:
+            self._curdoc_[thread_id] = doc
 
     @property
     def cookies(self) -> Dict[str, str]:

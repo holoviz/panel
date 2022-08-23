@@ -465,11 +465,9 @@ def test_server_thread_pool_bokeh_event(threads, port):
     requests.get(f"http://localhost:{port}/")
 
     model = list(tabulator._models.values())[0][0]
-    doc = model.document
     event = TableEditEvent(model, 'A', 0)
-    with set_curdoc(doc):
-        for _ in range(3):
-            tabulator._server_event(doc, event)
+    for _ in range(5):
+        tabulator._server_event(model.document, event)
 
     # Wait for callbacks to be scheduled
     time.sleep(1)

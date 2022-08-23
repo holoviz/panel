@@ -356,7 +356,7 @@ class Syncable(Renderable):
             with set_curdoc(doc):
                 self._change_event(doc)
 
-    async def _event_coroutine(self, event, doc: Document) -> None:
+    async def _event_coroutine(self, doc: Document, event) -> None:
         if state._thread_pool:
             state._thread_pool.submit(self._process_bokeh_event, doc, event)
         else:
@@ -402,7 +402,7 @@ class Syncable(Renderable):
     def _server_event(self, doc: Document, event: Event) -> None:
         if doc.session_context and not state._unblocked(doc):
             doc.add_next_tick_callback(
-                partial(self._event_coroutine, event, doc) # type: ignore
+                partial(self._event_coroutine, doc, event) # type: ignore
             )
         else:
             self._comm_event(doc, event)
