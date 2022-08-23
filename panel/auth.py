@@ -171,7 +171,6 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             raise ValueError('The client secret is undefined.')
 
         log.debug("%s making access token request.", type(self).__name__)
-
         params = {
             'code':          code,
             'redirect_uri':  redirect_uri,
@@ -782,11 +781,11 @@ class LogoutHandler(tornado.web.RequestHandler):
 
 class OAuthProvider(AuthProvider):
 
-    def __init__(self):
-        if config.auth_template is None:
+    def __init__(self, error_template=None):
+        if error_template is None:
             self._error_template = ERROR_TEMPLATE
         else:
-            with open(config.auth_template) as f:
+            with open(error_template) as f:
                 self._error_template = _env.from_string(f.read())
         super().__init__()
 

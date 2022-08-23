@@ -463,7 +463,13 @@ class Serve(_BkServe):
                     "CLI argument or the PANEL_COOKIE_SECRET environment "
                     "variable."
                 )
-            kwargs['auth_provider'] = OAuthProvider(error_template=args.oauth_error_template)
+            if args.oauth_error_template:
+                error_template = str(pathlib.Path(args.oauth_error_template).absolute())
+            elif config.auth_template:
+                error_template = config.auth_template
+            else:
+                error_template = None
+            kwargs['auth_provider'] = OAuthProvider(error_template=error_template)
 
             if args.oauth_redirect_uri and config.oauth_redirect_uri:
                 raise ValueError(
