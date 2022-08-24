@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+import gc
 import os
 import pathlib
 import time
@@ -183,6 +184,39 @@ def test_server_async_local_state(port):
         curdoc = state.curdoc
         await asyncio.sleep(0.5)
         docs[curdoc] = []
+        for i in range(5):
+            await asyncio.sleep(0.1)
+            docs[curdoc].append(state.curdoc)
+
+    def app():
+        state.execute(task)
+        return 'My app'
+
+    serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    for i in range(3):
+        requests.get(f"http://localhost:{port}/")
+
+    # Wait for callbacks to be scheduled
+    time.sleep(2)
+
+    # Ensure state.curdoc was consistent despite asyncio context switching
+    assert len(docs) == 3
+    assert all([len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items()])
+
+
+def test_server_async_local_state_nested_tasks(port):
+    docs = {}
+
+    async def task(depth=1):
+        curdoc = state.curdoc
+        await asyncio.sleep(0.5)
+        if depth > 0:
+            asyncio.ensure_future(task(depth-1))
+        docs[curdoc] = []
         for i in range(10):
             await asyncio.sleep(0.1)
             docs[curdoc].append(state.curdoc)
@@ -196,15 +230,20 @@ def test_server_async_local_state(port):
     # Wait for server to start
     time.sleep(1)
 
-    for i in range(5):
+    for i in range(3):
         requests.get(f"http://localhost:{port}/")
 
     # Wait for callbacks to be scheduled
     time.sleep(2)
 
     # Ensure state.curdoc was consistent despite asyncio context switching
-    assert len(docs) == 5
-    assert all([len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items()])
+    assert len(docs) == 3
+    assert all(len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items())
+
+    # Ensure all curdocs are GCed
+    gc.collect()
+    assert all(len(curdocs) == 0 for curdocs in state._curdoc_.values())
+
 
 def test_serve_config_per_session_state():
     CSS1 = 'body { background-color: red }'

@@ -69,7 +69,7 @@ from ..util import edit_readonly
 from .resources import (
     DIST_DIR, ERROR_TEMPLATE, Resources, _env,
 )
-from .server import server_html_page_for_session
+from .server import _add_task_factory, server_html_page_for_session
 from .state import set_curdoc, state
 
 logger = logging.getLogger(__name__)
@@ -218,6 +218,10 @@ class PanelExecutor(WSHandler):
             app.initialize_document(doc)
 
         loop = tornado.ioloop.IOLoop.current()
+        try:
+            _add_task_factory(loop.asyncio_loop) # type: ignore
+        except Exception:
+            pass
         session = ServerSession(self.session_id, doc, io_loop=loop, token=self.token)
         session_context._set_session(session)
         return session

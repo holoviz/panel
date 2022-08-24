@@ -204,7 +204,6 @@ def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url
 
     return AUTOLOAD_JS.render(bundle=bundle, elementid=element_id)
 
-
 def destroy_document(self, session):
     """
     Override for Document.destroy() without calling gc.collect directly.
@@ -560,6 +559,24 @@ if (
 ):
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
+def _add_task_factory(loop):
+    """
+    Adds a Task factory to the asyncio IOLoop that ensures child tasks
+    have access to their parent.
+    """
+    if getattr(loop, '_has_panel_task_factory', False):
+        return
+    existing_factory = loop.get_task_factory()
+    def task_factory(loop, coro):
+        if existing_factory:
+            task = existing_factory(loop, coro)
+        else:
+            task = asyncio.Task(coro, loop=loop)
+        task.parent_task = asyncio.current_task()
+        return task
+    loop.set_task_factory(task_factory)
+    loop._has_panel_task_factory = True
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -845,6 +862,11 @@ def get_server(
         def show_callback():
             server.show('/login' if config.oauth_provider else '/')
         server.io_loop.add_callback(show_callback)
+
+    try:
+        _add_task_factory(server.io_loop.asyncio_loop) # type: ignore
+    except Exception:
+        pass
 
     def sig_exit(*args, **kwargs):
         server.io_loop.add_callback_from_signal(do_stop)

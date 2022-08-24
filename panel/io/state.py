@@ -113,7 +113,7 @@ class _state(param.Parameterized):
        A dictionary used by the cache decorator.""")
 
     # Holds temporary curdoc overrides per thread
-    _curdoc_ = {}
+    _curdoc_ = defaultdict(WeakKeyDictionary)
 
     # Whether to hold comm events
     _hold: ClassVar[bool] = False
@@ -813,30 +813,45 @@ class _state(param.Parameterized):
         local. Otherwise two threads may independently override the
         curdoc and end up in a confused final state.
         """
-        try:
-            task = asyncio.current_task()
-            task_id = id(task)
-        except Exception:
-            task_id = None
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
-        return self._curdoc_.get((thread_id, task_id))
+        if thread_id not in self._curdoc_:
+            return None
+        curdocs = self._curdoc_[thread_id]
+        try:
+            task = asyncio.current_task()
+        except Exception:
+            task = None
+        while True:
+            if task in curdocs:
+                return curdocs[task]
+            elif task is None:
+                return None
+            try:
+                task = task.parent_task
+            except Exception:
+                task = None
 
     @_curdoc.setter
     def _curdoc(self, doc: Document | None) -> None:
-        try:
-            task = asyncio.current_task()
-            task_id = id(task)
-        except Exception:
-            task_id = None
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
-        key = (thread_id, task_id)
+        if thread_id not in self._curdoc_ and doc is None:
+            return None
+        curdocs = self._curdoc_[thread_id]
+        try:
+            task = asyncio.current_task()
+        except Exception:
+            task = None
         if doc is None:
-            if key in self._curdoc_:
-                del self._curdoc_[key]
+            # Do not clean up curdocs for tasks since they may have
+            # children that are still running
+            if task in curdocs and task is None:
+                del curdocs[task]
+            if not len(curdocs):
+                del self._curdoc_[thread_id]
         else:
-            self._curdoc_[key] = doc
+            curdocs[task] = doc
 
     @property
     def cookies(self) -> Dict[str, str]:
