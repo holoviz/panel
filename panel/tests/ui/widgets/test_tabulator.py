@@ -32,6 +32,7 @@ except ImportError:
 
 from panel import state
 from panel.io.server import serve
+from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
 from panel.tests.util import get_ctrl_modifier, wait_until
 from panel.widgets import Tabulator
 
@@ -1188,6 +1189,7 @@ def test_tabulator_theming(page, port, df_mixed, df_mixed_as_string, theme):
         use_inner_text=True
     )
     found = False
+    theme = _TABULATOR_THEMES_MAPPING.get(theme, theme)
     for response in responses:
         base = response.url.split('/')[-1]
         if base == f'tabulator_{theme}.min.css':

@@ -877,10 +877,22 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   setCSS(): boolean {
     let theme: string
-    if (this.model.theme == "default")
+    let theme_: string
+    if (this.model.theme == "default") {
       theme = "tabulator"
-    else
-      theme = "tabulator_" + this.model.theme
+    }
+    else {
+      if (this.model.theme == "bootstrap") {
+        theme_ = "bootstrap3"
+      }
+      else if (this.model.theme == "semantic-ui") {
+        theme_ = "semanticui"
+      }
+      else {
+        theme_ = this.model.theme
+      }
+      theme = "tabulator_" + theme_
+    }
     const css = this.model.theme_url + theme + ".min.css"
 
     let old_node: any = null

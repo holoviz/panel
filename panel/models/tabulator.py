@@ -15,10 +15,12 @@ from bokeh.models.widgets.tables import TableColumn
 from ..io.resources import bundled_files
 from ..util import classproperty
 
-JS_SRC = "https://unpkg.com/tabulator-tables@5.0.10/dist/js/tabulator.js"
+TABULATOR_VERSION = "5.0.10"
+
+JS_SRC = f"https://unpkg.com/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.js"
 MOMENT_SRC = "https://cdn.jsdelivr.net/npm/luxon/build/global/luxon.min.js"
 
-THEME_PATH = "tabulator-tables@5.0.10/dist/css/"
+THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
 THEME_URL = f"https://unpkg.com/{THEME_PATH}"
 PANEL_CDN = f'https://cdn.jsdelivr.net/npm/@holoviz/panel/dist/bundled/{THEME_PATH}'
 TABULATOR_THEMES = [
