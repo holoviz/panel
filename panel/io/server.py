@@ -62,6 +62,7 @@ from tornado.web import (
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
+from ..config import config
 from ..util import edit_readonly, fullpath
 from .document import init_doc, unlocked, with_lock  # noqa
 from .logging import (
@@ -70,8 +71,8 @@ from .logging import (
 from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import (
-    BASE_TEMPLATE, COMPONENT_PATH, Resources, bundle_resources,
-    component_rel_path,
+    BASE_TEMPLATE, COMPONENT_PATH, ERROR_TEMPLATE, Resources, _env,
+    bundle_resources, component_rel_path,
 )
 from .state import set_curdoc, state
 
@@ -290,17 +291,27 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
     async def get(self, *args, **kwargs):
         with self._session_prefix():
             session = await self.get_session()
-            state.curdoc = session.document
             logger.info(LOG_SESSION_CREATED, id(session.document))
-            try:
-                resources = Resources.from_bokeh(self.application.resources())
-                page = server_html_page_for_session(
-                    session, resources=resources, title=session.document.title,
-                    template=session.document.template,
-                    template_variables=session.document.template_variables
-                )
-            finally:
-                state.curdoc = None
+            with set_curdoc(session.document):
+                if config.authorize_callback and not config.authorize_callback(state.user_info):
+                    if config.auth_template:
+                        with open(config.auth_template) as f:
+                            template = _env.from_string(f.read())
+                    else:
+                        template = ERROR_TEMPLATE
+                    page = template.render(
+                        title='Panel: Authorization Error',
+                        error_type='Authorization Error',
+                        error='User is not authorized.',
+                        error_msg=f'{state.user} is not authorized to access this application.'
+                    )
+                else:
+                    resources = Resources.from_bokeh(self.application.resources())
+                    page = server_html_page_for_session(
+                        session, resources=resources, title=session.document.title,
+                        template=session.document.template,
+                        template_variables=session.document.template_variables
+                    )
         self.set_header("Content-Type", 'text/html')
         self.write(page)
 
