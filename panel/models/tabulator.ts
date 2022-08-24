@@ -363,8 +363,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   tableInit(): void {
     // Patch the ajax request and page data parsing methods
     const ajax = this.tabulator.modules.ajax
-    ajax.sendRequest = () => {
-      return this.requestPage(ajax.params.page, ajax.params.sort)
+    ajax.sendRequest = (_url: any, params: any, _config: any) => {
+      return this.requestPage(params.page, params.sort)
     }
     this.tabulator.modules.page._parseRemoteData = (): boolean => {
       return false
@@ -866,6 +866,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }
       return groups.join(', ')
     }
+    // Need to call it twice, see https://github.com/olifolkerd/tabulator/issues/3666
+    this.tabulator.setGroupBy(groupby)
     this.tabulator.setGroupBy(groupby)
   }
 

@@ -15,7 +15,7 @@ from bokeh.models.widgets.tables import TableColumn
 from ..io.resources import bundled_files
 from ..util import classproperty
 
-TABULATOR_VERSION = "5.0.10"
+TABULATOR_VERSION = "5.1.8"
 
 JS_SRC = f"https://unpkg.com/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.js"
 MOMENT_SRC = "https://cdn.jsdelivr.net/npm/luxon/build/global/luxon.min.js"
