@@ -60,7 +60,7 @@ if TYPE_CHECKING:
 @contextmanager
 def set_curdoc(doc: Document):
     orig_doc = state._curdoc
-    state.curdoc = doc
+    state._curdoc = doc
     yield
     state._curdoc = orig_doc
 
@@ -824,13 +824,14 @@ class _state(param.Parameterized):
             task = None
         while True:
             if task in curdocs:
-                return curdocs[task]
+                return curdocs[task or self]
             elif task is None:
-                return None
+                break
             try:
                 task = task.parent_task
             except Exception:
                 task = None
+        return curdocs[self] if self in curdocs else None
 
     @_curdoc.setter
     def _curdoc(self, doc: Document | None) -> None:
@@ -843,15 +844,16 @@ class _state(param.Parameterized):
             task = asyncio.current_task()
         except Exception:
             task = None
+        key = task or self
         if doc is None:
             # Do not clean up curdocs for tasks since they may have
             # children that are still running
-            if task in curdocs and task is None:
-                del curdocs[task]
+            if key in curdocs and task is None:
+                del curdocs[key]
             if not len(curdocs):
                 del self._curdoc_[thread_id]
         else:
-            curdocs[task] = doc
+            curdocs[key] = doc
 
     @property
     def cookies(self) -> Dict[str, str]:
