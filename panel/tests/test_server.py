@@ -1,6 +1,5 @@
 import asyncio
 import datetime as dt
-import gc
 import os
 import pathlib
 import time
@@ -239,10 +238,6 @@ def test_server_async_local_state_nested_tasks(port):
     # Ensure state.curdoc was consistent despite asyncio context switching
     assert len(docs) == 3
     assert all(len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items())
-
-    # Ensure all curdocs are GCed
-    gc.collect()
-    assert all(len(curdocs) == 0 for curdocs in state._curdoc_.values())
 
 
 def test_serve_config_per_session_state():
