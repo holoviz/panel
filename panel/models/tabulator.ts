@@ -727,8 +727,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         }
       } else if (ctype === "StringEditor") {
         if (editor.completions.length > 0) {
-          tab_column.editor = "autocomplete"
-          tab_column.editorParams = {values: editor.completions}
+          tab_column.editor = "list"
+          tab_column.editorParams = {values: editor.completions, autocomplete:true}
       } else
           tab_column.editor = "input"
       } else if (ctype === "TextEditor")
@@ -741,7 +741,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       } else if (ctype === "DateEditor") {
         tab_column.editor = dateEditor
       } else if (ctype === "SelectEditor") {
-        tab_column.editor = "select"
+        tab_column.editor = "list"
         tab_column.editorParams = {values: editor.options}
       } else if (editor != null && editor.default_view != null) {
         tab_column.editor = (cell: any, onRendered: any, success: any, cancel: any) => {

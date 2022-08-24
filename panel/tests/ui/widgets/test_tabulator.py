@@ -2365,9 +2365,10 @@ def test_tabulator_editor_datetime_nan(page, port, df_mixed):
 
 
 @pytest.mark.parametrize('col', ['index', 'int', 'float', 'str', 'date', 'datetime'])
-@pytest.mark.parametrize('dir', ['asc', 'desc'])
+@pytest.mark.parametrize('dir', ['ascending', 'descending'])
 def test_tabulator_sorters_on_init(page, port, df_mixed, col, dir):
-    widget = Tabulator(df_mixed, sorters=[{'field': col, 'dir': dir}])
+    dir_ = 'asc' if dir == 'ascending' else 'desc'
+    widget = Tabulator(df_mixed, sorters=[{'field': col, 'dir': dir_}])
 
     serve(widget, port=port, threaded=True, show=False)
 
@@ -2378,7 +2379,7 @@ def test_tabulator_sorters_on_init(page, port, df_mixed, col, dir):
     sorted_header = page.locator(f'[aria-sort="{dir}"]:visible')
     expect(sorted_header).to_have_attribute('tabulator-field', col)
 
-    ascending = True if dir == 'asc' else False
+    ascending = dir == 'ascending'
     if col == 'index':
         expected_current_view = df_mixed.sort_index(ascending=ascending)
     else:
@@ -2401,9 +2402,9 @@ def test_tabulator_sorters_on_init_multiple(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    s1 = page.locator('[aria-sort="desc"]:visible')
+    s1 = page.locator('[aria-sort="descending"]:visible')
     expect(s1).to_have_attribute('tabulator-field', 'col1')
-    s2 = page.locator('[aria-sort="asc"]:visible')
+    s2 = page.locator('[aria-sort="ascending"]:visible')
     expect(s2).to_have_attribute('tabulator-field', 'col2')
 
     first_index_rendered = page.locator('.tabulator-cell:visible').first.inner_text()
@@ -2425,7 +2426,7 @@ def test_tabulator_sorters_set_after_init(page, port, df_mixed):
 
     widget.sorters = [{'field': 'int', 'dir': 'desc'}]
 
-    sheader = page.locator('[aria-sort="desc"]:visible')
+    sheader = page.locator('[aria-sort="descending"]:visible')
     expect(sheader).to_have_count(1)
     assert sheader.get_attribute('tabulator-field') == 'int'
 
@@ -2445,7 +2446,7 @@ def test_tabulator_sorters_from_client(page, port, df_mixed):
 
     page.locator('.tabulator-col', has_text='float').locator('.tabulator-col-sorter').click()
 
-    sheader = page.locator('[aria-sort="asc"]:visible')
+    sheader = page.locator('[aria-sort="ascending"]:visible')
     expect(sheader).to_have_count(1)
     assert sheader.get_attribute('tabulator-field') == 'float'
 
@@ -2497,7 +2498,7 @@ def test_tabulator_sorters_pagination(page, port, df_mixed, pagination):
     page.wait_for_timeout(100)
     s.click()
 
-    sheader = page.locator('[aria-sort="desc"]:visible')
+    sheader = page.locator('[aria-sort="descending"]:visible')
     expect(sheader).to_have_count(1)
     assert sheader.get_attribute('tabulator-field') == 'str'
 
