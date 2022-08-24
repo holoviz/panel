@@ -352,30 +352,25 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     let configuration = this.getConfiguration()
 
     this.tabulator = new Tabulator(container, configuration)
-
+    this.init_callbacks()
     this.renderChildren(true)
 
-     // Swap pagination mode
-    if (this.model.pagination === 'remote') {
-      this.tabulator.options.pagination = this.model.pagination
-      this.tabulator.modules.page.mode = 'remote'
-    }
-
-    this.setGroupBy()
     this.setHidden()
-
-    // Set up page
-    if (this.model.pagination) {
-      this.setMaxPage()
-      this.tabulator.setPage(this.model.page)
-      this.setData()
-    } else
-      this.setFrozen()
 
     this.el.appendChild(container)
   }
 
-  /*
+  tableInit(): void {
+    // Patch the ajax request and page data parsing methods
+    const ajax = this.tabulator.modules.ajax
+    ajax.sendRequest = () => {
+      return this.requestPage(ajax.params.page, ajax.params.sort)
+    }
+    this.tabulator.modules.page._parseRemoteData = (): boolean => {
+      return false
+    }
+  }
+
   init_callbacks(): void {
     // Initialization
     this.tabulator.on("tableBuilding", () => this.tableInit())
@@ -389,6 +384,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         this.setFrozen()
         this.setStyles()
         this.renderChildren()
+        this.setGroupBy()
         this.tabulator.modules.frozenColumns.active = true
         this.tabulator.modules.frozenColumns.layout()
         this.relayout()
@@ -421,19 +417,26 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.tabulator.on("dataFiltering", () => {
       this.model.filters = this.tabulator.getHeaderFilters()
     })
+    this.tabulator.on("pageLoaded", (pageno: number) => {
+      if (this.model.pagination === 'local' && this.model.page !== pageno) {
+        this._updating_page = true
+        this.model.page = pageno
+        this._updating_page = false
+      }
+    })
+    this.tabulator.on("dataSorting", (sorters: any[]) => {
+      const sorts = []
+      for (const s of sorters) {
+        if (s.field !== '_index')
+          sorts.push({field: s.field, dir: s.dir})
+      }
+      if (this.model.pagination !== 'remote') {
+        this._updating_sort = true
+        this.model.sorters = sorts
+        this._updating_sort = false
+      }
+    })
   }
-
-  tableInit(): void {
-    // Patch the ajax request and page data parsing methods
-    const ajax = this.tabulator.modules.ajax
-    ajax.sendRequest = () => {
-      return this.requestPage(ajax.params.page, ajax.params.sort)
-    }
-    this.tabulator.modules.page._parseRemoteData = (): boolean => {
-      return false
-    }
-  }
-
 
   tableBuilt(): void {
     this.setHidden()
@@ -445,20 +448,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.tabulator.setPage(this.model.page)
       this.setStyles()
       this.renderChildren()
+      this.setGroupBy()
       this.tabulator.modules.frozenColumns.active = true
       this.tabulator.modules.frozenColumns.layout()
       setTimeout(() => this.relayout(), 10)
       this._initializing = false
     }
-  }*/
-
-  tableInit(view: DataTabulatorView, tabulator: any): void {
-    // Patch the ajax request and page data parsing methods
-    const ajax = tabulator.modules.ajax
-    ajax.sendRequest = () => {
-      return view.requestPage(ajax.params.page, ajax.params.sorters)
-    }
-    tabulator.modules.page._parseRemoteData = () => {}
   }
 
   relayout(): void {
@@ -527,7 +522,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   getConfiguration(): any {
     // Only use selectable mode if explicitly requested otherwise manually handle selections
     let selectable = this.model.select_mode === 'toggle' ? true : NaN
-    const that = this
     let configuration = {
       ...this.model.configuration,
       index: "_index",
@@ -535,62 +529,16 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       movableColumns: false,
       selectable: selectable,
       columns: this.getColumns(),
-      dataSorting: (sorters: any[]) => {
-        const sorts = []
-        for (const s of sorters) {
-          if (s.field !== '_index')
-            sorts.push({field: s.field, dir: s.dir})
-        }
-        if (this.model.pagination !== 'remote') {
-          this._updating_sort = true
-          this.model.sorters = sorts
-          this._updating_sort = false
-        }
-      },
       initialSort: this.sorters,
       layout: this.getLayout(),
-      pagination: this.model.pagination,
+      pagination: this.model.pagination != null,
+      paginationMode: this.model.pagination,
       paginationSize: this.model.page_size,
-      paginationInitialPage: 1,
-      pageLoaded: function(pageno: number) {
-        if (that.model.pagination === 'local' && that.model.page !== pageno) {
-          that._updating_page = true
-          that.model.page = pageno
-          that._updating_page = false
-        }
-      },
-      tableBuilding: function() { that.tableInit(that, this) },
-      renderComplete: () => this.renderComplete(),
-      rowSelectionChanged: (data: any, rows: any) => this.rowSelectionChanged(data, rows),
-      rowClick: (e: any, row: any) => this.rowClicked(e, row),
-      cellEdited: (cell: any) => this.cellEdited(cell),
-      selectableCheck: (row: any) => {
-        const selectable = this.model.selectable_rows
-        return (selectable == null) || (selectable.indexOf(row._row.data._index) >= 0)
-      },
-      tooltips: (cell: any) => {
-        return  cell.getColumn().getField() + ": " + cell.getValue();
-      },
-      scrollVertical: debounce(() => {
-        this._lastVerticalScrollbarTopPosition = this.tabulator.rowManager.element.scrollTop;
-        this.setStyles()
-      }, 50, false),
-      rowFormatter: (row: any) => this._render_row(row),
-      dataFiltering: () => {
-        if (this.tabulator != null) {
-          this.model.filters = this.tabulator.getHeaderFilters()
-          const pageno: number = this.tabulator.getPage()
-          if (this.model.pagination === 'local' && this.model.page !== pageno) {
-            this._updating_page = true
-            this.model.page = pageno
-            this._updating_page = false
-          }
-        }
-      }
+      paginationInitialPage: 1
     }
     if (this.model.pagination === "remote") {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
-      configuration['ajaxSorting'] = true
+      configuration['sortMode'] = "remote"
     }
     const cds: any = this.model.source;
     let data: any[]

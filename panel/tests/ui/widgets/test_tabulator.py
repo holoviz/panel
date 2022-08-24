@@ -2318,7 +2318,7 @@ def test_tabulator_patching_and_styling(page, port, df_mixed):
 def test_tabulator_configuration(page, port, df_mixed):
     # By default the Tabulator widget has sortable columns.
     # Pass a configuration property to disable this behaviour.
-    widget = Tabulator(df_mixed, configuration={'headerSort': False})
+    widget = Tabulator(df_mixed, configuration={'columnDefaults': {'headerSort': False}})
 
     serve(widget, port=port, threaded=True, show=False)
 
@@ -2957,7 +2957,6 @@ def test_tabulator_loading_no_vertical_rescroll(page, port):
     assert bb == page.locator('text="T"').bounding_box()
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3695')
 def test_tabulator_trigger_value_update(page, port):
     # Checking that this issue is resolved:
     # https://github.com/holoviz/panel/issues/3695

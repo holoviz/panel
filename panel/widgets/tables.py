@@ -1137,7 +1137,9 @@ class Tabulator(BaseTable):
 
     def _get_theme(self, theme, resources=None):
         from ..io.resources import RESOURCE_MODE
-        from ..models.tabulator import THEME_PATH, THEME_URL, _get_theme_url
+        from ..models.tabulator import (
+            _TABULATOR_THEMES_MAPPING, THEME_PATH, THEME_URL, _get_theme_url,
+        )
         if RESOURCE_MODE == 'server' and resources in (None, 'server'):
             theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
             if state.rel_path:
@@ -1147,7 +1149,8 @@ class Tabulator(BaseTable):
         # Ensure theme_url updates before theme
         cdn_url = _get_theme_url(THEME_URL, theme)
         theme_url = _get_theme_url(theme_url, theme)
-        fname = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme
+        theme_ = _TABULATOR_THEMES_MAPPING.get(self.theme, self.theme)
+        fname = 'tabulator' if theme_ == 'default' else 'tabulator_' + theme_
         if self._widget_type is not None:
             self._widget_type.__css_raw__ = [f'{cdn_url}{fname}.min.css']
         return theme_url, theme
