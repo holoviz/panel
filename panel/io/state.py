@@ -60,7 +60,7 @@ if TYPE_CHECKING:
 @contextmanager
 def set_curdoc(doc: Document):
     orig_doc = state._curdoc
-    state.curdoc = doc
+    state._curdoc = doc
     yield
     state._curdoc = orig_doc
 
@@ -113,7 +113,7 @@ class _state(param.Parameterized):
        A dictionary used by the cache decorator.""")
 
     # Holds temporary curdoc overrides per thread
-    _curdoc_ = {}
+    _curdoc_ = defaultdict(WeakKeyDictionary)
 
     # Whether to hold comm events
     _hold: ClassVar[bool] = False
@@ -325,10 +325,12 @@ class _state(param.Parameterized):
         from .profile import profile_ctx
         with set_curdoc(doc):
             if (doc and doc in self._launching) or not config.profiler:
-                for cb in callbacks: cb()
+                for cb in callbacks:
+                    self.execute(cb, schedule=False)
                 return
             with profile_ctx(config.profiler) as sessions:
-                for cb in callbacks: cb()
+                for cb in callbacks:
+                    self.execute(cb, schedule=False)
             path = doc.session_context.request.path
             self._profiles[(path+':on_load', config.profiler)] += sessions
             self.param.trigger('_profiles')
@@ -565,15 +567,20 @@ class _state(param.Parameterized):
             msg = LOG_USER_MSG.format(msg=msg)
         getattr(_state_logger, level.lower())(msg, *args)
 
-    def onload(self, callback):
+    def onload(self, callback: Callable[[], None] | Coroutine[Any, Any, None]):
         """
         Callback that is triggered when a session has been served.
+
+        Arguments
+        ---------
+        callback: Callable[[], None] | Coroutine[Any, Any, None]
+           Callback that is executed when the application is loaded
         """
         if self.curdoc is None:
             if self._thread_pool:
-                self._thread_pool.submit(callback)
+                self._thread_pool.submit(partial(self.execute, callback, schedule=False))
             else:
-                callback()
+                self.execute(callback, schedule=False)
             return
         if self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
@@ -802,23 +809,51 @@ class _state(param.Parameterized):
     def _curdoc(self) -> Document | None:
         """
         Required to make overrides to curdoc (e.g. using the
-        set_curdoc context manager) thread-safe. Otherwise two threads
-        may independently override the curdoc and end up in a confused
-        final state.
+        set_curdoc context manager) thread-safe and asyncio task
+        local. Otherwise two threads may independently override the
+        curdoc and end up in a confused final state.
         """
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
-        return self._curdoc_.get(thread_id)
+        if thread_id not in self._curdoc_:
+            return None
+        curdocs = self._curdoc_[thread_id]
+        try:
+            task = asyncio.current_task()
+        except Exception:
+            task = None
+        while True:
+            if task in curdocs:
+                return curdocs[task or self]
+            elif task is None:
+                break
+            try:
+                task = task.parent_task
+            except Exception:
+                task = None
+        return curdocs[self] if self in curdocs else None
 
     @_curdoc.setter
     def _curdoc(self, doc: Document | None) -> None:
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
+        if thread_id not in self._curdoc_ and doc is None:
+            return None
+        curdocs = self._curdoc_[thread_id]
+        try:
+            task = asyncio.current_task()
+        except Exception:
+            task = None
+        key = task or self
         if doc is None:
-            if thread_id in self._curdoc_:
+            # Do not clean up curdocs for tasks since they may have
+            # children that are still running
+            if key in curdocs and task is None:
+                del curdocs[key]
+            if not len(curdocs):
                 del self._curdoc_[thread_id]
         else:
-            self._curdoc_[thread_id] = doc
+            curdocs[key] = doc
 
     @property
     def cookies(self) -> Dict[str, str]:

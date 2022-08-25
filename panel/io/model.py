@@ -77,6 +77,8 @@ def diff(
         return None
 
     patch_events = [event for event in events if isinstance(event, DocumentPatchedEvent)]
+    if not patch_events:
+        return
     monkeypatch_events(events)
     msg_type: Literal["PATCH-DOC"] = "PATCH-DOC"
     msg = Protocol().create(msg_type, patch_events, use_buffers=binary)

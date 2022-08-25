@@ -47,7 +47,7 @@ from bokeh.embed.elements import (
 )
 from bokeh.embed.util import RenderItem
 from bokeh.io import curdoc
-from bokeh.server.server import Server
+from bokeh.server.server import Server as BokehServer
 from bokeh.server.urls import per_app_patterns
 from bokeh.server.views.autoload_js_handler import (
     AutoloadJsHandler as BkAutoloadJsHandler,
@@ -205,7 +205,6 @@ def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url
 
     return AUTOLOAD_JS.render(bundle=bundle, elementid=element_id)
 
-
 def destroy_document(self, session):
     """
     Override for Document.destroy() without calling gc.collect directly.
@@ -239,6 +238,18 @@ def destroy_document(self, session):
     at = dt.datetime.now() + dt.timedelta(seconds=5)
     state.schedule_task('gc.collect', gc.collect, at=at)
 
+
+# Patch Srrver to attach task factory to asyncio loop
+class Server(BokehServer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        try:
+            _add_task_factory(self.io_loop.asyncio_loop) # type: ignore
+        except Exception:
+            pass
+
+bokeh.server.server.Server = Server
 
 # Patch Application to handle session callbacks
 class Application(BkApplication):
@@ -339,15 +350,12 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
 
         with self._session_prefix():
             session = await self.get_session()
-            state.curdoc = session.document
-            try:
+            with set_curdoc(session.document):
                 resources = Resources.from_bokeh(self.application.resources(server_url))
                 js = autoload_js_script(
                     session.document, resources, session.token, element_id,
                     app_path, absolute_url
                 )
-            finally:
-                state.curdoc = None
 
         self.set_header("Content-Type", 'application/javascript')
         self.write(js)
@@ -557,6 +565,10 @@ def create_static_handler(prefix, key, app):
 
 bokeh.server.tornado.create_static_handler = create_static_handler
 
+#---------------------------------------------------------------------
+# Async patches
+#---------------------------------------------------------------------
+
 # Bokeh 2.4.x patches the asyncio event loop policy but Tornado 6.1
 # support the WindowsProactorEventLoopPolicy so we restore it,
 # unless we detect we are running on jupyter_server.
@@ -571,6 +583,28 @@ if (
 ):
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
+def _add_task_factory(loop):
+    """
+    Adds a Task factory to the asyncio IOLoop that ensures child tasks
+    have access to their parent.
+    """
+    if getattr(loop, '_has_panel_task_factory', False):
+        return
+    existing_factory = loop.get_task_factory()
+    def task_factory(loop, coro):
+        try:
+            parent_task = asyncio.current_task()
+        except RuntimeError:
+            parent_task = None
+        if existing_factory:
+            task = existing_factory(loop, coro)
+        else:
+            task = asyncio.Task(coro, loop=loop)
+        task.parent_task = parent_task
+        return task
+    loop.set_task_factory(task_factory)
+    loop._has_panel_task_factory = True
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -581,7 +615,7 @@ def serve(
     loop: Optional[IOLoop] = None, show: bool = True, start: bool = True,
     title: Optional[str] = None, verbose: bool = True, location: bool = True,
     threaded: bool = False, **kwargs
-) -> threading.Thread | 'Server':
+) -> threading.Thread | Server:
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
@@ -756,7 +790,7 @@ def get_server(
 
     Returns
     -------
-    server : bokeh.server.server.Server
+    server : panel.io.server.Server
       Bokeh Server instance running this panel
     """
     from ..config import config
