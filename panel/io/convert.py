@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import ast
 import dataclasses
+import gc
 import os
 import pathlib
 import pkgutil
 import sys
+import uuid
 
+from contextlib import contextmanager
 from textwrap import dedent
-from typing import List
+from typing import Any, Dict, List
 
 from bokeh.application.application import SessionContext
 from bokeh.command.util import build_single_handler_application
@@ -18,6 +21,7 @@ from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem, standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
+from bokeh.model import Model
 from bokeh.settings import settings as _settings
 from bokeh.util.serialization import make_id
 from typing_extensions import Literal
@@ -25,16 +29,31 @@ from typing_extensions import Literal
 from .. import __version__, config
 from ..util import escape
 from .resources import (
-    INDEX_TEMPLATE, Resources, _env as _pn_env, bundle_resources,
+    DIST_DIR, INDEX_TEMPLATE, Resources, _env as _pn_env, bundle_resources,
 )
 from .state import set_curdoc, state
 
+PWA_MANIFEST_TEMPLATE = _pn_env.get_template('site.webmanifest')
+SERVICE_WORKER_TEMPLATE = _pn_env.get_template('serviceWorker.js')
 WEB_WORKER_TEMPLATE = _pn_env.get_template('pyodide_worker.js')
 
-PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.0/full/pyodide.js'
+PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.1/full/pyodide.js'
 PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />'
 PYSCRIPT_JS = '<script defer src="https://pyscript.net/latest/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
+
+ICON_DIR = DIST_DIR / 'images'
+PWA_IMAGES = [
+    ICON_DIR / 'favicon.ico',
+    ICON_DIR / 'icon-vector.svg',
+    ICON_DIR / 'icon-32x32.png',
+    ICON_DIR / 'icon-192x192.png',
+    ICON_DIR / 'icon-512x512.png',
+    ICON_DIR / 'apple-touch-icon.png',
+    ICON_DIR / 'index_background.png'
+]
+
+Runtimes = Literal['pyodide', 'pyscript', 'pyodide-worker']
 
 def _stdlibs():
     env_dir = str(pathlib.Path(sys.executable).parent.parent)
@@ -128,6 +147,24 @@ pyodideWorker.onmessage = async (event) => {
 </script>
 """
 
+INIT_SERVICE_WORKER = """
+<script type="text/javascript">
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/serviceWorker.js');
+}
+</script>
+"""
+
+@contextmanager
+def reset_models():
+    old_model_map = Model.model_class_reverse_map.copy()
+    yield
+    for mname, module in list(sys.modules.items()):
+        if mname.startswith('bokeh_app_'):
+            del sys.modules[mname]
+    Model.model_class_reverse_map = old_model_map
+
+
 @dataclasses.dataclass
 class Request:
     headers : dict
@@ -195,19 +232,41 @@ def find_imports(code: str) -> List[str]:
     return packages
 
 
-def make_index(files):
+def make_index(files, title=None, manifest=True):
+    if manifest:
+        manifest = 'site.webmanifest'
+        favicon = 'images/favicon.ico'
+        apple_icon = 'images/apple-touch-icon.png'
+    else:
+        manifest = favicon = apple_icon = None
     items = ['/'+os.path.basename(f) for f in files]
-    return INDEX_TEMPLATE.render({'items': items})
+    return INDEX_TEMPLATE.render(
+        items=items, manifest=manifest, apple_icon=apple_icon,
+        favicon=favicon, title=title
+    )
 
+def build_pwa_manifest(files, title=None, **kwargs):
+    if len(files) > 1:
+        title = title or 'Panel Applications'
+        path = 'index.html'
+    else:
+        title = title or 'Panel Applications'
+        path = files[0]
+    return PWA_MANIFEST_TEMPLATE.render(
+        name=title,
+        path=path,
+        **kwargs
+    )
 
 def script_to_html(
     filename: str,
     requirements: Literal['auto'] | List[str] = 'auto',
     js_resources: Literal['auto'] | List[str] = 'auto',
     css_resources: Literal['auto'] | List[str] | None = None,
-    runtime: Literal['pyodide', 'pyscript'] = 'pyscript',
+    runtime: Runtimes = 'pyscript',
     prerender: bool = True,
     panel_version: Literal['auto'] | str = 'auto',
+    manifest: str | None = None
 ) -> str:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
@@ -223,7 +282,7 @@ def script_to_html(
       The list of JS resources to include in the exported HTML.
     css_resources: 'auto' | List[str] | None
       The list of CSS resources to include in the exported HTML.
-    runtime: 'pyodide' | 'pyscript' | 'pwa'
+    runtime: 'pyodide' | 'pyscript'
       The runtime to use for running Python in the browser.
     prerender: bool
       Whether to pre-render the components so the page loads.
@@ -257,7 +316,7 @@ def script_to_html(
     # Environment
     if panel_version == 'auto':
         panel_version = '.'.join(__version__.split('.')[:3])
-    reqs = [f'panel-lite=={panel_version}'] + [
+    reqs = [f'panel=={panel_version}'] + [
         req for req in requirements if req != 'panel'
     ]
 
@@ -299,6 +358,7 @@ def script_to_html(
                 'env_spec': env_spec,
                 'code': code
             })
+    plot_script = f'{INIT_SERVICE_WORKER}\n{plot_script}'
 
     if prerender:
         json_id = make_id()
@@ -334,7 +394,8 @@ def script_to_html(
         base = FILE,
         macros = MACROS,
         doc = render_item,
-        roots = render_item.roots
+        roots = render_item.roots,
+        manifest = manifest
     ))
 
     # Render
@@ -347,5 +408,130 @@ def script_to_html(
         .replace('<body>', f'<body class="bk pn-loading {config.loading_spinner}">')
     )
 
+    # Cleanup
     _settings.resources.unset_value()
+    del document._roots
+    del document._theme
+    del document._template
+    document._session_context = None
+
+    document.callbacks.destroy()
+    document.models.destroy()
+    document.modules.destroy()
+    gc.collect()
+
     return html, web_worker
+
+
+def convert_apps(
+    apps: List[str],
+    dest_path: str | None = None,
+    title: str | None = None,
+    runtime: Runtimes = 'pyodide-worker',
+    requirements: List[str] | Literal['auto'] = 'auto',
+    prerender: bool = True,
+    build_index: bool = True,
+    build_pwa: bool = True,
+    pwa_config: Dict[Any, Any] = {},
+    verbose: bool = True,
+):
+    """
+    Arguments
+    ---------
+    apps: str | List[str]
+        The filename(s) of the Panel/Bokeh application(s) to convert.
+    dest_path: str | pathlib.Path
+        The directory to write the converted application(s) to.
+    title: str | None
+        A title for the application(s)
+    runtime: 'pyodide' | 'pyscript' | 'pyodide-worker'
+        The runtime to use for running Python in the browser.
+    requirements: 'auto' | List[str]
+        The list of requirements to include (in addition to Panel).
+    prerender: bool
+        Whether to pre-render the components so the page loads.
+    build_index: bool
+        Whether to write an index page (if there are multiple apps).
+    build_pwa: bool
+        Whether to write files to define a progressive web app (PWA) including
+        a manifest and a service worker that caches the application locally
+    pwa_config: Dict[Any, Any]
+        Configuration for the PWA including (see https://developer.mozilla.org/en-US/docs/Web/Manifest)
+
+          - display: Display options ('fullscreen', 'standalone', 'minimal-ui' 'browser')
+          - orientation: Preferred orientation
+          - background_color: The background color of the splash screen
+          - theme_color: The theme color of the application
+    """
+    if isinstance(apps, str):
+        apps = [apps]
+    if dest_path is None:
+        dest_path = pathlib.Path('./')
+    elif not isinstance(dest_path, pathlib.PurePath):
+        dest_path = pathlib.Path(dest_path)
+    dest_path.mkdir(parents=True, exist_ok=True)
+
+    files = []
+    for app in apps:
+        try:
+            with reset_models():
+                html, js_worker = script_to_html(
+                    app, requirements=requirements, runtime=runtime, prerender=prerender,
+                    manifest='site.webmanifest' if build_pwa else None
+                )
+        except KeyboardInterrupt:
+            return
+        except Exception as e:
+            print(f'Failed to convert {app} to {runtime} target: {e}')
+            continue
+        name = '.'.join(os.path.basename(app).split('.')[:-1])
+        filename = f'{name}.html'
+        files.append(filename)
+        with open(dest_path / filename, 'w') as out:
+            out.write(html)
+        if runtime == 'pyodide-worker':
+            with open(dest_path / f'{name}.js', 'w') as out:
+                out.write(js_worker)
+        if verbose:
+            print(f'Successfully converted {app} to {runtime} target and wrote output to {filename}.')
+
+    if not build_index or len(files) == 1:
+        return
+
+    # Write index
+    index = make_index(files, manifest=build_pwa, title=title)
+    with open(dest_path / 'index.html', 'w') as f:
+        f.write(index)
+    if verbose:
+        print('Successfully wrote index.html.')
+
+    if not build_pwa:
+        return
+
+    # Write icons
+    imgs_path = (dest_path / 'images')
+    imgs_path.mkdir(exist_ok=True)
+    img_rel = []
+    for img in PWA_IMAGES:
+        with open(imgs_path / img.name, 'wb') as f:
+            f.write(img.read_bytes())
+        img_rel.append(f'/images/{img.name}')
+    if verbose:
+        print('Successfully wrote icons and images.')
+
+    # Write manifest
+    manifest = build_pwa_manifest(files, title=title, **pwa_config)
+    with open(dest_path / 'site.webmanifest', 'w') as f:
+        f.write(manifest)
+    if verbose:
+        print('Successfully wrote site.manifest.')
+
+    # Write service worker
+    worker = SERVICE_WORKER_TEMPLATE.render(
+        app=f'panel-{uuid.uuid4().hex}',
+        pre_cache=', '.join([repr(p) for p in img_rel])
+    )
+    with open(dest_path / 'serviceWorker.js', 'w') as f:
+        f.write(worker)
+    if verbose:
+        print('Successfully wrote serviceWorker.js.')

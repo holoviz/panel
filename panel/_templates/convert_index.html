@@ -5,7 +5,7 @@
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
-  <title>Panel Applications</title>
+  <title>{{ title|default('Panel Applications', true)  }}</title>
 
   <!-- Mobile Specific Metas
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
@@ -247,7 +247,7 @@
             <fast-tooltip anchor="title">Click to visit the Panel web site</fast-tooltip>
         </h1>
         <article>
-            <h2>Applications</h2>
+            <h2>{{ title|default('Panel Applications', true)  }}</h2>
         </article>
         </div>
         </section>

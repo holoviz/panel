@@ -1,9 +1,8 @@
 import argparse
-import os
 
 from bokeh.command.subcommand import Argument, Subcommand
 
-from ..io.convert import make_index, script_to_html
+from ..io.convert import convert_apps
 
 
 class Convert(Subcommand):
@@ -34,6 +33,11 @@ class Convert(Subcommand):
             type    = str,
             help    = "The directory to write the file to.",
         )),
+        ('--title', dict(
+            action  = 'store',
+            type    = str,
+            help    = "A custom title for the application(s).",
+        )),
         ('--prerender', dict(
             action  = 'store',
             type    = bool,
@@ -45,6 +49,12 @@ class Convert(Subcommand):
             type    = bool,
             default = True,
             help    = "Whether to create an index if multiple files are served.",
+        )),
+        ('--pwa', dict(
+            action  = 'store',
+            type    = bool,
+            default = True,
+            help    = "Whether to add files to serve applications as a Progressive Web App.",
         )),
         ('--requirements', dict(
             nargs='+',
@@ -58,37 +68,9 @@ class Convert(Subcommand):
         runtime = args.to.lower()
         if runtime not in self._targets:
             raise ValueError(f'Supported conversion targets include: {self._targets!r}')
-
-        if args.out:
-            os.makedirs(args.out, exist_ok=True)
         requirements = args.requirements or 'auto'
-        files = []
-        for f in args.files:
-            try:
-                html, js_worker = script_to_html(
-                    f, requirements=requirements, runtime=runtime, prerender=args.prerender
-                )
-            except KeyboardInterrupt:
-                return
-            except Exception as e:
-                print(f'Failed to convert {f} to {runtime} target: {e}')
-                continue
-            name = '.'.join(os.path.basename(f).split('.')[:-1])
-            filename = f'{name}.html'
-            files.append(filename)
-            if args.out:
-                filename = os.path.join(args.out, filename)
-            with open(filename, 'w') as out:
-                out.write(html)
-            if runtime == 'pyodide-worker':
-                web_worker_path = f'{name}.js'
-                if args.out:
-                    web_worker_path = os.path.join(args.out, web_worker_path)
-                with open(web_worker_path, 'w') as out:
-                    out.write(js_worker)
-            print(f'Successfully converted {f} to {runtime} target and wrote output to {filename}.')
-        if args.index and len(files) > 1:
-            index = make_index(files)
-            index_file = os.path.join(args.out, 'index.html') if args.out else 'index.html'
-            with open(index_file, 'w') as f:
-                f.write(index)
+        convert_apps(
+            args.files, dest_path=args.out, runtime=runtime, requirements=requirements,
+            prerender=args.prerender, build_index=args.index, build_pwa=args.pwa,
+            title=args.title
+        )
