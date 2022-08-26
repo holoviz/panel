@@ -514,7 +514,7 @@ def convert_apps(
     for img in PWA_IMAGES:
         with open(imgs_path / img.name, 'wb') as f:
             f.write(img.read_bytes())
-        img_rel.append(f'/images/{img.name}')
+        img_rel.append(f'images/{img.name}')
     if verbose:
         print('Successfully wrote icons and images.')
 
