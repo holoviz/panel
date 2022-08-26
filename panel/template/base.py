@@ -446,6 +446,9 @@ class BasicTemplate(BaseTemplate):
     site_url = param.String(default="/", doc="""
         Url of the site and logo. Default is '/'.""")
 
+    manifest = param.String(default=None, doc="""
+        Manifest to add to site.""")
+
     meta_description = param.String(doc="""
         A meta description to add to the document head for search
         engine optimization. For example 'P.A. Nelson'.""")
@@ -719,6 +722,7 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['meta_name'] = self.title
         self._render_variables['site_title'] = self.site
         self._render_variables['site_url'] = self.site_url
+        self._render_variables['manifest'] = self.manifest
         self._render_variables['meta_description'] = self.meta_description
         self._render_variables['meta_keywords'] = self.meta_keywords
         self._render_variables['meta_author'] = self.meta_author
