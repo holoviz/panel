@@ -135,7 +135,9 @@ _tests = [
     'pandas >=1.3',
     'ipython >=7.0',
     'holoviews',
-    'diskcache'
+    'diskcache',
+    # Temporary pins (jupyter_bokeh needs updates)
+    'ipywidgets <8.0'
 ]
 
 _ui = [
