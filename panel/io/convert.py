@@ -239,7 +239,7 @@ def make_index(files, title=None, manifest=True):
         apple_icon = 'images/apple-touch-icon.png'
     else:
         manifest = favicon = apple_icon = None
-    items = ['/'+os.path.basename(f) for f in files]
+    items = {label: './'+os.path.basename(f) for label, f in sorted(files.items())}
     return INDEX_TEMPLATE.render(
         items=items, manifest=manifest, apple_icon=apple_icon,
         favicon=favicon, title=title
@@ -251,7 +251,7 @@ def build_pwa_manifest(files, title=None, **kwargs):
         path = 'index.html'
     else:
         title = title or 'Panel Applications'
-        path = files[0]
+        path = list(files.values())[0]
     return PWA_MANIFEST_TEMPLATE.render(
         name=title,
         path=path,
@@ -471,7 +471,7 @@ def convert_apps(
         dest_path = pathlib.Path(dest_path)
     dest_path.mkdir(parents=True, exist_ok=True)
 
-    files = []
+    files = {}
     for app in apps:
         try:
             with reset_models():
@@ -486,7 +486,7 @@ def convert_apps(
             continue
         name = '.'.join(os.path.basename(app).split('.')[:-1])
         filename = f'{name}.html'
-        files.append(filename)
+        files[name.replace('_', ' ')] = filename
         with open(dest_path / filename, 'w') as out:
             out.write(html)
         if runtime == 'pyodide-worker':
