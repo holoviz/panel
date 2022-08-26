@@ -1169,6 +1169,32 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, port, df_mixed, pa
     # assert bb == page.locator(f'text="{col_name}"').bounding_box()
 
 
+def test_tabulator_header_filter_always_visible(page, port, df_mixed):
+    col_name = 'newcol'
+    df_mixed[col_name] = 'on'
+    widget = Tabulator(
+        df_mixed,
+        header_filters={col_name: {'type': 'input', 'func': 'like'}},
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    header = page.locator('input[type="search"]')
+    expect(header).to_have_count(1)
+    header.click()
+    header.fill('off')
+    header.press('Enter')
+
+    wait_until(page, lambda: widget.current_view.empty)
+
+    header = page.locator('input[type="search"]')
+    expect(header).to_have_count(1)
+
+
 @pytest.mark.parametrize('theme', Tabulator.param['theme'].objects)
 def test_tabulator_theming(page, port, df_mixed, df_mixed_as_string, theme):
     # Subscribe the reponse events to check that the CSS is loaded
