@@ -18,7 +18,7 @@ from bokeh.document.document import Document
 from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
 
 from .model import monkeypatch_events
-from .state import curdoc_locked, set_curdoc, state
+from .state import curdoc_locked, state
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +72,7 @@ def init_doc(doc: Optional[Document]) -> Document:
 
     thread = threading.current_thread()
     if thread:
-        with set_curdoc(curdoc):
-            state._thread_id = thread.ident
+        state._thread_id_[curdoc] = thread.ident
 
     session_id = curdoc.session_context.id
     sessions = state.session_info['sessions']

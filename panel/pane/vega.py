@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 
-from functools import partial
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
@@ -263,10 +262,7 @@ class Vega(PaneBase):
             data=json, data_sources=sources, events=list(self._selections),
             throttle=self._throttle, **props
         )
-        if comm:
-            model.on_event('vega_event', self._comm_event)
-        else:
-            model.on_event('vega_event', partial(self._server_event, doc))
+        self._register_events('vega_event', model=model, doc=doc, comm=comm)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)

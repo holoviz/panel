@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 import os
 import pathlib
@@ -149,7 +150,6 @@ def test_server_async_callbacks(port):
     counts = []
 
     async def cb(event, count=[0]):
-        import asyncio
         count[0] += 1
         counts.append(count[0])
         await asyncio.sleep(1)
@@ -174,6 +174,70 @@ def test_server_async_callbacks(port):
 
     # Ensure multiple callbacks started concurrently
     assert max(counts) > 1
+
+
+def test_server_async_local_state(port):
+    docs = {}
+
+    async def task():
+        curdoc = state.curdoc
+        await asyncio.sleep(0.5)
+        docs[curdoc] = []
+        for i in range(5):
+            await asyncio.sleep(0.1)
+            docs[curdoc].append(state.curdoc)
+
+    def app():
+        state.execute(task)
+        return 'My app'
+
+    serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    for i in range(3):
+        requests.get(f"http://localhost:{port}/")
+
+    # Wait for callbacks to be scheduled
+    time.sleep(2)
+
+    # Ensure state.curdoc was consistent despite asyncio context switching
+    assert len(docs) == 3
+    assert all([len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items()])
+
+
+def test_server_async_local_state_nested_tasks(port):
+    docs = {}
+
+    async def task(depth=1):
+        curdoc = state.curdoc
+        await asyncio.sleep(0.5)
+        if depth > 0:
+            asyncio.ensure_future(task(depth-1))
+        docs[curdoc] = []
+        for i in range(10):
+            await asyncio.sleep(0.1)
+            docs[curdoc].append(state.curdoc)
+
+    def app():
+        state.execute(task)
+        return 'My app'
+
+    serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    for i in range(3):
+        requests.get(f"http://localhost:{port}/")
+
+    # Wait for callbacks to be scheduled
+    time.sleep(2)
+
+    # Ensure state.curdoc was consistent despite asyncio context switching
+    assert len(docs) == 3
+    assert all(len(set(docs)) == 1 and docs[0] is doc for doc, docs in docs.items())
 
 
 def test_serve_config_per_session_state():
@@ -465,11 +529,9 @@ def test_server_thread_pool_bokeh_event(threads, port):
     requests.get(f"http://localhost:{port}/")
 
     model = list(tabulator._models.values())[0][0]
-    doc = model.document
     event = TableEditEvent(model, 'A', 0)
-    with set_curdoc(doc):
-        for _ in range(3):
-            tabulator._server_event(doc, event)
+    for _ in range(5):
+        tabulator._server_event(model.document, event)
 
     # Wait for callbacks to be scheduled
     time.sleep(1)
@@ -479,8 +541,6 @@ def test_server_thread_pool_bokeh_event(threads, port):
 
 
 def test_server_thread_pool_periodic(threads, port):
-    button = Button(name='Click')
-
     counts = []
 
     def cb(count=[0]):
@@ -489,16 +549,17 @@ def test_server_thread_pool_periodic(threads, port):
         time.sleep(0.5)
         count[0] -= 1
 
-    serve(button, port=port, threaded=True, show=False)
+    def app():
+        button = Button(name='Click')
+        state.add_periodic_callback(cb, 100)
+        return button
+
+    serve(app, port=port, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
 
     requests.get(f"http://localhost:{port}/")
-
-    doc = list(button._models.values())[0][0].document
-    with set_curdoc(doc):
-        state.add_periodic_callback(cb, 100)
 
     # Wait for callbacks to be scheduled
     time.sleep(1)
@@ -522,8 +583,42 @@ def test_server_thread_pool_onload(threads, port):
 
         # Simulate rendering
         def loaded():
-            state._schedule_on_load(None)
-        state.curdoc.add_next_tick_callback(loaded)
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
+
+        return button
+
+    serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}/")
+    requests.get(f"http://localhost:{port}/")
+
+    time.sleep(1)
+
+    # Checks whether onload callbacks were executed concurrently
+    assert max(counts) >= 2
+
+
+def test_server_async_onload(threads, port):
+    counts = []
+
+    def app(count=[0]):
+        button = Button(name='Click')
+        async def onload():
+            count[0] += 1
+            counts.append(count[0])
+            await asyncio.sleep(2)
+            count[0] -= 1
+
+        state.onload(onload)
+
+        # Simulate rendering
+        def loaded():
+            state._schedule_on_load(state.curdoc, None)
+        state.execute(loaded, schedule=True)
 
         return button
 

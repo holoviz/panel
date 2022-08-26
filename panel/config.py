@@ -99,6 +99,17 @@ class _config(_base_config):
         Whether to set custom Signature which allows tab-completion
         in some IDEs and environments.""")
 
+    authorize_callback = param.Callable(default=None, doc="""
+        Authorization callback that is invoked when authentication
+        is enabled. The callback is given the user information returned
+        by the configured Auth provider and should return True or False
+        depending on whether the user is authorized to access the
+        application.""")
+
+    auth_template = param.Path(default=None, doc="""
+        A jinja2 template rendered when the authorize_callback determines
+        that a user in not authorized to access the application.""")
+
     autoreload = param.Boolean(default=False, doc="""
         Whether to autoreload server when script changes.""")
 
@@ -119,7 +130,7 @@ class _config(_base_config):
         Whether to enable notifications functionality.""")
 
     profiler = param.Selector(default=None, allow_None=True, objects=[
-        'pyinstrument', 'snakeviz'], doc="""
+        'pyinstrument', 'snakeviz', 'memray'], doc="""
         The profiler engine to enable.""")
 
     safe_embed = param.Boolean(default=False, doc="""
