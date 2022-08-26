@@ -37,7 +37,7 @@ self.onmessage = async (event) => {
     import pyodide
 
     from bokeh.protocol.messages.patch_doc import process_document_events
-    from panel.state import state
+    from panel import state
 
     def pysync(event):
         json_patch, buffers = process_document_events([event], use_buffers=True)
