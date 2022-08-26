@@ -414,8 +414,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.tabulator.on("rowSelectionChanged", (data: any, rows: any) => this.rowSelectionChanged(data, rows))
     this.tabulator.on("rowClick", (e: any, row: any) => this.rowClicked(e, row))
     this.tabulator.on("cellEdited", (cell: any) => this.cellEdited(cell))
-    this.tabulator.on("dataFiltering", () => {
-      this.model.filters = this.tabulator.getHeaderFilters()
+    this.tabulator.on("dataFiltering", (filters: any) => {
+      this.model.filters = filters
     })
     this.tabulator.on("pageLoaded", (pageno: number) => {
       if (this.model.pagination === 'local' && this.model.page !== pageno) {
@@ -728,7 +728,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       } else if (ctype === "StringEditor") {
         if (editor.completions.length > 0) {
           tab_column.editor = "list"
-          tab_column.editorParams = {values: editor.completions, autocomplete:true}
+          tab_column.editorParams = {values: editor.completions, autocomplete:true, listOnEmpty:true}
       } else
           tab_column.editor = "input"
       } else if (ctype === "TextEditor")
