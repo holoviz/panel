@@ -1048,7 +1048,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       return
     let indices: number[] = []
     const selected = this.model.source.selected
-    const index: number = row.getPosition(true)
+    const index: number = row._row.data._index
     if (e.ctrlKey || e.metaKey) {
       indices = this.model.source.selected.indices
     } else if (e.shiftKey && selected.indices.length) {

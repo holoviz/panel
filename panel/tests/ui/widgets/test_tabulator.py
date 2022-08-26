@@ -2665,21 +2665,21 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, he
     header_filter_col = 'col1'
     header_filter_val = 'Y'
     target_col = 'col4'
-    target_val = 'F'
-    new_val = 'FF'
+    target_val = 'G'
+    new_val = 'GG'
 
     df = pd.DataFrame({
-        'col1': list('XYYYYY'),
-        'col2': list('abcddd'),
-        'col3': list(range(6)),
-        'col4': list('ABCDEF')
+        'col1': list('XYYYYYYZ'),
+        'col2': list('abcddddd'),
+        'col3': list(range(8)),
+        'col4': list('ABCDEFGH')
     })
 
     target_index = df.set_index(target_col).index.get_loc(target_val)
 
     kwargs = {}
     if pagination != 'no_pagination':
-        kwargs = dict(pagination=pagination, page_size=2)
+        kwargs = dict(pagination=pagination, page_size=3)
     if header_filter == 'header_filter':
         kwargs.update(dict(header_filters={header_filter_col: {'type': 'input', 'func': 'like'}}))
 
@@ -2734,7 +2734,7 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, he
         expected_current_view = widget.value
     if python_filter == 'python_filter':
         expected_current_view = expected_current_view.query(f'{python_filter_col} == @python_filter_val')
-    elif header_filter == 'header_filter':
+    if header_filter == 'header_filter':
         expected_current_view = expected_current_view.query(f'{header_filter_col} == @header_filter_val')
     assert widget.current_view.equals(expected_current_view)
 
@@ -2750,20 +2750,20 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
     header_filter_col = 'col1'
     header_filter_val = 'Y'
     target_col = 'col4'
-    target_val = 'F'
+    target_val = 'G'
 
     df = pd.DataFrame({
-        'col1': list('XYYYYY'),
-        'col2': list('abcddd'),
-        'col3': list(range(6)),
-        'col4': list('ABCDEF')
+        'col1': list('XYYYYYYZ'),
+        'col2': list('abcddddd'),
+        'col3': list(range(8)),
+        'col4': list('ABCDEFGH')
     })
 
     target_index = df.set_index(target_col).index.get_loc(target_val)
 
     kwargs = {}
     if pagination != 'no_pagination':
-        kwargs.update(dict(pagination=pagination, page_size=2))
+        kwargs.update(dict(pagination=pagination, page_size=3))
     if header_filter == 'header_filter':
         kwargs.update(dict(header_filters={header_filter_col: {'type': 'input', 'func': 'like'}}))
     widget = Tabulator(df, disabled=True, **kwargs)
@@ -2806,11 +2806,18 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
 
     wait_until(page, lambda: len(values) == 1)
     assert values[0] == (target_col, target_index, target_val)
-    wait_until(page, lambda: widget.selection == [target_index])
+    target_selection_index = widget.current_view.index.get_loc(target_index)
+    if python_filter == 'python_filter' or header_filter == 'header_filter' or sorter == 'sorter':
+        pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
+    wait_until(page, lambda: widget.selection == [target_selection_index])
+
+    if header_filter == 'header_filter' or sorter == 'sorter' or (pagination == 'remote' and python_filter == 'python_filter'):
+        pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
     expected_selected = df.iloc[[target_index], :]
     assert widget.selected_dataframe.equals(expected_selected)
 
 
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
 def test_tabulator_selection_sorters_on_init(page, port, df_mixed):
     widget = Tabulator(df_mixed, sorters=[{'field': 'int', 'dir': 'desc'}])
 
@@ -2830,6 +2837,7 @@ def test_tabulator_selection_sorters_on_init(page, port, df_mixed):
     assert widget.selected_dataframe.equals(expected_selected)
 
 
+@pytest.mark.xfail(reason='https://github.com/holoviz/panel/issues/3664')
 def test_tabulator_selection_header_filter_unchanged(page, port):
     df = pd.DataFrame({
         'col1': list('XYYYYY'),
@@ -2860,6 +2868,7 @@ def test_tabulator_selection_header_filter_unchanged(page, port):
     assert widget.selected_dataframe.equals(expected_selected)
 
 
+@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3670')
 def test_tabulator_selection_header_filter_changed(page, port):
     df = pd.DataFrame({
         'col1': list('XYYYYY'),
