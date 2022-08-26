@@ -20,6 +20,7 @@ include panel/tests/pane/assets/*.mp4
 recursive-include panel/template *.html
 recursive-include panel/template *.css
 recursive-include panel/template *.js
+recursive-include panel/template *.webmanifest
 global-exclude *.py[co]
 global-exclude *~
 global-exclude *.ipynb_checkpoints/*
