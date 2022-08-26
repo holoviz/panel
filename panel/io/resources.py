@@ -60,6 +60,7 @@ ERROR_TEMPLATE = _env.get_template('error.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
 CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
+DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
 

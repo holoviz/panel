@@ -21,9 +21,9 @@
 
   <!-- Favicon
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <link rel="apple-touch-icon" sizes="180x180" href="https://static.bokeh.org/favicon/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="https://panel.holoviz.org/_static/favicon.ico">
-  <link rel="manifest" href="https://static.bokeh.org/favicon/site.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ apple_icon|default('https://panel.holoviz.org/_static/icons/apple-touch-icon.png', true) }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ favicon|default('https://panel.holoviz.org/_static/icons/favicon.ico', true) }}">
+  <link rel="manifest" href="{{ manifest|default('https://panel.holoviz.org/_static/icons/site.webmanifest', true) }}">
   <meta name="msapplication-TileColor" content="#da532c">
   <meta name="theme-color" content="#ffffff">
   <script type="module" src="https://unpkg.com/@microsoft/fast-colors@5.1.0"></script>
@@ -115,8 +115,7 @@
       cursor: pointer;
   }
   .header {
-    /* Photo by mnm.all on Unsplash */
-    background-image: url('static/extensions/panel/images/index_background.png');
+    background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('/images/index_background.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -133,6 +132,7 @@
       padding-left: 1.0em;
       padding-right: 1.0em;
       opacity: 0.8;
+      color: white;
   }
 
   #title, #divider, #subtitle {
@@ -247,7 +247,7 @@
             <fast-tooltip anchor="title">Click to visit the Panel web site</fast-tooltip>
         </h1>
         <article>
-            <h2>Applications running on the server</h2>
+            <h2>Applications</h2>
         </article>
         </div>
         </section>

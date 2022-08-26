@@ -16,9 +16,9 @@
 
     <!-- Favicon
     –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-    <link rel="apple-touch-icon" sizes="180x180" href="https://static.bokeh.org/favicon/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="https://panel.holoviz.org/_static/favicon.ico">
-    <link rel="manifest" href="https://static.bokeh.org/favicon/site.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{base_url|default("", true) }}static/extensions/panel/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{base_url|default("", true) }}static/extensions/panel/images/favicon.ico">
+    <link rel="manifest" href="{{base_url|default("", true) }}static/extensions/panel/images/site.webmanifest">
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
     <script type="module" src="https://unpkg.com/@microsoft/fast-colors@5.1.0"></script>
@@ -82,7 +82,9 @@
 	<section class="header">
           <div class="header-grid">
             <h1>
-              <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self"><img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/></fast-anchor>
+              <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self">
+	        <img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/>
+	      </fast-anchor>
               <fast-tooltip anchor="title">Click to visit the Panel web site</fast-tooltip>
             </h1>
             <span id="subtitle">{{ error_type|default("Error", true) }}: {{ error }}</span>

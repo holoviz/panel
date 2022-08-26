@@ -24,5 +24,5 @@ global-exclude *.py[co]
 global-exclude *~
 global-exclude *.ipynb_checkpoints/*
 graft examples
-graft panel/examples
+graft doc/
 graft panel/dist
