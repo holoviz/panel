@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import sys
 
 from typing import Optional
 
@@ -17,6 +18,7 @@ from bokeh.protocol.messages.patch_doc import process_document_events
 from js import JSON
 
 from ..config import config
+from ..util import isurl
 from . import resources
 from .document import MockSessionContext
 from .state import state
@@ -28,6 +30,22 @@ os.environ['BOKEH_RESOURCES'] = 'cdn'
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+# Patch pandas.read_csv so it works in pyodide
+if 'pandas' in sys.modules:
+    import pandas
+
+    _read_csv_original = pandas.read_csv
+
+    def _read_csv(*args, **kwargs):
+        if args and isurl(args[0]):
+            args = (pyodide.http.open_url(args[0]),)+args[1:]
+        elif isurl(kwargs.get('filepath_or_buffer')):
+            kwargs['filepath_or_buffer'] = pyodide.http.open_url(kwargs['filepath_or_buffer'])
+        return _read_csv_original(*args, **kwargs)
+    _read_csv.__doc__ = _read_csv_original.__doc__
+
+    pandas.read_csv = _read_csv
 
 def async_execute(func):
     event_loop = asyncio.get_running_loop()
