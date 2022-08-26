@@ -150,7 +150,7 @@ pyodideWorker.onmessage = async (event) => {
 INIT_SERVICE_WORKER = """
 <script type="text/javascript">
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/serviceWorker.js');
+  navigator.serviceWorker.register('./serviceWorker.js');
 }
 </script>
 """
@@ -358,7 +358,6 @@ def script_to_html(
                 'env_spec': env_spec,
                 'code': code
             })
-    plot_script = f'{INIT_SERVICE_WORKER}\n{plot_script}'
 
     if prerender:
         json_id = make_id()
@@ -378,7 +377,7 @@ def script_to_html(
     # Collect resources
     resources = Resources(mode='cdn')
     bokeh_js, bokeh_css = bundle_resources(document.roots, resources)
-    bokeh_js = '\n'.join([bokeh_js]+js_resources)
+    bokeh_js = '\n'.join([INIT_SERVICE_WORKER, bokeh_js]+js_resources)
     bokeh_css = '\n'.join([bokeh_css]+css_resources)
 
     # Configure template
