@@ -2,6 +2,7 @@
 
 {% block preamble %}
 {% if app_favicon %}<link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">{% endif %}
+{% if manifest %}<link rel="manifest" href="{{ manifest }}">{% endif %}
 {% if meta_name %}<meta name="name" content="{{ meta_name }}">{% endif %}
 {% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
 {% if meta_keywords %}<meta name="keywords" content="{{ meta_keywords }}">{% endif %}

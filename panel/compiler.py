@@ -274,3 +274,10 @@ def bundle_resources():
             tmplt_bundle_dir = bundle_dir / theme._template.__name__.lower()
             tmplt_bundle_dir.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(theme.css, tmplt_bundle_dir / os.path.basename(theme.css))
+
+    # Bundle icons & images
+    dest_dir = bundle_dir / 'images'
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    icon_dir = pathlib.Path(__file__).parent.parent / 'doc' / '_static' / 'icons'
+    for icon in glob.glob(str(icon_dir / '*')):
+        shutil.copyfile(icon, dest_dir / os.path.basename(icon))

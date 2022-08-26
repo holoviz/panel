@@ -24,6 +24,7 @@ that accepts these same parameters.
     {% block inner_head %}
       <meta charset="utf-8">
       <title>{% block title %}{{ title | e if title else "Panel App" }}{% endblock %}</title>
+      {% if manifest_url %}<link rel="manifest" href="{{ manifest_url }}">{% endif %}
       {% block preamble %}{% endblock %}
       {% block resources %}
         {% block css_resources %}

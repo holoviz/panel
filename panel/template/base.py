@@ -25,7 +25,7 @@ from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
-    BUNDLE_DIR, CDN_DIST, LOCAL_DIST, _env, component_resource_path,
+    BUNDLE_DIR, CDN_DIST, DOC_DIST, LOCAL_DIST, _env, component_resource_path,
     resolve_custom_path,
 )
 from ..io.save import save
@@ -65,7 +65,7 @@ _server_info: str = (
     'https://localhost:{port}</a>'
 )
 
-FAVICON_URL: str = "/static/extensions/panel/icons/favicon.ico"
+FAVICON_URL: str = "/static/extensions/panel/images/favicon.ico"
 
 
 class BaseTemplate(param.Parameterized, ServableMixin):
@@ -446,6 +446,9 @@ class BasicTemplate(BaseTemplate):
     site_url = param.String(default="/", doc="""
         Url of the site and logo. Default is '/'.""")
 
+    manifest = param.String(default=None, doc="""
+        Manifest to add to site.""")
+
     meta_description = param.String(doc="""
         A meta description to add to the document head for search
         engine optimization. For example 'P.A. Nelson'.""")
@@ -719,6 +722,7 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['meta_name'] = self.title
         self._render_variables['site_title'] = self.site
         self._render_variables['site_url'] = self.site_url
+        self._render_variables['manifest'] = self.manifest
         self._render_variables['meta_description'] = self.meta_description
         self._render_variables['meta_keywords'] = self.meta_keywords
         self._render_variables['meta_author'] = self.meta_author
@@ -740,7 +744,7 @@ class BasicTemplate(BaseTemplate):
             favicon = img._b64()
         else:
             if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
-                favicon = CDN_DIST+"icons/favicon.ico"
+                favicon = DOC_DIST + "icons/favicon.ico"
             else:
                 favicon = self.favicon
         self._render_variables['template_resources'] = self._template_resources()
