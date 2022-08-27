@@ -2977,3 +2977,29 @@ def test_tabulator_trigger_value_update(page, port):
     # This currently fails because of a Tabulator JS issue,
     # it only displays the first 20 rows.
     expect(page.locator('.tabulator-row')).to_have_count(nrows)
+
+
+@pytest.mark.parametrize('pagination', ['remote', 'local'])
+def test_tabulator_selection_header_filter_pagination_updated(page, port, df_mixed, pagination):
+    widget = Tabulator(
+        df_mixed,
+        header_filters={'str': {'type': 'input', 'func': 'like'}},
+        pagination=pagination,
+        page_size=3,
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    page.locator('text="Last"').click()
+    wait_until(page, lambda: widget.page == 2)
+
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    str_header.fill('D')
+    str_header.press('Enter')
+
+    wait_until(page, lambda: widget.page == 1)

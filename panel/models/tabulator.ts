@@ -577,8 +577,15 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }, 50, false),
       rowFormatter: (row: any) => this._render_row(row),
       dataFiltering: () => {
-        if (this.tabulator != null)
+        if (this.tabulator != null) {
           this.model.filters = this.tabulator.getHeaderFilters()
+          const pageno: number = this.tabulator.getPage()
+          if (this.model.pagination === 'local' && this.model.page !== pageno) {
+            this._updating_page = true
+            this.model.page = pageno
+            this._updating_page = false
+          }
+        }
       }
     }
     if (this.model.pagination === "remote") {
