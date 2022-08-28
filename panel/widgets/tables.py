@@ -296,7 +296,7 @@ class BaseTable(ReactiveData, Widget):
         rename = 'index' in fields and df.index.name is None
         if rename:
             df.index.name = 'index'
-        df_sorted = df.sort_values(fields, ascending=ascending)
+        df_sorted = df.sort_values(fields, ascending=ascending, kind='mergesort')
         if rename:
             df.index.name = None
             df_sorted.index.name = None

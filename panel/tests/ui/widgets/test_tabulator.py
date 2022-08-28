@@ -3003,3 +3003,76 @@ def test_tabulator_selection_header_filter_pagination_updated(page, port, df_mix
     str_header.press('Enter')
 
     wait_until(page, lambda: widget.page == 1)
+
+
+def test_tabulator_sort_algorithm(page, port):
+    df = pd.DataFrame({
+        'vals': [
+            'A',
+            'i',
+            'W',
+            'g',
+            'r',
+            'l',
+            'a',
+            'n',
+            'z',
+            'N',
+            'a',
+            'l',
+            's',
+            'm',
+            'J',
+            'C',
+            'w'
+        ],
+        'groups': [
+            'A',
+            'B',
+            'C',
+            'B',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'A',
+            'A'
+        ],
+    })
+    target_col = 'vals'
+
+    widget = Tabulator(df, sorters=[{'field': 'groups', 'dir': 'asc'}])
+
+    values = []
+    widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Click on the cell
+    target_val = 'i'
+    target_index = df.set_index(target_col).index.get_loc(target_val)
+    cell = page.locator(f'text="{target_val}"')
+    cell.click()
+
+    wait_until(page, lambda: len(values) == 1)
+    assert values[0] == (target_col, target_index, target_val)
+
+    # Click on the cell
+    target_val = 'W'
+    target_index = df.set_index(target_col).index.get_loc(target_val)
+    cell = page.locator(f'text="{target_val}"')
+    cell.click()
+
+    wait_until(page, lambda: len(values) == 2)
+    assert values[1] == (target_col, target_index, target_val)
