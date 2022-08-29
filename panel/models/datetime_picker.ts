@@ -69,8 +69,8 @@ export class DatetimePickerView extends InputWidgetView {
     this.group_el.appendChild(this.input_el)
     this._picker = flatpickr(this.input_el, {
       defaultDate: this.model.value,
-      minDate: this.model.min_date ?? undefined,
-      maxDate: this.model.max_date ?? undefined,
+      minDate: this.model.min_date ? new Date(this.model.min_date) : undefined,
+      maxDate: this.model.max_date ? new Date(this.model.max_date) : undefined,
       inline: this.model.inline,
       position: this.model.position,
       disable: _convert_date_list(this.model.disabled_dates),
@@ -82,6 +82,8 @@ export class DatetimePickerView extends InputWidgetView {
       mode: this.model.mode,
       onClose: (selected_dates, date_string, instance) => this._on_close(selected_dates, date_string, instance),
     })
+    this._picker.maxDateHasTime = true
+    this._picker.minDateHasTime = true
   }
 
   protected _on_close(_selected_dates: Date[], date_string: string, _instance: flatpickr.Instance): void {
