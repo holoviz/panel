@@ -1828,7 +1828,7 @@ def test_tabulator_edit_event(page, port, df_mixed):
     assert df_mixed.at['idx0', 'str'] == 'AA'
 
 
-@pytest.mark.parametrize('pagination', ['remote', 'local',])
+@pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_pagination(page, port, df_mixed, pagination):
     page_size = 2
     widget = Tabulator(df_mixed, pagination=pagination, page_size=page_size)
@@ -2538,7 +2538,82 @@ def test_tabulator_edit_event_sorters_not_automatically_applied(page, port, df_m
     wait_until(page, lambda: tabulator_column_values(page, 'str') == expected_vals)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3660')
+def test_tabulator_click_event_and_header_filters(page, port):
+    df = pd.DataFrame({
+        'col1': list('ABCDD'),
+        'col2': list('XXXXZ'),
+    })
+    widget = Tabulator(
+        df,
+        header_filters={'col1': {'type': 'input', 'func': 'like'}},
+    )
+
+    values = []
+    widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Set a filter on col1
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    str_header.fill('D')
+    str_header.press('Enter')
+    wait_until(page, lambda: len(widget.filters) == 1)
+
+    # Click on the last cell
+    cell = page.locator('text="Z"')
+    cell.click()
+
+    wait_until(page, lambda: len(values) == 1)
+    # This cell was at index 4 in col2 of the original dataframe
+    assert values[0] == ('col2', 4, 'Z')
+
+
+def test_tabulator_edit_event_and_header_filters_last_row(page, port):
+    df = pd.DataFrame({
+        'col1': list('ABCDD'),
+        'col2': list('XXXXZ'),
+    })
+    widget = Tabulator(
+        df,
+        header_filters={'col1': {'type': 'input', 'func': 'like'}},
+    )
+
+    values = []
+    widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Set a filter on col1
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    str_header.fill('D')
+    str_header.press('Enter')
+    wait_until(page, lambda: len(widget.filters) == 1)
+
+    # Click on the last cell
+    cell = page.locator('text="Z"')
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("ZZ")
+    editable_cell.press('Enter')
+
+    wait_until(page, lambda: len(values) == 1)
+    # This cell was at index 4 in col2 of the original dataframe
+    assert values[0] == ('col2', 4, 'Z', 'ZZ')
+    assert df['col2'].iloc[-1] == 'ZZ'
+    assert widget.value.equals(df)
+    assert widget.current_view.equals(df.query('col1 == "D"'))
+
+
 def test_tabulator_edit_event_and_header_filters(page, port):
     df = pd.DataFrame({
         'col1': list('aaabcd'),
@@ -2564,7 +2639,7 @@ def test_tabulator_edit_event_and_header_filters(page, port):
     str_header.fill('a')
     str_header.press('Enter')
 
-    # Chankge the cell that contains B to BB
+    # Change the cell that contains B to BB
     cell = page.locator('text="B"')
     cell.click()
     editable_cell = page.locator('input[type="text"]')
@@ -2573,35 +2648,40 @@ def test_tabulator_edit_event_and_header_filters(page, port):
 
     wait_until(page, lambda: len(values) == 1)
     # This cell was at index 1 in col2 of the original dataframe
-    assert values[0] == ('col2', 1, 'B', 'BB')  # This fails
-    assert df['b'][1] == 'BB'
+    assert values[0] == ('col2', 1, 'B', 'BB')
+    assert df['col2'][1] == 'BB'
     assert widget.value.equals(df)
-    assert widget.current_view.equals(widget.value)
+    assert widget.current_view.equals(df.query('col1 == "a"'))
 
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
+@pytest.mark.parametrize('header_filter', ['header_filter', 'no_header_filter'])
 @pytest.mark.parametrize('pagination', ['remote', 'local', 'no_pagination'])
-def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pagination):
+def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, header_filter, pagination):
     sorter_col = 'col3'
     python_filter_col = 'col2'
     python_filter_val = 'd'
+    header_filter_col = 'col1'
+    header_filter_val = 'Y'
     target_col = 'col4'
-    target_val = 'F'
-    new_val = 'FF'
+    target_val = 'G'
+    new_val = 'GG'
 
     df = pd.DataFrame({
-        'col1': list('XYYYYY'),
-        'col2': list('abcddd'),
-        'col3': list(range(6)),
-        'col4': list('ABCDEF')
+        'col1': list('XYYYYYYZ'),
+        'col2': list('abcddddd'),
+        'col3': list(range(8)),
+        'col4': list('ABCDEFGH')
     })
 
     target_index = df.set_index(target_col).index.get_loc(target_val)
 
     kwargs = {}
     if pagination != 'no_pagination':
-        kwargs = dict(pagination=pagination, page_size=2)
+        kwargs = dict(pagination=pagination, page_size=3)
+    if header_filter == 'header_filter':
+        kwargs.update(dict(header_filters={header_filter_col: {'type': 'input', 'func': 'like'}}))
 
     widget = Tabulator(df, **kwargs)
 
@@ -2626,6 +2706,13 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pa
         s.click()
         page.wait_for_timeout(200)
 
+    if header_filter == 'header_filter':
+        str_header = page.locator('input[type="search"]')
+        str_header.click()
+        str_header.fill(header_filter_val)
+        str_header.press('Enter')
+        wait_until(page, lambda: len(widget.filters) == 1)
+
     if pagination != 'no_pagination' and sorter == 'no_sorter':
         page.locator('text="Last"').click()
         page.wait_for_timeout(200)
@@ -2638,11 +2725,6 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pa
     editable_cell.press('Enter')
 
     wait_until(page, lambda: len(values) == 1)
-    if python_filter == 'python_filter':
-        pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3662')
-    else:
-        if pagination == 'remote' and sorter == 'sorter':
-            pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3663')
     assert values[0] == (target_col, target_index, target_val, new_val)
     assert df[target_col][target_index] == new_val
     assert widget.value.equals(df)
@@ -2651,13 +2733,15 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, pa
     else:
         expected_current_view = widget.value
     if python_filter == 'python_filter':
-        expected_current_view = expected_current_view.query('@python_filter_col == @python_filter_val')
+        expected_current_view = expected_current_view.query(f'{python_filter_col} == @python_filter_val')
+    if header_filter == 'header_filter':
+        expected_current_view = expected_current_view.query(f'{header_filter_col} == @header_filter_val')
     assert widget.current_view.equals(expected_current_view)
 
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
-@pytest.mark.parametrize('header_filter', ['no_header_filter'])  # TODO: add header_filter
+@pytest.mark.parametrize('header_filter', ['header_filter', 'no_header_filter'])
 @pytest.mark.parametrize('pagination', ['remote', 'local', 'no_pagination'])
 def test_tabulator_click_event_selection_integrations(page, port, sorter, python_filter, header_filter, pagination):
     sorter_col = 'col3'
@@ -2666,20 +2750,20 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
     header_filter_col = 'col1'
     header_filter_val = 'Y'
     target_col = 'col4'
-    target_val = 'F'
+    target_val = 'G'
 
     df = pd.DataFrame({
-        'col1': list('XYYYYY'),
-        'col2': list('abcddd'),
-        'col3': list(range(6)),
-        'col4': list('ABCDEF')
+        'col1': list('XYYYYYYZ'),
+        'col2': list('abcddddd'),
+        'col3': list(range(8)),
+        'col4': list('ABCDEFGH')
     })
 
     target_index = df.set_index(target_col).index.get_loc(target_val)
 
     kwargs = {}
     if pagination != 'no_pagination':
-        kwargs.update(dict(pagination=pagination, page_size=2))
+        kwargs.update(dict(pagination=pagination, page_size=3))
     if header_filter == 'header_filter':
         kwargs.update(dict(header_filters={header_filter_col: {'type': 'input', 'func': 'like'}}))
     widget = Tabulator(df, disabled=True, **kwargs)
@@ -2705,15 +2789,15 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
         s.click()
         page.wait_for_timeout(200)
 
-    if pagination != 'no_pagination' and sorter == 'no_sorter':
-        page.locator('text="Last"').click()
-        page.wait_for_timeout(200)
-
     if header_filter == 'header_filter':
         str_header = page.locator('input[type="search"]')
         str_header.click()
         str_header.fill(header_filter_val)
         str_header.press('Enter')
+        wait_until(page, lambda: len(widget.filters) == 1)
+
+    if pagination != 'no_pagination' and sorter == 'no_sorter':
+        page.locator('text="Last"').click()
         page.wait_for_timeout(200)
 
     # Click on the cell
@@ -2721,14 +2805,13 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
     cell.click()
 
     wait_until(page, lambda: len(values) == 1)
-    if python_filter == 'python_filter':
-        pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3662')
-    else:
-        if pagination == 'remote' and sorter == 'sorter':
-            pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3663')
     assert values[0] == (target_col, target_index, target_val)
-    wait_until(page, lambda: widget.selection == [target_index])
-    if pagination in ['local', 'no_pagination'] and python_filter == 'no_python_filter' and sorter == 'sorter':
+    target_selection_index = widget.current_view.index.get_loc(target_index)
+    if python_filter == 'python_filter' or header_filter == 'header_filter' or sorter == 'sorter':
+        pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
+    wait_until(page, lambda: widget.selection == [target_selection_index])
+
+    if header_filter == 'header_filter' or sorter == 'sorter' or (pagination == 'remote' and python_filter == 'python_filter'):
         pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
     expected_selected = df.iloc[[target_index], :]
     assert widget.selected_dataframe.equals(expected_selected)
@@ -2751,7 +2834,7 @@ def test_tabulator_selection_sorters_on_init(page, port, df_mixed):
 
     wait_until(page, lambda: widget.selection == [len(df_mixed) - 1])
     expected_selected = df_mixed.loc[[last_index], :]
-    assert widget.selected_dataframe.equals(expected_selected)  # This fails
+    assert widget.selected_dataframe.equals(expected_selected)
 
 
 @pytest.mark.xfail(reason='https://github.com/holoviz/panel/issues/3664')
@@ -2782,7 +2865,6 @@ def test_tabulator_selection_header_filter_unchanged(page, port):
 
     assert widget.selection == selection
     expected_selected = df.iloc[selection, :]
-    # This fails
     assert widget.selected_dataframe.equals(expected_selected)
 
 
@@ -2814,7 +2896,6 @@ def test_tabulator_selection_header_filter_changed(page, port):
 
     assert widget.selection == selection
     expected_selected = df.iloc[selection, :]
-    # This fails
     assert widget.selected_dataframe.equals(expected_selected)
 
 
@@ -2896,3 +2977,102 @@ def test_tabulator_trigger_value_update(page, port):
     # This currently fails because of a Tabulator JS issue,
     # it only displays the first 20 rows.
     expect(page.locator('.tabulator-row')).to_have_count(nrows)
+
+
+@pytest.mark.parametrize('pagination', ['remote', 'local'])
+def test_tabulator_selection_header_filter_pagination_updated(page, port, df_mixed, pagination):
+    widget = Tabulator(
+        df_mixed,
+        header_filters={'str': {'type': 'input', 'func': 'like'}},
+        pagination=pagination,
+        page_size=3,
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    page.locator('text="Last"').click()
+    wait_until(page, lambda: widget.page == 2)
+
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    str_header.fill('D')
+    str_header.press('Enter')
+
+    wait_until(page, lambda: widget.page == 1)
+
+
+def test_tabulator_sort_algorithm(page, port):
+    df = pd.DataFrame({
+        'vals': [
+            'A',
+            'i',
+            'W',
+            'g',
+            'r',
+            'l',
+            'a',
+            'n',
+            'z',
+            'N',
+            'a',
+            'l',
+            's',
+            'm',
+            'J',
+            'C',
+            'w'
+        ],
+        'groups': [
+            'A',
+            'B',
+            'C',
+            'B',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'A',
+            'A'
+        ],
+    })
+    target_col = 'vals'
+
+    widget = Tabulator(df, sorters=[{'field': 'groups', 'dir': 'asc'}])
+
+    values = []
+    widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Click on the cell
+    target_val = 'i'
+    target_index = df.set_index(target_col).index.get_loc(target_val)
+    cell = page.locator(f'text="{target_val}"')
+    cell.click()
+
+    wait_until(page, lambda: len(values) == 1)
+    assert values[0] == (target_col, target_index, target_val)
+
+    # Click on the cell
+    target_val = 'W'
+    target_index = df.set_index(target_col).index.get_loc(target_val)
+    cell = page.locator(f'text="{target_val}"')
+    cell.click()
+
+    wait_until(page, lambda: len(values) == 2)
+    assert values[1] == (target_col, target_index, target_val)
