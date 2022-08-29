@@ -76,6 +76,13 @@ def test_plotly_2d_plot(page, port, plotly_2d_plot):
     hover = page.locator('.hoverlayer')
     expect(hover).to_have_count(1)
 
+    time.sleep(0.2)
+
+    assert plotly_2d_plot.viewport == {
+        'xaxis.range': [-0.08103975535168195, 1.081039755351682],
+        'yaxis.range': [1.9267515923566878, 3.073248407643312]
+    }
+
 
 @plotly_available
 def test_plotly_3d_plot(page, port, plotly_3d_plot):
@@ -104,19 +111,54 @@ def test_plotly_3d_plot(page, port, plotly_3d_plot):
 
 
 @plotly_available
-def _test_plotly_click_data(page, port, plotly_3d_plot):
-    plot_3d, title = plotly_3d_plot
-    serve(plot_3d, port=port, threaded=True, show=False)
+def test_plotly_hover_data(page, port, plotly_2d_plot):
+    serve(plotly_2d_plot, port=port, threaded=True, show=False)
     time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
 
-    plot = page.locator('.js-plotly-plot .plot-container.plotly .gl-container #scene')
-    plot_bbox = plot.bounding_box()
+    # Select and hover on first point
+    point = page.locator(':nth-match(.js-plotly-plot .plot-container.plotly path.point, 1)')
+    point.hover(force=True)
 
-    # TODO: clicking on plot updates data in Python
-    print('plot_bbox', plot_bbox)
-    for i in range(0, plot_bbox['width'], 20):
-        for j in range(0, plot_bbox['height'], 20):
-            page.mouse.click(plot_bbox['x'] + i, plot_bbox['y'] + j)
-            page.wait_for_timeout(500)
-            print(i, j, plot_3d.click_data)
+    time.sleep(0.2)
+
+    assert plotly_2d_plot.hover_data == {
+        'points': [{
+            'curveNumber': 0,
+            'pointIndex': 0,
+            'pointNumber': 0,
+            'x': 0,
+            'y': 2
+        }]
+    }
+
+    # Hover somewhere else
+    plot = page.locator('.js-plotly-plot .plot-container.plotly g.scatterlayer')
+    plot.hover(force=True)
+
+    time.sleep(0.2)
+
+    assert plotly_2d_plot.hover_data is None
+
+
+@plotly_available
+def test_plotly_click_data(page, port, plotly_2d_plot):
+    serve(plotly_2d_plot, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    # Select and click on first point
+    point = page.locator(':nth-match(.js-plotly-plot .plot-container.plotly path.point, 1)')
+    point.click(force=True)
+
+    time.sleep(0.2)
+
+    assert plotly_2d_plot.click_data == {
+        'points': [{
+            'curveNumber': 0,
+            'pointIndex': 0,
+            'pointNumber': 0,
+            'x': 0,
+            'y': 2
+        }]
+    }
