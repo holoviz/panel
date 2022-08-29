@@ -327,17 +327,9 @@ class _DatetimePickerBase(Widget):
         super().__init__(**params)
         self._update_value_bounds()
 
-    @staticmethod
-    def _date_to_datetime(x):
-        if isinstance(x, date):
-            return datetime(x.year, x.month, x.day)
-
     @param.depends('start', 'end', watch=True)
     def _update_value_bounds(self):
-        self.param.value.bounds = (
-            self._date_to_datetime(self.start),
-            self._date_to_datetime(self.end),
-        )
+        self.param.value.bounds = (self.start, self.end)
         self.param.value._validate(self.value)
 
     def _process_property_change(self, msg):
@@ -378,11 +370,6 @@ class DatetimePicker(_DatetimePickerBase):
         if isinstance(value, str) and value:
             value = datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
 
-            # Hour, minute and seconds can be increased after end is reached.
-            # This forces the hours, minute and second to be 0.
-            end = self._date_to_datetime(self.end)
-            if end is not None and value > end:
-                value = end
 
         return value
 
@@ -421,13 +408,6 @@ class DatetimeRangePicker(_DatetimePickerBase):
                 for value in value.split(' to ')
             ]
 
-            # Hour, minute and seconds can be increased after end is reached.
-            # This forces the hours, minute and second to be 0.
-            end = self._date_to_datetime(self.end)
-            if end is not None and value[0] > end:
-                value[0] = end
-            if end is not None and value[1] > end:
-                value[1] = end
 
             value = tuple(value)
 
