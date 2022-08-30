@@ -299,17 +299,13 @@ class _DatetimePickerBase(Widget):
       Enable editing of the seconds in the widget.""")
 
     end = param.Date(default=None, doc="""
-      Inclusive upper bound of the allowed date selection. Note that while
-      the parameter accepts datetimes the time portion of the range
-      is ignored.""")
+      Inclusive upper bound of the allowed date selection.""")
 
     military_time = param.Boolean(default=True, doc="""
       Whether to display time in 24 hour format.""")
 
     start = param.Date(default=None, doc="""
-      Inclusive lower bound of the allowed date selection. Note that while
-      the parameter accepts datetimes the time portion of the range
-      is ignored.""")
+      Inclusive lower bound of the allowed date selection.""")
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None, 'mode': None
@@ -369,7 +365,6 @@ class DatetimePicker(_DatetimePickerBase):
     def _serialize_value(self, value):
         if isinstance(value, str) and value:
             value = datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
-
 
         return value
 
