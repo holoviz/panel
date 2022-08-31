@@ -15,16 +15,23 @@ from bokeh.models.widgets.tables import TableColumn
 from ..io.resources import bundled_files
 from ..util import classproperty
 
-JS_SRC = "https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.js"
+TABULATOR_VERSION = "5.3.2"
+
+JS_SRC = f"https://unpkg.com/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.js"
 MOMENT_SRC = "https://cdn.jsdelivr.net/npm/luxon/build/global/luxon.min.js"
 
-THEME_PATH = "tabulator-tables@4.9.3/dist/css/"
+THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
 THEME_URL = f"https://unpkg.com/{THEME_PATH}"
 PANEL_CDN = f'https://cdn.jsdelivr.net/npm/@holoviz/panel/dist/bundled/{THEME_PATH}'
 TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
     'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'
 ]
+# Theme names were renamed in Tabulator 5.0.
+_TABULATOR_THEMES_MAPPING = {
+    'bootstrap': 'bootstrap3',
+    'semantic-ui': 'semanticui',
+}
 
 class TableEditEvent(ModelEvent):
 
@@ -60,15 +67,7 @@ class CellClickEvent(ModelEvent):
         )
 
 def _get_theme_url(url, theme):
-    if 'bootstrap' in theme:
-        url += 'bootstrap/'
-    elif 'materialize' in theme:
-        url += 'materialize/'
-    elif 'semantic-ui' in theme:
-        url += 'semantic-ui/'
-    elif 'bulma' in theme:
-        url += 'bulma/'
-    elif 'fast' in theme:
+    if 'fast' in theme:
         if url.startswith(THEME_URL):
             url = url.replace(THEME_URL, PANEL_CDN)
         url += 'fast/'
@@ -80,6 +79,7 @@ for theme in TABULATOR_THEMES:
     if theme == 'default':
         _url += 'tabulator.min.css'
     else:
+        theme = _TABULATOR_THEMES_MAPPING.get(theme, theme)
         _url += f'tabulator_{theme}.min.css'
     CSS_URLS.append(_url)
 

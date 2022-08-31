@@ -293,13 +293,29 @@ class BaseTable(ReactiveData, Widget):
             return df
         fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
         ascending = [s['dir'] == 'asc' for s in self.sorters]
-        rename = 'index' in fields and df.index.name is None
-        if rename:
-            df.index.name = 'index'
+
+        # Temporarily add _index_ column because Tabulator uses internal _index
+        # as additional sorter to break ties
+        df['_index_'] = np.arange(len(df)).astype(str)
+        fields.append('_index_')
+        ascending.append(True)
+
+        # Handle sort on index column if show_index=True
+        if self.show_index:
+            rename = 'index' in fields and df.index.name is None
+            if rename:
+                df.index.name = 'index'
+        else:
+            rename = False
+
         df_sorted = df.sort_values(fields, ascending=ascending, kind='mergesort')
+
+        # Revert temporary changes to DataFrames
         if rename:
             df.index.name = None
             df_sorted.index.name = None
+        df.drop(columns=['_index_'], inplace=True)
+        df_sorted.drop(columns=['_index_'], inplace=True)
         return df_sorted
 
     def _filter_dataframe(self, df: DataFrameType) -> DataFrameType:
@@ -1106,7 +1122,7 @@ class Tabulator(BaseTable):
     def _process_event(self, event):
         event_col = self._renamed_cols.get(event.column, event.column)
         processed = self._sort_df(self._processed)
-        if self.pagination == 'remote':
+        if self.pagination in ['local', 'remote']:
             nrows = self.page_size
             event.row = event.row+(self.page-1)*nrows
         event_row = event.row
@@ -1127,6 +1143,7 @@ class Tabulator(BaseTable):
             event.row = iloc
         if event.event_name == 'table-edit':
             for cb in self._on_edit_callbacks:
+                print(cb)
                 state.execute(partial(cb, event))
             self._update_style()
         else:
@@ -1137,7 +1154,9 @@ class Tabulator(BaseTable):
 
     def _get_theme(self, theme, resources=None):
         from ..io.resources import RESOURCE_MODE
-        from ..models.tabulator import THEME_PATH, THEME_URL, _get_theme_url
+        from ..models.tabulator import (
+            _TABULATOR_THEMES_MAPPING, THEME_PATH, THEME_URL, _get_theme_url,
+        )
         if RESOURCE_MODE == 'server' and resources in (None, 'server'):
             theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
             if state.rel_path:
@@ -1147,7 +1166,8 @@ class Tabulator(BaseTable):
         # Ensure theme_url updates before theme
         cdn_url = _get_theme_url(THEME_URL, theme)
         theme_url = _get_theme_url(theme_url, theme)
-        fname = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme
+        theme_ = _TABULATOR_THEMES_MAPPING.get(self.theme, self.theme)
+        fname = 'tabulator' if theme_ == 'default' else 'tabulator_' + theme_
         if self._widget_type is not None:
             self._widget_type.__css_raw__ = [f'{cdn_url}{fname}.min.css']
         return theme_url, theme

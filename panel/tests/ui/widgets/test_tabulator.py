@@ -32,6 +32,7 @@ except ImportError:
 
 from panel import state
 from panel.io.server import serve
+from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
 from panel.tests.util import get_ctrl_modifier, wait_until
 from panel.widgets import Tabulator
 
@@ -322,6 +323,10 @@ def test_tabulator_buttons_event(page, port, df_mixed):
     icon.wait_for()
     # Click on the first button
     icon.click()
+
+    time.sleep(0.2)
+
+    assert state == expected_state
     wait_until(page, lambda: state == expected_state)
 
 
@@ -1168,6 +1173,32 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, port, df_mixed, pa
     # assert bb == page.locator(f'text="{col_name}"').bounding_box()
 
 
+def test_tabulator_header_filter_always_visible(page, port, df_mixed):
+    col_name = 'newcol'
+    df_mixed[col_name] = 'on'
+    widget = Tabulator(
+        df_mixed,
+        header_filters={col_name: {'type': 'input', 'func': 'like'}},
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    header = page.locator('input[type="search"]')
+    expect(header).to_have_count(1)
+    header.click()
+    header.fill('off')
+    header.press('Enter')
+
+    wait_until(page, lambda: widget.current_view.empty)
+
+    header = page.locator('input[type="search"]')
+    expect(header).to_have_count(1)
+
+
 @pytest.mark.parametrize('theme', Tabulator.param['theme'].objects)
 def test_tabulator_theming(page, port, df_mixed, df_mixed_as_string, theme):
     # Subscribe the reponse events to check that the CSS is loaded
@@ -1188,6 +1219,7 @@ def test_tabulator_theming(page, port, df_mixed, df_mixed_as_string, theme):
         use_inner_text=True
     )
     found = False
+    theme = _TABULATOR_THEMES_MAPPING.get(theme, theme)
     for response in responses:
         base = response.url.split('/')[-1]
         if base == f'tabulator_{theme}.min.css':
@@ -2028,7 +2060,7 @@ def test_tabulator_header_filters_init_from_editors(page, port, df_mixed):
     assert number_header.get_attribute('step') == '0.5'
 
 
-def test_tabulator_header_filters_init_explicitely(page, port, df_mixed):
+def test_tabulator_header_filters_init_explicitly(page, port, df_mixed):
     header_filters = {
         'float': {'type': 'number', 'func': '>=', 'placeholder': 'Placeholder float'},
         'str': {'type': 'input', 'func': 'like', 'placeholder': 'Placeholder str'},
@@ -2318,7 +2350,7 @@ def test_tabulator_patching_and_styling(page, port, df_mixed):
 def test_tabulator_configuration(page, port, df_mixed):
     # By default the Tabulator widget has sortable columns.
     # Pass a configuration property to disable this behaviour.
-    widget = Tabulator(df_mixed, configuration={'headerSort': False})
+    widget = Tabulator(df_mixed, configuration={'columnDefaults': {'headerSort': False}})
 
     serve(widget, port=port, threaded=True, show=False)
 
@@ -2363,9 +2395,10 @@ def test_tabulator_editor_datetime_nan(page, port, df_mixed):
 
 
 @pytest.mark.parametrize('col', ['index', 'int', 'float', 'str', 'date', 'datetime'])
-@pytest.mark.parametrize('dir', ['asc', 'desc'])
+@pytest.mark.parametrize('dir', ['ascending', 'descending'])
 def test_tabulator_sorters_on_init(page, port, df_mixed, col, dir):
-    widget = Tabulator(df_mixed, sorters=[{'field': col, 'dir': dir}])
+    dir_ = 'asc' if dir == 'ascending' else 'desc'
+    widget = Tabulator(df_mixed, sorters=[{'field': col, 'dir': dir_}])
 
     serve(widget, port=port, threaded=True, show=False)
 
@@ -2376,7 +2409,7 @@ def test_tabulator_sorters_on_init(page, port, df_mixed, col, dir):
     sorted_header = page.locator(f'[aria-sort="{dir}"]:visible')
     expect(sorted_header).to_have_attribute('tabulator-field', col)
 
-    ascending = True if dir == 'asc' else False
+    ascending = dir == 'ascending'
     if col == 'index':
         expected_current_view = df_mixed.sort_index(ascending=ascending)
     else:
@@ -2399,9 +2432,9 @@ def test_tabulator_sorters_on_init_multiple(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    s1 = page.locator('[aria-sort="desc"]:visible')
+    s1 = page.locator('[aria-sort="descending"]:visible')
     expect(s1).to_have_attribute('tabulator-field', 'col1')
-    s2 = page.locator('[aria-sort="asc"]:visible')
+    s2 = page.locator('[aria-sort="ascending"]:visible')
     expect(s2).to_have_attribute('tabulator-field', 'col2')
 
     first_index_rendered = page.locator('.tabulator-cell:visible').first.inner_text()
@@ -2423,7 +2456,7 @@ def test_tabulator_sorters_set_after_init(page, port, df_mixed):
 
     widget.sorters = [{'field': 'int', 'dir': 'desc'}]
 
-    sheader = page.locator('[aria-sort="desc"]:visible')
+    sheader = page.locator('[aria-sort="descending"]:visible')
     expect(sheader).to_have_count(1)
     assert sheader.get_attribute('tabulator-field') == 'int'
 
@@ -2443,7 +2476,7 @@ def test_tabulator_sorters_from_client(page, port, df_mixed):
 
     page.locator('.tabulator-col', has_text='float').locator('.tabulator-col-sorter').click()
 
-    sheader = page.locator('[aria-sort="asc"]:visible')
+    sheader = page.locator('[aria-sort="ascending"]:visible')
     expect(sheader).to_have_count(1)
     assert sheader.get_attribute('tabulator-field') == 'float'
 
@@ -2495,7 +2528,7 @@ def test_tabulator_sorters_pagination(page, port, df_mixed, pagination):
     page.wait_for_timeout(100)
     s.click()
 
-    sheader = page.locator('[aria-sort="desc"]:visible')
+    sheader = page.locator('[aria-sort="descending"]:visible')
     expect(sheader).to_have_count(1)
     assert sheader.get_attribute('tabulator-field') == 'str'
 
@@ -2957,7 +2990,6 @@ def test_tabulator_loading_no_vertical_rescroll(page, port):
     assert bb == page.locator('text="T"').bounding_box()
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3695')
 def test_tabulator_trigger_value_update(page, port):
     # Checking that this issue is resolved:
     # https://github.com/holoviz/panel/issues/3695
@@ -3049,6 +3081,78 @@ def test_tabulator_sort_algorithm(page, port):
     target_col = 'vals'
 
     widget = Tabulator(df, sorters=[{'field': 'groups', 'dir': 'asc'}])
+
+    values = []
+    widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Click on the cell
+    target_val = 'i'
+    target_index = df.set_index(target_col).index.get_loc(target_val)
+    cell = page.locator(f'text="{target_val}"')
+    cell.click()
+
+    wait_until(page, lambda: len(values) == 1)
+    assert values[0] == (target_col, target_index, target_val)
+
+    # Click on the cell
+    target_val = 'W'
+    target_index = df.set_index(target_col).index.get_loc(target_val)
+    cell = page.locator(f'text="{target_val}"')
+    cell.click()
+
+    wait_until(page, lambda: len(values) == 2)
+    assert values[1] == (target_col, target_index, target_val)
+
+def test_tabulator_sort_algorithm_no_show_index(page, port):
+    df = pd.DataFrame({
+        'vals': [
+            'A',
+            'i',
+            'W',
+            'g',
+            'r',
+            'l',
+            'a',
+            'n',
+            'z',
+            'N',
+            'a',
+            'l',
+            's',
+            'm',
+            'J',
+            'C',
+            'w'
+        ],
+        'groups': [
+            'A',
+            'B',
+            'C',
+            'B',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'A',
+            'A'
+        ],
+    }, index=np.random.choice(list(range(17)), size=17, replace=False))
+    target_col = 'vals'
+
+    widget = Tabulator(df, sorters=[{'field': 'groups', 'dir': 'asc'}], show_index=False)
 
     values = []
     widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
