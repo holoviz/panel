@@ -290,7 +290,10 @@ def get_timeline(doc=None):
             push_notebook(bk_pane)
 
     for record in log_data_handler._data.data:
-        update_cds(record)
+        try:
+            update_cds(record)
+        except Exception:
+            pass
 
     def schedule_cds_update(event):
         new = event.new[-1]
@@ -443,14 +446,13 @@ def log_component():
         sizing_mode='stretch_both'
     )
 
-
-def admin_panel(doc):
-    # Add and remove admin panel app from log sessions list
+def admin_template(doc):
     log_sessions.append(id(doc))
     def _remove_log_session(session_context):
         log_sessions.remove(id(doc))
     doc.on_session_destroyed(_remove_log_session)
 
+    # Add and remove admin panel app from log sessions list
     # Set up admin panel
     template = FastListTemplate(title='Admin Panel', theme='dark')
     tabs = Tabs(
@@ -471,6 +473,10 @@ def admin_panel(doc):
         (name, plugin()) for name, plugin in config.admin_plugins
     ])
     template.main.append(tabs)
+    return template
+
+def admin_panel(doc):
+    template = admin_template(doc)
     with set_curdoc(doc):
         template.server_doc(doc)
     return doc

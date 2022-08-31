@@ -159,6 +159,8 @@ def profiling_tabs(state, allow=None, deny=[]):
         reporter = Select(name='Reporter', options=['flamegraph', 'table', 'tree'], value='tree')
         reporter.param.watch(update_memray, 'value')
         config_panel = reporter
+    else:
+        config_panel = Row(sizing_mode='stretch_width')
     return Column(
         Accordion(
             ('Config', config_panel),
