@@ -293,13 +293,29 @@ class BaseTable(ReactiveData, Widget):
             return df
         fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
         ascending = [s['dir'] == 'asc' for s in self.sorters]
-        rename = 'index' in fields and df.index.name is None
-        if rename:
-            df.index.name = 'index'
+
+        # Temporarily add _index_ column because Tabulator uses internal _index
+        # as additional sorter to break ties
+        df['_index_'] = np.arange(len(df)).astype(str)
+        fields.append('_index_')
+        ascending.append(True)
+
+        # Handle sort on index column if show_index=True
+        if self.show_index:
+            rename = 'index' in fields and df.index.name is None
+            if rename:
+                df.index.name = 'index'
+        else:
+            rename = False
+
         df_sorted = df.sort_values(fields, ascending=ascending, kind='mergesort')
+
+        # Revert temporary changes to DataFrames
         if rename:
             df.index.name = None
             df_sorted.index.name = None
+        df.drop(columns=['_index_'], inplace=True)
+        df_sorted.drop(columns=['_index_'], inplace=True)
         return df_sorted
 
     def _filter_dataframe(self, df: DataFrameType) -> DataFrameType:
@@ -1106,7 +1122,7 @@ class Tabulator(BaseTable):
     def _process_event(self, event):
         event_col = self._renamed_cols.get(event.column, event.column)
         processed = self._sort_df(self._processed)
-        if self.pagination == 'remote':
+        if self.pagination in ['local', 'remote']:
             nrows = self.page_size
             event.row = event.row+(self.page-1)*nrows
         event_row = event.row
@@ -1127,6 +1143,7 @@ class Tabulator(BaseTable):
             event.row = iloc
         if event.event_name == 'table-edit':
             for cb in self._on_edit_callbacks:
+                print(cb)
                 state.execute(partial(cb, event))
             self._update_style()
         else:

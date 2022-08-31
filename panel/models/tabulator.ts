@@ -238,6 +238,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0;
   _applied_styles: boolean = false
+  _building: boolean=false
 
   connect_signals(): void {
     super.connect_signals()
@@ -318,21 +319,16 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.relayout()
   }
 
-  renderComplete(): void {
-    // Only have to set up styles after initial render subsequent
-    // styling is handled by change event on styles property
-    if (this._initializing) {
-      this.setSelection()
-      this.relayout()
-      this._initializing = false
-      if (this._lastVerticalScrollbarTopPosition)
-        this.tabulator.rowManager.element.scrollTop = this._lastVerticalScrollbarTopPosition;
-    }
-  }
-
   redraw(): void {
-    this.tabulator.redraw(true)
-    this.setStyles()
+    if (!this._building) {
+      if (this.tabulator.columnManager.element != null) {
+	this.tabulator.columnManager.redraw(true);
+      }
+      if (this.tabulator.rowManager.renderer != null) {
+	this.tabulator.rowManager.redraw(true);
+	this.setStyles()
+      }
+    }
   }
 
   after_layout(): void {
@@ -361,6 +357,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   tableInit(): void {
+    this._building = true
     // Patch the ajax request and page data parsing methods
     const ajax = this.tabulator.modules.ajax
     ajax.sendRequest = (_url: any, params: any, _config: any) => {
@@ -375,22 +372,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     // Initialization
     this.tabulator.on("tableBuilding", () => this.tableInit())
     this.tabulator.on("tableBuilt", () => this.tableBuilt())
-
-    // For disabled pagination initialize on renderComplete
-    if (this.model.pagination !== 'remote') {
-      this.tabulator.on("renderComplete", () => {
-        this.tabulator.off("renderComplete")
-        // Apply styles after first render then unsubscribe
-        this.setFrozen()
-        this.setStyles()
-        this.renderChildren()
-        this.setGroupBy()
-        this.tabulator.modules.frozenColumns.active = true
-        this.tabulator.modules.frozenColumns.layout()
-        this.relayout()
-        this._initializing = false
-      })
-    }
 
     // Disable frozenColumns during rendering (see https://github.com/olifolkerd/tabulator/issues/3530)
     this.tabulator.on("dataLoading", () => {
@@ -417,12 +398,17 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.tabulator.on("dataFiltering", (filters: any) => {
       this.model.filters = filters
     })
+    this.tabulator.on("dataFiltered", (_: any, rows: any[]) => {
+      if (this._initializing)
+	return
+      // Ensure that after filtering empty scroll renders
+      if (rows.length === 0)
+	this.tabulator.rowManager.renderEmptyScroll()
+      // Ensure that after filtering the page is updated
+      this.updatePage(this.tabulator.getPage())
+    })
     this.tabulator.on("pageLoaded", (pageno: number) => {
-      if (this.model.pagination === 'local' && this.model.page !== pageno) {
-        this._updating_page = true
-        this.model.page = pageno
-        this._updating_page = false
-      }
+      this.updatePage(pageno)
     })
     this.tabulator.on("dataSorting", (sorters: any[]) => {
       const sorts = []
@@ -439,28 +425,29 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   tableBuilt(): void {
+    this._building = false
     this.setHidden()
     this.setSelection()
 
     // For remote pagination initialize on tableBuilt
-    if (this.model.pagination) {
-      this.setMaxPage()
-      this.tabulator.setPage(this.model.page)
-      this.setStyles()
-      this.renderChildren()
-      this.setGroupBy()
-      this.tabulator.modules.frozenColumns.active = true
-      this.tabulator.modules.frozenColumns.layout()
-      setTimeout(() => this.relayout(), 10)
-      this._initializing = false
-    }
+    this.setMaxPage()
+    this.tabulator.setPage(this.model.page)
+    this.setStyles()
+    this.renderChildren()
+    this.setGroupBy()
+    this.setFrozen()
+    this.tabulator.modules.frozenColumns.active = true
+    this.tabulator.modules.frozenColumns.layout()
+    this._initializing = false
   }
 
   relayout(): void {
     if (this._relayouting)
       return
     this._relayouting = true
-    this.tabulator.rowManager.adjustTableSize()
+    if (this.tabulator.rowManager.renderer) {
+      this.tabulator.rowManager.adjustTableSize()
+    }
     this.update_layout()
     this.compute_layout()
     if (this.root !== this) {
@@ -761,7 +748,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           tab_column.headerSortStartingDir = sort.dir
       }
       tab_column.cellClick = (_: any, cell: any) => {
-        const index_processed = cell.getRow().getPosition(true)
+        const index_processed = cell.getRow().getPosition()-1
         this.model.trigger_event(new CellClickEvent(column.field, index_processed))
       }
       if (config_columns == null)
@@ -775,7 +762,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         formatter: button_formatter,
         hozAlign: "center",
         cellClick: (_: any, cell: any) => {
-          const index_processed = cell.getRow().getPosition(true)
+          const index_processed = cell.getRow().getPosition()-1
           this.model.trigger_event(new CellClickEvent(col, index_processed))
         }
       }
@@ -853,6 +840,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.tabulator.getRow(row).freeze()
   }
 
+  updatePage(pageno: number): void {
+    if (this.model.pagination === 'local' && this.model.page !== pageno) {
+      this._updating_page = true
+      this.model.page = pageno
+      this._updating_page = false
+    }
+  }
+
   setGroupBy(): void {
     if (this.model.groupby.length == 0) {
       this.tabulator.setGroupBy(false)
@@ -926,8 +921,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     css_node.href = css
 
     css_node.onload = () => {
-      this.render()
-      this.relayout()
+      if (!this._building) {
+	this.render()
+	this.relayout()
+      }
     }
     parent_node.appendChild(css_node)
     return true
@@ -1080,9 +1077,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   cellEdited(cell: any): void {
     const field = cell._cell.column.field;
     // true to get the position of the filtered/sorted row index
-    const index_processed = cell.getRow().getPosition(true);
-    const index = cell._cell.row.data._index;
-    const value = cell._cell.value;
+    const index_processed = cell.getRow().getPosition()-1
+    const index = cell._cell.row.data._index
+    const value = cell._cell.value
     this._tabulator_cell_updating = true
     comm_settings.debounce = false
     try {

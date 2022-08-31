@@ -323,6 +323,10 @@ def test_tabulator_buttons_event(page, port, df_mixed):
     icon.wait_for()
     # Click on the first button
     icon.click()
+
+    time.sleep(0.2)
+
+    assert state == expected_state
     wait_until(page, lambda: state == expected_state)
 
 
@@ -2056,7 +2060,7 @@ def test_tabulator_header_filters_init_from_editors(page, port, df_mixed):
     assert number_header.get_attribute('step') == '0.5'
 
 
-def test_tabulator_header_filters_init_explicitely(page, port, df_mixed):
+def test_tabulator_header_filters_init_explicitly(page, port, df_mixed):
     header_filters = {
         'float': {'type': 'number', 'func': '>=', 'placeholder': 'Placeholder float'},
         'str': {'type': 'input', 'func': 'like', 'placeholder': 'Placeholder str'},
@@ -3077,6 +3081,78 @@ def test_tabulator_sort_algorithm(page, port):
     target_col = 'vals'
 
     widget = Tabulator(df, sorters=[{'field': 'groups', 'dir': 'asc'}])
+
+    values = []
+    widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Click on the cell
+    target_val = 'i'
+    target_index = df.set_index(target_col).index.get_loc(target_val)
+    cell = page.locator(f'text="{target_val}"')
+    cell.click()
+
+    wait_until(page, lambda: len(values) == 1)
+    assert values[0] == (target_col, target_index, target_val)
+
+    # Click on the cell
+    target_val = 'W'
+    target_index = df.set_index(target_col).index.get_loc(target_val)
+    cell = page.locator(f'text="{target_val}"')
+    cell.click()
+
+    wait_until(page, lambda: len(values) == 2)
+    assert values[1] == (target_col, target_index, target_val)
+
+def test_tabulator_sort_algorithm_no_show_index(page, port):
+    df = pd.DataFrame({
+        'vals': [
+            'A',
+            'i',
+            'W',
+            'g',
+            'r',
+            'l',
+            'a',
+            'n',
+            'z',
+            'N',
+            'a',
+            'l',
+            's',
+            'm',
+            'J',
+            'C',
+            'w'
+        ],
+        'groups': [
+            'A',
+            'B',
+            'C',
+            'B',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'C',
+            'A',
+            'A'
+        ],
+    }, index=np.random.choice(list(range(17)), size=17, replace=False))
+    target_col = 'vals'
+
+    widget = Tabulator(df, sorters=[{'field': 'groups', 'dir': 'asc'}], show_index=False)
 
     values = []
     widget.on_click(lambda e: values.append((e.column, e.row, e.value)))

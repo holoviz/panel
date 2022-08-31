@@ -511,7 +511,7 @@ class _state(param.Parameterized):
         doc = self.curdoc
         if param.parameterized.iscoroutinefunction(cb):
             param.parameterized.async_executor(callback)
-        elif doc and (schedule == True or (schedule == 'auto' and self._unblocked(doc))):
+        elif doc and doc.session_context and (schedule == True or (schedule == 'auto' and self._unblocked(doc))):
             doc.add_next_tick_callback(callback)
         else:
             callback()
