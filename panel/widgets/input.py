@@ -299,17 +299,13 @@ class _DatetimePickerBase(Widget):
       Enable editing of the seconds in the widget.""")
 
     end = param.Date(default=None, doc="""
-      Inclusive upper bound of the allowed date selection. Note that while
-      the parameter accepts datetimes the time portion of the range
-      is ignored.""")
+      Inclusive upper bound of the allowed date selection.""")
 
     military_time = param.Boolean(default=True, doc="""
       Whether to display time in 24 hour format.""")
 
     start = param.Date(default=None, doc="""
-      Inclusive lower bound of the allowed date selection. Note that while
-      the parameter accepts datetimes the time portion of the range
-      is ignored.""")
+      Inclusive lower bound of the allowed date selection.""")
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None, 'mode': None
@@ -327,9 +323,19 @@ class _DatetimePickerBase(Widget):
         super().__init__(**params)
         self._update_value_bounds()
 
+    @staticmethod
+    def _convert_to_datetime(v):
+        if isinstance(v, datetime):
+            return v
+        elif isinstance(v, date):
+            return datetime(v.year, v.month, v.day)
+
     @param.depends('start', 'end', watch=True)
     def _update_value_bounds(self):
-        self.param.value.bounds = (self.start, self.end)
+        self.param.value.bounds = (
+            self._convert_to_datetime(self.start),
+            self._convert_to_datetime(self.end)
+        )
         self.param.value._validate(self.value)
 
     def _process_property_change(self, msg):
@@ -342,6 +348,10 @@ class _DatetimePickerBase(Widget):
         msg = super()._process_param_change(msg)
         if 'value' in msg:
             msg['value'] = self._deserialize_value(msg['value'])
+        if 'min_date' in msg:
+            msg['min_date'] = self._convert_to_datetime(msg['min_date'])
+        if 'max_date' in msg:
+            msg['max_date'] = self._convert_to_datetime(msg['max_date'])
         return msg
 
 
@@ -369,7 +379,6 @@ class DatetimePicker(_DatetimePickerBase):
     def _serialize_value(self, value):
         if isinstance(value, str) and value:
             value = datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
-
 
         return value
 
