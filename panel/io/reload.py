@@ -71,7 +71,7 @@ def autoreload_watcher():
     files and sys.modules.
     """
     cb = partial(_reload_on_update, {})
-    _callbacks[state.curdoc] = pcb = PeriodicCallback(callback=cb)
+    _callbacks[state.curdoc] = pcb = PeriodicCallback(callback=cb, background=True)
     pcb.start()
 
 def watch(filename):

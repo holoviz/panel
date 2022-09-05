@@ -48,6 +48,7 @@ class PeriodicCallback(param.Parameterized):
         Toggles whether the periodic callback is currently running.""")
 
     def __init__(self, **params):
+        self._background = params.pop('background', False)
         super().__init__(**params)
         self._counter = 0
         self._start_time = None
@@ -90,8 +91,9 @@ class PeriodicCallback(param.Parameterized):
             _periodic_logger.info(
                 LOG_PERIODIC_END, id(self._doc), cbname, self._counter
             )
-        with edit_readonly(state):
-            state.busy = False
+        if not self._background:
+            with edit_readonly(state):
+                state.busy = False
         self._counter += 1
         if self.timeout is not None:
             dt = (time.time() - self._start_time) * 1000
@@ -101,8 +103,9 @@ class PeriodicCallback(param.Parameterized):
             self.stop()
 
     async def _periodic_callback(self):
-        with edit_readonly(state):
-            state.busy = True
+        if not self._background:
+            with edit_readonly(state):
+                state.busy = True
         cbname = function_name(self.callback)
         if self._doc and self.log:
             _periodic_logger.info(
