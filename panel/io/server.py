@@ -516,11 +516,12 @@ def modify_document(self, doc: 'Document'):
             else:
                 doc._modules.remove(module)
             bokeh.application.handlers.code_runner.handle_exception = handle_exception
-            tb = html.escape(traceback.format_exc())
+            tb = html.escape(traceback.format_exc()).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
 
             # Serve error
+            e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
             HTML(
-                f'<b>{type(e).__name__}</b>: {e}</br><pre style="overflow-y: scroll">{tb}</pre>',
+                f'<b>{type(e).__name__}</b>: {e_msg}</br><pre style="overflow-y: scroll">{tb}</pre>',
                 css_classes=['alert', 'alert-danger'], sizing_mode='stretch_width'
             ).servable()
 
