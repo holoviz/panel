@@ -498,7 +498,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
 class _RangeSliderBase(_SliderBase):
 
-    value = param.Tuple(length=2, doc="""
+    value = param.Tuple(length=2, allow_None=False, doc="""
         The selected range of the slider. Updated when a handle is dragged.""")
 
     value_start = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")
@@ -509,9 +509,11 @@ class _RangeSliderBase(_SliderBase):
 
     def __init__(self, **params):
         if 'value' not in params:
-            params['value'] = (params.get('start', self.start),
-                               params.get('end', self.end))
-        params['value_start'], params['value_end'] = params['value']
+            params['value'] = (
+                params.get('start', self.start), params.get('end', self.end)
+            )
+        if params['value'] is not None:
+            params['value_start'], params['value_end'] = params['value']
         with edit_readonly(self):
             super().__init__(**params)
 
@@ -544,7 +546,7 @@ class RangeSlider(_RangeSliderBase):
     ... )
     """
 
-    value = param.Range(default=(0, 1), doc=
+    value = param.Range(default=(0, 1), allow_None=False, doc=
         """The selected range as a tuple of values. Updated when a handle is
         dragged.""")
 
@@ -636,7 +638,7 @@ class DateRangeSlider(_SliderBase):
     ... )
     """
 
-    value = param.DateRange(default=None, doc="""
+    value = param.DateRange(default=None, allow_None=False, doc="""
         The selected range as a tuple of values. Updated when one of the handles is
         dragged. Supports datetime.datetime, datetime.date, and np.datetime64 ranges.""")
 
@@ -932,7 +934,8 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     ... )
     """
 
-    value = param.Range(default=(0, 1), doc="Current range value. Updated when a handle is dragged")
+    value = param.Range(default=(0, 1), allow_None=False, doc="""
+        Current range value. Updated when a handle is dragged.""")
 
     value_throttled = param.Range(default=None, constant=True, doc="""
         The value of the slider. Updated when the handle is released.""")
