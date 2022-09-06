@@ -472,7 +472,6 @@ class Param(PaneBase):
         if isinstance(widget_class, Widget):
             widget = widget_class
         else:
-            print(kwargs, widget_class, p_obj.allow_None)
             widget = widget_class(**kwargs)
         widget._param_pane = self
         widget._param_name = p_name
