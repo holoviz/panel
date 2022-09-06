@@ -156,21 +156,19 @@ class FloatSlider(ContinuousSlider):
     >>> FloatSlider(value=0.5, start=0.0, end=1.0, step=0.1, name="Float value")
     """
 
-    value = param.Number(default=0.0, doc="""
-        The selected floating-point value of the slider. Updated when the handle is dragged.
-        """)
+    start = param.Number(default=0.0, doc="The lower bound.")
+
+    end = param.Number(default=1.0, doc="The upper bound.")
+
+    step = param.Number(default=0.1, doc="The step size.")
+
+    value = param.Number(default=0.0, allow_None=True, doc="""
+        The selected floating-point value of the slider. Updated when
+        the handle is dragged."""
+    )
 
     value_throttled = param.Number(default=None, constant=True, doc="""
          The value of the slider. Updated when the handle is released.""")
-
-    start = param.Number(default=0.0, doc="""
-        The lower bound.""")
-
-    end = param.Number(default=1.0, doc="""
-        The upper bound.""")
-
-    step = param.Number(default=0.1, doc="""
-        The step size.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
@@ -187,9 +185,6 @@ class IntSlider(ContinuousSlider):
     >>> IntSlider(value=5, start=0, end=10, step=1, name="Integer Value")
     """
 
-    value = param.Integer(default=0, doc="""
-        The selected integer value of the slider. Updated when the handle is dragged.""")
-
     start = param.Integer(default=0, doc="""
         The lower bound.""")
 
@@ -198,6 +193,9 @@ class IntSlider(ContinuousSlider):
 
     step = param.Integer(default=1, doc="""
         The step size.""")
+
+    value = param.Integer(default=0, allow_None=True, doc="""
+        The selected integer value of the slider. Updated when the handle is dragged.""")
 
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The value of the slider. Updated when the handle is released""")
@@ -500,7 +498,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
 class _RangeSliderBase(_SliderBase):
 
-    value = param.Tuple(length=2, doc="""
+    value = param.Tuple(length=2, allow_None=False, doc="""
         The selected range of the slider. Updated when a handle is dragged.""")
 
     value_start = param.Parameter(readonly=True, doc="""The lower value of the selected range.""")
@@ -511,9 +509,11 @@ class _RangeSliderBase(_SliderBase):
 
     def __init__(self, **params):
         if 'value' not in params:
-            params['value'] = (params.get('start', self.start),
-                               params.get('end', self.end))
-        params['value_start'], params['value_end'] = params['value']
+            params['value'] = (
+                params.get('start', self.start), params.get('end', self.end)
+            )
+        if params['value'] is not None:
+            params['value_start'], params['value_end'] = params['value']
         with edit_readonly(self):
             super().__init__(**params)
 
@@ -546,7 +546,7 @@ class RangeSlider(_RangeSliderBase):
     ... )
     """
 
-    value = param.Range(default=(0, 1), doc=
+    value = param.Range(default=(0, 1), allow_None=False, doc=
         """The selected range as a tuple of values. Updated when a handle is
         dragged.""")
 
@@ -638,7 +638,7 @@ class DateRangeSlider(_SliderBase):
     ... )
     """
 
-    value = param.DateRange(default=None, doc="""
+    value = param.DateRange(default=None, allow_None=False, doc="""
         The selected range as a tuple of values. Updated when one of the handles is
         dragged. Supports datetime.datetime, datetime.date, and np.datetime64 ranges.""")
 
@@ -934,7 +934,8 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     ... )
     """
 
-    value = param.Range(default=(0, 1), doc="Current range value. Updated when a handle is dragged")
+    value = param.Range(default=(0, 1), allow_None=False, doc="""
+        Current range value. Updated when a handle is dragged.""")
 
     value_throttled = param.Range(default=None, constant=True, doc="""
         The value of the slider. Updated when the handle is released.""")

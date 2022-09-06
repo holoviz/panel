@@ -422,7 +422,10 @@ class Param(PaneBase):
             kw['visible'] = not p_obj.constant
 
         value = getattr(self.object, p_name)
-        if value is not None:
+        allow_None = p_obj.allow_None or False
+        if isinstance(widget_class, type) and issubclass(widget_class, Widget):
+            allow_None &= widget_class.param.value.allow_None
+        if value is not None or allow_None:
             kw['value'] = value
 
         if hasattr(p_obj, 'get_range'):

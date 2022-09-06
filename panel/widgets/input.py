@@ -524,7 +524,7 @@ class _SpinnerBase(_NumericInputBase):
     __abstract = True
 
     def __init__(self, **params):
-        if params.get('value') is None:
+        if 'value' not in params:
             value = params.get('start', self.value)
             if value is not None:
                 params['value'] = value
@@ -638,6 +638,9 @@ class LiteralInput(Widget):
     >>> LiteralInput(name='Dictionary', value={'key': [1, 2, 3]}, type=dict)
     """
 
+    placeholder = param.String(default='', doc="""
+      Placeholder for empty input field.""")
+
     serializer = param.ObjectSelector(default='ast', objects=['ast', 'json'], doc="""
        The serialization (and deserialization) method to use. 'ast'
        uses ast.literal_eval and 'json' uses json.loads and json.dumps.
@@ -685,7 +688,9 @@ class LiteralInput(Widget):
         if 'value' in msg:
             value = msg.pop('value')
             try:
-                if self.serializer == 'json':
+                if value == '':
+                    value = ''
+                elif self.serializer == 'json':
                     value = json.loads(value)
                 else:
                     value = ast.literal_eval(value)
@@ -703,7 +708,9 @@ class LiteralInput(Widget):
                             pass
                         else:
                             break
-                    if typed_value is None and value is not None:
+                    if typed_value is None and value == '':
+                        value = None
+                    elif typed_value is None and value is not None:
                         new_state = ' (wrong type)'
                         value = self.value
                     else:
