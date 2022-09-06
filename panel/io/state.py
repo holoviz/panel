@@ -206,7 +206,8 @@ class _state(param.Parameterized):
 
     @_thread_id.setter
     def _thread_id(self, thread_id: int) -> None:
-        self._thread_id_[self.curdoc] = thread_id
+        if self.curdoc:
+            self._thread_id_[self.curdoc] = thread_id
 
     def _unblocked(self, doc: Document) -> bool:
         thread = threading.current_thread()
@@ -582,7 +583,7 @@ class _state(param.Parameterized):
             else:
                 self.execute(callback, schedule=False)
             return
-        if self.curdoc not in self._onload:
+        elif self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
             try:
                 self.curdoc.on_event('document_ready', partial(self._schedule_on_load, self.curdoc))
@@ -789,17 +790,14 @@ class _state(param.Parameterized):
 
     @property
     def curdoc(self) -> Document | None:
-        if self._curdoc:
-            return self._curdoc
         try:
             doc = curdoc_locked()
-        except Exception:
-            return None
-        try:
             if doc.session_context or self._is_pyodide:
                 return doc
-        except Exception:
-            return None
+        finally:
+            curdoc = self._curdoc
+            if curdoc:
+                return curdoc
 
     @curdoc.setter
     def curdoc(self, doc: Document) -> None:
