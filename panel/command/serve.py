@@ -301,13 +301,6 @@ class Serve(_BkServe):
                         state._on_load(None)
                     _cleanup_doc(doc)
 
-        prefix = args.prefix
-        if prefix is None:
-            prefix = ""
-        prefix = prefix.strip("/")
-        if prefix:
-            prefix = "/" + prefix
-
         config.profiler = args.profiler
         if args.admin:
             from ..io.admin import admin_panel
@@ -322,7 +315,6 @@ class Serve(_BkServe):
             for p in per_app_patterns:
                 route = '/admin' + p[0]
                 context = {"application_context": app_ctx}
-                route = prefix + route
                 app_patterns.append((route, p[1], context))
 
             websocket_path = None
