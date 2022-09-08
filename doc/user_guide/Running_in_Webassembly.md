@@ -1,3 +1,5 @@
+# Running in Webassembly
+
 Panel is primarily a way to build dashboards and applications in the browser but since it is written in Python this generally means that we have to run a Python server that is connected to the frontend application.
 
 However quite recently it has become possible to run Python application directly in the browser thanks to a technology called [WebAssembly](https://webassembly.org/) (or WASM). More specifically the [Pyodide](https://pyodide.org/) pioneered the ability to install Python libraries, manipulate the DOM from Python, and execute regular Python code entirely in the browser. A number of libraries have sprung up around Python in WASM including [PyScript](https://pyscript.net/).
