@@ -239,7 +239,7 @@ def destroy_document(self, session):
     state.schedule_task('gc.collect', gc.collect, at=at)
 
 
-# Patch Srrver to attach task factory to asyncio loop
+# Patch Server to attach task factory to asyncio loop and handle Admin server context
 class Server(BokehServer):
 
     def __init__(self, *args, **kwargs):
@@ -248,8 +248,21 @@ class Server(BokehServer):
             _add_task_factory(self.io_loop.asyncio_loop) # type: ignore
         except Exception:
             pass
+        if state._admin_context:
+            state._admin_context._loop = self._loop
+
+    def start(self) -> None:
+        super().start()
+        if state._admin_context:
+            self._loop.add_callback(state._admin_context.run_load_hook)
+
+    def stop(self, wait: bool = True) -> None:
+        super().stop(wait=wait)
+        if state._admin_context:
+            state._admin_context.run_unload_hook()
 
 bokeh.server.server.Server = Server
+
 
 # Patch Application to handle session callbacks
 class Application(BkApplication):

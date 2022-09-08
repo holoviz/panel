@@ -34,11 +34,7 @@ from .profile import profiling_tabs
 from .server import set_curdoc
 from .state import state
 
-try:
-    import psutil
-    process = psutil.Process(os.getpid())
-except Exception:
-    process = None
+PROCESSES = {}
 
 log_sessions = []
 
@@ -324,11 +320,19 @@ def get_version_info():
     Param: {param.__version__}</br>
     </code>""", width=300, height=300, margin=(0, 5))
 
+def get_process():
+    import psutil
+    if os.getpid() in PROCESSES:
+        process = PROCESSES[os.getpid()]
+    else:
+        PROCESSES[os.getpid()] = process = psutil.Process(os.getpid())
+    return process
+
 def get_mem():
-    return pd.DataFrame([(time.time(), process.memory_info().rss/1024/1024)], columns=['time', 'memory'])
+    return pd.DataFrame([(time.time(), get_process().memory_info().rss/1024/1024)], columns=['time', 'memory'])
 
 def get_cpu():
-    return pd.DataFrame([(time.time(), process.cpu_percent())], columns=['time', 'cpu'])
+    return pd.DataFrame([(time.time(), get_process().cpu_percent())], columns=['time', 'cpu'])
 
 def get_process_info():
     memory = Trend(
@@ -339,14 +343,12 @@ def get_process_info():
         data=get_cpu(), plot_x='time', plot_y='cpu', plot_type='step',
         title='CPU Usage (%)', width=300, height=300
     )
-    def update_memory(): memory.stream(get_mem())
-    def update_cpu(): cpu.stream(get_cpu())
-    mem_cb = state.add_periodic_callback(update_memory, period=1000, start=False)
-    cpu_cb = state.add_periodic_callback(update_cpu, period=1000, start=False)
-    mem_cb.log = False
-    cpu_cb.log = False
-    mem_cb.start()
-    cpu_cb.start()
+    def update_stats():
+        memory.stream(get_mem())
+        cpu.stream(get_cpu())
+    stats_cb = state.add_periodic_callback(update_stats, period=1000, start=False)
+    stats_cb.log = False
+    stats_cb.start()
     return memory, cpu
 
 def get_session_data():
@@ -412,11 +414,14 @@ def get_session_info(doc=None):
 def get_overview(doc=None):
     layout = FlexBox(*get_session_info(doc), margin=0, sizing_mode='stretch_width')
     info = get_version_info()
-    if process is None:
+    try:
+        import psutil  # noqa
+    except Exception:
         layout.append(info)
         return layout
-    layout.extend([*get_process_info(), info])
-    return layout
+    else:
+        layout.extend([*get_process_info(), info])
+        return layout
 
 
 def log_component():
@@ -476,7 +481,7 @@ def admin_template(doc):
     return template
 
 def admin_panel(doc):
-    template = admin_template(doc)
     with set_curdoc(doc):
+        template = admin_template(doc)
         template.server_doc(doc)
     return doc

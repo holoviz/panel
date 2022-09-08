@@ -122,6 +122,9 @@ class _state(param.Parameterized):
     _thread_id_: ClassVar[WeakKeyDictionary[Document, int]] = WeakKeyDictionary()
     _thread_pool = None
 
+    # Admin application (remove in Panel 1.0 / Bokeh 3.0)
+    _admin_context = None
+
     # Jupyter communication
     _comm_manager = _CommManager
     _kernels = {}
