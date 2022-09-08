@@ -1553,8 +1553,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         #  {% endfor %}
         template_string = self._template
         for var, obj in self._parser.loop_map.items():
-            template_string = template_string.replace(
-                '${%s}' % var, '${%s[{{ loop.index0 }}]}' % obj)
+            for var in self._parser.loop_var_map[var]:
+                template_string = template_string.replace(
+                    '${%s}' % var, '${%s[{{ loop.index0 }}]}' % obj)
 
         # Add index to templated loop node ids
         for dom_node, _ in self._parser.looped:
