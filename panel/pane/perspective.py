@@ -318,6 +318,9 @@ class Perspective(PaneBase, ReactiveData):
     plugin = param.ObjectSelector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
       The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")
 
+    plugin_config = param.Dict(default={}, doc="""
+      Configuration for the PerspectiveViewerPlugin.""")
+
     toggle_config = param.Boolean(default=True, doc="""
       Whether to show the config menu.""")
 
