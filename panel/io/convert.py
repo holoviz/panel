@@ -263,7 +263,7 @@ def script_to_html(
     requirements: Literal['auto'] | List[str] = 'auto',
     js_resources: Literal['auto'] | List[str] = 'auto',
     css_resources: Literal['auto'] | List[str] | None = None,
-    runtime: Runtimes = 'pyscript',
+    runtime: Runtimes = 'pyodide',
     prerender: bool = True,
     panel_version: Literal['auto'] | str = 'auto',
     manifest: str | None = None
