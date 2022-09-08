@@ -469,6 +469,38 @@ def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
     assert model.looped == ['option']
 
 
+def test_reactive_html_templated_children_add_loop_id_and_for_loop_var_insensitive_to_spaces():
+
+    class TestTemplatedChildren(ReactiveHTML):
+
+        children = param.List(default=[])
+
+        _template = """
+        <select id="select">
+        {%- for option in children %}
+          <option id="option">${ option   }</option>
+        {%- endfor %}
+        </select>
+        """
+
+    assert TestTemplatedChildren._node_callbacks == {}
+    assert TestTemplatedChildren._inline_callbacks == []
+    assert TestTemplatedChildren._parser.children == {'option': 'children'}
+
+    test = TestTemplatedChildren(children=['A', 'B', 'C'])
+
+    assert test._get_template()[0] == """
+        <select id="select-${id}">
+          <option id="option-0-${id}"></option>
+          <option id="option-1-${id}"></option>
+          <option id="option-2-${id}"></option>
+        </select>
+        """
+    model = test.get_root()
+    assert test._attrs == {}
+    assert model.looped == ['option']
+
+
 def test_reactive_html_scripts_linked_properties_assignment_operator():
 
     for operator in ['', '+', '-', '*', '\\', '%', '**', '>>', '<<', '>>>', '&', '^', '&&', '||', '??']:
@@ -483,3 +515,84 @@ def test_reactive_html_scripts_linked_properties_assignment_operator():
                 _scripts = {'render': f'test.onclick = () => {{ data.clicks{sep}{operator}= 1 }}'}
 
             assert TestScripts()._linked_properties() == ['clicks']
+
+
+def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var():
+
+    class TestTemplatedChildren(ReactiveHTML):
+
+        children = param.List(default=[])
+
+        _template = """
+        <select id="select">
+        {%- for option in children %}
+          <option id="option">{{ option }}</option>
+        {%- endfor %}
+        </select>
+        """
+
+    assert TestTemplatedChildren._node_callbacks == {}
+    assert TestTemplatedChildren._inline_callbacks == []
+    assert TestTemplatedChildren._parser.children == {}
+
+    test = TestTemplatedChildren(children=['A', 'B', 'C'])
+
+    assert test._get_template()[0] == """
+        <select id="select-${id}">
+          <option id="option-0-${id}">A</option>
+          <option id="option-1-${id}">B</option>
+          <option id="option-2-${id}">C</option>
+        </select>
+        """
+    model = test.get_root()
+    assert test._attrs == {}
+    assert model.looped == ['option']
+
+
+def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var_insensitive_to_spaces():
+
+    class TestTemplatedChildren(ReactiveHTML):
+
+        children = param.List(default=[])
+
+        _template = """
+        <select id="select">
+        {%- for option in children %}
+          <option id="option">{{option   }}</option>
+        {%- endfor %}
+        </select>
+        """
+
+    assert TestTemplatedChildren._node_callbacks == {}
+    assert TestTemplatedChildren._inline_callbacks == []
+    assert TestTemplatedChildren._parser.children == {}
+
+    test = TestTemplatedChildren(children=['A', 'B', 'C'])
+
+    assert test._get_template()[0] == """
+        <select id="select-${id}">
+          <option id="option-0-${id}">A</option>
+          <option id="option-1-${id}">B</option>
+          <option id="option-2-${id}">C</option>
+        </select>
+        """
+    model = test.get_root()
+    assert test._attrs == {}
+    assert model.looped == ['option']
+
+
+def test_reactive_html_templated_variable_not_in_declared_node():
+    with pytest.raises(ValueError) as excinfo:
+        class TestTemplatedChildren(ReactiveHTML):
+
+            children = param.List(default=[])
+
+            _template = """
+            <select>
+            {%- for option in children %}
+            <option id="option">{{option   }}</option>
+            {%- endfor %}
+            </select>
+            """
+    assert 'could not be expanded because the <select> node' in str(excinfo)
+    assert '{%- for option in children %}' in str(excinfo)
