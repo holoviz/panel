@@ -12,14 +12,14 @@ To install Panel in the browser you merely have to use the installation mechanis
 
 ### Pyodide
 
-Currently the best supported mechanism for installing packages in Pyodide is `micropip`, which can be imported within the Pyodide runtime. Once imported simple use `micropip.install`:
+Currently the best supported mechanism for installing packages in Pyodide is `micropip`, which can be imported within the Pyodide runtime. Once imported simply use `micropip.install`:
 
 ```python
 import micropip
 micropip.install('panel')
 ```
 
-To get started with Pyodide simply follow their [Getting started guide](https://pyodide.org/en/stable/usage/quickstart.html). Note that if you want to render Panel output you will also have to load Bokeh.js and Panel.js from CDN. The most basic pyodide application therefore looks like this:
+To get started with Pyodide simply follow their [Getting started guide](https://pyodide.org/en/stable/usage/quickstart.html). Note that if you want to render Panel output you will also have to load [Bokeh.js](https://docs.bokeh.org/en/2.4.1/docs/first_steps/installation.html#install-bokehjs:~:text=Installing%20standalone%20BokehJS%C2%B6) and Panel.js from CDN. The most basic pyodide application therefore looks like this:
 
 ```html
 <!DOCTYPE html>
