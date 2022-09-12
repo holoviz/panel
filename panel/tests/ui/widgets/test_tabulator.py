@@ -3109,6 +3109,7 @@ def test_tabulator_sort_algorithm(page, port):
     wait_until(page, lambda: len(values) == 2)
     assert values[1] == (target_col, target_index, target_val)
 
+
 def test_tabulator_sort_algorithm_no_show_index(page, port):
     df = pd.DataFrame({
         'vals': [
@@ -3180,3 +3181,32 @@ def test_tabulator_sort_algorithm_no_show_index(page, port):
 
     wait_until(page, lambda: len(values) == 2)
     assert values[1] == (target_col, target_index, target_val)
+
+
+@pytest.mark.parametrize(
+    ('col', 'vals'),
+    (
+        ('string', [np.nan, '', 'B', 'a', '', np.nan]),
+        ('number', [1.0, 1.0, 0.0, 0.0]),
+        ('boolean', [True, True, False, False]),
+    ),
+)
+def test_tabulator_sort_algorithm_by_type(page, port, col, vals):
+    df = pd.DataFrame({
+        col: vals,
+    })
+
+    widget = Tabulator(df, sorters=[{'field': col, 'dir': 'asc'}])
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    client_index = [int(i) for i in tabulator_column_values(page, 'index')]
+
+    wait_until(
+        page,
+        lambda: client_index == list(widget.current_view.index)
+    )
