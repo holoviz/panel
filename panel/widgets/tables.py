@@ -308,7 +308,18 @@ class BaseTable(ReactiveData, Widget):
         else:
             rename = False
 
-        df_sorted = df.sort_values(fields, ascending=ascending, kind='mergesort')
+        def tabulator_sorter(col):
+            # Tabulator JS defines its own sorting algorithm:
+            # - strings's case isn't taken into account
+            if col.dtype != 'O':
+                return col
+            try:
+                return col.str.lower()
+            except Exception:
+                return col
+
+        df_sorted = df.sort_values(fields, ascending=ascending, kind='mergesort',
+                                  key=tabulator_sorter)
 
         # Revert temporary changes to DataFrames
         if rename:
