@@ -1576,8 +1576,9 @@ class Tabulator(BaseTable):
             filter_func = None
             filter_placeholder = None
         fspec['headerFilter'] = filter_type
-        if filter_type == 'select' and not filter_params:
-            filter_params = {'values': True}
+        # Tabulator JS renamed select to list
+        if filter_type in ['select', 'list'] and not filter_params:
+            filter_params = {'valuesLookup': True}
         fspec['headerFilter'] = filter_type
         if filter_params:
             fspec['headerFilterParams'] = filter_params
