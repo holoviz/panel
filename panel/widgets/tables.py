@@ -311,7 +311,7 @@ class BaseTable(ReactiveData, Widget):
         def tabulator_sorter(col):
             # Tabulator JS defines its own sorting algorithm:
             # - strings's case isn't taken into account
-            if col.dtype.kind not in 'SUO': 
+            if col.dtype.kind not in 'SUO':
                 return col
             try:
                 return col.str.lower()
