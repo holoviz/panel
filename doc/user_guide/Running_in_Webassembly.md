@@ -185,3 +185,52 @@ Current versions of PyScript will automatically render the output of the last ce
   pn.Row(slider, pn.bind(callback, slider))
 </py-script>
 ```
+
+## Embedding in documentation
+
+One more option is to include live Panel examples in your Sphinx documentation using the `nbsite.pyodide` directive. Simply install latest nbsite with `pip` or `conda`:
+
+```bash
+pip install --pre nbsite`
+# OR
+conda install -c pyviz/label/dev nbsite
+```
+
+and then you can use the `pyodide` as an RST directive:
+
+```rst
+.. pyodide::
+
+   import panel as pn
+
+   slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
+
+   def callback(new):
+       return f'Amplitude is: {new}'
+
+   pn.Row(slider, pn.bind(callback, slider))
+```
+
+The resulting output looks like this:
+
+```{pyodide}
+import panel as pn
+
+slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
+
+def callback(new):
+    return f'Amplitude is: {new}'
+
+pn.Row(slider, pn.bind(callback, slider))
+```
+
+The code cell will display a button to execute the cell, which will warn about downloading the Python runtime on first-click and ask you to confirm whether you want to proceed. It will then download Pyodide, all required packages and finally display the output.
+
+In the `conf.py` of your project you can configure the extension in a number of ways by defining an `nbsite_pyodide_conf` dictionary with the following options:
+
+- `PYODIDE_URL`: The URl to fetch Pyodide from
+- `autodetect_deps` (default=`True`): Whether to automatically detect dependencies in the executed code and install them.
+- `enable_pwa` (default=`True`): Whether to add a web manifest and service worker to configure the documentation as a progressive web app.
+- `requirements` (default=`['panel']`): Default requirements to include (by default this includes just panel.
+- `scripts`: Scripts to add to the website when a Pyodide cell is first executed.
+- `setup_code` (default=`''`): Python code to run when initializing the Pyodide runtime.
