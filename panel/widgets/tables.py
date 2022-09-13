@@ -1575,9 +1575,23 @@ class Tabulator(BaseTable):
             filter_params = {}
             filter_func = None
             filter_placeholder = None
-        fspec['headerFilter'] = filter_type
-        # Tabulator JS renamed select to list
-        if filter_type in ['select', 'list'] and not filter_params:
+        # Tabulator JS renamed select and autocomplete to list, and relies on
+        # valuesLookup set to True to autopopulate the filter, instead of
+        # values. This ensure backwards compatibility.
+        if filter_type in ['select', 'autocomplete']:
+            self.param.warning(
+                f'The {filter_type!r} filter has been deprecated, use '
+                f'instead the "list" filter type to configure column {column.field!r}'
+            )
+            filter_type = 'list'
+            if filter_params.get('values', False) is True:
+                self.param.warning(
+                    'Setting "values" to True has been deprecated, instead '
+                    f'set "valuesLookup" to True to configure column {column.field!r}'
+                )
+                del filter_params['values']
+                filter_params['valuesLookup'] = True
+        if filter_type == 'list' and not filter_params:
             filter_params = {'valuesLookup': True}
         fspec['headerFilter'] = filter_type
         if filter_params:
@@ -1653,6 +1667,15 @@ class Tabulator(BaseTable):
                 editor = dict(editor)
                 col_dict['editor'] = editor.pop('type')
                 col_dict['editorParams'] = editor
+            if col_dict.get('editor') in ['select', 'autocomplete']:
+                self.param.warning(
+                    f'The {col_dict["editor"]!r} editor has been deprecated, use '
+                    f'instead the "list" editor type to configure column {column.field!r}'
+                )
+                col_dict['editor'] = 'list'
+                if col_dict.get('editorParams', {}).get('values', False) is True:
+                    del col_dict['editorParams']['values']
+                    col_dict['editorParams']['valuesLookup']
             if column.field in self.frozen_columns or i in self.frozen_columns:
                 col_dict['frozen'] = True
             if isinstance(self.widths, dict) and isinstance(self.widths.get(column.field), str):
