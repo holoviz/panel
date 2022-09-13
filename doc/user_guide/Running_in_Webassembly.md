@@ -191,9 +191,18 @@ Current versions of PyScript will automatically render the output of the last ce
 One more option is to include live Panel examples in your Sphinx documentation using the `nbsite.pyodide` directive. Simply install latest nbsite with `pip` or `conda`:
 
 ```bash
-pip install --pre nbsite`
+pip install --pre nbsite
 # OR
 conda install -c pyviz/label/dev nbsite
+```
+
+add the extension to the Sphinx `conf.py`:
+
+```python
+extensions += [
+    ...
+    'nbsite.pyodide'
+]
 ```
 
 and then you can use the `pyodide` as an RST directive:

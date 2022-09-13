@@ -6,6 +6,7 @@ import gc
 import os
 import pathlib
 import pkgutil
+import re
 import sys
 import uuid
 
@@ -37,7 +38,7 @@ PWA_MANIFEST_TEMPLATE = _pn_env.get_template('site.webmanifest')
 SERVICE_WORKER_TEMPLATE = _pn_env.get_template('serviceWorker.js')
 WEB_WORKER_TEMPLATE = _pn_env.get_template('pyodide_worker.js')
 
-PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.1/full/pyodide.js'
+PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.2/full/pyodide.js'
 PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />'
 PYSCRIPT_JS = '<script defer src="https://pyscript.net/latest/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
@@ -66,7 +67,9 @@ def _stdlibs():
 
 _STDLIBS = _stdlibs()
 _PACKAGE_MAP = {
-    'sklearn': 'scikit-learn'
+    'sklearn': 'scikit-learn',
+    'hvplot': ['holoviews>=1.15.1a1', 'hvplot'],
+    'holoviews': ['holoviews>=1.15.1a1']
 }
 
 PRE = """
@@ -226,7 +229,15 @@ def find_imports(code: str) -> List[str]:
                 continue
             imports.add(module_name.split(".")[0])
 
-    packages = [_PACKAGE_MAP.get(pkg, pkg) for pkg in sorted(imports) if pkg not in _STDLIBS]
+    packages = []
+    for pkg in sorted(imports):
+        pkg = _PACKAGE_MAP.get(pkg, pkg)
+        if pkg in _STDLIBS:
+            continue
+        elif isinstance(pkg, list):
+            packages.extend(pkg)
+        else:
+            packages.append(pkg)
     if 'bokeh.sampledata' in code and 'pandas' not in packages:
         packages.append('pandas')
     return packages
@@ -315,7 +326,11 @@ def script_to_html(
 
     # Environment
     if panel_version == 'auto':
-        panel_version = '.'.join(__version__.split('.')[:3])
+        match = re.match(r"([\d]+\.[\d]+\.[\d]+(?:a|rc|b)?[\d]*)", __version__)
+        if match:
+            panel_version = match.group()
+        else:
+            panel_version = 'unknown'
     reqs = [f'panel=={panel_version}'] + [
         req for req in requirements if req != 'panel'
     ]
