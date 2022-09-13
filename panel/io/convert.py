@@ -59,7 +59,7 @@ def _stdlibs():
     env_dir = str(pathlib.Path(sys.executable).parent.parent)
     modules = list(sys.builtin_module_names)
     for m in pkgutil.iter_modules():
-        mpath = m.module_finder.path
+        mpath = getattr(m.module_finder, 'path', '')
         if mpath.startswith(env_dir) and not 'site-packages' in mpath:
             modules.append(m.name)
     return modules
