@@ -16,6 +16,7 @@ from typing import (
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
 from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
+from bokeh_django.consumers import WSConsumer
 
 from .model import monkeypatch_events
 from .state import curdoc_locked, state
@@ -152,6 +153,9 @@ def unlocked() -> Iterator:
                 continue
             for conn in connections:
                 socket = conn._socket
+                if isinstance(socket, WSConsumer):
+                    remaining_events.append(event)
+                    continue
                 ws_conn = getattr(socket, 'ws_connection', False)
                 if (not hasattr(socket, 'write_message') or
                     ws_conn is None or (ws_conn and ws_conn.is_closing())): # type: ignore
