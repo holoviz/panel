@@ -53,7 +53,7 @@ when needed.
 `Templates <Templates.html>`_
  Learn how to compose multiple Panels into a custom HTML document.
 
-`Running in Webassembly <Running_in_Webassembly.html>`_
+`Running Panel in the Browser with WASM <Running_in_Webassembly.html>`_
  Guide to embedding interactive Panel components in a web page or converting entire Panel applications to run entirely in your browser.
 
 `Server Deployment <Server_Deployment.html>`_
@@ -94,7 +94,7 @@ Supplementary guides
     Linking <Links>
     Pipelines <Pipelines>
     Templates <Templates>
-    Running in Webassembly <Running_in_Webassembly>
+    Running Panel in the Browser with WASM <Running_in_Webassembly>
     Server Deployment <Server_Deployment>
     Building Custom Components <Custom_Components>
     Asynchronous and Concurrent Process <Async_and_Concurrency>
