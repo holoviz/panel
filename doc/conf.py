@@ -62,6 +62,7 @@ extensions += [
     'sphinx.ext.napoleon',
     'nbsite.gallery',
     'sphinx_copybutton',
+    'nbsite.pyodide'
 ]
 napoleon_numpy_docstring = True
 

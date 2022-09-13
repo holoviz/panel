@@ -59,7 +59,7 @@ def _stdlibs():
     env_dir = str(pathlib.Path(sys.executable).parent.parent)
     modules = list(sys.builtin_module_names)
     for m in pkgutil.iter_modules():
-        mpath = m.module_finder.path
+        mpath = getattr(m.module_finder, 'path', '')
         if mpath.startswith(env_dir) and not 'site-packages' in mpath:
             modules.append(m.name)
     return modules
@@ -263,7 +263,7 @@ def script_to_html(
     requirements: Literal['auto'] | List[str] = 'auto',
     js_resources: Literal['auto'] | List[str] = 'auto',
     css_resources: Literal['auto'] | List[str] | None = None,
-    runtime: Runtimes = 'pyscript',
+    runtime: Runtimes = 'pyodide',
     prerender: bool = True,
     panel_version: Literal['auto'] | str = 'auto',
     manifest: str | None = None
