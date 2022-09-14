@@ -83,8 +83,11 @@ Server Usage
 `Authentication <Authentication.html>`_
  Learn how to add an authentication component in front of your application.
 
-`Django Apps <Django_Apps.html>`_
+`Django Integration <Django.html>`_
  How to embed a Panel/Bokeh app inside a Django web-server deployment.
+
+`FastAPI Integration <FastAPI.html>`_
+ How to embed a Panel/Bokeh app inside a FastAPI web-server deployment.
 
 Extending Panel
 ^^^^^^^^^^^^^^^
@@ -116,5 +119,6 @@ Extending Panel
     Server Configuration <Server_Configuration>
     Server Deployment <Server_Deployment>
     Authentication <Authentication>
-    Django Apps <Django_Apps>
+    Django Integration <Django>
+    FastAPI Integration <FastAPI>
     Building Custom Components <Custom_Components>
