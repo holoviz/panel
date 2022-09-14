@@ -3223,12 +3223,15 @@ def test_tabulator_sort_algorithm_by_type(page, port, col, vals):
 
     page.goto(f"http://localhost:{port}")
 
+    # Attempt at making this test more robust.
+    page.wait_for_timeout(200)
+
     client_index = [int(i) for i in tabulator_column_values(page, 'index')]
 
-    wait_until(
-        lambda: client_index == list(widget.current_view.index),
-        page
-    )
+    def indexes_equal():
+        assert client_index == list(widget.current_view.index)
+
+    wait_until(indexes_equal, page)
 
 
 def test_tabulator_python_filter_edit(page, port):
