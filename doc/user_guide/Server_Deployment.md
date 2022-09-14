@@ -4,7 +4,7 @@ Panel is built on top of Bokeh, which provides a powerful [Tornado](https://www.
 
 ## The server
 
-The Bokeh server is built on Tornado, which handles all of the communication between the browser and the backend. Whenever a user accesses the app or dashboard in a browser a new session is created which executes the app code and creates a new ``Document`` containing the models served to the browser where they are rendered by BokehJS.  
+The Bokeh server is built on Tornado, which handles all of the communication between the browser and the backend. Whenever a user accesses the app or dashboard in a browser a new session is created which executes the app code and creates a new ``Document`` containing the models served to the browser where they are rendered by BokehJS.
 
 <div style="margin-left: auto; margin-right: auto; display: block">
 <img src="https://bokeh.pydata.org/en/latest/_images/bokeh_serve.svg"></img>
@@ -129,7 +129,7 @@ All live examples in the Panel documentation are served on AE5, to see further e
 
 Azure is popular choice for enterprises often in combination with an automated CI/CD pipeline via Azure DevOps. To get started you can use the [Azure Portal](portal.azure.com) to deploy your app as a Linux Web App via the web based user interface.
 
-There are a few things you need to be aware of in order to be able to start your app. 
+There are a few things you need to be aware of in order to be able to start your app.
 
 Python Web Apps assumes your web app
 
@@ -138,7 +138,7 @@ Python Web Apps assumes your web app
     - You **can use** `python -m panel serve app.py ...` or `python app.py ...` as a *Startup command*.
 - is served on address 0.0.0.0 and port 8000
 
-Thus you can use 
+Thus you can use
 
 ```bash
 python -m panel serve app.py --address 0.0.0.0 --port 8000 --allow-websocket-origin=app-name.azurewebsites.net
@@ -148,7 +148,7 @@ as a *Startup command*.
 
 You might be able to use `python app.py` as a *Startup command* with `.show()` or `panel.serve` inside your `app.py` file, if you can configure the `address`, `port` and `allow-websocket-origin` in the app.py file or via environment variables.
 
-You also need to configure your app service **general settings** to 
+You also need to configure your app service **general settings** to
 
 - allow `Web sockets` and
 - be `Always on`
@@ -158,9 +158,9 @@ You also need to configure your app service **general settings** to
 If you would like to setup **automated CI/ CD** via Azure DevOps, Azure Pipelines and Docker to a Web App for Containers, you can find a good starting point in the [devops Folder](https://github.com/MarcSkovMadsen/awesome-panel/tree/master/devops) of [awesome-panel.org](https://awesome-panel.org).
 
 
-#### Google Cloud Platform (GCP) 
+#### Google Cloud Platform (GCP)
 
-First, you need to set up your Google cloud account following the [Cloud Run documentation](https://cloud.google.com/run/docs/quickstarts/build-and-deploy/python) or the [App Engine documentation](https://cloud.google.com/appengine/docs/standard/python3/quickstart) depending on whether you would like to deploy your Panel app to Cloud Run or App Engine. 
+First, you need to set up your Google cloud account following the [Cloud Run documentation](https://cloud.google.com/run/docs/quickstarts/build-and-deploy/python) or the [App Engine documentation](https://cloud.google.com/appengine/docs/standard/python3/quickstart) depending on whether you would like to deploy your Panel app to Cloud Run or App Engine.
 
 Next, you will need three files:
 1. app.py: This is the Python file that creates the Panel App.
@@ -184,7 +184,7 @@ runtime_config:
   python_version: 3
 ```
 
-Here is an example for Dockerfile (if you would like to deploy to Cloud Run): 
+Here is an example for Dockerfile (if you would like to deploy to Cloud Run):
 ```
 # Use the official lightweight Python image.
 # https://hub.docker.com/_/python
@@ -201,8 +201,8 @@ COPY . ./
 # Install production dependencies.
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Run the web service on container startup. 
-CMD panel serve app.py --address 0.0.0.0 --port 8080 --allow-websocket-origin="*" 
+# Run the web service on container startup.
+CMD panel serve app.py --address 0.0.0.0 --port 8080 --allow-websocket-origin="*"
 ```
 
 Finally, to deploy a Panel app to App Engine run `gcloud app create` and `gcloud app deploy`. To deploy a Panel app to Cloud Run, run `gcloud run deploy`.
