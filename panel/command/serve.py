@@ -25,6 +25,8 @@ from tornado.web import StaticFileHandler
 
 from ..auth import OAuthProvider
 from ..config import config
+from ..io.document import _cleanup_doc
+from ..io.liveness import LivenessHandler
 from ..io.reload import record_modules, watch
 from ..io.rest import REST_PROVIDERS
 from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
@@ -32,17 +34,6 @@ from ..io.state import state
 from ..util import fullpath
 
 log = logging.getLogger(__name__)
-
-
-def _cleanup_doc(doc):
-    for callback in doc.session_destroyed_callbacks:
-        try:
-            callback(None)
-        except Exception:
-            pass
-    doc.callbacks._change_callbacks[None] = {}
-    doc.destroy(None)
-
 
 def parse_var(s):
     """
@@ -199,7 +190,17 @@ class Serve(_BkServe):
             type    = str,
             help    = "Path to a setup script to run before server starts.",
             default = None
-        ))
+        )),
+        ('--liveness', dict(
+            action  = 'store_true',
+            help    = "Whether to add a liveness endpoint."
+        )),
+        ('--liveness-endpoint', dict(
+            action  = 'store',
+            type    = str,
+            help    = "The endpoint for the liveness API.",
+            default = "liveness"
+        )),
     )
 
     # Supported file extensions
@@ -299,6 +300,11 @@ class Serve(_BkServe):
                     with set_curdoc(doc):
                         state._on_load(None)
                     _cleanup_doc(doc)
+
+        if args.liveness:
+            argvs = {f: args.args for f in files}
+            applications = build_single_handler_applications(files, argvs)
+            patterns += [(r"/%s" % args.liveness_endpoint, LivenessHandler, dict(applications=applications))]
 
         config.profiler = args.profiler
         if args.admin:
