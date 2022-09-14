@@ -1,9 +1,15 @@
+from __future__ import annotations
+
+import ast
 import asyncio
+import copy
 import json
 import os
 import sys
 
-from typing import Optional
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, Tuple,
+)
 
 import param
 import pyodide
@@ -22,6 +28,9 @@ from ..util import isurl
 from . import resources
 from .document import MockSessionContext
 from .state import state
+
+if TYPE_CHECKING:
+    from bokeh.model import Model
 
 resources.RESOURCE_MODE = 'CDN'
 os.environ['BOKEH_RESOURCES'] = 'cdn'
@@ -47,7 +56,7 @@ if 'pandas' in sys.modules:
 
     pandas.read_csv = _read_csv
 
-def async_execute(func):
+def async_execute(func: Callable[[], []]):
     event_loop = asyncio.get_running_loop()
     if event_loop.is_running():
         asyncio.create_task(func())
@@ -57,7 +66,25 @@ def async_execute(func):
 
 param.parameterized.async_executor = async_execute
 
-def _model_json(model, target):
+def _model_json(model: Model, target: str) -> Tuple[Document, str]:
+    """
+    Renders a Bokeh Model to JSON representation given a particular
+    DOM target and returns the Document and the serialized JSON string.
+
+    Arguments
+    ---------
+    model: bokeh.model.Model
+        The bokeh model to render.
+    target: str
+        The id of the DOM node to render to.
+
+    Returns
+    -------
+    document: Document
+        The bokeh Document containing the rendered Bokeh Model.
+    model_json: str
+        The serialized JSON representation of the Bokeh Model.
+    """
     doc = Document()
     model.server_doc(doc=doc)
     model = doc.roots[0]
@@ -75,7 +102,25 @@ def _model_json(model, target):
         version   = __version__,
     ))
 
-def _doc_json(doc, root_els=None):
+def _doc_json(doc: Document, root_els=None) -> Tuple[str, str, str]:
+    """
+    Serializes a Bokeh Document into JSON representations of the entire
+    Document, the individual render_items and the ids of DOM nodes to
+    render each item into.
+
+    Arguments
+    ---------
+    doc: bokeh.document.Document
+        The Bokeh document to serialize to JSON.
+    root_els:
+        A list of DOM nodes to render each root of the Document into.
+
+    Returns
+    -------
+    docs_json: str
+    render_items: str
+    root_ids: str
+    """
     docs_json, render_items = standalone_docs_json_and_render_items(
         doc.roots, suppress_callback_warning=True
     )
@@ -89,7 +134,18 @@ def _doc_json(doc, root_els=None):
         })
     return json.dumps(docs_json), json.dumps(render_items), json.dumps(root_ids)
 
-def _link_docs(pydoc, jsdoc):
+def _link_docs(pydoc: Document, jsdoc: Any) -> None:
+    """
+    Links Python and JS documents in Pyodide ensuring taht messages
+    are passed between them.
+
+    Arguments
+    ---------
+    pydoc: bokeh.document.Document
+        The Python Bokeh Document instance to sync.
+    jsdoc: Javascript Document
+        The Javascript Bokeh Document instance to sync.
+    """
     def jssync(event):
         if (getattr(event, 'setter_id', None) is not None):
             return
@@ -111,7 +167,35 @@ def _link_docs(pydoc, jsdoc):
         {'event_name': 'document_ready', 'event_values': {}
     })
 
-async def _link_model(ref, doc):
+def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None):
+    """
+    Links the Python document to a dispatch_fn which can be used to
+    sync messages between a WebWorker and the main thread.
+    """
+    def pysync(event):
+        json_patch, buffers = process_document_events([event], use_buffers=True)
+        buffer_map = {}
+        for (ref, buffer) in buffers:
+            buffer_map[ref['id']] = pyodide.to_js(buffer).buffer
+        dispatch_fn(json_patch, pyodide.ffi.to_js(buffer_map), msg_id)
+
+    doc.on_change(pysync)
+    doc.callbacks.trigger_json_event(
+        {'event_name': 'document_ready', 'event_values': {}
+    })
+
+async def _link_model(ref: str, doc: Document) -> None:
+    """
+    Links a rendered Bokeh model on the frontend to a Python Document
+    in Python.
+
+    Arguments
+    ---------
+    ref: str
+        The ID of the rendered Bokeh Model.
+    doc: bokeh.document.Document
+        The Bokeh Document to sync the rendered Model with.
+    """
     from js import Bokeh
     rendered = Bokeh.index.object_keys()
     if ref not in rendered:
@@ -122,11 +206,51 @@ async def _link_model(ref, doc):
     view = views[rendered.indexOf(ref)]
     _link_docs(doc, view.model.document)
 
+def _convert_expr(expr: ast.Expr) -> ast.Expression:
+    """
+    Converts an ast.Expr to and ast.Expression that can be compiled
+    and evaled.
+    """
+    expr.lineno = 0
+    expr.col_offset = 0
+    return ast.Expression(expr.value, lineno=0, col_offset = 0)
+
+def _exec_with_return(code: str, global_context: Dict[str, Any] = None) -> Any:
+    """
+    Executes a code snippet and returns the resulting output of the
+    last line.
+
+    Arguments
+    ---------
+    code: str
+      The code to execute
+    global_context: Dict[str, Any]
+      The globals to inject into the execution context.
+
+    Returns
+    -------
+    The return value of the executed code.
+    """
+    global_context = global_context if global_context else globals()
+    code_ast = ast.parse(code)
+
+    init_ast = copy.deepcopy(code_ast)
+    init_ast.body = code_ast.body[:-1]
+
+    last_ast = copy.deepcopy(code_ast)
+    last_ast.body = code_ast.body[-1:]
+
+    exec(compile(init_ast, "<ast>", "exec"), global_context)
+    if type(last_ast.body[0]) == ast.Expr:
+        return eval(compile(_convert_expr(last_ast.body[0]), "<ast>", "eval"), global_context)
+    else:
+        exec(compile(last_ast, "<ast>", "exec"), global_context)
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
 
-def render_script(obj, target):
+def render_script(obj: Any, target: str) -> str:
     """
     Generates a script to render the supplied object to the target.
 
@@ -168,7 +292,7 @@ def init_doc() -> None:
     doc._session_context = lambda: MockSessionContext(document=doc)
     state._curdoc = doc
 
-async def show(obj, target):
+async def show(obj: Any, target: str) -> None:
     """
     Renders the object into a DOM node specified by the target.
 
@@ -183,7 +307,7 @@ async def show(obj, target):
     console.log('panel.io.pyodide.show is deprecated in favor of panel.io.pyodide.write')
     await write(target, obj)
 
-async def write(target, obj):
+async def write(target: str, obj: Any) -> None:
     """
     Renders the object into a DOM node specified by the target.
 
@@ -205,13 +329,13 @@ async def write(target, obj):
     jsdoc = views[0].model.document
     _link_docs(pydoc, jsdoc)
 
-def hide_loader():
+def hide_loader() -> None:
     from js import document
 
     body = document.getElementsByTagName('body')[0]
     body.classList.remove("bk", "pn-loading", config.loading_spinner)
 
-async def write_doc(doc: Optional['Document'] = None) -> None:
+async def write_doc(doc: Document | None = None) -> None:
     """
     Renders the contents of the Document into an existing template.
     Note that this assumes that the HTML file this function runs in
