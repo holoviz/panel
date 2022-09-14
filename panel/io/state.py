@@ -17,6 +17,7 @@ import time
 from collections import OrderedDict, defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
+from contextvars import ContextVar
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Coroutine, Dict,
@@ -59,10 +60,9 @@ if TYPE_CHECKING:
 
 @contextmanager
 def set_curdoc(doc: Document):
-    orig_doc = state._curdoc
-    state._curdoc = doc
+    token = state._curdoc.set(doc)
     yield
-    state._curdoc = orig_doc
+    state._curdoc.reset(token)
 
 def curdoc_locked() -> Document:
     doc = _curdoc()
@@ -113,7 +113,7 @@ class _state(param.Parameterized):
        A dictionary used by the cache decorator.""")
 
     # Holds temporary curdoc overrides per thread
-    _curdoc_ = defaultdict(WeakKeyDictionary)
+    _curdoc = ContextVar('curdoc', default=None)
 
     # Whether to hold comm events
     _hold: ClassVar[bool] = False
@@ -604,7 +604,7 @@ class _state(param.Parameterized):
         """
         Callback that is triggered when a session is destroyed.
         """
-        doc = self._curdoc or curdoc_locked()
+        doc = self.curdoc
         if doc:
             doc.on_session_destroyed(callback)
         else:
@@ -798,63 +798,13 @@ class _state(param.Parameterized):
             if doc.session_context or self._is_pyodide:
                 return doc
         finally:
-            curdoc = self._curdoc
+            curdoc = self._curdoc.get()
             if curdoc:
                 return curdoc
 
     @curdoc.setter
     def curdoc(self, doc: Document) -> None:
-        self._curdoc = doc
-
-    @property
-    def _curdoc(self) -> Document | None:
-        """
-        Required to make overrides to curdoc (e.g. using the
-        set_curdoc context manager) thread-safe and asyncio task
-        local. Otherwise two threads may independently override the
-        curdoc and end up in a confused final state.
-        """
-        thread = threading.current_thread()
-        thread_id = thread.ident if thread else None
-        if thread_id not in self._curdoc_:
-            return None
-        curdocs = self._curdoc_[thread_id]
-        try:
-            task = asyncio.current_task()
-        except Exception:
-            task = None
-        while True:
-            if task in curdocs:
-                return curdocs[task or self]
-            elif task is None:
-                break
-            try:
-                task = task.parent_task
-            except Exception:
-                task = None
-        return curdocs[self] if self in curdocs else None
-
-    @_curdoc.setter
-    def _curdoc(self, doc: Document | None) -> None:
-        thread = threading.current_thread()
-        thread_id = thread.ident if thread else None
-        if thread_id not in self._curdoc_ and doc is None:
-            return None
-        curdocs = self._curdoc_[thread_id]
-        try:
-            task = asyncio.current_task()
-        except Exception:
-            task = None
-        key = task or self
-        if doc is None:
-            # Do not clean up curdocs for tasks since they may have
-            # children that are still running
-            if key in curdocs and task is None:
-                del curdocs[key]
-            if not len(curdocs):
-                del self._curdoc_[thread_id]
-        else:
-            curdocs[key] = doc
+        self._curdoc.set(doc)
 
     @property
     def cookies(self) -> Dict[str, str]:
