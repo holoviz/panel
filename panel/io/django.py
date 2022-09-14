@@ -1,7 +1,10 @@
 from contextlib import contextmanager
 from urllib.parse import urljoin, urlparse
 
-from bokeh.server.django.consumers import AutoloadJsConsumer, DocConsumer
+try:
+    from bokeh_django.consumers import AutoloadJsConsumer, DocConsumer
+except Exception:
+    from bokeh.server.django.consumers import AutoloadJsConsumer, DocConsumer
 
 from ..util import edit_readonly
 from .resources import Resources

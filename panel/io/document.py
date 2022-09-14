@@ -120,6 +120,40 @@ def with_lock(func: Callable) -> Callable:
     wrapper.lock = True # type: ignore
     return wrapper
 
+def dispatch_tornado(conn, event):
+    from tornado.websocket import WebSocketHandler
+    socket = conn._socket
+    ws_conn = socket.ws_connection
+    if not ws_conn or ws_conn.is_closing(): # type: ignore
+        return
+    msg = conn.protocol.create('PATCH-DOC', [event])
+    futures = [
+        WebSocketHandler.write_message(socket, msg.header_json),
+        WebSocketHandler.write_message(socket, msg.metadata_json),
+        WebSocketHandler.write_message(socket, msg.content_json)
+    ]
+    for header, payload in msg._buffers:
+        futures.extend([
+            WebSocketHandler.write_message(socket, header),
+            WebSocketHandler.write_message(socket, payload, binary=True)
+        ])
+    return futures
+
+def dispatch_django(conn, event):
+    socket = conn._socket
+    msg = conn.protocol.create('PATCH-DOC', [event])
+    futures = [
+        socket.send(text_data=msg.header_json),
+        socket.send(text_data=msg.metadata_json),
+        socket.send(text_data=msg.content_json)
+    ]
+    for header, payload in msg._buffers:
+        futures.extend([
+            socket.send(text_data=header),
+            socket.send(binary_data=payload)
+        ])
+    return futures
+
 @contextmanager
 def unlocked() -> Iterator:
     """
@@ -160,22 +194,10 @@ def unlocked() -> Iterator:
                 remaining_events.append(event)
                 continue
             for conn in connections:
-                socket = conn._socket
-                ws_conn = getattr(socket, 'ws_connection', False)
-                if (not hasattr(socket, 'write_message') or
-                    ws_conn is None or (ws_conn and ws_conn.is_closing())): # type: ignore
-                    continue
-                msg = conn.protocol.create('PATCH-DOC', [event])
-                futures.extend([
-                    WebSocketHandler.write_message(socket, msg.header_json),
-                    WebSocketHandler.write_message(socket, msg.metadata_json),
-                    WebSocketHandler.write_message(socket, msg.content_json)
-                ])
-                for header, payload in msg._buffers:
-                    futures.extend([
-                        WebSocketHandler.write_message(socket, header),
-                        WebSocketHandler.write_message(socket, payload, binary=True)
-                    ])
+                if isinstance(conn._socket, WebSocketHandler):
+                    futures += dispatch_tornado(conn, event)
+                else:
+                    futures += dispatch_django(conn, event)
 
         # Ensure that all write_message calls are awaited and handled
         async def handle_write_errors():
