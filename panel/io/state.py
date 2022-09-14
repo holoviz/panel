@@ -61,8 +61,10 @@ if TYPE_CHECKING:
 @contextmanager
 def set_curdoc(doc: Document):
     token = state._curdoc.set(doc)
-    yield
-    state._curdoc.reset(token)
+    try:
+        yield
+    finally:
+        state._curdoc.reset(token)
 
 def curdoc_locked() -> Document:
     doc = _curdoc()
