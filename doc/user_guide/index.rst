@@ -32,9 +32,6 @@ when needed.
 `Customization <Customization.html>`_
  How to customize the visual appearance, layout, and size of Panel components.
 
-`Deploy & Export <Deploy_and_Export.html>`_
- Introduction to displaying, exporting, and deploying Panel apps.
-
 `Interact <Interact.html>`_
  Quickly making a panel using `interact()`.
 
@@ -53,27 +50,35 @@ when needed.
 `Templates <Templates.html>`_
  Learn how to compose multiple Panels into a custom HTML document.
 
-`Running Panel in the Browser with WASM <Running_in_Webassembly.html>`_
- Guide to embedding interactive Panel components in a web page or converting entire Panel applications to run entirely in your browser.
-
-`Server Deployment <Server_Deployment.html>`_
- Step-by-step guides for deploying Panel apps locally, on a web server or on common cloud providers.
+`Asynchronous and Concurrent Processing <Async_and_Concurrency.html>`_
+ Learn how leverage asynchronous and concurrent processing to make your app more responsive.
 
 `Building custom components <Custom_Components.html>`_
  Learn how to extend Panel by building custom components.
 
-`Asynchronous and Concurrent Processing <Async_and_Concurrency.html>`_
- Learn how leverage asynchronous and concurrent processing to make your app more responsive.
-
-`Authentication <Authentication.html>`_
- Learn how to add an authentication component in front of your application.
-
 `Profiling and Debugging <Performance_and_Debugging.html>`_
  Learn how to speed up your application and find issues.
 
+Export
+^^^^^^
 
-Supplementary guides
---------------------
+`Deploy & Export <Deploy_and_Export.html>`_
+ Introduction to displaying, exporting, and deploying Panel apps.
+
+`Running Panel in the Browser with WASM <Running_in_Webassembly.html>`_
+ Guide to embedding interactive Panel components in a web page or converting entire Panel applications to run entirely in your browser.
+
+Server Usage
+^^^^^^^^^^^^
+
+`Server configuration <Server_Configuration.html>`_
+ A guide detailing how to launch and configure a server from the commandline or programmatically.
+
+`Server Deployment <Server_Deployment.html>`_
+ Step-by-step guides for deploying Panel apps locally, on a web server or on common cloud providers.
+
+`Authentication <Authentication.html>`_
+ Learn how to add an authentication component in front of your application.
 
 `Django Apps <Django_Apps.html>`_
  How to embed a Panel/Bokeh app inside a Django web-server deployment.
@@ -87,17 +92,18 @@ Supplementary guides
     Components <Components>
     APIs <APIs>
     Customization <Customization>
-    Deploy & Export <Deploy_and_Export>
     Interact <Interact>
     Widgets <Widgets>
     Parameters <Param>
     Linking <Links>
     Pipelines <Pipelines>
     Templates <Templates>
-    Running Panel in the Browser with WASM <Running_in_Webassembly>
-    Server Deployment <Server_Deployment>
     Building Custom Components <Custom_Components>
     Asynchronous and Concurrent Process <Async_and_Concurrency>
-    Authentication <Authentication>
     Performance and Debugging <Performance_and_Debugging>
+    Deploy & Export <Deploy_and_Export>
+    Running Panel in the Browser with WASM <Running_in_Webassembly>
+    Server Configuration <Server_Configuration>
+    Server Deployment <Server_Deployment>
+    Authentication <Authentication>
     Django Apps <Django_Apps>
