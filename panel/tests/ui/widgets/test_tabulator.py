@@ -795,6 +795,25 @@ def test_tabulator_editors_tabulator_dict(page, port, df_mixed):
     assert textarea.get_attribute('maxlength') == "10"
 
 
+def test_tabulator_editors_tabulator_list_default(page, port):
+    df = pd.DataFrame({'values': ['A', 'B']})
+    widget = Tabulator(df, header_filters={'values': 'list'})
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    header = page.locator('input[type="search"]')
+    expect(header).to_have_count(1)
+    header.click()
+
+    # There should be a select element with the list of unique values
+    # found in the column.
+    expect(page.locator('.tabulator-edit-list')).to_have_text('AB')
+
+
 @pytest.mark.parametrize('layout', Tabulator.param['layout'].objects)
 def test_tabulator_column_layouts(page, port, df_mixed, layout):
     widget = Tabulator(df_mixed, layout=layout)

@@ -419,9 +419,9 @@ def test_tabulator_header_filters_config_boolean(document, comm):
         {'field': 'D', 'headerFilter': True}
     ]
 
-def test_tabulator_header_filters_column_config_select(document, comm):
+def test_tabulator_header_filters_column_config_list(document, comm):
     df = makeMixedDataFrame()
-    table = Tabulator(df, header_filters={'C': 'select'})
+    table = Tabulator(df, header_filters={'C': 'list'})
 
     model = table.get_root(document, comm)
 
@@ -429,15 +429,34 @@ def test_tabulator_header_filters_column_config_select(document, comm):
         {'field': 'index'},
         {'field': 'A'},
         {'field': 'B'},
-        {'field': 'C', 'headerFilter': 'select', 'headerFilterParams': {'values': True}},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
         {'field': 'D'}
+    ]
+    assert model.configuration['selectable'] == True
+
+@pytest.mark.parametrize('editor', ['select', 'autocomplete'])
+def test_tabulator_header_filters_column_config_select_autocomplete_backwards_compat(document, comm, editor):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, header_filters={
+        'C': editor,
+        'D': {'type': editor, 'values': True}
+    })
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index'},
+        {'field': 'A'},
+        {'field': 'B'},
+        {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
+        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
     ]
     assert model.configuration['selectable'] == True
 
 def test_tabulator_header_filters_column_config_dict(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, header_filters={
-        'C': {'type': 'select', 'values': True, 'func': '!=', 'placeholder': 'Not equal'}
+        'C': {'type': 'list', 'valuesLookup': True, 'func': '!=', 'placeholder': 'Not equal'}
     })
 
     model = table.get_root(document, comm)
@@ -448,8 +467,8 @@ def test_tabulator_header_filters_column_config_dict(document, comm):
         {'field': 'B'},
         {
             'field': 'C',
-            'headerFilter': 'select',
-            'headerFilterParams': {'values': True},
+            'headerFilter': 'list',
+            'headerFilterParams': {'valuesLookup': True},
             'headerFilterFunc': '!=',
             'headerFilterPlaceholder': 'Not equal'
         },
@@ -520,22 +539,31 @@ def test_tabulator_config_formatter_dict(document, comm):
     assert model.configuration['columns'][2] == {'field': 'B', 'formatter': 'tickCross', 'formatterParams': {'tristate': True}}
 
 
-def test_tabulator_config_editor_string(document, comm):
+def test_tabulator_config_editor_string_backwards_compat(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, editors={'B': 'select'})
 
     model = table.get_root(document, comm)
 
-    assert model.configuration['columns'][2] == {'field': 'B', 'editor': 'select'}
+    assert model.configuration['columns'][2] == {'field': 'B', 'editor': 'list'}
+
+
+def test_tabulator_config_editor_string(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, editors={'B': 'list'})
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'][2] == {'field': 'B', 'editor': 'list'}
 
 
 def test_tabulator_config_editor_dict(document, comm):
     df = makeMixedDataFrame()
-    table = Tabulator(df, editors={'B': {'type': 'select', 'values': True}})
+    table = Tabulator(df, editors={'B': {'type': 'list', 'valuesLookup': True}})
 
     model = table.get_root(document, comm)
 
-    assert model.configuration['columns'][2] == {'field': 'B', 'editor': 'select', 'editorParams': {'values': True}}
+    assert model.configuration['columns'][2] == {'field': 'B', 'editor': 'list', 'editorParams': {'valuesLookup': True}}
 
 
 def test_tabulator_groups(document, comm):
