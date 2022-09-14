@@ -206,6 +206,9 @@ def unlocked() -> Iterator:
                     await future
                 except WebSocketClosedError:
                     logger.warning("Failed sending message as connection was closed")
+                except Exception as e:
+                    logger.warning(f"Failed sending message due to following error: {e}")
+
         asyncio.ensure_future(handle_write_errors())
 
         curdoc.callbacks._held_events = remaining_events
