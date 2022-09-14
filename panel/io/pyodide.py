@@ -8,7 +8,7 @@ import os
 import sys
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Tuple,
+    TYPE_CHECKING, Any, Dict, Tuple,
 )
 
 import param
@@ -56,7 +56,7 @@ if 'pandas' in sys.modules:
 
     pandas.read_csv = _read_csv
 
-def async_execute(func: Callable[[], []]):
+def async_execute(func: Any):
     event_loop = asyncio.get_running_loop()
     if event_loop.is_running():
         asyncio.create_task(func())
@@ -124,15 +124,15 @@ def _doc_json(doc: Document, root_els=None) -> Tuple[str, str, str]:
     docs_json, render_items = standalone_docs_json_and_render_items(
         doc.roots, suppress_callback_warning=True
     )
-    render_items = [item.to_json() for item in render_items]
+    render_items_json = [item.to_json() for item in render_items]
     root_ids = [m.id for m in doc.roots]
     if root_els:
         root_data = sorted([(int(el.getAttribute('data-root-id')), el.id) for el in root_els])
-        render_items[0].update({
+        render_items_json[0].update({
             'roots': {model_id: elid for (_, elid), model_id in zip(root_data, root_ids)},
             'root_ids': root_ids
         })
-    return json.dumps(docs_json), json.dumps(render_items), json.dumps(root_ids)
+    return json.dumps(docs_json), json.dumps(render_items_json), json.dumps(root_ids)
 
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
@@ -335,7 +335,7 @@ def hide_loader() -> None:
     body = document.getElementsByTagName('body')[0]
     body.classList.remove("bk", "pn-loading", config.loading_spinner)
 
-async def write_doc(doc: Document | None = None) -> None:
+async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
     """
     Renders the contents of the Document into an existing template.
     Note that this assumes that the HTML file this function runs in
@@ -354,10 +354,10 @@ async def write_doc(doc: Document | None = None) -> None:
     render_items: str
     root_ids: str
     """
-    doc = doc or state.curdoc
-    if doc in state._templates:
-        template = state._templates[doc]
-        template.server_doc(title=template.title, location=True, doc=doc)
+    pydoc: Document = doc or state.curdoc
+    if pydoc in state._templates:
+        template = state._templates[pydoc]
+        template.server_doc(title=template.title, location=True, doc=pydoc)
 
     # Test whether we have access to DOM
     try:
@@ -367,13 +367,13 @@ async def write_doc(doc: Document | None = None) -> None:
             el.innerHTML = ''
     except Exception:
         root_els = None
-    docs_json, render_items, root_ids = _doc_json(doc, root_els)
+    docs_json, render_items, root_ids = _doc_json(pydoc, root_els)
     doc._session_context = None
 
     # If we have DOM access render and sync the document
     if root_els is not None:
         views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
         jsdoc = views[0][0].model.document
-        _link_docs(doc, jsdoc)
+        _link_docs(pydoc, jsdoc)
         hide_loader()
     return docs_json, render_items, root_ids
