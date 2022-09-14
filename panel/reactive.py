@@ -1023,7 +1023,6 @@ class ReactiveData(SyncableData):
 
     def __init__(self, **params):
         super().__init__(**params)
-        self._old = None
 
     def _update_selection(self, indices: List[int]) -> None:
         self.selection = indices
@@ -1054,10 +1053,9 @@ class ReactiveData(SyncableData):
     def _process_data(self, data: Mapping[str, List | Dict[int, Any] | np.ndarray]) -> None:
         if self._updating:
             return
-
         # Get old data to compare to
         old_raw, old_data = self._get_data()
-        self._old = old_raw = old_raw.copy()
+        old_raw = old_raw.copy()
         if hasattr(old_raw, 'columns'):
             columns = list(old_raw.columns) # type: ignore
         else:

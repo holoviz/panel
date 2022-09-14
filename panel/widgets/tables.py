@@ -1075,6 +1075,7 @@ class Tabulator(BaseTable):
         self._explicit_pagination = 'pagination' in params
         self._on_edit_callbacks = []
         self._on_click_callbacks = {}
+        self._old_value = None
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
@@ -1131,6 +1132,8 @@ class Tabulator(BaseTable):
         super()._cleanup(root)
 
     def _process_event(self, event):
+        if not self._on_click_callbacks and not self._on_edit_callbacks:
+            return
         event_col = self._renamed_cols.get(event.column, event.column)
         processed = self._sort_df(self._processed)
         if self.pagination in ['local', 'remote']:
@@ -1142,19 +1145,17 @@ class Tabulator(BaseTable):
                 event.value = processed.index[event_row]
             else:
                 event.value = processed[event_col].iloc[event_row]
-        # Set the old attribute on a table edit event
-        if event.event_name == 'table-edit' and self._old is not None:
-            old_processed = self._sort_df(self._old)
-            event.old = old_processed[event_col].iloc[event_row]
         # We want to return the index of the original `value` dataframe.
         if self._filters or self.filters or self.sorters:
             idx = processed.index[event.row]
             iloc = self.value.index.get_loc(idx)
             self._validate_iloc(idx, iloc)
             event.row = iloc
+        # Set the old attribute on a table edit event
+        if event.event_name == 'table-edit' and self._old_value is not None:
+            event.old = self._old_value[event_col].iloc[event.row]
         if event.event_name == 'table-edit':
             for cb in self._on_edit_callbacks:
-                print(cb)
                 state.execute(partial(cb, event))
             self._update_style()
         else:
@@ -1213,7 +1214,12 @@ class Tabulator(BaseTable):
         # _processed data is already filtered, this made the comparison between
         # the new data and old data wrong. This extension replicates the
         # front-end filtering - if need be - to be able to correctly make the
-        # comparison and update the data hold by the backend.
+        # comparison and update the data held by the backend.
+
+        # It also makes a copy of the value dataframe, to use it to obtain
+        # the old value in a table-edit event.
+        self._old_value = self.value.copy()
+
         if not self.filters:
             return super()._process_data(data)
         import pandas as pd
