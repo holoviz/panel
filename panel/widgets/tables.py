@@ -1132,6 +1132,8 @@ class Tabulator(BaseTable):
         super()._cleanup(root)
 
     def _process_event(self, event):
+        if not self._on_click_callbacks and not self._on_edit_callbacks:
+            return
         event_col = self._renamed_cols.get(event.column, event.column)
         processed = self._sort_df(self._processed)
         if self.pagination in ['local', 'remote']:
