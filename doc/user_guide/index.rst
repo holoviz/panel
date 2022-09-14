@@ -44,26 +44,29 @@ when needed.
 `Linking <Links.html>`_
  Defining links between Panel objects in Python and Javascript.
 
+`Templates <Templates.html>`_
+ Learn how to compose multiple Panels into a custom HTML document.
+
 `Pipelines <Pipelines.html>`_
  Using Parameterized classes to declare linear workflows containing multiple panels.
 
-`Templates <Templates.html>`_
- Learn how to compose multiple Panels into a custom HTML document.
+`Performance, Profiling and Debugging <Performance_and_Debugging.html>`_
+ Learn how to speed up your application and find issues.
+
+State, Caching & Callbacks
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`Session State and Callbacks <Session_State_and_Callbacks.html>`_
+ Learn how to access session state and schedule callbacks.
 
 `Asynchronous and Concurrent Processing <Async_and_Concurrency.html>`_
  Learn how leverage asynchronous and concurrent processing to make your app more responsive.
 
-`Building custom components <Custom_Components.html>`_
- Learn how to extend Panel by building custom components.
-
-`Profiling and Debugging <Performance_and_Debugging.html>`_
- Learn how to speed up your application and find issues.
-
 Export
 ^^^^^^
 
-`Deploy & Export <Deploy_and_Export.html>`_
- Introduction to displaying, exporting, and deploying Panel apps.
+`Display & Export <Display_and_Export.html>`_
+ Guide towards configuring and displaying output and exporting Panel apps and components.
 
 `Running Panel in the Browser with WASM <Running_in_Webassembly.html>`_
  Guide to embedding interactive Panel components in a web page or converting entire Panel applications to run entirely in your browser.
@@ -83,6 +86,13 @@ Server Usage
 `Django Apps <Django_Apps.html>`_
  How to embed a Panel/Bokeh app inside a Django web-server deployment.
 
+Extending Panel
+^^^^^^^^^^^^^^^
+
+`Building custom components <Custom_Components.html>`_
+ Learn how to extend Panel by building custom components.
+
+
 .. toctree::
     :titlesonly:
     :hidden:
@@ -98,12 +108,13 @@ Server Usage
     Linking <Links>
     Pipelines <Pipelines>
     Templates <Templates>
-    Building Custom Components <Custom_Components>
-    Asynchronous and Concurrent Process <Async_and_Concurrency>
     Performance and Debugging <Performance_and_Debugging>
-    Deploy & Export <Deploy_and_Export>
+    Session state & Callbacks <Session_State_and_Callbacks>
+    Asynchronous and Concurrent Process <Async_and_Concurrency>
+    Display & Export <Display_and_Export>
     Running Panel in the Browser with WASM <Running_in_Webassembly>
     Server Configuration <Server_Configuration>
     Server Deployment <Server_Deployment>
     Authentication <Authentication>
     Django Apps <Django_Apps>
+    Building Custom Components <Custom_Components>
