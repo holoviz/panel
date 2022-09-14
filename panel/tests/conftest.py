@@ -310,10 +310,8 @@ def server_cleanup():
         state.kill_all_servers()
         state._indicators.clear()
         state._locations.clear()
-        state._curdoc = None
         state.cache.clear()
         state._scheduled.clear()
-        state._curdoc_.clear()
         if state._thread_pool is not None:
             state._thread_pool.shutdown(wait=False)
             state._thread_pool = None

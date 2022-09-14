@@ -244,10 +244,6 @@ class Server(BokehServer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        try:
-            _add_task_factory(self.io_loop.asyncio_loop) # type: ignore
-        except Exception:
-            pass
         if state._admin_context:
             state._admin_context._loop = self._loop
 
@@ -596,28 +592,6 @@ if (
      'pytest' in sys.modules)
 ):
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
-def _add_task_factory(loop):
-    """
-    Adds a Task factory to the asyncio IOLoop that ensures child tasks
-    have access to their parent.
-    """
-    if getattr(loop, '_has_panel_task_factory', False):
-        return
-    existing_factory = loop.get_task_factory()
-    def task_factory(loop, coro):
-        try:
-            parent_task = asyncio.current_task()
-        except RuntimeError:
-            parent_task = None
-        if existing_factory:
-            task = existing_factory(loop, coro)
-        else:
-            task = asyncio.Task(coro, loop=loop)
-        task.parent_task = parent_task
-        return task
-    loop.set_task_factory(task_factory)
-    loop._has_panel_task_factory = True
 
 #---------------------------------------------------------------------
 # Public API

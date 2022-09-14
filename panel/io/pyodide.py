@@ -290,7 +290,7 @@ def init_doc() -> None:
     doc = Document()
     set_curdoc(doc)
     doc._session_context = lambda: MockSessionContext(document=doc)
-    state._curdoc = doc
+    state.curdoc = doc
 
 async def show(obj: Any, target: str) -> None:
     """
