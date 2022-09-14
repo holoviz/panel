@@ -59,6 +59,15 @@ def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
     for event in events:
         doc.callbacks.trigger_on_change(event)
 
+def _cleanup_doc(doc):
+    for callback in doc.session_destroyed_callbacks:
+        try:
+            callback(None)
+        except Exception:
+            pass
+    doc.callbacks._change_callbacks[None] = {}
+    doc.destroy(None)
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
