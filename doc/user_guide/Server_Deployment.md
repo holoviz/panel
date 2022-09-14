@@ -16,7 +16,7 @@ When a user accesses the Panel application via the browser they can optionally p
 
 ## Deployment
 
-As was covered in [Server_Configuration](Server_Configuration.md) guide a Panel app, either in a notebook or a Python script, can be annotated with `.servable()` and then launched from the commandline using ``panel serve``. This launches a Tornado server on a specific port (defaulting to 5006) which you can access locally at ``https://localhost:{PORT}``. This is a good option for simple deployments on a local network.
+As was covered in [Server Configuration](Server_Configuration.md) guide a Panel app, either in a notebook or a Python script, can be annotated with `.servable()` and then launched from the commandline using ``panel serve``. This launches a Tornado server on a specific port (defaulting to 5006) which you can access locally at ``https://localhost:{PORT}``. This is a good option for simple deployments on a local network.
 
 However many deployment scenarios have additional requirements around authentication, scaling, and uptime.
 
