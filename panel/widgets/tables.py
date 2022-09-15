@@ -1675,6 +1675,9 @@ class Tabulator(BaseTable):
                 formatter = dict(formatter)
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
+            dtype = getattr(self.value, column.field).dtype
+            if dtype.kind == 'M':
+                col_dict['sorter'] = 'timestamp'
             editor = self.editors.get(column.field)
             if column.field in self.editors and editor is None:
                 col_dict['editable'] = False
