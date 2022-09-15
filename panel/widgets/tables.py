@@ -108,6 +108,7 @@ class BaseTable(ReactiveData, Widget):
     def __init__(self, value=None, **params):
         self._renamed_cols = {}
         self._filters = []
+        self._index_mapping = {}
         super().__init__(value=value, **params)
 
     @param.depends('value', watch=True, on_init=True)
@@ -233,6 +234,13 @@ class BaseTable(ReactiveData, Widget):
     def _update_cds(self, *events: param.parameterized.Event):
         old_processed = self._processed
         self._processed, data = self._get_data()
+        if self._processed is not None and not (isinstance(self._processed, list) and not self._processed):
+            self._index_mapping = {
+                i: index
+                for i, index in enumerate(self._processed.index)
+            }
+        else:
+            self._index_mapping = {}
         # If there is a selection we have to compute new index
         if self.selection and old_processed is not None:
             indexes = list(self._processed.index)
@@ -1135,22 +1143,18 @@ class Tabulator(BaseTable):
         if not self._on_click_callbacks and not self._on_edit_callbacks:
             return
         event_col = self._renamed_cols.get(event.column, event.column)
-        processed = self._sort_df(self._processed)
-        if self.pagination in ['local', 'remote']:
+        if self.pagination in ['remote']:
             nrows = self.page_size
             event.row = event.row+(self.page-1)*nrows
-        event_row = event.row
+        idx = self._index_mapping[event.row]
+        iloc = self.value.index.get_loc(idx)
+        self._validate_iloc(idx, iloc)
+        event.row = iloc
         if event_col not in self.buttons:
-            if event_col not in processed.columns:
-                event.value = processed.index[event_row]
+            if event_col not in self.value.columns:
+                event.value = self.value.index[event.row]
             else:
-                event.value = processed[event_col].iloc[event_row]
-        # We want to return the index of the original `value` dataframe.
-        if self._filters or self.filters or self.sorters:
-            idx = processed.index[event.row]
-            iloc = self.value.index.get_loc(idx)
-            self._validate_iloc(idx, iloc)
-            event.row = iloc
+                event.value = self.value[event_col].iloc[event.row]
         # Set the old attribute on a table edit event
         if event.event_name == 'table-edit' and self._old_value is not None:
             event.old = self._old_value[event_col].iloc[event.row]
