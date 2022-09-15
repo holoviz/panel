@@ -2,15 +2,17 @@
 
 Panel generally runs on the Bokeh server which itself runs on Tornado. However, it is also often useful to embed a Panel app in large web application, such as a Django web server. Using Panel with Django requires a bit more work than for notebooks and Bokeh servers.
 
-To run this example app yourself, you will first need to install django 2 (e.g. `conda install "django=2"`).
+To run this example app yourself, you will first need to install django (e.g. `conda install "django=2"`).
 
-Additionally you should also install the `channels` library (using `pip install channels` or `conda install channels -c conda-forge`). This makes it possible to run bokeh without launching a separate Tornado server.
+Additionally, you should also install the `channels` library (using `pip install channels==2` or `conda install channels=2 -c conda-forge`). This makes it possible to run bokeh without launching a separate Tornado server.
+
+Note that these examples can also be run with django 3 or django 4 (which will require channels 3), by installing the additional `bokeh_django` library. In this case replace all instances of `bokeh.server.django` with `bokeh_django` in the example below.
 
 ## Configuration
 
-Before we start adding a bokeh app to our Django server we have to set up some of the basic plumbing. In the `examples/apps/django2/project` folder we will add some basic configurations.
+Before we start adding a bokeh app to our Django server we have to set up some of the basic plumbing. In the `examples/apps/django/project` folder we will add some basic configurations.
 
-First of all we need to set up a Asynchronous Server Gateway Interface (ASGI) instead of the usual WSGI setup. For this purpose we add `examples/apps/django2/project/asgi.py`:
+First of all we need to set up a Asynchronous Server Gateway Interface (ASGI) instead of the usual WSGI setup. For this purpose we add `examples/apps/django/project/asgi.py`:
 
 ```python
 import os
@@ -27,7 +29,7 @@ application = get_default_application()
 ```
 
 
-Next we need to ensure the routing is configured correctly to handle a bokeh server in `examples/apps/django2/project/routing.py`:
+Next we need to ensure the routing is configured correctly to handle a bokeh server in `examples/apps/django/project/routing.py`:
 
 
 ```python
@@ -43,7 +45,7 @@ application = ProtocolTypeRouter({
 })
 ```
 
-Lastly we need to add some configuration to `examples/apps/django2/project/settings.py`. As a first step we need to add both `channels` and `bokeh.server.django` to the ``INSTALLED_APPS``:
+Lastly we need to add some configuration to `examples/apps/django/project/settings.py`. As a first step we need to add both `channels` and `bokeh.server.django` to the ``INSTALLED_APPS``:
 
 ```python
 
@@ -103,9 +105,9 @@ Now it's time to configure an actual app and add it to our Django server.
 
 ## Sliders app
 
-Based on a standard Django2 app template, this app shows how to integrate Panel with a Django view
+Based on a standard Django app template, this app shows how to integrate Panel with a Django view
 
-The sliders app is in `examples/apps/django2/sliders`. We will cover the following additions/modifications to the Django2 app template:
+The sliders app is in `examples/apps/django/sliders`. We will cover the following additions/modifications to the Django app template:
 
   * `sliders/sinewave.py`: a parameterized object (representing your pre-existing code)
 
@@ -214,7 +216,7 @@ urlpatterns = [
 ]
 ```
 
-You should be able to run this app yourself by changing to the `examples/apps/django2` directory and then running: `python manage.py runserver`; then visit http://localhost:8000/sliders in your browser to try the app.
+You should be able to run this app yourself by changing to the `examples/apps/django` directory and then running: `python manage.py runserver`; then visit http://localhost:8000/sliders in your browser to try the app.
 
 ## Multiple apps
 
