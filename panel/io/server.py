@@ -273,7 +273,7 @@ class Application(BkApplication):
 
     def initialize_document(self, doc):
         super().initialize_document(doc)
-        if doc in state._templates:
+        if doc in state._templates and doc not in state._templates[doc]._documents:
             template = state._templates[doc]
             template.server_doc(title=template.title, location=True, doc=doc)
 

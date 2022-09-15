@@ -355,7 +355,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
     root_ids: str
     """
     pydoc: Document = doc or state.curdoc
-    if pydoc in state._templates:
+    if pydoc in state._templates and pydoc not in state._templates[pydoc]._documents:
         template = state._templates[pydoc]
         template.server_doc(title=template.title, location=True, doc=pydoc)
 
