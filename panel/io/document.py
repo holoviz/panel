@@ -74,11 +74,15 @@ def _cleanup_doc(doc):
         if vdoc is doc:
             pane._cleanup(root)
             if isinstance(pane, Viewable):
+                pane._hooks = []
                 for p in pane.select():
                     p._hooks = []
                     p._param_watchers = {}
                     p._documents = {}
                     p._callbacks = {}
+            pane._param_watchers = {}
+            pane._documents = {}
+            pane._callbacks = {}
         else:
             views[ref] = (pane, root, doc, comm)
     state._views = views
