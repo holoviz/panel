@@ -162,6 +162,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
     def _server_destroy(self, session_context: BokehSessionContext):
         doc = session_context._document
+        if doc in state._templates:
+            del state._templates[doc]
         self._documents.remove(doc)
 
     def _init_doc(
@@ -171,6 +173,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     ):
         document: Document = doc or curdoc_locked()
         self._documents.append(document)
+        if document not in state._templates:
+            state._templates[document] = self
         if location and self.location:
             self._add_location(document, location)
         document.on_session_destroyed(state._destroy_session) # type: ignore
@@ -400,7 +404,8 @@ class BasicTemplate(BaseTemplate):
         specifically for this template.""")
 
     busy_indicator = param.ClassSelector(default=LoadingSpinner(width=20, height=20),
-                                         class_=BooleanIndicator, constant=True, doc="""
+                                         class_=BooleanIndicator, constant=True,
+                                         allow_None=True, doc="""
         Visual indicator of application busy state.""")
 
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""

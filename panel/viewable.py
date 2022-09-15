@@ -488,6 +488,8 @@ class Renderable(param.Parameterized):
         if root is None:
             return
         ref = root.ref['id']
+        if root.document and root.document in self._documents:
+            del self._documents[root.document]
         if ref in state._handles:
             del state._handles[ref]
 
