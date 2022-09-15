@@ -1673,8 +1673,12 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         event_type = event.data['type']
         star_cbs = self._event_callbacks.get('*', {})
         node_cbs = self._event_callbacks.get(event.node, {})
+
+        def match(node, pattern):
+            return re.findall(re.sub(r'\{\{.*loop.index.*\}\}', r'\\d+', pattern), node)
+
         inline_cbs = {attr: [getattr(self, p)] for node, attr, p in self._inline_callbacks
-                      if node == event.node}
+                      if node == event.node or match(event.node, node)}
         event_cbs = (
             node_cbs.get(event_type, []) + node_cbs.get('*', []) +
             star_cbs.get(event_type, []) + star_cbs.get('*', []) +
