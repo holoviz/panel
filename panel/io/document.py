@@ -66,6 +66,34 @@ def _cleanup_doc(doc):
         except Exception:
             pass
     doc.callbacks._change_callbacks[None] = {}
+
+    # Remove views
+    from ..viewable import Viewable
+    views = {}
+    for ref, (pane, root, vdoc, comm) in list(state._views.items()):
+        if vdoc is doc:
+            pane._cleanup(root)
+            if isinstance(pane, Viewable):
+                pane._hooks = []
+                for p in pane.select():
+                    p._hooks = []
+                    p._param_watchers = {}
+                    p._documents = {}
+                    p._callbacks = {}
+            pane._param_watchers = {}
+            pane._documents = {}
+            pane._callbacks = {}
+        else:
+            views[ref] = (pane, root, doc, comm)
+    state._views = views
+
+    # Clean up templates
+    if doc in state._templates:
+        tmpl = state._templates[doc]
+        tmpl._documents = {}
+        del state._templates[doc]
+
+    # Destroy doc
     doc.destroy(None)
 
 #---------------------------------------------------------------------

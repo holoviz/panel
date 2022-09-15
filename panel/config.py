@@ -326,7 +326,7 @@ class _config(_base_config):
         else:
             params = []
         session_config = super().__getattribute__('_session_config')
-        curdoc =state.curdoc
+        curdoc = state.curdoc
         if curdoc and curdoc not in session_config:
             session_config[curdoc] = {}
         if (attr in ('raw_css', 'css_files', 'js_files', 'js_modules') and

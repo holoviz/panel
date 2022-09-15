@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import dataclasses
-import gc
 import os
 import pathlib
 import pkgutil
@@ -29,6 +28,7 @@ from typing_extensions import Literal
 
 from .. import __version__, config
 from ..util import escape
+from .document import _cleanup_doc
 from .resources import (
     DIST_DIR, INDEX_TEMPLATE, Resources, _env as _pn_env, bundle_resources,
 )
@@ -422,17 +422,11 @@ def script_to_html(
         .replace('<body>', f'<body class="bk pn-loading {config.loading_spinner}">')
     )
 
-    # Cleanup
+    # Reset resources
     _settings.resources.unset_value()
-    del document._roots
-    del document._theme
-    del document._template
-    document._session_context = None
 
-    document.callbacks.destroy()
-    document.models.destroy()
-    document.modules.destroy()
-    gc.collect()
+    # Destroy document
+    _cleanup_doc(document)
 
     return html, web_worker
 

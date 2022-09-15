@@ -797,7 +797,7 @@ class _state(param.Parameterized):
     def curdoc(self) -> Document | None:
         try:
             doc = curdoc_locked()
-            if doc.session_context or self._is_pyodide:
+            if doc and doc.session_context or self._is_pyodide:
                 return doc
         finally:
             curdoc = self._curdoc.get()

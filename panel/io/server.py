@@ -212,7 +212,9 @@ def destroy_document(self, session):
     multiple documents are destroyed in quick succession we do not
     schedule excessive garbage collection.
     """
-    self.remove_on_change(session)
+    if session is not None:
+        self.remove_on_change(session)
+
     del self._roots
     del self._theme
     del self._template
@@ -238,6 +240,7 @@ def destroy_document(self, session):
     at = dt.datetime.now() + dt.timedelta(seconds=5)
     state.schedule_task('gc.collect', gc.collect, at=at)
 
+    del self.destroy
 
 # Patch Server to attach task factory to asyncio loop and handle Admin server context
 class Server(BokehServer):
@@ -270,7 +273,7 @@ class Application(BkApplication):
 
     def initialize_document(self, doc):
         super().initialize_document(doc)
-        if doc in state._templates:
+        if doc in state._templates and doc not in state._templates[doc]._documents:
             template = state._templates[doc]
             template.server_doc(title=template.title, location=True, doc=doc)
 

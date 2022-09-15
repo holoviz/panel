@@ -275,7 +275,10 @@ class Syncable(Renderable):
         if root is None:
             return
         ref = root.ref['id']
-        self._models.pop(ref, None)
+        if ref in self._models:
+            model, _ = self._models.pop(ref, None)
+            model._callbacks = {}
+            model._event_callbacks = {}
         comm, client_comm = self._comms.pop(ref, (None, None))
         if comm:
             try:
