@@ -252,7 +252,7 @@ def test_tabulator_multi_index(document, comm):
         {'field': 'A'},
         {'field': 'C'},
         {'field': 'B'},
-        {'field': 'D'}
+        {'field': 'D', 'sorter': 'timestamp'}
     ]
 
     assert np.array_equal(model.source.data['A'], np.array([0., 1., 2., 3., 4.]))
@@ -269,7 +269,7 @@ def test_tabulator_multi_index_remote_pagination(document, comm):
         {'field': 'A'},
         {'field': 'C'},
         {'field': 'B'},
-        {'field': 'D'}
+        {'field': 'D', 'sorter': 'timestamp'}
     ]
 
     assert np.array_equal(model.source.data['A'], np.array([0., 1., 2.]))
@@ -386,7 +386,7 @@ def test_tabulator_config_defaults(document, comm):
         {'field': 'A'},
         {'field': 'B'},
         {'field': 'C'},
-        {'field': 'D'}
+        {'field': 'D', 'sorter': 'timestamp'}
     ]
     assert model.configuration['selectable'] == True
 
@@ -401,7 +401,7 @@ def test_tabulator_config_widths_percent(document, comm):
         {'field': 'A', 'width': '22%'},
         {'field': 'B'},
         {'field': 'C'},
-        {'field': 'D'}
+        {'field': 'D', 'sorter': 'timestamp'}
     ]
     assert model.columns[2].width == 100
 
@@ -416,7 +416,7 @@ def test_tabulator_header_filters_config_boolean(document, comm):
         {'field': 'A', 'headerFilter': True},
         {'field': 'B', 'headerFilter': True},
         {'field': 'C', 'headerFilter': True},
-        {'field': 'D', 'headerFilter': True}
+        {'field': 'D', 'headerFilter': True, 'sorter': 'timestamp'}
     ]
 
 def test_tabulator_header_filters_column_config_list(document, comm):
@@ -430,7 +430,7 @@ def test_tabulator_header_filters_column_config_list(document, comm):
         {'field': 'A'},
         {'field': 'B'},
         {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
-        {'field': 'D'}
+        {'field': 'D', 'sorter': 'timestamp'}
     ]
     assert model.configuration['selectable'] == True
 
@@ -449,7 +449,7 @@ def test_tabulator_header_filters_column_config_select_autocomplete_backwards_co
         {'field': 'A'},
         {'field': 'B'},
         {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
-        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
+        {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'sorter': 'timestamp'},
     ]
     assert model.configuration['selectable'] == True
 
@@ -472,7 +472,7 @@ def test_tabulator_header_filters_column_config_dict(document, comm):
             'headerFilterFunc': '!=',
             'headerFilterPlaceholder': 'Not equal'
         },
-        {'field': 'D'}
+        {'field': 'D', 'sorter': 'timestamp'}
     ]
     assert model.configuration['selectable'] == True
 
@@ -582,7 +582,7 @@ def test_tabulator_groups(document, comm):
         {'title': 'Other',
          'columns': [
             {'field': 'C'},
-            {'field': 'D'}
+            {'field': 'D', 'sorter': 'timestamp'}
         ]}
     ]
 
@@ -615,7 +615,7 @@ def test_tabulator_frozen_cols(document, comm):
         {'field': 'A'},
         {'field': 'B'},
         {'field': 'C'},
-        {'field': 'D'}
+        {'field': 'D', 'sorter': 'timestamp'}
     ]
 
 

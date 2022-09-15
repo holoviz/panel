@@ -1675,7 +1675,14 @@ class Tabulator(BaseTable):
                 formatter = dict(formatter)
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
-            dtype = getattr(self.value, column.field).dtype
+            col_name = self._renamed_cols[column.field]
+            if column.field in self.indexes:
+                if len(self.indexes) == 1:
+                    dtype = self.value.index.dtype
+                else:
+                    dtype = self.value.index.get_level_values(self.indexes.index(column.field)).dtype
+            else:
+                dtype = self.value.dtypes[col_name]
             if dtype.kind == 'M':
                 col_dict['sorter'] = 'timestamp'
             editor = self.editors.get(column.field)
