@@ -798,8 +798,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           tab_column.headerSortStartingDir = sort.dir
       }
       tab_column.cellClick = (_: any, cell: any) => {
-        const index_processed = cell.getRow().getPosition()-1
-        this.model.trigger_event(new CellClickEvent(column.field, index_processed))
+        const index = cell.getData()._index
+        this.model.trigger_event(new CellClickEvent(column.field, index))
       }
       if (config_columns == null)
         columns.push(tab_column)
@@ -812,8 +812,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         formatter: button_formatter,
         hozAlign: "center",
         cellClick: (_: any, cell: any) => {
-          const index_processed = cell.getRow().getPosition()-1
-          this.model.trigger_event(new CellClickEvent(col, index_processed))
+          const index = cell.getData()._index
+          this.model.trigger_event(new CellClickEvent(col, index))
         }
       }
       columns.push(button_column)
@@ -1126,9 +1126,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   cellEdited(cell: any): void {
     const field = cell._cell.column.field;
-    // true to get the position of the filtered/sorted row index
-    const index_processed = cell.getRow().getPosition()-1
-    const index = cell._cell.row.data._index
+    const index = cell.getData()._index
     const value = cell._cell.value
     this._tabulator_cell_updating = true
     comm_settings.debounce = false
@@ -1138,7 +1136,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       comm_settings.debounce = true
       this._tabulator_cell_updating = false
     }
-    this.model.trigger_event(new TableEditEvent(field, index_processed))
+    this.model.trigger_event(new TableEditEvent(field, index))
     this.tabulator.scrollToRow(index, "top", false)
   }
 }

@@ -16,8 +16,10 @@ export function transform_cds_to_records(cds: ColumnDataSource, addId: boolean =
       else
         item[column] = array[i]
     }
-    if (addId)
+    if (addId) {
+      console.log(i)
       item['_index'] = i
+    }
     data.push(item)
   }
   return data
