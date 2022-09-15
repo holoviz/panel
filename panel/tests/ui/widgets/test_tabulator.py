@@ -327,7 +327,7 @@ def test_tabulator_buttons_event(page, port, df_mixed):
     time.sleep(0.2)
 
     assert state == expected_state
-    wait_until(page, lambda: state == expected_state)
+    wait_until(lambda: state == expected_state, page)
 
 
 def test_tabulator_formatters_bokeh_bool(page, port, df_mixed):
@@ -1212,7 +1212,7 @@ def test_tabulator_header_filter_always_visible(page, port, df_mixed):
     header.fill('off')
     header.press('Enter')
 
-    wait_until(page, lambda: widget.current_view.empty)
+    wait_until(lambda: widget.current_view.empty, page)
 
     header = page.locator('input[type="search"]')
     expect(header).to_have_count(1)
@@ -1267,7 +1267,7 @@ def test_tabulator_selection_selectable_by_default(page, port, df_mixed):
     c0 = page.locator('text="idx0"')
     c0.wait_for()
     c0.click()
-    wait_until(page, lambda: widget.selection == [0])
+    wait_until(lambda: widget.selection == [0], page)
     assert 'tabulator-selected' in rows.first.get_attribute('class')
     for i in range(1, rows.count()):
         assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
@@ -1289,12 +1289,12 @@ def test_tabulator_selection_selectable_one_at_a_time(page, port, df_mixed):
     c0 = page.locator('text="idx0"')
     c0.wait_for()
     c0.click()
-    wait_until(page, lambda: widget.selection == [0])
+    wait_until(lambda: widget.selection == [0], page)
     expected_selected = df_mixed.loc[['idx0'], :]
     assert widget.selected_dataframe.equals(expected_selected)
     # Click on the second row should deselect the first one
     page.locator('text="idx1"').click()
-    wait_until(page, lambda: widget.selection == [1])
+    wait_until(lambda: widget.selection == [1], page)
     expected_selected = df_mixed.loc[['idx1'], :]
     assert widget.selected_dataframe.equals(expected_selected)
     for i in range(rows.count()):
@@ -1304,7 +1304,7 @@ def test_tabulator_selection_selectable_one_at_a_time(page, port, df_mixed):
             assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
     # Clicking again on the second row should not change anything
     page.locator('text="idx1"').click()
-    wait_until(page, lambda: widget.selection == [1])
+    wait_until(lambda: widget.selection == [1], page)
     assert widget.selected_dataframe.equals(expected_selected)
     for i in range(rows.count()):
         if i == 1:
@@ -1331,7 +1331,7 @@ def test_tabulator_selection_selectable_ctrl(page, port, df_mixed):
     modifier = get_ctrl_modifier()
     page.locator("text=idx2").click(modifiers=[modifier])
     expected_selection = [0, 2]
-    wait_until(page, lambda: widget.selection == expected_selection)
+    wait_until(lambda: widget.selection == expected_selection, page)
     expected_selected = df_mixed.loc[['idx0', 'idx2'], :]
     assert widget.selected_dataframe.equals(expected_selected)
     for i in range(rows.count()):
@@ -1342,7 +1342,7 @@ def test_tabulator_selection_selectable_ctrl(page, port, df_mixed):
     # Clicking again on the third row with CTRL pressed should remove the row from the selection
     page.locator("text=idx2").click(modifiers=[modifier])
     expected_selection = [0]
-    wait_until(page, lambda: widget.selection == expected_selection)
+    wait_until(lambda: widget.selection == expected_selection, page)
     expected_selected = df_mixed.loc[['idx0'], :]
     assert widget.selected_dataframe.equals(expected_selected)
     for i in range(rows.count()):
@@ -1369,7 +1369,7 @@ def test_tabulator_selection_selectable_shift(page, port, df_mixed):
     # Click on the thrid row with SHIFT pressed should select the 2nd row too
     page.locator("text=idx2").click(modifiers=['Shift'])
     expected_selection = [0, 1, 2]
-    wait_until(page, lambda: widget.selection == expected_selection)
+    wait_until(lambda: widget.selection == expected_selection, page)
     expected_selected = df_mixed.loc['idx0':'idx2', :]
     assert widget.selected_dataframe.equals(expected_selected)
     for i in range(rows.count()):
@@ -1445,7 +1445,7 @@ def test_tabulator_selection_selectable_checkbox_all(page, port, df_mixed):
     for i in range(rows.count()):
         assert 'tabulator-selected' in rows.nth(i).get_attribute('class')
     # The selection should have all the indexes
-    wait_until(page, lambda: widget.selection == list(range(len(df_mixed))))
+    wait_until(lambda: widget.selection == list(range(len(df_mixed))), page)
     assert widget.selected_dataframe.equals(df_mixed)
 
 
@@ -1478,7 +1478,7 @@ def test_tabulator_selection_selectable_checkbox_multiple(page, port, df_mixed):
         else:
             assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
 
-    wait_until(page, lambda: widget.selection == expected_selection)
+    wait_until(lambda: widget.selection == expected_selection, page)
     expected_selected = df_mixed.iloc[expected_selection, :]
     assert widget.selected_dataframe.equals(expected_selected)
 
@@ -1512,7 +1512,7 @@ def test_tabulator_selection_selectable_checkbox_single(page, port, df_mixed):
         else:
             assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
 
-    wait_until(page, lambda: widget.selection == expected_selection)
+    wait_until(lambda: widget.selection == expected_selection, page)
     expected_selected = df_mixed.iloc[expected_selection, :]
     assert widget.selected_dataframe.equals(expected_selected)
 
@@ -1536,7 +1536,7 @@ def test_tabulator_selection_selectable_toggle(page, port, df_mixed):
             assert 'tabulator-selected' in rows.nth(i).get_attribute('class')
         else:
             assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
-    wait_until(page, lambda: widget.selection == [0])
+    wait_until(lambda: widget.selection == [0], page)
     expected_selected = df_mixed.loc[['idx0'], :]
     assert widget.selected_dataframe.equals(expected_selected)
     # Click on the second row, the first row should still be selected
@@ -1546,7 +1546,7 @@ def test_tabulator_selection_selectable_toggle(page, port, df_mixed):
             assert 'tabulator-selected' in rows.nth(i).get_attribute('class')
         else:
             assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
-    wait_until(page, lambda: widget.selection == [0, 1])
+    wait_until(lambda: widget.selection == [0, 1], page)
     expected_selected = df_mixed.loc[['idx0', 'idx1'], :]
     assert widget.selected_dataframe.equals(expected_selected)
     # Click on a selected row deselect it
@@ -1556,7 +1556,7 @@ def test_tabulator_selection_selectable_toggle(page, port, df_mixed):
             assert 'tabulator-selected' in rows.nth(i).get_attribute('class')
         else:
             assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
-    wait_until(page, lambda: widget.selection == [0])
+    wait_until(lambda: widget.selection == [0], page)
     expected_selected = df_mixed.loc[['idx0'], :]
     assert widget.selected_dataframe.equals(expected_selected)
 
@@ -1575,7 +1575,7 @@ def test_tabulator_selection_selectable_rows(page, port, df_mixed):
     c1 = page.locator('text="idx1"')
     c1.wait_for()
     c1.click()
-    wait_until(page, lambda: widget.selection == [1])
+    wait_until(lambda: widget.selection == [1], page)
     expected_selected = df_mixed.loc[['idx1'], :]
     assert widget.selected_dataframe.equals(expected_selected)
     # Click on the first row with CTRL pressed should NOT add that row to the selection
@@ -1615,7 +1615,7 @@ def test_tabulator_row_content(page, port, df_mixed):
         expect(closables).to_have_count(i + 1)
         assert row_content.is_visible()
         expected_expanded.append(i)
-        wait_until(page, lambda: widget.expanded == expected_expanded)
+        wait_until(lambda: widget.expanded == expected_expanded, page)
 
     for i in range(len(df_mixed)):
         closables = page.locator('text="▼"')
@@ -1623,7 +1623,7 @@ def test_tabulator_row_content(page, port, df_mixed):
         row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
         expect(row_content).to_have_count(0)  # timeout here?
         expected_expanded.remove(i)
-        wait_until(page, lambda: widget.expanded == expected_expanded)
+        wait_until(lambda: widget.expanded == expected_expanded, page)
 
 
 def test_tabulator_row_content_expand_from_python_init(page, port, df_mixed):
@@ -1849,10 +1849,10 @@ def test_tabulator_cell_click_event(page, port, df_mixed):
     page.goto(f"http://localhost:{port}")
 
     page.locator('text="idx0"').click()
-    wait_until(page, lambda: len(values) >= 1)
+    wait_until(lambda: len(values) >= 1, page)
     assert values[-1] == ('index', 0, 'idx0')
     page.locator('text="A"').click()
-    wait_until(page, lambda: len(values) >= 2)
+    wait_until(lambda: len(values) >= 2, page)
     assert values[-1] == ('str', 0, 'A')
 
 
@@ -1874,7 +1874,7 @@ def test_tabulator_edit_event(page, port, df_mixed):
     editable_cell.fill("AA")
     editable_cell.press('Enter')
 
-    wait_until(page, lambda: len(values) >= 1)
+    wait_until(lambda: len(values) >= 1, page)
     assert values[0] == ('str', 0, 'A', 'AA')
     assert df_mixed.at['idx0', 'str'] == 'AA'
 
@@ -1893,7 +1893,7 @@ def test_tabulator_pagination(page, port, df_mixed, pagination):
     counts = count_per_page(len(df_mixed), page_size)
     i = 0
     while True:
-        wait_until(page, lambda: widget.page == i + 1)
+        wait_until(lambda: widget.page == i + 1, page)
         rows = page.locator('.tabulator-row')
         expect(rows).to_have_count(counts[i])
         assert page.locator(f'[aria-label="Show Page {i+1}"]').count() == 1
@@ -1993,7 +1993,7 @@ def test_tabulator_filter_param(page, port, df_mixed):
 
     df_filtered = df_mixed.loc[df_mixed[filt_col] == filt_val, :]
 
-    wait_until(page, lambda: widget.current_view.equals(df_filtered))
+    wait_until(lambda: widget.current_view.equals(df_filtered), page)
 
     # Check the table has the right number of rows
     expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))
@@ -2003,7 +2003,7 @@ def test_tabulator_filter_param(page, port, df_mixed):
         page.wait_for_timeout(200)
         df_filtered = df_mixed.loc[df_mixed[filt_col] == filt_val, :]
 
-        wait_until(page, lambda: widget.current_view.equals(df_filtered))
+        wait_until(lambda: widget.current_view.equals(df_filtered), page)
 
         # Check the table has the right number of rows
         expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))
@@ -2125,8 +2125,8 @@ def test_tabulator_header_filters_set_from_client(page, port, df_mixed):
     expected_filter_df = df_mixed.query(query1)
     expected_filter1 = {'field': col, 'type': cmp, 'value': val}
     expect(page.locator('.tabulator-row')).to_have_count(len(expected_filter_df))
-    wait_until(page, lambda: widget.filters == [expected_filter1])
-    wait_until(page, lambda: widget.current_view.equals(expected_filter_df))
+    wait_until(lambda: widget.filters == [expected_filter1], page)
+    wait_until(lambda: widget.current_view.equals(expected_filter_df), page)
 
     str_header = page.locator('input[type="search"]')
     str_header.click()
@@ -2137,8 +2137,8 @@ def test_tabulator_header_filters_set_from_client(page, port, df_mixed):
     expected_filter_df = df_mixed.query(f'{query1} and {query2}')
     expected_filter2 = {'field': col, 'type': cmp, 'value': val}
     expect(page.locator('.tabulator-row')).to_have_count(len(expected_filter_df))
-    wait_until(page, lambda: widget.filters == [expected_filter1, expected_filter2])
-    wait_until(page, lambda: widget.current_view.equals(expected_filter_df))
+    wait_until(lambda: widget.filters == [expected_filter1, expected_filter2], page)
+    wait_until(lambda: widget.current_view.equals(expected_filter_df), page)
 
 
 def test_tabulator_download(page, port, df_mixed, df_mixed_as_string):
@@ -2410,7 +2410,7 @@ def test_tabulator_editor_datetime_nan(page, port, df_mixed):
     page.locator('text="-"').click()
     page.locator("html").click()
 
-    wait_until(page, lambda: len(events) == 0)
+    wait_until(lambda: len(events) == 0, page)
 
 
 @pytest.mark.parametrize('col', ['index', 'int', 'float', 'str', 'date', 'datetime'])
@@ -2499,7 +2499,7 @@ def test_tabulator_sorters_from_client(page, port, df_mixed):
     expect(sheader).to_have_count(1)
     assert sheader.get_attribute('tabulator-field') == 'float'
 
-    wait_until(page, lambda: widget.sorters == [{'field': 'float', 'dir': 'asc'}])
+    wait_until(lambda: widget.sorters == [{'field': 'float', 'dir': 'asc'}], page)
 
     expected_df_sorted = df_mixed.sort_values('float', ascending=True)
     assert widget.current_view.equals(expected_df_sorted)
@@ -2552,13 +2552,13 @@ def test_tabulator_sorters_pagination(page, port, df_mixed, pagination):
     assert sheader.get_attribute('tabulator-field') == 'str'
 
     expected_sorted_df = df_mixed.sort_values('str', ascending=False)
-    wait_until(page, lambda: widget.current_view.equals(expected_sorted_df))
+    wait_until(lambda: widget.current_view.equals(expected_sorted_df), page)
 
     # Check that if we go to the next page the current_view hasn't changed
     page.locator('text="Next"').click()
 
     page.wait_for_timeout(200)
-    wait_until(page, lambda: widget.current_view.equals(expected_sorted_df))
+    wait_until(lambda: widget.current_view.equals(expected_sorted_df), page)
 
 
 def test_tabulator_edit_event_sorters_not_automatically_applied(page, port, df_mixed):
@@ -2575,7 +2575,7 @@ def test_tabulator_edit_event_sorters_not_automatically_applied(page, port, df_m
 
     expected_vals = list(df_mixed['str'].sort_values(ascending=False))
 
-    wait_until(page, lambda: tabulator_column_values(page, 'str') == expected_vals)
+    wait_until(lambda: tabulator_column_values(page, 'str') == expected_vals, page)
 
     # Chankge the cell that contains B to BB
     cell = page.locator('text="B"')
@@ -2584,10 +2584,10 @@ def test_tabulator_edit_event_sorters_not_automatically_applied(page, port, df_m
     editable_cell.fill("Z")
     editable_cell.press('Enter')
 
-    wait_until(page, lambda: len(values) == 1)
+    wait_until(lambda: len(values) == 1, page)
 
     expected_vals = [item if item != 'B' else 'Z' for item in expected_vals]
-    wait_until(page, lambda: tabulator_column_values(page, 'str') == expected_vals)
+    wait_until(lambda: tabulator_column_values(page, 'str') == expected_vals, page)
 
 
 def test_tabulator_click_event_and_header_filters(page, port):
@@ -2614,13 +2614,13 @@ def test_tabulator_click_event_and_header_filters(page, port):
     str_header.click()
     str_header.fill('D')
     str_header.press('Enter')
-    wait_until(page, lambda: len(widget.filters) == 1)
+    wait_until(lambda: len(widget.filters) == 1, page)
 
     # Click on the last cell
     cell = page.locator('text="Z"')
     cell.click()
 
-    wait_until(page, lambda: len(values) == 1)
+    wait_until(lambda: len(values) == 1, page)
     # This cell was at index 4 in col2 of the original dataframe
     assert values[0] == ('col2', 4, 'Z')
 
@@ -2649,7 +2649,7 @@ def test_tabulator_edit_event_and_header_filters_last_row(page, port):
     str_header.click()
     str_header.fill('D')
     str_header.press('Enter')
-    wait_until(page, lambda: len(widget.filters) == 1)
+    wait_until(lambda: len(widget.filters) == 1, page)
 
     # Click on the last cell
     cell = page.locator('text="Z"')
@@ -2658,7 +2658,7 @@ def test_tabulator_edit_event_and_header_filters_last_row(page, port):
     editable_cell.fill("ZZ")
     editable_cell.press('Enter')
 
-    wait_until(page, lambda: len(values) == 1)
+    wait_until(lambda: len(values) == 1, page)
     # This cell was at index 4 in col2 of the original dataframe
     assert values[0] == ('col2', 4, 'Z', 'ZZ')
     assert df['col2'].iloc[-1] == 'ZZ'
@@ -2698,7 +2698,7 @@ def test_tabulator_edit_event_and_header_filters(page, port):
     editable_cell.fill("BB")
     editable_cell.press('Enter')
 
-    wait_until(page, lambda: len(values) == 1)
+    wait_until(lambda: len(values) == 1, page)
     # This cell was at index 1 in col2 of the original dataframe
     assert values[0] == ('col2', 1, 'B', 'BB')
     assert df['col2'][1] == 'BB'
@@ -2763,7 +2763,7 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, he
         str_header.click()
         str_header.fill(header_filter_val)
         str_header.press('Enter')
-        wait_until(page, lambda: len(widget.filters) == 1)
+        wait_until(lambda: len(widget.filters) == 1, page)
 
     if pagination != 'no_pagination' and sorter == 'no_sorter':
         page.locator('text="Last"').click()
@@ -2776,7 +2776,7 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, he
     editable_cell.fill(new_val)
     editable_cell.press('Enter')
 
-    wait_until(page, lambda: len(values) == 1)
+    wait_until(lambda: len(values) == 1, page)
     assert values[0] == (target_col, target_index, target_val, new_val)
     assert df[target_col][target_index] == new_val
     assert widget.value.equals(df)
@@ -2846,7 +2846,7 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
         str_header.click()
         str_header.fill(header_filter_val)
         str_header.press('Enter')
-        wait_until(page, lambda: len(widget.filters) == 1)
+        wait_until(lambda: len(widget.filters) == 1, page)
 
     if pagination != 'no_pagination' and sorter == 'no_sorter':
         page.locator('text="Last"').click()
@@ -2856,12 +2856,12 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
     cell = page.locator(f'text="{target_val}"')
     cell.click()
 
-    wait_until(page, lambda: len(values) == 1)
+    wait_until(lambda: len(values) == 1, page)
     assert values[0] == (target_col, target_index, target_val)
     target_selection_index = widget.current_view.index.get_loc(target_index)
     if python_filter == 'python_filter' or header_filter == 'header_filter' or sorter == 'sorter':
         pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
-    wait_until(page, lambda: widget.selection == [target_selection_index])
+    wait_until(lambda: widget.selection == [target_selection_index], page)
 
     if header_filter == 'header_filter' or sorter == 'sorter' or (pagination == 'remote' and python_filter == 'python_filter'):
         pytest.xfail(reason='See https://github.com/holoviz/panel/issues/3664')
@@ -2884,7 +2884,7 @@ def test_tabulator_selection_sorters_on_init(page, port, df_mixed):
     cell = page.locator(f'text="{last_index}"')
     cell.click()
 
-    wait_until(page, lambda: widget.selection == [len(df_mixed) - 1])
+    wait_until(lambda: widget.selection == [len(df_mixed) - 1], page)
     expected_selected = df_mixed.loc[[last_index], :]
     assert widget.selected_dataframe.equals(expected_selected)
 
@@ -3046,14 +3046,14 @@ def test_tabulator_selection_header_filter_pagination_updated(page, port, df_mix
     page.goto(f"http://localhost:{port}")
 
     page.locator('text="Last"').click()
-    wait_until(page, lambda: widget.page == 2)
+    wait_until(lambda: widget.page == 2, page)
 
     str_header = page.locator('input[type="search"]')
     str_header.click()
     str_header.fill('D')
     str_header.press('Enter')
 
-    wait_until(page, lambda: widget.page == 1)
+    wait_until(lambda: widget.page == 1, page)
 
 
 def test_tabulator_sort_algorithm(page, port):
@@ -3116,7 +3116,7 @@ def test_tabulator_sort_algorithm(page, port):
     cell = page.locator(f'text="{target_val}"')
     cell.click()
 
-    wait_until(page, lambda: len(values) == 1)
+    wait_until(lambda: len(values) == 1, page)
     assert values[0] == (target_col, target_index, target_val)
 
     # Click on the cell
@@ -3125,7 +3125,7 @@ def test_tabulator_sort_algorithm(page, port):
     cell = page.locator(f'text="{target_val}"')
     cell.click()
 
-    wait_until(page, lambda: len(values) == 2)
+    wait_until(lambda: len(values) == 2, page)
     assert values[1] == (target_col, target_index, target_val)
 
 
@@ -3189,7 +3189,7 @@ def test_tabulator_sort_algorithm_no_show_index(page, port):
     cell = page.locator(f'text="{target_val}"')
     cell.click()
 
-    wait_until(page, lambda: len(values) == 1)
+    wait_until(lambda: len(values) == 1, page)
     assert values[0] == (target_col, target_index, target_val)
 
     # Click on the cell
@@ -3198,7 +3198,7 @@ def test_tabulator_sort_algorithm_no_show_index(page, port):
     cell = page.locator(f'text="{target_val}"')
     cell.click()
 
-    wait_until(page, lambda: len(values) == 2)
+    wait_until(lambda: len(values) == 2, page)
     assert values[1] == (target_col, target_index, target_val)
 
 
@@ -3223,12 +3223,15 @@ def test_tabulator_sort_algorithm_by_type(page, port, col, vals):
 
     page.goto(f"http://localhost:{port}")
 
+    # Attempt at making this test more robust.
+    page.wait_for_timeout(200)
+
     client_index = [int(i) for i in tabulator_column_values(page, 'index')]
 
-    wait_until(
-        page,
-        lambda: client_index == list(widget.current_view.index)
-    )
+    def indexes_equal():
+        assert client_index == list(widget.current_view.index)
+
+    wait_until(indexes_equal, page)
 
 
 def test_tabulator_python_filter_edit(page, port):
@@ -3259,7 +3262,7 @@ def test_tabulator_python_filter_edit(page, port):
     editable_cell.fill("X")
     editable_cell.press('Enter')
 
-    wait_until(page, lambda: len(values) == 1)
+    wait_until(lambda: len(values) == 1, page)
     assert values[0] == ('values', len(df) - 1, 'B', 'X')
     assert df.at['idx3', 'values'] == 'X'
 
@@ -3269,6 +3272,6 @@ def test_tabulator_python_filter_edit(page, port):
     editable_cell.fill("Y")
     editable_cell.press('Enter')
 
-    wait_until(page, lambda: len(values) == 2)
+    wait_until(lambda: len(values) == 2, page)
     assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
     assert df.at['idx3', 'values'] == 'Y'

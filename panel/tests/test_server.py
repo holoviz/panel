@@ -19,6 +19,7 @@ from panel.models.tabulator import TableEditEvent
 from panel.pane import Markdown
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
+from panel.tests.util import wait_until
 from panel.widgets import Button, Tabulator, Terminal
 
 
@@ -497,11 +498,9 @@ def test_server_thread_pool_change_event(threads, port):
         button._server_change(doc, model.ref['id'], None, 'clicks', 0, 1)
         button2._server_change(doc, model.ref['id'], None, 'clicks', 0, 1)
 
-    # Wait for callbacks to be scheduled
-    time.sleep(1)
-
     # Checks whether Button on_click callback was executed concurrently
-    assert max(counts) == 2
+    wait_until(lambda: len(counts) > 0)
+    wait_until(lambda: max(counts) == 2)
 
 
 def test_server_thread_pool_bokeh_event(threads, port):

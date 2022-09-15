@@ -1,7 +1,8 @@
 import sys
-import time
 
 import pytest
+
+from panel.tests.util import wait_until
 
 pytestmark = pytest.mark.jupyter
 
@@ -15,14 +16,12 @@ def test_jupyter_server(page, jupyter_preview):
     assert page.text_content('.bk.string') == '0'
 
     page.click('.bk.bk-btn')
-    time.sleep(0.5)
 
-    assert page.text_content('.bk.string') == '1'
+    wait_until(lambda: page.text_content('.bk.string') == '1', page)
 
     page.click('.bk.bk-btn')
-    time.sleep(0.5)
 
-    assert page.text_content('.bk.string') == '2'
+    wait_until(lambda: page.text_content('.bk.string') == '2', page)
 
 @not_windows
 @pytest.mark.flaky(max_runs=3)
@@ -33,10 +32,8 @@ def test_jupyter_server_kernel_error(page, jupyter_preview):
 
     page.select_option('select#kernel-select', 'python3')
 
-    time.sleep(0.5)
+    wait_until(lambda: page.text_content('.bk.string') == '0', page)
 
-    assert page.text_content('.bk.string') == '0'
     page.click('.bk.bk-btn')
-    time.sleep(0.5)
 
-    assert page.text_content('.bk.string') == '1'
+    wait_until(lambda: page.text_content('.bk.string') == '1', page)

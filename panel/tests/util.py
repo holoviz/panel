@@ -94,25 +94,28 @@ def check_layoutable_properties(layoutable, model):
     assert model.height_policy == 'min'
 
 
-def wait_until(page, fn, timeout=5000, interval=100):
+def wait_until(fn, page=None, timeout=5000, interval=100):
     """
     Exercice a test function in a loop until it evaluates to True
     or times out.
 
     The function can either be a simple lambda that returns True or False:
-    >>> wait_until(page, lambda: x.values() == ['x'])
+    >>> wait_until(lambda: x.values() == ['x'])
 
     Or a defined function with an assert:
     >>> def _()
     >>>    assert x.values() == ['x']
-    >>> wait_until(page, _)
+    >>> wait_until(_)
+
+    In a Playwright context test you should pass the page fixture:
+    >>> wait_until(lambda: x.values() == ['x'], page)
 
     Parameters
     ----------
-    page : playwright.sync_api.Page
-        Playwright page
     fn : callable
         Callback
+    page : playwright.sync_api.Page, optional
+        Playwright page
     timeout : int, optional
         Total timeout in milliseconds, by default 5000
     interval : int, optional
@@ -152,9 +155,12 @@ def wait_until(page, fn, timeout=5000, interval=100):
                 return
             if timed_out():
                 raise TimeoutError(timeout_msg)
-        # Playwright recommends against using time.sleep
-        # https://playwright.dev/python/docs/intro#timesleep-leads-to-outdated-state
-        page.wait_for_timeout(interval)
+        if page:
+            # Playwright recommends against using time.sleep
+            # https://playwright.dev/python/docs/intro#timesleep-leads-to-outdated-state
+            page.wait_for_timeout(interval)
+        else:
+            time.sleep(interval / 1000)
 
 
 def get_ctrl_modifier():
