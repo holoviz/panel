@@ -196,8 +196,8 @@ def server_html_page_for_session(
     return html_page_for_render_items(bundle, {}, [render_item], title,
         template=template, template_variables=template_variables)
 
-def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url):
-    resources = Resources.from_bokeh(resources)
+def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url, absolute=False):
+    resources = Resources.from_bokeh(resources, absolute=absolute)
     bundle = bundle_resources(doc.roots, resources)
 
     render_items = [RenderItem(token=token, elementid=element_id, use_for_title=False)]
