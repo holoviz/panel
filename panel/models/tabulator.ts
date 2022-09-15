@@ -120,6 +120,53 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
   return grouped
 }
 
+
+const timestampSorter = function(a: any, b: any, _aRow: any, _bRow: any, _column: any, _dir: any, _params: any){
+  // Bokeh serializes datetime objects as UNIX timestamps.
+
+  //a, b - the two values being compared
+  //aRow, bRow - the row components for the values being compared (useful if you need to access additional fields in the row data for the sort)
+  //column - the column component for the column being sorted
+  //dir - the direction of the sort ("asc" or "desc")
+  //sorterParams - sorterParams object from column definition array
+
+  // Added an _ in front of some parameters as they're unused and the Typescript compiler was complaining about it.
+
+  // const alignEmptyValues = params.alignEmptyValues
+  let emptyAlign: any
+  emptyAlign = 0
+
+  const opts = {zone: new (window as any).luxon.IANAZone('UTC')}
+
+  // NaN values are serialized to -9223372036854776 by Bokeh
+
+  if (String(a) == '-9223372036854776') {
+    a = (window as any).luxon.DateTime.fromISO('invalid')
+  } else {
+    a = (window as any).luxon.DateTime.fromMillis(a, opts)
+  }
+  if (String(b) == '-9223372036854776') {
+    b = (window as any).luxon.DateTime.fromISO('invalid')
+  } else {
+    b = (window as any).luxon.DateTime.fromMillis(b, opts)
+  }
+
+  if(!a.isValid){
+    emptyAlign = !b.isValid ? 0 : -1;
+  }else if(!b.isValid){
+    emptyAlign =  1;
+  }else{
+    //compare valid values
+    return a - b;
+  }
+
+  // Invalid (e.g. NaN) always at the bottom
+  emptyAlign *= -1
+
+  return emptyAlign;
+}
+
+
 const dateEditor = function(cell: any, onRendered: any, success: any, cancel: any) {
   //cell - the cell component for the editable cell
   //onRendered - function to call when the editor has been rendered
@@ -702,6 +749,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
             return child
           }
         }
+      }
+      if (tab_column.sorter == 'timestamp') {
+        tab_column.sorter = timestampSorter
       }
 
       const editor: any = column.editor

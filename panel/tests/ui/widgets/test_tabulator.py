@@ -3208,6 +3208,7 @@ def test_tabulator_sort_algorithm_no_show_index(page, port):
         ('string', [np.nan, '', 'B', 'a', '', np.nan]),
         ('number', [1.0, 1.0, 0.0, 0.0]),
         ('boolean', [True, True, False, False]),
+        ('datetime', [dt.datetime(2019, 1, 1, 1), np.nan, dt.datetime(2019, 12, 1, 1), dt.datetime(2019, 12, 1, 1), np.nan, dt.datetime(2019, 6, 1, 1), np.nan])
     ),
 )
 def test_tabulator_sort_algorithm_by_type(page, port, col, vals):
