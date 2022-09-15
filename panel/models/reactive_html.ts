@@ -409,7 +409,17 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         } else {
           definition = `
           const ${method} = (event) => {
-            view._send_event("${elname}", "${cb}", event)
+            let elname = "${elname}"
+            if (RegExp("\{\{.*loop\.index.*\}\}").test(elname)) {
+              const pattern = RegExp(elname.replace(/\{\{(.+?)\}\}/g, String.fromCharCode(92) + "d+"))
+              for (const p of event.path) {
+                if (pattern.exec(p.id) != null) {
+                  elname = p.id.split("-").slice(null, -1).join("-")
+                  break
+                }
+              }
+            }
+            view._send_event(elname, "${cb}", event)
           }
           `
         }
