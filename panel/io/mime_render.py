@@ -7,19 +7,20 @@ import io
 import json
 
 from html import escape
-from typing import (
-    TYPE_CHECKING, Any, Dict, Tuple,
-)
+from typing import Any, Dict, Tuple
+
+import markdown
 
 from bokeh import __version__
 from bokeh.document import Document
 from bokeh.embed.util import standalone_docs_json_and_render_items
+from bokeh.model import Model
 
-from ..viewable import Viewable
+from ..pane import panel
+from ..viewable import Viewable, Viewer
 from .state import state
 
-if TYPE_CHECKING:
-    from bokeh.model import Model
+UNDEFINED = object()
 
 #---------------------------------------------------------------------
 # Execution API
@@ -64,6 +65,7 @@ def exec_with_return(code: str, global_context: Dict[str, Any] = None) -> Any:
         return eval(compile(_convert_expr(last_ast.body[0]), "<ast>", "eval"), global_context)
     else:
         exec(compile(last_ast, "<ast>", "exec"), global_context)
+        return UNDEFINED
 
 #---------------------------------------------------------------------
 # MIME Render API
@@ -85,27 +87,32 @@ MIME_METHODS = {
     "servable": ""
 }
 
-def render_image(mime, value, meta):
+def render_image(value, meta, mime):
     data = f"data:{mime};charset=utf-8;base64,{value}"
     attrs = " ".join(['{k}="{v}"' for k, v in meta.items()])
-    return f'<img src="{data}" {attrs}</img>'
+    return f'<img src="{data}" {attrs}</img>', 'text/html'
 
-def identity(value, meta):
-    return value
+def render_javascript(value, meta, mime):
+    return f'<script>{value}</script>', 'text/html'
 
-def escaped(value, meta):
-    return escape(value)
+def render_markdown(value, meta, mime):
+    return (markdown.markdown(
+        value, extensions=["extra", "smarty", "codehilite"], output_format='html5'
+    ), 'text/html')
+
+def identity(value, meta, mime):
+    return value, mime
 
 MIME_RENDERERS = {
-    "text/plain": escaped,
-    "text/html": escaped,
-    "image/png": lambda value, meta: render_image("image/png", value, meta),
-    "image/jpeg": lambda value, meta: render_image("image/jpeg", value, meta),
+    "text/plain": identity,
+    "text/html": identity,
+    "image/png": render_image,
+    "image/jpeg": render_image,
     "image/svg+xml": identity,
     "application/json": identity,
-    "application/javascript": lambda value, meta: f"<script>{value}</script>",
+    "application/javascript": render_javascript,
+    "text/markdown": render_markdown
 }
-
 
 def _model_json(model: Model, target: str) -> Tuple[Document, str]:
     """
@@ -166,11 +173,10 @@ def format_mime(obj):
     """
     if isinstance(obj, str):
         return escape(obj), "text/plain"
-    elif isinstance(obj, Viewable):
-        from .pyodide import _model_json
-        doc, out = _model_json(obj, 'output-${msg.id}')
+    elif isinstance(obj, (Model, Viewable, Viewer)):
+        doc, out = _model_json(panel(obj), 'output-${msg.id}')
         state.cache['${msg.id}'] = doc
-        return out, 'application/panel'
+        return out, 'application/bokeh'
 
     mimebundle = eval_formatter(obj, "_repr_mimebundle_")
     if isinstance(mimebundle, tuple):
@@ -192,10 +198,13 @@ def format_mime(obj):
             continue
         break
     if output is None:
-        output = escape(repr(output))
+        output = repr(output)
         mime_type = "text/plain"
     elif isinstance(output, tuple):
         output, meta = output
     else:
         meta = {}
-    return MIME_RENDERERS[mime_type](output, meta), mime_type
+    content, mime_type = MIME_RENDERERS[mime_type](output, meta, mime_type)
+    if mime_type == 'text/plain':
+        content = escape(content)
+    return content, mime_type
