@@ -2762,7 +2762,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, port):
     editable_cell.fill("Z")
     editable_cell.press('Enter')
 
-    wait_until(lambda: len(values) == 2, page)
+    wait_until(lambda: len(values) == 3, page)
     assert values[-1] == ('values', len(df) - 2, 'B', 'Z')
     assert df.at['idx2', 'values'] == 'Z'
     # current_view should show Y and Z, there's no more B
@@ -2812,7 +2812,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_remote(page, port):
     assert values[0] == ('values', len(df) - 1, 'B', 'X')
     assert df.at['idx5', 'values'] == 'X'
     # The current view should show the edited value
-    assert len(widget.current_view) == 2
+    assert len(widget.current_view) == 4
 
     # In the same column, edit X to Y
     cell = page.locator('text="X"')
@@ -2824,7 +2824,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_remote(page, port):
     wait_until(lambda: len(values) == 2, page)
     assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
     assert df.at['idx5', 'values'] == 'Y'
-    assert len(widget.current_view) == 2
+    assert len(widget.current_view) == 4
 
     # Edit the last B value found in that column, from B to Z
     cell = page.locator('text="B"')
@@ -2833,11 +2833,11 @@ def test_tabulator_edit_event_and_header_filters_same_column_remote(page, port):
     editable_cell.fill("Z")
     editable_cell.press('Enter')
 
-    wait_until(lambda: len(values) == 2, page)
+    wait_until(lambda: len(values) == 3, page)
     assert values[-1] == ('values', len(df) - 2, 'B', 'Z')
     assert df.at['idx4', 'values'] == 'Z'
     # current_view should show Y and Z, there's no more B
-    assert len(widget.current_view) == 2
+    assert len(widget.current_view) == 4
 
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
