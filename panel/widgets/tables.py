@@ -353,6 +353,8 @@ class BaseTable(ReactiveData, Widget):
         """
         filters = []
         for col_name, filt in self._filters:
+            if col_name not in df.columns:
+                continue
             if isinstance(filt, (FunctionType, MethodType)):
                 df = filt(df)
                 continue
@@ -389,6 +391,9 @@ class BaseTable(ReactiveData, Widget):
             mask = filters[0]
             for f in filters:
                 mask &= f
+            if self._edited_indexes:
+                edited_mask = (df.index.isin(self._edited_indexes))
+                mask = mask | edited_mask
             df = df[mask]
         return df
 
@@ -406,6 +411,8 @@ class BaseTable(ReactiveData, Widget):
                     col = df.index
                 else:
                     col = df.index.get_level_values(self.indexes.index(col_name))
+            else:
+                continue
 
             # Sometimes Tabulator will provide a zero/single element list
             if isinstance(val, list):
@@ -1080,6 +1087,7 @@ class Tabulator(BaseTable):
         self.style = None
         self._computed_styler = None
         self._child_panels = {}
+        self._edited_indexes = []
         self._explicit_pagination = 'pagination' in params
         self._on_edit_callbacks = []
         self._on_click_callbacks = {}
@@ -1140,12 +1148,11 @@ class Tabulator(BaseTable):
         super()._cleanup(root)
 
     def _process_event(self, event):
-        if not self._on_click_callbacks and not self._on_edit_callbacks:
-            return
         event_col = self._renamed_cols.get(event.column, event.column)
         if self.pagination in ['remote']:
             nrows = self.page_size
             event.row = event.row+(self.page-1)*nrows
+
         idx = self._index_mapping[event.row]
         iloc = self.value.index.get_loc(idx)
         self._validate_iloc(idx, iloc)
@@ -1155,6 +1162,14 @@ class Tabulator(BaseTable):
                 event.value = self.value.index[event.row]
             else:
                 event.value = self.value[event_col].iloc[event.row]
+
+        # Check if edited cell was filtered
+        import pandas as pd
+        filter_df = pd.DataFrame([event.value], columns=[event.column])
+        filters = self._get_header_filters(filter_df)
+        if filters and filters[0].any():
+            self._edited_indexes.append(idx)
+
         # Set the old attribute on a table edit event
         if event.event_name == 'table-edit' and self._old_value is not None:
             event.old = self._old_value[event_col].iloc[event.row]
@@ -1233,6 +1248,9 @@ class Tabulator(BaseTable):
             mask = filters[0]
             for f in filters:
                 mask &= f
+            if self._edited_indexes:
+                edited_mask = (df['index'].isin(self._edited_indexes))
+                mask = mask | edited_mask
             df = df[mask]
         data = {
             col: df[col].values for col in df.columns
@@ -1247,6 +1265,7 @@ class Tabulator(BaseTable):
         df = self._sort_df(df)
         nrows = self.page_size
         start = (self.page-1)*nrows
+
         page_df = df.iloc[start: start+nrows]
         if isinstance(self.value.index, pd.MultiIndex):
             indexes = [
@@ -1416,6 +1435,8 @@ class Tabulator(BaseTable):
         self._update_selectable()
 
     def _update_cds(self, *events):
+        if any(event.name == 'filters' for event in events):
+            self._edited_indexes = []
         page_events = ('page', 'page_size', 'sorters', 'filters')
         if self._updating:
             return
