@@ -1148,8 +1148,6 @@ class Tabulator(BaseTable):
         super()._cleanup(root)
 
     def _process_event(self, event):
-        if not self._on_click_callbacks and not self._on_edit_callbacks:
-            return
         event_col = self._renamed_cols.get(event.column, event.column)
         if self.pagination in ['remote']:
             nrows = self.page_size
