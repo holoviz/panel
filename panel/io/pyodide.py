@@ -11,11 +11,13 @@ import param
 
 import pyodide # isort: split
 
+from bokeh import __version__
 from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.io.doc import set_curdoc
+from bokeh.model import Model
 from bokeh.protocol.messages.patch_doc import process_document_events
 from js import JSON
 
@@ -23,12 +25,11 @@ from ..config import config
 from ..util import isurl
 from . import resources
 from .document import MockSessionContext
-from .mime_render import _model_json
+from .mime_render import UNDEFINED, exec_with_return, format_mime
 from .state import state
 
 resources.RESOURCE_MODE = 'CDN'
 os.environ['BOKEH_RESOURCES'] = 'cdn'
-
 
 #---------------------------------------------------------------------
 # Private API
@@ -92,6 +93,42 @@ def _doc_json(doc: Document, root_els=None) -> Tuple[str, str, str]:
         })
     return json.dumps(docs_json), json.dumps(render_items_json), json.dumps(root_ids)
 
+def _model_json(model: Model, target: str) -> Tuple[Document, str]:
+    """
+    Renders a Bokeh Model to JSON representation given a particular
+    DOM target and returns the Document and the serialized JSON string.
+
+    Arguments
+    ---------
+    model: bokeh.model.Model
+        The bokeh model to render.
+    target: str
+        The id of the DOM node to render to.
+
+    Returns
+    -------
+    document: Document
+        The bokeh Document containing the rendered Bokeh Model.
+    model_json: str
+        The serialized JSON representation of the Bokeh Model.
+    """
+    doc = Document()
+    model.server_doc(doc=doc)
+    model = doc.roots[0]
+    docs_json, _ = standalone_docs_json_and_render_items(
+        [model], suppress_callback_warning=True
+    )
+
+    doc_json = list(docs_json.values())[0]
+    root_id = doc_json['roots']['root_ids'][0]
+
+    return doc, json.dumps(dict(
+        target_id = target,
+        root_id   = root_id,
+        doc       = doc_json,
+        version   = __version__,
+    ))
+
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
     Links Python and JS documents in Pyodide ensuring taht messages
@@ -128,7 +165,17 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
 def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None):
     """
     Links the Python document to a dispatch_fn which can be used to
-    sync messages between a WebWorker and the main thread.
+    sync messages between a WebWorker and the main thread in the
+    browser.
+
+    Arguments
+    ---------
+    doc: bokeh.document.Document
+        The document to dispatch messages from.
+    dispatch_fn: JS function
+        The Javascript function to dispatch messages to.
+    msg_id: str | None
+        An optional message ID to pass through to the dispatch_fn.
     """
     def pysync(event):
         json_patch, buffers = process_document_events([event], use_buffers=True)
@@ -150,9 +197,9 @@ async def _link_model(ref: str, doc: Document) -> None:
     Arguments
     ---------
     ref: str
-        The ID of the rendered Bokeh Model.
+        The ID of the rendered bokeh Model
     doc: bokeh.document.Document
-        The Bokeh Document to sync the rendered Model with.
+        The bokeh Document to sync the rendered Model with.
     """
     from js import Bokeh
     rendered = Bokeh.index.object_keys()
@@ -265,6 +312,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
     Arguments
     ---------
     doc: Document
+       The document to render to JSON.
 
     Returns
     -------
@@ -295,3 +343,34 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
         _link_docs(pydoc, jsdoc)
         hide_loader()
     return docs_json, render_items, root_ids
+
+def pyrender(code: str, msg_id: str):
+    """
+    Executes Python code and returns a MIME representation of the
+    return value.
+
+    Arguments
+    ---------
+    code: str
+        Python code to execute
+    msg_id: str
+        A unique ID associated with the output being rendered.
+
+    Returns
+    -------
+    Returns an JS Map containing the content, mime_type, stdout and stderr.
+    """
+    from ..pane import panel as as_panel
+    from ..viewable import Viewable, Viewer
+    out, stdout, stderr = exec_with_return(code)
+    ret = {
+        'stdout': stdout,
+        'stderr': stderr
+    }
+    if isinstance(out, (Model, Viewable, Viewer)):
+        doc, model_json = _model_json(as_panel(out), msg_id)
+        state.cache[msg_id] = doc
+        ret['content'], ret['mime_type'] = model_json, 'application/bokeh'
+    elif out is not UNDEFINED:
+        ret['content'], ret['mime_type'] = format_mime(out)
+    return pyodide.ffi.to_js(ret)
