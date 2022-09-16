@@ -1052,7 +1052,7 @@ class ReactiveData(SyncableData):
                 converted = new_values
         elif 'pandas' in sys.modules:
             import pandas as pd
-            if Version(pd.__version__) >= '1.1.0':
+            if Version(pd.__version__) >= Version('1.1.0'):
                 from pandas.core.arrays.masked import BaseMaskedDtype
                 if isinstance(dtype, BaseMaskedDtype):
                     values = [dtype.na_value if v == '<NA>' else v for v in values]
