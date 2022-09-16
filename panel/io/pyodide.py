@@ -12,7 +12,6 @@ from typing import (
 )
 
 import param
-import pyodide
 
 from bokeh import __version__
 from bokeh.document import Document
@@ -22,6 +21,8 @@ from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.io.doc import set_curdoc
 from bokeh.protocol.messages.patch_doc import process_document_events
 from js import JSON
+
+import pyodide
 
 from ..config import config
 from ..util import isurl
@@ -368,7 +369,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
     except Exception:
         root_els = None
     docs_json, render_items, root_ids = _doc_json(pydoc, root_els)
-    doc._session_context = None
+    pydoc._session_context = None
 
     # If we have DOM access render and sync the document
     if root_els is not None:
