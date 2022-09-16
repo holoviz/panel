@@ -1,19 +1,16 @@
 from __future__ import annotations
 
-import ast
 import asyncio
-import copy
 import json
 import os
 import sys
 
-from typing import (
-    TYPE_CHECKING, Any, Dict, Tuple,
-)
+from typing import Any, Tuple
 
 import param
 
-from bokeh import __version__
+import pyodide # isort: split
+
 from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
@@ -22,16 +19,12 @@ from bokeh.io.doc import set_curdoc
 from bokeh.protocol.messages.patch_doc import process_document_events
 from js import JSON
 
-import pyodide
-
 from ..config import config
 from ..util import isurl
 from . import resources
 from .document import MockSessionContext
+from .mime_render import _model_json
 from .state import state
-
-if TYPE_CHECKING:
-    from bokeh.model import Model
 
 resources.RESOURCE_MODE = 'CDN'
 os.environ['BOKEH_RESOURCES'] = 'cdn'
@@ -66,42 +59,6 @@ def async_execute(func: Any):
     return
 
 param.parameterized.async_executor = async_execute
-
-def _model_json(model: Model, target: str) -> Tuple[Document, str]:
-    """
-    Renders a Bokeh Model to JSON representation given a particular
-    DOM target and returns the Document and the serialized JSON string.
-
-    Arguments
-    ---------
-    model: bokeh.model.Model
-        The bokeh model to render.
-    target: str
-        The id of the DOM node to render to.
-
-    Returns
-    -------
-    document: Document
-        The bokeh Document containing the rendered Bokeh Model.
-    model_json: str
-        The serialized JSON representation of the Bokeh Model.
-    """
-    doc = Document()
-    model.server_doc(doc=doc)
-    model = doc.roots[0]
-    docs_json, _ = standalone_docs_json_and_render_items(
-        [model], suppress_callback_warning=True
-    )
-
-    doc_json = list(docs_json.values())[0]
-    root_id = doc_json['roots']['root_ids'][0]
-
-    return doc, json.dumps(dict(
-        target_id = target,
-        root_id   = root_id,
-        doc       = doc_json,
-        version   = __version__,
-    ))
 
 def _doc_json(doc: Document, root_els=None) -> Tuple[str, str, str]:
     """
@@ -206,46 +163,6 @@ async def _link_model(ref: str, doc: Document) -> None:
     views = Bokeh.index.object_values()
     view = views[rendered.indexOf(ref)]
     _link_docs(doc, view.model.document)
-
-def _convert_expr(expr: ast.Expr) -> ast.Expression:
-    """
-    Converts an ast.Expr to and ast.Expression that can be compiled
-    and evaled.
-    """
-    expr.lineno = 0
-    expr.col_offset = 0
-    return ast.Expression(expr.value, lineno=0, col_offset = 0)
-
-def _exec_with_return(code: str, global_context: Dict[str, Any] = None) -> Any:
-    """
-    Executes a code snippet and returns the resulting output of the
-    last line.
-
-    Arguments
-    ---------
-    code: str
-      The code to execute
-    global_context: Dict[str, Any]
-      The globals to inject into the execution context.
-
-    Returns
-    -------
-    The return value of the executed code.
-    """
-    global_context = global_context if global_context else globals()
-    code_ast = ast.parse(code)
-
-    init_ast = copy.deepcopy(code_ast)
-    init_ast.body = code_ast.body[:-1]
-
-    last_ast = copy.deepcopy(code_ast)
-    last_ast.body = code_ast.body[-1:]
-
-    exec(compile(init_ast, "<ast>", "exec"), global_context)
-    if type(last_ast.body[0]) == ast.Expr:
-        return eval(compile(_convert_expr(last_ast.body[0]), "<ast>", "eval"), global_context)
-    else:
-        exec(compile(last_ast, "<ast>", "exec"), global_context)
 
 #---------------------------------------------------------------------
 # Public API
