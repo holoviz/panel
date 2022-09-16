@@ -34,12 +34,15 @@ async function startApplication() {
 self.onmessage = async (event) => {
   if (event.data.type === 'rendered') {
     self.pyodide.runPythonAsync(`
+    from panel.io.state import state
     from panel.io.pyodide import _link_docs_worker
+
     _link_docs_worker(state.curdoc, sendPatch)
     `)
   } else if (event.data.type === 'patch') {
     self.pyodide.runPythonAsync(`
     import json
+
     state.curdoc.apply_json_patch(json.loads('${event.data.patch}'))
     `)
   }
