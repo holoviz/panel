@@ -100,7 +100,7 @@ export class CommManager extends Model {
     const message = Message.create('PATCH-DOC', {}, patch)
     this._client_comm.send(message)
     for (const view of this.ns.shared_views.get(this.plot_id)) {
-      if (view !== this)
+      if (view !== this && view.document != null)
 	view.document.apply_json_patch(patch, [], this.id)
     }
   }
