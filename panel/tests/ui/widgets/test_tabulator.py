@@ -2706,6 +2706,140 @@ def test_tabulator_edit_event_and_header_filters(page, port):
     assert widget.current_view.equals(df.query('col1 == "a"'))
 
 
+def test_tabulator_edit_event_and_header_filters_same_column(page, port):
+    df = pd.DataFrame({
+        'values':  ['A', 'A', 'B', 'B'],
+    }, index=['idx0', 'idx1', 'idx2', 'idx3'])
+
+    widget = Tabulator(df, header_filters={'values': {'type': 'input', 'func': 'like'}})
+
+    values = []
+    widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    header = page.locator('input[type="search"]')
+    header.click()
+    header.fill('B')
+    header.press('Enter')
+
+    # Check the table has the right number of rows
+    expect(page.locator('.tabulator-row')).to_have_count(2)
+
+    # Edit a cell in the filtered column, from B to X
+    cell = page.locator('text="B"').nth(1)
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("X")
+    editable_cell.press('Enter')
+
+    wait_until(lambda: len(values) == 1, page)
+    assert values[0] == ('values', len(df) - 1, 'B', 'X')
+    assert df.at['idx3', 'values'] == 'X'
+    # The current view should show the edited value
+    assert len(widget.current_view) == 2
+
+    # In the same column, edit X to Y
+    cell = page.locator('text="X"')
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("Y")
+    editable_cell.press('Enter')
+
+    wait_until(lambda: len(values) == 2, page)
+    assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
+    assert df.at['idx3', 'values'] == 'Y'
+    assert len(widget.current_view) == 2
+
+    # Edit the last B value found in that column, from B to Z
+    cell = page.locator('text="B"')
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("Z")
+    editable_cell.press('Enter')
+
+    wait_until(lambda: len(values) == 2, page)
+    assert values[-1] == ('values', len(df) - 2, 'B', 'Z')
+    assert df.at['idx2', 'values'] == 'Z'
+    # current_view should show Y and Z, there's no more B
+    assert len(widget.current_view) == 2
+
+
+def test_tabulator_edit_event_and_header_filters_same_column_remote(page, port):
+    df = pd.DataFrame({
+        'values':  ['A', 'A', 'B', 'B', 'B', 'B'],
+    }, index=['idx0', 'idx1', 'idx2', 'idx3', 'idx4', 'idx5'])
+
+    widget = Tabulator(
+        df,
+        header_filters={'values': {'type': 'input', 'func': 'like'}},
+        pagination='remote',
+        page_size=2,
+    )
+
+    values = []
+    widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    header = page.locator('input[type="search"]')
+    header.click()
+    header.fill('B')
+    header.press('Enter')
+
+    page.locator('text="Last"').click()
+    page.wait_for_timeout(200)
+
+    # Check the table has the right number of rows
+    expect(page.locator('.tabulator-row')).to_have_count(2)
+
+    # Edit a cell in the filtered column, from B to X
+    cell = page.locator('text="B"').nth(1)
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("X")
+    editable_cell.press('Enter')
+
+    wait_until(lambda: len(values) == 1, page)
+    assert values[0] == ('values', len(df) - 1, 'B', 'X')
+    assert df.at['idx5', 'values'] == 'X'
+    # The current view should show the edited value
+    assert len(widget.current_view) == 2
+
+    # In the same column, edit X to Y
+    cell = page.locator('text="X"')
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("Y")
+    editable_cell.press('Enter')
+
+    wait_until(lambda: len(values) == 2, page)
+    assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
+    assert df.at['idx5', 'values'] == 'Y'
+    assert len(widget.current_view) == 2
+
+    # Edit the last B value found in that column, from B to Z
+    cell = page.locator('text="B"')
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("Z")
+    editable_cell.press('Enter')
+
+    wait_until(lambda: len(values) == 2, page)
+    assert values[-1] == ('values', len(df) - 2, 'B', 'Z')
+    assert df.at['idx4', 'values'] == 'Z'
+    # current_view should show Y and Z, there's no more B
+    assert len(widget.current_view) == 2
+
+
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
 @pytest.mark.parametrize('header_filter', ['header_filter', 'no_header_filter'])
