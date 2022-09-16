@@ -1149,7 +1149,7 @@ def test_tabulator_patch_no_vertical_rescroll(page, port):
 @pytest.mark.parametrize(
     'pagination',
     (
-        'local',
+        pytest.param('local', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3553')),
         pytest.param('remote', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3553')),
         None,
     )
