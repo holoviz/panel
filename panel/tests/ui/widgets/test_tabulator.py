@@ -1149,7 +1149,7 @@ def test_tabulator_patch_no_vertical_rescroll(page, port):
 @pytest.mark.parametrize(
     'pagination',
     (
-        pytest.param('local', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3553')),
+        'local',
         pytest.param('remote', marks=pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3553')),
         None,
     )
@@ -2769,7 +2769,8 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, port):
     assert len(widget.current_view) == 2
 
 
-def test_tabulator_edit_event_and_header_filters_same_column_remote(page, port):
+@pytest.mark.parametrize('pagination', ['remote', 'local'])
+def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, port, pagination):
     df = pd.DataFrame({
         'values':  ['A', 'A', 'B', 'B', 'B', 'B'],
     }, index=['idx0', 'idx1', 'idx2', 'idx3', 'idx4', 'idx5'])
@@ -2777,7 +2778,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_remote(page, port):
     widget = Tabulator(
         df,
         header_filters={'values': {'type': 'input', 'func': 'like'}},
-        pagination='remote',
+        pagination=pagination,
         page_size=2,
     )
 
@@ -2795,6 +2796,18 @@ def test_tabulator_edit_event_and_header_filters_same_column_remote(page, port):
     header.fill('B')
     header.press('Enter')
 
+    cell = page.locator('text="B"').first
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("Q")
+    editable_cell.press('Enter')
+
+    wait_until(lambda: len(values) == 1, page)
+    assert values[-1] == ('values', 2, 'B', 'Q')
+    assert df.at['idx2', 'values'] == 'Q'
+    # current_view should show Y and Z, there's no more B
+    assert len(widget.current_view) == 4
+
     page.locator('text="Last"').click()
     page.wait_for_timeout(200)
 
@@ -2808,8 +2821,8 @@ def test_tabulator_edit_event_and_header_filters_same_column_remote(page, port):
     editable_cell.fill("X")
     editable_cell.press('Enter')
 
-    wait_until(lambda: len(values) == 1, page)
-    assert values[0] == ('values', len(df) - 1, 'B', 'X')
+    wait_until(lambda: len(values) == 2, page)
+    assert values[-1] == ('values', len(df) - 1, 'B', 'X')
     assert df.at['idx5', 'values'] == 'X'
     # The current view should show the edited value
     assert len(widget.current_view) == 4
@@ -2821,7 +2834,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_remote(page, port):
     editable_cell.fill("Y")
     editable_cell.press('Enter')
 
-    wait_until(lambda: len(values) == 2, page)
+    wait_until(lambda: len(values) == 3, page)
     assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
     assert df.at['idx5', 'values'] == 'Y'
     assert len(widget.current_view) == 4
@@ -2833,11 +2846,12 @@ def test_tabulator_edit_event_and_header_filters_same_column_remote(page, port):
     editable_cell.fill("Z")
     editable_cell.press('Enter')
 
-    wait_until(lambda: len(values) == 3, page)
+    wait_until(lambda: len(values) == 4, page)
     assert values[-1] == ('values', len(df) - 2, 'B', 'Z')
     assert df.at['idx4', 'values'] == 'Z'
     # current_view should show Y and Z, there's no more B
     assert len(widget.current_view) == 4
+
 
 
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
