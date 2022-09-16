@@ -185,7 +185,7 @@ def format_mime(obj):
         format_dict = mimebundle
 
     output, not_available = None, []
-    for method, mime_type in reversed(MIME_METHODS.items()):
+    for method, mime_type in reversed(list(MIME_METHODS.items())):
         if mime_type in format_dict:
             output = format_dict[mime_type]
         else:
