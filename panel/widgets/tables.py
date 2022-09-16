@@ -363,7 +363,9 @@ class BaseTable(ReactiveData, Widget):
             else:
                 val = filt
             column = df[col_name]
-            if np.isscalar(val):
+            if val is None:
+                continue
+            elif np.isscalar(val):
                 mask = column == val
             elif isinstance(val, (list, set)):
                 if not val:
@@ -1239,9 +1241,6 @@ class Tabulator(BaseTable):
         # the old value in a table-edit event.
         self._old_value = self.value.copy()
 
-        return super()._process_data(data)
-
-        print(self._old_value, data)
         import pandas as pd
         df = pd.DataFrame(data)
         filters = self._get_header_filters(df)
@@ -1441,7 +1440,9 @@ class Tabulator(BaseTable):
         page_events = ('page', 'page_size', 'sorters', 'filters')
         if self._updating:
             return
-        elif (events and all(e.name in page_events for e in events) and not self.pagination):
+        elif events and all(e.name in page_events[:-1] for e in events) and self.pagination == 'local':
+            return
+        elif events and all(e.name in page_events for e in events) and not self.pagination:
             self._processed, _ = self._get_data()
             return
         recompute = not all(
