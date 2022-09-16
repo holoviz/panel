@@ -1257,7 +1257,6 @@ class Tabulator(BaseTable):
         }
         return super()._process_data(data)
 
-
     def _get_data(self):
         if self.pagination != 'remote' or self.value is None:
             return super()._get_data()
@@ -1436,6 +1435,8 @@ class Tabulator(BaseTable):
         self._update_selectable()
 
     def _update_cds(self, *events):
+        if any(event.name == 'filters' for event in events):
+            self._edited_indexes = []
         page_events = ('page', 'page_size', 'sorters', 'filters')
         if self._updating:
             return
