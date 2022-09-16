@@ -26,6 +26,7 @@ import param
 
 from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
+from packaging.version import Version
 from param.parameterized import ParameterizedMetaclass, Watcher
 
 from .io.document import unlocked
@@ -1049,6 +1050,13 @@ class ReactiveData(SyncableData):
                         iv = dt.date.fromtimestamp(iv/1000)
                     new_values.append(iv)
                 converted = new_values
+        elif 'pandas' in sys.modules:
+            import pandas as pd
+            if Version(pd.__version__) >= Version('1.1.0'):
+                from pandas.core.arrays.masked import BaseMaskedDtype
+                if isinstance(dtype, BaseMaskedDtype):
+                    values = [dtype.na_value if v == '<NA>' else v for v in values]
+            converted = pd.Series(values).astype(dtype).values
         else:
             converted = values.astype(dtype)
         return values if converted is None else converted
