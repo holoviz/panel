@@ -416,7 +416,7 @@ def test_tabulator_header_filters_config_boolean(document, comm):
         {'field': 'A', 'headerFilter': True},
         {'field': 'B', 'headerFilter': True},
         {'field': 'C', 'headerFilter': True},
-        {'field': 'D', 'headerFilter': True, 'sorter': 'timestamp'}
+        {'field': 'D', 'headerFilter': False, 'sorter': 'timestamp'} # Datetime header filtering not supported
     ]
 
 def test_tabulator_header_filters_column_config_list(document, comm):

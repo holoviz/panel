@@ -1239,8 +1239,9 @@ class Tabulator(BaseTable):
         # the old value in a table-edit event.
         self._old_value = self.value.copy()
 
-        if not self.filters:
-            return super()._process_data(data)
+        return super()._process_data(data)
+
+        print(self._old_value, data)
         import pandas as pd
         df = pd.DataFrame(data)
         filters = self._get_header_filters(df)
@@ -1602,8 +1603,15 @@ class Tabulator(BaseTable):
                 elif col.dtype.kind == 'b':
                     fspec['headerFilter'] = 'tickCross'
                     fspec['headerFilterParams'] = {'tristate': True, 'indeterminateValue': None}
+                elif isdatetime(col) or col.dtype.kind == 'M':
+                    fspec['headerFilter'] = False
                 else:
                     fspec['headerFilter'] = True
+            elif isinstance(column.editor, DateEditor):
+                # Datetime filtering currently broken with Tabulator 5.4.3
+                # Initial (empty) value of filter is passed to luxon.js
+                # and causes error
+                fspec['headerFilter'] = False
             else:
                 fspec['headerFilter'] = True
             return fspec
