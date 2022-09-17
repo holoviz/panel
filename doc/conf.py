@@ -142,7 +142,7 @@ nbsite_gallery_conf = {
 }
 
 if panel.__version__ != version and PANEL_ROOT:
-    panel_req = 'wheels/panel-{version}-py3-none-any.whl'
+    panel_req = f'wheels/panel-{version}-py3-none-any.whl'
 else:
     panel_req = f'https://unpkg.com/@holoviz/panel@{js_version}/dist/wheels/panel-{version}-py3-none-any.whl'
 nbsite_pyodide_conf = {
