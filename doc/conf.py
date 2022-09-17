@@ -1,4 +1,6 @@
+import json
 import os
+import pathlib
 
 import param
 
@@ -16,6 +18,9 @@ description = 'High-level dashboarding for python visualization libraries'
 import panel
 
 version = release = base_version(panel.__version__)
+js_version = json.load(
+    (pathlib.Path(panel.__file__).parent / 'package.json').read_text()
+)['version']
 
 # For the interactivity warning box created by nbsite to point to the right
 # git tag instead of the default i.e. master.
@@ -137,7 +142,7 @@ nbsite_gallery_conf = {
 
 nbsite_pyodide_conf = {
     'requirements': [
-      f'wheels/panel-{version}-py3-none-any.whl'
+      f'https://unpkg.com/@holoviz/panel@{js_version}/dist/wheels/panel-{version}-py3-none-any.whl'
     ]
 }
 
