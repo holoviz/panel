@@ -60,7 +60,6 @@ html_theme_options = {
 
 extensions += [
     'sphinx.ext.napoleon',
-    'nbsite.gallery',
     'sphinx_copybutton',
     'nbsite.pyodide'
 ]
@@ -138,7 +137,7 @@ nbsite_gallery_conf = {
 
 nbsite_pyodide_conf = {
     'requirements': [
-      'wheels/panel-{panel.__version__}-py3-none-any.whl'
+      f'wheels/panel-{panel.__version__}-py3-none-any.whl'
     ]
 }
 
