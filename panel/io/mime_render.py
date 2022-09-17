@@ -17,6 +17,7 @@ import ast
 import base64
 import copy
 import io
+import sys
 import traceback
 
 from contextlib import redirect_stderr, redirect_stdout
@@ -25,11 +26,20 @@ from typing import Any, Dict
 
 import markdown
 
-UNDEFINED = object()
-
 #---------------------------------------------------------------------
 # Execution API
 #---------------------------------------------------------------------
+
+class WriteCallbackStream(io.StringIO):
+
+    def __init__(self, on_write=None):
+        self._onwrite = on_write
+        super().__init__()
+
+    def write(self, s):
+        if self._onwrite:
+            self._onwrite(s)
+        super().write(s)
 
 def _convert_expr(expr: ast.Expr) -> ast.Expression:
     """
@@ -40,7 +50,12 @@ def _convert_expr(expr: ast.Expr) -> ast.Expression:
     expr.col_offset = 0
     return ast.Expression(expr.value, lineno=0, col_offset = 0)
 
-def exec_with_return(code: str, global_context: Dict[str, Any] = None) -> Any:
+def exec_with_return(
+    code: str,
+    global_context: Dict[str, Any] = None,
+    stdout: Any = None,
+    stderr: Any = None
+) -> Any:
     """
     Executes a code snippet and returns the resulting output of the
     last line.
@@ -48,14 +63,18 @@ def exec_with_return(code: str, global_context: Dict[str, Any] = None) -> Any:
     Arguments
     ---------
     code: str
-      The code to execute
+        The code to execute
     global_context: Dict[str, Any]
-      The globals to inject into the execution context.
+        The globals to inject into the execution context.
+    stdout: io.StringIO
+        The stream to redirect stdout to.
+    stderr: io.StringIO
+        The stream to redirect stderr to.
 
     Returns
     -------
 
-    The return value of the executed code and stdout and stederr output.
+    The return value of the executed code.
     """
     global_context = global_context if global_context else globals()
     code_ast = ast.parse(code)
@@ -66,8 +85,8 @@ def exec_with_return(code: str, global_context: Dict[str, Any] = None) -> Any:
     last_ast = copy.deepcopy(code_ast)
     last_ast.body = code_ast.body[-1:]
 
-    stdout = io.StringIO()
-    stderr = io.StringIO()
+    stdout = stdout or sys.stdout
+    stderr = stderr or sys.stderr
     with redirect_stdout(stdout), redirect_stderr(stderr):
         try:
             exec(compile(init_ast, "<ast>", "exec"), global_context)
@@ -75,11 +94,11 @@ def exec_with_return(code: str, global_context: Dict[str, Any] = None) -> Any:
                 out = eval(compile(_convert_expr(last_ast.body[0]), "<ast>", "eval"), global_context)
             else:
                 exec(compile(last_ast, "<ast>", "exec"), global_context)
-                out = UNDEFINED
+                out = None
         except Exception:
-            out = UNDEFINED
+            out = None
             traceback.print_exc(file=stderr)
-    return out, stdout.getvalue(), stderr.getvalue()
+    return out
 
 #---------------------------------------------------------------------
 # MIME Render API

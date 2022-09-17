@@ -5,9 +5,11 @@ import json
 import os
 import sys
 
-from typing import Any, Tuple
+from typing import Any, Callable, Tuple
 
 import param
+
+from fucntools import partial
 
 import pyodide # isort: split
 
@@ -25,7 +27,7 @@ from ..config import config
 from ..util import isurl
 from . import resources
 from .document import MockSessionContext
-from .mime_render import UNDEFINED, exec_with_return, format_mime
+from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
 resources.RESOURCE_MODE = 'CDN'
@@ -344,7 +346,12 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
         hide_loader()
     return docs_json, render_items, root_ids
 
-def pyrender(code: str, msg_id: str):
+def pyrender(
+    code: str,
+    stdout_callback: Callable[[str], None] | None,
+    stderr_callback: Callable[[str], None] | None,
+    msg_id: str
+):
     """
     Executes Python code and returns a MIME representation of the
     return value.
@@ -353,6 +360,10 @@ def pyrender(code: str, msg_id: str):
     ---------
     code: str
         Python code to execute
+    stdout_callback: Callable[[str, str], None] | None
+        Callback executed with output written to stdout.
+    stderr_callback: Callable[[str, str], None] | None
+        Callback executed with output written to stderr.
     msg_id: str
         A unique ID associated with the output being rendered.
 
@@ -362,15 +373,17 @@ def pyrender(code: str, msg_id: str):
     """
     from ..pane import panel as as_panel
     from ..viewable import Viewable, Viewer
-    out, stdout, stderr = exec_with_return(code)
-    ret = {
-        'stdout': stdout,
-        'stderr': stderr
-    }
+    kwargs = {}
+    if stdout_callback:
+        kwargs['stdout'] = WriteCallbackStream(partial(stdout_callback, msg_id))
+    if stderr_callback:
+        kwargs['stderr'] = WriteCallbackStream(partial(stdout_callback, msg_id))
+    out = exec_with_return(code, **kwargs)
+    ret = {}
     if isinstance(out, (Model, Viewable, Viewer)):
         doc, model_json = _model_json(as_panel(out), msg_id)
         state.cache[msg_id] = doc
         ret['content'], ret['mime_type'] = model_json, 'application/bokeh'
-    elif out is not UNDEFINED:
+    elif out is not None:
         ret['content'], ret['mime_type'] = format_mime(out)
     return pyodide.ffi.to_js(ret)
