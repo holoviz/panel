@@ -17,10 +17,10 @@ description = 'High-level dashboarding for python visualization libraries'
 
 import panel
 
+PANEL_ROOT = pathlib.Path(panel.__file__).parent
+
 version = release = base_version(panel.__version__)
-js_version = json.load(
-    (pathlib.Path(panel.__file__).parent / 'package.json').read_text()
-)['version']
+js_version = json.load((PANEL_ROOT / 'package.json').read_text())['version']
 
 # For the interactivity warning box created by nbsite to point to the right
 # git tag instead of the default i.e. master.
@@ -140,10 +140,12 @@ nbsite_gallery_conf = {
     'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
 }
 
+if panel.__version__ != version and PANEL_ROOT:
+    panel_req = 'wheels/panel-{version}-py3-none-any.whl'
+else:
+    panel_req = f'https://unpkg.com/@holoviz/panel@{js_version}/dist/wheels/panel-{version}-py3-none-any.whl'
 nbsite_pyodide_conf = {
-    'requirements': [
-      f'https://unpkg.com/@holoviz/panel@{js_version}/dist/wheels/panel-{version}-py3-none-any.whl'
-    ]
+    'requirements': [panel_req, 'pandas']
 }
 
 templates_path = [
