@@ -40,7 +40,7 @@ WEB_WORKER_TEMPLATE = _pn_env.get_template('pyodide_worker.js')
 
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 PY_VERSION = base_version(__version__)
-JS_VERSION = json.load((PANEL_ROOT / 'package.json').read_text())['version']
+JS_VERSION = json.loads((PANEL_ROOT / 'package.json').read_text())['version']
 PANEL_CDN_WHL = f'https://unpkg.com/@holoviz/panel@{JS_VERSION}/dist/wheels/panel-{PY_VERSION}-py3-none-any.whl'
 PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js'
 PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />'
