@@ -137,7 +137,7 @@ nbsite_gallery_conf = {
 
 nbsite_pyodide_conf = {
     'requirements': [
-      f'wheels/panel-{panel.__version__}-py3-none-any.whl'
+      f'wheels/panel-{version}-py3-none-any.whl'
     ]
 }
 
