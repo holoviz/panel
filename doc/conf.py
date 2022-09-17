@@ -136,6 +136,12 @@ nbsite_gallery_conf = {
     'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
 }
 
+nbsite_pyodide_conf = {
+    'requirements': [
+      'wheels/panel-{panel.__version__}-py3-none-any.whl'
+    ]
+}
+
 templates_path = [
     '_templates'
 ]
