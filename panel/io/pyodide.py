@@ -5,7 +5,6 @@ import json
 import os
 import sys
 
-from functools import partial
 from typing import Any, Callable, Tuple
 
 import param
@@ -349,6 +348,7 @@ def pyrender(
     code: str,
     stdout_callback: Callable[[str], None] | None,
     stderr_callback: Callable[[str], None] | None,
+    target: str,
     msg_id: str
 ):
     """
@@ -363,6 +363,8 @@ def pyrender(
         Callback executed with output written to stdout.
     stderr_callback: Callable[[str, str], None] | None
         Callback executed with output written to stderr.
+    target: str
+        The ID of the DOM node to write the output into.
     msg_id: str
         A unique ID associated with the output being rendered.
 
@@ -374,9 +376,9 @@ def pyrender(
     from ..viewable import Viewable, Viewer
     kwargs = {}
     if stdout_callback:
-        kwargs['stdout'] = WriteCallbackStream(partial(stdout_callback, msg_id))
+        kwargs['stdout'] = WriteCallbackStream(stdout_callback)
     if stderr_callback:
-        kwargs['stderr'] = WriteCallbackStream(partial(stdout_callback, msg_id))
+        kwargs['stderr'] = WriteCallbackStream(stderr_callback)
     out = exec_with_return(code, **kwargs)
     ret = {}
     if isinstance(out, (Model, Viewable, Viewer)):
