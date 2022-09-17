@@ -21,7 +21,7 @@
   },
   "devDependencies": {},
   "files": [
-    "dist/**/*.{js,js.map,d.ts,json,css}"
+    "dist/**/*.{js,js.map,d.ts,json,css,whl}"
   ],
   "main": "dist/panel.min.js"
 }
