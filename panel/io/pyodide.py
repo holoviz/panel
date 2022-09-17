@@ -5,11 +5,10 @@ import json
 import os
 import sys
 
+from functools import partial
 from typing import Any, Callable, Tuple
 
 import param
-
-from fucntools import partial
 
 import pyodide # isort: split
 
