@@ -92,7 +92,8 @@ try:
 
         def run(self):
             """Do nothing so the command intentionally fails."""
-            _build_paneljs()
+            if not PANEL_LITE_BUILD:
+                _build_paneljs()
             bdist_wheel.run(self)
 
     _COMMANDS['bdist_wheel'] = CustomBdistWheelCommand
