@@ -348,8 +348,7 @@ def pyrender(
     code: str,
     stdout_callback: Callable[[str], None] | None,
     stderr_callback: Callable[[str], None] | None,
-    target: str,
-    msg_id: str
+    target: str
 ):
     """
     Executes Python code and returns a MIME representation of the
@@ -365,8 +364,6 @@ def pyrender(
         Callback executed with output written to stderr.
     target: str
         The ID of the DOM node to write the output into.
-    msg_id: str
-        A unique ID associated with the output being rendered.
 
     Returns
     -------
@@ -382,8 +379,8 @@ def pyrender(
     out = exec_with_return(code, **kwargs)
     ret = {}
     if isinstance(out, (Model, Viewable, Viewer)):
-        doc, model_json = _model_json(as_panel(out), msg_id)
-        state.cache[msg_id] = doc
+        doc, model_json = _model_json(as_panel(out), target)
+        state.cache[target] = doc
         ret['content'], ret['mime_type'] = model_json, 'application/bokeh'
     elif out is not None:
         ret['content'], ret['mime_type'] = format_mime(out)
