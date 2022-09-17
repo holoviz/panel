@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import ast
 import dataclasses
+import json
 import os
 import pathlib
 import pkgutil
-import re
 import sys
 import uuid
 
@@ -27,7 +27,7 @@ from bokeh.util.serialization import make_id
 from typing_extensions import Literal
 
 from .. import __version__, config
-from ..util import escape
+from ..util import base_version, escape
 from .document import _cleanup_doc
 from .resources import (
     DIST_DIR, INDEX_TEMPLATE, Resources, _env as _pn_env, bundle_resources,
@@ -38,7 +38,11 @@ PWA_MANIFEST_TEMPLATE = _pn_env.get_template('site.webmanifest')
 SERVICE_WORKER_TEMPLATE = _pn_env.get_template('serviceWorker.js')
 WEB_WORKER_TEMPLATE = _pn_env.get_template('pyodide_worker.js')
 
-PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.2/full/pyodide.js'
+PANEL_ROOT = pathlib.Path(__file__).parent.parent
+PY_VERSION = base_version(__version__)
+JS_VERSION = json.load((PANEL_ROOT / 'package.json').read_text())['version']
+PANEL_CDN_WHL = f'https://unpkg.com/@holoviz/panel@{JS_VERSION}/dist/wheels/panel-{PY_VERSION}-py3-none-any.whl'
+PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js'
 PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />'
 PYSCRIPT_JS = '<script defer src="https://pyscript.net/latest/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
@@ -326,12 +330,10 @@ def script_to_html(
 
     # Environment
     if panel_version == 'auto':
-        match = re.match(r"([\d]+\.[\d]+\.[\d]+(?:a|rc|b)?[\d]*)", __version__)
-        if match:
-            panel_version = match.group()
-        else:
-            panel_version = 'unknown'
-    reqs = [f'panel=={panel_version}'] + [
+        panel_req = PANEL_CDN_WHL
+    else:
+        panel_req = f'panel=={panel_version}'
+    reqs = [panel_req] + [
         req for req in requirements if req != 'panel'
     ]
 
