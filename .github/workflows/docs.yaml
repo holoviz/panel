@@ -111,7 +111,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          panel convert xamples/gallery/streaming/*.ipynb examples/gallery/dynamic/*.ipynb examples/gallery/param/*.ipynb examples/gallery/layout/*.ipynb --to pyodide-worker --out ./builtdoc/lite/
+          panel convert xamples/gallery/streaming/*.ipynb examples/gallery/dynamic/*.ipynb examples/gallery/param/*.ipynb --to pyodide-worker --out ./builtdoc/lite/
       - name: git status and git diff
         run: |
           git status
