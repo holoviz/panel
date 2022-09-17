@@ -1,24 +1,29 @@
+"""
+Utilities for executing Python code and rendering the resulting output
+using a similar MIME-type based rendering system as implemented by
+IPython.
+
+Attempts to limit the actual MIME types that have to be rendered on
+to a minimum simplifying frontend implementation:
+
+    - application/bokeh: Model JSON representation
+    - text/plain: HTML escaped string output
+    - text/html: HTML code to insert into the DOM
+"""
+
 from __future__ import annotations
 
 import ast
 import base64
 import copy
 import io
-import json
+import traceback
 
+from contextlib import redirect_stderr, redirect_stdout
 from html import escape
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
 import markdown
-
-from bokeh import __version__
-from bokeh.document import Document
-from bokeh.embed.util import standalone_docs_json_and_render_items
-from bokeh.model import Model
-
-from ..pane import panel
-from ..viewable import Viewable, Viewer
-from .state import state
 
 UNDEFINED = object()
 
@@ -49,7 +54,8 @@ def exec_with_return(code: str, global_context: Dict[str, Any] = None) -> Any:
 
     Returns
     -------
-    The return value of the executed code.
+
+    The return value of the executed code and stdout and stederr output.
     """
     global_context = global_context if global_context else globals()
     code_ast = ast.parse(code)
@@ -60,17 +66,24 @@ def exec_with_return(code: str, global_context: Dict[str, Any] = None) -> Any:
     last_ast = copy.deepcopy(code_ast)
     last_ast.body = code_ast.body[-1:]
 
-    exec(compile(init_ast, "<ast>", "exec"), global_context)
-    if type(last_ast.body[0]) == ast.Expr:
-        return eval(compile(_convert_expr(last_ast.body[0]), "<ast>", "eval"), global_context)
-    else:
-        exec(compile(last_ast, "<ast>", "exec"), global_context)
-        return UNDEFINED
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    with redirect_stdout(stdout), redirect_stderr(stderr):
+        try:
+            exec(compile(init_ast, "<ast>", "exec"), global_context)
+            if type(last_ast.body[0]) == ast.Expr:
+                out = eval(compile(_convert_expr(last_ast.body[0]), "<ast>", "eval"), global_context)
+            else:
+                exec(compile(last_ast, "<ast>", "exec"), global_context)
+                out = UNDEFINED
+        except Exception:
+            out = UNDEFINED
+            traceback.print_exc(file=stderr)
+    return out, stdout.getvalue(), stderr.getvalue()
 
 #---------------------------------------------------------------------
 # MIME Render API
 #---------------------------------------------------------------------
-
 
 MIME_METHODS = {
     "__repr__": "text/plain",
@@ -83,9 +96,13 @@ MIME_METHODS = {
     "_repr_latex": "text/latex",
     "_repr_json_": "application/json",
     "_repr_javascript_": "application/javascript",
-    "savefig": "image/png",
-    "servable": ""
+    "savefig": "image/png"
 }
+
+# Rendering function
+
+def render_svg(value, meta, mime):
+    return value, 'text/html'
 
 def render_image(value, meta, mime):
     data = f"data:{mime};charset=utf-8;base64,{value}"
@@ -100,55 +117,26 @@ def render_markdown(value, meta, mime):
         value, extensions=["extra", "smarty", "codehilite"], output_format='html5'
     ), 'text/html')
 
+def render_pdf(value, meta, mime):
+    data = value.encode('utf-8')
+    base64_pdf = base64.b64encode(data).decode("utf-8")
+    src = f"data:application/pdf;base64,{base64_pdf}"
+    return f'<embed src="{src}" width="100%" height="100%" type="application/pdf">', 'text/html'
+
 def identity(value, meta, mime):
     return value, mime
 
 MIME_RENDERERS = {
-    "text/plain": identity,
-    "text/html": identity,
     "image/png": render_image,
     "image/jpeg": render_image,
     "image/svg+xml": identity,
     "application/json": identity,
     "application/javascript": render_javascript,
-    "text/markdown": render_markdown
+    "application/pdf": render_pdf,
+    "text/html": identity,
+    "text/markdown": render_markdown,
+    "text/plain": identity,
 }
-
-def _model_json(model: Model, target: str) -> Tuple[Document, str]:
-    """
-    Renders a Bokeh Model to JSON representation given a particular
-    DOM target and returns the Document and the serialized JSON string.
-
-    Arguments
-    ---------
-    model: bokeh.model.Model
-        The bokeh model to render.
-    target: str
-        The id of the DOM node to render to.
-
-    Returns
-    -------
-    document: Document
-        The bokeh Document containing the rendered Bokeh Model.
-    model_json: str
-        The serialized JSON representation of the Bokeh Model.
-    """
-    doc = Document()
-    model.server_doc(doc=doc)
-    model = doc.roots[0]
-    docs_json, _ = standalone_docs_json_and_render_items(
-        [model], suppress_callback_warning=True
-    )
-
-    doc_json = list(docs_json.values())[0]
-    root_id = doc_json['roots']['root_ids'][0]
-
-    return doc, json.dumps(dict(
-        target_id = target,
-        root_id   = root_id,
-        doc       = doc_json,
-        version   = __version__,
-    ))
 
 def eval_formatter(obj, print_method):
     """
@@ -173,11 +161,6 @@ def format_mime(obj):
     """
     if isinstance(obj, str):
         return escape(obj), "text/plain"
-    elif isinstance(obj, (Model, Viewable, Viewer)):
-        doc, out = _model_json(panel(obj), 'output-${msg.id}')
-        state.cache['${msg.id}'] = doc
-        return out, 'application/bokeh'
-
     mimebundle = eval_formatter(obj, "_repr_mimebundle_")
     if isinstance(mimebundle, tuple):
         format_dict, _ = mimebundle

@@ -1,10 +1,6 @@
-import json
 import pathlib
 
-from bokeh.models import Slider
-
 from panel.io.mime_render import UNDEFINED, exec_with_return, format_mime
-from panel.widgets import FloatSlider
 
 
 class HTML:
@@ -32,13 +28,22 @@ class PNG:
 
 
 def test_exec_with_return_multi_line():
-    assert exec_with_return('a = 1\nb = 2\na + b') == 3
+    assert exec_with_return('a = 1\nb = 2\na + b') == (3, '', '')
 
 def test_exec_with_return_no_return():
-    assert exec_with_return('a = 1') is UNDEFINED
+    assert exec_with_return('a = 1') == (UNDEFINED, '', '')
 
 def test_exec_with_return_None():
-    assert exec_with_return('None') is None
+    assert exec_with_return('None') == (None, '', '')
+
+def test_exec_captures_print():
+    assert exec_with_return('print("foo")') == (None, 'foo\n', '')
+
+def test_exec_captures_error():
+    out, stdout, stderr = exec_with_return('raise ValueError("bar")')
+    assert out is UNDEFINED
+    assert stdout == ''
+    assert 'ValueError: bar' in stderr
 
 def test_format_mime_None():
     assert format_mime(None) == ('None', 'text/plain')
@@ -62,13 +67,3 @@ def test_format_mime_repr_png():
     img, mime_type = format_mime(PNG())
     assert mime_type == 'text/html'
     assert img.startswith('<img src="data:image/png')
-
-def test_format_mime_panel_obj():
-    model_json, mime_type = format_mime(FloatSlider())
-    assert mime_type == 'application/bokeh'
-    assert 'doc' in json.loads(model_json)
-
-def test_format_mime_bokeh_obj():
-    model_json, mime_type = format_mime(Slider())
-    assert mime_type == 'application/bokeh'
-    assert 'doc' in json.loads(model_json)
