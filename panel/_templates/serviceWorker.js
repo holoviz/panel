@@ -1,4 +1,4 @@
-const appName = 'panel-convert-{{ uuid }}';
+const appName = 'Panel-Pyodide-App-{{ uuid }}';
 
 const preCacheFiles = [{{ pre_cache }}];
 
@@ -14,7 +14,7 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.forEach((cache, cacheName) => {
-      if (cacheName.startsWith('panel-converted') && cacheName !== appName) {
+      if (cacheName.startsWith('Panel-Pyodide-App') && cacheName !== appName) {
         return caches.delete(cacheName);
       }
     })
@@ -24,11 +24,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (e) => {
   e.respondWith((async () => {
     const cache = await caches.open(appName);
-    const response = await cache.match(e.request);
+    let response = await cache.match(e.request);
     console.log(`[Service Worker] Fetching resource: ${e.request.url}`);
     if (response) { return response; }
-    const response = await fetch(e.request);
-    const cache = await caches.open(cacheName);
+    response = await fetch(e.request);
     console.log(`[Service Worker] Caching new resource: ${e.request.url}`);
     cache.put(e.request, response.clone());
     return response;
