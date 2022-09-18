@@ -5,6 +5,7 @@ import pathlib
 
 import param
 
+from ...config import config
 from ...io.resources import JS_URLS
 from ...layout import Card
 from ..base import BasicTemplate
@@ -31,11 +32,11 @@ class GoldenTemplate(BasicTemplate):
 
     _resources = {
         'css': {
-            'goldenlayout': "https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/src/css/goldenlayout-base.css",
+            'goldenlayout': f"{config.npm_cdn}/golden-layout@1.5.9/src/css/goldenlayout-base.css",
         },
         'js': {
             'jquery': JS_URLS['jQuery'],
-            'goldenlayout': 'https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/dist/goldenlayout.min.js'
+            'goldenlayout': f"{config.npm_cdn}/golden-layout@1.5.9/dist/goldenlayout.min.js"
         }
     }
 

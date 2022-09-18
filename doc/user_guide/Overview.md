@@ -165,6 +165,7 @@ The `pn.config` object allows setting various configuration variables, the confi
 > - `embed_load_path` (`PANEL_EMBED_LOAD_PATH`): Where to load json files for embedded state.
 > - `embed_save_path` (`PANEL_EMBED_SAVE_PATH`): Where to save json files for embedded state.
 > - `inline` (`PANEL_INLINE`): Whether to inline JS and CSS resources. If disabled, resources are loaded from CDN if one is available.
+> - `npm_cdn` (`PANEL_NPM_CDN`): The CDN to load NPM packages from if resources are served from CDN. Allows switching between 'https://unpkg.com' (default) and 'https://cdn.jsdelivr.net/npm' for most resources.
 
 ##### `pn.state`
 

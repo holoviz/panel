@@ -9,10 +9,11 @@ from bokeh.core.properties import (
 )
 from bokeh.models import ColorMapper, HTMLBox, Model
 
+from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
 
-vtk_cdn = "https://unpkg.com/vtk.js@20.0.1/vtk.js"
+vtk_cdn = f"{config.npm_cdn}/vtk.js@20.0.1/vtk.js"
 
 class VTKAxes(Model):
     """
