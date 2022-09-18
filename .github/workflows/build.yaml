@@ -52,6 +52,11 @@ jobs:
           conda install "pip<21.2.1"
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
+      - name: build wheel for CDN
+        run: |
+          PANEL_LITE=1 pip wheel . --no-build-isolation -w ./build
+          mkdir panel/dist/wheels/
+          cp build/panel-*-py3-none-any.whl panel/dist/wheels/
       - name: conda build
         run: doit package_build $CHANS_DEV $PKG_TEST_PYTHON --test-group=unit_deploy
       - name: npm setup

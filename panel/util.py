@@ -437,3 +437,25 @@ def fullpath(path: Union[AnyStr, os.PathLike]) -> Union[AnyStr, os.PathLike]:
     """Expanduser and then abspath for a given path
     """
     return os.path.abspath(os.path.expanduser(path))
+
+
+def base_version(version: str) -> str:
+    """Extract the final release and if available pre-release (alpha, beta,
+    release candidate) segments of a PEP440 version, defined with three
+    components (major.minor.micro).
+
+    Useful to avoid nbsite/sphinx to display the documentation HTML title
+    with a not so informative and rather ugly long version (e.g.
+    ``0.13.0a19.post4+g0695e214``). Use it in ``conf.py``::
+
+        version = release = base_version(package.__version__)
+
+    Return the version passed as input if no match is found with the pattern.
+    """
+    # look at the start for e.g. 0.13.0, 0.13.0rc1, 0.13.0a19, 0.13.0b10
+    pattern = r"([\d]+\.[\d]+\.[\d]+(?:a|rc|b)?[\d]*)"
+    match = re.match(pattern, version)
+    if match:
+        return match.group()
+    else:
+        return version

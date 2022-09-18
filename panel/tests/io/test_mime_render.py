@@ -1,6 +1,8 @@
 import pathlib
 
-from panel.io.mime_render import UNDEFINED, exec_with_return, format_mime
+from panel.io.mime_render import (
+    WriteCallbackStream, exec_with_return, format_mime,
+)
 
 
 class HTML:
@@ -28,22 +30,27 @@ class PNG:
 
 
 def test_exec_with_return_multi_line():
-    assert exec_with_return('a = 1\nb = 2\na + b') == (3, '', '')
+    assert exec_with_return('a = 1\nb = 2\na + b') == 3
 
 def test_exec_with_return_no_return():
-    assert exec_with_return('a = 1') == (UNDEFINED, '', '')
+    assert exec_with_return('a = 1') is None
 
 def test_exec_with_return_None():
-    assert exec_with_return('None') == (None, '', '')
+    assert exec_with_return('None') is None
 
 def test_exec_captures_print():
-    assert exec_with_return('print("foo")') == (None, 'foo\n', '')
+    def capture_stdout(stdout):
+        assert stdout == 'foo'
+    stdout = WriteCallbackStream(capture_stdout)
+    assert exec_with_return('print("foo")', stdout=stdout) is None
+    assert stdout.getvalue() == 'foo'
 
 def test_exec_captures_error():
-    out, stdout, stderr = exec_with_return('raise ValueError("bar")')
-    assert out is UNDEFINED
-    assert stdout == ''
-    assert 'ValueError: bar' in stderr
+    def capture_stderr(stderr):
+        print()
+    stderr = WriteCallbackStream(capture_stderr)
+    assert exec_with_return('raise ValueError("bar")', stderr=stderr) is None
+    assert 'ValueError: bar' in stderr.getvalue()
 
 def test_format_mime_None():
     assert format_mime(None) == ('None', 'text/plain')
