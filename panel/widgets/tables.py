@@ -1177,13 +1177,13 @@ class Tabulator(BaseTable):
             event.old = self._old_value[event_col].iloc[event.row]
         if event.event_name == 'table-edit':
             for cb in self._on_edit_callbacks:
-                state.execute(partial(cb, event))
+                state.execute(partial(cb, event), schedule=False)
             self._update_style()
         else:
             for cb in self._on_click_callbacks.get(None, []):
-                state.execute(partial(cb, event))
+                state.execute(partial(cb, event), schedule=False)
             for cb in self._on_click_callbacks.get(event_col, []):
-                state.execute(partial(cb, event))
+                state.execute(partial(cb, event), schedule=False)
 
     def _get_theme(self, theme, resources=None):
         from ..io.resources import RESOURCE_MODE
