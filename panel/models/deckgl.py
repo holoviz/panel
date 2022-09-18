@@ -16,6 +16,7 @@ from bokeh.core.properties import (
 )
 from bokeh.models import ColumnDataSource, HTMLBox
 
+from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
 
@@ -30,12 +31,12 @@ class DeckGLPlot(HTMLBox):
         return bundled_files(cls, 'css')
 
     __javascript_raw__ = [
-        "https://unpkg.com/h3-js@3.7.2/dist/h3-js.umd.js",
-        "https://cdn.jsdelivr.net/npm/deck.gl@8.6.7/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.6.7/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@3.1.7/dist/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@loaders.gl/json@3.1.7/dist/dist.min.js",
-        "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@3.1.7/dist/dist.min.js",
+        f"{config.npm_cdn}/h3-js@3.7.2/dist/h3-js.umd.js",
+        f"{config.npm_cdn}/deck.gl@8.6.7/dist.min.js",
+        f"{config.npm_cdn}/@deck.gl/json@8.6.7/dist.min.js",
+        f"{config.npm_cdn}/@loaders.gl/csv@3.1.7/dist/dist.min.js",
+        f"{config.npm_cdn}/@loaders.gl/json@3.1.7/dist/dist.min.js",
+        f"{config.npm_cdn}/@loaders.gl/3d-tiles@3.1.7/dist/dist.min.js",
         "https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js",
     ]
 
@@ -52,13 +53,13 @@ class DeckGLPlot(HTMLBox):
 
     __js_require__ = {
         'paths': OrderedDict([
-            ("h3", "https://unpkg.com/h3-js@3.7.2/dist/h3-js.umd"),
-            ("deck-gl", "https://cdn.jsdelivr.net/npm/deck.gl@8.6.7/dist.min"),
-            ("deck-json", "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.6.7/dist.min"),
-            ("loader-csv", "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@3.1.7/dist/dist.min"),
-            ("loader-json", "https://cdn.jsdelivr.net/npm/@loaders.gl/json@3.1.7/dist/dist.min"),
-            ("loader-tiles", "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@3.1.7/dist/dist.min"),
-            ("mapbox-gl", 'https://cdn.jsdelivr.net/npm/mapbox-gl@2.6.1/dist/mapbox-gl.min'),
+            ("h3", f"{config.npm_cdn}/h3-js@3.7.2/dist/h3-js.umd"),
+            ("deck-gl", f"{config.npm_cdn}/deck.gl@8.6.7/dist.min"),
+            ("deck-json", f"{config.npm_cdn}/@deck.gl/json@8.6.7/dist.min"),
+            ("loader-csv", f"{config.npm_cdn}/@loaders.gl/csv@3.1.7/dist/dist.min"),
+            ("loader-json", f"{config.npm_cdn}/@loaders.gl/json@3.1.7/dist/dist.min"),
+            ("loader-tiles", f"{config.npm_cdn}/@loaders.gl/3d-tiles@3.1.7/dist/dist.min"),
+            ("mapbox-gl", f"{config.npm_cdn}/mapbox-gl@2.6.1/dist/mapbox-gl.min"),
         ]),
         'exports': {"deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3"},
         'shim': {

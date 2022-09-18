@@ -39,9 +39,11 @@ SERVICE_WORKER_TEMPLATE = _pn_env.get_template('serviceWorker.js')
 WEB_WORKER_TEMPLATE = _pn_env.get_template('pyodide_worker.js')
 
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
+BOKEH_VERSION = '2.4.3'
 PY_VERSION = base_version(__version__)
 JS_VERSION = json.loads((PANEL_ROOT / 'package.json').read_text())['version']
-PANEL_CDN_WHL = f'https://unpkg.com/@holoviz/panel@{JS_VERSION}/dist/wheels/panel-{PY_VERSION}-py3-none-any.whl'
+PANEL_CDN_WHL = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/wheels/panel-{PY_VERSION}-py3-none-any.whl'
+BOKEH_CDN_WHL = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js'
 PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />'
 PYSCRIPT_JS = '<script defer src="https://pyscript.net/latest/pyscript.js"></script>'
@@ -331,10 +333,12 @@ def script_to_html(
     # Environment
     if panel_version == 'auto':
         panel_req = PANEL_CDN_WHL
+        bokeh_req = BOKEH_CDN_WHL
     else:
         panel_req = f'panel=={panel_version}'
-    reqs = [panel_req] + [
-        req for req in requirements if req != 'panel'
+        bokeh_req = f'bokeh=={BOKEH_VERSION}'
+    reqs = [panel_req, bokeh_req] + [
+        req for req in requirements if req not in ('panel', 'bokeh')
     ]
 
     # Execution

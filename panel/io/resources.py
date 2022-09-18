@@ -25,6 +25,7 @@ from jinja2.environment import Environment
 from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
+from ..config import config
 from ..util import isurl, url_path
 from .state import state
 
@@ -59,19 +60,19 @@ BASE_TEMPLATE = _env.get_template('base.html')
 ERROR_TEMPLATE = _env.get_template('error.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
-CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
+CDN_DIST = f"{config.npm_cdn}/@holoviz/panel@{js_version}/dist/"
 DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
 
 CSS_URLS = {
     'font-awesome': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css',
-    'bootstrap4': 'https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css'
+    'bootstrap4': f'{config.npm_cdn}/bootstrap@4.6.1/dist/css/bootstrap.min.css'
 }
 
 JS_URLS = {
-    'jQuery': 'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js',
-    'bootstrap4': 'https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js'
+    'jQuery': f'{config.npm_cdn}/jquery@3.5.1/dist/jquery.slim.min.js',
+    'bootstrap4': f'{config.npm_cdn}/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js'
 }
 
 extension_dirs['panel'] = str(DIST_DIR)
@@ -318,8 +319,6 @@ class Resources(BkResources):
         from ..config import config
         modules = list(config.js_modules.values())
         self.extra_resources(modules, '__javascript_modules__')
-
-
         return modules
 
     @property
@@ -365,6 +364,9 @@ class Bundle(BkBundle):
         self.js_modules = kwargs.pop("js_modules", js_modules)
         super().__init__(**kwargs)
 
+    def _replace_cdn(self, resources):
+        return [resource.replace('https://unpkg.com', config.npm_cdn) for resource in resources]
+
     @classmethod
     def from_bokeh(cls, bk_bundle):
         return cls(
@@ -377,6 +379,6 @@ class Bundle(BkBundle):
 
     def _render_js(self):
         return JS_RESOURCES.render(
-            js_raw=self.js_raw, js_files=self.js_files,
-            js_modules=self.js_modules, hashes=self.hashes
+            js_raw=self.js_raw, js_files=self._replace_cdn(self.js_files),
+            js_modules=self._replace_cdn(self.js_modules), hashes=self.hashes
         )

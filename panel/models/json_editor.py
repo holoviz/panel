@@ -7,6 +7,7 @@ from bokeh.core.properties import (
 from bokeh.events import ModelEvent
 from bokeh.models import HTMLBox
 
+from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
 
@@ -40,15 +41,15 @@ class JSONEditor(HTMLBox):
     templates = List(Any)
 
     __javascript_raw__ = [
-        'https://cdn.jsdelivr.net/npm/jsoneditor@9.5.6/dist/jsoneditor.min.js'
+        f"{config.npm_cdn}/jsoneditor@9.5.6/dist/jsoneditor.min.js"
     ]
 
     __css_raw__ = [
-        'https://cdn.jsdelivr.net/npm/jsoneditor@9.5.6/dist/jsoneditor.min.css'
+        f"{config.npm_cdn}/jsoneditor@9.5.6/dist/jsoneditor.min.css"
     ]
 
     __resources__ = [
-        'https://cdn.jsdelivr.net/npm/jsoneditor@9.5.6/dist/img/jsoneditor-icons.svg'
+        f"{config.npm_cdn}/jsoneditor@9.5.6/dist/img/jsoneditor-icons.svg"
     ]
 
     @classproperty

@@ -20,7 +20,6 @@ from pyviz_comms import (
 )
 
 from .io.logging import panel_log_handler
-from .io.notebook import load_notebook
 from .io.state import state
 
 __version__ = str(param.version.Version(
@@ -193,6 +192,11 @@ class _config(_base_config):
         default='WARNING', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of Panel loggers")
 
+    _npm_cdn = param.String(default='https://unpkg.com', doc="""
+        The CDN to load NPM packages from if resources are served from
+        CDN. Allows switching between https://unpkg.com and
+        https://cdn.jsdelivr.net/npm for most resources.""")
+
     _nthreads = param.Integer(default=None, doc="""
         When set to a non-None value a thread pool will be started.
         Whenever an event arrives from the frontend it will be
@@ -232,7 +236,7 @@ class _config(_base_config):
         'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
-        'oauth_encryption_key', 'oauth_extra_params',
+        'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn'
     ]
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -392,6 +396,10 @@ class _config(_base_config):
     def log_level(self):
         log_level = os.environ.get('PANEL_LOG_LEVEL', self._log_level)
         return log_level.upper() if log_level else None
+
+    @property
+    def npm_cdn(self):
+        return os.environ.get('PANEL_NPM_CDN', _config._npm_cdn)
 
     @property
     def nthreads(self):
@@ -580,6 +588,8 @@ class panel_extension(_pyviz_extension):
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except Exception:
             return
+
+        from .io.notebook import load_notebook
 
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if loaded and newly_loaded:

@@ -5,6 +5,7 @@ from typing import ClassVar, Mapping
 
 import param
 
+from ..config import config
 from ..io.resources import bundled_files
 from ..reactive import ReactiveHTML
 from ..util import classproperty
@@ -103,17 +104,17 @@ class GridStack(ReactiveHTML, GridSpec):
     }
 
     __css_raw__ = [
-        'https://cdn.jsdelivr.net/npm/gridstack@4.2.5/dist/gridstack.min.css',
-        'https://cdn.jsdelivr.net/npm/gridstack@4.2.5/dist/gridstack-extra.min.css'
+        f'{config.npm_cdn}/gridstack@4.2.5/dist/gridstack.min.css',
+        f'{config.npm_cdn}/gridstack@4.2.5/dist/gridstack-extra.min.css'
     ]
 
     __javascript_raw__ = [
-        'https://cdn.jsdelivr.net/npm/gridstack@4.2.5/dist/gridstack-h5.js'
+        f'{config.npm_cdn}/gridstack@4.2.5/dist/gridstack-h5.js'
     ]
 
     __js_require__ = {
         'paths': {
-            'gridstack': 'https://cdn.jsdelivr.net/npm/gridstack@4.2.5/dist/gridstack-h5'
+            'gridstack': f'{config.npm_cdn}/gridstack@4.2.5/dist/gridstack-h5'
         },
         'exports': {
             'gridstack': 'GridStack'

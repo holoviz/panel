@@ -3,6 +3,8 @@ Defines a custom KaTeX bokeh model to render text using KaTeX.
 """
 from bokeh.models import Markup
 
+from ..config import config
+
 
 class KaTeX(Markup):
     """
@@ -13,7 +15,7 @@ class KaTeX(Markup):
 
     __javascript__ = [
         "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.js",
-        "https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/contrib/auto-render.min.js"
+        f"{config.npm_cdn}/katex@0.10.1/dist/contrib/auto-render.min.js"
     ]
 
     __js_skip__ = {
@@ -23,7 +25,8 @@ class KaTeX(Markup):
 
     __js_require__ = {
         'paths': {
-            'katex': 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min',
-            'autoLoad': 'https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/contrib/auto-render.min'},
+            'katex': "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min",
+            'autoLoad': f"{config.npm_cdn}/katex@0.10.1/dist/contrib/auto-render.min"
+        },
         'exports': {'katex': 'katex', 'autoLoad': 'renderMathInElement'}
     }

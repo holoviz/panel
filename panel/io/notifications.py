@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 import param
 
+from ..config import config
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .datamodel import _DATA_MODELS, construct_data_model
@@ -129,7 +130,7 @@ class NotificationArea(NotificationAreaBase):
         },
     ])
 
-    __javascript_raw__ = ["https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"]
+    __javascript_raw__ = [f"{config.npm_cdn}/notyf@3/notyf.min.js"]
 
     @classproperty
     def __javascript__(cls):
@@ -144,7 +145,7 @@ class NotificationArea(NotificationAreaBase):
     }
 
     __css_raw__ = [
-        "https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css",
+        f"{config.npm_cdn}/notyf@3/notyf.min.css",
         CSS_URLS['font-awesome']
     ]
 

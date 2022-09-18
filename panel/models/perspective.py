@@ -3,6 +3,8 @@ from bokeh.core.properties import (
 )
 from bokeh.models import ColumnDataSource, HTMLBox
 
+from ..config import config
+
 
 class Perspective(HTMLBox):
 
@@ -38,10 +40,10 @@ class Perspective(HTMLBox):
 
     # pylint: disable=line-too-long
     __javascript__ = [
-        "https://unpkg.com/@finos/perspective@1.3.6/dist/umd/perspective.js",
-        "https://unpkg.com/@finos/perspective-viewer@1.3.6/dist/umd/perspective-viewer.js",
-        "https://unpkg.com/@finos/perspective-viewer-datagrid@1.3.6/dist/umd/perspective-viewer-datagrid.js",
-        "https://unpkg.com/@finos/perspective-viewer-d3fc@1.3.6/dist/umd/perspective-viewer-d3fc.js",
+        f"{config.npm_cdn}/@finos/perspective@1.3.6/dist/umd/perspective.js",
+        f"{config.npm_cdn}/@finos/perspective-viewer@1.3.6/dist/umd/perspective-viewer.js",
+        f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@1.3.6/dist/umd/perspective-viewer-datagrid.js",
+        f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@1.3.6/dist/umd/perspective-viewer-d3fc.js",
     ]
 
     __js_skip__ = {
@@ -50,10 +52,10 @@ class Perspective(HTMLBox):
 
     __js_require__ = {
         "paths": {
-            "perspective": "https://unpkg.com/@finos/perspective@1.3.6/dist/umd/perspective",
-            "perspective-viewer": "https://unpkg.com/@finos/perspective-viewer@1.3.6/dist/umd/perspective-viewer",
-            "perspective-viewer-datagrid": "https://unpkg.com/@finos/perspective-viewer-datagrid@1.3.6/dist/umd/perspective-viewer-datagrid",
-            "perspective-viewer-d3fc": "https://unpkg.com/@finos/perspective-viewer-d3fc@1.3.6/dist/umd/perspective-viewer-d3fc",
+            "perspective": f"{config.npm_cdn}/@finos/perspective@1.3.6/dist/umd/perspective",
+            "perspective-viewer": f"{config.npm_cdn}/@finos/perspective-viewer@1.3.6/dist/umd/perspective-viewer",
+            "perspective-viewer-datagrid": f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@1.3.6/dist/umd/perspective-viewer-datagrid",
+            "perspective-viewer-d3fc": f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@1.3.6/dist/umd/perspective-viewer-d3fc",
         },
         "exports": {
             "perspective": "perspective",
@@ -63,4 +65,4 @@ class Perspective(HTMLBox):
         },
     }
 
-    __css__ = ["https://unpkg.com/@finos/perspective-viewer@1.3.6/dist/css/themes.css"]
+    __css__ = [f"{config.npm_cdn}/@finos/perspective-viewer@1.3.6/dist/css/themes.css"]
