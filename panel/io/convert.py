@@ -542,7 +542,7 @@ def convert_apps(
 
     # Write service worker
     worker = SERVICE_WORKER_TEMPLATE.render(
-        app=f'panel-{uuid.uuid4().hex}',
+        uuid=uuid.uuid4().hex,
         pre_cache=', '.join([repr(p) for p in img_rel])
     )
     with open(dest_path / 'serviceWorker.js', 'w') as f:
