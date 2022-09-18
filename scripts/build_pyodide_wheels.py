@@ -12,7 +12,8 @@ import zipfile
 sp = subprocess.Popen(['pip', 'wheel', '.', '-w', './build'], env=dict(os.environ, PANEL_LITE='1'))
 sp.wait()
 
-os.mkdir('panel/dist/wheels')
+if not os.path.isdir('panel/dist/wheels'):
+    os.mkdir('panel/dist/wheels')
 
 panel_wheels = glob.glob('build/panel-*-py3-none-any.whl')
 
@@ -31,9 +32,17 @@ zin = zipfile.ZipFile (bokeh_wheel, 'r')
 zout = zipfile.ZipFile (f'panel/dist/wheels/{os.path.basename(bokeh_wheel)}', 'w')
 exts = ['.js', '.d.ts', '.tsbuildinfo']
 for item in zin.infolist():
-    buffer = zin.read(item.filename)
-    if not (item.filename.endswith('bokeh.json') or any(item.filename.endswith(ext) for ext in exts)):
-        zout.writestr(item, buffer)
+    filename = item.filename
+    buffer = zin.read(filename)
+    if (filename.endswith('bokeh.json') or any(filename.endswith(ext) for ext in exts)):
+        continue
+    elif filename.startswith('bokeh-') and filename.endswith('METADATA'):
+        # remove tornado dependency
+        buffer = '\n'.join([
+            line for line in buffer.decode('utf-8').split('\n')
+            if not ('Requires-Dist:' in line and 'tornado' in line)
+        ]).encode('utf-8')
+    zout.writestr(item, buffer)
 
 zout.close()
 zin.close()
