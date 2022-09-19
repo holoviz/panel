@@ -145,14 +145,14 @@ nbsite_gallery_conf = {
 
 if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
     py_version = panel.__version__.replace("-dirty", "")
-    panel_req = f'wheels/panel-{py_version}-py3-none-any.whl'
-    bokeh_req = f'wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+    panel_req = f'./wheels/panel-{py_version}-py3-none-any.whl'
+    bokeh_req = f'./wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 else:
     panel_req = f'https://unpkg.com/@holoviz/panel@{JS_version}/dist/wheels/panel-{PY_VERSION}-py3-none-any.whl'
     bokeh_req = f'https://unpkg.com/@holoviz/panel@{JS_version}/dist/wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
 nbsite_pyodide_conf = {
-    'requirements': [panel_req, bokeh_req, 'pandas']
+    'requirements': [bokeh_req, panel_req, 'pandas']
 }
 
 templates_path = [
