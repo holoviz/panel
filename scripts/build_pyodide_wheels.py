@@ -34,7 +34,10 @@ exts = ['.js', '.d.ts', '.tsbuildinfo']
 for item in zin.infolist():
     filename = item.filename
     buffer = zin.read(filename)
-    if (filename.endswith('bokeh.json') or any(filename.endswith(ext) for ext in exts)):
+    if (not filename.startswith('bokeh/core/_templates') and (
+            filename.endswith('bokeh.json') or
+            any(filename.endswith(ext) for ext in exts)
+    )):
         continue
     elif filename.startswith('bokeh-') and filename.endswith('METADATA'):
         # remove tornado dependency
