@@ -398,7 +398,8 @@ def script_to_html(
     # Collect resources
     resources = Resources(mode='cdn')
     bokeh_js, bokeh_css = bundle_resources(document.roots, resources)
-    bokeh_js = '\n'.join([INIT_SERVICE_WORKER, bokeh_js]+js_resources)
+    extra_js = [INIT_SERVICE_WORKER, bokeh_js] if manifest else [bokeh_js]
+    bokeh_js = '\n'.join(extra_js+js_resources)
     bokeh_css = '\n'.join([bokeh_css]+css_resources)
 
     # Configure template

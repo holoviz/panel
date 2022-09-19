@@ -26,6 +26,13 @@
   <link rel="manifest" href="{{ manifest|default('https://panel.holoviz.org/_static/icons/site.webmanifest', true) }}">
   <meta name="msapplication-TileColor" content="#da532c">
   <meta name="theme-color" content="#ffffff">
+  {% if manifest %}
+  <script type="text/javascript">
+    if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./serviceWorker.js');
+  }
+  </script>
+  {% endif %}
   <script type="module" src="https://unpkg.com/@microsoft/fast-colors@5.1.0"></script>
   <script type="module" src="https://unpkg.com/@microsoft/fast-components@1.13.0"></script>
   <script type="text/javascript">
