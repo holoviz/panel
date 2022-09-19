@@ -353,7 +353,7 @@ class BaseTable(ReactiveData, Widget):
         """
         filters = []
         for col_name, filt in self._filters:
-            if col_name not in df.columns:
+            if col_name is not None and col_name not in df.columns:
                 continue
             if isinstance(filt, (FunctionType, MethodType)):
                 df = filt(df)
