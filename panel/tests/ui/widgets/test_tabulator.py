@@ -2831,6 +2831,8 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, po
     header.fill('B')
     header.press('Enter')
 
+    wait_until(lambda: widget.current_view.equals(df[df['values'] == 'B']))
+
     cell = page.locator('text="B"').first
     cell.click()
     editable_cell = page.locator('input[type="text"]')
