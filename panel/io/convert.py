@@ -337,7 +337,7 @@ def script_to_html(
     else:
         panel_req = f'panel=={panel_version}'
         bokeh_req = f'bokeh=={BOKEH_VERSION}'
-    reqs = [panel_req, bokeh_req] + [
+    reqs = [bokeh_req, panel_req] + [
         req for req in requirements if req not in ('panel', 'bokeh')
     ]
 
