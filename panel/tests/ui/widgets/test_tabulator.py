@@ -31,10 +31,11 @@ except ImportError:
     pytestmark = pytest.mark.skip('pandas not available')
 
 from panel import state
+from panel.depends import bind
 from panel.io.server import serve
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
 from panel.tests.util import get_ctrl_modifier, wait_until
-from panel.widgets import Tabulator
+from panel.widgets import Select, Tabulator
 
 
 @pytest.fixture
@@ -2002,6 +2003,40 @@ def test_tabulator_filter_param(page, port, df_mixed):
         p.s = filt_val
         page.wait_for_timeout(200)
         df_filtered = df_mixed.loc[df_mixed[filt_col] == filt_val, :]
+
+        wait_until(lambda: widget.current_view.equals(df_filtered), page)
+
+        # Check the table has the right number of rows
+        expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))
+
+
+def test_tabulator_filter_bound_function(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    def filt_(df, val):
+        return df[df['str'] == val]
+
+    filt_val = 'A'
+    w_filter = Select(value='A', options=['A', 'B', ''])
+    widget.add_filter(bind(filt_, val=w_filter))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    df_filtered = filt_(df_mixed, w_filter.value)
+
+    wait_until(lambda: widget.current_view.equals(df_filtered), page)
+
+    # Check the table has the right number of rows
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_filtered))
+
+    for filt_val in w_filter.options[1:]:
+        w_filter.value = filt_val
+        page.wait_for_timeout(200)
+        df_filtered = filt_(df_mixed, filt_val)
 
         wait_until(lambda: widget.current_view.equals(df_filtered), page)
 
