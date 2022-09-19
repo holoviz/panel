@@ -457,7 +457,8 @@ def convert_apps(
     dest_path: str | pathlib.Path
         The directory to write the converted application(s) to.
     title: str | None
-        A title for the application(s)
+        A title for the application(s). Also used to generate unique
+        name for the application cache to ensure.
     runtime: 'pyodide' | 'pyscript' | 'pyodide-worker'
         The runtime to use for running Python in the browser.
     requirements: 'auto' | List[str]
@@ -543,6 +544,7 @@ def convert_apps(
     # Write service worker
     worker = SERVICE_WORKER_TEMPLATE.render(
         uuid=uuid.uuid4().hex,
+        name=title or 'Panel Pyodide App',
         pre_cache=', '.join([repr(p) for p in img_rel])
     )
     with open(dest_path / 'serviceWorker.js', 'w') as f:
