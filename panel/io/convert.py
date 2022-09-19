@@ -337,7 +337,7 @@ def script_to_html(
     else:
         panel_req = f'panel=={panel_version}'
         bokeh_req = f'bokeh=={BOKEH_VERSION}'
-    reqs = [panel_req, bokeh_req] + [
+    reqs = [bokeh_req, panel_req] + [
         req for req in requirements if req not in ('panel', 'bokeh')
     ]
 
@@ -398,7 +398,8 @@ def script_to_html(
     # Collect resources
     resources = Resources(mode='cdn')
     bokeh_js, bokeh_css = bundle_resources(document.roots, resources)
-    bokeh_js = '\n'.join([INIT_SERVICE_WORKER, bokeh_js]+js_resources)
+    extra_js = [INIT_SERVICE_WORKER, bokeh_js] if manifest else [bokeh_js]
+    bokeh_js = '\n'.join(extra_js+js_resources)
     bokeh_css = '\n'.join([bokeh_css]+css_resources)
 
     # Configure template
@@ -457,7 +458,8 @@ def convert_apps(
     dest_path: str | pathlib.Path
         The directory to write the converted application(s) to.
     title: str | None
-        A title for the application(s)
+        A title for the application(s). Also used to generate unique
+        name for the application cache to ensure.
     runtime: 'pyodide' | 'pyscript' | 'pyodide-worker'
         The runtime to use for running Python in the browser.
     requirements: 'auto' | List[str]
@@ -543,6 +545,7 @@ def convert_apps(
     # Write service worker
     worker = SERVICE_WORKER_TEMPLATE.render(
         uuid=uuid.uuid4().hex,
+        name=title or 'Panel Pyodide App',
         pre_cache=', '.join([repr(p) for p in img_rel])
     )
     with open(dest_path / 'serviceWorker.js', 'w') as f:
