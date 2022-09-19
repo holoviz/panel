@@ -144,7 +144,7 @@ nbsite_gallery_conf = {
 }
 
 if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
-    py_version = panel.__version__.replace(".dirty", "")
+    py_version = panel.__version__.replace("-dirty", "")
     panel_req = f'wheels/panel-{py_version}-py3-none-any.whl'
     bokeh_req = f'wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 else:
