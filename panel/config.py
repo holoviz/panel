@@ -659,7 +659,9 @@ class panel_extension(_pyviz_extension):
 
         descendants = param.concrete_descendents(Viewable)
         for cls in reversed(list(descendants.values())):
-            if cls.__doc__.startswith('params'):
+            if cls.__doc__ is None:
+                pass
+            elif cls.__doc__.startswith('params'):
                 prefix = cls.__doc__.split('\n')[0]
                 cls.__doc__ = cls.__doc__.replace(prefix, '')
             sig = inspect.signature(cls.__init__)
