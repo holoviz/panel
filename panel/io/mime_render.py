@@ -32,13 +32,14 @@ import markdown
 
 class WriteCallbackStream(io.StringIO):
 
-    def __init__(self, on_write=None):
+    def __init__(self, on_write=None, escape=True):
         self._onwrite = on_write
+        self._escape = escape
         super().__init__()
 
     def write(self, s):
         if self._onwrite:
-            self._onwrite(s)
+            self._onwrite(escape(s) if self.escape else s)
         super().write(s)
 
 def _convert_expr(expr: ast.Expr) -> ast.Expression:
@@ -90,7 +91,9 @@ def exec_with_return(
     with redirect_stdout(stdout), redirect_stderr(stderr):
         try:
             exec(compile(init_ast, "<ast>", "exec"), global_context)
-            if type(last_ast.body[0]) == ast.Expr:
+            if not last_ast.body:
+                out = None
+            elif type(last_ast.body[0]) == ast.Expr:
                 out = eval(compile(_convert_expr(last_ast.body[0]), "<ast>", "eval"), global_context)
             else:
                 exec(compile(last_ast, "<ast>", "exec"), global_context)
@@ -115,7 +118,8 @@ MIME_METHODS = {
     "_repr_latex": "text/latex",
     "_repr_json_": "application/json",
     "_repr_javascript_": "application/javascript",
-    "savefig": "image/png"
+    "savefig": "image/png",
+    "to_html": "text/html"
 }
 
 # Rendering function
