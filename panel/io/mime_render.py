@@ -39,7 +39,7 @@ class WriteCallbackStream(io.StringIO):
 
     def write(self, s):
         if self._onwrite:
-            self._onwrite(escape(s) if self.escape else s)
+            self._onwrite(escape(s) if self._escape else s)
         super().write(s)
 
 def _convert_expr(expr: ast.Expr) -> ast.Expression:
