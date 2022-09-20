@@ -374,13 +374,9 @@ class ServableMixin(object):
                 self.server_doc(title=title, location=location) # type: ignore
         elif state._is_pyodide:
             from .io.pyodide import write
-            if target:
-                out = target
-            elif hasattr(sys.stdout, '_out'):
-                out = sys.stdout._out # type: ignore
-            else:
-                raise ValueError("Could not determine target node to write to.")
-            asyncio.create_task(write(out, self))
+            target = target or getattr(sys.stdout, '_out', None)
+            if target is not None:
+                asyncio.create_task(write(target, self))
         return self
 
     def show(
