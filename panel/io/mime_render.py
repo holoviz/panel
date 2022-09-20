@@ -98,6 +98,8 @@ def exec_with_return(
             else:
                 exec(compile(last_ast, "<ast>", "exec"), global_context)
                 out = None
+            if code.strip().endswith(';'):
+                out = None
         except Exception:
             out = None
             traceback.print_exc(file=stderr)
