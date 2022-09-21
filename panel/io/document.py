@@ -153,7 +153,7 @@ def dispatch_tornado(conn, event):
     socket = conn._socket
     ws_conn = socket.ws_connection
     if not ws_conn or ws_conn.is_closing(): # type: ignore
-        return
+        return []
     msg = conn.protocol.create('PATCH-DOC', [event])
     futures = [
         WebSocketHandler.write_message(socket, msg.header_json),
