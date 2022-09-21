@@ -31,7 +31,7 @@ from .state import state
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
-    js_version = package_json['version'].split('+')[0]
+    JS_VERSION = package_json['version'].split('+')[0]
 
 def get_env():
     ''' Get the correct Jinja2 Environment, also for frozen scripts.
@@ -60,7 +60,7 @@ BASE_TEMPLATE = _env.get_template('base.html')
 ERROR_TEMPLATE = _env.get_template('error.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
-CDN_DIST = f"{config.npm_cdn}/@holoviz/panel@{js_version}/dist/"
+CDN_DIST = f"https://cdn.holoviz.org/panel/{JS_VERSION}/dist/"
 DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
@@ -150,8 +150,13 @@ def bundled_files(model, file_type='javascript'):
     for url in getattr(model, f"__{file_type}_raw__", []):
         filepath = url_path(url)
         test_filepath = filepath.split('?')[0]
-        if RESOURCE_MODE == 'server' and os.path.isfile(os.path.join(bdir, test_filepath)):
-            files.append(f'static/extensions/panel/bundled/{name}/{filepath}')
+        if os.path.isfile(os.path.join(bdir, test_filepath)):
+            if RESOURCE_MODE == 'server':
+                files.append(f'static/extensions/panel/bundled/{name}/{filepath}')
+            elif filepath == test_filepath:
+                files.append(f'{CDN_DIST}bundled/{name}/{filepath}')
+            else:
+                files.append(url)
         else:
             files.append(url)
     return files
@@ -365,7 +370,14 @@ class Bundle(BkBundle):
         super().__init__(**kwargs)
 
     def _replace_cdn(self, resources):
-        return [resource.replace('https://unpkg.com', config.npm_cdn) for resource in resources]
+        redirected = []
+        cdn_base = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/'
+        for resource in resources:
+            resource = resource.replace('https://unpkg.com', config.npm_cdn)
+            if resource.startswith(cdn_base):
+                resource = resource.replace(cdn_base, CDN_DIST)
+            redirected.append(resource)
+        return redirected
 
     @classmethod
     def from_bokeh(cls, bk_bundle):
