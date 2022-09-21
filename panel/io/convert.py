@@ -29,7 +29,7 @@ from .. import __version__, config
 from ..util import base_version, escape
 from .document import _cleanup_doc
 from .resources import (
-    DIST_DIR, INDEX_TEMPLATE, JS_VERSION, Resources, _env as _pn_env,
+    CDN_DIST, DIST_DIR, INDEX_TEMPLATE, Resources, _env as _pn_env,
     bundle_resources,
 )
 from .state import set_curdoc, state
@@ -41,8 +41,8 @@ WEB_WORKER_TEMPLATE = _pn_env.get_template('pyodide_worker.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = '2.4.3'
 PY_VERSION = base_version(__version__)
-PANEL_CDN_WHL = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/wheels/panel-{PY_VERSION}-py3-none-any.whl'
-BOKEH_CDN_WHL = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
+BOKEH_CDN_WHL = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js'
 PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />'
 PYSCRIPT_JS = '<script defer src="https://pyscript.net/latest/pyscript.js"></script>'
