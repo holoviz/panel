@@ -1,11 +1,11 @@
 # Build an app
 
-At this point you should have [set up your environment and installed Panel](installation.md) and been introduced some of the basic ideas and APIs behind Panel in the [Core Concepts](core_concepts.md) guide.
+At this point you should have [set up your environment and installed Panel](installation.md) so you should be ready to get going.
 
-However the easiest way to get started with Panel is to play around with it yourself. In this section we're going to be building a basic application using a public dataset and add some interactivity. The easiest way to follow along is to copy the examples and launch a Jupyter notebook session as described in the [installation guide](installation.md).
+In this section we're going to be building a basic application using a public dataset and add some interactivity.
 
 :::{important}
-This guide is written for an interactive environment such as Jupyter notebooks. The interactive widgets will not work in a static version of this documentation.
+This guide renders static output by default (denoted by the golden border) but you can execute the code cells below by clicking the play button. Only run this if you are willing to download ~40 MB.
 :::
 
 ## Fetch some data
@@ -49,7 +49,6 @@ def find_outliers(variable='Temperature', window=30, sigma=10, view_fn=mpl_plot)
 ```
 
 We can call the function with parameters and get a plot:
-
 
 ```{pyodide}
 find_outliers(variable='Temperature', window=20, sigma=10)
@@ -105,7 +104,7 @@ During development, particularly when working with a raw script using `panel ser
 
 ## Declarative Panels
 
-The above compositional approach is very flexible, but it ties your domain-specific code (the parts about sine waves) with your widget display code. That's fine for small, quick projects or projects dominated by visualization code, but what about large-scale, long-lived projects, where the code is used in many different contexts over time, such as in large batch runs, one-off command-line usage, notebooks, and deployed dashboards?  For larger projects like that, it's important to be able to separate the parts of the code that are about the underlying domain (i.e. application or research area) from those that are tied to specific display technologies (such as Jupyter notebooks or web servers).
+The above compositional approach is very flexible, but it ties your domain-specific code (the parts about sine waves) with your widget display code. That's fine for small, quick projects or projects dominated by visualization code, but what about large-scale, long-lived projects, where the code is used in many different contexts over time, such as in large batch runs, one-off command-line usage, notebooks, and deployed dashboards?  For larger projects like that, it's important to be able to separate the parts of the code that are about the underlying domain (i.e. application or research area) from those that are tied to specific display technologies (such as Jupyter notebooks or web servers). 
 
 For such usages, Panel supports objects declared with the separate [Param](http://param.pyviz.org) library, which provides a GUI-independent way of capturing and declaring the parameters of your objects (and dependencies between your code and those parameters), in a way that's independent of any particular application or dashboard technology. For instance, the above code can be captured in an object that declares the ranges and values of all parameters, as well as how to generate the plot, independently of the Panel library or any other way of interacting with the object:
 
@@ -138,17 +137,39 @@ pn.Row(obj.param, obj.view)
 
 To support a particular domain, you can create hierarchies of such classes encapsulating all the parameters and functionality you need across different families of objects, with both parameters and code inheriting across the classes as appropriate, all without any dependency on a particular GUI library or even the presence of a GUI at all.  This approach makes it practical to maintain a large codebase, all fully displayable and editable with Panel, in a way that can be maintained and adapted over time.
 
-## Exploring further
+## Get help
 
-For a quick reference of different Panel functionality refer to the [overview](../user_guide/Overview.md). If you want a more detailed description of different ways of using Panel, each appropriate for different applications see the following materials:
+Now that we have given you a taste of how easy it is to build a little application in Panel its time to introduce you to some of the [core concepts](core_concepts.md) behing Panel. Go to the next guide or visit some of the other resources to help you dive a little deeper:
 
-- [APIs](../user_guide/APIs.rst): An overview of the different APIs offered by Panel.
-- [Parameters](../user_guide/Param.rst): Capturing parameters and their links to actions declaratively
+::::{grid} 1 2 2 4
+:gutter: 1 1 1 2
 
-Just pick the style that seems most appropriate for the task you want to do, then study that section of the user guide. Regardless of which approach you take, you'll want to learn more about Panel's panes and layouts:
+:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Core Concepts
+:link: core_concepts
+:link-type: doc
 
-- [Components](../user_guide/Components.rst): An overview of the core components of Panel including Panes, Widgets and Layouts
-- [Customization](../user_guide/Customization.rst): How to set styles and sizes of Panel components
-- [Display & Export](../user_guide/Display_and_Export.rst): An overview on how to display and export Panel components and apps.
-- [Server Configuration](../user_guide/Server_Configuration.md): An overview on how to configure applications and dashboards for deployment.
-- [Templates](../user_guide/Templates.rst): Composing one or more Panel objects into a template with full control over layout and styling.
+Introduces you to some of the core concepts behind Panel, how to develop Panel applications effectively both in your IDE and in the notebook and some of the core features that make Panel such a powerful library.
+:::
+
+:::{grid-item-card} {octicon}`comment-discussion;2.5em;sd-mr-1` Discourse
+:link: https://discourse.holoviz.org/c/panel/5
+:link-type: url
+
+Visit our community Discourse where you can exchange ideas with the community and ask our helpful community members questions.
+:::
+
+:::{grid-item-card} {octicon}`mark-github;2.5em;sd-mr-1` GitHub
+:link: https://github.com/holoviz/panel/issues
+:link-type: url
+
+Visit us on GitHub and file issues and/or contribute.
+:::
+
+:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` User Guide
+:link: ../user_guide/index
+:link-type: doc
+
+For a more in-depth guide through a range of topics, starting from the various APIs of Panel, through to building custom components and authentication visit our user guide.
+:::
+
+::::

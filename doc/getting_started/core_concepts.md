@@ -290,30 +290,17 @@ pn.Column(
 ).servable(target='main')
 ```
 
-## Get help
+## Exploring further
 
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
+For a quick reference of different Panel functionality refer to the [overview](../user_guide/Overview.md). If you want a more detailed description of different ways of using Panel, each appropriate for different applications see the following materials:
 
-:::{grid-item-card} {octicon}`comment-discussion;2.5em;sd-mr-1` Discourse
-:link: https://discourse.holoviz.org/c/panel/5
-:link-type: url
+- [APIs](../user_guide/APIs.rst): An overview of the different APIs offered by Panel.
+- [Parameters](../user_guide/Param.rst): Capturing parameters and their links to actions declaratively
 
-Visit our community Discourse where you can exchange ideas with the community and ask our helpful community members questions.
-:::
+Just pick the style that seems most appropriate for the task you want to do, then study that section of the user guide. Regardless of which approach you take, you'll want to learn more about Panel's panes and layouts:
 
-:::{grid-item-card} {octicon}`mark-github;2.5em;sd-mr-1` GitHub
-:link: https://github.com/holoviz/panel/issues
-:link-type: url
-
-Visit us on GitHub and file issues and/or contribute.
-:::
-
-:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` User Guide
-:link: ../user_guide/index
-:link-type: doc
-
-For a more in-depth guide through a range of topics, starting from the various APIs of Panel, through to building custom components and authentication visit our user guide.
-:::
-
-::::
+- [Components](../user_guide/Components.rst): An overview of the core components of Panel including Panes, Widgets and Layouts
+- [Customization](../user_guide/Customization.rst): How to set styles and sizes of Panel components
+- [Display & Export](../user_guide/Display_and_Export.rst): An overview on how to display and export Panel components and apps.
+- [Server Configuration](../user_guide/Server_Configuration.md): An overview on how to configure applications and dashboards for deployment.
+- [Templates](../user_guide/Templates.rst): Composing one or more Panel objects into a template with full control over layout and styling.
