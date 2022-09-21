@@ -7,6 +7,8 @@ import numpy as np
 
 from bokeh.resources import Resources
 
+from panel.config import config
+from panel.io.resources import CDN_DIST
 from panel.models.vega import VegaPlot
 from panel.pane import Alert, Vega
 from panel.tests.util import hv_available
@@ -36,7 +38,7 @@ def test_save_external():
     sio.seek(0)
     html = sio.read()
     for js in VegaPlot.__javascript_raw__:
-        assert js in html
+        assert js.replace(config.npm_cdn, f'{CDN_DIST}bundled/vegaplot') in html
 
 
 def test_save_inline_resources():
@@ -56,7 +58,7 @@ def test_save_cdn_resources():
     alert.save(sio, resources='cdn')
     sio.seek(0)
     html = sio.read()
-    assert re.findall('https://unpkg.com/@holoviz/panel@(.*)/dist/css/alerts.css', html)
+    assert re.findall('https://cdn.holoviz.org/panel/(.*)/dist/css/alerts.css', html)
 
 
 @hv_available

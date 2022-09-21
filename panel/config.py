@@ -192,7 +192,7 @@ class _config(_base_config):
         default='WARNING', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of Panel loggers")
 
-    _npm_cdn = param.Selector(default='https://unpkg.com',
+    _npm_cdn = param.Selector(default='https://cdn.jsdelivr.net/npm',
         objects=['https://unpkg.com', 'https://cdn.jsdelivr.net/npm'],  doc="""
         The CDN to load NPM packages from if resources are served from
         CDN. Allows switching between https://unpkg.com and
