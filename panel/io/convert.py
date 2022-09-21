@@ -108,19 +108,44 @@ main();
 PYODIDE_WORKER_SCRIPT = """
 <script type="text/javascript">
 const pyodideWorker = new Worker("./{{ name }}.js");
+pyodideWorker.busy = false
+pyodideWorker.queue = []
 
 function send_change(jsdoc, event) {
-  if (event.setter_id != null)
+  if (event.setter_id != null && event.setter_id == 'py') {
     return
+  } else if (pyodideWorker.busy && event.model && event.attr) {
+    let events = []
+    for (const old_event of pyodideWorker.queue) {
+      if (!(old_event.model === event.model && old_event.attr === event.attr)) {
+        events.push(old_event)
+      }
+    }
+    events.push(event)
+    pyodideWorker.queue = events
+    return
+  }
   const patch = jsdoc.create_json_patch_string([event])
+  pyodideWorker.busy = true
   pyodideWorker.postMessage({type: 'patch', patch: patch})
 }
 
 pyodideWorker.onmessage = async (event) => {
-  if (event.data.type === 'render') {
-    const docs_json = JSON.parse(event.data.docs_json)
-    const render_items = JSON.parse(event.data.render_items)
-    const root_ids = JSON.parse(event.data.root_ids)
+  const msg = event.data
+
+  if (msg.type === 'idle') {
+    if (pyodideWorker.queue.length) {
+      const patch = pyodideWorker.jsdoc.create_json_patch_string(pyodideWorker.queue)
+      pyodideWorker.busy = true
+      pyodideWorker.queue = []
+      pyodideWorker.postMessage({type: 'patch', patch: patch})
+    } else {
+      pyodideWorker.busy = false
+    }
+  } else if (msg.type === 'render') {
+    const docs_json = JSON.parse(msg.docs_json)
+    const render_items = JSON.parse(msg.render_items)
+    const root_ids = JSON.parse(msg.root_ids)
 
     // Remap roots in message to element IDs
     const root_els = document.getElementsByClassName('bk-root')
@@ -148,8 +173,8 @@ pyodideWorker.onmessage = async (event) => {
     pyodideWorker.jsdoc = jsdoc = views[0].model.document
     jsdoc.on_change(send_change.bind(null, jsdoc), false)
     pyodideWorker.postMessage({'type': 'rendered'})
-  } else if (event.data.type === 'patch') {
-    pyodideWorker.jsdoc.apply_json_patch(JSON.parse(event.data.patch), event.data.buffers, setter_id='js')
+  } else if (msg.type === 'patch') {
+    pyodideWorker.jsdoc.apply_json_patch(JSON.parse(msg.patch), msg.buffers, setter_id='py')
   }
 };
 </script>

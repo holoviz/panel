@@ -37,14 +37,15 @@ self.onmessage = async (event) => {
     from panel.io.state import state
     from panel.io.pyodide import _link_docs_worker
 
-    _link_docs_worker(state.curdoc, sendPatch)
+    _link_docs_worker(state.curdoc, sendPatch, setter='js')
     `)
   } else if (event.data.type === 'patch') {
     self.pyodide.runPythonAsync(`
     import json
 
-    state.curdoc.apply_json_patch(json.loads('${event.data.patch}'))
+    state.curdoc.apply_json_patch(json.loads('${event.data.patch}'), setter='js')
     `)
+    self.postMessage({type: 'idle'})
   }
 }
 
