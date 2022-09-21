@@ -129,7 +129,7 @@ def _model_json(model: Model, target: str) -> Tuple[Document, str]:
         version   = __version__,
     ))
 
-def _link_docs(pydoc: Document, jsdoc: Any) -> None:
+def _link_docs(pydoc: Document, jsdoc: Any, setter: str | None =None) -> None:
     """
     Links Python and JS documents in Pyodide ensuring taht messages
     are passed between them.
@@ -140,29 +140,32 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         The Python Bokeh Document instance to sync.
     jsdoc: Javascript Document
         The Javascript Bokeh Document instance to sync.
+    setter: str
+        Setter ID used for suppressing events.
     """
     def jssync(event):
-        if (getattr(event, 'setter_id', None) is not None):
+        if (event.setter_id is not None and event.setter_id == setter):
             return
-        events = [event]
-        json_patch = jsdoc.create_json_patch_string(pyodide.ffi.to_js(events))
-        pydoc.apply_json_patch(json.loads(json_patch))
+        json_patch = jsdoc.create_json_patch_string(pyodide.ffi.to_js([event]))
+        pydoc.apply_json_patch(json.loads(json_patch), setter=setter)
 
     jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
 
     def pysync(event):
+        if event.setter is not None and event.setter == setter:
+            return
         json_patch, buffers = process_document_events([event], use_buffers=True)
         buffer_map = {}
         for (ref, buffer) in buffers:
             buffer_map[ref['id']] = pyodide.ffi.to_js(buffer).buffer
-        jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.ffi.to_js(buffer_map), setter_id='js')
+        jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.ffi.to_js(buffer_map), setter_id=setter)
 
     pydoc.on_change(pysync)
     pydoc.callbacks.trigger_json_event(
         {'event_name': 'document_ready', 'event_values': {}
     })
 
-def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None):
+def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None, setter: str | None = None):
     """
     Links the Python document to a dispatch_fn which can be used to
     sync messages between a WebWorker and the main thread in the
@@ -174,10 +177,14 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
         The document to dispatch messages from.
     dispatch_fn: JS function
         The Javascript function to dispatch messages to.
+    setter: str
+        Setter ID used for suppressing events.
     msg_id: str | None
         An optional message ID to pass through to the dispatch_fn.
     """
     def pysync(event):
+        if setter is not None and event.setter == setter:
+            return
         json_patch, buffers = process_document_events([event], use_buffers=True)
         buffer_map = {}
         for (ref, buffer) in buffers:
