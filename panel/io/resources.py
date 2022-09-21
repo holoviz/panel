@@ -148,7 +148,10 @@ def bundled_files(model, file_type='javascript'):
 
     files = []
     for url in getattr(model, f"__{file_type}_raw__", []):
-        filepath = url_path(url)
+        if url.startswith(config.npm_cdn):
+            filepath = url.replace(config.npm_cdn, '')[1:]
+        else:
+            filepath = url_path(url)
         test_filepath = filepath.split('?')[0]
         if os.path.isfile(os.path.join(bdir, test_filepath)):
             if RESOURCE_MODE == 'server':
