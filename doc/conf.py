@@ -17,7 +17,8 @@ description = 'High-level dashboarding for python visualization libraries'
 
 import panel
 
-from panel.io.convert import BOKEH_VERSION, JS_VERSION, PY_VERSION
+from panel.io.convert import BOKEH_VERSION, PY_VERSION
+from panel.io.resources import CDN_DIST
 
 PANEL_ROOT = pathlib.Path(panel.__file__).parent
 
@@ -148,8 +149,8 @@ if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
     panel_req = f'./wheels/panel-{py_version}-py3-none-any.whl'
     bokeh_req = f'./wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 else:
-    panel_req = f'https://cdn.holoviz.org/panel/{JS_VERSION}/dist/wheels/panel-{PY_VERSION}-py3-none-any.whl'
-    bokeh_req = f'https://cdn.holoviz.org/panel/{JS_VERSION}/dist/wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+    panel_req = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
+    bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
 nbsite_pyodide_conf = {
     'requirements': [bokeh_req, panel_req, 'pandas']
