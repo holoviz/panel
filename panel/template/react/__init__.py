@@ -5,6 +5,7 @@ import pathlib
 
 import param
 
+from ...config import config
 from ...depends import depends
 from ...io.resources import CSS_URLS
 from ...layout import Card, GridSpec
@@ -51,9 +52,9 @@ class ReactTemplate(BasicTemplate):
 
     _resources = {
         'js': {
-            'react': "https://unpkg.com/react@16/umd/react.development.js",
-            'react-dom': "https://unpkg.com/react-dom@16/umd/react-dom.development.js",
-            'babel': "https://unpkg.com/babel-standalone@latest/babel.min.js",
+            'react': f"{config.npm_cdn}/react@16/umd/react.development.js",
+            'react-dom': f"{config.npm_cdn}/react-dom@16/umd/react-dom.development.js",
+            'babel': f"{config.npm_cdn}/babel-standalone@latest/babel.min.js",
             'react-grid': "https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.1.1/react-grid-layout.min.js"
         },
         'css': {

@@ -7,6 +7,7 @@ import param
 
 from bokeh.themes import Theme as _BkTheme
 
+from ...config import config
 from ...layout import Card
 from ..base import BasicTemplate, TemplateActions
 from ..theme import DarkTheme, DefaultTheme
@@ -49,10 +50,10 @@ class MaterialTemplate(BasicTemplate):
 
     _resources = {
         'css': {
-            'material': "https://unpkg.com/material-components-web@7.0.0/dist/material-components-web.min.css",
+            'material': f"{config.npm_cdn}/material-components-web@7.0.0/dist/material-components-web.min.css",
         },
         'js': {
-            'material': "https://unpkg.com/material-components-web@7.0.0/dist/material-components-web.min.js"
+            'material': f"{config.npm_cdn}/material-components-web@7.0.0/dist/material-components-web.min.js"
         }
     }
 

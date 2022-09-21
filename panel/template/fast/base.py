@@ -2,6 +2,7 @@ import pathlib
 
 import param
 
+from ...config import config
 from ...io.state import state
 from ..base import BasicTemplate
 from ..react import ReactTemplate
@@ -65,8 +66,8 @@ class FastBaseTemplate(BasicTemplate):
 
     _resources = {
         'js_modules': {
-            'fast-colors': 'https://unpkg.com/@microsoft/fast-colors@5.1.4',
-            'fast': 'https://unpkg.com/@microsoft/fast-components@1.21.8'
+            'fast-colors': f'{config.npm_cdn}/@microsoft/fast-colors@5.1.4',
+            'fast': f'{config.npm_cdn}/@microsoft/fast-components@1.21.8'
         },
         'bundle': False
     }

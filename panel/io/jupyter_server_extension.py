@@ -65,6 +65,7 @@ from jupyter_server.base.handlers import JupyterHandler
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
+from ..config import config
 from ..util import edit_readonly
 from .resources import (
     DIST_DIR, ERROR_TEMPLATE, Resources, _env,
@@ -403,6 +404,7 @@ class PanelJupyterHandler(JupyterHandler):
         except (TimeoutError, RuntimeError) as e:
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
             html = ERROR_TEMPLATE.render(
+                npm_cdn=config.npn_cdn,
                 base_url=root_url,
                 error_type="Kernel error",
                 error="Failed to start kernel",
