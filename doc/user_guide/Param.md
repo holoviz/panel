@@ -208,7 +208,7 @@ sine = Sine(name='ASCII Sine Wave')
 pn.Row(sine.param, sine.view)
 ```
 
-The parameterized and annotated ``view`` method could return any one of the types handled by the [Pane objects](./Components.ipynb#Panes) Panel provides, making it easy to link parameters and their associated widgets to a plot or other output. Parameterized classes can therefore be a very useful pattern for encapsulating a part of a computational workflow with an associated visualization, declaratively expressing the dependencies between the parameters and the computation.
+The parameterized and annotated ``view`` method could return any one of the types handled by the [Pane objects](./Components.md#Panes) Panel provides, making it easy to link parameters and their associated widgets to a plot or other output. Parameterized classes can therefore be a very useful pattern for encapsulating a part of a computational workflow with an associated visualization, declaratively expressing the dependencies between the parameters and the computation.
 
 By default, a Param pane will show widgets for all parameters with a `precedence` value above the value `pn.Param.display_threshold`, so you can use `precedence` to automatically hide parameters that are not meant to have widgets.  You can also explicitly choose which parameters should have widgets in a given pane, by passing a `parameters` argument.  For example, this code gives a `phase` widget, while maintaining `sine.frequency` at the initial value of `1`:
 
@@ -356,4 +356,4 @@ pn.Row(
     viewer.panel())
 ```
 
-In this user guide we have seen how to leverage Param to declare parameters, which Panel can then turn into a GUI with little additionl effort or code. We have also seen how to link parameters to views and to other parameters using the ``param.depends`` operator. This approach allows building complex and reactive panels. In the [pipelines user guide](Pipelines.ipynb) we can discover how to link multiple such classes into pipelines, making it possible to encapsulate complex workflows in clean self-contained classes.
+In this user guide we have seen how to leverage Param to declare parameters, which Panel can then turn into a GUI with little additionl effort or code. We have also seen how to link parameters to views and to other parameters using the ``param.depends`` operator. This approach allows building complex and reactive panels. In the [pipelines user guide](Pipelines.md) we can discover how to link multiple such classes into pipelines, making it possible to encapsulate complex workflows in clean self-contained classes.

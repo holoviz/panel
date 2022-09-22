@@ -1,6 +1,6 @@
 # FastAPI
 
-As the core user guides including the [Introduction](../getting_started/Introduction.ipynb) have demonstrated, it is easy to display Panel apps in the notebook, launch them from an interactive Python prompt, and deploy them as a standalone Bokeh server app from the commandline. However, it is also often useful to embed a Panel app in large web application, such as a FastAPI web server. [FastAPI](https://fastapi.tiangolo.com/) is especially useful compared to others like Flask and Django because of it's lightning fast, lightweight framework. Using Panel with FastAPI requires a bit more work than for notebooks and Bokeh servers.
+Panel generally runs on the Bokeh server which itself runs on Tornado. However, it is also often useful to embed a Panel app in large web application, such as a FastAPI web server. [FastAPI](https://fastapi.tiangolo.com/) is especially useful compared to others like Flask and Django because of it's lightning fast, lightweight framework. Using Panel with FastAPI requires a bit more work than for notebooks and Bokeh servers.
 
 Following FastAPI's [Tutorial - User Guide](https://fastapi.tiangolo.com/tutorial/) make sure you first have FastAPI installed using: `conda install -c conda-forge fastapi`. Also make sure Panel is installed `conda install -c conda-forge panel`.
 

@@ -209,7 +209,7 @@ In the notebook the `.servable()` method is effectively a no-op. This means you 
 
 To build an interactive application you will want to add widget components (such as `TextInput`, `FloatSlider` or `Checkbox`) to your application and then bind them to an interactive function. As an example let's create a slider:
 
-```
+```{pyodide}
 import panel as pn
 x = pn.widgets.IntSlider(name='x', start=0, end=100)
 
@@ -231,7 +231,7 @@ Remember how we talked about the difference between a parameter **value** and a 
 
 In certain cases reactivity isn't what is needed, e.g. if you want very fine grained control over specific parameters. To achieve this we have to dig a bit further into Param functionality, specifically we need to learn about watching parameters. To `watch` a parameter means to declare a callback that fires when the parameter value changes. As an example let's rewrite the example above using a watcher:
 
-```python
+```{pyodide}
 import panel as pn
 x = pn.widgets.IntSlider(name='x', start=0, end=100)
 square = pn.panel(f'{x.value} squared is {x.value**2}')
@@ -240,6 +240,8 @@ def update_square(event):
     square.object = f'{x.value} squared is {x.value**2}'
 
 x.param.watch(update_square, 'value')
+
+pn.Row(x, square)
 ```
 
 The first thing you will not is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding. At the same time this is also more explicit however, and also provides more control over very specific, fine-grained updates.

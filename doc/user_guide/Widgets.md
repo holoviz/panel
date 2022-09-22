@@ -45,11 +45,11 @@ If we change the ``widget.value`` now, the resulting change event will be printe
 widget.value = 'A'
 ```
 
-In combination with ``Panel`` objects, widgets make it possible to build interactive dashboards and visualizations very easily. For more detail on defining callbacks and links between widgets and other components see the [Links user guide](Links.ipynb).
+In combination with ``Panel`` objects, widgets make it possible to build interactive dashboards and visualizations very easily. For more detail on defining callbacks and links between widgets and other components see the [Links user guide](Links.md).
 
 ## Laying out widgets
 
-To compose multiple widgets they can be added to a ``Row``, ``Column`` or ``Tabs`` Panel. To learn more about laying out widgets and panels, see the [customization user guide](Customization.ipynb).
+To compose multiple widgets they can be added to a ``Row``, ``Column`` or ``Tabs`` Panel. To learn more about laying out widgets and panels, see the [customization user guide](Customization.md).
 
 
 ```{pyodide}

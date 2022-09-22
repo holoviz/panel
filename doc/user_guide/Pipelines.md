@@ -7,7 +7,7 @@ import panel as pn
 pn.extension('katex')
 ```
 
-The [Param user guide](Param.ipynb) described how to set up classes that declare parameters and link them to some computation or visualization. In this section we will discover how to connect multiple such panels into a ``Pipeline`` to express complex multi-page workflows where the output of one stage feeds into the next stage.
+The [Param user guide](Param.md) described how to set up classes that declare parameters and link them to some computation or visualization. In this section we will discover how to connect multiple such panels into a ``Pipeline`` to express complex multi-page workflows where the output of one stage feeds into the next stage.
 
 To start using a ``Pipeline``, let us declare an empty one by instantiating the class:
 
