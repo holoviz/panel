@@ -98,7 +98,10 @@ def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
                 map_response = requests.get(map_file, verify=False)
             except Exception:
                 map_response = None
-        bundle_path = os.path.join(*bundle_file.replace(config.npm_cdn, '').split('/'))
+        if bundle_file.startswith(config.npm_cdn):
+            bundle_path = os.path.join(*bundle_file.replace(config.npm_cdn, '').split('/'))
+        else:
+            bundle_path = os.path.join(*os.path.join(*bundle_file.split('//')[1:]).split('/')[1:])
         obj_dir = explicit_dir or model_name
         filename = bundle_dir.joinpath(obj_dir, bundle_path)
         filename.parent.mkdir(parents=True, exist_ok=True)
