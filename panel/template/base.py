@@ -603,7 +603,7 @@ class BasicTemplate(BaseTemplate):
             if state.rel_path:
                 dist_path = f'{state.rel_path}/{self._LOCAL}'
             else:
-                dist_path = self._LOCAL
+                dist_path = f'./{self._LOCAL}'
         else:
             dist_path = self._CDN
 
@@ -625,13 +625,14 @@ class BasicTemplate(BaseTemplate):
                 continue
             resource_files = resource_types[resource_type]
             for rname, resource in self._resources[resource_type].items():
-                resource_path = url_path(resource)
-                if rname in self._resources.get('tarball', {}):
-                    resource_path += '/index.mjs'
+                if resource.startswith(config.npm_cdn):
+                    resource_path = resource.replace(config.npm_cdn, '')[1:]
                 else:
-                    resource_path += '.mjs'
-                if (BUNDLE_DIR / rname / resource_path.replace('/', os.path.sep)).is_file():
-                    resource_files[rname] = dist_path + f'bundled/{resource_type}/{resource_path}'
+                    resource_path = url_path(resource)
+                rtype = 'css' if resource_type == 'css' else 'js'
+                bundlepath = BUNDLE_DIR / rtype / resource_path.replace('/', os.path.sep)
+                if bundlepath:
+                    resource_files[rname] = f'{dist_path}bundled/{rtype}/{resource_path}'
                 elif isurl(resource):
                     resource_files[rname] = resource
                 elif resolve_custom_path(self, resource):

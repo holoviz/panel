@@ -1,6 +1,7 @@
 """
 Utilities for building custom models included in panel.
 """
+import fnmatch
 import glob
 import inspect
 import io
@@ -129,7 +130,7 @@ def write_bundled_tarball(name, tarball, bundle_dir, module=False):
         if not tarf.name.startswith(tarball['src']) or not tarf.isfile():
             continue
         path = tarf.name.replace(tarball['src'], '')
-        if any(path.startswith(exc) for exc in exclude):
+        if any(fnmatch.fnmatch(tarf.name, exc) for exc in exclude):
             continue
         bundle_path = os.path.join(*path.split('/'))
         dest_path = os.path.join(*tarball['dest'].split('/'))
@@ -234,7 +235,7 @@ def bundle_resources(verbose=False):
                     js_modules.append(js_module)
             write_bundled_files(name, js_modules, bundle_dir, 'js', ext='mjs')
             for tarball in template._resources.get('tarball', {}).values():
-                write_bundled_tarball('js', tarball, bundle_dir, module=True)
+                write_bundled_tarball('js', tarball, bundle_dir)
 
         # Bundle CSS files in template dir
         template_dir = pathlib.Path(inspect.getfile(template)).parent
