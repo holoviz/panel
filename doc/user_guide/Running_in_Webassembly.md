@@ -224,13 +224,50 @@ The resulting output looks like this:
 
 ```{pyodide}
 import panel as pn
+```
 
+
+```{pyodide}
 slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
 
 def callback(new):
     return f'Amplitude is: {new}'
 
 pn.Row(slider, pn.bind(callback, slider))
+```
+
+```{pyodide}
+1+1
+```
+
+
+```{pyodide}
+"Blah"
+```
+
+```{pyodide}
+import numpy as np
+for i in range(10):
+    print(f'Repeat {i}')
+    for i in range(10000):
+        np.random.rand(1000)
+```
+
+```{pyodide}
+raise ValueError('Baz!!')
+```
+
+
+```{pyodide}
+class HTML:
+
+    def __init__(self, html):
+	    self.html = html
+
+    def _repr_html_(self):
+	    return self.html
+
+HTML('<b>HTML!</b>')
 ```
 
 The code cell will display a button to execute the cell, which will warn about downloading the Python runtime on first-click and ask you to confirm whether you want to proceed. It will then download Pyodide, all required packages and finally display the output.

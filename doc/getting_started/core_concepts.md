@@ -209,7 +209,7 @@ In the notebook the `.servable()` method is effectively a no-op. This means you 
 
 To build an interactive application you will want to add widget components (such as `TextInput`, `FloatSlider` or `Checkbox`) to your application and then bind them to an interactive function. As an example let's create a slider:
 
-```
+```{pyodide}
 import panel as pn
 x = pn.widgets.IntSlider(name='x', start=0, end=100)
 
@@ -231,7 +231,7 @@ Remember how we talked about the difference between a parameter **value** and a 
 
 In certain cases reactivity isn't what is needed, e.g. if you want very fine grained control over specific parameters. To achieve this we have to dig a bit further into Param functionality, specifically we need to learn about watching parameters. To `watch` a parameter means to declare a callback that fires when the parameter value changes. As an example let's rewrite the example above using a watcher:
 
-```python
+```{pyodide}
 import panel as pn
 x = pn.widgets.IntSlider(name='x', start=0, end=100)
 square = pn.panel(f'{x.value} squared is {x.value**2}')
@@ -240,6 +240,8 @@ def update_square(event):
     square.object = f'{x.value} squared is {x.value**2}'
 
 x.param.watch(update_square, 'value')
+
+pn.Row(x, square)
 ```
 
 The first thing you will not is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding. At the same time this is also more explicit however, and also provides more control over very specific, fine-grained updates.
@@ -290,30 +292,17 @@ pn.Column(
 ).servable(target='main')
 ```
 
-## Get help
+## Exploring further
 
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
+For a quick reference of different Panel functionality refer to the [overview](../user_guide/Overview.md). If you want a more detailed description of different ways of using Panel, each appropriate for different applications see the following materials:
 
-:::{grid-item-card} {octicon}`comment-discussion;2.5em;sd-mr-1` Discourse
-:link: https://discourse.holoviz.org/c/panel/5
-:link-type: url
+- [APIs](../user_guide/APIs.rst): An overview of the different APIs offered by Panel.
+- [Parameters](../user_guide/Param.rst): Capturing parameters and their links to actions declaratively
 
-Visit our community Discourse where you can exchange ideas with the community and ask our helpful community members questions.
-:::
+Just pick the style that seems most appropriate for the task you want to do, then study that section of the user guide. Regardless of which approach you take, you'll want to learn more about Panel's panes and layouts:
 
-:::{grid-item-card} {octicon}`mark-github;2.5em;sd-mr-1` GitHub
-:link: https://github.com/holoviz/panel/issues
-:link-type: url
-
-Visit us on GitHub and file issues and/or contribute.
-:::
-
-:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` User Guide
-:link: ../user_guide/index
-:link-type: doc
-
-For a more in-depth guide through a range of topics, starting from the various APIs of Panel, through to building custom components and authentication visit our user guide.
-:::
-
-::::
+- [Components](../user_guide/Components.rst): An overview of the core components of Panel including Panes, Widgets and Layouts
+- [Customization](../user_guide/Customization.rst): How to set styles and sizes of Panel components
+- [Display & Export](../user_guide/Display_and_Export.rst): An overview on how to display and export Panel components and apps.
+- [Server Configuration](../user_guide/Server_Configuration.md): An overview on how to configure applications and dashboards for deployment.
+- [Templates](../user_guide/Templates.rst): Composing one or more Panel objects into a template with full control over layout and styling.
