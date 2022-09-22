@@ -603,7 +603,7 @@ class BasicTemplate(BaseTemplate):
             if state.rel_path:
                 dist_path = f'{state.rel_path}/{self._LOCAL}'
             else:
-                dist_path = f'./{self._LOCAL}'
+                dist_path = f'{self._LOCAL}'
         else:
             dist_path = self._CDN
 
@@ -630,9 +630,10 @@ class BasicTemplate(BaseTemplate):
                 else:
                     resource_path = url_path(resource)
                 rtype = 'css' if resource_type == 'css' else 'js'
+                prefix = f'./{dist_path}' if resource_type == 'js_module' and not state.rel_path else dist_path
                 bundlepath = BUNDLE_DIR / rtype / resource_path.replace('/', os.path.sep)
                 if bundlepath:
-                    resource_files[rname] = f'{dist_path}bundled/{rtype}/{resource_path}'
+                    resource_files[rname] = f'{prefix}bundled/{rtype}/{resource_path}'
                 elif isurl(resource):
                     resource_files[rname] = resource
                 elif resolve_custom_path(self, resource):
