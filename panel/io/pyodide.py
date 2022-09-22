@@ -22,7 +22,7 @@ from bokeh.protocol.messages.patch_doc import process_document_events
 from js import JSON
 
 from ..config import config
-from ..util import isurl
+from ..util import is_holoviews, isurl
 from . import resources
 from .document import MockSessionContext
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
@@ -388,7 +388,7 @@ def pyrender(
         kwargs['stderr'] = WriteCallbackStream(stderr_callback)
     out = exec_with_return(code, **kwargs)
     ret = {}
-    if isinstance(out, (Model, Viewable, Viewer)):
+    if isinstance(out, (Model, Viewable, Viewer)) or is_holoviews(out):
         doc, model_json = _model_json(as_panel(out), target)
         state.cache[target] = doc
         ret['content'], ret['mime_type'] = model_json, 'application/bokeh'
