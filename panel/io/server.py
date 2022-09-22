@@ -294,8 +294,7 @@ class SessionPrefixHandler:
         # Handle autoload.js absolute paths
         abs_url = self.get_argument('bokeh-absolute-url', default=None)
         if abs_url is not None:
-            app_path = self.get_argument('bokeh-app-path', default='')
-            rel_path = abs_url.replace(app_path, '')
+            rel_path = abs_url.replace(self.application_context._url, '')
 
         with edit_readonly(state):
             state.base_url = base_url

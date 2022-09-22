@@ -372,13 +372,16 @@ class Bundle(BkBundle):
         self.js_modules = kwargs.pop("js_modules", js_modules)
         super().__init__(**kwargs)
 
-    def _replace_cdn(self, resources):
+    def _adjust_paths(self, resources):
         redirected = []
         cdn_base = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/'
         for resource in resources:
             resource = resource.replace('https://unpkg.com', config.npm_cdn)
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
+            if (resource.startswith('static/') and state.rel_path):
+                if state.rel_path:
+                    resource = f'{state.rel_path}/{resource}'
             redirected.append(resource)
         return redirected
 
@@ -394,6 +397,6 @@ class Bundle(BkBundle):
 
     def _render_js(self):
         return JS_RESOURCES.render(
-            js_raw=self.js_raw, js_files=self._replace_cdn(self.js_files),
-            js_modules=self._replace_cdn(self.js_modules), hashes=self.hashes
+            js_raw=self.js_raw, js_files=self._adjust_paths(self.js_files),
+            js_modules=self._adjust_paths(self.js_modules), hashes=self.hashes
         )
