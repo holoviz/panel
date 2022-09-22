@@ -64,7 +64,7 @@ bound_fn = pn.bind(fn, a=slider, b=2)
 bound_fn()
 ```
 
-Here we can see that although `fn` required two arguments, `bound_fn` takes no arguments because `a` has been bound to the slider value and `b` to a static value. 
+Here we can see that although `fn` required two arguments, `bound_fn` takes no arguments because `a` has been bound to the slider value and `b` to a static value.
 
 If we display the slider and bound function in Panel, we can see that everything will update reactively as you use the widget, reevaluating the function whenever the bound argument changes:
 
@@ -100,7 +100,7 @@ def plot(xval, yval, colorval):
     return autompg.hvplot.scatter(xval, yval, c=colorval)
 
 pn.Row(
-    pn.Column('## MPG Explorer', x, y, color), 
+    pn.Column('## MPG Explorer', x, y, color),
     plot
 )
 ```
@@ -111,7 +111,7 @@ This alternative way of specifying the same app lets you declare the dependency 
 
 The ``interact`` function will automatically generate a UI (including widgets) by inspecting the arguments of the function given to it, or by using additional hints you provide in the ``interact`` function call. If you have worked with the [``ipywidgets``](https://github.com/jupyter-widgets/ipywidgets) package you may already be familiar with this approach. (In fact, the Panel interact function is modeled on the one from ipywidgets, making it simpler to port code between the two platforms.) The basic idea is that given a function that returns some object, Panel will inspect the arguments to that function, try to infer appropriate widgets for those arguments, and then re-run that function to update the output whenever one of the widgets generates an event. For more detail on how interact creates widgets and other ways of using it, see the Panel [interact user guide](./interact.md).  This section instead focuses on when and why to use this API, laying out its benefits and drawbacks.
 
-The main benefit of this approach is convenience and ease of use.  You start by writing some function that returns an object, be that a plot, a dataframe, or anything else that Panel can render. Then with a single call to `pn.interact()`, you can immediately get an interactive UI, without ever instantiating any widgets or wiring up any callbacks explicitly. Unlike ipywidgets, the ``pn.interact`` call will return a Panel. This Panel can then be further modified by laying out the widgets and output separately, or combining these components with other panes. Even though `pn.interact` itself is limited in flexibility compared to the rest of Panel, you can still unpack and reconfigure the results from it to generate fairly complex GUIs in very little code. 
+The main benefit of this approach is convenience and ease of use.  You start by writing some function that returns an object, be that a plot, a dataframe, or anything else that Panel can render. Then with a single call to `pn.interact()`, you can immediately get an interactive UI, without ever instantiating any widgets or wiring up any callbacks explicitly. Unlike ipywidgets, the ``pn.interact`` call will return a Panel. This Panel can then be further modified by laying out the widgets and output separately, or combining these components with other panes. Even though `pn.interact` itself is limited in flexibility compared to the rest of Panel, you can still unpack and reconfigure the results from it to generate fairly complex GUIs in very little code.
 
 #### Pros:
 
@@ -160,7 +160,7 @@ class MPGExplorer(param.Parameterized):
     x = param.Selector(objects=columns)
     y = param.Selector(default='hp', objects=columns)
     color = param.Color(default='#0f0f0f')
-    
+
     @param.depends('x', 'y', 'color') # optional in this case
     def plot(self):
         return autompg_plot(self.x, self.y, self.color)

@@ -248,7 +248,7 @@ pn.Row(slider, pn.bind(callback, slider))
 ```{pyodide}
 import numpy as np
 for i in range(10):
-    print(f'Repeat {i}') 
+    print(f'Repeat {i}')
     for i in range(10000):
         np.random.rand(1000)
 ```
@@ -263,10 +263,10 @@ class HTML:
 
     def __init__(self, html):
 	    self.html = html
-		
+
     def _repr_html_(self):
 	    return self.html
-		
+
 HTML('<b>HTML!</b>')
 ```
 

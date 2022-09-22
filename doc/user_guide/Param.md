@@ -1,10 +1,12 @@
+# Parameters
+
 Panel supports using parameters and dependencies between parameters as expressed by ``param`` in a simple way to encapsulate dashboards as declarative, self-contained classes.
 
 Parameters are Python attributes extended using the [Param library](https://github.com/holoviz/param) to support types, ranges, and documentation, which turns out to be just the information you need to automatically create widgets for each parameter.
 
 Additionally Panel provides support for linking parameters to the URL query string to allow parameterizing an app very easily.
 
-# Parameters and widgets
+## Parameters and widgets
 
 To use this approach, first declare some Parameterized classes with various Parameters:
 
@@ -43,16 +45,16 @@ class Example(BaseClass):
     int_list                = param.ListSelector(default=[3, 5], objects=[1, 3, 5, 7, 9], precedence=0.5)
     single_file             = param.FileSelector(path='../../*/*.py*', precedence=0.5)
     multiple_files          = param.MultiFileSelector(path='../../*/*.py?', precedence=0.5)
-    record_timestamp        = param.Action(lambda x: x.timestamps.append(dt.datetime.utcnow()), 
+    record_timestamp        = param.Action(lambda x: x.timestamps.append(dt.datetime.utcnow()),
                                            doc="""Record timestamp.""", precedence=0.7)
-    
+
 Example.num_int
 ```
 
 As you can see, declaring Parameters depends only on the separate Param library.  Parameters are a simple idea with some properties that are crucial for helping you create clean, usable code:
 
-- The Param library is pure Python with no dependencies, which makes it easy to include in any code without tying it to a particular GUI or widgets library, or even to the Jupyter notebook.  
-- Parameter declarations focus on semantic information relevant to your domain, allowing you to avoid polluting your domain-specific code with anything that ties it to a particular way of displaying or interacting with it. 
+- The Param library is pure Python with no dependencies, which makes it easy to include in any code without tying it to a particular GUI or widgets library, or even to the Jupyter notebook.
+- Parameter declarations focus on semantic information relevant to your domain, allowing you to avoid polluting your domain-specific code with anything that ties it to a particular way of displaying or interacting with it.
 - Parameters can be defined wherever they make sense in your inheritance hierarchy, allowing you to document, type, and range-limit them _once_, with all of those properties inherited by any base class.  E.g. parameters work the same here whether they were declared in `BaseClass` or `Example`, which makes it easy to provide this metadata once, and avoiding duplicating it throughout the code wherever ranges or types need checking or documentation needs to be stored.
 
 If you then decide to use these Parameterized classes in a notebook or web-server environment, you can `import panel` and easily display and edit the parameter values as an optional additional step:
@@ -69,7 +71,7 @@ pn.Row(Example.param, base.param)
 
 As you can see, Panel does not need to be provided with any knowledge of your domain-specific application, not even the names of your parameters; it simply displays widgets for whatever Parameters may have been defined on that object.  Using Param with Panel thus achieves a nearly complete separation between your domain-specific code and your display code, making it vastly easier to maintain both of them over time.  Here even the `msg` button behavior was specified declaratively, as an action that can be invoked (printing "Hello") independently of whether it is used in a GUI or other context.
 
-Interacting with the widgets above is only supported in the notebook and on Bokeh server, but you can also export static renderings of the widgets to a file or web page.  
+Interacting with the widgets above is only supported in the notebook and on Bokeh server, but you can also export static renderings of the widgets to a file or web page.
 
 By default, editing values in this way requires you to run the notebook cell by cell -- when you get to the above cell, edit the values as you like, and then move on to execute subsequent cells, where any reference to those parameter values will use your interactively selected setting:
 
@@ -106,7 +108,7 @@ pn.Row(Example.param.float_range, Example.param.num_int)
 
 As you can see, you can access the parameter values at the class level from within the notebook to control behavior explicitly, e.g. to select what to show in subsequent cells.  Moreover, any instances of the Parameterized classes in your own code will now use the new parameter values unless specifically overridden in that instance, so you can now import and use your domain-specific library however you like, knowing that it will use your interactive selections wherever those classes appear.  None of the domain-specific code needs to know or care that you used Panel; it will simply see new values for whatever attributes were changed interactively.  Panel thus allows you to provide notebook-specific, domain-specific interactive functionality without ever tying your domain-specific code to the notebook environment. This default behavior can also be modified if you wish, as outlined below.
 
-## Custom widgets
+### Custom widgets
 
 In the previous section we saw how parameters can automatically be turned into widgets. This is possible because internally Panel maintains a mapping between parameter types and widget types. However, sometimes the default widget does not provide the most convenient UI and we want to provide an explicit hint to Panel to tell it how to render a parameter. This is possible using the ``widgets`` argument to the `Param` pane. Using the ``widgets`` keyword we can declare a mapping between the parameter name and the type of widget that is desired (as long as the widget type supports the types of values held by the parameter type).
 
@@ -129,7 +131,7 @@ pn.Param(CustomExample.param, widgets={
 )
 ```
 
-Also, it's possible to pass arguments to the widget in order to customize it. Instead of passing the widget, pass a dictionary with the desired options. Use the ``widget_type`` keyword to map the widget. 
+Also, it's possible to pass arguments to the widget in order to customize it. Instead of passing the widget, pass a dictionary with the desired options. Use the ``widget_type`` keyword to map the widget.
 
 Taking up the previous example.
 
@@ -149,7 +151,7 @@ However it is also possible to explicitly construct a widget from a parameter us
 pn.widgets.IntSlider.from_param(Example.param.unbounded_int, start=0, end=100)
 ```
 
-## Custom name
+### Custom name
 
 By default, a param Pane has a title that is derived from the class name of its `Parameterized` object. Using the ``name`` keyword we can set any title to the pane, e.g. to improve the user interface.
 
@@ -158,7 +160,7 @@ By default, a param Pane has a title that is derived from the class name of its 
 pn.Param(CustomExample.param, name="Custom Name")
 ```
 
-## Sort
+### Sort
 
 You can sort the widgets alphabetically by setting `sort=True`
 
@@ -222,15 +224,15 @@ We also define a ``view`` method that returns an HTML iframe displaying the coun
 
 ```{pyodide}
 class GoogleMapViewer(param.Parameterized):
-    
+
     continent = param.ObjectSelector(default='Asia', objects=['Africa', 'Asia', 'Europe'])
-    
+
     country = param.ObjectSelector(default='China', objects=['China', 'Thailand', 'Japan'])
-    
+
     _countries = {'Africa': ['Ghana', 'Togo', 'South Africa', 'Tanzania'],
                   'Asia'  : ['China', 'Thailand', 'Japan'],
                   'Europe': ['Austria', 'Bulgaria', 'Greece', 'Portugal', 'Switzerland']}
-    
+
     @param.depends('continent', watch=True)
     def _update_countries(self):
         countries = self._countries[self.continent]
@@ -244,14 +246,14 @@ class GoogleMapViewer(param.Parameterized):
         frameborder="0" scrolling="no" marginheight="0" marginwidth="0"></iframe>
         """.format(country=self.country)
         return pn.pane.HTML(iframe, height=400)
-        
+
 viewer = GoogleMapViewer(name='Google Map Viewer')
 pn.Row(viewer.param, viewer.view)
 ```
 
 Whenever the continent changes Param will now eagerly execute the ``_update_countries`` method to change the list of countries that is displayed, which in turn triggers an update in the view method updating the map. Note that there is no need to add ``watch=True`` to decorators of methods that are passed to a Panel layout (e.g. ``viewer.View`` being passed to ``pn.Row`` here), because Panel will already handle dependencies on those methods, executing the method automatically when the dependent parameters change. Indeed, if you specify ``watch=True`` for such a method, the method will get invoked _twice_ each time a dependency changes (once by Param internally and once by Panel), so you should reserve ``watch=True`` only for methods that aren't otherwise being monitored for dependencies.
 
-## Parameter subobjects
+### Parameter subobjects
 
 ``Parameterized`` objects often have parameter values which are themselves ``Parameterized`` objects, forming a tree-like structure. Panel allows you to edit not just the main object's parameters but also lets you drill down to the subobject. Let us first define some classes declaring a hierarchy of Shape classes which draw a Bokeh plot of the selected shape:
 
@@ -308,17 +310,17 @@ Now that we have multiple Shape classes we can make instances of them and declar
 shapes = [NGon(), Circle()]
 
 class ShapeViewer(param.Parameterized):
-    
+
     shape = param.ObjectSelector(default=shapes[0], objects=shapes)
-    
+
     @param.depends('shape')
     def view(self):
         return self.shape.view()
-    
+
     @param.depends('shape', 'shape.radius')
     def title(self):
         return '## %s (radius=%.1f)' % (type(self.shape).__name__, self.shape.radius)
-    
+
     def panel(self):
         return pn.Column(self.title, self.view)
 ```
@@ -353,36 +355,5 @@ pn.Row(
         expand_layout),
     viewer.panel())
 ```
-
-## Syncing query parameters
-
-By default the current [query parameters](https://en.wikipedia.org/wiki/Query_string) in the URL (specified as a URL suffix such as `?color=blue`) are made available on `pn.state.location.query_params`. To make working with query parameters straightforward the `Location` object also provides a `sync` method which allows syncing query parameters with the parameters on a `Parameterized` object.
-
-We will start by defining a `Parameterized` class:
-
-
-```{pyodide}
-class QueryExample(param.Parameterized):
-    
-    integer = param.Integer(default=None, bounds=(0, 10))
-    
-    string = param.String(default='A string')
-```
-
-Now we will use the `pn.state.location` object to sync it with the URL query string (note that in a notebook environment `pn.state.location` is not initialized until the first plot has been displayed). The sync method takes the Parameterized object or instance to sync with as the first argument and a list or dictionary of the parameters as the second argument. If a dictionary is provided it should map from the Parameterized object's parameters to the query parameter name in the URL:
-
-
-```{pyodide}
-pn.state.location.sync(QueryExample, {'integer': 'int', 'string': 'str'})
-```
-
-Now the Parameterized object is bi-directionally linked to the URL query parameter, if we set a query parameter in Python it will update the URL bar and when we specify a URL with a query parameter that will be set on the Parameterized, e.g. let us set the 'integer' parameter and watch the URL in your browser update:
-
-
-```{pyodide}
-QueryExample.integer = 5
-```
-
-Note to unsync the Parameterized object you can simply call pn.state.location.unsync(QueryExample).
 
 In this user guide we have seen how to leverage Param to declare parameters, which Panel can then turn into a GUI with little additionl effort or code. We have also seen how to link parameters to views and to other parameters using the ``param.depends`` operator. This approach allows building complex and reactive panels. In the [pipelines user guide](Pipelines.ipynb) we can discover how to link multiple such classes into pipelines, making it possible to encapsulate complex workflows in clean self-contained classes.

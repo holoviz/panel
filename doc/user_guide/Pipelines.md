@@ -1,15 +1,13 @@
 # Pipelines
 
 ```{pyodide}
-
-
 import param
 import panel as pn
 
 pn.extension('katex')
 ```
 
-The [Param user guide](Param.ipynb) described how to set up classes that declare parameters and link them to some computation or visualization. In this section we will discover how to connect multiple such panels into a ``Pipeline`` to express complex multi-page workflows where the output of one stage feeds into the next stage. 
+The [Param user guide](Param.ipynb) described how to set up classes that declare parameters and link them to some computation or visualization. In this section we will discover how to connect multiple such panels into a ``Pipeline`` to express complex multi-page workflows where the output of one stage feeds into the next stage.
 
 To start using a ``Pipeline``, let us declare an empty one by instantiating the class:
 
@@ -31,7 +29,7 @@ It is also possible to declare multiple outputs, either as keywords or tuples:
 * ``param.output(c=param.Number, d=param.String)`` or
 * ``param.output(('c', param.Number), ('d', param.String))``
 
-The example below takes two inputs (``a`` and ``b``) and produces two outputs (``c``, computed by mutiplying the inputs, and ``d``, computed by raising ``a`` to the power ``b``). To use the class as a pipeline stage, we also have to implement a ``panel`` method, which returns a Panel object providing a visual representation of the stage.  Here we help implement the ``panel`` method using an additional ``view`` method that returns a ``LaTeX`` pane, which will render the equation to ``LaTeX``. 
+The example below takes two inputs (``a`` and ``b``) and produces two outputs (``c``, computed by mutiplying the inputs, and ``d``, computed by raising ``a`` to the power ``b``). To use the class as a pipeline stage, we also have to implement a ``panel`` method, which returns a Panel object providing a visual representation of the stage.  Here we help implement the ``panel`` method using an additional ``view`` method that returns a ``LaTeX`` pane, which will render the equation to ``LaTeX``.
 
 In addition to passing along the outputs, the Pipeline will also pass along the values of any input parameters whose names match input parameters on the next stage (unless ``inherit_params`` is set to `False`).
 
@@ -44,13 +42,13 @@ class Stage1(param.Parameterized):
     a = param.Number(default=5, bounds=(0, 10))
 
     b = param.Number(default=5, bounds=(0, 10))
-    
+
     ready = param.Boolean(default=False, precedence=-1)
 
     @param.output(('c', param.Number), ('d', param.Number))
     def output(self):
         return self.a * self.b, self.a ** self.b
-    
+
     @param.depends('a', 'b')
     def view(self):
         c, d = self.output()
@@ -93,11 +91,11 @@ In the second stage we will define parameters ``c`` and ``exp``. To make sure th
 
 ```{pyodide}
 class Stage2(param.Parameterized):
-    
+
     c = param.Number(default=5, bounds=(0, None))
 
     exp = param.Number(default=0.1, bounds=(0, 3))
-    
+
     @param.depends('c', 'exp')
     def view(self):
         return pn.pane.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
@@ -105,7 +103,7 @@ class Stage2(param.Parameterized):
 
     def panel(self):
         return pn.Row(self.param, self.view)
-    
+
 stage2 = Stage2(c=stage1.output()[0])
 stage2.panel()
 ```
@@ -135,7 +133,7 @@ pipeline.add_stage('Stage 2', Stage2)
 pipeline
 ```
 
-As you can see the ``Pipeline`` renders a little diagram displaying the available stages in the workflow along with previous and next buttons to move between each stage. This allows setting up complex workflows with multiple stages, where each component is a self-contained unit, with minimal declarations about stage outputs (using the ``param.output`` decorator) and how to render the stage (by declaring a ``panel`` method).  Note also when progressing to Stage 2, the `c` parameter widget is not rendered because its value has been provided by the previous stage. 
+As you can see the ``Pipeline`` renders a little diagram displaying the available stages in the workflow along with previous and next buttons to move between each stage. This allows setting up complex workflows with multiple stages, where each component is a self-contained unit, with minimal declarations about stage outputs (using the ``param.output`` decorator) and how to render the stage (by declaring a ``panel`` method).  Note also when progressing to Stage 2, the `c` parameter widget is not rendered because its value has been provided by the previous stage.
 
 Above we created the ``Pipeline`` as we went along, which makes some sense in a notebook to allow debugging and development of each stage.  When deploying the Pipeline as a server app or when there's no reason to instantiate each stage separately; instead we can declare the stages as part of the constructor:
 
@@ -154,39 +152,39 @@ Pipelines are not limited to simple linear UI workflows like the ones listed abo
 
 ```{pyodide}
 class Input(param.Parameterized):
-    
+
     value1 = param.Integer(default=2)
 
     value2 = param.Integer(default=3)
-    
+
     def panel(self):
         return pn.Row(self.param.value1, self.param.value2)
 
 class Multiply(Input):
-    
+
     def panel(self):
         return '%.3f * %.3f' % (self.value1, self.value2)
 
     @param.output('result')
     def output(self):
         return self.value1 * self.value2
-    
+
 class Add(Input):
-    
+
     def panel(self):
         return '%d + %d' % (self.value1, self.value2)
-    
+
     @param.output('result')
     def output(self):
         return self.value1 + self.value2
-    
+
 class Result(Input):
-    
+
     result = param.Number(default=0)
 
     def panel(self):
         return self.result
-    
+
 dag = pn.pipeline.Pipeline()
 
 dag.add_stage('Input', Input)
@@ -252,7 +250,7 @@ class AutoInput(Input):
     operator = param.Selector(default='Add', objects=['Multiply', 'Add'])
 
     ready = param.Boolean(default=False)
-    
+
     def panel(self):
         button = pn.widgets.Button(name='Go', button_type='success')
         button.on_click(lambda event: setattr(self, 'ready', True))
@@ -262,11 +260,11 @@ class AutoInput(Input):
         return pn.Column(widgets, button)
 
 class AutoMultiply(Multiply):
-    
+
     ready = param.Boolean(default=True)
 
 class AutoAdd(Add):
-    
+
     ready = param.Boolean(default=True)
 ```
 

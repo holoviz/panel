@@ -78,7 +78,6 @@ def h(p, q):
 
 When we call `interact`, we pass `fixed(20)` for q to hold it fixed at a value of `20`.
 
-
 ```{pyodide}
 interact(h, p=5, q=fixed(20))
 ```
@@ -89,12 +88,11 @@ Notice that a slider is only produced for `p`, as the value of `q` is fixed.
 
 When you pass an integer-valued keyword argument of `10` (`x=10`) to `interact`, it generates an integer-valued slider control with a range of `[-10,+3*10]`. In this case, `10` is an *abbreviation* for an actual slider widget:
 
-```{pyodide}
+```python
 IntSlider(min=-10,max=30,step=1,value=10)
 ```
 
 In fact, we can get the same result if we pass this `IntSlider` as the keyword argument for `x`:
-
 
 ```{pyodide}
 interact(f, x=widgets.IntSlider(start=-10,end=30,step=1,value=10))
@@ -108,8 +106,8 @@ This examples clarifies how `interact` proceses its keyword arguments:
 The following table gives an overview of different widget abbreviations:
 
 <table class="table table-condensed table-bordered">
-  <tr><td><strong>Keyword argument</strong></td><td><strong>Widget</strong></td></tr>  
-  <tr><td>True or False</td><td>Checkbox</td></tr>  
+  <tr><td><strong>Keyword argument</strong></td><td><strong>Widget</strong></td></tr>
+  <tr><td>True or False</td><td>Checkbox</td></tr>
   <tr><td>'Hi there'</td><td>Text</td></tr>
   <tr><td>value or (min,max,[step,[value]]) if integers are passed</td><td>IntSlider</td></tr>
   <tr><td>value or (min,max,[step,[value]]) if floats are passed</td><td>FloatSlider</td></tr>

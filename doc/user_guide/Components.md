@@ -1,3 +1,5 @@
+# Components
+
 Panel provides a wide range of components for easily composing panels, apps, and dashboards both in the notebook and as standalone apps. The components can be broken down into three broad classes of objects:
 
 * ``Pane`` objects allow wrapping external viewable items like Bokeh, Plotly, Vega, or HoloViews plots, so they can be embedded in a panel.
@@ -15,7 +17,7 @@ pn.extension()
 Note that to use certain components such as Vega, LaTeX, and Plotly plots in a notebook, the models must be loaded using the extension. E.g.:
 
     pn.extension('vega', 'katex')
-    
+
 will ensure that the Vega and LaTeX JS dependencies are loaded. Once the extension is loaded, Panel objects will display themselves in the notebook, outside the notebook objects can be displayed in a server using the show method or run from the commandline by appending ``.serveable()`` to the objects to be displayed.
 
 ## Parameterized Components
@@ -112,7 +114,7 @@ There are four main types of ``Panel``s:
 
 * **``Row``**: A ``Row`` arranges a list of components horizontally.
 * **``Column``**: A ``Column`` arranges a list of components vertically.
-* **``Tabs``**: A ``Tabs`` object lays out a list of components as selectable tabs. 
+* **``Tabs``**: A ``Tabs`` object lays out a list of components as selectable tabs.
 * **``GridSpec``**: A ``GridSpec`` lays out components on a grid.
 
 ``Spacer`` components are also provided, to control spacing between other components.
@@ -217,22 +219,6 @@ When assigning to a grid cell that is already occupied, the ``GridSpec`` will ge
 
 ```{pyodide}
 gspec[0:3, :2] = 'Some text'
-```
-
-```bash
----------------------------------------------------------------------------
-WARNING:param.GridSpec01316: Specified region overlaps with the following existing object(s) in the grid:
-    (0, 0): Spacer(background='#FF0000', sizing_mode='stretch_both')
-    (1, 0): Spacer(background='#0000FF', sizing_mode='stretch_both')
-    (1, 1): Bokeh(Figure, sizing_mode='stretch_both')
-
-The following shows a view of the grid (empty: 0, occupied: 1, overlapping: 2):
-
-[[2 2 1]
- [2 2 1]
- [2 2 1]
- [1 1 0]
- [1 1 1]]
 ```
 
 In addition to assignment, we can also slice and index the ``GridSpec`` to access an individual object or a subregion of the grid, returning another GridSpec. Here we will access the last row and everything except the first column:

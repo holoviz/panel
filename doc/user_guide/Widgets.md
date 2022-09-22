@@ -81,7 +81,7 @@ These widgets allow selecting one value from a list or dictionary of options:
 These widgets allow selecting _multiple_ values from a list or dictionary of options:
 
 * **[``CheckBoxGroup``](../reference/widgets/CheckBoxGroup.ipynb)**: Select values by ticking the corresponding checkboxes.
-* **[``CheckButtonGroup``](../reference/widgets/CheckButtonGroup.ipynb)**: Select values by toggling the corresponding buttons. 
+* **[``CheckButtonGroup``](../reference/widgets/CheckButtonGroup.ipynb)**: Select values by toggling the corresponding buttons.
 * **[``CrossSelector``](../reference/widgets/CrossSelector.ipynb)**: Select values by moving items between two lists.
 * **[``MultiSelect``](../reference/widgets/MultiSelect.ipynb)**: Select values by highlighting in a list.
 
@@ -108,7 +108,7 @@ Numeric selectors are bounded by a ``start`` and ``end`` value:
 
 ##### Dates
 
-* **[``DatetimeInput``](../reference/widgets/DatetimeInput.ipynb)**: Enter a datetime value as text, parsing it using a pre-defined formatter. 
+* **[``DatetimeInput``](../reference/widgets/DatetimeInput.ipynb)**: Enter a datetime value as text, parsing it using a pre-defined formatter.
 * **[``DatePicker``](../reference/widgets/DatePicker.ipynb)**: Select a date value using a text box and the browser's date-picking utility.
 * **[``DateSlider``](../reference/widgets/DateSlider.ipynb)**: Select a date value within a set bounds using a slider.
 

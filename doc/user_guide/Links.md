@@ -5,7 +5,7 @@ In the [Param user guide](Param.ipynb), we have seen how Parameterized classes c
 Here we will show how to link parameters of Panel objects, typically from widgets to other objects. To do this, we will introduce three API calls:
 
 * ``obj.link``: convenient high-level API to link objects via Python calls
-* ``obj.param.watch``: powerful but lower-level Python API provided by [param](https://param.pyviz.org) 
+* ``obj.param.watch``: powerful but lower-level Python API provided by [param](https://param.pyviz.org)
 * ``obj.jslink``: high-level API to link objects via JS code
 * ``obj.jscallback``: a lower-level API to define arbitrary Javascript callbacks
 
@@ -27,7 +27,7 @@ To start, let's see how a ``TextInput`` widget and a ``Markdown`` pane normally 
 pn.Row(pn.widgets.TextInput(value="Editable text"), pn.pane.Markdown('Some markdown'))
 ```
 
-These two Panel objects are entirely independent; text can be entered into the input area and separately the Markdown pane will display its argument. 
+These two Panel objects are entirely independent; text can be entered into the input area and separately the Markdown pane will display its argument.
 
 What if we wanted connected input and output displays?  One option when you expect to have a live Python process available is to use the ``link`` method on Widgets to link its parameters to some other Panel object. In the simplest case we simply provide the ``target`` object and define the mapping between the source and target parameters as the keywords. In this case, we map the ``value`` parameter on the ``TextInput`` widget to the ``object`` parameter on the ``Markdown`` pane:
 
@@ -241,7 +241,7 @@ button =   pn.widgets.Button(name='=', width=50)
 result =   pn.widgets.StaticText(value='0', width=50, align='center')
 
 button.jscallback(clicks="""
-if (op.value == '*') 
+if (op.value == '*')
   result.text = (v1.value * v2.value).toString()
 else
   result.text = (v1.value + v2.value).toString()
