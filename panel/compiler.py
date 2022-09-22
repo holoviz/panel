@@ -1,6 +1,7 @@
 """
 Utilities for building custom models included in panel.
 """
+import fnmatch
 import glob
 import inspect
 import io
@@ -98,7 +99,10 @@ def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
                 map_response = requests.get(map_file, verify=False)
             except Exception:
                 map_response = None
-        bundle_path = os.path.join(*bundle_file.replace(config.npm_cdn, '').split('/'))
+        if bundle_file.startswith(config.npm_cdn):
+            bundle_path = os.path.join(*bundle_file.replace(config.npm_cdn, '').split('/'))
+        else:
+            bundle_path = os.path.join(*os.path.join(*bundle_file.split('//')[1:]).split('/')[1:])
         obj_dir = explicit_dir or model_name
         filename = bundle_dir.joinpath(obj_dir, bundle_path)
         filename.parent.mkdir(parents=True, exist_ok=True)
@@ -126,7 +130,7 @@ def write_bundled_tarball(name, tarball, bundle_dir, module=False):
         if not tarf.name.startswith(tarball['src']) or not tarf.isfile():
             continue
         path = tarf.name.replace(tarball['src'], '')
-        if any(path.startswith(exc) for exc in exclude):
+        if any(fnmatch.fnmatch(tarf.name, exc) for exc in exclude):
             continue
         bundle_path = os.path.join(*path.split('/'))
         dest_path = os.path.join(*tarball['dest'].split('/'))
@@ -231,7 +235,7 @@ def bundle_resources(verbose=False):
                     js_modules.append(js_module)
             write_bundled_files(name, js_modules, bundle_dir, 'js', ext='mjs')
             for tarball in template._resources.get('tarball', {}).values():
-                write_bundled_tarball('js', tarball, bundle_dir, module=True)
+                write_bundled_tarball('js', tarball, bundle_dir)
 
         # Bundle CSS files in template dir
         template_dir = pathlib.Path(inspect.getfile(template)).parent

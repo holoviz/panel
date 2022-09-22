@@ -323,6 +323,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                     else:
                         template = ERROR_TEMPLATE
                     page = template.render(
+                        npm_cdn=config.npn_cdn,
                         title='Panel: Authorization Error',
                         error_type='Authorization Error',
                         error='User is not authorized.',

@@ -283,7 +283,7 @@ def make_index(files, title=None, manifest=True):
     items = {label: './'+os.path.basename(f) for label, f in sorted(files.items())}
     return INDEX_TEMPLATE.render(
         items=items, manifest=manifest, apple_icon=apple_icon,
-        favicon=favicon, title=title
+        favicon=favicon, title=title, npm_cdn=config.npm_cdn
     )
 
 def build_pwa_manifest(files, title=None, **kwargs):
