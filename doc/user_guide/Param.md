@@ -1,4 +1,4 @@
-# Parameters
+# Using Param with Panel
 
 Panel supports using parameters and dependencies between parameters as expressed by ``param`` in a simple way to encapsulate dashboards as declarative, self-contained classes.
 

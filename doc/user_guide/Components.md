@@ -1,4 +1,4 @@
-# Components
+# Component overview
 
 Panel provides a wide range of components for easily composing panels, apps, and dashboards both in the notebook and as standalone apps. The components can be broken down into three broad classes of objects:
 

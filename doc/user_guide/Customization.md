@@ -10,7 +10,7 @@ Panel objects are built on top of [Param](https://param.pyviz.org), which allows
 
 ## Styling Components
 
-#### ``css_classes``
+### ``css_classes``
 
 The ``css_classes`` parameter allows associating a Panel component with one or more CSS classes. CSS styles can be embedded in raw form or by referencing an external .css file by providing each to the panel extension using the ``raw_css`` and ``css_files`` arguments; both should be supplied as lists. Outside the notebook or if we want to add some CSS in an external module or library, we can simply append to the ``pn.config.raw_css`` and ``pn.config.js_files`` config parameters.
 
@@ -40,7 +40,7 @@ pn.Column(
 css_classes=['panel-widget-box'])
 ```
 
-#### ``background``
+### ``background``
 
 In case we simply want to give the component a background we can define one as a hex string:
 
@@ -49,7 +49,7 @@ In case we simply want to give the component a background we can define one as a
 pn.pane.HTML(background='#f307eb', width=100, height=100)
 ```
 
-#### `loading`
+### `loading`
 
 All components also have a `loading` parameter which indicates that they are currently processing some event. Setting the parameter will display the global `loading_spinner` on top of the component. To configure the loading spinner you can set the:
 
@@ -63,7 +63,7 @@ In the notebook these should be configured before loading the `pn.extension` and
 pn.pane.HTML(background='#00aa41', width=100, height=100, loading=True)
 ```
 
-#### ``style``
+### ``style``
 
 Certain components, specifically markup-related panes, expose a ``style`` parameter that allows defining CSS styles applying to the HTML container of the pane's contents, e.g. the ``Markdown`` pane:
 
@@ -72,7 +72,7 @@ Certain components, specifically markup-related panes, expose a ``style`` parame
 pn.pane.Markdown('### A serif Markdown heading', style={'font-family': "serif"})
 ```
 
-#### ``visible``
+### ``visible``
 
 All components provide a `visible` parameter which allows toggling whether the component should be visible or not. Below we display a set of components and provide some widgets to toggle the `visible` property on or off:
 
@@ -96,7 +96,7 @@ pn.Column(controls, layout)
 
 The size of components and their spacing is also controlled through a set of parameters shared by all components.
 
-#### ``margin``
+### ``margin``
 
 The ``margin`` parameter can be used to create space around an element defined as the number of pixels at the (top, right, bottom, and left). The ``margin`` can be defined in one of three ways:
 
@@ -122,7 +122,7 @@ pn.Row(
     pn.Column(pn.widgets.Button(name='Run', margin=(25, 50, 75, 100)), background='#f0f0f0'))
 ```
 
-## ``align``
+### ``align``
 
 The `align` parameter controls how components align vertically and horizontally. It supports 'start', 'center', and 'end' values and can be set for both horizontal and vertical directions at once or for each separately by passing in a tuple of the form `(horizontal, vertical)`.
 
@@ -159,11 +159,11 @@ pn.Row(
 
 Unlike other components, the size of a plot is usually determined by the underlying plotting library, so it may be necessary to ensure that you set the size and aspect when declaring the plot.
 
-### Responsive sizing
+## Responsive sizing
 
 By default, panel objects will use a fixed size if one is provided or adapt to the size of the content. However most panel objects also support reactive sizing which adjusts depending on the size of the viewport. These responsive sizing modes can be controlled using the ``sizing_mode`` parameter.
 
-#### ``sizing_mode``
+### ``sizing_mode``
 
 * **"fixed"**: Component is not responsive. It will retain its original width and height regardless of any subsequent browser window resize events.
 
@@ -216,7 +216,7 @@ pn.Column(
     height=400, width=500, background='#3f3f3f')
 ```
 
-### Spacers
+## Spacers
 
 Spacers are a very versatile component which makes it easy to put fixed or responsive spacing between objects. Like all other components spacers support both absolute and responsive sizing modes:
 
