@@ -13,7 +13,7 @@ from typing import Any, Dict, List
 from bokeh.application.application import SessionContext
 from bokeh.command.util import build_single_handler_application
 from bokeh.core.json_encoder import serialize_json
-from bokeh.core.templates import FILE, MACROS, _env
+from bokeh.core.templates import FILE, MACROS, get_env
 from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem, standalone_docs_json_and_render_items
@@ -319,7 +319,7 @@ def script_to_html(
     if template is None:
         template = FILE
     elif isinstance(template, str):
-        template = _env.from_string("{% extends base %}\n" + template)
+        template = get_env().from_string("{% extends base %}\n" + template)
     html = template.render(context)
     html = (html
         .replace('<body>', f'<body class="bk pn-loading {config.loading_spinner}">')
