@@ -79,7 +79,7 @@ selected = pn.pane.Markdown(object='')
 toggle = pn.widgets.ToggleGroup(options=['A', 'B'])
 ```
 
-#### Defining a callback
+### Defining a callback
 
 Next we define a callback that can handle multiple parameter changes at once and uses the ``Event``'s ``name`` to figure out how to process the event. In this case it updates either the ``selections`` or the ``selected`` pane depending on whether ToggleGroup ``options`` or ``value`` changed:
 
@@ -94,7 +94,7 @@ def callback(*events):
             selected.object = 'Selected: %s' % ','.join(event.new)
 ```
 
-#### Event objects
+### Event objects
 
 Before going any further let us discover what these ``Event`` objects are. An ``Event`` is used to signal the change in a parameter value. Event objects provide a number of useful attributes that provides additional information about the event:
 
@@ -106,7 +106,7 @@ Before going any further let us discover what these ``Event`` objects are. An ``
 * **``obj``**: The Parameterized instance that holds the parameter
 * **``cls``**: The Parameterized class that holds the parameter
 
-#### Registering a watcher
+### Registering a watcher
 
 Now that we know how to define a callback and make use of ``Event`` attributes, it is time to register the callback. The ``obj.param.watch`` method lets us supply the callback along with the parameters we want to watch. Additionally we can declare whether the events should only be triggered when the parameter value changes, or every time the parameter is set:
 
@@ -141,7 +141,7 @@ Using `set_param` allows us to batch two separate changes (the options and the v
 
 Now that the widgets are visible, you can toggle the option values and see the selected pane update in response via the callback (if Python is running).
 
-#### Unlinking
+### Unlinking
 
 If for whatever reason we want to stop watching parameter changes we can unsubscribe by passing our ``watcher`` (returned in the ``watch`` call above) to the ``unwatch`` method:
 
@@ -254,7 +254,7 @@ pn.Row(value1, operator, value2, button, result)
 
 The above examples link widgets to simple static panes, but links are probably most useful when combined with dynamic objects like plots.
 
-#### Bokeh
+### Bokeh
 
 The ``jslink`` API trivially allows us to link a parameter on a Panel widget to a Bokeh plot property. Here we create a Bokeh Figure with a simple sine curve. The ``jslink`` method allows us to pass any Bokeh model held by the Figure as the ``target``, then link the widget value to some property on it. E.g. here we link a ``FloatSlider`` value to the ``line_width`` of the ``Line`` glyph:
 
@@ -272,7 +272,7 @@ width_slider.jslink(r.glyph, value='line_width')
 pn.Column(width_slider, p)
 ```
 
-#### HoloViews
+### HoloViews
 
 Bokeh models allow us to directly access the underlying models and properties, but this access is more indirect when working with HoloViews objects. HoloViews makes various models available directly in the namespace so that they can be accessed for linking:
 

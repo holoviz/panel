@@ -41,13 +41,13 @@ pn.extension()
 
 The `pn.bind` reactive programming API is very similar to the ``interact`` function but is more explicit about widget selection and layout. `pn.bind` requires the programmer to select and configure widgets explicity and to lay out components explicitly, without relying on inference of widget types and ranges and without any default layouts. Specifying those aspects explicitly provides more power and control, but does typically take a bit more code and more knowledge of widget and layout components than using `interact` does. Once widgets have been bound to a reactive function, you can lay out the bound function and the widgets in any order or combination you like, including across Jupyter notebook cells if desired.
 
-#### Pros:
+### Pros:
 
 + Very clear mapping from widgets to the arguments of the function.
 + Very explicit layout of each of the different components.
 + Like `interact`, doesn't typically require modifying existing visualization code.
 
-#### Cons:
+### Cons:
 
 - Typically requires a bit more code than `interact`
 
@@ -109,21 +109,21 @@ This alternative way of specifying the same app lets you declare the dependency 
 
 ## Interact Functions
 
-The ``interact`` function will automatically generate a UI (including widgets) by inspecting the arguments of the function given to it, or by using additional hints you provide in the ``interact`` function call. If you have worked with the [``ipywidgets``](https://github.com/jupyter-widgets/ipywidgets) package you may already be familiar with this approach. (In fact, the Panel interact function is modeled on the one from ipywidgets, making it simpler to port code between the two platforms.) The basic idea is that given a function that returns some object, Panel will inspect the arguments to that function, try to infer appropriate widgets for those arguments, and then re-run that function to update the output whenever one of the widgets generates an event. For more detail on how interact creates widgets and other ways of using it, see the Panel [interact user guide](./interact.md).  This section instead focuses on when and why to use this API, laying out its benefits and drawbacks.
+The ``interact`` function will automatically generate a UI (including widgets) by inspecting the arguments of the function given to it, or by using additional hints you provide in the ``interact`` function call. If you have worked with the [``ipywidgets``](https://github.com/jupyter-widgets/ipywidgets) package you may already be familiar with this approach. (In fact, the Panel interact function is modeled on the one from ipywidgets, making it simpler to port code between the two platforms.) The basic idea is that given a function that returns some object, Panel will inspect the arguments to that function, try to infer appropriate widgets for those arguments, and then re-run that function to update the output whenever one of the widgets generates an event. For more detail on how interact creates widgets and other ways of using it, see the Panel [interact user guide](./Interact.md).  This section instead focuses on when and why to use this API, laying out its benefits and drawbacks.
 
 The main benefit of this approach is convenience and ease of use.  You start by writing some function that returns an object, be that a plot, a dataframe, or anything else that Panel can render. Then with a single call to `pn.interact()`, you can immediately get an interactive UI, without ever instantiating any widgets or wiring up any callbacks explicitly. Unlike ipywidgets, the ``pn.interact`` call will return a Panel. This Panel can then be further modified by laying out the widgets and output separately, or combining these components with other panes. Even though `pn.interact` itself is limited in flexibility compared to the rest of Panel, you can still unpack and reconfigure the results from it to generate fairly complex GUIs in very little code.
 
-#### Pros:
+### Pros:
 
 + Easy to use (or at least easy to get started!).
 + Doesn't typically require modifying existing visualization code.
 
-#### Cons:
+### Cons:
 
 - Most of the behavior is implicit, with magic happening by introspection, making it difficult to see how to modify the appearance or functionality of the resulting object.
 - Customizing the layout requires indexing into the panel returned by `interact`.
 
-The simplest `interact` call can be a one-liner, but here we'll show an example of intermediate complexity so that you get a good idea of what `interact` can do in practice. In this code, ``pn.interact`` infers the initial value for `x` and `y` from the `autompg_plot` function default arguments and their widget type and range from the `columns` list provided to `interact`. `interact` wouldn't normally put up a color widget because it would have no way of knowing that this string-type argument represents an RGB color, and so here we explicitly create a color-picker widget and pass that as the value for the color so that we can control the color as well. Finally, we unpack the result from `interact` and rearrange it in a different layout with a title, to create the final app. See the Panel [interact user guide](./interact.md) for even simpler examples along with details about how to control the widgets and how to rearrange the layout.
+The simplest `interact` call can be a one-liner, but here we'll show an example of intermediate complexity so that you get a good idea of what `interact` can do in practice. In this code, ``pn.interact`` infers the initial value for `x` and `y` from the `autompg_plot` function default arguments and their widget type and range from the `columns` list provided to `interact`. `interact` wouldn't normally put up a color widget because it would have no way of knowing that this string-type argument represents an RGB color, and so here we explicitly create a color-picker widget and pass that as the value for the color so that we can control the color as well. Finally, we unpack the result from `interact` and rearrange it in a different layout with a title, to create the final app. See the Panel [interact user guide](./Interact.md) for even simpler examples along with details about how to control the widgets and how to rearrange the layout.
 
 
 ```{pyodide}
@@ -139,12 +139,12 @@ The [Param](http://param.pyviz.org) library allows expressing the parameters of 
 
 The parameterized approach is a powerful way to encapsulate computation in self-contained classes, taking advantage of object-oriented programming patterns. It also makes it possible to express a problem completely independently from Panel or any other GUI code, while still getting a GUI for free as a last step. For more detail on using this approach see the [Param user guide](./Param.md).
 
-Pros:
+### Pros:
 
 + Declarative way of expressing parameters and dependencies between parameters and computation
 + The resulting code is not tied to any particular GUI framework and can be used in other contexts as well
 
-Cons:
+### Cons:
 
 - Requires writing classes
 - Less explicit about widgets to use for each parameter; can be harder to customize behavior than if widgets are instantiated explicitly
@@ -176,11 +176,11 @@ The callback API in panel is the lowest-level approach, affording the greatest a
 
 For more details on defining callbacks see the [Links user guide](./Links.md).
 
-#### Pros:
+### Pros:
 
 + Complete and modular control over specific events
 
-#### Cons:
+### Cons:
 
 - Complexity grows very quickly with the number of callbacks
 - Have to handle initializing the plots separately
