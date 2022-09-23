@@ -147,6 +147,8 @@ The OAuth providers integrated with Panel provide an easy way to enable authenti
 The `authorization_callback` can be configured on `pn.config` or via the `pn.extension`:
 
 ```python
+import panel as pn
+
 def authorize(user_info):
     with open('users.txt') as f:
         valid_users = f.readlines()

@@ -59,6 +59,8 @@ Panel aims to let you work with all your favorite Python libraries and has a sys
 For this reason, it often makes sense to get a handle on the Pane type. So if you want to wrap your `DataFrame` into a pane you can call the `panel` function and it will automatically convert it (this is exactly what a layout does internally when you give it an object to render):
 
 ```python
+import pandas as pd
+
 df = pd.DataFrame({
   'A': [1, 2, 3, 4],
   'B': [10, 20, 30, 40]
