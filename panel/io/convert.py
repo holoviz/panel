@@ -473,10 +473,10 @@ def convert_app(
         return
     name = '.'.join(os.path.basename(app).split('.')[:-1])
     filename = f'{name}.html'
-    with open(dest_path / filename, 'w') as out:
+    with open(dest_path / filename, 'w', encoding="utf-8") as out:
         out.write(html)
     if runtime == 'pyodide-worker':
-        with open(dest_path / f'{name}.js', 'w') as out:
+        with open(dest_path / f'{name}.js', 'w', encoding="utf-8") as out:
             out.write(js_worker)
     if verbose:
         print(f'Successfully converted {app} to {runtime} target and wrote output to {filename}.')
@@ -579,7 +579,7 @@ def convert_apps(
 
     # Write manifest
     manifest = build_pwa_manifest(files, title=title, **pwa_config)
-    with open(dest_path / 'site.webmanifest', 'w') as f:
+    with open(dest_path / 'site.webmanifest', 'w', encoding="utf-8") as f:
         f.write(manifest)
     if verbose:
         print('Successfully wrote site.manifest.')
@@ -590,7 +590,7 @@ def convert_apps(
         name=title or 'Panel Pyodide App',
         pre_cache=', '.join([repr(p) for p in img_rel])
     )
-    with open(dest_path / 'serviceWorker.js', 'w') as f:
+    with open(dest_path / 'serviceWorker.js', 'w', encoding="utf-8") as f:
         f.write(worker)
     if verbose:
         print('Successfully wrote serviceWorker.js.')
