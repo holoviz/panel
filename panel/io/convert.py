@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import concurrent.futures
 import dataclasses
 import os
 import pathlib
@@ -8,7 +9,7 @@ import pkgutil
 import sys
 import uuid
 
-from contextlib import contextmanager
+from concurrent.futures import ProcessPoolExecutor
 from textwrap import dedent
 from typing import Any, Dict, List
 
@@ -20,7 +21,6 @@ from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem, standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.model import Model
 from bokeh.settings import settings as _settings
 from bokeh.util.serialization import make_id
 from typing_extensions import Literal
@@ -187,16 +187,6 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 """
-
-@contextmanager
-def reset_models():
-    old_model_map = Model.model_class_reverse_map.copy()
-    yield
-    for mname, module in list(sys.modules.items()):
-        if mname.startswith('bokeh_app_'):
-            del sys.modules[mname]
-    Model.model_class_reverse_map = old_model_map
-
 
 @dataclasses.dataclass
 class Request:
@@ -462,6 +452,37 @@ def script_to_html(
     return html, web_worker
 
 
+def convert_app(
+    app: str,
+    dest_path: str,
+    requirements: List[str] | Literal['auto'] = 'auto',
+    runtime: Runtimes = 'pyodide-worker',
+    prerender: bool = True,
+    manifest: str | None = None,
+    verbose: bool = True
+):
+    try:
+        html, js_worker = script_to_html(
+            app, requirements=requirements, runtime=runtime,
+            prerender=prerender, manifest=manifest
+        )
+    except KeyboardInterrupt:
+        return
+    except Exception as e:
+        print(f'Failed to convert {app} to {runtime} target: {e}')
+        return
+    name = '.'.join(os.path.basename(app).split('.')[:-1])
+    filename = f'{name}.html'
+    with open(dest_path / filename, 'w') as out:
+        out.write(html)
+    if runtime == 'pyodide-worker':
+        with open(dest_path / f'{name}.js', 'w') as out:
+            out.write(js_worker)
+    if verbose:
+        print(f'Successfully converted {app} to {runtime} target and wrote output to {filename}.')
+    return (name.replace('_', ' '), filename)
+
+
 def convert_apps(
     apps: List[str],
     dest_path: str | None = None,
@@ -473,6 +494,7 @@ def convert_apps(
     build_pwa: bool = True,
     pwa_config: Dict[Any, Any] = {},
     verbose: bool = True,
+    max_workers: int = 4
 ):
     """
     Arguments
@@ -502,6 +524,8 @@ def convert_apps(
           - orientation: Preferred orientation
           - background_color: The background color of the splash screen
           - theme_color: The theme color of the application
+    max_workers: int
+        The maximum number of parallel workers
     """
     if isinstance(apps, str):
         apps = [apps]
@@ -512,29 +536,23 @@ def convert_apps(
     dest_path.mkdir(parents=True, exist_ok=True)
 
     files = {}
-    for app in apps:
-        try:
-            with reset_models():
-                html, js_worker = script_to_html(
-                    app, requirements=requirements, runtime=runtime, prerender=prerender,
-                    manifest='site.webmanifest' if build_pwa else None
+    manifest = 'site.webmanifest' if build_pwa else None
+    groups = [apps[i:i+max_workers] for i in range(0, len(apps), max_workers)]
+    for group in groups:
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            futures = []
+            for app in group:
+                f = executor.submit(
+                    convert_app, app, dest_path, requirements=requirements,
+                    runtime=runtime, prerender=prerender, manifest=manifest,
+                    verbose=verbose
                 )
-        except KeyboardInterrupt:
-            return
-        except Exception as e:
-            print(f'Failed to convert {app} to {runtime} target: {e}')
-            continue
-        name = '.'.join(os.path.basename(app).split('.')[:-1])
-        filename = f'{name}.html'
-        files[name.replace('_', ' ')] = filename
-        with open(dest_path / filename, 'w') as out:
-            out.write(html)
-        if runtime == 'pyodide-worker':
-            with open(dest_path / f'{name}.js', 'w') as out:
-                out.write(js_worker)
-        if verbose:
-            print(f'Successfully converted {app} to {runtime} target and wrote output to {filename}.')
-
+                futures.append(f)
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result is not None:
+                    name, filename = result
+                    files[name] = filename
     if not build_index or len(files) == 1:
         return
 
