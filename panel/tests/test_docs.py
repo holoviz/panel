@@ -8,8 +8,9 @@ import os
 from inspect import isclass
 from pathlib import Path
 
-import commonmark
 import pytest
+
+from markdown_it import MarkdownIt
 
 import panel as pn
 
@@ -59,24 +60,24 @@ def test_panes_are_in_reference_gallery():
 
 def test_markdown_codeblocks():
     NO_EXEC_WORDS = ("await", "pn.serve", "django")
-    md_parser = commonmark.Parser()
+    md_parser = MarkdownIt()
     path = (Path(__file__).parents[2] / "doc").resolve(strict=True)
 
     for file in sorted(path.rglob("*.md")):
         md_ast = md_parser.parse(file.read_text())
         lines = ""
-        for n, _ in md_ast.walker():
-            if n.t == "code_block" and n.info is not None:
+        for n in md_ast:
+            if n.tag == "code" and n.info is not None:
                 if 'pyodide' in n.info.lower() or 'python' in n.info.lower():
-                    if ">>>" not in n.literal:
-                        lines += n.literal
+                    if ">>>" not in n.content:
+                        lines += n.content
         if lines:
             try:
                 ast.parse(lines)
             except Exception as e:
                 raise Exception(file) from e
 
-        if lines and not any(w not in lines for w in NO_EXEC_WORDS):
+        if lines and not any(w in lines for w in NO_EXEC_WORDS):
             try:
                 exec(lines, {})
             except Exception as e:
