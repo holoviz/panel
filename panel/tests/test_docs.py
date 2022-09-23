@@ -60,10 +60,9 @@ def test_markdown_codeblocks():
     import commonmark
     md_parser = commonmark.Parser()
 
-    path = Path(__file__).parents[2] / "docs"
+    path = (Path(__file__).parents[2] / "doc").resolve(strict=True)
 
     for file in sorted(path.rglob("*.md")):
-        print(file)
         md_ast = md_parser.parse(file.read_text())
         lines = ""
         for n, _ in md_ast.walker():
