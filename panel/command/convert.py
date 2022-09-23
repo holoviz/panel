@@ -60,6 +60,12 @@ class Convert(Subcommand):
             nargs='+',
             help=("Explicit requirements to add to the converted file.")
         )),
+        ('--nprocs', dict(
+            action  = 'store',
+            type    = int,
+            default = 1,
+            help    = "The number of processes to start in parallel to convert the apps."
+        )),
     )
 
     _targets = ('pyscript', 'pyodide', 'pyodide-worker')
@@ -72,5 +78,5 @@ class Convert(Subcommand):
         convert_apps(
             args.files, dest_path=args.out, runtime=runtime, requirements=requirements,
             prerender=args.prerender, build_index=args.index, build_pwa=args.pwa,
-            title=args.title
+            title=args.title, max_workers=args.nprocs
         )
