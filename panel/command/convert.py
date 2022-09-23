@@ -60,7 +60,7 @@ class Convert(Subcommand):
             nargs='+',
             help=("Explicit requirements to add to the converted file.")
         )),
-        ('--nprocs', dict(
+        ('--num-procs', dict(
             action  = 'store',
             type    = int,
             default = 1,
@@ -78,5 +78,5 @@ class Convert(Subcommand):
         convert_apps(
             args.files, dest_path=args.out, runtime=runtime, requirements=requirements,
             prerender=args.prerender, build_index=args.index, build_pwa=args.pwa,
-            title=args.title, max_workers=args.nprocs
+            title=args.title, max_workers=args.num_procs
         )
