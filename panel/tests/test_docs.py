@@ -8,6 +8,7 @@ import os
 from inspect import isclass
 from pathlib import Path
 
+import commonmark
 import pytest
 
 import panel as pn
@@ -57,9 +58,8 @@ def test_panes_are_in_reference_gallery():
 
 
 def test_markdown_codeblocks():
-    import commonmark
+    NO_EXEC_WORDS = ("await", "pn.serve", "django")
     md_parser = commonmark.Parser()
-
     path = (Path(__file__).parents[2] / "doc").resolve(strict=True)
 
     for file in sorted(path.rglob("*.md")):
@@ -73,5 +73,11 @@ def test_markdown_codeblocks():
         if lines:
             try:
                 ast.parse(lines)
-            except SyntaxError as e:
-                raise SyntaxError(file) from e
+            except Exception as e:
+                raise Exception(file) from e
+
+        if lines and not any(w not in lines for w in NO_EXEC_WORDS):
+            try:
+                exec(lines, {})
+            except Exception as e:
+                raise Exception(file) from e
