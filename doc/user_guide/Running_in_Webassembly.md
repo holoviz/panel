@@ -159,7 +159,7 @@ pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
 
 This code will render this simple application into the `simple_app` DOM node:
 
-```python
+```html
 <div id="simple_app"></div>
 ```
 
@@ -200,7 +200,7 @@ add the extension to the Sphinx `conf.py`:
 
 ```python
 extensions += [
-    ...
+    ...,
     'nbsite.pyodide'
 ]
 ```

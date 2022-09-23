@@ -16,12 +16,12 @@ The `panel.auth` group should be used to register new authentication providers. 
 The `panel.io.rest` entrypoint group can be used to register rest providers that will be served along the panel app. The entrypoint should resolve to a callable with the following signature:
 
 ```python
-    from typing import List, Tuple
-    from tornado.web import RequestHandler
-    RequestHandlerClass = Type[RequestHandler]
+from typing import List, Tuple, Type
+from tornado.web import RequestHandler
+RequestHandlerClass = Type[RequestHandler]
 
-    def provider(files: list, endpoint: str) -> List[Tuple[str,RequestHandlerClass,dict]]:
-        pass
+def provider(files: list, endpoint: str) -> List[Tuple[str,RequestHandlerClass,dict]]:
+    pass
 
 ```
 

@@ -48,7 +48,7 @@ Lastly we need to add some configuration to `examples/apps/django2/project/setti
 ```python
 
 INSTALLED_APPS = [
-    ...
+    ...,
     'channels',
     'bokeh.server.django',
 ]
@@ -68,7 +68,7 @@ Now we need to add any templates we have:
 TEMPLATES = [
     {
         'DIRS': [os.path.join(BASE_DIR, 'sliders', 'templates')],
-        ...
+        ...: ...,
     }
 ]
 ```
