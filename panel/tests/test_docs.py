@@ -1,6 +1,9 @@
 """
-These tests verify that all of the panes, layouts, and widgets defined by panel are
+The ref_available tests verify that all of the panes, layouts, and widgets defined by panel are
 represented in the reference gallery.
+
+The doc_available tests check that python in markdown files can be run top to bottom.
+
 """
 import ast
 
