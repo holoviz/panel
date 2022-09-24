@@ -3,7 +3,6 @@ These tests verify that all of the panes, layouts, and widgets defined by panel 
 represented in the reference gallery.
 """
 import ast
-import os
 
 from inspect import isclass
 from pathlib import Path
@@ -14,17 +13,18 @@ from markdown_it import MarkdownIt
 
 import panel as pn
 
-here = os.path.abspath(os.path.dirname(__file__))
-ref = os.path.join(here, '..', '..', 'examples', 'reference')
-docs_available = pytest.mark.skipif(not os.path.isdir(ref), reason="docs not found")
+REF_PATH = Path(__file__).parents[2] / "examples" / "reference"
+ref_available = pytest.mark.skipif(not REF_PATH.is_dir(), reason="example/references not found")
 
-DOC_PATH = (Path(__file__).parents[2] / "doc").resolve(strict=True)
-DOC_FILES = sorted(DOC_PATH.rglob("*.md"))
+DOC_PATH = Path(__file__).parents[2] / "doc"
+doc_files = sorted(DOC_PATH.rglob("*.md"))
+doc_available = pytest.mark.skipif(not REF_PATH.is_dir(), reason="docs not found")
 
-@docs_available
+
+@ref_available
 def test_layouts_are_in_reference_gallery():
-    exceptions = set(['ListPanel', 'Panel'])
-    docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'layouts'))}
+    exceptions = {"ListPanel", "Panel"}
+    docs = {f.with_suffix("").name for f in (REF_PATH / "layouts").iterdir()}
 
     def is_panel_layout(attr):
         layout = getattr(pn.layout, attr)
@@ -34,10 +34,14 @@ def test_layouts_are_in_reference_gallery():
     assert layouts - exceptions - docs == set()
 
 
-@docs_available
+@ref_available
 def test_widgets_are_in_reference_gallery():
-    exceptions = set(['CompositeWidget', 'Widget', 'ToggleGroup', 'NumberInput', 'Spinner'])
-    docs = {os.path.splitext(f)[0] for g in ('indicators', 'widgets') for f in os.listdir(os.path.join(ref, g))}
+    exceptions = {"CompositeWidget", "Widget", "ToggleGroup", "NumberInput", "Spinner"}
+    docs = {
+        f.with_suffix("").name
+        for g in ("indicators", "widgets")
+        for f in (REF_PATH / g).iterdir()
+    }
 
     def is_panel_widget(attr):
         widget = getattr(pn.widgets, attr)
@@ -47,10 +51,10 @@ def test_widgets_are_in_reference_gallery():
     assert widgets - exceptions - docs == set()
 
 
-@docs_available
+@ref_available
 def test_panes_are_in_reference_gallery():
-    exceptions = set(['PaneBase', 'YT', 'RGGPlot', 'Interactive', 'ICO'])
-    docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'panes'))}
+    exceptions = {"PaneBase", "YT", "RGGPlot", "Interactive", "ICO"}
+    docs = {f.with_suffix("").name for f in (REF_PATH / "panes").iterdir()}
 
     def is_panel_pane(attr):
         pane = getattr(pn.pane, attr)
@@ -60,7 +64,10 @@ def test_panes_are_in_reference_gallery():
     assert panes - exceptions - docs == set()
 
 
-@pytest.mark.parametrize("file", DOC_FILES, ids=[str(f.relative_to(DOC_PATH)) for f in DOC_FILES])
+@doc_available
+@pytest.mark.parametrize(
+    "file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
+)
 def test_markdown_codeblocks(file):
     NO_EXEC_WORDS = ("await", "pn.serve", "django")
 
@@ -68,7 +75,7 @@ def test_markdown_codeblocks(file):
     lines = ""
     for n in md_ast:
         if n.tag == "code" and n.info is not None:
-            if 'pyodide' in n.info.lower() or 'python' in n.info.lower():
+            if "pyodide" in n.info.lower() or "python" in n.info.lower():
                 if ">>>" not in n.content:
                     lines += n.content
     if lines:
