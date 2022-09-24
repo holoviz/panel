@@ -22,7 +22,7 @@ from bokeh.protocol.messages.patch_doc import process_document_events
 from js import JSON
 
 from ..config import config
-from ..util import isurl
+from ..util import is_holoviews, isurl
 from . import resources
 from .document import MockSessionContext
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
@@ -113,6 +113,7 @@ def _model_json(model: Model, target: str) -> Tuple[Document, str]:
         The serialized JSON representation of the Bokeh Model.
     """
     doc = Document()
+    doc.hold()
     model.server_doc(doc=doc)
     model = doc.roots[0]
     docs_json, _ = standalone_docs_json_and_render_items(
@@ -192,6 +193,7 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
         dispatch_fn(json_patch, pyodide.ffi.to_js(buffer_map), msg_id)
 
     doc.on_change(pysync)
+    doc.unhold()
     doc.callbacks.trigger_json_event(
         {'event_name': 'document_ready', 'event_values': {}
     })
@@ -300,6 +302,7 @@ async def write(target: str, obj: Any) -> None:
     views = await Bokeh.embed.embed_item(JSON.parse(model_json))
     jsdoc = views[0].model.document
     _link_docs(pydoc, jsdoc)
+    pydoc.unhold()
 
 def hide_loader() -> None:
     from js import document
@@ -385,7 +388,7 @@ def pyrender(
         kwargs['stderr'] = WriteCallbackStream(stderr_callback)
     out = exec_with_return(code, **kwargs)
     ret = {}
-    if isinstance(out, (Model, Viewable, Viewer)):
+    if isinstance(out, (Model, Viewable, Viewer)) or is_holoviews(out):
         doc, model_json = _model_json(as_panel(out), target)
         state.cache[target] = doc
         ret['content'], ret['mime_type'] = model_json, 'application/bokeh'

@@ -1,6 +1,6 @@
 # Django
 
-As the core user guides including the [Introduction](../getting_started/Introduction.rst) have demonstrated, it is easy to display Panel apps in the notebook, launch them from an interactive Python prompt, and deploy them as a standalone Bokeh server app from the commandline. However, it is also often useful to embed a Panel app in large web application, such as a Django web server. Using Panel with Django requires a bit more work than for notebooks and Bokeh servers.
+Panel generally runs on the Bokeh server which itself runs on Tornado. However, it is also often useful to embed a Panel app in large web application, such as a Django web server. Using Panel with Django requires a bit more work than for notebooks and Bokeh servers.
 
 To run this example app yourself, you will first need to install django 2 (e.g. `conda install "django=2"`).
 

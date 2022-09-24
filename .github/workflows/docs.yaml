@@ -58,7 +58,7 @@ jobs:
       - name: conda setup
         run: |
           conda config --prepend channels bokeh/label/dev
-          conda create -n test-environment python=3.8 pyctdev
+          conda create -n test-environment python=3.9 pyctdev
       - uses: actions/setup-node@v2
         with:
           node-version: '15'
@@ -111,7 +111,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          panel convert examples/gallery/streaming/*.ipynb examples/gallery/dynamic/*.ipynb examples/gallery/param/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/
+          panel convert examples/gallery/**/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/
       - name: git status and git diff
         run: |
           git status

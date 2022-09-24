@@ -153,7 +153,7 @@ else:
     bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
 nbsite_pyodide_conf = {
-    'requirements': [bokeh_req, panel_req, 'pandas']
+    'requirements': [bokeh_req, panel_req, 'pandas', 'holoviews>=1.15.1a1']
 }
 
 templates_path = [
