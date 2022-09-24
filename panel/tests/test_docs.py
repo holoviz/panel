@@ -18,6 +18,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 ref = os.path.join(here, '..', '..', 'examples', 'reference')
 docs_available = pytest.mark.skipif(not os.path.isdir(ref), reason="docs not found")
 
+DOC_PATH = (Path(__file__).parents[2] / "doc").resolve(strict=True)
+DOC_FILES = sorted(DOC_PATH.rglob("*.md"))
 
 @docs_available
 def test_layouts_are_in_reference_gallery():
@@ -58,27 +60,19 @@ def test_panes_are_in_reference_gallery():
     assert panes - exceptions - docs == set()
 
 
-def test_markdown_codeblocks():
+@pytest.mark.parametrize("file", DOC_FILES, ids=[str(f.relative_to(DOC_PATH)) for f in DOC_FILES])
+def test_markdown_codeblocks(file):
     NO_EXEC_WORDS = ("await", "pn.serve", "django")
-    md_parser = MarkdownIt()
-    path = (Path(__file__).parents[2] / "doc").resolve(strict=True)
 
-    for file in sorted(path.rglob("*.md")):
-        md_ast = md_parser.parse(file.read_text())
-        lines = ""
-        for n in md_ast:
-            if n.tag == "code" and n.info is not None:
-                if 'pyodide' in n.info.lower() or 'python' in n.info.lower():
-                    if ">>>" not in n.content:
-                        lines += n.content
-        if lines:
-            try:
-                ast.parse(lines)
-            except Exception as e:
-                raise Exception(file) from e
+    md_ast = MarkdownIt().parse(file.read_text())
+    lines = ""
+    for n in md_ast:
+        if n.tag == "code" and n.info is not None:
+            if 'pyodide' in n.info.lower() or 'python' in n.info.lower():
+                if ">>>" not in n.content:
+                    lines += n.content
+    if lines:
+        ast.parse(lines)
 
-        if lines and not any(w in lines for w in NO_EXEC_WORDS):
-            try:
-                exec(lines, {})
-            except Exception as e:
-                raise Exception(file) from e
+    if lines and not any(w in lines for w in NO_EXEC_WORDS):
+        exec(lines, {})
