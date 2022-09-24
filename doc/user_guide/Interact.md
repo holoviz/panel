@@ -89,7 +89,7 @@ Notice that a slider is only produced for `p`, as the value of `q` is fixed.
 When you pass an integer-valued keyword argument of `10` (`x=10`) to `interact`, it generates an integer-valued slider control with a range of `[-10,+3*10]`. In this case, `10` is an *abbreviation* for an actual slider widget:
 
 ```python
-IntSlider(min=-10,max=30,step=1,value=10)
+widgets.IntSlider(min=-10,max=30,step=1,value=10)
 ```
 
 In fact, we can get the same result if we pass this `IntSlider` as the keyword argument for `x`:
