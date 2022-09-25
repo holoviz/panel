@@ -9,6 +9,7 @@ import ast
 
 from inspect import isclass
 from pathlib import Path
+from subprocess import run
 
 import pytest
 
@@ -85,4 +86,4 @@ def test_markdown_codeblocks(file):
         ast.parse(lines)
 
     if lines and not any(w in lines for w in NO_EXEC_WORDS):
-        exec(lines, {})
+        run(["python", "-c", lines], timeout=30, check=True)
