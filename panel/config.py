@@ -112,6 +112,9 @@ class _config(_base_config):
     autoreload = param.Boolean(default=False, doc="""
         Whether to autoreload server when script changes.""")
 
+    defer_load = param.Boolean(default=False, doc="""
+        Whether to defer load of rendered functions.""")
+
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
 
