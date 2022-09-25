@@ -73,7 +73,7 @@ def test_panes_are_in_reference_gallery():
     "file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
 )
 def test_markdown_codeblocks(file):
-    NO_EXEC_WORDS = ("await", "pn.serve", "django")
+    exceptions = ("await", "pn.serve", "django")
 
     md_ast = MarkdownIt().parse(file.read_text())
     lines = ""
@@ -85,5 +85,5 @@ def test_markdown_codeblocks(file):
     if lines:
         ast.parse(lines)
 
-    if lines and not any(w in lines for w in NO_EXEC_WORDS):
+    if lines and not any(w in lines for w in exceptions):
         run(["python", "-c", lines], timeout=30, check=True)
