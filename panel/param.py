@@ -765,7 +765,10 @@ class ParamMethod(ReplacementPane):
         Whether to show loading indicator while pane is updating.""")
 
     def __init__(self, object=None, **params):
-        if self.param.defer_load.default is None and config.defer_load:
+        if (
+            self.param.defer_load.default is None and
+            'defer_load' not in params and config.defer_load
+        ):
             params['defer_load'] = config.defer_load
         super().__init__(object, **params)
         self._evaled = not (self.lazy or self.defer_load)
@@ -773,6 +776,7 @@ class ParamMethod(ReplacementPane):
         if object is not None:
             self._validate_object()
             self._replace_pane()
+        self._inner_layout.loading = self.defer_load and not state.loaded
 
     @param.depends('object', watch=True)
     def _validate_object(self):
@@ -815,8 +819,9 @@ class ParamMethod(ReplacementPane):
 
     def _replace_pane(self, *args, force=False):
         deferred = self.defer_load and not state.loaded
-        self._inner_layout.loading = self.loading_indicator or deferred
-        self._evaled |= force or not self.lazy and not deferred
+        if not self._inner_layout.loading:
+            self._inner_layout.loading = self.loading_indicator or deferred
+        self._evaled |= force or not (self.lazy or deferred)
         if not self._evaled:
             return
         try:
@@ -890,10 +895,10 @@ class ParamMethod(ReplacementPane):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         if not self._evaled:
-            if self.defer_load and not state.loaded:
+            deferred = self.defer_load and not state.loaded
+            if deferred:
                 state.onload(partial(self._replace_pane, force=True))
-            else:
-                self._replace_pane(force=True)
+            self._replace_pane(force=not deferred)
         return super()._get_model(doc, root, parent, comm)
 
     #----------------------------------------------------------------
@@ -917,7 +922,6 @@ class ParamFunction(ParamMethod):
 
     priority: ClassVar[float | bool | None] = 0.6
 
-    # Whether applies requires full set of keywords
     _applies_kw: ClassVar[bool] = True
 
     def _link_object_params(self):
@@ -958,7 +962,7 @@ class ParamFunction(ParamMethod):
         if isinstance(obj, types.FunctionType):
             if hasattr(obj, '_dinfo'):
                 return True
-            if 'defer_load' in kwargs or (cls.param.defer_load.default is None and config.defer_load):
+            if kwargs.get('defer_load') or (cls.param.defer_load.default is None and config.defer_load):
                 return True
             return None
         return False
