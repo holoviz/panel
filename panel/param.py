@@ -820,7 +820,7 @@ class ParamMethod(ReplacementPane):
     def _replace_pane(self, *args, force=False):
         deferred = self.defer_load and not state.loaded
         if not self._inner_layout.loading:
-            self._inner_layout.loading = self.loading_indicator or deferred
+            self._inner_layout.loading = bool(self.loading_indicator or deferred)
         self._evaled |= force or not (self.lazy or deferred)
         if not self._evaled:
             return
