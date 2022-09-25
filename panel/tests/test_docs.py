@@ -75,7 +75,7 @@ def test_panes_are_in_reference_gallery():
 def test_markdown_codeblocks(file):
     exceptions = ("await", "pn.serve", "django")
 
-    md_ast = MarkdownIt().parse(file.read_text())
+    md_ast = MarkdownIt().parse(file.read_text(encoding="utf-8"))
     lines = ""
     for n in md_ast:
         if n.tag == "code" and n.info is not None:
