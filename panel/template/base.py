@@ -630,7 +630,7 @@ class BasicTemplate(BaseTemplate):
                 else:
                     resource_path = url_path(resource)
                 rtype = 'css' if resource_type == 'css' else 'js'
-                prefix = f'./{dist_path}' if resource_type == 'js_module' and not state.rel_path else dist_path
+                prefix = f'./{dist_path}' if resource_type == 'js_modules' and not state.rel_path else dist_path
                 bundlepath = BUNDLE_DIR / rtype / resource_path.replace('/', os.path.sep)
                 if bundlepath:
                     resource_files[rname] = f'{prefix}bundled/{rtype}/{resource_path}'
