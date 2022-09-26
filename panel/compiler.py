@@ -109,8 +109,13 @@ def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
         filename = str(filename)
         if ext and not str(filename).endswith(ext):
             filename += f'.{ext}'
-        with open(filename, 'w', encoding="utf-8") as f:
-            f.write(response.content.decode('utf-8'))
+        if filename.endswith('.ttf'):
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+        else:
+            content = response.content.decode('utf-8')
+            with open(filename, 'w', encoding="utf-8") as f:
+                f.write(content)
         if map_response:
             with open(f'{filename}.map', 'w', encoding="utf-8") as f:
                 f.write(map_response.content.decode('utf-8'))
@@ -143,8 +148,12 @@ def write_bundled_tarball(name, tarball, bundle_dir, module=False):
             filename = filename[:-3]
             if filename.endswith('index'):
                 filename += '.mjs'
-        with open(filename, 'w', encoding="utf-8") as f:
-            f.write(content)
+        if filename.endswith('.tff'):
+            with open(filename, 'wb') as f:
+                f.write(content)
+        else:
+            with open(filename, 'w', encoding="utf-8") as f:
+                f.write(content)
     tar_obj.close()
 
 
