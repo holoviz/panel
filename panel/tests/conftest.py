@@ -312,6 +312,7 @@ def server_cleanup():
         state._locations.clear()
         state._templates.clear()
         state._views.clear()
+        state._loaded.clear()
         state.cache.clear()
         state._scheduled.clear()
         if state._thread_pool is not None:
