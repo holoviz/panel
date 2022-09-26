@@ -13,16 +13,14 @@ from subprocess import run
 
 import pytest
 
-from markdown_it import MarkdownIt
-
 import panel as pn
 
 REF_PATH = Path(__file__).parents[2] / "examples" / "reference"
-ref_available = pytest.mark.skipif(not REF_PATH.is_dir(), reason="example/references not found")
+ref_available = pytest.mark.skipif(not REF_PATH.is_dir(), reason="folder 'examples/reference' not found")
 
 DOC_PATH = Path(__file__).parents[2] / "doc"
 doc_files = sorted(DOC_PATH.rglob("*.md"))
-doc_available = pytest.mark.skipif(not REF_PATH.is_dir(), reason="docs not found")
+doc_available = pytest.mark.skipif(not DOC_PATH.is_dir(), reason="folder 'doc' not found")
 
 
 @ref_available
@@ -73,6 +71,8 @@ def test_panes_are_in_reference_gallery():
     "file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
 )
 def test_markdown_codeblocks(file):
+    from markdown_it import MarkdownIt
+
     exceptions = ("await", "pn.serve", "django")
 
     md_ast = MarkdownIt().parse(file.read_text(encoding="utf-8"))
