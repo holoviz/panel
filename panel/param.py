@@ -776,7 +776,6 @@ class ParamMethod(ReplacementPane):
         if object is not None:
             self._validate_object()
             self._replace_pane()
-        self._inner_layout.loading = self.defer_load and not state.loaded
 
     @param.depends('object', watch=True)
     def _validate_object(self):
