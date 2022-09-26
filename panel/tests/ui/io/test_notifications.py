@@ -16,12 +16,12 @@ def test_notifications_no_template(page, port):
         state.notifications.error('MyError')
 
     def app():
+        config.notifications = True
         button = Button(name='Display error')
         button.on_click(callback)
         return button
 
-    with config.set(notifications=True):
-        serve(app, port=port, threaded=True, show=False)
+    serve(app, port=port, threaded=True, show=False)
 
     time.sleep(0.2)
 
@@ -31,7 +31,7 @@ def test_notifications_no_template(page, port):
 
     time.sleep(0.1)
 
-    assert page.text_content('.notyf__message') == 'MyErrors'
+    assert page.text_content('.notyf__message') == 'MyError'
 
 
 def test_notifications_with_template(page, port):
