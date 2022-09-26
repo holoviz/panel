@@ -37,6 +37,7 @@ from .state import set_curdoc, state
 PWA_MANIFEST_TEMPLATE = _pn_env.get_template('site.webmanifest')
 SERVICE_WORKER_TEMPLATE = _pn_env.get_template('serviceWorker.js')
 WEB_WORKER_TEMPLATE = _pn_env.get_template('pyodide_worker.js')
+WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = '2.4.3'
@@ -102,81 +103,6 @@ async function main() {
   await pyodide.runPythonAsync(code);
 }
 main();
-</script>
-"""
-
-PYODIDE_WORKER_SCRIPT = """
-<script type="text/javascript">
-const pyodideWorker = new Worker("./{{ name }}.js");
-pyodideWorker.busy = false
-pyodideWorker.queue = []
-
-function send_change(jsdoc, event) {
-  if (event.setter_id != null && event.setter_id == 'py') {
-    return
-  } else if (pyodideWorker.busy && event.model && event.attr) {
-    let events = []
-    for (const old_event of pyodideWorker.queue) {
-      if (!(old_event.model === event.model && old_event.attr === event.attr)) {
-        events.push(old_event)
-      }
-    }
-    events.push(event)
-    pyodideWorker.queue = events
-    return
-  }
-  const patch = jsdoc.create_json_patch_string([event])
-  pyodideWorker.busy = true
-  pyodideWorker.postMessage({type: 'patch', patch: patch})
-}
-
-pyodideWorker.onmessage = async (event) => {
-  const msg = event.data
-
-  if (msg.type === 'idle') {
-    if (pyodideWorker.queue.length) {
-      const patch = pyodideWorker.jsdoc.create_json_patch_string(pyodideWorker.queue)
-      pyodideWorker.busy = true
-      pyodideWorker.queue = []
-      pyodideWorker.postMessage({type: 'patch', patch: patch})
-    } else {
-      pyodideWorker.busy = false
-    }
-  } else if (msg.type === 'render') {
-    const docs_json = JSON.parse(msg.docs_json)
-    const render_items = JSON.parse(msg.render_items)
-    const root_ids = JSON.parse(msg.root_ids)
-
-    // Remap roots in message to element IDs
-    const root_els = document.getElementsByClassName('bk-root')
-    const data_roots = []
-    for (const el of root_els) {
-       el.innerHTML = ''
-       data_roots.push([parseInt(el.getAttribute('data-root-id')), el.id])
-    }
-    data_roots.sort((a, b) => a[0]<b[0] ? -1: 1)
-    const roots = {}
-    for (let i=0; i<data_roots.length; i++) {
-      roots[root_ids[i]] = data_roots[i][1]
-    }
-    render_items[0]['roots'] = roots
-    render_items[0]['root_ids'] = root_ids
-
-    // Embed content
-    const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
-
-    // Remove loading spinner
-    body = document.getElementsByTagName('body')[0]
-    body.classList.remove("bk", "pn-loading")
-
-    // Setup bi-directional syncing
-    pyodideWorker.jsdoc = jsdoc = views[0].model.document
-    jsdoc.on_change(send_change.bind(null, jsdoc), false)
-    pyodideWorker.postMessage({'type': 'rendered'})
-  } else if (msg.type === 'patch') {
-    pyodideWorker.jsdoc.apply_json_patch(JSON.parse(msg.patch), msg.buffers, setter_id='py')
-  }
-};
 </script>
 """
 
@@ -376,8 +302,7 @@ def script_to_html(
         if runtime == 'pyodide-worker':
             if js_resources == 'auto':
                 js_resources = []
-            script_template = _pn_env.from_string(PYODIDE_WORKER_SCRIPT)
-            plot_script = script_template.render({
+            worker_handler = WORKER_HANDLER_TEMPLATE.render({
                 'name': name
             })
             web_worker = WEB_WORKER_TEMPLATE.render({
@@ -385,6 +310,7 @@ def script_to_html(
                 'env_spec': env_spec,
                 'code': code
             })
+            plot_script = wrap_in_script_tag(worker_handler)
         else:
             if js_resources == 'auto':
                 js_resources = [PYODIDE_JS]

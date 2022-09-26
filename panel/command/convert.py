@@ -38,29 +38,23 @@ class Convert(Subcommand):
             type    = str,
             help    = "A custom title for the application(s).",
         )),
-        ('--prerender', dict(
-            action  = 'store',
-            type    = bool,
-            default = True,
-            help    = "The format to convert to.",
+        ('--skip-embed', dict(
+            action  = 'store_true',
+            help    = "Whether to skip embedding pre-rendered contennt in the converted file to display content while app is loading.",
         )),
         ('--index', dict(
-            action  = 'store',
-            type    = bool,
-            default = True,
+            action  = 'store_true',
             help    = "Whether to create an index if multiple files are served.",
         )),
         ('--pwa', dict(
-            action  = 'store',
-            type    = bool,
-            default = True,
+            action  = 'store_true',
             help    = "Whether to add files to serve applications as a Progressive Web App.",
         )),
         ('--requirements', dict(
             nargs='+',
             help=("Explicit requirements to add to the converted file.")
         )),
-        ('--nprocs', dict(
+        ('--num-procs', dict(
             action  = 'store',
             type    = int,
             default = 1,
@@ -75,8 +69,9 @@ class Convert(Subcommand):
         if runtime not in self._targets:
             raise ValueError(f'Supported conversion targets include: {self._targets!r}')
         requirements = args.requirements or 'auto'
+
         convert_apps(
             args.files, dest_path=args.out, runtime=runtime, requirements=requirements,
-            prerender=args.prerender, build_index=args.index, build_pwa=args.pwa,
-            title=args.title, max_workers=args.nprocs
+            prerender=not args.skip_embed, build_index=args.index, build_pwa=args.pwa,
+            title=args.title, max_workers=args.num_procs
         )
