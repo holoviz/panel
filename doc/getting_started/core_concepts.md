@@ -45,7 +45,7 @@ Let's start simple and answer the question "what is param?"
 One of the main things to understand about param in the context of its use in Panel is the distinction between the parameter **value** and the parameter **object**. The **value** represents the current value of a parameter at a particular point in time, while the **object** holds metadata about the parameter but also acts as a **reference** to the parameters value across time. In many cases you can pass a parameter **object** and Panel will automatically resolve the current value **and** reactively update when that parameter changes. Let's take a widget as an example:
 
 ```python
-text = pn.widget.TextInput()
+text = pn.widgets.TextInput()
 
 text.value # 👈 this reflects the current value
 text.param.value # 👈 can be used as a reference to the live value
@@ -59,6 +59,8 @@ Panel aims to let you work with all your favorite Python libraries and has a sys
 For this reason, it often makes sense to get a handle on the Pane type. So if you want to wrap your `DataFrame` into a pane you can call the `panel` function and it will automatically convert it (this is exactly what a layout does internally when you give it an object to render):
 
 ```python
+import pandas as pd
+
 df = pd.DataFrame({
   'A': [1, 2, 3, 4],
   'B': [10, 20, 30, 40]

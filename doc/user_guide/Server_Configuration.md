@@ -178,6 +178,7 @@ The ``.show`` call will return either a Bokeh server instance (if ``threaded=Fal
 If you want to serve more than one app on a single server you can use the ``pn.serve`` function. By supplying a dictionary where the keys represent the URL slugs and the values must be either Panel objects or functions returning Panel objects you can easily launch a server with a number of apps, e.g.:
 
 ```python
+import panel as pn
 pn.serve({
     'markdown': '# This is a Panel app',
     'json': pn.pane.JSON({'abc': 123})
