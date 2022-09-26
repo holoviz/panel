@@ -10,9 +10,10 @@ from bokeh.models import (
     TextInput as BkTextInput, Toggle,
 )
 
+from panel.io.state import set_curdoc, state
 from panel.layout import Row, Tabs
 from panel.pane import (
-    HTML, Bokeh, Matplotlib, Pane, PaneBase, panel,
+    HTML, Bokeh, Matplotlib, Pane, PaneBase, Str, panel,
 )
 from panel.param import (
     JSONInit, Param, ParamFunction, ParamMethod,
@@ -1048,6 +1049,42 @@ def test_param_function_pane(document, comm):
     assert inner_pane is pane._pane
     assert new_model.text == '5'
     assert pane._models[row.ref['id']][0] is row
+
+    # Cleanup pane
+    pane._cleanup(row)
+    assert pane._models == {}
+    assert inner_pane._models == {}
+
+
+def test_param_function_pane_defer_load(document, comm):
+    test = View()
+
+    @param.depends(test.param.a)
+    def view(a):
+        return Div(text='%d' % a)
+
+    pane = panel(view, defer_load=True)
+    inner_pane = pane._pane
+    assert isinstance(inner_pane, Str)
+
+    # Ensure pane thinks page is not loaded
+    state._loaded[document] = False
+
+    # Create pane
+    with set_curdoc(document):
+        row = pane.get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert pane._models[row.ref['id']][0] is row
+    assert isinstance(model, Div)
+    assert model.text == '&lt;pre&gt; &lt;/pre&gt;'
+
+    # Test on_load
+    state._on_load(document)
+    model = row.children[0]
+    assert isinstance(model, Div)
+    assert model.text == '0'
 
     # Cleanup pane
     pane._cleanup(row)

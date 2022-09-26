@@ -99,6 +99,9 @@ class _state(param.Parameterized):
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
+    loaded = param.Boolean(default=False, doc="""
+       Whether the page is fully loaded.""")
+
     rel_path = param.String(default='', readonly=True, doc="""
        Relative path from the current app being served to the root URL.
        If application is embedded in a different server via autoload.js
@@ -162,6 +165,7 @@ class _state(param.Parameterized):
     # Dictionary of callbacks to be triggered on app load
     _onload: ClassVar[Dict[Document, Callable[[], None]]] = WeakKeyDictionary()
     _on_session_created: ClassVar[List[Callable[[BokehSessionContext], []]]] = []
+    _loaded: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
     # Module that was run during setup
     _setup_module = None
@@ -323,6 +327,7 @@ class _state(param.Parameterized):
 
     def _on_load(self, doc: Optional[Document] = None) -> None:
         doc = doc or self.curdoc
+        self._loaded[doc] = True
         callbacks = self._onload.pop(doc, [])
         if not callbacks:
             return
@@ -815,6 +820,16 @@ class _state(param.Parameterized):
     @property
     def headers(self) -> Dict[str, str | List[str]]:
         return self.curdoc.session_context.request.headers if self.curdoc and self.curdoc.session_context else {}
+
+    @property
+    def loaded(self) -> bool:
+        curdoc = self.curdoc
+        if curdoc:
+            if curdoc in self._loaded:
+                return self._loaded[curdoc]
+            elif curdoc.session_context:
+                return False
+        return True
 
     @property
     def location(self) -> Location | None:

@@ -23,6 +23,7 @@ import param
 from packaging.version import Version
 from param.parameterized import classlist, discard_events
 
+from .config import config
 from .io import init_doc, state
 from .layout import (
     Column, Panel, Row, Spacer, Tabs,
@@ -752,6 +753,10 @@ class ParamMethod(ReplacementPane):
     return any object which itself can be rendered as a Pane.
     """
 
+    defer_load = param.Boolean(default=None, doc="""
+        Whether to defer load until after the page is rendered.
+        Can be set as parameter or by setting panel.config.defer_load.""")
+
     lazy = param.Boolean(default=False, doc="""
         Whether to lazily evaluate the contents of the object
         only when it is required for rendering.""")
@@ -760,12 +765,18 @@ class ParamMethod(ReplacementPane):
         Whether to show loading indicator while pane is updating.""")
 
     def __init__(self, object=None, **params):
+        if (
+            self.param.defer_load.default is None and
+            'defer_load' not in params and config.defer_load
+        ):
+            params['defer_load'] = config.defer_load
         super().__init__(object, **params)
-        self._evaled = not self.lazy
+        self._evaled = not (self.lazy or self.defer_load)
         self._link_object_params()
         if object is not None:
             self._validate_object()
-            self._replace_pane()
+            if not self.defer_load:
+                self._replace_pane()
 
     @param.depends('object', watch=True)
     def _validate_object(self):
@@ -807,20 +818,23 @@ class ParamMethod(ReplacementPane):
             self._inner_layout.loading = False
 
     def _replace_pane(self, *args, force=False):
-        self._evaled = bool(self._models) or force or not self.lazy
-        if self._evaled:
-            self._inner_layout.loading = self.loading_indicator
-            try:
-                if self.object is None:
-                    new_object = Spacer()
-                else:
-                    new_object = self.eval(self.object)
-                if inspect.isawaitable(new_object):
-                    param.parameterized.async_executor(partial(self._eval_async, new_object))
-                    return
-                self._update_inner(new_object)
-            finally:
-                self._inner_layout.loading = False
+        deferred = self.defer_load and not state.loaded
+        if not self._inner_layout.loading:
+            self._inner_layout.loading = bool(self.loading_indicator or deferred)
+        self._evaled |= force or not (self.lazy or deferred)
+        if not self._evaled:
+            return
+        try:
+            if self.object is None:
+                new_object = Spacer()
+            else:
+                new_object = self.eval(self.object)
+            if inspect.isawaitable(new_object):
+                param.parameterized.async_executor(partial(self._eval_async, new_object))
+                return
+            self._update_inner(new_object)
+        finally:
+            self._inner_layout.loading = False
 
     def _update_pane(self, *events):
         callbacks = []
@@ -881,7 +895,10 @@ class ParamMethod(ReplacementPane):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         if not self._evaled:
-            self._replace_pane(force=True)
+            deferred = self.defer_load and not state.loaded
+            if deferred:
+                state.onload(partial(self._replace_pane, force=True))
+            self._replace_pane(force=not deferred)
         return super()._get_model(doc, root, parent, comm)
 
     #----------------------------------------------------------------
@@ -905,10 +922,12 @@ class ParamFunction(ParamMethod):
 
     priority: ClassVar[float | bool | None] = 0.6
 
+    _applies_kw: ClassVar[bool] = True
+
     def _link_object_params(self):
         deps = getattr(self.object, '_dinfo', {})
         dep_params = list(deps.get('dependencies', [])) + list(deps.get('kw', {}).values())
-        if not dep_params and not self.lazy:
+        if not dep_params and not self.lazy and not self.defer_load:
             fn = getattr(self.object, '__bound_function__', self.object)
             fn_name = getattr(fn, '__name__', repr(self.object))
             self.param.warning(
@@ -939,9 +958,11 @@ class ParamFunction(ParamMethod):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
+    def applies(cls, obj: Any, **kwargs) -> float | bool | None:
         if isinstance(obj, types.FunctionType):
             if hasattr(obj, '_dinfo'):
+                return True
+            if kwargs.get('defer_load') or (cls.param.defer_load.default is None and config.defer_load):
                 return True
             return None
         return False
