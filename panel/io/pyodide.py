@@ -130,7 +130,7 @@ def _model_json(model: Model, target: str) -> Tuple[Document, str]:
         version   = __version__,
     ))
 
-def _link_docs(pydoc: Document, jsdoc: Any, setter: str | None =None) -> None:
+def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
     Links Python and JS documents in Pyodide ensuring taht messages
     are passed between them.
@@ -141,27 +141,26 @@ def _link_docs(pydoc: Document, jsdoc: Any, setter: str | None =None) -> None:
         The Python Bokeh Document instance to sync.
     jsdoc: Javascript Document
         The Javascript Bokeh Document instance to sync.
-    setter: str
-        Setter ID used for suppressing events.
     """
     def jssync(event):
-        if (event.setter_id is not None and event.setter_id == setter):
+        if (event.setter_id is not None and event.setter_id == 'python'):
             return
         json_patch = jsdoc.create_json_patch_string(pyodide.ffi.to_js([event]))
-        pydoc.apply_json_patch(json.loads(json_patch), setter=setter)
+        pydoc.apply_json_patch(json.loads(json_patch), setter='js')
 
     jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
 
     def pysync(event):
-        if event.setter is not None and event.setter == setter:
+        if event.setter is not None and event.setter == 'js':
             return
         json_patch, buffers = process_document_events([event], use_buffers=True)
         buffer_map = {}
         for (ref, buffer) in buffers:
             buffer_map[ref['id']] = pyodide.ffi.to_js(buffer).buffer
-        jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.ffi.to_js(buffer_map), setter_id=setter)
+        jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.ffi.to_js(buffer_map), setter_id='python')
 
     pydoc.on_change(pysync)
+    pydoc.unhold()
     pydoc.callbacks.trigger_json_event(
         {'event_name': 'document_ready', 'event_values': {}
     })
@@ -263,6 +262,7 @@ def init_doc() -> None:
     """
     doc = Document()
     set_curdoc(doc)
+    doc.hold()
     doc._session_context = lambda: MockSessionContext(document=doc)
     state.curdoc = doc
 

@@ -599,13 +599,13 @@ class BasicTemplate(BaseTemplate):
     def _template_resources(self) -> ResourcesType:
         clsname = type(self).__name__
         name = clsname.lower()
-        if _settings.resources(default="server") == 'server':
-            if state.rel_path:
-                dist_path = f'{state.rel_path}/{self._LOCAL}'
-            else:
-                dist_path = f'{self._LOCAL}'
-        else:
+        use_cdn = _settings.resources(default="server") != 'server'
+        if use_cdn:
             dist_path = self._CDN
+        elif state.rel_path:
+            dist_path = f'{state.rel_path}/{self._LOCAL}'
+        else:
+            dist_path = f'{self._LOCAL}'
 
         # External resources
         css_files: Dict[str, str] = {}
@@ -630,7 +630,10 @@ class BasicTemplate(BaseTemplate):
                 else:
                     resource_path = url_path(resource)
                 rtype = 'css' if resource_type == 'css' else 'js'
-                prefix = f'./{dist_path}' if resource_type == 'js_modules' and not state.rel_path else dist_path
+                if resource_type == 'js_modules' and not (state.rel_path or use_cdn):
+                    prefix = f'./{dist_path}'
+                else:
+                    prefix = dist_path
                 bundlepath = BUNDLE_DIR / rtype / resource_path.replace('/', os.path.sep)
                 if bundlepath:
                     resource_files[rname] = f'{prefix}bundled/{rtype}/{resource_path}'
