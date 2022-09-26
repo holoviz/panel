@@ -149,6 +149,11 @@ class NotificationArea(NotificationAreaBase):
         CSS_URLS['font-awesome']
     ]
 
+    __resources__ = [
+        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/webfonts/fa-brands-400.ttf',
+        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/webfonts/fa-regular-400.ttf'
+    ]
+
     @classproperty
     def __css__(cls):
         return bundled_files(cls, 'css')

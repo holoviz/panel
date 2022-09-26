@@ -867,6 +867,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         add_to_doc(model, doc)
         if location:
             self._add_location(doc, location, model)
+        if config.notifications and doc is state.curdoc:
+            notification_model = state.notifications._get_model(doc, model)
+            notification_model.name = 'notifications'
+            doc.add_root(notification_model)
         return doc
 
 
