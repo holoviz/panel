@@ -1,7 +1,6 @@
 import * as p from "@bokehjs/core/properties"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
-import {PanelHTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 import {Attrs} from "@bokehjs/core/types"
 
 export class JSONEditEvent extends ModelEvent {
@@ -17,7 +16,7 @@ export class JSONEditEvent extends ModelEvent {
 }
 
 
-export class JSONEditorView extends PanelHTMLBoxView {
+export class JSONEditorView extends HTMLBoxView {
   model: JSONEditor
   editor: any
   _menu_context: any

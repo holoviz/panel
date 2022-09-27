@@ -1,5 +1,5 @@
 import * as p from "@bokehjs/core/properties"
-import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
+import { HTMLBox, HTMLBoxView } from "./layout"
 
 function toVoicesList(voices: SpeechSynthesisVoice[]) {
   var voicesList = [];

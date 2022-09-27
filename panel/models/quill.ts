@@ -1,10 +1,9 @@
 import * as p from "@bokehjs/core/properties"
 import { div } from "@bokehjs/core/dom"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
-import {PanelHTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
-export class QuillInputView extends PanelHTMLBoxView {
+export class QuillInputView extends HTMLBoxView {
   override model: QuillInput
   protected _container: HTMLDivElement
   protected _editor: HTMLDivElement

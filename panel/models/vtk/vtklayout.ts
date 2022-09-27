@@ -1,12 +1,11 @@
 import * as p from "@bokehjs/core/properties"
 
 import {div, canvas} from "@bokehjs/core/dom"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {clone} from "@bokehjs/core/util/object"
 import {ColorMapper} from "@bokehjs/models/mappers/color_mapper"
 import {Enum} from "@bokehjs/core/kinds"
 
-import {PanelHTMLBoxView, set_size} from "../layout"
+import {HTMLBox, HTMLBoxView, set_size} from "../layout"
 import {vtkns, setup_vtkns, VolumeType, majorAxis, applyStyle, CSSProperties, Annotation} from "./util"
 import {VTKColorBar} from "./vtkcolorbar"
 import {VTKAxes} from "./vtkaxes"
@@ -28,7 +27,7 @@ const INFO_DIV_STYLE: CSSProperties = {
 
 const textPositions = Enum("LowerLeft", "LowerRight", "UpperLeft", "UpperRight", "LowerEdge", "RightEdge", "LeftEdge", "UpperEdge")
 
-export abstract class AbstractVTKView extends PanelHTMLBoxView {
+export abstract class AbstractVTKView extends HTMLBoxView {
   model: AbstractVTKPlot
   protected _axes: any
   protected _camera_callbacks: any[]

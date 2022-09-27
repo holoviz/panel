@@ -4,8 +4,7 @@ import {html} from 'htm/preact';
 import {applyPatch, getValueByPointer} from 'fast-json-patch';
 
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
-import {PanelHTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 import {serializeEvent} from "./event-to-object"
 
 const LayoutConfigContext = createContext({});
@@ -207,7 +206,7 @@ function joinUrl(base: string, tail: string) {
     : tail;
 }
 
-export class IDOMView extends PanelHTMLBoxView {
+export class IDOMView extends HTMLBoxView {
   model: IDOM
   _update: any
 

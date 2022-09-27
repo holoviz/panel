@@ -1,7 +1,7 @@
 import * as p from "@bokehjs/core/properties"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {isArray} from "@bokehjs/core/util/types"
-import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import {HTMLBox, HTMLBoxView} from "./layout"
 import {Attrs} from "@bokehjs/core/types"
 
 import {debounce} from  "debounce"

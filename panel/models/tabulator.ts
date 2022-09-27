@@ -1,6 +1,5 @@
 import {undisplay} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {build_views} from "@bokehjs/core/build_views"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
@@ -14,7 +13,7 @@ import {debounce} from "debounce"
 
 import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
-import {PanelHTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
 export class TableEditEvent extends ModelEvent {
   event_name: string = "table-edit"
@@ -275,7 +274,7 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
 };
 
 
-export class DataTabulatorView extends PanelHTMLBoxView {
+export class DataTabulatorView extends HTMLBoxView {
   model: DataTabulator;
   tabulator: any;
   _tabulator_cell_updating: boolean=false

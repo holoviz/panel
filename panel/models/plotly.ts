@@ -3,13 +3,12 @@ import * as p from "@bokehjs/core/properties"
 import {div} from "@bokehjs/core/dom"
 import {clone} from "@bokehjs/core/util/object"
 import {is_equal} from "@bokehjs/core/util/eq"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 
 import {debounce} from  "debounce"
 import {deepCopy, isPlainObject, get, throttle} from "./util"
 
-import {PanelHTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
 
 interface PlotlyHTMLElement extends HTMLDivElement {
@@ -109,7 +108,7 @@ const _isHidden = (gd: any) => {
 };
 
 
-export class PlotlyPlotView extends PanelHTMLBoxView {
+export class PlotlyPlotView extends HTMLBoxView {
   model: PlotlyPlot
   _setViewport: Function
   _settingViewport: boolean = false

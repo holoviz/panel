@@ -1,12 +1,11 @@
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {debounce} from  "debounce"
 
 import {transform_cds_to_records} from "./data"
-import {PanelHTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 import {makeTooltip} from "./tooltips"
 
 import GL from '@luma.gl/constants';
@@ -22,7 +21,7 @@ function extractClasses() {
   return classesDict;
 }
 
-export class DeckGLPlotView extends PanelHTMLBoxView {
+export class DeckGLPlotView extends HTMLBoxView {
   model: DeckGLPlot
   jsonConverter: any
   deckGL: any

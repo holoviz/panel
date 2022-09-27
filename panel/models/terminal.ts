@@ -1,10 +1,9 @@
-import { HTMLBox } from "@bokehjs/models/layouts/html_box"
 import * as p from "@bokehjs/core/properties"
 import { div } from "@bokehjs/core/dom"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {Attrs} from "@bokehjs/core/types"
 
-import { PanelHTMLBoxView, set_size } from "./layout"
+import { HTMLBox, HTMLBoxView, set_size } from "./layout"
 
 
 export class KeystrokeEvent extends ModelEvent {
@@ -19,7 +18,7 @@ export class KeystrokeEvent extends ModelEvent {
   }
 }
 
-export class TerminalView extends PanelHTMLBoxView {
+export class TerminalView extends HTMLBoxView {
   model: Terminal
   term: any // Element
   webLinksAddon: any

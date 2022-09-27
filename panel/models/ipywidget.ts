@@ -1,11 +1,10 @@
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
-import {PanelHTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 const Jupyter = (window as any).Jupyter
 
-export class IPyWidgetView extends PanelHTMLBoxView {
+export class IPyWidgetView extends HTMLBoxView {
   model: IPyWidget
   private rendered: boolean = false
   private ipyview: any

@@ -1,9 +1,8 @@
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
-import {PanelHTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
-export class VideoStreamView extends PanelHTMLBoxView {
+export class VideoStreamView extends HTMLBoxView {
   model: VideoStream
   protected videoEl: HTMLVideoElement
   protected canvasEl: HTMLCanvasElement

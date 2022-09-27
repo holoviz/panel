@@ -5,7 +5,6 @@ import {html} from 'htm/preact';
 import {build_views} from "@bokehjs/core/build_views"
 import {isArray, isNumber} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {empty, classes} from "@bokehjs/core/dom"
 import {color2css} from "@bokehjs/core/util/color"
@@ -13,7 +12,7 @@ import {color2css} from "@bokehjs/core/util/color"
 import {dict_to_records} from "./data"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent, htmlDecode} from "./html"
-import {PanelHTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
 
 function serialize_attrs(attrs: any): any {
@@ -82,7 +81,7 @@ function extractToken(template: string, str: string, tokens: string[]) {
 }
 
 
-export class ReactiveHTMLView extends PanelHTMLBoxView {
+export class ReactiveHTMLView extends HTMLBoxView {
   model: ReactiveHTML
   html: string
   _parent: any = null

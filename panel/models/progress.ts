@@ -1,11 +1,8 @@
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
-
-import {CachedVariadicBox, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class ProgressView extends HTMLBoxView {
   model: Progress
-  _prev_sizing_mode: string | null
   protected progressEl: HTMLProgressElement
 
   connect_signals(): void {
@@ -32,7 +29,6 @@ export class ProgressView extends HTMLBoxView {
     this.progressEl = document.createElement('progress')
     this.setValue()
     this.setMax()
-    set_size(this.progressEl, this.model)
 
     // Set styling
     this.setCSS()
@@ -61,14 +57,6 @@ export class ProgressView extends HTMLBoxView {
   setMax(): void {
     if (this.model.max != null)
       this.progressEl.max = this.model.max
-  }
-
-  _update_layout(): void {
-    let changed = ((this._prev_sizing_mode !== undefined) &&
-                   (this._prev_sizing_mode !== this.model.sizing_mode))
-    this._prev_sizing_mode = this.model.sizing_mode;
-    this.layout = new CachedVariadicBox(this.el, this.model.sizing_mode, changed)
-    this.layout.set_sizing(this.box_sizing())
   }
 }
 

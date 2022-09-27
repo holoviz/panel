@@ -1,4 +1,4 @@
-import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import {HTMLBox, HTMLBoxView} from "./layout"
 import {build_view} from "@bokehjs/core/build_views"
 import {Plot} from "@bokehjs/models/plots"
 import {Line, Step, VArea, VBar} from "@bokehjs/models/glyphs"
