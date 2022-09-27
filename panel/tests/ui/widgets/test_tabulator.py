@@ -131,7 +131,7 @@ def tabulator_column_values(page, col_name: str) -> list[str]:
     return cells.all_inner_texts()
 
 
-def test_tabulator_no_console_error(page, port):
+def test_tabulator_no_console_error(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
     serve(widget, port=port, threaded=True, show=False)
