@@ -631,7 +631,7 @@ export class DataTabulatorView extends HTMLBoxView {
       viewEl = div({style: "background-color: " + bg +"; margin-left:" + neg_margin})
     }
     row.getElement().appendChild(viewEl);
-    view.renderTo(viewEl)
+    view.render_to(viewEl)
   }
 
   _expand_render(cell: any): string {

@@ -298,7 +298,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       el.innerHTML = htmlDecode(model) || model
     else {
       view._parent = this
-      view.renderTo(el)
+      view.render_to(el)
     }
   }
 

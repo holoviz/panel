@@ -120,7 +120,7 @@ export class TrendIndicatorView extends HTMLBoxView {
 
     const view = await build_view(this.plot)
     this.plotDiv.innerHTML = ""
-    view.renderTo(this.plotDiv)
+    view.render_to(this.plotDiv)
   }
 
   after_layout(): void {
