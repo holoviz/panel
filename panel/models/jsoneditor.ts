@@ -90,7 +90,7 @@ export class JSONEditor extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.json_editor"
+  static __module__ = "panel.models.jsoneditor"
 
   static init_JSONEditor(): void {
     this.prototype.default_view = JSONEditorView
