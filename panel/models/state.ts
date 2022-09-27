@@ -19,9 +19,6 @@ function get_json(file: string, callback: any): void {
 
 export class StateView extends View {
   model: State
-
-  renderTo(): void {
-  }
 }
 
 export namespace State {

@@ -12,9 +12,6 @@ export const comm_settings: any = {
 
 export class CommManagerView extends View {
   override model: CommManager
-
-  renderTo(): void {
-  }
 }
 
 export namespace CommManager {
