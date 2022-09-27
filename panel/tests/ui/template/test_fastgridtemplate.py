@@ -6,14 +6,14 @@ pytestmark = pytest.mark.ui
 
 from panel.io.server import serve
 from panel.pane import Markdown
-from panel.template import FastListTemplate
+from panel.template import FastGridTemplate
 
 
-def test_fast_list_template_no_console_errors(page, port):
-    tmpl = FastListTemplate()
+def test_fast_grid_template_no_console_errors(page, port):
+    tmpl = FastGridTemplate()
     md = Markdown('Initial')
 
-    tmpl.main.append(md)
+    tmpl.main[0:3, 0:3] = md
 
     serve(tmpl, port=port, threaded=True, show=False)
 
@@ -24,22 +24,17 @@ def test_fast_list_template_no_console_errors(page, port):
 
     page.goto(f"http://localhost:{port}", timeout=40_000)
 
-    known_messages = [
-        "[bokeh] setting log level to: 'info'",
-        "[bokeh] Websocket connection 0 is now open",
-        "[bokeh] document idle at",
-        "Bokeh items were rendered successfully"
-    ]
-    assert len([
-        msg for msg in msgs if not any(msg.text.startswith(known) for known in known_messages)
-    ]) == 0
+    expected = ['maxWidth', 'maxHeight']
+    assert [
+        msg for msg in msgs if msg.type == 'error' and not any(e in msg.text for e in expected)
+    ] == []
 
 
-def test_fast_list_template_updates(page, port):
-    tmpl = FastListTemplate()
+def test_fast_grid_template_updates(page, port):
+    tmpl = FastGridTemplate()
     md = Markdown('Initial')
 
-    tmpl.main.append(md)
+    tmpl.main[0:3, 0:3] = md
 
     serve(tmpl, port=port, threaded=True, show=False)
 
