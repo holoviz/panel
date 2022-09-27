@@ -6,7 +6,6 @@ const Jupyter = (window as any).Jupyter
 
 export class IPyWidgetView extends HTMLBoxView {
   model: IPyWidget
-  private rendered: boolean = false
   private ipyview: any
   private manager: any
 
@@ -38,15 +37,10 @@ export class IPyWidgetView extends HTMLBoxView {
   render(): void {
     super.render()
     if (this.ipyview != null) {
-      this.el.appendChild(this.ipyview.el)
+      this.shadow_el.appendChild(this.ipyview.el)
       if (!this.rendered)
 	this.ipyview.trigger('displayed', this.ipyview)
     }
-    this.rendered = true
-  }
-
-  has_finished(): boolean {
-    return this.rendered && super.has_finished()
   }
 }
 

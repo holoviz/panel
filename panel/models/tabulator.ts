@@ -400,7 +400,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
     this.setHidden()
 
-    this.el.appendChild(container)
+    this.shadow_el.appendChild(container)
   }
 
   tableInit(): void {

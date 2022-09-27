@@ -170,7 +170,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   async render(): Promise<void> {
     super.render()
     this.el.style.visibility = this.model.visibility ? 'visible' : 'hidden'
-    this.el.appendChild(this._layout_wrapper)
+    this.shadow_el.appendChild(this._layout_wrapper)
     await this.plot();
     (window as any).Plotly.relayout(this._layout_wrapper, this.model.relayout)
   }

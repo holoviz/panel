@@ -52,7 +52,7 @@ export class QuillInputView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    this.el.appendChild(this._container)
+    this.shadow_el.appendChild(this._container)
     const theme = (this.model.mode === 'bubble') ? 'bubble' : 'snow'
     this.quill = new (window as any).Quill(this._container, {
       modules: {

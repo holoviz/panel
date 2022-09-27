@@ -206,7 +206,7 @@ export class DeckGLPlotView extends HTMLBoxView {
         tooltip
       });
     }
-    this.el.appendChild(container);
+    this.shadow_el.appendChild(container);
   }
 }
 

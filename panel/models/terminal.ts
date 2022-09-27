@@ -53,7 +53,7 @@ export class TerminalView extends HTMLBoxView {
 
     this.write()
 
-    this.el.appendChild(this.container)
+    this.shadow_el.appendChild(this.container)
   }
 
   getNewTerminal(): any {

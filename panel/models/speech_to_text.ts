@@ -170,7 +170,7 @@ export class SpeechToTextView extends HTMLBoxView {
   render(): void {
     super.render()
     if (!this.model.button_hide)
-      this.el.appendChild(this.buttonEl)
+      this.shadow_el.appendChild(this.buttonEl)
   }
 }
 

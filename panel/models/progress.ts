@@ -34,7 +34,7 @@ export class ProgressView extends HTMLBoxView {
     this.setCSS()
     for (const prop in style)
       this.progressEl.style.setProperty(prop, style[prop]);
-    this.el.appendChild(this.progressEl)
+    this.shadow_el.appendChild(this.progressEl)
   }
 
   setCSS(): void {

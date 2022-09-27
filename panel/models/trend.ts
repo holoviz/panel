@@ -60,7 +60,7 @@ export class TrendIndicatorView extends HTMLBoxView {
 
   async render(): Promise<void> {
     super.render()
-    this.el.appendChild(this.containerDiv)
+    this.shadow_el.appendChild(this.containerDiv)
     await this.setPlot()
   }
 

@@ -46,7 +46,7 @@ export class AcePlotView extends HTMLBoxView {
   render(): void {
     super.render()
     if (!(this._container === this.el.childNodes[0]))
-      this.el.appendChild(this._container)
+      this.shadow_el.appendChild(this._container)
       this._container.textContent = this.model.code
       this._editor = (window as any).ace.edit(this._container.id)
       this._langTools = (window as any).ace.require('ace/ext/language_tools')

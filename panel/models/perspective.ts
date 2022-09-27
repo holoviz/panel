@@ -127,7 +127,7 @@ export class PerspectiveView extends HTMLBoxView {
     this.perspective_element = container.children[0]
     this.perspective_element.resetThemes([...Object.values(THEMES)]).catch(() => {})
     set_size(this.perspective_element, this.model)
-    this.el.appendChild(container)
+    this.shadow_el.appendChild(container)
     this.perspective_element.load(this.table)
 
     const plugin_config = {

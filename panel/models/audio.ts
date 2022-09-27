@@ -45,7 +45,7 @@ export class AudioView extends HTMLBoxView {
     this.audioEl.onplay = () => this.model.paused = false
     this.audioEl.ontimeupdate = () => this.update_time(this)
     this.audioEl.onvolumechange = () => this.update_volume(this)
-    this.el.appendChild(this.audioEl)
+    this.shadow_el.appendChild(this.audioEl)
     if (!this.model.paused)
       this.audioEl.play()
   }

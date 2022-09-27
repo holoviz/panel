@@ -84,12 +84,12 @@ export class CardView extends ColumnView {
 
     if (!this.model.hide_header) {
       header_el.style.color = header_color != null ? header_color : ""
-      this.el.appendChild(header_el)
+      this.shadow_el.appendChild(header_el)
       header.render()
     }
     for (const child_view of this.child_views.slice(1)) {
       if (!this.model.collapsed)
-        this.el.appendChild(child_view.el)
+        this.shadow_el.appendChild(child_view.el)
       child_view.render()
     }
   }

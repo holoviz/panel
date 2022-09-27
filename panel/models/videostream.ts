@@ -77,7 +77,7 @@ export class VideoStreamView extends HTMLBoxView {
     this.videoEl.style.minWidth = '100%';
     this.videoEl.style.minHeight = '100%';
     this.canvasEl = document.createElement('canvas')
-    this.el.appendChild(this.videoEl)
+    this.shadow_el.appendChild(this.videoEl)
     if (navigator.mediaDevices.getUserMedia){
       navigator.mediaDevices.getUserMedia(this.constraints)
       .then(stream => {

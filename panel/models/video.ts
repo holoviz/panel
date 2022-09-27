@@ -54,7 +54,7 @@ export class VideoView extends HTMLBoxView {
     this.videoEl.onplay = () => this.model.paused = false
     this.videoEl.ontimeupdate = () => this.update_time(this)
     this.videoEl.onvolumechange = () => this.update_volume(this)
-    this.el.appendChild(this.videoEl)
+    this.shadow_el.appendChild(this.videoEl)
     if (!this.model.paused)
       this.videoEl.play()
   }

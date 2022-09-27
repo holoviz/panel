@@ -218,7 +218,7 @@ export class TabsView extends BkTabsView {
 
     const loc = this.model.tabs_location
     this.header_el = div({class: [tabs.tabs_header, tabs[loc]]}, this.scroll_el, this.wrapper_el)
-    this.el.appendChild(this.header_el)
+    this.shadow_el.appendChild(this.header_el)
 
     this.update_zindex()
     if (active === -1 && this.model.tabs.length)

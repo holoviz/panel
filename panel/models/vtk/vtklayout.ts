@@ -59,7 +59,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     info_div.classList.add('vtk_info')
     applyStyle(info_div, INFO_DIV_STYLE)
     applyStyle(info_div, {width: expand_width})
-    this.el.appendChild(info_div)
+    this.shadow_el.appendChild(info_div)
 
     //construct colorbars
     const colorbars: VTKColorBar[] = []
@@ -197,7 +197,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
       this.init_vtk_renwin()
       this._init_annotations_container()
       set_size(this._vtk_container, this.model)
-      this.el.appendChild(this._vtk_container)
+      this.shadow_el.appendChild(this._vtk_container)
       // update camera model state only at the end of the interaction
       // with the scene (avoid bouncing events and large amount of events)
       this._vtk_renwin.getInteractor().onEndAnimation(() => this._get_camera_state())
@@ -211,9 +211,9 @@ export abstract class AbstractVTKView extends HTMLBoxView {
       set_size(this._vtk_container, this.model)
       // warning if _vtk_renwin contain controllers or other elements
       // we must attach them to the new el
-      this.el.appendChild(this._vtk_container)
+      this.shadow_el.appendChild(this._vtk_container)
     }
-    this.el.appendChild(this._annotations_container)
+    this.shadow_el.appendChild(this._annotations_container)
   }
 
   after_layout(): void {
