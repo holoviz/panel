@@ -65,14 +65,34 @@ DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
 
+RESOURCE_URLS = {
+    'font-awesome': {
+        'zip': 'https://use.fontawesome.com/releases/v5.15.4/fontawesome-free-5.15.4-web.zip',
+        'src': 'fontawesome-free-5.15.4-web/',
+        'exclude': []
+    },
+    'bootstrap4': {
+        'tar': 'https://registry.npmjs.org/bootstrap/-/bootstrap-4.6.1.tgz',
+        'src': 'package/dist',
+        'exclude': [],
+        'dest': ''
+    },
+    'jQuery': {
+        'tar': 'https://registry.npmjs.org/jquery/-/jquery-3.5.1.tgz',
+        'src': 'package/dist',
+        'exclude': [],
+        'dest': ''
+    }
+}
+
 CSS_URLS = {
-    'font-awesome': 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css',
-    'bootstrap4': f'{config.npm_cdn}/bootstrap@4.6.1/dist/css/bootstrap.min.css'
+    'font-awesome': f'{CDN_DIST}bundled/font-awesome/css/all.min.css',
+    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/css/bootstrap.min.css'
 }
 
 JS_URLS = {
-    'jQuery': f'{config.npm_cdn}/jquery@3.5.1/dist/jquery.slim.min.js',
-    'bootstrap4': f'{config.npm_cdn}/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js'
+    'jQuery': f'{CDN_DIST}bundled/jquery/jquery.slim.min.js',
+    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/js/bootstrap.bundle.min.js'
 }
 
 extension_dirs['panel'] = str(DIST_DIR)
@@ -143,21 +163,30 @@ def loading_css():
     """
 
 def bundled_files(model, file_type='javascript'):
-    bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
+    bdir = BUNDLE_DIR / model.__name__.lower()
     name = model.__name__.lower()
+    shared = list((JS_URLS if file_type == 'javascript' else CSS_URLS).values())
 
     files = []
     for url in getattr(model, f"__{file_type}_raw__", []):
-        if url.startswith(config.npm_cdn):
+        if url.startswith(CDN_DIST):
+            filepath = url.replace(f'{CDN_DIST}bundled/', '')
+        elif url.startswith(config.npm_cdn):
             filepath = url.replace(config.npm_cdn, '')[1:]
         else:
             filepath = url_path(url)
         test_filepath = filepath.split('?')[0]
-        if os.path.isfile(os.path.join(bdir, test_filepath)):
+        if url in shared:
+            prefixed = filepath
+            test_path = BUNDLE_DIR / test_filepath
+        else:
+            prefixed = f'{name}/{filepath}'
+            test_path = bdir / test_filepath
+        if test_path.is_file():
             if RESOURCE_MODE == 'server':
-                files.append(f'static/extensions/panel/bundled/{name}/{filepath}')
+                files.append(f'static/extensions/panel/bundled/{prefixed}')
             elif filepath == test_filepath:
-                files.append(f'{CDN_DIST}bundled/{name}/{filepath}')
+                files.append(f'{CDN_DIST}bundled/{prefixed}')
             else:
                 files.append(url)
         else:

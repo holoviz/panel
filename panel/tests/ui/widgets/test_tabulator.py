@@ -131,6 +131,23 @@ def tabulator_column_values(page, col_name: str) -> list[str]:
     return cells.all_inner_texts()
 
 
+def test_tabulator_no_console_error(page, port):
+    widget = Tabulator(df_mixed)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    msgs = []
+    page.on("console", lambda msg: msgs.append(msg))
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    time.sleep(1)
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
 def test_tabulator_default(page, port, df_mixed, df_mixed_as_string):
     nrows, ncols = df_mixed.shape
     widget = Tabulator(df_mixed)

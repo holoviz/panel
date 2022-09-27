@@ -25,8 +25,8 @@ from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
-    BUNDLE_DIR, CDN_DIST, DOC_DIST, LOCAL_DIST, _env, component_resource_path,
-    resolve_custom_path,
+    BUNDLE_DIR, CDN_DIST, CSS_URLS, DOC_DIST, JS_URLS, LOCAL_DIST, _env,
+    component_resource_path, resolve_custom_path,
 )
 from ..io.save import save
 from ..io.state import curdoc_locked, state
@@ -624,19 +624,26 @@ class BasicTemplate(BaseTemplate):
             if resource_type not in self._resources:
                 continue
             resource_files = resource_types[resource_type]
+            shared = list((CSS_URLS if resource_type == 'css' else JS_URLS).values())
             for rname, resource in self._resources[resource_type].items():
-                if resource.startswith(config.npm_cdn):
+                if resource.startswith(CDN_DIST):
+                    resource_path = resource.replace(f'{CDN_DIST}bundled/', '')
+                elif resource.startswith(config.npm_cdn):
                     resource_path = resource.replace(config.npm_cdn, '')[1:]
                 else:
                     resource_path = url_path(resource)
-                rtype = 'css' if resource_type == 'css' else 'js'
-                if resource_type == 'js_modules' and not (state.rel_path or use_cdn):
-                    prefix = f'./{dist_path}'
+                if resource in shared:
+                    prefixed = resource_path
                 else:
-                    prefix = dist_path
-                bundlepath = BUNDLE_DIR / rtype / resource_path.replace('/', os.path.sep)
+                    rtype = 'css' if resource_type == 'css' else 'js'
+                    prefixed = f'{rtype}/{resource_path}'
+                if resource_type == 'js_modules' and not (state.rel_path or use_cdn):
+                    prefixed_dist = f'./{dist_path}'
+                else:
+                    prefixed_dist = dist_path
+                bundlepath = BUNDLE_DIR / prefixed.replace('/', os.path.sep)
                 if bundlepath:
-                    resource_files[rname] = f'{prefix}bundled/{rtype}/{resource_path}'
+                    resource_files[rname] = f'{prefixed_dist}bundled/{prefixed}'
                 elif isurl(resource):
                     resource_files[rname] = resource
                 elif resolve_custom_path(self, resource):
