@@ -8,7 +8,7 @@ import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 import {debounce} from  "debounce"
 import {deepCopy, isPlainObject, get, throttle} from "./util"
 
-import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 
 interface PlotlyHTMLElement extends HTMLDivElement {

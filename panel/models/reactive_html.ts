@@ -12,7 +12,7 @@ import {color2css} from "@bokehjs/core/util/color"
 import {dict_to_records} from "./data"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent, htmlDecode} from "./html"
-import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 
 function serialize_attrs(attrs: any): any {

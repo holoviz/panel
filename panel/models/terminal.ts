@@ -3,7 +3,7 @@ import { div } from "@bokehjs/core/dom"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {Attrs} from "@bokehjs/core/types"
 
-import { HTMLBox, HTMLBoxView, set_size } from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 
 export class KeystrokeEvent extends ModelEvent {

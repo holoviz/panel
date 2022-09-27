@@ -4,7 +4,7 @@ import {html} from 'htm/preact';
 import {applyPatch, getValueByPointer} from 'fast-json-patch';
 
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 import {serializeEvent} from "./event-to-object"
 
 const LayoutConfigContext = createContext({});

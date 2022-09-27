@@ -5,7 +5,7 @@ import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {debounce} from  "debounce"
 
 import {transform_cds_to_records} from "./data"
-import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 import {makeTooltip} from "./tooltips"
 
 import GL from '@luma.gl/constants';
