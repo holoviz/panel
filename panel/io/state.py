@@ -18,7 +18,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from functools import partial
+from functools import partial, wraps
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Coroutine, Dict,
     Iterator as TIterator, List, Optional, Tuple, TypeVar, Union,
@@ -34,7 +34,7 @@ from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 from typing_extensions import Literal
 
-from ..util import base64url_decode, handle_future_exception, parse_timedelta
+from ..util import base64url_decode, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -322,7 +322,7 @@ class _state(param.Parameterized):
     def _schedule_on_load(self, doc: Document, event) -> None:
         if self._thread_pool:
             future = self._thread_pool.submit(self._on_load, doc)
-            future.add_done_callback(handle_future_exception)
+            future.add_done_callback(self._handle_future_exception)
         else:
             self._on_load(doc)
 
@@ -367,6 +367,15 @@ class _state(param.Parameterized):
         if inspect.isawaitable(res):
             await res
 
+    def _handle_exception_wrapper(self, callback):
+        @wraps(callback)
+        def wrapper(*args, **kw):
+            try:
+                return callback(*args, **kw)
+            except Exception as e:
+                self._handle_exception(e)
+        return wrapper
+
     def _handle_future_exception(self, future):
         exception = future.exception()
         if exception:
@@ -374,7 +383,9 @@ class _state(param.Parameterized):
 
     def _handle_exception(self, exception):
         from ..config import config
-        if config.exception_handler:
+        thread = threading.current_thread()
+        thread_id = thread.ident if thread else None
+        if config.exception_handler and self._thread_id == thread_id:
             config.exception_handler(exception)
         else:
             raise exception
@@ -539,7 +550,7 @@ class _state(param.Parameterized):
         if param.parameterized.iscoroutinefunction(cb):
             param.parameterized.async_executor(callback)
         elif doc and doc.session_context and (schedule == True or (schedule == 'auto' and not self._unblocked(doc))):
-            doc.add_next_tick_callback(callback)
+            doc.add_next_tick_callback(self._handle_exception_wrapper(callback))
         else:
             try:
                 callback()
