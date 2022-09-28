@@ -9,6 +9,8 @@ import param
 import pytest
 import requests
 
+from bokeh.events import ButtonClick
+
 from panel.config import config
 from panel.io import state
 from panel.io.resources import DIST_DIR
@@ -20,7 +22,9 @@ from panel.pane import Markdown
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
 from panel.tests.util import wait_until
-from panel.widgets import Button, Tabulator, Terminal
+from panel.widgets import (
+    Button, Tabulator, Terminal, TextInput,
+)
 
 
 def test_get_server(html_server_session):
@@ -773,3 +777,119 @@ def test_server_component_css_with_subpath_and_prefix_relative_url(port):
     r = requests.get(f"http://localhost:{port}/prefix/subpath/component")
     content = r.content.decode('utf-8')
     assert 'href="../static/extensions/panel/bundled/terminal/xterm@4.11.0/css/xterm.css' in content
+
+
+def synchronous_handler(event=None):
+    raise Exception()
+
+async def async_handler(event=None):
+    raise Exception()
+
+@pytest.mark.parametrize(
+    'threads, handler', [
+        ('threads', synchronous_handler),
+        ('nothreads', synchronous_handler),
+        ('threads', async_handler),
+        ('nothreads', async_handler)
+])
+def test_server_exception_handler_bokeh_event(threads, handler, port, request):
+    request.getfixturevalue(threads)
+
+    exceptions = []
+
+    def exception_handler(e):
+        exceptions.append(e)
+
+    def simulate_click():
+        button._comm_event(state.curdoc, ButtonClick(model=None))
+
+    button = Button()
+    button.on_click(handler)
+
+    def app():
+        config.exception_handler = exception_handler
+        state.curdoc.add_next_tick_callback(simulate_click)
+        return button
+
+    serve(app, port=port, threaded=True, show=False)
+
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}")
+
+    time.sleep(0.5)
+
+    assert len(exceptions) == 1
+
+@pytest.mark.parametrize(
+    'threads, handler', [
+        ('threads', synchronous_handler),
+        ('nothreads', synchronous_handler),
+        ('threads', async_handler),
+        ('nothreads', async_handler)
+])
+def test_server_exception_handler_async_change_event(threads, handler, port, request):
+    request.getfixturevalue(threads)
+
+    exceptions = []
+
+    def exception_handler(e):
+        exceptions.append(e)
+
+    def simulate_input():
+        text_input._server_change(state.curdoc, ref=None, subpath=None, attr='value', old='', new='foo')
+
+    text_input = TextInput()
+    text_input.param.watch(handler, 'value')
+
+    def app():
+        config.exception_handler = exception_handler
+        state.curdoc.add_next_tick_callback(simulate_input)
+        return text_input
+
+    serve(app, port=port, threaded=True, show=False)
+
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}")
+
+    time.sleep(0.5)
+
+    assert len(exceptions) == 1
+
+
+@pytest.mark.parametrize(
+    'threads, handler', [
+        ('threads', synchronous_handler),
+        ('nothreads', synchronous_handler),
+        ('threads', async_handler),
+        ('nothreads', async_handler)
+])
+def test_server_exception_handler_async_onload_event(threads, handler, port, request):
+    request.getfixturevalue(threads)
+
+    exceptions = []
+
+    def exception_handler(e):
+        exceptions.append(e)
+
+    def loaded():
+        state._schedule_on_load(state.curdoc, None)
+
+    text_input = TextInput()
+
+    def app():
+        config.exception_handler = exception_handler
+        state.onload(handler)
+        state.curdoc.add_next_tick_callback(loaded)
+        return text_input
+
+    serve(app, port=port, threaded=True, show=False)
+
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}")
+
+    time.sleep(0.5)
+
+    assert len(exceptions) == 1

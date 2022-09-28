@@ -355,16 +355,24 @@ class Syncable(Renderable):
 
     async def _change_coroutine(self, doc: Document) -> None:
         if state._thread_pool:
-            state._thread_pool.submit(self._change_event, doc)
+            future = state._thread_pool.submit(self._change_event, doc)
+            future.add_done_callback(state._handle_future_exception)
         else:
             with set_curdoc(doc):
-                self._change_event(doc)
+                try:
+                    self._change_event(doc)
+                except Exception as e:
+                    state._handle_exception(e)
 
     async def _event_coroutine(self, doc: Document, event) -> None:
         if state._thread_pool:
-            state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future.add_done_callback(state._handle_future_exception)
         else:
-            self._process_bokeh_event(doc, event)
+            try:
+                self._process_bokeh_event(doc, event)
+            except Exception as e:
+                state._handle_exception(e)
 
     def _change_event(self, doc: Document) -> None:
         events = self._events
@@ -388,15 +396,23 @@ class Syncable(Renderable):
 
         self._events.update({attr: new})
         if state._thread_pool:
-            state._thread_pool.submit(self._schedule_change, doc, comm)
+            future = state._thread_pool.submit(self._schedule_change, doc, comm)
+            future.add_done_callback(state._handle_future_exception)
         else:
-            self._schedule_change(doc, comm)
+            try:
+                self._schedule_change(doc, comm)
+            except Exception as e:
+                state._handle_exception(e)
 
     def _comm_event(self, doc: Document, event: Event) -> None:
         if state._thread_pool:
-            state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future.add_done_callback(state._handle_future_exception)
         else:
-            self._process_bokeh_event(doc, event)
+            try:
+                self._process_bokeh_event(doc, event)
+            except Exception as e:
+                state._handle_exception(e)
 
     def _register_events(self, *event_names: str, model: Model, doc: Document, comm: Comm | None) -> None:
         for event_name in event_names:
@@ -433,7 +449,10 @@ class Syncable(Renderable):
             else:
                 doc.add_timeout_callback(cb, self._debounce) # type: ignore
         else:
-            self._change_event(doc)
+            try:
+                self._change_event(doc)
+            except Exception as e:
+                state._handle_exception(e)
 
 
 class Reactive(Syncable, Viewable):

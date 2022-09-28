@@ -341,6 +341,10 @@ def threads():
         config.nthreads = None
 
 @pytest.fixture
+def nothreads():
+    yield
+
+@pytest.fixture
 def change_test_dir(request):
     os.chdir(request.fspath.dirname)
     yield

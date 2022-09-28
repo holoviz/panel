@@ -129,10 +129,11 @@ def async_execute(func: Callable[..., None]) -> None:
     if not state.curdoc or not state.curdoc.session_context:
         ioloop = IOLoop.current()
         event_loop = ioloop.asyncio_loop # type: ignore
+        wrapper = state._handle_exception_wrapper(func)
         if event_loop.is_running():
-            ioloop.add_callback(func)
+            ioloop.add_callback(wrapper)
         else:
-            event_loop.run_until_complete(func())
+            event_loop.run_until_complete(wrapper())
         return
 
     if isinstance(func, partial) and hasattr(func.func, 'lock'):
@@ -143,7 +144,10 @@ def async_execute(func: Callable[..., None]) -> None:
     @wraps(func)
     async def wrapper(*args, **kw):
         with set_curdoc(curdoc):
-            return await func(*args, **kw)
+            try:
+                return await func(*args, **kw)
+            except Exception as e:
+                state._handle_exception(e)
     if unlock:
         wrapper.nolock = True # type: ignore
     state.curdoc.add_next_tick_callback(wrapper)

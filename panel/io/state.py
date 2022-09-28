@@ -18,7 +18,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from functools import partial
+from functools import partial, wraps
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Coroutine, Dict,
     Iterator as TIterator, List, Optional, Tuple, TypeVar, Union,
@@ -321,7 +321,8 @@ class _state(param.Parameterized):
 
     def _schedule_on_load(self, doc: Document, event) -> None:
         if self._thread_pool:
-            self._thread_pool.submit(self._on_load, doc)
+            future = self._thread_pool.submit(self._on_load, doc)
+            future.add_done_callback(self._handle_future_exception)
         else:
             self._on_load(doc)
 
@@ -359,9 +360,35 @@ class _state(param.Parameterized):
             now = dt.datetime.now().timestamp()
             call_time_seconds = (at - now)
             self._ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
-        res = cb()
-        if inspect.isawaitable(res):
-            await res
+        try:
+            res = cb()
+            if inspect.isawaitable(res):
+                await res
+        except Exception as e:
+            self._handle_exception(e)
+
+    def _handle_exception_wrapper(self, callback):
+        @wraps(callback)
+        def wrapper(*args, **kw):
+            try:
+                return callback(*args, **kw)
+            except Exception as e:
+                self._handle_exception(e)
+        return wrapper
+
+    def _handle_future_exception(self, future):
+        exception = future.exception()
+        if exception:
+            self._handle_exception(exception)
+
+    def _handle_exception(self, exception):
+        from ..config import config
+        thread = threading.current_thread()
+        thread_id = thread.ident if thread else None
+        if config.exception_handler and (self._thread_id is None or self._thread_id == thread_id):
+            config.exception_handler(exception)
+        else:
+            raise exception
 
     #----------------------------------------------------------------
     # Public Methods
@@ -523,9 +550,12 @@ class _state(param.Parameterized):
         if param.parameterized.iscoroutinefunction(cb):
             param.parameterized.async_executor(callback)
         elif doc and doc.session_context and (schedule == True or (schedule == 'auto' and not self._unblocked(doc))):
-            doc.add_next_tick_callback(callback)
+            doc.add_next_tick_callback(self._handle_exception_wrapper(callback))
         else:
-            callback()
+            try:
+                callback()
+            except Exception as e:
+                state._handle_exception(e)
 
     def get_profile(self, profile: str):
         """
@@ -589,7 +619,8 @@ class _state(param.Parameterized):
         """
         if self.curdoc is None:
             if self._thread_pool:
-                self._thread_pool.submit(partial(self.execute, callback, schedule=False))
+                future = self._thread_pool.submit(partial(self.execute, callback, schedule=False))
+                future.add_done_callback(self._handle_exception)
             else:
                 self.execute(callback, schedule=False)
             return

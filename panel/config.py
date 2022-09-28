@@ -115,6 +115,9 @@ class _config(_base_config):
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
+    exception_handler = param.Callable(default=None, doc="""
+        General exception handler for events.""")
+
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
 

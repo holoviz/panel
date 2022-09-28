@@ -149,6 +149,7 @@ The `pn.config` object allows setting various configuration variables, the confi
 > - `loading_spinner`: The style of the global loading indicator, e.g. 'arcs', 'bars', 'dots', 'petals'.
 > - `loading_color`: The color of the global loading indicator as a hex color, e.g. #6a6a6a
 > - `defer_load`: Whether reactive function evaluation is deferred until the page is rendered.
+> - `exception_handler`: A custom exception handler can be defined which should accept any exceptions raised while processing events originating from the frontend and onload callbacks.
 > - `nthreads`: If set will start a `ThreadPoolExecutor` to dispatch events to for concurrent execution on separate cores. By default no thread pool is launched, while setting nthreads=0 launches `min(32, os.cpu_count() + 4)` threads.
 > - `raw_css`: List of raw CSS strings to add to load.
 > - `reuse_sessions`: Whether to reuse a session for the initial request to speed up the initial page render. Note that if the initial page differs between sessions, e.g. because it uses query parameters to modify the rendered content, then this option will result in the wrong content being rendered. See the [Performance and Debugging guide](Performance_and_Debugging.rst#Reuse-sessions) for more information.
