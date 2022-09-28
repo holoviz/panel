@@ -468,3 +468,12 @@ def base_version(version: str) -> str:
         return match.group()
     else:
         return version
+
+
+def handle_future_exception(future):
+    """
+    Exception handler for Futures, e.g. when submitting a task to a thread.
+    """
+    exception = future.exception()
+    if exception:
+        raise exception

@@ -36,7 +36,9 @@ from .io.state import set_curdoc, state
 from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
-from .util import edit_readonly, escape, updating
+from .util import (
+    edit_readonly, escape, handle_future_exception, updating,
+)
 from .viewable import Layoutable, Renderable, Viewable
 
 if TYPE_CHECKING:
@@ -355,14 +357,16 @@ class Syncable(Renderable):
 
     async def _change_coroutine(self, doc: Document) -> None:
         if state._thread_pool:
-            state._thread_pool.submit(self._change_event, doc)
+            future = state._thread_pool.submit(self._change_event, doc)
+            future.add_done_callback(handle_future_exception)
         else:
             with set_curdoc(doc):
                 self._change_event(doc)
 
     async def _event_coroutine(self, doc: Document, event) -> None:
         if state._thread_pool:
-            state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future.add_done_callback(handle_future_exception)
         else:
             self._process_bokeh_event(doc, event)
 
@@ -388,13 +392,15 @@ class Syncable(Renderable):
 
         self._events.update({attr: new})
         if state._thread_pool:
-            state._thread_pool.submit(self._schedule_change, doc, comm)
+            future = state._thread_pool.submit(self._schedule_change, doc, comm)
+            future.add_done_callback(handle_future_exception)
         else:
             self._schedule_change(doc, comm)
 
     def _comm_event(self, doc: Document, event: Event) -> None:
         if state._thread_pool:
-            state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future.add_done_callback(handle_future_exception)
         else:
             self._process_bokeh_event(doc, event)
 

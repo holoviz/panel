@@ -34,7 +34,7 @@ from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 from typing_extensions import Literal
 
-from ..util import base64url_decode, parse_timedelta
+from ..util import base64url_decode, handle_future_exception, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -321,7 +321,8 @@ class _state(param.Parameterized):
 
     def _schedule_on_load(self, doc: Document, event) -> None:
         if self._thread_pool:
-            self._thread_pool.submit(self._on_load, doc)
+            future = self._thread_pool.submit(self._on_load, doc)
+            future.add_done_callback(handle_future_exception)
         else:
             self._on_load(doc)
 
@@ -589,7 +590,8 @@ class _state(param.Parameterized):
         """
         if self.curdoc is None:
             if self._thread_pool:
-                self._thread_pool.submit(partial(self.execute, callback, schedule=False))
+                future = self._thread_pool.submit(partial(self.execute, callback, schedule=False))
+                future.add_done_callback(handle_future_exception)
             else:
                 self.execute(callback, schedule=False)
             return
