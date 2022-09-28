@@ -385,7 +385,7 @@ class _state(param.Parameterized):
         from ..config import config
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
-        if config.exception_handler and self._thread_id == thread_id:
+        if config.exception_handler and (self._thread_id is None or self._thread_id == thread_id):
             config.exception_handler(exception)
         else:
             raise exception
