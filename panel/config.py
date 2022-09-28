@@ -98,6 +98,10 @@ class _config(_base_config):
         Whether to set custom Signature which allows tab-completion
         in some IDEs and environments.""")
 
+    async_to_sync_wrapper = param.Callable(default=None, doc="""
+        Wrapper to ensure that calls from an asynchronous context are
+        safe, e.g. required for Django to safely access a database.""")
+
     authorize_callback = param.Callable(default=None, doc="""
         Authorization callback that is invoked when authentication
         is enabled. The callback is given the user information returned
@@ -243,7 +247,8 @@ class _config(_base_config):
         'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
-        'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn'
+        'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
+        'async_to_sync_wrapper'
     ]
 
     _truthy = ['True', 'true', '1', True, 1]

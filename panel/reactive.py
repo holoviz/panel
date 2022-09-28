@@ -356,9 +356,13 @@ class Syncable(Renderable):
             future = state._thread_pool.submit(self._change_event, doc)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
         else:
+            from .config import config
             with set_curdoc(doc):
                 try:
-                    self._change_event(doc)
+                    if config.async_to_sync_wrapper:
+                        await config.async_to_sync_wrapper(self._change_event)(doc)
+                    else:
+                        self._change_event(doc)
                 except Exception as e:
                     state._handle_exception(e)
 
@@ -367,8 +371,12 @@ class Syncable(Renderable):
             future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
         else:
+            from .config import config
             try:
-                self._process_bokeh_event(doc, event)
+                if config.async_to_sync_wrapper:
+                    await config.async_to_sync_wrapper(self._process_bokeh_event)(event)
+                else:
+                    self._process_bokeh_event(doc, event)
             except Exception as e:
                 state._handle_exception(e)
 
@@ -418,7 +426,8 @@ class Syncable(Renderable):
             model.on_event(event_name, partial(method, doc))
 
     def _server_event(self, doc: Document, event: Event) -> None:
-        if doc.session_context and not state._unblocked(doc):
+        from .config import config
+        if doc.session_context and (not state._unblocked(doc) or config.async_to_sync_wrapper):
             doc.add_next_tick_callback(
                 partial(self._event_coroutine, doc, event) # type: ignore
             )
