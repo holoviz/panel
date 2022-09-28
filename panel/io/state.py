@@ -360,9 +360,24 @@ class _state(param.Parameterized):
             now = dt.datetime.now().timestamp()
             call_time_seconds = (at - now)
             self._ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
-        res = cb()
+        try:
+            res = cb()
+        except Exception as e:
+            self._handle_exception(e)
         if inspect.isawaitable(res):
             await res
+
+    def _handle_future_exception(self, future):
+        exception = future.exception()
+        if exception:
+            self._handle_exception(exception)
+
+    def _handle_exception(self, exception):
+        from ..config import config
+        if config.exception_handler:
+            config.exception_handler(exception)
+        else:
+            raise exception
 
     #----------------------------------------------------------------
     # Public Methods
@@ -526,7 +541,10 @@ class _state(param.Parameterized):
         elif doc and doc.session_context and (schedule == True or (schedule == 'auto' and not self._unblocked(doc))):
             doc.add_next_tick_callback(callback)
         else:
-            callback()
+            try:
+                callback()
+            except Exception as e:
+                state._handle_exception(e)
 
     def get_profile(self, profile: str):
         """
@@ -591,7 +609,7 @@ class _state(param.Parameterized):
         if self.curdoc is None:
             if self._thread_pool:
                 future = self._thread_pool.submit(partial(self.execute, callback, schedule=False))
-                future.add_done_callback(handle_future_exception)
+                future.add_done_callback(self._handle_exception)
             else:
                 self.execute(callback, schedule=False)
             return

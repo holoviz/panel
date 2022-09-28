@@ -9,7 +9,7 @@ import time
 
 import param
 
-from ..util import edit_readonly, function_name, handle_future_exception
+from ..util import edit_readonly, function_name
 from .logging import LOG_PERIODIC_END, LOG_PERIODIC_START
 from .state import curdoc_locked, state
 
@@ -117,7 +117,7 @@ class PeriodicCallback(param.Parameterized):
         )
         if state._thread_pool and not is_async:
             future = state._thread_pool.submit(self._exec_callback, True)
-            future.add_done_callback(handle_future_exception)
+            future.add_done_callback(state._handle_future_exception)
             return
         try:
             cb = self._exec_callback()
