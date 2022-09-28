@@ -362,10 +362,10 @@ class _state(param.Parameterized):
             self._ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
         try:
             res = cb()
+            if inspect.isawaitable(res):
+                await res
         except Exception as e:
             self._handle_exception(e)
-        if inspect.isawaitable(res):
-            await res
 
     def _handle_exception_wrapper(self, callback):
         @wraps(callback)
