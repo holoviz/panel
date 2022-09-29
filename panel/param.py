@@ -8,6 +8,7 @@ import inspect
 import itertools
 import json
 import os
+import sys
 import types
 
 from collections import OrderedDict, defaultdict, namedtuple
@@ -15,7 +16,7 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Type,
 )
 
 import param
@@ -39,7 +40,8 @@ from .widgets import (
     ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
     DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
     FileSelector, FloatInput, FloatSlider, IntInput, IntSlider, LiteralInput,
-    MultiSelect, RangeSlider, Select, StaticText, TextInput, Toggle, Widget,
+    MultiSelect, RangeSlider, Select, StaticText, Tabulator, TextInput, Toggle,
+    Widget,
 )
 from .widgets.button import _ButtonBase
 
@@ -49,7 +51,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-def SingleFileSelector(pobj: param.Parameter) -> Widget:
+def SingleFileSelector(pobj: param.Parameter) -> Type[Widget]:
     """
     Determines whether to use a TextInput or Select widget for FileSelector
     """
@@ -59,7 +61,7 @@ def SingleFileSelector(pobj: param.Parameter) -> Widget:
         return TextInput
 
 
-def LiteralInputTyped(pobj: param.Parameter) -> Widget:
+def LiteralInputTyped(pobj: param.Parameter) -> Type[Widget]:
     if isinstance(pobj, param.Tuple):
         return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
@@ -69,6 +71,13 @@ def LiteralInputTyped(pobj: param.Parameter) -> Widget:
     elif isinstance(pobj, param.List):
         return type(str('ListInput'), (LiteralInput,), {'type': list})
     return LiteralInput
+
+
+def DataFrameWidget(pobj: param.DataFrame) -> Type[Widget]:
+    if 'panel.models.tabulator' in sys.modules:
+        return Tabulator
+    else:
+        return DataFrame
 
 
 @contextmanager
@@ -171,7 +180,7 @@ class Param(PaneBase):
         param.Date:              DatetimeInput,
         param.DateRange:         DateRangeSlider,
         param.CalendarDateRange: DateRangeSlider,
-        param.DataFrame:         DataFrame,
+        param.DataFrame:         DataFrameWidget,
         param.Dict:              LiteralInputTyped,
         param.FileSelector:      SingleFileSelector,
         param.Filename:          TextInput,
@@ -496,6 +505,8 @@ class Param(PaneBase):
             def action(change):
                 value(self.object)
             watcher = widget.param.watch(action, 'clicks')
+        elif kw_widget.get('onkeyup', False) and hasattr(widget, 'value_input'):
+            watcher = widget.param.watch(link_widget, 'value_input')
         elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
             watcher = widget.param.watch(link_widget, 'value_throttled')
         else:

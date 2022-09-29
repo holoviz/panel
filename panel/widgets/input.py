@@ -36,6 +36,8 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+    from ..viewable import Viewable
+
 
 class TextInput(Widget):
     """
@@ -61,6 +63,28 @@ class TextInput(Widget):
       Initial or entered text value updated on every key press.""")
 
     _widget_type: ClassVar[Type[Model]] = _BkTextInput
+
+    @classmethod
+    def from_param(cls, parameter: param.Parameter, onkeyup=False, **params) -> Viewable:
+        """
+        Construct a widget from a Parameter and link the two
+        bi-directionally.
+
+        Parameters
+        ----------
+        parameter: param.Parameter
+          A parameter to create the widget from.
+        onkeyup: boolean
+          Whether to trigger events on every key press.
+        params: dict
+          Keyword arguments to be passed to the widget constructor
+
+        Returns
+        -------
+        Widget instance linked to the supplied parameter
+        """
+        params['onkeyup'] = onkeyup
+        return super().from_param(parameter, **params)
 
 
 class PasswordInput(TextInput):
