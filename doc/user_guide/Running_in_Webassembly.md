@@ -77,7 +77,7 @@ pn.Column(
 ).servable()
 ```
 
-- Run `panel convert script.py --to pyodide-worker --requirements bokeh numpy pandas panel scikit-learn xgboost`
+- Run `panel convert script.py --to pyodide-worker --requirements numpy pandas scikit-learn xgboost`
 - Run `python3 -m http.server` to start a web server locally
 - Open `http://localhost:8000/script.html` to try the app.
 
