@@ -10,15 +10,22 @@ function sendPatch(patch, buffers, msg_id) {
 
 async function startApplication() {
   console.log("Loading pyodide!");
+  self.postMessage({type: 'status', msg: 'Loading pyodide'})
   self.pyodide = await loadPyodide();
   self.pyodide.globals.set("sendPatch", sendPatch);
   console.log("Loaded!");
   await self.pyodide.loadPackage("micropip");
-  await self.pyodide.runPythonAsync(`
-    import micropip
-    await micropip.install([{{ env_spec }}]);
-  `);
+  const env_spec = [{{ env_spec }}]
+  for (const pkg of env_spec) {
+    await self.pyodide.runPythonAsync(`
+      import micropip
+      await micropip.install('${pkg}');
+    `);
+    self.postMessage({type: 'status', msg: `Installed ${pkg}`})
+  }
   console.log("Packages loaded!");
+
+  self.postMessage({type: 'status', msg: 'Executing code'})
   const code = `
   {{ code }}
   `

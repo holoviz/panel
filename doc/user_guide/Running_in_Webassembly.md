@@ -105,18 +105,16 @@ Progressive web applications (PWAs) provide a way for your web apps to behave al
 
 Once generated, you can inspect the `site.webmanifest` file and modify it to your liking, including updating the favicons in the assets directory.
 
+```{note} If you decide to enable the `--pwa` ensure that you also provide a unique `--title`. Otherwise the browser caches storing your apps dependencies will end up overwriting each other.
+```
+
 ## Installing Panel in the browser
 
 To install Panel in the browser you merely have to use the installation mechanism provided by each supported runtime:
 
 ### Pyodide
 
-Currently the best supported mechanism for installing packages in Pyodide is `micropip`, which can be imported within the Pyodide runtime. Once imported simply use `micropip.install`:
-
-```python
-import micropip
-micropip.install('panel')
-```
+Currently the best supported mechanism for installing packages in Pyodide is `micropip`.
 
 To get started with Pyodide simply follow their [Getting started guide](https://pyodide.org/en/stable/usage/quickstart.html). Note that if you want to render Panel output you will also have to load [Bokeh.js](https://docs.bokeh.org/en/2.4.1/docs/first_steps/installation.html#install-bokehjs:~:text=Installing%20standalone%20BokehJS%C2%B6) and Panel.js from CDN. The most basic pyodide application therefore looks like this:
 
