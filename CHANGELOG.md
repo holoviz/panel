@@ -4,7 +4,7 @@
 
 Date: 2022-09-30
 
-This release focuses on two main themes, support for running Panel entirely in the browser using WebAssembly (via Pyodide and PyScript), quality of life improvements to make it easier to build responsive and performant applications and finally improvements to static typing and docstrings to enhance the developer experience.
+This release focuses on three main themes, support for running Panel entirely in the browser using WebAssembly (via Pyodide and PyScript), quality of life improvements to make it easier to build responsive and performant applications and finally improvements to static typing and docstrings to enhance the developer experience.
 
 Many, many thanks to everyone who filed issues or contributed to this release. In particular we would like to thank @janimo, @xavArtley, @thuydotm, @jmosbacher, @dmarx, 2WoLpH, @ipopa144, @sdc50 and the core team consisting of @philippjfr, @Hoxbro, @maximlt and @MarcSkovMadsen.
 
