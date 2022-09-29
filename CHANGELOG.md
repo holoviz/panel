@@ -1,5 +1,110 @@
 # Releases
 
+## Version 0.14.0
+
+Date: 2022-09-30
+
+This release focuses on two main themes, support for running Panel entirely in the browser using WebAssembly (via Pyodide and PyScript), quality of life improvements to make it easier to build responsive and performant applications and finally improvements to static typing and docstrings to enhance the developer experience.
+
+Many, many thanks to everyone who filed issues or contributed to this release. In particular we would like to thank @janimo, @xavArtley, @thuydotm, @jmosbacher, @dmarx, 2WoLpH, @ipopa144, @sdc50 and the core team consisting of @philippjfr, @Hoxbro, @maximlt and @MarcSkovMadsen.
+
+### Features
+
+- Add support for converting Panel apps to pyscript/pyodide (#3817, #3830, #3851, #3856, #3857, #3858, #3860, #3861, #3863, #3864, #3868, #3878)
+- Manage our own CDN (#3867, #3870)
+- Add `pn.widget` helper function (#1826)
+- Add ability to `defer_load` of components (#3882)
+- Add `config.exception_handler` to easily capture, log and notify users about errors (#3893)
+- Implement `pn.cache` function for memoization support (#2411)
+- Rewrite server extension to run Panel applications in kernels (#3763)
+- Add liveness endpoint (#3832)
+- Add ability to define authorization callback (#3777)
+- Add memray profiler (#3509)
+
+### Enhancements
+
+- Ensure OAuth redirects to requested app and retains query arguments (#3555)
+- Add extension entry point (#3738)
+- Update Admin Logs page to use `Tabulator` (#3694)
+- Ensure `location.unsync` unsets query params (#3806)
+- Allow none value on numeric sliders and `LiteralInput` (#3174)
+- Allow serving admin panel with `pn.serve` (#3798)
+- Improve `ReactiveHTML` loop support and validation (#3813)
+- Support declaring `Perspective.plugin_config` pane (#3814)
+- Do not flicker busy indicator during `--autoreload` check (#3804)
+- Improve robustness of `state.curdoc` in threaded and async contexts (#3776, #3810, #3834)
+- Supporting datetime bounds for `DatetimePicker` and `DatetimeRangePicker` (#3788)
+- Allow setting the Oauth provider using environment variables (#3698)
+- Implement `Player.value_throttled` (#3756)
+- Ensure that URL query parameters are preserved during OAuth (#3656)
+- Improve `Markdown` code syntax highlighting (#3758)
+- Ensure components do not re-render if `background` or `loading` parameters change (#3599)
+- Add ability to define admin dashboard plugins (#3668)
+- Do not calculate embed state for disabled widgets (#3757)
+- Add hard bounds to editable sliders (#3739)
+
+### Documentation
+
+- Overhaul documentation (#3568)
+- Improves the Fast Template docstrings (#3570)
+- Reorganize docs and convert static notebooks to markdown (#3875, #3833)
+- Added DevelopingCustomModels to the webpage (#3710)
+- Improve typing (#3561, #3562, #3592, #3604, #3714, #3729)
+
+### Compatibility & Version updates
+
+- Support ipywidgets>=8.0 (#3782)
+- Bump jsoneditor package (#3838)
+- Upgrade to Tabulator 5.3.2 (#3784)
+- Improve Django compatibility (#3843, #3835)
+- Removed all usage of deprecated `Pane`
+
+### Bugs
+
+#### Server
+
+- Ensure closed websocket does not cause errors
+- Handle session and websocket close cleanly (#3769)
+- Fix prefix handling for admin page (#3809)
+- Support admin dashboard in multi-process deployments (#3812)
+- Improved document cleanup when not invoked using `server_destroy` (#3842)
+- Ensure `pn.state.execute` dispatches immediately if possible (#3859)
+- Ensure autoload.js resources are appropriately prefixed (#3873)
+
+#### Notebook
+
+- Fix support for copying cells and creating new views in JupyterLab (#3652)
+- Ensure output renders in VSCode notebook with latest ipywidgets (#3765)
+- Resolved issues with Jupyter slowdown due to event_loop patching on Windows (#3770)
+- Ensure old comm managers do not raise errors in notebook (#3853)
+
+#### Tabulator
+
+- Do not re-render `Tabulator` on `css_classes` or `background` change (#3598)
+- Ensure expand icon updates on `Tabulator.expanded` change (#3703)
+- Update `page` Parameter when pagination is 'local' (#3704)
+- Do not apply `sorters` on `Tabulator` cell edits (#3744)
+- Ensure `Tabulator.controls` renders (#3768)
+- Ensure correctness of event row and selection indices in `Tabulator` (#3771, #3841)
+- Fix issues with frontend and backend sorters being out of sync in Tabulator (#3825, #3839)
+- Fix default values of a list header filter in `Tabulator` (#3826)
+- Fix the edit event with a python filter in `Tabulator` (#3829)
+- Disable client-side date filtering on `Tabulator` (#3849)
+- Support editing of pandas masked array dtypes in `Tabulator` (#3850)
+- Fix issues editing a cell when client-side filtering applied (#3852)
+- Do not recompute data when local pagination is enabled (#3854)
+- Don't skip filtering when the column name is undefined (#3862)
+
+#### Misc
+
+- Fix `FileInput.save` (#3579)
+- Fix issues with `Matplotlib.high_dpi` option (#3591, #3594)
+- Ensure layout recomputes on `HTML`/`Markdown` re-rerender (#3616)
+- Allow overriding all widget parameters on `Param` pane (#3754)
+- Ensure `DatePicker` start/end are transformed when jslinked (#3759)
+- Ensure notifications can be enabled without a template (#3820)
+- Ensure `ReactiveHTML` inline callback on loop variables return correct node (#3840)
+
 ## Version 0.13.1
 
 Date: 2022-05-20
