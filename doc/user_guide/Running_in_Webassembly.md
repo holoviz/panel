@@ -39,6 +39,9 @@ Progressive web applications (PWAs) provide a way for your web apps to behave al
 
 Once generated, you can inspect the `site.webmanifest` file and modify it to your liking, including updating the favicons in the assets directory.
 
+```{note} If you decide to enable the `--pwa` ensure that you also provide a unique `--title`. Otherwise the browser caches storing your apps dependencies will end up overwriting each other.
+```
+
 ### Index
 
 If you convert multiple applications at once you may want to add an index to be able to navigate between the applications easily. To enable the index simply pass `--index` to the convert command.
