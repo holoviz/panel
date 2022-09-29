@@ -140,7 +140,7 @@ To get started with Pyodide simply follow their [Getting started guide](https://
         await micropip.install('panel')
         pyodide.runPython(`
           import panel as pn
-          
+
           pn.extension(sizing_mode="stretch_width")
 
           slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
