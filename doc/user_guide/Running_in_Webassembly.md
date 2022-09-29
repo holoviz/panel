@@ -20,10 +20,60 @@ The ``panel convert`` command has the following options:
       --to                  The format to convert to, one of 'pyodide', 'pyodide-worker' or 'pyscript'
       --out                 Directory to export files to
       --title               Custom title for the application(s)
-      --prerender           Whether to export pre-rendered models to display while pyodide loads.
+      --skip-embed          Whether to skip the prerendering while pyodide loads.
       --index               Whether to create an index if multiple files are served.
       --pwa                 Whether to add files to allow serving the application as a Progressive Web App.
-      --requirements        Explicit list of Python requirements to add to the converted file.
+      --requirements        list of Python requirements to add to the converted file. Use space to separate the packages. You don't need to include Panel it will be included automatically.
+
+### Example
+
+This example will demonstrate how to `convert` and `serve` a basic data app locally.
+
+- Create a `script.py` file with the following content
+
+```python
+from sklearn.datasets import load_iris
+from sklearn.metrics import accuracy_score
+from xgboost import XGBClassifier
+
+import panel as pn
+
+pn.extension(sizing_mode="stretch_width", template="fast")
+pn.state.template.param.update(site="Panel in the Browser", title="XGBoost Example")
+
+iris = load_iris()
+
+iris_df = load_iris(as_frame=True)
+
+trees = pn.widgets.IntSlider(start=2, end=30, name="Number of trees")
+
+
+def pipeline(trees):
+    model = XGBClassifier(max_depth=2, n_estimators=trees)
+    model.fit(iris.data, iris.target)
+    accuracy = round(accuracy_score(iris.target, model.predict(iris.data)) * 100, 1)
+    return pn.indicators.Number(
+        name="Test score",
+        value=accuracy,
+        format="{value}%",
+        colors=[(97.5, "red"), (99.0, "orange"), (100, "green")],
+    )
+
+
+pn.Column(
+    "Simple example of training an XGBoost classification model on the small Iris dataset.",
+    iris_df.data.head(),
+    "Move the slider below to change the number of training rounds for the XGBoost classifier. The training accuracy score will adjust accordingly.",
+    trees,
+    pn.bind(pipeline, trees),
+).servable()
+```
+
+- Run `panel convert script.py --to pyodide-worker --requirements bokeh numpy pandas panel scikit-learn xgboost`
+- Run `python3 -m http.server` to start a web server locally
+- Open `http://localhost:8000/script.html` to try the app.
+
+You can now add the `script.html` file to your Github pages or similar. NO SERVER REQUIRED!
 
 ### Formats
 
