@@ -30,6 +30,7 @@ import json
 import logging
 import os
 import pathlib
+import textwrap
 import time
 import weakref
 
@@ -244,7 +245,9 @@ class PanelExecutor(WSHandler):
         The code to be executed inside the kernel.
         """
         execute_template = _env.from_string(cls._code)
-        return execute_template.render(path=path, token=token, root_url=root_url)
+        return textwrap.dedent(
+            execute_template.render(path=path, token=token, root_url=root_url)
+        )
 
     async def write_message(
         self, message: Union[bytes, str, Dict[str, Any]],
@@ -404,7 +407,7 @@ class PanelJupyterHandler(JupyterHandler):
         except (TimeoutError, RuntimeError) as e:
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
             html = ERROR_TEMPLATE.render(
-                npm_cdn=config.npn_cdn,
+                npm_cdn=config.npm_cdn,
                 base_url=root_url,
                 error_type="Kernel error",
                 error="Failed to start kernel",
