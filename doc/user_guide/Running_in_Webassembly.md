@@ -129,7 +129,7 @@ To get started with Pyodide simply follow their [Getting started guide](https://
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.4.3.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.4.3.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.3.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@holoviz/panel@0.13.1/dist/panel.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@holoviz/panel@0.14.0/dist/panel.min.js"></script>
 
   </head>
   <body>
@@ -159,6 +159,10 @@ To get started with Pyodide simply follow their [Getting started guide](https://
 </html>
 ```
 
+The app should look like this
+
+![Panel Pyodide App](https://user-images.githubusercontent.com/42288570/193093585-6ec5abd8-d099-4e6c-b82c-43975a6ad15f.png)
+
 ### PyScript
 
 PyScript makes it even easier to manage your dependencies, with a `<py-env>` HTML tag. Simply include `panel` in the list of dependencies and PyScript will install it automatically:
@@ -173,6 +177,7 @@ PyScript makes it even easier to manage your dependencies, with a `<py-env>` HTM
 Once installed you will be able to `import panel` in your `<py-script>` tag. Again, make sure you also load Bokeh.js and Panel.js:
 
 ```html
+<!DOCTYPE html>
 <html>
   <head>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.4.3.js"></script>
@@ -180,16 +185,19 @@ Once installed you will be able to `import panel` in your `<py-script>` tag. Aga
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.3.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@holoviz/panel@0.14.0/dist/panel.min.js"></script>
 
-    <link rel="stylesheet" href="https://pyscript.net/stable/pyscript.css" />
-    <script defer src="https://pyscript.net/stable/pyscript.js"></script>
+    <link rel="stylesheet" href="https://pyscript.net/unstable/pyscript.css" />
+    <script defer src="https://pyscript.net/unstable/pyscript.js"></script>
 
   </head>
   <body>
     <py-env>
       - panel
     </py-env>
+    <div id="simple_app"></div>
     <py-script>
       import panel as pn
+
+      pn.extension(sizing_mode="stretch_width")
 
       slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
 
@@ -201,6 +209,10 @@ Once installed you will be able to `import panel` in your `<py-script>` tag. Aga
   </body>
 </html>
 ```
+
+The app should look like this
+
+![Panel Pyodide App](https://user-images.githubusercontent.com/42288570/193093585-6ec5abd8-d099-4e6c-b82c-43975a6ad15f.png)
 
 ### Rendering Panel components in Pyodide or Pyscript
 
@@ -229,7 +241,7 @@ Alternatively you can also use the `panel.io.pyodide.write` function to write in
 await pn.io.pyodide.write('simple_app', component)
 ```
 
-### Rendering Panel component in PyScript
+### Rendering Panel components in PyScript
 
 Current versions of PyScript will automatically render the output of the last cell of a <py-script> tag. E.g. in this example the `pn.Row()` component will be rendered wherever you placed the tag:
 
@@ -246,7 +258,7 @@ Current versions of PyScript will automatically render the output of the last ce
 </py-script>
 ```
 
-## Embedding in documentation
+## Embedding in Sphinx documentation
 
 One more option is to include live Panel examples in your Sphinx documentation using the `nbsite.pyodide` directive.
 
