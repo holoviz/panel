@@ -41,11 +41,11 @@ Once generated, you can inspect the `site.webmanifest` file and modify it to you
 
 ### Index
 
-By default if you convert multiple applications, Panel will automatically create an index page for you that allows you to navigate between the applications.
+If you convert multiple applications at once you may want to add an index to be able to navigate between the applications easily. To enable the index simply pass `--index` to the convert command.
 
-### Prerender
+### Prerendering
 
-The `--prerender` option greatly improves the loading experience for a user. One major drawback of Pyodide at the moment is that it actually has to fetch the entire Python runtime and all required packages from a CDN. This can be **very** slow depending on your internet connection. The `prerender` option renders the application using the current Python process (presumably outside the browser) into the HTML file as a "cached" copy of the application for the user to see while the Python runtime is initialized and the actual browser-generated application is ready for interaction.
+In order to improve the loading experience Panel will pre-render and embed the initial render of the page and replace it with live components once the page is loaded. This is important because Pyodide has to fetch the entire Python runtime and all required packages from a CDN. This can be **very** slow depending on your internet connection. If you want to disable this behavior and render an initially blank page use the `--skip-embed` option. Otherwise Panel will render application using the current Python process (presumably outside the browser) into the HTML file as a "cached" copy of the application for the user to see while the Python runtime is initialized and the actual browser-generated application is ready for interaction.
 
 ## Installing Panel in the browser
 
@@ -188,13 +188,29 @@ Current versions of PyScript will automatically render the output of the last ce
 
 ## Embedding in documentation
 
-One more option is to include live Panel examples in your Sphinx documentation using the `nbsite.pyodide` directive. Simply install latest nbsite with `pip` or `conda`:
+One more option is to include live Panel examples in your Sphinx documentation using the `nbsite.pyodide` directive.
 
-```bash
-pip install --pre nbsite
-# OR
-conda install -c pyviz/label/dev nbsite
+### Setup
+
+In the near future we hope to make this a separate Sphinx extension, until then simply install latest nbsite with `pip` or `conda`:
+
+::::{tab-set}
+:::{tab-item} Conda
+:sync: conda
+
+``` bash
+conda install -c pyviz nbsite
 ```
+
+:::
+:::{tab-item} Pip
+:sync: pip
+
+``` bash
+pip install nbsite
+```
+:::
+::::
 
 add the extension to the Sphinx `conf.py`:
 
@@ -204,6 +220,17 @@ extensions += [
     'nbsite.pyodide'
 ]
 ```
+
+### Configuration
+
+In the `conf.py` of your project you can configure the extension in a number of ways by defining an `nbsite_pyodide_conf` dictionary with the following options:
+
+- `PYODIDE_URL`: The URl to fetch Pyodide from
+- `autodetect_deps` (default=`True`): Whether to automatically detect dependencies in the executed code and install them.
+- `enable_pwa` (default=`True`): Whether to add a web manifest and service worker to configure the documentation as a progressive web app.
+- `requirements` (default=`['panel']`): Default requirements to include (by default this includes just panel.
+- `scripts`: Scripts to add to the website when a Pyodide cell is first executed.
+- `setup_code` (default=`''`): Python code to run when initializing the Pyodide runtime.
 
 and then you can use the `pyodide` as an RST directive:
 
@@ -219,6 +246,8 @@ and then you can use the `pyodide` as an RST directive:
 
    pn.Row(slider, pn.bind(callback, slider))
 ```
+
+### Examples
 
 The resulting output looks like this:
 
@@ -236,14 +265,19 @@ def callback(new):
 pn.Row(slider, pn.bind(callback, slider))
 ```
 
+In addition to rendering Panel components it also renders regular Pytho
+types:
+
 ```{pyodide}
 1+1
 ```
 
 
 ```{pyodide}
-"Blah"
+"A string"
 ```
+
+and also handles stdout and stderr streams:
 
 ```{pyodide}
 import numpy as np
@@ -254,9 +288,10 @@ for i in range(10):
 ```
 
 ```{pyodide}
-raise ValueError('Baz!!')
+raise ValueError('Encountered an error')
 ```
 
+and supports `_repr_<mime>_` methods that are commonly used by the IPython and Jupyter ecosystem:
 
 ```{pyodide}
 class HTML:
@@ -270,13 +305,6 @@ class HTML:
 HTML('<b>HTML!</b>')
 ```
 
+### Usage
+
 The code cell will display a button to execute the cell, which will warn about downloading the Python runtime on first-click and ask you to confirm whether you want to proceed. It will then download Pyodide, all required packages and finally display the output.
-
-In the `conf.py` of your project you can configure the extension in a number of ways by defining an `nbsite_pyodide_conf` dictionary with the following options:
-
-- `PYODIDE_URL`: The URl to fetch Pyodide from
-- `autodetect_deps` (default=`True`): Whether to automatically detect dependencies in the executed code and install them.
-- `enable_pwa` (default=`True`): Whether to add a web manifest and service worker to configure the documentation as a progressive web app.
-- `requirements` (default=`['panel']`): Default requirements to include (by default this includes just panel.
-- `scripts`: Scripts to add to the website when a Pyodide cell is first executed.
-- `setup_code` (default=`''`): Python code to run when initializing the Pyodide runtime.
