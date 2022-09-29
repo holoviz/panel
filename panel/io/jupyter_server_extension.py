@@ -391,7 +391,7 @@ class PanelJupyterHandler(JupyterHandler):
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
             html = ERROR_TEMPLATE.render(
                 npm_cdn=config.npm_cdn,
-                base_url=root_url,
+                base_url=f'{root_url}/',
                 error_type="Kernel error",
                 error="Failed to start kernel",
                 error_msg=str(e),
