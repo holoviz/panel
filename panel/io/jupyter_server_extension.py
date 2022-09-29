@@ -290,40 +290,26 @@ class PanelJupyterHandler(JupyterHandler):
         self.notebook_path = kwargs.pop('notebook_path', [])
         self.kernel_started = False
 
-    async def _get_comm_id(self, timeout=20):
+    async def _get_info(self, msg_id, timeout=KERNEL_TIMEOUT):
         deadline = time.monotonic() + timeout
-        while True:
+        result, comm_id = None, None
+        while result is None or comm_id is None:
+            if time.monotonic() > deadline:
+                raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
             try:
                 msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=None))
             except Empty:
                 if not await ensure_async(self.kernel.is_alive()):
                     raise RuntimeError("Kernel died before establishing Comm connection to Panel app.")
                 continue
-            if (
-                msg['header']['msg_type'] == 'comm_open' and
-                msg['content']['target_name'] == self.session_id
-            ):
-                comm_id = msg['content']['comm_id']
-                break
-            if time.monotonic() > deadline:
-                raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
-        return comm_id
-
-    async def _get_execute_result(self, msg_id, timeout=KERNEL_TIMEOUT):
-        deadline = time.monotonic() + timeout
-        while True:
-            try:
-                msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=timeout))
-            except Empty:
-                if not await ensure_async(self.kernel.is_alive()):
-                    raise RuntimeError("Kernel died while executing Panel application.")
+            if msg['parent_header'].get('msg_id') != msg_id:
                 continue
-            if msg['parent_header'].get('msg_id') == msg_id:
-                if msg['header']['msg_type'] == 'execute_result':
-                    break
-            if time.monotonic() > deadline:
-                raise TimeoutError('Timed out while waiting for Panel application to start.')
-        return msg
+            msg_type = msg['header']['msg_type']
+            if msg_type == 'execute_result':
+                result = msg
+            elif msg_type == 'comm_open' and msg['content']['target_name'] == self.session_id:
+                comm_id = msg['content']['comm_id']
+        return result, comm_id
 
     @tornado.web.authenticated
     async def get(self, path=None):
@@ -400,10 +386,7 @@ class PanelJupyterHandler(JupyterHandler):
 
         # Wait for comm to open and rendered HTML to be returned by the kernel
         try:
-            comm_id, msg = await asyncio.gather(
-                self._get_comm_id(),
-                self._get_execute_result(msg_id)
-            )
+            msg, comm_id = await self._get_info(msg_id)
         except (TimeoutError, RuntimeError) as e:
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
             html = ERROR_TEMPLATE.render(
