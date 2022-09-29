@@ -339,7 +339,8 @@ def cache(
         # If the function is defined inside a bokeh/panel application
         # it is recreated for each session, therefore we cache by
         # filen, class and function name
-        fname = sys.modules[func.__module__].__file__
+        module = sys.modules[func.__module__]
+        fname = '__main__' if func.__module__ == '__main__' else module.__file__
         if is_method:
             func_hash = (fname, type(args[0]).__name__, func.__name__)
         else:
