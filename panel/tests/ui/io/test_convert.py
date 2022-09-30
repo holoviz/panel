@@ -29,7 +29,7 @@ def write_app(app):
     """
     Writes app to temporary file and returns path.
     """
-    nf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    nf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
     nf.write(app)
     nf.flush()
     return nf
