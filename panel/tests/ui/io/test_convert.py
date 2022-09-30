@@ -36,9 +36,6 @@ def write_app(app):
 
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript'])
-@pytest.mark.xfail(
-    reason='_link_docs mishandling setter id in 0.14.0rc2'
-)
 def test_pyodide_test_convert_button_app(page, runtime):
     nf = write_app(button_app)
     app_path = pathlib.Path(nf.name)
