@@ -4,22 +4,22 @@
 
 Date: 2022-09-30
 
-This release focuses on three main themes, support for running Panel entirely in the browser using WebAssembly (via Pyodide and PyScript), quality of life improvements to make it easier to build responsive and performant applications and finally improvements to static typing and docstrings to enhance the developer experience.
+This release focuses on three main themes: support for running Panel apps entirely in the browser using WebAssembly (via Pyodide and PyScript), improvements in the app-user experience by making it easier to build responsive and performant applications, and finally improvements in the developer experience through static typing and docstrings.
 
-Many, many thanks to everyone who filed issues or contributed to this release. In particular we would like to thank @janimo, @xavArtley, @thuydotm, @jmosbacher, @dmarx, 2WoLpH, @ipopa144, @sdc50 and the core team consisting of @philippjfr, @Hoxbro, @maximlt and @MarcSkovMadsen.
+Many, many thanks to everyone who filed issues or contributed to this release. In particular we would like to thank @janimo, @xavArtley, @thuydotm, @jmosbacher, @dmarx, @2WoLpH, @ipopa144, @sdc50 for contributions and @philippjfr, @Hoxbro, @maximlt, and @MarcSkovMadsen for ongoing maintenance and development.
 
 ### Features
 
 - Add support for converting Panel apps to pyscript/pyodide (#3817, #3830, #3851, #3856, #3857, #3858, #3860, #3861, #3863, #3864, #3868, #3878)
-- Manage our own CDN (#3867, #3870)
-- Add `pn.widget` helper function (#1826)
+- Manage our own CDN to improve performance and reliability for delivering JS payloads (#3867, #3870)
+- Add `pn.widget` helper function (#3589, #1826)
 - Add ability to `defer_load` of components (#3882)
 - Add `config.exception_handler` to easily capture, log and notify users about errors (#3893)
 - Implement `pn.cache` function for memoization support (#2411)
-- Rewrite server extension to run Panel applications in kernels (#3763)
+- Rewrite server extension to run Panel applications in kernels so that previews run in the same environment as the deployed app (#3763)
 - Add liveness endpoint (#3832)
 - Add ability to define authorization callback (#3777)
-- Add memray profiler (#3509)
+- Support memray profiler (#3509)
 
 ### Enhancements
 
@@ -27,13 +27,13 @@ Many, many thanks to everyone who filed issues or contributed to this release. I
 - Add extension entry point (#3738)
 - Update Admin Logs page to use `Tabulator` (#3694)
 - Ensure `location.unsync` unsets query params (#3806)
-- Allow none value on numeric sliders and `LiteralInput` (#3174)
+- Allow None value on numeric sliders and `LiteralInput` (#3174)
 - Allow serving admin panel with `pn.serve` (#3798)
 - Improve `ReactiveHTML` loop support and validation (#3813)
 - Support declaring `Perspective.plugin_config` pane (#3814)
 - Do not flicker busy indicator during `--autoreload` check (#3804)
 - Improve robustness of `state.curdoc` in threaded and async contexts (#3776, #3810, #3834)
-- Supporting datetime bounds for `DatetimePicker` and `DatetimeRangePicker` (#3788)
+- Support datetime bounds for `DatetimePicker` and `DatetimeRangePicker` (#3788)
 - Allow setting the Oauth provider using environment variables (#3698)
 - Implement `Player.value_throttled` (#3756)
 - Ensure that URL query parameters are preserved during OAuth (#3656)
@@ -46,9 +46,9 @@ Many, many thanks to everyone who filed issues or contributed to this release. I
 ### Documentation
 
 - Overhaul documentation (#3568)
-- Improves the Fast Template docstrings (#3570)
-- Reorganize docs and convert static notebooks to markdown (#3875, #3833)
-- Added DevelopingCustomModels to the webpage (#3710)
+- Improve Fast Template docstrings (#3570)
+- Reorganize docs and convert static notebooks to Markdown (#3875, #3833)
+- Add DevelopingCustomModels to the webpage (#3710)
 - Improve typing (#3561, #3562, #3592, #3604, #3714, #3729)
 
 ### Compatibility & Version updates
@@ -57,7 +57,7 @@ Many, many thanks to everyone who filed issues or contributed to this release. I
 - Bump jsoneditor package (#3838)
 - Upgrade to Tabulator 5.3.2 (#3784)
 - Improve Django compatibility (#3843, #3835)
-- Removed all usage of deprecated `Pane`
+- Remove all usage of deprecated `Pane`
 
 ### Bugs
 
@@ -67,7 +67,7 @@ Many, many thanks to everyone who filed issues or contributed to this release. I
 - Handle session and websocket close cleanly (#3769)
 - Fix prefix handling for admin page (#3809)
 - Support admin dashboard in multi-process deployments (#3812)
-- Improved document cleanup when not invoked using `server_destroy` (#3842)
+- Improve document cleanup when not invoked using `server_destroy` (#3842)
 - Ensure `pn.state.execute` dispatches immediately if possible (#3859)
 - Ensure autoload.js resources are appropriately prefixed (#3873)
 
@@ -75,7 +75,7 @@ Many, many thanks to everyone who filed issues or contributed to this release. I
 
 - Fix support for copying cells and creating new views in JupyterLab (#3652)
 - Ensure output renders in VSCode notebook with latest ipywidgets (#3765)
-- Resolved issues with Jupyter slowdown due to event_loop patching on Windows (#3770)
+- Resolve issues with Jupyter slowdown due to event_loop patching on Windows (#3770)
 - Ensure old comm managers do not raise errors in notebook (#3853)
 
 #### Tabulator
@@ -103,7 +103,7 @@ Many, many thanks to everyone who filed issues or contributed to this release. I
 - Allow overriding all widget parameters on `Param` pane (#3754)
 - Ensure `DatePicker` start/end are transformed when jslinked (#3759)
 - Ensure notifications can be enabled without a template (#3820)
-- Ensure `ReactiveHTML` inline callback on loop variables return correct node (#3840)
+- Ensure `ReactiveHTML` inline callbacks on loop variables return correct node (#3840)
 
 ## Version 0.13.1
 
