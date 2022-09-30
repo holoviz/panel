@@ -79,9 +79,20 @@ pn.Column(
 
 - Run `panel convert script.py --to pyodide-worker --requirements numpy pandas scikit-learn xgboost`
 - Run `python3 -m http.server` to start a web server locally
-- Open `http://localhost:8000/script.html` to try the app.
+- Open `http://localhost:8000/script.html` to try out the app.
 
 You can now add the `script.html` file to your Github pages or similar. **no separate server needed!**
+
+#### Tips & Tricks for development
+
+- While developing you should run the script locally with *auto reload*: `panel serve script.py --autoreload`.
+- If the converted app does not work as expected you can most often find the errors in the browser
+console. [This guide](https://balsamiq.com/support/faqs/browserconsole/) describes how to open the
+console. In the image below the app errors because I "forgot" to add `xgboost` to the list of requirements.
+
+![Converted app with error](https://user-images.githubusercontent.com/42288570/193193850-53e41fa9-57d6-4ced-8d05-b2a51f8201df.png)
+
+- You can find answers to the most frequently asked questions about *Python in the browser* in the [Pyodide - FAQ](https://pyodide.org/en/stable/usage/faq.html) and the [PyScript FAQ](https://docs.pyscript.net/latest/reference/faq.html). For example the answer to "How can I load external data?".
 
 ### Formats
 
