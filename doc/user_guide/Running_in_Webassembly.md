@@ -35,8 +35,6 @@ The ``panel convert`` command has the following options:
 
 This example will demonstrate how to *convert* and *serve* a basic data app locally.
 
-![Panel in the browser](https://user-images.githubusercontent.com/42288570/193093585-6ec5abd8-d099-4e6c-b82c-43975a6ad15f.png)
-
 - Create a `script.py` file with the following content
 
 ```python
@@ -81,6 +79,10 @@ pn.Column(
 - Run `python3 -m http.server` to start a web server locally
 - Open `http://localhost:8000/script.html` to try out the app.
 
+The app should look like this
+
+![Panel in the browser](https://user-images.githubusercontent.com/42288570/193093585-6ec5abd8-d099-4e6c-b82c-43975a6ad15f.png)
+
 You can now add the `script.html` file to your Github pages or similar. **no separate server needed!**
 
 #### Tips & Tricks for development
@@ -92,7 +94,7 @@ console. In the image below the app errors because I "forgot" to add `xgboost` t
 
 ![Converted app with error](https://user-images.githubusercontent.com/42288570/193193850-53e41fa9-57d6-4ced-8d05-b2a51f8201df.png)
 
-- You can find answers to the most frequently asked questions about *Python in the browser* in the [Pyodide - FAQ](https://pyodide.org/en/stable/usage/faq.html) and the [PyScript FAQ](https://docs.pyscript.net/latest/reference/faq.html). For example the answer to "How can I load external data?".
+- You can find answers to the most frequently asked questions about *Python in the browser* in the [Pyodide - FAQ](https://pyodide.org/en/stable/usage/faq.html) or the [PyScript FAQ](https://docs.pyscript.net/latest/reference/faq.html). For example the answer to "How can I load external data?".
 
 ### Formats
 
@@ -116,7 +118,8 @@ Progressive web applications (PWAs) provide a way for your web apps to behave al
 
 Once generated, you can inspect the `site.webmanifest` file and modify it to your liking, including updating the favicons in the assets directory.
 
-```{note} If you decide to enable the `--pwa` ensure that you also provide a unique `--title`. Otherwise the browser caches storing your apps dependencies will end up overwriting each other.
+```{note}
+If you decide to enable the `--pwa` ensure that you also provide a unique `--title`. Otherwise the browser caches storing your apps dependencies will end up overwriting each other.
 ```
 
 ## Installing Panel in the browser
@@ -170,7 +173,7 @@ To get started with Pyodide simply follow their [Getting started guide](https://
 
 The app should look like this
 
-![Panel Pyodide App](https://user-images.githubusercontent.com/42288570/193093585-6ec5abd8-d099-4e6c-b82c-43975a6ad15f.png)
+![Panel Pyodide App](https://user-images.githubusercontent.com/42288570/193104420-ea2657f2-4266-4622-81ce-d309c2674c3b.png)
 
 ### PyScript
 
@@ -221,7 +224,7 @@ Once installed you will be able to `import panel` in your `<py-script>` tag. Aga
 
 The app should look like this
 
-![Panel Pyodide App](https://user-images.githubusercontent.com/42288570/193093585-6ec5abd8-d099-4e6c-b82c-43975a6ad15f.png)
+![Panel Pyodide App](https://user-images.githubusercontent.com/42288570/193104420-ea2657f2-4266-4622-81ce-d309c2674c3b.png)
 
 ### Rendering Panel components in Pyodide or Pyscript
 
