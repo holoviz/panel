@@ -44,7 +44,7 @@ def test_pyodide_test_convert_button_app(page, runtime):
     page.goto(f"file://{str(app_path)[:-3]}.html")
 
     expect(page.locator('body')).to_have_class('bk pn-loading arcs')
-    expect(page.locator('body')).to_have_class("", timeout=20000)
+    expect(page.locator('body')).to_have_class("", timeout=30000)
 
     assert page.text_content(".bk.bk-clearfix") == '0'
 
@@ -64,7 +64,7 @@ def test_pyodide_test_convert_slider_app(page, runtime):
     page.goto(f"file://{str(app_path)[:-3]}.html")
 
     expect(page.locator('body')).to_have_class('bk pn-loading arcs')
-    expect(page.locator('body')).to_have_class("", timeout=20000)
+    expect(page.locator('body')).to_have_class("", timeout=30000)
 
     assert page.text_content(".bk.bk-clearfix") == '0.0'
 
