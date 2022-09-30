@@ -29,16 +29,13 @@ def write_app(app):
     """
     Writes app to temporary file and returns path.
     """
-    nf = tempfile.NamedTemporaryFile(mode='w', suffix='.py')
+    nf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
     nf.write(app)
     nf.flush()
     return nf
 
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript'])
-@pytest.mark.xfail(
-    reason='_link_docs mishandling setter id in 0.14.0rc2'
-)
 def test_pyodide_test_convert_button_app(page, runtime):
     nf = write_app(button_app)
     app_path = pathlib.Path(nf.name)
@@ -47,15 +44,15 @@ def test_pyodide_test_convert_button_app(page, runtime):
     page.goto(f"file://{str(app_path)[:-3]}.html")
 
     expect(page.locator('body')).to_have_class('bk pn-loading arcs')
-    expect(page.locator('body')).to_have_class("", timeout=20000)
+    expect(page.locator('body')).to_have_class("", timeout=30000)
 
-    assert page.text_content(".bk.markdown") == '0'
+    assert page.text_content(".bk.bk-clearfix") == '0'
 
     page.click('.bk.bk-btn')
 
     time.sleep(0.1)
 
-    assert page.text_content(".bk.markdown") == '1'
+    assert page.text_content(".bk.bk-clearfix") == '1'
 
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript'])
@@ -67,7 +64,7 @@ def test_pyodide_test_convert_slider_app(page, runtime):
     page.goto(f"file://{str(app_path)[:-3]}.html")
 
     expect(page.locator('body')).to_have_class('bk pn-loading arcs')
-    expect(page.locator('body')).to_have_class("", timeout=20000)
+    expect(page.locator('body')).to_have_class("", timeout=30000)
 
     assert page.text_content(".bk.bk-clearfix") == '0.0'
 
