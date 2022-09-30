@@ -23,7 +23,6 @@ from typing_extensions import Literal
 
 from .. import __version__, config
 from ..util import base_version, escape
-from .document import _cleanup_doc
 from .mime_render import find_imports
 from .resources import (
     CDN_DIST, DIST_DIR, INDEX_TEMPLATE, Resources, _env as _pn_env,
@@ -315,9 +314,6 @@ def script_to_html(
     # Reset resources
     _settings.resources.unset_value()
 
-    # Destroy document
-    _cleanup_doc(document)
-
     return html, web_worker
 
 
@@ -328,7 +324,7 @@ def convert_app(
     runtime: Runtimes = 'pyodide-worker',
     prerender: bool = True,
     manifest: str | None = None,
-    verbose: bool = True
+    verbose: bool = True,
 ):
     try:
         html, js_worker = script_to_html(

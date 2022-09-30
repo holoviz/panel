@@ -1,4 +1,5 @@
 import argparse
+import time
 
 from bokeh.command.subcommand import Argument, Subcommand
 
@@ -51,8 +52,12 @@ class Convert(Subcommand):
             help    = "Whether to add files to serve applications as a Progressive Web App.",
         )),
         ('--requirements', dict(
-            nargs='+',
-            help=("Explicit requirements to add to the converted file.")
+            nargs   = '+',
+            help    = "Explicit requirements to add to the converted file."
+        )),
+        ('--watch', dict(
+            action  = 'store_true',
+            help    = "Watch the files"
         )),
         ('--num-procs', dict(
             action  = 'store',
@@ -69,9 +74,25 @@ class Convert(Subcommand):
         if runtime not in self._targets:
             raise ValueError(f'Supported conversion targets include: {self._targets!r}')
         requirements = args.requirements or 'auto'
-
-        convert_apps(
-            args.files, dest_path=args.out, runtime=runtime, requirements=requirements,
-            prerender=not args.skip_embed, build_index=args.index, build_pwa=args.pwa,
-            title=args.title, max_workers=args.num_procs
-        )
+        prev_hashes = {}
+        built = False
+        while True:
+            hashes = {f: hash(open(f).read()) for f in args.files}
+            if hashes == prev_hashes:
+                time.sleep(0.5)
+                continue
+            files = [f for f, h in hashes.items() if prev_hashes.get(f) != h]
+            index = args.index and not built
+            try:
+                convert_apps(
+                    files, dest_path=args.out, runtime=runtime, requirements=requirements,
+                    prerender=not args.skip_embed, build_index=index, build_pwa=args.pwa,
+                    title=args.title, max_workers=args.num_procs, verbose=True
+                )
+            except KeyboardInterrupt:
+                print("Aborted while building docs.")
+                break
+            built = True
+            prev_hashes = hashes
+            if not args.watch:
+                return
