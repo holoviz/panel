@@ -122,11 +122,11 @@ export class PerspectiveView extends HTMLBoxView {
         zIndex: 0,
       }
     })
-    set_size(container, this.model)
+    //set_size(container, this.model)
     container.innerHTML = "<perspective-viewer style='height:100%; width:100%;'></perspective-viewer>";
     this.perspective_element = container.children[0]
     this.perspective_element.resetThemes([...Object.values(THEMES)]).catch(() => {})
-    set_size(this.perspective_element, this.model)
+    //set_size(this.perspective_element, this.model)
     this.shadow_el.appendChild(container)
     this.perspective_element.load(this.table)
 

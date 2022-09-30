@@ -289,7 +289,7 @@ export class PlotlyPlotView extends HTMLBoxView {
 
   after_layout(): void{
     super.after_layout()
-    set_size(this.el, this.model)
+    //set_size(this.el, this.model)
     if ((window as any).Plotly && this._plotInitialized)
       (window as any).Plotly.Plots.resize(this._layout_wrapper)
   }

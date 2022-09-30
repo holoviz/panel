@@ -196,7 +196,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
       this._vtk_container = div()
       this.init_vtk_renwin()
       this._init_annotations_container()
-      set_size(this._vtk_container, this.model)
+      //set_size(this._vtk_container, this.model)
       this.shadow_el.appendChild(this._vtk_container)
       // update camera model state only at the end of the interaction
       // with the scene (avoid bouncing events and large amount of events)
@@ -208,7 +208,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
       this._add_annotations()
       this.model.renderer_el = this._vtk_renwin
     } else {
-      set_size(this._vtk_container, this.model)
+      //set_size(this._vtk_container, this.model)
       // warning if _vtk_renwin contain controllers or other elements
       // we must attach them to the new el
       this.shadow_el.appendChild(this._vtk_container)

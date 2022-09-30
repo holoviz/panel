@@ -391,7 +391,7 @@ export class DataTabulatorView extends HTMLBoxView {
       return
     this._initializing = true
     const container = div({class: "pnx-tabulator"})
-    set_size(container, this.model)
+    //set_size(container, this.model)
     let configuration = this.getConfiguration()
 
     this.tabulator = new Tabulator(container, configuration)

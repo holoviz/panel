@@ -322,7 +322,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       return
     }
     this.el.style.display = this.model.visible ? "block" : "none"
-    set_size(this.el, this.model)
+    //set_size(this.el, this.model)
 
     let {margin} = this.model
     let margin_spec = null

@@ -34,7 +34,7 @@ export class TerminalView extends HTMLBoxView {
   render(): void {
     super.render()
     this.container = div({class: "terminal-container"})
-    set_size(this.container, this.model)
+    //set_size(this.container, this.model)
 
     this.term = this.getNewTerminal()
     this.term.onData((value: any) => {

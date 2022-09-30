@@ -222,7 +222,7 @@ export class IDOMView extends HTMLBoxView {
     this.update_layout()
     this.compute_layout()
     this.invalidate_layout()
-    set_size(this.el, this.model)
+    //set_size(this.el, this.model)
   }
 
   initialize(): void {
