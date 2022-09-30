@@ -126,7 +126,7 @@ class DataTabulator(HTMLBox):
 
     source = Instance(ColumnDataSource)
 
-    styles = Dict(String, Either(String, Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))))
+    styles_ = Dict(String, Either(String, Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))))
 
     pagination = Nullable(String)
 
