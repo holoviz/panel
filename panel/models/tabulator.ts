@@ -320,7 +320,7 @@ export class DataTabulatorView extends HTMLBoxView {
       }
     })
 
-    this.connect(p.styles_.change, () => {
+    this.connect(p.cell_styles.change, () => {
       if (this._applied_styles)
      this.tabulator.redraw(true)
       this.setStyles()
@@ -984,8 +984,8 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this.tabulator == null || this.tabulator.getDataCount() == 0)
       return
     this._applied_styles = false
-    for (const r in this.model.styles_.data) {
-      const row_style = this.model.styles_.data[r]
+    for (const r in this.model.cell_styles.data) {
+      const row_style = this.model.cell_styles.data[r]
       const row = this.tabulator.getRow(r)
       if (!row)
         continue
@@ -1170,7 +1170,7 @@ export namespace DataTabulator {
     selectable_rows: p.Property<number[] | null>
     source: p.Property<ColumnDataSource>
     sorters: p.Property<any[]>
-    styles_: p.Property<any>
+    cell_styles: p.Property<any>
     theme: p.Property<string>
     theme_url: p.Property<string>
   }
@@ -1216,7 +1216,7 @@ export class DataTabulator extends HTMLBox {
       selectable_rows: [ Nullable(Array(Number)), null ],
       source:         [ Ref(ColumnDataSource)       ],
       sorters:        [ Array(Any),              [] ],
-      styles_:         [ Any,                     {} ],
+      cell_styles:         [ Any,                     {} ],
       theme:          [ String,            "simple" ],
       theme_url:      [ String, "https://unpkg.com/tabulator-tables@5.3.2/dist/css/"]
     }))
