@@ -4,9 +4,12 @@ import time
 
 import pytest
 
-pytestmark = pytest.mark.ui
+try:
+    from playwright.sync_api import expect
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
 
-from playwright.sync_api import expect
+pytestmark = pytest.mark.ui
 
 from panel.io.convert import convert_apps
 
