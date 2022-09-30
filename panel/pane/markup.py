@@ -36,7 +36,7 @@ class DivPaneBase(PaneBase):
 
     _bokeh_model: ClassVar[Model] = _BkHTML
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text', 'style': 'styles'}
 
     _updates: ClassVar[bool] = True
 
@@ -50,7 +50,7 @@ class DivPaneBase(PaneBase):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        model = self._bokeh_model(**self._get_properties())
+        model = self._bokeh_model(**self._process_param_change(self._get_properties()))
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
