@@ -143,7 +143,8 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         The Javascript Bokeh Document instance to sync.
     """
     def jssync(event):
-        if (event.setter_id is not None and event.setter_id == 'python'):
+        setter_id = getattr(event, 'setter_id', None)
+        if (setter_id is not None and setter_id == 'python'):
             return
         json_patch = jsdoc.create_json_patch_string(pyodide.ffi.to_js([event]))
         pydoc.apply_json_patch(json.loads(json_patch), setter='js')
@@ -151,7 +152,8 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
 
     def pysync(event):
-        if event.setter is not None and event.setter == 'js':
+        setter = getattr(event, 'setter', None)
+        if setter is not None and setter == 'js':
             return
         json_patch, buffers = process_document_events([event], use_buffers=True)
         buffer_map = {}
@@ -183,7 +185,7 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
         An optional message ID to pass through to the dispatch_fn.
     """
     def pysync(event):
-        if setter is not None and event.setter == setter:
+        if setter is not None and getattr(event, setter, None) == setter:
             return
         json_patch, buffers = process_document_events([event], use_buffers=True)
         buffer_map = {}
