@@ -1,10 +1,16 @@
 # Running Panel in the Browser with WASM
 
-Panel lets you write dashboards and other applications in Python that are accessed using a web browser. Typically, the Python interpreter runs as a separate Jupyter or Bokeh server process, communicating with JavaScript code running in the client browser. However, it is now possible to run Python directly in the browser, with no separate server needed!
+Panel lets you write dashboards and other applications in Python that are accessed using a web browser. Typically, the Python interpreter runs as a separate Jupyter or Bokeh server process, communicating with JavaScript code running in the client browser. However, **it is now possible to run Python directly in the browser**, with **no separate server needed!**
 
 The underlying technology involved is called [WebAssembly](https://webassembly.org/) (or WASM). More specifically, [Pyodide](https://pyodide.org/) pioneered the ability to install Python libraries, manipulate the web page's [DOM](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Introduction) from Python, and execute regular Python code entirely in the browser. A number of libraries have sprung up around Python in WASM, including [PyScript](https://pyscript.net/).
 
-Panel can be run directly in Pyodide and has special support for rendering in PyScript. This guide will take us through the process of either converting entire Panel applications into a Pyodide/PyScript based application or manually installing Panel in the browser and using it to render components.
+Panel can be run directly in Pyodide and has special support for rendering in PyScript.
+
+This guide will take you through the process of either
+
+- Automatically converting Panel applications into a Pyodide/PyScript based application
+- Manually installing Panel in the browser and using it to render components.
+- Embedding Panel in your Sphinx documentation.
 
 ## Converting Panel applications
 
@@ -20,10 +26,72 @@ The ``panel convert`` command has the following options:
       --to                  The format to convert to, one of 'pyodide', 'pyodide-worker' or 'pyscript'
       --out                 Directory to export files to
       --title               Custom title for the application(s)
-      --prerender           Whether to export pre-rendered models to display while pyodide loads.
+      --skip-embed          Whether to skip the prerendering while pyodide loads.
       --index               Whether to create an index if multiple files are served.
       --pwa                 Whether to add files to allow serving the application as a Progressive Web App.
-      --requirements        Explicit list of Python requirements to add to the converted file.
+      --requirements        List of Python requirements to add to the converted file. By default it will automatically try to infer dependencies based on your imports and Panel will automatically be included.
+	  -- watch              Watches files for changes and rebuilds them when they are updated.
+
+### Example
+
+This example will demonstrate how to *convert* and *serve* a basic data app locally.
+
+- Create a `script.py` file with the following content
+
+```python
+from sklearn.datasets import load_iris
+from sklearn.metrics import accuracy_score
+from xgboost import XGBClassifier
+
+import panel as pn
+
+pn.extension(sizing_mode="stretch_width", template="fast")
+pn.state.template.param.update(site="Panel in the Browser", title="XGBoost Example")
+
+iris = load_iris()
+
+iris_df = load_iris(as_frame=True)
+
+trees = pn.widgets.IntSlider(start=2, end=30, name="Number of trees")
+
+def pipeline(trees):
+    model = XGBClassifier(max_depth=2, n_estimators=trees)
+    model.fit(iris.data, iris.target)
+    accuracy = round(accuracy_score(iris.target, model.predict(iris.data)) * 100, 1)
+    return pn.indicators.Number(
+        name="Test score",
+        value=accuracy,
+        format="{value}%",
+        colors=[(97.5, "red"), (99.0, "orange"), (100, "green")],
+    )
+
+pn.Column(
+    "Simple example of training an XGBoost classification model on the small Iris dataset.",
+    iris_df.data.head(),
+    "Move the slider below to change the number of training rounds for the XGBoost classifier. The training accuracy score will adjust accordingly.",
+    trees,
+    pn.bind(pipeline, trees),
+).servable()
+```
+
+- Run `panel convert script.py --to pyodide-worker --out pyodide`
+- Run `python3 -m http.server` to start a web server locally
+- Open `http://localhost:8000/pyodide/script.html` to try out the app.
+
+The app should look like this
+
+![Panel in the browser](../_static/images/pyodide_xgboost_app.png)
+
+You can now add the `script.html` (and `script.js` file if you used the `pyodide-worker` target) to your Github pages or similar. **no separate server needed!**
+
+#### Tips & Tricks for development
+
+- While developing you should run the script locally with *auto reload*: `panel serve script.py --autoreload`.
+- You can also watch your script for changes and rebuild it if you make an edit with `panel convert ... --watch`
+- If the converted app does not work as expected, you can most often find the errors in the browser
+console. [This guide](https://balsamiq.com/support/faqs/browserconsole/) describes how to open the
+console.
+- You can find answers to the most frequently asked questions about *Python in the browser* in the [Pyodide - FAQ](https://pyodide.org/en/stable/usage/faq.html) or the [PyScript FAQ](https://docs.pyscript.net/latest/reference/faq.html). For example the answer to "How can I load external data?".
 
 ### Formats
 
@@ -33,15 +101,6 @@ Using the `--to` argument on the CLI you can control the format of the file that
 - **`pyodide-worker`**: Generates an HTML file and a JS file containing a Web Worker that runs in a separate thread. This is the most performant option, but files have to be hosted on a static file server.
 - **`pyscript`**: Generates an HTML leveraging PyScript. This produces standalone HTML files containing `<py-env>` and `<py-script>` tags containing the dependencies and the application code. This output is the most readable, and should have equivalent performance to the `pyodide` option.
 
-### Progressive Web Apps
-
-Progressive web applications (PWAs) provide a way for your web apps to behave almost like a native application, both on mobile devices and on the desktop. The `panel convert` CLI has a `--pwa` option that will generate the necessary files to turn your Panel + Pyodide application into a PWA. The web manifest, service worker script and assets such as thumbnails are exported alongside the other HTML and JS files and can then be hosted on your static file host. Note that Progressive web apps must be served via HTTPS to ensure user privacy, security, and content authenticity, including the application itself and all resources it references. Depending on your hosting service, you will have to enable HTTPS yourself. GitHub pages generally make this very simple and provide a great starting point.
-
-Once generated, you can inspect the `site.webmanifest` file and modify it to your liking, including updating the favicons in the assets directory.
-
-```{note} If you decide to enable the `--pwa` ensure that you also provide a unique `--title`. Otherwise the browser caches storing your apps dependencies will end up overwriting each other.
-```
-
 ### Index
 
 If you convert multiple applications at once you may want to add an index to be able to navigate between the applications easily. To enable the index simply pass `--index` to the convert command.
@@ -50,18 +109,23 @@ If you convert multiple applications at once you may want to add an index to be 
 
 In order to improve the loading experience Panel will pre-render and embed the initial render of the page and replace it with live components once the page is loaded. This is important because Pyodide has to fetch the entire Python runtime and all required packages from a CDN. This can be **very** slow depending on your internet connection. If you want to disable this behavior and render an initially blank page use the `--skip-embed` option. Otherwise Panel will render application using the current Python process (presumably outside the browser) into the HTML file as a "cached" copy of the application for the user to see while the Python runtime is initialized and the actual browser-generated application is ready for interaction.
 
+### Progressive Web Apps
+
+Progressive web applications (PWAs) provide a way for your web apps to behave almost like a native application, both on mobile devices and on the desktop. The `panel convert` CLI has a `--pwa` option that will generate the necessary files to turn your Panel + Pyodide application into a PWA. The web manifest, service worker script and assets such as thumbnails are exported alongside the other HTML and JS files and can then be hosted on your static file host. Note that Progressive web apps must be served via HTTPS to ensure user privacy, security, and content authenticity, including the application itself and all resources it references. Depending on your hosting service, you will have to enable HTTPS yourself. GitHub pages generally make this very simple and provide a great starting point.
+
+Once generated, you can inspect the `site.webmanifest` file and modify it to your liking, including updating the favicons in the assets directory.
+
+```{note}
+If you decide to enable the `--pwa` ensure that you also provide a unique `--title`. Otherwise the browser caches storing your apps dependencies will end up overwriting each other.
+```
+
 ## Installing Panel in the browser
 
 To install Panel in the browser you merely have to use the installation mechanism provided by each supported runtime:
 
 ### Pyodide
 
-Currently the best supported mechanism for installing packages in Pyodide is `micropip`, which can be imported within the Pyodide runtime. Once imported simply use `micropip.install`:
-
-```python
-import micropip
-micropip.install('panel')
-```
+Currently the best supported mechanism for installing packages in Pyodide is `micropip`.
 
 To get started with Pyodide simply follow their [Getting started guide](https://pyodide.org/en/stable/usage/quickstart.html). Note that if you want to render Panel output you will also have to load [Bokeh.js](https://docs.bokeh.org/en/2.4.1/docs/first_steps/installation.html#install-bokehjs:~:text=Installing%20standalone%20BokehJS%C2%B6) and Panel.js from CDN. The most basic pyodide application therefore looks like this:
 
@@ -78,14 +142,17 @@ To get started with Pyodide simply follow their [Getting started guide](https://
 
   </head>
   <body>
+    <div id="simple_app"></div>
     <script type="text/javascript">
       async function main(){
         let pyodide = await loadPyodide();
+        await pyodide.loadPackage("micropip");
+        const micropip = pyodide.pyimport("micropip");
+        await micropip.install('panel')
         pyodide.runPython(`
-          import micropip
-          micropip.install('panel')
-
           import panel as pn
+
+          pn.extension(sizing_mode="stretch_width")
 
           slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
 
@@ -101,20 +168,37 @@ To get started with Pyodide simply follow their [Getting started guide](https://
 </html>
 ```
 
+The app should look like this
+
+![Panel Pyodide App](../_static/images/pyodide_app_simple.png)
+
+:::{admonition}
+The default bokeh and panel packages are very large, therefore we recommend you pip install specialized wheels:
+
+```javascript
+const bk_whl = "https://cdn.holoviz.org/panel/0.14.0/wheels/bokeh-2.4.3-py3-none-any.whl"
+const pn_whl = "https://cdn.holoviz.org/panel/0.14.0/wheels/panel-0.14.0-py3-none-any.whl"
+await micropip.install(bk_whl, pn_whl)
+```
+:::
+
 ### PyScript
 
-PyScript makes it even easier to manage your dependencies, with a `<py-env>` HTML tag. Simply include `panel` in the list of dependencies and PyScript will install it automatically:
+PyScript makes it even easier to manage your dependencies, with a `<py-config>` HTML tag. Simply include `panel` in the list of dependencies and PyScript will install it automatically:
 
 ```html
-<py-env>
-- panel
-...
-</py-env>
+<py-config>
+packages = [
+  "panel",
+  ...
+]
+</py-config>
 ```
 
 Once installed you will be able to `import panel` in your `<py-script>` tag. Again, make sure you also load Bokeh.js and Panel.js:
 
 ```html
+<!DOCTYPE html>
 <html>
   <head>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.4.3.js"></script>
@@ -122,17 +206,21 @@ Once installed you will be able to `import panel` in your `<py-script>` tag. Aga
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.3.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@holoviz/panel@0.14.0/dist/panel.min.js"></script>
 
-    <link rel="stylesheet" href="https://pyscript.net/stable/pyscript.css" />
-    <script defer src="https://pyscript.net/stable/pyscript.js"></script>
-
+    <link rel="stylesheet" href="https://pyscript.net/releases/2022.09.1/pyscript.css" />
+    <script defer src="https://pyscript.net/releases/2022.09.1/pyscript.js"></script>
   </head>
   <body>
-    <py-env>
-      - panel
-      ...
-    </py-env>
+    <py-config>
+       packages = [
+         "panel",
+         ...
+       ]
+    </py-config>
+    <div id="simple_app"></div>
     <py-script>
       import panel as pn
+
+      pn.extension(sizing_mode="stretch_width")
 
       slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
 
@@ -145,7 +233,9 @@ Once installed you will be able to `import panel` in your `<py-script>` tag. Aga
 </html>
 ```
 
-## Rendering Panel components
+The app should look identical to the one above but show a loading spinner while Pyodide is initializing.
+
+### Rendering Panel components in Pyodide or Pyscript
 
 Rendering Panel components into the DOM is quite straightforward. You can simply use the `.servable()` method on any component and provide a target that should match the `id` of a DOM node:
 
@@ -172,24 +262,7 @@ Alternatively you can also use the `panel.io.pyodide.write` function to write in
 await pn.io.pyodide.write('simple_app', component)
 ```
 
-### PyScript
-
-Current versions of PyScript will automatically render the output of the last cell of a <py-script> tag. E.g. in this example the `pn.Row()` component will be rendered wherever you placed the tag:
-
-```html
-<py-script>
-  import panel as pn
-
-  slider = pn.widgets.FloatSlider(start=0, end=10, name='Amplitude')
-
-  def callback(new):
-      return f'Amplitude is: {new}'
-
-  pn.Row(slider, pn.bind(callback, slider))
-</py-script>
-```
-
-## Embedding in documentation
+## Embedding in Sphinx documentation
 
 One more option is to include live Panel examples in your Sphinx documentation using the `nbsite.pyodide` directive.
 
