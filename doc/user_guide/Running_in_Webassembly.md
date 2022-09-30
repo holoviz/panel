@@ -88,7 +88,7 @@ You can now add the `script.html` file to your Github pages or similar. **no sep
 #### Tips & Tricks for development
 
 - While developing you should run the script locally with *auto reload*: `panel serve script.py --autoreload`.
-- If the converted app does not work as expected you can most often find the errors in the browser
+- If the converted app does not work as expected, you can most often find the errors in the browser
 console. [This guide](https://balsamiq.com/support/faqs/browserconsole/) describes how to open the
 console. In the image below the app errors because I "forgot" to add `xgboost` to the list of requirements.
 
