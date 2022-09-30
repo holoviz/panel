@@ -46,13 +46,13 @@ def test_pyodide_test_convert_button_app(page, runtime):
     expect(page.locator('body')).to_have_class('bk pn-loading arcs')
     expect(page.locator('body')).to_have_class("", timeout=20000)
 
-    assert page.text_content(".bk.markdown") == '0'
+    assert page.text_content(".bk.bk-clearfix") == '0'
 
     page.click('.bk.bk-btn')
 
     time.sleep(0.1)
 
-    assert page.text_content(".bk.markdown") == '1'
+    assert page.text_content(".bk.bk-clearfix") == '1'
 
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript'])
