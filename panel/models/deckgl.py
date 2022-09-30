@@ -14,11 +14,12 @@ from collections import OrderedDict
 from bokeh.core.properties import (
     Any, Bool, Dict, Either, Instance, Int, List, Override, String,
 )
-from bokeh.models import ColumnDataSource, HTMLBox
+from bokeh.models import ColumnDataSource
 
 from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .layout import HTMLBox
 
 
 class DeckGLPlot(HTMLBox):

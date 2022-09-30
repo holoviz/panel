@@ -17,7 +17,7 @@ from bokeh.document.events import (
     ColumnDataChangedEvent, DocumentPatchedEvent, ModelChangedEvent,
 )
 from bokeh.model import DataModel
-from bokeh.models import Box, ColumnDataSource, Model
+from bokeh.models import FlexBox, ColumnDataSource, Model
 from bokeh.protocol import Protocol
 from typing_extensions import Literal
 
@@ -169,7 +169,7 @@ def bokeh_repr(obj: 'Model', depth: int = 0, ignored: Optional[Iterable[str]] = 
             v = v[:30] + '...'
         props.append('%s=%s' % (k, v))
     props_repr = ', '.join(props)
-    if isinstance(obj, Box):
+    if isinstance(obj, FlexBox):
         r += '{cls}(children=[\n'.format(cls=cls)
         for obj in obj.children: # type: ignore
             r += textwrap.indent(bokeh_repr(obj, depth=depth+1) + ',\n', '  ')

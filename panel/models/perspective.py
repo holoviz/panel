@@ -1,9 +1,10 @@
 from bokeh.core.properties import (
     Any, Bool, Dict, Either, Instance, List, Null, Nullable, String,
 )
-from bokeh.models import ColumnDataSource, HTMLBox
+from bokeh.models import ColumnDataSource
 
 from ..config import config
+from .layout import HTMLBox
 
 
 class Perspective(HTMLBox):
