@@ -80,7 +80,7 @@ pn.Column(
 
 The app should look like this
 
-![Panel in the browser](https://user-images.githubusercontent.com/42288570/193093585-6ec5abd8-d099-4e6c-b82c-43975a6ad15f.png)
+![Panel in the browser](../_static/images/pyodide_xgboost_app.png)
 
 You can now add the `script.html` (and `script.js` file if you used the `pyodide-worker` target) to your Github pages or similar. **no separate server needed!**
 
