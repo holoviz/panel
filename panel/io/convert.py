@@ -41,8 +41,8 @@ PY_VERSION = base_version(__version__)
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js'
-PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/releases/2022.09.1/pyscript.css" />'
-PYSCRIPT_JS = '<script defer src="https://pyscript.net/releases/2022.09.1/pyscript.js"></script>'
+PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/unstable/pyscript.css" />'
+PYSCRIPT_JS = '<script defer src="https://pyscript.net/unstable/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
 
 ICON_DIR = DIST_DIR / 'images'
@@ -67,7 +67,7 @@ init_doc()
 """
 
 POST = """
-await write_doc()
+await write_doc();
 """
 
 PYODIDE_SCRIPT = """
@@ -234,8 +234,8 @@ def script_to_html(
         css_resources = []
         if css_resources == 'auto':
             css_resources = [PYSCRIPT_CSS]
-        pyenv = '\n'.join([f'- {req}' for req in reqs])
-        plot_script = f'<py-env>\n{pyenv}\n</py-env>\n<py-script>{code}</py-script>'
+        pyenv = ','.join([repr(req) for req in reqs])
+        plot_script = f'<py-config>\npackages = [{pyenv}]\n</py-config>\n<py-script>{code}</py-script>'
     else:
         if css_resources == 'auto':
             css_resources = []
