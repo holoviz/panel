@@ -1,5 +1,4 @@
 import {classes} from "@bokehjs/core/dom"
-import {color2css} from "@bokehjs/core/util/color"
 import {MarkupView} from "@bokehjs/models/widgets/markup"
 import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import * as p from "@bokehjs/core/properties"
@@ -19,9 +18,9 @@ export abstract class HTMLBoxView extends LayoutDOMView {
     super.connect_signals()
 
     // Note due to on_change hack properties must be defined in this order.
-    const {css_classes, background} = this.model.properties
+    const {css_classes} = this.model.properties
     this._prev_css_classes = this.model.css_classes
-    this.on_change([css_classes, background], () => {
+    this.on_change([css_classes], () => {
       // Note: This ensures that changes in the background and changes
       // to the loading parameter in Panel do NOT trigger a full re-render
       const css = []
@@ -36,8 +35,6 @@ export abstract class HTMLBoxView extends LayoutDOMView {
       }
       const prev = this._prev_css_classes
       if (JSON.stringify(css) === JSON.stringify(prev)) {
-        const {background} = this.model
-        this.el.style.backgroundColor = background != null ? color2css(background) : ""
         classes(this.el).clear().add(...this.css_classes())
       } else {
         this.invalidate_render()
