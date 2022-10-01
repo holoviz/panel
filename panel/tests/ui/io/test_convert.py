@@ -110,7 +110,7 @@ def test_pyodide_test_convert_slider_app(page, runtime, start_server):
     expect(page.locator('body')).to_have_class(cls)
     expect(page.locator('body')).not_to_have_class(cls, timeout=30000)
 
-    expect(page.locator(".bk.bk-clearfix")).to_have_text('0')
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('0.0')
 
     page.click('.noUi-handle')
     page.keyboard.press('ArrowRight')
