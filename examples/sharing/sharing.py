@@ -15,8 +15,8 @@ from pathlib import Path
 import os
 
 ARGUMENT = "config"
-
-
+APPS = "apps"
+DEST_PATH = "build"
 class NoConfiguration(Exception):
     pass
 
@@ -35,13 +35,13 @@ def decode(configuration: bytes) -> Dict:
 
 # Test
 
-test_configuration = {"apps": {"script.py": """
+test_configuration = {APPS: {"script.py": """
 import panel as pn
 pn.panel("Hello World").servable()
 """}}
 
 encoded = encode(test_configuration)
-print("test argument:", encoded.decode("utf8"))
+print("test url:", f'http://localhost:5006/sharing?{ARGUMENT}={encoded.decode("utf8")}')
 decoded = decode(encoded)
 assert decoded == test_configuration
 
@@ -58,11 +58,11 @@ def to_configuration(argument: bytes)->Dict:
         raise InvalidConfiguration(f"Could not convert the {ARGUMENT} to a dictionary") from ex
 
 def validate(configuration):
-    if not "apps" in configuration:
+    if not APPS in configuration:
         raise InvalidConfiguration(f"No files found in the {ARGUMENT}")
-    if not isinstance(configuration["apps"], dict):
+    if not isinstance(configuration[APPS], dict):
         raise InvalidConfiguration(f"The value of files in the {ARGUMENT} is not a dictionary")
-    files = configuration["apps"]
+    files = configuration[APPS]
     if not files:
         raise InvalidConfiguration(f"No files found in the {ARGUMENT}")
     if len(files)>1:
@@ -87,8 +87,11 @@ def set_directory(path: Path):
         os.chdir(origin)
 
 def save_files(configuration: Dict):
-    for file, text in configuration["apps"].items():
+    for file, text in configuration[APPS].items():
         pathlib.Path(file).write_text(text)
+
+def to_html_file_name(app_name):
+    return app_name.replace(".py", ".html").replace(".ipynb", ".html")
 
 def serve_html(app_html):
     template = app_html.read_text()
@@ -101,11 +104,11 @@ validate(configuration)
 with tempfile.TemporaryDirectory() as directory:
      with set_directory(directory):
         save_files(configuration)
-        configuration["dest_path"]="build"
-        configuration["apps"]=list(configuration["apps"].keys())
+        configuration["dest_path"]=DEST_PATH
+        configuration[APPS]=list(configuration[APPS].keys())
         convert_apps(**configuration)
-        app_html_name = configuration["apps"][0].replace(".py", ".html").replace(".ipynb", ".html")
-        app_html = pathlib.Path(directory)/"build"/app_html_name
+        app_html_name = to_html_file_name(configuration[APPS][0])
+        app_html = pathlib.Path(directory)/DEST_PATH/app_html_name
         serve_html(app_html)
 
 
