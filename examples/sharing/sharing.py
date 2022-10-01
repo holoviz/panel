@@ -11,7 +11,7 @@ import tempfile
 from panel.io.convert import convert_apps
 from contextlib import contextmanager
 from pathlib import Path
-
+import sys
 import os
 
 ARGUMENT = "config"
@@ -35,19 +35,19 @@ def decode(configuration: bytes) -> Dict:
 
 # Test
 
-test_configuration = {APPS: {"script.py": """
+test_configuration = {APPS: ["script.py"], "source": {"script.py": """
 import panel as pn
 pn.panel("Hello World").servable()
-"""}}
+"""}, "build_index": False, "build_pwa": False}
 
 encoded = encode(test_configuration)
 print("test url:", f'http://localhost:5006/sharing?{ARGUMENT}={encoded.decode("utf8")}')
 decoded = decode(encoded)
 assert decoded == test_configuration
 
-def get_argument() -> bytes:
-    if "config" in pn.state.session_args:
-        return pn.state.session_args[ARGUMENT][0]
+def get_argument(session_args: Dict) -> bytes:
+    if "config" in session_args:
+        return session_args[ARGUMENT][0]
     else:
         raise NoConfiguration(f"No {ARGUMENT} provided")
 
@@ -60,8 +60,10 @@ def to_configuration(argument: bytes)->Dict:
 def validate(configuration):
     if not APPS in configuration:
         raise InvalidConfiguration(f"No files found in the {ARGUMENT}")
-    if not isinstance(configuration[APPS], dict):
-        raise InvalidConfiguration(f"The value of files in the {ARGUMENT} is not a dictionary")
+    if not isinstance(configuration[APPS], list):
+        raise InvalidConfiguration(f"The value of files in the {ARGUMENT} is not a list")
+    if not isinstance(configuration["source"], dict):
+        raise InvalidConfiguration(f"The value of source in the {ARGUMENT} is not a dict")
     files = configuration[APPS]
     if not files:
         raise InvalidConfiguration(f"No files found in the {ARGUMENT}")
@@ -87,8 +89,10 @@ def set_directory(path: Path):
         os.chdir(origin)
 
 def save_files(configuration: Dict):
-    for file, text in configuration[APPS].items():
+    for file, text in configuration["source"].items():
         pathlib.Path(file).write_text(text)
+    
+    pathlib.Path("config.json").write_text(json.dumps(configuration))
 
 def to_html_file_name(app_name):
     return app_name.replace(".py", ".html").replace(".ipynb", ".html")
@@ -97,19 +101,42 @@ def serve_html(app_html):
     template = app_html.read_text()
     pn.Template(template).servable()
 
-argument = get_argument()
+argument = get_argument(pn.state.session_args)
 configuration = to_configuration(argument)
 validate(configuration)
 
-with tempfile.TemporaryDirectory() as directory:
-     with set_directory(directory):
-        save_files(configuration)
-        configuration["dest_path"]=DEST_PATH
-        configuration[APPS]=list(configuration[APPS].keys())
-        convert_apps(**configuration)
-        app_html_name = to_html_file_name(configuration[APPS][0])
-        app_html = pathlib.Path(directory)/DEST_PATH/app_html_name
-        serve_html(app_html)
+APPS_ROOT = pathlib.Path("apps")
+SOURCE_ROOT = APPS_ROOT / "source"
+TARGET_ROOT = APPS_ROOT / "target"
+
+DIR = str(hash(str(configuration))% ((sys.maxsize + 1) * 2))
+SOURCE = SOURCE_ROOT/DIR
+TARGET = TARGET_ROOT/DIR
+
+SOURCE.mkdir(parents=True, exist_ok="ok")
+TARGET.mkdir(parents=True, exist_ok="ok")
+print("target", TARGET)
+configuration["dest_path"]=str(TARGET.absolute())
+
+with set_directory(SOURCE):
+    save_files(configuration)   
+    config = {key: value for key, value in configuration.items() if key not in ["source"]}
+    print(config)
+    convert_apps(**config)
 
 
-
+app_url = "apps/" + DIR + "/" + to_html_file_name(configuration[APPS][0])
+print(app_url)
+save_button = pn.widgets.Button(name="Save", sizing_mode="fixed", align="end")
+requirements = pn.widgets.TextInput(name="Requirements", sizing_mode="stretch_width")
+source_actions = pn.Row(requirements, save_button, sizing_mode="stretch_width")
+print(configuration)
+code = configuration["source"]["script.py"]
+editor = pn.widgets.Ace(value=code, sizing_mode="stretch_both")
+source_pane = pn.Column(source_actions, editor, sizing_mode="stretch_both")
+target_link = pn.pane.HTML(f"<a href='{app_url}' target='_blank'>App Link</a>", sizing_mode="fixed")
+iframe_pane = pn.pane.HTML(f"""\
+<iframe frameborder="0" title="panel app" class="preview-iframe" style="width: 100%;height:100%";flex-grow: 1;" src="{app_url}" allow="accelerometer;autoplay;camera;document-domain;encrypted-media;fullscreen;gamepad;geolocation;gyroscope;layout-animations;legacy-image-formats;microphone;oversized-images;payment;publickey-credentials-get;speaker-selection;sync-xhr;unoptimized-images;unsized-media;screen-wake-lock;web-share;xr-spatial-tracking"></iframe>""", sizing_mode="stretch_both")
+target_pane = pn.Column(target_link, iframe_pane, sizing_mode="stretch_both")
+    
+pn.Row(source_pane, target_pane, sizing_mode="stretch_both").servable()
