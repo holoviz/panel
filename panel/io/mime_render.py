@@ -48,6 +48,7 @@ _PACKAGE_MAP = {
     'hvplot': ['holoviews>=1.15.1a1', 'hvplot'],
     'holoviews': ['holoviews>=1.15.1a1']
 }
+_PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
 
 def find_imports(code: str) -> List[str]:
     """
@@ -94,7 +95,7 @@ def find_imports(code: str) -> List[str]:
             packages.extend(pkg)
         else:
             packages.append(pkg)
-    if 'bokeh.sampledata' in code and 'pandas' not in packages:
+    if any(pdd in code for pdd in _PANDAS_AUTODETECT) and 'pandas' not in packages:
         packages.append('pandas')
     return packages
 
