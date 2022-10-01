@@ -17,14 +17,14 @@ async function startApplication() {
   await self.pyodide.loadPackage("micropip");
   const env_spec = [{{ env_spec }}]
   for (const pkg of env_spec) {
+    const pkg_name = pkg.split('/').slice(-1)[0].split('-')[0]
+    self.postMessage({type: 'status', msg: `Installing ${pkg_name}`})
     await self.pyodide.runPythonAsync(`
       import micropip
       await micropip.install('${pkg}');
     `);
-    self.postMessage({type: 'status', msg: `Installed ${pkg}`})
   }
   console.log("Packages loaded!");
-
   self.postMessage({type: 'status', msg: 'Executing code'})
   const code = `
   {{ code }}
@@ -39,20 +39,33 @@ async function startApplication() {
 }
 
 self.onmessage = async (event) => {
-  if (event.data.type === 'rendered') {
+  const msg = event.data
+  if (msg.type === 'rendered') {
     self.pyodide.runPythonAsync(`
     from panel.io.state import state
     from panel.io.pyodide import _link_docs_worker
 
     _link_docs_worker(state.curdoc, sendPatch, setter='js')
     `)
-  } else if (event.data.type === 'patch') {
+  } else if (msg.type === 'patch') {
     self.pyodide.runPythonAsync(`
     import json
 
-    state.curdoc.apply_json_patch(json.loads('${event.data.patch}'), setter='js')
+    state.curdoc.apply_json_patch(json.loads('${msg.patch}'), setter='js')
     `)
     self.postMessage({type: 'idle'})
+  } else if (msg.type === 'location') {
+    self.pyodide.runPythonAsync(`
+    import json
+    from panel.io.state import state
+    from panel.util import edit_readonly
+    if state.location:
+        loc_data = json.loads("""${msg.location}""")
+        with edit_readonly(state.location):
+            state.location.param.update({
+                k: v for k, v in loc_data.items() if k in state.location.param
+            })
+    `)
   }
 }
 
