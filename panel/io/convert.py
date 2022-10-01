@@ -90,7 +90,7 @@ INIT_SERVICE_WORKER = """
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./serviceWorker.js').then(reg => {
     reg.onupdatefound = () => {
-      const installingWorker = reg.installing;x
+      const installingWorker = reg.installing;
       installingWorker.onstatechange = () => {
         if (installingWorker.state === 'installed' &&
             navigator.serviceWorker.controller) {
