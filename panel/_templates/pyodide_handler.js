@@ -80,6 +80,7 @@ pyodideWorker.onmessage = async (event) => {
     pyodideWorker.jsdoc = jsdoc = views[0].model.document
     jsdoc.on_change(send_change.bind(null, jsdoc), false)
     pyodideWorker.postMessage({'type': 'rendered'})
+    pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
   } else if (msg.type === 'patch') {
     pyodideWorker.jsdoc.apply_json_patch(JSON.parse(msg.patch), msg.buffers, setter_id='py')
   }

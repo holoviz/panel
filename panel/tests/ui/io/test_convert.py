@@ -29,6 +29,14 @@ slider = pn.widgets.FloatSlider()
 pn.Row(slider, pn.bind(lambda v: v, slider)).servable();
 """
 
+location_app = """
+import panel as pn
+slider = pn.widgets.FloatSlider(start=0, end=10)
+pn.state.location.sync(slider, ['value'])
+pn.Row(slider, pn.bind(lambda v: v, slider)).servable();
+"""
+
+
 def write_app(app):
     """
     Writes app to temporary file and returns path.
@@ -79,15 +87,13 @@ def test_pyodide_test_convert_button_app(page, runtime, start_server):
 
     cls = f'bk pn-loading {config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
-    expect(page.locator('body')).not_to_have_class(cls, timeout=30000)
+    expect(page.locator('body')).not_to_have_class(cls, timeout=60 * 1000)
 
-    assert page.text_content(".bk.bk-clearfix") == '0'
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('0')
 
     page.click('.bk.bk-btn')
 
-    time.sleep(0.1)
-
-    assert page.text_content(".bk.bk-clearfix") == '1'
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('1')
 
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
@@ -102,13 +108,36 @@ def test_pyodide_test_convert_slider_app(page, runtime, start_server):
 
     cls = f'bk pn-loading {config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
-    expect(page.locator('body')).not_to_have_class(cls, timeout=30000)
+    expect(page.locator('body')).not_to_have_class(cls, timeout=60 * 1000)
 
-    assert page.text_content(".bk.bk-clearfix") == '0.0'
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('0.0')
 
     page.click('.noUi-handle')
     page.keyboard.press('ArrowRight')
 
-    time.sleep(0.1)
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('0.1')
 
-    assert page.text_content(".bk.bk-clearfix") == '0.1'
+
+@pytest.mark.parametrize('runtime', ['pyodide-worker'])
+def test_pyodide_test_convert_location_app(page, runtime, start_server):
+    nf = write_app(location_app)
+    app_path = pathlib.Path(nf.name)
+    start_server(app_path)
+
+    convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False)
+
+    app_url = f"http://localhost:8123/{app_path.name[:-3]}.html"
+    page.goto(f"{app_url}?value=3.14")
+
+    cls = f'bk pn-loading {config.loading_spinner}'
+    expect(page.locator('body')).to_have_class(cls)
+    expect(page.locator('body')).not_to_have_class(cls, timeout=60 * 1000)
+
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('3.14')
+
+    page.click('.noUi-handle')
+    page.keyboard.press('ArrowRight')
+
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('3.2')
+
+    assert page.url == f"{app_url}?value=3.2"
