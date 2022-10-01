@@ -100,7 +100,7 @@ if ('serviceWorker' in navigator) {
         }
       }
     }
-  }
+  })
 }
 </script>
 """
