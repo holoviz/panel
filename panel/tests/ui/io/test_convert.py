@@ -87,7 +87,7 @@ def test_pyodide_test_convert_button_app(page, runtime, start_server):
 
     cls = f'bk pn-loading {config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
-    expect(page.locator('body')).not_to_have_class(cls, timeout=30000)
+    expect(page.locator('body')).not_to_have_class(cls, timeout=60 * 1000)
 
     expect(page.locator(".bk.bk-clearfix")).to_have_text('0')
 
@@ -108,7 +108,7 @@ def test_pyodide_test_convert_slider_app(page, runtime, start_server):
 
     cls = f'bk pn-loading {config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
-    expect(page.locator('body')).not_to_have_class(cls, timeout=30000)
+    expect(page.locator('body')).not_to_have_class(cls, timeout=60 * 1000)
 
     expect(page.locator(".bk.bk-clearfix")).to_have_text('0.0')
 
@@ -131,7 +131,7 @@ def test_pyodide_test_convert_location_app(page, runtime, start_server):
 
     cls = f'bk pn-loading {config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
-    expect(page.locator('body')).not_to_have_class(cls, timeout=30000)
+    expect(page.locator('body')).not_to_have_class(cls, timeout=60 * 1000)
 
     expect(page.locator(".bk.bk-clearfix")).to_have_text('3.14')
 
