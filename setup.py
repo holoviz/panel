@@ -188,7 +188,7 @@ extras_require = {
         'graphviz',
         'lxml',
         'python-graphviz',
-        'pydata-sphinx-theme',
+        'pydata-sphinx-theme <=0.9.0',
         'sphinx-copybutton',
         'sphinx-design',
         'pydeck',
