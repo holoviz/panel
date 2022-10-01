@@ -16,8 +16,9 @@ import sys
 import os
 import param
 import uuid
+import datetime as dt
 
-pn.extension("ace")
+pn.extension("ace", notifications=True)
 
 APPS = "apps"
 APP_FILE = "app.py"
@@ -101,6 +102,9 @@ class AppActions(param.Parameterized):
     _state = param.ClassSelector(class_=AppState)
     jsactions = param.ClassSelector(class_=JSActions)
 
+    last_conversion=param.Date()
+    last_save=param.Date()
+
     def __init__(self, state: AppState, **params):
         super().__init__(_state=state, **params, jsactions=JSActions())
 
@@ -119,17 +123,19 @@ class AppActions(param.Parameterized):
             convert_apps(**config)
 
     @pn.depends("convert", watch=True)
-    def _update(self):
+    def _convert(self):
         self._convert_apps(
             source=self._state.converted_source_dir,
             target=self._state.converted_target_dir,
         )
+        self.last_conversion = dt.datetime.now()
 
     @pn.depends("save", watch=True)
     def _save(self):
         self._convert_apps(
             source=self._state.saved_source_dir, target=self._state.saved_target_dir
         )
+        self.last_save = dt.datetime.now()
 
     @pn.depends("open", watch=True)
     def _open(self):
@@ -240,10 +246,10 @@ editor = pn.widgets.Ace.from_param(
     sizing_mode="stretch_both",
     name="Code",
 )
-servable = pn.widgets.TextInput(
-    value="$ panel serve script.py", sizing_mode="stretch_width", disabled=True
-)
-source_pane = pn.Tabs(editor, configuration_tab, sizing_mode="stretch_both")
+gallery=pn.pane.Markdown("Coming up", name="Gallery")
+faq=pn.pane.Markdown("Coming up", name="FAQ")
+resources=pn.pane.Markdown("Coming up", name="Resources")
+source_pane = pn.Tabs(editor, configuration_tab, gallery, faq, resources, sizing_mode="stretch_both")
 
 convert_button = pn.widgets.Button.from_param(
     actions.param.convert,
@@ -265,16 +271,23 @@ open_button = pn.widgets.Button.from_param(
 copy_link = pn.widgets.Button.from_param(
     actions.param.copy, name="🔗 COPY SAVED LINK", sizing_mode="stretch_width", align="end", button_type="success"
 )
+download_saved_files = pn.widgets.FileDownload(filename="download.zip", disabled=True, button_type="success",sizing_mode="stretch_width")
 
 target_actions = pn.Row(
-    convert_button, save_button, copy_link, open_button, sizing_mode="stretch_width"
+    convert_button, save_button, copy_link, open_button, download_saved_files, sizing_mode="stretch_width"
 )
 iframe_pane=pn.pane.HTML(sizing_mode="stretch_both")
 
-@pn.depends(actions.param.convert, watch=True)
-def _update_iframe_pane(_=None):
-    iframe_pane.object = ""
-    iframe_pane.object = to_iframe(state.converted_url)
+@pn.depends(actions.param.last_conversion, watch=True)
+def _update_iframe_pane(last_conversion=None):
+    iframe_pane.object = to_iframe(state.converted_url + f"?last_conversion={last_conversion}")
+    pn.state.notifications.success("Converted")
+
+@pn.depends(actions.param.last_save, watch=True)
+def _update_iframe_pane(last_save=None):
+    pn.state.notifications.success("Saved")
+
+actions.convert=True
 _update_iframe_pane()
 
 target_pane = pn.Column(actions.jsactions, target_actions, pn.panel(iframe_pane, sizing_mode="stretch_both"), sizing_mode="stretch_both")
