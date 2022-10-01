@@ -48,15 +48,13 @@ import panel as pn
 pn.extension(sizing_mode="stretch_width", template="fast")
 pn.state.template.param.update(site="Panel in the Browser", title="XGBoost Example")
 
-iris = load_iris()
-
 iris_df = load_iris(as_frame=True)
 
 trees = pn.widgets.IntSlider(start=2, end=30, name="Number of trees")
 
 def pipeline(trees):
     model = XGBClassifier(max_depth=2, n_estimators=trees)
-    model.fit(iris.data, iris.target)
+    model.fit(iris.data, iris_df.target)
     accuracy = round(accuracy_score(iris.target, model.predict(iris.data)) * 100, 1)
     return pn.indicators.Number(
         name="Test score",
@@ -100,6 +98,14 @@ Using the `--to` argument on the CLI you can control the format of the file that
 - **`pyodide`** (default): Run application using Pyodide running in the main thread. This option is less performant than pyodide-worker but produces completely standalone HTML files that do not have to be hosted on a static file server (e.g. Github Pages).
 - **`pyodide-worker`**: Generates an HTML file and a JS file containing a Web Worker that runs in a separate thread. This is the most performant option, but files have to be hosted on a static file server.
 - **`pyscript`**: Generates an HTML leveraging PyScript. This produces standalone HTML files containing `<py-env>` and `<py-script>` tags containing the dependencies and the application code. This output is the most readable, and should have equivalent performance to the `pyodide` option.
+
+### Requirements
+
+The `panel convert` command will try its best to figure out the requirements of your script based on the imports, which means that in most cases you won't have to provide the explicit `--requirements` argument. However, if some library uses an optional import that cannot be inferred from the list of imports in your app you will have to provide an explicit list of dependencies. Note that `panel` and its dependencies including NumPy and Bokeh will be added loaded automatically, e.g. the explicit requirements for the app above would look like this:
+
+```
+panel convert script.py --to pyodide-worker --out pyodide --requirements xgboost scikit-learn pandas
+```
 
 ### Index
 
