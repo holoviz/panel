@@ -97,7 +97,6 @@ def serve_html(app_html):
 argument = get_argument()
 configuration = to_configuration(argument)
 validate(configuration)
-pn.panel(str(configuration)).servable()
 
 with tempfile.TemporaryDirectory() as directory:
      with set_directory(directory):
