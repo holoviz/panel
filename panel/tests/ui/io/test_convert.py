@@ -89,13 +89,33 @@ def test_pyodide_test_convert_button_app(page, runtime, start_server):
     expect(page.locator('body')).to_have_class(cls)
     expect(page.locator('body')).not_to_have_class(cls, timeout=30000)
 
-    assert page.text_content(".bk.bk-clearfix") == '0'
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('0')
 
     page.click('.bk.bk-btn')
 
-    time.sleep(0.1)
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('1')
 
-    assert page.text_content(".bk.bk-clearfix") == '1'
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
+def test_pyodide_test_convert_slider_app(page, runtime, start_server):
+    nf = write_app(slider_app)
+    app_path = pathlib.Path(nf.name)
+    start_server(app_path)
+
+    convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False)
+
+    page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
+
+    cls = f'bk pn-loading {config.loading_spinner}'
+    expect(page.locator('body')).to_have_class(cls)
+    expect(page.locator('body')).not_to_have_class(cls, timeout=30000)
+
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('0')
+
+    page.click('.noUi-handle')
+    page.keyboard.press('ArrowRight')
+
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('0.1')
 
 
 @pytest.mark.parametrize('runtime', ['pyodide-worker'])
@@ -106,18 +126,18 @@ def test_pyodide_test_convert_location_app(page, runtime, start_server):
 
     convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False)
 
-    page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html?value=3.14")
+    app_url = f"http://localhost:8123/{app_path.name[:-3]}.html"
+    page.goto(f"{app_url}?value=3.14")
 
     cls = f'bk pn-loading {config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
     expect(page.locator('body')).not_to_have_class(cls, timeout=30000)
 
-    assert page.text_content(".bk.bk-clearfix") == '3.14'
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('3.14')
 
     page.click('.noUi-handle')
     page.keyboard.press('ArrowRight')
 
-    time.sleep(0.1)
+    expect(page.locator(".bk.bk-clearfix")).to_have_text('3.2')
 
-    assert page.text_content(".bk.bk-clearfix") == '3.2'
-    assert page.url == f"http://localhost:8123/{app_path.name[:-3]}.html?value=3.2"
+    assert page.url == f"{app_url}?value=3.2"
