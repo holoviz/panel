@@ -71,7 +71,7 @@ pyodideWorker.onmessage = async (event) => {
     const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
 
     // Remove loading spinner and message
-    body.classList.remove("bk", "pn-loading")
+    body.classList.remove("bk", "pn-loading", "{{ loading_spinner }}")
     for (const loading_msg of loading_msgs) {
       loading_msg.remove()
     }

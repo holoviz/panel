@@ -2,6 +2,9 @@ import pathlib
 import tempfile
 import time
 
+from http.client import HTTPConnection
+from subprocess import PIPE, Popen
+
 import pytest
 
 try:
@@ -11,6 +14,7 @@ except ImportError:
 
 pytestmark = pytest.mark.ui
 
+from panel.config import config
 from panel.io.convert import convert_apps
 
 button_app = """
@@ -34,16 +38,46 @@ def write_app(app):
     nf.flush()
     return nf
 
+@pytest.fixture(scope="module")
+def start_server():
+    _PROCESSES = []
 
-@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript'])
-def test_pyodide_test_convert_button_app(page, runtime):
+    def start(path):
+        process = Popen(
+            ["python", "-m", "http.server", "8123", "--directory", str(path.parent)], stdout=PIPE
+        )
+        retries = 5
+        while retries > 0:
+            conn = HTTPConnection("localhost:8123")
+            try:
+                conn.request("HEAD", str(path.name))
+                response = conn.getresponse()
+                if response is not None:
+                    _PROCESSES.append(process)
+                    break
+            except ConnectionRefusedError:
+                time.sleep(1)
+                retries -= 1
+
+        if not retries:
+            raise RuntimeError("Failed to start http server")
+    yield start
+    for process in _PROCESSES:
+        process.terminate()
+        process.wait()
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
+def test_pyodide_test_convert_button_app(page, runtime, start_server):
     nf = write_app(button_app)
     app_path = pathlib.Path(nf.name)
+    start_server(app_path)
+
     convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False)
 
-    page.goto(f"file://{str(app_path)[:-3]}.html")
+    page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
 
-    expect(page.locator('body')).to_have_class('bk pn-loading arcs')
+    expect(page.locator('body')).to_have_class(f'bk pn-loading {config.loading_spinner}')
     expect(page.locator('body')).to_have_class("", timeout=30000)
 
     assert page.text_content(".bk.bk-clearfix") == '0'
@@ -55,15 +89,17 @@ def test_pyodide_test_convert_button_app(page, runtime):
     assert page.text_content(".bk.bk-clearfix") == '1'
 
 
-@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript'])
-def test_pyodide_test_convert_slider_app(page, runtime):
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
+def test_pyodide_test_convert_slider_app(page, runtime, start_server):
     nf = write_app(slider_app)
     app_path = pathlib.Path(nf.name)
+    start_server(app_path)
+
     convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False)
 
-    page.goto(f"file://{str(app_path)[:-3]}.html")
+    page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
 
-    expect(page.locator('body')).to_have_class('bk pn-loading arcs')
+    expect(page.locator('body')).to_have_class(f'bk pn-loading {config.loading_spinner}')
     expect(page.locator('body')).to_have_class("", timeout=30000)
 
     assert page.text_content(".bk.bk-clearfix") == '0.0'

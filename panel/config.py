@@ -121,7 +121,7 @@ class _config(_base_config):
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
 
-    loading_spinner = param.Selector(default='arcs', objects=[
+    loading_spinner = param.Selector(default='arc', objects=[
         'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
         Loading indicator to use when component loading parameter is set.""")
 

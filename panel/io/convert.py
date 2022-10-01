@@ -67,8 +67,7 @@ init_doc()
 """
 
 POST = """
-await write_doc();
-"""
+await write_doc()"""
 
 PYODIDE_SCRIPT = """
 <script type="text/javascript">
@@ -224,7 +223,8 @@ def script_to_html(
     ]
 
     # Execution
-    code = '\n'.join([PRE, source, POST])
+    post_code = f'{POST};' if runtime == 'pyscript' else POST
+    code = '\n'.join([PRE, source, post_code])
     web_worker = None
     if css_resources is None:
         css_resources = []
@@ -245,7 +245,8 @@ def script_to_html(
             if js_resources == 'auto':
                 js_resources = []
             worker_handler = WORKER_HANDLER_TEMPLATE.render({
-                'name': name
+                'name': name,
+                'loading_spinner': config.loading_spinner
             })
             web_worker = WEB_WORKER_TEMPLATE.render({
                 'PYODIDE_URL': PYODIDE_URL,
