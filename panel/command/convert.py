@@ -78,7 +78,8 @@ class Convert(Subcommand):
         if (
             isinstance(requirements, list) and
             len(requirements) == 1 and
-            pathlib.Path(requirements[0]).is_file()
+            pathlib.Path(requirements[0]).is_file() and
+            requirements[0].endswith('.txt')
         ):
             requirements = requirements[0]
         prev_hashes = {}
