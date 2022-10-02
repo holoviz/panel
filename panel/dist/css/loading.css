@@ -1,3 +1,6 @@
+.bk.pn-loading {
+  overflow: hidden;
+}
 .bk.pn-loading:before {
   position: absolute;
   height: 100%;
