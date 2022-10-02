@@ -357,7 +357,7 @@ class Perspective(PaneBase, ReactiveData):
     @classmethod
     def applies(cls, object):
         if isinstance(object, dict) and all(isinstance(v, (list, np.ndarray)) for v in object.values()):
-            return 0.2
+            return 0 if object else None
         elif 'pandas' in sys.modules:
             import pandas as pd
             if isinstance(object, pd.DataFrame):
