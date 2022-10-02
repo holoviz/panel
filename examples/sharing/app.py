@@ -1,4 +1,4 @@
-# Serve with panel serve examples/sharing/sharing.py --autoreload --static-dirs apps=apps/saved/target tmp-apps=apps/converted/target
+# Serve with panel serve examples/sharing/app.py --autoreload --static-dirs apps=apps/saved/target tmp-apps=apps/converted/target
 from __future__ import annotations
 
 import base64
@@ -21,6 +21,7 @@ import param
 import panel as pn
 
 from panel.io.convert import convert_apps
+from config import provider
 
 pn.extension("ace", notifications=True)
 
@@ -286,7 +287,6 @@ def serve_html(app_html):
 def to_iframe(app_url):
     return f"""<iframe frameborder="0" title="panel app" style="width: 100%;height:100%";flex-grow: 1" src="{app_url}" allow="accelerometer;autoplay;camera;document-domain;encrypted-media;fullscreen;gamepad;geolocation;gyroscope;layout-animations;legacy-image-formats;microphone;oversized-images;payment;publickey-credentials-get;speaker-selection;sync-xhr;unoptimized-images;unsized-media;screen-wake-lock;web-share;xr-spatial-tracking"></iframe>"""
 
-
 state = AppState()
 actions = AppActions(state=state)
 
@@ -322,47 +322,9 @@ new_button = pn.widgets.Button.from_param(
 new_tab = pn.Column(
     actions.gallery, new_button, sizing_mode="stretch_width", name="New"
 )
-faq_text = """
-# Frequently Asked Questions
 
-## What is the purpose of the sharing service?
-
-The purpose of this project is to make it easy for you, me and the rest of the Panel community to
-share Panel apps.
-
-## What are my rights when using the sharing service?
-
-By using this project you consent to making your project publicly available and
-[MIT licensed](https://opensource.org/licenses/MIT).
-
-On the other hand I cannot guarentee the persisting of your project. Use at your own risk.
-
-## How do I add more files to a project?
-
-You cannot do this as that would complicate this free and personal project.
-
-What you can do is 
-
-- Package your python code into a python package that you share on pypi and add it to the
-`requirements`
-- Store your other files somewhere public. For example on Github.
-
-## What are the most useful resources for Panel data apps?
-
-- [Panel](https://holoviz.panel.org) | [WebAssembly User Guide](https://pyviz-dev.github.io/panel/user_guide/Running_in_Webassembly.html) | [Community Forum](https://discourse.holoviz.org/) | [Github Code](https://github.com/holoviz/panel) | [Github Issues](https://github.com/holoviz/panel/issues) | [Twitter](https://mobile.twitter.com/panel_org) | [LinkedIn](https://www.linkedin.com/company/79754450)
-- [Awesome Panel](https://awesome-panel.org) | [Github Code](https://github.com/marcskovmadsen/awesome-panel) | [Github Issues](https://github.com/MarcSkovMadsen/awesome-panel/issues)
-- Marc Skov Madsen | [Twitter](https://twitter.com/MarcSkovMadsen) | [LinkedIn](https://www.linkedin.com/in/marcskovmadsen/)
-- Sophia Yang | [Twitter](https://twitter.com/sophiamyang) | [Medium](https://sophiamyang.medium.com/)
-- [Pyodide](https://pyodide.org) | [FAQ](https://pyodide.org/en/stable/usage/faq.html)
-- [PyScript](https://pyscript.net/) | [FAQ](https://docs.pyscript.net/latest/reference/faq.html)
-
-## How did you make the Panel Sharing service?
-
-With Panel of course. Check out the code on
-[Github](https://github.com/marcskovmadsen/awesome-panel)
-"""
-
-faq_tab = pn.pane.Markdown(faq_text, name="FAQ", sizing_mode="stretch_both")
+faq_tab = pn.pane.Markdown(provider.faq, name="FAQ", sizing_mode="stretch_both")
+about_tab = pn.pane.Markdown(provider.about, name="About", sizing_mode="stretch_both")
 
 convert_button = pn.widgets.Button.from_param(
     actions.param.convert,
@@ -410,7 +372,7 @@ actions_pane = pn.Row(
     margin=(20, 5, 10, 5),
 )
 editor_tab = pn.Column(actions_pane, file_tabs, sizing_mode="stretch_both", name="Edit")
-source_pane = pn.Tabs(new_tab, editor_tab, faq_tab, sizing_mode="stretch_both", active=1)
+source_pane = pn.Tabs(new_tab, editor_tab, faq_tab, about_tab, sizing_mode="stretch_both", active=1)
 iframe_pane = pn.pane.HTML(sizing_mode="stretch_both")
 
 
@@ -436,8 +398,8 @@ target_pane = pn.Column(
 )
 
 template = pn.template.FastGridTemplate(
-    site="Panel",
-    title="Sharing",
+    site=provider.site,
+    title=provider.title,
     theme_toggle=False,
     prevent_collision=True,
     save_layout=True,
