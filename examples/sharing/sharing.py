@@ -2,23 +2,25 @@
 from __future__ import annotations
 
 import base64
+import datetime as dt
 import json
+import os
 import pathlib
-
-from typing import Any, Dict
-
-import panel as pn
+import subprocess
+import sys
 import tempfile
-from panel.io.convert import convert_apps
+import time
+import uuid
+
 from contextlib import contextmanager
 from pathlib import Path
-import sys
-import os
+from typing import Any, Dict
+
 import param
-import uuid
-import datetime as dt
-import time
-import subprocess
+
+import panel as pn
+
+from panel.io.convert import convert_apps
 
 pn.extension("ace", notifications=True)
 
