@@ -210,6 +210,18 @@ def script_to_html(
 
     if requirements == 'auto':
         requirements = find_imports(source)
+    elif isinstance(requirements, str) and pathlib.Path(requirements).is_file():
+        requirements = pathlib.Path(requirements).read_text().split('/n')
+        try:
+            import pkg_resources
+            parsed = pkg_resources.parse_requirements(requirements)
+            requirements = [str(requirement) for requirement in parsed]
+        except ImportError:
+            pass
+        except Exception as e:
+            raise ValueError(
+                f'Requirements parser raised following error: {e}'
+            )
 
     # Environment
     if panel_version == 'auto':
@@ -321,7 +333,7 @@ def script_to_html(
 def convert_app(
     app: str,
     dest_path: str,
-    requirements: List[str] | Literal['auto'] = 'auto',
+    requirements: List[str] | Literal['auto'] | os.PathLike = 'auto',
     runtime: Runtimes = 'pyodide-worker',
     prerender: bool = True,
     manifest: str | None = None,
@@ -354,7 +366,7 @@ def convert_apps(
     dest_path: str | None = None,
     title: str | None = None,
     runtime: Runtimes = 'pyodide-worker',
-    requirements: List[str] | Literal['auto'] = 'auto',
+    requirements: List[str] | Literal['auto'] | os.PathLike = 'auto',
     prerender: bool = True,
     build_index: bool = True,
     build_pwa: bool = True,
@@ -374,8 +386,10 @@ def convert_apps(
         name for the application cache to ensure.
     runtime: 'pyodide' | 'pyscript' | 'pyodide-worker'
         The runtime to use for running Python in the browser.
-    requirements: 'auto' | List[str]
+    requirements: 'auto' | List[str] | os.PathLike
         The list of requirements to include (in addition to Panel).
+        By default automatically infers dependencies from imports
+        in the application. May also provide path to a requirements.txt
     prerender: bool
         Whether to pre-render the components so the page loads.
     build_index: bool
