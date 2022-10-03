@@ -39,11 +39,11 @@ This example will demonstrate how to *convert* and *serve* a basic data app loca
 - Create a `script.py` file with the following content
 
 ```python
+import panel as pn
+
 from sklearn.datasets import load_iris
 from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier
-
-import panel as pn
 
 pn.extension(sizing_mode="stretch_width", template="fast")
 pn.state.template.param.update(site="Panel in the Browser", title="XGBoost Example")
@@ -54,8 +54,8 @@ trees = pn.widgets.IntSlider(start=2, end=30, name="Number of trees")
 
 def pipeline(trees):
     model = XGBClassifier(max_depth=2, n_estimators=trees)
-    model.fit(iris.data, iris_df.target)
-    accuracy = round(accuracy_score(iris.target, model.predict(iris.data)) * 100, 1)
+    model.fit(iris_df.data, iris_df.target)
+    accuracy = round(accuracy_score(iris_df.target, model.predict(iris_df.data)) * 100, 1)
     return pn.indicators.Number(
         name="Test score",
         value=accuracy,
