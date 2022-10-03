@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import dataclasses
+import multiprocessing as mp
 import os
 import pathlib
 import uuid
@@ -419,7 +420,7 @@ def convert_apps(
     manifest = 'site.webmanifest' if build_pwa else None
     groups = [apps[i:i+max_workers] for i in range(0, len(apps), max_workers)]
     for group in groups:
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        with ProcessPoolExecutor(max_workers=max_workers, mp_context=mp.get_context('spawn')) as executor:
             futures = []
             for app in group:
                 f = executor.submit(
@@ -433,15 +434,12 @@ def convert_apps(
                 if result is not None:
                     name, filename = result
                     files[name] = filename
-    if not build_index or len(files) == 1:
-        return
-
-    # Write index
-    index = make_index(files, manifest=build_pwa, title=title)
-    with open(dest_path / 'index.html', 'w') as f:
-        f.write(index)
-    if verbose:
-        print('Successfully wrote index.html.')
+    if build_index and len(files) >= 1:
+        index = make_index(files, manifest=build_pwa, title=title)
+        with open(dest_path / 'index.html', 'w') as f:
+            f.write(index)
+        if verbose:
+            print('Successfully wrote index.html.')
 
     if not build_pwa:
         return
