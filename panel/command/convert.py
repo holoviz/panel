@@ -1,4 +1,5 @@
 import argparse
+import pathlib
 import time
 
 from bokeh.command.subcommand import Argument, Subcommand
@@ -53,7 +54,7 @@ class Convert(Subcommand):
         )),
         ('--requirements', dict(
             nargs   = '+',
-            help    = "Explicit requirements to add to the converted file."
+            help    = "Explicit requirements to add to the converted file or a single requirements.txt file. By default requirements are inferred from the code."
         )),
         ('--watch', dict(
             action  = 'store_true',
@@ -74,6 +75,13 @@ class Convert(Subcommand):
         if runtime not in self._targets:
             raise ValueError(f'Supported conversion targets include: {self._targets!r}')
         requirements = args.requirements or 'auto'
+        if (
+            isinstance(requirements, list) and
+            len(requirements) == 1 and
+            pathlib.Path(requirements[0]).is_file() and
+            requirements[0].endswith('.txt')
+        ):
+            requirements = requirements[0]
         prev_hashes = {}
         built = False
         while True:
