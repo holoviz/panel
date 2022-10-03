@@ -60,18 +60,18 @@ class BuildAndShare(pn.viewable.Viewer):
 
     @pn.depends("convert", watch=True)
     def _convert(self):
-        self._state.convert()
+        self._state.build()
         
         if pn.state.notifications:
-            pn.state.notifications.success("Converted")
+            pn.state.notifications.success("Build succeeded")
 
     @pn.depends("save", watch=True)
     def _save(self):
         key = self._state.shared_key
-        self._state.site.shared_storage[key] = self._state.project
+        self._state.site.production_storage[key] = self._state.project
         
         if pn.state.notifications:
-            pn.state.notifications.success("Shared")
+            pn.state.notifications.success("Release succeeded")
 
     @pn.depends("open_developer_link", watch=True)
     def _open_developer_link(self):

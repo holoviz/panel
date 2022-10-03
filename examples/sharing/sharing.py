@@ -1,4 +1,4 @@
-# Serve with panel serve examples/sharing/sharing.py --autoreload --static-dirs apps=apps/shared/target tmp-apps=apps/development/target
+# Serve with panel serve examples/sharing/sharing.py --autoreload --static-dirs apps-dev=apps/dev/www apps=apps/prod/www 
 from __future__ import annotations
 
 import base64
@@ -29,7 +29,7 @@ from utils import exception_handler
 pn.extension("ace", notifications=True, exception_handler=exception_handler)
 
 state = AppState()
-state.convert()
+state.build()
 
 new_project_tab = components.NewProject()
 configuration_tab = components.settings_editor(state)
@@ -48,7 +48,7 @@ source_pane = pn.Tabs(
     active=2,
 )
 
-target_pane = components.iframe(src=state.param.development_url)
+target_pane = components.iframe(src=state.param.development_url_with_unique_id)
 
 template = pn.template.FastGridTemplate(
     site=state.site.name,

@@ -11,6 +11,7 @@ import param
 
 from utils import set_directory
 import uuid
+from panel.io.convert import convert_apps
 
 class Repository(param.Parameterized):
     name = param.String(config.REPOSITORY_NAME, constant=True)
@@ -89,21 +90,25 @@ class FileStorage(Storage):
     def __getitem__(self, key):
         raise NotImplementedError()
 
-    def _get_source_path(self, key)->pathlib.Path:
-        return self._path / "source" / key
+    def _get_project_path(self, key)->pathlib.Path:
+        return self._path / "project" / key
 
-    def _get_target_path(self, key)->pathlib.Path:
-        return self._path / "target" / key
+    def _get_www_path(self, key)->pathlib.Path:
+        return self._path / "www" / key
 
     def __setitem__(self, key: str, value: Project):
-        source = self._get_source_path(key)
+        source = self._get_project_path(key) / "source"
         value.save(source)
-        target = self._get_target_path(key)
+        target = self._get_www_path(key)
         target.mkdir(parents=True, exist_ok=True)
-        
         with set_directory(source):
-            command = f"panel convert app.py --requirements requirements.txt --to pyodide-worker --skip-embed --out {target.absolute()}"
-            result = subprocess.run(command, shell=True)
+            if pathlib.Path("requirements.txt").exists() and pathlib.Path("requirements.txt").read_text():
+                requirements = "requirements.txt"
+            else:
+                requirements = "auto"
+            # We use `convert_apps` over `convert_app` due to https://github.com/holoviz/panel/issues/3939
+            convert_apps(["app.py"], dest_path=target, runtime="pyodide-worker", requirements=requirements)
+            
 
     def __delitem__(self, key):
         raise NotImplementedError()
@@ -113,7 +118,7 @@ class FileStorage(Storage):
     
     def get_zipped_folder(self, key)->BytesIO:
         # Todo: This only includes the repository files. We should also include the converted files
-        source = self._get_source_path(key).absolute()
+        source = self._get_project_path(key).absolute()
         with tempfile.TemporaryDirectory() as tmpdir:
             with set_directory(pathlib.Path(tmpdir)):
                 target_file = "saved"
@@ -136,17 +141,17 @@ class Site(param.Parameterized):
 
     development_storage = param.ClassSelector(class_=Storage, constant=True)
     examples_storage = param.ClassSelector(class_=Storage, constant=True)
-    shared_storage = param.ClassSelector(class_=Storage, constant=True)
+    production_storage = param.ClassSelector(class_=Storage, constant=True)
 
     auth_provider = param.Parameter(constant=True)
 
     def __init__(self, **params):
         if not "development_storage" in params:
-            params["development_storage"]=TmpFileStorage(path="apps/development")
+            params["development_storage"]=TmpFileStorage(path="apps/dev")
         if not "examples_storage" in params:
             params["examples_storage"]=FileStorage(path="apps/examples")
-        if not "shared_storage" in params:
-            params["shared_storage"]=FileStorage(path="apps/shared")
+        if not "production_storage" in params:
+            params["production_storage"]=FileStorage(path="apps/prod")
 
         super().__init__(**params)
 
@@ -161,7 +166,7 @@ class Site(param.Parameterized):
         return f"apps/{key}/app.html"
 
     def get_development_src(self, key):
-        return f"tmp-apps/{key}/app.html"
+        return f"apps-dev/{key}/app.html"
 
 class AppState(param.Parameterized):
     site = param.Parameter(constant=True)
@@ -172,6 +177,7 @@ class AppState(param.Parameterized):
     # could not do it as it raised an error!
     development_key = param.String()
     development_url = param.String()
+    development_url_with_unique_id = param.String()
     
     shared_key = param.String()
     shared_url = param.String()
@@ -186,7 +192,9 @@ class AppState(param.Parameterized):
         
         super().__init__(**params)
 
-    def set_development(self, key: str):
+        self._set_development(self._get_random_key())
+
+    def _set_development(self, key: str):
         self.development_key = key
         self.development_url = self.site.get_development_src(key)
 
@@ -202,10 +210,10 @@ class AppState(param.Parameterized):
     def _get_random_key(self):
         return str(uuid.uuid4())
     
-    def convert(self):
-        key = self._get_random_key()
+    def build(self):
+        key = self.development_key
         self.site.development_storage[key] = self.project
-        self.set_development(key)
+        self.development_url_with_unique_id = self.development_url +  "?id=" + self._get_random_key()
 
 
     
