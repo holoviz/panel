@@ -222,5 +222,5 @@ def test_cache_ttl(to_disk):
     OFFSET.clear()
     fn = cache(function_with_args, ttl=0.1, to_disk=to_disk)
     assert fn(0, 0) == 0
-    time.sleep(0.11)
+    time.sleep(0.2)
     assert fn(0, 0) == 1
