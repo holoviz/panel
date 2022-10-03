@@ -3,6 +3,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 from queue import Empty, Queue
 from threading import Thread
@@ -17,6 +18,7 @@ not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work 
 def run_panel_serve(args):
     cmd = [sys.executable, "-m", "panel", "serve"] + args
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    time.sleep(1)
     try:
         yield p
     except Exception as e:
