@@ -10,7 +10,7 @@ import config
 import param
 
 from utils import set_directory
-
+import uuid
 
 class Repository(param.Parameterized):
     name = param.String(config.REPOSITORY_NAME, constant=True)
@@ -112,6 +112,7 @@ class FileStorage(Storage):
         raise NotImplementedError()
     
     def get_zipped_folder(self, key)->BytesIO:
+        # Todo: This only includes the repository files. We should also include the converted files
         source = self._get_source_path(key).absolute()
         with tempfile.TemporaryDirectory() as tmpdir:
             with set_directory(pathlib.Path(tmpdir)):
@@ -167,6 +168,14 @@ class AppState(param.Parameterized):
     user = param.Parameter(constant=True)
     project = param.Parameter(constant=True)
 
+    # Todo: make the below constant
+    # could not do it as it raised an error!
+    development_key = param.String()
+    development_url = param.String()
+    
+    shared_key = param.String()
+    shared_url = param.String()
+
     def __init__(self, **params):
         if not "site" in params:
             params["site"]=Site()
@@ -176,3 +185,27 @@ class AppState(param.Parameterized):
             params["project"]=Project()
         
         super().__init__(**params)
+
+    def set_development(self, key: str):
+        self.development_key = key
+        self.development_url = self.site.get_development_src(key)
+
+    def set_shared(self, key: str):
+        self.shared_key = key
+        self.shared_url = self.site.get_shared_src(key)
+
+    @param.depends("user.name", "project.name", watch=True, on_init=True)
+    def _update_shared(self):
+        key = self.site.get_shared_key(user=self.user, project=self.project)
+        self.set_shared(key)
+
+    def _get_random_key(self):
+        return str(uuid.uuid4())
+    
+    def convert(self):
+        key = self._get_random_key()
+        self.site.development_storage[key] = self.project
+        self.set_development(key)
+
+
+    
