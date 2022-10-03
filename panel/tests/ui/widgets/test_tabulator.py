@@ -2758,6 +2758,7 @@ def test_tabulator_edit_event_and_header_filters(page, port):
     assert widget.current_view.equals(df.query('col1 == "a"'))
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_tabulator_edit_event_and_header_filters_same_column(page, port):
     df = pd.DataFrame({
         'values':  ['A', 'A', 'B', 'B'],
@@ -2786,6 +2787,9 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, port):
     cell = page.locator('text="B"').nth(1)
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("X")
     editable_cell.press('Enter')
 
