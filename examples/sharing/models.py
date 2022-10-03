@@ -102,7 +102,7 @@ class FileStorage(Storage):
         target.mkdir(parents=True, exist_ok=True)
         
         with set_directory(source):
-            command = f"panel convert app.py --to pyodide-worker --out {target.absolute()}"
+            command = f"panel convert app.py --requirements requirements.txt --to pyodide-worker --skip-embed --out {target.absolute()}"
             result = subprocess.run(command, shell=True)
 
     def __delitem__(self, key):

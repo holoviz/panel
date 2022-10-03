@@ -30,7 +30,7 @@ The ``panel convert`` command has the following options:
       --index               Whether to create an index if multiple files are served.
       --pwa                 Whether to add files to allow serving the application as a Progressive Web App.
       --requirements        List of Python requirements to add to the converted file. By default it will automatically try to infer dependencies based on your imports and Panel will automatically be included.
-	  -- watch              Watches files for changes and rebuilds them when they are updated.
+      -- watch              Watches files for changes and rebuilds them when they are updated.
 
 ### Example
 
