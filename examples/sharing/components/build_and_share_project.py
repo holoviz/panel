@@ -1,7 +1,8 @@
+import uuid
+
 import param
 
 import panel as pn
-import uuid
 
 
 class JSActions(pn.reactive.ReactiveHTML):
@@ -9,7 +10,7 @@ class JSActions(pn.reactive.ReactiveHTML):
     _url = param.String()
     _open = param.Boolean()
     _copy = param.Boolean()
-    
+
     _template = """<div id="jsaction" style="height:0px;width:0px"></div>"""
     _scripts = {
         # Todo: Make this more robust by removing fragile replace
@@ -37,7 +38,7 @@ class JSActions(pn.reactive.ReactiveHTML):
             raise ValueError("No url to copy")
 
 
-class BuildAndShare(pn.viewable.Viewer):
+class BuildAndShareActions(pn.viewable.Viewer):
     convert = param.Event()
     save = param.Event()
 
@@ -45,10 +46,10 @@ class BuildAndShare(pn.viewable.Viewer):
     open_shared_link = param.Event()
     copy_shared_link = param.Event()
 
-    _state = param.Parameter() # Todo: Make this ClassParameter with class_=AppState
+    _state = param.Parameter()  # Todo: Make this ClassParameter with class_=AppState
     _jsactions = param.ClassSelector(class_=JSActions)
 
-    def __init__(self, state, **params): # Todo: type annotate this
+    def __init__(self, state, **params):  # Todo: type annotate this
         if not "_jsactions" in params:
             params["_jsactions"] = JSActions()
         super().__init__(_state=state, **params)
@@ -61,7 +62,7 @@ class BuildAndShare(pn.viewable.Viewer):
     @pn.depends("convert", watch=True)
     def _convert(self):
         self._state.build()
-        
+
         if pn.state.notifications:
             pn.state.notifications.success("Build succeeded")
 
@@ -69,7 +70,7 @@ class BuildAndShare(pn.viewable.Viewer):
     def _save(self):
         key = self._state.shared_key
         self._state.site.production_storage[key] = self._state.project
-        
+
         if pn.state.notifications:
             pn.state.notifications.success("Release succeeded")
 
@@ -80,7 +81,6 @@ class BuildAndShare(pn.viewable.Viewer):
     @pn.depends("open_shared_link", watch=True)
     def _open_shared_link(self):
         self._jsactions.open(url=self._state.shared_url)
-        
 
     @pn.depends("copy_shared_link", watch=True)
     def _copy_shared_link(self):

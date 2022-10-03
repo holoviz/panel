@@ -1,9 +1,11 @@
+import logging
 import os
 
 from contextlib import contextmanager
 from pathlib import Path
+
 import panel as pn
-import logging
+
 
 @contextmanager
 def set_directory(path: Path):
@@ -23,6 +25,7 @@ def set_directory(path: Path):
         yield
     finally:
         os.chdir(origin)
+
 
 def exception_handler(ex):
     logging.exception("Error", exc_info=ex)

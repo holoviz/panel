@@ -1,5 +1,5 @@
-from .other import iframe, about, faq
+from .build_and_share_project import BuildAndShareActions
 from .new_project import NewProject
-from .build_and_share_project import BuildAndShare
-from .source_editor import SourceEditor
+from .other import about, faq, iframe
 from .settings_editor import settings_editor
+from .source_editor import SourceEditor

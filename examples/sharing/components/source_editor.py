@@ -1,8 +1,10 @@
-import panel as pn
 import param
 
+import panel as pn
+
+
 class SourceEditor(pn.viewable.Viewer):
-    project = param.Parameter(constant=True) # Todo: Should be ClassSelector
+    project = param.Parameter(constant=True)  # Todo: Should be ClassSelector
 
     def __init__(self, project):
         super().__init__(project=project)
@@ -10,7 +12,7 @@ class SourceEditor(pn.viewable.Viewer):
 
     def __panel__(self):
         return self._panel
-    
+
     def _get_panel(self):
         code_tab = pn.widgets.Ace.from_param(
             self.project.source.param.code,
@@ -26,6 +28,7 @@ class SourceEditor(pn.viewable.Viewer):
             sizing_mode="stretch_both",
             name="readme.md",
         )
+
         @pn.depends(dataurl=self.project.source.param.thumbnail)
         def thumbnail_tab(dataurl):
             return pn.pane.HTML(
@@ -34,6 +37,7 @@ class SourceEditor(pn.viewable.Viewer):
                 name="thumbnail.png",
                 sizing_mode="scale_width",
             )
+
         requirements_tab = pn.widgets.Ace.from_param(
             self.project.source.param.requirements,
             language="txt",

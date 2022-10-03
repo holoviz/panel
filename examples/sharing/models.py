@@ -2,6 +2,7 @@ import pathlib
 import shutil
 import subprocess
 import tempfile
+import uuid
 
 from io import BytesIO
 from typing import Dict, List
@@ -10,20 +11,23 @@ import config
 import param
 
 from utils import set_directory
-import uuid
+
 from panel.io.convert import convert_apps
 
+
 class Source(param.Parameterized):
+    """Represent the source files"""
+
     name = param.String(config.REPOSITORY_NAME, constant=True)
     code = param.String(config.CODE)
     readme = param.String(config.README)
     thumbnail = param.String(config.THUMBNAIL)
     requirements = param.String(config.REQUIREMENTS)
 
-    def items(self)-> Dict:
+    def items(self) -> Dict:
         return {
             "app.py": self.code,
-            "readme.md" : self.readme,
+            "readme.md": self.readme,
             "thumbnail.png": self.thumbnail,
             "requirements.txt": self.requirements,
         }.items()
@@ -33,25 +37,29 @@ class Source(param.Parameterized):
         for file_path, text in self.items():
             pathlib.Path(path / file_path).write_text(text)
 
+
 class Project(param.Parameterized):
+    """A project consists of configuration and source files"""
+
     name = param.String(config.PROJECT_NAME)
     source = param.ClassSelector(class_=Source)
-    
+
     def __init__(self, **params):
         if not "source" in params:
-            params["source"]=Source()
+            params["source"] = Source()
 
         super().__init__(**params)
 
         if not "name" in params:
             with param.edit_constant(self):
-                self.name=config.PROJECT_NAME
+                self.name = config.PROJECT_NAME
 
     def __str__(self):
         return self.name
 
     def save(self, path: pathlib.Path):
-        self.source.save(path=path/"source")
+        self.source.save(path=path / "source")
+
 
 class User(param.Parameterized):
     name = param.String(config.USER_NAME, constant=True, regex=config.USER_NAME_REGEX)
@@ -62,12 +70,15 @@ class User(param.Parameterized):
 
         if not "name" in params:
             with param.edit_constant(self):
-                self.name=config.USER_NAME
+                self.name = config.USER_NAME
 
     def __str__(self):
         return self.name
 
+
 class Storage(param.Parameterized):
+    """Represent a key-value where the value is a Project"""
+
     def __getitem__(self, key):
         raise NotImplementedError()
 
@@ -76,7 +87,7 @@ class Storage(param.Parameterized):
 
     def __delitem__(self, key):
         raise NotImplementedError()
-    
+
     def keys(self):
         raise NotImplementedError()
 
@@ -84,16 +95,16 @@ class Storage(param.Parameterized):
 class FileStorage(Storage):
     def __init__(self, path: str):
         super().__init__()
-        
+
         self._path = pathlib.Path(path).absolute()
-    
+
     def __getitem__(self, key):
         raise NotImplementedError()
 
-    def _get_project_path(self, key)->pathlib.Path:
+    def _get_project_path(self, key) -> pathlib.Path:
         return self._path / "projects" / key
 
-    def _get_www_path(self, key)->pathlib.Path:
+    def _get_www_path(self, key) -> pathlib.Path:
         return self._path / "www" / key
 
     def __setitem__(self, key: str, value: Project):
@@ -102,51 +113,64 @@ class FileStorage(Storage):
         # We do all this to minimize the risk of loosing data
         with tempfile.TemporaryDirectory() as tmpdir:
             tmppath = pathlib.Path(tmpdir)
-            source = tmppath/"source"
+            source = tmppath / "source"
             build = tmppath / "build"
-            
+
             value.save(tmppath)
             with set_directory(source):
-                if pathlib.Path("requirements.txt").exists() and pathlib.Path("requirements.txt").read_text():
+                if (
+                    pathlib.Path("requirements.txt").exists()
+                    and pathlib.Path("requirements.txt").read_text()
+                ):
                     requirements = "requirements.txt"
                 else:
                     requirements = "auto"
                 # We use `convert_apps` over `convert_app` due to https://github.com/holoviz/panel/issues/3939
-                convert_apps(["app.py"], dest_path=build, runtime="pyodide-worker", requirements=requirements)
-        
+                convert_apps(
+                    ["app.py"],
+                    dest_path=build,
+                    runtime="pyodide-worker",
+                    requirements=requirements,
+                )
+
             project = self._get_project_path(key)
             www = self._get_www_path(key)
-            
+
             if project.exists():
-                shutil.rmtree(project)        
+                shutil.rmtree(project)
             shutil.copytree(tmppath, project)
             if www.exists():
                 shutil.rmtree(www)
-            shutil.copytree(tmppath/"build", www)
-            
+            shutil.copytree(tmppath / "build", www)
 
     def __delitem__(self, key):
         raise NotImplementedError()
-    
+
     def keys(self):
         raise NotImplementedError()
-    
-    def get_zipped_folder(self, key)->BytesIO:
+
+    def get_zipped_folder(self, key) -> BytesIO:
+        """Returns the project as a .zip folder"""
         source = self._get_project_path(key).absolute()
         with tempfile.TemporaryDirectory() as tmpdir:
             with set_directory(pathlib.Path(tmpdir)):
                 target_file = "saved"
-                result = shutil.make_archive(target_file, 'zip', source)
+                result = shutil.make_archive(target_file, "zip", source)
                 with open(result, "rb") as fh:
                     return BytesIO(fh.read())
+
 
 class TmpFileStorage(FileStorage):
     pass
 
+
 class AzureBlobStorage(Storage):
     pass
 
+
 class Site(param.Parameterized):
+    """A site like awesome-panel.org. But could also be another site"""
+
     name = param.String(config.SITE, constant=True)
     title = param.String(config.TITLE, constant=True)
     faq = param.String(config.FAQ, constant=True)
@@ -161,11 +185,11 @@ class Site(param.Parameterized):
 
     def __init__(self, **params):
         if not "development_storage" in params:
-            params["development_storage"]=TmpFileStorage(path="apps/dev")
+            params["development_storage"] = TmpFileStorage(path="apps/dev")
         if not "examples_storage" in params:
-            params["examples_storage"]=FileStorage(path="apps/examples")
+            params["examples_storage"] = FileStorage(path="apps/examples")
         if not "production_storage" in params:
-            params["production_storage"]=FileStorage(path="apps/prod")
+            params["production_storage"] = FileStorage(path="apps/prod")
 
         super().__init__(**params)
 
@@ -182,7 +206,10 @@ class Site(param.Parameterized):
     def get_development_src(self, key):
         return f"apps-dev/{key}/app.html"
 
+
 class AppState(param.Parameterized):
+    """Represents the state of the Sharing App"""
+
     site = param.Parameter(constant=True)
     user = param.Parameter(constant=True)
     project = param.Parameter(constant=True)
@@ -192,18 +219,18 @@ class AppState(param.Parameterized):
     development_key = param.String()
     development_url = param.String()
     development_url_with_unique_id = param.String()
-    
+
     shared_key = param.String()
     shared_url = param.String()
 
     def __init__(self, **params):
         if not "site" in params:
-            params["site"]=Site()
+            params["site"] = Site()
         if not "user" in params:
-            params["user"]=User()
+            params["user"] = User()
         if not "project" in params:
-            params["project"]=Project()
-        
+            params["project"] = Project()
+
         super().__init__(**params)
 
         self._set_development(self._get_random_key())
@@ -223,11 +250,10 @@ class AppState(param.Parameterized):
 
     def _get_random_key(self):
         return str(uuid.uuid4())
-    
+
     def build(self):
         key = self.development_key
         self.site.development_storage[key] = self.project
-        self.development_url_with_unique_id = self.development_url +  "?id=" + self._get_random_key()
-
-
-    
+        self.development_url_with_unique_id = (
+            self.development_url + "?id=" + self._get_random_key()
+        )
