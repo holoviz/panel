@@ -110,7 +110,7 @@ def test_plotly_3d_plot(page, port, plotly_3d_plot):
 
     # main pane
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
-    expect(plotly_plot).to_have_count(1)
+    expect(plotly_plot).to_have_count(1, timeout=10_000)
     expect(plotly_plot).to_contain_text(title, use_inner_text=True)
 
     plot_title = page.locator('.g-gtitle')
