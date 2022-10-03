@@ -51,7 +51,7 @@ class Project(param.Parameterized):
         return self.name
 
     def save(self, path: pathlib.Path):
-        self.repository.save(path=path)
+        self.repository.save(path=path/"source")
 
 class User(param.Parameterized):
     name = param.String(config.USER_NAME, constant=True, regex=config.USER_NAME_REGEX)
@@ -91,23 +91,38 @@ class FileStorage(Storage):
         raise NotImplementedError()
 
     def _get_project_path(self, key)->pathlib.Path:
-        return self._path / "project" / key
+        return self._path / "projects" / key
 
     def _get_www_path(self, key)->pathlib.Path:
         return self._path / "www" / key
 
     def __setitem__(self, key: str, value: Project):
-        source = self._get_project_path(key) / "source"
-        value.save(source)
-        target = self._get_www_path(key)
-        target.mkdir(parents=True, exist_ok=True)
-        with set_directory(source):
-            if pathlib.Path("requirements.txt").exists() and pathlib.Path("requirements.txt").read_text():
-                requirements = "requirements.txt"
-            else:
-                requirements = "auto"
-            # We use `convert_apps` over `convert_app` due to https://github.com/holoviz/panel/issues/3939
-            convert_apps(["app.py"], dest_path=target, runtime="pyodide-worker", requirements=requirements)
+        # We first save and build to a temporary folder
+        # We then move
+        # We do all this to minimize the risk of loosing data
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = pathlib.Path(tmpdir)
+            source = tmppath/"source"
+            build = tmppath / "build"
+            
+            value.save(tmppath)
+            with set_directory(source):
+                if pathlib.Path("requirements.txt").exists() and pathlib.Path("requirements.txt").read_text():
+                    requirements = "requirements.txt"
+                else:
+                    requirements = "auto"
+                # We use `convert_apps` over `convert_app` due to https://github.com/holoviz/panel/issues/3939
+                convert_apps(["app.py"], dest_path=build, runtime="pyodide-worker", requirements=requirements)
+        
+            project = self._get_project_path(key)
+            www = self._get_www_path(key)
+            
+            if project.exists():
+                shutil.rmtree(project)        
+            shutil.copytree(tmppath, project)
+            if www.exists():
+                shutil.rmtree(www)
+            shutil.copytree(tmppath/"build", www)
             
 
     def __delitem__(self, key):
