@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import dataclasses
+import multiprocessing as mp
 import os
 import pathlib
 import uuid
@@ -419,7 +420,7 @@ def convert_apps(
     manifest = 'site.webmanifest' if build_pwa else None
     groups = [apps[i:i+max_workers] for i in range(0, len(apps), max_workers)]
     for group in groups:
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        with ProcessPoolExecutor(max_workers=max_workers, mp_context=mp.get_context('spawn')) as executor:
             futures = []
             for app in group:
                 f = executor.submit(
