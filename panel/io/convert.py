@@ -433,15 +433,12 @@ def convert_apps(
                 if result is not None:
                     name, filename = result
                     files[name] = filename
-    if not build_index or len(files) == 1:
-        return
-
-    # Write index
-    index = make_index(files, manifest=build_pwa, title=title)
-    with open(dest_path / 'index.html', 'w') as f:
-        f.write(index)
-    if verbose:
-        print('Successfully wrote index.html.')
+    if build_index and len(files) >= 1:
+        index = make_index(files, manifest=build_pwa, title=title)
+        with open(dest_path / 'index.html', 'w') as f:
+            f.write(index)
+        if verbose:
+            print('Successfully wrote index.html.')
 
     if not build_pwa:
         return
