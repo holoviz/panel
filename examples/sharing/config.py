@@ -1,5 +1,5 @@
 SITE = "Awesome Panel"
-TITLE = "Sharing - BETA!"
+TITLE = "Sharing BETA ⚠️"
 
 FAQ = """
 # Frequently Asked Questions
