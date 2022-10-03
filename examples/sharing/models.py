@@ -13,7 +13,7 @@ from utils import set_directory
 import uuid
 from panel.io.convert import convert_apps
 
-class Repository(param.Parameterized):
+class Source(param.Parameterized):
     name = param.String(config.REPOSITORY_NAME, constant=True)
     code = param.String(config.CODE)
     readme = param.String(config.README)
@@ -35,11 +35,11 @@ class Repository(param.Parameterized):
 
 class Project(param.Parameterized):
     name = param.String(config.PROJECT_NAME)
-    repository = param.ClassSelector(class_=Repository)
+    source = param.ClassSelector(class_=Source)
     
     def __init__(self, **params):
-        if not "repository" in params:
-            params["repository"]=Repository()
+        if not "source" in params:
+            params["source"]=Source()
 
         super().__init__(**params)
 
@@ -51,7 +51,7 @@ class Project(param.Parameterized):
         return self.name
 
     def save(self, path: pathlib.Path):
-        self.repository.save(path=path/"source")
+        self.source.save(path=path/"source")
 
 class User(param.Parameterized):
     name = param.String(config.USER_NAME, constant=True, regex=config.USER_NAME_REGEX)
@@ -132,7 +132,6 @@ class FileStorage(Storage):
         raise NotImplementedError()
     
     def get_zipped_folder(self, key)->BytesIO:
-        # Todo: This only includes the repository files. We should also include the converted files
         source = self._get_project_path(key).absolute()
         with tempfile.TemporaryDirectory() as tmpdir:
             with set_directory(pathlib.Path(tmpdir)):

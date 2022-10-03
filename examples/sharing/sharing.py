@@ -35,8 +35,8 @@ new_project_tab = components.NewProject()
 configuration_tab = components.settings_editor(state)
 
 build_and_share = components.BuildAndShare(state=state)
-repository_editor = components.RepositoryEditor(project=state.project)
-editor_tab = pn.Column(build_and_share, repository_editor, sizing_mode="stretch_both", name="Edit")
+source_editor = components.SourceEditor(project=state.project)
+editor_tab = pn.Column(build_and_share, source_editor, sizing_mode="stretch_both", name="Edit")
 
 source_pane = pn.Tabs(
     new_project_tab,
