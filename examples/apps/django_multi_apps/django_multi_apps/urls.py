@@ -28,8 +28,8 @@ from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
 
-from .themes import plot_themes
 from .settings import bokeh_app_module
+from .themes import plot_themes
 
 pn_app_config = apps.get_app_config(bokeh_app_module)
 

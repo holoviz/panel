@@ -25,6 +25,7 @@ from django.apps import apps
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
+
 from .settings import bokeh_app_module
 
 pn_app_config = apps.get_app_config(bokeh_app_module)
