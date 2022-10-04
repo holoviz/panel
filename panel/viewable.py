@@ -239,7 +239,9 @@ class Layoutable(param.Parameterized):
                     params['sizing_mode'] = 'stretch_height'
                 else:
                     params['sizing_mode'] = config.sizing_mode
-            else:
+            elif config.sizing_mode == 'stretch_width' and 'width' not in params:
+                params['sizing_mode'] = config.sizing_mode
+            elif config.sizing_mode == 'stretch_height' and 'height' not in params:
                 params['sizing_mode'] = config.sizing_mode
         super().__init__(**params)
 
