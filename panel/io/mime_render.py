@@ -45,8 +45,8 @@ def _stdlibs():
 _STDLIBS = _stdlibs()
 _PACKAGE_MAP = {
     'sklearn': 'scikit-learn',
-    'hvplot': ['holoviews>=1.15.1a1', 'hvplot'],
-    'holoviews': ['holoviews>=1.15.1a1']
+    'hvplot': ['holoviews>=1.15.1', 'hvplot'],
+    'holoviews': ['holoviews>=1.15.1']
 }
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
 
