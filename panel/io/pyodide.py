@@ -185,7 +185,7 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
         An optional message ID to pass through to the dispatch_fn.
     """
     def pysync(event):
-        if setter is not None and getattr(event, setter, None) == setter:
+        if setter is not None and getattr(event, 'setter', None) == setter:
             return
         json_patch, buffers = process_document_events([event], use_buffers=True)
         buffer_map = {}
