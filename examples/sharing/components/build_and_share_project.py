@@ -38,7 +38,7 @@ class JSActions(pn.reactive.ReactiveHTML):
             raise ValueError("No url to copy")
 
 
-class BuildAndShareActions(pn.viewable.Viewer):
+class BuildAndShareProject(pn.viewable.Viewer):
     convert = param.Event()
     save = param.Event()
 
@@ -96,7 +96,7 @@ class BuildAndShareActions(pn.viewable.Viewer):
             name="▶ BUILD",
             sizing_mode="stretch_width",
             align="end",
-            button_type="success",
+            button_type="primary",
         )
         open_developer_link_button = pn.widgets.Button.from_param(
             self.param.open_developer_link,
@@ -140,12 +140,8 @@ class BuildAndShareActions(pn.viewable.Viewer):
 
         return pn.Row(
             self._jsactions,
-            convert_button,
-            open_developer_link_button,
-            download_converted_files,
-            share_button,
-            open_shared_link_button,
-            copy_shared_link_button,
+            convert_button, open_developer_link_button, download_converted_files,
+            share_button, open_shared_link_button, copy_shared_link_button,
             sizing_mode="stretch_width",
             margin=(20, 5, 10, 5),
         )

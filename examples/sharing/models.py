@@ -1,3 +1,4 @@
+import json
 import pathlib
 import shutil
 import subprocess
@@ -13,6 +14,7 @@ import param
 from utils import set_directory
 
 from panel.io.convert import convert_apps
+from panel import __version__
 
 
 class Source(param.Parameterized):
@@ -32,7 +34,8 @@ class Source(param.Parameterized):
             "requirements.txt": self.requirements,
         }.items()
 
-    def save(self, path: pathlib.Path):
+    def save(self):
+        path = pathlib.Path()
         path.mkdir(parents=True, exist_ok=True)
         for file_path, text in self.items():
             pathlib.Path(path / file_path).write_text(text)
@@ -57,8 +60,59 @@ class Project(param.Parameterized):
     def __str__(self):
         return self.name
 
-    def save(self, path: pathlib.Path):
-        self.source.save(path=path / "source")
+    def save(self):
+        with set_directory(pathlib.Path() / "source"):
+            self.source.save()
+
+    def _get_requirements(self):
+        if (
+            pathlib.Path("requirements.txt").exists()
+            and pathlib.Path("requirements.txt").read_text()
+        ):
+            return "requirements.txt"
+        else:
+            return "auto"
+
+    @property
+    def build_kwargs(self)->Dict:
+        """
+        
+        Assumes we are in the Project root and the source files are in ./source
+
+        Returns:
+            _description_
+        """
+        return dict(
+            apps=["source/app.py"],
+            dest_path="build",
+            runtime="pyodide-worker",
+            requirements=self._get_requirements(),
+            prerender=True,
+            build_index=False,
+            build_pwa=False,
+            pwa_config={},
+            verbose=False,
+            max_workers=1,
+        )
+
+    def save_build_json(self, kwargs: Dict):
+        if not kwargs:
+            kwargs = self.build_kwargs()
+        
+        build_json = {
+            "app_builder": {"awesome panel sharing": "0.0.0"},
+            "app_framework": {"panel": __version__},
+            "build_kwargs": kwargs
+        }
+        json.dump( obj=build_json, fp=open( "build.json", 'w' ), indent=1 )
+
+    def build(self, kwargs=None):
+        if not kwargs:
+            kwargs = self.build_kwargs
+
+        # We use `convert_apps` over `convert_app` due to https://github.com/holoviz/panel/issues/3939
+        convert_apps(**kwargs)
+        self.save_build_json(kwargs)
 
 
 class User(param.Parameterized):
@@ -107,41 +161,25 @@ class FileStorage(Storage):
     def _get_www_path(self, key) -> pathlib.Path:
         return self._path / "www" / key
 
+    def _move_locally(self, tmppath: pathlib.Path, project: pathlib.Path, www: pathlib.Path):
+        if project.exists():
+                shutil.rmtree(project)
+        shutil.copytree(tmppath, project)
+        if www.exists():
+            shutil.rmtree(www)
+        shutil.copytree(tmppath / "build", www)
+    
     def __setitem__(self, key: str, value: Project):
-        # We first save and build to a temporary folder
-        # We then move
-        # We do all this to minimize the risk of loosing data
         with tempfile.TemporaryDirectory() as tmpdir:
             tmppath = pathlib.Path(tmpdir)
-            source = tmppath / "source"
-            build = tmppath / "build"
-
-            value.save(tmppath)
-            with set_directory(source):
-                if (
-                    pathlib.Path("requirements.txt").exists()
-                    and pathlib.Path("requirements.txt").read_text()
-                ):
-                    requirements = "requirements.txt"
-                else:
-                    requirements = "auto"
-                # We use `convert_apps` over `convert_app` due to https://github.com/holoviz/panel/issues/3939
-                convert_apps(
-                    ["app.py"],
-                    dest_path=build,
-                    runtime="pyodide-worker",
-                    requirements=requirements,
-                )
+            with set_directory(tmppath):
+                value.save()
+                value.build()
 
             project = self._get_project_path(key)
             www = self._get_www_path(key)
 
-            if project.exists():
-                shutil.rmtree(project)
-            shutil.copytree(tmppath, project)
-            if www.exists():
-                shutil.rmtree(www)
-            shutil.copytree(tmppath / "build", www)
+            self._move_locally(tmppath, project, www)
 
     def __delitem__(self, key):
         raise NotImplementedError()
@@ -218,7 +256,6 @@ class AppState(param.Parameterized):
     # could not do it as it raised an error!
     development_key = param.String()
     development_url = param.String()
-    development_url_with_unique_id = param.String()
 
     shared_key = param.String()
     shared_url = param.String()
@@ -232,8 +269,6 @@ class AppState(param.Parameterized):
             params["project"] = Project()
 
         super().__init__(**params)
-
-        self._set_development(self._get_random_key())
 
     def _set_development(self, key: str):
         self.development_key = key
@@ -252,8 +287,8 @@ class AppState(param.Parameterized):
         return str(uuid.uuid4())
 
     def build(self):
-        key = self.development_key
+        # We need to use a new key to trigger the iframe to refresh
+        # The panel server somehow messes with the file
+        key = self._get_random_key()
         self.site.development_storage[key] = self.project
-        self.development_url_with_unique_id = (
-            self.development_url + "?id=" + self._get_random_key()
-        )
+        self._set_development(key)

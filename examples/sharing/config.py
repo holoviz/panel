@@ -28,8 +28,8 @@ What you can do is
 ABOUT = """
 # About
 
-The purpose of this project is to make it easy for you, me and the rest of the Panel community to
-share Panel apps.
+The purpose of this project is to make it easy for everyone to
+build and share Panel data apps.
 
 By using this project you consent to making your project publicly available and
 [MIT licensed](https://opensource.org/licenses/MIT).
@@ -39,7 +39,8 @@ On the other hand I cannot guarentee the persisting of your project. Use at your
 This project was made with Panel! Check out the code on
 [Github](https://github.com/marcskovmadsen/awesome-panel).
 
-If you are interested in getting your own version of Awesome Panel Sharing contact me via [LinkedIn](https://www.linkedin.com/in/marcskovmadsen).
+Awesome Panel Sharing can also be deployed as a secure solution for your organisation only.
+If this is something for you contact me via [LinkedIn](https://www.linkedin.com/in/marcskovmadsen).
 """
 
 CODE = """\

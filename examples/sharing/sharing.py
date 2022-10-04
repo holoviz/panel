@@ -35,10 +35,10 @@ state.build()
 new_project_tab = components.NewProject()
 configuration_tab = components.settings_editor(state)
 
-build_and_share_actions = components.BuildAndShareActions(state=state)
+build_and_share_project = components.BuildAndShareProject(state=state)
 source_editor = components.SourceEditor(project=state.project)
 editor_tab = pn.Column(
-    build_and_share_actions, source_editor, sizing_mode="stretch_both", name="Edit"
+    build_and_share_project, source_editor, sizing_mode="stretch_both", name="Edit"
 )
 
 source_pane = pn.Tabs(
@@ -51,7 +51,7 @@ source_pane = pn.Tabs(
     active=2,
 )
 
-target_pane = components.iframe(src=state.param.development_url_with_unique_id)
+target_pane=components.iframe(src=state.param.development_url)
 
 template = pn.template.FastGridTemplate(
     site=state.site.name,
