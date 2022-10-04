@@ -57,7 +57,6 @@ jobs:
           echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: conda setup
         run: |
-          conda config --prepend channels bokeh/label/dev
           conda create -n test-environment python=3.9 pyctdev
       - uses: actions/setup-node@v2
         with:
@@ -66,15 +65,9 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install "pip<21.2.1"
-          conda list
-          doit develop_install -o doc -o examples
-          pip install pyecharts idom==0.24 "pydata_sphinx_theme==0.9.0"
-      - name: temporarily pin jinja2
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install "jinja2<=3.0.3"
+          doit develop_install -o examples
+          pip install --use-deprecated=legacy-resolver --pre nbsite "myst-parser<0.17.0"
+          pip install --use-deprecated=legacy-resolver pyecharts "idom==0.24" "pydata-sphinx-theme<=0.9.0" "pydata-sphinx-theme<=0.9.0" sphinx-copybutton sphinx-design
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
