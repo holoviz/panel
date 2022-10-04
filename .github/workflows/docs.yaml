@@ -32,6 +32,7 @@ jobs:
     env:
       DESC: "Documentation build"
       MPLBACKEND: "Agg"
+      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       MOZ_HEADLESS: 1
       DISPLAY: ":99.0"
       PANEL_IPYWIDGET: 1
