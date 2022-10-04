@@ -276,6 +276,9 @@ class _config(_base_config):
     def _enable_notifications(self):
         from .io.notifications import NotificationArea
         from .io.state import state
+        from .reactive import ReactiveHTMLMetaclass
+        if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
+            ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
         if not state.curdoc:
             state._notification = NotificationArea()
 
