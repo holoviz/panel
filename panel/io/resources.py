@@ -69,7 +69,7 @@ RESOURCE_URLS = {
     'font-awesome': {
         'zip': 'https://use.fontawesome.com/releases/v5.15.4/fontawesome-free-5.15.4-web.zip',
         'src': 'fontawesome-free-5.15.4-web/',
-        'exclude': []
+        'exclude': ['*.svg', '*.scss', '*.less']
     },
     'bootstrap4': {
         'tar': 'https://registry.npmjs.org/bootstrap/-/bootstrap-4.6.1.tgz',
