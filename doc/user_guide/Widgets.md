@@ -142,4 +142,3 @@ Allow selecting a range of values of the appropriate type stored as a ``(lower, 
 * **[``Button``](../reference/widgets/Button.ipynb)**: Allows triggering events when the button is clicked.  Unlike other widgets, it does not have a ``value`` parameter.
 * **[``DataFrame``](../reference/widgets/DataFrame.ipynb)**: A widget that allows displaying and editing a Pandas DataFrame.
 * **[``FileDownload``](../reference/widgets/FileDownload.ipynb)**: A button that allows downloading a file on the frontend by sending the file data to the browser.
-* **[``Progress``](../reference/widgets/Progress.ipynb)**: A Progress bar which allows updating current the progress towards some goal or indicate an ongoing process.

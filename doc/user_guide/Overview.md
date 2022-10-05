@@ -38,7 +38,7 @@ At the lowest level, you can build interactive applications using ``Pane``, ``Wi
 
 ## Display and rendering
 
-Throughout this user guide we will cover a number of ways to display Panel objects, including display in a Jupyter notebook, in a standalone server, by saving and embedding, and more. For a detailed description see the [Deploy and Export user guide](./Deploy_and_Export.rst).
+Throughout this user guide we will cover a number of ways to display Panel objects, including display in a Jupyter notebook, in a standalone server, by saving and embedding, and more. For a detailed description see the [Display and Export user guide](./Display_and_Export.rst).
 
 ### Notebook
 
