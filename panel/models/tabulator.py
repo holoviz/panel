@@ -23,7 +23,7 @@ MOMENT_SRC = f"{config.npm_cdn}/luxon/build/global/luxon.min.js"
 
 THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
-PANEL_CDN = f"{config.npm_cdn}/@holoviz/panel/dist/bundled/{THEME_PATH}"
+PANEL_CDN = f"{config.npm_cdn}/@holoviz/panel/dist/bundled/datatabulator/{THEME_PATH}"
 TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
     'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'

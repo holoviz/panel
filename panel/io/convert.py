@@ -18,7 +18,6 @@ from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem, standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.settings import settings as _settings
 from bokeh.util.serialization import make_id
 from typing_extensions import Literal
 
@@ -27,7 +26,7 @@ from ..util import base_version, escape
 from .mime_render import find_imports
 from .resources import (
     CDN_DIST, DIST_DIR, INDEX_TEMPLATE, Resources, _env as _pn_env,
-    bundle_resources,
+    bundle_resources, set_resource_mode,
 )
 from .state import set_curdoc, state
 
@@ -188,9 +187,6 @@ def script_to_html(
     panel_version: 'auto' | str
       The panel release version to use in the exported HTML.
     """
-    # Configure resources
-    _settings.resources.set_value('cdn')
-
     # Run script
     path = pathlib.Path(filename)
     name = '.'.join(path.name.split('.')[:-1])
@@ -324,10 +320,6 @@ def script_to_html(
     html = (html
         .replace('<body>', f'<body class="bk pn-loading {config.loading_spinner}">')
     )
-
-    # Reset resources
-    _settings.resources.unset_value()
-
     return html, web_worker
 
 
@@ -341,10 +333,11 @@ def convert_app(
     verbose: bool = True,
 ):
     try:
-        html, js_worker = script_to_html(
-            app, requirements=requirements, runtime=runtime,
-            prerender=prerender, manifest=manifest
-        )
+        with set_resource_mode('cdn'):
+            html, js_worker = script_to_html(
+                app, requirements=requirements, runtime=runtime,
+                prerender=prerender, manifest=manifest
+            )
     except KeyboardInterrupt:
         return
     except Exception as e:
