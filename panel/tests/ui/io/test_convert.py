@@ -1,3 +1,4 @@
+import os
 import pathlib
 import tempfile
 import time
@@ -15,7 +16,7 @@ except ImportError:
 pytestmark = pytest.mark.ui
 
 from panel.config import config
-from panel.io.convert import convert_apps
+from panel.io.convert import BOKEH_LOCAL_WHL, PANEL_LOCAL_WHL, convert_apps
 
 button_app = """
 import panel as pn
@@ -36,6 +37,19 @@ pn.state.location.sync(slider, ['value'])
 pn.Row(slider, pn.bind(lambda v: v, slider)).servable();
 """
 
+tabulator_app = """
+import panel as pn
+import pandas as pd
+tabulator = pn.widgets.Tabulator(pd._testing.makeMixedDataFrame())
+
+def on_click(e):
+    tabulator.theme = 'fast'
+
+button = pn.widgets.Button()
+button.on_click(on_click)
+
+pn.Row(button, tabulator).servable();
+"""
 
 def write_app(app):
     """
@@ -44,6 +58,19 @@ def write_app(app):
     nf = tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False)
     nf.write(app)
     nf.flush()
+    dest = pathlib.Path(nf.name).parent
+    pn_whl = pathlib.Path(PANEL_LOCAL_WHL)
+    bk_whl = pathlib.Path(BOKEH_LOCAL_WHL)
+    if not (pn_whl.is_file() and bk_whl.is_file()):
+        raise RuntimeError(
+            "Build local wheels for pyodide using `python scripts/build_pyodide_wheels.py`."
+        )
+    if (dest / pn_whl.name).is_file():
+        os.unlink(dest / pn_whl.name)
+    os.link(PANEL_LOCAL_WHL, dest / pn_whl.name)
+    if (dest / bk_whl.name).is_file():
+        os.unlink(dest / bk_whl.name)
+    os.link(BOKEH_LOCAL_WHL, dest / bk_whl.name)
     return nf
 
 @pytest.fixture(scope="module")
@@ -52,7 +79,7 @@ def start_server():
 
     def start(path):
         process = Popen(
-            ["python", "-m", "http.server", "8123", "--directory", str(path.parent)], stdout=PIPE
+            ["python", "-m", "http.server", "8123", "--directory", str(path)], stdout=PIPE
         )
         retries = 5
         while retries > 0:
@@ -79,9 +106,12 @@ def start_server():
 def test_pyodide_test_convert_button_app(page, runtime, start_server):
     nf = write_app(button_app)
     app_path = pathlib.Path(nf.name)
-    start_server(app_path)
+    start_server(app_path.parent)
 
-    convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False)
+    convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False, panel_version='local')
+
+    msgs = []
+    page.on("console", lambda msg: msgs.append(msg))
 
     page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
 
@@ -95,14 +125,18 @@ def test_pyodide_test_convert_button_app(page, runtime, start_server):
 
     expect(page.locator(".bk.bk-clearfix")).to_have_text('1')
 
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
 def test_pyodide_test_convert_slider_app(page, runtime, start_server):
     nf = write_app(slider_app)
     app_path = pathlib.Path(nf.name)
-    start_server(app_path)
+    start_server(app_path.parent)
 
-    convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False)
+    convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False, panel_version='local')
+
+    msgs = []
+    page.on("console", lambda msg: msgs.append(msg))
 
     page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
 
@@ -117,27 +151,28 @@ def test_pyodide_test_convert_slider_app(page, runtime, start_server):
 
     expect(page.locator(".bk.bk-clearfix")).to_have_text('0.1')
 
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
 
 @pytest.mark.parametrize('runtime', ['pyodide-worker'])
-def test_pyodide_test_convert_location_app(page, runtime, start_server):
-    nf = write_app(location_app)
+def test_pyodide_test_convert_tabulator_app(page, runtime, start_server):
+    nf = write_app(tabulator_app)
     app_path = pathlib.Path(nf.name)
-    start_server(app_path)
+    start_server(app_path.parent)
 
-    convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False)
+    convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False, panel_version='local')
 
-    app_url = f"http://localhost:8123/{app_path.name[:-3]}.html"
-    page.goto(f"{app_url}?value=3.14")
+    msgs = []
+    page.on("console", lambda msg: msgs.append(msg))
+
+    page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
 
     cls = f'bk pn-loading {config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
     expect(page.locator('body')).not_to_have_class(cls, timeout=60 * 1000)
 
-    expect(page.locator(".bk.bk-clearfix")).to_have_text('3.14')
+    page.click('.bk.bk-btn')
 
-    page.click('.noUi-handle')
-    page.keyboard.press('ArrowRight')
+    time.sleep(1)
 
-    expect(page.locator(".bk.bk-clearfix")).to_have_text('3.2')
-
-    assert page.url == f"{app_url}?value=3.2"
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []

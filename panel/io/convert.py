@@ -38,6 +38,8 @@ WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = '2.4.3'
 PY_VERSION = base_version(__version__)
+PANEL_LOCAL_WHL = f'{DIST_DIR}/wheels/panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
+BOKEH_LOCAL_WHL = f'{DIST_DIR}/wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js'
@@ -163,7 +165,7 @@ def script_to_html(
     css_resources: Literal['auto'] | List[str] | None = None,
     runtime: Runtimes = 'pyodide',
     prerender: bool = True,
-    panel_version: Literal['auto'] | str = 'auto',
+    panel_version: Literal['auto', 'local'] | str = 'auto',
     manifest: str | None = None
 ) -> str:
     """
@@ -221,7 +223,10 @@ def script_to_html(
             )
 
     # Environment
-    if panel_version == 'auto':
+    if panel_version == 'local':
+        panel_req = './' + PANEL_LOCAL_WHL.split('/')[-1]
+        bokeh_req = './' + BOKEH_LOCAL_WHL.split('/')[-1]
+    elif panel_version == 'auto':
         panel_req = PANEL_CDN_WHL
         bokeh_req = BOKEH_CDN_WHL
     else:
@@ -330,13 +335,15 @@ def convert_app(
     runtime: Runtimes = 'pyodide-worker',
     prerender: bool = True,
     manifest: str | None = None,
+    panel_version: Literal['auto', 'local'] | str = 'auto',
     verbose: bool = True,
 ):
     try:
         with set_resource_mode('cdn'):
             html, js_worker = script_to_html(
                 app, requirements=requirements, runtime=runtime,
-                prerender=prerender, manifest=manifest
+                prerender=prerender, manifest=manifest,
+                panel_version=panel_version
             )
     except KeyboardInterrupt:
         return
@@ -365,8 +372,9 @@ def convert_apps(
     build_index: bool = True,
     build_pwa: bool = True,
     pwa_config: Dict[Any, Any] = {},
+    max_workers: int = 4,
+    panel_version: Literal['auto', 'local'] | str = 'auto',
     verbose: bool = True,
-    max_workers: int = 4
 ):
     """
     Arguments
@@ -400,6 +408,8 @@ def convert_apps(
           - theme_color: The theme color of the application
     max_workers: int
         The maximum number of parallel workers
+    panel_version: 'auto' | 'local'] | str
+'       The panel version to include.
     """
     if isinstance(apps, str):
         apps = [apps]
@@ -419,7 +429,7 @@ def convert_apps(
                 f = executor.submit(
                     convert_app, app, dest_path, requirements=requirements,
                     runtime=runtime, prerender=prerender, manifest=manifest,
-                    verbose=verbose
+                    panel_version=panel_version, verbose=verbose
                 )
                 futures.append(f)
             for future in concurrent.futures.as_completed(futures):
