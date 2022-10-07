@@ -1,5 +1,5 @@
-import os
 import pathlib
+import shutil
 import tempfile
 import time
 
@@ -63,12 +63,14 @@ def write_app(app):
         raise RuntimeError(
             "Build local wheels for pyodide using `python scripts/build_pyodide_wheels.py`."
         )
-    if (dest / PANEL_LOCAL_WHL.name).is_file():
-        os.unlink(dest / PANEL_LOCAL_WHL.name)
-    os.link(PANEL_LOCAL_WHL, dest / PANEL_LOCAL_WHL.name)
-    if (dest / BOKEH_LOCAL_WHL.name).is_file():
-        os.unlink(dest / BOKEH_LOCAL_WHL.name)
-    os.link(BOKEH_LOCAL_WHL, dest / BOKEH_LOCAL_WHL.name)
+    try:
+        shutil.copy(PANEL_LOCAL_WHL, dest / PANEL_LOCAL_WHL.name)
+    except shutil.SameFileError:
+        pass
+    try:
+        shutil.copy(BOKEH_LOCAL_WHL, dest / BOKEH_LOCAL_WHL.name)
+    except shutil.SameFileError:
+        pass
     return nf
 
 @pytest.fixture(scope="module")
