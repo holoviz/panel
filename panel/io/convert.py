@@ -38,8 +38,8 @@ WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = '2.4.3'
 PY_VERSION = base_version(__version__)
-PANEL_LOCAL_WHL = f'{DIST_DIR}/wheels/panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
-BOKEH_LOCAL_WHL = f'{DIST_DIR}/wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
+BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js'
@@ -224,8 +224,8 @@ def script_to_html(
 
     # Environment
     if panel_version == 'local':
-        panel_req = './' + PANEL_LOCAL_WHL.split('/')[-1]
-        bokeh_req = './' + BOKEH_LOCAL_WHL.split('/')[-1]
+        panel_req = './' + str(PANEL_LOCAL_WHL).split('/')[-1]
+        bokeh_req = './' + str(BOKEH_LOCAL_WHL).split('/')[-1]
     elif panel_version == 'auto':
         panel_req = PANEL_CDN_WHL
         bokeh_req = BOKEH_CDN_WHL

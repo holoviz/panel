@@ -59,18 +59,16 @@ def write_app(app):
     nf.write(app)
     nf.flush()
     dest = pathlib.Path(nf.name).parent
-    pn_whl = pathlib.Path(PANEL_LOCAL_WHL)
-    bk_whl = pathlib.Path(BOKEH_LOCAL_WHL)
-    if not (pn_whl.is_file() and bk_whl.is_file()):
+    if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
         raise RuntimeError(
             "Build local wheels for pyodide using `python scripts/build_pyodide_wheels.py`."
         )
-    if (dest / pn_whl.name).is_file():
-        os.unlink(dest / pn_whl.name)
-    os.link(PANEL_LOCAL_WHL, dest / pn_whl.name)
-    if (dest / bk_whl.name).is_file():
-        os.unlink(dest / bk_whl.name)
-    os.link(BOKEH_LOCAL_WHL, dest / bk_whl.name)
+    if (dest / PANEL_LOCAL_WHL.name).is_file():
+        os.unlink(dest / PANEL_LOCAL_WHL.name)
+    os.link(PANEL_LOCAL_WHL, dest / PANEL_LOCAL_WHL.name)
+    if (dest / BOKEH_LOCAL_WHL.name).is_file():
+        os.unlink(dest / BOKEH_LOCAL_WHL.name)
+    os.link(BOKEH_LOCAL_WHL, dest / BOKEH_LOCAL_WHL.name)
     return nf
 
 @pytest.fixture(scope="module")
