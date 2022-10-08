@@ -16,8 +16,8 @@ from pathlib import Path
 import param
 
 from bokeh.embed.bundle import (
-    Bundle as BkBundle, _bundle_extensions, _use_mathjax, bundle_models,
-    extension_dirs,
+    CSS_RESOURCES as BkCSS_RESOURCES, Bundle as BkBundle, _bundle_extensions,
+    _use_mathjax, bundle_models, extension_dirs,
 )
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
@@ -376,7 +376,6 @@ class Resources(BkResources):
             if self.mode == 'inline':
                 break
             css_files.append(dist_dir + f'css/{os.path.basename(cssf)}')
-
         return css_files
 
     @property
@@ -423,6 +422,9 @@ class Bundle(BkBundle):
             css_raw=bk_bundle.css_raw,
             hashes=bk_bundle.hashes,
         )
+
+    def _render_css(self) -> str:
+        return BkCSS_RESOURCES.render(css_files=self._adjust_paths(self.css_files), css_raw=self.css_raw)
 
     def _render_js(self):
         return JS_RESOURCES.render(
