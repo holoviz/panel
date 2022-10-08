@@ -224,8 +224,8 @@ def script_to_html(
 
     # Environment
     if panel_version == 'local':
-        panel_req = './' + str(PANEL_LOCAL_WHL).split('/')[-1]
-        bokeh_req = './' + str(BOKEH_LOCAL_WHL).split('/')[-1]
+        panel_req = './' + str(PANEL_LOCAL_WHL.as_posix()).split('/')[-1]
+        bokeh_req = './' + str(BOKEH_LOCAL_WHL.as_posix()).split('/')[-1]
     elif panel_version == 'auto':
         panel_req = PANEL_CDN_WHL
         bokeh_req = BOKEH_CDN_WHL
