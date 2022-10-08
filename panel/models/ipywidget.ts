@@ -38,8 +38,7 @@ export class IPyWidgetView extends HTMLBoxView {
     super.render()
     if (this.ipyview != null) {
       this.shadow_el.appendChild(this.ipyview.el)
-      if (!this.rendered)
-	this.ipyview.trigger('displayed', this.ipyview)
+      this.ipyview.trigger('displayed', this.ipyview)
     }
   }
 }
