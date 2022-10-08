@@ -2,6 +2,7 @@ import {render} from 'preact';
 import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
+import {div} from "@bokehjs/core/dom"
 import {build_views} from "@bokehjs/core/build_views"
 import {isArray, isNumber} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
@@ -224,7 +225,6 @@ export class ReactiveHTMLView extends HTMLBoxView {
     if (this.root != this)
       super.compute_layout()
     else {
-      this.update_position()
       this.after_layout()
       this.notify_finished()
     }
@@ -240,7 +240,6 @@ export class ReactiveHTMLView extends HTMLBoxView {
 
   update_layout(): void {
     for (const child_view of this.child_views) {
-      this._align_view(child_view)
       child_view.compute_viewport()
       child_view.update_layout()
       child_view.compute_layout()
@@ -269,12 +268,17 @@ export class ReactiveHTMLView extends HTMLBoxView {
   }
 
   render(): void {
-    empty(this.el)
+    this.empty()
+    this._apply_stylesheets(this.styles())
+    this._apply_stylesheets(this.stylesheets)
+    this._apply_stylesheets(this.model.stylesheets)
+    this._apply_styles()
+    this._apply_classes(this.classes)
+    this._apply_classes(this.model.classes)
+    this._apply_visible()
 
-    const {background} = this.model
-    this.el.style.backgroundColor = background != null ? color2css(background) : ""
-    classes(this.el).clear().add(...this.css_classes())
-
+    this.el = div()
+    this.shadow_el.append(this.el)
     this._update()
     this._render_children()
     this._setup_mutation_observers()
@@ -316,41 +320,11 @@ export class ReactiveHTMLView extends HTMLBoxView {
       super.invalidate_layout()
   }
 
-  update_position(): void {
-    if (this.root != this) {
-      super.update_position()
-      return
-    }
-    this.el.style.display = this.model.visible ? "block" : "none"
-    //set_size(this.el, this.model)
-
-    let {margin} = this.model
-    let margin_spec = null
-    if (margin == null)
-      this.el.style.margin = ""
-    else {
-      if (isNumber(margin))
-        margin_spec = {top: margin, right: margin, bottom: margin, left: margin}
-      else if (margin.length == 2) {
-        const [vertical, horizontal] = margin
-        margin_spec = {top: vertical, right: horizontal, bottom: vertical, left: horizontal}
-      } else {
-        const [top, right, bottom, left] = margin
-        margin_spec = {top, right, bottom, left}
-      }
-      const {top, right, bottom, left} = margin_spec
-      this.el.style.padding = `${top}px ${right}px ${bottom}px ${left}px`
-    }
-
-    for (const child_view of this.child_views)
-      child_view.update_position()
-  }
-
   _render_node(node: any, children: any[]): void {
     const id = this.model.data.id
     if (this.model.looped.indexOf(node) > -1) {
       for (let i = 0; i < children.length; i++) {
-        let el: any = document.getElementById(`${node}-${i}-${id}`)
+        let el: any = this.shadow_el.getElementById(`${node}-${i}-${id}`)
         if (el == null) {
           console.warn(`DOM node '${node}-${i}-${id}' could not be found. Cannot render children.`)
           continue
@@ -358,7 +332,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
         this._render_child(children[i], el)
       }
     } else {
-      let el: any = document.getElementById(`${node}-${id}`)
+      let el: any = this.shadow_el.getElementById(`${node}-${id}`)
       if (el == null) {
         console.warn(`DOM node '${node}-${id}' could not be found. Cannot render children.`)
         return
@@ -447,7 +421,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       if (literal.indexOf(elvar) === -1)
         continue
       const script = `
-      const ${elvar} = document.getElementById('${elname}-${id}')
+      const ${elvar} = this.shadow_el.getElementById('${elname}-${id}')
       if (${elvar} == null) {
         console.warn("DOM node '${elname}' could not be found. Cannot execute callback.")
         return
@@ -474,7 +448,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _setup_mutation_observers(): void {
     const id = this.model.data.id
     for (const name in this.model.attrs) {
-      const el: any = document.getElementById(`${name}-${id}`)
+      const el: any = this.shadow_el.getElementById(`${name}-${id}`)
       if (el == null) {
         console.warn(`DOM node '${name}-${id}' could not be found. Cannot set up MutationObserver.`)
         continue
@@ -490,7 +464,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _remove_event_listeners(): void {
     const id = this.model.data.id
     for (const node in this._event_listeners) {
-      const el: any = document.getElementById(`${node}-${id}`)
+      const el: any = this.shadow_el.getElementById(`${node}-${id}`)
       if (el == null)
         continue
       for (const event_name in this._event_listeners[node]) {
@@ -504,7 +478,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _setup_event_listeners(): void {
     const id = this.model.data.id
     for (const node in this.model.events) {
-      const el: any = document.getElementById(`${node}-${id}`)
+      const el: any = this.shadow_el.getElementById(`${node}-${id}`)
       if (el == null) {
         console.warn(`DOM node '${node}-${id}' could not be found. Cannot subscribe to DOM events.`)
         continue
