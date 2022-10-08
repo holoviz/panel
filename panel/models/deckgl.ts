@@ -185,7 +185,6 @@ export class DeckGLPlotView extends HTMLBoxView {
   render(): void {
     super.render()
     const container = div({class: "deckgl"})
-    //set_size(container, this.model)
 
     const MAPBOX_API_KEY = this.model.mapbox_api_key
     const tooltip = this.model.tooltip

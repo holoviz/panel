@@ -88,11 +88,8 @@ export class TerminalView extends HTMLBoxView {
   }
 
   fit(): void {
-    const sizing = this.box_sizing()
-    const vert_margin = sizing.margin == null ? 0 : sizing.margin.top + sizing.margin.bottom
-    const horz_margin = sizing.margin == null ? 0 : sizing.margin.left + sizing.margin.right
-    const width = (this.layout.inner_bbox.width || this.model.width || 0) - horz_margin
-    const height = (this.layout.inner_bbox.height || this.model.height || 0) - vert_margin
+    const width = this.container.offsetWidth;
+    const height = this.container.offsetHeight;
     const renderer = this.term._core._renderService
     const cell_width = renderer.dimensions.actualCellWidth || 9
     const cell_height = renderer.dimensions.actualCellHeight || 18
@@ -109,11 +106,6 @@ export class TerminalView extends HTMLBoxView {
 
   after_layout(): void {
     super.after_layout()
-    this.fit()
-  }
-
-  resize_layout(): void {
-    super.resize_layout()
     this.fit()
   }
 }

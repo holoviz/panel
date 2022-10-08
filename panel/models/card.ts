@@ -1,10 +1,6 @@
 import {Column, ColumnView} from "@bokehjs/models/layouts/column"
-import {BBox} from "@bokehjs/core/util/bbox"
 import * as DOM from "@bokehjs/core/dom"
-import {classes, empty} from "@bokehjs/core/dom"
-import {Column as ColumnLayout} from "@bokehjs/core/layout/grid"
 import * as p from "@bokehjs/core/properties"
-import {color2css} from "@bokehjs/core/util/color"
 
 export class CardView extends ColumnView {
   model: Card
@@ -17,47 +13,17 @@ export class CardView extends ColumnView {
     this.on_change([active_header_background, header_background, header_color, hide_header], () => this.render())
   }
 
-  _update_layout(): void {
-    let views: any[]
-    if (this.model.hide_header)
-      views = this.child_views.slice(1)
-    else
-      views = this.model.collapsed ? this.child_views.slice(0, 1) : this.child_views
-    const items = views.map((child) => child.layout)
-    this.layout = new ColumnLayout(items)
-    this.layout.rows = this.model.rows
-    this.layout.spacing = [this.model.spacing, 0]
-    this.layout.set_sizing(this.box_sizing())
-  }
-
-  update_position(): void {
-    if (this.model.collapsible && !this.model.hide_header) {
-      const header = this.child_views[0]
-      const obbox = header.layout.bbox
-      const ibbox = header.layout.inner_bbox
-      if (obbox.x1 != 0) {
-        let offset: number
-        if (this.model.collapsible) {
-          const icon_style = getComputedStyle(this.button_el.children[0])
-          offset = (parseFloat(icon_style.width) + parseFloat(icon_style.marginLeft)) || 0
-        } else {
-          offset = 0
-        }
-        const outer = new BBox({x0: obbox.x0, x1: obbox.x1-offset, y0: obbox.y0, y1: obbox.y1})
-        const inner = new BBox({x0: ibbox.x0, x1: ibbox.x1-offset, y0: ibbox.y0, y1: ibbox.y1})
-        header.layout.set_geometry(outer, inner)
-      }
-    }
-    super.update_position()
-  }
-
   render(): void {
-    empty(this.el)
+    this.empty()
+    this._apply_stylesheets(this.styles())
+    this._apply_stylesheets(this.stylesheets)
+    this._apply_stylesheets(this.model.stylesheets)
+    this._apply_styles()
+    this._apply_classes(this.classes)
+    this._apply_classes(this.model.classes)
+    this._apply_visible()
 
-    const {background, button_css_classes, header_color, header_tag, header_css_classes} = this.model
-
-    this.el.style.backgroundColor = background != null ? color2css(background) : ""
-    classes(this.el).clear().add(...this.css_classes())
+    const {button_css_classes, header_color, header_tag, header_css_classes} = this.model
 
     let header_background = this.model.header_background
     if (!this.model.collapsed && this.model.active_header_background)

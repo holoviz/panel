@@ -4,11 +4,10 @@ import {html} from 'htm/preact';
 
 import {div} from "@bokehjs/core/dom"
 import {build_views} from "@bokehjs/core/build_views"
-import {isArray, isNumber} from "@bokehjs/core/util/types"
+import {isArray} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
+import {UIElementView} from "@bokehjs/models/ui/ui_element"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
-import {empty, classes} from "@bokehjs/core/dom"
-import {color2css} from "@bokehjs/core/util/color"
 
 import {dict_to_records} from "./data"
 import {serializeEvent} from "./event-to-object"
@@ -85,6 +84,7 @@ function extractToken(template: string, str: string, tokens: string[]) {
 export class ReactiveHTMLView extends HTMLBoxView {
   model: ReactiveHTML
   html: string
+  container: HTMLDivElement
   _parent: any = null
   _changing: boolean = false
   _event_listeners: any = {}
@@ -117,14 +117,12 @@ export class ReactiveHTMLView extends HTMLBoxView {
               if (!isArray(children))
                 children = [children]
               this._render_node(node, children)
-              this.invalidate_layout()
               return
             }
           }
         }
         if (!this._changing) {
           this._update(subpath)
-          this.invalidate_layout()
         }
       })
     }
@@ -135,7 +133,6 @@ export class ReactiveHTMLView extends HTMLBoxView {
     this.connect(this.model.properties.children.change, async () => {
       this.html = htmlDecode(this.model.html) || this.model.html
       await this.rebuild()
-      this.invalidate_layout()
     })
     this._recursive_connect(this.model.data, true, '')
     this.connect(this.model.properties.events.change, () => {
@@ -217,54 +214,20 @@ export class ReactiveHTMLView extends HTMLBoxView {
     return models
   }
 
-  async build_child_views(): Promise<void> {
-    await build_views(this._child_views, this.child_models, {parent: (null as any)})
-  }
-
-  compute_layout(): void {
-    if (this.root != this)
-      super.compute_layout()
-    else {
-      this.after_layout()
-      this.notify_finished()
+  async build_child_views(): Promise<UIElementView[]> {
+    const {created, removed} = await build_views(this._child_views, this.child_models, {parent: (null as any)})
+    for (const view of removed) {
+      this._resize_observer.unobserve(view.el)
     }
+
+    for (const view of created) {
+      this._resize_observer.observe(view.el, {box: "border-box"})
+    }
+    return created
   }
 
-  after_layout(): void {
-    for (const child_view of this.child_views)
-      child_view.after_layout()
-
+  _after_layout(): void {
     this.run_script('after_layout', true)
-    this._has_finished = true
-  }
-
-  update_layout(): void {
-    for (const child_view of this.child_views) {
-      child_view.compute_viewport()
-      child_view.update_layout()
-      child_view.compute_layout()
-    }
-    if (this.root != this)
-      this._update_layout()
-  }
-
-  private _align_view(view: any): void {
-    const {align} = view.model
-    let halign, valign: string
-    if (isArray(align))
-      [halign, valign] = (align as any)
-    else
-      halign = valign = align
-    if (halign === 'center') {
-      view.el.style.marginLeft = 'auto';
-      view.el.style.marginRight = 'auto';
-    } else if (halign === 'end')
-      view.el.style.marginLeft = 'auto';
-    if (valign === 'center') {
-      view.el.style.marginTop = 'auto';
-      view.el.style.marginBottom = 'auto';
-    } else if (valign === 'end')
-      view.el.style.marginTop = 'auto';
   }
 
   render(): void {
@@ -277,8 +240,8 @@ export class ReactiveHTMLView extends HTMLBoxView {
     this._apply_classes(this.model.classes)
     this._apply_visible()
 
-    this.el = div()
-    this.shadow_el.append(this.el)
+    this.container = div()
+    this.shadow_el.append(this.container)
     this._update()
     this._render_children()
     this._setup_mutation_observers()
@@ -301,23 +264,8 @@ export class ReactiveHTMLView extends HTMLBoxView {
     if (view == null)
       el.innerHTML = htmlDecode(model) || model
     else {
-      view._parent = this
       view.render_to(el)
     }
-  }
-
-  resize_layout(): void {
-    if (this._parent != null)
-      this._parent.resize_layout()
-    if (this.root != this)
-      super.resize_layout()
-  }
-
-  invalidate_layout(): void {
-    if (this._parent != null)
-      this._parent.invalidate_layout()
-    if (this.root != this && this.root.has_finished())
-      super.invalidate_layout()
   }
 
   _render_node(node: any, children: any[]): void {
@@ -503,7 +451,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       const rendered = this._render_html(this.html)
       try {
         this._changing = true
-        render(rendered, this.el)
+        render(rendered, this.container)
       } finally {
         this._changing = false
       }

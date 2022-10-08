@@ -228,11 +228,6 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     super.invalidate_render()
   }
 
-  resize_layout(): void {
-    if (!this.layout) { return }
-    super.resize_layout()
-  }
-
   remove(): void {
     this._unsubscribe_camera_cb()
     window.removeEventListener("resize", this._vtk_renwin.resize)

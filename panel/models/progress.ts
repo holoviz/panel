@@ -7,15 +7,12 @@ export class ProgressView extends HTMLBoxView {
 
   connect_signals(): void {
     super.connect_signals()
-    const resize = () => {
-      this.render()
-      this.root.compute_layout() // XXX: invalidate_layout?
-    }
-    this.connect(this.model.properties.height.change, resize)
-    this.connect(this.model.properties.width.change, resize)
-    this.connect(this.model.properties.height_policy.change, resize)
-    this.connect(this.model.properties.width_policy.change, resize)
-    this.connect(this.model.properties.sizing_mode.change, resize)
+    const render = () => this.render()
+    this.connect(this.model.properties.height.change, render)
+    this.connect(this.model.properties.width.change, render)
+    this.connect(this.model.properties.height_policy.change, render)
+    this.connect(this.model.properties.width_policy.change, render)
+    this.connect(this.model.properties.sizing_mode.change, render)
     this.connect(this.model.properties.active.change, () => this.setCSS())
     this.connect(this.model.properties.bar_color.change, () => this.setCSS())
     this.connect(this.model.properties.css_classes.change, () => this.setCSS())
@@ -25,7 +22,7 @@ export class ProgressView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    const style: any = {...this.model.style, display: "inline-block"}
+    const style: any = {...this.model.styles, display: "inline-block"}
     this.progressEl = document.createElement('progress')
     this.setValue()
     this.setMax()
