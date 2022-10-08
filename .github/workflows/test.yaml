@@ -47,6 +47,7 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
+      PYTHONIOENCODING: "utf-8"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Without this env var `doit env_create ...` uses by default
       # the `pyviz` channel, except that we don't want to configure
@@ -99,6 +100,7 @@ jobs:
         shell: bash -l {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
+      PYTHONIOENCODING: "utf-8"
       PANEL_LOG_LEVEL: info
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
