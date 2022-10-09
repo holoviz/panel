@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import io
 import json
 import os
 import sys
@@ -19,7 +20,7 @@ from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
 from bokeh.protocol.messages.patch_doc import process_document_events
-from js import JSON
+from js import JSON, XMLHttpRequest
 
 from ..config import config
 from ..util import edit_readonly, is_holoviews, isurl
@@ -31,9 +32,30 @@ from .state import state
 resources.RESOURCE_MODE = 'CDN'
 os.environ['BOKEH_RESOURCES'] = 'cdn'
 
+try:
+    from js import document as js_document  # noqa
+    _IN_WORKER = False
+except Exception:
+    _IN_WORKER = True
+
+try:
+    import pyodide_http
+    pyodide_http.patch_all()
+except Exception:
+    pyodide_http = None
+    pass
+
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+def fetch_binary(url):
+    if not _IN_WORKER:
+        raise RuntimeError("Cannot make synchronous binary request in main thread.")
+    xhr = XMLHttpRequest.new()
+    xhr.responseType = "arraybuffer"
+    xhr.open('get', url, False)
+    return io.BytesIO(xhr.response.to_py().tobytes())
 
 # Patch pandas.read_csv so it works in pyodide
 if 'pandas' in sys.modules:
@@ -61,6 +83,18 @@ if 'pandas' in sys.modules:
         return _read_json_original(*args, **kwargs)
     _read_json.__doc__ = _read_json_original.__doc__
     pandas.read_json = _read_json
+
+    if _IN_WORKER:
+        # Patch pandas.read_parquet
+        _read_parquet_original = pandas.read_parquet
+        def _read_parquet(*args, **kwargs):
+            if args and isurl(args[0]):
+                args = (fetch_binary(args[0]),)+args[1:]
+            elif isurl(kwargs.get('filepath_or_buffer')):
+                kwargs['filepath_or_buffer'] = fetch_binary(kwargs['filepath_or_buffer'])
+            return _read_parquet_original(*args, **kwargs)
+        _read_parquet.__doc__ = _read_parquet_original.__doc__
+        pandas.read_parquet = _read_parquet
 
 
 def async_execute(func: Any):
