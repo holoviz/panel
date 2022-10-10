@@ -197,9 +197,6 @@ def test_pyodide_test_convert_csv_app(page, runtime, http_patch, launch_app):
 
     titles = page.locator('.tabulator-col-title').all_text_contents()
 
-    import pdb
-    pdb.set_trace()
-
     assert titles[1:] == ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
