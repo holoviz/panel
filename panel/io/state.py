@@ -40,6 +40,8 @@ from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 _state_logger = logging.getLogger('panel.state')
 
 if TYPE_CHECKING:
+    from concurrent.futures import Future
+
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.server import Server
@@ -322,7 +324,7 @@ class _state(param.Parameterized):
     def _schedule_on_load(self, doc: Document, event) -> None:
         if self._thread_pool:
             future = self._thread_pool.submit(self._on_load, doc)
-            future.add_done_callback(self._handle_future_exception)
+            future.add_done_callback(partial(self._handle_future_exception, doc))
         else:
             self._on_load(doc)
 
@@ -376,16 +378,16 @@ class _state(param.Parameterized):
                 self._handle_exception(e)
         return wrapper
 
-    def _handle_future_exception(self, future):
+    def _handle_future_exception(self, future: Future, doc: Document = None) -> None:
         exception = future.exception()
-        if exception:
+        if not exception:
+            return
+        with set_curdoc(doc):
             self._handle_exception(exception)
 
-    def _handle_exception(self, exception):
+    def _handle_exception(self, exception) -> None:
         from ..config import config
-        thread = threading.current_thread()
-        thread_id = thread.ident if thread else None
-        if config.exception_handler and (self._thread_id is None or self._thread_id == thread_id):
+        if config.exception_handler:
             config.exception_handler(exception)
         else:
             raise exception
@@ -620,7 +622,7 @@ class _state(param.Parameterized):
         if self.curdoc is None:
             if self._thread_pool:
                 future = self._thread_pool.submit(partial(self.execute, callback, schedule=False))
-                future.add_done_callback(self._handle_exception)
+                future.add_done_callback(self._handle_future_exception)
             else:
                 self.execute(callback, schedule=False)
             return
