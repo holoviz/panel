@@ -61,7 +61,7 @@ if 'pandas' in sys.modules and pyodide_http is None:
         return args, kwargs
 
     # Patch pandas.read_csv
-    _read_csv_original = pandas._read_csv
+    _read_csv_original = pandas.read_csv
     @functools.wraps(pandas.read_csv)
     def _read_csv(*args, **kwargs):
         args, kwargs = _read_file(*args, **kwargs)
@@ -69,7 +69,7 @@ if 'pandas' in sys.modules and pyodide_http is None:
     pandas.read_csv = _read_csv
 
     # Patch pandas.read_json
-    _read_json_original = pandas._read_json
+    _read_json_original = pandas.read_json
     @functools.wraps(pandas.read_json)
     def _read_json(*args, **kwargs):
         args, kwargs = _read_file(*args, **kwargs)
