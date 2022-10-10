@@ -187,7 +187,7 @@ def test_pyodide_test_convert_tabulator_app(page, runtime, launch_app):
 @pytest.mark.parametrize(
     'runtime, http_patch', [
         ('pyodide', False),
-        ('pyodide', True)
+        ('pyodide', True),
         ('pyodide-worker', False),
         ('pyodide-worker', True)
     ]
