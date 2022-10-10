@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import io
 import json
 import os
@@ -49,16 +50,7 @@ except Exception:
 # Private API
 #---------------------------------------------------------------------
 
-def fetch_binary(url):
-    if not _IN_WORKER:
-        raise RuntimeError("Cannot make synchronous binary request in main thread.")
-    xhr = XMLHttpRequest.new()
-    xhr.responseType = "arraybuffer"
-    xhr.open('get', url, False)
-    return io.BytesIO(xhr.response.to_py().tobytes())
-
-# Patch pandas.read_csv so it works in pyodide
-if 'pandas' in sys.modules:
+if 'pandas' in sys.modules and pyodide_http is None:
     import pandas
 
     def _read_file(*args, **kwargs):
@@ -69,32 +61,20 @@ if 'pandas' in sys.modules:
         return args, kwargs
 
     # Patch pandas.read_csv
-    _read_csv_original = pandas.read_csv
+    _read_csv_original = pandas._read_csv
+    @functools.wraps(pandas.read_csv)
     def _read_csv(*args, **kwargs):
         args, kwargs = _read_file(*args, **kwargs)
         return _read_csv_original(*args, **kwargs)
-    _read_csv.__doc__ = _read_csv_original.__doc__
     pandas.read_csv = _read_csv
 
     # Patch pandas.read_json
-    _read_json_original = pandas.read_json
+    _read_json_original = pandas._read_json
+    @functools.wraps(pandas.read_json)
     def _read_json(*args, **kwargs):
         args, kwargs = _read_file(*args, **kwargs)
         return _read_json_original(*args, **kwargs)
-    _read_json.__doc__ = _read_json_original.__doc__
     pandas.read_json = _read_json
-
-    if _IN_WORKER:
-        # Patch pandas.read_parquet
-        _read_parquet_original = pandas.read_parquet
-        def _read_parquet(*args, **kwargs):
-            if args and isurl(args[0]):
-                args = (fetch_binary(args[0]),)+args[1:]
-            elif isurl(kwargs.get('filepath_or_buffer')):
-                kwargs['filepath_or_buffer'] = fetch_binary(kwargs['filepath_or_buffer'])
-            return _read_parquet_original(*args, **kwargs)
-        _read_parquet.__doc__ = _read_parquet_original.__doc__
-        pandas.read_parquet = _read_parquet
 
 
 def async_execute(func: Any):
@@ -270,6 +250,15 @@ async def _link_model(ref: str, doc: Document) -> None:
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
+
+def fetch_binary(url):
+    if not _IN_WORKER:
+        raise RuntimeError("Cannot make synchronous binary request in main thread.")
+    xhr = XMLHttpRequest.new()
+    xhr.responseType = "arraybuffer"
+    xhr.open('get', url, False)
+    xhr.send()
+    return io.BytesIO(xhr.response.to_py().tobytes())
 
 def render_script(obj: Any, target: str) -> str:
     """

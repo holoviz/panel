@@ -166,7 +166,8 @@ def script_to_html(
     runtime: Runtimes = 'pyodide',
     prerender: bool = True,
     panel_version: Literal['auto', 'local'] | str = 'auto',
-    manifest: str | None = None
+    manifest: str | None = None,
+    http_patch: bool = True,
 ) -> str:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
@@ -188,6 +189,9 @@ def script_to_html(
       Whether to pre-render the components so the page loads.
     panel_version: 'auto' | str
       The panel release version to use in the exported HTML.
+    http_patch: bool
+        Whether to patch the HTTP request stack with the pyodide-http library
+        to allow urllib3 and requests to work.
     """
     # Run script
     path = pathlib.Path(filename)
@@ -232,7 +236,10 @@ def script_to_html(
     else:
         panel_req = f'panel=={panel_version}'
         bokeh_req = f'bokeh=={BOKEH_VERSION}'
-    reqs = [bokeh_req, panel_req, 'pyodide-http'] + [
+    base_reqs = [bokeh_req, panel_req]
+    if http_patch:
+        base_reqs.append('pyodide-http==0.1.0')
+    reqs = base_reqs + [
         req for req in requirements if req not in ('panel', 'bokeh')
     ]
 
@@ -336,6 +343,7 @@ def convert_app(
     prerender: bool = True,
     manifest: str | None = None,
     panel_version: Literal['auto', 'local'] | str = 'auto',
+    http_patch: bool = True,
     verbose: bool = True,
 ):
     try:
@@ -343,7 +351,7 @@ def convert_app(
             html, js_worker = script_to_html(
                 app, requirements=requirements, runtime=runtime,
                 prerender=prerender, manifest=manifest,
-                panel_version=panel_version
+                panel_version=panel_version, http_patch=http_patch
             )
     except KeyboardInterrupt:
         return
@@ -374,6 +382,7 @@ def convert_apps(
     pwa_config: Dict[Any, Any] = {},
     max_workers: int = 4,
     panel_version: Literal['auto', 'local'] | str = 'auto',
+    http_patch: bool = True,
     verbose: bool = True,
 ):
     """
@@ -410,6 +419,9 @@ def convert_apps(
         The maximum number of parallel workers
     panel_version: 'auto' | 'local'] | str
 '       The panel version to include.
+    http_patch: bool
+        Whether to patch the HTTP request stack with the pyodide-http library
+        to allow urllib3 and requests to work.
     """
     if isinstance(apps, str):
         apps = [apps]
@@ -429,7 +441,8 @@ def convert_apps(
                 f = executor.submit(
                     convert_app, app, dest_path, requirements=requirements,
                     runtime=runtime, prerender=prerender, manifest=manifest,
-                    panel_version=panel_version, verbose=verbose
+                    panel_version=panel_version, http_patch=http_patch,
+                    verbose=verbose
                 )
                 futures.append(f)
             for future in concurrent.futures.as_completed(futures):
