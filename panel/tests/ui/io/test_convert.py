@@ -60,6 +60,24 @@ button.on_click(on_click)
 pn.Row(button, tabulator).servable();
 """
 
+csv_app = """
+import pandas as pd
+import panel as pn
+
+df = pd.read_csv('https://raw.githubusercontent.com/holoviz/panel/master/examples/assets/occupancy.csv')
+tabulator = pn.widgets.Tabulator(df)
+
+tabulator.servable()
+"""
+
+png_app = """
+import panel as pn
+
+png = pn.pane.PNG('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png', width=200)
+
+png.servable()
+"""
+
 def write_app(app):
     """
     Writes app to temporary file and returns path.
@@ -112,11 +130,13 @@ def launch_app():
             os.remove(f)
 
 
-@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
-def test_pyodide_test_convert_button_app(page, runtime, launch_app):
-    app_path = launch_app(button_app)
+def wait_for_app(launch_app, app, page, runtime, **kwargs):
+    app_path = launch_app(app)
 
-    convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False, panel_version='local')
+    convert_apps(
+        [app_path], app_path.parent, runtime=runtime, build_pwa=False,
+        prerender=False, panel_version='local', **kwargs
+    )
 
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
@@ -125,7 +145,13 @@ def test_pyodide_test_convert_button_app(page, runtime, launch_app):
 
     cls = f'bk pn-loading {config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
-    expect(page.locator('body')).not_to_have_class(cls, timeout=60 * 1000)
+    expect(page.locator('body')).not_to_have_class(cls, timeout=90 * 1000)
+
+    return msgs
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
+def test_pyodide_test_convert_button_app(page, runtime, launch_app):
+    msgs = wait_for_app(launch_app, button_app, page, runtime)
 
     expect(page.locator(".bk.bk-clearfix")).to_have_text('0')
 
@@ -137,18 +163,7 @@ def test_pyodide_test_convert_button_app(page, runtime, launch_app):
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
 def test_pyodide_test_convert_slider_app(page, runtime, launch_app):
-    app_path = launch_app(slider_app)
-
-    convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False, panel_version='local')
-
-    msgs = []
-    page.on("console", lambda msg: msgs.append(msg))
-
-    page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
-
-    cls = f'bk pn-loading {config.loading_spinner}'
-    expect(page.locator('body')).to_have_class(cls)
-    expect(page.locator('body')).not_to_have_class(cls, timeout=60 * 1000)
+    msgs = wait_for_app(launch_app, slider_app, page, runtime)
 
     expect(page.locator(".bk.bk-clearfix")).to_have_text('0.0')
 
@@ -159,23 +174,37 @@ def test_pyodide_test_convert_slider_app(page, runtime, launch_app):
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
-@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
 def test_pyodide_test_convert_tabulator_app(page, runtime, launch_app):
-    app_path = launch_app(tabulator_app)
-
-    convert_apps([app_path], app_path.parent, runtime=runtime, build_pwa=False, build_index=False, prerender=False, panel_version='local')
-
-    msgs = []
-    page.on("console", lambda msg: msgs.append(msg))
-
-    page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
-
-    cls = f'bk pn-loading {config.loading_spinner}'
-    expect(page.locator('body')).to_have_class(cls)
-    expect(page.locator('body')).not_to_have_class(cls, timeout=60 * 1000)
+    msgs = wait_for_app(launch_app, tabulator_app, page, runtime)
 
     page.click('.bk.bk-btn')
 
     time.sleep(1)
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+@pytest.mark.parametrize(
+    'runtime, http_patch', [
+        ('pyodide', False),
+        ('pyodide', True),
+        ('pyodide-worker', False),
+        ('pyodide-worker', True)
+    ]
+)
+def test_pyodide_test_convert_csv_app(page, runtime, http_patch, launch_app):
+    msgs = wait_for_app(launch_app, csv_app, page, runtime, http_patch=http_patch)
+
+    titles = page.locator('.tabulator-col-title').all_text_contents()
+
+    assert titles[1:] == ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_png_app(page, runtime, launch_app):
+    msgs = wait_for_app(launch_app, png_app, page, runtime)
+
+    assert page.locator('img').count() == 1
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []

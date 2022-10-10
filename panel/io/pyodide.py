@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import functools
+import io
 import json
 import os
 import sys
@@ -19,7 +21,7 @@ from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
 from bokeh.protocol.messages.patch_doc import process_document_events
-from js import JSON
+from js import JSON, XMLHttpRequest
 
 from ..config import config
 from ..util import edit_readonly, is_holoviews, isurl
@@ -31,12 +33,24 @@ from .state import state
 resources.RESOURCE_MODE = 'CDN'
 os.environ['BOKEH_RESOURCES'] = 'cdn'
 
+try:
+    from js import document as js_document  # noqa
+    _IN_WORKER = False
+except Exception:
+    _IN_WORKER = True
+
+try:
+    import pyodide_http
+    pyodide_http.patch_all()
+except Exception:
+    pyodide_http = None
+    pass
+
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
 
-# Patch pandas.read_csv so it works in pyodide
-if 'pandas' in sys.modules:
+if 'pandas' in sys.modules and pyodide_http is None:
     import pandas
 
     def _read_file(*args, **kwargs):
@@ -48,18 +62,18 @@ if 'pandas' in sys.modules:
 
     # Patch pandas.read_csv
     _read_csv_original = pandas.read_csv
+    @functools.wraps(pandas.read_csv)
     def _read_csv(*args, **kwargs):
         args, kwargs = _read_file(*args, **kwargs)
         return _read_csv_original(*args, **kwargs)
-    _read_csv.__doc__ = _read_csv_original.__doc__
     pandas.read_csv = _read_csv
 
     # Patch pandas.read_json
     _read_json_original = pandas.read_json
+    @functools.wraps(pandas.read_json)
     def _read_json(*args, **kwargs):
         args, kwargs = _read_file(*args, **kwargs)
         return _read_json_original(*args, **kwargs)
-    _read_json.__doc__ = _read_json_original.__doc__
     pandas.read_json = _read_json
 
 
@@ -236,6 +250,15 @@ async def _link_model(ref: str, doc: Document) -> None:
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
+
+def fetch_binary(url):
+    if not _IN_WORKER:
+        raise RuntimeError("Cannot make synchronous binary request in main thread.")
+    xhr = XMLHttpRequest.new()
+    xhr.responseType = "arraybuffer"
+    xhr.open('get', url, False)
+    xhr.send()
+    return io.BytesIO(xhr.response.to_py().tobytes())
 
 def render_script(obj: Any, target: str) -> str:
     """

@@ -81,10 +81,14 @@ class FileBase(DivPaneBase):
         if isurl(self.object, None):
             from ..io.state import state
             if state._is_pyodide:
-                from pyodide.http import pyfetch
-                async def replace_content():
-                    self.object = await (await pyfetch(self.object)).bytes()
-                asyncio.create_task(replace_content())
+                from ..io.pyodide import _IN_WORKER, fetch_binary
+                if _IN_WORKER:
+                    return fetch_binary(self.object).read()
+                else:
+                    from pyodide.http import pyfetch
+                    async def replace_content():
+                        self.object = await (await pyfetch(self.object)).bytes()
+                    asyncio.create_task(replace_content())
             else:
                 import requests
                 r = requests.request(url=self.object, method='GET')

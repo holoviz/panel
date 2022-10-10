@@ -56,6 +56,10 @@ class Convert(Subcommand):
             nargs   = '+',
             help    = "Explicit requirements to add to the converted file or a single requirements.txt file. By default requirements are inferred from the code."
         )),
+        ('--disable-http-patch', dict(
+            action  = 'store_false',
+            help    = "Whether to disable patching http requests using the pyodide-http library."
+        )),
         ('--watch', dict(
             action  = 'store_true',
             help    = "Watch the files"
@@ -95,7 +99,8 @@ class Convert(Subcommand):
                 convert_apps(
                     files, dest_path=args.out, runtime=runtime, requirements=requirements,
                     prerender=not args.skip_embed, build_index=index, build_pwa=args.pwa,
-                    title=args.title, max_workers=args.num_procs, verbose=True
+                    title=args.title, max_workers=args.num_procs,
+                    http_patch=not args.disable_http_patch, verbose=True
                 )
             except KeyboardInterrupt:
                 print("Aborted while building docs.")
