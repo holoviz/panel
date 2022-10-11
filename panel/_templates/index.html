@@ -2,31 +2,31 @@
 <html lang="en">
 <head>
   <!-- Basic Page Needs
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  -------------------------------------------------- -->
   <meta charset="utf-8">
   <title>Panel Applications</title>
 
   <!-- Mobile Specific Metas
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  -------------------------------------------------- -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- FONT
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  -------------------------------------------------- -->
   <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600&Lato|Work+Sans:400,700&display=swap" rel="stylesheet" type='text/css'>
 
   <!-- CSS
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  -------------------------------------------------- -->
   <style>*:not(:defined){visibility:hidden}</style>
 
   <!-- Favicon
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <link rel="apple-touch-icon" sizes="180x180" href="{{base_url|default("", true) }}static/extensions/panel/images/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="{{base_url|default("", true) }}static/extensions/panel/images/favicon.ico">
-  <link rel="manifest" href="{{base_url|default("", true) }}static/extensions/panel/images/site.webmanifest">
+  -------------------------------------------------- -->
+  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/latest/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.holoviz.org/panel/latest/images/favicon.ico">
+  <link rel="manifest" href="https://cdn.holoviz.org/panel/latest/images/site.webmanifest">
   <meta name="msapplication-TileColor" content="#da532c">
   <meta name="theme-color" content="#ffffff">
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@microsoft/fast-colors@5.3.1/dist/index.js"></script>
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@microsoft/fast-components@1.21.8/dist/fast-components.js"></script>
+  <script type="module" src="https://cdn.holoviz.org/panel/latest/dist/bundled/js/@microsoft/fast-colors@5.3.1/dist/index.js"></script>
+  <script type="module" src="https://cdn.holoviz.org/panel/latest/dist/bundled/js/@microsoft/fast-components@1.21.8/dist/fast-components.js"></script>
   <script type="text/javascript">
     function setParamsFromSearch(text){
         const params = new URLSearchParams(location.search);
@@ -115,7 +115,7 @@
 	cursor: pointer;
     }
     .header {
-	background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('{{base_url|default("", true) }}static/extensions/panel/images/index_background.png');
+	background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('https://cdn.holoviz.org/panel/latest/dist/images/index_background.png');
 	background-size: cover;
 	background-repeat: no-repeat;
 	background-position: center;
@@ -266,9 +266,7 @@
     </section>
     <section>
       <fast-divider></fast-divider>
-      <footer>
-        <p>Made with &#x1f40d;, &#10084;&#65039;, <fast-anchor href="https://fast.design" appearance="hypertext" target="_blank">Fast</fast-anchor> and <fast-anchor href="https://panel.holoviz.org" appearance="hypertext" target="_blank">Panel</fast-anchor>.</p>
-      </footer>
+      <footer></footer>
     </section>
   </fast-design-system-provider>
   <script type="text/javascript">

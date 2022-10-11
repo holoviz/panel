@@ -14,7 +14,9 @@ from bokeh.events import ButtonClick
 from panel.config import config
 from panel.io import state
 from panel.io.resources import DIST_DIR
-from panel.io.server import get_server, serve, set_curdoc
+from panel.io.server import (
+    INDEX_HTML, get_server, serve, set_curdoc,
+)
 from panel.layout import Row
 from panel.models import HTML as BkHTML
 from panel.models.tabulator import TableEditEvent
@@ -68,6 +70,22 @@ def test_server_static_dirs(port):
     r = requests.get(f"http://localhost:{port}/tests/test_server.py")
     with open(__file__, encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+
+
+def test_server_root_handler(port):
+    html = Markdown('# Title')
+
+    serve(
+        {'app': html}, port=port, threaded=True, show=False, use_index=True,
+        index=INDEX_HTML, redirect_root=False
+    )
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get(f"http://localhost:{port}/")
+
+    assert 'href="./app"' in r.content.decode('utf-8')
 
 
 def test_server_template_static_resources(port):
