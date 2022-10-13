@@ -36,7 +36,7 @@ export class DatetimePickerView extends InputWidgetView {
 
     const {value, min_date, max_date, disabled_dates, enabled_dates, position, inline,
       enable_time, enable_seconds, military_time, date_format, mode} = this.model.properties
-    this.connect(value.change, () => this.model.value ? this._picker?.setDate(this.model.value) : this._picker?.clear())
+    this.connect(value.change, () => this.model.value ? this._picker?.setDate(this.model.value) : this._clear())
     this.connect(min_date.change, () => this._picker?.set("minDate", this.model.min_date))
     this.connect(max_date.change, () => this._picker?.set("maxDate", this.model.max_date))
     this.connect(disabled_dates.change, () => this._picker?.set("disable", this.model.disabled_dates))
@@ -86,10 +86,13 @@ export class DatetimePickerView extends InputWidgetView {
     this._picker.minDateHasTime = true
   }
 
+  protected _clear() {
+    this._picker?.clear()
+    this.model.value = null
+  }
+
   protected _on_close(_selected_dates: Date[], date_string: string, _instance: flatpickr.Instance): void {
     if (this.model.mode == "range" && !date_string.includes("to"))
-      return
-    if (date_string == "")
       return
     this.model.value = date_string
     this.change_input()
