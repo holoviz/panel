@@ -69,7 +69,10 @@ def set_curdoc(doc: Document):
         state._curdoc.reset(token)
 
 def curdoc_locked() -> Document:
-    doc = _curdoc()
+    try:
+        doc = _curdoc()
+    except RuntimeError:
+        return None
     if isinstance(doc, UnlockedDocumentProxy):
         doc = doc._doc
     return doc
