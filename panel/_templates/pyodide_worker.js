@@ -17,25 +17,49 @@ async function startApplication() {
   await self.pyodide.loadPackage("micropip");
   const env_spec = [{{ env_spec }}]
   for (const pkg of env_spec) {
-    const pkg_name = pkg.split('/').slice(-1)[0].split('-')[0]
+    let pkg_name;
+    if (pkg.endsWith('.whl')) {
+      pkg_name = pkg.split('/').slice(-1)[0].split('-')[0]
+    } else {
+      pkg_name = pkg
+    }
     self.postMessage({type: 'status', msg: `Installing ${pkg_name}`})
-    await self.pyodide.runPythonAsync(`
-      import micropip
-      await micropip.install('${pkg}');
-    `);
+    try {
+      await self.pyodide.runPythonAsync(`
+        import micropip
+        await micropip.install('${pkg}');
+      `);
+    } catch(e) {
+      self.postMessage({
+	type: 'status',
+	msg: `Error while installing ${pkg_name}`
+      });
+    }
   }
   console.log("Packages loaded!");
   self.postMessage({type: 'status', msg: 'Executing code'})
   const code = `
   {{ code }}
   `
-  const [docs_json, render_items, root_ids] = await self.pyodide.runPythonAsync(code)
+
+  try {
+    const [docs_json, render_items, root_ids] = await self.pyodide.runPythonAsync(code)
+  } catch(e) {
+    const traceback = `${e}`
+    const tblines = traceback.split('\n')
+    const error_msg = tblines[tblines.length-2]
+    self.postMessage({
+      type: 'status',
+      msg: `Error: ${error_msg}`
+    });
+    return
+  }
   self.postMessage({
     type: 'render',
     docs_json: docs_json,
     render_items: render_items,
     root_ids: root_ids
-  });
+  })
 }
 
 self.onmessage = async (event) => {
