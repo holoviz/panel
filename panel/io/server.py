@@ -327,7 +327,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                     else:
                         template = ERROR_TEMPLATE
                     page = template.render(
-                        npm_cdn=config.npn_cdn,
+                        npm_cdn=config.npm_cdn,
                         title='Panel: Authorization Error',
                         error_type='Authorization Error',
                         error='User is not authorized.',
@@ -741,6 +741,7 @@ def get_server(
     oauth_provider: Optional[str] = None,
     oauth_key: Optional[str] = None,
     oauth_secret: Optional[str] = None,
+    oauth_redirect_uri: Optional[str] = None,
     oauth_extra_params: Mapping[str, str] = {},
     cookie_secret: Optional[str] = None,
     oauth_encryption_key: Optional[str] = None,
@@ -792,6 +793,8 @@ def get_server(
       The public OAuth identifier
     oauth_secret: str (optional, default=None)
       The client secret for the OAuth provider
+    oauth_redirect_uri: Optional[str] = None,
+      Overrides the default OAuth redirect URI
     oauth_extra_params: dict (optional, default={})
       Additional information for the OAuth provider
     cookie_secret: str (optional, default=None)
@@ -901,10 +904,14 @@ def get_server(
         opts['auth_provider'] = OAuthProvider()
     if oauth_key:
         config.oauth_key = oauth_key # type: ignore
+    if oauth_secret:
+        config.oauth_secret = oauth_secret # type: ignore
     if oauth_extra_params:
         config.oauth_extra_params = oauth_extra_params # type: ignore
     if cookie_secret:
         config.cookie_secret = cookie_secret # type: ignore
+    if oauth_redirect_uri:
+        config.oauth_redirect_uri = oauth_redirect_uri # type: ignore
     opts['cookie_secret'] = config.cookie_secret
 
     server = Server(apps, port=port, **opts)
