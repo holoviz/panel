@@ -383,8 +383,9 @@ class _state(param.Parameterized):
 
     def _handle_future_exception(self, future: Future, doc: Document = None) -> None:
         exception = future.exception()
-        if not exception:
+        if exception is None:
             return
+
         with set_curdoc(doc):
             self._handle_exception(exception)
 
@@ -392,8 +393,10 @@ class _state(param.Parameterized):
         from ..config import config
         if config.exception_handler:
             config.exception_handler(exception)
-        else:
+        elif isinstance(exception, BaseException):
             raise exception
+        else:
+            self.log(f'Exception of unknown type raised: {exception}', level='error')
 
     #----------------------------------------------------------------
     # Public Methods
