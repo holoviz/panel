@@ -78,6 +78,18 @@ png = pn.pane.PNG('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_trans
 png.servable()
 """
 
+error_app = """
+import panel as pn
+
+button = pn.widgets.Button()
+
+button.servable()
+
+if pn.state._is_pyodide:
+    raise RuntimeError('This app is broken')
+"""
+
+
 def write_app(app):
     """
     Writes app to temporary file and returns path.
@@ -130,7 +142,7 @@ def launch_app():
             os.remove(f)
 
 
-def wait_for_app(launch_app, app, page, runtime, **kwargs):
+def wait_for_app(launch_app, app, page, runtime, wait=True, **kwargs):
     app_path = launch_app(app)
 
     convert_apps(
@@ -145,9 +157,16 @@ def wait_for_app(launch_app, app, page, runtime, **kwargs):
 
     cls = f'bk pn-loading {config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
-    expect(page.locator('body')).not_to_have_class(cls, timeout=90 * 1000)
+    if wait:
+        expect(page.locator('body')).not_to_have_class(cls, timeout=90 * 1000)
 
     return msgs
+
+
+def test_pyodide_test_error_handling_worker(page, launch_app):
+    wait_for_app(launch_app, error_app, page, 'pyodide-worker', wait=False)
+
+    expect(page.locator('.pn-loading-msg')).to_have_text('RuntimeError: This app is broken', timeout=90 * 1000)
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
 def test_pyodide_test_convert_button_app(page, runtime, launch_app):

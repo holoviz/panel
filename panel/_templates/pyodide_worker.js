@@ -24,12 +24,14 @@ async function startApplication() {
       pkg_name = pkg
     }
     self.postMessage({type: 'status', msg: `Installing ${pkg_name}`})
+    console.log(pkg)
     try {
       await self.pyodide.runPythonAsync(`
         import micropip
         await micropip.install('${pkg}');
       `);
     } catch(e) {
+      console.log(e)
       self.postMessage({
 	type: 'status',
 	msg: `Error while installing ${pkg_name}`
@@ -45,12 +47,12 @@ async function startApplication() {
   try {
     const [docs_json, render_items, root_ids] = await self.pyodide.runPythonAsync(code)
   } catch(e) {
+    console.log(e)
     const traceback = `${e}`
     const tblines = traceback.split('\n')
-    const error_msg = tblines[tblines.length-2]
     self.postMessage({
       type: 'status',
-      msg: `Error: ${error_msg}`
+      msg: tblines[tblines.length-2]
     });
     return
   }
