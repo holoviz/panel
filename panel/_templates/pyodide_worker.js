@@ -24,7 +24,6 @@ async function startApplication() {
       pkg_name = pkg
     }
     self.postMessage({type: 'status', msg: `Installing ${pkg_name}`})
-    console.log(pkg)
     try {
       await self.pyodide.runPythonAsync(`
         import micropip
@@ -46,22 +45,21 @@ async function startApplication() {
 
   try {
     const [docs_json, render_items, root_ids] = await self.pyodide.runPythonAsync(code)
+    self.postMessage({
+      type: 'render',
+      docs_json: docs_json,
+      render_items: render_items,
+      root_ids: root_ids
+    })
   } catch(e) {
-    console.log(e)
     const traceback = `${e}`
     const tblines = traceback.split('\n')
     self.postMessage({
       type: 'status',
       msg: tblines[tblines.length-2]
     });
-    return
+    throw e
   }
-  self.postMessage({
-    type: 'render',
-    docs_json: docs_json,
-    render_items: render_items,
-    root_ids: root_ids
-  })
 }
 
 self.onmessage = async (event) => {
