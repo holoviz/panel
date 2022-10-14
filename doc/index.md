@@ -40,7 +40,7 @@ width: 125
 :::
 
 :::{grid-item-card} Glaciers
-:link: https://penguins-crossfilter.pyviz.demo.anaconda.com
+:link: https://glaciers.pyviz.demo.anaconda.com
 :link-type: url
 
 ```{image} https://assets.holoviews.org/panel/thumbnails/index/glaciers.png
