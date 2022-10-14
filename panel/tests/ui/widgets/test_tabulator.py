@@ -3482,3 +3482,23 @@ def test_tabulator_python_filter_edit(page, port):
     wait_until(lambda: len(values) == 2, page)
     assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
     assert df.at['idx3', 'values'] == 'Y'
+
+
+def test_tabulator_sorter_default_number(page, port):
+    df = pd.DataFrame({'x': []}).astype({'x': int})
+    widget = Tabulator(df, sorters=[{"field": "x", "dir": "desc"}])
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    df2 = pd.DataFrame({'x': [0, 96, 116]})
+    widget.value = df2
+
+    def x_values():
+        table_values = [int(v) for v in tabulator_column_values(page, 'x')]
+        assert table_values == list(df2['x'].sort_values(ascending=False))
+
+    wait_until(x_values, page)
