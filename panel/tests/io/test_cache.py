@@ -1,3 +1,4 @@
+import datetime as dt
 import io
 import pathlib
 import time
@@ -40,6 +41,14 @@ def test_none_hash():
 def test_bytes_hash():
     assert hashes_equal(b'0', b'0')
     assert not hashes_equal(b'0', b'1')
+
+def test_date_hash():
+    assert hashes_equal(dt.date(1988, 4, 14), dt.date(1988, 4, 14))
+    assert not hashes_equal(dt.date(1988, 4, 14), dt.date(1988, 4, 15))
+
+def test_datetime_hash():
+    assert hashes_equal(dt.datetime(1988, 4, 14, 12, 3, 2, 1), dt.datetime(1988, 4, 14, 12, 3, 2, 1))
+    assert not hashes_equal(dt.datetime(1988, 4, 14, 12, 3, 2, 1), dt.datetime(1988, 4, 14, 12, 3, 2, 2))
 
 def test_list_hash():
     assert hashes_equal([0], [0])

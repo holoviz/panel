@@ -1,6 +1,7 @@
 """
 Implements memoization for functions with arbitrary arguments
 """
+import datetime as dt
 import functools
 import hashlib
 import inspect
@@ -134,6 +135,7 @@ _hash_funcs = {
     functools.partial  : _partial_hash,
     unittest.mock.Mock : lambda obj: _int_to_bytes(id(obj)),
     (io.StringIO, io.BytesIO): _io_hash,
+    dt.date      : lambda obj: f'{type(obj).__name__}{obj}'.encode('utf-8'),
     # Fully qualified type strings
     'numpy.ndarray'              : _numpy_hash,
     'pandas.core.series.Series'  : _pandas_hash,
