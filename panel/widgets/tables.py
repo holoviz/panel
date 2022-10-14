@@ -544,7 +544,7 @@ class BaseTable(ReactiveData, Widget):
         if len(indexes) > 1:
             df = df.reset_index()
         data = ColumnDataSource.from_df(df)
-        if not self.show_index:
+        if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
         return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
 
@@ -1209,6 +1209,9 @@ class Tabulator(BaseTable):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
+        if 'hidden_columns' in msg:
+            if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):
+                msg['hidden_columns'] += [self.value.index.name or 'index']
         if 'frozen_rows' in msg:
             length = self._length
             msg['frozen_rows'] = [
