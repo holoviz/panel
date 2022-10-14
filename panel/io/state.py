@@ -327,7 +327,7 @@ class _state(param.Parameterized):
     def _schedule_on_load(self, doc: Document, event) -> None:
         if self._thread_pool:
             future = self._thread_pool.submit(self._on_load, doc)
-            future.add_done_callback(partial(self._handle_future_exception, doc))
+            future.add_done_callback(partial(self._handle_future_exception, doc=doc))
         else:
             self._on_load(doc)
 
