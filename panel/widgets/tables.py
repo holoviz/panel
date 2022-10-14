@@ -1720,6 +1720,10 @@ class Tabulator(BaseTable):
                 dtype = self.value.dtypes[col_name]
             if dtype.kind == 'M':
                 col_dict['sorter'] = 'timestamp'
+            elif dtype.kind in 'iuf':
+                col_dict['sorter'] = 'number'
+            elif dtype.kind == 'b':
+                col_dict['sorter'] = 'boolean'
             editor = self.editors.get(column.field)
             if column.field in self.editors and editor is None:
                 col_dict['editable'] = False
