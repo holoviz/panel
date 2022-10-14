@@ -38,11 +38,12 @@ class TableEditEvent(ModelEvent):
 
     event_name = 'table-edit'
 
-    def __init__(self, model, column, row, value=None, old=None):
+    def __init__(self, model, column, row, pre=False, value=None, old=None):
         self.column = column
         self.row = row
         self.value = value
         self.old = old
+        self.pre = pre
         super().__init__(model=model)
 
     def __repr__(self):
