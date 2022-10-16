@@ -5,7 +5,6 @@ on a running bokeh server.
 import asyncio
 import inspect
 import logging
-import threading
 import time
 
 from functools import partial
@@ -175,9 +174,7 @@ class PeriodicCallback(param.Parameterized):
             )
         elif state.curdoc:
             self._doc = state.curdoc
-            thread = threading.current_thread()
-            thread_id = thread.ident if thread else None
-            if state._thread_id == thread_id:
+            if self._unblocked(state.curdoc):
                 self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
             else:
                 self._doc.add_next_tick_callback(self.start)

@@ -211,6 +211,12 @@ class _state(param.Parameterized):
             return IOLoop.current()
 
     @property
+    def _current_thread(self) -> str | None:
+        thread = threading.current_thread()
+        thread_id = thread.ident if thread else None
+        return thread_id
+
+    @property
     def _is_pyodide(self) -> bool:
         return '_pyodide' in sys.modules
 
@@ -224,9 +230,7 @@ class _state(param.Parameterized):
             self._thread_id_[self.curdoc] = thread_id
 
     def _unblocked(self, doc: Document) -> bool:
-        thread = threading.current_thread()
-        thread_id = thread.ident if thread else None
-        return doc is self.curdoc and self._thread_id in (thread_id, None)
+        return doc is self.curdoc and self._thread_id in (self._current_thread, None)
 
     @param.depends('busy', watch=True)
     def _update_busy(self) -> None:
@@ -486,12 +490,6 @@ class _state(param.Parameterized):
             callback=callback, period=period, count=count, timeout=timeout
         )
         if start:
-            if self._thread_id is not None:
-                thread = threading.current_thread()
-                thread_id = thread.ident if thread else None
-                if self._thread_id != thread_id:
-                    self.curdoc.add_next_tick_callback(cb.start)
-                    return cb
             cb.start()
         if self.curdoc:
             if self.curdoc not in self._periodic:
