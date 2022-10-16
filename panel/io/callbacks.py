@@ -5,6 +5,7 @@ on a running bokeh server.
 import asyncio
 import inspect
 import logging
+import threading
 import time
 
 from functools import partial
@@ -174,7 +175,12 @@ class PeriodicCallback(param.Parameterized):
             )
         elif state.curdoc:
             self._doc = state.curdoc
-            self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
+            thread = threading.current_thread()
+            thread_id = thread.ident if thread else None
+            if state._thread_id == thread_id:
+                self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
+            else:
+                self._doc.add_next_tick_callback(self.start)
         else:
             from tornado.ioloop import PeriodicCallback
             self._cb = PeriodicCallback(lambda: asyncio.create_task(self._periodic_callback()), self.period)
