@@ -174,7 +174,10 @@ class PeriodicCallback(param.Parameterized):
             )
         elif state.curdoc:
             self._doc = state.curdoc
-            self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
+            if state._unblocked(state.curdoc):
+                self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
+            else:
+                self._doc.add_next_tick_callback(self.start)
         else:
             from tornado.ioloop import PeriodicCallback
             self._cb = PeriodicCallback(lambda: asyncio.create_task(self._periodic_callback()), self.period)
