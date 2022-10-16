@@ -15,7 +15,7 @@ jobs:
     name: Run pre-commit hooks
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: "1"
       - name: set PY
