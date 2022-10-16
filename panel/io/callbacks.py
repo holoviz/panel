@@ -174,7 +174,7 @@ class PeriodicCallback(param.Parameterized):
             )
         elif state.curdoc:
             self._doc = state.curdoc
-            if self._unblocked(state.curdoc):
+            if state._unblocked(state.curdoc):
                 self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
             else:
                 self._doc.add_next_tick_callback(self.start)
