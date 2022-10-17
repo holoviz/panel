@@ -2759,12 +2759,19 @@ def test_tabulator_edit_event_and_header_filters(page, port):
 
 
 @pytest.mark.flaky(max_runs=3)
-def test_tabulator_edit_event_and_header_filters_same_column(page, port):
+@pytest.mark.parametrize('show_index', [True, False])
+@pytest.mark.parametrize('index_name', ['index', 'foo'])
+def test_tabulator_edit_event_and_header_filters_same_column(page, port, show_index, index_name):
     df = pd.DataFrame({
         'values':  ['A', 'A', 'B', 'B'],
     }, index=['idx0', 'idx1', 'idx2', 'idx3'])
+    df.index.name = index_name
 
-    widget = Tabulator(df, header_filters={'values': {'type': 'input', 'func': 'like'}})
+    widget = Tabulator(
+        df,
+        header_filters={'values': {'type': 'input', 'func': 'like'}},
+        show_index=show_index,
+    )
 
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
