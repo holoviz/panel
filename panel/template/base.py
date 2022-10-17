@@ -615,8 +615,8 @@ class BasicTemplate(BaseTemplate):
             'css': css_files,
             'js': js_files,
             'js_modules': js_modules,
-            'extra_css': list(self.config.raw_css),
-            'raw_css': []
+            'extra_css': [],
+            'raw_css': list(self.config.raw_css)
         }
 
         resolved_resources: List[Literal['css', 'js', 'js_modules']] = ['css', 'js', 'js_modules']
