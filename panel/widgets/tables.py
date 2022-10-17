@@ -1254,7 +1254,7 @@ class Tabulator(BaseTable):
             for f in filters:
                 mask &= f
             if self._edited_indexes:
-                edited_mask = (df['index'].isin(self._edited_indexes))
+                edited_mask = (df[self.value.index.name or 'index'].isin(self._edited_indexes))
                 mask = mask | edited_mask
             df = df[mask]
         data = {
