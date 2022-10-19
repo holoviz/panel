@@ -87,8 +87,6 @@ class _state(param.Parameterized):
     apps to indicate their state to a user.
     """
 
-    admin_context = param.Parameter()
-
     base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
 
