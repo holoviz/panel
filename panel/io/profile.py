@@ -17,11 +17,17 @@ def render_pyinstrument(sessions, timeline=False, show_all=False):
     from pyinstrument.renderers import HTMLRenderer
     from pyinstrument.session import Session
     r = HTMLRenderer(timeline=timeline, show_all=show_all)
-    session = sessions[0]
-    if not timeline:
+    if timeline:
+        session = sessions[-1]
+    else:
+        session = sessions[0]
         for s in sessions[1:]:
             session = Session.combine(session, s)
-    return escape(r.render(session)), ""
+    try:
+        rendered = r.render(session)
+    except Exception:
+        rendered = "<h2><b>Rendering pyinstrument session failed</b></h2>"
+    return escape(rendered), ""
 
 def render_snakeviz(name, sessions):
     from pstats import Stats
