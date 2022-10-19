@@ -29,6 +29,7 @@ from bokeh.document import Document
 from bokeh.resources import Resources
 from jinja2 import Template
 from pyviz_comms import Comm, JupyterCommManager  # type: ignore
+from typing_extensions import Self
 
 from .config import config, panel_extension
 from .io import serve
@@ -326,7 +327,7 @@ class ServableMixin(object):
     def servable(
         self, title: Optional[str] = None, location: bool | 'Location' = True,
         area: str = 'main', target: Optional[str] = None
-    ) -> 'ServableMixin':
+    ) -> Self:
         """
         Serves the object or adds it to the configured
         pn.state.template if in a `panel serve` context, writes to the
@@ -887,7 +888,7 @@ class Viewer(param.Parameterized):
     render itself in a notebook and provide show and servable methods.
     """
 
-    def __panel__(self):
+    def __panel__(self) -> Viewable:
         """
         Subclasses should return a Panel component to be rendered.
         """
@@ -906,7 +907,7 @@ class Viewer(param.Parameterized):
     def servable(
         self, title: Optional[str]=None, location: bool | 'Location' = True,
         area: str = 'main', target: Optional[str] = None
-    ) -> 'Viewer':
+    ) -> Viewable:
         return self._create_view().servable(title, location, area, target)
 
     servable.__doc__ = ServableMixin.servable.__doc__
