@@ -123,7 +123,7 @@ Once you have deployed the app you might find that if your app is visited by mor
 
 #### Anaconda Enterprise 5 (AE5)
 
-All live examples in the Panel documentation are served on AE5, to see further examples deployed there see [examples.pyviz.org](https://examples.pyviz.org) and for detailed instructions follow the [developer guide](https://examples.pyviz.org/developer_guide.html).
+All live examples in the Panel documentation are served on AE5, to see further examples deployed there see [examples.pyviz.org](https://examples.pyviz.org) and for detailed instructions follow the [developer guide](https://examples.pyviz.org/make_project.html).
 
 #### Microsoft Azure
 
