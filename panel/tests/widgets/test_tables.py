@@ -1893,3 +1893,28 @@ def test_tabulator_cell_click_event_error_duplicate_index():
     event = CellClickEvent(model=None, column='y', row=0)
     with pytest.raises(ValueError, match="Found this duplicate index: 'a'"):
         table._process_event(event)
+
+def test_tabulator_styling_empty_dataframe():
+    df = pd.DataFrame(columns=["A", "B", "C"]).astype({
+        "A": float,
+        "B": str,
+        "C": int,
+    })
+    table = Tabulator(df)
+    table.style.apply(lambda x: [
+        "border-color: #dc3545; border-style: solid" for name, value in x.items()
+    ], axis=1)
+
+    model = table.get_root()
+
+    assert model.styles == {}
+
+    table.value = pd.DataFrame({'A': [3.14], 'B': ['foo'], 'C': [3]})
+
+    assert model.styles['data'] == {
+        0: {
+            2: [('border-color', '#dc3545'), ('border-style', 'solid')],
+            3: [('border-color', '#dc3545'), ('border-style', 'solid')],
+            4: [('border-color', '#dc3545'), ('border-style', 'solid')]
+        }
+    }
