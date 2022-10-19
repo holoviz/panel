@@ -1,5 +1,44 @@
 # Releases
 
+## Version 0.14.1
+
+Date: 2022-10-20
+
+This release primarily addresses regressions introduced in 0.14.0 and various long standing bugs. Many thanks to external contribuor @liu-kan and the maintainers @Hoxbro, @maximlt and @philippjfr for contributing a number of fixes.
+
+### Minor enhancements
+
+- Add option to clear value of DatetimePicker ([#3990](https://github.com/holoviz/panel/pull/3990))
+- Add support for hashing dates in pn.cache ([#4004](https://github.com/holoviz/panel/pull/4004))
+
+### Bugs
+
+#### Webassembly conversion
+
+- Correctly handle resource mode in when converting to WebAssembly ([#3967](https://github.com/holoviz/panel/pull/3967))
+- Improve support for `requests` in pyodide ([#3973](https://github.com/holoviz/panel/pull/3973))
+
+### Jupyter and Server
+
+- Correctly handle future exceptions on threads ([#3977](https://github.com/holoviz/panel/pull/3977))
+- Fix `panel serve` index template ([#3980](https://github.com/holoviz/panel/pull/3980))
+- Do not error if `curdoc` has been destroyed ([#3994](https://github.com/holoviz/panel/pull/3994))
+- Ensure extensions loaded in jupyter kernel are served by StaticHandler ([#4000](https://github.com/holoviz/panel/pull/4000))
+- Various fixes for OAuth handling with `pn.serve` ([#4006](https://github.com/holoviz/panel/pull/4006))
+- Fix bug in `on_load` callback exception handling ([#4007](https://github.com/holoviz/panel/pull/4007))
+- Ensure periodic callbacks are only started on main thread ([#4011](https://github.com/holoviz/panel/pull/4011))
+- Ensure jupyter server extension handles explicit `root_dir` ([#4029](https://github.com/holoviz/panel/pull/4029))
+- Ensure futures are correctly awaited when executed on thread ([#4031](https://github.com/holoviz/panel/pull/4031))
+
+#### Components
+
+- Ensure `Tabulator` handles filtering on edited values correctly if `show_index=False` ([#3988](https://github.com/holoviz/panel/pull/3988), [#4016](https://github.com/holoviz/panel/pull/4016))
+- Ensure `Tabulator` declares numeric sorter for numeric dtypes ([#3999](https://github.com/holoviz/panel/pull/3999))
+- Fix regression initializing `DiscreteSlider` with non-integer value ([#4009](https://github.com/holoviz/panel/pull/4009))
+- Ensure that template.config.raw_css is correctly applied ([#4018](https://github.com/holoviz/panel/pull/4018))
+- Fix handling `MenuButton` clicks when `split=True` ([#4021](https://github.com/holoviz/panel/pull/4021))
+- Ensure styling on `Tabulator` with empty DataFrame does not error ([#4028](https://github.com/holoviz/panel/pull/4028))
+
 ## Version 0.14.0
 
 Date: 2022-09-30
