@@ -111,6 +111,16 @@ def url_path_join(*pieces):
     if result == '//': result = '/'
     return result
 
+def get_server_root_dir(settings):
+    if 'server_root_dir' in settings:
+        # notebook >= 5.0.0 has this in the settings
+        root_dir = settings['server_root_dir']
+    else:
+        # This copies the logic added in the notebook in
+        #  https://github.com/jupyter/notebook/pull/2234
+        contents_manager = settings['contents_manager']
+        root_dir = contents_manager.root_dir
+    return os.path.expanduser(root_dir)
 
 @dataclass
 class _RequestProxy:
@@ -316,7 +326,12 @@ class PanelJupyterHandler(JupyterHandler):
 
     @tornado.web.authenticated
     async def get(self, path=None):
-        notebook_path = str(pathlib.Path(self.notebook_path or path).absolute())
+        root_dir = get_server_root_dir(self.application.settings)
+        rel_path = pathlib.Path(self.notebook_path or path)
+        if rel_path.is_absolute():
+            notebook_path = str(rel_path)
+        else:
+            notebook_path = str((root_dir / rel_path).absolute())
 
         if (
             self.notebook_path and path
