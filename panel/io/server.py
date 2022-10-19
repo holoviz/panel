@@ -108,9 +108,18 @@ def _server_url(url: str, port: int) -> str:
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
-def _eval_panel(panel: 'TViewableOrFunc', server_id: str, title: str, location, doc: 'Document'):
+def _eval_panel(
+    panel: 'TViewableOrFunc', server_id: str, title: str,
+    location: bool | Location, admin: bool, doc: 'Document'
+):
     from ..pane import panel as as_panel
     from ..template import BaseTemplate
+
+    # Set up instrumentation for logging sessions
+    logger.info(LOG_SESSION_LAUNCHING, id(doc))
+    def _log_session_destroyed(session_context):
+        logger.info(LOG_SESSION_DESTROYED, id(doc))
+    doc.on_session_destroyed(_log_session_destroyed)
 
     with set_curdoc(doc):
         if isinstance(panel, (FunctionType, MethodType)):
@@ -270,9 +279,15 @@ bokeh.server.server.Server = Server
 # Patch Application to handle session callbacks
 class Application(BkApplication):
 
+    def __init__(self, *args, **kwargs):
+        self._admin = kwargs.pop('admin', False)
+        super().__init__(*args, **kwargs)
+
     async def on_session_created(self, session_context):
-        for cb in state._on_session_created:
-            cb(session_context)
+        with set_curdoc(session_context._document):
+            config._admin = self._admin
+            for cb in state._on_session_created:
+                cb(session_context)
         await super().on_session_created(session_context)
 
     def initialize_document(self, doc):
@@ -849,15 +864,16 @@ def get_server(
                 app = str(app) # enables serving apps from Paths
             if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb"))
                 and os.path.isfile(app)):
-                apps[slug] = build_single_handler_application(app)
-            elif isinstance(app, Application):
+                apps[slug] = app = build_single_handler_application(app)
+                app._admin = admin
+            elif isinstance(app, BkApplication):
                 apps[slug] = app
             else:
-                handler = FunctionHandler(partial(_eval_panel, app, server_id, title_, location))
-                apps[slug] = Application(handler)
+                handler = FunctionHandler(partial(_eval_panel, app, server_id, title_, location, admin))
+                apps[slug] = Application(handler, admin=admin)
     else:
-        handler = FunctionHandler(partial(_eval_panel, panel, server_id, title, location))
-        apps = {'/': Application(handler)}
+        handler = FunctionHandler(partial(_eval_panel, panel, server_id, title, location, admin))
+        apps = {'/': Application(handler, admin=admin)}
 
     if admin:
         if '/admin' in apps:
