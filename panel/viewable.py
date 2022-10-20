@@ -600,12 +600,15 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         if state._is_pyodide:
-            from .io.pyodide import render_script
-            if hasattr(sys.stdout, '_out'):
-                target = sys.stdout._out # type: ignore
-            else:
-                raise ValueError("Could not determine target node to write to.")
-            return {'text/html': render_script(self, target)}, {}
+            from .io.pyodide import (
+                _IN_WORKER, _get_pyscript_target, render_script,
+            )
+
+            # If in pyodide and not in a worker we are probably in
+            # PyScript otherwise we are probabably in JupyterLite
+            if not _IN_WORKER:
+                target = _get_pyscript_target()
+                return {'text/html': render_script(self, target)}, {}
 
         loaded = panel_extension._loaded
         if not loaded and 'holoviews' in sys.modules:
