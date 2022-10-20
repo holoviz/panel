@@ -4,12 +4,16 @@
 
 Date: 2022-10-20
 
-This release primarily addresses regressions introduced in 0.14.0 and various long standing bugs. Many thanks to external contribuor @liu-kan and the maintainers @Hoxbro, @maximlt and @philippjfr for contributing a number of fixes.
+This release primarily addresses regressions introduced in 0.14.0 and various long standing bugs. Many thanks to external contributor @liu-kan and the maintainers @Hoxbro, @maximlt and @philippjfr for contributing a number of fixes.
 
 ### Minor enhancements
 
 - Add option to clear value of DatetimePicker ([#3990](https://github.com/holoviz/panel/pull/3990))
 - Add support for hashing dates in pn.cache ([#4004](https://github.com/holoviz/panel/pull/4004))
+
+### Compatibility
+
+- Fix Jupyterlite and latest PyScript compatibility ([#4040](https://github.com/holoviz/panel/pull/4040))
 
 ### Bugs
 
