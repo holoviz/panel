@@ -247,6 +247,16 @@ async def _link_model(ref: str, doc: Document) -> None:
     view = views[rendered.indexOf(ref)]
     _link_docs(doc, view.model.document)
 
+def _get_pyscript_target():
+    if '__main__' in sys.modules and hasattr(sys.modules['__main__'], 'get_current_display_target'):
+        # pyscript >= 2022.10.01
+        return sys.modules['__main__'].get_current_display_target()
+    elif hasattr(sys.stdout, '_out'):
+        # pyscript <= 2022.09.01
+        return sys.stdout._out # type: ignore
+    else:
+        raise ValueError("Could not determine target node to write to.")
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
