@@ -21,6 +21,7 @@ import uuid
 from functools import partial
 from typing import (
     IO, TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    TypeVar,
 )
 
 import param  # type: ignore
@@ -246,6 +247,8 @@ class Layoutable(param.Parameterized):
         super().__init__(**params)
 
 
+_Self = TypeVar('_Self', bound='ServableMixin')
+
 class ServableMixin(object):
     """
     Mixin to define methods shared by objects which can served.
@@ -326,7 +329,7 @@ class ServableMixin(object):
     def servable(
         self, title: Optional[str] = None, location: bool | 'Location' = True,
         area: str = 'main', target: Optional[str] = None
-    ) -> 'ServableMixin':
+    ) -> _Self:
         """
         Serves the object or adds it to the configured
         pn.state.template if in a `panel serve` context, writes to the
@@ -887,7 +890,7 @@ class Viewer(param.Parameterized):
     render itself in a notebook and provide show and servable methods.
     """
 
-    def __panel__(self):
+    def __panel__(self) -> Viewable:
         """
         Subclasses should return a Panel component to be rendered.
         """
@@ -906,7 +909,7 @@ class Viewer(param.Parameterized):
     def servable(
         self, title: Optional[str]=None, location: bool | 'Location' = True,
         area: str = 'main', target: Optional[str] = None
-    ) -> 'Viewer':
+    ) -> Viewable:
         return self._create_view().servable(title, location, area, target)
 
     servable.__doc__ = ServableMixin.servable.__doc__
