@@ -465,6 +465,34 @@ class Reactive(Syncable, Viewable):
     the parameters to other objects.
     """
 
+    def __init__(self, **params):
+        params, refs = self._extract_refs(params)
+        super().__init__(**params)
+        self._setup_refs(refs)
+
+    def _extract_refs(self, params):
+        from .depends import param_value_if_widget
+        processed, refs = {}, {}
+        for pname, value in params.items():
+            if pname not in self.param:
+                processed[pname] = value
+                continue
+            value = param_value_if_widget(value)
+            if isinstance(value, param.Parameter):
+                refs[pname] = value
+                value = getattr(value.owner, value.name)
+                if self.param[pname].allow_None and value is None:
+                    continue
+            processed[pname] = value
+        return processed, refs
+
+    def _setup_refs(self, refs):
+        groups = defaultdict(list)
+        for pname, p in refs.items():
+            groups[p.owner].append((pname, p.name))
+        for owner, pnames in groups.items():
+            self.link(owner, bidirectional=True, **dict(pnames))
+
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
