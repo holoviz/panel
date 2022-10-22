@@ -1,0 +1,3 @@
+panel
+numpy
+scikit-image
