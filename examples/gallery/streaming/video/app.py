@@ -16,7 +16,7 @@ from skimage.exposure import rescale_intensity
 from skimage.feature import Cascade
 
 
-pn.extension("terminaljs", sizing_mode="stretch_width")
+pn.extension("terminal", sizing_mode="stretch_width")
 
 
 class ImageTransform(pn.viewable.Viewer):
