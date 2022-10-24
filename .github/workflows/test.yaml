@@ -61,6 +61,7 @@ jobs:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          nodejs: true
           envs: "-o examples -o recommended -o tests -o build"
           cache: true
           opengl: true
