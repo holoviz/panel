@@ -56,7 +56,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a5
+      - uses: pyviz-dev/holoviz_tasks/install@update_install
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
