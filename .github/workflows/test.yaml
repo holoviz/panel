@@ -58,7 +58,7 @@ jobs:
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           nodejs: true
           envs: "-o examples -o recommended -o tests -o build"
-          cache: false
+          cache: true
           opengl: true
         id: install
       - name: doit develop_install
