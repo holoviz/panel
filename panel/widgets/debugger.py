@@ -313,7 +313,15 @@ class Debugger(Card):
 
         self.title = ', '.join(title)
 
-    def acknowledge_errors(self,event):
+    def acknowledge_errors(self, event):
         self._number_of_errors = 0
         self._number_of_warnings = 0
         self._number_of_infos = 0
+
+    @param.depends("level", watch=True)
+    def _update_level(self):
+        stream_handler = logging.StreamHandler(self.terminal)
+        stream_handler.setLevel(self.level)
+        for logger_name in self.logger_names:
+            logger = logging.getLogger(logger_name)
+            logger.addHandler(stream_handler)
