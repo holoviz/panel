@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+import logging
 import os
 import pathlib
 import time
@@ -911,3 +912,30 @@ def test_server_exception_handler_async_onload_event(threads, handler, port, req
     time.sleep(0.5)
 
     assert len(exceptions) == 1
+
+
+def test_server_no_warning_empty_layout(port, caplog):
+
+    bk_logger = logging.getLogger('bokeh')
+    old_level = bk_logger.level
+    old_propagate = bk_logger.propagate
+    try:
+        # Test pretty dependent on how Bokeh sets up its logging system
+        bk_logger.propagate = True
+        bk_logger.setLevel(logging.WARNING)
+
+        app = Row()
+
+        serve(app, port=port, threaded=True, show=False)
+
+        # Wait for server to start
+        time.sleep(1)
+        requests.get(f"http://localhost:{port}")
+        time.sleep(1)
+
+        for rec in caplog.records:
+            if rec.levelname == 'WARNING':
+                assert 'EMPTY_LAYOUT' not in rec.message
+    finally:
+        bk_logger.setLevel(old_level)
+        bk_logger.propagate = old_propagate
