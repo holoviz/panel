@@ -1,10 +1,7 @@
-"""The VideoStreamInterface provides an easy way to apply transforms to a video stream"""
-from __future__ import annotations
+"""The VideoStreamInterface provides an easy way to apply models to a video stream"""
 import base64
 import io
 import time
-
-from typing import List, Type
 
 import numpy as np
 import param
@@ -98,22 +95,22 @@ class Timer(pn.viewable.Viewer):
         return self._panel
 
 
-class ImageTransform(pn.viewable.Viewer):
-    """Base class for image transforms."""
+class ImageModel(pn.viewable.Viewer):
+    """Base class for image models."""
 
     def __init__(self, **params):
         super().__init__(**params)
 
         with param.edit_constant(self):
-            self.name = self.__class__.name.replace("Transform", "")
+            self.name = self.__class__.name.replace("Model", "")
         self.view = self.create_view()
 
     def __panel__(self):
         print("__panel__", self.name)
         return self.view
 
-    def run(self, image: str, height: int = HEIGHT, width: int = WIDTH) -> str:
-        """Transforms the base64 encoded jpg image to a base64 encoded jpg BytesIO object"""
+    def apply(self, image: str, height: int = HEIGHT, width: int = WIDTH) -> str:
+        """Transforms a base64 encoded jpg image to a base64 encoded jpg BytesIO object"""
         raise NotImplementedError()
 
     def create_view(self):
@@ -125,8 +122,8 @@ class ImageTransform(pn.viewable.Viewer):
         raise NotImplementedError()
 
 
-class PILImageTransform(ImageTransform):
-    """Base class for PIL image transforms"""
+class PILImageModel(ImageModel):
+    """Base class for PIL image models"""
 
     @staticmethod
     def to_pil_img(value: str, height=HEIGHT, width=WIDTH):
@@ -144,7 +141,7 @@ class PILImageTransform(ImageTransform):
         image.save(buff, format="JPEG")
         return buff
 
-    def run(self, image: str, height: int = HEIGHT, width: int = WIDTH) -> io.BytesIO:
+    def apply(self, image: str, height: int = HEIGHT, width: int = WIDTH) -> io.BytesIO:
         pil_img = self.to_pil_img(image, height=height, width=width)
 
         transformed_image = self.transform(pil_img)
@@ -156,13 +153,13 @@ class PILImageTransform(ImageTransform):
         raise NotImplementedError()
 
 
-class NumpyImageTransform(ImageTransform):
-    """Base class for np.ndarray image transforms"""
+class NumpyImageModel(ImageModel):
+    """Base class for np.ndarray image models"""
 
     @staticmethod
     def to_np_ndarray(image: str, height=HEIGHT, width=WIDTH) -> np.ndarray:
         """Converts a base64 encoded jpeg string to a np.ndarray"""
-        pil_img = PILImageTransform.to_pil_img(image, height=height, width=width)
+        pil_img = PILImageModel.to_pil_img(image, height=height, width=width)
         return np.array(pil_img)
 
     @staticmethod
@@ -171,9 +168,9 @@ class NumpyImageTransform(ImageTransform):
         if image.dtype == np.dtype("float64"):
             image = (image * 255).astype(np.uint8)
         pil_img = PIL.Image.fromarray(image)
-        return PILImageTransform.from_pil_img(pil_img)
+        return PILImageModel.from_pil_img(pil_img)
 
-    def run(self, image: str, height: int = HEIGHT, width: int = WIDTH) -> io.BytesIO:
+    def apply(self, image: str, height: int = HEIGHT, width: int = WIDTH) -> io.BytesIO:
         np_array = self.to_np_ndarray(image, height=height, width=width)
 
         transformed_image = self.transform(np_array)
@@ -181,7 +178,7 @@ class NumpyImageTransform(ImageTransform):
         return self.from_np_ndarray(transformed_image)
 
     def transform(self, image: np.ndarray) -> np.ndarray:
-        """Transforms the nd.array image"""
+        """Transforms the np.array image"""
         raise NotImplementedError()
 
 
@@ -205,11 +202,11 @@ class VideoStreamInterface(pn.viewable.Viewer):
         doc="""The width of the image converted and shown""",
     )
 
-    transform = param.Selector(doc="The currently selected transform")
+    model = param.Selector(doc="The currently selected model")
 
     def __init__(
         self,
-        transforms: List[ImageTransform | Type[ImageTransform]],
+        models,
         timeout=TIMEOUT,
         paused=False,
         **params,
@@ -230,9 +227,9 @@ class VideoStreamInterface(pn.viewable.Viewer):
             height=self.height, width=self.width, sizing_mode="fixed"
         )
         self._updating = False
-        transforms = [to_instance(transform) for transform in transforms]
-        self.param.transform.objects = transforms
-        self.transform = transforms[0]
+        models = [to_instance(model) for model in models]
+        self.param.model.objects = models
+        self.model = models[0]
         self.timer = Timer(sizing_mode="stretch_width")
         self.settings = self._create_settings()
         self._panel = self._create_panel()
@@ -255,17 +252,17 @@ class VideoStreamInterface(pn.viewable.Viewer):
             pn.Param(self, parameters=["height", "width"], name="Image"),
             pn.Param(
                 self,
-                parameters=["transform"],
+                parameters=["model"],
                 expand_button=False,
                 expand=False,
                 widgets={
-                    "transform": {
+                    "model": {
                         "widget_type": pn.widgets.RadioButtonGroup,
                         "orientation": "vertical",
                         "button_type": "success",
                     }
                 },
-                name="Transform",
+                name="Model",
             ),
             self._get_transform,
         )
@@ -285,10 +282,10 @@ class VideoStreamInterface(pn.viewable.Viewer):
         self.image.height = self.height
         self.image.width = self.width
 
-    @pn.depends("transform")
+    @pn.depends("model")
     def _get_transform(self):
         # Hack: returning self.transform stops working after browsing the transforms for a while
-        return self.transform.view
+        return self.model.view
 
     def __panel__(self):
         return self._panel
@@ -299,12 +296,12 @@ class VideoStreamInterface(pn.viewable.Viewer):
             return
 
         self._updating = True
-        if self.transform and self.video_stream.value:
+        if self.model and self.video_stream.value:
             value = self.video_stream.value
             try:
                 image = self.timer.time_it(
-                    name="Transform",
-                    func=self.transform.run,
+                    name="Model",
+                    func=self.model.apply,
                     image=value,
                     height=self.height,
                     width=self.width,
@@ -313,12 +310,12 @@ class VideoStreamInterface(pn.viewable.Viewer):
             except PIL.UnidentifiedImageError:
                 print("unidentified image")
 
-            self.timer.inc_it("last update")
+            self.timer.inc_it("Last Update")
         self._updating = False
 
 
-class GaussianBlur(PILImageTransform):
-    """Gaussian Blur
+class GaussianBlurModel(PILImageModel):
+    """Gaussian Blur Model
 
     https://pillow.readthedocs.io/en/stable/reference/ImageFilter.html#PIL.ImageFilter.GaussianBlur
     """
@@ -329,8 +326,8 @@ class GaussianBlur(PILImageTransform):
         return image.filter(ImageFilter.GaussianBlur(radius=self.radius))
 
 
-class GrayscaleTransform(NumpyImageTransform):
-    """GrayScale transform
+class GrayscaleModel(NumpyImageModel):
+    """GrayScale Model
 
     https://scikit-image.org/docs/0.15.x/auto_examples/color_exposure/plot_rgb_to_gray.html
     """
@@ -340,8 +337,8 @@ class GrayscaleTransform(NumpyImageTransform):
         return skimage.color.gray2rgb(grayscale)
 
 
-class SobelTransform(NumpyImageTransform):
-    """Sobel Transform
+class SobelModel(NumpyImageModel):
+    """Sobel Model
 
     https://scikit-image.org/docs/0.15.x/auto_examples/color_exposure/plot_adapt_rgb.html
     """
@@ -362,13 +359,13 @@ def get_detector():
     return Cascade(trained_file)
 
 
-class FaceDetectionTransform(NumpyImageTransform):
+class FaceDetectionModel(NumpyImageModel):
     """Face detection using a cascade classifier.
 
     https://scikit-image.org/docs/0.15.x/auto_examples/applications/plot_face_detection.html
     """
 
-    scale_factor = param.Number(1.4, bounds=(0.1, 2.0), step=0.1)
+    scale_factor = param.Number(1.4, bounds=(1.0, 2.0), step=0.1)
     step_ratio = param.Integer(1, bounds=(1, 10))
     size_x = param.Range(default=(60, 322), bounds=(10, 500))
     size_y = param.Range(default=(60, 322), bounds=(10, 500))
@@ -395,17 +392,17 @@ class FaceDetectionTransform(NumpyImageTransform):
 
 
 component = VideoStreamInterface(
-    transforms=[
-        GaussianBlur,
-        GrayscaleTransform,
-        SobelTransform,
-        FaceDetectionTransform,
+    models=[
+        GaussianBlurModel,
+        GrayscaleModel,
+        SobelModel,
+        FaceDetectionModel,
     ]
 )
 
 pn.template.FastListTemplate(
-    site="Awesome Panel",
-    title="VideoStream with transforms",
+    site="Panel",
+    title="VideoStream Interface",
     sidebar=[component.settings],
     main=[component],
 ).servable()
