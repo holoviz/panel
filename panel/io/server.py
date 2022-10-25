@@ -41,6 +41,8 @@ from bokeh.application.handlers.code import (
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.core.templates import AUTOLOAD_JS
+from bokeh.core.validation import silence
+from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.embed.bundle import Script
 from bokeh.embed.elements import (
     html_page_for_render_items, script_for_render_items,
@@ -682,6 +684,9 @@ def serve(
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
+    # Empty layout are valid and the Bokeh warning is silenced as usually
+    # not relevant to Panel users.
+    silence(EMPTY_LAYOUT, True)
     kwargs = dict(kwargs, **dict(
         port=port, address=address, websocket_origin=websocket_origin,
         loop=loop, show=show, start=start, title=title, verbose=verbose,

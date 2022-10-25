@@ -19,6 +19,8 @@ from bokeh.application.handlers.document_lifecycle import (
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.subcommands.serve import Serve as _BkServe
 from bokeh.command.util import build_single_handler_applications
+from bokeh.core.validation import silence
+from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.server.contexts import ApplicationContext
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
@@ -490,3 +492,9 @@ class Serve(_BkServe):
             kwargs['cookie_secret'] = config.cookie_secret
 
         return kwargs
+
+    def invoke(self, args):
+        # Empty layout are valid and the Bokeh warning is silenced as usually
+        # not relevant to Panel users.
+        silence(EMPTY_LAYOUT, True)
+        super().invoke(args)
