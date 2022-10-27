@@ -263,6 +263,7 @@ class Debugger(Card):
             logger.addHandler(stream_handler)
 
         self.terminal = terminal
+        self.stream_handler = stream_handler
 
         #callbacks for header
         self.param.watch(self.update_log_counts,'_number_of_errors')
@@ -320,8 +321,4 @@ class Debugger(Card):
 
     @param.depends("level", watch=True)
     def _update_level(self):
-        stream_handler = logging.StreamHandler(self.terminal)
-        stream_handler.setLevel(self.level)
-        for logger_name in self.logger_names:
-            logger = logging.getLogger(logger_name)
-            logger.addHandler(stream_handler)
+        self.stream_handler.setLevel(self.level)
