@@ -57,6 +57,7 @@ class Convert(Subcommand):
             help    = "Explicit requirements to add to the converted file or a single requirements.txt file. By default requirements are inferred from the code."
         )),
         ('--disable-http-patch', dict(
+            default = False,
             action  = 'store_false',
             help    = "Whether to disable patching http requests using the pyodide-http library."
         )),
