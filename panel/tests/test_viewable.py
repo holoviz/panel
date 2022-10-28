@@ -3,7 +3,7 @@ import pytest
 
 from panel import config
 from panel.interact import interactive
-from panel.pane import Str, panel
+from panel.pane import Markdown, Str, panel
 from panel.viewable import Viewable, Viewer
 
 from .util import jb_available
@@ -42,3 +42,14 @@ def test_Viewer_not_initialized():
     # Confirm that initialized also work
     test = panel(Test())
     assert test.object == "# Test"
+
+def test_viewer_wraps_panel():
+    class TestViewer(Viewer):
+        value = param.String()
+
+        def __panel__(self):
+            return self.value
+
+    tv = TestViewer(value="hello")
+
+    assert isinstance(tv._create_view(), Markdown)
