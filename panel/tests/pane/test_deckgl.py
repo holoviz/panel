@@ -29,6 +29,7 @@ def test_pydeck_pane_deck(document, comm):
     assert pane._models[model.ref["id"]][0] is model
     assert model.data == {
         'mapProvider': 'carto',
+        'tooltip': True,
         'mapStyle': 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
         'views': [{'@@type': 'MapView', 'controller': True}]
     }
