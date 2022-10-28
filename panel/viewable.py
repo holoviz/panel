@@ -897,12 +897,13 @@ class Viewer(param.Parameterized):
         raise NotImplementedError
 
     def _create_view(self):
+        from .pane import panel
         from .param import ParamMethod
 
         if hasattr(self.__panel__, "_dinfo"):
-            view = ParamMethod(self.__panel__)
+            view = ParamMethod(self.__panel__, lazy=True)
         else:
-            view = self.__panel__()
+            view = panel(self.__panel__())
 
         return view
 
