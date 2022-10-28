@@ -901,7 +901,7 @@ class Viewer(param.Parameterized):
         from .param import ParamMethod
 
         if hasattr(self.__panel__, "_dinfo"):
-            view = ParamMethod(self.__panel__)
+            view = ParamMethod(self.__panel__, lazy=True)
         else:
             view = panel(self.__panel__())
 
