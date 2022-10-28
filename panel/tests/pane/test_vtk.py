@@ -29,7 +29,7 @@ from panel.pane.vtk.vtk import (
 )
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
-pyvista_available = pytest.mark.skipif(pv is None, reason="requires pyvista")
+pyvista_available = pytest.mark.skipif((pv is None) or (vtk is None), reason="requires pyvista")
 
 
 def make_render_window():
