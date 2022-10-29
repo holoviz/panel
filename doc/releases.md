@@ -45,7 +45,7 @@ This release primarily addresses regressions introduced in 0.14.0 and various lo
 - Ensure that template.config.raw_css is correctly applied ([#4018](https://github.com/holoviz/panel/pull/4018))
 - Fix handling `MenuButton` clicks when `split=True` ([#4021](https://github.com/holoviz/panel/pull/4021))
 - Ensure styling on `Tabulator` with empty DataFrame does not error ([#4028](https://github.com/holoviz/panel/pull/4028))
-- Allow changing `level` on `Debugger` widget  (#4057)
+- Allow changing `level` on `Debugger` widget ([#4057](https://github.com/holoviz/panel/pull/4057))
 
 ## Version 0.14.0
 
