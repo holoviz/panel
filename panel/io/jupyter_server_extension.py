@@ -61,7 +61,7 @@ from bokeh.util.token import (
     generate_jwt_token, generate_session_id, get_session_id, get_token_payload,
 )
 from ipykernel.comm import Comm
-from IPython.display import HTML
+from IPython.display import HTML, publish_display_data
 from jupyter_server.base.handlers import JupyterHandler
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
@@ -111,6 +111,16 @@ def url_path_join(*pieces):
     if result == '//': result = '/'
     return result
 
+def get_server_root_dir(settings):
+    if 'server_root_dir' in settings:
+        # notebook >= 5.0.0 has this in the settings
+        root_dir = settings['server_root_dir']
+    else:
+        # This copies the logic added in the notebook in
+        #  https://github.com/jupyter/notebook/pull/2234
+        contents_manager = settings['contents_manager']
+        root_dir = contents_manager.root_dir
+    return os.path.expanduser(root_dir)
 
 @dataclass
 class _RequestProxy:
@@ -154,6 +164,7 @@ class PanelExecutor(WSHandler):
         self._set_state()
         self.session = self._create_server_session()
         self.connection = ServerConnection(self.protocol, self, None, self.session)
+        publish_display_data({'application/bokeh-extensions': extension_dirs})
 
     def _get_payload(self, token: str) -> Dict[str, Any]:
         payload = get_token_payload(token)
@@ -292,8 +303,8 @@ class PanelJupyterHandler(JupyterHandler):
 
     async def _get_info(self, msg_id, timeout=KERNEL_TIMEOUT):
         deadline = time.monotonic() + timeout
-        result, comm_id = None, None
-        while result is None or comm_id is None:
+        result, comm_id, extension_dirs = None, None, None
+        while result is None or comm_id is None or extension_dirs is None:
             if time.monotonic() > deadline:
                 raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
             try:
@@ -305,15 +316,22 @@ class PanelJupyterHandler(JupyterHandler):
             if msg['parent_header'].get('msg_id') != msg_id:
                 continue
             msg_type = msg['header']['msg_type']
-            if msg_type == 'execute_result':
+            if msg_type == 'display_data' and 'application/bokeh-extensions' in msg['content']['data']:
+                extension_dirs = msg['content']['data']['application/bokeh-extensions']
+            elif msg_type == 'execute_result':
                 result = msg
             elif msg_type == 'comm_open' and msg['content']['target_name'] == self.session_id:
                 comm_id = msg['content']['comm_id']
-        return result, comm_id
+        return result, comm_id, extension_dirs
 
     @tornado.web.authenticated
     async def get(self, path=None):
-        notebook_path = str(pathlib.Path(self.notebook_path or path).absolute())
+        root_dir = get_server_root_dir(self.application.settings)
+        rel_path = pathlib.Path(self.notebook_path or path)
+        if rel_path.is_absolute():
+            notebook_path = str(rel_path)
+        else:
+            notebook_path = str((root_dir / rel_path).absolute())
 
         if (
             self.notebook_path and path
@@ -386,7 +404,7 @@ class PanelJupyterHandler(JupyterHandler):
 
         # Wait for comm to open and rendered HTML to be returned by the kernel
         try:
-            msg, comm_id = await self._get_info(msg_id)
+            msg, comm_id, ext_dirs = await self._get_info(msg_id)
         except (TimeoutError, RuntimeError) as e:
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
             html = ERROR_TEMPLATE.render(
@@ -399,6 +417,8 @@ class PanelJupyterHandler(JupyterHandler):
             )
             self.finish(html)
         else:
+            # Sync extension_dirs from kernel to ensure dynamically loaded extensions are served
+            extension_dirs.update(ext_dirs)
             state._kernels[self.session_id] = (self.kernel, comm_id, kernel_id, False)
             loop = tornado.ioloop.IOLoop.current()
             loop.call_later(CONNECTION_TIMEOUT, self._check_connected)

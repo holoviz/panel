@@ -240,7 +240,10 @@ def unlocked() -> Iterator:
                 except Exception as e:
                     logger.warning(f"Failed sending message due to following error: {e}")
 
-        asyncio.ensure_future(handle_write_errors())
+        if state._unblocked(curdoc):
+            asyncio.ensure_future(handle_write_errors())
+        else:
+            curdoc.add_next_tick_callback(handle_write_errors)
 
         curdoc.callbacks._held_events = remaining_events
     finally:

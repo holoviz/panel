@@ -18,7 +18,6 @@ from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem, standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.settings import settings as _settings
 from bokeh.util.serialization import make_id
 from typing_extensions import Literal
 
@@ -27,7 +26,7 @@ from ..util import base_version, escape
 from .mime_render import find_imports
 from .resources import (
     CDN_DIST, DIST_DIR, INDEX_TEMPLATE, Resources, _env as _pn_env,
-    bundle_resources,
+    bundle_resources, set_resource_mode,
 )
 from .state import set_curdoc, state
 
@@ -39,6 +38,8 @@ WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = '2.4.3'
 PY_VERSION = base_version(__version__)
+PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
+BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js'
@@ -164,8 +165,9 @@ def script_to_html(
     css_resources: Literal['auto'] | List[str] | None = None,
     runtime: Runtimes = 'pyodide',
     prerender: bool = True,
-    panel_version: Literal['auto'] | str = 'auto',
-    manifest: str | None = None
+    panel_version: Literal['auto', 'local'] | str = 'auto',
+    manifest: str | None = None,
+    http_patch: bool = True,
 ) -> str:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
@@ -187,10 +189,10 @@ def script_to_html(
       Whether to pre-render the components so the page loads.
     panel_version: 'auto' | str
       The panel release version to use in the exported HTML.
+    http_patch: bool
+        Whether to patch the HTTP request stack with the pyodide-http library
+        to allow urllib3 and requests to work.
     """
-    # Configure resources
-    _settings.resources.set_value('cdn')
-
     # Run script
     path = pathlib.Path(filename)
     name = '.'.join(path.name.split('.')[:-1])
@@ -225,13 +227,19 @@ def script_to_html(
             )
 
     # Environment
-    if panel_version == 'auto':
+    if panel_version == 'local':
+        panel_req = './' + str(PANEL_LOCAL_WHL.as_posix()).split('/')[-1]
+        bokeh_req = './' + str(BOKEH_LOCAL_WHL.as_posix()).split('/')[-1]
+    elif panel_version == 'auto':
         panel_req = PANEL_CDN_WHL
         bokeh_req = BOKEH_CDN_WHL
     else:
         panel_req = f'panel=={panel_version}'
         bokeh_req = f'bokeh=={BOKEH_VERSION}'
-    reqs = [bokeh_req, panel_req] + [
+    base_reqs = [bokeh_req, panel_req]
+    if http_patch:
+        base_reqs.append('pyodide-http==0.1.0')
+    reqs = base_reqs + [
         req for req in requirements if req not in ('panel', 'bokeh')
     ]
 
@@ -324,10 +332,6 @@ def script_to_html(
     html = (html
         .replace('<body>', f'<body class="bk pn-loading {config.loading_spinner}">')
     )
-
-    # Reset resources
-    _settings.resources.unset_value()
-
     return html, web_worker
 
 
@@ -338,13 +342,17 @@ def convert_app(
     runtime: Runtimes = 'pyodide-worker',
     prerender: bool = True,
     manifest: str | None = None,
+    panel_version: Literal['auto', 'local'] | str = 'auto',
+    http_patch: bool = True,
     verbose: bool = True,
 ):
     try:
-        html, js_worker = script_to_html(
-            app, requirements=requirements, runtime=runtime,
-            prerender=prerender, manifest=manifest
-        )
+        with set_resource_mode('cdn'):
+            html, js_worker = script_to_html(
+                app, requirements=requirements, runtime=runtime,
+                prerender=prerender, manifest=manifest,
+                panel_version=panel_version, http_patch=http_patch
+            )
     except KeyboardInterrupt:
         return
     except Exception as e:
@@ -372,8 +380,10 @@ def convert_apps(
     build_index: bool = True,
     build_pwa: bool = True,
     pwa_config: Dict[Any, Any] = {},
+    max_workers: int = 4,
+    panel_version: Literal['auto', 'local'] | str = 'auto',
+    http_patch: bool = True,
     verbose: bool = True,
-    max_workers: int = 4
 ):
     """
     Arguments
@@ -407,6 +417,11 @@ def convert_apps(
           - theme_color: The theme color of the application
     max_workers: int
         The maximum number of parallel workers
+    panel_version: 'auto' | 'local'] | str
+'       The panel version to include.
+    http_patch: bool
+        Whether to patch the HTTP request stack with the pyodide-http library
+        to allow urllib3 and requests to work.
     """
     if isinstance(apps, str):
         apps = [apps]
@@ -426,6 +441,7 @@ def convert_apps(
                 f = executor.submit(
                     convert_app, app, dest_path, requirements=requirements,
                     runtime=runtime, prerender=prerender, manifest=manifest,
+                    panel_version=panel_version, http_patch=http_patch,
                     verbose=verbose
                 )
                 futures.append(f)

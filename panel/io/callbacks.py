@@ -7,6 +7,8 @@ import inspect
 import logging
 import time
 
+from functools import partial
+
 import param
 
 from ..util import edit_readonly, function_name
@@ -117,7 +119,7 @@ class PeriodicCallback(param.Parameterized):
         )
         if state._thread_pool and not is_async:
             future = state._thread_pool.submit(self._exec_callback, True)
-            future.add_done_callback(state._handle_future_exception)
+            future.add_done_callback(partial(state._handle_future_exception, doc=self._doc))
             return
         try:
             cb = self._exec_callback()
@@ -172,7 +174,10 @@ class PeriodicCallback(param.Parameterized):
             )
         elif state.curdoc:
             self._doc = state.curdoc
-            self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
+            if state._unblocked(state.curdoc):
+                self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
+            else:
+                self._doc.add_next_tick_callback(self.start)
         else:
             from tornado.ioloop import PeriodicCallback
             self._cb = PeriodicCallback(lambda: asyncio.create_task(self._periodic_callback()), self.period)

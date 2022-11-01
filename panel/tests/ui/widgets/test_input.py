@@ -4,7 +4,8 @@ import time
 import pytest
 
 from panel.io.server import serve
-from panel.widgets import DatetimePicker
+from panel.tests.util import wait_until
+from panel.widgets import DatetimePicker, DatetimeRangePicker
 
 try:
     from playwright.sync_api import expect
@@ -566,3 +567,56 @@ def test_datetimepicker_name(page, port):
 
     datetime_picker_with_name = page.locator('.datetimepicker-with-name')
     expect(datetime_picker_with_name).to_have_text(name)
+
+
+def test_datetimepicker_no_value(page, port, datetime_start_end):
+    datetime_picker_widget = DatetimePicker()
+
+    serve(datetime_picker_widget, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    datetime_picker = page.locator('.flatpickr-input')
+    assert datetime_picker.input_value() == ""
+
+    datetime_picker_widget.value = datetime_start_end[0]
+    wait_until(lambda: datetime_picker.input_value() == '2021-03-02 00:00:00', page)
+
+    datetime_picker_widget.value = None
+    wait_until(lambda: datetime_picker.input_value() == '', page)
+
+
+def test_datetimerangepicker_no_value(page, port, datetime_start_end):
+    datetime_picker_widget = DatetimeRangePicker()
+
+    serve(datetime_picker_widget, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    datetime_picker = page.locator('.flatpickr-input')
+    assert datetime_picker.input_value() == ""
+
+    datetime_picker_widget.value = datetime_start_end[:2]
+    expected = '2021-03-02 00:00:00 to 2021-03-03 00:00:00'
+    wait_until(lambda: datetime_picker.input_value() == expected, page)
+
+    datetime_picker_widget.value = None
+    wait_until(lambda: datetime_picker.input_value() == '', page)
+
+
+def test_datetimepicker_remove_value(page, port, datetime_start_end):
+    datetime_picker_widget = DatetimePicker(value=datetime_start_end[0])
+
+    serve(datetime_picker_widget, port=port, threaded=True, show=False)
+    time.sleep(0.2)
+    page.goto(f"http://localhost:{port}")
+
+    datetime_picker = page.locator('.flatpickr-input')
+    assert datetime_picker.input_value() == "2021-03-02 00:00:00"
+
+    # Remove values from the browser
+    datetime_picker.dblclick()
+    datetime_picker.press("Backspace")
+    datetime_picker.press("Escape")
+
+    wait_until(lambda: datetime_picker_widget.value is None, page)

@@ -36,7 +36,7 @@ export class DatetimePickerView extends InputWidgetView {
 
     const {value, min_date, max_date, disabled_dates, enabled_dates, position, inline,
       enable_time, enable_seconds, military_time, date_format, mode} = this.model.properties
-    this.connect(value.change, () => this._picker?.setDate(this.model.value))
+    this.connect(value.change, () => this.model.value ? this._picker?.setDate(this.model.value) : this._clear())
     this.connect(min_date.change, () => this._picker?.set("minDate", this.model.min_date))
     this.connect(max_date.change, () => this._picker?.set("maxDate", this.model.max_date))
     this.connect(disabled_dates.change, () => this._picker?.set("disable", this.model.disabled_dates))
@@ -68,7 +68,7 @@ export class DatetimePickerView extends InputWidgetView {
     this.input_el = input({type: "text", class: inputs.input, disabled: this.model.disabled})
     this.group_el.appendChild(this.input_el)
     this._picker = flatpickr(this.input_el, {
-      defaultDate: this.model.value,
+      defaultDate: this.model.value!,
       minDate: this.model.min_date ? new Date(this.model.min_date) : undefined,
       maxDate: this.model.max_date ? new Date(this.model.max_date) : undefined,
       inline: this.model.inline,
@@ -86,6 +86,11 @@ export class DatetimePickerView extends InputWidgetView {
     this._picker.minDateHasTime = true
   }
 
+  protected _clear() {
+    this._picker?.clear()
+    this.model.value = null
+  }
+
   protected _on_close(_selected_dates: Date[], date_string: string, _instance: flatpickr.Instance): void {
     if (this.model.mode == "range" && !date_string.includes("to"))
       return
@@ -98,7 +103,7 @@ export namespace DatetimePicker {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = InputWidget.Props & {
-    value:          p.Property<string>
+    value:          p.Property<string | null>
     min_date:       p.Property<string | null>
     max_date:       p.Property<string | null>
     disabled_dates: p.Property<DatesList>
@@ -132,7 +137,7 @@ export class DatetimePicker extends InputWidget {
       const DateStr = String
       const DatesList = Array(Or(DateStr, Tuple(DateStr, DateStr)))
       return {
-        value:          [ String ],
+        value:          [ Nullable(String), null ],
         min_date:       [ Nullable(String), null ],
         max_date:       [ Nullable(String), null ],
         disabled_dates: [ DatesList, [] ],

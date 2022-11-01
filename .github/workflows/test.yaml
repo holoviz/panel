@@ -15,17 +15,17 @@ jobs:
   #   name: Run pre-commit hooks
   #   runs-on: 'ubuntu-latest'
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v3
   #       with:
   #         fetch-depth: "1"
   #     - name: set PY
   #       run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
-  #     - uses: actions/cache@v1
+  #     - uses: actions/cache@v3
   #       with:
   #         path: ~/.cache/pre-commit
   #         key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
   #     - name: pre-commit
-  #       uses: pre-commit/action@v2.0.3
+  #       uses: pre-commit/action@v3.0.0
   unit_test_suite:
     name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     needs: [pre_commit]
@@ -36,9 +36,6 @@ jobs:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         # python-version: [3.7, 3.8, 3.9]
         python-version: [3.9]
-        # exclude:
-        #   - os: windows-latest
-        #     python-version: 3.8
     timeout-minutes: 90
     defaults:
       run:
@@ -48,17 +45,19 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
+      PYTHONIOENCODING: "utf-8"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Without this env var `doit env_create ...` uses by default
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a2
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a6
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          nodejs: true
           envs: "-o examples -o recommended -o tests -o build"
           cache: true
           opengl: true
@@ -111,6 +110,7 @@ jobs:
         shell: bash -l {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
+      PYTHONIOENCODING: "utf-8"
       PANEL_LOG_LEVEL: info
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
@@ -119,7 +119,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a2
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a5
         with:
           name: ui_test_suite
           python-version: 3.9
@@ -128,6 +128,10 @@ jobs:
           cache: true
           playwright: true
         id: install
+      - name: build pyodide wheels
+        run: |
+          conda activate test-environment
+          python scripts/build_pyodide_wheels.py
       - name: launch jupyter
         run: |
           conda activate test-environment

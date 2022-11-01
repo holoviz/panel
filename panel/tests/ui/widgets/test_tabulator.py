@@ -2759,12 +2759,19 @@ def test_tabulator_edit_event_and_header_filters(page, port):
 
 
 @pytest.mark.flaky(max_runs=3)
-def test_tabulator_edit_event_and_header_filters_same_column(page, port):
+@pytest.mark.parametrize('show_index', [True, False])
+@pytest.mark.parametrize('index_name', ['index', 'foo'])
+def test_tabulator_edit_event_and_header_filters_same_column(page, port, show_index, index_name):
     df = pd.DataFrame({
         'values':  ['A', 'A', 'B', 'B'],
     }, index=['idx0', 'idx1', 'idx2', 'idx3'])
+    df.index.name = index_name
 
-    widget = Tabulator(df, header_filters={'values': {'type': 'input', 'func': 'like'}})
+    widget = Tabulator(
+        df,
+        header_filters={'values': {'type': 'input', 'func': 'like'}},
+        show_index=show_index,
+    )
 
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
@@ -3482,3 +3489,23 @@ def test_tabulator_python_filter_edit(page, port):
     wait_until(lambda: len(values) == 2, page)
     assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
     assert df.at['idx3', 'values'] == 'Y'
+
+
+def test_tabulator_sorter_default_number(page, port):
+    df = pd.DataFrame({'x': []}).astype({'x': int})
+    widget = Tabulator(df, sorters=[{"field": "x", "dir": "desc"}])
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    df2 = pd.DataFrame({'x': [0, 96, 116]})
+    widget.value = df2
+
+    def x_values():
+        table_values = [int(v) for v in tabulator_column_values(page, 'x')]
+        assert table_values == list(df2['x'].sort_values(ascending=False))
+
+    wait_until(x_values, page)

@@ -30,7 +30,8 @@ The ``panel convert`` command has the following options:
       --index               Whether to create an index if multiple files are served.
       --pwa                 Whether to add files to allow serving the application as a Progressive Web App.
       --requirements        List of Python requirements to add to the converted file. By default it will automatically try to infer dependencies based on your imports and Panel will automatically be included.
-	  -- watch              Watches files for changes and rebuilds them when they are updated.
+      --watch               Watches files for changes and rebuilds them when they are updated.
+      --disable-http-patch  Disables patching of http requests using pyodide-http library.
 
 ### Example
 
@@ -130,6 +131,12 @@ Once generated, you can inspect the `site.webmanifest` file and modify it to you
 ```{note}
 If you decide to enable the `--pwa` ensure that you also provide a unique `--title`. Otherwise the browser caches storing your apps dependencies will end up overwriting each other.
 ```
+
+### Handling HTTP requests
+
+By default Panel 0.14.1 will install the [pyodide-http](https://github.com/koenvo/pyodide-http) library which patches `urllib3` and `requests` making it possible to use them within the pyodide process. To disable this behavior use the `--disable-http-patch` CLI option.
+
+Note that making HTTP requests when converting to the `pyodide` or `pyscript` target will block the main browser thread and result in a poor user experience. Therefore we strongly recommend converting to `pyodide-worker` if your app is making synchronous HTTP requests.
 
 ## Installing Panel in the browser
 

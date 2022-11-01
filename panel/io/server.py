@@ -41,6 +41,8 @@ from bokeh.application.handlers.code import (
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.core.templates import AUTOLOAD_JS
+from bokeh.core.validation import silence
+from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.embed.bundle import Script
 from bokeh.embed.elements import (
     html_page_for_render_items, script_for_render_items,
@@ -108,9 +110,18 @@ def _server_url(url: str, port: int) -> str:
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
-def _eval_panel(panel: 'TViewableOrFunc', server_id: str, title: str, location, doc: 'Document'):
+def _eval_panel(
+    panel: 'TViewableOrFunc', server_id: str, title: str,
+    location: bool | Location, admin: bool, doc: 'Document'
+):
     from ..pane import panel as as_panel
     from ..template import BaseTemplate
+
+    # Set up instrumentation for logging sessions
+    logger.info(LOG_SESSION_LAUNCHING, id(doc))
+    def _log_session_destroyed(session_context):
+        logger.info(LOG_SESSION_DESTROYED, id(doc))
+    doc.on_session_destroyed(_log_session_destroyed)
 
     with set_curdoc(doc):
         if isinstance(panel, (FunctionType, MethodType)):
@@ -270,9 +281,15 @@ bokeh.server.server.Server = Server
 # Patch Application to handle session callbacks
 class Application(BkApplication):
 
+    def __init__(self, *args, **kwargs):
+        self._admin = kwargs.pop('admin', False)
+        super().__init__(*args, **kwargs)
+
     async def on_session_created(self, session_context):
-        for cb in state._on_session_created:
-            cb(session_context)
+        with set_curdoc(session_context._document):
+            config._admin = self._admin
+            for cb in state._on_session_created:
+                cb(session_context)
         await super().on_session_created(session_context)
 
     def initialize_document(self, doc):
@@ -327,7 +344,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                     else:
                         template = ERROR_TEMPLATE
                     page = template.render(
-                        npm_cdn=config.npn_cdn,
+                        npm_cdn=config.npm_cdn,
                         title='Panel: Authorization Error',
                         error_type='Authorization Error',
                         error='User is not authorized.',
@@ -667,6 +684,9 @@ def serve(
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
+    # Empty layout are valid and the Bokeh warning is silenced as usually
+    # not relevant to Panel users.
+    silence(EMPTY_LAYOUT, True)
     kwargs = dict(kwargs, **dict(
         port=port, address=address, websocket_origin=websocket_origin,
         loop=loop, show=show, start=start, title=title, verbose=verbose,
@@ -741,6 +761,7 @@ def get_server(
     oauth_provider: Optional[str] = None,
     oauth_key: Optional[str] = None,
     oauth_secret: Optional[str] = None,
+    oauth_redirect_uri: Optional[str] = None,
     oauth_extra_params: Mapping[str, str] = {},
     cookie_secret: Optional[str] = None,
     oauth_encryption_key: Optional[str] = None,
@@ -792,6 +813,8 @@ def get_server(
       The public OAuth identifier
     oauth_secret: str (optional, default=None)
       The client secret for the OAuth provider
+    oauth_redirect_uri: Optional[str] = None,
+      Overrides the default OAuth redirect URI
     oauth_extra_params: dict (optional, default={})
       Additional information for the OAuth provider
     cookie_secret: str (optional, default=None)
@@ -846,15 +869,16 @@ def get_server(
                 app = str(app) # enables serving apps from Paths
             if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb"))
                 and os.path.isfile(app)):
-                apps[slug] = build_single_handler_application(app)
-            elif isinstance(app, Application):
+                apps[slug] = app = build_single_handler_application(app)
+                app._admin = admin
+            elif isinstance(app, BkApplication):
                 apps[slug] = app
             else:
-                handler = FunctionHandler(partial(_eval_panel, app, server_id, title_, location))
-                apps[slug] = Application(handler)
+                handler = FunctionHandler(partial(_eval_panel, app, server_id, title_, location, admin))
+                apps[slug] = Application(handler, admin=admin)
     else:
-        handler = FunctionHandler(partial(_eval_panel, panel, server_id, title, location))
-        apps = {'/': Application(handler)}
+        handler = FunctionHandler(partial(_eval_panel, panel, server_id, title, location, admin))
+        apps = {'/': Application(handler, admin=admin)}
 
     if admin:
         if '/admin' in apps:
@@ -901,10 +925,14 @@ def get_server(
         opts['auth_provider'] = OAuthProvider()
     if oauth_key:
         config.oauth_key = oauth_key # type: ignore
+    if oauth_secret:
+        config.oauth_secret = oauth_secret # type: ignore
     if oauth_extra_params:
         config.oauth_extra_params = oauth_extra_params # type: ignore
     if cookie_secret:
         config.cookie_secret = cookie_secret # type: ignore
+    if oauth_redirect_uri:
+        config.oauth_redirect_uri = oauth_redirect_uri # type: ignore
     opts['cookie_secret'] = config.cookie_secret
 
     server = Server(apps, port=port, **opts)
