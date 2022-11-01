@@ -17,7 +17,7 @@ from bokeh.document.events import (
     ColumnDataChangedEvent, DocumentPatchedEvent, ModelChangedEvent,
 )
 from bokeh.model import DataModel
-from bokeh.models import FlexBox, ColumnDataSource, Model
+from bokeh.models import ColumnDataSource, FlexBox, Model
 from bokeh.protocol import Protocol
 from typing_extensions import Literal
 
