@@ -14,7 +14,7 @@ from typing import (
 import param
 
 from ..models import HTML as _BkHTML, JSON as _BkJSON
-from ..util import escape
+from ..util import escape, style_to_styles
 from ..viewable import Layoutable
 from .base import PaneBase
 
@@ -31,19 +31,23 @@ class DivPaneBase(PaneBase):
     the supported options like style and sizing_mode.
     """
 
-    style = param.Dict(default=None, doc="""
+    styles = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
 
     _bokeh_model: ClassVar[Model] = _BkHTML
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text', 'style': 'styles'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
 
     _updates: ClassVar[bool] = True
 
     __abstract = True
 
+    def __init__(self, object=None, **params):
+        params = style_to_styles(params)
+        super().__init__(object=object, **params)
+
     def _get_properties(self):
-        return {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
+        return {p : getattr(self, p) for p in list(Layoutable.param) + ['styles']
                 if getattr(self, p) is not None}
 
     def _get_model(
@@ -354,7 +358,7 @@ class Markdown(DivPaneBase):
         if self.dedent:
             data = textwrap.dedent(data)
         properties = super()._get_properties()
-        properties['style'] = properties.get('style', {})
+        properties['styles'] = properties.get('style', {})
         css_classes = properties.pop('css_classes', []) + ['markdown']
         html = markdown.markdown(data, extensions=self.extensions,
                                  output_format='html5')
@@ -398,7 +402,7 @@ class JSON(DivPaneBase):
     _bokeh_model: ClassVar[Model] = _BkJSON
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        "name": None, "object": "text", "encoder": None
+        "name": None, "object": "text", "encoder": None, "style": "styles"
     }
 
     _rerender_params: ClassVar[List[str]] = [

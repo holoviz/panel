@@ -229,7 +229,7 @@ class StaticText(Widget):
     >>> StaticText(name='Model', value='animagen2')
     """
 
-    style = param.Dict(default=None, doc="""
+    styles = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
 
     value = param.Parameter(default=None, doc="""
@@ -250,7 +250,7 @@ class StaticText(Widget):
     _widget_type: ClassVar[Type[Model]] = _BkDiv
 
     def _process_param_change(self, msg):
-        msg = super()._process_property_change(msg)
+        msg = super()._process_param_change(msg)
         if 'value' in msg:
             text = str(msg.pop('value'))
             partial = self._format.replace('{value}', '').format(title=self.name)
