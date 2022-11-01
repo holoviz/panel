@@ -161,7 +161,7 @@ def dispatch_tornado(conn, event):
         WebSocketHandler.write_message(socket, msg.metadata_json),
         WebSocketHandler.write_message(socket, msg.content_json)
     ]
-    for header, payload in msg._buffers:
+    for buffer in msg._buffers:
         header = json.dumps(buffer.ref)
         payload = buffer.to_bytes()
         futures.extend([
@@ -178,7 +178,9 @@ def dispatch_django(conn, event):
         socket.send(text_data=msg.metadata_json),
         socket.send(text_data=msg.content_json)
     ]
-    for header, payload in msg._buffers:
+    for buffer in msg._buffers:
+        header = json.dumps(buffer.ref)
+        payload = buffer.to_bytes()
         futures.extend([
             socket.send(text_data=header),
             socket.send(binary_data=payload)
