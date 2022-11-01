@@ -74,7 +74,7 @@ jobs:
       - name: Install bokeh 3.0 compatibility packages
         run: |
           conda activate test-environment
-          conda install "nodejs>16" "bokeh=3.0.0dev11" -c bokeh/label/dev -c conda-forge -y
+          # conda install "nodejs>16" "bokeh=3.0.0dev11" -c bokeh/label/dev -c conda-forge -y
           conda uninstall holoviews jupyter_bokeh --force -y
           pip install "git+https://github.com/holoviz/holoviews.git@bokeh3.0"
           pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
