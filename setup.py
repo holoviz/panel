@@ -111,7 +111,7 @@ install_requires = [
     'tqdm >=4.48.0',
     'pyct >=0.4.4',
     'bleach',
-    'setuptools',
+    'setuptools >=42',
     'typing_extensions'
 ]
 
