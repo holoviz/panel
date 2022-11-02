@@ -213,12 +213,12 @@ extras_require['build'] = [
     'param >=1.9.2',
     'pyct >=0.4.4',
     'setuptools >=42',
-    'bokeh >=2.4.3,<2.5',
-    'pyviz_comms >=0.6.0',
+    'bokeh >=2.4.3,<2.5.0',
+    'pyviz_comms >=0.7.4',
+    'requests',
+    'packaging',
     'bleach',
-    'tqdm',
-    'twine',
-    'rfc3986>=1.4.0'
+    'tqdm >=4.48.0',
 ]
 
 setup_args = dict(
