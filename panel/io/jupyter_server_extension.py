@@ -164,7 +164,6 @@ class PanelExecutor(WSHandler):
         self._set_state()
         self.session = self._create_server_session()
         self.connection = ServerConnection(self.protocol, self, None, self.session)
-        publish_display_data({'application/bokeh-extensions': extension_dirs})
 
     def _get_payload(self, token: str) -> Dict[str, Any]:
         payload = get_token_payload(token)
@@ -275,13 +274,15 @@ class PanelExecutor(WSHandler):
         Renders the application to an IPython.display.HTML object to
         be served by the `PanelJupyterHandler`.
         """
-        return HTML(server_html_page_for_session(
+        res = HTML(server_html_page_for_session(
             self.session,
             resources=self.resources,
             title=self.session.document.title,
             template=self.session.document.template,
             template_variables=self.session.document.template_variables
         ))
+        publish_display_data({'application/bokeh-extensions': extension_dirs})
+        return res
 
 
 class PanelJupyterHandler(JupyterHandler):
