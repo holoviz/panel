@@ -85,7 +85,7 @@ class Audio(HTMLBox):
 
     value = Any(help="Encoded file data")
 
-    volume = Int(0, help="""The volume of the audio player.""")
+    volume = Nullable(Int, help="""The volume of the audio player.""")
 
 
 class Video(HTMLBox):
