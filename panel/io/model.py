@@ -19,7 +19,6 @@ from bokeh.document.events import (
 from bokeh.model import DataModel
 from bokeh.models import ColumnDataSource, FlexBox, Model
 from bokeh.protocol import Protocol
-from typing_extensions import Literal
 
 from .state import state
 
@@ -28,6 +27,7 @@ if TYPE_CHECKING:
     from bokeh.document.events import DocumentChangedEvent
     from bokeh.protocol.message import Message
     from pyviz_comms import Comm
+    from typing_extensions import Literal
 
 #---------------------------------------------------------------------
 # Private API
