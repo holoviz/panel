@@ -43,9 +43,13 @@ class Alert(Markdown):
         if "sizing_mode" not in params:
             params["sizing_mode"] = "stretch_width"
         super().__init__(object, **params)
-        self._set_css_classes()
 
-    @param.depends("alert_type", watch=True)
+    def _get_properties(self):
+        props = super()._get_properties()
+        props['css'] = ['css/alerts.css']
+        return props
+
+    @param.depends("alert_type", watch=True, on_init=True)
     def _set_css_classes(self):
         css_classes = []
         if self.css_classes:

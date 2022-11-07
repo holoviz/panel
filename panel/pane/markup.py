@@ -198,9 +198,8 @@ class DataFrame(HTML):
     ]
 
     def __init__(self, object=None, **params):
-        super().__init__(object, **params)
         self._stream = None
-        self._setup_stream()
+        super().__init__(object, **params)
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -215,7 +214,7 @@ class DataFrame(HTML):
     def _set_object(self, object):
         self._object = object
 
-    @param.depends('object', watch=True)
+    @param.depends('object', watch=True, on_init=True)
     def _setup_stream(self):
         if not self._models or not hasattr(self.object, 'stream'):
             return
@@ -241,6 +240,7 @@ class DataFrame(HTML):
 
     def _get_properties(self):
         properties = DivPaneBase._get_properties(self)
+        properties['css'] = ['css/dataframe.css']
         if self._stream:
             df = self._object
         else:

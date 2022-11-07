@@ -12,6 +12,8 @@ class HTML(Div):
     A bokeh model to render HTML markup including embedded script tags.
     """
 
+    css = List(String)
+
     events = Dict(String, List(String))
 
 

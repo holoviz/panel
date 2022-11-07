@@ -1,3 +1,4 @@
+import {StyleSheetLike, ImportedStyleSheet} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
@@ -43,6 +44,13 @@ export class HTMLView extends PanelMarkupView {
       this._remove_event_listeners()
       this._setup_event_listeners()
     })
+  }
+
+  override styles(): StyleSheetLike[] {
+    const styles = super.styles()
+    for (const css of this.model.css)
+      styles.push(new ImportedStyleSheet(css))
+    return styles
   }
 
   protected rerender() {
@@ -131,6 +139,7 @@ export namespace HTML {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = Markup.Props & {
+    css: p.Property<string[]>
     events: p.Property<any>
   }
 }
@@ -148,7 +157,8 @@ export class HTML extends Markup {
 
   static {
     this.prototype.default_view = HTMLView
-    this.define<HTML.Props>(({Any}) => ({
+    this.define<HTML.Props>(({Any, Array, String}) => ({
+      css:    [ Array(String), [] ],
       events: [ Any, {} ]
     }))
   }
