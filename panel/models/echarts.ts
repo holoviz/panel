@@ -1,9 +1,16 @@
+import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class EChartsView extends HTMLBoxView {
   model: ECharts
   _chart: any
+  _layout_wrapper: Element
+
+  initialize(): void {
+    super.initialize()
+    this._layout_wrapper = div({style: "height: 100%; width: 100%;"})
+  }
 
   connect_signals(): void {
     super.connect_signals()
@@ -14,12 +21,23 @@ export class EChartsView extends HTMLBoxView {
   }
 
   render(): void {
-    super.render()
-    const config = {width: this.model.width, height: this.model.height, renderer: this.model.renderer}
     if (this._chart != null)
       (window as any).echarts.dispose(this._chart);
-    this._chart = (window as any).echarts.init(this.el, this.model.theme, config);
+    super.render()
+    const config = {width: this.model.width, height: this.model.height, renderer: this.model.renderer}
+    this._chart = (window as any).echarts.init(
+      this._layout_wrapper,
+      this.model.theme,
+      config
+    )
     this._plot()
+    this.shadow_el.append(this._layout_wrapper)
+  }
+
+  override remove(): void {
+    super.remove()
+    if (this._chart != null)
+      (window as any).echarts.dispose(this._chart);
   }
 
   after_layout(): void {
