@@ -1,4 +1,5 @@
 import * as p from "@bokehjs/core/properties"
+import {StyleSheetLike, ImportedStyleSheet} from "@bokehjs/core/dom"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {HTMLBox, HTMLBoxView} from "./layout"
 import {Attrs} from "@bokehjs/core/types"
@@ -43,6 +44,13 @@ export class JSONEditorView extends HTMLBoxView {
     })
   }
 
+  override styles(): StyleSheetLike[] {
+    const styles = super.styles()
+    for (const css of this.model.css)
+      styles.push(new ImportedStyleSheet(css))
+    return styles
+  }
+
   override remove(): void {
     super.remove()
     this.editor.destroy()
@@ -51,7 +59,7 @@ export class JSONEditorView extends HTMLBoxView {
   render(): void {
     super.render();
     const mode = this.model.disabled ? 'view': this.model.mode;
-    this.editor = new (window as any).JSONEditor(this.el, {
+    this.editor = new (window as any).JSONEditor(this.shadow_el, {
       menu: this.model.menu,
       mode: mode,
       onChangeJSON: (json: any) => {
@@ -71,6 +79,7 @@ export class JSONEditorView extends HTMLBoxView {
 export namespace JSONEditor {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
+    css: p.Property<string[]>
     data: p.Property<any>
     menu: p.Property<boolean>
     mode: p.Property<string>
@@ -95,13 +104,14 @@ export class JSONEditor extends HTMLBox {
   static {
     this.prototype.default_view = JSONEditorView
     this.define<JSONEditor.Props>(({Any, Array, Boolean, String}) => ({
-      data:      [ Any,          {} ],
-      mode:      [ String,   'tree' ],
-      menu:      [ Boolean,    true ],
-      search:    [ Boolean,    true ],
-      selection: [ Array(Any),   [] ],
-      schema:    [ Any,        null ],
-      templates: [ Array(Any),   [] ],
+      css:       [ Array(String), [] ],
+      data:      [ Any,           {} ],
+      mode:      [ String,    'tree' ],
+      menu:      [ Boolean,     true ],
+      search:    [ Boolean,     true ],
+      selection: [ Array(Any),    [] ],
+      schema:    [ Any,         null ],
+      templates: [ Array(Any),    [] ],
     }))
   }
 }

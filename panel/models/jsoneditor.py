@@ -26,6 +26,8 @@ class JSONEditor(HTMLBox):
     A bokeh model that allows editing JSON.
     """
 
+    css = List(String)
+
     data = Any()
 
     menu = Bool(True)
