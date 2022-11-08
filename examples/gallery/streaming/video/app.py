@@ -24,77 +24,6 @@ WIDTH = 400
 TIMEOUT = 250
 
 
-def to_instance(value, **params):
-    """Converts the value to an instance
-
-    Args:
-        value: A param.Parameterized class or instance
-
-    Returns:
-        An instance of the param.Parameterized class
-    """
-    if isinstance(value, param.Parameterized):
-        value.param.update(**params)
-        return value
-    return value(**params)
-
-
-class Timer(pn.viewable.Viewer):
-    """Helper Component used to show duration trends"""
-
-    _trends = param.Dict()
-
-    def __init__(self, **params):
-        super().__init__()
-
-        self.last_updates = {}
-        self._trends = {}
-
-        self._layout = pn.Row(**params)
-
-    def time_it(self, name, func, *args, **kwargs):
-        """Measures the duration of the execution of the func function and reports it under the
-        name specified"""
-        start = time.time()
-        result = func(*args, **kwargs)
-        end = time.time()
-        duration = round(end - start, 2)
-        self._report(name=name, duration=duration)
-        return result
-
-    def inc_it(self, name):
-        """Measures the duration since the last time `inc_it` was called and reports it under the
-        specified name"""
-        start = self.last_updates.get(name, time.time())
-        end = time.time()
-        duration = round(end - start, 2)
-        self._report(name=name, duration=duration)
-        self.last_updates[name] = end
-
-    def _report(self, name, duration):
-        if not name in self._trends:
-            self._trends[name] = pn.indicators.Trend(
-                title=name,
-                data={"x": [1], "y": [duration]},
-                height=100,
-                width=150,
-                sizing_mode="fixed",
-            )
-            self.param.trigger("_trends")
-        else:
-            trend = self._trends[name]
-            next_x = max(trend.data["x"]) + 1
-            trend.stream({"x": [next_x], "y": [duration]}, rollover=10)
-
-    @pn.depends("_trends")
-    def _panel(self):
-        self._layout[:] = list(self._trends.values())
-        return self._layout
-
-    def __panel__(self):
-        return self._panel
-
-
 class ImageModel(pn.viewable.Viewer):
     """Base class for image models."""
 
@@ -181,6 +110,76 @@ class NumpyImageModel(ImageModel):
         """Transforms the np.array image"""
         raise NotImplementedError()
 
+
+def to_instance(value, **params):
+    """Converts the value to an instance
+
+    Args:
+        value: A param.Parameterized class or instance
+
+    Returns:
+        An instance of the param.Parameterized class
+    """
+    if isinstance(value, param.Parameterized):
+        value.param.update(**params)
+        return value
+    return value(**params)
+
+
+class Timer(pn.viewable.Viewer):
+    """Helper Component used to show duration trends"""
+
+    _trends = param.Dict()
+
+    def __init__(self, **params):
+        super().__init__()
+
+        self.last_updates = {}
+        self._trends = {}
+
+        self._layout = pn.Row(**params)
+
+    def time_it(self, name, func, *args, **kwargs):
+        """Measures the duration of the execution of the func function and reports it under the
+        name specified"""
+        start = time.time()
+        result = func(*args, **kwargs)
+        end = time.time()
+        duration = round(end - start, 2)
+        self._report(name=name, duration=duration)
+        return result
+
+    def inc_it(self, name):
+        """Measures the duration since the last time `inc_it` was called and reports it under the
+        specified name"""
+        start = self.last_updates.get(name, time.time())
+        end = time.time()
+        duration = round(end - start, 2)
+        self._report(name=name, duration=duration)
+        self.last_updates[name] = end
+
+    def _report(self, name, duration):
+        if not name in self._trends:
+            self._trends[name] = pn.indicators.Trend(
+                title=name,
+                data={"x": [1], "y": [duration]},
+                height=100,
+                width=150,
+                sizing_mode="fixed",
+            )
+            self.param.trigger("_trends")
+        else:
+            trend = self._trends[name]
+            next_x = max(trend.data["x"]) + 1
+            trend.stream({"x": [next_x], "y": [duration]}, rollover=10)
+
+    @pn.depends("_trends")
+    def _panel(self):
+        self._layout[:] = list(self._trends.values())
+        return self._layout
+
+    def __panel__(self):
+        return pn.panel(self._panel)
 
 class VideoStreamInterface(pn.viewable.Viewer):
     """An easy to use interface for a VideoStream and a set of transforms"""
