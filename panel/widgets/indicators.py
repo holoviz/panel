@@ -18,6 +18,7 @@ How to use indicators
 from __future__ import annotations
 
 import math
+from multiprocessing import Lock
 import os
 import sys
 
@@ -1137,6 +1138,9 @@ class Tqdm(Indicator):
     layout = param.ClassSelector(class_=(Column, Row), precedence=-1, constant=True, doc="""
         The layout for the text and progress indicator.""",)
 
+    lock = param.ClassSelector(class_=object, default=None,
+                               doc="""The layout for the text and progress indicator.""",)
+
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
     progress = param.ClassSelector(class_=Progress, precedence=-1, doc="""
@@ -1199,6 +1203,8 @@ class Tqdm(Indicator):
         self.progress.max = self.max
         self.progress.value = self.value
         self.text_pane.object = self.text
+        # used by tqdm.contrib.concurrent.process_map
+        self._lock = params.pop('lock', Lock())
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -1216,6 +1222,14 @@ class Tqdm(Indicator):
 
     def _update_layout(self, *events):
         self.layout.param.update(**{event.name: event.new for event in events})
+
+    # used by tqdm.contrib.concurrent.process_map
+    def get_lock(self) -> LockType:
+        return self._lock
+
+    # used by tqdm.contrib.concurrent.process_map
+    def set_lock(self, lock: LockType) -> None:
+        self._lock = lock
 
     @param.depends("text", watch=True)
     def _update_text(self):
