@@ -9,25 +9,27 @@ from .layout import HTMLBox
 
 class Perspective(HTMLBox):
 
+    css = List(String)
+
     aggregates = Either(Dict(String, Any), Null())
 
     split_by = Either(List(String), Null())
 
-    columns = Either(List(Either(String, Null)), Null)
+    columns = Either(List(Either(String, Null)), Null())
 
-    expressions = Either(List(String), Null())
+    expressions = Nullable(List(String))
 
-    editable = Nullable(Bool())
+    editable = Bool(default=True)
 
     filters = Either(List(Any), Null())
 
     plugin = String()
 
-    plugin_config = Either(Dict(String, Any), Null)
+    plugin_config = Either(Dict(String, Any), Null, default={})
 
     group_by = Either(List(String), Null())
 
-    selectable = Nullable(Bool())
+    selectable = Bool(default=True)
 
     schema = Dict(String, String)
 

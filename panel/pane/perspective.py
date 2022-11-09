@@ -402,6 +402,8 @@ class Perspective(PaneBase, ReactiveData):
 
     def _init_params(self):
         props = super()._init_params()
+        Perspective = lazy_load('panel.models.perspective', 'Perspective')
+        props['css'] = Perspective.__css__
         props['source'] = ColumnDataSource(data=self._data)
         props['schema'] = schema = {}
         for col, array in self._data.items():

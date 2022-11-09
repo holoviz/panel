@@ -175,7 +175,7 @@ class PaneBase(Reactive):
 
     @property
     def _synced_params(self) -> List[str]:
-        ignored_params = ['name', 'default_layout', 'loading']+self._rerender_params
+        ignored_params = ['name', 'default_layout', 'loading', 'background']+self._rerender_params
         return [p for p in self.param if p not in ignored_params]
 
     def _update_object(

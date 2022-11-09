@@ -22,6 +22,8 @@ class JSON(Markup):
     A bokeh model that renders JSON as tree.
     """
 
+    css = List(String)
+
     depth = Either(Int, Float, Null, default=1, help="Depth to which the JSON tree is expanded.")
 
     hover_preview = Bool(default=False, help="Whether to show a hover preview for collapsed nodes.")

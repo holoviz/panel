@@ -173,7 +173,7 @@ def patch_model_css(root, dist_url):
     for model in root.select({'type': Model}):
         if hasattr(model, 'css'):
             try:
-                model.css = [f'{dist_url}{css}' for css in model.css]
+                model.css = [css if css.startswith('http') else f'{dist_url}{css}' for css in model.css]
             except Exception:
                 pass
 

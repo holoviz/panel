@@ -46,7 +46,7 @@ class Alert(Markdown):
 
     def _get_properties(self):
         props = super()._get_properties()
-        props['css'] = ['css/alerts.css']
+        props['css'] = props.get('css', []) + ['css/alerts.css']
         return props
 
     @param.depends("alert_type", watch=True, on_init=True)

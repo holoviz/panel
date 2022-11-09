@@ -358,6 +358,7 @@ class Markdown(DivPaneBase):
         if self.dedent:
             data = textwrap.dedent(data)
         properties = super()._get_properties()
+        properties['css'] = properties.get('css', []) + ['css/markdown.css']
         properties['styles'] = properties.get('style', {})
         css_classes = properties.pop('css_classes', []) + ['markdown']
         html = markdown.markdown(data, extensions=self.extensions,
@@ -425,6 +426,7 @@ class JSON(DivPaneBase):
 
     def _get_properties(self):
         properties = super()._get_properties()
+        properties['css'] = ['css/json.css']
         try:
             data = json.loads(self.object)
         except Exception:
