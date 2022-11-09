@@ -1139,7 +1139,7 @@ class Tqdm(Indicator):
         The layout for the text and progress indicator.""",)
 
     lock = param.ClassSelector(class_=object, default=None,
-                               doc="""The layout for the text and progress indicator.""",)
+                               doc="""The `mutithreading.Lock` or `multiprocessing.Lock` object to be used by Tqdm.""",)
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
