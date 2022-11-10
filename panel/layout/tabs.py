@@ -10,9 +10,10 @@ from typing import (
 
 import param
 
-from bokeh.models import Panel as BkPanel, Spacer as BkSpacer
+from bokeh.models import (
+    Spacer as BkSpacer, TabPanel as BkTabPanel, Tabs as BkTabs,
+)
 
-from ..models import Tabs as BkTabs
 from ..viewable import Layoutable
 from .base import NamedListPanel
 
@@ -205,7 +206,7 @@ class Tabs(NamedListPanel):
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
 
-            panel = panels[pref] = BkPanel(
+            panel = panels[pref] = BkTabPanel(
                 title=name, name=pane.name, child=child, closable=self.closable
             )
             new_models.append(panel)

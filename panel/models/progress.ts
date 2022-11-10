@@ -1,24 +1,18 @@
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
-
-import {CachedVariadicBox, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class ProgressView extends HTMLBoxView {
   model: Progress
-  _prev_sizing_mode: string | null
   protected progressEl: HTMLProgressElement
 
   connect_signals(): void {
     super.connect_signals()
-    const resize = () => {
-      this.render()
-      this.root.compute_layout() // XXX: invalidate_layout?
-    }
-    this.connect(this.model.properties.height.change, resize)
-    this.connect(this.model.properties.width.change, resize)
-    this.connect(this.model.properties.height_policy.change, resize)
-    this.connect(this.model.properties.width_policy.change, resize)
-    this.connect(this.model.properties.sizing_mode.change, resize)
+    const render = () => this.render()
+    this.connect(this.model.properties.height.change, render)
+    this.connect(this.model.properties.width.change, render)
+    this.connect(this.model.properties.height_policy.change, render)
+    this.connect(this.model.properties.width_policy.change, render)
+    this.connect(this.model.properties.sizing_mode.change, render)
     this.connect(this.model.properties.active.change, () => this.setCSS())
     this.connect(this.model.properties.bar_color.change, () => this.setCSS())
     this.connect(this.model.properties.css_classes.change, () => this.setCSS())
@@ -28,17 +22,16 @@ export class ProgressView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    const style: any = {...this.model.style, display: "inline-block"}
+    const style: any = {...this.model.styles, display: "inline-block"}
     this.progressEl = document.createElement('progress')
     this.setValue()
     this.setMax()
-    set_size(this.progressEl, this.model)
 
     // Set styling
     this.setCSS()
     for (const prop in style)
       this.progressEl.style.setProperty(prop, style[prop]);
-    this.el.appendChild(this.progressEl)
+    this.shadow_el.appendChild(this.progressEl)
   }
 
   setCSS(): void {
@@ -62,14 +55,6 @@ export class ProgressView extends HTMLBoxView {
     if (this.model.max != null)
       this.progressEl.max = this.model.max
   }
-
-  _update_layout(): void {
-    let changed = ((this._prev_sizing_mode !== undefined) &&
-                   (this._prev_sizing_mode !== this.model.sizing_mode))
-    this._prev_sizing_mode = this.model.sizing_mode;
-    this.layout = new CachedVariadicBox(this.el, this.model.sizing_mode, changed)
-    this.layout.set_sizing(this.box_sizing())
-  }
 }
 
 export namespace Progress {
@@ -78,7 +63,7 @@ export namespace Progress {
   export type Props = HTMLBox.Props & {
     active: p.Property<boolean>
     bar_color: p.Property<string>
-    style: p.Property<{[key: string]: string}>
+    // style: p.Property<{[key: string]: string}>
     max: p.Property<number | null>
     value: p.Property<number | null>
   }
@@ -95,12 +80,12 @@ export class Progress extends HTMLBox {
 
   static __module__ = "panel.models.widgets"
 
-  static init_Progress(): void {
+  static {
     this.prototype.default_view = ProgressView
     this.define<Progress.Props>(({Any, Boolean, Number, String}) => ({
       active:    [ Boolean, true ],
       bar_color: [ String, 'primary' ],
-      style:     [ Any, {} ],
+      // style:     [ Any, {} ],
       max:       [ Number, 100 ],
       value:     [ Any, null ],
     }))

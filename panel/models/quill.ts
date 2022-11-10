@@ -1,10 +1,9 @@
 import * as p from "@bokehjs/core/properties"
 import { div } from "@bokehjs/core/dom"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
-import {PanelHTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
-export class QuillInputView extends PanelHTMLBoxView {
+export class QuillInputView extends HTMLBoxView {
   override model: QuillInput
   protected _container: HTMLDivElement
   protected _editor: HTMLDivElement
@@ -53,7 +52,7 @@ export class QuillInputView extends PanelHTMLBoxView {
 
   render(): void {
     super.render()
-    this.el.appendChild(this._container)
+    this.shadow_el.appendChild(this._container)
     const theme = (this.model.mode === 'bubble') ? 'bubble' : 'snow'
     this.quill = new (window as any).Quill(this._container, {
       modules: {
@@ -105,7 +104,7 @@ export class QuillInput extends HTMLBox {
 
   static __module__ = "panel.models.quill"
 
-  static init_QuillInput(): void {
+  static {
     this.prototype.default_view = QuillInputView
 
     this.define<QuillInput.Props>(({Any, String}) => ({

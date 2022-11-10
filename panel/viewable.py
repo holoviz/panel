@@ -104,6 +104,12 @@ class Layoutable(param.Parameterized):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
+    styles = param.Dict(default={}, doc="""
+        Styles to apply to DOM node.""")
+
+    stylesheets = param.List(default=[], doc="""
+        List of stylesheets.""")
+
     width_policy = param.ObjectSelector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its width.
@@ -441,12 +447,12 @@ class Renderable(param.Parameterized):
     __abstract = True
 
     def __init__(self, **params):
-        super().__init__(**params)
         self._callbacks = []
         self._documents = {}
         self._models = {}
         self._comms = {}
         self._kernels = {}
+        super().__init__(**params)
         self._found_links = set()
         self._logger = logging.getLogger(f'{__name__}.{type(self).__name__}')
 

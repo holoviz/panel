@@ -1,3 +1,4 @@
+import {StyleSheetLike, ImportedStyleSheet} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
@@ -13,8 +14,15 @@ export class JSONView extends PanelMarkupView {
     this.on_change([depth, hover_preview, theme], () => this.render())
   }
 
+  override styles(): StyleSheetLike[] {
+    const styles = super.styles()
+    for (const css of this.model.css)
+      styles.push(new ImportedStyleSheet(css))
+    return styles
+  }
+
   render(): void {
-    super.render();
+    super.render()
     const text = this.model.text.replace(/(\r\n|\n|\r)/gm, "")
     let json;
     try {
@@ -41,6 +49,7 @@ export const JSONTheme = Enum("dark", "light")
 export namespace JSON {
   export type Attrs = p.AttrsOf<Props>
   export type Props = Markup.Props & {
+    css: p.Property<string[]>
     depth: p.Property<number | null>
     hover_preview: p.Property<boolean>
     theme: p.Property<typeof JSONTheme["__type__"]>
@@ -58,9 +67,10 @@ export class JSON extends Markup {
 
   static __module__ = "panel.models.markup"
 
-  static init_JSON(): void {
+  static {
     this.prototype.default_view = JSONView
-    this.define<JSON.Props>(({Boolean, Int, Nullable}) => ({
+    this.define<JSON.Props>(({Array, Boolean, Int, Nullable, String}) => ({
+      css:           [ Array(String), [] ],
       depth:         [ Nullable(Int),  1 ],
       hover_preview: [ Boolean,    false ],
       theme:         [ JSONTheme, "dark" ],

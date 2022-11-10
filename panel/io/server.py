@@ -73,8 +73,8 @@ from .logging import (
 from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import (
-    BASE_TEMPLATE, COMPONENT_PATH, ERROR_TEMPLATE, Resources, _env,
-    bundle_resources, component_rel_path,
+    BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
+    Resources, _env, bundle_resources, component_rel_path, patch_model_css,
 )
 from .state import set_curdoc, state
 
@@ -198,6 +198,15 @@ def server_html_page_for_session(
     template: str | Template = BASE_TEMPLATE,
     template_variables: Optional[Dict[str, Any]] = None
 ) -> str:
+
+    # ALERT: Replace with better approach before Bokeh 3.x compatible release
+    if resources.mode == 'server':
+        dist_url = f'{state.rel_path}/{LOCAL_DIST}' if state.rel_path else LOCAL_DIST
+    else:
+        dist_url = CDN_DIST
+    for root in session.document.roots:
+        patch_model_css(root, dist_url=dist_url)
+
     render_item = RenderItem(
         token = session.token,
         roots = session.document.roots,

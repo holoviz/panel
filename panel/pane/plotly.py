@@ -257,6 +257,7 @@ class Plotly(PaneBase):
             json = self._plotly_json_wrapper(fig)
             sources = Plotly._get_sources(json)
 
+        params['css'] = ['css/plotly.css']
         params['_render_count'] = self._render_count
         params['config'] = self.config or {}
         params['data'] = json.get('data', [])
@@ -265,6 +266,9 @@ class Plotly(PaneBase):
         params['frames'] = json.get('frames', [])
         if layout.get('autosize') and self.sizing_mode is self.param.sizing_mode.default:
             params['sizing_mode'] = 'stretch_both'
+            if 'styles' not in params:
+                params['styles'] = {}
+            params['styles']['display'] = 'contents'
         return params
 
     def _get_model(
@@ -272,7 +276,7 @@ class Plotly(PaneBase):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         PlotlyPlot = lazy_load('panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root)
-        model = PlotlyPlot(**self._init_params())
+        model = PlotlyPlot(**self._process_param_change(self._init_params()))
         if root is None:
             root = model
         self._link_props(model, self._linkable_params, doc, root, comm)
@@ -333,10 +337,14 @@ class Plotly(PaneBase):
         updates = {}
         if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
             autosize = layout.get('autosize')
+            styles = dict(model.styles)
             if autosize and model.sizing_mode != 'stretch_both':
                 updates['sizing_mode'] = 'stretch_both'
+                styles['display'] = 'contents'
             elif not autosize and model.sizing_mode != 'fixed':
                 updates['sizing_mode'] = 'fixed'
+                if 'display' in styles:
+                    del styles['display']
 
         if new_sources:
             updates['data_sources'] = model.data_sources + new_sources

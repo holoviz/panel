@@ -5,11 +5,11 @@ from bokeh.core.properties import (
     Any, Bool, Dict, Enum, List, Nullable, String,
 )
 from bokeh.events import ModelEvent
-from bokeh.models import HTMLBox
 
 from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .layout import HTMLBox
 
 
 class JSONEditEvent(ModelEvent):
@@ -25,6 +25,8 @@ class JSONEditor(HTMLBox):
     """
     A bokeh model that allows editing JSON.
     """
+
+    css = List(String)
 
     data = Any()
 
