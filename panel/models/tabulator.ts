@@ -1,19 +1,19 @@
 import {undisplay} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {build_views} from "@bokehjs/core/build_views"
-import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties";
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {TableColumn} from "@bokehjs/models/widgets/tables"
+import {Attrs} from "@bokehjs/core/types"
 
 import {debounce} from "debounce"
 
 import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
-import {PanelHTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class TableEditEvent extends ModelEvent {
   event_name: string = "table-edit"
@@ -22,7 +22,7 @@ export class TableEditEvent extends ModelEvent {
     super()
   }
 
-  protected _to_json(): JSON {
+  protected get event_values(): Attrs {
     return {model: this.origin, column: this.column, row: this.row, pre: this.pre}
   }
 }
@@ -34,7 +34,7 @@ export class CellClickEvent extends ModelEvent {
     super()
   }
 
-  protected _to_json(): JSON {
+  protected get event_values(): Attrs {
     return {model: this.origin, column: this.column, row: this.row}
   }
 }
@@ -274,7 +274,7 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
 };
 
 
-export class DataTabulatorView extends PanelHTMLBoxView {
+export class DataTabulatorView extends HTMLBoxView {
   model: DataTabulator;
   tabulator: any;
   _tabulator_cell_updating: boolean=false
@@ -320,7 +320,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }
     })
 
-    this.connect(p.styles.change, () => {
+    this.connect(p.cell_styles.change, () => {
       if (this._applied_styles)
         this.tabulator.redraw(true)
       this.setStyles()
@@ -394,7 +394,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       return
     this._initializing = true
     const container = div({class: "pnx-tabulator"})
-    set_size(container, this.model)
+    //set_size(container, this.model)
     let configuration = this.getConfiguration()
 
     this.tabulator = new Tabulator(container, configuration)
@@ -403,7 +403,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     this.setHidden()
 
-    this.el.appendChild(container)
+    this.shadow_el.appendChild(container)
   }
 
   tableInit(): void {
@@ -634,7 +634,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       viewEl = div({style: "background-color: " + bg +"; margin-left:" + neg_margin})
     }
     row.getElement().appendChild(viewEl);
-    view.renderTo(viewEl)
+    view.render_to(viewEl)
   }
 
   _expand_render(cell: any): string {
@@ -987,8 +987,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     if (this.tabulator == null || this.tabulator.getDataCount() == 0)
       return
     this._applied_styles = false
-    for (const r in this.model.styles.data) {
-      const row_style = this.model.styles.data[r]
+    for (const r in this.model.cell_styles.data) {
+      const row_style = this.model.cell_styles.data[r]
       const row = this.tabulator.getRow(r)
       if (!row)
         continue
@@ -1174,7 +1174,7 @@ export namespace DataTabulator {
     selectable_rows: p.Property<number[] | null>
     source: p.Property<ColumnDataSource>
     sorters: p.Property<any[]>
-    styles: p.Property<any>
+    cell_styles: p.Property<any>
     theme: p.Property<string>
     theme_url: p.Property<string>
   }
@@ -1192,7 +1192,7 @@ export class DataTabulator extends HTMLBox {
 
   static __module__ = "panel.models.tabulator"
 
-  static init_DataTabulator(): void {
+  static {
     this.prototype.default_view = DataTabulatorView;
 
     this.define<DataTabulator.Props>(({Any, Array, Boolean, Nullable, Number, Ref, String}) => ({
@@ -1220,7 +1220,7 @@ export class DataTabulator extends HTMLBox {
       selectable_rows: [ Nullable(Array(Number)), null ],
       source:         [ Ref(ColumnDataSource)       ],
       sorters:        [ Array(Any),              [] ],
-      styles:         [ Any,                     {} ],
+      cell_styles:         [ Any,                     {} ],
       theme:          [ String,            "simple" ],
       theme_url:      [ String, "https://unpkg.com/tabulator-tables@5.3.2/dist/css/"]
     }))

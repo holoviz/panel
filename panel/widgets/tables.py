@@ -1071,7 +1071,8 @@ class Tabulator(BaseTable):
     _rename: ClassVar[Mapping[str, str | None]] = {
         'disabled': 'editable', 'selection': None, 'selectable': 'select_mode',
         'row_content': None, 'row_height': None, 'text_align': None,
-        'embed_content': None, 'header_align': None, 'header_filters': None
+        'embed_content': None, 'header_align': None, 'header_filters': None,
+        'styles': 'cell_styles'
     }
 
     # Determines the maximum size limits beyond which (local, remote)
@@ -1536,7 +1537,7 @@ class Tabulator(BaseTable):
             'buttons': self.buttons,
             'expanded': self.expanded,
             'source': source,
-            'styles': self._get_style_data(),
+            'cell_styles': self._get_style_data(),
             'columns': columns,
             'configuration': self._get_configuration(columns),
             'page': self.page,

@@ -1,12 +1,11 @@
 import * as p from "@bokehjs/core/properties"
 
 import {div, canvas} from "@bokehjs/core/dom"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {clone} from "@bokehjs/core/util/object"
 import {ColorMapper} from "@bokehjs/models/mappers/color_mapper"
 import {Enum} from "@bokehjs/core/kinds"
 
-import {PanelHTMLBoxView, set_size} from "../layout"
+import {HTMLBox, HTMLBoxView} from "../layout"
 import {vtkns, setup_vtkns, VolumeType, majorAxis, applyStyle, CSSProperties, Annotation} from "./util"
 import {VTKColorBar} from "./vtkcolorbar"
 import {VTKAxes} from "./vtkaxes"
@@ -28,7 +27,7 @@ const INFO_DIV_STYLE: CSSProperties = {
 
 const textPositions = Enum("LowerLeft", "LowerRight", "UpperLeft", "UpperRight", "LowerEdge", "RightEdge", "LeftEdge", "UpperEdge")
 
-export abstract class AbstractVTKView extends PanelHTMLBoxView {
+export abstract class AbstractVTKView extends HTMLBoxView {
   model: AbstractVTKPlot
   protected _axes: any
   protected _camera_callbacks: any[]
@@ -60,7 +59,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     info_div.classList.add('vtk_info')
     applyStyle(info_div, INFO_DIV_STYLE)
     applyStyle(info_div, {width: expand_width})
-    this.el.appendChild(info_div)
+    this.shadow_el.appendChild(info_div)
 
     //construct colorbars
     const colorbars: VTKColorBar[] = []
@@ -197,8 +196,8 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       this._vtk_container = div()
       this.init_vtk_renwin()
       this._init_annotations_container()
-      set_size(this._vtk_container, this.model)
-      this.el.appendChild(this._vtk_container)
+      //set_size(this._vtk_container, this.model)
+      this.shadow_el.appendChild(this._vtk_container)
       // update camera model state only at the end of the interaction
       // with the scene (avoid bouncing events and large amount of events)
       this._vtk_renwin.getInteractor().onEndAnimation(() => this._get_camera_state())
@@ -209,12 +208,12 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       this._add_annotations()
       this.model.renderer_el = this._vtk_renwin
     } else {
-      set_size(this._vtk_container, this.model)
+      //set_size(this._vtk_container, this.model)
       // warning if _vtk_renwin contain controllers or other elements
       // we must attach them to the new el
-      this.el.appendChild(this._vtk_container)
+      this.shadow_el.appendChild(this._vtk_container)
     }
-    this.el.appendChild(this._annotations_container)
+    this.shadow_el.appendChild(this._annotations_container)
   }
 
   after_layout(): void {
@@ -227,11 +226,6 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   invalidate_render(): void {
     this._unsubscribe_camera_cb()
     super.invalidate_render()
-  }
-
-  resize_layout(): void {
-    if (!this.layout) { return }
-    super.resize_layout()
   }
 
   remove(): void {
@@ -508,7 +502,7 @@ export abstract class AbstractVTKPlot extends HTMLBox {
     return this.renderer_el.getRenderer().getActors()
   }
 
-  static init_AbstractVTKPlot(): void {
+  static {
     this.define<AbstractVTKPlot.Props>(({Any, Ref, Array, Boolean, Nullable}) => ({
       axes:                           [ Nullable(Ref(VTKAxes)),       null ],
       camera:                         [ Any                                ],

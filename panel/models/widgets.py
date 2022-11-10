@@ -3,11 +3,12 @@ Custom bokeh Widget models.
 """
 from bokeh.core.enums import ButtonType
 from bokeh.core.properties import (
-    Any, Bool, Dict, Either, Enum, Float, Int, List, Nullable, Override,
-    String, Tuple,
+    Any, Bool, Either, Enum, Float, Int, List, Nullable, Override, String,
+    Tuple,
 )
-from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets import InputWidget, Select, Widget
+
+from .layout import HTMLBox
 
 
 class Player(Widget):
@@ -84,7 +85,7 @@ class Audio(HTMLBox):
 
     value = Any(help="Encoded file data")
 
-    volume = Int(0, help="""The volume of the audio player.""")
+    volume = Nullable(Int, help="""The volume of the audio player.""")
 
 
 class Video(HTMLBox):
@@ -138,9 +139,7 @@ class Progress(HTMLBox):
 
     value = Nullable(Int, help="""Current value""")
 
-    style = Dict(String, Any, default={}, help="""
-    Raw CSS style declaration. Note this may be web browser dependent.
-    """)
+    # style = Override(default={})
 
 
 class FileDownload(InputWidget):

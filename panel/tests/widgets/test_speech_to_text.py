@@ -164,7 +164,7 @@ def test_get_advanced_app():
         pn.pane.HTML(
             "<h1>Speech to Text <img style='float:right;height:40px;width:164px;margin-right:40px' src='https://panel.holoviz.org/_static/logo_horizontal.png'></h1>", # noqa
             background="black",
-            style={"color": "white", "margin-left": "20px"},
+            styles={"color": "white", "margin-left": "20px"},
             margin=(0, 0, 15, 0),
         ),
         speech_to_text,

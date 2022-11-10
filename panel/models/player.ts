@@ -213,7 +213,7 @@ export class PlayerView extends WidgetView {
       this.groupEl.appendChild(this.loop_state)
 
     this.toggle_disable()
-    this.el.appendChild(this.groupEl)
+    this.shadow_el.appendChild(this.groupEl)
   }
 
   set_frame(frame: number, throttled: boolean=true): void {
@@ -382,7 +382,7 @@ export class Player extends Widget {
 
   static __module__ = "panel.models.widgets"
 
-  static init_Player(): void {
+  static {
     this.prototype.default_view = PlayerView
 
     this.define<Player.Props>(({Boolean, Int}) => ({

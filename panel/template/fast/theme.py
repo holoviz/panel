@@ -62,7 +62,7 @@ class FastStyle(param.Parameterized):
 
         return {
             "attrs": {
-                "Figure": {
+                "figure": {
                     "background_fill_color": self.background_color,
                     "border_fill_color": self.neutral_fill_card_rest,
                     "border_fill_alpha": 0,

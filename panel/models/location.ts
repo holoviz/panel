@@ -88,7 +88,7 @@ export class Location extends Model {
     super(attrs)
   }
 
-  static init_Location(): void {
+  static {
     this.prototype.default_view = LocationView
 
     this.define<Location.Props>(({Boolean, String}) => ({

@@ -25,7 +25,7 @@ class FileBase(DivPaneBase):
         Whether to embed the file as base64.""")
 
     _rerender_params: ClassVar[List[str]] = [
-        'embed', 'object', 'style', 'width', 'height'
+        'embed', 'object', 'styles', 'width', 'height'
     ]
 
     __abstract = True
@@ -120,7 +120,7 @@ class ImageBase(FileBase):
     filetype: ClassVar[str] = 'None'
 
     _rerender_params: ClassVar[List[str]] = [
-        'alt_text', 'link_url', 'embed', 'object', 'style', 'width', 'height'
+        'alt_text', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
     ]
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {

@@ -1,9 +1,8 @@
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
-import {PanelHTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
-export class VideoStreamView extends PanelHTMLBoxView {
+export class VideoStreamView extends HTMLBoxView {
   model: VideoStream
   protected videoEl: HTMLVideoElement
   protected canvasEl: HTMLCanvasElement
@@ -78,7 +77,7 @@ export class VideoStreamView extends PanelHTMLBoxView {
     this.videoEl.style.minWidth = '100%';
     this.videoEl.style.minHeight = '100%';
     this.canvasEl = document.createElement('canvas')
-    this.el.appendChild(this.videoEl)
+    this.shadow_el.appendChild(this.videoEl)
     if (navigator.mediaDevices.getUserMedia){
       navigator.mediaDevices.getUserMedia(this.constraints)
       .then(stream => {
@@ -114,7 +113,7 @@ export class VideoStream extends HTMLBox {
 
   static __module__ = "panel.models.widgets"
 
-  static init_VideoStream(): void {
+  static {
     this.prototype.default_view = VideoStreamView
 
     this.define<VideoStream.Props>(({Any, Boolean, Int, Nullable, String}) => ({

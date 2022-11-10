@@ -1,15 +1,14 @@
-import * as p from "@bokehjs/core/properties"
-
+import {StyleSheetLike, ImportedStyleSheet} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
+import * as p from "@bokehjs/core/properties"
 import {clone} from "@bokehjs/core/util/object"
-import {isEqual} from "@bokehjs/core/util/eq"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
+import {is_equal} from "@bokehjs/core/util/eq"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 
 import {debounce} from  "debounce"
 import {deepCopy, isPlainObject, get, throttle} from "./util"
 
-import {PanelHTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
 
 interface PlotlyHTMLElement extends HTMLDivElement {
@@ -109,7 +108,7 @@ const _isHidden = (gd: any) => {
 };
 
 
-export class PlotlyPlotView extends PanelHTMLBoxView {
+export class PlotlyPlotView extends HTMLBoxView {
   model: PlotlyPlot
   _setViewport: Function
   _settingViewport: boolean = false
@@ -124,7 +123,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
 
   initialize(): void {
     super.initialize()
-    this._layout_wrapper = <PlotlyHTMLElement>div({style: "height: 100%; width: 100%;"})
+    this._layout_wrapper = <PlotlyHTMLElement>div()
   }
 
   connect_signals(): void {
@@ -168,12 +167,21 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     })
   }
 
+  override styles(): StyleSheetLike[] {
+    const styles = super.styles()
+    for (const css of this.model.css)
+      styles.push(new ImportedStyleSheet(css))
+    return styles
+  }
+
   async render(): Promise<void> {
     super.render()
-    this.el.style.visibility = this.model.visibility ? 'visible' : 'hidden'
-    this.el.appendChild(this._layout_wrapper)
+    set_size(this._layout_wrapper, this.model)
+    this._layout_wrapper.style.visibility = this.model.visibility ? 'visible' : 'hidden'
     await this.plot();
-    (window as any).Plotly.relayout(this._layout_wrapper, this.model.relayout)
+    if (this.model.relayout != null)
+      (window as any).Plotly.relayout(this._layout_wrapper, this.model.relayout)
+    this.shadow_el.appendChild(this._layout_wrapper)
   }
 
   _trace_data(): any {
@@ -290,7 +298,6 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
 
   after_layout(): void{
     super.after_layout()
-    set_size(this.el, this.model)
     if ((window as any).Plotly && this._plotInitialized)
       (window as any).Plotly.Plots.resize(this._layout_wrapper)
   }
@@ -331,7 +338,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
 
     // Call relayout if viewport differs from fullLayout
     Object.keys(this.model.viewport).reduce((value: any, key: string) => {
-      if (!isEqual(get(fullLayout, key), value)) {
+      if (!is_equal(get(fullLayout, key), value)) {
         let clonedViewport = deepCopy(this.model.viewport)
         clonedViewport['_update_from_property'] = true
         this._settingViewport = true;
@@ -358,7 +365,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
         viewport[prop + '.range'] = deepCopy(fullLayout[prop].range)
     }
 
-    if (!isEqual(viewport, this.model.viewport))
+    if (!is_equal(viewport, this.model.viewport))
       this._setViewport(viewport)
   }
 
@@ -387,6 +394,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
 export namespace PlotlyPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
+    css: p.Property<string[]>
     data: p.Property<any[]>
     frames: p.Property<any[] | null>
     layout: p.Property<any>
@@ -419,10 +427,11 @@ export class PlotlyPlot extends HTMLBox {
 
   static __module__ = "panel.models.plotly"
 
-  static init_PlotlyPlot(): void {
+  static {
     this.prototype.default_view = PlotlyPlotView
 
-    this.define<PlotlyPlot.Props>(({Array, Any, Boolean, Ref, String, Nullable, Number}) => ({
+    this.define<PlotlyPlot.Props>(({Array, Any, Boolean, Nullable, Number, Ref, String}) => ({
+      css: [ Array(String), [] ],
       data: [ Array(Any), [] ],
       layout: [ Any, {} ],
       config: [ Any, {} ],

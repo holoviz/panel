@@ -1,7 +1,9 @@
+import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {isArray} from "@bokehjs/core/util/types"
-import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import {HTMLBox, HTMLBoxView} from "./layout"
+import {Attrs} from "@bokehjs/core/types"
 
 import {debounce} from  "debounce"
 
@@ -12,7 +14,7 @@ export class VegaEvent extends ModelEvent {
     super()
   }
 
-  protected _to_json(): JSON {
+  protected get event_values(): Attrs {
     return {model: this.origin, data: this.data}
   }
 }
@@ -84,8 +86,10 @@ export class VegaPlotView extends HTMLBoxView {
 
   render(): void {
     super.render()
+    this.el = div()
     this._callbacks = []
     this._plot()
+    this.shadow_el.append(this.el)
   }
 
   _plot(): void {
@@ -110,9 +114,9 @@ export class VegaPlotView extends HTMLBoxView {
       this.model.data['datasets'] = datasets
     }
     const config: any = {actions: this.model.show_actions, theme: this.model.theme};
+
     (window as any).vegaEmbed(this.el, this.model.data, config).then((result: any) => {
       this.vega_view = result.view
-      this.relayout()
       if (this.vega_view._viewHeight <= 0 || this.vega_view._viewWidth <= 0) {
         (window as any).dispatchEvent(new Event('resize'));
       }
@@ -123,26 +127,6 @@ export class VegaPlotView extends HTMLBoxView {
         this.vega_view.addSignalListener(event, debounce(callback, timeout, false))
       }
     })
-  }
-
-  relayout(): void {
-    this.update_layout()
-    this.compute_layout()
-    if (this.root !== this)
-      this.invalidate_layout()
-    else if ((this as any)._parent != undefined) // HACK: Support ReactiveHTML
-      (this as any)._parent.invalidate_layout()
-  }
-
-  box_sizing(): any {
-    const sizing = super.box_sizing()
-    if (this.vega_view != null) {
-      if (sizing.height_policy === "fixed")
-        sizing.height = this.vega_view._viewHeight
-      if (sizing.width_policy === "fixed")
-        sizing.width = this.vega_view._viewWidth
-    }
-    return sizing
   }
 }
 
@@ -169,16 +153,16 @@ export class VegaPlot extends HTMLBox {
 
   static __module__ = "panel.models.vega"
 
-  static init_VegaPlot(): void {
+  static {
     this.prototype.default_view = VegaPlotView
 
-    this.define<VegaPlot.Props>(({Any, Array, Boolean, String}) => ({
-      data:         [ Any,           {} ],
-      data_sources: [ Any,           {} ],
-      events:       [ Array(String), [] ],
-      show_actions: [ Boolean,    false ],
-      theme:        [ String,           ],
-      throttle:     [ Any,           {} ]
+    this.define<VegaPlot.Props>(({Any, Array, Boolean, Nullable, String}) => ({
+      data:         [ Any,                {} ],
+      data_sources: [ Any,                {} ],
+      events:       [ Array(String),      [] ],
+      show_actions: [ Boolean,         false ],
+      theme:        [ Nullable(String), null ],
+      throttle:     [ Any,                {} ]
     }))
   }
 }

@@ -107,7 +107,7 @@ export class SingleSelect extends InputWidget {
 
   static __module__ = "panel.models.widgets"
 
-  static init_SingleSelect(): void {
+  static {
     this.prototype.default_view = SingleSelectView
 
     this.define<SingleSelect.Props>(({Any, Array, Int, String}) => ({

@@ -1,7 +1,7 @@
 import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
 
 import buttons_css, * as buttons from "@bokehjs/styles/buttons.css"
-import {input} from "@bokehjs/core/dom"
+import {input, StyleSheetLike} from "@bokehjs/core/dom"
 
 import {ButtonType} from "@bokehjs/core/enums"
 import * as p from "@bokehjs/core/properties"
@@ -111,7 +111,7 @@ export class FileDownloadView extends InputWidgetView {
     this.input_el.addEventListener("change", () => this.change_input())
   }
 
-  styles(): string[] {
+  styles(): StyleSheetLike[] {
     return [...super.styles(), buttons_css]
   }
 
@@ -218,7 +218,7 @@ export class FileDownload extends InputWidget {
 
   static __module__ = "panel.models.widgets"
 
-  static init_FileDownload(): void {
+  static {
     this.prototype.default_view = FileDownloadView
 
     this.define<FileDownload.Props>(({Boolean, Int, Nullable, String}) => ({

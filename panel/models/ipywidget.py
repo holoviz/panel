@@ -1,5 +1,6 @@
 from bokeh.core.properties import Any
-from bokeh.models.layouts import HTMLBox
+
+from .layout import HTMLBox
 
 
 class IPyWidget(HTMLBox):
