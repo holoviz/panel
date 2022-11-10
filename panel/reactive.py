@@ -165,7 +165,7 @@ class Syncable(Renderable):
         Parameters which are synced with properties using transforms
         applied in the _process_param_change method.
         """
-        ignored = ['default_layout', 'loading']
+        ignored = ['default_layout', 'loading', 'background']
         return [p for p in self.param if p not in self._manual_params+ignored]
 
     def _init_params(self) -> Dict[str, Any]:

@@ -9,12 +9,12 @@ from bokeh.core.properties import (
 )
 from bokeh.events import ModelEvent
 from bokeh.models import ColumnDataSource, LayoutDOM
-from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets.tables import TableColumn
 
 from ..config import config
 from ..io.resources import JS_VERSION, bundled_files
 from ..util import classproperty
+from .layout import HTMLBox
 
 TABULATOR_VERSION = "5.3.2"
 
@@ -127,7 +127,7 @@ class DataTabulator(HTMLBox):
 
     source = Instance(ColumnDataSource)
 
-    styles = Dict(String, Either(String, Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))))
+    cell_styles = Dict(String, Either(String, Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))))
 
     pagination = Nullable(String)
 

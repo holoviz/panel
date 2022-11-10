@@ -37,7 +37,7 @@ export class VTKAxes extends Model {
 
   static __module__ = "panel.models.vtk"
 
-  static init_VTKAxes(): void {
+  static {
     this.define<VTKAxes.Props>(({Any, Array, Boolean, Number}) => ({
       origin: [Array(Number)],
       xticker: [Any],
