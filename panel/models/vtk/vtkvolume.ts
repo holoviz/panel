@@ -414,7 +414,7 @@ export class VTKVolumePlot extends AbstractVTKPlot {
     super(attrs)
   }
 
-  static init_VTKVolumePlot(): void {
+  static {
     this.prototype.default_view = VTKVolumePlotView
 
     this.define<VTKVolumePlot.Props>(({Any, Array, Boolean, Int, Number, String, Struct}) => ({

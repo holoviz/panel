@@ -4,11 +4,11 @@ Defines custom AcePlot bokeh model to render Ace editor.
 from bokeh.core.properties import (
     Any, Bool, Dict, Enum, List, Nullable, Override, String,
 )
-from bokeh.models import HTMLBox
 
 from ..io.resources import bundled_files
 from ..util import classproperty
 from .enums import ace_themes
+from .layout import HTMLBox
 
 
 class AcePlot(HTMLBox):

@@ -1,5 +1,5 @@
 import * as p from "@bokehjs/core/properties"
-import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
+import { HTMLBox, HTMLBoxView } from "./layout"
 
 function toVoicesList(voices: SpeechSynthesisVoice[]) {
   var voicesList = [];
@@ -150,7 +150,7 @@ export class TextToSpeech extends HTMLBox {
 
   static __module__ = "panel.models.text_to_speech"
 
-  static init_TextToSpeech(): void {
+  static {
     this.prototype.default_view = TextToSpeechView
 
     this.define<TextToSpeech.Props>(({Any, Array, Boolean}) => ({

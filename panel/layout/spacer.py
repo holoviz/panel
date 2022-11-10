@@ -104,7 +104,7 @@ class Divider(Reactive):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         properties = self._process_param_change(self._init_params())
-        properties['style'] = {'width': '100%', 'height': '100%'}
+        properties['styles'] = {'width': '100%', 'height': '100%'}
         model = self._bokeh_model(text='<hr style="margin: 0px">', **properties)
         if root is None:
             root = model

@@ -1,12 +1,11 @@
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {debounce} from  "debounce"
 
 import {transform_cds_to_records} from "./data"
-import {PanelHTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 import {makeTooltip} from "./tooltips"
 
 import GL from '@luma.gl/constants';
@@ -22,7 +21,7 @@ function extractClasses() {
   return classesDict;
 }
 
-export class DeckGLPlotView extends PanelHTMLBoxView {
+export class DeckGLPlotView extends HTMLBoxView {
   model: DeckGLPlot
   jsonConverter: any
   deckGL: any
@@ -186,7 +185,6 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   render(): void {
     super.render()
     const container = div({class: "deckgl"})
-    set_size(container, this.model)
 
     const MAPBOX_API_KEY = this.model.mapbox_api_key
     const tooltip = this.model.tooltip
@@ -207,7 +205,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
         tooltip
       });
     }
-    this.el.appendChild(container);
+    this.shadow_el.appendChild(container);
   }
 }
 
@@ -238,7 +236,7 @@ export class DeckGLPlot extends HTMLBox {
 
   static __module__ = "panel.models.deckgl"
 
-  static init_DeckGLPlot(): void {
+  static {
     this.prototype.default_view = DeckGLPlotView;
 
     this.define<DeckGLPlot.Props>(({Any, Array, String, Ref}) => ({
