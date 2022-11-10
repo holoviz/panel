@@ -37,7 +37,7 @@ from ..util import escape
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    PANEL_DIR, Bundle, Resources, _env, bundle_resources,
+    PANEL_DIR, Bundle, Resources, _env, bundle_resources, patch_model_css,
 )
 from .state import state
 
@@ -71,7 +71,9 @@ def push(doc: 'Document', comm: 'Comm', binary: bool = True) -> None:
     comm.send(msg.header_json)
     comm.send(msg.metadata_json)
     comm.send(msg.content_json)
-    for header, payload in msg.buffers:
+    for buffer in msg.buffers:
+        header = json.dumps(buffer.ref)
+        payload = buffer.to_bytes()
         comm.send(json.dumps(header))
         comm.send(buffers=[payload])
 
@@ -134,7 +136,7 @@ def render_template(
     document: 'Document', comm: Optional['Comm'] = None, manager: Optional['CommManager'] = None
 ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
     ref = document.roots[0].ref['id']
-    (docs_json, render_items) = standalone_docs_json_and_render_items(document, True)
+    (docs_json, render_items) = standalone_docs_json_and_render_items(document, suppress_callback_warning=True)
 
     # We do not want the CommManager to appear in the roots because
     # the custom template may not reference it
@@ -157,7 +159,10 @@ def render_model(
 
     target = model.ref['id']
 
-    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], True)
+    # ALERT: Replace with better approach before Bokeh 3.x compatible release
+    patch_model_css(model, dist_url='/panel-preview/static/extensions/panel/')
+
+    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], suppress_callback_warning=True)
     div = div_for_render_item(render_item)
     render_json = render_item.to_json()
     requirements = [pnext._globals[ext] for ext in pnext._loaded_extensions
@@ -246,10 +251,11 @@ def load_notebook(inline: bool = True, load_timeout: int = 5000) -> None:
     resources = INLINE if inline else CDN
     prev_resources = settings.resources(default="server")
     user_resources = settings.resources._user_value is not _Unset
-    resources = Resources.from_bokeh(resources)
+    nb_endpoint = not state._is_pyodide
+    resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
     try:
         bundle = bundle_resources(None, resources)
-        bundle = Bundle.from_bokeh(bundle)
+        bundle = Bundle.from_bokeh(bundle, notebook=nb_endpoint)
         configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
         bokeh_js = _autoload_js(bundle, configs, requirements, exports,

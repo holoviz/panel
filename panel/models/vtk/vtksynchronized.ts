@@ -187,7 +187,7 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
     return actors
   }
 
-  static init_VTKSynchronizedPlot(): void {
+  static {
     this.prototype.default_view = VTKSynchronizedPlotView
 
     this.define<VTKSynchronizedPlot.Props>(({Any, Array, Boolean, String}) => ({

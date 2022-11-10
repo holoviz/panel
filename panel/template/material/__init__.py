@@ -100,7 +100,7 @@ MATERIAL_TEXT_DIGITAL_DARK = "rgb(236,236,236)"
 
 MATERIAL_DARK_THEME = {
         "attrs": {
-            "Figure": {
+            "figure": {
                 "background_fill_color": MATERIAL_DARK_50,
                 "border_fill_color": MATERIAL_DARK_100,
                 "outline_line_color": MATERIAL_DARK_75,

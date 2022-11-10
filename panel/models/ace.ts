@@ -1,8 +1,7 @@
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import { div } from "@bokehjs/core/dom";
 
-import {PanelHTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 function ID() {
   // Math.random should be unique because of its seeding algorithm.
@@ -12,7 +11,7 @@ function ID() {
 }
 
 
-export class AcePlotView extends PanelHTMLBoxView {
+export class AcePlotView extends HTMLBoxView {
   model: AcePlot
   protected _editor: any
   protected _langTools: any
@@ -47,7 +46,7 @@ export class AcePlotView extends PanelHTMLBoxView {
   render(): void {
     super.render()
     if (!(this._container === this.el.childNodes[0]))
-      this.el.appendChild(this._container)
+      this.shadow_el.appendChild(this._container)
       this._container.textContent = this.model.code
       this._editor = (window as any).ace.edit(this._container.id)
       this._langTools = (window as any).ace.require('ace/ext/language_tools')
@@ -131,7 +130,7 @@ export class AcePlot extends HTMLBox {
 
   static __module__ = "panel.models.ace"
 
-  static init_AcePlot(): void {
+  static {
     this.prototype.default_view = AcePlotView
 
     this.define<AcePlot.Props>(({Any, Array, Boolean, String}) => ({
