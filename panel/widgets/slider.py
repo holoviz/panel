@@ -355,7 +355,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                              'is one of the declared options.'
                              % self.value)
 
-        self._text = StaticText(margin=(5, 0, 0, 5), style={'white-space': 'nowrap'})
+        self._text = StaticText(margin=(5, 0, 0, 5), styles={'white-space': 'nowrap'})
         self._slider = None
         self._composite = Column(self._text, self._slider)
         self._update_options()

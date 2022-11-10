@@ -73,7 +73,7 @@ class LaTeX(DivPaneBase):
         return lazy_load(f'panel.models.{module}', model, isinstance(comm, JupyterComm), root)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = self._get_model_type(root, comm)(**self._get_properties())
+        model = self._get_model_type(root, comm)(**self._process_param_change(self._get_properties()))
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)

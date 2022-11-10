@@ -1,9 +1,8 @@
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
-import {div} from "@bokehjs/core/dom"
+import {StyleSheetLike, ImportedStyleSheet, div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {DocumentEvent} from "@bokehjs/document/events"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
-import {PanelHTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
 
 const THEMES: any = {
@@ -44,7 +43,7 @@ function objectFlip(obj: any) {
 const PLUGINS_REVERSE = objectFlip(PLUGINS)
 const THEMES_REVERSE = objectFlip(THEMES)
 
-export class PerspectiveView extends PanelHTMLBoxView {
+export class PerspectiveView extends HTMLBoxView {
   model: Perspective
   perspective_element: any
   table: any
@@ -61,7 +60,6 @@ export class PerspectiveView extends PanelHTMLBoxView {
     this.connect(this.model.source.properties.data.change, () => this.setData());
     this.connect(this.model.properties.toggle_config.change, () => {
       this.perspective_element.toggleConfig()
-      this.fix_layout()
     })
     this.connect(this.model.properties.columns.change, () => {
       this.perspective_element.restore({"columns": this.model.columns})
@@ -112,6 +110,13 @@ export class PerspectiveView extends PanelHTMLBoxView {
     super.disconnect_signals()
   }
 
+  override styles(): StyleSheetLike[] {
+    const styles = super.styles()
+    for (const css of this.model.css)
+      styles.push(new ImportedStyleSheet(css))
+    return styles
+  }
+
   async render(): Promise<void> {
     super.render()
     this.worker = (window as any).perspective.worker();
@@ -123,13 +128,12 @@ export class PerspectiveView extends PanelHTMLBoxView {
         zIndex: 0,
       }
     })
-    set_size(container, this.model)
+    //set_size(container, this.model)
     container.innerHTML = "<perspective-viewer style='height:100%; width:100%;'></perspective-viewer>";
     this.perspective_element = container.children[0]
     this.perspective_element.resetThemes([...Object.values(THEMES)]).catch(() => {})
-    set_size(this.perspective_element, this.model)
-    this.el.appendChild(container)
     this.perspective_element.load(this.table)
+    set_size(this.perspective_element, this.model)
 
     const plugin_config = {
       ...this.model.plugin_config,
@@ -155,14 +159,8 @@ export class PerspectiveView extends PanelHTMLBoxView {
     if (this.model.toggle_config)
       this.perspective_element.toggleConfig()
     this.perspective_element.addEventListener("perspective-config-update", this._config_listener)
+    this.shadow_el.appendChild(container)
     this._loaded = true
-    this.fix_layout()
-  }
-
-  fix_layout(): void {
-    this.update_layout()
-    this.compute_layout()
-    this.invalidate_layout()
   }
 
   sync_config(): boolean {
@@ -229,6 +227,7 @@ export class PerspectiveView extends PanelHTMLBoxView {
 export namespace Perspective {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
+    css: p.Property<string[]>
     aggregates: p.Property<any>
     split_by: p.Property<any[] | null>
     columns: p.Property<any[]>
@@ -258,25 +257,26 @@ export class Perspective extends HTMLBox {
 
   static __module__ = "panel.models.perspective"
 
-  static init_Perspective(): void {
+  static {
     this.prototype.default_view = PerspectiveView
 
     this.define<Perspective.Props>(({Any, Array, Boolean, Ref, Nullable, String}) => ({
-      aggregates:       [ Any,                     ],
-      columns:          [ Array(Nullable(String)), ],
-      expressions:      [ Nullable(Array(String)), ],
-      split_by:         [ Nullable(Array(String)), ],
-      editable:         [ Nullable(Boolean),       ],
-      filters:          [ Nullable(Array(Any)),    ],
-      group_by:         [ Nullable(Array(String)), ],
-      plugin:           [ String,                  ],
-      plugin_config:    [ Any,                     ],
-      selectable:       [ Nullable(Boolean),       ],
-      schema:           [ Any,                  {} ],
-      toggle_config:    [ Boolean,            true ],
-      sort:             [ Nullable(Array(Array(String))), ],
-      source:           [ Ref(ColumnDataSource),   ],
-      theme:            [ String,                  ],
+      aggregates:       [ Any,                                 {} ],
+      css:              [ Array(String),                       [] ],
+      columns:          [ Array(Nullable(String)),             [] ],
+      expressions:      [ Nullable(Array(String)),           null ],
+      split_by:         [ Nullable(Array(String)),           null ],
+      editable:         [ Boolean,                           true ],
+      filters:          [ Nullable(Array(Any)),              null ],
+      group_by:         [ Nullable(Array(String)),           null ],
+      plugin:           [ String,                                 ],
+      plugin_config:    [ Any,                                 {} ],
+      selectable:       [ Boolean,                           true ],
+      schema:           [ Any,                                 {} ],
+      toggle_config:    [ Boolean,                           true ],
+      sort:             [ Nullable(Array(Array(String))),    null ],
+      source:           [ Ref(ColumnDataSource),                  ],
+      theme:            [ String,                                 ],
     }))
   }
 }

@@ -11,11 +11,11 @@ except Exception:
     hv = None
 
 from bokeh.models import (
-    Column as BkColumn, ColumnDataSource, GlyphRenderer, GridBox, Line,
+    Column as BkColumn, ColumnDataSource, GlyphRenderer, GridPlot, Line,
     Row as BkRow, Scatter, Select as BkSelect, Slider as BkSlider,
     Spacer as BkSpacer,
 )
-from bokeh.plotting import Figure
+from bokeh.plotting import figure
 
 import panel as pn
 
@@ -76,7 +76,7 @@ def test_holoviews_pane_switch_backend(document, comm):
     # Replace Pane.object
     pane.backend = 'bokeh'
     model = row.children[0]
-    assert isinstance(model, Figure)
+    assert isinstance(model, figure)
 
     # Cleanup
     pane._cleanup(row)
@@ -94,7 +94,7 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
-    assert isinstance(model, Figure)
+    assert isinstance(model, figure)
     assert pane._models[row.ref['id']][0] is model
     renderers = [r for r in model.renderers if isinstance(r, GlyphRenderer)]
     assert len(renderers) == 1
@@ -104,7 +104,7 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     scatter = hv.Scatter([1, 2, 3])
     pane.object = scatter
     model = row.children[0]
-    assert isinstance(model, Figure)
+    assert isinstance(model, figure)
     renderers = [r for r in model.renderers if isinstance(r, GlyphRenderer)]
     assert len(renderers) == 1
     assert isinstance(renderers[0].glyph, Scatter)
@@ -130,7 +130,7 @@ def test_holoviews_pane_initialize_empty(document, comm):
 
     pane.object = hv.Curve([1, 2, 3])
     model = row.children[0]
-    assert isinstance(model, Figure)
+    assert isinstance(model, figure)
 
 
 @hv_available
@@ -315,7 +315,7 @@ def test_holoviews_layouts(document, comm):
                     hv_obj, widgets = col
                     hv_model, wmodel = cmodel.children
             assert hv_pane is hv_obj
-            assert isinstance(hv_model, Figure)
+            assert isinstance(hv_model, figure)
 
             if loc in ('left', 'right', 'top', 'bottom',
                        'top_right', 'right_bottom', 'bottom_right',
@@ -403,7 +403,7 @@ def test_holoviews_linked_axes(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is p2.x_range
     assert p1.y_range is p2.y_range
@@ -418,7 +418,7 @@ def test_holoviews_linked_axes_flexbox(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is p2.x_range
     assert p1.y_range is p2.y_range
@@ -433,7 +433,7 @@ def test_holoviews_linked_axes_merged_ranges(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is p2.x_range
     assert p1.y_range is p2.y_range
@@ -450,7 +450,7 @@ def test_holoviews_linked_x_axis(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is p2.x_range
     assert p1.y_range is not p2.y_range
@@ -465,7 +465,7 @@ def test_holoviews_axiswise_not_linked_axes(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is not p2.x_range
     assert p1.y_range is not p2.y_range
@@ -480,7 +480,7 @@ def test_holoviews_shared_axes_opt_not_linked_axes(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is not p2.x_range
     assert p1.y_range is not p2.y_range
@@ -498,7 +498,7 @@ def test_holoviews_not_linked_axes(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    p1, p2 = row_model.select({'type': Figure})
+    p1, p2 = row_model.select({'type': figure})
 
     assert p1.x_range is not p2.x_range
     assert p1.y_range is not p2.y_range
@@ -520,8 +520,8 @@ def test_holoviews_link_across_panes(document, comm):
     assert len(row.children) == 2
     p1, p2 = row.children
 
-    assert isinstance(p1, Figure)
-    assert isinstance(p2, Figure)
+    assert isinstance(p1, figure)
+    assert isinstance(p2, figure)
 
     range_tool = row.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
@@ -544,13 +544,13 @@ def test_holoviews_link_after_adding_item(document, comm):
     assert len(row.children) == 1
     p1, = row.children
 
-    assert isinstance(p1, Figure)
+    assert isinstance(p1, figure)
     range_tool = row.select_one({'type': RangeTool})
     assert range_tool is None
 
     layout.append(pn.panel(c2, backend='bokeh'))
     _, p2 = row.children
-    assert isinstance(p2, Figure)
+    assert isinstance(p2, figure)
     range_tool = row.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
@@ -570,18 +570,15 @@ def test_holoviews_link_within_pane(document, comm):
     column = pane.get_root(document, comm=comm)
 
     assert len(column.children) == 1
-    subcolumn = column.children[0]
-    assert isinstance(subcolumn, BkColumn)
-    assert len(subcolumn.children) == 2
-    toolbar, subsubcolumn = subcolumn.children
-    assert isinstance(subsubcolumn, GridBox)
-    assert len(subsubcolumn.children) == 2
-    (p1, _, _), (p2, _, _) = subsubcolumn.children
+    grid_plot = column.children[0]
+    assert isinstance(grid_plot, GridPlot)
+    assert len(grid_plot.children) == 2
+    (p1, _, _), (p2, _, _) = grid_plot.children
 
-    assert isinstance(p1, Figure)
-    assert isinstance(p2, Figure)
+    assert isinstance(p1, figure)
+    assert isinstance(p2, figure)
 
-    range_tool = subsubcolumn.select_one({'type': RangeTool})
+    range_tool = grid_plot.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
 

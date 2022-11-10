@@ -2,7 +2,15 @@ from bokeh.core.properties import (
     Bool, List, Nullable, String,
 )
 from bokeh.models import Column
+from bokeh.models.layouts import LayoutDOM
 
+__all__ = (
+    "Card",
+    "HTMLBox",
+)
+
+class HTMLBox(LayoutDOM):
+    """ """
 
 class Card(Column):
 

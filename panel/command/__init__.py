@@ -7,7 +7,7 @@ import sys
 from bokeh.__main__ import main as bokeh_entry_point
 from bokeh.command.subcommands.serve import Serve as BkServe
 from bokeh.command.util import die
-from bokeh.util.string import nice_join
+from bokeh.util.strings import nice_join
 
 from .. import __version__
 from .convert import Convert
