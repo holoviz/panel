@@ -32,7 +32,6 @@ from bokeh.document import Document
 from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
-from typing_extensions import Literal
 
 from ..util import base64url_decode, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
@@ -48,6 +47,7 @@ if TYPE_CHECKING:
     from IPython.display import DisplayHandle
     from pyviz_comms import Comm
     from tornado.ioloop import IOLoop
+    from typing_extensions import Literal
 
     from ..template.base import BaseTemplate
     from ..viewable import Viewable

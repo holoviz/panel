@@ -69,7 +69,7 @@ export interface VTKJSPlot extends VTKJSPlot.Attrs {}
 export class VTKJSPlot extends AbstractVTKPlot {
   properties: VTKJSPlot.Props
 
-  static init_VTKJSPlot(): void {
+  static {
     this.prototype.default_view = VTKJSPlotView
 
     this.define<VTKJSPlot.Props>(({Boolean, Nullable, String}) => ({

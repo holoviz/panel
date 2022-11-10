@@ -36,7 +36,7 @@ def test_tqdm_color():
     for index in tqdm(range(0, 3), colour='red'):
         pass
 
-    assert tqdm.text_pane.style == {'color': 'red'}
+    assert tqdm.text_pane.styles == {'color': 'red'}
 
 
 def get_tqdm_app():

@@ -4,6 +4,7 @@ import asyncio
 import dataclasses
 import datetime as dt
 import inspect
+import json
 import logging
 import threading
 
@@ -151,7 +152,7 @@ def with_lock(func: Callable) -> Callable:
 def dispatch_tornado(conn, event):
     from tornado.websocket import WebSocketHandler
     socket = conn._socket
-    ws_conn = socket.ws_connection
+    ws_conn = getattr(socket, 'ws_connection', False)
     if not ws_conn or ws_conn.is_closing(): # type: ignore
         return []
     msg = conn.protocol.create('PATCH-DOC', [event])
@@ -160,7 +161,9 @@ def dispatch_tornado(conn, event):
         WebSocketHandler.write_message(socket, msg.metadata_json),
         WebSocketHandler.write_message(socket, msg.content_json)
     ]
-    for header, payload in msg._buffers:
+    for buffer in msg._buffers:
+        header = json.dumps(buffer.ref)
+        payload = buffer.to_bytes()
         futures.extend([
             WebSocketHandler.write_message(socket, header),
             WebSocketHandler.write_message(socket, payload, binary=True)
@@ -175,7 +178,9 @@ def dispatch_django(conn, event):
         socket.send(text_data=msg.metadata_json),
         socket.send(text_data=msg.content_json)
     ]
-    for header, payload in msg._buffers:
+    for buffer in msg._buffers:
+        header = json.dumps(buffer.ref)
+        payload = buffer.to_bytes()
         futures.extend([
             socket.send(text_data=header),
             socket.send(binary_data=payload)

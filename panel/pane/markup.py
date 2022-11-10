@@ -14,7 +14,7 @@ from typing import (
 import param
 
 from ..models import HTML as _BkHTML, JSON as _BkJSON
-from ..util import escape
+from ..util import escape, style_to_styles
 from ..viewable import Layoutable
 from .base import PaneBase
 
@@ -31,7 +31,7 @@ class DivPaneBase(PaneBase):
     the supported options like style and sizing_mode.
     """
 
-    style = param.Dict(default=None, doc="""
+    styles = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
 
     _bokeh_model: ClassVar[Model] = _BkHTML
@@ -42,15 +42,19 @@ class DivPaneBase(PaneBase):
 
     __abstract = True
 
+    def __init__(self, object=None, **params):
+        params = style_to_styles(params)
+        super().__init__(object=object, **params)
+
     def _get_properties(self):
-        return {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
+        return {p : getattr(self, p) for p in list(Layoutable.param) + ['styles']
                 if getattr(self, p) is not None}
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        model = self._bokeh_model(**self._get_properties())
+        model = self._bokeh_model(**self._process_param_change(self._get_properties()))
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
@@ -194,9 +198,8 @@ class DataFrame(HTML):
     ]
 
     def __init__(self, object=None, **params):
-        super().__init__(object, **params)
         self._stream = None
-        self._setup_stream()
+        super().__init__(object, **params)
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -211,7 +214,7 @@ class DataFrame(HTML):
     def _set_object(self, object):
         self._object = object
 
-    @param.depends('object', watch=True)
+    @param.depends('object', watch=True, on_init=True)
     def _setup_stream(self):
         if not self._models or not hasattr(self.object, 'stream'):
             return
@@ -237,6 +240,7 @@ class DataFrame(HTML):
 
     def _get_properties(self):
         properties = DivPaneBase._get_properties(self)
+        properties['css'] = ['css/dataframe.css']
         if self._stream:
             df = self._object
         else:
@@ -354,7 +358,8 @@ class Markdown(DivPaneBase):
         if self.dedent:
             data = textwrap.dedent(data)
         properties = super()._get_properties()
-        properties['style'] = properties.get('style', {})
+        properties['css'] = properties.get('css', []) + ['css/markdown.css']
+        properties['styles'] = properties.get('style', {})
         css_classes = properties.pop('css_classes', []) + ['markdown']
         html = markdown.markdown(data, extensions=self.extensions,
                                  output_format='html5')
@@ -398,7 +403,7 @@ class JSON(DivPaneBase):
     _bokeh_model: ClassVar[Model] = _BkJSON
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        "name": None, "object": "text", "encoder": None
+        "name": None, "object": "text", "encoder": None, "style": "styles"
     }
 
     _rerender_params: ClassVar[List[str]] = [
@@ -421,6 +426,7 @@ class JSON(DivPaneBase):
 
     def _get_properties(self):
         properties = super()._get_properties()
+        properties['css'] = ['css/json.css']
         try:
             data = json.loads(self.object)
         except Exception:

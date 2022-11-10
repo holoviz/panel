@@ -8,8 +8,8 @@ from __future__ import annotations
 import math
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional, Tuple,
-    Type,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    Tuple, Type,
 )
 
 import param  # type: ignore
@@ -90,6 +90,12 @@ class Widget(Reactive):
             display_threshold=-math.inf
         )
         return layout[0]
+
+    def _init_params(self) -> Dict[str, Any]:
+        msg = super()._init_params()
+        if 'css' in self._widget_type.properties():
+            msg['css'] = getattr(self._widget_type, '__css__', [])
+        return msg
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
