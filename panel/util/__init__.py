@@ -13,6 +13,7 @@ import os
 import re
 import sys
 import urllib.parse as urlparse
+import warnings
 
 from collections import OrderedDict, defaultdict
 from collections.abc import MutableMapping, MutableSequence
@@ -380,3 +381,17 @@ def base_version(version: str) -> str:
         return match.group()
     else:
         return version
+
+
+def style_to_styles(params):
+    """
+    In Bokeh 3.0.0 'style' was changed to 'styles'.
+    This small function will change it and emit a warning.
+
+    """
+    if "style" in params:
+        params["styles"] = params.pop("style")
+        msg = "The parameter 'style' is deprecated please use 'styles' instead of."
+        warnings.warn(msg, stacklevel=3)
+
+    return params

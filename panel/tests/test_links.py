@@ -12,7 +12,8 @@ from panel.links import Link
 from panel.pane import Bokeh, HoloViews
 from panel.tests.util import hv_available
 from panel.widgets import (
-    ColorPicker, DatetimeInput, FloatSlider, RangeSlider, TextInput,
+    ColorPicker, DatetimeInput, FloatInput, FloatSlider, RangeSlider,
+    TextInput,
 )
 
 
@@ -243,9 +244,10 @@ def test_widget_bkplot_link(document, comm):
 
 def test_bokeh_figure_jslink(document, comm):
     fig = figure()
+    fig.line(0, 0)
 
     pane = Bokeh(fig)
-    t1 = TextInput()
+    t1 = FloatInput()
 
     pane.jslink(t1, **{'x_range.start': 'value'})
     row = Row(pane, t1)

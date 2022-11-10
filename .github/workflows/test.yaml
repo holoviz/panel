@@ -35,7 +35,8 @@ jobs:
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
-        python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.7", "3.9", "3.11"]') }}
+        # python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.7", "3.9", "3.11"]') }}
+        python-version: [3.9]
     timeout-minutes: 90
     defaults:
       run:
@@ -75,6 +76,16 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
+      - name: Install bokeh 3.0 compatibility packages
+        run: |
+          conda activate test-environment
+          conda uninstall holoviews jupyter_bokeh --force -y --offline
+          pip install "git+https://github.com/holoviz/holoviews.git@bokeh3.0"
+          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
+      - name: doit env_capture
+        run: |
+          conda activate test-environment
+          doit env_capture
       - name: doit test_unit
         run: |
           conda activate test-environment
@@ -91,72 +102,82 @@ jobs:
           files: ./coverage.xml
           flags: unitexamples-tests
           fail_ci_if_error: false # optional (default = false)
-  ui_test_suite:
-    name: UI tests on ${{ matrix.os }} with Python 3.9
-    needs: [pre_commit]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-    timeout-minutes: 60
-    defaults:
-      run:
-        shell: bash -el {0}
-    env:
-      DESC: "Python ${{ matrix.python-version }} tests"
-      PYTHONIOENCODING: "utf-8"
-      PANEL_LOG_LEVEL: info
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
-      # Without this env var `doit env_create ...` uses by default
-      # the `pyviz` channel, except that we don't want to configure
-      # it as one of the sources.
-      PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
-    steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
-        with:
-          name: ui_test_suite
-          python-version: 3.9
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
-          envs: "-o recommended -o tests -o build"
-          cache: true
-          playwright: true
-          conda-mamba: mamba
-        id: install
-      - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
-        run: |
-          conda activate test-environment
-          pip install ipywidgets_bokeh
-      - name: build pyodide wheels
-        run: |
-          conda activate test-environment
-          python scripts/build_pyodide_wheels.py
-      - name: launch jupyter
-        run: |
-          conda activate test-environment
-          jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
-          (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
-      - name: build jupyterlite
-        run: |
-          conda activate test-environment
-          pip install jupyterlite
-          python ./scripts/build_pyodide_wheels.py lite/pypi
-          python ./scripts/generate_panelite_content.py
-          jupyter lite build --lite-dir lite --output-dir lite/dist
-      - name: Wait for JupyterLab
-        uses: ifaxity/wait-on-action@v1
-        with:
-          resource: http-get://localhost:8887/lab
-          timeout: 180000
-      - name: doit test_ui
-        run: |
-          conda activate test-environment
-          doit test_ui
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          flags: ui-tests
-          fail_ci_if_error: false # optional (default = false)
+  # ui_test_suite:
+  #   name: UI tests on ${{ matrix.os }} with Python 3.9
+  #   needs: [pre_commit]
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+  #   timeout-minutes: 60
+  #   defaults:
+  #     run:
+  #       shell: bash -el {0}
+  #   env:
+  #     DESC: "Python ${{ matrix.python-version }} tests"
+  #     PYTHONIOENCODING: "utf-8"
+  #     PANEL_LOG_LEVEL: info
+  #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
+  #     # Without this env var `doit env_create ...` uses by default
+  #     # the `pyviz` channel, except that we don't want to configure
+  #     # it as one of the sources.
+  #     PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
+  #   steps:
+  #     - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
+  #       with:
+  #         name: ui_test_suite
+  #         python-version: 3.9
+  #         channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
+  #         envs: "-o recommended -o tests -o build"
+  #         cache: true
+  #         playwright: true
+  #         conda-mamba: mamba
+  #       id: install
+  #     - name: doit develop_install
+  #       if: steps.install.outputs.cache-hit != 'true'
+  #       run: |
+  #         conda activate test-environment
+  #         pip install ipywidgets_bokeh
+  #     - name: build pyodide wheels
+  #       run: |
+  #         conda activate test-environment
+  #         python scripts/build_pyodide_wheels.py
+  #     - name: launch jupyter
+  #       run: |
+  #         conda activate test-environment
+  #         jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+  #         (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
+  #    - name: build jupyterlite
+  #      run: |
+  #        conda activate test-environment
+  #        pip install jupyterlite
+  #        python ./scripts/build_pyodide_wheels.py lite/pypi
+  #        python ./scripts/generate_panelite_content.py
+  #        jupyter lite build --lite-dir lite --output-dir lite/dist
+  #     - name: Wait for JupyterLab
+  #       uses: ifaxity/wait-on-action@v1
+  #       with:
+  #         resource: http-get://localhost:8887/lab
+  #         timeout: 180000
+  #     - name: Install bokeh 3.0 compatibility packages
+  #       run: |
+  #         conda activate test-environment
+  #         conda uninstall holoviews jupyter_bokeh --force -y --offline
+  #         pip install "git+https://github.com/holoviz/holoviews.git@bokeh3.0"
+  #         pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
+  #     - name: doit env_capture
+  #       run: |
+  #         conda activate test-environment
+  #         doit env_capture
+  #     - name: doit test_ui
+  #       run: |
+  #         conda activate test-environment
+  #         doit test_ui
+  #     - name: Upload coverage to Codecov
+  #       uses: codecov/codecov-action@v3
+  #       with:
+  #         files: ./coverage.xml
+  #         flags: ui-tests
+  #         fail_ci_if_error: false # optional (default = false)

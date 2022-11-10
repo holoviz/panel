@@ -476,24 +476,24 @@ def test_embed_merged_sliders(document, comm):
     ref4 = model.children[1].children[0].ref['id']
     state0 = json.loads(state_model.state[0]['content'])['events']
     assert state0 == [
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>1</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "1", "hint": None},
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>1</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "1", "hint": None}
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>1</b>',},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "1"},
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>1</b>',},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "1"}
     ]
     state1 = json.loads(state_model.state[1]['content'])['events']
     assert state1 == [
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>5</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "5", "hint": None},
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>5</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "5", "hint": None}
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>5</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "5"},
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>5</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "5"}
     ]
     state2 = json.loads(state_model.state[2]['content'])['events']
     assert state2 == [
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>9</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "9", "hint": None},
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>9</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "9", "hint": None}
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>9</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "9"},
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>9</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "9"}
     ]
 
 

@@ -1,13 +1,11 @@
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
-import {PanelHTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 const Jupyter = (window as any).Jupyter
 
-export class IPyWidgetView extends PanelHTMLBoxView {
+export class IPyWidgetView extends HTMLBoxView {
   model: IPyWidget
-  private rendered: boolean = false
   private ipyview: any
   private ipychildren: any[]
   private manager: any
@@ -41,18 +39,11 @@ export class IPyWidgetView extends PanelHTMLBoxView {
   render(): void {
     super.render()
     if (this.ipyview != null) {
-      this.el.appendChild(this.ipyview.el)
-      if (!this.rendered) {
-	this.ipyview.trigger('displayed', this.ipyview)
-	for (const child of this.ipychildren)
-          child.trigger('displayed', child)
-      }
+      this.shadow_el.appendChild(this.ipyview.el)
+      this.ipyview.trigger('displayed', this.ipyview)
+      for (const child of this.ipychildren)
+        child.trigger('displayed', child)
     }
-    this.rendered = true
-  }
-
-  has_finished(): boolean {
-    return this.rendered && super.has_finished()
   }
 }
 
@@ -74,7 +65,7 @@ export class IPyWidget extends HTMLBox {
 
   static __module__ = "panel.models.ipywidget"
 
-  static init_IPyWidget(): void {
+  static {
     this.prototype.default_view = IPyWidgetView
 
     this.define<IPyWidget.Props>(({Any}) => ({

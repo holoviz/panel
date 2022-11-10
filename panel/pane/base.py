@@ -12,7 +12,7 @@ from typing import (
 import param
 
 from bokeh.models.layouts import (
-    GridBox as _BkGridBox, Panel as _BkPanel, Tabs as _BkTabs,
+    GridBox as _BkGridBox, TabPanel as _BkTabPanel, Tabs as _BkTabs,
 )
 
 from ..io import (
@@ -173,7 +173,7 @@ class PaneBase(Reactive):
 
     @property
     def _synced_params(self) -> List[str]:
-        ignored_params = ['name', 'default_layout', 'loading']+self._rerender_params
+        ignored_params = ['name', 'default_layout', 'loading', 'background']+self._rerender_params
         return [p for p in self.param if p not in ignored_params]
 
     def _update_object(
@@ -218,7 +218,7 @@ class PaneBase(Reactive):
                 elif isinstance(parent, _BkTabs):
                     old_tab = parent.tabs[index]
                     props = dict(old_tab.properties_with_values(), child=new_model)
-                    parent.tabs[index] = _BkPanel(**props)
+                    parent.tabs[index] = _BkTabPanel(**props)
                 else:
                     parent.children[index] = new_model
 

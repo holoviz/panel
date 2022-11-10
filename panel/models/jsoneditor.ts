@@ -1,7 +1,8 @@
 import * as p from "@bokehjs/core/properties"
-import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
-import {PanelHTMLBoxView} from "./layout"
+import {StyleSheetLike, ImportedStyleSheet} from "@bokehjs/core/dom"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import {HTMLBox, HTMLBoxView} from "./layout"
+import {Attrs} from "@bokehjs/core/types"
 
 export class JSONEditEvent extends ModelEvent {
   event_name: string = "json_edit"
@@ -10,13 +11,13 @@ export class JSONEditEvent extends ModelEvent {
     super()
   }
 
-  protected _to_json(): JSON {
+  protected get event_values(): Attrs {
     return {model: this.origin, data: this.data}
   }
 }
 
 
-export class JSONEditorView extends PanelHTMLBoxView {
+export class JSONEditorView extends HTMLBoxView {
   model: JSONEditor
   editor: any
   _menu_context: any
@@ -43,6 +44,13 @@ export class JSONEditorView extends PanelHTMLBoxView {
     })
   }
 
+  override styles(): StyleSheetLike[] {
+    const styles = super.styles()
+    for (const css of this.model.css)
+      styles.push(new ImportedStyleSheet(css))
+    return styles
+  }
+
   override remove(): void {
     super.remove()
     this.editor.destroy()
@@ -51,7 +59,7 @@ export class JSONEditorView extends PanelHTMLBoxView {
   render(): void {
     super.render();
     const mode = this.model.disabled ? 'view': this.model.mode;
-    this.editor = new (window as any).JSONEditor(this.el, {
+    this.editor = new (window as any).JSONEditor(this.shadow_el, {
       menu: this.model.menu,
       mode: mode,
       onChangeJSON: (json: any) => {
@@ -71,6 +79,7 @@ export class JSONEditorView extends PanelHTMLBoxView {
 export namespace JSONEditor {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
+    css: p.Property<string[]>
     data: p.Property<any>
     menu: p.Property<boolean>
     mode: p.Property<string>
@@ -92,16 +101,17 @@ export class JSONEditor extends HTMLBox {
 
   static __module__ = "panel.models.jsoneditor"
 
-  static init_JSONEditor(): void {
+  static {
     this.prototype.default_view = JSONEditorView
     this.define<JSONEditor.Props>(({Any, Array, Boolean, String}) => ({
-      data:      [ Any,          {} ],
-      mode:      [ String,   'tree' ],
-      menu:      [ Boolean,    true ],
-      search:    [ Boolean,    true ],
-      selection: [ Array(Any),   [] ],
-      schema:    [ Any,        null ],
-      templates: [ Array(Any),   [] ],
+      css:       [ Array(String), [] ],
+      data:      [ Any,           {} ],
+      mode:      [ String,    'tree' ],
+      menu:      [ Boolean,     true ],
+      search:    [ Boolean,     true ],
+      selection: [ Array(Any),    [] ],
+      schema:    [ Any,         null ],
+      templates: [ Array(Any),    [] ],
     }))
   }
 }

@@ -1,4 +1,4 @@
-import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import {HTMLBox, HTMLBoxView} from "./layout"
 import {build_view} from "@bokehjs/core/build_views"
 import {Plot} from "@bokehjs/models/plots"
 import {Line, Step, VArea, VBar} from "@bokehjs/models/glyphs"
@@ -60,7 +60,7 @@ export class TrendIndicatorView extends HTMLBoxView {
 
   async render(): Promise<void> {
     super.render()
-    this.el.appendChild(this.containerDiv)
+    this.shadow_el.appendChild(this.containerDiv)
     await this.setPlot()
   }
 
@@ -120,7 +120,7 @@ export class TrendIndicatorView extends HTMLBoxView {
 
     const view = await build_view(this.plot)
     this.plotDiv.innerHTML = ""
-    view.renderTo(this.plotDiv)
+    view.render_to(this.plotDiv)
   }
 
   after_layout(): void {
@@ -243,7 +243,7 @@ export class TrendIndicator extends HTMLBox {
 
   static __module__ = "panel.models.trend"
 
-  static init_TrendIndicator(): void {
+  static {
     this.prototype.default_view = TrendIndicatorView;
 
     this.define<TrendIndicator.Props>(({Number, String, Ref}) => ({

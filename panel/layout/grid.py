@@ -14,7 +14,7 @@ from typing import (
 import numpy as np
 import param
 
-from bokeh.models import Box as BkBox, GridBox as BkGridBox
+from bokeh.models import FlexBox as BkFlexBox, GridBox as BkGridBox
 
 from ..io.model import hold
 from .base import (
@@ -307,7 +307,7 @@ class GridSpec(Panel):
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
 
-            if isinstance(child, BkBox) and len(child.children) == 1:
+            if isinstance(child, BkFlexBox) and len(child.children) == 1:
                 child.children[0].update(**properties)
             else:
                 child.update(**properties)
