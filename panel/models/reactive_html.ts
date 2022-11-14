@@ -369,7 +369,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       if (literal.indexOf(elvar) === -1)
         continue
       const script = `
-      const ${elvar} = this.shadow_el.getElementById('${elname}-${id}')
+      const ${elvar} = view.shadow_el.getElementById('${elname}-${id}')
       if (${elvar} == null) {
         console.warn("DOM node '${elname}' could not be found. Cannot execute callback.")
         return
@@ -378,8 +378,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
       scripts.push(script)
     }
     const event = `
+    let event = null
     if (state.event !== undefined) {
-      const event = state.event
+      event = state.event
     }
     `
     scripts.push(event)
