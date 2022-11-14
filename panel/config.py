@@ -166,7 +166,7 @@ class _config(_base_config):
     _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
 
     _comms = param.ObjectSelector(
-        default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
+        default=None, objects=[None, 'default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
         extension or use the jupyter_bokeh ipywidget model.""")
 
@@ -601,6 +601,8 @@ class panel_extension(_pyviz_extension):
 
         from .io.notebook import load_notebook
 
+        self._detect_comms(params)
+
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if loaded and newly_loaded:
             self.param.warning(
@@ -637,7 +639,18 @@ class panel_extension(_pyviz_extension):
             load_notebook(config.inline)
         panel_extension._loaded = True
 
+        if config.notifications:
+            display(state.notifications) # noqa
+
+        if config.load_entry_points:
+            self._load_entry_points()
+
+    def _detect_comms(self, params):
         if 'comms' in params:
+            config.comms = params.pop("comms")
+            return
+
+        if config.comms is not None:
             return
 
         # Try to detect environment so that we can enable comms
@@ -648,18 +661,15 @@ class panel_extension(_pyviz_extension):
         except ImportError:
             pass
 
-        # Check if we're running in VSCode
         if "VSCODE_PID" in os.environ:
             config.comms = "vscode"
+            return
 
         if "pyodide" in sys.modules:
             config.comms = "ipywidgets"
+            return
 
-        if config.notifications:
-            display(state.notifications) # noqa
-
-        if config.load_entry_points:
-            self._load_entry_points()
+        config.comms = "default"
 
     def _apply_signatures(self):
         from inspect import Parameter, Signature
