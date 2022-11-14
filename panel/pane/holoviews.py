@@ -355,7 +355,7 @@ class HoloViews(PaneBase):
                 old_pane._cleanup(root)
         super()._cleanup(root)
 
-    def _server_destroy(self, session_context: 'BokehSessionContext') -> None:
+    def _server_destroy(self, session_context: BokehSessionContext) -> None:
         with param.discard_events(self):
             self.object = None
         return super()._server_destroy(session_context)

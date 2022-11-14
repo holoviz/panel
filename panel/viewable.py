@@ -521,7 +521,7 @@ class Renderable(param.Parameterized):
     def _init_params(self) -> Mapping[str, Any]:
         return {k: v for k, v in self.param.values().items() if v is not None}
 
-    def _server_destroy(self, session_context: 'BokehSessionContext') -> None:
+    def _server_destroy(self, session_context: BokehSessionContext) -> None:
         """
         Server lifecycle hook triggered when session is destroyed.
         """
