@@ -31,6 +31,7 @@ from .plotly import Plotly
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
+    from bokeh.server.contexts import BokehSessionContext
     from pyviz_comms import Comm
 
 
@@ -353,6 +354,11 @@ class HoloViews(PaneBase):
             if old_pane:
                 old_pane._cleanup(root)
         super()._cleanup(root)
+
+    def _server_destroy(self, session_context: 'BokehSessionContext') -> None:
+        with param.discard_events(self):
+            self.object = None
+        return super()._server_destroy(session_context)
 
     #----------------------------------------------------------------
     # Public API
