@@ -1511,7 +1511,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _get_children(
         self, doc: Document, root: Model, model: Model, comm: Optional[Comm]
     ) -> Dict[str, List[Model]]:
-        from .pane import panel
+        from .pane.base import RerenderError, panel
         old_models = model.children
         new_models: Dict[str, List[Model]] = {parent: [] for parent in self._parser.children}
         new_panes: Dict[str, List[Viewable] | Dict[str, Viewable] | None] = {}
@@ -1555,16 +1555,22 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     if pane in old_panes and root.ref['id'] in pane._models:
                         child, _ = pane._models[root.ref['id']]
                     else:
-                        child = pane._get_model(doc, root, model, comm)
+                        try:
+                            child = pane._get_model(doc, root, model, comm)
+                        except RerenderError:
+                            return self._get_children(doc, root, model, comm)
                     new_models[parent].append(child)
             elif parent in old_models:
                 # Children parameter unchanged
                 new_models[parent] = old_models[parent]
             else:
-                new_models[parent] = [
-                    pane._get_model(doc, root, model, comm)
-                    for pane in child_panes
-                ]
+                try:
+                    new_models[parent] = [
+                        pane._get_model(doc, root, model, comm)
+                        for pane in child_panes
+                    ]
+                except RerenderError:
+                    return self._get_children(doc, root, model, comm)
         self._panes = internal_panes
         return self._process_children(doc, root, model, comm, new_models)
 

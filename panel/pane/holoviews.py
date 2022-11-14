@@ -109,12 +109,11 @@ class HoloViews(PaneBase):
         self._initialized = False
         self._responsive_content = False
         self._restore_plot = None
+        self._updating_layout = False
         self.widget_box = self.widget_layout()
         self._widget_container = []
-        self._update_widgets()
         self._plots = {}
         self.param.watch(self._update_widgets, self._rerender_params)
-        self._initialized = True
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
@@ -160,7 +159,11 @@ class HoloViews(PaneBase):
                 components = [Column(widgets, self)]
             elif loc.startswith('bottom'):
                 components = [Column(self, widgets)]
-        self.layout[:] = components
+        self._updating_layout = True
+        try:
+            self.layout[:] = components
+        finally:
+            self._updating_layout = False
 
     #----------------------------------------------------------------
     # Callback API
@@ -174,6 +177,15 @@ class HoloViews(PaneBase):
             if model.document:
                 model.document.theme = self.theme
 
+    def _unwatch_widgets(self):
+        """
+        Clean up anything listening to the current widgets
+        """
+        for cb in list(self._callbacks):
+            if cb.inst in self.widget_box.objects:
+                cb.inst.param.unwatch(cb)
+                self._callbacks.remove(cb)
+
     @param.depends('widget_type', 'widgets', watch=True)
     def _update_widgets(self, *events):
         if self.object is None:
@@ -183,11 +195,7 @@ class HoloViews(PaneBase):
                 self.object, self.widgets, self.widget_type)
         self._values = values
 
-        # Clean up anything models listening to the previous widgets
-        for cb in list(self._callbacks):
-            if cb.inst in self.widget_box.objects:
-                cb.inst.param.unwatch(cb)
-                self._callbacks.remove(cb)
+        self._unwatch_widgets()
 
         # Add new widget callbacks
         for widget in widgets:
@@ -199,6 +207,7 @@ class HoloViews(PaneBase):
             (not widgets and self.widget_box in self._widget_container) or
             not self._initialized):
             self._update_layout()
+        self._initialized = True
 
     def _update_plot(self, plot, pane):
         from holoviews.core.util import cross_index, wrap_tuple_streams
@@ -248,6 +257,14 @@ class HoloViews(PaneBase):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         from holoviews.plotting.plot import Plot
+        if not self._initialized:
+            # Widgets and layout are generated lazily, i.e. we do not
+            # keep them around unless they are currently being viewed.
+            # Therefore we have to render if we are in an uninialized
+            # state.
+            self._update_widgets()
+            raise RerenderError()
+
         if root is None:
             return self.get_root(doc, comm)
         ref = root.ref['id']
@@ -346,6 +363,8 @@ class HoloViews(PaneBase):
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
+        if self._updating_layout:
+            return
         if root:
             old_plot, old_pane = self._plots.pop(root.ref['id'], (None, None))
             if old_plot:
@@ -353,6 +372,12 @@ class HoloViews(PaneBase):
             if old_pane:
                 old_pane._cleanup(root)
         super()._cleanup(root)
+        if not self._models:
+            self._unwatch_widgets()
+            self._initialized = False
+            self.layout.objects[:] = []
+            self.widget_box[:] = []
+            self._widget_container[:] = []
 
     #----------------------------------------------------------------
     # Public API
