@@ -57,7 +57,7 @@ export class State extends Model {
   _receive_json(result: string, path: string): void {
     const state = JSON.parse(result)
     this._cache[path] = state
-	let current: any = this.state
+    let current: any = this.state
     for (const i of this.values) {
       current = current[i]
     }
@@ -73,7 +73,7 @@ export class State extends Model {
     values[index] = value
     let state: any = this.state
     for (const i of values) {
-      state = state[i]
+      state = state.get(i)
     }
     this.values = values
     if (this.json) {
