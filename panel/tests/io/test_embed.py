@@ -122,6 +122,19 @@ def test_embed_float_slider_explicit_values(document, comm):
         assert event2['model'] == model.children[1].ref
         assert event2['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % states[k]
 
+def test_embed_float_slider_default_value(document, comm):
+    slider = FloatSlider(start=0, end=7.2, value=3.6)
+    string = Str()
+    def link(target, event):
+        target.object = event.new
+    slider.link(string, callbacks={'value': link})
+    panel = Row(slider, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    embed_state(panel, model, document)
+    layout, state = document.roots
+    assert set(state.state) == {0, 1, 2}
+    assert layout.children[0].children[1].value == 1
 
 def test_embed_select_explicit_values(document, comm):
     select = Select(options=['A', 'B', 'C'])

@@ -129,7 +129,9 @@ class ContinuousSlider(_SliderBase):
         # Replace model
         layout_opts = {k: v for k, v in self.param.values().items()
                        if k in Layoutable.param and k != 'name'}
-        dw = DiscreteSlider(options=values, name=self.name, **layout_opts)
+
+        value = values[np.argmin(np.abs(np.array(values)-self.value))]
+        dw = DiscreteSlider(options=values, value=value, name=self.name, **layout_opts)
         dw.link(self, value='value')
         self._models.pop(ref)
         index = parent.children.index(w_model)
