@@ -665,10 +665,6 @@ class panel_extension(_pyviz_extension):
             config.comms = "vscode"
             return
 
-        if "pyodide" in sys.modules:
-            config.comms = "ipywidgets"
-            return
-
         config.comms = "default"
 
     def _apply_signatures(self):

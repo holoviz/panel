@@ -64,14 +64,12 @@ jobs:
           node-version: '15'
       - name: doit develop_install and other installs
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit develop_install -o examples
           pip install --use-deprecated=legacy-resolver --pre nbsite "myst-parser<0.17.0" "sphinx==5.2.3"
           pip install --use-deprecated=legacy-resolver pyecharts "idom==0.24" "pydata-sphinx-theme<=0.9.0" "pydata-sphinx-theme<=0.9.0" sphinx-copybutton sphinx-design
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
       - name: opengl
@@ -82,28 +80,23 @@ jobs:
           sleep 3
       - name: bokeh sampledata
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           bokeh sampledata
       - name: generate rst
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           nbsite generate-rst --org holoviz --project-name panel
       - name: refmanual
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests
       - name: build docs
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
           cp -r ./panel/dist ./builtdocs/panel_dist
       - name: convert gallery
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           panel convert examples/gallery/**/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index
       - name: git status and git diff
@@ -130,3 +123,29 @@ jobs:
           publish_dir: ./builtdocs
           cname: panel.holoviz.org
           force_orphan: true
+  deploy_jupyterlite:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install the dependencies
+        run: |
+          python -m pip install -r ./lite/requirements.txt
+      - name: Build pyodide wheels for JupyterLite
+        run: |
+          python ./scripts/build_pyodide_wheels.py lite/pypi
+      - name: Convert content
+        run: |
+          python ./scripts/generate_panelite_content.py
+      - name: Build the JupyterLite site
+        run: |
+          jupyter lite build --lite-dir lite --output-dir lite/dist
+      - name: upload
+        if: (github.event_name == 'push')
+        run: |
+          aws s3 rm s3://panelite.holoviz.org --recursive
+          aws s3 sync ./lite/dist s3://panelite.holoviz.org
