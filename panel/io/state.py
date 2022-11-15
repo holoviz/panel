@@ -117,6 +117,9 @@ class _state(param.Parameterized):
     webdriver = param.Parameter(default=None, doc="""
       Selenium webdriver used to export bokeh models to pngs.""")
 
+    _busy_counter = param.Integer(default=0, doc="""
+       Count of active callbacks current being processed.""")
+
     _memoize_cache = param.Dict(default={}, doc="""
        A dictionary used by the cache decorator.""")
 
@@ -229,6 +232,10 @@ class _state(param.Parameterized):
 
     def _unblocked(self, doc: Document) -> bool:
         return doc is self.curdoc and self._thread_id in (self._current_thread, None)
+
+    @param.depends('_busy_counter', watch=True)
+    def _update_busy_counter(self):
+        self.busy = self._busy_counter >= 1
 
     @param.depends('busy', watch=True)
     def _update_busy(self) -> None:
