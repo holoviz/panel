@@ -407,11 +407,11 @@ The code cell will display a button to execute the cell, which will warn about d
 
 ## Setting up JupyterLite
 
-[JupyterLite](https://jupyterlite.readthedocs.io/en/latest/) is a JupyterLab distribution that runs entirely in the browser built from the ground-up using JupyterLab components and extensions. In order to use Panel in JupyterLite you will have to build your own distribution. As a starting point we recommend following [this guide](https://jupyterlite.readthedocs.io/en/latest/howto/configure/simple_extensions.html) in the JupyterLite documentation which will tell you how to set up an environment to begin building JupyterLite.
+[JupyterLite](https://jupyterlite.readthedocs.io/en/latest/) is a JupyterLab distribution that runs entirely in the browser built from the ground-up using JupyterLab components and extensions. In order to use Panel in JupyterLite you will have to build your own distribution. As a starting point we recommend [this guide](https://jupyterlite.readthedocs.io/en/latest/howto/configure/simple_extensions.html) in the JupyterLite documentation, which will tell you how to set up an environment to begin building JupyterLite.
 
 ### Create a `<lite-dir>`
 
-Once your environment is set up create a new directory which will become the source for your JupyterLite distribution. Once created place the file contents into `<lite-dir>/files`.
+Once your environment is set up, create a new directory, which will become the source for your JupyterLite distribution. Once created place the file contents you want to make available in JupyterLite into `<lite-dir>/files`.
 
 ### Adding extensions
 
@@ -419,7 +419,7 @@ In order for Panel to set up communication channels inside JupyterLite we have t
 
 ### Optimized wheels (optional)
 
-To get Panel installed inside a Jupyterlite session we have to install it with `piplite`. The default Bokeh and Panel packages are quite large since they contain contents which are needed in a server environemnt, however since we will be running inside Jupyter these contents are not needed. To bundle the optimized packages download them from the CDN and place them in the `<lite-dir>/pypi` directory. You can download them from the CDN (replacing the latest version numbers).
+To get Panel installed inside a Jupyterlite session we have to install it with `piplite`. The default Bokeh and Panel packages are quite large since they contain contents which are needed in a server environment. Since we will be running inside Jupyter these contents are not needed. To bundle the optimized packages download them from the CDN and place them in the `<lite-dir>/pypi` directory. You can download them from the CDN (replacing the latest version numbers):
 
 ```
 https://cdn.holoviz.org/panel/0.14.2/dist/wheels/bokeh-2.4.3-py3-none-any.whl

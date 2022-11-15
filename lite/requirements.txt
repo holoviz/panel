@@ -5,4 +5,5 @@ jupyter_bokeh
 jupyterlab
 jupyterlite
 nbformat
+pkginfo
 pyviz_comms

@@ -7,7 +7,7 @@ import nbformat
 
 PANEL_BASE = pathlib.Path(__file__).parent.parent
 EXAMPLES_DIR = PANEL_BASE / 'examples'
-DEPENDENCIES = ['panel', 'pyodide-http', 'altair', 'hvplot', 'matplotlib', 'plotly', 'pydeck', 'scikit-learn']
+DEPENDENCIES = [repr(d) for d in ['panel', 'pyodide-http', 'altair', 'hvplot', 'matplotlib', 'plotly', 'pydeck', 'scikit-learn']]
 
 nbs = list(EXAMPLES_DIR.glob('*/*/*.ipynb')) + list(EXAMPLES_DIR.glob('*/*.ipynb'))
 install = nbformat.v4.new_code_cell(source=f"import piplite\nawait piplite.install([{', '.join(DEPENDENCIES)}])")
