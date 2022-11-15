@@ -118,7 +118,7 @@ class _state(param.Parameterized):
       Selenium webdriver used to export bokeh models to pngs.""")
 
     _busy_counter = param.Integer(default=0, doc="""
-       Active counts""")
+       Count of active callbacks current being processed.""")
 
     _memoize_cache = param.Dict(default={}, doc="""
        A dictionary used by the cache decorator.""")
