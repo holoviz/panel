@@ -95,7 +95,7 @@ class PeriodicCallback(param.Parameterized):
             )
         if not self._background:
             with edit_readonly(state):
-                state.busy = False
+                state._busy_counter -= 1
         self._counter += 1
         if self.timeout is not None:
             dt = (time.time() - self._start_time) * 1000
@@ -107,7 +107,7 @@ class PeriodicCallback(param.Parameterized):
     async def _periodic_callback(self):
         if not self._background:
             with edit_readonly(state):
-                state.busy = True
+                state._busy_counter += 1
         cbname = function_name(self.callback)
         if self._doc and self.log:
             _periodic_logger.info(
