@@ -238,7 +238,10 @@ def unlocked() -> Iterator:
                     logger.warning(f"Failed sending message due to following error: {e}")
 
         if state._unblocked(curdoc):
-            asyncio.ensure_future(handle_write_errors())
+            try:
+                asyncio.ensure_future(handle_write_errors())
+            except RuntimeError:
+                curdoc.add_next_tick_callback(handle_write_errors)
         else:
             curdoc.add_next_tick_callback(handle_write_errors)
 
