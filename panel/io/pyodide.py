@@ -254,7 +254,7 @@ def _get_pyscript_target():
     elif hasattr(sys.stdout, '_out'):
         # pyscript <= 2022.09.01
         return sys.stdout._out # type: ignore
-    else:
+    elif not _IN_WORKER:
         raise ValueError("Could not determine target node to write to.")
 
 #---------------------------------------------------------------------

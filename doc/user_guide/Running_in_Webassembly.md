@@ -422,10 +422,10 @@ In order for Panel to set up communication channels inside JupyterLite we have t
 To get Panel installed inside a Jupyterlite session we have to install it with `piplite`. The default Bokeh and Panel packages are quite large since they contain contents which are needed in a server environemnt, however since we will be running inside Jupyter these contents are not needed. To bundle the optimized packages download them from the CDN and place them in the `<lite-dir>/pypi` directory. You can download them from the CDN (replacing the latest version numbers).
 
 ```
-wget https://cdn.holoviz.org/panel/0.14.1/dist/wheels/bokeh-2.4.3-py3-none-any.whl
-wget https://cdn.holoviz.org/panel/0.14.1/dist/wheels/panel-0.14.1-py3-none-any.whl
+https://cdn.holoviz.org/panel/0.14.2/dist/wheels/bokeh-2.4.3-py3-none-any.whl
+https://cdn.holoviz.org/panel/0.14.2/dist/wheels/panel-0.14.2-py3-none-any.whl
 ```
 
 ### Building Panel lite
 
-Finally `cd` into your `<lite-dir>` and run `jupyter lite build --out-dir ./dist`. This will bundle up the file contents, extensions and wheels into your JupyterLite distribution. You can now easily deploy this to [GitHub pages](https://jupyterlite.readthedocs.io/en/latest/quickstart/deploy.html) or elsewhere.
+Finally `cd` into your `<lite-dir>` and run `jupyter lite build --output-dir ./dist`. This will bundle up the file contents, extensions and wheels into your JupyterLite distribution. You can now easily deploy this to [GitHub pages](https://jupyterlite.readthedocs.io/en/latest/quickstart/deploy.html) or elsewhere.

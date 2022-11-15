@@ -11,32 +11,33 @@ import subprocess
 import sys
 import zipfile
 
-sp = subprocess.Popen(['pip', 'wheel', '.', '-w', './build'], env=dict(os.environ, PANEL_LITE='1'))
+PANEL_BASE = pathlib.Path(__file__).parent.parent
+
+sp = subprocess.Popen(['pip', 'wheel', '.', '-w', str(PANEL_BASE / 'build')], env=dict(os.environ, PANEL_LITE='1'))
 sp.wait()
 
 if len(sys.argv) > 1:
     out = pathlib.Path(sys.argv[1])
 else:
-    out = pathlib.Path('./panel/dist/wheels')
+    out = PANEL_BASE / 'panel/dist/wheels'
 
 out.mkdir(exist_ok=True)
 
-panel_wheels = glob.glob('build/panel-*-py3-none-any.whl')
-
+panel_wheels = list(PANEL_BASE.glob('build/panel-*-py3-none-any.whl'))
 if not panel_wheels:
     raise RuntimeError('Panel wheel not found.')
-
 panel_wheel = sorted(panel_wheels)[-1]
-shutil.copyfile(panel_wheel, out / f'{os.path.basename(panel_wheel).replace(".dirty", "")}')
 
-bokeh_wheels = glob.glob('build/bokeh-*-py3-none-any.whl')
+shutil.copyfile(panel_wheel, out / os.path.basename(panel_wheel).replace(".dirty", ""))
+
+bokeh_wheels = PANEL_BASE.glob('build/bokeh-*-py3-none-any.whl')
 if not bokeh_wheels:
     raise RuntimeError('Bokeh wheel not found.')
-
 bokeh_wheel = sorted(bokeh_wheels)[-1]
+
 zin = zipfile.ZipFile (bokeh_wheel, 'r')
 
-zout = zipfile.ZipFile(out / f'{os.path.basename(bokeh_wheel)}', 'w')
+zout = zipfile.ZipFile(out / os.path.basename(bokeh_wheel), 'w')
 exts = ['.js', '.d.ts', '.tsbuildinfo']
 for item in zin.infolist():
     filename = item.filename
