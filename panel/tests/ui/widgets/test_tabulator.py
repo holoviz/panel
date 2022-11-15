@@ -3509,3 +3509,39 @@ def test_tabulator_sorter_default_number(page, port):
         assert table_values == list(df2['x'].sort_values(ascending=False))
 
     wait_until(x_values, page)
+
+
+def test_tabulator_update_hidden_columns(page, port):
+    df = pd.DataFrame({
+        'a': [1, 2, 3],
+        'b': [1, 2, 3]
+    })
+
+    widget = Tabulator(
+        df, hidden_columns=['a', 'b'], sizing_mode='stretch_width'
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    col_a_cells = page.locator('text="3"')
+
+    assert not col_a_cells.nth(0).is_visible()
+    assert not col_a_cells.nth(1).is_visible()
+
+    widget.hidden_columns = ['b']
+
+    time.sleep(0.5)
+
+    col_a_cells = page.locator('text="3"')
+    title_bbox = page.locator('text="a"').bounding_box()
+    cell_bbox = col_a_cells.first.bounding_box()
+
+    assert col_a_cells.nth(0).is_visible()
+    assert not col_a_cells.nth(1).is_visible()
+
+    assert title_bbox['x'] == cell_bbox['x']
+    assert title_bbox['width'] == cell_bbox['width']
