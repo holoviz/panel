@@ -143,7 +143,6 @@ _tests = [
     'holoviews',
     'diskcache',
     'markdown-it-py',
-    'jupyterlite',
     # Temporary pins (jupyter_bokeh needs updates)
     'ipywidgets <8.0'
 ]
