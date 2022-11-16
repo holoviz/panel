@@ -152,9 +152,13 @@ jobs:
         run: |
           jupyter lite build --lite-dir lite --output-dir lite/dist
       - name: upload
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
+          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         uses: peaceiris/actions-gh-pages@v3
         with:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
           external_repository: pyviz-dev/panelite
           publish_dir: ./lite/dist
+          cname: panelite.holoviz.org
           force_orphan: true
