@@ -176,6 +176,11 @@ class LoadingSpinner(BooleanIndicator):
         msg['css_classes'] = ['loader', 'spin', color_cls] if self.value else ['loader', self.bgcolor]
         return msg
 
+    def _init_params(self) -> dict[str, Any]:
+        properties = super()._init_params()
+        properties['css'] = ['css/loadingspinner.css']
+        return properties
+
 
 class ValueIndicator(Indicator):
     """
