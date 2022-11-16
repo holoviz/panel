@@ -150,7 +150,9 @@ jobs:
         run: |
           jupyter lite build --lite-dir lite --output-dir lite/dist
       - name: upload
-        if: (github.event_name == 'push')
-        run: |
-          aws s3 rm s3://panelite.holoviz.org --recursive
-          aws s3 sync ./lite/dist s3://panelite.holoviz.org
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.ACCESS_TOKEN }}
+          external_repository: pyviz-dev/panelite
+          publish_dir: ./builtdocs
+          force_orphan: true
