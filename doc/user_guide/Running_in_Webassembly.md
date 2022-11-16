@@ -407,7 +407,7 @@ The code cell will display a button to execute the cell, which will warn about d
 
 ## Setting up JupyterLite
 
-[JupyterLite](https://jupyterlite.readthedocs.io/en/latest/) is a JupyterLab distribution that runs entirely in the browser built from the ground-up using JupyterLab components and extensions. In order to use Panel in JupyterLite you will have to build your own distribution. As a starting point we recommend [this guide](https://jupyterlite.readthedocs.io/en/latest/howto/configure/simple_extensions.html) in the JupyterLite documentation, which will tell you how to set up an environment to begin building JupyterLite.
+[JupyterLite](https://jupyterlite.readthedocs.io/en/latest/) is a JupyterLab distribution built from all the usual components and extensions that come with JupyterLab, but now running entirely in the browser with no external server needed. In order to use Panel in JupyterLite you will have to build your own distribution. As a starting point we recommend [this guide](https://jupyterlite.readthedocs.io/en/latest/howto/configure/simple_extensions.html) in the JupyterLite documentation, which will tell you how to set up an environment to begin building JupyterLite.
 
 ### Create a `<lite-dir>`
 
