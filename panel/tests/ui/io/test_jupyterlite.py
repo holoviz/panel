@@ -12,8 +12,7 @@ except ImportError:
 
 pytestmark = pytest.mark.ui
 
-
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def launch_jupyterlite():
     process = Popen(
         ["python", "-m", "http.server", "8123", "--directory", str('lite/dist/')], stdout=PIPE
