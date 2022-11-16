@@ -115,6 +115,9 @@ doc/**/*.json
 builtdocs/
 .doit.db
 
+lite/
+.jupyterlite.doit.db
+
 # vscode settings
 .vscode/
 .vscode/panel.code-workspace
