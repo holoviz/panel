@@ -103,7 +103,7 @@ jobs:
           sudo rm /usr/local/bin/npm
       - uses: actions/checkout@v3
         with:
-          fetch-depth: "100"
+          fetch-depth: 0
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
@@ -113,8 +113,6 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '15'
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
       - name: conda setup
         run: |
           conda config --set always_yes True
