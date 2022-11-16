@@ -21,10 +21,10 @@ for nb in nbs:
     out = (PANEL_BASE / 'lite/files') / nbpath.relative_to(EXAMPLES_DIR)
     out.parent.mkdir(parents=True, exist_ok=True)
     if nb.suffix == '.ipynb':
-        with open(nb) as fin:
+        with open(nb, encoding='utf-8') as fin:
             nb = nbformat.read(fin, 4)
             nb['cells'].insert(0, install)
-        with open(out, 'w') as fout:
+        with open(out, 'w', encoding='utf-8') as fout:
             nbformat.write(nb, fout)
     elif not nb.is_dir():
         shutil.copyfile(nb, out)
