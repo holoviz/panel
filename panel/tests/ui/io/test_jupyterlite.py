@@ -41,8 +41,8 @@ def test_jupyterlite_execution(launch_jupyterlite, page):
     page.goto("http://localhost:8123/index.html")
 
     page.locator('text="Getting_Started.ipynb"').first.dblclick()
-    page.locator('[data-command="runmenu:restart-and-run-all"]').click()
-    page.locator('text="Restart"').click()
+    for _ in range(6):
+        page.locator('[data-command="runmenu:run"]').click()
 
     page.locator('.noUi-handle').click(timeout=90 * 1000)
 
