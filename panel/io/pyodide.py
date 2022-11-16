@@ -53,7 +53,9 @@ except Exception:
 
 # Make bokeh sampledata available in pyolite kernel
 if 'pyolite' in sys.modules and os.path.exists('/drive/assets/sampledata'):
-    bokeh.util.sampledata.external_data_dir = lambda create: '/drive/assets/sampledata'
+    def _sampledata_dir(create=None):
+        return '/drive/assets/sampledata'
+    bokeh.util.sampledata.external_data_dir = _sampledata_dir
 
 if 'pandas' in sys.modules and pyodide_http is None:
     import pandas
