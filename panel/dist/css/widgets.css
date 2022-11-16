@@ -236,55 +236,6 @@ progress:not([value])::before {
   100% { transform: rotate(360deg); }
 }
 
-.dot div {
-  height: 100%;
-  width: 100%;
-  border: 1px solid #000 !important;
-  background-color: #fff;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.dot-filled div {
-  height: 100%;
-  width: 100%;
-  border: 1px solid #000 !important;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.dot-filled.primary div {
-  background-color: #007bff;
-}
-
-.dot-filled.secondary div {
-  background-color: #6c757d;
-}
-
-.dot-filled.success div {
-  background-color: #28a745;
-}
-
-.dot-filled.danger div {
-  background-color: #dc3545;
-}
-
-.dot-filled.warning div {
-  background-color: #ffc107;
-}
-
-.dot-filled.info div {
-  background-color: #17a2b8;
-}
-
-.dot-filled.dark div {
-  background-color: #343a40;
-}
-
-.dot-filled.light div {
-  background-color: #f8f9fa;
-}
-
 /* Slider editor */
 .slider-edit .bk-input-group .bk-input {
   border: 0;

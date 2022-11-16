@@ -1,0 +1,48 @@
+:host(.dot) div {
+  height: 100%;
+  width: 100%;
+  border: 1px solid #000 !important;
+  background-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+:host(.dot-filled) div {
+  height: 100%;
+  width: 100%;
+  border: 1px solid #000 !important;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+:host(.dot-filled.primary) div {
+  background-color: #007bff;
+}
+
+:host(.dot-filled.secondary) div {
+  background-color: #6c757d;
+}
+
+:host(.dot-filled.success) div {
+  background-color: #28a745;
+}
+
+:host(.dot-filled.danger) div {
+  background-color: #dc3545;
+}
+
+:host(.dot-filled.warning) div {
+  background-color: #ffc107;
+}
+
+:host(.dot-filled.info) div {
+  background-color: #17a2b8;
+}
+
+:host(.dot-filled.dark) div {
+  background-color: #343a40;
+}
+
+:host(.dot-filled.light) div {
+  background-color: #f8f9fa;
+}

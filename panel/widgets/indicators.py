@@ -23,7 +23,7 @@ import sys
 
 from math import pi
 from typing import (
-    TYPE_CHECKING, ClassVar, Dict, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Type,
 )
 
 import numpy as np
@@ -124,6 +124,10 @@ class BooleanStatus(BooleanIndicator):
         msg['css_classes'] = ['dot-filled', self.color] if self.value else ['dot']
         return msg
 
+    def _init_params(self) -> dict[str, Any]:
+        properties = super()._init_params()
+        properties['css'] = ['css/booleanstatus.css']
+        return properties
 
 class LoadingSpinner(BooleanIndicator):
     """
