@@ -156,5 +156,5 @@ jobs:
         with:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
           external_repository: pyviz-dev/panelite
-          publish_dir: ./builtdocs
+          publish_dir: ./lite/dist
           force_orphan: true
