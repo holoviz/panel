@@ -25,7 +25,7 @@ from .io.state import state
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
 
-_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty'))
+_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty')) and not state._is_pyodide
 
 #---------------------------------------------------------------------
 # Public API
