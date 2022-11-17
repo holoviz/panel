@@ -16,33 +16,33 @@
 }
 
 :host(.dot-filled.primary) div {
-  background-color: #007bff;
+  background-color: var(--primary-bg-color);
 }
 
 :host(.dot-filled.secondary) div {
-  background-color: #6c757d;
+  background-color: var(--secondary-bg-color);
 }
 
 :host(.dot-filled.success) div {
-  background-color: #28a745;
+  background-color: var(--success-bg-color);
 }
 
 :host(.dot-filled.danger) div {
-  background-color: #dc3545;
+  background-color: var(--danger-bg-color);
 }
 
 :host(.dot-filled.warning) div {
-  background-color: #ffc107;
+  background-color: var(--warning-bg-color);
 }
 
 :host(.dot-filled.info) div {
-  background-color: #17a2b8;
+  background-color: var(--info-bg-color);
 }
 
 :host(.dot-filled.dark) div {
-  background-color: #343a40;
+  background-color: var(--dark-bg-color);
 }
 
 :host(.dot-filled.light) div {
-  background-color: #f8f9fa;
+  background-color: var(--light-bg-color);
 }

@@ -1,0 +1,10 @@
+:host {
+    --primary-bg-color: #007bff;
+    --secondary-bg-color: #6c757d;
+    --success-bg-color: #28a745;
+    --danger-bg-color: #dc3545;
+    --warning-bg-color: #ffc107;
+    --info-bg-color: #17a2b8;
+    --light-bg-color: #f8f9fa;
+    --dark-bg-color: #343a40;
+  }

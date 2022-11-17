@@ -27,37 +27,37 @@
 
 :host(.loader.spin.primary-light) ::after {
   background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
-    linear-gradient(45deg, #f0f0f0 50%, #007bff 50%);
+    linear-gradient(45deg, #f0f0f0 50%, var(--primary-bg-color) 50%);
 }
 
 :host(.loader.spin.secondary-light) ::after {
   background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
-    linear-gradient(45deg, #f0f0f0 50%, #6c757d 50%);
+    linear-gradient(45deg, #f0f0f0 50%, var(--secondary-bg-color) 50%);
 }
 
 :host(.loader.spin.success-light) ::after {
   background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
-    linear-gradient(45deg, #f0f0f0 50%, #28a745 50%);
+    linear-gradient(45deg, #f0f0f0 50%, var(--success-bg-color) 50%);
 }
 
 :host(.loader.spin.danger-light) ::after {
   background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
-    linear-gradient(45deg, #f0f0f0 50%, #dc3545 50%);
+    linear-gradient(45deg, #f0f0f0 50%, var(--danger-bg-color) 50%);
 }
 
 :host(.loader.spin.warning-light) ::after {
   background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
-    linear-gradient(45deg, #f0f0f0 50%, #ffc107 50%);
+    linear-gradient(45deg, #f0f0f0 50%, var(--warning-bg-color) 50%);
 }
 
 :host(.loader.spin.info-light) ::after {
   background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
-    linear-gradient(45deg, #f0f0f0 50%, #17a2b8 50%);
+    linear-gradient(45deg, #f0f0f0 50%, var(--info-bg-color) 50%);
 }
 
 :host(.loader.spin.light-light) ::after {
   background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%),
-    linear-gradient(45deg, #f0f0f0 50%, #f8f9fa 50%);
+    linear-gradient(45deg, #f0f0f0 50%, var(--light-bg-color) 50%);
 }
 
 :host(.loader.dark-light) ::after {
@@ -67,42 +67,42 @@
 
 :host(.loader.spin.primary-dark) ::after {
   background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
-    linear-gradient(45deg, #0f0f0f 50%, #007bff 50%);
+    linear-gradient(45deg, #0f0f0f 50%, var(--primary-bg-color) 50%);
 }
 
 :host(.loader.spin.secondary-dark) ::after {
   background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
-    linear-gradient(45deg, #0f0f0f 50%, #6c757d 50%);
+    linear-gradient(45deg, #0f0f0f 50%, var(--secondary-bg-color) 50%);
 }
 
 :host(.loader.spin.success-dark) ::after {
   background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
-    linear-gradient(45deg, #0f0f0f 50%, #28a745 50%);
+    linear-gradient(45deg, #0f0f0f 50%, var(--success-bg-color) 50%);
 }
 
 :host(.loader.spin.danger-dark) ::after {
   background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
-    linear-gradient(45deg, #0f0f0f 50%, #dc3545 50%);
+    linear-gradient(45deg, #0f0f0f 50%, var(--danger-bg-color) 50%);
 }
 
 :host(.loader.spin.warning-dark) ::after {
   background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
-    linear-gradient(45deg, #0f0f0f 50%, #ffc107 50%);
+    linear-gradient(45deg, #0f0f0f 50%, var(--warning-bg-color) 50%);
 }
 
 :host(.loader.spin.info-dark) ::after {
   background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
-    linear-gradient(45deg, #0f0f0f 50%, #17a2b8 50%);
+    linear-gradient(45deg, #0f0f0f 50%, var(--info-bg-color) 50%);
 }
 
 :host(.loader.spin.light-dark) ::after {
   background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
-    linear-gradient(45deg, #0f0f0f 50%, #f8f9fa 50%);
+    linear-gradient(45deg, #0f0f0f 50%, var(--light-bg-color) 50%);
 }
 
 :host(.loader.spin.dark-dark) ::after {
   background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%),
-    linear-gradient(45deg, #0f0f0f 50%, #343a40 50%);
+    linear-gradient(45deg, #0f0f0f 50%, var(--dark-bg-color) 50%);
 }
 
 /* Safari */

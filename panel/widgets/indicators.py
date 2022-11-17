@@ -126,7 +126,7 @@ class BooleanStatus(BooleanIndicator):
 
     def _init_params(self) -> dict[str, Any]:
         properties = super()._init_params()
-        properties['css'] = ['css/booleanstatus.css']
+        properties['css'] = ['css/booleanstatus.css', 'css/indicators.css']
         return properties
 
 class LoadingSpinner(BooleanIndicator):
@@ -178,7 +178,7 @@ class LoadingSpinner(BooleanIndicator):
 
     def _init_params(self) -> dict[str, Any]:
         properties = super()._init_params()
-        properties['css'] = ['css/loadingspinner.css']
+        properties['css'] = ['css/loadingspinner.css', 'css/indicators.css']
         return properties
 
 
@@ -239,7 +239,7 @@ class Progress(ValueIndicator):
 
     def _init_params(self) -> dict[str, Any]:
         properties = super()._init_params()
-        properties['css'] = ['css/progress.css']
+        properties['css'] = ['css/progress.css', 'css/indicators.css']
         return properties
 
 

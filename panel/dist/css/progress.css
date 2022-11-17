@@ -66,107 +66,107 @@ progress.active:not([value])::-webkit-progress-bar {
 }
 
 progress.primary[value]::-webkit-progress-value {
-  background-color: #007bff;
+  background-color: var(--primary-bg-color);
 }
 progress.primary:not([value])::before {
-  background-color: #007bff;
+  background-color: var(--primary-bg-color);
 }
 progress.primary:not([value])::-webkit-progress-bar {
-  background-color: #007bff;
+  background-color: var(--primary-bg-color);
 }
 progress.primary::-moz-progress-bar {
-  background-color: #007bff;
+  background-color: var(--primary-bg-color);
 }
 
 progress.secondary[value]::-webkit-progress-value {
-  background-color: #6c757d;
+  background-color: var(--secondary-bg-color);
 }
 progress.secondary:not([value])::before {
-  background-color: #6c757d;
+  background-color: var(--secondary-bg-color);
 }
 progress.secondary:not([value])::-webkit-progress-bar {
-  background-color: #6c757d;
+  background-color: var(--secondary-bg-color);
 }
 progress.secondary::-moz-progress-bar {
-  background-color: #6c757d;
+  background-color: var(--secondary-bg-color);
 }
 
 progress.success[value]::-webkit-progress-value {
-  background-color: #28a745;
+  background-color: var(--success-bg-color);
 }
 progress.success:not([value])::before {
-  background-color: #28a745;
+  background-color: var(--success-bg-color);
 }
 progress.success:not([value])::-webkit-progress-bar {
-  background-color: #28a745;
+  background-color: var(--success-bg-color);
 }
 progress.success::-moz-progress-bar {
-  background-color: #28a745;
+  background-color: var(--success-bg-color);
 }
 
 progress.danger[value]::-webkit-progress-value {
-  background-color: #dc3545;
+  background-color: var(--danger-bg-color);
 }
 progress.danger:not([value])::before {
-  background-color: #dc3545;
+  background-color: var(--danger-bg-color);
 }
 progress.danger:not([value])::-webkit-progress-bar {
-  background-color: #dc3545;
+  background-color: var(--danger-bg-color);
 }
 progress.danger::-moz-progress-bar {
-  background-color: #dc3545;
+  background-color: var(--danger-bg-color);
 }
 
 progress.warning[value]::-webkit-progress-value {
-  background-color: #ffc107;
+  background-color: var(--warning-bg-color);
 }
 progress.warning:not([value])::before {
-  background-color: #ffc107;
+  background-color: var(--warning-bg-color);
 }
 progress.warning:not([value])::-webkit-progress-bar {
-  background-color: #ffc107;
+  background-color: var(--warning-bg-color);
 }
 progress.warning::-moz-progress-bar {
-  background-color: #ffc107;
+  background-color: var(--warning-bg-color);
 }
 
 progress.info[value]::-webkit-progress-value {
-  background-color: #17a2b8;
+  background-color: var(--info-bg-color);
 }
 progress.info:not([value])::before {
-  background-color: #17a2b8;
+  background-color: var(--info-bg-color);
 }
 progress.info:not([value])::-webkit-progress-bar {
-  background-color: #17a2b8;
+  background-color: var(--info-bg-color);
 }
 progress.info::-moz-progress-bar {
-  background-color: #17a2b8;
+  background-color: var(--info-bg-color);
 }
 
 progress.light[value]::-webkit-progress-value {
-  background-color: #f8f9fa;
+  background-color: var(--light-bg-color);
 }
 progress.light:not([value])::before {
-  background-color: #f8f9fa;
+  background-color: var(--light-bg-color);
 }
 progress.light:not([value])::-webkit-progress-bar {
-  background-color: #f8f9fa;
+  background-color: var(--light-bg-color);
 }
 progress.light::-moz-progress-bar {
-  background-color: #f8f9fa;
+  background-color: var(--light-bg-color);
 }
 
 progress.dark[value]::-webkit-progress-value {
-  background-color: #343a40;
+  background-color: var(--dark-bg-color);
 }
 progress.dark:not([value])::-webkit-progress-bar {
-  background-color: #343a40;
+  background-color: var(--dark-bg-color);
 }
 progress.dark:not([value])::before {
-  background-color: #343a40;
+  background-color: var(--dark-bg-color);
 }
 progress.dark::-moz-progress-bar {
-  background-color: #343a40;
+  background-color: var(--dark-bg-color);
 }
 
 progress:not([value])::-webkit-progress-bar {
