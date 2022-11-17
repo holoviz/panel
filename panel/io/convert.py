@@ -375,6 +375,33 @@ def convert_app(
     return (name.replace('_', ' '), filename)
 
 
+def _convert_process_pool(
+    apps: List[str],
+    dest_path: str | None = None,
+    max_workers: int = 4,
+    **kwargs
+):
+    import multiprocessing as mp
+
+    from concurrent.futures import ProcessPoolExecutor
+
+    files = {}
+    groups = [apps[i:i+max_workers] for i in range(0, len(apps), max_workers)]
+    for group in groups:
+        with ProcessPoolExecutor(
+                max_workers=max_workers, mp_context=mp.get_context('spawn')
+        ) as executor:
+            futures = []
+            for app in group:
+                f = executor.submit(convert_app, app, dest_path, **kwargs)
+                futures.append(f)
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result is not None:
+                    name, filename = result
+                    files[name] = filename
+    return files
+
 def convert_apps(
     apps: List[str],
     dest_path: str | None = None,
@@ -436,41 +463,21 @@ def convert_apps(
         dest_path = pathlib.Path(dest_path)
     dest_path.mkdir(parents=True, exist_ok=True)
 
-    files = {}
     manifest = 'site.webmanifest' if build_pwa else None
-    groups = [apps[i:i+max_workers] for i in range(0, len(apps), max_workers)]
-    for group in groups:
-        if state._is_pyodide:
-            for app in group:
-                name, filename = convert_app(
-                    app, dest_path, requirements=requirements,
-                    runtime=runtime, prerender=prerender, manifest=manifest,
-                    panel_version=panel_version, http_patch=http_patch,
-                    verbose=verbose
-                )
-            files[name] = filename
-        else:
-            import multiprocessing as mp
 
-            from concurrent.futures import ProcessPoolExecutor
+    kwargs = {
+        'requirements': requirements, 'runtime': runtime,
+        'prerender': prerender, 'manifest': manifest,
+        'panel_version': panel_version, 'http_patch': http_patch,
+        'verbose': verbose
+    }
+    if state._is_pyodide:
+        files = dict((convert_app(app, dest_path, **kwargs) for app in apps))
+    else:
+        files = _convert_process_pool(
+            apps, dest_path, max_workers=max_workers, **kwargs
+        )
 
-            with ProcessPoolExecutor(
-                    max_workers=max_workers, mp_context=mp.get_context('spawn')
-            ) as executor:
-                futures = []
-                for app in group:
-                    f = executor.submit(
-                        convert_app, app, dest_path, requirements=requirements,
-                        runtime=runtime, prerender=prerender, manifest=manifest,
-                        panel_version=panel_version, http_patch=http_patch,
-                        verbose=verbose
-                    )
-                    futures.append(f)
-                for future in concurrent.futures.as_completed(futures):
-                    result = future.result()
-                    if result is not None:
-                        name, filename = result
-                        files[name] = filename
     if build_index and len(files) >= 1:
         index = make_index(files, manifest=build_pwa, title=title)
         with open(dest_path / 'index.html', 'w') as f:
