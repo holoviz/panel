@@ -282,12 +282,13 @@ bokeh.server.server.Server = Server
 class Application(BkApplication):
 
     def __init__(self, *args, **kwargs):
-        self._admin = kwargs.pop('admin', False)
+        self._admin = kwargs.pop('admin', None)
         super().__init__(*args, **kwargs)
 
     async def on_session_created(self, session_context):
         with set_curdoc(session_context._document):
-            config._admin = self._admin
+            if self._admin is not None:
+                config._admin = self._admin
             for cb in state._on_session_created:
                 cb(session_context)
         await super().on_session_created(session_context)
