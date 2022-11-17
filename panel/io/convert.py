@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import concurrent.futures
 import dataclasses
-import multiprocessing as mp
 import os
 import pathlib
 import uuid
 
-from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Dict, List
+from typing import (
+    IO, Any, Dict, List,
+)
 
-from bokeh.application.application import SessionContext
+from bokeh.application.application import Application, SessionContext
+from bokeh.application.handlers.code import CodeHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import FILE, MACROS, _env
@@ -159,7 +160,7 @@ def build_pwa_manifest(files, title=None, **kwargs):
     )
 
 def script_to_html(
-    filename: str,
+    filename: str | os.PathLike | IO,
     requirements: Literal['auto'] | List[str] = 'auto',
     js_resources: Literal['auto'] | List[str] = 'auto',
     css_resources: Literal['auto'] | List[str] | None = None,
@@ -175,7 +176,7 @@ def script_to_html(
 
     Arguments
     ---------
-    filename : str
+    filename: str | Path | IO
       The filename of the Panel/Bokeh application to convert.
     requirements: 'auto' | List[str]
       The list of requirements to include (in addition to Panel).
@@ -194,9 +195,13 @@ def script_to_html(
         to allow urllib3 and requests to work.
     """
     # Run script
-    path = pathlib.Path(filename)
-    name = '.'.join(path.name.split('.')[:-1])
-    app = build_single_handler_application(str(path.absolute()))
+    if hasattr(filename, 'read'):
+        handler = CodeHandler(source=filename.read(), filename='convert.py')
+        app = Application(handler)
+    else:
+        path = pathlib.Path(filename)
+        name = '.'.join(path.name.split('.')[:-1])
+        app = build_single_handler_application(str(path.absolute()))
     document = Document()
     document._session_context = lambda: MockSessionContext(document=document)
     with set_curdoc(document):
@@ -435,21 +440,37 @@ def convert_apps(
     manifest = 'site.webmanifest' if build_pwa else None
     groups = [apps[i:i+max_workers] for i in range(0, len(apps), max_workers)]
     for group in groups:
-        with ProcessPoolExecutor(max_workers=max_workers, mp_context=mp.get_context('spawn')) as executor:
-            futures = []
+        if state._is_pyodide:
             for app in group:
-                f = executor.submit(
-                    convert_app, app, dest_path, requirements=requirements,
+                name, filename = convert_app(
+                    app, dest_path, requirements=requirements,
                     runtime=runtime, prerender=prerender, manifest=manifest,
                     panel_version=panel_version, http_patch=http_patch,
                     verbose=verbose
                 )
-                futures.append(f)
-            for future in concurrent.futures.as_completed(futures):
-                result = future.result()
-                if result is not None:
-                    name, filename = result
-                    files[name] = filename
+            files[name] = filename
+        else:
+            import multiprocessing as mp
+
+            from concurrent.futures import ProcessPoolExecutor
+
+            with ProcessPoolExecutor(
+                    max_workers=max_workers, mp_context=mp.get_context('spawn')
+            ) as executor:
+                futures = []
+                for app in group:
+                    f = executor.submit(
+                        convert_app, app, dest_path, requirements=requirements,
+                        runtime=runtime, prerender=prerender, manifest=manifest,
+                        panel_version=panel_version, http_patch=http_patch,
+                        verbose=verbose
+                    )
+                    futures.append(f)
+                for future in concurrent.futures.as_completed(futures):
+                    result = future.result()
+                    if result is not None:
+                        name, filename = result
+                        files[name] = filename
     if build_index and len(files) >= 1:
         index = make_index(files, manifest=build_pwa, title=title)
         with open(dest_path / 'index.html', 'w') as f:
