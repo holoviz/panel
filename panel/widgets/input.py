@@ -115,7 +115,6 @@ class TextAreaInput(TextInput):
     Lines are joined with the newline character `\n`.
 
     Reference: https://panel.holoviz.org/reference/widgets/TextAreaInput.html
-L
     :Example:
 
     >>> TextAreaInput(
