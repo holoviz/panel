@@ -1,5 +1,7 @@
 import panel as pn
 
+pn.config.raw_css = ['.bk.string { color: purple }']
+
 button = pn.widgets.Button(name='Click')
 
 string = pn.pane.Str(object=0, css_classes=['string'])
