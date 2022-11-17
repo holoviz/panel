@@ -237,6 +237,11 @@ class Progress(ValueIndicator):
         super().__init__(**params)
         self._update_value_bounds()
 
+    def _init_params(self) -> dict[str, Any]:
+        properties = super()._init_params()
+        properties['css'] = ['css/progress.css']
+        return properties
+
 
 class Number(ValueIndicator):
     """

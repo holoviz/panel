@@ -139,7 +139,7 @@ class Progress(HTMLBox):
 
     value = Nullable(Int, help="""Current value""")
 
-    # style = Override(default={})
+    css = List(String)
 
 
 class FileDownload(InputWidget):

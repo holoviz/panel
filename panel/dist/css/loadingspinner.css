@@ -105,11 +105,6 @@
     linear-gradient(45deg, #0f0f0f 50%, #343a40 50%);
 }
 
-@keyframes stripes {
-  from {background-position: 0%}
-  to {background-position: 100%}
-}
-
 /* Safari */
 @-webkit-keyframes spin {
   0% { -webkit-transform: rotate(0deg); }
