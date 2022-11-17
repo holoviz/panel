@@ -234,6 +234,8 @@ class Progress(ValueIndicator):
         self.param.value.bounds = (-1, self.max)
 
     def __init__(self,**params):
+        if "sizing_mode" not in params:
+            params["sizing_mode"] = None
         super().__init__(**params)
         self._update_value_bounds()
 
@@ -284,6 +286,11 @@ class Number(ValueIndicator):
 
     _widget_type: ClassVar[Type[Model]] = HTML
 
+    def __init__(self, **params):
+        if "sizing_mode" not in params:
+            params["sizing_mode"] = None
+        super().__init__(**params)
+
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         font_size = msg.pop('font_size', self.font_size)
@@ -332,6 +339,11 @@ class String(ValueIndicator):
     }
 
     _widget_type: ClassVar[Type[Model]] = HTML
+
+    def __init__(self, **params):
+        if "sizing_mode" not in params:
+            params["sizing_mode"] = None
+        super().__init__(**params)
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
