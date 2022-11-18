@@ -166,7 +166,7 @@ class _config(_base_config):
     _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
 
     _comms = param.ObjectSelector(
-        default=None, objects=[None, 'default', 'ipywidgets', 'vscode', 'colab'], doc="""
+        default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
         extension or use the jupyter_bokeh ipywidget model.""")
 
@@ -534,6 +534,8 @@ class panel_extension(_pyviz_extension):
 
     _loaded_extensions = []
 
+    _comms_detected_before = False
+
     def __call__(self, *args, **params):
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
         reactive_exts = {
@@ -646,11 +648,14 @@ class panel_extension(_pyviz_extension):
             self._load_entry_points()
 
     def _detect_comms(self, params):
+        called_before = self._comms_detected_before
+        self._comms_detected_before = True
+
         if 'comms' in params:
             config.comms = params.pop("comms")
             return
 
-        if config.comms is not None:
+        if called_before:
             return
 
         # Try to detect environment so that we can enable comms
@@ -664,8 +669,6 @@ class panel_extension(_pyviz_extension):
         if "VSCODE_PID" in os.environ:
             config.comms = "vscode"
             return
-
-        config.comms = "default"
 
     def _apply_signatures(self):
         from inspect import Parameter, Signature
