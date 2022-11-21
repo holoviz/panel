@@ -752,7 +752,7 @@ def test_tabulator_styling(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert model.styles['data'] == {
+    assert model.cell_styles['data'] == {
         0: {2: [('color', 'black')]},
         1: {2: [('color', 'black')]},
         2: {2: [('color', 'black')]},
@@ -1911,7 +1911,7 @@ def test_tabulator_styling_empty_dataframe():
 
     table.value = pd.DataFrame({'A': [3.14], 'B': ['foo'], 'C': [3]})
 
-    assert model.styles['data'] == {
+    assert model.cell_styles['data'] == {
         0: {
             2: [('border-color', '#dc3545'), ('border-style', 'solid')],
             3: [('border-color', '#dc3545'), ('border-style', 'solid')],
