@@ -21,7 +21,6 @@ from typing import (
 
 import param
 
-from packaging.version import Version
 from param.parameterized import classlist, discard_events
 
 from .config import config
@@ -32,8 +31,8 @@ from .layout import (
 from .pane.base import PaneBase, ReplacementPane
 from .reactive import Reactive
 from .util import (
-    abbreviated_repr, bokeh_version, classproperty, full_groupby, fullpath,
-    get_method_owner, is_parameterized, param_name, recursive_parameterized,
+    abbreviated_repr, classproperty, full_groupby, fullpath, get_method_owner,
+    is_parameterized, param_name, recursive_parameterized,
 )
 from .viewable import Layoutable, Viewable
 from .widgets import (
@@ -178,7 +177,7 @@ class Param(PaneBase):
         param.CalendarDate:      DatePicker,
         param.Color:             ColorPicker,
         param.Date:              DatetimeInput,
-        param.DateRange:         DateRangeSlider,
+        param.DateRange:         DatetimeRangeSlider,
         param.CalendarDateRange: DateRangeSlider,
         param.DataFrame:         DataFrameWidget,
         param.Dict:              LiteralInputTyped,
@@ -199,9 +198,6 @@ class Param(PaneBase):
 
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
-
-    if bokeh_version >= Version('2.4.3'):
-        mapping[param.DateRange] = DatetimeRangeSlider
 
     priority: ClassVar[float | bool | None] = 0.1
 
