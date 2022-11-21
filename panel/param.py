@@ -267,7 +267,7 @@ class Param(PaneBase):
         parameters = [k for k in params if k != 'name']
         params = []
         for p, v in sorted(self.param.values().items()):
-            if v is self.param[p].default: continue
+            if v == self.param[p].default: continue
             elif v is None: continue
             elif isinstance(v, str) and v == '': continue
             elif p == 'object' or (p == 'name' and (v.startswith(obj_cls) or v.startswith(cls))): continue
@@ -286,7 +286,7 @@ class Param(PaneBase):
 
     @property
     def _synced_params(self):
-        ignored_params = ['default_layout', 'loading']
+        ignored_params = ['default_layout', 'loading', 'background']
         return [p for p in Layoutable.param if p not in ignored_params]
 
     def _update_widgets(self, *events):

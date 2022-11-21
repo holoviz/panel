@@ -42,7 +42,7 @@ from .io.notebook import (
 )
 from .io.save import save
 from .io.state import curdoc_locked, state
-from .util import escape, param_reprs
+from .util import deprecation_warning, escape, param_reprs
 
 if TYPE_CHECKING:
     from bokeh.model import Model
@@ -251,6 +251,23 @@ class Layoutable(param.Parameterized):
             elif config.sizing_mode == 'stretch_height' and 'height' not in params:
                 params['sizing_mode'] = config.sizing_mode
         super().__init__(**params)
+        self._set_background()
+        self.param.watch(self._set_background, 'background')
+
+    def _set_background(self, *event):
+        if self.background == self.styles.get("background", None):
+            return
+
+        # Warning
+        prev = f'{type(self).name}(background="{self.background}")'
+        new = f'{type(self).name}(styles={{"background": "{self.background}"}}'
+        deprecation_warning(
+            f"{prev!r} is deprecated and will stop working, "
+            f"use {new!r} instead of."
+        )
+
+        self.styles["background"] = self.background
+        self.param.trigger("styles")
 
 
 _Self = TypeVar('_Self', bound='ServableMixin')

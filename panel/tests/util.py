@@ -54,8 +54,11 @@ def mpl_figure():
 
 
 def check_layoutable_properties(layoutable, model):
+    layoutable.styles = {"background": '#fffff0'}
+    assert model.styles["background"] == '#fffff0'
+
     layoutable.background = '#ffffff'
-    assert model.background == '#ffffff'
+    assert model.styles["background"] == '#ffffff'
 
     layoutable.css_classes = ['custom_class']
     if isinstance(layoutable, Markdown):
@@ -82,7 +85,7 @@ def check_layoutable_properties(layoutable, model):
     assert model.max_width == 550
 
     layoutable.margin = 10
-    assert model.margin == (10, 10, 10, 10)
+    assert model.margin == 10
 
     layoutable.sizing_mode = 'stretch_width'
     assert model.sizing_mode == 'stretch_width'
