@@ -1,5 +1,6 @@
 import sys
 import time
+import warnings
 
 import numpy as np
 import pytest
@@ -57,7 +58,10 @@ def check_layoutable_properties(layoutable, model):
     layoutable.styles = {"background": '#fffff0'}
     assert model.styles["background"] == '#fffff0'
 
-    layoutable.background = '#ffffff'
+    # Is deprecated, but we still support it for now.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        layoutable.background = '#ffffff'
     assert model.styles["background"] == '#ffffff'
 
     layoutable.css_classes = ['custom_class']
