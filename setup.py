@@ -144,7 +144,9 @@ _tests = [
     'diskcache',
     'markdown-it-py',
     # Temporary pins (jupyter_bokeh needs updates)
-    'ipywidgets <8.0'
+    'ipywidgets <8.0',
+    # Issues with comm (see https://github.com/ipython/ipykernel/issues/1026)
+    'ipykernel <6.18.0'
 ]
 
 _ui = [
