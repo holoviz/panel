@@ -251,23 +251,6 @@ class Layoutable(param.Parameterized):
             elif config.sizing_mode == 'stretch_height' and 'height' not in params:
                 params['sizing_mode'] = config.sizing_mode
         super().__init__(**params)
-        self._set_background()
-        self.param.watch(self._set_background, 'background')
-
-    def _set_background(self, *event):
-        if self.background == self.styles.get("background", None):
-            return
-
-        # Warning
-        prev = f'{type(self).name}(background="{self.background}")'
-        new = f'{type(self).name}(styles={{"background": "{self.background}"}}'
-        deprecation_warning(
-            f"{prev!r} is deprecated and will stop working, "
-            f"use {new!r} instead of."
-        )
-
-        self.styles["background"] = self.background
-        self.param.trigger("styles")
 
 
 _Self = TypeVar('_Self', bound='ServableMixin')
@@ -607,8 +590,13 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         hooks = params.pop('hooks', [])
         super().__init__(**params)
         self._hooks = hooks
+
         self._update_loading()
         watcher = self.param.watch(self._update_loading, 'loading')
+        self._callbacks.append(watcher)
+
+        self._set_background()
+        watcher = self.param.watch(self._set_background, 'background')
         self._callbacks.append(watcher)
 
     def _update_loading(self, *_) -> None:
@@ -616,6 +604,21 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             start_loading_spinner(self)
         else:
             stop_loading_spinner(self)
+
+    def _set_background(self, *_) -> None:
+        if self.background == self.styles.get("background", None):
+            return
+
+        # Warning
+        prev = f'{type(self).name}(background="{self.background}")'
+        new = f'{type(self).name}(styles={{"background": "{self.background}"}}'
+        deprecation_warning(
+            f"{prev!r} is deprecated and will stop working, "
+            f"use {new!r} instead of."
+        )
+
+        self.styles["background"] = self.background
+        self.param.trigger("styles")
 
     def __repr__(self, depth: int = 0) -> str:
         return '{cls}({params})'.format(cls=type(self).__name__,
