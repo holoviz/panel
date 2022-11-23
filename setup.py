@@ -210,7 +210,7 @@ extras_require['build'] = [
     'param >=1.9.2',
     'pyct >=0.4.4',
     'setuptools >=42',
-    'bokeh >=2.4.3,<2.5',
+    'bokeh >=3.0.0',
     'pyviz_comms >=0.6.0',
     'bleach',
     'tqdm',
