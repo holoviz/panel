@@ -213,7 +213,7 @@ For detailed information and steps, check out this [example](https://towardsdata
 
 The guides below assumes you have already signed up and logged into your account at [huggingface.co](https://huggingface.co/).
 
-#### Duplicate an existing space
+##### Duplicate an existing space
 
 The easiest way to get started is to  [search](https://huggingface.co/spaces), find and duplicate an existing space. A simple space to duplicate is
 [MarcSkovMadsen/awesome-panel](https://huggingface.co/spaces/MarcSkovMadsen/awesome-panel).
@@ -233,7 +233,7 @@ In this example you will need to
 
 <img src="../_static/hugging-face-app-py.jpg" style="width:67%"></img>
 
-#### Creating a new space from scratch
+##### Creating a new space from scratch
 
 You can deploy Panel to Hugging Face Spaces as a [*Custom Python Space*](https://huggingface.co/docs/hub/spaces-sdks-python). For a general introduction to Hugging Face Spaces see the [Spaces Overview](https://huggingface.co/docs/hub/spaces-overview).
 
@@ -255,6 +255,16 @@ To work around this your `app.py` will need to either
 The app also needs to run on a port given by the `PORT` environment variable.
 
 Check out the example repository [MarcSkovMadsen/awesome-panel](https://huggingface.co/spaces/MarcSkovMadsen/awesome-panel/tree/main) for inspiration.
+
+##### Git clone
+
+Opionally you can git clone your repository using
+
+```python
+git clone https://huggingface.co/spaces/NAME-OF-USER/NAME-OF-SPACE
+```
+
+<img src="../_static/hugging-face-git-clone.png" style="width:67%"></img>
 
 #### Other Cloud Providers
 
