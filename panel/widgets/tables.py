@@ -1209,6 +1209,7 @@ class Tabulator(BaseTable):
         return theme_url, theme
 
     def _process_param_change(self, msg):
+        import pandas as pd
         msg = super()._process_param_change(msg)
         if 'hidden_columns' in msg:
             if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):

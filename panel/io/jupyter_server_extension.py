@@ -274,15 +274,16 @@ class PanelExecutor(WSHandler):
         Renders the application to an IPython.display.HTML object to
         be served by the `PanelJupyterHandler`.
         """
-        res = HTML(server_html_page_for_session(
-            self.session,
-            resources=self.resources,
-            title=self.session.document.title,
-            template=self.session.document.template,
-            template_variables=self.session.document.template_variables
-        ))
+        with set_curdoc(self.session.document):
+            html = server_html_page_for_session(
+                self.session,
+                resources=self.resources,
+                title=self.session.document.title,
+                template=self.session.document.template,
+                template_variables=self.session.document.template_variables
+            )
         publish_display_data({'application/bokeh-extensions': extension_dirs})
-        return res
+        return HTML(html)
 
 
 class PanelJupyterHandler(JupyterHandler):

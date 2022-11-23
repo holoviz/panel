@@ -122,7 +122,7 @@ jobs:
   #       with:
   #         name: ui_test_suite
   #         python-version: 3.9
-  #         channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
+  #         channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
   #         envs: "-o recommended -o tests -o build"
   #         cache: true
   #         playwright: true
@@ -136,21 +136,18 @@ jobs:
   #         conda activate test-environment
   #         jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
   #         (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
+  #     - name: build jupyterlite
+  #       run: |
+  #         conda activate test-environment
+  #         pip install jupyterlite
+  #         python ./scripts/build_pyodide_wheels.py lite/pypi
+  #         python ./scripts/generate_panelite_content.py
+  #         jupyter lite build --lite-dir lite --output-dir lite/dist
   #     - name: Wait for JupyterLab
   #       uses: ifaxity/wait-on-action@v1
   #       with:
   #         resource: http-get://localhost:8887/lab
   #         timeout: 180000
-  #     - name: Install bokeh 3.0 compatibility packages
-  #       run: |
-  #         conda activate test-environment
-  #         conda uninstall holoviews jupyter_bokeh --force -y --offline
-  #         pip install "git+https://github.com/holoviz/holoviews.git@bokeh3.0"
-  #         pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
-  #     - name: doit env_capture
-  #       run: |
-  #         conda activate test-environment
-  #         doit env_capture
   #     - name: doit test_ui
   #       run: |
   #         conda activate test-environment

@@ -309,9 +309,8 @@ class Syncable(Renderable):
 
     def _process_events(self, events: Dict[str, Any]) -> None:
         self._log('received events %s', events)
-        busy = state.busy
         with edit_readonly(state):
-            state.busy = True
+            state._busy_counter += 1
         events = self._process_property_change(events)
         try:
             with edit_readonly(self):
@@ -338,20 +337,19 @@ class Syncable(Renderable):
         finally:
             self._log('finished processing events %s', events)
             with edit_readonly(state):
-                state.busy = busy
+                state._busy_counter -= 1
 
     def _process_bokeh_event(self, doc: Document, event: Event) -> None:
         self._log('received bokeh event %s', event)
-        busy = state.busy
         with edit_readonly(state):
-            state.busy = True
+            state._busy_counter += 1
         try:
             with set_curdoc(doc):
                 self._process_event(event)
         finally:
             self._log('finished processing bokeh event %s', event)
             with edit_readonly(state):
-                state.busy = busy
+                state._busy_counter -= 1
 
     async def _change_coroutine(self, doc: Document) -> None:
         if state._thread_pool:

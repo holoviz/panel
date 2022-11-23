@@ -1143,9 +1143,7 @@ def mergeToPolydataSerializer(parent, dataObject, dataObjectId, context, depth):
         gf.SetInputData(dataObject)
         gf.Update()
         dataset = gf.GetOutput()
-    elif (dataObject.IsA('vtkUnstructuredGrid') or
-          dataObject.IsA('vtkStructuredGrid') or
-          dataObject.IsA('vtkImageData')):
+    elif not dataObject.IsA('vtkPolyData'):
         gf = vtkGeometryFilter()
         gf.SetInputData(dataObject)
         gf.Update()

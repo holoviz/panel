@@ -25,7 +25,9 @@ from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
 from ..util import param_reprs
-from ..viewable import Layoutable, Viewable, Viewer
+from ..viewable import (
+    Layoutable, ServableMixin, Viewable, Viewer,
+)
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -71,7 +73,7 @@ def panel(obj: Any, **kwargs) -> Viewable:
     layout: Viewable
        A Viewable representation of the input object
     """
-    if isinstance(obj, Viewable):
+    if isinstance(obj, (Viewable, ServableMixin)):
         return obj
     elif hasattr(obj, '__panel__'):
         if not isinstance(obj, Viewer) and issubclass(obj, Viewer):

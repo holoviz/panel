@@ -624,6 +624,36 @@ def test_server_thread_pool_onload(threads, port):
     assert max(counts) >= 2
 
 
+def test_server_thread_pool_busy(threads, port):
+    button = Button(name='Click')
+
+    def cb(event):
+        time.sleep(0.5)
+
+    def simulate_click():
+        button._comm_event(state.curdoc, ButtonClick(model=None))
+
+    button.on_click(cb)
+
+    def app():
+        state.curdoc.add_next_tick_callback(simulate_click)
+        state.curdoc.add_next_tick_callback(simulate_click)
+        state.curdoc.add_next_tick_callback(simulate_click)
+        return button
+
+    serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    requests.get(f"http://localhost:{port}/")
+
+    time.sleep(1)
+
+    assert state._busy_counter == 0
+    assert state.busy == False
+
+
 def test_server_async_onload(threads, port):
     counts = []
 

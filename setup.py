@@ -142,9 +142,11 @@ _tests = [
     'ipython >=7.0',
     'holoviews',
     'diskcache',
-    "markdown-it-py",
+    'markdown-it-py',
     # Temporary pins (jupyter_bokeh needs updates)
-    'ipywidgets <8.0'
+    'ipywidgets <8.0',
+    # Issues with comm (see https://github.com/ipython/ipykernel/issues/1026)
+    'ipykernel <6.18.0'
 ]
 
 _ui = [
@@ -208,7 +210,7 @@ extras_require['build'] = [
     'param >=1.9.2',
     'pyct >=0.4.4',
     'setuptools >=42',
-    'bokeh >=2.4.3',
+    'bokeh >=2.4.3,<2.5',
     'pyviz_comms >=0.6.0',
     'bleach',
     'tqdm',

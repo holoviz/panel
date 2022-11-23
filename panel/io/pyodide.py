@@ -9,6 +9,7 @@ import sys
 
 from typing import Any, Callable, Tuple
 
+import bokeh
 import param
 
 import pyodide # isort: split
@@ -49,6 +50,12 @@ except Exception:
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+# Make bokeh sampledata available in pyolite kernel
+if 'pyolite' in sys.modules and os.path.exists('/drive/assets/sampledata'):
+    def _sampledata_dir(create=None):
+        return '/drive/assets/sampledata'
+    bokeh.util.sampledata.external_data_dir = _sampledata_dir
 
 if 'pandas' in sys.modules and pyodide_http is None:
     import pandas
@@ -254,7 +261,7 @@ def _get_pyscript_target():
     elif hasattr(sys.stdout, '_out'):
         # pyscript <= 2022.09.01
         return sys.stdout._out # type: ignore
-    else:
+    elif not _IN_WORKER:
         raise ValueError("Could not determine target node to write to.")
 
 #---------------------------------------------------------------------
