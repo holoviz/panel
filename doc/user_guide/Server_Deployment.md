@@ -215,7 +215,7 @@ The guides below assumes you have already signed up and logged into your account
 
 #### Duplicate an existing space
 
-The easiest way to get started is to  [search](https://huggingface.co/spaces), find and duplicate an existing space. A simple space is
+The easiest way to get started is to  [search](https://huggingface.co/spaces), find and duplicate an existing space. A simple space to duplicate is
 [MarcSkovMadsen/awesome-panel](https://huggingface.co/spaces/MarcSkovMadsen/awesome-panel).
 
 - Open the space [MarcSkovMadsen/awesome-panel](https://huggingface.co/spaces/MarcSkovMadsen/awesome-panel).
@@ -237,18 +237,24 @@ In this example you will need to
 
 You can deploy Panel to Hugging Face Spaces as a [*Custom Python Space*](https://huggingface.co/docs/hub/spaces-sdks-python). For a general introduction to Hugging Face Spaces see the [Spaces Overview](https://huggingface.co/docs/hub/spaces-overview).
 
-If you want to create a new space from scratch you will need to use a Gradio space.
+Go to [Spaces](https://huggingface.co/spaces) and click the "Create New Space" button.
 
-<img src="../_static/hugging-face-gradio-space.jpg" style="width:67%"></img>
+<img src="../_static/hugging-face-create-new-space.png" style="width:67%"></img>
 
-A Gradio space will serve the app via the commmand `python app.py`. I.e. you cannot run `panel serve app.py`.
+Fill out the form. Make sure to select the *Gradio Space SDK*.
+
+<img src="../_static/hugging-face-create-spaces-form.png" style="width:67%"></img>
+
+A Gradio space will serve your app via the commmand `python app.py`. I.e. you cannot run `panel serve app.py ...`.
 
 To work around this your `app.py` will need to either
 
-- Use `subprocess` to run `panel serve some_app_file.py` or
+- Use `subprocess` to run `panel serve ...` or
 - Use `pn.serve` to serve one or more functions.
 
-#### The easy way - clone 
+The app also needs to run on a port given by the `PORT` environment variable.
+
+Check out the example repository [MarcSkovMadsen/awesome-panel](https://huggingface.co/spaces/MarcSkovMadsen/awesome-panel/tree/main) for inspiration.
 
 #### Other Cloud Providers
 
