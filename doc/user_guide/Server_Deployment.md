@@ -256,7 +256,7 @@ Check out the example repository [MarcSkovMadsen/awesome-panel](https://huggingf
 
 Optionally you can git clone your repository using
 
-```python
+```bash
 git clone https://huggingface.co/spaces/NAME-OF-USER/NAME-OF-SPACE
 ```
 
