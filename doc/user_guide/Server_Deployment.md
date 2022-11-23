@@ -227,11 +227,7 @@ The easiest way to get started is to  [search](https://huggingface.co/spaces), f
 
 Once you have finalized the duplication you will need to take a look at the `app.py` file in the new space to figure out what to replace.
 
-In this example you will need to
-
-- Update the contents of the `panel_app.py` file.
-
-<img src="../_static/hugging-face-app-py.jpg" style="width:67%"></img>
+<img src="../_static/hugging-face-app-py.png" style="width:67%"></img>
 
 ##### Creating a new space from scratch
 
@@ -258,7 +254,7 @@ Check out the example repository [MarcSkovMadsen/awesome-panel](https://huggingf
 
 ##### Git clone
 
-Opionally you can git clone your repository using
+Optionally you can git clone your repository using
 
 ```python
 git clone https://huggingface.co/spaces/NAME-OF-USER/NAME-OF-SPACE
