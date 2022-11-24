@@ -1,4 +1,4 @@
-import {undisplay} from "@bokehjs/core/dom"
+import {StyleSheetLike, ImportedStyleSheet, undisplay} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
 import {build_views} from "@bokehjs/core/build_views"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
@@ -292,9 +292,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
     const p = this.model.properties
     const {configuration, layout, columns, theme, groupby} = p;
-    this.on_change([configuration, layout, columns, groupby], debounce(() => this.invalidate_render(), 20, false))
-
-    this.on_change([theme], () => this.setCSS())
+    this.on_change([configuration, layout, columns, groupby, theme], debounce(() => this.invalidate_render(), 20, false))
 
     this.connect(p.download.change, () => {
       const ftype = this.model.filename.endsWith('.json') ? "json" : "csv"
@@ -386,9 +384,6 @@ export class DataTabulatorView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    const wait = this.setCSS()
-    if (wait)
-      return
     this._initializing = true
     const container = div({class: "pnx-tabulator"})
     //set_size(container, this.model)
@@ -922,7 +917,8 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.setSort(this.sorters)
   }
 
-  setCSS(): boolean {
+  override styles(): StyleSheetLike[] {
+    const styles = super.styles()
     let theme: string
     let theme_: string
     if (this.model.theme == "default") {
@@ -941,43 +937,8 @@ export class DataTabulatorView extends HTMLBoxView {
       theme = "tabulator_" + theme_
     }
     const css = this.model.theme_url + theme + ".min.css"
-
-    let old_node: any = null
-    const links = document.getElementsByTagName("link")
-    const dist_index = this.model.theme_url.indexOf('dist/')
-    const start_url = this.model.theme_url.slice(0, dist_index)
-    for (const link of links) {
-      if (link.href.indexOf(start_url) >= 0) {
-        old_node = link
-        break
-      }
-    }
-
-    if (old_node != null) {
-      if (old_node.href.endsWith(css))
-        return false
-      else {
-        old_node.href = css
-        setTimeout(() => this.render(), 100)
-        return true
-      }
-    }
-    let parent_node = document.getElementsByTagName("head")[0]
-
-    const css_node: any = document.createElement('link')
-    css_node.type = 'text/css'
-    css_node.rel = 'stylesheet'
-    css_node.media = 'screen'
-    css_node.href = css
-
-    css_node.onload = () => {
-      if (!this._building) {
-	this.render()
-	this.relayout()
-      }
-    }
-    parent_node.appendChild(css_node)
-    return true
+    styles.push(new ImportedStyleSheet(css))
+    return styles
   }
 
   setStyles(): void {
