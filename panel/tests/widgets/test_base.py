@@ -29,14 +29,14 @@ def test_widget_signature(widget):
 
 
 @pytest.mark.parametrize('widget', all_widgets)
-def test_widget_linkable_params(widget):
+def test_widget_linkable_params(widget, document, comm):
     w = widget()
     controls = w.controls(jslink=True)
     layout = Row(w, controls)
 
     try:
         CallbackGenerator.error = True
-        layout.get_root()
+        layout.get_root(document, comm)
     finally:
         CallbackGenerator.error = False
 
