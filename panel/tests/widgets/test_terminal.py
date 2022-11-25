@@ -20,11 +20,11 @@ def test_terminal_constructor():
     assert repr(terminal).startswith("Terminal(")
 
 
-def test_terminal():
+def test_terminal(document, comm):
     terminal = pn.widgets.Terminal("Hello")
     terminal.write(" World!")
 
-    model = terminal.get_root()
+    model = terminal.get_root(document, comm)
 
     assert model.output == "Hello World!"
 
@@ -33,7 +33,7 @@ def test_terminal():
     assert model._clears == 1
     assert terminal.output == ""
 
-    model2 = terminal.get_root()
+    model2 = terminal.get_root(document, comm)
 
     assert model2.output == ""
 
