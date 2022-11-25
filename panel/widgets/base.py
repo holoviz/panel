@@ -93,7 +93,7 @@ class Widget(Reactive):
 
     def _init_params(self) -> Dict[str, Any]:
         msg = super()._init_params()
-        if 'css' in self._widget_type.properties():
+        if self._widget_type is not None and 'css' in self._widget_type.properties():
             msg['css'] = getattr(self._widget_type, '__css__', [])
         return msg
 

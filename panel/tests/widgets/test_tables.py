@@ -246,7 +246,7 @@ def test_tabulator_multi_index(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df.set_index(['A', 'C']))
 
-    model = table.get_root()
+    model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
         {'field': 'A', 'sorter': 'number'},
@@ -263,7 +263,7 @@ def test_tabulator_multi_index_remote_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df.set_index(['A', 'C']), pagination='remote', page_size=3)
 
-    model = table.get_root()
+    model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
         {'field': 'A', 'sorter': 'number'},
@@ -276,12 +276,12 @@ def test_tabulator_multi_index_remote_pagination(document, comm):
     assert np.array_equal(model.source.data['C'], np.array(['foo1', 'foo2', 'foo3']))
 
 
-def test_tabulator_expanded_content():
+def test_tabulator_expanded_content(document, comm):
     df = makeMixedDataFrame()
 
     table = Tabulator(df, expanded=[0, 1], row_content=lambda r: r.A)
 
-    model = table.get_root()
+    model = table.get_root(document, comm)
 
     assert len(model.children) == 2
 
@@ -320,12 +320,12 @@ def test_tabulator_index_column(document, comm):
     assert model.columns[0].title == ''
 
 
-def test_tabulator_expanded_content_pagination():
+def test_tabulator_expanded_content_pagination(document, comm):
     df = makeMixedDataFrame()
 
     table = Tabulator(df, expanded=[0, 1], row_content=lambda r: r.A, pagination='remote', page_size=2)
 
-    model = table.get_root()
+    model = table.get_root(document, comm)
 
     assert len(model.children) == 2
 
@@ -334,12 +334,12 @@ def test_tabulator_expanded_content_pagination():
     assert len(model.children) == 0
 
 
-def test_tabulator_expanded_content_embed():
+def test_tabulator_expanded_content_embed(document, comm):
     df = makeMixedDataFrame()
 
     table = Tabulator(df, embed_content=True, row_content=lambda r: r.A)
 
-    model = table.get_root()
+    model = table.get_root(document, comm)
 
     assert len(model.children) == len(df)
 
@@ -752,7 +752,7 @@ def test_tabulator_styling(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert model.styles['data'] == {
+    assert model.cell_styles['data'] == {
         0: {2: [('color', 'black')]},
         1: {2: [('color', 'black')]},
         2: {2: [('color', 'black')]},
@@ -1894,7 +1894,7 @@ def test_tabulator_cell_click_event_error_duplicate_index():
     with pytest.raises(ValueError, match="Found this duplicate index: 'a'"):
         table._process_event(event)
 
-def test_tabulator_styling_empty_dataframe():
+def test_tabulator_styling_empty_dataframe(document, comm):
     df = pd.DataFrame(columns=["A", "B", "C"]).astype({
         "A": float,
         "B": str,
@@ -1905,13 +1905,13 @@ def test_tabulator_styling_empty_dataframe():
         "border-color: #dc3545; border-style: solid" for name, value in x.items()
     ], axis=1)
 
-    model = table.get_root()
+    model = table.get_root(document, comm)
 
     assert model.styles == {}
 
     table.value = pd.DataFrame({'A': [3.14], 'B': ['foo'], 'C': [3]})
 
-    assert model.styles['data'] == {
+    assert model.cell_styles['data'] == {
         0: {
             2: [('border-color', '#dc3545'), ('border-style', 'solid')],
             3: [('border-color', '#dc3545'), ('border-style', 'solid')],

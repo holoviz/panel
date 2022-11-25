@@ -1,12 +1,29 @@
 import sys
 import time
+import warnings
 
 import numpy as np
 import pytest
 
 from packaging.version import Version
 
+import panel as pn
+
 from panel.io.server import serve
+
+# Ignore tests which are not yet working with Bokeh 3.
+# Will begin to fail again when the first rc is released.
+bokeh3_failing = pytest.mark.xfail(
+    not Version(pn.__version__).is_prerelease,
+    reason="Bokeh 3: Not working yet"
+)
+# These tests passes when running alone
+# but will fail when running with all the other tests
+bokeh3_failing_all = pytest.mark.skipif(
+    not Version(pn.__version__).is_prerelease,
+    reason="Bokeh 3: Not working when running all tests"
+)
+
 
 try:
     import holoviews as hv
@@ -54,8 +71,14 @@ def mpl_figure():
 
 
 def check_layoutable_properties(layoutable, model):
-    layoutable.background = '#ffffff'
-    assert model.background == '#ffffff'
+    layoutable.styles = {"background": '#fffff0'}
+    assert model.styles["background"] == '#fffff0'
+
+    # Is deprecated, but we still support it for now.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        layoutable.background = '#ffffff'
+    assert model.styles["background"] == '#ffffff'
 
     layoutable.css_classes = ['custom_class']
     if isinstance(layoutable, Markdown):
@@ -82,7 +105,7 @@ def check_layoutable_properties(layoutable, model):
     assert model.max_width == 550
 
     layoutable.margin = 10
-    assert model.margin == (10, 10, 10, 10)
+    assert model.margin == 10
 
     layoutable.sizing_mode = 'stretch_width'
     assert model.sizing_mode == 'stretch_width'

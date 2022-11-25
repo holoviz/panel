@@ -34,7 +34,7 @@ def test_pane_layout_properties(pane, document, comm):
 
 
 @pytest.mark.parametrize('pane', all_panes+[Bokeh])
-def test_pane_linkable_params(pane):
+def test_pane_linkable_params(pane, document, comm):
     try:
         p = pane()
     except ImportError:
@@ -44,7 +44,7 @@ def test_pane_linkable_params(pane):
 
     try:
         CallbackGenerator.error = True
-        layout.get_root()
+        layout.get_root(document, comm)
     except Exception as e:
         raise e
     finally:

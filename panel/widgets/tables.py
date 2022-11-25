@@ -1337,7 +1337,7 @@ class Tabulator(BaseTable):
 
     def _update_style(self, recompute=True):
         styles = self._get_style_data(recompute)
-        msg = {'styles': styles}
+        msg = {'cell_styles': styles}
         for ref, (m, _) in self._models.items():
             self._apply_update([], msg, m, ref)
 

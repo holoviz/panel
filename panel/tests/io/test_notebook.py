@@ -1,13 +1,14 @@
 from panel.io.notebook import ipywidget
 from panel.pane import Str
 
-from ..util import jb_available
+from ..util import bokeh3_failing_all, jb_available
 
 
+@bokeh3_failing_all
 @jb_available
-def test_ipywidget():
+def test_ipywidget(document):
     pane = Str('A')
-    widget = ipywidget(pane)
+    widget = ipywidget(pane, doc=document)
 
     assert widget._view_count == 0
     assert len(pane._models) == 1
