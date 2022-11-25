@@ -392,6 +392,30 @@ def style_to_styles(params):
     if "style" in params:
         params["styles"] = params.pop("style")
         msg = "The parameter 'style' is deprecated please use 'styles' instead of."
-        warnings.warn(msg, stacklevel=3)
+        deprecation_warning(msg)
 
     return params
+
+
+def deprecation_warning(msg, warning=FutureWarning):
+    # Finding the first stacklevel outside panel and param
+    # Inspired by: pandas.util._exceptions.find_stack_level
+    import param
+
+    import panel as pn
+
+    pkg_dir = os.path.dirname(pn.__file__)
+    test_dir = os.path.join(pkg_dir, "tests")
+    param_dir = os.path.dirname(param.__file__)
+
+    frame = inspect.currentframe()
+    stacklevel = 1
+    while frame:
+        fname = inspect.getfile(frame)
+        if (fname.startswith(pkg_dir) or fname.startswith(param_dir)) and not fname.startswith(test_dir):
+            frame = frame.f_back
+            stacklevel += 1
+        else:
+            break
+
+    warnings.warn(msg, warning, stacklevel=stacklevel)

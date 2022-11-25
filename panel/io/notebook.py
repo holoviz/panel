@@ -370,7 +370,7 @@ def show_embed(
                     states)
     publish_display_data(*render_model(model))
 
-def ipywidget(obj: Any, **kwargs: Any):
+def ipywidget(obj: Any, doc=None, **kwargs: Any):
     """
     Returns an ipywidget model which renders the Panel object.
 
@@ -380,6 +380,8 @@ def ipywidget(obj: Any, **kwargs: Any):
     ---------
     obj: object
       Any Panel object or object which can be rendered with Panel
+    doc: bokeh.Document
+        Bokeh document the bokeh model will be attached to.
     **kwargs: dict
       Keyword arguments passed to the pn.panel utility function
 
@@ -390,7 +392,7 @@ def ipywidget(obj: Any, **kwargs: Any):
     from jupyter_bokeh.widgets import BokehModel
 
     from ..pane import panel
-    model = panel(obj, **kwargs).get_root()
+    model = panel(obj, **kwargs).get_root(doc=doc)
     widget = BokehModel(model, combine_events=True)
     if hasattr(widget, '_view_count'):
         widget._view_count = 0

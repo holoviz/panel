@@ -149,8 +149,13 @@ def test_text_input_controls():
     assert not not_checked
 
     assert isinstance(wb2, WidgetBox)
-    assert len(wb2) == len(list(Viewable.param)) + 1
 
+    params1 = {w.name.replace(" ", "_").lower() for w in wb2 if len(w.name)}
+    params2 = set(Viewable.param) - {"background"}
+    # Background should be moved when Layoutable.background is removed.
+
+    assert not len(params1 - params2)
+    assert not len(params2 - params1)
 
 
 def test_text_input_controls_explicit():

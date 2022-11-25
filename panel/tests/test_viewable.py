@@ -6,12 +6,13 @@ from panel.interact import interactive
 from panel.pane import Markdown, Str, panel
 from panel.viewable import Viewable, Viewer
 
-from .util import jb_available
+from .util import bokeh3_failing_all, jb_available
 
 all_viewables = [w for w in param.concrete_descendents(Viewable).values()
                if not w.__name__.startswith('_') and
                not issubclass(w, interactive)]
 
+@bokeh3_failing_all
 @jb_available
 def test_viewable_ipywidget():
     pane = Str('A')
