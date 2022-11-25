@@ -591,5 +591,5 @@ def test_holoviews_property_override(document, comm):
                 css_classes=['test_class'])
     model = pane.get_root(document, comm=comm)
 
-    assert model.background == 'red'
+    assert model.styles["background"] == 'red'
     assert model.css_classes == ['test_class']
