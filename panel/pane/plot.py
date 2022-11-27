@@ -295,7 +295,7 @@ class Matplotlib(PNG, IPyWidget):
         try:
             self.object.set_dpi(self.dpi)
         except Exception as ex:
-            raise Exception("The Matplotlib backend is not configured. Try adding `matplotlib.use('agg')`")
+            raise Exception("The Matplotlib backend is not configured. Try adding `matplotlib.use('agg')`") from ex
         b = BytesIO()
 
         if self.tight:
