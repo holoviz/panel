@@ -292,7 +292,10 @@ class Matplotlib(PNG, IPyWidget):
         manager.canvas.draw_idle()
 
     def _data(self):
-        self.object.set_dpi(self.dpi)
+        try:
+            self.object.set_dpi(self.dpi)
+        except Exception as ex:
+            raise Exception("The Matplotlib backend is not configured. Try adding `matplotlib.use('agg')`")
         b = BytesIO()
 
         if self.tight:
