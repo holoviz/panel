@@ -289,7 +289,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             )
             self.set_header("Content-Type", 'text/html')
             self.write(self._error_template.render(
-                npm_cdn=config.npn_cdn,
+                npm_cdn=config.npm_cdn,
                 title='Panel: Authentication Error',
                 error_type='Authentication Error',
                 error=error,
