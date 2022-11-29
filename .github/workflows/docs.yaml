@@ -46,7 +46,6 @@ jobs:
           fetch-depth: "100"
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          mamba-version: "*"
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           miniconda-version: "latest"
       - name: Fetch unshallow
@@ -58,7 +57,14 @@ jobs:
           echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: conda setup
         run: |
-          conda create -n test-environment python=3.9 pyctdev
+          conda update -n base -c defaults conda
+          conda install -n base -c conda-forge --no-update-deps
+          conda create -n test-environment
+          conda activate test-environment
+          conda config --remove channels defaults
+          conda config --env --remove channels defaults
+          conda config --env --append channels pyviz/label/dev --append channels bokeh --append channels conda-forge
+          conda install python=3.9 pyctdev
       - uses: actions/setup-node@v2
         with:
           node-version: '15'
