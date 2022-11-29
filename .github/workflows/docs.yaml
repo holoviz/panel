@@ -46,7 +46,6 @@ jobs:
           fetch-depth: "100"
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           miniconda-version: "latest"
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
