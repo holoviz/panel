@@ -18,11 +18,11 @@ import param
 
 from bokeh.models.formatters import TickFormatter
 from bokeh.models.widgets import (
-    CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
+    Checkbox as _BkCheckbox, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, FileInput as _BkFileInput,
     NumericInput as _BkNumericInput, PasswordInput as _BkPasswordInput,
-    Spinner as _BkSpinner, TextAreaInput as _BkTextAreaInput,
-    TextInput as _BkTextInput,
+    Spinner as _BkSpinner, Switch as _BkSwitch,
+    TextAreaInput as _BkTextAreaInput, TextInput as _BkTextInput,
 )
 
 from ..config import config
@@ -50,17 +50,20 @@ class TextInput(Widget):
     >>> TextInput(name='Name', placeholder='Enter your name here ...')
     """
 
+    description = param.String(doc="""
+        An HTML string describing the function of this component.""")
+
     max_length = param.Integer(default=5000, doc="""
-      Max count of characters in the input field.""")
+        Max count of characters in the input field.""")
 
     placeholder = param.String(default='', doc="""
-      Placeholder for empty input field.""")
+        Placeholder for empty input field.""")
 
     value = param.String(default='', allow_None=True, doc="""
-      Initial or entered text value updated when <enter> key is pressed.""")
+        Initial or entered text value updated when <enter> key is pressed.""")
 
     value_input = param.String(default='', allow_None=True, doc="""
-      Initial or entered text value updated on every key press.""")
+        Initial or entered text value updated on every key press.""")
 
     _widget_type: ClassVar[Type[Model]] = _BkTextInput
 
@@ -112,7 +115,6 @@ class TextAreaInput(TextInput):
     Lines are joined with the newline character `\n`.
 
     Reference: https://panel.holoviz.org/reference/widgets/TextAreaInput.html
-
     :Example:
 
     >>> TextAreaInput(
@@ -142,6 +144,9 @@ class FileInput(Widget):
     """
 
     accept = param.String(default=None)
+
+    description = param.String(doc="""
+        An HTML string describing the function of this component.""")
 
     filename = param.ClassSelector(default=None, class_=(str, list),
                                is_instance=True)
@@ -467,6 +472,9 @@ class ColorPicker(Widget):
     >>> ColorPicker(name='Color', value='#99ef78')
     """
 
+    description = param.String(default="""
+        An HTML string describing the function of this component.""")
+
     value = param.Color(default=None, doc="""
         The selected color""")
 
@@ -476,6 +484,9 @@ class ColorPicker(Widget):
 
 
 class _NumericInputBase(Widget):
+
+    description = param.String(doc="""
+        An HTML string describing the function of this component.""")
 
     value = param.Number(default=0, allow_None=True, doc="""
         The current value of the spinner.""")
@@ -661,6 +672,9 @@ class LiteralInput(Widget):
 
     >>> LiteralInput(name='Dictionary', value={'key': [1, 2, 3]}, type=dict)
     """
+
+    description = param.String(doc="""
+        An HTML string describing the function of this component.""")
 
     placeholder = param.String(default='', doc="""
       Placeholder for empty input field.""")
@@ -999,7 +1013,23 @@ class DatetimeRangeInput(CompositeWidget):
             self._updating = False
 
 
-class Checkbox(Widget):
+class _BooleanWidget(Widget):
+
+    value = param.Boolean(default=False, doc="""
+        The current value""")
+
+    _supports_embed: ClassVar[bool] = True
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
+
+    __abstract = True
+
+    def _get_embed_state(self, root, values=None, max_opts=3):
+        return (self, self._models[root.ref['id']][0], [False, True],
+                lambda x: x.active, 'active', "cb_obj.active")
+
+
+class Checkbox(_BooleanWidget):
     """
     The `Checkbox` allows toggling a single condition between `True`/`False`
     states by ticking a checkbox.
@@ -1013,40 +1043,23 @@ class Checkbox(Widget):
     >>> Checkbox(name='Works with the tools you know and love', value=True)
     """
 
-    value = param.Boolean(default=False, doc="""
-        The current value""")
+    _widget_type: ClassVar[Type[Model]] = _BkCheckbox
 
-    _supports_embed: ClassVar[bool] = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'labels'}
+class Switch(_BooleanWidget):
+    """
+    The `Switch` allows toggling a single condition between `True`/`False`
+    states by ticking a checkbox.
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'value': "value.indexOf(0) >= 0", 'name': "value[0]"
-    }
+    This widget is interchangeable with the `Toggle` widget.
 
-    _target_transforms: ClassVar[Mapping[str, str | None]] = {
-        'value': "value ? [0] : []", 'name': "[value]"
-    }
+    Reference: https://panel.holoviz.org/reference/widgets/Switch.html
 
-    _widget_type: ClassVar[Type[Model]] = _BkCheckboxGroup
+    :Example:
 
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = 0 in msg.pop('value')
-        if 'name' in msg:
-            msg['name'] = [msg['name']]
-        return msg
+    >>> Switch(name='Works with the tools you know and love', value=True)
+    """
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'active' in msg:
-            msg['active'] = [0] if msg.pop('active', None) else []
-        if 'labels' in msg:
-            msg['labels'] = [msg.pop('labels')]
-        return msg
+    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': None}
 
-    def _get_embed_state(self, root, values=None, max_opts=3):
-        return (self, self._models[root.ref['id']][0], [False, True],
-                lambda x: str(0 in x.active).lower(), 'active',
-                "String(cb_obj.active.indexOf(0) >= 0)")
+    _widget_type: ClassVar[Type[Model]] = _BkSwitch

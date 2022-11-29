@@ -9,6 +9,7 @@ import itertools
 import json
 import os
 import sys
+import textwrap
 import types
 
 from collections import OrderedDict, defaultdict, namedtuple
@@ -466,6 +467,9 @@ class Param(PaneBase):
                 kw['fixed_start'] = p_obj.bounds[0]
             if hasattr(widget_class, 'fixed_end') and getattr(p_obj, 'bounds', None):
                 kw['fixed_end'] = p_obj.bounds[1]
+
+        if p_obj.doc:
+            kw['description'] = textwrap.dedent(p_obj.doc.lstrip())
 
         # Update kwargs
         kw.update(kw_widget)
