@@ -58,7 +58,7 @@ jobs:
       - name: conda setup
         run: |
           conda update -n base -c defaults conda
-          conda install -n base -c conda-forge --no-update-deps
+          conda install -n base -c conda-forge --no-update-deps mamba
           conda create -n test-environment
           conda activate test-environment
           conda config --remove channels defaults
