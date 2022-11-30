@@ -602,3 +602,43 @@ def test_editable_rangeslider_bounds(
         slider.value = val_update
     except Exception:
         assert fail_update
+
+
+@pytest.mark.parametrize(
+    "editableslider,fixed_start,fixed_end",
+    [
+        (EditableFloatSlider, 0.05, 0.10),
+        (EditableIntSlider, 5, 10),
+    ],
+)
+def test_editable_slider_fixed_novalue(editableslider, fixed_start, fixed_end):
+    slider = editableslider(
+        fixed_start=fixed_start, fixed_end=fixed_end,
+    )
+    assert slider.value == fixed_start
+
+    slider = editableslider(fixed_start=fixed_start)
+    assert slider.value == fixed_start
+
+    slider = editableslider(fixed_end=fixed_end)
+    assert slider.value == fixed_end
+
+
+def test_editable_rangeslider_fixed_novalue():
+    fixed_start, fixed_end, step = 0.05, 0.10, 0.01
+    slider = EditableRangeSlider(
+        fixed_start=fixed_start, fixed_end=fixed_end,
+    )
+    assert slider.value == (fixed_start, fixed_end)
+
+    slider = EditableRangeSlider(fixed_start=fixed_start)
+    assert slider.value == (fixed_start, fixed_start + 0.1)
+
+    slider = EditableRangeSlider(fixed_start=fixed_start, step=step)
+    assert slider.value == (fixed_start, fixed_start + step)
+
+    slider = EditableRangeSlider(fixed_end=fixed_end)
+    assert slider.value == (fixed_end - 0.1, fixed_end)
+
+    slider = EditableRangeSlider(fixed_end=fixed_end, step=step)
+    assert slider.value == (fixed_end - step, fixed_end)

@@ -787,6 +787,11 @@ class _EditableContinuousSlider(CompositeWidget):
     def __init__(self, **params):
         if not 'width' in params and not 'sizing_mode' in params:
             params['width'] = 300
+        if "value" not in params and "fixed_start" in params:
+            params["value"] = params["fixed_start"]
+        if "value" not in params and "fixed_end" in params:
+            params["value"] = params["fixed_end"]
+
         super().__init__(**params)
         self._label = StaticText(margin=0, align='end')
         self._slider = self._slider_widget(
@@ -977,6 +982,15 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     def __init__(self, **params):
         if not 'width' in params and not 'sizing_mode' in params:
             params['width'] = 300
+        if "value" not in params and "fixed_start" in params:
+            start = params["fixed_start"]
+            end = params.get("fixed_end", start + params.get("step", 0.1))
+            params["value"] = (start, end)
+        if "value" not in params and "fixed_end" in params:
+            end = params["fixed_end"]
+            start = params.get("fixed_start", end - params.get("step", 0.1))
+            params["value"] = (start, end)
+
         super().__init__(**params)
         self._label = StaticText(margin=0, align='end')
         self._slider = RangeSlider(margin=(0, 0, 5, 0), show_value=False)
