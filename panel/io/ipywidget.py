@@ -1,5 +1,7 @@
 import logging
 
+from functools import partial
+
 import param
 
 from bokeh.document.events import MessageSentEvent
@@ -10,6 +12,8 @@ from ipywidgets_bokeh.kernel import (
     BokehKernel, SessionWebsocket, WebsocketStream,
 )
 from tornado.ioloop import IOLoop
+
+from .state import set_curdoc, state
 
 
 class MessageSentBuffers(TypedDict):
@@ -105,4 +109,12 @@ class PanelKernel(BokehKernel):
 
         comm_msg_types = ['comm_open', 'comm_msg', 'comm_close']
         for msg_type in comm_msg_types:
-            self.shell_handlers[msg_type] = getattr(self.comm_manager, msg_type)
+            handler = getattr(self.comm_manager, msg_type)
+            self.shell_handlers[msg_type] = self._wrap_handler(handler)
+
+    def _wrap_handler(self, handler):
+        doc = self.session._document
+        def wrapper(*args, **kwargs):
+            with set_curdoc(doc):
+                state.execute(partial(handler, *args, **kwargs), schedule=True)
+        return wrapper
