@@ -53,12 +53,25 @@ jobs:
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a6
+        if: matrix.python-version < '3.10'
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           nodejs: true
           envs: "-o examples -o recommended -o tests -o build"
+          cache: true
+          opengl: true
+        id: install
+        # Remove when all examples tools can be installed on 3.10
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a6
+        if: matrix.python-version == '3.10'
+        with:
+          name: unit_test_suite
+          python-version: ${{ matrix.python-version }}
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          nodejs: true
+          envs: "-o recommended -o tests -o build"
           cache: true
           opengl: true
         id: install
@@ -76,6 +89,8 @@ jobs:
           conda activate test-environment
           doit test_unit
       - name: test examples
+        # Remove when all examples tools can be installed on 3.10
+        if: matrix.python-version < '3.10'
         run: |
           conda activate test-environment
           doit test_examples
