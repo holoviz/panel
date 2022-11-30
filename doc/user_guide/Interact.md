@@ -6,7 +6,7 @@ The `interact` function (`panel.interact`) automatically creates user interface 
 ```{pyodide}
 import panel as pn
 
-from panel.interact import interact, interactive, fixed, interact_manual
+from panel.interact import interact, fixed
 from panel import widgets
 
 pn.extension()

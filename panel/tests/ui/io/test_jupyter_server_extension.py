@@ -25,6 +25,14 @@ def test_jupyter_server(page, jupyter_preview):
 
 @not_windows
 @pytest.mark.flaky(max_runs=3)
+def test_jupyter_server_custom_resources(page, jupyter_preview):
+    page.goto(f"{jupyter_preview}/app.py", timeout=30000)
+
+    assert page.locator('.bk.string').evaluate("""(element) =>
+        window.getComputedStyle(element).getPropertyValue('color')""") == 'rgb(128, 0, 128)'
+
+@not_windows
+@pytest.mark.flaky(max_runs=3)
 def test_jupyter_server_kernel_error(page, jupyter_preview):
     page.goto(f"{jupyter_preview}/app.py?kernel=blah", timeout=30000)
 

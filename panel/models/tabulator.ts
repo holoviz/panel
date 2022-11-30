@@ -322,10 +322,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     this.connect(p.styles.change, () => {
       if (this._applied_styles)
-     this.tabulator.redraw(true)
+        this.tabulator.redraw(true)
       this.setStyles()
     })
-    this.connect(p.hidden_columns.change, () => this.setHidden())
+    this.connect(p.hidden_columns.change, () => {
+      this.setHidden()
+      this.tabulator.redraw(true)
+    })
     this.connect(p.page_size.change, () => this.setPageSize())
     this.connect(p.page.change, () => {
       if (!this._updating_page)

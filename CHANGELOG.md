@@ -2,14 +2,16 @@
 
 ## Version 0.14.1
 
-Date: 2022-10-20
+Date: 2022-10-28
 
-This release primarily addresses regressions introduced in 0.14.0 and various long standing bugs. Many thanks to external contributor @liu-kan and the maintainers @Hoxbro, @maximlt and @philippjfr for contributing a number of fixes.
+This release primarily addresses regressions introduced in 0.14.0 and various long standing bugs. Many thanks to external contributors @liu-kan and @KedoKudo and the maintainers @Hoxbro, @maximlt and @philippjfr for contributing a number of fixes.
 
 ### Minor enhancements
 
+- Improve support for `requests` in pyodide ([#3973](https://github.com/holoviz/panel/pull/3973))
 - Add option to clear value of DatetimePicker ([#3990](https://github.com/holoviz/panel/pull/3990))
 - Add support for hashing dates in pn.cache ([#4004](https://github.com/holoviz/panel/pull/4004))
+- Silence `EMPTY_LAYOUT` warnings ([#4056](https://github.com/holoviz/panel/pull/4056))
 
 ### Compatibility
 
@@ -20,7 +22,6 @@ This release primarily addresses regressions introduced in 0.14.0 and various lo
 #### Webassembly conversion
 
 - Correctly handle resource mode in when converting to WebAssembly ([#3967](https://github.com/holoviz/panel/pull/3967))
-- Improve support for `requests` in pyodide ([#3973](https://github.com/holoviz/panel/pull/3973))
 
 ### Jupyter and Server
 
@@ -42,6 +43,7 @@ This release primarily addresses regressions introduced in 0.14.0 and various lo
 - Ensure that template.config.raw_css is correctly applied ([#4018](https://github.com/holoviz/panel/pull/4018))
 - Fix handling `MenuButton` clicks when `split=True` ([#4021](https://github.com/holoviz/panel/pull/4021))
 - Ensure styling on `Tabulator` with empty DataFrame does not error ([#4028](https://github.com/holoviz/panel/pull/4028))
+- Allow changing `level` on `Debugger` widget ([#4057](https://github.com/holoviz/panel/pull/4057)
 
 ## Version 0.14.0
 

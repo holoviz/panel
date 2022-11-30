@@ -63,7 +63,8 @@ class IPyWidget(PaneBase):
                 widgets = (obj._active_widgets if hasattr(obj, '_active_widgets') else obj.widgets).values()
                 for w in widgets:
                     w.comm.kernel = kernel
-                    w.comm.open()
+                    if w.comm._closed:
+                        w.comm.open()
 
         model = IPyWidget(widget=obj, **kwargs)
         return model

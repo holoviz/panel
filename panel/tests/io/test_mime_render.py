@@ -1,7 +1,7 @@
 import pathlib
 
 from panel.io.mime_render import (
-    WriteCallbackStream, exec_with_return, format_mime,
+    WriteCallbackStream, exec_with_return, find_imports, format_mime,
 )
 
 
@@ -28,6 +28,25 @@ class PNG:
         with open(pathlib.Path(__file__).parent.parent / 'test_data' / 'logo.png', 'rb') as f:
             return f.read()
 
+def test_find_imports_stdlibs():
+    code = """
+    import os
+    import base64
+    import pathlib
+    """
+    assert find_imports(code) == []
+
+def test_find_import_stdlibs_multiline():
+    code = """
+    import re, io, time
+    """
+    assert find_imports(code) == []
+
+def test_find_import_imports_multiline():
+    code = """
+    import numpy, scipy
+    """
+    assert find_imports(code) == ['numpy', 'scipy']
 
 def test_exec_with_return_multi_line():
     assert exec_with_return('a = 1\nb = 2\na + b') == 3

@@ -1918,3 +1918,12 @@ def test_tabulator_styling_empty_dataframe():
             4: [('border-color', '#dc3545'), ('border-style', 'solid')]
         }
     }
+
+
+def test_tabulator_pandas_import():
+    # Checks for: https://github.com/holoviz/panel/issues/4102
+    _tabulator = Tabulator(
+        pd.DataFrame(),
+        show_index=False,
+    )
+    _tabulator.hidden_columns = ["a", "b", "c"]

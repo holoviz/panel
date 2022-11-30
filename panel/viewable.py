@@ -378,8 +378,8 @@ class ServableMixin(object):
             else:
                 self.server_doc(title=title, location=location) # type: ignore
         elif state._is_pyodide:
-            from .io.pyodide import write
-            target = target or getattr(sys.stdout, '_out', None)
+            from .io.pyodide import _get_pyscript_target, write
+            target = target or _get_pyscript_target()
             if target is not None:
                 asyncio.create_task(write(target, self))
         return self
@@ -897,12 +897,13 @@ class Viewer(param.Parameterized):
         raise NotImplementedError
 
     def _create_view(self):
+        from .pane import panel
         from .param import ParamMethod
 
         if hasattr(self.__panel__, "_dinfo"):
-            view = ParamMethod(self.__panel__)
+            view = ParamMethod(self.__panel__, lazy=True)
         else:
-            view = self.__panel__()
+            view = panel(self.__panel__())
 
         return view
 

@@ -138,10 +138,11 @@ export class TabsView extends BkTabsView {
     const vertical = loc == "above" || loc == "below"
 
     const scroll_el_size = size(this.scroll_el)
-    const headers_el_size = scroll_size(this.headers_el)
+    const headers = [...this.headers_el.children]
     if (vertical) {
+      const headers_el_width = sum(headers.map((el: HTMLElement) => scroll_size(el).width))
       const {width} = this.header.bbox
-      if (headers_el_size.width > width) {
+      if (headers_el_width > width) {
         this.wrapper_el.style.maxWidth = `${width - scroll_el_size.width}px`
         display(this.scroll_el)
         this.do_scroll(this.model.active)
@@ -151,8 +152,9 @@ export class TabsView extends BkTabsView {
         undisplay(this.scroll_el)
       }
     } else {
+      const headers_el_height = sum(headers.map((el: HTMLElement) => scroll_size(el).height))
       const {height} = this.header.bbox
-      if (headers_el_size.height > height) {
+      if (headers_el_height > height) {
         this.wrapper_el.style.maxHeight = `${height - scroll_el_size.height}px`
         display(this.scroll_el)
         this.do_scroll(this.model.active)

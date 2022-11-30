@@ -27,7 +27,7 @@ class Convert(Subcommand):
         ('--to', dict(
             action  = 'store',
             type    = str,
-            help    = "The format to convert to.",
+            help    = "The format to convert to, one of 'pyodide' (default), 'pyodide-worker' or 'pyscript'",
             default = 'pyodide'
         )),
         ('--out', dict(

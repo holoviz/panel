@@ -129,7 +129,9 @@ class ContinuousSlider(_SliderBase):
         # Replace model
         layout_opts = {k: v for k, v in self.param.values().items()
                        if k in Layoutable.param and k != 'name'}
-        dw = DiscreteSlider(options=values, name=self.name, **layout_opts)
+
+        value = values[np.argmin(np.abs(np.array(values)-self.value))]
+        dw = DiscreteSlider(options=values, value=value, name=self.name, **layout_opts)
         dw.link(self, value='value')
         self._models.pop(ref)
         index = parent.children.index(w_model)
@@ -247,6 +249,12 @@ class DateSlider(_SliderBase):
 
     as_datetime = param.Boolean(default=False, doc="""
         Whether to store the date as a datetime.""")
+
+    step = param.Number(default=None, doc="""
+        The step parameter in milliseconds.""")
+
+    format = param.String(default=None, doc="""
+        Datetime format used for parsing and formatting the date.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'name': 'title', 'as_datetime': None
@@ -659,7 +667,10 @@ class DateRangeSlider(_SliderBase):
         The upper bound.""")
 
     step = param.Number(default=1, doc="""
-        The step size. Default is 1 (day).""")
+        The step size. Default is 1 millisecond.""")
+
+    format = param.String(default=None, doc="""
+        Datetime format used for parsing and formatting the date.""")
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'value_throttled': None, 'start': None, 'end': None,

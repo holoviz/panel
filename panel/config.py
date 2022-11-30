@@ -25,7 +25,7 @@ from .io.state import state
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
 
-_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty'))
+_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty')) and not state._is_pyodide
 
 #---------------------------------------------------------------------
 # Public API
@@ -534,6 +534,8 @@ class panel_extension(_pyviz_extension):
 
     _loaded_extensions = []
 
+    _comms_detected_before = False
+
     def __call__(self, *args, **params):
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
         reactive_exts = {
@@ -601,6 +603,8 @@ class panel_extension(_pyviz_extension):
 
         from .io.notebook import load_notebook
 
+        self._detect_comms(params)
+
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if loaded and newly_loaded:
             self.param.warning(
@@ -637,7 +641,21 @@ class panel_extension(_pyviz_extension):
             load_notebook(config.inline)
         panel_extension._loaded = True
 
+        if config.notifications:
+            display(state.notifications) # noqa
+
+        if config.load_entry_points:
+            self._load_entry_points()
+
+    def _detect_comms(self, params):
+        called_before = self._comms_detected_before
+        self._comms_detected_before = True
+
         if 'comms' in params:
+            config.comms = params.pop("comms")
+            return
+
+        if called_before:
             return
 
         # Try to detect environment so that we can enable comms
@@ -648,18 +666,9 @@ class panel_extension(_pyviz_extension):
         except ImportError:
             pass
 
-        # Check if we're running in VSCode
         if "VSCODE_PID" in os.environ:
             config.comms = "vscode"
-
-        if "pyodide" in sys.modules:
-            config.comms = "ipywidgets"
-
-        if config.notifications:
-            display(state.notifications) # noqa
-
-        if config.load_entry_points:
-            self._load_entry_points()
+            return
 
     def _apply_signatures(self):
         from inspect import Parameter, Signature

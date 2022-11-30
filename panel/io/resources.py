@@ -6,6 +6,8 @@ import copy
 import glob
 import importlib
 import json
+import logging
+import mimetypes
 import os
 
 from base64 import b64encode
@@ -28,6 +30,8 @@ from markupsafe import Markup
 from ..config import config
 from ..util import isurl, url_path
 from .state import state
+
+logger = logging.getLogger(__name__)
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
@@ -96,6 +100,15 @@ JS_URLS = {
 }
 
 extension_dirs['panel'] = str(DIST_DIR)
+
+if mimetypes.types_map.get('.js') == 'text/plain':
+    logger.warn(
+        "Mimetype declaration for .js files was set to 'text/plain'. "
+        "This will interefere with serving JS modules. Ensure your system "
+        "does not override the mimetype declaration and/or contact your "
+        "system administrator. "
+    )
+    mimetypes.add_type("application/javascript", ".js")
 
 @contextmanager
 def set_resource_mode(mode):
