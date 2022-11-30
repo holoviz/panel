@@ -18,7 +18,6 @@ How to use indicators
 from __future__ import annotations
 
 import math
-from multiprocessing import Lock
 import os
 import sys
 
@@ -1203,8 +1202,14 @@ class Tqdm(Indicator):
         self.progress.max = self.max
         self.progress.value = self.value
         self.text_pane.object = self.text
-        # used by tqdm.contrib.concurrent.process_map
-        self._lock = params.pop('lock', Lock())
+        # self._lock used by tqdm.contrib.concurrent.process_map
+        try:
+            from multiprocessing import Lock
+            self._lock = params.pop('lock', Lock())
+        except ImportError:
+            # process_map won't work without a lock explicitly provided
+            # but everything else will
+            self._lock = params.pop('lock', None)
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
