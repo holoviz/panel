@@ -56,7 +56,7 @@ jobs:
         id: infer
         run: |
           # Fake ternary operator
-          echo ::set-output name=envs::${{ (matrix.python-version < '3.10') && "-o examples -o recommended -o tests -o build" || "-o recommended -o tests -o build" }}
+          echo ::set-output name=envs::${{ (matrix.python-version < '3.10') && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a6
         with:
           name: unit_test_suite
