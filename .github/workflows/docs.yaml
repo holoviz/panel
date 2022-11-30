@@ -80,7 +80,7 @@ jobs:
       - name: opengl
         run: |
           sudo apt-get install libglu1-mesa
-          conda install -c mesalib --no-update-deps
+          conda install -c conda-forge mesalib --no-update-deps
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
           sleep 3
       - name: bokeh sampledata
