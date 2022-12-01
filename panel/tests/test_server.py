@@ -587,7 +587,11 @@ def test_server_thread_pool_periodic(threads, port):
     time.sleep(1)
 
     # Checks whether periodic callbacks were executed concurrently
-    assert max(counts) >= 2
+    def _more_than_two():
+        if counts:
+            assert max(counts) >= 2
+
+    wait_until(_more_than_two)
 
 
 def test_server_thread_pool_onload(threads, port):
