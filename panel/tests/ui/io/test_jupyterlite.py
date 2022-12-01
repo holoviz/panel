@@ -37,6 +37,8 @@ def launch_jupyterlite():
         process.terminate()
         process.wait()
 
+
+@pytest.mark.flaky(max_runs=3)
 def test_jupyterlite_execution(launch_jupyterlite, page):
     page.goto("http://localhost:8123/index.html")
 
