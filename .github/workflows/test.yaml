@@ -33,10 +33,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        os: ['ubuntu-latest']
-        # python-version: ['3.7', '3.8', '3.9', '3.10']
-        python-version: ['3.7']
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
     timeout-minutes: 90
     defaults:
       run:
@@ -53,11 +51,6 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - name: debug
-        run: |
-          echo ${{ matrix.python-version < '3.10' && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
-          echo ${{ matrix.python-version  }}
-          echo ${{ matrix.python-version  < '3.10' }}
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a6
         with:
           name: unit_test_suite
@@ -65,7 +58,7 @@ jobs:
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           nodejs: true
           # Remove when all examples tools can be installed on 3.10
-          envs: ${{ matrix.python-version < '3.10' && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
+          envs: ${{ matrix.python-version != '3.10' && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
           cache: false
           opengl: true
         id: install
