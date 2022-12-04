@@ -58,7 +58,7 @@ jobs:
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           nodejs: true
           # Remove when all examples tools can be installed on 3.10
-          envs: ${{ (matrix.python-version < '3.10') && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
+          envs: ${{ matrix.python-version < '3.10' && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
           cache: false
           opengl: true
         id: install
