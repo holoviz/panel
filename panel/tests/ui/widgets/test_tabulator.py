@@ -747,7 +747,7 @@ def test_tabulator_editors_panel_datetime(page, port, df_mixed):
     page.locator('input[type="datetime-local"]').press('Enter')
     new_datetime_display = new_datetime.strftime('%Y-%m-%d %H:%M:%S')
     expect(page.locator(f'text="{new_datetime_display}"')).to_have_count(1)
-    assert new_datetime in widget.value['datetime'].tolist()
+    wait_until(lambda: new_datetime in widget.value['datetime'].tolist(), page)
 
     cell = page.locator(f'text="{new_datetime_display}"')
     cell.click()
