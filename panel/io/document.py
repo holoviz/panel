@@ -192,18 +192,18 @@ def unlocked() -> Iterator:
     curdoc = state.curdoc
     session_context = getattr(curdoc, 'session_context', None)
     session = getattr(session_context, 'session', None)
-    if (curdoc is None or session_context is None or session is None):
+    if curdoc is None or session_context is None or session is None:
         yield
         return
+    elif curdoc.callbacks.hold_value:
+        yield
+        monkeypatch_events(curdoc.callbacks._held_events)
+        return
+
     from tornado.websocket import WebSocketClosedError, WebSocketHandler
     connections = session._subscribed_connections
 
-    hold = curdoc.callbacks.hold_value
-    if hold:
-        old_events = list(curdoc.callbacks._held_events)
-    else:
-        old_events = []
-        curdoc.hold()
+    curdoc.hold()
     try:
         yield
 
@@ -218,7 +218,7 @@ def unlocked() -> Iterator:
         monkeypatch_events(events)
         remaining_events, futures = [], []
         for event in events:
-            if not isinstance(event, ModelChangedEvent) or event in old_events or locked:
+            if not isinstance(event, ModelChangedEvent) or locked:
                 remaining_events.append(event)
                 continue
             for conn in connections:
@@ -247,8 +247,6 @@ def unlocked() -> Iterator:
 
         curdoc.callbacks._held_events = remaining_events
     finally:
-        if hold:
-            return
         try:
             curdoc.unhold()
         except RuntimeError:
