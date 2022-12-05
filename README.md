@@ -1,4 +1,7 @@
-<img src="https://github.com/holoviz/panel/raw/master/doc/_static/logo_horizontal_light_theme.png" data-canonical-src="https://github.com/holoviz/panel/raw/master/doc/_static/logo_stacked.png" width="400"/><br>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/holoviz/panel/raw/master/doc/_static/logo_horizontal_dark_theme.png">
+  <img src="https://github.com/holoviz/panel/raw/master/doc/_static/logo_horizontal_light_theme.png" alt="Panel logo -- text is white in dark theme and black in light theme" width=400/>
+</picture>
 
 -----------------
 
