@@ -2582,6 +2582,7 @@ def test_tabulator_sorters_pagination_no_page_reset(page, port, df_mixed):
     assert widget.page == 2
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_sorters_pagination(page, port, df_mixed, pagination):
     widget = Tabulator(df_mixed, pagination=pagination, page_size=2)
