@@ -110,7 +110,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a6
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a7
         with:
           name: ui_test_suite
           python-version: 3.9
