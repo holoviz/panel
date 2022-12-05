@@ -193,6 +193,7 @@ def test_tabulator_default(page, port, df_mixed, df_mixed_as_string):
         assert cols.nth(i).get_attribute('aria-sort') == 'none'
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_tabulator_value_changed(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
@@ -206,7 +207,6 @@ def test_tabulator_value_changed(page, port, df_mixed):
     # Need to trigger the value as the dataframe was modified
     # in place which is not detected.
     widget.param.trigger('value')
-    page.wait_for_timeout(200)
     changed_cell = page.locator('text="AA"')
     expect(changed_cell).to_have_count(1)
 
