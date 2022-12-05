@@ -206,6 +206,7 @@ def test_tabulator_value_changed(page, port, df_mixed):
     # Need to trigger the value as the dataframe was modified
     # in place which is not detected.
     widget.param.trigger('value')
+    page.wait_for_timeout(200)
     changed_cell = page.locator('text="AA"')
     expect(changed_cell).to_have_count(1)
 
