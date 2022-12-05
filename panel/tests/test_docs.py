@@ -94,7 +94,7 @@ def test_markdown_codeblocks(file, tmp_path):
 
     mod = tmp_path / f'{file.stem}.py'
 
-    with open(mod, 'w') as f:
+    with open(mod, 'w', encoding='utf-8') as f:
         f.writelines(lines)
 
     runpy.run_path(mod)
