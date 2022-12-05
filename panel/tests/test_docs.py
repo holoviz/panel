@@ -6,10 +6,10 @@ The doc_available tests check that python in markdown files can be run top to bo
 
 """
 import ast
+import runpy
 
 from inspect import isclass
 from pathlib import Path
-from subprocess import run
 
 import pytest
 
@@ -70,7 +70,7 @@ def test_panes_are_in_reference_gallery():
 @pytest.mark.parametrize(
     "file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
 )
-def test_markdown_codeblocks(file):
+def test_markdown_codeblocks(file, tmp_path):
     from markdown_it import MarkdownIt
 
     exceptions = ("await", "pn.serve", "django")
@@ -82,8 +82,17 @@ def test_markdown_codeblocks(file):
             if "pyodide" in n.info.lower() or "python" in n.info.lower():
                 if ">>>" not in n.content:
                     lines += n.content
-    if lines:
-        ast.parse(lines)
+    if not lines:
+        return
 
-    if lines and not any(w in lines for w in exceptions):
-        run(["python", "-c", lines], timeout=30, check=True)
+    ast.parse(lines)
+
+    if any(w in lines for w in exceptions):
+        return
+
+    mod = tmp_path / f'{file.stem}.py'
+
+    with open(mod, 'w') as f:
+        f.writelines(lines)
+
+    runpy.run_path(mod)
