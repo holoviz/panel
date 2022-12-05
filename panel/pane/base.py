@@ -76,7 +76,7 @@ def panel(obj: Any, **kwargs) -> Viewable:
     if isinstance(obj, (Viewable, ServableMixin)):
         return obj
     elif hasattr(obj, '__panel__'):
-        if not isinstance(obj, Viewer) and issubclass(obj, Viewer):
+        if not isinstance(obj, Viewer) and (isinstance(obj, type) and issubclass(obj, Viewer)):
             return panel(obj().__panel__())
         return panel(obj.__panel__())
     if kwargs.get('name', False) is None:

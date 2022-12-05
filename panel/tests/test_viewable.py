@@ -53,3 +53,14 @@ def test_viewer_wraps_panel():
     tv = TestViewer(value="hello")
 
     assert isinstance(tv._create_view(), Markdown)
+
+
+def test_non_viewer_class():
+    # This test checks that a class with __panel__ (other than Viewer)
+    # does not raise a TypeError: issubclass() arg 1 must be a class
+
+    class Example:
+        def __panel__(self):
+            return 42
+
+    panel(Example())
