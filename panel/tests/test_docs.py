@@ -15,6 +15,8 @@ import pytest
 
 import panel as pn
 
+pytestmark = pytest.mark.docs
+
 REF_PATH = Path(__file__).parents[2] / "examples" / "reference"
 ref_available = pytest.mark.skipif(not REF_PATH.is_dir(), reason="folder 'examples/reference' not found")
 
