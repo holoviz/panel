@@ -57,10 +57,11 @@ jobs:
       - name: Set output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: debug
-        run:
-          echo ${{ steps.vars.outputs.tag }}
-          echo ${{ github  }}
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
       - run: exit 1
       - uses: pyviz-dev/holoviz_tasks/install@v0.1a8
         with:
