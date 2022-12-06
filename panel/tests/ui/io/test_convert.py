@@ -19,6 +19,7 @@ pytestmark = pytest.mark.ui
 
 from panel.config import config
 from panel.io.convert import BOKEH_LOCAL_WHL, PANEL_LOCAL_WHL, convert_apps
+from panel.tests.util import wait_until
 
 if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
     pytest.skip(
@@ -216,7 +217,9 @@ def test_pyodide_test_convert_csv_app(page, runtime, http_patch, launch_app):
 
     titles = page.locator('.tabulator-col-title').all_text_contents()
 
-    assert titles[1:] == ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
+    def _found_titles():
+        assert titles[1:] == ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
+    wait_until(_found_titles, page)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
