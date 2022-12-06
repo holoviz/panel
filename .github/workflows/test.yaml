@@ -51,11 +51,13 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a7
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a8
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          # Remove when Python 3.11 is well supported on latest conda/conda-forge.
+          conda-update: ${{ matrix.python-version == '3.11' && 'false' || 'true' }}
           nodejs: true
           # Remove when all examples tools can be installed on 3.10
           envs: ${{ !contains(matrix.python-version, '3.1') && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
@@ -110,7 +112,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a7
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a8
         with:
           name: ui_test_suite
           python-version: 3.9
