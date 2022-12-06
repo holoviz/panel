@@ -214,9 +214,12 @@ def test_pyodide_test_convert_tabulator_app(page, runtime, launch_app):
 def test_pyodide_test_convert_csv_app(page, runtime, http_patch, launch_app):
     msgs = wait_for_app(launch_app, csv_app, page, runtime, http_patch=http_patch)
 
-    titles = page.locator('.tabulator-col-title').all_text_contents()
+    expected_titles = ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
 
-    assert titles[1:] == ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
+    titles = page.locator('.tabulator-col-title')
+    expect(titles).to_have_count(1 + len(expected_titles), timeout=60 * 1000)
+    titles = titles.all_text_contents()
+    assert titles[1:] == expected_titles
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
@@ -224,6 +227,6 @@ def test_pyodide_test_convert_csv_app(page, runtime, http_patch, launch_app):
 def test_pyodide_test_convert_png_app(page, runtime, launch_app):
     msgs = wait_for_app(launch_app, png_app, page, runtime)
 
-    assert page.locator('img').count() == 1
+    expect(page.locator('img')).to_have_count(1)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []

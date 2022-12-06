@@ -34,7 +34,8 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: [3.7, 3.8, 3.9]
+        # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
+        python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.7", "3.9", "3.11"]') }}
     timeout-minutes: 90
     defaults:
       run:
@@ -51,13 +52,16 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a6
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a8
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          # Remove when Python 3.11 is well supported on latest conda/conda-forge.
+          conda-update: ${{ matrix.python-version == '3.11' && 'false' || 'true' }}
           nodejs: true
-          envs: "-o examples -o recommended -o tests -o build"
+          # Remove when all examples tools can be installed on 3.10
+          envs: ${{ !contains(matrix.python-version, '3.1') && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
           cache: true
           opengl: true
         id: install
@@ -75,6 +79,8 @@ jobs:
           conda activate test-environment
           doit test_unit
       - name: test examples
+        # Remove when all examples tools can be installed on 3.10
+        if: (!(contains(matrix.python-version, '3.1')))
         run: |
           conda activate test-environment
           doit test_examples
@@ -107,7 +113,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a5
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a8
         with:
           name: ui_test_suite
           python-version: 3.9

@@ -193,6 +193,7 @@ def test_tabulator_default(page, port, df_mixed, df_mixed_as_string):
         assert cols.nth(i).get_attribute('aria-sort') == 'none'
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_tabulator_value_changed(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
@@ -747,7 +748,7 @@ def test_tabulator_editors_panel_datetime(page, port, df_mixed):
     page.locator('input[type="datetime-local"]').press('Enter')
     new_datetime_display = new_datetime.strftime('%Y-%m-%d %H:%M:%S')
     expect(page.locator(f'text="{new_datetime_display}"')).to_have_count(1)
-    assert new_datetime in widget.value['datetime'].tolist()
+    wait_until(lambda: new_datetime in widget.value['datetime'].tolist(), page)
 
     cell = page.locator(f'text="{new_datetime_display}"')
     cell.click()
@@ -2581,6 +2582,7 @@ def test_tabulator_sorters_pagination_no_page_reset(page, port, df_mixed):
     assert widget.page == 2
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_sorters_pagination(page, port, df_mixed, pagination):
     widget = Tabulator(df_mixed, pagination=pagination, page_size=2)

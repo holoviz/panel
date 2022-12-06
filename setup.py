@@ -146,7 +146,10 @@ _tests = [
     # Temporary pins (jupyter_bokeh needs updates)
     'ipywidgets <8.0',
     # Issues with comm (see https://github.com/ipython/ipykernel/issues/1026)
-    'ipykernel <6.18.0'
+    'ipykernel <6.18.0',
+    # Added lxml temporarily as installing pyechars or idom on Python 3.11
+    # via pip tries to build it and fails. To be removed.
+    'lxml',
 ]
 
 _ui = [
@@ -257,6 +260,7 @@ setup_args = dict(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",

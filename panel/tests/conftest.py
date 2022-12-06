@@ -80,6 +80,11 @@ optional_markers = {
         "help": "Runs Jupyter related tests",
         "marker-descr": "Jupyter test marker",
         "skip-reason": "Test only runs with the --jupyter option."
+    },
+    "docs": {
+        "help": "Runs docs specific tests",
+        "marker-descr": "Docs test marker",
+        "skip-reason": "Test only runs with the --docs option."
     }
 }
 

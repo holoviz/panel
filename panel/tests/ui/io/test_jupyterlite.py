@@ -37,14 +37,17 @@ def launch_jupyterlite():
         process.terminate()
         process.wait()
 
+
+@pytest.mark.flaky(max_runs=3)
 def test_jupyterlite_execution(launch_jupyterlite, page):
     page.goto("http://localhost:8123/index.html")
 
     page.locator('text="Getting_Started.ipynb"').first.dblclick()
     for _ in range(6):
         page.locator('[data-command="runmenu:run"]').click()
+        page.wait_for_timeout(500)
 
-    page.locator('.noUi-handle').click(timeout=90 * 1000)
+    page.locator('.noUi-handle').click(timeout=120 * 1000)
 
     page.keyboard.press('ArrowRight');
 
