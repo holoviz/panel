@@ -360,7 +360,7 @@ class Syncable(Renderable):
             with set_curdoc(doc):
                 try:
                     if config.async_to_sync_wrapper:
-                        await config.async_to_sync_wrapper(self._change_event)(doc)
+                        await config.async_to_sync_wrapper(partial(self._change_event, doc))()
                     else:
                         self._change_event(doc)
                 except Exception as e:
@@ -374,7 +374,7 @@ class Syncable(Renderable):
             from .config import config
             try:
                 if config.async_to_sync_wrapper:
-                    await config.async_to_sync_wrapper(self._process_bokeh_event)(event)
+                    await config.async_to_sync_wrapper(partial(self._process_bokeh_event, event))()
                 else:
                     self._process_bokeh_event(doc, event)
             except Exception as e:
