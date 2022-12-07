@@ -103,7 +103,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.0.0',
+    'bokeh >=3.0,<3.1',
     'param >=1.12.0',
     'pyviz_comms >=0.7.4',
     'markdown',
@@ -216,10 +216,10 @@ extras_require['build'] = [
     'param >=1.9.2',
     'pyct >=0.4.4',
     'setuptools >=42',
-    'bokeh >=2.4.3,<2.5.0',
-    'pyviz_comms >=0.7.4',
     'requests',
     'packaging',
+    'bokeh >=3.1,<3.2',
+    'pyviz_comms >=0.7.4',
     'bleach',
     'tqdm >=4.48.0',
 ]

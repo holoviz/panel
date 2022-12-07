@@ -4,7 +4,7 @@ import param
 import pytest
 
 from bokeh.models import (
-    AutocompleteInput as BkAutocompleteInput, Button, CheckboxGroup,
+    AutocompleteInput as BkAutocompleteInput, Button, Checkbox,
     Column as BkColumn, Div, MultiSelect, RangeSlider as BkRangeSlider,
     Row as BkRow, Select, Slider, Tabs as BkTabs, TextInput,
     TextInput as BkTextInput, Toggle,
@@ -205,14 +205,14 @@ def test_boolean_param(document, comm):
     model = test_pane.get_root(document, comm=comm)
 
     checkbox = model.children[1]
-    assert isinstance(checkbox, CheckboxGroup)
-    assert checkbox.labels == ['A']
-    assert checkbox.active == []
+    assert isinstance(checkbox, Checkbox)
+    assert checkbox.label == 'A'
+    assert checkbox.active == False
     assert checkbox.disabled == False
 
     # Check changing param value updates widget
     test.a = True
-    assert checkbox.active == [0]
+    assert checkbox.active == True
 
     # Check changing param attribute updates widget
     a_param = test.param['a']
@@ -223,7 +223,7 @@ def test_boolean_param(document, comm):
     test_pane._cleanup(model)
     a_param.constant = False
     test.a = False
-    assert checkbox.active == [0]
+    assert checkbox.active == True
     assert checkbox.disabled == True
 
 
@@ -445,7 +445,7 @@ def test_explicit_params(document, comm):
     model = test_pane.get_root(document, comm=comm)
 
     assert len(model.children) == 2
-    assert isinstance(model.children[1], CheckboxGroup)
+    assert isinstance(model.children[1], Checkbox)
 
 
 def test_param_precedence(document, comm):
