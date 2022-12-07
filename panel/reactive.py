@@ -374,7 +374,7 @@ class Syncable(Renderable):
             from .config import config
             try:
                 if config.async_to_sync_wrapper:
-                    await config.async_to_sync_wrapper(partial(self._process_bokeh_event, event))()
+                    await config.async_to_sync_wrapper(partial(self._process_bokeh_event, doc, event))()
                 else:
                     self._process_bokeh_event(doc, event)
             except Exception as e:
