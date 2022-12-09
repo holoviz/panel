@@ -3,7 +3,7 @@ requires = [
     "param >=1.9.0",
     "pyct >=0.4.4",
     "setuptools >=42",
-    "bokeh >=3.0.0",
+    "bokeh >=3.0,<3.1",
     "pyviz_comms >=0.6.0",
     "requests",
     "bleach",

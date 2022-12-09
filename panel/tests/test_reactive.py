@@ -123,7 +123,7 @@ def test_text_input_controls():
     assert len(controls) == 2
     wb1, wb2 = controls
     assert isinstance(wb1, WidgetBox)
-    assert len(wb1) == 6
+    assert len(wb1) == 7
     name, disabled, *(ws) = wb1
 
     assert isinstance(name, StaticText)
@@ -143,6 +143,10 @@ def test_text_input_controls():
             assert w.value == "Test placeholder..."
         elif w.name == 'Max length':
             assert isinstance(w, IntInput)
+        elif w.name == 'Description':
+            assert isinstance(w, TextInput)
+            text_input.description = "Test description..."
+            assert w.value == "Test description..."
         else:
             not_checked.append(w)
 
