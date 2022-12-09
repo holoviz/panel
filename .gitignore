@@ -123,7 +123,8 @@ lite/
 .vscode/panel.code-workspace
 discover/
 
-node_modules/*
+node_modules
+.bokeh
 /tmp
 .devcontainer/*
 pyodide/
@@ -131,3 +132,8 @@ script.*
 doc/_build/*
 doc/gallery/*
 doc/reference/*
+
+!/panel/dist
+/panel/dist/*
+!/panel/dist/css
+!/panel/dist/css/*.css
