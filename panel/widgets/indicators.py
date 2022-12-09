@@ -23,7 +23,7 @@ import sys
 
 from math import pi
 from typing import (
-    TYPE_CHECKING, ClassVar, Dict, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Type,
 )
 
 import numpy as np
@@ -124,6 +124,10 @@ class BooleanStatus(BooleanIndicator):
         msg['css_classes'] = ['dot-filled', self.color] if self.value else ['dot']
         return msg
 
+    def _init_params(self) -> dict[str, Any]:
+        properties = super()._init_params()
+        properties['css'] = ['css/booleanstatus.css', 'css/variables.css']
+        return properties
 
 class LoadingSpinner(BooleanIndicator):
     """
@@ -171,6 +175,11 @@ class LoadingSpinner(BooleanIndicator):
         color_cls = f'{self.color}-{self.bgcolor}'
         msg['css_classes'] = ['loader', 'spin', color_cls] if self.value else ['loader', self.bgcolor]
         return msg
+
+    def _init_params(self) -> dict[str, Any]:
+        properties = super()._init_params()
+        properties['css'] = ['css/loadingspinner.css', 'css/variables.css']
+        return properties
 
 
 class ValueIndicator(Indicator):
@@ -225,8 +234,15 @@ class Progress(ValueIndicator):
         self.param.value.bounds = (-1, self.max)
 
     def __init__(self,**params):
+        if "sizing_mode" not in params:
+            params["sizing_mode"] = None
         super().__init__(**params)
         self._update_value_bounds()
+
+    def _init_params(self) -> dict[str, Any]:
+        properties = super()._init_params()
+        properties['css'] = ['css/progress.css', 'css/variables.css']
+        return properties
 
 
 class Number(ValueIndicator):
@@ -269,6 +285,11 @@ class Number(ValueIndicator):
     }
 
     _widget_type: ClassVar[Type[Model]] = HTML
+
+    def __init__(self, **params):
+        if "sizing_mode" not in params:
+            params["sizing_mode"] = None
+        super().__init__(**params)
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -318,6 +339,11 @@ class String(ValueIndicator):
     }
 
     _widget_type: ClassVar[Type[Model]] = HTML
+
+    def __init__(self, **params):
+        if "sizing_mode" not in params:
+            params["sizing_mode"] = None
+        super().__init__(**params)
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)

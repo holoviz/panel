@@ -25,8 +25,8 @@
 }
 
 :host(.alert-primary) {
-    color: #004085;
-    background-color: #cce5ff;
+    color: var(--primary-text-color);
+    background-color: var(--primary-bg-color);
     border-color: #b8daff;
 }
 :host(.alert-primary) hr {
@@ -34,8 +34,8 @@
 }
 
 :host(.alert-secondary) {
-    color: #383d41;
-    background-color: #e2e3e5;
+    color: var(--secondary-text-color);
+    background-color: var(--secondary-bg-color);
     border-color: #d6d8db;
 }
 
@@ -44,8 +44,8 @@
 }
 
 :host(.alert-success) {
-    color: #155724;
-    background-color: #d4edda;
+    color: var(--success-text-color);
+    background-color: var(--success-bg-color);
     border-color: #c3e6cb;
 }
 
@@ -54,8 +54,8 @@
 }
 
 :host(.alert-info) {
-    color: #0c5460;
-    background-color: #d1ecf1;
+    color: var(--info-text-color);
+    background-color: var(--info-bg-color);
     border-color: #bee5eb;
 }
 
@@ -64,8 +64,8 @@
 }
 
 :host(.alert-warning) {
-    color: #856404;
-    background-color: #fff3cd;
+    color: var(--warning-text-color);
+    background-color: var(--warning-bg-color);
     border-color: #ffeeba;
   }
 
@@ -74,8 +74,8 @@
 }
 
 :host(.alert-danger) {
-    color: #721c24;
-    background-color: #f8d7da;
+    color: var(--danger-text-color);
+    background-color: var(--danger-bg-color);
     border-color: #f5c6cb;
 }
 :host(.alert-danger) hr {
@@ -83,8 +83,8 @@
 }
 
 :host(.alert-light) {
-    color: #818182;
-    background-color: #fefefe;
+    color: var(--light-text-color);
+    background-color: var(--light-bg-color);
     border-color: #fdfdfe;
   }
 :host(.alert-light) hr {
@@ -92,8 +92,8 @@
 }
 
 :host(.alert-dark) {
-    color: #1b1e21;
-    background-color: #d6d8d9;
+    color: var(--dark-text-color);
+    background-color: var(--dark-bg-color);
     border-color: #c6c8ca;
   }
 :host(.alert-dark) hr {
