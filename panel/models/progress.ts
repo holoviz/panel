@@ -1,3 +1,4 @@
+import {StyleSheetLike, ImportedStyleSheet} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
@@ -34,6 +35,13 @@ export class ProgressView extends HTMLBoxView {
     this.shadow_el.appendChild(this.progressEl)
   }
 
+  override styles(): StyleSheetLike[] {
+    const styles = super.styles()
+    for (const css of this.model.css)
+      styles.push(new ImportedStyleSheet(css))
+    return styles
+  }
+
   setCSS(): void {
     let css = this.model.css_classes.join(" ") + " " + this.model.bar_color;
     if (this.model.active)
@@ -63,7 +71,7 @@ export namespace Progress {
   export type Props = HTMLBox.Props & {
     active: p.Property<boolean>
     bar_color: p.Property<string>
-    // style: p.Property<{[key: string]: string}>
+    css: p.Property<string[]>
     max: p.Property<number | null>
     value: p.Property<number | null>
   }
@@ -82,10 +90,10 @@ export class Progress extends HTMLBox {
 
   static {
     this.prototype.default_view = ProgressView
-    this.define<Progress.Props>(({Any, Boolean, Number, String}) => ({
+    this.define<Progress.Props>(({Any, Array, Boolean, Number, String}) => ({
       active:    [ Boolean, true ],
       bar_color: [ String, 'primary' ],
-      // style:     [ Any, {} ],
+      css:       [ Array(String), [] ],
       max:       [ Number, 100 ],
       value:     [ Any, null ],
     }))

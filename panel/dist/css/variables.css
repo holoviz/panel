@@ -1,0 +1,19 @@
+:host {
+  --primary-bg-color: #007bff;
+  --secondary-bg-color: #6c757d;
+  --success-bg-color: #28a745;
+  --danger-bg-color: #dc3545;
+  --warning-bg-color: #ffc107;
+  --info-bg-color: #17a2b8;
+  --light-bg-color: #f8f9fa;
+  --dark-bg-color: #343a40;
+
+  --primary-text-color: #050407;
+  --secondary-text-color: #fffffe;
+  --success-text-color: #152c3e;
+  --danger-text-color: #fffff9;
+  --warning-text-color: #3d3846;
+  --info-text-color: #06282e;
+  --light-text-color: #686869;
+  --dark-text-color: #a8b6bd;
+}
