@@ -1,4 +1,8 @@
 """Tests of the Tqdm indicator"""
+import time
+
+from tqdm.contrib.concurrent import process_map
+
 import panel as pn
 
 from panel.widgets import Tqdm
