@@ -44,6 +44,8 @@ from ..viewable import Viewable
 from .base import Widget
 
 if TYPE_CHECKING:
+    from _thread import LockType
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
