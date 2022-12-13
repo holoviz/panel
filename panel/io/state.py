@@ -628,7 +628,7 @@ class _state(param.Parameterized):
         callback: Callable[[], None] | Coroutine[Any, Any, None]
            Callback that is executed when the application is loaded
         """
-        if self.curdoc is None:
+        if self.curdoc is None or self._is_pyodide:
             if self._thread_pool:
                 future = self._thread_pool.submit(partial(self.execute, callback, schedule=False))
                 future.add_done_callback(self._handle_future_exception)
