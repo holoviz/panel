@@ -84,8 +84,9 @@ class IPyLeaflet(IPyWidget):
 
 class Reacton(IPyWidget):
 
-    def __init__(self, object, **params):
+    def __init__(self, object=None, **params):
         super().__init__(object=object, **params)
+        self._widget_wrappers = {}
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -104,5 +105,6 @@ class Reacton(IPyWidget):
         from reacton.core import render
 
         box = widgets.VBox(_view_count=0)
+        self._widget_wrappers[root.ref['id']] = box
         widget, rc = render(obj, container=box)
         return super()._get_ipywidget(box, doc, root, comm, **kwargs)
