@@ -60,8 +60,13 @@ class IPyWidget(PaneBase):
             if not isinstance(ipykernel.kernelbase.Kernel._instance, PanelKernel):
                 kernel = PanelKernel(document=doc, key=str(id(doc)).encode('utf-8'))
                 # Support ipywidgets >=8.0 and <8.0
-                widgets = (obj._active_widgets if hasattr(obj, '_active_widgets') else obj.widgets).values()
-                for w in widgets:
+                try:
+                    from ipywidgets.widgets.widget import _instances as widgets
+                except Exception:
+                    widgets = obj.widgets
+                for w in widgets.values():
+                    if isinstance(w.comm.kernel, PanelKernel):
+                        continue
                     w.comm.kernel = kernel
                     if w.comm._closed:
                         w.comm.open()
