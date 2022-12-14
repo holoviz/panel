@@ -1,5 +1,44 @@
 # Releases
 
+## Version 0.14.2
+
+This release primarily focuses on bug fixes. In particular it ensures the experience when working with IPyWidgets is better in general but particularly for versions >=8.0. Many thanks for @govinda18, @joelostblom, @banesullivan, @xeldnahcram, @geronimogoemon, @minasouliman, @peterfpeterson, @jlstevens and the core maintainers @maximlt, @Hoxbro, @MarcSkovMadsen and @philippjfr for their contributions to this release.
+
+Date: 2022-12-06
+
+### Bugs
+
+- Ensure Jupyter server extension serves resources and extensions correctly ([#4083](https://github.com/holoviz/panel/pull/4083), [#4133](https://github.com/holoviz/panel/pull/4133))
+- Ensure `IPyWidget` comm does not break when new widget is rendered ([#4091](https://github.com/holoviz/panel/pull/4091))
+- Improving detection of comms in VSCode and Google Colab ([#4115](https://github.com/holoviz/panel/pull/4115))
+- Ensure `.js` mimetype is served correctly on Windows ([#4118](https://github.com/holoviz/panel/pull/4118))
+- Ensure unhiding `Tabulator` columns renders cells correctly ([#4119](https://github.com/holoviz/panel/pull/4119))
+- Ensure embedded `Slider` widgets initialize with correct default ([#4121](https://github.com/holoviz/panel/pull/4121))
+- Handle missing event loop in thread gracefully ([#4123](https://github.com/holoviz/panel/pull/4123))
+- Ensure `Matplotlib` pane handles explicit `width`/`height` settings correctly ([#4128](https://github.com/holoviz/panel/pull/4128))
+- Allow `Viewer` to render servable but non-viewable objects ([#4131](https://github.com/holoviz/panel/pull/4131))
+- Fix regression in tracking sessions in admin interface ([#4132](https://github.com/holoviz/panel/pull/4132))
+- Ensure `Tabs` headers do not scroll unncessarily ([#4146](https://github.com/holoviz/panel/pull/4146))
+- Ensure `Location` model reports as idle ([#4159](https://github.com/holoviz/panel/pull/4159))
+- Fix auth error template rendering ([#4162](https://github.com/holoviz/panel/pull/4162))
+- Fix issues with value on `EditableSlider` when it is outside `fixed_start` / `fixed_end` range ([#4169](https://github.com/holoviz/panel/pull/4169))
+- Ensure ipywidgets events are handled the same way as regular events ([#4171](https://github.com/holoviz/panel/pull/4171))
+- Don't raise `TypeError` for class which contains `__panel__` ([#4174](https://github.com/holoviz/panel/pull/4174))
+- Do not dispatch events if bokeh `Document` is set to hold events ([#4178](https://github.com/holoviz/panel/pull/4178))
+- Execute `onload` callbacks immediately in pyodide app ([#4191](https://github.com/holoviz/panel/pull/4191))
+
+### Enhancements
+
+- Add support for `Tqdm.process_map` ([#4093](https://github.com/holoviz/panel/pull/4093))
+- Support non-vtkPolyData types in vtk synchronizer ([#4124](https://github.com/holoviz/panel/pull/4124))
+- Allow invoking `convert` functions from pyodide ([#4135](https://github.com/holoviz/panel/pull/4135))
+- Support `step` format in date sliders ([#4152](https://github.com/holoviz/panel/pull/4152))
+
+### Docs
+
+- Add JupyterLite build and instructions ([#4122](https://github.com/holoviz/panel/pull/4122))
+- Document deployment to Hugging Face Spaces ([#4143](https://github.com/holoviz/panel/pull/4143))
+
 ## Version 0.14.1
 
 Date: 2022-10-28
