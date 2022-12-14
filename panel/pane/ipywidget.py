@@ -94,7 +94,7 @@ class Reacton(IPyWidget):
 
     def _cleanup(self, root: Model | None = None) -> None:
         if root and root.ref['id'] in self._widget_wrappers:
-            box = self._widget_wrappers[root.ref['id']]
+            box = self._widget_wrappers.pop(root.ref['id'])
             box.layout.close()
             box.close()
         super()._cleanup(root)
