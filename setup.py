@@ -189,7 +189,8 @@ extras_require = {
         'graphviz',
         'lxml',
         'python-graphviz',
-        'xgboost'
+        'xgboost',
+        'reacton'
     ],
     'tests': _tests,
     'recommended': _recommended,
