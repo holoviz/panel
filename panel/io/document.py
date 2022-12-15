@@ -65,7 +65,8 @@ def _cleanup_doc(doc):
             callback(None)
         except Exception:
             pass
-    doc.callbacks._change_callbacks[None] = {}
+    if hasattr(doc.callbacks, '_change_callbacks'):
+        doc.callbacks._change_callbacks[None] = {}
 
     # Remove views
     from ..viewable import Viewable

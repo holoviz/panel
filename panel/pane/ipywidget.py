@@ -46,30 +46,13 @@ class IPyWidget(PaneBase):
         if isinstance(comm, JupyterComm) and not config.embed and not "PANEL_IPYWIDGET" in os.environ:
             IPyWidget = _BkIPyWidget
         else:
-            import ipykernel
-
             from ipywidgets_bokeh.widget import IPyWidget
 
-            from ..io.ipywidget import PanelKernel
+            from ..io.ipywidget import _get_ipywidgets, _on_widget_constructed
 
-            # Patch font-awesome CSS
-            IPyWidget.__css__ = [
-                "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.css"
-            ]
-
-            if not isinstance(ipykernel.kernelbase.Kernel._instance, PanelKernel):
-                kernel = PanelKernel(document=doc, key=str(id(doc)).encode('utf-8'))
-                # Support ipywidgets >=8.0 and <8.0
-                try:
-                    from ipywidgets.widgets.widget import _instances as widgets
-                except Exception:
-                    widgets = obj.widgets
-                for w in widgets.values():
-                    if isinstance(w.comm.kernel, PanelKernel):
-                        continue
-                    w.comm.kernel = kernel
-                    if w.comm._closed:
-                        w.comm.open()
+            # Ensure all widgets are initialized
+            for w in _get_ipywidgets().values():
+                _on_widget_constructed(w, doc)
 
         model = IPyWidget(widget=obj, **kwargs)
         return model
