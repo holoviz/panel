@@ -7,6 +7,7 @@ import hashlib
 import inspect
 import io
 import os
+import pathlib
 import pickle
 import sys
 import threading
@@ -132,6 +133,7 @@ _hash_funcs = {
     type(None)   : lambda obj: b'0',
     (bytes, bytearray) : lambda obj: obj,
     (list, tuple, dict): _container_hash,
+    pathlib.Path       : lambda obj: str(obj).encode(),
     functools.partial  : _partial_hash,
     unittest.mock.Mock : lambda obj: _int_to_bytes(id(obj)),
     (io.StringIO, io.BytesIO): _io_hash,

@@ -6,6 +6,12 @@ import time
 import numpy as np
 import pytest
 
+try:
+    import diskcache
+except Exception:
+    diskcache = None
+diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires diskcache")
+
 from panel.io.cache import _find_hash_func, cache
 from panel.tests.util import pd_available
 
@@ -103,6 +109,10 @@ def test_bytesio_hash():
     bio3.seek(0)
     assert not hashes_equal(bio1, bio3)
 
+def test_pathlib_hash():
+    assert hashes_equal(pathlib.Path('./'), pathlib.Path('./'))
+    assert not hashes_equal(pathlib.Path('./'), pathlib.Path('../'))
+
 def test_ndarray_hash():
     assert hashes_equal(np.array([0, 1, 2]), np.array([0, 1, 2]))
     assert not hashes_equal(
@@ -178,6 +188,7 @@ def test_cache_clear():
     fn.clear()
     assert fn(0, 0) == 1
 
+@diskcache_available
 def test_disk_cache():
     global OFFSET
     OFFSET.clear()
@@ -192,6 +203,8 @@ def test_disk_cache():
 
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_lifo(to_disk):
+    if to_disk and diskcache is None:
+        pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
     fn = cache(function_with_args, max_items=2, policy='lifo', to_disk=to_disk)
@@ -203,6 +216,8 @@ def test_cache_lifo(to_disk):
 
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_lfu(to_disk):
+    if to_disk and diskcache is None:
+        pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
     fn = cache(function_with_args, max_items=2, policy='lfu', to_disk=to_disk)
@@ -214,6 +229,8 @@ def test_cache_lfu(to_disk):
 
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_lru(to_disk):
+    if to_disk and diskcache is None:
+        pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
     fn = cache(function_with_args, max_items=3, policy='lru', to_disk=to_disk)
@@ -227,6 +244,8 @@ def test_cache_lru(to_disk):
 
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_ttl(to_disk):
+    if to_disk and diskcache is None:
+        pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
     fn = cache(function_with_args, ttl=0.1, to_disk=to_disk)
