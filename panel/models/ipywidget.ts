@@ -9,6 +9,7 @@ export class IPyWidgetView extends PanelHTMLBoxView {
   model: IPyWidget
   private rendered: boolean = false
   private ipyview: any
+  private ipychildren: any[]
   private manager: any
 
   override async lazy_initialize(): Promise<void> {
@@ -23,6 +24,7 @@ export class IPyWidgetView extends PanelHTMLBoxView {
       return
     }
     this.manager = manager
+    this.ipychildren = []
     const {spec, state} = this.model.bundle
     const models = await manager.set_state(state)
     const model = models.find((item: any) => item.model_id == spec.model_id)
@@ -31,7 +33,7 @@ export class IPyWidgetView extends PanelHTMLBoxView {
       this.ipyview = view
       if (view.children_views) {
         for (const child of view.children_views.views)
-          await child
+          this.ipychildren.push(await child)
       }
     }
   }
@@ -40,8 +42,11 @@ export class IPyWidgetView extends PanelHTMLBoxView {
     super.render()
     if (this.ipyview != null) {
       this.el.appendChild(this.ipyview.el)
-      if (!this.rendered)
+      if (!this.rendered) {
 	this.ipyview.trigger('displayed', this.ipyview)
+	for (const child of this.ipychildren)
+          child.trigger('displayed', child)
+      }
     }
     this.rendered = true
   }
