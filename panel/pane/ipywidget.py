@@ -86,22 +86,22 @@ class Reacton(IPyWidget):
 
     def __init__(self, object=None, **params):
         super().__init__(object=object, **params)
-        self._widget_wrappers = {}
+        self._rcs = {}
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         return getattr(obj, '__module__', 'None').startswith('reacton')
 
     def _cleanup(self, root: Model | None = None) -> None:
-        if root and root.ref['id'] in self._widget_wrappers:
-            box = self._widget_wrappers.pop(root.ref['id'])
-            box.layout.close()
-            box.close()
+        if root and root.ref['id'] in self._rcs:
+            rc = self._rcs.pop(root.ref['id'])
+            rc.close()
         super()._cleanup(root)
 
     def _get_ipywidget(
         self, obj, doc: Document, root: Model, comm: Optional[Comm], **kwargs
     ):
-        from reacton.core import make
-        self._widget_wrappers[root.ref['id']] = widget = make(obj)
+        import reacton
+        widget, rc = reacton.render(obj)
+        self._rcs[root.ref['id']] = rc
         return super()._get_ipywidget(widget, doc, root, comm, **kwargs)

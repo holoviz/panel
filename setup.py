@@ -143,10 +143,7 @@ _tests = [
     'holoviews',
     'diskcache',
     'markdown-it-py',
-    # Temporary pins (jupyter_bokeh needs updates)
-    'ipywidgets <8.0',
-    # Issues with comm (see https://github.com/ipython/ipykernel/issues/1026)
-    'ipykernel <6.18.0',
+    'reacton',
     # Added lxml temporarily as installing pyechars or idom on Python 3.11
     # via pip tries to build it and fails. To be removed.
     'lxml',
@@ -189,8 +186,7 @@ extras_require = {
         'graphviz',
         'lxml',
         'python-graphviz',
-        'xgboost',
-        'reacton'
+        'xgboost'
     ],
     'tests': _tests,
     'recommended': _recommended,
