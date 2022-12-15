@@ -34,5 +34,5 @@
       "react-dom": ["node_modules/preact/compat"]
     }
   },
-  "include": ["./**/*.ts"]
+  "include": ["./**/*.ts", "./dist/dts/**/*.d.ts"]
 }
