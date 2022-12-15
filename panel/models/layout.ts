@@ -1,8 +1,14 @@
 import {MarkupView} from "@bokehjs/models/widgets/markup"
 import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import * as p from "@bokehjs/core/properties"
+import {StyleSheetLike} from "@bokehjs/core/dom"
+import variables_css from "styles/variables.css"
 
 export class PanelMarkupView extends MarkupView {
+
+  override styles(): StyleSheetLike[] {
+    return [...super.styles(), variables_css]
+  }
 
   render(): void {
     super.render()
@@ -63,6 +69,10 @@ export function set_size(el: HTMLElement, model: HTMLBox): void {
 
 export abstract class HTMLBoxView extends LayoutDOMView {
   override model: HTMLBox
+
+  override styles(): StyleSheetLike[] {
+    return [...super.styles(), variables_css]
+  }
 
   get child_models(): LayoutDOM[] {
     return []
