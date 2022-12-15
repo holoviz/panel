@@ -10,9 +10,8 @@ from panel.pane.ipywidget import Reacton
 
 
 def test_reacton(page, port):
-    import reacton.ipywidgets as w
-
     import reacton
+    import reacton.ipywidgets
 
     runs, cleanups, click = [], [], []
 
@@ -34,8 +33,10 @@ def test_reacton(page, port):
             click.append(clicks+1)
             set_clicks(clicks+1)
 
-        button = w.Button(description=f"Clicked {clicks} times",
-                          on_click=my_click_handler)
+        button = reacton.ipywidgets.Button(
+            description=f"Clicked {clicks} times",
+            on_click=my_click_handler
+        )
         return button
 
     reacton_app = Row(
