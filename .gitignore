@@ -130,5 +130,3 @@ node_modules
 
 !/panel/dist
 /panel/dist/*
-!/panel/dist/css
-!/panel/dist/css/*.css
