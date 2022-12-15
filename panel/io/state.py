@@ -139,6 +139,7 @@ class _state(param.Parameterized):
     # Jupyter communication
     _comm_manager = _CommManager
     _kernels = {}
+    _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
 
     # Locations
     _location: ClassVar[Location | None] = None # Global location, e.g. for notebook context

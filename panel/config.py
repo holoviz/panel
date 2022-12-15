@@ -508,7 +508,7 @@ class panel_extension(_pyviz_extension):
         'vtk': 'panel.models.vtk',
         'ace': 'panel.models.ace',
         'echarts': 'panel.models.echarts',
-        'ipywidgets': 'ipywidgets_bokeh.widget',
+        'ipywidgets': 'panel.io.ipywidget',
         'perspective': 'panel.models.perspective',
         'terminal': 'panel.models.terminal',
         'tabulator': 'panel.models.tabulator',
