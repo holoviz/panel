@@ -193,7 +193,7 @@ def bundle_resources(verbose=False):
     from .template.theme import Theme
 
     for imp in panel_extension._imports.values():
-        if imp.startswith('panel.'):
+        if imp.startswith('panel.models'):
             __import__(imp)
 
     bundle_dir = pathlib.Path(__file__).parent.joinpath('dist', 'bundled')
