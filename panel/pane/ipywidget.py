@@ -99,12 +99,9 @@ class Reacton(IPyWidget):
             box.close()
         super()._cleanup(root)
 
-    def _get_ipywidget(self, obj, doc, root, comm, **kwargs):
-        import ipywidgets as widgets
-
-        from reacton.core import render
-
-        box = widgets.VBox(_view_count=0)
-        self._widget_wrappers[root.ref['id']] = box
-        widget, rc = render(obj, container=box)
-        return super()._get_ipywidget(box, doc, root, comm, **kwargs)
+    def _get_ipywidget(
+        self, obj, doc: Document, root: Model, comm: Optional[Comm], **kwargs
+    ):
+        from reacton.core import make
+        self._widget_wrappers[root.ref['id']] = widget = make(obj)
+        return super()._get_ipywidget(widget, doc, root, comm, **kwargs)
