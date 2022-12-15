@@ -143,6 +143,7 @@ _tests = [
     'holoviews',
     'diskcache',
     'markdown-it-py',
+    'ipyvuetify',
     'reacton',
     # Added lxml temporarily as installing pyechars or idom on Python 3.11
     # via pip tries to build it and fails. To be removed.
