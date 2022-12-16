@@ -52,8 +52,8 @@ class ReactTemplate(BasicTemplate):
 
     _resources = {
         'js': {
-            'react': f"{config.npm_cdn}/react@16/umd/react.development.js",
-            'react-dom': f"{config.npm_cdn}/react-dom@16/umd/react-dom.development.js",
+            'react': f"{config.npm_cdn}/react@18/umd/react.production.min.js",
+            'react-dom': f"{config.npm_cdn}/react-dom@18/umd/react-dom.production.min.js",
             'babel': f"{config.npm_cdn}/babel-standalone@latest/babel.min.js",
             'react-grid': "https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.1.1/react-grid-layout.min.js"
         },

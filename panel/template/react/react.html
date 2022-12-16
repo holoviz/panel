@@ -10,9 +10,7 @@
 {% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
 {% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
 {% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
-{% endblock %}
 
-{% block postamble %}
 <!-- Template CSS -->
 {% for css in template_resources['css'].values() %}
 <link rel="stylesheet" href="{{ css }}">
@@ -152,122 +150,114 @@
 </script>
 
 <script type="text/babel">
- const divStyle = {borderRadius: '5px'};
+  const divStyle = {borderRadius: '5px'};
+  const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive);
+  {% if saveLayout %}
+  const originalLayout = getFromLS("layouts") || {{ layouts }};
+  {% else %}
+  const originalLayout = {{ layouts }};
+  {% endif %}
 
- const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive);
- {% if saveLayout %}
- const originalLayout = getFromLS("layouts") || {{ layouts }};
- {% else %}
- const originalLayout = {{ layouts }};
- {% endif %}
+  function resize_layout(obj, old_, new_, p, e, element) {
+    window.dispatchEvent(new Event("resize"))
+  }
 
- function resize_layout(obj, old_, new_, p, e, element) {
-     window.dispatchEvent(new Event("resize"))
- }
+  function resize_layout_stop(obj, old_, new_, p, e, element) {
+    setTimeout(function(){
+      window.dispatchEvent(new Event("resize"))
+    }, 50);
+  }
 
- function resize_layout_stop(obj, old_, new_, p, e, element) {
-     setTimeout(function(){
-         window.dispatchEvent(new Event("resize"))
-     }, 50);
- }
+  function getFromLS(key) {
+    let ls = {};
+    if (window.localStorage) {
+      try {
+        ls = JSON.parse(window.localStorage.getItem(window.location.origin + window.location.pathname)) || {};
+      } catch (e) {
+        /*Ignore*/
+      }
+    }
+    return ls[key];
+  }
 
- function getFromLS(key) {
-     let ls = {};
-     if (window.localStorage) {
-         try {
-             ls = JSON.parse(window.localStorage.getItem(window.location.href)) || {};
-         } catch (e) {
-             /*Ignore*/
-         }
-     }
-     return ls[key];
- }
+  function saveToLS(key, value) {
+    if (window.localStorage) {
+      window.localStorage.setItem(
+        window.location.origin + window.location.pathname,
+        JSON.stringify({
+          [key]: value
+        })
+      );
+    }
+  }
 
- function saveToLS(key, value) {
-     if (window.localStorage) {
+  class ResponsiveGrid extends React.PureComponent {
 
-         window.localStorage.setItem(
-             window.location.href,
-             JSON.stringify({
-                 [key]: value
-             })
-         );
-     }
- }
+    static defaultProps = {
+      onLayoutChange: function() {}
+    }
 
- class ResponsiveGrid extends React.PureComponent
- {
-     static defaultProps = {
-         onLayoutChange: function() {}
-     }
-
-     constructor(props)
-     {
-         super(props);
-         this.state = {
-             layouts: JSON.parse(JSON.stringify(originalLayout))
-         };
-
-         {% if saveLayout %}
-         this.resetLayout = this.resetLayout.bind(this)
-         document.getElementById('layout-reset').onclick = this.resetLayout
-         {% endif %}
-     }
+    constructor(props) {
+      super(props);
+      this.state = {
+	layouts: JSON.parse(JSON.stringify(originalLayout))
+      };
+      {% if saveLayout %}
+      this.resetLayout = this.resetLayout.bind(this)
+      document.getElementById('layout-reset').onclick = this.resetLayout
+      {% endif %}
+    }
 
     resetLayout() {
-         this.setState({
-             layouts: {{ layouts }}
-         });
-         window.dispatchEvent(new Event("resize"))
-     }
+      this.setState({
+	layouts: {{ layouts }}
+      });
+      window.dispatchEvent(new Event("resize"));
+    }
 
-     onLayoutChange(layout, layouts)
-     {
-         saveToLS("layouts", layouts);
-         this.setState({ layouts });
-     }
+    onLayoutChange(layout, layouts) {
+      saveToLS("layouts", layouts);
+      this.setState({ layouts });
+    }
 
-     render()
-     {
+    render() {
       return (
-             <ResponsiveGridLayout
-		         className={"layout"}
-                 cols={ {{cols}} }
-                 breakpoints={ {{breakpoints}} }
-                 draggableHandle={".drag-handle"}
-                 onResize={resize_layout}
-                 onResizeStop={resize_layout_stop}
-		         draggableCancel={".bk-root"}
-                 rowHeight={ {{rowHeight}} }
-                 layouts={this.state.layouts}
-                 {% if compact == "both" %}
-                 compactType={"horizontal"}
-                 {% elif compact == "horizontal" %}
-                 verticalCompact={false}
-                 compactType={"horizontal"}
-                 {% elif compact is none %}
-                 verticalCompact={false}
-                 {% endif %}
-                 preventCollision={ {{preventCollision and 'true' or 'false'}} }
-                 {%if saveLayout %}
-                 onLayoutChange={(layout, layouts) => this.onLayoutChange(layout, layouts)}
-                 {% endif %}
-             >
-                 {% set count = [] %}
-                 {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}
-                 <div key="{{count|length + 1 }}" style={divStyle} >
-			         <span className="drag-handle"></span>
-                     {{ embed(root) | indent(4) | replace("class", "className") }}
-                 </div>
-                 {% set __ = count.append(1) %}
-                 {% endif %}{% endfor %}{% endfor %}
-             </ResponsiveGridLayout>
-         );
-     }
- }
- ReactDOM.render(<ResponsiveGrid />, document.getElementById('responsive-grid'))
-
-
+        <ResponsiveGridLayout
+	   className={"layout"}
+           cols={ {{cols}} }
+           breakpoints={ {{breakpoints}} }
+           draggableHandle={".drag-handle"}
+           onResize={resize_layout}
+           onResizeStop={resize_layout_stop}
+	   draggableCancel={".bk-root"}
+           rowHeight={ {{rowHeight}} }
+           layouts={this.state.layouts}
+           {% if compact == "both" %}
+           compactType={"horizontal"}
+           {% elif compact == "horizontal" %}
+           verticalCompact={false}
+           compactType={"horizontal"}
+           {% elif compact is none %}
+           verticalCompact={false}
+           {% endif %}
+           preventCollision={ {{preventCollision and 'true' or 'false'}} }
+           {% if saveLayout %}
+           onLayoutChange={(layout, layouts) => this.onLayoutChange(layout, layouts)}
+           {% endif %}
+         >
+         {% set count = [] %}
+         {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}
+           <div key="{{count|length + 1 }}" style={divStyle} >
+             <span className="drag-handle"></span>
+             {{ embed(root) | indent(4) | replace("class", "className") }}
+           </div>
+         {% set __ = count.append(1) %}
+         {% endif %}{% endfor %}{% endfor %}
+         </ResponsiveGridLayout>
+      );
+    }
+  }
+  ReactDOM.render(<ResponsiveGrid />, document.getElementById('responsive-grid'))
 </script>
 
 {{ embed(roots.js_area) }}
