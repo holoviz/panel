@@ -80,3 +80,28 @@ class IPyLeaflet(IPyWidget):
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         return IPyWidget.applies(obj) and obj._view_module == 'jupyter-leaflet'
+
+
+class Reacton(IPyWidget):
+
+    def __init__(self, object=None, **params):
+        super().__init__(object=object, **params)
+        self._rcs = {}
+
+    @classmethod
+    def applies(cls, obj: Any) -> float | bool | None:
+        return getattr(obj, '__module__', 'None').startswith('reacton')
+
+    def _cleanup(self, root: Model | None = None) -> None:
+        if root and root.ref['id'] in self._rcs:
+            rc = self._rcs.pop(root.ref['id'])
+            rc.close()
+        super()._cleanup(root)
+
+    def _get_ipywidget(
+        self, obj, doc: Document, root: Model, comm: Optional[Comm], **kwargs
+    ):
+        import reacton
+        widget, rc = reacton.render(obj)
+        self._rcs[root.ref['id']] = rc
+        return super()._get_ipywidget(widget, doc, root, comm, **kwargs)

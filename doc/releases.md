@@ -4,9 +4,17 @@ See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual sum
 
 ## Version 0.14.2
 
+Date: 2022-12-14
+
 This release primarily focuses on bug fixes. In particular it ensures the experience when working with IPyWidgets is better in general but particularly for versions >=8.0. Many thanks for @govinda18, @joelostblom, @banesullivan, @xeldnahcram, @geronimogoemon, @minasouliman, @peterfpeterson, @jlstevens and the core maintainers @maximlt, @Hoxbro, @MarcSkovMadsen and @philippjfr for their contributions to this release.
 
-Date: 2022-12-14
+### Enhancements
+
+- Add support for `Tqdm.process_map` ([#4093](https://github.com/holoviz/panel/pull/4093))
+- Support non-vtkPolyData types in vtk synchronizer ([#4124](https://github.com/holoviz/panel/pull/4124))
+- Allow invoking `convert` functions from pyodide ([#4135](https://github.com/holoviz/panel/pull/4135))
+- Support `step` format in date sliders ([#4152](https://github.com/holoviz/panel/pull/4152))
+- Add a `Reacton` component to simplify rendering ([#4190](https://github.com/holoviz/panel/pull/4190))
 
 ### Bugs
 
@@ -28,13 +36,6 @@ Date: 2022-12-14
 - Don't raise `TypeError` for class which contains `__panel__` ([#4174](https://github.com/holoviz/panel/pull/4174))
 - Do not dispatch events if bokeh `Document` is set to hold events ([#4178](https://github.com/holoviz/panel/pull/4178))
 - Execute `onload` callbacks immediately in pyodide app ([#4191](https://github.com/holoviz/panel/pull/4191))
-
-### Enhancements
-
-- Add support for `Tqdm.process_map` ([#4093](https://github.com/holoviz/panel/pull/4093))
-- Support non-vtkPolyData types in vtk synchronizer ([#4124](https://github.com/holoviz/panel/pull/4124))
-- Allow invoking `convert` functions from pyodide ([#4135](https://github.com/holoviz/panel/pull/4135))
-- Support `step` format in date sliders ([#4152](https://github.com/holoviz/panel/pull/4152))
 
 ### Docs
 

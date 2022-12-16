@@ -122,6 +122,11 @@ jobs:
           cache: true
           playwright: true
         id: install
+      - name: doit develop_install
+        if: steps.install.outputs.cache-hit != 'true'
+        run: |
+          conda activate test-environment
+          pip install ipywidgets_bokeh
       - name: build pyodide wheels
         run: |
           conda activate test-environment
