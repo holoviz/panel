@@ -11,6 +11,16 @@
 {% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
 {% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
 
+<!-- Template JS -->
+{% for src in template_resources['js'].values() %}
+<script src="{{ src }}"></script>
+{% endfor %}
+{% for src in template_resources['js_modules'].values() %}
+<script src="{{ src }}" type="module"></script>
+{% endfor %}
+{% endblock %}
+
+{% block postamble %}
 <!-- Template CSS -->
 {% for css in template_resources['css'].values() %}
 <link rel="stylesheet" href="{{ css }}">
@@ -22,14 +32,6 @@
 <style type="text/css">
 {{ raw_css }}
 </style>
-{% endfor %}
-
-<!-- Template JS -->
-{% for src in template_resources['js'].values() %}
-<script src="{{ src }}"></script>
-{% endfor %}
-{% for src in template_resources['js_modules'].values() %}
-<script src="{{ src }}" type="module"></script>
 {% endfor %}
 
 <style>
