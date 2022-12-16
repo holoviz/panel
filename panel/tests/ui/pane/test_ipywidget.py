@@ -2,11 +2,20 @@ import time
 
 import pytest
 
+from bokeh.model import Model
+
 pytestmark = pytest.mark.ui
 
 from panel.io.server import serve
 from panel.layout import Row
 from panel.pane.ipywidget import Reacton
+
+
+@pytest.fixture(scope="module", autouse=True)
+def cleanup_ipywidgets():
+    old_models = dict(Model.model_class_reverse_map)
+    yield
+    Model.model_class_reverse_map = old_models
 
 
 def test_reacton(page, port):
