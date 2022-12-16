@@ -6,7 +6,7 @@ See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual sum
 
 Date: 2022-12-14
 
-This release primarily focuses on bug fixes. In particular it ensures the experience when working with IPyWidgets is better in general but particularly for versions >=8.0. Many thanks for @govinda18, @joelostblom, @banesullivan, @xeldnahcram, @geronimogoemon, @minasouliman, @peterfpeterson, @jlstevens and the core maintainers @maximlt, @Hoxbro, @MarcSkovMadsen and @philippjfr for their contributions to this release.
+This release primarily focuses on bug fixes. In particular it resolves various issues with support for rendering `ipywidgets` (particularly in `ipywidgets>=8.0`) and also fixes a number of issues with the Jupyter Server previews. Many thanks for @govinda18, @joelostblom, @banesullivan, @xeldnahcram, @geronimogoemon, @minasouliman, @peterfpeterson, @jlstevens and the core maintainers @maximlt, @Hoxbro, @MarcSkovMadsen and @philippjfr for their contributions to this release.
 
 ### Enhancements
 
@@ -18,7 +18,7 @@ This release primarily focuses on bug fixes. In particular it ensures the experi
 
 ### Bugs
 
-- Ensure Jupyter server extension serves resources and extensions correctly ([#4083](https://github.com/holoviz/panel/pull/4083), [#4133](https://github.com/holoviz/panel/pull/4133))
+- Ensure Jupyter server extension serves resources, extensions and paths correctly ([#4083](https://github.com/holoviz/panel/pull/4083), [#4133](https://github.com/holoviz/panel/pull/4133), [#4202](https://github.com/holoviz/panel/pull/4202))
 - Ensure `IPyWidget` comm does not break when new widget is rendered ([#4091](https://github.com/holoviz/panel/pull/4091))
 - Improving detection of comms in VSCode and Google Colab ([#4115](https://github.com/holoviz/panel/pull/4115))
 - Ensure `.js` mimetype is served correctly on Windows ([#4118](https://github.com/holoviz/panel/pull/4118))
@@ -32,10 +32,12 @@ This release primarily focuses on bug fixes. In particular it ensures the experi
 - Ensure `Location` model reports as idle ([#4159](https://github.com/holoviz/panel/pull/4159))
 - Fix auth error template rendering ([#4162](https://github.com/holoviz/panel/pull/4162))
 - Fix issues with value on `EditableSlider` when it is outside `fixed_start` / `fixed_end` range ([#4169](https://github.com/holoviz/panel/pull/4169))
-- Ensure ipywidgets events are handled the same way as regular events ([#4171](https://github.com/holoviz/panel/pull/4171))
+- Ensure `ipywidgets` events are handled the same way as regular events ([#4171](https://github.com/holoviz/panel/pull/4171))
 - Don't raise `TypeError` for class which contains `__panel__` ([#4174](https://github.com/holoviz/panel/pull/4174))
 - Do not dispatch events if bokeh `Document` is set to hold events ([#4178](https://github.com/holoviz/panel/pull/4178))
 - Execute `onload` callbacks immediately in pyodide app ([#4191](https://github.com/holoviz/panel/pull/4191))
+- Improve `IPyWidget` kernel handling in server contexts ([#4195](https://github.com/holoviz/panel/pull/4195))
+- Fix rendering of `IPyWidget` with child views in the notebook ([#4197](https://github.com/holoviz/panel/pull/4197))
 
 ### Docs
 
