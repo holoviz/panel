@@ -233,7 +233,13 @@ class PanelExecutor(WSHandler):
         # use the _attribute to set the public property .session_context
         doc._session_context = weakref.ref(session_context)
 
-        app = build_single_handler_application(self.path)
+        if self.path.endswith('.yaml') or self.path.endswith('.yml'):
+            from lumen.command import (
+                build_single_handler_application as build_lumen_app,
+            )
+            app = build_lumen_app(self.path, argv=None)
+        else:
+            app = build_single_handler_application(self.path)
         with set_curdoc(doc):
             app.initialize_document(doc)
 
