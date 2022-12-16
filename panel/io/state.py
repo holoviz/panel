@@ -21,7 +21,7 @@ from contextvars import ContextVar
 from functools import partial, wraps
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Coroutine, Dict,
-    Iterator as TIterator, List, Optional, Tuple, TypeVar, Union,
+    Iterator as TIterator, List, Optional, Tuple, Type, TypeVar, Union,
 )
 from urllib.parse import urljoin
 from weakref import WeakKeyDictionary
@@ -137,7 +137,8 @@ class _state(param.Parameterized):
     _admin_context = None
 
     # Jupyter communication
-    _comm_manager = _CommManager
+    _comm_manager: ClassVar[Type[_CommManager]] = _CommManager
+    _jupyter_kernel_context: ClassVar[bool] = False
     _kernels = {}
     _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
 

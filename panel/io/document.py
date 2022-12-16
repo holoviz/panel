@@ -193,7 +193,7 @@ def unlocked() -> Iterator:
     curdoc = state.curdoc
     session_context = getattr(curdoc, 'session_context', None)
     session = getattr(session_context, 'session', None)
-    if curdoc is None or session_context is None or session is None:
+    if curdoc is None or session_context is None or session is None or state._jupyter_kernel_context:
         yield
         return
     elif curdoc.callbacks.hold_value:

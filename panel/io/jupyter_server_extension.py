@@ -139,8 +139,14 @@ class PanelExecutor(WSHandler):
     """
 
     _code = """
+    import os
+    import pathlib
+
+    app = '{{ path }}'
+    os.chdir(str(pathlib.Path(app).parent))
+
     from panel.io.jupyter_server_extension import PanelExecutor
-    executor = PanelExecutor('{{ path }}', '{{ token }}', '{{ root_url }}')
+    executor = PanelExecutor(app, '{{ token }}', '{{ root_url }}')
     executor.render()
     """
 
@@ -156,6 +162,7 @@ class PanelExecutor(WSHandler):
         self.receiver = Receiver(self.protocol)
         self.handler = ProtocolHandler()
         self.write_lock = tornado.locks.Lock()
+        self._context = None
 
         self.resources = Resources(
             mode="server", root_url=self.root_url,
@@ -176,6 +183,7 @@ class PanelExecutor(WSHandler):
         return payload
 
     def _set_state(self):
+        state._jupyter_kernel_context = True
         with edit_readonly(state):
             state.base_url = self.root_url + '/'
             state.rel_path = self.root_url
@@ -209,7 +217,7 @@ class PanelExecutor(WSHandler):
     def _create_server_session(self) -> ServerSession:
         doc = Document()
 
-        session_context = BokehSessionContext(
+        self._context = session_context = BokehSessionContext(
             self.session_id, None, doc
         )
 
@@ -265,7 +273,7 @@ class PanelExecutor(WSHandler):
     ) -> None:
         metadata = {'binary': binary}
         if binary:
-            self.comm.send({}, metadata=metadata, buffers=[binary])
+            self.comm.send({}, metadata=metadata, buffers=[message])
         else:
             self.comm.send(message, metadata=metadata)
 
@@ -536,10 +544,12 @@ class PanelWSProxy(WSHandler, JupyterHandler):
                 return self._internal_error(content['data'])
             binary = metadata.get('binary')
             if binary:
-                data = msg['buffers'][0]
+                fragment = msg['buffers'][0].tobytes()
             else:
-                data = content['data']
-            message = await self._receive(data)
+                fragment = content['data']
+                if isinstance(fragment, dict):
+                    fragment = json.dumps(fragment)
+            message = await self._receive(fragment)
             if message:
                 await self.send_message(message)
 
