@@ -188,6 +188,7 @@ def test_cache_clear():
     fn.clear()
     assert fn(0, 0) == 1
 
+@pytest.mark.xdist_group("cache")
 @diskcache_available
 def test_disk_cache():
     global OFFSET
@@ -201,6 +202,7 @@ def test_disk_cache():
     fn.clear()
     assert fn(0, 0) == 1
 
+@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_lifo(to_disk):
     if to_disk and diskcache is None:
@@ -214,6 +216,7 @@ def test_cache_lifo(to_disk):
     assert fn(0, 2) == 2 # (0, 0) should be evicted
     assert fn(0, 0) == 1
 
+@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_lfu(to_disk):
     if to_disk and diskcache is None:
@@ -227,6 +230,7 @@ def test_cache_lfu(to_disk):
     assert fn(0, 2) == 2 # (0, 1) should be evicted
     assert fn(0, 1) == 2
 
+@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_lru(to_disk):
     if to_disk and diskcache is None:
@@ -242,6 +246,7 @@ def test_cache_lru(to_disk):
     assert fn(0, 0) == 0
     assert fn(0, 1) == 2
 
+@pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
 def test_cache_ttl(to_disk):
     if to_disk and diskcache is None:

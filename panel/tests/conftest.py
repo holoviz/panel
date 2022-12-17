@@ -45,7 +45,6 @@ def get_default_port():
     n = int(re.sub(r"\D", "", worker_id))
     return 6000 + n * 30
 
-
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
     args = ['jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''"]
@@ -218,14 +217,15 @@ def tmpdir(request, tmpdir_factory):
 
 @pytest.fixture()
 def html_server_session():
+    port = 5050
     html = HTML('<h1>Title</h1>')
-    server = serve(html, port=6000, show=False, start=False)
+    server = serve(html, port=port, show=False, start=False)
     session = pull_session(
         session_id='Test',
         url="http://localhost:{:d}/".format(server.port),
         io_loop=server.io_loop
     )
-    yield html, server, session
+    yield html, server, session, port
     try:
         server.stop()
     except AssertionError:
@@ -234,14 +234,15 @@ def html_server_session():
 
 @pytest.fixture()
 def markdown_server_session():
+    port = 5051
     html = Markdown('#Title')
-    server = serve(html, port=6001, show=False, start=False)
+    server = serve(html, port=port, show=False, start=False)
     session = pull_session(
         session_id='Test',
         url="http://localhost:{:d}/".format(server.port),
         io_loop=server.io_loop
     )
-    yield html, server, session
+    yield html, server, session, port
     try:
         server.stop()
     except AssertionError:
@@ -249,7 +250,7 @@ def markdown_server_session():
 
 
 @pytest.fixture
-def multiple_apps_server_sessions():
+def multiple_apps_server_sessions(port):
     """Serve multiple apps and yield a factory to allow
     parameterizing the slugs and the titles."""
     servers = []
@@ -259,7 +260,7 @@ def multiple_apps_server_sessions():
             app1_slug: Markdown('First app'),
             app2_slug: Markdown('Second app')
         }
-        server = serve(apps, port=5008, title=titles, show=False, start=False)
+        server = serve(apps, port=port, title=titles, show=False, start=False)
         servers.append(server)
         session1 = pull_session(
             url=f"http://localhost:{server.port:d}/app1",
