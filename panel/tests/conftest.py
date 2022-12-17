@@ -39,6 +39,13 @@ def port_open(port):
     sock.close()
     return is_open
 
+def get_default_port():
+    # to get a different starting port per worker for pytest-xdist
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
+    n = int(re.sub(r"\D", "", worker_id))
+    return 6000 + n * 30
+
+
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
     args = ['jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''"]
@@ -135,7 +142,7 @@ def context(context):
     context.set_default_timeout(20_000)
     yield context
 
-PORT = [6000]
+PORT = [get_default_port()]
 
 @pytest.fixture
 def document():
