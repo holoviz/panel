@@ -21,9 +21,7 @@ from datetime import datetime
 from functools import partial
 from html import escape  # noqa
 from importlib import import_module
-from typing import (
-    Any, AnyStr, Dict, Iterator, List, Union,
-)
+from typing import Any, AnyStr, Iterator
 
 import bokeh
 import numpy as np
@@ -76,7 +74,7 @@ def param_name(name: str) -> str:
     return name[:name.index(match[0])] if match else name
 
 
-def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> List[param.Parameterized]:
+def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> list[param.Parameterized]:
     """
     Recursively searches a Parameterized object for other Parmeterized
     objects.
@@ -151,7 +149,7 @@ def param_reprs(parameterized, skip=None):
         elif isinstance(v, dict) and v == {}: continue
         elif (skip and p in skip) or (p == 'name' and v.startswith(cls)): continue
         else: v = abbreviated_repr(v)
-        param_reprs.append('%s=%s' % (p, v))
+        param_reprs.append(f'{p}={v}')
     return param_reprs
 
 
@@ -199,13 +197,13 @@ def datetime_as_utctimestamp(value):
     return value.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
 
 
-def parse_query(query: str) -> Dict[str, Any]:
+def parse_query(query: str) -> dict[str, Any]:
     """
     Parses a url query string, e.g. ?a=1&b=2.1&c=string, converting
     numeric strings to int or float types.
     """
     query_dict = dict(urlparse.parse_qsl(query[1:]))
-    parsed_query: Dict[str, Any] = {}
+    parsed_query: dict[str, Any] = {}
     for k, v in query_dict.items():
         if v.isdigit():
             parsed_query[k] = int(v)
@@ -243,7 +241,7 @@ def base64url_decode(input):
     return base64.urlsafe_b64decode(input)
 
 
-class classproperty(object):
+class classproperty:
 
     def __init__(self, f):
         self.f = f
@@ -356,7 +354,7 @@ def parse_timedelta(time_str: str) -> dt.timedelta | None:
     return dt.timedelta(**time_params)
 
 
-def fullpath(path: Union[AnyStr, os.PathLike]) -> Union[AnyStr, os.PathLike]:
+def fullpath(path: AnyStr | os.PathLike) -> AnyStr | os.PathLike:
     """Expanduser and then abspath for a given path
     """
     return os.path.abspath(os.path.expanduser(path))
