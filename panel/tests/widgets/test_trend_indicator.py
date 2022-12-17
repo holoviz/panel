@@ -8,6 +8,10 @@ from panel.widgets import IntSlider, Trend
 
 
 def test_constructor():
+    Trend(title="Test")
+
+
+def manualtest_constructor():
     return Trend(title="Test")
 
 
@@ -37,7 +41,7 @@ def test_trend_auto_value_stream():
     assert model.source.data['x'][-1] == 6
 
 
-def test_app():
+def manualtest_app():
     data = {"x": [1, 2, 3, 4, 5], "y": [3800, 3700, 3800, 3900, 4000]}
 
     trend = Trend(
@@ -95,4 +99,4 @@ def test_app():
 
 
 if __name__.startswith("bokeh"):
-    test_app().servable()
+    manualtest_app().servable()
