@@ -16,7 +16,6 @@ import sys
 import threading
 import traceback
 import uuid
-import warnings
 import weakref
 
 from collections import OrderedDict
@@ -66,6 +65,7 @@ from tornado.wsgi import WSGIContainer
 # Internal imports
 from ..config import config
 from ..util import edit_readonly, fullpath
+from ..util.warnings import warn
 from .document import init_doc, unlocked, with_lock  # noqa
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
@@ -967,7 +967,7 @@ def get_server(
         except RuntimeError:
             pass
         except TypeError:
-            warnings.warn(
+            warn(
                 "IOLoop couldn't be started. Ensure it is started by "
                 "process invoking the panel.io.server.serve."
             )
