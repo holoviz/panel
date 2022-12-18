@@ -130,7 +130,7 @@ img.app-logo {
 .sidenav fast-menu {
   width: 100%;
 }
-.sidenav a {
+.sidenav fast-menu a {
   padding: 8px 8px 8px 32px;
   text-decoration: none;
   color: var(--neutral-foreground-rest);
@@ -139,7 +139,7 @@ img.app-logo {
   display: block;
   transition: 0.3s;
 }
-.sidenav a:hover {
+.sidenav fast-menu a:hover {
   color: #f1f1f1;
 }
 .sidenav fast-menu {
