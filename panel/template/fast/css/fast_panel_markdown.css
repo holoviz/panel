@@ -2,11 +2,11 @@
   padding-right: 1em;
   padding-left: 1em;
 }
-.markdown a {
+.main a, .sidenav a {
   color: var(--accent-foreground-rest);
   text-decoration: underline;
 }
-.markdown a:hover {
+.main a:hover, .sidenav a:hover {
   color: var(--accent-foreground-hover);
 }
 .markdown a img {
