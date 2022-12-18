@@ -230,7 +230,7 @@ def test_altair_pane(document, comm):
     chart.mark = 'point'
     chart.data.values[0]['x'] = 'C'
     pane.object = chart
-    point_example = dict(vega_example, mark='point')
+    point_example = dict(vega_example, data={},  mark='point')
     if altair_version >= Version('4.0.0'):
         point_example['config'] = vega4_config
     assert dict(model.data, **blank_schema) == dict(point_example, **blank_schema)
