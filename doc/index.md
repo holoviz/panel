@@ -78,7 +78,7 @@ If you want to become a data science pro, you definitely need Panel. Check out o
 
 ----
 
-Try Panel in a notebook now at [**panelite.holoviz.org**](https://panelite.holoviz.org)
+Try Panel in a notebook now at [**panelite.holoviz.org**](https://panelite.holoviz.org) or just [get started](getting_started/index.md).
 
 <h2 style="margin-top: 0.3em;">Get Informed</h2>
 
