@@ -39,7 +39,7 @@ def find_stack_level() -> int:
     param_dir = os.path.dirname(param.__file__)
 
     frame = inspect.currentframe()
-    stacklevel = 1
+    stacklevel = 0
     while frame:
         fname = inspect.getfile(frame)
         if (
@@ -68,9 +68,9 @@ def deprecated(
         remove_version = Version(remove_version)
 
     if remove_version < current_version:
-        # This is most for developers to secure that the removal actually find place
+        # This error is mainly for developers to remove the deprecated.
         raise ValueError(
-            f"{old!r} should have been removed in {remove_version}, current version {current_version}"
+            f"{old!r} should have been removed in {remove_version}, current version {current_version}."
         )
 
     message = f"{old!r} is deprecated and will be removed in version {remove_version}."
