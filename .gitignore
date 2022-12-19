@@ -128,3 +128,6 @@ node_modules/*
 .devcontainer/*
 pyodide/
 script.*
+doc/_build/*
+doc/gallery/*
+doc/reference/*

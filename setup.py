@@ -192,6 +192,7 @@ extras_require = {
         'xgboost',
         'ipyvuetify',
         'reacton'
+        'scikit-image',
     ],
     'tests': _tests,
     'recommended': _recommended,
