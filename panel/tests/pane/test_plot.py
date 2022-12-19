@@ -1,8 +1,8 @@
 from bokeh.models import Div, Row as BkRow
 
-from panel.pane import (
-    Bokeh, Matplotlib, Pane, PaneBase,
-)
+import panel as pn
+
+from panel.pane import Bokeh, Matplotlib, PaneBase
 from panel.tests.util import mpl_available, mpl_figure
 
 
@@ -13,7 +13,7 @@ def test_get_bokeh_pane_type():
 
 def test_bokeh_pane(document, comm):
     div = Div()
-    pane = Pane(div)
+    pane = pn.panel(div)
 
     # Create pane
     row = pane.get_root(document, comm=comm)
@@ -42,7 +42,7 @@ def test_get_matplotlib_pane_type():
 
 @mpl_available
 def test_matplotlib_pane(document, comm):
-    pane = Pane(mpl_figure())
+    pane = pn.panel(mpl_figure())
 
     # Create pane
     model = pane.get_root(document, comm=comm)

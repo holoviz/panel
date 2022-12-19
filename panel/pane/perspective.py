@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 import sys
-import warnings
 
 from enum import Enum
 from typing import (
@@ -17,6 +16,7 @@ from pyviz_comms import JupyterComm
 
 from ..reactive import ReactiveData
 from ..util import lazy_load
+from ..util.warnings import deprecated
 from ..viewable import Viewable
 from .base import PaneBase
 
@@ -389,10 +389,7 @@ class Perspective(PaneBase, ReactiveData):
         updates = {}
         for event in events:
             renamed = self._deprecations[event.name]
-            warnings.warn(
-                f'The {event.name!r} parameter is deprecated use {renamed!r} parameter instead.',
-                DeprecationWarning
-            )
+            deprecated("1.0", event.name, renamed)
             updates[renamed] = event.new
         self.param.update(**updates)
 

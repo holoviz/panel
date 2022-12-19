@@ -28,9 +28,9 @@ except ImportError:
     try:
         import pkg_resources
     except ImportError:
-        import warnings
+        from .util.warnings import warn
 
-        warnings.warn(
+        warn(
             "Under Python <= 3.7, Panel requires either the importlib_metadata "
             "or setuptools package in order to load plugins via entrypoints.",
         )

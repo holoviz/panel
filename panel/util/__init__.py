@@ -21,9 +21,7 @@ from datetime import datetime
 from functools import partial
 from html import escape  # noqa
 from importlib import import_module
-from typing import (
-    Any, AnyStr, Dict, Iterable, Iterator, List, Optional, Union,
-)
+from typing import Any, AnyStr, Iterator
 
 import bokeh
 import numpy as np
@@ -32,44 +30,15 @@ import param
 from bokeh.model import Model
 from packaging.version import Version
 
-datetime_types = (np.datetime64, dt.datetime, dt.date)
+from .checks import (  # noqa
+    datetime_types, is_dataframe, is_holoviews, is_number, is_parameterized,
+    is_series, isdatetime, isfile, isIn, isurl,
+)
 
 bokeh_version = Version(bokeh.__version__)
 
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
-
-
-def isfile(path: str) -> bool:
-    """Safe version of os.path.isfile robust to path length issues on Windows"""
-    try:
-        return os.path.isfile(path)
-    except ValueError: # path too long for Windows
-        return False
-
-
-def isurl(obj: Any, formats: Optional[Iterable[str]] = None) -> bool:
-    if not isinstance(obj, str):
-        return False
-    lower_string = obj.lower().split('?')[0].split('#')[0]
-    return (
-        lower_string.startswith('http://')
-        or lower_string.startswith('https://')
-    ) and (formats is None or any(lower_string.endswith('.'+fmt) for fmt in formats))
-
-
-def is_dataframe(obj) -> bool:
-    if 'pandas' not in sys.modules:
-        return False
-    import pandas as pd
-    return isinstance(obj, pd.DataFrame)
-
-
-def is_series(obj) -> bool:
-    if 'pandas' not in sys.modules:
-        return False
-    import pandas as pd
-    return isinstance(obj, pd.Series)
 
 
 def hashable(x):
@@ -79,22 +48,6 @@ def hashable(x):
         return tuple([(k,v) for k,v in x.items()])
     else:
         return x
-
-
-def isIn(obj, objs):
-    """
-    Checks if the object is in the list of objects safely.
-    """
-    for o in objs:
-        if o is obj:
-            return True
-        try:
-            if o == obj:
-                return True
-        except Exception:
-            pass
-    return False
-
 
 def indexOf(obj, objs):
     """
@@ -121,7 +74,7 @@ def param_name(name: str) -> str:
     return name[:name.index(match[0])] if match else name
 
 
-def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> List[param.Parameterized]:
+def recursive_parameterized(parameterized: param.Parameterized, objects=None) -> list[param.Parameterized]:
     """
     Recursively searches a Parameterized object for other Parmeterized
     objects.
@@ -196,7 +149,7 @@ def param_reprs(parameterized, skip=None):
         elif isinstance(v, dict) and v == {}: continue
         elif (skip and p in skip) or (p == 'name' and v.startswith(cls)): continue
         else: v = abbreviated_repr(v)
-        param_reprs.append('%s=%s' % (p, v))
+        param_reprs.append(f'{p}={v}')
     return param_reprs
 
 
@@ -219,39 +172,6 @@ def get_method_owner(meth):
         return meth.__self__
 
 
-def is_parameterized(obj) -> bool:
-    """
-    Whether an object is a Parameterized class or instance.
-    """
-    return (isinstance(obj, param.Parameterized) or
-            (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
-
-def is_holoviews(obj: Any) -> bool:
-    """
-    Whether the object is a HoloViews type that can be rendered.
-    """
-    if 'holoviews' not in sys.modules:
-        return False
-    from holoviews.core.dimension import Dimensioned
-    from holoviews.plotting import Plot
-    return isinstance(obj, (Dimensioned, Plot))
-
-def isdatetime(value) -> bool:
-    """
-    Whether the array or scalar is recognized datetime type.
-    """
-    if is_series(value) and len(value):
-        return isinstance(value.iloc[0], datetime_types)
-    elif isinstance(value, np.ndarray):
-        return (
-            value.dtype.kind == "M" or
-            (value.dtype.kind == "O" and len(value) != 0 and
-             isinstance(value[0], datetime_types))
-        )
-    elif isinstance(value, list):
-        return all(isinstance(d, datetime_types) for d in value)
-    else:
-        return isinstance(value, datetime_types)
 
 def value_as_datetime(value):
     """
@@ -277,21 +197,13 @@ def datetime_as_utctimestamp(value):
     return value.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
 
 
-def is_number(s: Any) -> bool:
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
-
-
-def parse_query(query: str) -> Dict[str, Any]:
+def parse_query(query: str) -> dict[str, Any]:
     """
     Parses a url query string, e.g. ?a=1&b=2.1&c=string, converting
     numeric strings to int or float types.
     """
     query_dict = dict(urlparse.parse_qsl(query[1:]))
-    parsed_query: Dict[str, Any] = {}
+    parsed_query: dict[str, Any] = {}
     for k, v in query_dict.items():
         if v.isdigit():
             parsed_query[k] = int(v)
@@ -329,7 +241,7 @@ def base64url_decode(input):
     return base64.urlsafe_b64decode(input)
 
 
-class classproperty(object):
+class classproperty:
 
     def __init__(self, f):
         self.f = f
@@ -387,7 +299,7 @@ def lazy_load(module, model, notebook=False, root=None):
             f'\n\npn.extension(\'{ext}\')\n'
         )
     elif root is not None:
-        from .io.state import state
+        from ..io.state import state
         ext = module.split('.')[-1]
         if root.ref['id'] in state._views:
             param.main.param.warning(
@@ -442,7 +354,7 @@ def parse_timedelta(time_str: str) -> dt.timedelta | None:
     return dt.timedelta(**time_params)
 
 
-def fullpath(path: Union[AnyStr, os.PathLike]) -> Union[AnyStr, os.PathLike]:
+def fullpath(path: AnyStr | os.PathLike) -> AnyStr | os.PathLike:
     """Expanduser and then abspath for a given path
     """
     return os.path.abspath(os.path.expanduser(path))
