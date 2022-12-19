@@ -18,7 +18,7 @@ sd_hide_title: true
 :link: https://gapminders.pyviz.demo.anaconda.com
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/gapminders.png
+```{image} https://user-images.githubusercontent.com/42288570/208299928-ef3253eb-000d-4c0c-94df-55c8ff5ac224.jpg
 ```
 
 :::
@@ -70,7 +70,7 @@ sd_hide_title: true
 
 ::::
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/master/LICENSE.txt) Python library that lets you create powerful tools, apps and dashboards **using the tools you know and love**. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem.
+Panel is an [open-source](https://github.com/holoviz/panel/blob/master/LICENSE.txt) Python library that lets you create powerful tools and data apps **using the tools you know and love**. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem.
 
 If you want to become a data science pro, you definitely need Panel. Check out our 5 minute intro video to see why.
 
@@ -78,7 +78,7 @@ If you want to become a data science pro, you definitely need Panel. Check out o
 
 ----
 
-Try Panel in a notebook now at [**panelite.holoviz.org**](https://panelite.holoviz.org) or just [get started](getting_started/index.md).
+Try Panel in a notebook at [**panelite.holoviz.org**](https://panelite.holoviz.org) or click [here](getting_started/index.md) to **get started**.
 
 <h2 style="margin-top: 0.3em;">Get Informed</h2>
 
@@ -92,7 +92,7 @@ Panel makes it simple to:
 - Create interactive **big data** applications with **crossfiltering**
 - Create **high performing**, **streaming** data applications
 - Create data apps that **can run in the browser only**.
-- Create **polished, secure and production-ready web applications**
+- Create **polished, performant, secure and production-ready web applications**
 
 ```{eval-rst}
 .. notebook:: panel ../examples/homepage.ipynb
@@ -103,10 +103,11 @@ Panel makes it simple to:
 
 Panel is novel in that it supports
 
-- **ipywidgets** and **nearly all plotting libraries**,
-- Jupyter **notebooks**, **IDEs** and many types of secure **web servers**
-- Python-backed **server apps**, **pyodide** backed client side apps and exported **static HTML/JavaScript applications**
-- developing large, complex, reactive, modular, testable, maintainable and **reusable component libraries and applications**
+- **ipywidgets** and **nearly all Python plotting libraries**,
+- Jupyter **notebooks**, **editors** and many types of secure **web servers**
+- Specialized and **demanding interactive data visualization use cases**.
+- Python-backed **server apps**, pyodide backed **client side apps** and exported **static HTML/JavaScript applications**
+- developing large, complex, reactive, modular, testable, maintainable and **reusable component libraries and web applications**
 
 <h2 style="margin-top: 0.3em;">Get Started</h2>
 
@@ -147,11 +148,17 @@ For a more in-depth guide through a range of topics, starting from the various A
 
 For usage questions, technical assistance or to showcase your work, please head over to the community [Discourse](https://discourse.holoviz.org/) site.
 
-If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
+If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
 
 <h2 style="margin-top: 0.3em;">Thanks</h2>
 
-The Panel project is grateful for the sponsorship by the organizations and companies below:
+The Panel project is grateful for the numerous contributions from the community including
+
+- The [awesome-panel.org](https://www.awesome-panel.org/) project, [tweets](https://twitter.com/MarcSkovMadsen) and [videos](https://www.youtube.com/watch?v=7dJO4j4ENhg&list=PLrrcIlm1vLr69f4CsTlrO0wSNBw6VbsJA) by [Marc Skov Madsen](https://www.linkedin.com/in/marcskovmadsen)
+- Inspiring [blog posts](https://sophiamyang.medium.com/), [tweets](https://twitter.com/sophiamyang) and [videos](https://www.youtube.com/watch?v=wlzkiGPIV3I&list=PL2KLV6jxFCI39YW7v-nVZOp34cVhYpSJO) by [Sophia Yang](https://www.linkedin.com/in/sophiamyang/)
+- Cool [videos](https://youtu.be/uhxiXOTKzfs) by [Thu Hien Vu](https://www.linkedin.com/in/thu-hien-vu-3766b174/)
+
+The Panel project is also very grateful for the sponsorship by the organizations and companies below:
 
 ::::{grid} 2
 
