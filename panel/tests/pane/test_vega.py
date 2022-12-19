@@ -155,7 +155,7 @@ def test_vega_pane(document, comm):
     point_example = dict(vega_example, mark='point')
     point_example['data']['values'][0]['x'] = 'C'
     pane.object = point_example
-    point_example['data'].pop('values')
+    point_example = dict(point_example, data={})
     assert model.data == point_example
     cds_data = model.data_sources['data'].data
     assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E']))
