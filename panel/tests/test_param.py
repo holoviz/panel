@@ -13,7 +13,7 @@ from bokeh.models import (
 from panel.io.state import set_curdoc, state
 from panel.layout import Row, Tabs
 from panel.pane import (
-    HTML, Bokeh, Matplotlib, Pane, PaneBase, Str, panel,
+    HTML, Bokeh, Matplotlib, PaneBase, Str, panel,
 )
 from panel.param import (
     JSONInit, Param, ParamFunction, ParamMethod,
@@ -23,6 +23,10 @@ from panel.widgets import (
     AutocompleteInput, DatePicker, DatetimeInput, EditableFloatSlider,
     EditableRangeSlider, LiteralInput, NumberInput, RangeSlider,
 )
+
+
+def Pane(obj, **kwargs):
+    return PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
 
 
 def test_instantiate_from_class():
