@@ -26,6 +26,7 @@ from bokeh.embed.bundle import (
     _use_mathjax, bundle_models, extension_dirs,
 )
 from bokeh.models import ImportedStyleSheet
+from bokeh.model import Model
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
 from jinja2.environment import Environment
@@ -360,7 +361,7 @@ def bundle_resources(roots, resources, notebook=False):
     return Bundle(
         js_files=js_files, js_raw=js_raw, css_files=css_files,
         css_raw=css_raw, hashes=hashes, notebook=notebook,
-        js_modules=resources.js_modules
+        js_modules=resources.js_modules, resources.js_module_exports
     )
 
 
@@ -507,6 +508,14 @@ class Resources(BkResources):
         return self.adjust_paths(modules)
 
     @property
+    def js_module_exports(self):
+        modules = {}
+        for model in Model.model_class_reverse_map.values():
+            if hasattr(model, '__javascript_module_exports__'):
+                modules.update(dict(zip(model.__javascript_module_exports__, model.__javascript_module__)))
+        return modules
+
+    @property
     def css_files(self):
         from ..config import config
 
@@ -526,7 +535,8 @@ class Resources(BkResources):
     def render_js(self):
         return JS_RESOURCES.render(
             js_raw=self.js_raw, js_files=self.js_files,
-            js_modules=self.js_modules, hashes=self.hashes
+            js_modules=self.js_modules, hashes=self.hashes,
+            js_module_exports=self.js_module_exports
         )
 
 
@@ -534,6 +544,7 @@ class Bundle(BkBundle):
 
     def __init__(self, notebook=False, **kwargs):
         self.js_modules = kwargs.pop("js_modules", [])
+        self.js_module_exports = kwargs.pop("js_module_exports", exports)
         self.notebook = notebook
         super().__init__(**kwargs)
 
@@ -559,5 +570,6 @@ class Bundle(BkBundle):
             js_raw=self.js_raw,
             js_files=self.js_files,
             js_modules=self.js_modules,
+            js_module_exports=self.js_module_exports,
             hashes=self.hashes
         )
