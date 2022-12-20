@@ -191,7 +191,7 @@ extras_require = {
         'python-graphviz',
         'xgboost',
         'ipyvuetify',
-        'reacton'
+        'reacton',
         'scikit-image',
     ],
     'tests': _tests,
