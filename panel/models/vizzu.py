@@ -28,6 +28,8 @@ class VizzuChart(LayoutDOM):
     def __javascript_modules__(cls):
         return bundled_files(cls, 'javascript_modules')
 
+    animation = Dict(String, Any)
+
     config = Dict(String, Any)
 
     columns = List(Dict(String, Any))

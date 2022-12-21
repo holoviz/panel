@@ -39,6 +39,7 @@ export class VizzuChartView extends PanelHTMLBoxView {
 export namespace VizzuChart {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
+    animation: p.Property<any>
     config: p.Property<any>
     columns: p.Property<any>
     source: p.Property<ColumnDataSource>
@@ -62,6 +63,7 @@ export class VizzuChart extends HTMLBox {
     this.prototype.default_view = VizzuChartView
 
     this.define<VizzuChart.Props>(({Any, Array, Number, Ref}) => ({
+      animation:   [ Any,                     {} ],
       config:      [ Any,                     {} ],
       columns:     [ Array(Any),              [] ],
       source:      [ Ref(ColumnDataSource),      ],

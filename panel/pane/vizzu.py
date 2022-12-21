@@ -4,7 +4,7 @@ import datetime as dt
 import sys
 
 from typing import (
-    TYPE_CHECKING, ClassVar, List, Optional,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Optional,
 )
 
 import numpy as np
@@ -35,13 +35,22 @@ class Vizzu(PaneBase, SyncableData):
     >>> Vizzu(df)
     """
 
-    config = param.Dict(default={})
+    animation = param.Dict(default={}, doc="""
+        Animation settings.""")
 
-    columns = param.List(default=[])
+    config = param.Dict(default={}, doc="""
+        """)
 
-    duration = param.Integer(default=500)
+    columns = param.List(default=[], doc="""
+        Optional column definitions. If not defined will be inferred
+        from the data.""")
 
-    style = param.Dict()
+    duration = param.Integer(default=500, doc="""
+        The config contains all of the parameters needed to render a
+        particular static chart or a state of an animated chart.""")
+
+    style = param.Dict(default={}, doc="""
+        Style configuration of the chart.""")
 
     _data_params: ClassVar[List[str]] = ['object']
 
@@ -56,6 +65,29 @@ class Vizzu(PaneBase, SyncableData):
             if isinstance(object, pd.DataFrame):
                 return 0
         return False
+
+    def animate(
+        self, anim: Dict[str, Any], options: int | Dict[str, Any] | None = None
+    ) -> None:
+        """
+        Updates the chart with a new configuration.
+        """
+        if not any(key in anim for key in ('config', 'data', 'style')):
+            anim = {'config': anim}
+        updates = {}
+        for p, value in anim.items():
+            if p not in self.param:
+                raise ValueError(
+                    f'Could not update {p!r}. You must pass either a dictionary '
+                    'containing config, data and/or style values OR a single '
+                    'config dictionary. '
+                )
+            updates[p] = dict(getattr(self, p), value)
+        if isinstance(options, int):
+            self.duration = options
+        elif isinstance(options, dict):
+            self.animation = options
+        self.param.update(updates)
 
     def _get_data(self):
         if self.object is None:
