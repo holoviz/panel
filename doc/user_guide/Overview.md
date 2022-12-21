@@ -161,6 +161,7 @@ The `pn.config` object allows setting various configuration variables, the confi
 > - `throttled`: Whether sliders and inputs should be throttled until release of mouse.
 
 #### Python and Environment variables
+
 > - `comms` (`PANEL_COMMS`): Whether to render output in Jupyter with the default Jupyter extension or use the `jupyter_bokeh` ipywidget model.
 > - `console_output` (`PANEL_CONSOLE_OUTPUT`): How to log errors and stdout output triggered by callbacks from Javascript in the notebook. Options include `'accumulate'`, `'replace'` and `'disable'`.
 > - `embed` (`PANEL_EMBED`): Whether plot data will be [embedded](./Deploy_and_Export.rst#Embedding).
@@ -175,6 +176,7 @@ The `pn.config` object allows setting various configuration variables, the confi
 
 The `pn.state` object makes various global state available and provides methods to manage that state:
 
+- - `access_token`: The access token issued by the OAuth provider to authorize requests to its APIs.
 > - `busy`: A boolean value to indicate whether a callback is being actively processed.
 > - `cache`: A global cache which can be used to share data between different processes.
 > - `cookies`: HTTP request cookies for the current session.
@@ -189,6 +191,7 @@ The `pn.state` object makes various global state available and provides methods 
 >   * `protocol` (readonly): protocol in window.location e.g. 'http:' or 'https:'
 >   * `port` (readonly): port in window.location e.g. '80'
 > - `headers`: HTTP request headers for the current session.
+> - `refresh_token`: The refresh token issued by the OAuth provider to authorize requests to its APIs (if available these are usually longer lived than the `access_token`).
 > - `session_args`: When running a server session this return the request arguments.
 > - `session_info`: A dictionary tracking information about server sessions:
 >   * `total` (int): The total number of sessions that have been opened

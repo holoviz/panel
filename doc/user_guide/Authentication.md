@@ -138,6 +138,7 @@ Once a user is authorized with the chosen OAuth provider certain user informatio
 
 * **`pn.state.user`**: A unique name, email or ID that identifies the user.
 * **`pn.state.access_token`**: The access token issued by the OAuth provider to authorize requests to its APIs.
+* **`pn.state.refresh_token`**: The refresh token issued by the OAuth provider to authorize requests to its APIs (if available these are usually longer lived than the `access_token`).
 * **`pn.state.user_info`**: Additional user information provided by the OAuth provider. This may include names, email, APIs to request further user information, IDs and more.
 
 ## Authorization
