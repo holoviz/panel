@@ -217,7 +217,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             return
 
         log.debug("%s received user information.", type(self).__name__)
-        return self._on_auth(user, body['access_token'])
+        return self._on_auth(user, body['access_token'], body.get('refresh_token'))
 
     def get_state_cookie(self):
         """Get OAuth state from cookies
@@ -323,7 +323,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             self.set_state_cookie(state)
             await self.get_authenticated_user(**params)
 
-    def _on_auth(self, user_info, access_token):
+    def _on_auth(self, user_info, access_token, refresh_token=None):
         user_key = config.oauth_jwt_user or self._USER_KEY
         user = user_info[user_key]
         self.set_secure_cookie('user', user, expires_days=config.oauth_expiry)
@@ -331,8 +331,12 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
+            if refresh_token:
+                refresh_token = state.encryption.encrypt(refresh_token.encode('utf-8'))
         self.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry)
         self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
+        if refresh_token:
+            self.set_secure_cookie('refresh_token', refresh_token, expires_days=config.oauth_expiry)
         return user
 
     def _on_error(self, response, body=None):
@@ -349,7 +353,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             log.warning(f"{provider} OAuth provider failed to fully "
                         f"authenticate returning the following response:"
                         f"{body}.")
-        raise HTTPError(500, f"{provider} authentication failed")
+        raise HTTPError(500, f"{provider} authentication failed {body}")
 
 
 class GenericLoginHandler(OAuthLoginHandler, OAuth2Mixin):
@@ -628,9 +632,9 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
 
         access_token = body['access_token']
         id_token = body['id_token']
-        return self._on_auth(id_token, access_token)
+        return self._on_auth(id_token, access_token, body.get('refresh_token'))
 
-    def _on_auth(self, id_token, access_token):
+    def _on_auth(self, id_token, access_token, refresh_token=None):
         decoded = decode_id_token(id_token)
         user_key = config.oauth_jwt_user or self._USER_KEY
         if user_key in decoded:
@@ -643,8 +647,12 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
+            if refresh_token:
+                refresh_token = state.encryption.encrypt(refresh_token.encode('utf-8'))
         self.set_secure_cookie('access_token', access_token, expires_days=config.oauth_expiry)
         self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
+        if refresh_token:
+            self.set_secure_cookie('refresh_token', refresh_token, expires_days=config.oauth_expiry)
         return user
 
 
