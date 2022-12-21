@@ -821,18 +821,25 @@ class _state(param.Parameterized):
     # Public Properties
     #----------------------------------------------------------------
 
-    @property
-    def access_token(self) -> str | None:
+    def _decode_cookie(self, cookie_name):
         from tornado.web import decode_signed_value
 
         from ..config import config
-        access_token = self.cookies.get('access_token')
-        if access_token is None:
+        cookie = self.cookies.get(cookie_name)
+        if cookie is None:
             return None
-        access_token = decode_signed_value(config.cookie_secret, 'access_token', access_token)
+        cookie = decode_signed_value(config.cookie_secret, cookie_name, cookie)
         if self.encryption is None:
-            return access_token.decode('utf-8')
-        return self.encryption.decrypt(access_token).decode('utf-8')
+            return cookie.decode('utf-8')
+        return self.encryption.decrypt(cookie).decode('utf-8')
+
+    @property
+    def access_token(self) -> str | None:
+        return self._decode_cookie('access_token')
+
+    @property
+    def refresh_token(self) -> str | None:
+        return self._decode_cookie('refresh_token')
 
     @property
     def app_url(self) -> str | None:
