@@ -52,7 +52,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: hoxbro/holoviz_tasks/install@add_mamba
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
@@ -114,7 +114,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: hoxbro/holoviz_tasks/install@add_mamba
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
         with:
           name: ui_test_suite
           python-version: 3.9
