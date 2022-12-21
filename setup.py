@@ -113,7 +113,6 @@ install_requires = [
     'bleach',
     'setuptools >=42',
     'typing_extensions',
-    'numpy <1.24', # VTK test fail
 ]
 
 _recommended = [
@@ -149,6 +148,7 @@ _tests = [
     # Added lxml temporarily as installing pyechars or idom on Python 3.11
     # via pip tries to build it and fails. To be removed.
     'lxml',
+    'numpy <1.24', # Avoid VTK test fail
 ]
 
 _ui = [
