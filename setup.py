@@ -112,7 +112,8 @@ install_requires = [
     'pyct >=0.4.4',
     'bleach',
     'setuptools >=42',
-    'typing_extensions'
+    'typing_extensions',
+    'numpy <1.24', # VTK test fail
 ]
 
 _recommended = [
