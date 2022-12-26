@@ -32,7 +32,7 @@ def test_accepts_colors_by_name():
     )
     template._update_vars()
 
-def test_app():
+def manualtest_app():
     app = FastListTemplate(
         title="FastListTemplate w. #ORSOME colors",
         site="Panel",
@@ -59,4 +59,4 @@ def test_accent():
 
 if __name__.startswith("bokeh"):
     pn.extension(sizing_mode="stretch_width")
-    test_app().servable()
+    manualtest_app().servable()

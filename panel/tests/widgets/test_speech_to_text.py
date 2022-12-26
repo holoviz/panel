@@ -120,7 +120,7 @@ def test_can_create_result_from_list():
     assert actual[0].alternatives[0].transcript == "and why"
 
 
-def test_get_advanced_app():
+def manualtest_get_advanced_app():
     src = "#JSGF V1.0; grammar colors; public <color> = aqua | azure | beige | bisque | black | blue | brown | chocolate | coral | crimson | cyan | fuchsia | ghostwhite | gold | goldenrod | gray | green | indigo | ivory | khaki | lavender | lime | linen | magenta | maroon | moccasin | navy | olive | orange | orchid | peru | pink | plum | purple | red | salmon | sienna | silver | snow | tan | teal | thistle | tomato | turquoise | violet | white | yellow ;" # noqa
     speech_to_text = SpeechToText(button_type="success", continuous=True)
 
@@ -182,7 +182,7 @@ def test_get_advanced_app():
     return app
 
 
-def test_get_color_app():
+def manualtest_get_color_app():
     speech_to_text_color = SpeechToText(button_type="light", continuous=True)
 
     colors = [
@@ -277,5 +277,4 @@ def test_get_color_app():
 
 if __name__.startswith("bokeh"):
     pn.extension(sizing_mode="stretch_width")
-    # test_get_advanced_app().servable()
-    test_get_color_app().servable()
+    manualtest_get_color_app().servable()

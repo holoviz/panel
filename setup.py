@@ -133,6 +133,7 @@ _tests = [
     'pytest-xdist',
     'pytest-cov',
     'pre-commit',
+    'psutil',
     # Libraries tested in unit tests
     'folium',
     'ipympl',

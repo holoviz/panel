@@ -22,7 +22,7 @@ def _get_template_class(template_class=pn.template.VanillaTemplate):
         template_class=TEMPLATES_NAMES[template_name]
     return template_class
 
-def test_template_with_sidebar(template_class=pn.template.VanillaTemplate, theme=pn.template.DefaultTheme):
+def manualtest_template_with_sidebar(template_class=pn.template.VanillaTemplate, theme=pn.template.DefaultTheme):
     """Returns an app that uses the vanilla template in various ways.
 
 Inspect the app and verify that the issues of [Issue 1641]\
@@ -60,7 +60,7 @@ Inspect the app and verify that the issues of [Issue 1641]\
 
     vanilla.sidebar.append(freq)
     vanilla.sidebar.append(phase)
-    vanilla.sidebar.append(pn.pane.Markdown(test_template_with_sidebar.__doc__, height=280,
+    vanilla.sidebar.append(pn.pane.Markdown(manualtest_template_with_sidebar.__doc__, height=280,
                                             sizing_mode='stretch_width'))
     vanilla.sidebar.append(pn.pane.Markdown("## Sidebar Item\n" * 50))
 
@@ -96,7 +96,7 @@ Inspect the app and verify that the issues of [Issue 1641]\
     return vanilla
 
 
-def test_template_with_no_sidebar(template_class=pn.template.VanillaTemplate, theme=pn.template.DefaultTheme):
+def manualtest_template_with_no_sidebar(template_class=pn.template.VanillaTemplate, theme=pn.template.DefaultTheme):
     """Returns an app that uses the vanilla template in various ways.
 
 Inspect the app and verify that the issues of [Issue 1641]\
@@ -128,7 +128,7 @@ Inspect the app and verify that the issues of [Issue 1641]\
     def cosine(freq, phase):
         return hv.Curve((xs, np.cos(xs * freq + phase))).opts(responsive=True, min_height=400)
 
-    markdown = pn.pane.Markdown(test_template_with_no_sidebar.__doc__)
+    markdown = pn.pane.Markdown(manualtest_template_with_no_sidebar.__doc__)
     row1 = pn.Row(
         pn.Card(hv.DynamicMap(sine), title="Sine"),
         pn.Card(hv.DynamicMap(cosine), title="Cosine"),
@@ -170,20 +170,20 @@ TEMPLATES = [
 
 @pytest.mark.parametrize(["template_class"], TEMPLATES)
 def test_all_templates_with_sidebar(template_class):
-    test_template_with_sidebar(template_class=template_class)
+    manualtest_template_with_sidebar(template_class=template_class)
 
 @pytest.mark.parametrize(["template_class"], TEMPLATES)
 def test_all_templates_with_no_sidebar(template_class):
-    test_template_with_no_sidebar(template_class=template_class)
+    manualtest_template_with_no_sidebar(template_class=template_class)
 
-def _get_template_func(template_func=test_template_with_sidebar):
+def _get_template_func(template_func=manualtest_template_with_sidebar):
     app_name = pn.state.session_args.get("app", None)
     if app_name:
         app_name = app_name[0].decode("utf-8")
         if app_name == "no_sidebar":
-            return test_template_with_no_sidebar
+            return manualtest_template_with_no_sidebar
         elif app_name == "sidebar":
-            return test_template_with_sidebar
+            return manualtest_template_with_sidebar
     return template_func
 
 def _get_theme():
@@ -205,4 +205,4 @@ def _get_app():
 if __name__.startswith("bokeh"):
     pn.extension(sizing_mode="stretch_width")
     _get_app().servable()
-    # test_template_with_no_sidebar().servable()
+    # manualtest_template_with_no_sidebar().servable()
