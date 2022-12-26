@@ -153,7 +153,7 @@ def _fast_button_card():
     )
 
 
-def test_app():
+def manualtest_app():
     app = FastGridTemplate(
         title="FastGridTemplate w. Layout Persistence",
         site="Panel",
@@ -177,4 +177,4 @@ def test_app():
 
 if __name__.startswith("bokeh"):
     config.sizing_mode = "stretch_width"
-    test_app().servable()
+    manualtest_app().servable()
