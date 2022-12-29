@@ -75,7 +75,7 @@ It may be difficult to write UI tests robust enough to pass all the time. For in
 
 ## Continuous Integration
 
-Every push to the `master` branch or any Pull Request branch on GitHub automatically triggers a full test build on the [GitHub Actions](https://github.com/features/actions) continuous integration service. This is most often useful for running the full Panel test suite continuously, but also triggers automated scripts for publishing releases when a tagged branch is pushed.
+Every push to the `main` branch or any Pull Request branch on GitHub automatically triggers a full test build on the [GitHub Actions](https://github.com/features/actions) continuous integration service. This is most often useful for running the full Panel test suite continuously, but also triggers automated scripts for publishing releases when a tagged branch is pushed.
 
 You can see the list of all current and previous builds at this URL: https://github.com/holoviz/panel/actions
 

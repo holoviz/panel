@@ -64,7 +64,7 @@ csv_app = """
 import pandas as pd
 import panel as pn
 
-df = pd.read_csv('https://raw.githubusercontent.com/holoviz/panel/master/examples/assets/occupancy.csv')
+df = pd.read_csv('https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv')
 tabulator = pn.widgets.Tabulator(df)
 
 tabulator.servable()
