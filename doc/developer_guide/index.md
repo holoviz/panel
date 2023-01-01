@@ -105,9 +105,9 @@ You will likely want to check out the :ref:`devguide_testing` guide. Meanwhile, 
 
 - [Dev version of Panel Site](https://pyviz-dev.github.io/panel)
    - Use this to explore new, not yet released features and docs
-- [Panel master branch on Binder](https://mybinder.org/v2/gh/holoviz/panel/master?urlpath=lab/tree/examples)
+- [Panel main branch on Binder](https://mybinder.org/v2/gh/holoviz/panel/main?urlpath=lab/tree/examples)
    - Use this to quickly explore and manually test the newest panel features in a fresh environment with all requirements installed.
-   - Replace `master` with `name-of-other-branch` for other branches.
+   - Replace `main` with `name-of-other-branch` for other branches.
 
 ```{toctree}
 :titlesonly:

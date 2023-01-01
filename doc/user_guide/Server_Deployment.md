@@ -82,7 +82,7 @@ packages:
 
 3. Go to mybinder.org, enter the URL of your GitHub repository and hit ``Launch``
 
-4. mybinder.org will give you a link to the deployment, e.g. for the example app it is https://mybinder.org/v2/gh/panel-demos/clifford-interact/master. To visit the app simply append ``?urlpath=/panel/clifford`` where you should replace clifford with the name of the notebook or script you are serving.
+4. mybinder.org will give you a link to the deployment, e.g. for the example app it is https://mybinder.org/v2/gh/panel-demos/clifford-interact/main. To visit the app simply append ``?urlpath=/panel/clifford`` where you should replace clifford with the name of the notebook or script you are serving.
 
 
 #### Heroku
