@@ -26,7 +26,7 @@ version = release = base_version(panel.__version__)
 js_version = json.loads((PANEL_ROOT / 'package.json').read_text())['version']
 
 # For the interactivity warning box created by nbsite to point to the right
-# git tag instead of the default i.e. master.
+# git tag instead of the default i.e. main.
 os.environ['BRANCH'] = f"v{release}"
 
 html_static_path += ['_static']
