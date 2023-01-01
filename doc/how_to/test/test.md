@@ -36,10 +36,10 @@ class App(pn.viewable.Viewer):
 
     load_delay = param.Number(0.5)
     run_delay = param.Number(0.5)
-    
+
     def __init__(self, **params):
         super().__init__(**params)
-        
+
         result = self._load()
         self._time = time.time()
 
@@ -82,7 +82,7 @@ class App(pn.viewable.Viewer):
     def _run(self):
         time.sleep(self.run_delay)
         return f"Result {self.runs+1}"
-    
+
 if __name__.startswith("bokeh"):
     pn.extension(sizing_mode="stretch_width")
     App().servable()
@@ -250,7 +250,7 @@ def test_component(page, port):
     # Then
     page.goto(url)
     page.get_by_role("button", name="Run").wait_for()
-    
+
     for index in range(CLICKS):
         page.get_by_role("button", name="Run").first.click()
         page.get_by_text(f"Finished run {index+1}").wait_for()
