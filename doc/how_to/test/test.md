@@ -333,7 +333,7 @@ According to [locust-plugins](https://github.com/SvenskaSpel/locust-plugins) it 
 
 ### Test advanced interactions with Loadwright
 
-[Loadwright](https://github.com/awesome-panel/loadwright) is a very young load testing framework built on top of Playwright and Panel.
+[Loadwright](https://github.com/awesome-panel/loadwright) is a young load testing framework built on top of Playwright and Panel.
 
 Create the file `test_loadwright.py` and add the code below.
 
