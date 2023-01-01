@@ -1,10 +1,8 @@
 # How to test Panel apps
 
-Testing is key to developing robust and performant applications.
+Testing is key to developing robust and performant applications. You can test Panel data apps using Python and the test tools you know and love.
 
-Panel is a reactive, python framework based on Param. This makes it easy to test Panel data apps using Python and the test tools you know and love.
-
-Before we get started you should
+Before we get started, you should
 
 ```bash
 pip install panel pytest pytest-benchmark locust-plugins pytest-playwright playwright
@@ -18,35 +16,39 @@ playwright install
 
 ## Create the app
 
-Lets create a data app in a file called `app.py`.
+Lets create a simple data app for testing. The app sleeps 0.5 seconds (default) when loaded and when the button is clicked.
+
+![app.py](https://user-images.githubusercontent.com/42288570/210162656-ae771b17-d406-4aa2-8e58-182270fbd7c1.gif)
+
+Create the file `app.py` and add the code below.
 
 ```python
 # app.py
-import asyncio
 import time
 
 import panel as pn
 import param
 
 class App(pn.viewable.Viewer):
-    run = param.Event()
-    runs = param.Integer()
-    status = param.String("Click Run")
+    run = param.Event(doc="Runs for click_delay seconds when clicked")
+    runs = param.Integer(doc="The number of runs")
+    status = param.String("No runs yet")
 
     load_delay = param.Number(0.5)
-    click_delay = param.Number(0.5)
+    run_delay = param.Number(0.5)
     
     def __init__(self, **params):
         super().__init__(**params)
         
-        self.load()
+        result = self._load()
         self._time = time.time()
 
 
-        self._status_pane = pn.pane.Markdown(self.status, height=33)
+        self._status_pane = pn.pane.Markdown(self.status, height=40, align="start", margin=(0,5,10,5))
+        self._result_pane = pn.Column(result)
         self._view = pn.Column(
-            pn.widgets.Button.from_param(self.param.run, align="end"),
-            self._status_pane
+            pn.Row(pn.widgets.Button.from_param(self.param.run, sizing_mode="fixed"), self._status_pane),
+            self._result_pane
         )
 
     def __panel__(self):
@@ -54,7 +56,7 @@ class App(pn.viewable.Viewer):
 
     def _start_run(self):
         self.status = f"Running ..."
-        self._start = time.time()
+        self._time = time.time()
 
     def _stop_run(self):
         now = time.time()
@@ -64,30 +66,29 @@ class App(pn.viewable.Viewer):
         self.status=f"Finished run {self.runs} in {duration}sec"
 
     @pn.depends("run", watch=True)
-    def _run(self):
+    def _run_with_status_update(self):
         self._start_run()
-        self.handle_click()
-        self._stop_run()        
+        self._result_pane[:] = [self._run()]
+        self._stop_run()
 
     @pn.depends("status", watch=True)
     def _update_status_pane(self):
-        print(self.status)
         self._status_pane.object = self.status
 
-    def load(self):
+    def _load(self):
         time.sleep(self.load_delay)
+        return "Loaded"
 
-    def handle_click(self):
-        time.sleep(self.click_delay)
+    def _run(self):
+        time.sleep(self.run_delay)
+        return f"Result {self.runs+1}"
     
 if __name__.startswith("bokeh"):
-    app = App()
-    pn.panel(app).servable()
+    pn.extension(sizing_mode="stretch_width")
+    App().servable()
 ```
 
-Try serving the app: `panel serve app.py`. It should look like
-
-![app.py](https://user-images.githubusercontent.com/42288570/209909169-23849050-7401-4f01-bbdb-79ded3a33b4f.gif)
+Serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app) in your browser.
 
 ## Test the backend with Pytest
 
@@ -97,10 +98,9 @@ Lets test
 - That the app *state* changes appropriately when the *Run* button is clicked.
 - That the duration of the *run* is as expected.
 
-We can test all these things via the `test_app.py` file below.
+Create the file `test_app.py` and add the code below.
 
 ```python
-# test_app.py
 import pytest
 
 from app import App
@@ -113,7 +113,7 @@ def test_constructor(app):
     """Tests default values of App"""
     # Then
     assert app.run == False
-    assert app.status == "Click Run"
+    assert app.status == "No runs yet"
     assert app.runs == 0
 
 def test_run(app):
@@ -135,7 +135,7 @@ def test_run_twice(app):
 
 def test_run_performance(app: App, benchmark):
     """Test the duration when Run button is clicked"""
-    app.click_delay=0.3
+    app.run_delay=0.3
 
     def run():
         app.run=True
@@ -168,8 +168,6 @@ Legend:
 ================================================================== 4 passed in 4.82s
 ```
 
-Please note that **normally Panel users just need to test the backend behaviour**. The Panel developers have already tested the frontend behaviour. This makes Panel data apps really simple to test.
-
 ## Test the frontend with pytest and PlayWright
 
 Sometimes, for example when you create [custom components](https://panel.holoviz.org/user_guide/Custom_Components.html), it can be useful to test the frontend behaviour.
@@ -182,6 +180,8 @@ The `conftest.py` file contains pytest fixtures. it will
 
 - provide us with an available `port`
 - clean up the Panel server after each test.
+
+Create the file `conftest.py` and add the code below.
 
 ```python
 # conftest.py
@@ -215,7 +215,6 @@ def server_cleanup():
         if pn.state._thread_pool is not None:
             pn.state._thread_pool.shutdown(wait=False)
             pn.state._thread_pool = None
-
 ```
 
 For more inspiration check out the [Panel `conftest.py` file](https://github.com/holoviz/panel/blob/master/panel/tests/conftest.py)
@@ -228,7 +227,7 @@ Lets test that the app will
 - provide a *Run* button
 - Update the app as expected when the *Run* button is clicked
 
-We can test all this via the `test_app_frontend.py` file below.
+Create the file `test_app_frontend.py` and add the code below.
 
 ```python
 # test_app_frontend.py
@@ -263,7 +262,7 @@ Lets run `pytest`. We will add the `--headed` argument to see what is going on i
 pytest test_app_frontend.py --headed
 ```
 
-![panel-pytest-frontend.gif](https://user-images.githubusercontent.com/42288570/209915079-d2dfd7dd-77e1-4e04-b022-5f2f49852c31.gif)
+![panel-pytest-frontend.gif](https://user-images.githubusercontent.com/42288570/210163005-29e26514-02a3-4076-92c5-ba4e8d14dd30.gif)
 
 ### Record the test code
 
@@ -281,7 +280,7 @@ and starting the PlayWright recorder
 playwright codegen http://localhost:5006/app
 ```
 
-![panel-playwright-recording.gif](https://user-images.githubusercontent.com/42288570/209916542-acd17660-90ae-4246-a417-5fd8fc79dc3f.gif)
+![panel-playwright-recording.gif](https://user-images.githubusercontent.com/42288570/210163133-bf08e9cd-2599-4c7e-a017-ba447547f0e0.gif)
 
 ## Test the load
 
@@ -296,15 +295,15 @@ This kind of testing is really useful if you want to
 
 [Locust](https://locust.io/) can help you the the behaviour of users that loads (i.e. requests) your Panel app. Locust provides many performance related statistics and charts.
 
-We can test how our app performs when users request the page to load via the below `locust.py` file.
+Create the file `locustfile.py` and add the code below.
 
 ```python
-#locust.py
+#locustfile.py
 from locust import HttpUser, task
 
 class RequestOnlyUser(HttpUser):
     @task
-    def app(self):
+    def goto(self):
         self.client.get("/app")
 ```
 
@@ -320,7 +319,7 @@ Start the Locust server
 locust --host http://localhost:5006
 ```
 
-Keep the default settings and click the *Start swarming* button. This should look like the below.
+Open [http://localhost:8089](http://localhost:8089). Keep the default settings and click the *Start swarming* button. This should look like the below.
 
 ![panel-locust.gif](https://user-images.githubusercontent.com/42288570/209923009-521554d4-dcf8-49b3-8cca-c714037af901.gif)
 
@@ -328,7 +327,7 @@ The median response time (on my laptop) is ~530ms when one user requests the pag
 
 If you try to increase to 10 simultanous users you will see a median response time of ~5300ms. If this is a likely scenario, you will have to look into how to improve the performance of your app.
 
-According to [locust-plugins](https://github.com/SvenskaSpel/locust-plugins) it should also be possible to possible to combine Locust and PlayWright. I've tried. Unfortunately it does not work for me on Windows. You can check out the issue with code [here](https://github.com/SvenskaSpel/locust-plugins/issues/101#issuecomment-1367216919).
+According to [locust-plugins](https://github.com/SvenskaSpel/locust-plugins) it should also be possible to possible to combine Locust and PlayWright to test more advanced interactions. Unfortunately it does not work for me on Windows. You can check out the issue with code [here](https://github.com/SvenskaSpel/locust-plugins/issues/101#issuecomment-1367216919).
 
 ### Test advanced interactions with Panel and PlayWright
 
