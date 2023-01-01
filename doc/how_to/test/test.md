@@ -178,7 +178,7 @@ For testing the frontend we recommend the framework [Playwright](https://playwri
 
 ### Create the conftest.py
 
-The `conftest.py` file contains pytest fixtures. it will 
+The `conftest.py` file contains pytest fixtures. it will
 
 - provide us with an available `port`
 - clean up the Panel server after each test.
@@ -288,7 +288,7 @@ playwright codegen http://localhost:5006/app
 
 Load testing refers to testing the performance of the entire Panel application and the server(s) running it.
 
-This kind of testing is really useful if you want to 
+This kind of testing is really useful if you want to
 
 - develop fast and snappy apps and/ or
 - develop apps that scale to many users
