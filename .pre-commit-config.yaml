@@ -26,3 +26,5 @@ repos:
     hooks:
       - id: isort
         name: isort (python)
+ci:
+  autofix_prs: false
