@@ -28,3 +28,4 @@ repos:
         name: isort (python)
 ci:
   autofix_prs: false
+  autoupdate_schedule: quarterly
