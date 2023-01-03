@@ -11,8 +11,24 @@ on:
     - cron: '0 19 * * SUN'
 
 jobs:
+  pre_commit:
+    name: Run pre-commit hooks
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "1"
+      - name: set PY
+        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: pre-commit
+        uses: pre-commit/action@v3.0.0
   unit_test_suite:
     name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -77,6 +93,7 @@ jobs:
           fail_ci_if_error: false # optional (default = false)
   ui_test_suite:
     name: UI tests on ${{ matrix.os }} with Python 3.9
+    needs: [pre_commit]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
