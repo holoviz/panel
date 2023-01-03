@@ -1,4 +1,4 @@
-# Running and configuring a Panel server
+# Configuring a Panel server
 
 The Panel server can be launched either from the commandline (using `panel serve`) or programmatically (using `panel.serve()`). In this guide we will discover how to run and configure server instances using these two options.
 
@@ -15,34 +15,59 @@ If you do not want to maintain your own web server and/or set up complex reverse
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} Launch Panel server from the commandline
+:::{grid-item-card} {octicon}`terminal;2.5em;sd-mr-1` Launch from the commandline
 :link: commandline
 :link-type: doc
+
+Launch and configure a Panel application from the commandline.
 :::
 
-:::{grid-item-card} Launch Panel server programmatically
+:::{grid-item-card} {octicon}`code-square;2.5em;sd-mr-1` Launch programmatically
 :link: programmatic
 :link-type: doc
+
+Launch and configure a Panel application programmatically.
 :::
 
-:::{grid-item-card} Serving multiple applications
+:::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1` Serving multiple applications
 :link: multiple
 :link-type: doc
+
+Discover how-to launch and configure multiple applications on the same server. 
 :::
 
-:::{grid-item-card} Accessing a deployment over SSH
-:link: ssh
-:link-type: doc
-:::
-
-:::{grid-item-card} Setting up a (reverse) proxy
+:::{grid-item-card} {octicon}`server;2.5em;sd-mr-1` Setting up a (reverse) proxy
 :link: proxy
 :link-type: doc
+
+Discover how-to configure a reverse proxy to scale your deployment.
 :::
 
-:::{grid-item-card} Serving static files
+:::{grid-item-card} {octicon}`chevron-right;2.5em;sd-mr-1` Access via SSH
+:link: ssh
+:link-type: doc
+
+Discover how to access a Panel deployment running remotely via SSH.
+:::
+
+:::{grid-item-card} {octicon}`file-media;2.5em;sd-mr-1` Serving static files
 :link: static_files
 :link-type: doc
+
+Discover how to serve static files alongside your Panel application(s). 
 :::
 
 ::::
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+commandline
+programmatic
+multiple
+ssh
+proxy
+static_files
+```

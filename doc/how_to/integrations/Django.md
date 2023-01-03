@@ -1,4 +1,4 @@
-# Django
+# Running Panel apps inside Django
 
 Panel generally runs on the Bokeh server which itself runs on Tornado. However, it is also often useful to embed a Panel app in large web application, such as a Django web server. Using Panel with Django requires a bit more work than for notebooks and Bokeh servers.
 

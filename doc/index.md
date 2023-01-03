@@ -155,6 +155,7 @@ alt: Blackstone Logo
 
 self
 getting_started/index.md
+how_to/index.md
 user_guide/index.rst
 gallery/index.rst
 reference/index.rst

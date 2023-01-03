@@ -1,4 +1,4 @@
-# FastAPI
+# Integrating Panel with FastAPI
 
 Panel generally runs on the Bokeh server which itself runs on Tornado. However, it is also often useful to embed a Panel app in large web application, such as a FastAPI web server. [FastAPI](https://fastapi.tiangolo.com/) is especially useful compared to others like Flask and Django because of it's lightning fast, lightweight framework. Using Panel with FastAPI requires a bit more work than for notebooks and Bokeh servers.
 
@@ -11,7 +11,7 @@ Before we start adding a bokeh app to our FastApi server we have to set up some 
 You'll need to create a file called `examples/apps/fastApi/main.py`.
 
 In `main.py` you'll need to import the following( which should all be already available from the above conda installs):
-
+i
 ```python
 import panel as pn
 from bokeh.embed import server_document
