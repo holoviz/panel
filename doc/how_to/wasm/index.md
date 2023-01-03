@@ -34,14 +34,14 @@ Discover how to set up and use Panel from Pyodide and PyScript.
 :link: user_info
 :link-type: doc
 
-Discover how to integrate live Panel components in your Sphinx based documentation. 
+Discover how to integrate live Panel components in your Sphinx based documentation.
 :::
 
 :::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` JupyterLite
 :link: jupyterlite
 :link-type: doc
 
-Discover how to set up a JupyterLite deployment capable of rendering interactive Panel output. 
+Discover how to set up a JupyterLite deployment capable of rendering interactive Panel output.
 :::
 
 ::::

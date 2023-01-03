@@ -13,7 +13,7 @@ except Exception:
     phase = 1
 ```
 
-This mechanism may be used to modify the behavior of an app dependending on parameters provided in the URL. 
+This mechanism may be used to modify the behavior of an app dependending on parameters provided in the URL.
 
 ## Cookies
 

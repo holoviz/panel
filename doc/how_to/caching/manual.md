@@ -2,7 +2,7 @@
 
 The `panel.state.cache` object is a simple dictionary that is shared between all sessions on a particular Panel server process. This makes it possible to load large datasets (or other objects you want to share) once and subsequently access the cached object.
 
-To assign to the cache manually, simply put the data load or expensive calculation in an `if`/`else` block which checks whether the custom key is already present: 
+To assign to the cache manually, simply put the data load or expensive calculation in an `if`/`else` block which checks whether the custom key is already present:
 
 ```python
 if 'data' in pn.state.cache:
@@ -11,7 +11,7 @@ else:
     pn.state.cache['data'] = data = ... # Load some data or perform an expensive computation
 ```
 
-The `as_cached` helper function provides a slightly cleaner way to write the caching logic. Instead of writing a conditional statement you write a function that is executed only when the inputs to the function change. If provided the `args` and `kwargs` will also be hashed making it easy to cache (or memoize) on the arguments to the function: 
+The `as_cached` helper function provides a slightly cleaner way to write the caching logic. Instead of writing a conditional statement you write a function that is executed only when the inputs to the function change. If provided the `args` and `kwargs` will also be hashed making it easy to cache (or memoize) on the arguments to the function:
 
 ```python
 def load_data(*args, **kwargs):

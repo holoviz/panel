@@ -16,7 +16,7 @@ Discover to run Panel applications alongside an existing Flask server.
 :link: FastAPI
 :link-type: doc
 
-Discover to run Panel applications alongside an existing FastAPI server. 
+Discover to run Panel applications alongside an existing FastAPI server.
 :::
 
 :::{grid-item-card} Django

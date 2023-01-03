@@ -47,7 +47,7 @@ async def stream(event):
     x, y = cds.data['x'][-1], cds.data['y'][-1]
     cds.stream({'x': list(range(x+1, x+6)), 'y': y+np.random.randn(5).cumsum()})
     pane.param.trigger('object')
-    
+
 # Equivalent to `.on_click` but shown
 button.param.watch(stream, 'clicks')
 
@@ -65,11 +65,11 @@ async def get_img(index):
     async with aiohttp.ClientSession() as session:
         async with session.get(f"https://picsum.photos/800/300?image={index}") as resp:
             return pn.pane.JPG(await resp.read())
-            
+
 pn.Column(widget, pn.bind(get_img, widget))
 ```
 
-In this example Panel will invoke the function and update the output when the function returns while leaving the process unblocked for the duration of the `aiohttp` request. 
+In this example Panel will invoke the function and update the output when the function returns while leaving the process unblocked for the duration of the `aiohttp` request.
 
 The equivalent can be written using `.param.watch` as:
 
@@ -82,10 +82,10 @@ async def update_img(event):
     async with aiohttp.ClientSession() as session:
         async with session.get(f"https://picsum.photos/800/300?image={event.new}") as resp:
             image.object = await resp.read()
-            
+
 widget.param.watch(update_img, 'value')
 widget.param.trigger('value')
-            
+
 pn.Column(widget, image)
 ```
 

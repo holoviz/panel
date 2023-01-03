@@ -33,7 +33,7 @@ Launch and configure a Panel application programmatically.
 :link: multiple
 :link-type: doc
 
-Discover how-to launch and configure multiple applications on the same server. 
+Discover how-to launch and configure multiple applications on the same server.
 :::
 
 :::{grid-item-card} {octicon}`server;2.5em;sd-mr-1` Setting up a (reverse) proxy
@@ -54,7 +54,7 @@ Discover how to access a Panel deployment running remotely via SSH.
 :link: static_files
 :link-type: doc
 
-Discover how to serve static files alongside your Panel application(s). 
+Discover how to serve static files alongside your Panel application(s).
 :::
 
 ::::

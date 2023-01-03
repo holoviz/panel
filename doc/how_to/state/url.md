@@ -14,7 +14,7 @@ When starting a server session Panel will attach a `Location` component which ca
 * **``search``** (string): search part of the url e.g. '?color=blue'.
 * **``hash_``** (string): hash part of the url e.g. '#interact'.
 * **``reload``** (bool): Whether or not to reload the page when the url is updated.
-    - For independent apps this should be set to True. 
+    - For independent apps this should be set to True.
     - For integrated or single page apps this should be set to False.
 
 ### Readonly
@@ -34,9 +34,9 @@ import param
 import panel as pn
 
 class QueryExample(param.Parameterized):
-    
+
     integer = param.Integer(default=None, bounds=(0, 10))
-    
+
     string = param.String(default='A string')
 ```
 

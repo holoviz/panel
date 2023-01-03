@@ -33,7 +33,7 @@ A list of OAuth providers and how to configure them.
 :link: user_info
 :link-type: doc
 
-Discover how to make use of the user information and access tokens returned by the OAuth provider. 
+Discover how to make use of the user information and access tokens returned by the OAuth provider.
 :::
 
 ::::

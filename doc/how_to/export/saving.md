@@ -1,4 +1,4 @@
-# Saving output 
+# Saving output
 
 In case you don't need an actual server or simply want to export a static snapshot of a panel app, you can use the ``save`` method, which allows exporting the app to a standalone HTML or PNG file.
 

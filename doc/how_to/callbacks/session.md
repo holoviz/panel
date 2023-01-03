@@ -1,6 +1,6 @@
 # Session callbacks
 
-Whenever a request is made to an endpoint that is serving a Panel application a new session is created. If you have to perform some setup or tear down tasks on session creation (e.g. logging) you can define `on_session_created` and `on_session_destroyed` callbacks. 
+Whenever a request is made to an endpoint that is serving a Panel application a new session is created. If you have to perform some setup or tear down tasks on session creation (e.g. logging) you can define `on_session_created` and `on_session_destroyed` callbacks.
 
 ## pn.state.on_session_created
 

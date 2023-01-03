@@ -10,7 +10,7 @@ import time
 def processing(event):
     # Some longer running task
     time.sleep(1)
-    
+
 button = pn.widgets.Button(name='Click me!')
 button.on_click(processing)
 
