@@ -56,9 +56,6 @@ when needed.
 State, Caching & Callbacks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-`Session State and Callbacks <Session_State_and_Callbacks.html>`_
- Learn how to access session state and schedule callbacks.
-
 `Asynchronous and Concurrent Processing <Async_and_Concurrency.html>`_
  Learn how leverage asynchronous and concurrent processing to make your app more responsive.
 
@@ -68,33 +65,11 @@ Export
 `Display & Export <Display_and_Export.html>`_
  Guide towards configuring and displaying output and exporting Panel apps and components.
 
-`Running Panel in the Browser with WASM <Running_in_Webassembly.html>`_
- Guide to embedding interactive Panel components in a web page or converting entire Panel applications to run entirely in your browser.
-
-Server Usage
-^^^^^^^^^^^^
-
-`Server configuration <Server_Configuration.html>`_
- A guide detailing how to launch and configure a server from the commandline or programmatically.
-
-`Server Deployment <Server_Deployment.html>`_
- Step-by-step guides for deploying Panel apps locally, on a web server or on common cloud providers.
-
-`Authentication <Authentication.html>`_
- Learn how to add an authentication component in front of your application.
-
-`Django Integration <Django.html>`_
- How to embed a Panel/Bokeh app inside a Django web-server deployment.
-
-`FastAPI Integration <FastAPI.html>`_
- How to embed a Panel/Bokeh app inside a FastAPI web-server deployment.
-
 Extending Panel
 ^^^^^^^^^^^^^^^
 
 `Building custom components <Custom_Components.html>`_
  Learn how to extend Panel by building custom components.
-
 
 .. toctree::
     :titlesonly:
@@ -112,13 +87,6 @@ Extending Panel
     Pipelines <Pipelines>
     Templates <Templates>
     Performance and Debugging <Performance_and_Debugging>
-    Session state & Callbacks <Session_State_and_Callbacks>
     Asynchronous and Concurrent Process <Async_and_Concurrency>
     Display & Export <Display_and_Export>
-    Running Panel in the Browser with WASM <Running_in_Webassembly>
-    Server Configuration <Server_Configuration>
-    Server Deployment <Server_Deployment>
-    Authentication <Authentication>
-    Django Integration <Django>
-    FastAPI Integration <FastAPI>
     Building Custom Components <Custom_Components>

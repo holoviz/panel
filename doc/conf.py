@@ -41,7 +41,6 @@ html_theme = "pydata_sphinx_theme"
 html_logo = "_static/logo_horizontal.png"
 html_favicon = "_static/icons/favicon.ico"
 
-
 html_theme_options = {
     "github_url": "https://github.com/holoviz/panel",
     "icon_links": [
