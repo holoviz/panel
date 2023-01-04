@@ -1,0 +1,168 @@
+# How to test data apps with Pytest
+
+Testing is key to developing robust and performant applications. You can test Panel data apps using
+Python and the test tools you know and love.
+
+Before we get started, you should
+
+```bash
+pip install panel pytest pytest-benchmark
+```
+
+## Create the app
+
+Lets create a simple data app for testing. The app sleeps 0.5 seconds (default) when loaded and
+when the button is clicked.
+
+![app.py](https://user-images.githubusercontent.com/42288570/210162656-ae771b17-d406-4aa2-8e58-182270fbd7c1.gif)
+
+Create the file `app.py` and add the code below.
+
+```python
+# app.py
+import time
+
+import panel as pn
+import param
+
+class App(pn.viewable.Viewer):
+    run = param.Event(doc="Runs for click_delay seconds when clicked")
+    runs = param.Integer(doc="The number of runs")
+    status = param.String("No runs yet")
+
+    load_delay = param.Number(0.5)
+    run_delay = param.Number(0.5)
+
+    def __init__(self, **params):
+        super().__init__(**params)
+
+        result = self._load()
+        self._time = time.time()
+
+
+        self._status_pane = pn.pane.Markdown(self.status, height=40, align="start", margin=(0,5,10,5))
+        self._result_pane = pn.Column(result)
+        self._view = pn.Column(
+            pn.Row(pn.widgets.Button.from_param(self.param.run, sizing_mode="fixed"), self._status_pane),
+            self._result_pane
+        )
+
+    def __panel__(self):
+        return self._view
+
+    def _start_run(self):
+        self.status = f"Running ..."
+        self._time = time.time()
+
+    def _stop_run(self):
+        now = time.time()
+        duration = round(now-self._time,3)
+        self._time = now
+        self.runs+=1
+        self.status=f"Finished run {self.runs} in {duration}sec"
+
+    @pn.depends("run", watch=True)
+    def _run_with_status_update(self):
+        self._start_run()
+        self._result_pane[:] = [self._run()]
+        self._stop_run()
+
+    @pn.depends("status", watch=True)
+    def _update_status_pane(self):
+        self._status_pane.object = self.status
+
+    def _load(self):
+        time.sleep(self.load_delay)
+        return "Loaded"
+
+    def _run(self):
+        time.sleep(self.run_delay)
+        return f"Result {self.runs+1}"
+
+if __name__.startswith("bokeh"):
+    pn.extension(sizing_mode="stretch_width")
+    App().servable()
+```
+
+Serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app)
+in your browser.
+
+## Create the tests
+
+Lets test
+
+- The initial *state* of the App
+- That the app *state* changes appropriately when the *Run* button is clicked.
+- That the duration of the *run* is as expected.
+
+Create the file `test_app.py` and add the code below.
+
+```python
+import pytest
+
+from app import App
+
+@pytest.fixture
+def app():
+    return App(sleep_delay=0.001, load_delay=0.001)
+
+def test_constructor(app):
+    """Tests default values of App"""
+    # Then
+    assert app.run == False
+    assert app.status == "No runs yet"
+    assert app.runs == 0
+
+def test_run(app):
+    """Tests behaviour when Run button is clicked once"""
+    # When
+    app.run=True
+    # Then
+    assert app.runs == 1
+    assert app.status.startswith("Finished run 1 in")
+
+def test_run_twice(app):
+    """Tests behaviour when Run button is clicked twice"""
+    # When
+    app.run=True
+    app.run=True
+    # Then
+    assert app.runs == 2
+    assert app.status.startswith("Finished run 2 in")
+
+def test_run_performance(app: App, benchmark):
+    """Test the duration when Run button is clicked"""
+    app.run_delay=0.3
+
+    def run():
+        app.run=True
+
+    benchmark(run)
+    assert benchmark.stats['min'] >= 0.3
+    assert benchmark.stats['max'] < 0.4
+```
+
+Lets run `pytest test_app.py`.
+
+```bash
+$ pytest test_app.py
+======================================================================= test session starts
+
+collected 4 items
+
+test_app.py ....                                                                                                                                             [100%]
+
+
+------------------------------------------------- benchmark: 1 tests ------------------------------------------------
+Name (time in ms)             Min       Max      Mean  StdDev    Median     IQR  Outliers     OPS  Rounds  Iterations
+---------------------------------------------------------------------------------------------------------------------
+test_run_performance     308.4448  311.8413  310.1718  1.2477  310.1379  1.5623       2;0  3.2240       5           1
+---------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+================================================================== 4 passed in 4.82s
+```
+
+Notice how we used the `benchmark` fixture of [pytest-benchmark](https://pytest-benchmark.readthedocs.io/en/latest/) to test the performance of the `run` event.
