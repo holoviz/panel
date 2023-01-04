@@ -2,7 +2,7 @@
 
 Testing is key to developing robust and performant applications. You can test Panel data apps using Python and the test tools you know and love.
 
-*Load testing* refers to testing the performance of the entire Panel application and the server(s) running it.
+*Load testing* means testing the performance of the entire Panel application and the server(s) running it.
 
 This kind of testing is really useful if you want to
 
@@ -12,7 +12,7 @@ This kind of testing is really useful if you want to
 Before we get started, you should
 
 ```bash
-pip install panel pytest locust pytest-playwright pytest-async loadwright==0.1.0
+pip install panel pytest locust pytest-playwright pytest-asyncio loadwright==0.1.0
 ```
 
 and install the browsers
