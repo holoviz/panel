@@ -4,7 +4,7 @@ Testing is key to developing robust and performant applications. You can test Pa
 
 Sometimes, for example when you create [custom components](https://panel.holoviz.org/user_guide/Custom_Components.html), it can be useful to also test the UI.
 
-For testing the UI we recommend the framework [Playwright](https://playwright.dev/) by Microsoft. Panel it self is tested by this framework.
+For testing the UI we recommend the framework [Playwright](https://playwright.dev/) by Microsoft. Panel itself is tested with this framework.
 
 Before you get started please install the packages
 

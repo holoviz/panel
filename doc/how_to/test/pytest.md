@@ -87,17 +87,17 @@ if __name__.startswith("bokeh"):
 Serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app)
 in your browser.
 
-## Create the tests
+## Create the unit tests
 
 Lets test
 
 - The initial *state* of the App
 - That the app *state* changes appropriately when the *Run* button is clicked.
-- That the duration of the *run* is as expected.
 
 Create the file `test_app.py` and add the code below.
 
 ```python
+# test_app.py
 import pytest
 
 from app import App
@@ -129,9 +129,37 @@ def test_run_twice(app):
     # Then
     assert app.runs == 2
     assert app.status.startswith("Finished run 2 in")
+```
 
+Lets run `pytest test_app.py`.
+
+```bash
+$ pytest test_app.py
+=================================== test session starts
+...
+collected 3 items
+
+test_app.py ...                                                                       [100%]
+
+=============================== 3 passed
+```
+
+## Create a performance test
+
+The performance of your data app is key to providing a good user experience. You can test the
+performance of functions and methods using
+[pytest-benchmark](https://github.com/ionelmc/pytest-benchmark).
+
+Lets test that
+
+- the duration of the *run* is as expected.
+
+Create the file `test_app_performance.py`.
+
+```python
+# test_app_performance.py
 def test_run_performance(app: App, benchmark):
-    """Test the duration when Run button is clicked"""
+    """Test the duration when the Run button is clicked"""
     app.run_delay=0.3
 
     def run():
@@ -142,27 +170,26 @@ def test_run_performance(app: App, benchmark):
     assert benchmark.stats['max'] < 0.4
 ```
 
-Lets run `pytest test_app.py`.
+Run `pytest test_app_performance.py`.
 
 ```bash
-$ pytest test_app.py
-======================================================================= test session starts
+$ pytest test_app_performance.py
+============================================================================================================================= test session starts
+...
+collected 1 item
 
-collected 4 items
-
-test_app.py ....                                                                                                                                             [100%]
-
+test_app_performance.py .                                                                                                                                                                                                                                                 [100%]
 
 ------------------------------------------------- benchmark: 1 tests ------------------------------------------------
 Name (time in ms)             Min       Max      Mean  StdDev    Median     IQR  Outliers     OPS  Rounds  Iterations
 ---------------------------------------------------------------------------------------------------------------------
-test_run_performance     308.4448  311.8413  310.1718  1.2477  310.1379  1.5623       2;0  3.2240       5           1
+test_run_performance     307.6315  316.8270  312.2731  4.2335  314.1614  7.5190       3;0  3.2023       5           1
 ---------------------------------------------------------------------------------------------------------------------
 
 Legend:
   Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
   OPS: Operations Per Second, computed as 1 / Mean
-================================================================== 4 passed in 4.82s
+========================================================================================================================= 1 passed in 3.23s
 ```
 
-Notice how we used the `benchmark` fixture of [pytest-benchmark](https://pytest-benchmark.readthedocs.io/en/latest/) to test the performance of the `run` event.
+Notice how we used the `benchmark` *fixture* of [pytest-benchmark](https://pytest-benchmark.readthedocs.io/en/latest/) to test the performance of the `run` event.
