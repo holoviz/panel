@@ -6,20 +6,20 @@ Whenever a Panel application is being served the `panel.state` object will provi
 :gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` HTTP Request
-:link: manual
+:link: request
 :link-type: doc
 
 How to access information about the HTTP request associated with a session.
 :::
 
-:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` url
+:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` URL state
 :link: url
 :link-type: doc
 
 How to access and manipulate the URL.
 :::
 
-:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` busy
+:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Busyiness state
 :link: busy
 :link-type: doc
 

@@ -19,14 +19,14 @@ If you do not want to maintain your own web server and/or set up complex reverse
 :link: commandline
 :link-type: doc
 
-Launch and configure a Panel application from the commandline.
+Discover how to launch and configure a Panel application from the commandline.
 :::
 
 :::{grid-item-card} {octicon}`code-square;2.5em;sd-mr-1` Launch programmatically
 :link: programmatic
 :link-type: doc
 
-Launch and configure a Panel application programmatically.
+Discover how to launch and configure a Panel application programmatically.
 :::
 
 :::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1` Serving multiple applications

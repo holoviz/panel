@@ -10,26 +10,36 @@ For guides on running and configuring a Panel server see the [server how-to guid
 :::{grid-item-card} Azure
 :link: azure
 :link-type: doc
+
+![Azure Logo](../../_static/logos/azure.png)
 :::
 
 :::{grid-item-card} Binder
 :link: binder
 :link-type: doc
+
+![Binder Logo](../../_static/logos/binder.png)
 :::
 
-:::{grid-item-card} Google Cloud
+:::{grid-item-card} Google Cloud Platform
 :link: gcp
 :link-type: doc
+
+![GCP Logo](../../_static/logos/gcp.png)
 :::
 
 :::{grid-item-card} Heroku
 :link: heroku
 :link-type: doc
+
+![Heroku Logo](../../_static/logos/heroku.png)
 :::
 
 :::{grid-item-card} Hugging Face
 :link: huggingface
 :link-type: doc
+
+![Hugging Face Logo](../../_static/logos/huggingface.png)
 :::
 
 ::::

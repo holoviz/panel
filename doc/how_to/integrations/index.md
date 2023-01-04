@@ -10,6 +10,8 @@ These guides will cover how to integrate Panel applications with various externa
 :link-type: doc
 
 Discover to run Panel applications alongside an existing Flask server.
+
+![Flask Logo](../../_static/logos/flask.png)
 :::
 
 :::{grid-item-card} FastAPI
@@ -17,6 +19,8 @@ Discover to run Panel applications alongside an existing Flask server.
 :link-type: doc
 
 Discover to run Panel applications alongside an existing FastAPI server.
+
+![FastAPI Logo](../../_static/logos/fastapi.png)
 :::
 
 :::{grid-item-card} Django
@@ -24,6 +28,8 @@ Discover to run Panel applications alongside an existing FastAPI server.
 :link-type: doc
 
 Discover to run Panel applications on a Django server (replacing the standard Tornado based server).
+
+![Django Logo](../../_static/logos/django.png)
 :::
 
 ::::
