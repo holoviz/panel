@@ -89,7 +89,7 @@ How to run Panel applications entirely in the browser using WebAssembly, Pyodide
 ::::
 
 
-## Server configuration and deployment 
+## Server configuration and deployment
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2

@@ -4,8 +4,8 @@ In the [Param how-to guide](../param/index), we have seen how Parameterized clas
 
 Here we will show how to link parameters of Panel objects, typically from widgets to other objects. To do this, we will introduce three API calls:
 
-* ``obj.link``: 
-* ``obj.param.watch``: 
+* ``obj.link``:
+* ``obj.param.watch``:
 * ``obj.jslink``: high-level API to link objects via JS code
 * ``obj.jscallback``: a lower-level API to define arbitrary Javascript callbacks
 
