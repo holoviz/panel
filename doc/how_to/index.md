@@ -2,10 +2,41 @@
 
 The Panel's How to Guides provide step by step recipes for solving essential problems and tasks. They are more advanced than the Getting Started material and assume some knowledge of how Panel works.
 
+## Basics
+
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Session callbacks and events
+:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` APIs
+:link: apis/index
+:link-type: doc
+
+Discover the different APIs offered by Panel.
+:::
+
+:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Parameters
+:link: param/index
+:link-type: doc
+
+Discover how to use Parameters with Panel.
+:::
+
+:::{grid-item-card} {octicon}`link;2.5em;sd-mr-1` Linking Parameters
+:link: links/index
+:link-type: doc
+
+Discover different ways of linking parameters in Python and Javascript.
+:::
+
+::::
+
+
+## Advanced
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Session callbacks and events
 :link: callbacks/index
 :link-type: doc
 
@@ -25,6 +56,14 @@ How to access state related to the user session, HTTP request and URL arguments.
 
 How to cache data across sessions and memoize the output of functions.
 :::
+
+::::
+
+
+## Display and Export
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1` Display and Preview output
 :link: display/index
@@ -46,6 +85,14 @@ How to export and save Panel applications as static files.
 
 How to run Panel applications entirely in the browser using WebAssembly, Pyodide and PyScript.
 :::
+
+::::
+
+
+## Server configuration and deployment 
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`server;2.5em;sd-mr-1` Server Configuration
 :link: server/index
@@ -77,11 +124,14 @@ How to configure OAuth to add authentication to a server deployment.
 
 ::::
 
+
 ```{toctree}
 :titlesonly:
 :hidden:
 :maxdepth: 2
 
+apis/index
+links/index
 callbacks/index
 state/index
 caching/index

@@ -19,9 +19,6 @@ the core guide sections.
 `Components <Components.html>`_
  An introduction to the three main component types: Widgets, Panes, and Panels.
 
-`APIs <APIs.html>`_
- An introduction to the different APIs panel provides to build interactive applications and dashboards.
-
 Reference guide
 ---------------
 
@@ -37,12 +34,6 @@ when needed.
 
 `Widgets <Widgets.html>`_
  Declaring and working with Panel widgets.
-
-`Parameters <Param.html>`_
- Using Param to express panels in a self-contained class.
-
-`Linking <Links.html>`_
- Defining links between Panel objects in Python and Javascript.
 
 `Templates <Templates.html>`_
  Learn how to compose multiple Panels into a custom HTML document.
