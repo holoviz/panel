@@ -31,45 +31,16 @@ Discover different ways of linking parameters in Python and Javascript.
 ::::
 
 
-## Advanced
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Session callbacks and events
-:link: callbacks/index
-:link-type: doc
-
-How to set up callbacks on session related events and periodic tasks.
-:::
-
-:::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Access Session State
-:link: state/index
-:link-type: doc
-
-How to access state related to the user session, HTTP request and URL arguments.
-:::
-
-:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Cache Data
-:link: caching/index
-:link-type: doc
-
-How to cache data across sessions and memoize the output of functions.
-:::
-
-::::
-
-
 ## Display and Export
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1` Display and Preview Output
+:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1` Display Components and Apps
 :link: display/index
 :link-type: doc
 
-How to display Panel components and apps in your favorite notebook or editor environment.
+How to display Panel components and effectively develop apps in your favorite notebook or editor environment.
 :::
 
 :::{grid-item-card} {octicon}`file;2.5em;sd-mr-1` Export and Save Output
@@ -84,6 +55,35 @@ How to export and save Panel applications as static files.
 :link-type: doc
 
 How to run Panel applications entirely in the browser using WebAssembly, Pyodide and PyScript.
+:::
+
+::::
+
+
+## Advanced
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Register session callbacks
+:link: callbacks/index
+:link-type: doc
+
+How to set up callbacks on session related events (e.g. on page load or when a session is destroyed) and define periodic tasks.
+:::
+
+:::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Access Session State
+:link: state/index
+:link-type: doc
+
+How to access state related to the user session, HTTP request and URL arguments.
+:::
+
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Cache Data
+:link: caching/index
+:link-type: doc
+
+How to cache data across sessions and memoize the output of functions.
 :::
 
 ::::
@@ -133,11 +133,12 @@ How to configure OAuth to add authentication to a server deployment.
 apis/index
 param/index
 links/index
+display/index
+export/index
+wasm/index
 callbacks/index
 state/index
 caching/index
-export/index
-wasm/index
 server/index
 integrations/index
 deployment/index
