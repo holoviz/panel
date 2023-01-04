@@ -4,7 +4,7 @@ Linking objects in Python is often very convenient, because it allows writing co
 
 To begin with let us see how we can express simple links between standard Panel components before digging into some more specific and complex examples.
 
-### Linking model properties
+## Linking model properties
 
 Let us start by rehashing the example from above, linking the ``value`` of the ``TextInput`` widget to the ``object`` property of the ``Markdown`` pane:
 
@@ -21,7 +21,7 @@ pn.Row(text_input, markdown)
 
 As you can see the signature is identical to the ``link`` example above, but here Panel translates the specification into a JS code snippet which syncs the properties on the underlying Bokeh properties. But now if you edit the widget and press Return, the Markdown display will automatically update even in a static HTML web page.
 
-### Linking bi-directionally
+## Linking bi-directionally
 
 When you want the source and target to be linked bi-directionally, i.e. a change in one will automatically trigger a change in the other you can simply set the `bidirectional` argument:
 
@@ -35,7 +35,7 @@ t1.jslink(t2, value='value', bidirectional=True)
 pn.Row(t1, t2)
 ```
 
-### Linking using custom JS code
+## Linking using custom JS code
 
 Since everything happens in JS for a `jslink`, we can't provide a Python callback. Instead, we can define a JS code snippet, which is executed when a property changes. E.g. we can define a little code snippet which adds HTML bold tags (``<b>``) around the text before setting it on the target. The code argument should map from the parameter/property on the source object to the JS code snippet to execute:
 
@@ -61,7 +61,7 @@ Of course, you can still update the value from Python, and it will automatically
 text_input.value = "Markdown display"
 ```
 
-### Open URL
+## Open URL
 
 As an example of using `jslink`, here we open a URL from the ``TextInput`` widget value. A new browser tab will open with the provided URL:
 

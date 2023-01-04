@@ -51,9 +51,9 @@ To get started with Pyodide simply follow their [Getting started guide](https://
 
 The app should look like this
 
-![Panel Pyodide App](../_static/images/pyodide_app_simple.png)
+![Panel Pyodide App](../../_static/images/pyodide_app_simple.png)
 
-:::{admonition}
+:::{admonition} warn
 The default bokeh and panel packages are very large, therefore we recommend you pip install specialized wheels:
 
 ```javascript

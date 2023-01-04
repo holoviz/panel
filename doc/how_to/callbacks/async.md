@@ -1,4 +1,4 @@
-## Asynchronous callbacks
+# Asynchronous callbacks
 
 Python has natively supported asynchronous functions since version 3.5, for a quick overview of some of the concepts involved see [the Python documentation](https://docs.python.org/3/library/asyncio-task.html). For full asyncio support in Panel you will have to use `python>=3.8`.
 

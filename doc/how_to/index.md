@@ -14,11 +14,11 @@ The Panel's How to Guides provide step by step recipes for solving essential pro
 Discover the different APIs offered by Panel and how to choose between them.
 :::
 
-:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1` Declaring UIs with parameters
+:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1` Declare UIs with parameters
 :link: param/index
 :link-type: doc
 
-Discover how to use Parameters with Panel.
+Discover how to use Parameters with Panel to automatically generate UIs without writing GUI code.
 :::
 
 :::{grid-item-card} {octicon}`link;2.5em;sd-mr-1` Link Parameters
