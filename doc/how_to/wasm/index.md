@@ -20,7 +20,7 @@ This guide will take you through the process of either
 :link: convert
 :link-type: doc
 
-Discover how to convert existing Panel applications to WASM.
+Discover how to convert existing Panel applications to WebAssembly.
 :::
 
 :::{grid-item-card} {octicon}`code;2.5em;sd-mr-1` Use from WASM

@@ -2,14 +2,7 @@
 
 In the [Param how-to guide](../param/index), we have seen how Parameterized classes can be used to automatically generate a graphical user interface for Python code without any additional effort. If you need full control over how your GUI is set up, you can instead manually define widgets linking directly to other objects using either Python or JavaScript (JS) callbacks. Python callbacks are simple for Python users to write and can directly access Python data structures, while JS callbacks can directly manipulate the displayed HTML document and allow setting up dynamic behavior even for exported HTML files (with no Python process running).
 
-Here we will show how to link parameters of Panel objects, typically from widgets to other objects. To do this, we will introduce three API calls:
-
-* ``obj.link``:
-* ``obj.param.watch``:
-* ``obj.jslink``: high-level API to link objects via JS code
-* ``obj.jscallback``: a lower-level API to define arbitrary Javascript callbacks
-
-::::{grid} 1 2 2 4
+::::{grid} 1 3 3 3
 :gutter: 1 1 1 2
 
 :::{grid-item-card} Watchers
@@ -59,5 +52,5 @@ watchers
 links
 jslinks
 link_plots
-jscallback
+jscallbacks
 ```

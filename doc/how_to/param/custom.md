@@ -5,6 +5,9 @@ In the previous section we saw how parameters can automatically be turned into w
 As an example, we can map a string and a number Selector to a `RadioButtonGroup` and `DiscretePlayer` respectively.
 
 ```{pyodide}
+import panel as pn
+import param
+
 class CustomExample(param.Parameterized):
     """An example Parameterized class"""
 

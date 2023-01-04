@@ -131,6 +131,7 @@ How to configure OAuth to add authentication to a server deployment.
 :maxdepth: 2
 
 apis/index
+param/index
 links/index
 callbacks/index
 state/index

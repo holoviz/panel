@@ -5,6 +5,8 @@ The ``link`` method used above provides a high-level API to link to parameters, 
 To demonstrate ``param.watch``, let us set up three different models: 1) a `Markdown` pane to display the possible options, 2) a ``Markdown`` pane to display the _selected_ options, and 3) a ``ToggleGroup`` widget that allows us to toggle between a number of options:
 
 ```{pyodide}
+import panel as pn
+
 selections = pn.pane.Markdown(object='')
 selected = pn.pane.Markdown(object='')
 toggle = pn.widgets.ToggleGroup(options=['A', 'B'])
