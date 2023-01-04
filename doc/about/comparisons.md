@@ -1,9 +1,6 @@
-Comparisons
-===========
+# Comparisons
 
-
-Comparing Panel and Bokeh
--------------------------
+## Comparing Panel and Bokeh
 
 Panel and Bokeh can both be used to create dashboards in Python, but are intended for different uses and different audiences:
 
@@ -14,9 +11,7 @@ Panel and Bokeh can both be used to create dashboards in Python, but are intende
 - Bokeh focuses on providing lower-level primitives that can be used to create any dashboard with enough effort, while Panel focuses on making common data-science tasks and making typical types of apps easier.
 
 
-
-Comparing Panel and Dash
-------------------------
+## Comparing Panel and Dash
 
 Panel and Dash can both be used to create dashboards in Python, but take very different approaches:
 
@@ -33,8 +28,7 @@ Panel and Dash can both be used to create dashboards in Python, but take very di
   * Panel's approach makes it easy to do server-side caching of intermediate computations for each user, which can make complex processing pipelines much more responsive. For instance, when used with a Datashader pipeline where the server renders an image from data that is never transmitted to the client, only the stages that have actually changed need to be re-run when a user interacts with the plot, making rendering changes like selecting a colormap almost instantaneous because the already aggregated data can be reused. With Dash, the server does not retain a copy of the intermediate data in such a pipeline, so when a new request comes in, it has to recompute each of the stages even when the data involved has not changed.  The `Datashader example dashboard <https://examples.pyviz.org/datashader_dashboard/dashboard.html>`__ shows how to use this intermediate-value caching to provide the fastest possible updates for a given user action, only re-running the computation actually needed to satisfy the request, re-using cached values stored on the server when appropriate.
 
 
-Comparing Panel and ipywidgets
-------------------------------
+## Comparing Panel and ipywidgets
 
 Both Panel and ipywidgets (aka Jupyter Widgets) allow Python users to work with custom widgets and create apps and dashboards from Python, both in Jupyter notebooks and in standalone servers (when paired with Voila). But Panel and ipywidgets are based on different, independently developed technologies for doing so, with some implications:
 
@@ -51,9 +45,7 @@ Both Panel and ipywidgets (aka Jupyter Widgets) allow Python users to work with 
 - As of 9/2020, both types of widgets are now fully interoperable; you can use Panel or Bokeh widgets and panes in an ipywidgets-based app using `jupyter_bokeh <https://github.com/bokeh/jupyter_bokeh>`_ and you can use ipywidgets in a Panel or Bokeh app using `ipywidgets_bokeh <https://github.com/bokeh/ipywidgets_bokeh>`_.  So in practice, you can now mix and match content from either ecosystem as needed, choosing your "native" ecosystem based on other factors like deployment options (see below).
 
 
-
-Comparing Panel and Voila
--------------------------
+## Comparing Panel and Voila
 
 Voila is a technology for deploying Jupyter notebooks (with or without Panel code) as standalone web pages backed by Python. Voila is thus one way you can deploy your Panel apps, your ipywidgets-based apps, or any other content visible in a Jupyter notebook (including multiple languages, like R or C++). Voila is an alternative to the Bokeh Server component that is available through ``panel serve``; Panel works with either one, and you can deploy with *either* Bokeh Server (panel serve) or Voila. To serve a Panel app with Voila, just install `jupyter_bokeh <https://github.com/bokeh/jupyter_bokeh>`__ and do ``pn.ipywidget(panel_obj)``, which makes an ipywidget out of your Panel object that Voila (or Jupyter itself) can then display and let you interact with.
 
@@ -70,8 +62,7 @@ The other major difference between Bokeh Server and Voila is the way they proces
 Panel takes a different approach, in that output from a notebook cell needs to be explicitly wrapped in a Panel object and marked as being "servable"; cell outputs and Markdown cells by default are shown only in the notebook, and not with ``panel serve``. Panel in fact entirely ignores the fact that your notebook is organized into cells; it simply processes all the cells as Python code, and serves all the items that ended up being marked "servable". Although this approach means editing the original notebook before you can see a dashboard, it makes it fully practical for the same notebook to serve both an exploratory or storytelling purpose (in Jupyter) and act as a dashboard deployment (of a designated subset of the functionality). The Panel developers very often use this functionality to provide detailed documentation for any given panel, with the cell-by-cell output showing the dataset, intermediate steps, interesting features, and how-tos, while the final deployed dashboard focuses on the final result, with the content in each case organized to best suit its purpose.
 
 
-Comparing Panel and streamlit
------------------------------
+## Comparing Panel and streamlit
 
 streamlit is an alternative to all of the above packages. Like Jupyter, streamlit provides an interactive, incremental way to build apps. streamlit works with Python text files written in a separate editor, while Jupyter uses a web-based notebook cell editor. Although a web-based editor makes it simple to work locally on remote files, using a local Python text file allows users to maximize their productivity by choosing their own favorite editor. Dash, Panel, and Bokeh all also support bare Python files developed in a local editor, and like streamlit they can all also watch that file and automatically re-run the file when you change it in the editor (e.g. for Panel or Bokeh, launch ``bokeh serve file.py --dev`` to watch the Python file and re-launch the served app on any changes).
 

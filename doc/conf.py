@@ -73,7 +73,7 @@ extensions += [
 ]
 napoleon_numpy_docstring = True
 
-myst_enable_extensions = ["colon_fence"]
+myst_enable_extensions = ["colon_fence", "deflist"]
 
 nbsite_gallery_conf = {
     'github_org': 'holoviz',

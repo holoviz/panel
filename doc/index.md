@@ -154,14 +154,13 @@ alt: Blackstone Logo
 :maxdepth: 2
 
 self
-getting_started/index.md
-how_to/index.md
-user_guide/index.rst
-gallery/index.rst
-reference/index.rst
-developer_guide/index.rst
-api/index.rst
-releases.md
-FAQ.rst
+getting_started/index
+how_to/index
+gallery/index
+reference/index
+developer_guide/index
+api/index
+releases
+FAQ
 about/index.rst
 ```
