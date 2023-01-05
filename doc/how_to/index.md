@@ -86,21 +86,21 @@ How to access state related to the user session, HTTP request and URL arguments.
 How to cache data across sessions and memoize the output of functions.
 :::
 
-:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Improve Performance
+:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Improve Performance
 :link: concurrency/index
 :link-type: doc
 
 Discover some tips and tricks instructing you on how you can improve the performance of your application.
 :::
 
-:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Improve Scalability
+:::{grid-item-card} {octicon}`duplicate;2.5em;sd-mr-1` Improve Scalability
 :link: concurrency/index
 :link-type: doc
 
 Discover various approaches telling you how to improve the scalability of your Panel application.
 :::
 
-:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Enable Profiling & Debugging
+:::{grid-item-card} {octicon}`meter;2.5em;sd-mr-1` Enable Profiling & Debugging
 :link: profiling/index
 :link-type: doc
 

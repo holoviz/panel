@@ -20,7 +20,7 @@ The Cheat Sheet provides a high-level overview of some of the most important fun
 :link: config
 :link-type: doc
 
-The `panel.config` provides a way to set high-level configuration options. 
+The `panel.config` provides a way to set high-level configuration options.
 :::
 
 :::{grid-item-card} {octicon}`link;2.5em;sd-mr-1` State

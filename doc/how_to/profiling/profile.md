@@ -23,7 +23,7 @@ In addition to profiling the launch step of an application it is often also impo
 def get_clustering(event):
     # some expensive calculation
     ...
-    
+
 widget.param.watch(my_callback, 'value')
 ```
 

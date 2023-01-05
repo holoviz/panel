@@ -6,6 +6,7 @@ As a straightforward example without any additional dependencies we will write a
 
 ```{pyodide}
 import panel as pn
+import param
 import numpy as np
 
 class Sine(param.Parameterized):

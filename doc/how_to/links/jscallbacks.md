@@ -5,6 +5,8 @@ Sometimes defining a simple link between to objects is not sufficient, e.g. when
 To implement this we define a `jscallback`, which is triggered when the `Button.clicks` property changes and provide a number of `args` allowing us to access the values of the various widgets:
 
 ```{pyodide}
+import panel as pn
+
 value1 =   pn.widgets.Spinner(value=0, width=75)
 operator = pn.widgets.Select(value='*', options=['*', '+'], width=50, align='center')
 value2 =   pn.widgets.Spinner(value=0, width=75)

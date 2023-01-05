@@ -7,6 +7,8 @@ Below we will create a little application to demonstrate this, we will create a 
 ```{pyodide}
 import time
 
+import panel as pn
+
 def processing(event):
     # Some longer running task
     time.sleep(1)

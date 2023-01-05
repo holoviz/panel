@@ -37,7 +37,7 @@ class MPGExplorer(param.Parameterized):
 
     @param.depends('x', 'y', 'color') # optional in this case
     def plot(self):
-        return autompg.hvplot.scatter(x, y, c=color, padding=0.1)
+        return autompg.hvplot.scatter(self.x, self.y, c=self.color, padding=0.1)
 
 explorer = MPGExplorer()
 

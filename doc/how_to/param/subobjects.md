@@ -3,6 +3,9 @@
 ``Parameterized`` objects often have parameter values which are themselves ``Parameterized`` objects, forming a tree-like structure. Panel allows you to edit not just the main object's parameters but also lets you drill down to the subobject. Let us first define some classes declaring a hierarchy of Shape classes which draw a Bokeh plot of the selected shape:
 
 ```{pyodide}
+import panel
+import param
+
 from bokeh.plotting import figure
 
 class Shape(param.Parameterized):

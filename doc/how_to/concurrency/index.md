@@ -4,7 +4,7 @@ When deploying a Panel application to be accessed by multiple users they will of
 
 1. `Load balancing`: A load balancer distributes network traffic between multiple instances of the Panel application. This ensures that the load is distributed across multiple servers but also requires a lot configuration and resources.
 2. `Multi-process server instance`: Launches your app with multiple processes on a single machine. Much simpler to set up than a load balancer but the load is not distributed equally across processes and you are limited by the compute and memory resources on one machine.
-2. `Threading`: Attempts to distribute processing across multiple threads. Effectiveness depends on the operations being performed, I/O bound and CPU bound operations that release the GIL can easily be made concurrent in this way. 
+2. `Threading`: Attempts to distribute processing across multiple threads. Effectiveness depends on the operations being performed, I/O bound and CPU bound operations that release the GIL can easily be made concurrent in this way.
 3. `AsyncIO`: Allows asynchronously processing I/O bound operations. Effective for many concurrent I/O operations but requires rewriting your application and callbacks to make use of `async`/`await` paradigm.
 
 ## Scaling across processes

@@ -19,6 +19,7 @@ In this approach we once again define the widgets. Unlike in other approaches we
 
 ```{pyodide}
 import hvplot.pandas
+import panel as pn
 
 from bokeh.sampledata.autompg import autompg
 

@@ -25,7 +25,7 @@ def callback():
         text.value = "Queue empty"
         c.release()
         time.sleep(1)
-        
+
 thread = threading.Thread(target=callback)
 thread.start()
 ```

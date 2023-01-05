@@ -20,7 +20,7 @@ pn.extension('vega', 'tabulator')
 
 ## Display output
 
-One of the major benefits of notebook environments is that they support rich output. This means that if you place an object with rich output at the end of a cell the notebook will figure out how to render the rich representation. Panel uses this mechanism to ensure that all components return a rich representation: 
+One of the major benefits of notebook environments is that they support rich output. This means that if you place an object with rich output at the end of a cell the notebook will figure out how to render the rich representation. Panel uses this mechanism to ensure that all components return a rich representation:
 
 ```{pyodide}
 pane = pn.panel('<marquee>Here is some custom HTML</marquee>')
@@ -41,7 +41,7 @@ To avoid having to put a Panel on the last line of a notebook cell, e.g. to disp
 ```{pyodide}
 def display_marquee(text):
     display(pn.panel('<marquee>{text}</marquee>'.format(text=text)))
-    
+
 display_marquee('This Panel was displayed from within a function')
 ```
 
@@ -70,7 +70,7 @@ Accordion(children=[pn.ipywidget(pane)])
 ```
 
 To use Panel's ipywidgets support in JupyterLab, the following extensions have to be installed:
- 
+
 ```
 jupyter labextension install @jupyter-widgets/jupyterlab-manager
 jupyter labextension install @bokeh/jupyter_bokeh
