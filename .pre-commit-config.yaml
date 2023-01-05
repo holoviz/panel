@@ -26,6 +26,10 @@ repos:
     hooks:
       - id: isort
         name: isort (python)
+-   repo: https://github.com/hoxbro/clean_notebook
+    rev: 0.1.5
+    hooks:
+      - id: clean-notebook
 ci:
   autofix_prs: false
   autoupdate_schedule: quarterly
