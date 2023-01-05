@@ -31,10 +31,11 @@ color = pn.widgets.ColorPicker(name='Color', value='#880588')
 
 layout = pn.Row(
     pn.Column('## MPG Explorer', x, y, color),
-    autompg_plot(x.value, y.value, color.value))
+    autompg.hvplot.scatter(x.value, y.value, c=color.value, padding=0.1)
+)
 
 def update(event):
-    layout[1].object = autompg_plot(x.value, y.value, color.value)
+    layout[1].object = autompg.hvplot.scatter(x.value, y.value, c=color.value, padding=0.1)
 
 x.param.watch(update, 'value')
 y.param.watch(update, 'value')

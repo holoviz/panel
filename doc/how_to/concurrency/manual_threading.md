@@ -19,7 +19,7 @@ def callback():
         c.acquire()
         for i, event in enumerate(queue):
             text.value = f'Processing item {i+1} of {len(queue)} items in queue.'
-	    ... # Do something with the event
+            ... # Do something with the event
             time.sleep(2)
         queue.clear()
         text.value = "Queue empty"

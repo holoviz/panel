@@ -39,7 +39,7 @@ However it is also possible to explicitly construct a widget from a parameter us
 
 
 ```{pyodide}
-pn.widgets.IntSlider.from_param(Example.param.unbounded_int, start=0, end=100)
+pn.widgets.RadioBoxGroup.from_param(CustomExample.param.select_string, inline=True)
 ```
 
 ## Custom name

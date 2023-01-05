@@ -26,7 +26,7 @@ select = pn.widgets.Select(options={
     'Penguins': 'https://raw.githubusercontent.com/mwaskom/seaborn-data/master/penguins.csv',
     'Diamonds': 'https://raw.githucbusercontent.com/mwaskom/seaborn-data/master/diamonds.csv',
     'Titanic': 'https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv',
-    'MPG': 'https://raw.githubusercontent.com/mwaskom/seaborn-data/master/mpg.csv'
+    'MPG': 'https://raw.githubusercontent.com/mwaskom/seaborn-data/mastser/mpg.csv'
 })
 
 @pn.cache

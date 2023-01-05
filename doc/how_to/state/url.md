@@ -29,7 +29,7 @@ By default the current [query parameters](https://en.wikipedia.org/wiki/Query_st
 
 We will start by defining a `Parameterized` class:
 
-```{pyodide}
+```python
 import param
 import panel as pn
 
@@ -42,13 +42,13 @@ class QueryExample(param.Parameterized):
 
 Now we will use the `pn.state.location` object to sync it with the URL query string (note that in a notebook environment `pn.state.location` is not initialized until the first plot has been displayed). The sync method takes the Parameterized object or instance to sync with as the first argument and a list or dictionary of the parameters as the second argument. If a dictionary is provided it should map from the Parameterized object's parameters to the query parameter name in the URL:
 
-```{pyodide}
+```python
 pn.state.location.sync(QueryExample, {'integer': 'int', 'string': 'str'})
 ```
 
 Now the Parameterized object is bi-directionally linked to the URL query parameter, if we set a query parameter in Python it will update the URL bar and when we specify a URL with a query parameter that will be set on the Parameterized, e.g. let us set the 'integer' parameter and watch the URL in your browser update:
 
-```{pyodide}
+```python
 QueryExample.integer = 5
 ```
 
