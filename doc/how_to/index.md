@@ -1,6 +1,6 @@
 # How-to Guide
 
-The Panel's How to Guides provide step by step recipes for solving essential problems and tasks. They are more advanced than the Getting Started material and assume some knowledge of how Panel works.
+The Panel How-to Guides provide step by step recipes for solving essential problems and tasks. They are more advanced than the Getting Started material and assume some knowledge of how Panel works.
 
 ## Basics
 
@@ -65,7 +65,7 @@ How to run Panel applications entirely in the browser using WebAssembly, Pyodide
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Register session callbacks
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Register Session Callbacks
 :link: callbacks/index
 :link-type: doc
 
@@ -84,6 +84,27 @@ How to access state related to the user session, HTTP request and URL arguments.
 :link-type: doc
 
 How to cache data across sessions and memoize the output of functions.
+:::
+
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Improve Performance
+:link: concurrency/index
+:link-type: doc
+
+Discover some tips and tricks instructing you on how you can improve the performance of your application.
+:::
+
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Improve Scalability
+:link: concurrency/index
+:link-type: doc
+
+Discover various approaches telling you how to improve the scalability of your Panel application.
+:::
+
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Enable Profiling & Debugging
+:link: profiling/index
+:link-type: doc
+
+Discover how to profile and debug your application using the admin dashboard and other tools.
 :::
 
 ::::
@@ -139,6 +160,9 @@ wasm/index
 callbacks/index
 state/index
 caching/index
+performance/index
+concurrency/index
+profiling/index
 server/index
 integrations/index
 deployment/index

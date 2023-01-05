@@ -13,9 +13,6 @@ To get an initial understanding of the core concepts and components of Panel and
 how to use it in practice, it is recommended that all users go through each of
 the core guide sections.
 
-`Overview <Overview.html>`_
- A high-level overview of the key concepts behind Panel.
-
 `Components <Components.html>`_
  An introduction to the three main component types: Widgets, Panes, and Panels.
 
@@ -41,21 +38,6 @@ when needed.
 `Pipelines <Pipelines.html>`_
  Using Parameterized classes to declare linear workflows containing multiple panels.
 
-`Performance, Profiling and Debugging <Performance_and_Debugging.html>`_
- Learn how to speed up your application and find issues.
-
-State, Caching & Callbacks
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-`Asynchronous and Concurrent Processing <Async_and_Concurrency.html>`_
- Learn how leverage asynchronous and concurrent processing to make your app more responsive.
-
-Export
-^^^^^^
-
-`Display & Export <Display_and_Export.html>`_
- Guide towards configuring and displaying output and exporting Panel apps and components.
-
 Extending Panel
 ^^^^^^^^^^^^^^^
 
@@ -67,17 +49,10 @@ Extending Panel
     :hidden:
     :maxdepth: 2
 
-    Overview <Overview>
     Components <Components>
-    APIs <APIs>
     Customization <Customization>
     Interact <Interact>
     Widgets <Widgets>
-    Parameters <Param>
-    Linking <Links>
     Pipelines <Pipelines>
     Templates <Templates>
-    Performance and Debugging <Performance_and_Debugging>
-    Asynchronous and Concurrent Process <Async_and_Concurrency>
-    Display & Export <Display_and_Export>
     Building Custom Components <Custom_Components>

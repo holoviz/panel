@@ -9,7 +9,7 @@ Panel can be used to make a first pass at an app or dashboard in minutes, while 
 :link: reactive
 :link-type: doc
 
-Linking functions or methods to widgets using ``pn.bind`` or the equivalent ``pn.depends`` decorator, declaring that the function should be re-run when those widget values change.
+Linking functions or methods to widgets using ``pn.bind`` or the equivalent ``pn.depends`` decorator.
 :::
 
 :::{grid-item-card} Interact functions
