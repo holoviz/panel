@@ -842,6 +842,16 @@ class _state(param.Parameterized):
         return self._decode_cookie('refresh_token')
 
     @property
+    def in_app(self):
+        """
+        Determines whether we are in an application context.
+        """
+        try:
+            return inspect.stack()[1].frame.f_globals['__name__'].startswith('bokeh_app_')
+        except Exception:
+            return False
+
+    @property
     def app_url(self) -> str | None:
         if not self.curdoc:
             return
