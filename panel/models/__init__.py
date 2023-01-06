@@ -6,7 +6,6 @@ files.
 """
 
 from .datetime_picker import DatetimePicker  # noqa
-from .idom import IDOM  # noqa
 from .ipywidget import IPyWidget  # noqa
 from .layout import Card  # noqa
 from .location import Location  # noqa

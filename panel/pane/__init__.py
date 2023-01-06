@@ -37,7 +37,6 @@ from .deckgl import DeckGL  # noqa
 from .echarts import ECharts  # noqa
 from .equation import LaTeX  # noqa
 from .holoviews import HoloViews, Interactive  # noqa
-from .idom import IDOM  # noqa
 from .image import (  # noqa
     GIF, ICO, JPG, PDF, PNG, SVG,
 )
@@ -54,6 +53,16 @@ from .plotly import Plotly  # noqa
 from .streamz import Streamz  # noqa
 from .vega import Vega  # noqa
 from .vtk import VTK, VTKVolume  # noqa
+
+
+class IDOM:
+    def __init__(self, *args, **kwargs):
+        raise RuntimeError(
+            "The IDOM pane was deprecated from Panel in version 1.0 "
+            "because it was no longer maintained. For a Pythonic "
+            "React implementation take a look at Reacton, which is "
+            "fully supported in Panel."
+        )
 
 __all__ = (
     "Alert",
