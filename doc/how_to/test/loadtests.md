@@ -1,21 +1,19 @@
 # How to test the load of data apps with Locust and Playwright
 
-Testing is key to developing robust and performant applications. You can test Panel data apps using Python and the test tools you know and love.
-
 *Load testing* means testing the performance of the entire Panel application and the server(s) running it.
 
 This kind of testing is really useful if you want to
 
-- develop fast and snappy apps and/ or
-- develop apps that scale to many users
+- develop fast and snappy applications and/ or
+- develop applications that scale to many users
 
-Before we get started, you should
+Before you get started ensure you have installed the required dependencies:
 
 ```bash
 pip install panel pytest locust pytest-playwright pytest-asyncio loadwright==0.1.0
 ```
 
-and install the browsers
+and ensure `playwright` sets up the browsers it will use to display the applications:
 
 ```bash
 playwright install
@@ -25,9 +23,9 @@ playwright install
 
 Lets create a simple data app for testing. The app sleeps 0.5 seconds (default) when loaded and when the button is clicked.
 
-![app.py](https://user-images.githubusercontent.com/42288570/210162656-ae771b17-d406-4aa2-8e58-182270fbd7c1.gif)
+![app.py](https://assets.holoviz.org/panel/gifs/pytest.gif)
 
-Create the file `app.py` and add the code below.
+Create the file `app.py` and add the code below:
 
 ```python
 # app.py
@@ -90,19 +88,19 @@ class App(pn.viewable.Viewer):
         time.sleep(self.run_delay)
         return f"Result {self.runs+1}"
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
     App().servable()
 ```
 
 Serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app) in your browser.
 
-### Create the conftest.py
+## Create a conftest.py
 
-The `conftest.py` file contains pytest fixtures. it will
+The `conftest.py` file should be placed alongside your tests and will be loaded automatically by pytest. It is often used to declare [fixtures](https://docs.pytest.org/en/6.2.x/fixture.html) that allow you declare reusable components. It will:
 
-- provide us with an available `port`
-- clean up the Panel server after each test.
+- provide us with an available `port`.
+- clean up the Panel *state* after each test.
 
 Create the file `conftest.py` and add the code below.
 
@@ -127,24 +125,14 @@ def server_cleanup():
     try:
         yield
     finally:
-        pn.state.kill_all_servers()
-        pn.state._indicators.clear()
-        pn.state._locations.clear()
-        pn.state._templates.clear()
-        pn.state._views.clear()
-        pn.state._loaded.clear()
-        pn.state.cache.clear()
-        pn.state._scheduled.clear()
-        if pn.state._thread_pool is not None:
-            pn.state._thread_pool.shutdown(wait=False)
-            pn.state._thread_pool = None
+        pn.state.reset()
 ```
 
-For more inspiration check out the [Panel `conftest.py` file](https://github.com/holoviz/panel/blob/master/panel/tests/conftest.py)
+For more inspiration see the [Panel `conftest.py` file](https://github.com/holoviz/panel/blob/main/panel/tests/conftest.py)
 
 ## Test the initial load with Locust
 
-[Locust](https://locust.io/) can help you the the behaviour of users that loads (i.e. requests) your Panel app. Locust provides many useful performance related statistics and charts.
+[Locust](https://locust.io/) can help you test the behaviour of users that load (i.e. requests) your Panel app. Locust provides many useful performance related statistics and charts.
 
 Create the file `locustfile.py` and add the code below.
 
@@ -158,7 +146,7 @@ class RequestOnlyUser(HttpUser):
         self.client.get("/app")
 ```
 
-Start the Panel server
+Start the Panel server:
 
 ```bash
 panel serve app.py
@@ -170,26 +158,22 @@ Start the Locust server
 locust --host http://localhost:5006
 ```
 
-Open [http://localhost:8089](http://localhost:8089). Keep the default settings and click the *Start swarming* button. This should look like the below.
+Open [http://localhost:8089](http://localhost:8089). Keep the default settings and click the *Start swarming* button. This should look like the below:
 
-![panel-locust.gif](https://user-images.githubusercontent.com/42288570/209923009-521554d4-dcf8-49b3-8cca-c714037af901.gif)
+![panel-locust.gif](https://assets.holoviz.org/panel/gifs/locust.gif)
 
-The median response time (on my laptop) is ~530ms when one user requests the page every second.
-
-If you try to increase to 10 simultanous users you will see a median response time of ~5300ms. If this is a likely scenario, you will have to look into how to improve the performance of your app.
-
-According to [locust-plugins](https://github.com/SvenskaSpel/locust-plugins) it should also be possible to combine Locust and [Playwright](https://playwright.dev/python/docs/intro) to test more advanced interactions. Unfortunately it does not work for me. You can check out the issue [here](https://github.com/SvenskaSpel/locust-plugins/issues/101#issuecomment-1367216919).
+The median response time is ~530ms when one user requests the page every second. If you try to increase to 10 simultanous users you will see a median response time of ~5300ms. If this is a likely scenario, you will have to look into how to improve the performance of your app.
 
 ## Test advanced interactions with Loadwright
 
 [Loadwright](https://github.com/awesome-panel/loadwright) is a young load testing framework built on top of Playwright and Panel.
 
-Lets test a user that
+It lets test a user that:
 
 - Opens the app in the browser
 - Clicks the *Run* button `n_clicks` times.
 
-Create the file `test_loadwright.py` and add the code below.
+Create the file `test_loadwright.py` and add the code below:
 
 ```python
 # test_loadwright.py

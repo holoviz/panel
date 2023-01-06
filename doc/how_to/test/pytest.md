@@ -1,9 +1,8 @@
-# How to test data apps with Pytest
+# Test Applications with Pytest
 
-Testing is key to developing robust and performant applications. You can test Panel data apps using
-Python and the test tools you know and love.
+Testing is key to developing robust and performant applications. This how-to will take you through setting up basic pytest based unit tests for an application.
 
-Before we get started, you should
+Before we get started, make sure you have installed the required dependencies:
 
 ```bash
 pip install panel pytest pytest-benchmark
@@ -11,12 +10,11 @@ pip install panel pytest pytest-benchmark
 
 ## Create the app
 
-Lets create a simple data app for testing. The app sleeps 0.5 seconds (default) when loaded and
-when the button is clicked.
+Let's create a simple data app for testing. The app sleeps 0.5 seconds (default) when loaded and when the button is clicked.
 
-![app.py](https://user-images.githubusercontent.com/42288570/210162656-ae771b17-d406-4aa2-8e58-182270fbd7c1.gif)
+![app.py](https://assets.holoviz.org/panel/gifs/pytest.gif)
 
-Create the file `app.py` and add the code below.
+Create the file `app.py` and add the code below (don't worry about the contents of the app for now):
 
 ```python
 # app.py
@@ -26,6 +24,7 @@ import panel as pn
 import param
 
 class App(pn.viewable.Viewer):
+
     run = param.Event(doc="Runs for click_delay seconds when clicked")
     runs = param.Integer(doc="The number of runs")
     status = param.String("No runs yet")
@@ -39,11 +38,12 @@ class App(pn.viewable.Viewer):
         result = self._load()
         self._time = time.time()
 
-
         self._status_pane = pn.pane.Markdown(self.status, height=40, align="start", margin=(0,5,10,5))
         self._result_pane = pn.Column(result)
+
+        button = pn.widgets.Button.from_param(self.param.run, sizing_mode="fixed")
         self._view = pn.Column(
-            pn.Row(pn.widgets.Button.from_param(self.param.run, sizing_mode="fixed"), self._status_pane),
+            pn.Row(button, self._status_pane),
             self._result_pane
         )
 
@@ -58,8 +58,8 @@ class App(pn.viewable.Viewer):
         now = time.time()
         duration = round(now-self._time,3)
         self._time = now
-        self.runs+=1
-        self.status=f"Finished run {self.runs} in {duration}sec"
+        self.runs += 1
+        self.status = f"Finished run {self.runs} in {duration}sec"
 
     @pn.depends("run", watch=True)
     def _run_with_status_update(self):
@@ -79,17 +79,18 @@ class App(pn.viewable.Viewer):
         time.sleep(self.run_delay)
         return f"Result {self.runs+1}"
 
-if __name__.startswith("bokeh"):
+
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
+
     App().servable()
 ```
 
-Serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app)
-in your browser.
+Now serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app) in your browser to see what it does.
 
 ## Create the unit tests
 
-Lets test
+Let's test:
 
 - The initial *state* of the App
 - That the app *state* changes appropriately when the *Run* button is clicked.
@@ -116,7 +117,7 @@ def test_constructor(app):
 def test_run(app):
     """Tests behaviour when Run button is clicked once"""
     # When
-    app.run=True
+    app.param.trigger('run')
     # Then
     assert app.runs == 1
     assert app.status.startswith("Finished run 1 in")
@@ -124,14 +125,14 @@ def test_run(app):
 def test_run_twice(app):
     """Tests behaviour when Run button is clicked twice"""
     # When
-    app.run=True
-    app.run=True
+    app.param.trigger('run')
+    app.param.trigger('run')
     # Then
     assert app.runs == 2
     assert app.status.startswith("Finished run 2 in")
 ```
 
-Lets run `pytest test_app.py`.
+Let's run `pytest test_app.py`:
 
 ```bash
 $ pytest test_app.py
@@ -146,15 +147,13 @@ test_app.py ...                                                                 
 
 ## Create a performance test
 
-The performance of your data app is key to providing a good user experience. You can test the
-performance of functions and methods using
-[pytest-benchmark](https://github.com/ionelmc/pytest-benchmark).
+The performance of your data app is key to providing a good user experience. You can test the performance of functions and methods using [pytest-benchmark](https://github.com/ionelmc/pytest-benchmark).
 
-Lets test that
+Let's test that:
 
-- the duration of the *run* is as expected.
+- the *duration* of the run is as expected.
 
-Create the file `test_app_performance.py`.
+Create the file `test_app_performance.py`:
 
 ```python
 # test_app_performance.py
@@ -163,14 +162,14 @@ def test_run_performance(app: App, benchmark):
     app.run_delay=0.3
 
     def run():
-        app.run=True
+        app.run = True
 
     benchmark(run)
     assert benchmark.stats['min'] >= 0.3
     assert benchmark.stats['max'] < 0.4
 ```
 
-Run `pytest test_app_performance.py`.
+Now run `pytest test_app_performance.py`:
 
 ```bash
 $ pytest test_app_performance.py
