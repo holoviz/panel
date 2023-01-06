@@ -57,6 +57,6 @@ def test_accent():
     assert template.header_background==accent
 
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
     manualtest_app().servable()

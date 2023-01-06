@@ -297,6 +297,6 @@ def manualtest_get_app():
     return template
 
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
     manualtest_get_app().servable()

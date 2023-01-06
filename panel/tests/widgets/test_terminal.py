@@ -220,5 +220,5 @@ def get_app():
     return template
 
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     get_app().servable()

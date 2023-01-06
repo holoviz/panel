@@ -144,72 +144,166 @@ The `pn.config` object allows setting various configuration variables, the confi
 
 #### Python only
 
-> - `css_files`: External CSS files to load.
-> - `js_files`: External JS files to load. Dictionary should map from exported name to the URL of the JS file.
-> - `loading_spinner`: The style of the global loading indicator, e.g. 'arcs', 'bars', 'dots', 'petals'.
-> - `loading_color`: The color of the global loading indicator as a hex color, e.g. #6a6a6a
-> - `defer_load`: Whether reactive function evaluation is deferred until the page is rendered.
-> - `exception_handler`: A custom exception handler can be defined which should accept any exceptions raised while processing events originating from the frontend and onload callbacks.
-> - `nthreads`: If set will start a `ThreadPoolExecutor` to dispatch events to for concurrent execution on separate cores. By default no thread pool is launched, while setting nthreads=0 launches `min(32, os.cpu_count() + 4)` threads.
-> - `raw_css`: List of raw CSS strings to add to load.
-> - `reuse_sessions`: Whether to reuse a session for the initial request to speed up the initial page render. Note that if the initial page differs between sessions, e.g. because it uses query parameters to modify the rendered content, then this option will result in the wrong content being rendered. See the [Performance and Debugging guide](Performance_and_Debugging.rst#Reuse-sessions) for more information.
-> - `safe_embed`: Whether to record all set events when embedding rather than just those that are changed
-> - `session_history`: If set to a non-zero value this determines the maximum length of the pn.state.session_info dictionary, which tracks information about user sessions. A value of -1 indicates an unlimited history.
-> - `sizing_mode`:  Specify the default sizing mode behavior of panels.
-> - `template`: The template to render the served application into, e.g. `'bootstrap'` or `'material'`.
-> - `theme`: The theme to apply to the selected template (no effect unless `template` is set)
-> - `throttled`: Whether sliders and inputs should be throttled until release of mouse.
+`css_files`
+: External CSS files to load.
+
+`js_files`
+: External JS files to load. Dictionary should map from exported name to the URL of the JS file.
+
+`loading_spinner`
+: The style of the global loading indicator, e.g. 'arcs', 'bars', 'dots', 'petals'.
+
+`loading_color`
+: The color of the global loading indicator as a hex color, e.g. #6a6a6a
+
+`defer_load`
+: Whether reactive function evaluation is deferred until the page is rendered.
+
+`exception_handler`
+: A custom exception handler can be defined which should accept any exceptions raised while processing events originating from the frontend and onload callbacks.
+
+`loading_indicator`
+: Whether a loading indicator is shown by default when panes are updating.
+
+`nthreads`
+: If set will start a `ThreadPoolExecutor` to dispatch events to for concurrent execution on separate cores. By default no thread pool is launched, while setting nthreads=0 launches `min(32, os.cpu_count() + 4)` threads.
+
+`raw_css`
+: List of raw CSS strings to add to load.
+
+`reuse_sessions`
+: Whether to reuse a session for the initial request to speed up the initial page render. Note that if the initial page differs between sessions, e.g. because it uses query parameters to modify the rendered content, then this option will result in the wrong content being rendered. See the [Performance and Debugging guide](Performance_and_Debugging.rst#Reuse-sessions) for more information.
+
+`safe_embed`
+: Whether to record all set events when embedding rather than just those that are changed
+
+`session_history`
+: If set to a non-zero value this determines the maximum length of the pn.state.session_info dictionary, which tracks information about user sessions. A value of -1 indicates an unlimited history.
+`sizing_mode`
+:  Specify the default sizing mode behavior of panels.
+
+`template`
+: The template to render the served application into, e.g. `'bootstrap'` or `'material'`.
+
+`theme`
+: The theme to apply to the selected template (no effect unless `template` is set)
+
+`throttled`
+: Whether sliders and inputs should be throttled until release of mouse.
 
 #### Python and Environment variables
 
-> - `comms` (`PANEL_COMMS`): Whether to render output in Jupyter with the default Jupyter extension or use the `jupyter_bokeh` ipywidget model.
-> - `console_output` (`PANEL_CONSOLE_OUTPUT`): How to log errors and stdout output triggered by callbacks from Javascript in the notebook. Options include `'accumulate'`, `'replace'` and `'disable'`.
-> - `embed` (`PANEL_EMBED`): Whether plot data will be [embedded](./Deploy_and_Export.rst#Embedding).
-> - `embed_json` (`PANEL_EMBED_JSON`): Whether to save embedded state to json files.
-> - `embed_json_prefix` (`PANEL_EMBED_JSON_PREFIX`): Prefix for randomly generated json directories.
-> - `embed_load_path` (`PANEL_EMBED_LOAD_PATH`): Where to load json files for embedded state.
-> - `embed_save_path` (`PANEL_EMBED_SAVE_PATH`): Where to save json files for embedded state.
-> - `inline` (`PANEL_INLINE`): Whether to inline JS and CSS resources. If disabled, resources are loaded from CDN if one is available.
-> - `npm_cdn` (`PANEL_NPM_CDN`): The CDN to load NPM packages from if resources are served from CDN. Allows switching between 'https://unpkg.com' (default) and 'https://cdn.jsdelivr.net/npm' for most resources.
+`admin_log_level` (`PANEL_ADMIN_LOG_LEVEL`):
+Log level of Panel admin's logger (default=DEBUG).
 
-#### `pn.state`
+`comms` (`PANEL_COMMS`)
+: Whether to render output in Jupyter with the default Jupyter extension or use the `jupyter_bokeh` ipywidget model.
 
-The `pn.state` object makes various global state available and provides methods to manage that state:
+`console_output` (`PANEL_CONSOLE_OUTPUT`): How to log errors and stdout output triggered by callbacks from Javascript in the notebook. Options include `'accumulate'`, `'replace'` and `'disable'`.
 
-- - `access_token`: The access token issued by the OAuth provider to authorize requests to its APIs.
-> - `busy`: A boolean value to indicate whether a callback is being actively processed.
-> - `cache`: A global cache which can be used to share data between different processes.
-> - `cookies`: HTTP request cookies for the current session.
-> - `curdoc`: When running a server session this property holds the current bokeh Document.
-> - `location`: In a server context this provides read and write access to the URL:
->   * `hash`: hash in window.location e.g. '#interact'
->   * `pathname`: pathname in window.location e.g. '/user_guide/Interact.html'
->   * `search`: search in window.location e.g. '?color=blue'
->   * `reload`: Reloads the page when the location is updated.
->   * `href` (readonly): The full url, e.g. 'https://localhost:80?color=blue#interact'
->   * `hostname` (readonly): hostname in window.location e.g. 'panel.holoviz.org'
->   * `protocol` (readonly): protocol in window.location e.g. 'http:' or 'https:'
->   * `port` (readonly): port in window.location e.g. '80'
-> - `headers`: HTTP request headers for the current session.
-> - `refresh_token`: The refresh token issued by the OAuth provider to authorize requests to its APIs (if available these are usually longer lived than the `access_token`).
-> - `session_args`: When running a server session this return the request arguments.
-> - `session_info`: A dictionary tracking information about server sessions:
->   * `total` (int): The total number of sessions that have been opened
->   * `live` (int): The current number of live sessions
->   * `sessions` (dict(str, dict)): A dictionary of session information:
->       * `started`: Timestamp when the session was started
->       * `rendered`: Timestamp when the session was rendered
->       * `ended`: Timestamp when the session was ended
->       * `user_agent`: User-Agent header of client that opened the session
-> - `webdriver`: Caches the current webdriver to speed up export of bokeh models to PNGs.
->
-> #### Methods
->
-> - `add_periodic_callback`: Schedules a periodic callback to be run at an interval set by the period
-> - `as_cached`: Allows caching data across sessions by memoizing on the provided key and keyword arguments to the provided function.
-> - `cancel_scheduled`: Cancel a scheduled task by name.
-> - `execute`: Executes both synchronous and asynchronous callbacks appropriately depending on the context the application is running in.
-> - `kill_all_servers`: Stops all running server sessions.
-> - `onload`: Allows defining a callback which is run when a server is fully loaded
-> - `schedule`: Schedule a callback periodically at a specific time (click [here](./Deploy_and_Export.rst#pn.state.schedule) for more details)
-> - `sync_busy`: Sync an indicator with a boolean value parameter to the busy property on state
+`embed` (`PANEL_EMBED`)
+: Whether plot data will be [embedded](./Deploy_and_Export.rst#Embedding).
+
+`embed_json` (`PANEL_EMBED_JSON`)
+: Whether to save embedded state to json files.
+
+`embed_json_prefix` (`PANEL_EMBED_JSON_PREFIX`)
+: Prefix for randomly generated json directories.
+
+`embed_load_path` (`PANEL_EMBED_LOAD_PATH`)
+: Where to load json files for embedded state.
+
+`embed_save_path` (`PANEL_EMBED_SAVE_PATH`)
+: Where to save json files for embedded state.
+
+`inline` (`PANEL_INLINE`)
+: Whether to inline JS and CSS resources. If disabled, resources are loaded from CDN if one is available.
+
+`log_level` (`PANEL_LOG_LEVEL`)
+: Log level of Panel's logger (default=WARNING).
+
+`npm_cdn` (`PANEL_NPM_CDN`)
+: The CDN to load NPM packages from if resources are served from CDN. Allows switching between 'https://unpkg.com' (default) and 'https://cdn.jsdelivr.net/npm' for most resources.
+
+### `pn.state`
+
+The `pn.state` object makes various global state available and provides methods to manage that state.
+
+## Parameters
+
+`access_token`
+: The access token issued by the OAuth provider to authorize requests to its APIs.
+
+`busy`
+: A boolean value to indicate whether a callback is being actively processed.
+
+`cache`
+: A global cache which can be used to share data between different processes.
+
+`cookies`
+: HTTP request cookies for the current session.
+
+`curdoc`
+: When running a server session this property holds the current bokeh Document.
+
+`location`
+: In a server context this provides read and write access to the URL:
+   * `hash`: hash in window.location e.g. '#interact'
+   * `pathname`: pathname in window.location e.g. '/user_guide/Interact.html'
+   * `search`: search in window.location e.g. '?color=blue'
+   * `reload`: Reloads the page when the location is updated.
+   * `href` (readonly): The full url, e.g. 'https://localhost:80?color=blue#interact'
+   * `hostname` (readonly): hostname in window.location e.g. 'panel.holoviz.org'
+   * `protocol` (readonly): protocol in window.location e.g. 'http:' or 'https:'
+   * `port` (readonly): port in window.location e.g. '80'
+
+`headers`
+: HTTP request headers for the current session.
+
+`refresh_token`
+: The refresh token issued by the OAuth provider to authorize requests to its APIs (if available these are usually longer lived than the `access_token`).
+
+`served`
+:Whether we are currently inside a script or notebook that is being served using `panel serve`.
+
+`session_args`
+: When running a server session this return the request arguments.
+
+`session_info`
+: A dictionary tracking information about server sessions:
+   * `total` (int): The total number of sessions that have been opened
+   * `live` (int): The current number of live sessions
+   * `sessions` (dict(str, dict)): A dictionary of session information:
+       * `started`: Timestamp when the session was started
+       * `rendered`: Timestamp when the session was rendered
+       * `ended`: Timestamp when the session was ended
+       * `user_agent`: User-Agent header of client that opened the session
+
+`webdriver`
+: Caches the current webdriver to speed up export of bokeh models to PNGs.
+
+## Methods
+
+`add_periodic_callback`
+: Schedules a periodic callback to be run at an interval set by the period
+
+`as_cached`
+: Allows caching data across sessions by memoizing on the provided key and keyword arguments to the provided function.
+
+`cancel_scheduled`
+: Cancel a scheduled task by name.
+
+`execute`
+: Executes both synchronous and asynchronous callbacks appropriately depending on the context the application is running in.
+
+`kill_all_servers`
+: Stops all running server sessions.
+
+`onload`
+: Allows defining a callback which is run when a server is fully loaded
+
+`schedule`
+: Schedule a callback periodically at a specific time (click [here](./Deploy_and_Export.rst#pn.state.schedule) for more details)
+
+`sync_busy`
+: Sync an indicator with a boolean value parameter to the busy property on state
