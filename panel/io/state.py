@@ -857,17 +857,6 @@ class _state(param.Parameterized):
         return self._decode_cookie('access_token')
 
     @property
-    def refresh_token(self) -> str | None:
-        return self._decode_cookie('refresh_token')
-
-    @property
-    def in_app(self):
-        try:
-            return inspect.stack()[1].frame.f_globals['__name__'].startswith('bokeh_app_')
-        except Exception:
-            return False
-
-    @property
     def app_url(self) -> str | None:
         """
         Returns the URL of the app that is currently being executed.
