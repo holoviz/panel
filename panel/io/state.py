@@ -835,24 +835,16 @@ class _state(param.Parameterized):
 
     @property
     def access_token(self) -> str | None:
+        """
+        Returns the OAuth access_token if enabled.
+        """
         return self._decode_cookie('access_token')
 
     @property
-    def refresh_token(self) -> str | None:
-        return self._decode_cookie('refresh_token')
-
-    @property
-    def in_app(self):
-        """
-        Determines whether we are in an application context.
-        """
-        try:
-            return inspect.stack()[1].frame.f_globals['__name__'].startswith('bokeh_app_')
-        except Exception:
-            return False
-
-    @property
     def app_url(self) -> str | None:
+        """
+        Returns the URL of the app that is currently being executed.
+        """
         if not self.curdoc:
             return
         app_url = self.curdoc.session_context.server_context.application_context.url
@@ -861,6 +853,9 @@ class _state(param.Parameterized):
 
     @property
     def curdoc(self) -> Document | None:
+        """
+        Returns the Document that is currently being executed.
+        """
         try:
             doc = curdoc_locked()
             if doc and doc.session_context or self._is_pyodide:
@@ -872,18 +867,30 @@ class _state(param.Parameterized):
 
     @curdoc.setter
     def curdoc(self, doc: Document) -> None:
+        """
+        Overrides the current Document.
+        """
         self._curdoc.set(doc)
 
     @property
     def cookies(self) -> Dict[str, str]:
+        """
+        Returns the cookies associated with the request that started the session.
+        """
         return self.curdoc.session_context.request.cookies if self.curdoc and self.curdoc.session_context else {}
 
     @property
     def headers(self) -> Dict[str, str | List[str]]:
+        """
+        Returns the header associated with the request that started the session.
+        """
         return self.curdoc.session_context.request.headers if self.curdoc and self.curdoc.session_context else {}
 
     @property
     def loaded(self) -> bool:
+        """
+        Whether the application has been fully loaded.
+        """
         curdoc = self.curdoc
         if curdoc:
             if curdoc in self._loaded:
@@ -918,6 +925,11 @@ class _state(param.Parameterized):
         return loc
 
     @property
+    def log_terminal(self):
+        from .admin import log_terminal
+        return log_terminal
+
+    @property
     def notifications(self) -> NotificationArea | None:
         from ..config import config
         if config.notifications and self.curdoc and self.curdoc not in self._notifications:
@@ -930,12 +942,28 @@ class _state(param.Parameterized):
             return self._notifications.get(self.curdoc) if self.curdoc else None
 
     @property
-    def log_terminal(self):
-        from .admin import log_terminal
-        return log_terminal
+    def refresh_token(self) -> str | None:
+        """
+        Returns the OAuth refresh_token if enabled and available.
+        """
+        return self._decode_cookie('refresh_token')
+
+    @property
+    def served(self):
+        """
+        Whether we are currently inside a script or notebook that is
+        being served using `panel serve`.
+        """
+        try:
+            return inspect.stack()[1].frame.f_globals['__name__'].startswith('bokeh_app_')
+        except Exception:
+            return False
 
     @property
     def session_args(self) -> Dict[str, List[bytes]]:
+        """
+        Returns the request arguments associated with the request that started the session.
+        """
         return self.curdoc.session_context.request.arguments if self.curdoc and self.curdoc.session_context else {}
 
     @property
@@ -954,6 +982,9 @@ class _state(param.Parameterized):
 
     @property
     def user(self) -> str | None:
+        """
+        Returns the OAuth user if enabled.
+        """
         from tornado.web import decode_signed_value
 
         from ..config import config
@@ -964,6 +995,9 @@ class _state(param.Parameterized):
 
     @property
     def user_info(self) -> Dict[str, Any] | None:
+        """
+        Returns the OAuth user information if enabled.
+        """
         from tornado.web import decode_signed_value
 
         from ..config import config
