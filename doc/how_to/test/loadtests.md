@@ -1,4 +1,4 @@
-# How to test the load of data apps with Locust and Playwright
+# Add Load Tests with Locust and Playwright
 
 *Load testing* means testing the performance of the entire Panel application and the server(s) running it.
 
@@ -238,6 +238,6 @@ $ panel serve test_loadwright.py
 2023-01-01 15:53:03,396 Bokeh app running at: http://localhost:5006/test_loadwright
 ```
 
-![loadwright.gif](https://user-images.githubusercontent.com/42288570/210174984-a059fc66-e526-4dcf-8a91-ee4eb345c03e.gif).
+![Loadwright Demo](https://assets.holoviz.org/panel/gifs/loadwright.gif).
 
 You will find an *archive* of *test results* in the `tests_results/archive` folder.

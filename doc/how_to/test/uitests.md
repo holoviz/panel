@@ -1,4 +1,4 @@
-# How to test the UI of data apps with Pytest and PlayWright
+# Add UI tests with Pytest and Playwright
 
 Testing is key to developing robust and performant applications. Particularly when you build complex UIs you will want to ensure that it behaves as expected. Unit tests will allow you test that the logic on the backend behaves correctly but to test that the UI is rendered correctly and responds appropriately it can be useful to also test the UI.
 
