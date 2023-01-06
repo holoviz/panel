@@ -70,7 +70,7 @@ jobs:
         run: |
           conda activate test-environment
           doit develop_install -o examples -o doc
-          pip install --use-deprecated=legacy-resolver pyecharts "idom==0.24" "pydata-sphinx-theme<=0.9.0" "pydata-sphinx-theme<=0.9.0" sphinx-copybutton sphinx-design
+          pip install --use-deprecated=legacy-resolver pyecharts "pydata-sphinx-theme<=0.9.0" "pydata-sphinx-theme<=0.9.0" sphinx-copybutton sphinx-design
       - name: doit env_capture
         run: |
           conda activate test-environment
