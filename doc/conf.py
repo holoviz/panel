@@ -26,7 +26,7 @@ version = release = base_version(panel.__version__)
 js_version = json.loads((PANEL_ROOT / 'package.json').read_text())['version']
 
 # For the interactivity warning box created by nbsite to point to the right
-# git tag instead of the default i.e. master.
+# git tag instead of the default i.e. main.
 os.environ['BRANCH'] = f"v{release}"
 
 html_static_path += ['_static']
@@ -40,7 +40,6 @@ html_css_files = [
 html_theme = "pydata_sphinx_theme"
 html_logo = "_static/logo_horizontal.png"
 html_favicon = "_static/icons/favicon.ico"
-
 
 html_theme_options = {
     "github_url": "https://github.com/holoviz/panel",
@@ -74,7 +73,7 @@ extensions += [
 ]
 napoleon_numpy_docstring = True
 
-myst_enable_extensions = ["colon_fence"]
+myst_enable_extensions = ["colon_fence", "deflist"]
 
 nbsite_gallery_conf = {
     'github_org': 'holoviz',

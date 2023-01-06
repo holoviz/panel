@@ -3,7 +3,7 @@
 [![conda pyviz badge](https://img.shields.io/conda/v/pyviz/panel.svg)](https://anaconda.org/pyviz/panel)
 [![conda defaults badge](https://img.shields.io/conda/v/anaconda/panel.svg?label=conda%7Cdefaults)](https://anaconda.org/anaconda/panel)
 [![PyPI badge](https://img.shields.io/pypi/v/panel.svg)](https://pypi.python.org/pypi/panel)
-[![License badge](https://img.shields.io/pypi/l/panel.svg)](https://github.com/holoviz/panel/blob/master/LICENSE.txt)
+[![License badge](https://img.shields.io/pypi/l/panel.svg)](https://github.com/holoviz/panel/blob/main/LICENSE.txt)
 
 ## Prerequisites
 

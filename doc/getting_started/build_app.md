@@ -16,7 +16,7 @@ Panel lets you add interactive controls for just about anything you can display 
 ```{pyodide}
 import pandas as pd; import numpy as np; import matplotlib.pyplot as plt
 
-csv_file = 'https://raw.githubusercontent.com/holoviz/panel/master/examples/assets/occupancy.csv'
+csv_file = 'https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv'
 data = pd.read_csv(csv_file, parse_dates=['date'], index_col='date')
 
 data.tail()

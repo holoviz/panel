@@ -133,6 +133,7 @@ _tests = [
     'pytest-xdist',
     'pytest-cov',
     'pre-commit',
+    'psutil',
     # Libraries tested in unit tests
     'folium',
     'ipympl',
@@ -190,7 +191,8 @@ extras_require = {
         'python-graphviz',
         'xgboost',
         'ipyvuetify',
-        'reacton'
+        'reacton',
+        'scikit-image',
     ],
     'tests': _tests,
     'recommended': _recommended,

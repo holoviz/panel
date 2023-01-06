@@ -30,17 +30,18 @@ from panel.widgets import (
 )
 
 
+@pytest.mark.xdist_group(name="server")
 def test_get_server(html_server_session):
-    html, server, session = html_server_session
+    html, server, session, port = html_server_session
 
-    assert server.port == 6000
+    assert server.port == port
     root = session.document.roots[0]
     assert isinstance(root, BkHTML)
     assert root.text == '&lt;h1&gt;Title&lt;/h1&gt;'
 
-
+@pytest.mark.xdist_group(name="server")
 def test_server_update(html_server_session):
-    html, server, session = html_server_session
+    html, server, session, port = html_server_session
 
     html.object = '<h1>New Title</h1>'
     session.pull()
@@ -48,9 +49,9 @@ def test_server_update(html_server_session):
     assert isinstance(root, BkHTML)
     assert root.text == '&lt;h1&gt;New Title&lt;/h1&gt;'
 
-
+@pytest.mark.xdist_group(name="server")
 def test_server_change_io_state(html_server_session):
-    html, server, session = html_server_session
+    html, server, session, port = html_server_session
 
     def handle_event(event):
         assert state.curdoc is session.document
@@ -452,21 +453,23 @@ def test_server_schedule_at_callable(port):
 
     server.stop()
 
-
+@pytest.mark.xdist_group(name="server")
 def test_show_server_info(html_server_session, markdown_server_session):
+    *_, html_port = html_server_session
+    *_, markdown_port = markdown_server_session
     server_info = repr(state)
-    assert "localhost:6000 - HTML" in server_info
-    assert "localhost:6001 - Markdown" in server_info
+    assert f"localhost:{html_port} - HTML" in server_info
+    assert f"localhost:{markdown_port} - Markdown" in server_info
 
-
+@pytest.mark.xdist_group(name="server")
 def test_kill_all_servers(html_server_session, markdown_server_session):
-    _, server_1, _ = html_server_session
-    _, server_2, _ = markdown_server_session
+    _, server_1, *_ = html_server_session
+    _, server_2, *_ = markdown_server_session
     state.kill_all_servers()
     assert server_1._stopped
     assert server_2._stopped
 
-
+@pytest.mark.xdist_group(name="server")
 def test_multiple_titles(multiple_apps_server_sessions):
     """Serve multiple apps with a title per app."""
     session1, session2 = multiple_apps_server_sessions(

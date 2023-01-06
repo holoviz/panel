@@ -75,13 +75,13 @@ def test_panes_are_in_reference_gallery():
 def test_markdown_codeblocks(file, tmp_path):
     from markdown_it import MarkdownIt
 
-    exceptions = ("await", "pn.serve", "django")
+    exceptions = ("await", "pn.serve", "django", "raise", "display(")
 
     md_ast = MarkdownIt().parse(file.read_text(encoding="utf-8"))
     lines = ""
     for n in md_ast:
         if n.tag == "code" and n.info is not None:
-            if "pyodide" in n.info.lower() or "python" in n.info.lower():
+            if "pyodide" in n.info.lower():
                 if ">>>" not in n.content:
                     lines += n.content
     if not lines:

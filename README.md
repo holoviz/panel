@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/holoviz/panel/raw/master/doc/_static/logo_horizontal_dark_theme.png">
-  <img src="https://github.com/holoviz/panel/raw/master/doc/_static/logo_horizontal_light_theme.png" alt="Panel logo -- text is white in dark theme and black in light theme" width=400/>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/holoviz/panel/raw/main/doc/_static/logo_horizontal_dark_theme.png">
+  <img src="https://github.com/holoviz/panel/raw/main/doc/_static/logo_horizontal_light_theme.png" alt="Panel logo -- text is white in dark theme and black in light theme" width=400/>
 </picture>
 
 -----------------
@@ -9,8 +9,8 @@
 
 |    |    |
 | --- | --- |
-| Build Status | [![Linux/MacOS Build Status](https://github.com/holoviz/panel/workflows/pytest/badge.svg?query=branch%3Amaster)](https://github.com/holoviz/panel/actions/workflows/test.yaml?query=branch%3Amaster)
-| Coverage | [![codecov](https://codecov.io/gh/holoviz/panel/branch/master/graph/badge.svg)](https://codecov.io/gh/holoviz/panel) |
+| Build Status | [![Linux/MacOS Build Status](https://github.com/holoviz/panel/workflows/pytest/badge.svg?query=branch%3Amain)](https://github.com/holoviz/panel/actions/workflows/test.yaml?query=branch%3Amain)
+| Coverage | [![codecov](https://codecov.io/gh/holoviz/panel/branch/main/graph/badge.svg)](https://codecov.io/gh/holoviz/panel) |
 | Latest dev release | [![Github tag](https://img.shields.io/github/v/tag/holoviz/panel.svg?label=tag&colorB=11ccbb)](https://github.com/holoviz/panel/tags) [![dev-site](https://img.shields.io/website-up-down-green-red/https/pyviz-dev.github.io/panel.svg?label=dev%20website)](https://pyviz-dev.github.io/panel/) |
 | Latest release | [![Github release](https://img.shields.io/github/release/holoviz/panel.svg?label=tag&colorB=11ccbb)](https://github.com/holoviz/panel/releases) [![PyPI version](https://img.shields.io/pypi/v/panel.svg?colorB=cc77dd)](https://pypi.python.org/pypi/panel) [![panel version](https://img.shields.io/conda/v/pyviz/panel.svg?colorB=4488ff&style=flat)](https://anaconda.org/pyviz/panel) [![conda-forge version](https://img.shields.io/conda/v/conda-forge/panel.svg?label=conda%7Cconda-forge&colorB=4488ff)](https://anaconda.org/conda-forge/panel) [![defaults version](https://img.shields.io/conda/v/anaconda/panel.svg?label=conda%7Cdefaults&style=flat&colorB=4488ff)](https://anaconda.org/anaconda/panel) |
 | Docs | [![gh-pages](https://img.shields.io/github/last-commit/holoviz/panel/gh-pages.svg)](https://github.com/holoviz/panel/tree/gh-pages) [![site](https://img.shields.io/website-up-down-green-red/https/panel.holoviz.org.svg)](https://panel.holoviz.org) |

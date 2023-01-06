@@ -57,7 +57,7 @@ width: 125
 
 ::::
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/master/LICENSE.txt) Python library that lets you create custom interactive web apps and dashboards by connecting user-defined widgets to plots, images, tables, or text.
+Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you create custom interactive web apps and dashboards by connecting user-defined widgets to plots, images, tables, or text.
 
 ```{eval-rst}
 .. notebook:: panel ../examples/homepage.ipynb
@@ -154,13 +154,13 @@ alt: Blackstone Logo
 :maxdepth: 2
 
 self
-getting_started/index.md
-user_guide/index.rst
-gallery/index.rst
-reference/index.rst
-developer_guide/index.rst
-api/index.rst
-releases.md
-FAQ.rst
+getting_started/index
+how_to/index
+gallery/index
+reference/index
+developer_guide/index
+api/index
+releases
+FAQ
 about/index.rst
 ```

@@ -1,18 +1,16 @@
-# How to test the UI of data apps with Pytest and PlayWright
+# Add UI tests with Pytest and Playwright
 
-Testing is key to developing robust and performant applications. You can test Panel data apps using Python and the test tools you know and love.
-
-Sometimes, for example when you create [custom components](https://panel.holoviz.org/user_guide/Custom_Components.html), it can be useful to also test the UI.
+Testing is key to developing robust and performant applications. Particularly when you build complex UIs you will want to ensure that it behaves as expected. Unit tests will allow you test that the logic on the backend behaves correctly, but to test that the UI is rendered correctly and responds appropriately, it can be useful to also test the UI.
 
 For testing the UI we recommend the framework [Playwright](https://playwright.dev/) by Microsoft. Panel itself is tested with this framework.
 
-Before you get started please install the packages
+Before you get started ensure you have installed the required dependencies:
 
 ```bash
 pip install panel pytest pytest-playwright
 ```
 
-and the browsers
+and ensure `playwright` sets up the browsers it will use to display the applications:
 
 ```bash
 playwright install
@@ -20,11 +18,11 @@ playwright install
 
 ## Create the app
 
-Lets create a simple data app for testing. The app sleeps 0.5 seconds (default) when loaded and when the button is clicked.
+Let's create a simple data app for testing. The app sleeps 0.5 seconds (default) when loaded and when the button is clicked.
 
-![app.py](https://user-images.githubusercontent.com/42288570/210162656-ae771b17-d406-4aa2-8e58-182270fbd7c1.gif)
+![app.py](https://assets.holoviz.org/panel/gifs/pytest.gif)
 
-Create the file `app.py` and add the code below.
+Create the file `app.py` and add the code below (don't worry about the contents of the app for now):
 
 ```python
 # app.py
@@ -87,18 +85,20 @@ class App(pn.viewable.Viewer):
         time.sleep(self.run_delay)
         return f"Result {self.runs+1}"
 
-if __name__.startswith("bokeh"):
+
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
+
     App().servable()
 ```
 
-Serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app) in your browser.
+Serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app) in your browser to see what it does.
 
-### Create the conftest.py
+## Create a conftest.py
 
-The `conftest.py` file contains pytest fixtures. it will
+The `conftest.py` file should be placed alongside your tests and will be loaded automatically by pytest. It is often used to declare [fixtures](https://docs.pytest.org/en/latest/explanation/fixtures.html) that allow you declare reusable components. It will:
 
-- provide us with an available `port`
+- provide us with an available `port`.
 - clean up the Panel *state* after each test.
 
 Create the file `conftest.py` and add the code below.
@@ -124,28 +124,18 @@ def server_cleanup():
     try:
         yield
     finally:
-        pn.state.kill_all_servers()
-        pn.state._indicators.clear()
-        pn.state._locations.clear()
-        pn.state._templates.clear()
-        pn.state._views.clear()
-        pn.state._loaded.clear()
-        pn.state.cache.clear()
-        pn.state._scheduled.clear()
-        if pn.state._thread_pool is not None:
-            pn.state._thread_pool.shutdown(wait=False)
-            pn.state._thread_pool = None
+        pn.state.reset()
 ```
 
-For more inspiration check out the [Panel `conftest.py` file](https://github.com/holoviz/panel/blob/master/panel/tests/conftest.py)
+For more inspiration see the [Panel `conftest.py` file](https://github.com/holoviz/panel/blob/main/panel/tests/conftest.py)
 
 ### Test the app UI
 
-Lets test that the app will
+Now let us actually set up some UI tests, we will want to assert that the app:
 
-- respond when we make an initial request
-- provide a *Run* button
-- Update the app as expected when the *Run* button is clicked
+- Responds when we make an initial request
+- Renders a *Run* button
+- Updates as expected when the *Run* button is clicked
 
 Create the file `test_app_frontend.py` and add the code below.
 
@@ -176,28 +166,28 @@ def test_component(page, port):
     server.stop()
 ```
 
-Lets run `pytest`. We will add the `--headed` argument to see what is going on in the browser. This is very illustrative and also helpful for debugging purposes.
+Let's run `pytest`. We will add the `--headed` and `--slowmo` arguments to see what is going on in the browser. This is very illustrative and also helpful for debugging purposes.
 
 ```bash
-pytest test_app_frontend.py --headed
+pytest test_app_frontend.py --headed --slowmo 1000
 ```
 
-![panel-pytest-frontend.gif](https://user-images.githubusercontent.com/42288570/210163005-29e26514-02a3-4076-92c5-ba4e8d14dd30.gif)
+![Playwright UI test with --headed enabled](https://assets.holoviz.org/panel/gifs/uitest.gif)
 
 ### Record the test code
 
-Its relatively easy to create the test code because Playwright allows you to record the code as you navigate your live app. See the Playwright [codegen](https://playwright.dev/python/docs/codegen) docs.
+Writing code to test complex UIs can be quite cumbersome, thankfully there is an easier way. Playwright allows you to record UI interactions as you navigate your live app and translates these interactions as code (see the [Playwright codegen](https://playwright.dev/python/docs/codegen) documentation for more detail).
 
-You can try it by starting the Panel server
+You can try it yourself by launching the app again:
 
 ```bash
 panel serve app.py
 ```
 
-and starting the Playwright recorder
+and starting the Playwright recorder:
 
 ```bash
 playwright codegen http://localhost:5006/app
 ```
 
-![panel-playwright-recording.gif](https://user-images.githubusercontent.com/42288570/210163133-bf08e9cd-2599-4c7e-a017-ba447547f0e0.gif)
+![Playwright Code generation demo](https://assets.holoviz.org/panel/gifs/codegen.gif)

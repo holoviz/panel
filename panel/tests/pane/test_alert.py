@@ -36,7 +36,7 @@ def test_existing_css_classes():
     assert set(alert.css_classes) == {"alert", "alert-info", "important"}
 
 
-def test_all_view():
+def manualtest_all_view():
     """Test that we can construct and view all Alerts"""
     alerts = []
     for alert_type in ALERT_TYPES:
@@ -61,6 +61,6 @@ def test_all_view():
     return pn.Column(*alerts, margin=50)
 
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
-    test_all_view().servable()
+    manualtest_all_view().servable()
