@@ -123,7 +123,7 @@ Inspect the app and verify that the issues of [Issue 1641]\
     return vanilla
 
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
     manualtest_vanilla_with_sidebar().servable()
     # manualtest_vanilla_with_no_sidebar().servable()

@@ -36,6 +36,9 @@ The `pn.state` object makes various global state available and provides methods 
 `refresh_token`
 : The refresh token issued by the OAuth provider to authorize requests to its APIs (if available these are usually longer lived than the `access_token`).
 
+`served`
+:Whether we are currently inside a script or notebook that is being served using `panel serve`.
+
 `session_args`
 : When running a server session this return the request arguments.
 

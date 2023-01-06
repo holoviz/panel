@@ -61,6 +61,6 @@ def manualtest_all_view():
     return pn.Column(*alerts, margin=50)
 
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
     manualtest_all_view().servable()

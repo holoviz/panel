@@ -111,6 +111,6 @@ def get_tqdm_app_simple():
         tqdm, button
     )
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     # get_tqdm_app_simple().servable()
     get_tqdm_app().servable()

@@ -98,5 +98,5 @@ def manualtest_app():
     return app
 
 
-if __name__.startswith("bokeh"):
+if state.served:
     manualtest_app().servable()
