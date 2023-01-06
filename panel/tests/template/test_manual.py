@@ -202,7 +202,7 @@ def _get_app():
     theme = _get_theme()
     return template_func(template_class=template_class, theme=theme)
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
     _get_app().servable()
     # manualtest_template_with_no_sidebar().servable()

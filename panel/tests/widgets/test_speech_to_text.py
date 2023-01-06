@@ -275,6 +275,6 @@ def manualtest_get_color_app():
     return app
 
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
     manualtest_get_color_app().servable()

@@ -7,6 +7,7 @@ from bokeh.document import Document
 from holoviews import opts
 
 from panel.config import config
+from panel.io.state import state
 from panel.layout import Column
 from panel.pane import HTML, HoloViews, Markdown
 from panel.param import Param
@@ -19,8 +20,6 @@ ACCENT_COLOR = "#f63366" # "lightblue"
 opts.defaults(opts.Ellipse(line_width=3, color=ACCENT_COLOR))
 
 
-
-
 def test_template_theme_parameter():
     template = FastGridTemplate(title="Fast", theme="dark")
     # Not '#3f3f3f' which is for the Vanilla theme
@@ -29,8 +28,6 @@ def test_template_theme_parameter():
     assert doc.theme._json['attrs']['Figure']['background_fill_color']=="#181818"
 
     assert isinstance(template._get_theme(), FastGridDarkTheme)
-
-
 
 COLLAPSED_ICON = """
 <svg style="stroke: var(--accent-fill-rest);" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
@@ -95,7 +92,6 @@ package. You can use it via `pip install awesome-panel-extensions` and
 `from awesome_panel_extensions.frameworks import fast`.
 """ # noqa
 
-
 def _create_hvplot():
     # Generate some data
     cl1 = np.random.normal(loc=2, scale=0.2, size=(200, 200))
@@ -111,17 +107,14 @@ def _create_hvplot():
     plot = clusters * hv.Ellipse(2, 2, 2) * hv.Ellipse(-2, -2, (4, 2))
     return plot
 
-
 def _navigation_menu():
     return HTML(NAVIGATION_HTML)
-
 
 def _sidebar_items():
     return [
         Markdown("## Settings"),
         _navigation_menu(),
     ]
-
 
 def _fast_button_card():
     button = Button(name="Click me", button_type="primary")
@@ -152,7 +145,6 @@ def _fast_button_card():
         sizing_mode="stretch_both",
     )
 
-
 def manualtest_app():
     app = FastGridTemplate(
         title="FastGridTemplate w. Layout Persistence",
@@ -175,6 +167,6 @@ def manualtest_app():
     return app
 
 
-if __name__.startswith("bokeh"):
+if state.served:
     config.sizing_mode = "stretch_width"
     manualtest_app().servable()

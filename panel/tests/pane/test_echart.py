@@ -57,7 +57,7 @@ def get_pyechart2():
         return pn.pane.ECharts(my_plot, width=500, height=250)
     return pn.Row(pn.Column(bar1, bar2), plot)
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     # manualtest_echart().servable()
     get_pyechart2().servable()
 if __name__.startswith("__main__"):
