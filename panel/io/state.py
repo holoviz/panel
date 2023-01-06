@@ -696,6 +696,22 @@ class _state(param.Parameterized):
             self._rest_endpoints[endpoint] = ([parameterized], parameters, cb)
         parameterized.param.watch(cb, parameters)
 
+    def reset(self):
+        """
+        Resets the state object killing running servers and clearing
+        any other state held by the server.
+        """
+        self.kill_all_servers()
+        self._indicators.clear()
+        self._locations.clear()
+        self._templates.clear()
+        self._views.clear()
+        self._loaded.clear()
+        self.cache.clear()
+        self._scheduled.clear()
+        if self._thread_pool is not None:
+            self._thread_pool.shutdown(wait=False)
+            self._thread_pool = None
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
@@ -839,6 +855,17 @@ class _state(param.Parameterized):
         Returns the OAuth access_token if enabled.
         """
         return self._decode_cookie('access_token')
+
+    @property
+    def refresh_token(self) -> str | None:
+        return self._decode_cookie('refresh_token')
+
+    @property
+    def in_app(self):
+        try:
+            return inspect.stack()[1].frame.f_globals['__name__'].startswith('bokeh_app_')
+        except Exception:
+            return False
 
     @property
     def app_url(self) -> str | None:
