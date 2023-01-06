@@ -2,7 +2,7 @@
 
 Testing is key to developing robust and performant applications. Particularly when you build complex UIs you will want to ensure that it behaves as expected. Unit tests will allow you test that the logic on the backend behaves correctly, but to test that the UI is rendered correctly and responds appropriately, it can be useful to also test the UI.
 
-For testing the UI we recommend the framework [Playwright](https://playwright.dev/) by Microsoft. Panel itself is tested with this framework.
+For testing the UI we recommend the framework [Playwright](https://playwright.dev/). Panel itself is tested with this framework.
 
 Before you get started ensure you have installed the required dependencies:
 

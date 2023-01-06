@@ -1,7 +1,11 @@
-# How to test data apps with Pytest
+# Add Unit and Performance tests with Pytest
 
 Testing is key to developing robust and performant applications. You can test Panel data apps using
 Python and the test tools you know and love.
+
+[![pytest](https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Pytest_logo.svg/600px-Pytest_logo.svg.png)](https://docs.pytest.org/en/latest/)
+
+[Pytest](https://docs.pytest.org/en/latest/) is the most used Python testing framework. We will use it below to write *unit* and *performance* tests.
 
 Before we get started, you should
 
@@ -157,6 +161,13 @@ Create the file `test_app_performance.py`:
 
 ```python
 # test_app_performance.py
+import pytest
+from app import App
+
+@pytest.fixture
+def app():
+    return App(run_delay=0.001, load_delay=0.001)
+
 def test_run_performance(app: App, benchmark):
     """Test the duration when the Run button is clicked"""
     app.run_delay=0.3

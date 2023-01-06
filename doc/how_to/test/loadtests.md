@@ -179,7 +179,10 @@ Create the file `test_loadwright.py` and add the code below:
 # test_loadwright.py
 import param
 import pytest
+
 from loadwright import LoadTestRunner, LoadTestViewer, User
+
+import panel as pn
 
 from app import App
 
