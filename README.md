@@ -29,6 +29,12 @@ Panel makes it easy to combine widgets, plots, tables and other viewable Python 
 
 <br/>
 
+Panel works really well with Pythons dataviz ecosystem including [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [Folium](https://python-visualization.github.io/folium/), [plotnine](https://plotnine.readthedocs.io/en/stable/), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [pyecharts](https://pyecharts.org/#/), [PyVista](https://docs.pyvista.org/), [Seaborn](https://seaborn.pydata.org/) and more. Panel also works with the [ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
+
+[![Pythons DataViz works with Panel](https://github.com/MarcSkovMadsen/dataviz-in-python/raw/main/assets/dataviz-in-python.gif)](https://panel.holoviz.org/reference/index.html#panes)
+
+<br/>
+
 Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot api),  and [Datashader](https://datashader.org/) (big data viz).
 
 <table style="overflow:hidden">
@@ -43,12 +49,6 @@ Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosy
     <td border=1 style="width:14%"><a href="https://colorcet.holoviz.org"><img style="width:100%;" src="https://holoviz.org/assets/colorcet.png"></a></td>
   <tr>
 </table>
-
-<br/>
-
-Panel works really well with the rest of Pythons dataviz ecosystem including [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [Folium](https://python-visualization.github.io/folium/), [plotnine](https://plotnine.readthedocs.io/en/stable/), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [pyecharts](https://pyecharts.org/#/), [PyVista](https://docs.pyvista.org/), [Seaborn](https://seaborn.pydata.org/) and more. Panel also works with the [ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
-
-[![Pythons DataViz works with Panel](https://github.com/MarcSkovMadsen/dataviz-in-python/raw/main/assets/dataviz-in-python.gif)](https://panel.holoviz.org/reference/index.html#panes)
 
 <br/>
 
