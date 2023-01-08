@@ -10,6 +10,7 @@ from bokeh.models import (
     TextInput as BkTextInput, Toggle,
 )
 
+from panel import config
 from panel.io.state import set_curdoc, state
 from panel.layout import Row, Tabs
 from panel.pane import (
@@ -1095,6 +1096,60 @@ def test_param_function_pane_defer_load(document, comm):
     assert pane._models == {}
     assert inner_pane._models == {}
 
+class ParameterizedMock(param.Parameterized):
+        run = param.Event()
+
+        @param.depends("run")
+        def click_view(self):
+            return "click..."
+
+def test_param_function_pane_defer_load():
+    # When
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.defer_load==False
+    
+    # When
+    config.defer_load=False
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.defer_load==False
+
+    # When
+    config.defer_load=True
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.defer_load==True
+
+    # Clean Up
+    config.defer_load=config.param.defer_load.default
+
+def test_param_function_pane_loading_indicator():
+    # When
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.loading_indicator==False
+    
+    # When
+    config.loading_indicator=False
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.loading_indicator==False
+
+    # When
+    config.loading_indicator=True
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.loading_indicator==True
+
+    # Clean Up
+    config.loading_indicator=config.param.loading_indicator.default
 
 def test_param_function_pane_update(document, comm):
     test = View()
