@@ -1108,21 +1108,21 @@ def test_param_function_pane_config_defer_load():
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.defer_load==False
+    assert test.defer_load==config.defer_load
 
     # When
-    config.defer_load=False
+    config.defer_load=not config.defer_load
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.defer_load==False
+    assert test.defer_load==config.defer_load
 
     # When
-    config.defer_load=True
+    config.defer_load=not config.defer_load
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.defer_load==True
+    assert test.defer_load==config.defer_load
 
     # Clean Up
     config.defer_load=config.param.defer_load.default
@@ -1132,21 +1132,21 @@ def test_param_function_pane_config_loading_indicator():
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.loading_indicator==False
+    assert test.loading_indicator==config.loading_indicator
 
     # When
-    config.loading_indicator=False
+    config.loading_indicator=not config.loading_indicator
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.loading_indicator==False
+    assert test.loading_indicator==config.loading_indicator
 
     # When
-    config.loading_indicator=True
+    config.loading_indicator=not config.loading_indicator
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.loading_indicator==True
+    assert test.loading_indicator==config.loading_indicator
 
     # Clean Up
     config.loading_indicator=config.param.loading_indicator.default
