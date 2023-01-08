@@ -74,8 +74,6 @@ Panel provides a unique combination of end products. You can share your data and
 
 Panel has something to offer for every one *from novice to data pro*.
 
-<br>
-
 ## Examples
 
 <table style="overflow:hidden">
@@ -88,7 +86,7 @@ Panel has something to offer for every one *from novice to data pro*.
   <tr>
 </table>
 
-### Installation Instructions
+## Installation Instructions
 
 Panel can be installed on Linux, Windows, or Mac with ``conda``:
 
@@ -194,7 +192,7 @@ If your development environment offers embedded Python processes but does not su
 
 ## License
 
-hvPlot is completely free and open-source. It is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
+Panel is completely free and open-source. It is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
 
 ## Support & Feedback
 
