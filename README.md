@@ -19,24 +19,50 @@
 
 ## Panel works with the tools you know and love
 
-[Panel](https://panel.holoviz.org/) makes it easy to compose widgets, plots, tables, and other viewable objects into custom analysis tools, applications, and dashboards.
+[Panel](https://panel.holoviz.org/) makes it easy to combine widgets, plots, tables, and other viewable objects into custom analysis tools, applications, and dashboards.
 
-Panel works with most of Python dataviz ecosystem including [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [HoloViews](https://holoviews.org), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [PyVista](https://docs.pyvista.org/) and more.
+![Panel Example](https://user-images.githubusercontent.com/42288570/211207118-23d1e6d5-0c47-4489-aab5-892de338cc3b.gif)
 
-Panel works equally well in [Jupyter Notebooks](http://jupyter.org), for creating quick data-exploration tools, or as standalone deployed apps and dashboards, and allows you to easily switch between those contexts as needed.
+<br/>
 
-Panel makes it simple to make:
+Panel is a member of the [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot api),  and [Datashader](https://datashader.org/) (big data viz).
 
-- Plots with user-defined controls
-- Property sheets for editing parameters of objects in a workflow
-- Control panels for simulations or experiments
-- Custom data-exploration tools
-- Dashboards reporting key performance indicators (KPIs) and trends
-- Streaming applications
-- Data-rich Python-backed web servers
-- and anything in between
+<div style="width: 100%;display:flex">
+<a href="https://panel.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/panel.png"></a>
+<a href="https://hvplot.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/hvplot.png"></a>
+<a href="https://holoviews.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/holoviews.png"></a>
+<a href="https://geoviews.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/geoviews.png"></a>
+<a href="https://datashader.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/datashader.png"></a>
+<a href="https://lumen.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/lumen.png"></a>
+<a href="https://param.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/param.png"></a>
+<a href="https://colorcet.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/colorcet.png"></a>
+</div>
 
-Panel objects are reactive, immediately updating to reflect changes to their state, which makes it simple to compose viewable objects and link them into simple, one-off apps to do a specific exploratory task.  The same objects can then be reused in more complex combinations to build more ambitious apps, while always sharing the same code that works well on its own.
+<br/>
+
+Panel works really well with the rest of Pythons dataviz ecosystem including [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [Folium](https://python-visualization.github.io/folium/), [PlotNine](https://plotnine.readthedocs.io/en/stable/), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [pyecharts](https://pyecharts.org/#/), [PyVista](https://docs.pyvista.org/), [Seaborn](https://seaborn.pydata.org/) and more. Panel also works with the [Ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
+
+![Pythons DataViz works with Panel](https://github.com/MarcSkovMadsen/dataviz-in-python/raw/main/assets/dataviz-in-python.gif)
+
+You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
+
+<div style="width: 100%;display:flex">
+<a href="https://panel.holoviz.org"><img style="max-height:400px;width:90%;margin-right:20px;" src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif"></a>
+<a href="https://hvplot.holoviz.org"><img style="max-height:400px;width:90%;margin-right:20px;" src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif"></a>
+</div>
+
+<br>
+
+Panel provides an extensive and unique combination of deployment options. You can share your work as
+
+- a web application running on Tornado (default), Flask, Django or Fast API servers.
+- a stand alone client side application powered by Pyodide or PyScript.
+- an interactive jupyter notebook component.
+- a static web page.
+
+<br>
+
+Examples
 
    <table>
      <tr>
