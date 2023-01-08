@@ -772,8 +772,8 @@ class ParamMethod(ReplacementPane):
         Whether to lazily evaluate the contents of the object
         only when it is required for rendering.""")
 
-    loading_indicator = param.Boolean(default=False, doc="""
-        Whether to show loading indicator while pane is updating.""")
+    loading_indicator = param.Boolean(default=None, doc="""
+        Whether to show a loading indicator while the pane is updating.""")
 
     def __init__(self, object=None, **params):
         if (
@@ -781,6 +781,11 @@ class ParamMethod(ReplacementPane):
             'defer_load' not in params and config.defer_load
         ):
             params['defer_load'] = config.defer_load
+        if (
+            self.param.loading_indicator.default is None and
+            'loading_indicator' not in params and config.loading_indicator
+        ):
+            params['loading_indicator'] = config.loading_indicator
         super().__init__(object, **params)
         self._evaled = not (self.lazy or self.defer_load)
         self._link_object_params()
