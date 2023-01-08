@@ -9,6 +9,7 @@ You can contribute in many ways, for example, by
 - Sharing knowledge about Panel at conferences and other events.
 - Helping users in our [community forum](https://discourse.holoviz.org/) or on [stackoverflow](https://stackoverflow.com/questions/tagged/holoviz-panel).
 - Triaging [Github Issues](https://github.com/holoviz/panel/issues) or reviewing [Pull Requests](https://github.com/holoviz/panel/pulls).
+- Contributing very clear and easily reproducible [Bug Reports or Feature Requests](https://github.com/holoviz/panel/issues).
 - Improving the Panel documentation or adding Panel examples to other projects documentation.
 - Participating in the biweekly HoloViz meetings or weekly triaging meetings.
 - Becoming a member of the [HoloViz Steering Committee](https://github.com/holoviz/holoviz/blob/main/doc/governance/org-docs/STEERING-COMMITTEE.md).
