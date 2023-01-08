@@ -5,7 +5,7 @@
 
 -----------------
 
-# Panel makes it easy to share your data or models as a data app
+# Panel makes it easy to share your data and models
 
 |    |    |
 | --- | --- |
@@ -19,7 +19,9 @@
 
 ## Panel works with the tools you know and love
 
-[Panel](https://panel.holoviz.org/) makes it easy to combine widgets, plots, tables and other viewable objects into custom analysis tools, applications, and dashboards.
+[Panel](https://panel.holoviz.org/) is a high-level app and dashboarding framework for Python.
+
+Panel makes it easy to combine widgets, plots, tables and other viewable Python objects into custom analysis tools, applications, and dashboards.
 
 [![Panel Example](https://user-images.githubusercontent.com/42288570/211207118-23d1e6d5-0c47-4489-aab5-892de338cc3b.gif)](https://panel.holoviz.org/reference/templates/FastGridTemplate.html)
 
@@ -42,33 +44,37 @@ Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosy
 
 <br/>
 
-Panel works really well with the rest of Pythons dataviz ecosystem including [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [Folium](https://python-visualization.github.io/folium/), [PlotNine](https://plotnine.readthedocs.io/en/stable/), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [pyecharts](https://pyecharts.org/#/), [PyVista](https://docs.pyvista.org/), [Seaborn](https://seaborn.pydata.org/) and more. Panel also works with the [ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
+Panel works really well with the rest of Pythons dataviz ecosystem including [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [Folium](https://python-visualization.github.io/folium/), [plotnine](https://plotnine.readthedocs.io/en/stable/), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [pyecharts](https://pyecharts.org/#/), [PyVista](https://docs.pyvista.org/), [Seaborn](https://seaborn.pydata.org/) and more. Panel also works with the [ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
 
 [![Pythons DataViz works with Panel](https://github.com/MarcSkovMadsen/dataviz-in-python/raw/main/assets/dataviz-in-python.gif)](https://panel.holoviz.org/reference/index.html#panes)
+
+<br/>
+
+Panel is built on top of [Param](https://param.holoviz.org). Param enables you to annotate your code with parameter ranges, documentation, and dependencies between parameters and code. With this approach, you don't ever have to commit to whether your code will be used in a notebook, in a data app, or completely behind the scenes in batch processing or reports. With this approach you can build large, maintainable code bases!
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
 <table style="overflow:hidden">
     <tr>
-      <td border=1 style="width:57%"><img src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif" /></td>
-      <td border=1 style="width:43%"><img src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif" /></a></td>
+      <td border=1 style="width:57%"><a href="https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews"><img src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif" /></a></td>
+      <td border=1 style="width:43%"><a href="https://blog.holoviz.org/panel_0.11.0.html#Autoreload"><img src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif" /></a></td>
     <tr>
   </table>
 
-<br>
+<br/>
 
-Panel provides a unique combination of sharing options. You can share your work as
+Panel provides a unique combination of end products. You can share your data and models as
 
 - a web application running on the [Tornado](https://www.tornadoweb.org/en/stable/) (default), [Flask](https://flask.palletsprojects.com/), [Django](https://www.djangoproject.com/) or [Fast API](https://fastapi.tiangolo.com/) web server.
 - a stand alone client side application powered by [Pyodide](https://pyodide.org/en/stable/) or [PyScript](https://pyscript.net/) via [`panel convert`](https://panel.holoviz.org/user_guide/Running_in_Webassembly.html).
 - an interactive Jupyter notebook component.
 - a static `.html` web page, a `.gif` video, a `.png` image and more.
 
-Panel has something to offer for every one *from novice to data science pro*.
+Panel has something to offer for every one *from novice to data pro*.
 
 <br>
 
-Examples
+## Examples
 
 <table style="overflow:hidden">
   <tr>
@@ -80,10 +86,6 @@ Examples
   <tr>
 </table>
 
-## Using Panel for declarative, reactive programming
-
-Panel can also be used with the separate [Param](https://param.pyviz.org) project to create interactively configurable objects with or without associated visualizations, in a fully [declarative](https://en.wikipedia.org/wiki/Declarative_programming) way. With this approach, you declare your configurable object using the pure-Python, zero-dependency `param` library, annotating your code with parameter ranges, documentation, and dependencies between parameters and your code.  Using this information, you can make all of your domain-specific code be optionally configurable in a GUI, with optional visual displays and debugging information if you like, all with just a few lines of declarations. With this approach, you don't ever have to commit to whether your code will be used in a notebook, in a GUI app, or completely behind the scenes in batch processing or reports -- the same code can support all of these cases equally well, once you declare the associated parameters and constraints. This approach lets you completely separate your domain-specific code from anything to do with web browsers, GUI toolkits, or other volatile technologies that would otherwise make your hard work become obsolete as they change over time.
-
 ## Usage
 
 Panel can be used in a wide range of development environments:
@@ -94,7 +96,7 @@ Panel can be used in a wide range of development environments:
 You can edit your Panel code as a `.py` file in any text editor, marking the objects you want to render as ``.servable()``, then launch a server with:
 
 ```bash
-panel serve my_script.py --show --autoreload
+panel serve my_script.py --autoreload --show
 ```
 
 to open a browser tab showing your app or dashboard and backed by a live Python process. The `--autoreload` flag ensures that the app reloads whenever you make a change to the Python source.
