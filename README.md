@@ -68,7 +68,7 @@ Panel provides a unique combination of end products. You can share your data and
 - an interactive Jupyter notebook component.
 - a static `.html` web page, a `.gif` video, a `.png` image and more.
 
-Panel has something to offer for every one *from novice to data pro*.
+Panel has something to offer for every one *from beginner to data pro*.
 
 ## Examples
 
