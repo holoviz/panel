@@ -5,7 +5,7 @@
 
 -----------------
 
-# Panel makes it easy to share your work as an app or a dashboard
+# Panel makes it easy to share your data or model as a dashboard or web app
 
 |    |    |
 | --- | --- |
@@ -19,60 +19,64 @@
 
 ## Panel works with the tools you know and love
 
-[Panel](https://panel.holoviz.org/) makes it easy to combine widgets, plots, tables, and other viewable objects into custom analysis tools, applications, and dashboards.
+[Panel](https://panel.holoviz.org/) makes it easy to combine widgets, plots, tables and other viewable objects into custom analysis tools, applications, and dashboards.
 
-![Panel Example](https://user-images.githubusercontent.com/42288570/211207118-23d1e6d5-0c47-4489-aab5-892de338cc3b.gif)
+[![Panel Example](https://user-images.githubusercontent.com/42288570/211207118-23d1e6d5-0c47-4489-aab5-892de338cc3b.gif)](https://panel.holoviz.org/reference/templates/FastGridTemplate.html)
 
 <br/>
 
 Panel is a member of the [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot api),  and [Datashader](https://datashader.org/) (big data viz).
 
-<div style="width: 100%;display:flex">
-<a href="https://panel.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/panel.png"></a>
-<a href="https://hvplot.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/hvplot.png"></a>
-<a href="https://holoviews.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/holoviews.png"></a>
-<a href="https://geoviews.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/geoviews.png"></a>
-<a href="https://datashader.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/datashader.png"></a>
-<a href="https://lumen.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/lumen.png"></a>
-<a href="https://param.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/param.png"></a>
-<a href="https://colorcet.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/colorcet.png"></a>
-</div>
+<table>
+  <tr>
+    <td border=1><a href="https://panel.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/panel.png"></a></td>
+    <td border=1><a href="https://hvplot.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/hvplot.png"></a></td>
+    <td border=1><a href="https://holoviews.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/holoviews.png"></a></td>
+    <td border=1><a href="https://geoviews.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/geoviews.png"></a></td>
+    <td border=1><a href="https://datashader.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/datashader.png"></a></td>
+    <td border=1><a href="https://lumen.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/lumen.png"></a></td>
+    <td border=1><a href="https://param.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/param.png"></a></td>
+    <td border=1><a href="https://colorcet.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/colorcet.png"></a></td>
+  <tr>
+</table>
 
 <br/>
 
-Panel works really well with the rest of Pythons dataviz ecosystem including [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [Folium](https://python-visualization.github.io/folium/), [PlotNine](https://plotnine.readthedocs.io/en/stable/), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [pyecharts](https://pyecharts.org/#/), [PyVista](https://docs.pyvista.org/), [Seaborn](https://seaborn.pydata.org/) and more. Panel also works with the [Ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
+Panel works really well with the rest of Pythons dataviz ecosystem including [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [Folium](https://python-visualization.github.io/folium/), [PlotNine](https://plotnine.readthedocs.io/en/stable/), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [pyecharts](https://pyecharts.org/#/), [PyVista](https://docs.pyvista.org/), [Seaborn](https://seaborn.pydata.org/) and more. Panel also works with the [ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
 
-![Pythons DataViz works with Panel](https://github.com/MarcSkovMadsen/dataviz-in-python/raw/main/assets/dataviz-in-python.gif)
+[![Pythons DataViz works with Panel](https://github.com/MarcSkovMadsen/dataviz-in-python/raw/main/assets/dataviz-in-python.gif)](https://panel.holoviz.org/reference/index.html#panes)
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
-<div style="width: 100%;display:flex">
-<a href="https://panel.holoviz.org"><img style="max-height:400px;width:90%;margin-right:20px;" src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif"></a>
-<a href="https://hvplot.holoviz.org"><img style="max-height:400px;width:90%;margin-right:20px;" src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif"></a>
-</div>
+<table>
+    <tr>
+      <td border=1><img src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif" /></td>
+      <td border=1><img src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif" /></a></td>
+    <tr>
+  </table>
 
 <br>
 
-Panel provides an extensive and unique combination of deployment options. You can share your work as
+Panel provides a unique combination of sharing options. You can share your work as
 
-- a web application running on Tornado (default), Flask, Django or Fast API servers.
-- a stand alone client side application powered by Pyodide or PyScript.
-- an interactive jupyter notebook component.
-- a static web page.
+- a web application running on the [Tornado](https://www.tornadoweb.org/en/stable/) (default), [Flask](https://flask.palletsprojects.com/), [Django](https://www.djangoproject.com/) or [Fast API](https://fastapi.tiangolo.com/) web server.
+- a stand alone client side application powered by [Pyodide](https://pyodide.org/en/stable/) or [PyScript](https://pyscript.net/) via [`panel convert`](https://panel.holoviz.org/user_guide/Running_in_Webassembly.html).
+- an interactive Jupyter notebook component.
+- a static `.html` web page or a `.png` image.
 
 <br>
 
 Examples
 
-   <table>
-     <tr>
-       <td border=1><a href="https://examples.pyviz.org/attractors/attractors_panel.html"><b>Attractors</b></a><br><a href="https://attractors.pyviz.demo.anaconda.com/attractors_panel"><img src="http://assets.holoviews.org/panel/thumbnails/index/attractors.png" /></a></td>
-       <td border=1><a href="https://examples.pyviz.org/gapminders/gapminders.html"><b>Gapminders</b></a><br><a href="https://gapminders.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/gapminders.png" /></a></td>
-       <td border=1><a href="https://examples.pyviz.org/nyc_taxi/dashboard.html"><b>NYC Taxi</b></a><br><a href="https://nyc-taxi.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/nyc_taxi.png" /></a></td>
-       <td border=1><a href="https://examples.pyviz.org/glaciers/glaciers.html"><b>Glaciers</b></a><br><a href="https://glaciers.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/glaciers.png" /></a></td>
-       <td border=1><a href="https://examples.pyviz.org/portfolio_optimizer/portfolio.html"><b>Portfolio Optimizer</b></a><br><a href="https://portfolio-optimizer.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/portfolio_optimizer.png" /></a></td>
-     <tr>
-   </table>
+<table>
+  <tr>
+    <td border=1><a href="https://examples.pyviz.org/attractors/attractors_panel.html"><b>Attractors</b></a><br><a href="https://attractors.pyviz.demo.anaconda.com/attractors_panel"><img src="http://assets.holoviews.org/panel/thumbnails/index/attractors.png" /></a></td>
+    <td border=1><a href="https://examples.pyviz.org/gapminders/gapminders.html"><b>Gapminders</b></a><br><a href="https://gapminders.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/gapminders.png" /></a></td>
+    <td border=1><a href="https://examples.pyviz.org/nyc_taxi/dashboard.html"><b>NYC Taxi</b></a><br><a href="https://nyc-taxi.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/nyc_taxi.png" /></a></td>
+    <td border=1><a href="https://examples.pyviz.org/glaciers/glaciers.html"><b>Glaciers</b></a><br><a href="https://glaciers.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/glaciers.png" /></a></td>
+    <td border=1><a href="https://examples.pyviz.org/portfolio_optimizer/portfolio.html"><b>Portfolio Optimizer</b></a><br><a href="https://portfolio-optimizer.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/portfolio_optimizer.png" /></a></td>
+  <tr>
+</table>
 
 ## Using Panel for declarative, reactive programming
 
