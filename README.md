@@ -5,7 +5,7 @@
 
 -----------------
 
-# Panel makes it easy to share your data or model as a dashboard or web app
+# Panel makes it easy to share your data or models as a data app
 
 |    |    |
 | --- | --- |
@@ -25,18 +25,18 @@
 
 <br/>
 
-Panel is a member of the [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot api),  and [Datashader](https://datashader.org/) (big data viz).
+Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot api),  and [Datashader](https://datashader.org/) (big data viz).
 
-<table>
+<table style="overflow:hidden">
   <tr>
-    <td border=1><a href="https://panel.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/panel.png"></a></td>
-    <td border=1><a href="https://hvplot.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/hvplot.png"></a></td>
-    <td border=1><a href="https://holoviews.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/holoviews.png"></a></td>
-    <td border=1><a href="https://geoviews.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/geoviews.png"></a></td>
-    <td border=1><a href="https://datashader.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/datashader.png"></a></td>
-    <td border=1><a href="https://lumen.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/lumen.png"></a></td>
-    <td border=1><a href="https://param.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/param.png"></a></td>
-    <td border=1><a href="https://colorcet.holoviz.org"><img style="max-height:130px;width:90%;margin-right:20px;" src="https://holoviz.org/assets/colorcet.png"></a></td>
+    <td border=1 style="width:12%"><a href="https://panel.holoviz.org"><img style="width:100%;" src="https://holoviz.org/assets/panel.png"></a></td>
+    <td border=1 style="width:10%"><a href="https://hvplot.holoviz.org"><img style="width:100%;" src="https://holoviz.org/assets/hvplot.png"></a></td>
+    <td border=1 style="width:15%"><a href="https://holoviews.org"><img style="width:100%;" src="https://holoviz.org/assets/holoviews.png"></a></td>
+    <td border=1 style="width:14%"><a href="https://geoviews.org"><img style="width:100%;" src="https://holoviz.org/assets/geoviews.png"></a></td>
+    <td border=1 style="width:16%"><a href="https://datashader.org"><img style="width:100%;" src="https://holoviz.org/assets/datashader.png"></a></td>
+    <td border=1 style="width:10%"><a href="https://lumen.holoviz.org"><img style="width:100%;" src="https://holoviz.org/assets/lumen.png"></a></td>
+    <td border=1 style="width:10%"><a href="https://param.holoviz.org"><img style="width:100%;" src="https://holoviz.org/assets/param.png"></a></td>
+    <td border=1 style="width:14%"><a href="https://colorcet.holoviz.org"><img style="width:100%;" src="https://holoviz.org/assets/colorcet.png"></a></td>
   <tr>
 </table>
 
@@ -48,10 +48,10 @@ Panel works really well with the rest of Pythons dataviz ecosystem including [Al
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
-<table>
+<table style="overflow:hidden">
     <tr>
-      <td border=1><img src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif" /></td>
-      <td border=1><img src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif" /></a></td>
+      <td border=1 style="width:57%"><img src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif" /></td>
+      <td border=1 style="width:43%"><img src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif" /></a></td>
     <tr>
   </table>
 
@@ -62,13 +62,15 @@ Panel provides a unique combination of sharing options. You can share your work 
 - a web application running on the [Tornado](https://www.tornadoweb.org/en/stable/) (default), [Flask](https://flask.palletsprojects.com/), [Django](https://www.djangoproject.com/) or [Fast API](https://fastapi.tiangolo.com/) web server.
 - a stand alone client side application powered by [Pyodide](https://pyodide.org/en/stable/) or [PyScript](https://pyscript.net/) via [`panel convert`](https://panel.holoviz.org/user_guide/Running_in_Webassembly.html).
 - an interactive Jupyter notebook component.
-- a static `.html` web page or a `.png` image.
+- a static `.html` web page, a `.gif` video, a `.png` image and more.
+
+Panel has something to offer for every one *from novice to data science pro*.
 
 <br>
 
 Examples
 
-<table>
+<table style="overflow:hidden">
   <tr>
     <td border=1><a href="https://examples.pyviz.org/attractors/attractors_panel.html"><b>Attractors</b></a><br><a href="https://attractors.pyviz.demo.anaconda.com/attractors_panel"><img src="http://assets.holoviews.org/panel/thumbnails/index/attractors.png" /></a></td>
     <td border=1><a href="https://examples.pyviz.org/gapminders/gapminders.html"><b>Gapminders</b></a><br><a href="https://gapminders.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/gapminders.png" /></a></td>
