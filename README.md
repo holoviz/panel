@@ -17,6 +17,8 @@
 | Binder | [![Binder](https://img.shields.io/badge/launch%20v0.14.2-binder-579aca.svg?logo=data:image/png;base64,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)](https://mybinder.org/v2/gh/holoviz/panel/v0.14.2?urlpath=lab/tree/examples) |
 | Support | [![Discourse](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.holoviz.org)](https://discourse.holoviz.org/) |
 
+[Home](https://panel.holoviz.org/) | [Installation instructions](#installation-instructions) | [Getting Started Guide](https://panel.holoviz.org/getting_started/index.html) | [Reference Guides](https://panel.holoviz.org/reference/index.html) | [Examples](#examples) | [License](#license) | [Support](#support--feedback)
+
 ## Panel works with the tools you know and love
 
 [Panel](https://panel.holoviz.org/) is a high-level app and dashboarding framework for Python.
@@ -50,7 +52,7 @@ Panel works really well with the rest of Pythons dataviz ecosystem including [Al
 
 <br/>
 
-Panel is built on top of [Param](https://param.holoviz.org). Param enables you to annotate your code with parameter ranges, documentation, and dependencies between parameters and code. With this approach, you don't ever have to commit to whether your code will be used in a notebook, in a data app, or completely behind the scenes in batch processing or reports. With this approach you can build large, maintainable code bases!
+Panel is built on top of [Param](https://param.holoviz.org). Param enables you to annotate your code with parameter ranges, documentation, and dependencies between parameters and code. With this approach, you don't ever have to commit to whether your code will be used in a notebook, a data app, or completely behind the scenes in batch processing or reports. With this approach you can build large, maintainable code bases!
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
@@ -86,7 +88,54 @@ Panel has something to offer for every one *from novice to data pro*.
   <tr>
 </table>
 
-## Usage
+### Installation Instructions
+
+Panel can be installed on Linux, Windows, or Mac with ``conda``:
+
+```bash
+conda install -c pyviz panel
+```
+
+or with ``pip``:
+
+```bash
+pip install panel
+```
+
+See the [Environments](#environments) section below for additional instructions for your environment.
+
+## Mini getting-started
+
+Bring your data or model(s)
+
+```python
+def model(n=5):
+    return "⭐"*n
+```
+
+Bind them to Panel *widgets* and lay them out in a nice *template*.
+
+```python
+import panel as pn
+
+pn. extension()
+
+slider = pn.widgets.IntSlider(value=5, start=1, end=5)
+
+interactive_model = pn.bind(model, n=slider)
+
+layout = pn.Column(slider, interactive_model)
+
+pn.template.FastListTemplate(
+    site="Panel", title="Example", main=[layout]
+).servable()
+```
+
+![Panel Example App](https://user-images.githubusercontent.com/42288570/211216020-c1d120ba-7cf6-44a7-abe3-53e73cb7bea6.gif)
+
+Head over to the [getting started guide](https://panel.holoviz.org/getting_started/index.html) for more!
+
+## Environments
 
 Panel can be used in a wide range of development environments:
 
@@ -124,6 +173,14 @@ In other notebook environments that support rendering ipywidgets interactively, 
 ### Other environments
 
 If your development environment offers embedded Python processes but does not support ipywidgets or Jupyter "comms" (communication channels), you will notice that some or all interactive functionality is missing. Some widgets that operate only in JavaScript will work fine, but others require communication channels between JavaScript and Python. In such cases you can either request ipywidgets or Panel support from the editor or environment, or else use the Editor + Server approach above.
+
+## License
+
+hvPlot is completely free and open-source. It is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
+
+## Support & Feedback
+
+Get support from or provide feedback to the [HoloViz Community](https://holoviz.org/community.html).
 
 ## Sponsors
 
