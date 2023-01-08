@@ -56,12 +56,8 @@ Panel is built on top of [Param](https://param.holoviz.org). Param enables you t
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
-<table style="overflow:hidden">
-    <tr>
-      <td border=1 style="width:57%"><a href="https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews"><img src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif" /></a></td>
-      <td border=1 style="width:43%"><a href="https://blog.holoviz.org/panel_0.11.0.html#Autoreload"><img src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif" /></a></td>
-    <tr>
-  </table>
+<a href="https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews"><img src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif" /></a>
+<a href="https://blog.holoviz.org/panel_0.11.0.html#Autoreload"><img src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif" /></a>
 
 <br/>
 
