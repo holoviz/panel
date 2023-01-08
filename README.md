@@ -89,6 +89,10 @@ In other notebook environments that support rendering ipywidgets interactively, 
 
 If your development environment offers embedded Python processes but does not support ipywidgets or Jupyter "comms" (communication channels), you will notice that some or all interactive functionality is missing. Some widgets that operate only in JavaScript will work fine, but others require communication channels between JavaScript and Python. In such cases you can either request ipywidgets or Panel support from the editor or environment, or else use the Editor + Server approach above.
 
+## Contributing ❤️
+
+Check out the [Contributing Guide](CONTRIBUTING.MD).
+
 ## Sponsors
 
 The Panel project is grateful for the sponsorship by the organizations and companies below:
