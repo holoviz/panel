@@ -145,6 +145,12 @@ Start the server with
 panel serve name_of_script.py --show
 ```
 
+or
+
+```bash
+panel serve name_of_notebook.ipynb --show
+```
+
 ![Panel Example App](https://user-images.githubusercontent.com/42288570/211216020-c1d120ba-7cf6-44a7-abe3-53e73cb7bea6.gif)
 
 ## Environments
