@@ -780,14 +780,14 @@ class ParamMethod(ReplacementPane):
         if (
             'defer_load' not in params and
             self.param.defer_load.default is None
-            
+
         ):
             params['defer_load'] = config.defer_load
         if (
             'loading_indicator' not in params and
             self.param.loading_indicator.default is None
         ):
-            params['loading_indicator'] = config.loading_indicator           
+            params['loading_indicator'] = config.loading_indicator
         super().__init__(object, **params)
         self._evaled = not (self.lazy or self.defer_load)
         self._link_object_params()

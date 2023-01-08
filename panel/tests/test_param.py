@@ -1103,13 +1103,13 @@ class ParameterizedMock(param.Parameterized):
         def click_view(self):
             return "click..."
 
-def test_param_function_pane_defer_load():
+def test_param_function_pane_config_defer_load():
     # When
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
     assert test.defer_load==False
-    
+
     # When
     config.defer_load=False
     app = ParameterizedMock()
@@ -1127,13 +1127,13 @@ def test_param_function_pane_defer_load():
     # Clean Up
     config.defer_load=config.param.defer_load.default
 
-def test_param_function_pane_loading_indicator():
+def test_param_function_pane_config_loading_indicator():
     # When
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
     assert test.loading_indicator==False
-    
+
     # When
     config.loading_indicator=False
     app = ParameterizedMock()
