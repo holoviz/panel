@@ -106,34 +106,46 @@ See the [Environments](#environments) section below for additional instructions 
 
 ## Mini getting-started
 
-Bring your data or model(s)
+Head over to the [getting started guide](https://panel.holoviz.org/getting_started/index.html) for more!
+
+Bring your data or model
 
 ```python
 def model(n=5):
     return "⭐"*n
 ```
 
-Bind them to Panel *widgets* and lay them out in a nice *template*.
+Bind it to a Panel *widget* and *lay it out*.
 
 ```python
 import panel as pn
 
-pn. extension()
+pn.extension()
 
 slider = pn.widgets.IntSlider(value=5, start=1, end=5)
 
 interactive_model = pn.bind(model, n=slider)
 
 layout = pn.Column(slider, interactive_model)
+```
 
+![Panel Notebook Example](https://user-images.githubusercontent.com/42288570/211216829-a9090722-66b2-486c-b798-a9e2fd043240.gif)
+
+For deployment on a web server wrap it in a nice template.
+
+```python
 pn.template.FastListTemplate(
-    site="Panel", title="Example", main=[layout]
+    site="Panel", title="Example", main=[layout],
 ).servable()
 ```
 
-![Panel Example App](https://user-images.githubusercontent.com/42288570/211216020-c1d120ba-7cf6-44a7-abe3-53e73cb7bea6.gif)
+Start the server with
 
-Head over to the [getting started guide](https://panel.holoviz.org/getting_started/index.html) for more!
+```bash
+panel serve name_of_script.py --show
+```
+
+![Panel Example App](https://user-images.githubusercontent.com/42288570/211216020-c1d120ba-7cf6-44a7-abe3-53e73cb7bea6.gif)
 
 ## Environments
 
