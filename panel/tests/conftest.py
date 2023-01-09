@@ -311,7 +311,6 @@ def module_cleanup():
         if not any(model.__module__.startswith(tr) for tr in to_reset)
     }
 
-
 @pytest.fixture(autouse=True)
 def server_cleanup():
     """
@@ -320,17 +319,7 @@ def server_cleanup():
     try:
         yield
     finally:
-        state.kill_all_servers()
-        state._indicators.clear()
-        state._locations.clear()
-        state._templates.clear()
-        state._views.clear()
-        state._loaded.clear()
-        state.cache.clear()
-        state._scheduled.clear()
-        if state._thread_pool is not None:
-            state._thread_pool.shutdown(wait=False)
-            state._thread_pool = None
+        state.reset()
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():
