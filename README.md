@@ -7,6 +7,8 @@
 
 # Panel makes it easy to share your data and models
 
+[Panel](https://panel.holoviz.org/) is a high-level data app and dashboarding framework for Python.
+
 |    |    |
 | --- | --- |
 | Build Status | [![Linux/MacOS Build Status](https://github.com/holoviz/panel/workflows/pytest/badge.svg?query=branch%3Amain)](https://github.com/holoviz/panel/actions/workflows/test.yaml?query=branch%3Amain)
@@ -21,8 +23,6 @@
 
 ## Panel works with the tools you know and love
 
-[Panel](https://panel.holoviz.org/) is a high-level app and dashboarding framework for Python.
-
 Panel makes it easy to combine widgets, plots, tables and other viewable Python objects into custom analysis tools, applications, and dashboards.
 
 [![Panel Example](https://user-images.githubusercontent.com/42288570/211207118-23d1e6d5-0c47-4489-aab5-892de338cc3b.gif)](https://panel.holoviz.org/reference/templates/FastGridTemplate.html)
@@ -30,6 +30,8 @@ Panel makes it easy to combine widgets, plots, tables and other viewable Python 
 <br/>
 
 Panel works really well with Pythons dataviz ecosystem including [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [Folium](https://python-visualization.github.io/folium/), [plotnine](https://plotnine.readthedocs.io/en/stable/), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [pyecharts](https://pyecharts.org/#/), [PyVista](https://docs.pyvista.org/), [Seaborn](https://seaborn.pydata.org/) and more. Panel also works with the [ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
+
+Panel provides advanced bi-directional communication making it possible to react to clicks, selections, hover etc. events.
 
 [![Pythons DataViz works with Panel](https://github.com/MarcSkovMadsen/dataviz-in-python/raw/main/assets/dataviz-in-python.gif)](https://panel.holoviz.org/reference/index.html#panes)
 
@@ -52,7 +54,11 @@ Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosy
 
 <br/>
 
-Panel is built on top of [Param](https://param.holoviz.org). Param enables you to annotate your code with parameter ranges, documentation, and dependencies between parameters and code. With this approach, you don't ever have to commit to whether your code will be used in a notebook, a data app, or completely behind the scenes in batch processing or reports. With this approach you can build large, maintainable code bases!
+Panel is built on top of [Param](https://param.holoviz.org). Param enables you to annotate your code with parameter ranges, documentation, and dependencies between parameters and code. With this approach, 
+
+- you don't ever have to commit to whether your code will be used in a notebook, a data app, or completely behind the scenes in batch processing or reports.
+- you will write less code.
+- you can develop large, maintainable code bases!
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
@@ -70,19 +76,11 @@ Panel provides a unique combination of end products. You can share your data and
 
 Panel has something to offer for every one *from beginner to data pro*.
 
-## Examples
+## Mini getting-started
 
-<table style="overflow:hidden">
-  <tr>
-    <td border=1><a href="https://examples.pyviz.org/attractors/attractors_panel.html"><b>Attractors</b></a><br><a href="https://attractors.pyviz.demo.anaconda.com/attractors_panel"><img src="http://assets.holoviews.org/panel/thumbnails/index/attractors.png" /></a></td>
-    <td border=1><a href="https://examples.pyviz.org/gapminders/gapminders.html"><b>Gapminders</b></a><br><a href="https://gapminders.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/gapminders.png" /></a></td>
-    <td border=1><a href="https://examples.pyviz.org/nyc_taxi/dashboard.html"><b>NYC Taxi</b></a><br><a href="https://nyc-taxi.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/nyc_taxi.png" /></a></td>
-    <td border=1><a href="https://examples.pyviz.org/glaciers/glaciers.html"><b>Glaciers</b></a><br><a href="https://glaciers.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/glaciers.png" /></a></td>
-    <td border=1><a href="https://examples.pyviz.org/portfolio_optimizer/portfolio.html"><b>Portfolio Optimizer</b></a><br><a href="https://portfolio-optimizer.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/portfolio_optimizer.png" /></a></td>
-  <tr>
-</table>
+Head over to the [getting started guide](https://panel.holoviz.org/getting_started/index.html) for more!
 
-## Installation Instructions
+### Installation Instructions
 
 Panel can be installed on Linux, Windows, or Mac with ``conda``:
 
@@ -98,9 +96,7 @@ pip install panel
 
 See the [Environments](#environments) section below for additional instructions for your environment.
 
-## Mini getting-started
-
-Head over to the [getting started guide](https://panel.holoviz.org/getting_started/index.html) for more!
+### Interactive data apps
 
 Bring your data or model
 
@@ -186,17 +182,33 @@ In other notebook environments that support rendering ipywidgets interactively, 
 
 If your development environment offers embedded Python processes but does not support ipywidgets or Jupyter "comms" (communication channels), you will notice that some or all interactive functionality is missing. Some widgets that operate only in JavaScript will work fine, but others require communication channels between JavaScript and Python. In such cases you can either request ipywidgets or Panel support from the editor or environment, or else use the Editor + Server approach above.
 
+## Examples
+
+[![Panel Gallery](https://user-images.githubusercontent.com/42288570/211242707-f4a41f20-3265-4dca-9a17-d8babd54ce71.jpg)](https://panel.holoviz.org/gallery/index.html)
+
+[![Awesome Panel Gallery](https://user-images.githubusercontent.com/42288570/211242719-b6f1035e-98bc-40ba-b986-954d3c10d607.jpg)](https://www.awesome-panel.org/gallery?theme=default)
+
+## Support & Feedback
+
+- Usage questions and showcases -> [HoloViz Community](https://holoviz.org/community.html)
+- Bug reports and feature requests -> [Github](https://github.com/holoviz/panel)
+- Developer discussions -> [Gitter](https://gitter.im/pyviz/pyviz)
+
+For more detail check out the [HoloViz Community Guide](https://holoviz.org/community.html).
+
 ## License
 
 Panel is completely free and open-source. It is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
 
-## Support & Feedback
-
-Get support from or provide feedback to the [HoloViz Community](https://holoviz.org/community.html).
-
 ## Sponsors
 
-The Panel project is grateful for the sponsorship by the organizations and companies below:
+The Panel project is grateful for the numerous contributions from the community including
+
+- The [awesome-panel.org](https://www.awesome-panel.org/) project, [tweets](https://twitter.com/MarcSkovMadsen) and [videos](https://www.youtube.com/watch?v=7dJO4j4ENhg&list=PLrrcIlm1vLr69f4CsTlrO0wSNBw6VbsJA) by [Marc Skov Madsen](https://www.linkedin.com/in/marcskovmadsen)
+- Inspiring [blog posts](https://sophiamyang.medium.com/), [tweets](https://twitter.com/sophiamyang) and [videos](https://www.youtube.com/watch?v=wlzkiGPIV3I&list=PL2KLV6jxFCI39YW7v-nVZOp34cVhYpSJO) by [Sophia Yang](https://www.linkedin.com/in/sophiamyang/)
+- Cool [videos](https://youtu.be/uhxiXOTKzfs) by [Thu Hien Vu](https://www.linkedin.com/in/thu-hien-vu-3766b174/)
+
+The Panel project is also very grateful for the sponsorship by the organizations and companies below:
 
 <table align="center">
 <tr>
