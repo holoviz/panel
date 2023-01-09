@@ -10,3 +10,9 @@ example_pane = pn.panel('https://upload.wikimedia.org/wikipedia/commons/b/b1/Loa
 
 example_pane.pprint()
 ```
+
+:::{admonition} Pane Background
+:class: info
+
+Learn more about Panes in the [Background for Components](../background/components/components_overview.md#Panes)
+:::

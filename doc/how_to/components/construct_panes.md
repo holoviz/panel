@@ -5,6 +5,9 @@ There are two main ways to construct a pane - explicitly or automatically.
 To explicitly construct a pane, use one of the pane types listed in the [reference gallery](../../reference/index.html#panes). For example, you can create a Markdown pane as follows:
 
 ```{pyodide}
+import panel as pn
+pn.extension()
+
 pn.pane.Markdown('''
 # H1
 ## H2
@@ -20,8 +23,8 @@ png = pn.panel('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transpar
 png
 ```
 
-:::{admonition} Learn More
+:::{admonition} Pane Background
 :class: info
 
-Learn more about Panes in the (Background for Components)[../background/components/components_overview.md#Panes]
+Learn more about Panes in the [Background for Components](../background/components/components_overview.md#Panes)
 :::
