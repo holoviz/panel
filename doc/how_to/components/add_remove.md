@@ -1,8 +1,9 @@
-# Add or Remove Components
+# Add or Remove Components from Panels
 
-## Row & Column
+This page will cover adding or removing components to several types of ``Panels``, starting with the most common - ``Row`` and ``Column``.
+## Row & Column Panels
 
-Manipulate the components in a ``Row`` and ``Column`` ``Panel``s just like a Python list. To start, we will declare a ``Column`` and populate it with some text and a widget:
+To start, we will declare a ``Column`` and populate it with some text and a widget:
 
 ```{pyodide}
 import panel as pn
@@ -13,7 +14,7 @@ column = pn.Column('# some text', pn.widgets.FloatSlider())
 column
 ```
 
-Next we add another bit of markdown:
+As we can manipulate a ``Row`` or ``Column`` object just like a Python list, we'll use `.append` to add some markdown:
 
 ```{pyodide}
 column.append('* Item 1\n* Item 2')
@@ -21,7 +22,7 @@ column.append('* Item 1\n* Item 2')
 column
 ```
 
-Then we add a few more widgets:
+Next, we add a few more widgets:
 
 ```{pyodide}
 column.extend([pn.widgets.TextInput(), pn.widgets.Checkbox(name='Tick this!')])
@@ -37,9 +38,9 @@ column[4] = pn.widgets.Button(name='Click here')
 column
 ```
 
-## Tabs
+## Tabs Panel
 
-Just like ``Column``, ``Tabs`` components can be changed like a Python list. However, when adding or replacing items, it is also possible to pass a tuple providing a custom title for the tab. First, create a ``Tabs`` panel that contains a plot:
+``Tabs`` can also be changed like a Python list. However, when adding or replacing tab items, it is also possible to pass a tuple providing a custom title for the tab. First, create a ``Tabs`` panel that contains a plot:
 
 ```{pyodide}
 from bokeh.plotting import figure
@@ -71,11 +72,11 @@ tabs.extend([
 tabs
 ```
 
-## GridSpec
+## GridSpec Panel
 
-A ``GridSpec`` isn't list-like, and behaves more like a 2D array. Just like a Python array, the indexing is zero-based and specifies the rows first and the columns second, for instance, ``gridspec[0, 1] = object`` would assign the object to the first row and second column.
+A ``GridSpec`` behaves like a 2D array. The indexing is zero-based and specifies the rows first and the columns second.
 
-First, declare a ``GridSpec`` and add red and blue blocks. The red block goes in the first row and span 3 columns. The blue block spans from the second to fourth row, but only occupies the first column
+First, declare a ``GridSpec`` and add red and blue blocks. The red block goes in the first row and spans 3 columns. The blue block spans from the second to fourth row, but only occupies the first column:
 
 ```{pyodide}
 gridspec = pn.GridSpec(sizing_mode='stretch_both', max_height=400)
@@ -106,8 +107,7 @@ gridspec[3, 1] = 'https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transp
 gridspec
 ```
 
-:::{admonition} Panels Background
-:class: info
-
-Read more about ``Panel``s in the [Background for Components](../background/components/components_overview.md#Panels).
+:::{admonition} See Also
+:class: seealso
+* Learn more about Panels in the <a href="../../background/components/components_overview.html#panels">Background for Components</a>
 :::

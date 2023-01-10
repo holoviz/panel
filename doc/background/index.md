@@ -1,15 +1,38 @@
 # Background
 
-The Background pages provide context for the different aspects of Panel. In addition to conceptual discussions that aim to deepen users' understanding of this library, the Background may include opinionated reasoning about design decisions, historical development, and technical constrains. While every new user should read through the core concepts that are covered within the [Getting Started material](../getting_started/index.md), this Background section is intended for practitioners to revisit as needed to deepen their understanding of particular topics.
+The Background section aims to clarify, deepen, and broaden the understanding of Panel with discussions about topics at a high-level or from alternate angles. This may include reasoning about design decisions, historical development, and technical constraints.
+
+Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md) that new users must internalize in order to begin working, this Background section is intended to help practitioners form and strengthen a conceptual web that facilitates new and advanced usage directions.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Components Overview
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Components
 :link: components/components_overview
 :link-type: doc
 
-Review the categories of objects and layouts in Panel
+Deepen your understanding about Panel's visible objects and layouts types.
+:::
+
+:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` APIs
+:link: api/api
+:link-type: doc
+
+Explore the reasoning for each of Panel's APIs.
+:::
+
+:::{grid-item-card} {octicon}`multi-select;2.5em;sd-mr-1` Param
+:link: param/param
+:link-type: doc
+
+Discover why Panel utilizes the Param library.
+:::
+
+:::{grid-item-card} {octicon}`git-compare;2.5em;sd-mr-1` Library Comparisons
+:link: ../about/comparisons
+:link-type: doc
+
+Compare Panel with similar libraries.
 :::
 
 ::::
@@ -21,4 +44,7 @@ Review the categories of objects and layouts in Panel
 :maxdepth: 2
 
 components/components_overview
+api/api
+param/param
+../about/comparisons
 ```

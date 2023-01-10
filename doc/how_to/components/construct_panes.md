@@ -15,7 +15,7 @@ pn.pane.Markdown('''
 ''')
 ```
 
-Alternatively, you can create a pane using the `pn.panel()` utility to automatically infer the pane type from the object being passed as the argument. This utility resolves the appropriate representation for an object by checking all Pane object types available and then ranking them by priority. For example, when passing a string there are many representations, but the PNG pane takes precedence if the string is a valid URL or local file path ending in ".png":
+Alternatively, you can create a pane using the `pn.panel()` utility to automatically infer the pane type from the object being passed as the argument:
 
 ```{pyodide}
 png = pn.panel('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png', width=500)
@@ -23,8 +23,8 @@ png = pn.panel('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transpar
 png
 ```
 
-:::{admonition} Pane Background
-:class: info
+:::{admonition} See Also
+:class: seealso
 
-Learn more about Panes in the [Background for Components](../background/components/components_overview.md#Panes)
+* Learn more about Panes in the <a href="../../background/components/components_overview.html#panes">Background for Components</a>
 :::

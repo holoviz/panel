@@ -1,5 +1,7 @@
 # Components
 
+Panel components are the building blocks and visual layouts of your app or dashboard. These How-to pages provide solutions for common component tasks.
+
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
@@ -25,7 +27,7 @@ How to access and set widget values.
 :::
 
 :::{grid-item-card} Add or Remove Components
-:link: widget_values
+:link: add_remove
 :link-type: doc
 
 How to add or remove components from a panel.

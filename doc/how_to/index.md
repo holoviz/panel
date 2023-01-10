@@ -28,7 +28,7 @@ Discover how to use Parameters with Panel to automatically generate UIs without 
 Discover different ways of linking parameters in Python and Javascript.
 :::
 
-:::{grid-item-card} {octicon}`link;2.5em;sd-mr-1` Specify Components
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Specify Components
 :link: components/index
 :link-type: doc
 
