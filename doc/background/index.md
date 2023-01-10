@@ -29,7 +29,7 @@ Discover why Panel utilizes the Param library.
 :::
 
 :::{grid-item-card} {octicon}`git-compare;2.5em;sd-mr-1` Library Comparisons
-:link: ../about/comparisons
+:link: compare/comparisons
 :link-type: doc
 
 Compare Panel with similar libraries.
@@ -46,5 +46,5 @@ Compare Panel with similar libraries.
 components/components_overview
 api/api
 param/param
-../about/comparisons
+compare/comparisons
 ```

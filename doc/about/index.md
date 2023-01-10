@@ -2,7 +2,7 @@
 
 Panel is completely open source, available under a BSD license freely for both commercial and non-commercial use. Panel was originally developed with the support of [Anaconda Inc.](https://anaconda.com) using funding from various commercial and government partners, and is now maintained by Anaconda developers and community contributors.
 
-Panel is part of the [HoloViz](https://holoviz.org) family of tools. The [holoviz.org](https://holoviz.org) website shows how to use Panel together with other libraries to solve complex problems, with detailed tutorials and examples. You can see a variety of projects using Panel at [examples.pyviz.org](https://examples.pyviz.org), and you can compare Panel to other available tools at [pyviz.org](https://pyviz.org).
+Panel is part of the [HoloViz](https://holoviz.org) family of tools. The [holoviz.org](https://holoviz.org) website shows how to use Panel together with other libraries to solve complex problems, with detailed tutorials and examples. You can see a variety of projects using Panel at [examples.pyviz.org](https://examples.pyviz.org), and you can compare Panel to other available tools at [pyviz.org](https://pyviz.org) or on the [Background > Comparisons](../background/compare/comparisons.md) page.
 
 If you have any questions or usage issues visit the [Panel Discourse](https://discourse.holoviz.org/c/panel/) site. If you are interested in contributing to Panel development to help address some of the [open issues](https://github.com/holoviz/panel/issues), see our [developer instructions](https://pyviz-dev.github.io/panel/developer_guide/index.html) to set up your development environment.
 
@@ -15,5 +15,4 @@ If you like Panel and have built something you want to share, tweet a link or sc
 :maxdepth: 2
 
 releases
-comparisons
 ```
