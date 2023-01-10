@@ -150,7 +150,7 @@ and finally we change our mind and replace the ``Checkbox`` with a button:
 
 
 ```{pyodide}
-column[3] = pn.widgets.Button(name='Click here')
+column[4] = pn.widgets.Button(name='Click here')
 
 column
 ```

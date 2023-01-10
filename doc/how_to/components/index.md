@@ -24,5 +24,10 @@ How to access Pane Type.
 How to access and set widget values.
 :::
 
-::::
+:::{grid-item-card} Add or Remove Components
+:link: widget_values
+:link-type: doc
 
+How to add or remove components from a panel.
+:::
+::::
