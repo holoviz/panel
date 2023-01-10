@@ -3,7 +3,7 @@
 In addition to other parameters that govern widget behavior and appearance, Widget objects have a ``value`` parameter that can be used to access the current value state.
 
 
-Let's first create a TextInput widget:
+Let's first create a `TextInput` widget:
 
 ```{pyodide}
 import panel as pn

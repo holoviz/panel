@@ -1,6 +1,7 @@
 # Add or Remove Components from Panels
 
 This page will cover the adding or removing of components to several types of ``Panels``, starting with the most common: ``Row`` and ``Column``.
+
 ## Row & Column Panels
 
 To start, we will declare a ``Column`` and populate it with some text and a widget:
