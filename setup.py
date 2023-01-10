@@ -197,8 +197,8 @@ extras_require = {
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite >=0.7.2rc2',
-        'pydata-sphinx-theme <=0.9.0',
+        'nbsite >=0.8.0rc7',
+        'pydata-sphinx-theme ==0.9.0',
         'sphinx-copybutton',
         'sphinx-design',
     ],

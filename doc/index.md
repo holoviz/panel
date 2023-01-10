@@ -157,6 +157,7 @@ self
 getting_started/index
 how_to/index
 gallery/index
+background/index
 reference/index
 developer_guide/index
 api/index
