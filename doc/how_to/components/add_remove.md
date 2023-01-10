@@ -1,6 +1,6 @@
 # Add or Remove Components from Panels
 
-This page will cover adding or removing components to several types of ``Panels``, starting with the most common - ``Row`` and ``Column``.
+This page will cover the adding or removing of components to several types of ``Panels``, starting with the most common: ``Row`` and ``Column``.
 ## Row & Column Panels
 
 To start, we will declare a ``Column`` and populate it with some text and a widget:
@@ -30,10 +30,23 @@ column.extend([pn.widgets.TextInput(), pn.widgets.Checkbox(name='Tick this!')])
 column
 ```
 
-Finally, we change our mind and replace the ``Checkbox`` with a button:
+Now, we change our mind and replace the ``Checkbox`` with a button:
 
 ```{pyodide}
 column[4] = pn.widgets.Button(name='Click here')
+
+column
+```
+
+Finally, we decide to remove the FloatSlider widget, but we forget its index. We can use `.pprint` to see the index of the components:
+```{pyodide}
+column.pprint()
+```
+
+and then `.pop` to remove the FloatSlider:
+
+```{pyodide}
+column.pop(1)
 
 column
 ```
@@ -87,7 +100,7 @@ gridspec[1:3, 0] = pn.Spacer(background='#0000FF')
 gridspec
 ```
 
-Now, add our previously created bokeh figure to the remaining slots of the second row,
+Next, add our previously created bokeh figure to the remaining slots of the second row:
 
 ```{pyodide}
 gridspec[1:3, 1:3] = p1
@@ -95,7 +108,7 @@ gridspec[1:3, 1:3] = p1
 gridspec
 ```
 
-Finally, place an image and a ``Column`` of widgets under the plot:
+Then, place an image and a ``Column`` of widgets under the plot:
 
 ```{pyodide}
 gridspec[3, 2] = pn.Column(
@@ -103,6 +116,15 @@ gridspec[3, 2] = pn.Column(
     pn.widgets.ColorPicker(),
     pn.widgets.Toggle(name='Toggle Me!'))
 gridspec[3, 1] = 'https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png'
+
+gridspec
+```
+
+Finally, remove the Spacers:
+
+```{pyodide}
+del gridspec[0, :3]
+del gridspec[1:3, 0]
 
 gridspec
 ```
