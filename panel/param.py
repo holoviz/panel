@@ -764,7 +764,7 @@ class ParamMethod(ReplacementPane):
     return any object which itself can be rendered as a Pane.
     """
 
-    defer_load = param.Boolean(default=None, doc="""
+    defer_load = param.Boolean(default=config.defer_load, doc="""
         Whether to defer load until after the page is rendered.
         Can be set as parameter or by setting panel.config.defer_load.""")
 
@@ -772,15 +772,11 @@ class ParamMethod(ReplacementPane):
         Whether to lazily evaluate the contents of the object
         only when it is required for rendering.""")
 
-    loading_indicator = param.Boolean(default=False, doc="""
-        Whether to show loading indicator while pane is updating.""")
+    loading_indicator = param.Boolean(default=config.loading_indicator, doc="""
+        Whether to show a loading indicator while the pane is updating.
+        Can be set as parameter or by setting panel.config.loading_indicator.""")
 
     def __init__(self, object=None, **params):
-        if (
-            self.param.defer_load.default is None and
-            'defer_load' not in params and config.defer_load
-        ):
-            params['defer_load'] = config.defer_load
         super().__init__(object, **params)
         self._evaled = not (self.lazy or self.defer_load)
         self._link_object_params()
@@ -920,7 +916,13 @@ class ParamMethod(ReplacementPane):
     def applies(cls, obj: Any) -> float | bool | None:
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
 
+@param.depends(config.param.defer_load, watch=True)
+def _update_defer_load_default(default_value):
+    ParamMethod.param.defer_load.default = default_value
 
+@param.depends(config.param.loading_indicator, watch=True)
+def _update_loading_indicator_default(default_value):
+    ParamMethod.param.loading_indicator.default = default_value
 
 class ParamFunction(ParamMethod):
     """

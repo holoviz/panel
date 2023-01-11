@@ -22,6 +22,9 @@ The `pn.config` object allows setting various configuration variables, the confi
 `exception_handler`
 : A custom exception handler can be defined which should accept any exceptions raised while processing events originating from the frontend and onload callbacks.
 
+`loading_indicator`
+: Whether a loading indicator is shown by default when panes are updating.
+
 `nthreads`
 : If set will start a `ThreadPoolExecutor` to dispatch events to for concurrent execution on separate cores. By default no thread pool is launched, while setting nthreads=0 launches `min(32, os.cpu_count() + 4)` threads.
 
