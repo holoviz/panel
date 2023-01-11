@@ -147,23 +147,24 @@ The `pn.config` object allows setting various configuration variables, the confi
 `css_files`
 : External CSS files to load.
 
-`js_files`
-: External JS files to load. Dictionary should map from exported name to the URL of the JS file.
-
-`loading_spinner`
-: The style of the global loading indicator, e.g. 'arcs', 'bars', 'dots', 'petals'.
-
-`loading_color`
-: The color of the global loading indicator as a hex color, e.g. #6a6a6a
-
 `defer_load`
 : Whether reactive function evaluation is deferred until the page is rendered.
 
 `exception_handler`
 : A custom exception handler can be defined which should accept any exceptions raised while processing events originating from the frontend and onload callbacks.
+ng.
+
+`js_files`
+: External JS files to load. Dictionary should map from exported name to the URL of the JS file.
+
+`loading_color`
+: The color of the global loading indicator as a hex color, e.g. #6a6a6a
 
 `loading_indicator`
 : Whether a loading indicator is shown by default when panes are updating.
+
+`loading_spinner`
+: The style of the global loading indicator, e.g. 'arcs', 'bars', 'dots', 'petals'.
 
 `nthreads`
 : If set will start a `ThreadPoolExecutor` to dispatch events to for concurrent execution on separate cores. By default no thread pool is launched, while setting nthreads=0 launches `min(32, os.cpu_count() + 4)` threads.
