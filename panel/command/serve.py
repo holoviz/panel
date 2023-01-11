@@ -391,7 +391,7 @@ class Serve(_BkServe):
                     "or via explicit argument, not both."
                 )
 
-        for plugin in args.plugins:
+        for plugin in (args.plugins or []):
             try:
                 with add_sys_path('./'):
                     plugin_module = importlib.import_module(plugin)
