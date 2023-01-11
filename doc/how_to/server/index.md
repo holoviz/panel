@@ -50,11 +50,18 @@ Discover how-to configure a reverse proxy to scale your deployment.
 Discover how to access a Panel deployment running remotely via SSH.
 :::
 
-:::{grid-item-card} {octicon}`file-media;2.5em;sd-mr-1` Serving static files
+:::{grid-item-card} {octicon}`file-media;2.5em;sd-mr-1` Serve static files
 :link: static_files
 :link-type: doc
 
 Discover how to serve static files alongside your Panel application(s).
+:::
+
+:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1` Add custom endpoints
+:link: endpoints
+:link-type: doc
+
+Discover how to add custom endpoints to your Panel server.
 :::
 
 ::::
@@ -70,4 +77,5 @@ multiple
 ssh
 proxy
 static_files
+endpoints
 ```
