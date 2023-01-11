@@ -2,6 +2,7 @@ import pathlib
 
 import param
 
+from ...config import config
 from ...io.state import state
 from ..base import BasicTemplate
 from ..react import ReactTemplate
@@ -65,10 +66,24 @@ class FastBaseTemplate(BasicTemplate):
 
     _resources = {
         'js_modules': {
-            'fast-colors': 'https://unpkg.com/@microsoft/fast-colors@5.1.4',
-            'fast': 'https://unpkg.com/@microsoft/fast-components@1.21.8'
+            'fast-colors': f'{config.npm_cdn}/@microsoft/fast-colors@5.3.1/dist/index.js',
+            'fast': f'{config.npm_cdn}/@microsoft/fast-components@1.21.8/dist/fast-components.js'
         },
-        'bundle': False
+        'bundle': True,
+        'tarball': {
+            'fast-colors': {
+                'tar': 'https://registry.npmjs.org/@microsoft/fast-colors/-/fast-colors-5.3.1.tgz',
+                'src': 'package/',
+                'dest': '@microsoft/fast-colors@5.3.1',
+                'exclude': ['*.d.ts', '*.json', '*.md', '*/esm/*']
+            },
+            'fast': {
+                'tar': 'https://registry.npmjs.org/@microsoft/fast-components/-/fast-components-1.21.8.tgz',
+                'src': 'package/',
+                'dest': '@microsoft/fast-components@1.21.8',
+                'exclude': ['*.d.ts', '*.json', '*.md', '*/esm/*']
+            }
+        }
     }
 
     __abstract = True

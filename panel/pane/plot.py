@@ -200,6 +200,8 @@ class Matplotlib(PNG, IPyWidget):
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._managers = {}
+        self._explicit_width = params.get('width') is not None
+        self._explicit_height = params.get('height') is not None
 
     def _get_widget(self, fig):
         import matplotlib.backends
@@ -223,12 +225,30 @@ class Matplotlib(PNG, IPyWidget):
         canvas.mpl_connect('close_event', closer)
         return manager
 
+    @param.depends('width', watch=True)
+    def _set_explicict_width(self):
+        self._explicit_width = self.width is not None
+
+    @param.depends('height', watch=True)
+    def _set_explicict_height(self):
+        self._explicit_height = self.height is not None
+
     def _update_dimensions(self):
         w, h = self.object.get_size_inches()
         dpi = self.dpi / 2. if self.high_dpi else self.dpi
         with param.discard_events(self):
-            self.width = self.width or int(dpi * w)
-            self.height = self.height or int(dpi * h)
+            if not self._explicit_width:
+                if self._explicit_height:
+                    self.width = int(self.height * (w/h))
+                else:
+                    self.width = int(dpi * w)
+                self._explicit_width = False
+            if not self._explicit_height:
+                if self._explicit_width:
+                    self.height = int(self.width * (w/h))
+                else:
+                    self.height = self.height or int(dpi * h)
+                self._explicit_height = False
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -272,7 +292,10 @@ class Matplotlib(PNG, IPyWidget):
         manager.canvas.draw_idle()
 
     def _data(self):
-        self.object.set_dpi(self.dpi)
+        try:
+            self.object.set_dpi(self.dpi)
+        except Exception as ex:
+            raise Exception("The Matplotlib backend is not configured. Try adding `matplotlib.use('agg')`") from ex
         b = BytesIO()
 
         if self.tight:

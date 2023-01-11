@@ -544,7 +544,7 @@ class BaseTable(ReactiveData, Widget):
         if len(indexes) > 1:
             df = df.reset_index()
         data = ColumnDataSource.from_df(df)
-        if not self.show_index:
+        if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
         return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
 
@@ -1151,7 +1151,7 @@ class Tabulator(BaseTable):
 
     def _process_event(self, event):
         event_col = self._renamed_cols.get(event.column, event.column)
-        if self.pagination in ['remote']:
+        if self.pagination == 'remote':
             nrows = self.page_size
             event.row = event.row+(self.page-1)*nrows
 
@@ -1165,20 +1165,21 @@ class Tabulator(BaseTable):
             else:
                 event.value = self.value[event_col].iloc[event.row]
 
-        # Check if edited cell was filtered
-        import pandas as pd
-        filter_df = pd.DataFrame([event.value], columns=[event.column])
-        filters = self._get_header_filters(filter_df)
-        if filters and filters[0].any():
-            self._edited_indexes.append(idx)
-
         # Set the old attribute on a table edit event
-        if event.event_name == 'table-edit' and self._old_value is not None:
-            event.old = self._old_value[event_col].iloc[event.row]
         if event.event_name == 'table-edit':
-            for cb in self._on_edit_callbacks:
-                state.execute(partial(cb, event), schedule=False)
-            self._update_style()
+            if event.pre:
+                import pandas as pd
+                filter_df = pd.DataFrame([event.value], columns=[event.column])
+                filters = self._get_header_filters(filter_df)
+                # Check if edited cell was filtered
+                if filters and filters[0].any():
+                    self._edited_indexes.append(idx)
+            else:
+                if self._old_value is not None:
+                    event.old = self._old_value[event_col].iloc[event.row]
+                for cb in self._on_edit_callbacks:
+                    state.execute(partial(cb, event), schedule=False)
+                self._update_style()
         else:
             for cb in self._on_click_callbacks.get(None, []):
                 state.execute(partial(cb, event), schedule=False)
@@ -1188,14 +1189,15 @@ class Tabulator(BaseTable):
     def _get_theme(self, theme, resources=None):
         from ..io.resources import RESOURCE_MODE
         from ..models.tabulator import (
-            _TABULATOR_THEMES_MAPPING, THEME_PATH, THEME_URL, _get_theme_url,
+            _TABULATOR_THEMES_MAPPING, PANEL_CDN, THEME_PATH, THEME_URL,
+            _get_theme_url,
         )
         if RESOURCE_MODE == 'server' and resources in (None, 'server'):
             theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
             if state.rel_path:
                 theme_url = f'{state.rel_path}/{theme_url}'
         else:
-            theme_url = THEME_URL
+            theme_url = PANEL_CDN
         # Ensure theme_url updates before theme
         cdn_url = _get_theme_url(THEME_URL, theme)
         theme_url = _get_theme_url(theme_url, theme)
@@ -1206,7 +1208,11 @@ class Tabulator(BaseTable):
         return theme_url, theme
 
     def _process_param_change(self, msg):
+        import pandas as pd
         msg = super()._process_param_change(msg)
+        if 'hidden_columns' in msg:
+            if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):
+                msg['hidden_columns'] += [self.value.index.name or 'index']
         if 'frozen_rows' in msg:
             length = self._length
             msg['frozen_rows'] = [
@@ -1249,7 +1255,7 @@ class Tabulator(BaseTable):
             for f in filters:
                 mask &= f
             if self._edited_indexes:
-                edited_mask = (df['index'].isin(self._edited_indexes))
+                edited_mask = (df[self.value.index.name or 'index'].isin(self._edited_indexes))
                 mask = mask | edited_mask
             df = df[mask]
         data = {
@@ -1285,7 +1291,7 @@ class Tabulator(BaseTable):
         return len(self._processed)
 
     def _get_style_data(self, recompute=True):
-        if self.value is None or self.style is None:
+        if self.value is None or self.style is None or self.value.empty:
             return {}
         df = self._processed
         if recompute:
@@ -1719,6 +1725,10 @@ class Tabulator(BaseTable):
                 dtype = self.value.dtypes[col_name]
             if dtype.kind == 'M':
                 col_dict['sorter'] = 'timestamp'
+            elif dtype.kind in 'iuf':
+                col_dict['sorter'] = 'number'
+            elif dtype.kind == 'b':
+                col_dict['sorter'] = 'boolean'
             editor = self.editors.get(column.field)
             if column.field in self.editors and editor is None:
                 col_dict['editable'] = False

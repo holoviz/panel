@@ -157,6 +157,8 @@ class DiscretePlayer(PlayerBase, SelectBase):
                 msg['value'] = indexOf(value, values)
             elif values:
                 self.value = values[0]
+        if 'value_throttled' in msg:
+            del msg['value_throttled']
         return super()._process_param_change(msg)
 
     def _process_property_change(self, msg):

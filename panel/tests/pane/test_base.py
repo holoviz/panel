@@ -1,11 +1,13 @@
 import param
 import pytest
 
+import panel as pn
+
 from panel.interact import interactive
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.pane import (
-    IDOM, Bokeh, HoloViews, Interactive, IPyWidget, Pane, PaneBase, Vega,
+    IDOM, Bokeh, HoloViews, Interactive, IPyWidget, PaneBase, Vega,
 )
 from panel.param import ParamMethod
 from panel.tests.util import check_layoutable_properties
@@ -19,7 +21,7 @@ all_panes = [w for w in param.concrete_descendents(PaneBase).values()
 
 
 def test_pane_repr(document, comm):
-    pane = Pane('Some text', width=400)
+    pane = pn.panel('Some text', width=400)
     assert repr(pane) == 'Markdown(str, width=400)'
 
 

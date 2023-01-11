@@ -17,7 +17,8 @@ description = 'High-level dashboarding for python visualization libraries'
 
 import panel
 
-from panel.io.convert import BOKEH_VERSION, JS_VERSION, PY_VERSION
+from panel.io.convert import BOKEH_VERSION, PY_VERSION
+from panel.io.resources import CDN_DIST
 
 PANEL_ROOT = pathlib.Path(panel.__file__).parent
 
@@ -25,7 +26,7 @@ version = release = base_version(panel.__version__)
 js_version = json.loads((PANEL_ROOT / 'package.json').read_text())['version']
 
 # For the interactivity warning box created by nbsite to point to the right
-# git tag instead of the default i.e. master.
+# git tag instead of the default i.e. main.
 os.environ['BRANCH'] = f"v{release}"
 
 html_static_path += ['_static']
@@ -39,7 +40,6 @@ html_css_files = [
 html_theme = "pydata_sphinx_theme"
 html_logo = "_static/logo_horizontal.png"
 html_favicon = "_static/icons/favicon.ico"
-
 
 html_theme_options = {
     "github_url": "https://github.com/holoviz/panel",
@@ -73,7 +73,7 @@ extensions += [
 ]
 napoleon_numpy_docstring = True
 
-myst_enable_extensions = ["colon_fence"]
+myst_enable_extensions = ["colon_fence", "deflist"]
 
 nbsite_gallery_conf = {
     'github_org': 'holoviz',
@@ -148,11 +148,11 @@ if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
     panel_req = f'./wheels/panel-{py_version}-py3-none-any.whl'
     bokeh_req = f'./wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 else:
-    panel_req = f'https://unpkg.com/@holoviz/panel@{JS_VERSION}/dist/wheels/panel-{PY_VERSION}-py3-none-any.whl'
-    bokeh_req = f'https://unpkg.com/@holoviz/panel@{JS_VERSION}/dist/wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+    panel_req = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
+    bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
 nbsite_pyodide_conf = {
-    'requirements': [bokeh_req, panel_req, 'pandas']
+    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.15.1']
 }
 
 templates_path = [

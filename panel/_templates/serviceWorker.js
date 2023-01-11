@@ -7,6 +7,13 @@ self.addEventListener('install', (e) => {
   console.log('[Service Worker] Install');
   self.skipWaiting();
   e.waitUntil((async () => {
+    const cacheNames = await caches.keys();
+    for (const cacheName of cacheNames) {
+      if (cacheName.startsWith(appName) && cacheName !== appCacheName) {
+        console.log(`[Service Worker] Delete old cache ${cacheName}`);
+        caches.delete(cacheName);
+      }
+    }
     const cache = await caches.open(appCacheName);
     console.log('[Service Worker] Caching ');
     preCacheFiles.forEach(async (cacheFile) => {
@@ -21,15 +28,6 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating');
-  event.waitUntil((async() => {
-    const cacheNames = await caches.keys();
-    for (const cacheName of cacheNames) {
-      if (cacheName.startsWith(appName) && cacheName !== appCacheName) {
-        console.log(`[Service Worker] Delete old cache ${cacheName}`);
-        caches.delete(cacheName);
-      }
-    }
-  })());
   return self.clients.claim();
 });
 

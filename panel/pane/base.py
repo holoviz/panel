@@ -4,8 +4,6 @@ objects to a visual representation expressed as a bokeh model.
 """
 from __future__ import annotations
 
-import warnings
-
 from functools import partial
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, List, Optional, Type, TypeVar,
@@ -25,7 +23,10 @@ from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
 from ..util import param_reprs
-from ..viewable import Layoutable, Viewable, Viewer
+from ..util.warnings import deprecated
+from ..viewable import (
+    Layoutable, ServableMixin, Viewable, Viewer,
+)
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -37,10 +38,7 @@ def Pane(obj: Any, **kwargs) -> 'PaneBase':
     """
     Converts any object to a Pane if a matching Pane class exists.
     """
-    warnings.warn(
-        'panel.Pane(...) is deprecated, use panel.panel(...) instead.',
-        DeprecationWarning
-    )
+    deprecated("1.0", "panel.Pane", "panel.panel")
     if isinstance(obj, Viewable):
         return obj
     return PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
@@ -71,10 +69,10 @@ def panel(obj: Any, **kwargs) -> Viewable:
     layout: Viewable
        A Viewable representation of the input object
     """
-    if isinstance(obj, Viewable):
+    if isinstance(obj, (Viewable, ServableMixin)):
         return obj
     elif hasattr(obj, '__panel__'):
-        if not isinstance(obj, Viewer) and issubclass(obj, Viewer):
+        if not isinstance(obj, Viewer) and (isinstance(obj, type) and issubclass(obj, Viewer)):
             return panel(obj().__panel__())
         return panel(obj.__panel__())
     if kwargs.get('name', False) is None:

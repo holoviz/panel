@@ -23,6 +23,9 @@ export class LocationView extends View {
       this.model.hash = window.location.hash
     }
     window.addEventListener('hashchange', this._hash_listener)
+
+    this._has_finished = true
+    this.notify_finished()
   }
 
   connect_signals(): void {

@@ -10,9 +10,11 @@ from bokeh.models import (
     TextInput as BkTextInput, Toggle,
 )
 
+from panel import config
+from panel.io.state import set_curdoc, state
 from panel.layout import Row, Tabs
 from panel.pane import (
-    HTML, Bokeh, Matplotlib, Pane, PaneBase, panel,
+    HTML, Bokeh, Matplotlib, PaneBase, Str, panel,
 )
 from panel.param import (
     JSONInit, Param, ParamFunction, ParamMethod,
@@ -22,6 +24,10 @@ from panel.widgets import (
     AutocompleteInput, DatePicker, DatetimeInput, EditableFloatSlider,
     EditableRangeSlider, LiteralInput, NumberInput, RangeSlider,
 )
+
+
+def Pane(obj, **kwargs):
+    return PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
 
 
 def test_instantiate_from_class():
@@ -1054,6 +1060,96 @@ def test_param_function_pane(document, comm):
     assert pane._models == {}
     assert inner_pane._models == {}
 
+
+def test_param_function_pane_defer_load(document, comm):
+    test = View()
+
+    @param.depends(test.param.a)
+    def view(a):
+        return Div(text='%d' % a)
+
+    pane = panel(view, defer_load=True)
+    inner_pane = pane._pane
+    assert isinstance(inner_pane, Str)
+
+    # Ensure pane thinks page is not loaded
+    state._loaded[document] = False
+
+    # Create pane
+    with set_curdoc(document):
+        row = pane.get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert pane._models[row.ref['id']][0] is row
+    assert isinstance(model, Div)
+    assert model.text == '&lt;pre&gt; &lt;/pre&gt;'
+
+    # Test on_load
+    state._on_load(document)
+    model = row.children[0]
+    assert isinstance(model, Div)
+    assert model.text == '0'
+
+    # Cleanup pane
+    pane._cleanup(row)
+    assert pane._models == {}
+    assert inner_pane._models == {}
+
+class ParameterizedMock(param.Parameterized):
+        run = param.Event()
+
+        @param.depends("run")
+        def click_view(self):
+            return "click..."
+
+def test_param_function_pane_config_defer_load():
+    # When
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.defer_load==config.defer_load
+
+    # When
+    config.defer_load=not config.defer_load
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.defer_load==config.defer_load
+
+    # When
+    config.defer_load=not config.defer_load
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.defer_load==config.defer_load
+
+    # Clean Up
+    config.defer_load=config.param.defer_load.default
+
+def test_param_function_pane_config_loading_indicator():
+    # When
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.loading_indicator==config.loading_indicator
+
+    # When
+    config.loading_indicator=not config.loading_indicator
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.loading_indicator==config.loading_indicator
+
+    # When
+    config.loading_indicator=not config.loading_indicator
+    app = ParameterizedMock()
+    test = ParamMethod(app.click_view)
+    # Then
+    assert test.loading_indicator==config.loading_indicator
+
+    # Clean Up
+    config.loading_indicator=config.param.loading_indicator.default
 
 def test_param_function_pane_update(document, comm):
     test = View()

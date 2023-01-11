@@ -29,7 +29,7 @@ from panel.pane.vtk.vtk import (
 )
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
-pyvista_available = pytest.mark.skipif(pv is None, reason="requires pyvista")
+pyvista_available = pytest.mark.skipif((pv is None) or (vtk is None), reason="requires pyvista")
 
 
 def make_render_window():
@@ -130,7 +130,7 @@ def test_get_vtkvol_pane_type_from_vtk_image():
     image_data = make_image_data()
     assert PaneBase.get_pane_type(image_data) is VTKVolume
 
-
+@pytest.mark.skip(reason="vtk=9.0.1=no_osmesa not currently available")
 def test_vtkjs_pane(document, comm, tmp_path):
     # from url
     url = r'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs'

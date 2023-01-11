@@ -602,3 +602,116 @@ def test_editable_rangeslider_bounds(
         slider.value = val_update
     except Exception:
         assert fail_update
+
+
+@pytest.mark.parametrize(
+    "editableslider,fixed_start,fixed_end",
+    [
+        (EditableFloatSlider, 5, 10),
+        (EditableIntSlider, 5, 10),
+    ],
+)
+def test_editable_slider_fixed_novalue(editableslider, fixed_start, fixed_end):
+    slider = editableslider(
+        fixed_start=fixed_start, fixed_end=fixed_end,
+    )
+    assert slider.value == fixed_start
+
+    slider = editableslider(fixed_start=fixed_start)
+    assert slider.value == fixed_start
+
+    slider = editableslider(fixed_end=fixed_end)
+    assert slider.value == fixed_end - 1
+
+
+def test_editable_rangeslider_fixed_novalue():
+    fixed_start, fixed_end, step = 5, 10, 0.01
+    slider = EditableRangeSlider(
+        fixed_start=fixed_start, fixed_end=fixed_end,
+    )
+    assert slider.value == (fixed_start, fixed_end)
+
+    slider = EditableRangeSlider(fixed_start=fixed_start)
+    assert slider.value == (fixed_start, fixed_start + 1)
+
+    slider = EditableRangeSlider(fixed_start=fixed_start, step=step)
+    assert slider.value == (fixed_start, fixed_start + step)
+
+    slider = EditableRangeSlider(fixed_end=fixed_end)
+    assert slider.value == (fixed_end - 1, fixed_end)
+
+    slider = EditableRangeSlider(fixed_end=fixed_end, step=step)
+    assert slider.value == (fixed_end - step, fixed_end)
+
+@pytest.mark.parametrize(
+    "editableslider",
+    [EditableFloatSlider, EditableIntSlider, EditableRangeSlider],
+)
+def test_editable_fixed_nosoftbounds_fixed_start_end(editableslider):
+    start, end = 8, 9
+    fixed_start, fixed_end = 5, 10
+
+    slider = editableslider(
+        fixed_start=fixed_start, fixed_end=fixed_end,
+    )
+    assert slider.start == fixed_start
+    assert slider.end == fixed_end
+
+    slider = editableslider(
+        fixed_start=fixed_start, fixed_end=fixed_end,
+        start=start, end=end,
+    )
+    assert slider.start == start
+    assert slider.end == end
+
+
+@pytest.mark.parametrize(
+    "editableslider",
+    [EditableFloatSlider, EditableIntSlider, EditableRangeSlider],
+)
+def test_editable_fixed_nosoftbounds_fixed_start(editableslider):
+    start, _ = 8, 9
+    fixed_start, _ = 5, 10
+    step = 2
+
+    slider = editableslider(fixed_start=fixed_start)
+    assert slider.start == fixed_start
+    assert slider.end == fixed_start + 1
+
+    slider = editableslider(fixed_start=fixed_start, step=step)
+    assert slider.start == fixed_start
+    assert slider.end == fixed_start + step
+
+    slider = editableslider(fixed_start=fixed_start, start=start)
+    assert slider.start == start
+    assert slider.end == start + 1
+
+    slider = editableslider(fixed_start=fixed_start, start=start, step=step)
+    assert slider.start == start
+    assert slider.end == start + step
+
+
+
+@pytest.mark.parametrize(
+    "editableslider",
+    [EditableFloatSlider, EditableIntSlider, EditableRangeSlider],
+)
+def test_editable_fixed_nosoftbounds_fixed_end(editableslider):
+    _, end = 8, 9
+    _, fixed_end = 5, 10
+    step = 2
+    slider = editableslider(fixed_end=fixed_end)
+    assert slider.start == fixed_end - 1
+    assert slider.end == fixed_end
+
+    slider = editableslider(fixed_end=fixed_end, step=step)
+    assert slider.start == fixed_end - step
+    assert slider.end == fixed_end
+
+    slider = editableslider(fixed_end=fixed_end, end=end)
+    assert slider.start == end - 1
+    assert slider.end == end
+
+    slider = editableslider(fixed_end=fixed_end, end=end, step=step)
+    assert slider.start == end - step
+    assert slider.end == end

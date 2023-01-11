@@ -39,6 +39,12 @@ def port_open(port):
     sock.close()
     return is_open
 
+def get_default_port():
+    # to get a different starting port per worker for pytest-xdist
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
+    n = int(re.sub(r"\D", "", worker_id))
+    return 6000 + n * 30
+
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
     args = ['jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''"]
@@ -80,6 +86,11 @@ optional_markers = {
         "help": "Runs Jupyter related tests",
         "marker-descr": "Jupyter test marker",
         "skip-reason": "Test only runs with the --jupyter option."
+    },
+    "docs": {
+        "help": "Runs docs specific tests",
+        "marker-descr": "Docs test marker",
+        "skip-reason": "Test only runs with the --docs option."
     }
 }
 
@@ -130,7 +141,7 @@ def context(context):
     context.set_default_timeout(20_000)
     yield context
 
-PORT = [6000]
+PORT = [get_default_port()]
 
 @pytest.fixture
 def document():
@@ -206,14 +217,15 @@ def tmpdir(request, tmpdir_factory):
 
 @pytest.fixture()
 def html_server_session():
+    port = 5050
     html = HTML('<h1>Title</h1>')
-    server = serve(html, port=6000, show=False, start=False)
+    server = serve(html, port=port, show=False, start=False)
     session = pull_session(
         session_id='Test',
         url="http://localhost:{:d}/".format(server.port),
         io_loop=server.io_loop
     )
-    yield html, server, session
+    yield html, server, session, port
     try:
         server.stop()
     except AssertionError:
@@ -222,14 +234,15 @@ def html_server_session():
 
 @pytest.fixture()
 def markdown_server_session():
+    port = 5051
     html = Markdown('#Title')
-    server = serve(html, port=6001, show=False, start=False)
+    server = serve(html, port=port, show=False, start=False)
     session = pull_session(
         session_id='Test',
         url="http://localhost:{:d}/".format(server.port),
         io_loop=server.io_loop
     )
-    yield html, server, session
+    yield html, server, session, port
     try:
         server.stop()
     except AssertionError:
@@ -237,7 +250,7 @@ def markdown_server_session():
 
 
 @pytest.fixture
-def multiple_apps_server_sessions():
+def multiple_apps_server_sessions(port):
     """Serve multiple apps and yield a factory to allow
     parameterizing the slugs and the titles."""
     servers = []
@@ -247,7 +260,7 @@ def multiple_apps_server_sessions():
             app1_slug: Markdown('First app'),
             app2_slug: Markdown('Second app')
         }
-        server = serve(apps, port=5008, title=titles, show=False, start=False)
+        server = serve(apps, port=port, title=titles, show=False, start=False)
         servers.append(server)
         session1 = pull_session(
             url=f"http://localhost:{server.port:d}/app1",
@@ -298,7 +311,6 @@ def module_cleanup():
         if not any(model.__module__.startswith(tr) for tr in to_reset)
     }
 
-
 @pytest.fixture(autouse=True)
 def server_cleanup():
     """
@@ -307,16 +319,7 @@ def server_cleanup():
     try:
         yield
     finally:
-        state.kill_all_servers()
-        state._indicators.clear()
-        state._locations.clear()
-        state._templates.clear()
-        state._views.clear()
-        state.cache.clear()
-        state._scheduled.clear()
-        if state._thread_pool is not None:
-            state._thread_pool.shutdown(wait=False)
-            state._thread_pool = None
+        state.reset()
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():
@@ -338,6 +341,10 @@ def threads():
         yield 4
     finally:
         config.nthreads = None
+
+@pytest.fixture
+def nothreads():
+    yield
 
 @pytest.fixture
 def change_test_dir(request):

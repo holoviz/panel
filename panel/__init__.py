@@ -84,6 +84,7 @@ __all__ = (
     "Template",
     "WidgetBox",
     "bind",
+    "cache",
     "config",
     "depends",
     "extension",

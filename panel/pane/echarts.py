@@ -53,9 +53,16 @@ class ECharts(PaneBase):
     def applies(cls, obj: Any, **params) -> float | bool | None:
         if isinstance(obj, dict):
             return 0
-        elif "pyecharts." in repr(obj.__class__):
+        elif cls.is_pyecharts(obj):
             return 0.8
         return None
+
+    @classmethod
+    def is_pyecharts(cls, obj):
+        if 'pyecharts' in sys.modules:
+            import pyecharts
+            return isinstance(obj, pyecharts.charts.chart.Chart)
+        return False
 
     @classmethod
     def _get_dimensions(cls, props):
@@ -90,14 +97,12 @@ class ECharts(PaneBase):
     def _get_echart_dict(self, object):
         if isinstance(object, dict):
             return {'data': dict(object)}
-        elif "pyecharts" in sys.modules:
-            import pyecharts  # pylint: disable=import-outside-toplevel,import-error
-            if isinstance(object, pyecharts.charts.chart.Chart):
-                w, h = object.width, object.height
-                params = {'data': json.loads(object.dump_options())}
-                if not self.height and h:
-                    params['height'] = int(h.replace('px', ''))
-                if not self.width and w:
-                    params['width'] = int(w.replace('px', ''))
-                return params
+        elif object is not None:
+            w, h = object.width, object.height
+            params = {'data': json.loads(object.dump_options())}
+            if not self.height and h:
+                params['height'] = int(h.replace('px', ''))
+            if not self.width and w:
+                params['width'] = int(w.replace('px', ''))
+            return params
         return {}

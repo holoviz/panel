@@ -257,7 +257,7 @@ def test_can_set_voices():
     assert utterance.voice == utterance.param.voice.default
 
 
-def test_get_app():
+def manualtest_get_app():
     text_to_speech = TextToSpeech(name="Speaker", value=TEXT, auto_speak=False)
     speaker_settings = pn.Param(
         text_to_speech,
@@ -297,6 +297,6 @@ def test_get_app():
     return template
 
 
-if __name__.startswith("bokeh"):
+if pn.state.served:
     pn.extension(sizing_mode="stretch_width")
-    test_get_app().servable()
+    manualtest_get_app().servable()

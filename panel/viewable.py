@@ -21,6 +21,7 @@ import uuid
 from functools import partial
 from typing import (
     IO, TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    TypeVar,
 )
 
 import param  # type: ignore
@@ -239,10 +240,14 @@ class Layoutable(param.Parameterized):
                     params['sizing_mode'] = 'stretch_height'
                 else:
                     params['sizing_mode'] = config.sizing_mode
-            else:
+            elif config.sizing_mode == 'stretch_width' and 'width' not in params:
+                params['sizing_mode'] = config.sizing_mode
+            elif config.sizing_mode == 'stretch_height' and 'height' not in params:
                 params['sizing_mode'] = config.sizing_mode
         super().__init__(**params)
 
+
+_Self = TypeVar('_Self', bound='ServableMixin')
 
 class ServableMixin(object):
     """
@@ -324,7 +329,7 @@ class ServableMixin(object):
     def servable(
         self, title: Optional[str] = None, location: bool | 'Location' = True,
         area: str = 'main', target: Optional[str] = None
-    ) -> 'ServableMixin':
+    ) -> _Self:
         """
         Serves the object or adds it to the configured
         pn.state.template if in a `panel serve` context, writes to the
@@ -373,8 +378,8 @@ class ServableMixin(object):
             else:
                 self.server_doc(title=title, location=location) # type: ignore
         elif state._is_pyodide:
-            from .io.pyodide import write
-            target = target or getattr(sys.stdout, '_out', None)
+            from .io.pyodide import _get_pyscript_target, write
+            target = target or _get_pyscript_target()
             if target is not None:
                 asyncio.create_task(write(target, self))
         return self
@@ -598,12 +603,15 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         if state._is_pyodide:
-            from .io.pyodide import render_script
-            if hasattr(sys.stdout, '_out'):
-                target = sys.stdout._out # type: ignore
-            else:
-                raise ValueError("Could not determine target node to write to.")
-            return {'text/html': render_script(self, target)}, {}
+            from .io.pyodide import (
+                _IN_WORKER, _get_pyscript_target, render_script,
+            )
+
+            # If in pyodide and not in a worker we are probably in
+            # PyScript otherwise we are probabably in JupyterLite
+            if not _IN_WORKER:
+                target = _get_pyscript_target()
+                return {'text/html': render_script(self, target)}, {}
 
         loaded = panel_extension._loaded
         if not loaded and 'holoviews' in sys.modules:
@@ -867,6 +875,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         add_to_doc(model, doc)
         if location:
             self._add_location(doc, location, model)
+        if config.notifications and doc is state.curdoc:
+            notification_model = state.notifications._get_model(doc, model)
+            notification_model.name = 'notifications'
+            doc.add_root(notification_model)
         return doc
 
 
@@ -878,26 +890,27 @@ class Viewer(param.Parameterized):
     render itself in a notebook and provide show and servable methods.
     """
 
-    def __panel__(self):
+    def __panel__(self) -> Viewable:
         """
         Subclasses should return a Panel component to be rendered.
         """
         raise NotImplementedError
 
     def _create_view(self):
+        from .pane import panel
         from .param import ParamMethod
 
         if hasattr(self.__panel__, "_dinfo"):
-            view = ParamMethod(self.__panel__)
+            view = ParamMethod(self.__panel__, lazy=True)
         else:
-            view = self.__panel__()
+            view = panel(self.__panel__())
 
         return view
 
     def servable(
         self, title: Optional[str]=None, location: bool | 'Location' = True,
         area: str = 'main', target: Optional[str] = None
-    ) -> 'Viewer':
+    ) -> Viewable:
         return self._create_view().servable(title, location, area, target)
 
     servable.__doc__ = ServableMixin.servable.__doc__

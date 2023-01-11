@@ -1,11 +1,13 @@
 """
 Implements memoization for functions with arbitrary arguments
 """
+import datetime as dt
 import functools
 import hashlib
 import inspect
 import io
 import os
+import pathlib
 import pickle
 import sys
 import threading
@@ -131,9 +133,11 @@ _hash_funcs = {
     type(None)   : lambda obj: b'0',
     (bytes, bytearray) : lambda obj: obj,
     (list, tuple, dict): _container_hash,
+    pathlib.Path       : lambda obj: str(obj).encode(),
     functools.partial  : _partial_hash,
     unittest.mock.Mock : lambda obj: _int_to_bytes(id(obj)),
     (io.StringIO, io.BytesIO): _io_hash,
+    dt.date      : lambda obj: f'{type(obj).__name__}{obj}'.encode('utf-8'),
     # Fully qualified type strings
     'numpy.ndarray'              : _numpy_hash,
     'pandas.core.series.Series'  : _pandas_hash,
@@ -339,7 +343,8 @@ def cache(
         # If the function is defined inside a bokeh/panel application
         # it is recreated for each session, therefore we cache by
         # filen, class and function name
-        fname = sys.modules[func.__module__].__file__
+        module = sys.modules[func.__module__]
+        fname = '__main__' if func.__module__ == '__main__' else module.__file__
         if is_method:
             func_hash = (fname, type(args[0]).__name__, func.__name__)
         else:

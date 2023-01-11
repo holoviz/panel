@@ -111,9 +111,12 @@ ENV/
 doc/**/*.rst
 doc/**/*.ipynb
 doc/**/*.json
-# this dir contains the whole website and should not be checked in on master
+# this dir contains the whole website and should not be checked in on main
 builtdocs/
 .doit.db
+
+lite/
+.jupyterlite.doit.db
 
 # vscode settings
 .vscode/
@@ -123,3 +126,8 @@ discover/
 node_modules/*
 /tmp
 .devcontainer/*
+pyodide/
+script.*
+doc/_build/*
+doc/gallery/*
+doc/reference/*

@@ -33,7 +33,7 @@ def voila_serve_examples():
     """
     # See:
     # https://jupyter-server-proxy.readthedocs.io/en/latest/server-process.html
-    # https://github.com/holoviz/jupyter-panel-proxy/blob/master/panel_server/__init__.py
+    # https://github.com/holoviz/jupyter-panel-proxy/blob/main/panel_server/__init__.py
     return {
         "command": [
             "voila", # voila examples/gallery/dynamic --strip_sources=False --base_url

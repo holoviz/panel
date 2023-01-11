@@ -1,16 +1,70 @@
 import logging
 
+from functools import partial
+
+import ipykernel
 import param
 
 from bokeh.document.events import MessageSentEvent
 from bokeh.document.json import Literal, MessageSent, TypedDict
 from bokeh.util.serialization import make_id
-from ipykernel.comm import CommManager
+from ipykernel.comm import Comm, CommManager
+from ipywidgets import Widget
+from ipywidgets._version import __protocol_version__
 from ipywidgets_bokeh.kernel import (
     BokehKernel, SessionWebsocket, WebsocketStream,
 )
+from ipywidgets_bokeh.widget import IPyWidget
 from tornado.ioloop import IOLoop
 
+from ..util import classproperty
+from .state import set_curdoc, state
+
+
+def _get_kernel(cls=None, doc=None):
+    doc = doc or state.curdoc
+    if doc is None:
+        return _ORIG_KERNEL
+    elif doc in state._ipykernels:
+        return state._ipykernels[doc]
+    state._ipykernels[doc] = kernel = PanelKernel(document=doc, key=str(id(doc)).encode('utf-8'))
+    return kernel
+
+def _get_ipywidgets():
+    # Support ipywidgets >=8.0 and <8.0
+    try:
+        from ipywidgets.widgets.widget import _instances as widgets
+    except Exception:
+        widgets = Widget.widgets
+    return widgets
+
+def _on_widget_constructed(widget, doc=None):
+    doc = doc or state.curdoc
+    if not doc or getattr(widget, '_document', None) not in (doc, None):
+        return
+    widget._document = doc
+    kernel = _get_kernel(doc=doc)
+    if widget.comm and isinstance(widget.comm.kernel, PanelKernel):
+        return
+    args = dict(
+        target_name='jupyter.widget', data={}, buffers=[],
+        metadata={'version': __protocol_version__}
+    )
+    if widget._model_id is not None:
+        args['comm_id'] = widget._model_id
+    widget.comm = Comm(**args)
+    kernel.register_widget(widget)
+
+# Patch kernel and widget objects
+_ORIG_KERNEL = ipykernel.kernelbase.Kernel._instance
+if isinstance(ipykernel.kernelbase.Kernel._instance, BokehKernel):
+    ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)
+Widget.on_widget_constructed(_on_widget_constructed)
+
+# Patch font-awesome CSS onto ipywidgets_bokeh IPyWidget
+IPyWidget.__css__ = [
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.css"
+]
 
 class MessageSentBuffers(TypedDict):
     kind: Literal["MessageSent"]
@@ -105,4 +159,18 @@ class PanelKernel(BokehKernel):
 
         comm_msg_types = ['comm_open', 'comm_msg', 'comm_close']
         for msg_type in comm_msg_types:
-            self.shell_handlers[msg_type] = getattr(self.comm_manager, msg_type)
+            handler = getattr(self.comm_manager, msg_type)
+            self.shell_handlers[msg_type] = self._wrap_handler(handler)
+
+    def register_widget(self, widget):
+        comm = widget.comm
+        comm.kernel = self
+        comm.open()
+        self.comm_manager.register_comm(comm)
+
+    def _wrap_handler(self, handler):
+        doc = self.session._document
+        def wrapper(*args, **kwargs):
+            with set_curdoc(doc):
+                state.execute(partial(handler, *args, **kwargs), schedule=True)
+        return wrapper

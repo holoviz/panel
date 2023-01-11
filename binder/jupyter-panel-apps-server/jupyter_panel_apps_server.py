@@ -34,7 +34,7 @@ def panel_serve_examples():
     apps = get_apps()
     # See:
     # https://jupyter-server-proxy.readthedocs.io/en/latest/server-process.html
-    # https://github.com/holoviz/jupyter-panel-proxy/blob/master/panel_server/__init__.py
+    # https://github.com/holoviz/jupyter-panel-proxy/blob/main/panel_server/__init__.py
     return {
         "command": [
             "panel",

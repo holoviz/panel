@@ -2,7 +2,7 @@ name: tests
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
     - '*'
@@ -25,7 +25,7 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: pre-commit
-        uses: pre-commit/action@v2.0.3
+        uses: pre-commit/action@v3.0.0
   unit_test_suite:
     name: Unit tests on ${{ matrix.os }} with Python ${{ matrix.python-version }}
     needs: [pre_commit]
@@ -34,10 +34,8 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: ['3.7', '3.8', '3.9']  # '3.10', '3.11-dev']  # Python 3.10 and 3.11 are not yet supported.
-        exclude:
-          - os: windows-latest
-            python-version: 3.8
+        # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
+        python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.7", "3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.7", "3.9", "3.11"]') }}
     timeout-minutes: 90
     defaults:
       run:
@@ -47,20 +45,26 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python-version }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
+      PYTHONIOENCODING: "utf-8"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Without this env var `doit env_create ...` uses by default
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a2
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
           channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
-          envs: "-o examples -o recommended -o tests -o build"
+          # Remove when Python 3.11 is well supported on latest conda/conda-forge.
+          conda-update: ${{ matrix.python-version == '3.11' && 'false' || 'true' }}
+          nodejs: true
+          # Remove when all examples tools can be installed on 3.10
+          envs: ${{ !contains(matrix.python-version, '3.1') && '-o examples -o recommended -o tests -o build' || '-o recommended -o tests -o build' }}
           cache: true
           opengl: true
+          conda-mamba: mamba
         id: install
       - name: doit develop_install
         if: steps.install.outputs.cache-hit != 'true'
@@ -76,6 +80,8 @@ jobs:
           conda activate test-environment
           doit test_unit
       - name: test examples
+        # Remove when all examples tools can be installed on 3.10
+        if: (!(contains(matrix.python-version, '3.1')))
         run: |
           conda activate test-environment
           doit test_examples
@@ -96,9 +102,10 @@ jobs:
     timeout-minutes: 60
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -el {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
+      PYTHONIOENCODING: "utf-8"
       PANEL_LOG_LEVEL: info
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
@@ -107,7 +114,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a2
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
         with:
           name: ui_test_suite
           python-version: 3.9
@@ -115,12 +122,29 @@ jobs:
           envs: "-o recommended -o tests -o build"
           cache: true
           playwright: true
+          conda-mamba: mamba
         id: install
+      - name: doit develop_install
+        if: steps.install.outputs.cache-hit != 'true'
+        run: |
+          conda activate test-environment
+          pip install ipywidgets_bokeh
+      - name: build pyodide wheels
+        run: |
+          conda activate test-environment
+          python scripts/build_pyodide_wheels.py
       - name: launch jupyter
         run: |
           conda activate test-environment
           jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
           (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
+      - name: build jupyterlite
+        run: |
+          conda activate test-environment
+          pip install jupyterlite
+          python ./scripts/build_pyodide_wheels.py lite/pypi
+          python ./scripts/generate_panelite_content.py
+          jupyter lite build --lite-dir lite --output-dir lite/dist
       - name: Wait for JupyterLab
         uses: ifaxity/wait-on-action@v1
         with:

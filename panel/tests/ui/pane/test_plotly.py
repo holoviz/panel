@@ -54,6 +54,22 @@ def plotly_3d_plot():
 
 
 @plotly_available
+def test_plotly_no_console_errors(page, port, plotly_2d_plot):
+    serve(plotly_2d_plot, port=port, threaded=True, show=False)
+
+    msgs = []
+    page.on("console", lambda msg: msgs.append(msg))
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    time.sleep(1)
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
+@plotly_available
 def test_plotly_2d_plot(page, port, plotly_2d_plot):
     serve(plotly_2d_plot, port=port, threaded=True, show=False)
     time.sleep(0.2)
@@ -94,7 +110,7 @@ def test_plotly_3d_plot(page, port, plotly_3d_plot):
 
     # main pane
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
-    expect(plotly_plot).to_have_count(1)
+    expect(plotly_plot).to_have_count(1, timeout=10_000)
     expect(plotly_plot).to_contain_text(title, use_inner_text=True)
 
     plot_title = page.locator('.g-gtitle')

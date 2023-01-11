@@ -4,6 +4,7 @@ file types.
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 
 from io import BytesIO
@@ -78,9 +79,20 @@ class FileBase(DivPaneBase):
                 self.object.seek(0)
             return self.object.read()
         if isurl(self.object, None):
-            import requests
-            r = requests.request(url=self.object, method='GET')
-            return r.content
+            from ..io.state import state
+            if state._is_pyodide:
+                from ..io.pyodide import _IN_WORKER, fetch_binary
+                if _IN_WORKER:
+                    return fetch_binary(self.object).read()
+                else:
+                    from pyodide.http import pyfetch
+                    async def replace_content():
+                        self.object = await (await pyfetch(self.object)).bytes()
+                    asyncio.create_task(replace_content())
+            else:
+                import requests
+                r = requests.request(url=self.object, method='GET')
+                return r.content
 
 
 class ImageBase(FileBase):
@@ -133,6 +145,8 @@ class ImageBase(FileBase):
         if self.object is None:
             return dict(p, text='<img></img>')
         data = self._data()
+        if data is None:
+            return dict(p, text='<img></img>')
         if not isinstance(data, bytes):
             data = base64.b64decode(data)
         width, height = self._imgshape(data)

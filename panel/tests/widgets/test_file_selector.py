@@ -1,5 +1,4 @@
 import os
-import shutil
 
 from collections import OrderedDict
 
@@ -9,17 +8,19 @@ from panel.widgets import FileSelector
 
 
 @pytest.fixture
-def test_dir():
-    test_dir = os.path.expanduser(os.path.join('~','test_dir'))
-    os.mkdir(test_dir)
-    os.mkdir(os.path.expanduser(os.path.join('~','test_dir','subdir1')))
-    with open(os.path.expanduser(os.path.join('~','test_dir','subdir1','a')), 'a'):
-        pass
-    with open(os.path.expanduser(os.path.join('~','test_dir','subdir1','b')), 'a'):
-        pass
-    os.mkdir(os.path.expanduser(os.path.join('~','test_dir','subdir2')))
-    yield test_dir
-    shutil.rmtree(os.path.expanduser(os.path.join('~','test_dir')))
+def test_dir(tmp_path):
+    test_dir = tmp_path / 'test_dir'
+    subdir1 = test_dir / 'subdir1'
+    subdir2 = test_dir / 'subdir2'
+    a = subdir1 / "a"
+    b = subdir1 / "b"
+
+    subdir1.mkdir(parents=True)
+    subdir2.mkdir(parents=True)
+    a.write_text("")
+    b.write_text("")
+
+    yield str(test_dir)
 
 
 def test_file_selector_init(test_dir):

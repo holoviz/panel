@@ -17,8 +17,10 @@ from bokeh.models import (
 )
 from bokeh.plotting import Figure
 
+import panel as pn
+
 from panel.layout import Column, FlexBox, Row
-from panel.pane import HoloViews, Pane, PaneBase
+from panel.pane import HoloViews, PaneBase
 from panel.tests.util import hv_available, mpl_available
 from panel.widgets import DiscreteSlider, FloatSlider, Select
 
@@ -34,7 +36,7 @@ def test_get_holoviews_pane_type():
 @hv_available
 def test_holoviews_pane_mpl_renderer(document, comm):
     curve = hv.Curve([1, 2, 3])
-    pane = Pane(curve)
+    pane = pn.panel(curve)
 
     # Create pane
     row = pane.get_root(document, comm=comm)
@@ -61,7 +63,7 @@ def test_holoviews_pane_mpl_renderer(document, comm):
 @hv_available
 def test_holoviews_pane_switch_backend(document, comm):
     curve = hv.Curve([1, 2, 3])
-    pane = Pane(curve)
+    pane = pn.panel(curve)
 
     # Create pane
     row = pane.get_root(document, comm=comm)
@@ -85,7 +87,7 @@ def test_holoviews_pane_switch_backend(document, comm):
 @hv_available
 def test_holoviews_pane_bokeh_renderer(document, comm):
     curve = hv.Curve([1, 2, 3])
-    pane = Pane(curve)
+    pane = pn.panel(curve)
 
     # Create pane
     row = pane.get_root(document, comm=comm)
@@ -512,7 +514,7 @@ def test_holoviews_link_across_panes(document, comm):
 
     RangeToolLink(c1, c2)
 
-    layout = Row(Pane(c1, backend='bokeh'), Pane(c2, backend='bokeh'))
+    layout = Row(pn.panel(c1, backend='bokeh'), pn.panel(c2, backend='bokeh'))
     row = layout.get_root(document, comm=comm)
 
     assert len(row.children) == 2
@@ -536,7 +538,7 @@ def test_holoviews_link_after_adding_item(document, comm):
 
     RangeToolLink(c1, c2)
 
-    layout = Row(Pane(c1, backend='bokeh'))
+    layout = Row(pn.panel(c1, backend='bokeh'))
     row = layout.get_root(document, comm=comm)
 
     assert len(row.children) == 1
@@ -546,7 +548,7 @@ def test_holoviews_link_after_adding_item(document, comm):
     range_tool = row.select_one({'type': RangeTool})
     assert range_tool is None
 
-    layout.append(Pane(c2, backend='bokeh'))
+    layout.append(pn.panel(c2, backend='bokeh'))
     _, p2 = row.children
     assert isinstance(p2, Figure)
     range_tool = row.select_one({'type': RangeTool})
@@ -564,7 +566,7 @@ def test_holoviews_link_within_pane(document, comm):
 
     RangeToolLink(c1, c2)
 
-    pane = Pane(Pane(hv.Layout([c1, c2]), backend='bokeh'))
+    pane = pn.panel(pn.panel(hv.Layout([c1, c2]), backend='bokeh'))
     column = pane.get_root(document, comm=comm)
 
     assert len(column.children) == 1
@@ -588,7 +590,7 @@ def test_holoviews_link_within_pane(document, comm):
 def test_holoviews_property_override(document, comm):
     c1 = hv.Curve([])
 
-    pane = Pane(c1, backend='bokeh', background='red',
+    pane = pn.panel(c1, backend='bokeh', background='red',
                 css_classes=['test_class'])
     model = pane.get_root(document, comm=comm)
 

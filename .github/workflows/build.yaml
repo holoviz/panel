@@ -28,10 +28,10 @@ jobs:
         run: |
           sudo rm /usr/local/bin/node
           sudo rm /usr/local/bin/npm
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: "100"
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - uses: conda-incubator/setup-miniconda@v2
@@ -62,20 +62,27 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > $HOME/.npmrc
           npm whoami
           npm -v
-      - name: dev deploy
+      - name: conda dev deploy
         if: (github.event_name == 'push' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           doit package_upload --token=${{ secrets.CONDA_UPLOAD_TOKEN }} --label=dev
           python setup.py develop
           cd ./panel
           npm publish --tag dev
-      - name: main deploy
+      - name: conda main deploy
         if: (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           doit package_upload --token=${{ secrets.CONDA_UPLOAD_TOKEN }} --label=dev --label=main
           python setup.py develop
           cd ./panel
           npm publish --tag latest
+          cd ..
+      - name: Deploy to cdn.holoviz.org
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: 'us-east-1'
+        run: python scripts/cdn_upload.py
   pip_build:
     name: Build PyPI Packages
     runs-on: 'ubuntu-latest'
@@ -94,10 +101,10 @@ jobs:
         run: |
           sudo rm /usr/local/bin/node
           sudo rm /usr/local/bin/npm
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: "100"
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - uses: conda-incubator/setup-miniconda@v2

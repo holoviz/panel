@@ -25,7 +25,7 @@ from .io.state import state
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
 
-_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty'))
+_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty')) and not state._is_pyodide
 
 #---------------------------------------------------------------------
 # Public API
@@ -112,10 +112,19 @@ class _config(_base_config):
     autoreload = param.Boolean(default=False, doc="""
         Whether to autoreload server when script changes.""")
 
+    defer_load = param.Boolean(default=False, doc="""
+        Whether to defer load of rendered functions.""")
+
+    exception_handler = param.Callable(default=None, doc="""
+        General exception handler for events.""")
+
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
 
-    loading_spinner = param.Selector(default='arcs', objects=[
+    loading_indicator = param.Boolean(default=False, doc="""
+        Whether a loading indicator is shown by default while panes are updating.""")
+
+    loading_spinner = param.Selector(default='arc', objects=[
         'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
         Loading indicator to use when component loading parameter is set.""")
 
@@ -159,6 +168,10 @@ class _config(_base_config):
 
     _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
 
+    _admin_log_level = param.Selector(
+        default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        doc="Log level of the Admin Panel logger")
+
     _comms = param.ObjectSelector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
@@ -192,7 +205,7 @@ class _config(_base_config):
         default='WARNING', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of Panel loggers")
 
-    _npm_cdn = param.Selector(default='https://unpkg.com',
+    _npm_cdn = param.Selector(default='https://cdn.jsdelivr.net/npm',
         objects=['https://unpkg.com', 'https://cdn.jsdelivr.net/npm'],  doc="""
         The CDN to load NPM packages from if resources are served from
         CDN. Allows switching between https://unpkg.com and
@@ -270,6 +283,9 @@ class _config(_base_config):
     def _enable_notifications(self):
         from .io.notifications import NotificationArea
         from .io.state import state
+        from .reactive import ReactiveHTMLMetaclass
+        if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
+            ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
         if not state.curdoc:
             state._notification = NotificationArea()
 
@@ -316,6 +332,11 @@ class _config(_base_config):
     def _update_log_level(self):
         panel_log_handler.setLevel(self._log_level)
 
+    @param.depends('_admin_log_level', watch=True)
+    def _update_admin_log_level(self):
+        from .io.admin import log_handler as admin_log_handler
+        admin_log_handler.setLevel(self._log_level)
+
     def __getattribute__(self, attr):
         """
         Ensures that configuration parameters that are defined per
@@ -357,6 +378,10 @@ class _config(_base_config):
     @property
     def _doc_build(self):
         return os.environ.get('PANEL_DOC_BUILD')
+
+    def admin_log_level(self):
+        admin_log_level = os.environ.get('PANEL_ADMIN_LOG_LEVEL', self._admin_log_level)
+        return admin_log_level.upper() if admin_log_level else None
 
     @property
     def console_output(self):
@@ -499,12 +524,12 @@ class panel_extension(_pyviz_extension):
         'vtk': 'panel.models.vtk',
         'ace': 'panel.models.ace',
         'echarts': 'panel.models.echarts',
-        'ipywidgets': 'ipywidgets_bokeh.widget',
+        'ipywidgets': 'panel.io.ipywidget',
         'perspective': 'panel.models.perspective',
         'terminal': 'panel.models.terminal',
         'tabulator': 'panel.models.tabulator',
         'texteditor': 'panel.models.quill',
-        'jsoneditor': 'panel.models.json_editor'
+        'jsoneditor': 'panel.models.jsoneditor'
     }
 
     # Check whether these are loaded before rendering (if any item
@@ -524,6 +549,8 @@ class panel_extension(_pyviz_extension):
     }
 
     _loaded_extensions = []
+
+    _comms_detected_before = False
 
     def __call__(self, *args, **params):
         from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
@@ -592,6 +619,8 @@ class panel_extension(_pyviz_extension):
 
         from .io.notebook import load_notebook
 
+        self._detect_comms(params)
+
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if loaded and newly_loaded:
             self.param.warning(
@@ -628,7 +657,21 @@ class panel_extension(_pyviz_extension):
             load_notebook(config.inline)
         panel_extension._loaded = True
 
+        if config.notifications:
+            display(state.notifications) # noqa
+
+        if config.load_entry_points:
+            self._load_entry_points()
+
+    def _detect_comms(self, params):
+        called_before = self._comms_detected_before
+        self._comms_detected_before = True
+
         if 'comms' in params:
+            config.comms = params.pop("comms")
+            return
+
+        if called_before:
             return
 
         # Try to detect environment so that we can enable comms
@@ -639,18 +682,9 @@ class panel_extension(_pyviz_extension):
         except ImportError:
             pass
 
-        # Check if we're running in VSCode
         if "VSCODE_PID" in os.environ:
             config.comms = "vscode"
-
-        if "pyodide" in sys.modules:
-            config.comms = "ipywidgets"
-
-        if config.notifications:
-            display(state.notifications) # noqa
-
-        if config.load_entry_points:
-            self._load_entry_points()
+            return
 
     def _apply_signatures(self):
         from inspect import Parameter, Signature

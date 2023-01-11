@@ -249,9 +249,9 @@ def test_tabulator_multi_index(document, comm):
     model = table.get_root()
 
     assert model.configuration['columns'] == [
-        {'field': 'A'},
+        {'field': 'A', 'sorter': 'number'},
         {'field': 'C'},
-        {'field': 'B'},
+        {'field': 'B', 'sorter': 'number'},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
 
@@ -266,9 +266,9 @@ def test_tabulator_multi_index_remote_pagination(document, comm):
     model = table.get_root()
 
     assert model.configuration['columns'] == [
-        {'field': 'A'},
+        {'field': 'A', 'sorter': 'number'},
         {'field': 'C'},
-        {'field': 'B'},
+        {'field': 'B', 'sorter': 'number'},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
 
@@ -382,9 +382,9 @@ def test_tabulator_config_defaults(document, comm):
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index'},
-        {'field': 'A'},
-        {'field': 'B'},
+        {'field': 'index', 'sorter': 'number'},
+        {'field': 'A', 'sorter': 'number'},
+        {'field': 'B', 'sorter': 'number'},
         {'field': 'C'},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
@@ -397,9 +397,9 @@ def test_tabulator_config_widths_percent(document, comm):
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index'},
-        {'field': 'A', 'width': '22%'},
-        {'field': 'B'},
+        {'field': 'index', 'sorter': 'number'},
+        {'field': 'A', 'sorter': 'number', 'width': '22%'},
+        {'field': 'B', 'sorter': 'number'},
         {'field': 'C'},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
@@ -412,9 +412,9 @@ def test_tabulator_header_filters_config_boolean(document, comm):
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index', 'headerFilter': 'number'},
-        {'field': 'A', 'headerFilter': True},
-        {'field': 'B', 'headerFilter': True},
+        {'field': 'index', 'sorter': 'number', 'headerFilter': 'number'},
+        {'field': 'A', 'sorter': 'number', 'headerFilter': True},
+        {'field': 'B', 'sorter': 'number', 'headerFilter': True},
         {'field': 'C', 'headerFilter': True},
         {'field': 'D', 'headerFilter': False, 'sorter': 'timestamp'} # Datetime header filtering not supported
     ]
@@ -426,9 +426,9 @@ def test_tabulator_header_filters_column_config_list(document, comm):
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index'},
-        {'field': 'A'},
-        {'field': 'B'},
+        {'field': 'index', 'sorter': 'number'},
+        {'field': 'A', 'sorter': 'number'},
+        {'field': 'B', 'sorter': 'number'},
         {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
@@ -445,9 +445,9 @@ def test_tabulator_header_filters_column_config_select_autocomplete_backwards_co
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index'},
-        {'field': 'A'},
-        {'field': 'B'},
+        {'field': 'index', 'sorter': 'number'},
+        {'field': 'A', 'sorter': 'number'},
+        {'field': 'B', 'sorter': 'number'},
         {'field': 'C', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}},
         {'field': 'D', 'headerFilter': 'list', 'headerFilterParams': {'valuesLookup': True}, 'sorter': 'timestamp'},
     ]
@@ -462,9 +462,9 @@ def test_tabulator_header_filters_column_config_dict(document, comm):
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index'},
-        {'field': 'A'},
-        {'field': 'B'},
+        {'field': 'index', 'sorter': 'number'},
+        {'field': 'A', 'sorter': 'number'},
+        {'field': 'B', 'sorter': 'number'},
         {
             'field': 'C',
             'headerFilter': 'list',
@@ -527,7 +527,7 @@ def test_tabulator_config_formatter_string(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert model.configuration['columns'][2] == {'field': 'B', 'formatter': 'tickCross'}
+    assert model.configuration['columns'][2] == {'field': 'B', 'sorter': 'number', 'formatter': 'tickCross'}
 
 
 def test_tabulator_config_formatter_dict(document, comm):
@@ -536,7 +536,7 @@ def test_tabulator_config_formatter_dict(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert model.configuration['columns'][2] == {'field': 'B', 'formatter': 'tickCross', 'formatterParams': {'tristate': True}}
+    assert model.configuration['columns'][2] == {'field': 'B', 'sorter': 'number', 'formatter': 'tickCross', 'formatterParams': {'tristate': True}}
 
 
 def test_tabulator_config_editor_string_backwards_compat(document, comm):
@@ -545,7 +545,7 @@ def test_tabulator_config_editor_string_backwards_compat(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert model.configuration['columns'][2] == {'field': 'B', 'editor': 'list'}
+    assert model.configuration['columns'][2] == {'field': 'B', 'sorter': 'number', 'editor': 'list'}
 
 
 def test_tabulator_config_editor_string(document, comm):
@@ -554,7 +554,7 @@ def test_tabulator_config_editor_string(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert model.configuration['columns'][2] == {'field': 'B', 'editor': 'list'}
+    assert model.configuration['columns'][2] == {'field': 'B', 'sorter': 'number', 'editor': 'list'}
 
 
 def test_tabulator_config_editor_dict(document, comm):
@@ -563,7 +563,7 @@ def test_tabulator_config_editor_dict(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert model.configuration['columns'][2] == {'field': 'B', 'editor': 'list', 'editorParams': {'valuesLookup': True}}
+    assert model.configuration['columns'][2] == {'field': 'B', 'sorter': 'number', 'editor': 'list', 'editorParams': {'valuesLookup': True}}
 
 
 def test_tabulator_groups(document, comm):
@@ -573,11 +573,11 @@ def test_tabulator_groups(document, comm):
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index'},
+        {'field': 'index', 'sorter': 'number'},
         {'title': 'Number',
          'columns': [
-            {'field': 'A'},
-            {'field': 'B'}
+            {'field': 'A', 'sorter': 'number'},
+            {'field': 'B', 'sorter': 'number'}
         ]},
         {'title': 'Other',
          'columns': [
@@ -588,19 +588,20 @@ def test_tabulator_groups(document, comm):
 
 
 def test_tabulator_numeric_groups(document, comm):
+    print(document)
     df = pd.DataFrame(np.random.rand(10, 3))
     table = Tabulator(df, groups={'Number': [0, 1]})
 
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index'},
+        {'field': 'index', 'sorter': 'number'},
         {'title': 'Number',
          'columns': [
-            {'field': '0'},
-            {'field': '1'}
+            {'field': '0', 'sorter': 'number'},
+            {'field': '1', 'sorter': 'number'}
         ]},
-        {'field': '2'}
+        {'field': '2', 'sorter': 'number'}
     ]
 
 
@@ -611,9 +612,9 @@ def test_tabulator_frozen_cols(document, comm):
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index', 'frozen': True},
-        {'field': 'A'},
-        {'field': 'B'},
+        {'field': 'index', 'sorter': 'number', 'frozen': True},
+        {'field': 'A', 'sorter': 'number'},
+        {'field': 'B', 'sorter': 'number'},
         {'field': 'C'},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
@@ -777,7 +778,7 @@ def test_tabulator_sorters_unnamed_index(document, comm):
     df = pd.DataFrame(np.random.rand(10, 4))
     table = Tabulator(df)
 
-    table.sorters = [{'field': 'index', 'dir': 'desc'}]
+    table.sorters = [{'field': 'index', 'sorter': 'number', 'dir': 'desc'}]
 
     pd.testing.assert_frame_equal(
         table.current_view,
@@ -1055,7 +1056,7 @@ def test_tabulator_patch_scalars_not_as_index(document, comm):
 
 def test_tabulator_patch_with_filters(document, comm):
     df = makeMixedDataFrame()
-    table = Tabulator(df, filters=[{'field': 'A', 'type': '>', 'value': '2'}])
+    table = Tabulator(df, filters=[{'field': 'A', 'sorter': 'number', 'type': '>', 'value': '2'}])
 
     model = table.get_root(document, comm)
 
@@ -1090,7 +1091,7 @@ def test_tabulator_patch_with_filters(document, comm):
 
 def test_tabulator_patch_with_sorters(document, comm):
     df = makeMixedDataFrame()
-    table = Tabulator(df, sorters=[{'field': 'A', 'dir': 'desc'}])
+    table = Tabulator(df, sorters=[{'field': 'A', 'sorter': 'number', 'dir': 'desc'}])
 
     model = table.get_root(document, comm)
 
@@ -1130,7 +1131,7 @@ def test_tabulator_patch_with_sorters(document, comm):
 def test_tabulator_patch_with_sorters_and_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(
-        df, sorters=[{'field': 'A', 'dir': 'desc'}],
+        df, sorters=[{'field': 'A', 'sorter': 'number', 'dir': 'desc'}],
         pagination='remote', page_size=3, page=2
     )
 
@@ -1255,7 +1256,7 @@ def test_tabulator_paginated_sorted_selection(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, pagination='remote', page_size=2)
 
-    table.sorters = [{'field': 'A', 'dir': 'dec'}]
+    table.sorters = [{'field': 'A', 'sorter': 'number', 'dir': 'dec'}]
 
     model = table.get_root(document, comm)
 
@@ -1277,7 +1278,7 @@ def test_tabulator_paginated_sorted_selection(document, comm):
     table._process_events({'indices': [1]})
     assert table.selection == [3]
 
-    table.sorters = [{'field': 'A', 'dir': 'asc'}]
+    table.sorters = [{'field': 'A', 'sorter': 'number', 'dir': 'asc'}]
     table._process_events({'indices': [1]})
     assert table.selection == [1]
 
@@ -1335,7 +1336,7 @@ def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
-    table.filters = [{'field': 'index', 'type': '=', 'value': 2}]
+    table.filters = [{'field': 'index', 'sorter': 'number', 'type': '=', 'value': 2}]
 
     expected = pd.DataFrame({
         'A': np.array([2.]),
@@ -1351,7 +1352,7 @@ def test_tabulator_constant_scalar_filter_on_multi_index_client_side(document, c
     table = Tabulator(df.set_index(['A', 'C']))
 
     table.filters = [
-        {'field': 'A', 'type': '=', 'value': 2},
+        {'field': 'A', 'sorter': 'number', 'type': '=', 'value': 2},
         {'field': 'C', 'type': '=', 'value': 'foo3'}
     ]
 
@@ -1436,7 +1437,7 @@ def test_tabulator_constant_scalar_filter_on_index_with_pagination_client_side(d
 
     model = table.get_root(document, comm)
 
-    table.filters = [{'field': 'index', 'type': '=', 'value': 2}]
+    table.filters = [{'field': 'index', 'sorter': 'number', 'type': '=', 'value': 2}]
 
     expected = {
         'index': np.array([2]),
@@ -1456,7 +1457,7 @@ def test_tabulator_constant_scalar_filter_on_multi_index_with_pagination_client_
     model = table.get_root(document, comm)
 
     table.filters = [
-        {'field': 'A', 'type': '=', 'value': 2},
+        {'field': 'A', 'sorter': 'number', 'type': '=', 'value': 2},
         {'field': 'C', 'type': '=', 'value': 'foo3'}
     ]
 
@@ -1884,7 +1885,7 @@ def test_tabulator_pagination_remote_cell_click_event():
 
 def test_tabulator_cell_click_event_error_duplicate_index():
     df = pd.DataFrame(data={'A': [1, 2]}, index=['a', 'a'])
-    table = Tabulator(df, sorters=[{'field': 'A', 'dir': 'desc'}])
+    table = Tabulator(df, sorters=[{'field': 'A', 'sorter': 'number', 'dir': 'desc'}])
 
     values = []
     table.on_click(lambda e: values.append((e.column, e.row, e.value)))
@@ -1892,3 +1893,37 @@ def test_tabulator_cell_click_event_error_duplicate_index():
     event = CellClickEvent(model=None, column='y', row=0)
     with pytest.raises(ValueError, match="Found this duplicate index: 'a'"):
         table._process_event(event)
+
+def test_tabulator_styling_empty_dataframe():
+    df = pd.DataFrame(columns=["A", "B", "C"]).astype({
+        "A": float,
+        "B": str,
+        "C": int,
+    })
+    table = Tabulator(df)
+    table.style.apply(lambda x: [
+        "border-color: #dc3545; border-style: solid" for name, value in x.items()
+    ], axis=1)
+
+    model = table.get_root()
+
+    assert model.styles == {}
+
+    table.value = pd.DataFrame({'A': [3.14], 'B': ['foo'], 'C': [3]})
+
+    assert model.styles['data'] == {
+        0: {
+            2: [('border-color', '#dc3545'), ('border-style', 'solid')],
+            3: [('border-color', '#dc3545'), ('border-style', 'solid')],
+            4: [('border-color', '#dc3545'), ('border-style', 'solid')]
+        }
+    }
+
+
+def test_tabulator_pandas_import():
+    # Checks for: https://github.com/holoviz/panel/issues/4102
+    _tabulator = Tabulator(
+        pd.DataFrame(),
+        show_index=False,
+    )
+    _tabulator.hidden_columns = ["a", "b", "c"]

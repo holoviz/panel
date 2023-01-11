@@ -19,6 +19,8 @@ from bokeh.application.handlers.document_lifecycle import (
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.subcommands.serve import Serve as _BkServe
 from bokeh.command.util import build_single_handler_applications
+from bokeh.core.validation import silence
+from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.server.contexts import ApplicationContext
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
@@ -169,6 +171,12 @@ class Serve(_BkServe):
         ('--admin', dict(
             action  = 'store_true',
             help    = "Whether to add an admin panel."
+        )),
+        ('--admin-log-level', dict(
+            action  = 'store',
+            default = None,
+            choices = ('debug', 'info', 'warning', 'error', 'critical'),
+            help    = "One of: debug (default), info, warning, error or critical",
         )),
         ('--profiler', dict(
             action  = 'store',
@@ -341,6 +349,15 @@ class Serve(_BkServe):
             except Exception:
                 pass
             patterns.extend(app_patterns)
+            if args.admin_log_level is not None:
+                if os.environ.get('PANEL_ADMIN_LOG_LEVEL'):
+                    raise ValueError(
+                        "admin_log_level supplied both using the environment variable "
+                        "PANEL_ADMIN_LOG_LEVEL and as an explicit argument, only the "
+                        "value supplied to the environment variable is used "
+                    )
+                else:
+                    config.admin_log_level = args.admin_log_level.upper()
 
         config.session_history = args.session_history
         if args.rest_session_info:
@@ -490,3 +507,9 @@ class Serve(_BkServe):
             kwargs['cookie_secret'] = config.cookie_secret
 
         return kwargs
+
+    def invoke(self, args):
+        # Empty layout are valid and the Bokeh warning is silenced as usually
+        # not relevant to Panel users.
+        silence(EMPTY_LAYOUT, True)
+        super().invoke(args)

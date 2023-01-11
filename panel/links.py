@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import difflib
 import sys
-import warnings
 import weakref
 
 from typing import (
@@ -20,6 +19,7 @@ from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 from .io.datamodel import create_linked_datamodel
 from .models import ReactiveHTML
 from .reactive import Reactive
+from .util.warnings import warn
 from .viewable import Viewable
 
 if TYPE_CHECKING:
@@ -384,7 +384,7 @@ class CallbackGenerator(object):
                     model_spec = None
                 model = obj.handles[handle_spec]
         elif isinstance(obj, Viewable):
-            model, _ = obj._models[root_model.ref['id']]
+            model, _ = obj._models.get(root_model.ref['id'], (None, None))
         elif isinstance(obj, BkModel):
             model = obj
         elif isinstance(obj, param.Parameterized):
@@ -499,7 +499,7 @@ class CallbackGenerator(object):
                 if self.error:
                     raise ValueError(msg)
                 else:
-                    warnings.warn(msg)
+                    warn(msg)
             tgt_model.js_on_change(ch, tgt_cb)
         for ev in events:
             tgt_model.js_on_event(ev, tgt_cb)

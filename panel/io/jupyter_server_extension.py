@@ -30,6 +30,7 @@ import json
 import logging
 import os
 import pathlib
+import textwrap
 import time
 import weakref
 
@@ -60,11 +61,12 @@ from bokeh.util.token import (
     generate_jwt_token, generate_session_id, get_session_id, get_token_payload,
 )
 from ipykernel.comm import Comm
-from IPython.display import HTML
+from IPython.display import HTML, publish_display_data
 from jupyter_server.base.handlers import JupyterHandler
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
+from ..config import config
 from ..util import edit_readonly
 from .resources import (
     DIST_DIR, ERROR_TEMPLATE, Resources, _env,
@@ -109,6 +111,16 @@ def url_path_join(*pieces):
     if result == '//': result = '/'
     return result
 
+def get_server_root_dir(settings):
+    if 'server_root_dir' in settings:
+        # notebook >= 5.0.0 has this in the settings
+        root_dir = settings['server_root_dir']
+    else:
+        # This copies the logic added in the notebook in
+        #  https://github.com/jupyter/notebook/pull/2234
+        contents_manager = settings['contents_manager']
+        root_dir = contents_manager.root_dir
+    return os.path.expanduser(root_dir)
 
 @dataclass
 class _RequestProxy:
@@ -127,8 +139,14 @@ class PanelExecutor(WSHandler):
     """
 
     _code = """
+    import os
+    import pathlib
+
+    app = '{{ path }}'
+    os.chdir(str(pathlib.Path(app).parent))
+
     from panel.io.jupyter_server_extension import PanelExecutor
-    executor = PanelExecutor('{{ path }}', '{{ token }}', '{{ root_url }}')
+    executor = PanelExecutor(app, '{{ token }}', '{{ root_url }}')
     executor.render()
     """
 
@@ -144,6 +162,7 @@ class PanelExecutor(WSHandler):
         self.receiver = Receiver(self.protocol)
         self.handler = ProtocolHandler()
         self.write_lock = tornado.locks.Lock()
+        self._context = None
 
         self.resources = Resources(
             mode="server", root_url=self.root_url,
@@ -164,6 +183,7 @@ class PanelExecutor(WSHandler):
         return payload
 
     def _set_state(self):
+        state._jupyter_kernel_context = True
         with edit_readonly(state):
             state.base_url = self.root_url + '/'
             state.rel_path = self.root_url
@@ -197,7 +217,7 @@ class PanelExecutor(WSHandler):
     def _create_server_session(self) -> ServerSession:
         doc = Document()
 
-        session_context = BokehSessionContext(
+        self._context = session_context = BokehSessionContext(
             self.session_id, None, doc
         )
 
@@ -213,7 +233,13 @@ class PanelExecutor(WSHandler):
         # use the _attribute to set the public property .session_context
         doc._session_context = weakref.ref(session_context)
 
-        app = build_single_handler_application(self.path)
+        if self.path.endswith('.yaml') or self.path.endswith('.yml'):
+            from lumen.command import (
+                build_single_handler_application as build_lumen_app,
+            )
+            app = build_lumen_app(self.path, argv=None)
+        else:
+            app = build_single_handler_application(self.path)
         with set_curdoc(doc):
             app.initialize_document(doc)
 
@@ -243,7 +269,9 @@ class PanelExecutor(WSHandler):
         The code to be executed inside the kernel.
         """
         execute_template = _env.from_string(cls._code)
-        return execute_template.render(path=path, token=token, root_url=root_url)
+        return textwrap.dedent(
+            execute_template.render(path=path, token=token, root_url=root_url)
+        )
 
     async def write_message(
         self, message: Union[bytes, str, Dict[str, Any]],
@@ -251,7 +279,7 @@ class PanelExecutor(WSHandler):
     ) -> None:
         metadata = {'binary': binary}
         if binary:
-            self.comm.send({}, metadata=metadata, buffers=[binary])
+            self.comm.send({}, metadata=metadata, buffers=[message])
         else:
             self.comm.send(message, metadata=metadata)
 
@@ -260,13 +288,16 @@ class PanelExecutor(WSHandler):
         Renders the application to an IPython.display.HTML object to
         be served by the `PanelJupyterHandler`.
         """
-        return HTML(server_html_page_for_session(
-            self.session,
-            resources=self.resources,
-            title=self.session.document.title,
-            template=self.session.document.template,
-            template_variables=self.session.document.template_variables
-        ))
+        with set_curdoc(self.session.document):
+            html = server_html_page_for_session(
+                self.session,
+                resources=self.resources,
+                title=self.session.document.title,
+                template=self.session.document.template,
+                template_variables=self.session.document.template_variables
+            )
+        publish_display_data({'application/bokeh-extensions': extension_dirs})
+        return HTML(html)
 
 
 class PanelJupyterHandler(JupyterHandler):
@@ -286,44 +317,37 @@ class PanelJupyterHandler(JupyterHandler):
         self.notebook_path = kwargs.pop('notebook_path', [])
         self.kernel_started = False
 
-    async def _get_comm_id(self, timeout=20):
+    async def _get_info(self, msg_id, timeout=KERNEL_TIMEOUT):
         deadline = time.monotonic() + timeout
-        while True:
+        result, comm_id, extension_dirs = None, None, None
+        while result is None or comm_id is None or extension_dirs is None:
+            if time.monotonic() > deadline:
+                raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
             try:
                 msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=None))
             except Empty:
                 if not await ensure_async(self.kernel.is_alive()):
                     raise RuntimeError("Kernel died before establishing Comm connection to Panel app.")
                 continue
-            if (
-                msg['header']['msg_type'] == 'comm_open' and
-                msg['content']['target_name'] == self.session_id
-            ):
-                comm_id = msg['content']['comm_id']
-                break
-            if time.monotonic() > deadline:
-                raise TimeoutError('Timed out while waiting for kernel to open Comm channel to Panel application.')
-        return comm_id
-
-    async def _get_execute_result(self, msg_id, timeout=KERNEL_TIMEOUT):
-        deadline = time.monotonic() + timeout
-        while True:
-            try:
-                msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=timeout))
-            except Empty:
-                if not await ensure_async(self.kernel.is_alive()):
-                    raise RuntimeError("Kernel died while executing Panel application.")
+            if msg['parent_header'].get('msg_id') != msg_id:
                 continue
-            if msg['parent_header'].get('msg_id') == msg_id:
-                if msg['header']['msg_type'] == 'execute_result':
-                    break
-            if time.monotonic() > deadline:
-                raise TimeoutError('Timed out while waiting for Panel application to start.')
-        return msg
+            msg_type = msg['header']['msg_type']
+            if msg_type == 'display_data' and 'application/bokeh-extensions' in msg['content']['data']:
+                extension_dirs = msg['content']['data']['application/bokeh-extensions']
+            elif msg_type == 'execute_result':
+                result = msg
+            elif msg_type == 'comm_open' and msg['content']['target_name'] == self.session_id:
+                comm_id = msg['content']['comm_id']
+        return result, comm_id, extension_dirs
 
     @tornado.web.authenticated
     async def get(self, path=None):
-        notebook_path = str(pathlib.Path(self.notebook_path or path).absolute())
+        root_dir = get_server_root_dir(self.application.settings)
+        rel_path = pathlib.Path(self.notebook_path or path)
+        if rel_path.is_absolute():
+            notebook_path = str(rel_path)
+        else:
+            notebook_path = str((root_dir / rel_path).absolute())
 
         if (
             self.notebook_path and path
@@ -396,14 +420,12 @@ class PanelJupyterHandler(JupyterHandler):
 
         # Wait for comm to open and rendered HTML to be returned by the kernel
         try:
-            comm_id, msg = await asyncio.gather(
-                self._get_comm_id(),
-                self._get_execute_result(msg_id)
-            )
+            msg, comm_id, ext_dirs = await self._get_info(msg_id)
         except (TimeoutError, RuntimeError) as e:
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
             html = ERROR_TEMPLATE.render(
-                base_url=root_url,
+                npm_cdn=config.npm_cdn,
+                base_url=f'{root_url}/',
                 error_type="Kernel error",
                 error="Failed to start kernel",
                 error_msg=str(e),
@@ -411,6 +433,8 @@ class PanelJupyterHandler(JupyterHandler):
             )
             self.finish(html)
         else:
+            # Sync extension_dirs from kernel to ensure dynamically loaded extensions are served
+            extension_dirs.update(ext_dirs)
             state._kernels[self.session_id] = (self.kernel, comm_id, kernel_id, False)
             loop = tornado.ioloop.IOLoop.current()
             loop.call_later(CONNECTION_TIMEOUT, self._check_connected)
@@ -526,10 +550,12 @@ class PanelWSProxy(WSHandler, JupyterHandler):
                 return self._internal_error(content['data'])
             binary = metadata.get('binary')
             if binary:
-                data = msg['buffers'][0]
+                fragment = msg['buffers'][0].tobytes()
             else:
-                data = content['data']
-            message = await self._receive(data)
+                fragment = content['data']
+                if isinstance(fragment, dict):
+                    fragment = json.dumps(fragment)
+            message = await self._receive(fragment)
             if message:
                 await self.send_message(message)
 

@@ -129,7 +129,9 @@ class ContinuousSlider(_SliderBase):
         # Replace model
         layout_opts = {k: v for k, v in self.param.values().items()
                        if k in Layoutable.param and k != 'name'}
-        dw = DiscreteSlider(options=values, name=self.name, **layout_opts)
+
+        value = values[np.argmin(np.abs(np.array(values)-self.value))]
+        dw = DiscreteSlider(options=values, value=value, name=self.name, **layout_opts)
         dw.link(self, value='value')
         self._models.pop(ref)
         index = parent.children.index(w_model)
@@ -247,6 +249,12 @@ class DateSlider(_SliderBase):
 
     as_datetime = param.Boolean(default=False, doc="""
         Whether to store the date as a datetime.""")
+
+    step = param.Number(default=None, doc="""
+        The step parameter in milliseconds.""")
+
+    format = param.String(default=None, doc="""
+        Datetime format used for parsing and formatting the date.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'name': 'title', 'as_datetime': None
@@ -659,7 +667,10 @@ class DateRangeSlider(_SliderBase):
         The upper bound.""")
 
     step = param.Number(default=1, doc="""
-        The step size. Default is 1 (day).""")
+        The step size. Default is 1 millisecond.""")
+
+    format = param.String(default=None, doc="""
+        Datetime format used for parsing and formatting the date.""")
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'value_throttled': None, 'start': None, 'end': None,
@@ -776,6 +787,7 @@ class _EditableContinuousSlider(CompositeWidget):
     def __init__(self, **params):
         if not 'width' in params and not 'sizing_mode' in params:
             params['width'] = 300
+        self._validate_init_bounds(params)
         super().__init__(**params)
         self._label = StaticText(margin=0, align='end')
         self._slider = self._slider_widget(
@@ -804,6 +816,38 @@ class _EditableContinuousSlider(CompositeWidget):
         self._update_slider()
         self._update_value()
         self._update_bounds()
+
+    def _validate_init_bounds(self, params):
+        """
+        This updates the default value, start and end
+        if outside the fixed_start and fixed_end
+        """
+        start, end = None, None
+        if "start" not in params:
+            if "fixed_start" in params:
+                start = params["fixed_start"]
+            elif "end" in params:
+                start = params.get("end") - params.get("step", 1)
+            elif "fixed_end" in params:
+                start = params.get("fixed_end") - params.get("step", 1)
+
+        if "end" not in params:
+            if "fixed_end" in params:
+                end = params["fixed_end"]
+            elif "start" in params:
+                end = params["start"] + params.get("step", 1)
+            elif "fixed_start" in params:
+                end = params["fixed_start"] + params.get("step", 1)
+
+        if start is not None:
+            params["start"] = start
+        if end is not None:
+            params["end"] = end
+
+        if "value" not in params and "start" in params:
+            params["value"] = params["start"]
+        if "value" not in params and "end" in params:
+            params["value"] = params["end"]
 
     @param.depends('width', 'height', 'sizing_mode', watch=True)
     def _update_layout(self):
@@ -966,6 +1010,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     def __init__(self, **params):
         if not 'width' in params and not 'sizing_mode' in params:
             params['width'] = 300
+        self._validate_init_bounds(params)
         super().__init__(**params)
         self._label = StaticText(margin=0, align='end')
         self._slider = RangeSlider(margin=(0, 0, 5, 0), show_value=False)
@@ -1014,6 +1059,42 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self._update_slider()
         self._update_value()
         self._update_bounds()
+
+    def _validate_init_bounds(self, params):
+        """
+        This updates the default value, start and end
+        if outside the fixed_start and fixed_end
+        """
+        start, end = None, None
+        if "start" not in params:
+            if "fixed_start" in params:
+                start = params["fixed_start"]
+            elif "end" in params:
+                start = params.get("end") - params.get("step", 1)
+            elif "fixed_end" in params:
+                start = params.get("fixed_end") - params.get("step", 1)
+
+        if "end" not in params:
+            if "fixed_end" in params:
+                end = params["fixed_end"]
+            elif "start" in params:
+                end = params["start"] + params.get("step", 1)
+            elif "fixed_start" in params:
+                end = params["fixed_start"] + params.get("step", 1)
+
+        if start is not None:
+            params["start"] = start
+        if end is not None:
+            params["end"] = end
+
+        if "value" not in params and "start" in params:
+            start = params["start"]
+            end = params.get("end", start + params.get("step", 1))
+            params["value"] = (start, end)
+        if "value" not in params and "end" in params:
+            end = params["end"]
+            start = params.get("start", end - params.get("step", 1))
+            params["value"] = (start, end)
 
     @param.depends('editable', watch=True)
     def _update_editable(self):

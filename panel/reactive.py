@@ -309,9 +309,8 @@ class Syncable(Renderable):
 
     def _process_events(self, events: Dict[str, Any]) -> None:
         self._log('received events %s', events)
-        busy = state.busy
         with edit_readonly(state):
-            state.busy = True
+            state._busy_counter += 1
         events = self._process_property_change(events)
         try:
             with edit_readonly(self):
@@ -338,33 +337,40 @@ class Syncable(Renderable):
         finally:
             self._log('finished processing events %s', events)
             with edit_readonly(state):
-                state.busy = busy
+                state._busy_counter -= 1
 
     def _process_bokeh_event(self, doc: Document, event: Event) -> None:
         self._log('received bokeh event %s', event)
-        busy = state.busy
         with edit_readonly(state):
-            state.busy = True
+            state._busy_counter += 1
         try:
             with set_curdoc(doc):
                 self._process_event(event)
         finally:
             self._log('finished processing bokeh event %s', event)
             with edit_readonly(state):
-                state.busy = busy
+                state._busy_counter -= 1
 
     async def _change_coroutine(self, doc: Document) -> None:
         if state._thread_pool:
-            state._thread_pool.submit(self._change_event, doc)
+            future = state._thread_pool.submit(self._change_event, doc)
+            future.add_done_callback(partial(state._handle_future_exception, doc=doc))
         else:
             with set_curdoc(doc):
-                self._change_event(doc)
+                try:
+                    self._change_event(doc)
+                except Exception as e:
+                    state._handle_exception(e)
 
     async def _event_coroutine(self, doc: Document, event) -> None:
         if state._thread_pool:
-            state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future.add_done_callback(partial(state._handle_future_exception, doc=doc))
         else:
-            self._process_bokeh_event(doc, event)
+            try:
+                self._process_bokeh_event(doc, event)
+            except Exception as e:
+                state._handle_exception(e)
 
     def _change_event(self, doc: Document) -> None:
         events = self._events
@@ -388,15 +394,23 @@ class Syncable(Renderable):
 
         self._events.update({attr: new})
         if state._thread_pool:
-            state._thread_pool.submit(self._schedule_change, doc, comm)
+            future = state._thread_pool.submit(self._schedule_change, doc, comm)
+            future.add_done_callback(partial(state._handle_future_exception, doc=doc))
         else:
-            self._schedule_change(doc, comm)
+            try:
+                self._schedule_change(doc, comm)
+            except Exception as e:
+                state._handle_exception(e)
 
     def _comm_event(self, doc: Document, event: Event) -> None:
         if state._thread_pool:
-            state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
+            future.add_done_callback(partial(state._handle_future_exception, doc=doc))
         else:
-            self._process_bokeh_event(doc, event)
+            try:
+                self._process_bokeh_event(doc, event)
+            except Exception as e:
+                state._handle_exception(e)
 
     def _register_events(self, *event_names: str, model: Model, doc: Document, comm: Comm | None) -> None:
         for event_name in event_names:
@@ -433,7 +447,10 @@ class Syncable(Renderable):
             else:
                 doc.add_timeout_callback(cb, self._debounce) # type: ignore
         else:
-            self._change_event(doc)
+            try:
+                self._change_event(doc)
+            except Exception as e:
+                state._handle_exception(e)
 
 
 class Reactive(Syncable, Viewable):

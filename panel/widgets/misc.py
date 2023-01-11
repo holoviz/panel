@@ -297,7 +297,7 @@ class JSONEditor(Widget):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:
             self._widget_type = lazy_load(
-                'panel.models.json_editor', 'JSONEditor', isinstance(comm, JupyterComm)
+                "panel.models.jsoneditor", "JSONEditor", isinstance(comm, JupyterComm)
             )
         model = super()._get_model(doc, root, parent, comm)
         return model

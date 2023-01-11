@@ -18,12 +18,12 @@ import {PanelHTMLBoxView, set_size} from "./layout"
 export class TableEditEvent extends ModelEvent {
   event_name: string = "table-edit"
 
-  constructor(readonly column: string, readonly row: number) {
+  constructor(readonly column: string, readonly row: number, readonly pre: boolean) {
     super()
   }
 
   protected _to_json(): JSON {
-    return {model: this.origin, column: this.column, row: this.row}
+    return {model: this.origin, column: this.column, row: this.row, pre: this.pre}
   }
 }
 
@@ -322,10 +322,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     this.connect(p.styles.change, () => {
       if (this._applied_styles)
-     this.tabulator.redraw(true)
+        this.tabulator.redraw(true)
       this.setStyles()
     })
-    this.connect(p.hidden_columns.change, () => this.setHidden())
+    this.connect(p.hidden_columns.change, () => {
+      this.setHidden()
+      this.tabulator.redraw(true)
+    })
     this.connect(p.page_size.change, () => this.setPageSize())
     this.connect(p.page.change, () => {
       if (!this._updating_page)
@@ -1130,13 +1133,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const value = cell._cell.value
     this._tabulator_cell_updating = true
     comm_settings.debounce = false
+    this.model.trigger_event(new TableEditEvent(field, index, true))
     try {
       this.model.source.patch({[field]: [[index, value]]})
     } finally {
       comm_settings.debounce = true
       this._tabulator_cell_updating = false
     }
-    this.model.trigger_event(new TableEditEvent(field, index))
+    this.model.trigger_event(new TableEditEvent(field, index, false))
     this.tabulator.scrollToRow(index, "top", false)
   }
 }

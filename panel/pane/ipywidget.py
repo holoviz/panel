@@ -46,24 +46,13 @@ class IPyWidget(PaneBase):
         if isinstance(comm, JupyterComm) and not config.embed and not "PANEL_IPYWIDGET" in os.environ:
             IPyWidget = _BkIPyWidget
         else:
-            import ipykernel
-
             from ipywidgets_bokeh.widget import IPyWidget
 
-            from ..io.ipywidget import PanelKernel
+            from ..io.ipywidget import _get_ipywidgets, _on_widget_constructed
 
-            # Patch font-awesome CSS
-            IPyWidget.__css__ = [
-                "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.css"
-            ]
-
-            if not isinstance(ipykernel.kernelbase.Kernel._instance, PanelKernel):
-                kernel = PanelKernel(document=doc, key=str(id(doc)).encode('utf-8'))
-                # Support ipywidgets >=8.0 and <8.0
-                widgets = (obj._active_widgets if hasattr(obj, '_active_widgets') else obj.widgets).values()
-                for w in widgets:
-                    w.comm.kernel = kernel
-                    w.comm.open()
+            # Ensure all widgets are initialized
+            for w in _get_ipywidgets().values():
+                _on_widget_constructed(w, doc)
 
         model = IPyWidget(widget=obj, **kwargs)
         return model
@@ -91,3 +80,28 @@ class IPyLeaflet(IPyWidget):
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         return IPyWidget.applies(obj) and obj._view_module == 'jupyter-leaflet'
+
+
+class Reacton(IPyWidget):
+
+    def __init__(self, object=None, **params):
+        super().__init__(object=object, **params)
+        self._rcs = {}
+
+    @classmethod
+    def applies(cls, obj: Any) -> float | bool | None:
+        return getattr(obj, '__module__', 'None').startswith('reacton')
+
+    def _cleanup(self, root: Model | None = None) -> None:
+        if root and root.ref['id'] in self._rcs:
+            rc = self._rcs.pop(root.ref['id'])
+            rc.close()
+        super()._cleanup(root)
+
+    def _get_ipywidget(
+        self, obj, doc: Document, root: Model, comm: Optional[Comm], **kwargs
+    ):
+        import reacton
+        widget, rc = reacton.render(obj)
+        self._rcs[root.ref['id']] = rc
+        return super()._get_ipywidget(widget, doc, root, comm, **kwargs)

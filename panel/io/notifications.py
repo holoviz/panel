@@ -58,6 +58,8 @@ class NotificationAreaBase(ReactiveHTML):
     </div>
     """
 
+    _extension_name = 'notifications'
+
     __abstract = True
 
     def __init__(self, **params):

@@ -68,8 +68,16 @@ button.toggle-button {
     margin-bottom: 0 !important;
 }
 
+details.hide.above-input {
+    display: none;
+}
+
 .toggle-hidden + .cell_output {
     margin-top: 0 !important;
+}
+
+dl.field-list {
+    display: none
 }
 
 /* Improve styling */

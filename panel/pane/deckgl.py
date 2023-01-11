@@ -5,6 +5,7 @@ bokeh model.
 from __future__ import annotations
 
 import json
+import sys
 
 from collections import defaultdict
 from typing import (
@@ -129,11 +130,17 @@ class DeckGL(PaneBase):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        if (hasattr(obj, "to_json") and hasattr(obj, "mapbox_key")
-            and hasattr(obj, "deck_widget")):
+        if cls.is_pydeck(obj):
             return 0.8
         elif isinstance(obj, (dict, str)):
             return 0
+        return False
+
+    @classmethod
+    def is_pydeck(cls, obj):
+        if 'pydeck' in sys.modules:
+            import pydeck
+            return isinstance(obj, pydeck.bindings.deck.Deck)
         return False
 
     def _get_properties(self, layout: bool = True):

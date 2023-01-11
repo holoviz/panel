@@ -40,7 +40,7 @@ width: 125
 :::
 
 :::{grid-item-card} Glaciers
-:link: https://penguins-crossfilter.pyviz.demo.anaconda.com
+:link: https://glaciers.pyviz.demo.anaconda.com
 :link-type: url
 
 ```{image} https://assets.holoviews.org/panel/thumbnails/index/glaciers.png
@@ -57,13 +57,12 @@ width: 125
 
 ::::
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/master/LICENSE.txt) Python library that lets you create custom interactive web apps and dashboards by connecting user-defined widgets to plots, images, tables, or text.
+Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you create custom interactive web apps and dashboards by connecting user-defined widgets to plots, images, tables, or text.
 
 ```{eval-rst}
 .. notebook:: panel ../examples/homepage.ipynb
     :disable_interactivity_warning: True
 ```
-
 
 Compared to other approaches, Panel is novel in that it supports nearly all plotting libraries, works just as well in a Jupyter notebook as on a standalone secure web server, uses the same code for both those cases, supports both Python-backed and static HTML/JavaScript exported applications, and can be used to develop rich interactive applications without tying your domain-specific code to any particular GUI or web tools.
 
@@ -155,13 +154,14 @@ alt: Blackstone Logo
 :maxdepth: 2
 
 self
-getting_started/index.md
-user_guide/index.rst
-gallery/index.rst
-reference/index.rst
-developer_guide/index.rst
-api/index.rst
-releases.md
-FAQ.rst
+getting_started/index
+how_to/index
+gallery/index
+background/index
+reference/index
+developer_guide/index
+api/index
+releases
+FAQ
 about/index.rst
 ```

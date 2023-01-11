@@ -43,8 +43,8 @@
     <div class="app-header">
       {% if app_logo %}<a href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
       {% if site_title %}<a class="title" href="{{ site_url }}" >{{ site_title }}</a>{% endif %}
-      {% if site_title and app_title%}<span class="title">&nbsp;-&nbsp;</span>{% endif %}
-      {% if app_title %}<a class="title" href="" >{{ app_title }}</a>{% endif %}
+      {% if site_title and app_title%}<span class="title">-</span>{% endif %}
+      {% if app_title %}<a class="title" href="">{{ app_title }}</a>{% endif %}
     </div>
 	<section class="header-contents">
 	  {% for doc in docs %}

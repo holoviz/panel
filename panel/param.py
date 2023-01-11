@@ -8,6 +8,7 @@ import inspect
 import itertools
 import json
 import os
+import sys
 import types
 
 from collections import OrderedDict, defaultdict, namedtuple
@@ -15,7 +16,7 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Type,
 )
 
 import param
@@ -23,6 +24,7 @@ import param
 from packaging.version import Version
 from param.parameterized import classlist, discard_events
 
+from .config import config
 from .io import init_doc, state
 from .layout import (
     Column, Panel, Row, Spacer, Tabs,
@@ -38,7 +40,8 @@ from .widgets import (
     ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
     DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
     FileSelector, FloatInput, FloatSlider, IntInput, IntSlider, LiteralInput,
-    MultiSelect, RangeSlider, Select, StaticText, TextInput, Toggle, Widget,
+    MultiSelect, RangeSlider, Select, StaticText, Tabulator, TextInput, Toggle,
+    Widget,
 )
 from .widgets.button import _ButtonBase
 
@@ -48,7 +51,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-def SingleFileSelector(pobj: param.Parameter) -> Widget:
+def SingleFileSelector(pobj: param.Parameter) -> Type[Widget]:
     """
     Determines whether to use a TextInput or Select widget for FileSelector
     """
@@ -58,7 +61,7 @@ def SingleFileSelector(pobj: param.Parameter) -> Widget:
         return TextInput
 
 
-def LiteralInputTyped(pobj: param.Parameter) -> Widget:
+def LiteralInputTyped(pobj: param.Parameter) -> Type[Widget]:
     if isinstance(pobj, param.Tuple):
         return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
@@ -68,6 +71,13 @@ def LiteralInputTyped(pobj: param.Parameter) -> Widget:
     elif isinstance(pobj, param.List):
         return type(str('ListInput'), (LiteralInput,), {'type': list})
     return LiteralInput
+
+
+def DataFrameWidget(pobj: param.DataFrame) -> Type[Widget]:
+    if 'panel.models.tabulator' in sys.modules:
+        return Tabulator
+    else:
+        return DataFrame
 
 
 @contextmanager
@@ -170,7 +180,7 @@ class Param(PaneBase):
         param.Date:              DatetimeInput,
         param.DateRange:         DateRangeSlider,
         param.CalendarDateRange: DateRangeSlider,
-        param.DataFrame:         DataFrame,
+        param.DataFrame:         DataFrameWidget,
         param.Dict:              LiteralInputTyped,
         param.FileSelector:      SingleFileSelector,
         param.Filename:          TextInput,
@@ -495,6 +505,8 @@ class Param(PaneBase):
             def action(change):
                 value(self.object)
             watcher = widget.param.watch(action, 'clicks')
+        elif kw_widget.get('onkeyup', False) and hasattr(widget, 'value_input'):
+            watcher = widget.param.watch(link_widget, 'value_input')
         elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
             watcher = widget.param.watch(link_widget, 'value_throttled')
         else:
@@ -752,20 +764,26 @@ class ParamMethod(ReplacementPane):
     return any object which itself can be rendered as a Pane.
     """
 
+    defer_load = param.Boolean(default=config.defer_load, doc="""
+        Whether to defer load until after the page is rendered.
+        Can be set as parameter or by setting panel.config.defer_load.""")
+
     lazy = param.Boolean(default=False, doc="""
         Whether to lazily evaluate the contents of the object
         only when it is required for rendering.""")
 
-    loading_indicator = param.Boolean(default=False, doc="""
-        Whether to show loading indicator while pane is updating.""")
+    loading_indicator = param.Boolean(default=config.loading_indicator, doc="""
+        Whether to show a loading indicator while the pane is updating.
+        Can be set as parameter or by setting panel.config.loading_indicator.""")
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
-        self._evaled = not self.lazy
+        self._evaled = not (self.lazy or self.defer_load)
         self._link_object_params()
         if object is not None:
             self._validate_object()
-            self._replace_pane()
+            if not self.defer_load:
+                self._replace_pane()
 
     @param.depends('object', watch=True)
     def _validate_object(self):
@@ -807,20 +825,23 @@ class ParamMethod(ReplacementPane):
             self._inner_layout.loading = False
 
     def _replace_pane(self, *args, force=False):
-        self._evaled = bool(self._models) or force or not self.lazy
-        if self._evaled:
-            self._inner_layout.loading = self.loading_indicator
-            try:
-                if self.object is None:
-                    new_object = Spacer()
-                else:
-                    new_object = self.eval(self.object)
-                if inspect.isawaitable(new_object):
-                    param.parameterized.async_executor(partial(self._eval_async, new_object))
-                    return
-                self._update_inner(new_object)
-            finally:
-                self._inner_layout.loading = False
+        deferred = self.defer_load and not state.loaded
+        if not self._inner_layout.loading:
+            self._inner_layout.loading = bool(self.loading_indicator or deferred)
+        self._evaled |= force or not (self.lazy or deferred)
+        if not self._evaled:
+            return
+        try:
+            if self.object is None:
+                new_object = Spacer()
+            else:
+                new_object = self.eval(self.object)
+            if inspect.isawaitable(new_object):
+                param.parameterized.async_executor(partial(self._eval_async, new_object))
+                return
+            self._update_inner(new_object)
+        finally:
+            self._inner_layout.loading = False
 
     def _update_pane(self, *events):
         callbacks = []
@@ -881,7 +902,10 @@ class ParamMethod(ReplacementPane):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         if not self._evaled:
-            self._replace_pane(force=True)
+            deferred = self.defer_load and not state.loaded
+            if deferred:
+                state.onload(partial(self._replace_pane, force=True))
+            self._replace_pane(force=not deferred)
         return super()._get_model(doc, root, parent, comm)
 
     #----------------------------------------------------------------
@@ -892,7 +916,13 @@ class ParamMethod(ReplacementPane):
     def applies(cls, obj: Any) -> float | bool | None:
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
 
+@param.depends(config.param.defer_load, watch=True)
+def _update_defer_load_default(default_value):
+    ParamMethod.param.defer_load.default = default_value
 
+@param.depends(config.param.loading_indicator, watch=True)
+def _update_loading_indicator_default(default_value):
+    ParamMethod.param.loading_indicator.default = default_value
 
 class ParamFunction(ParamMethod):
     """
@@ -905,10 +935,12 @@ class ParamFunction(ParamMethod):
 
     priority: ClassVar[float | bool | None] = 0.6
 
+    _applies_kw: ClassVar[bool] = True
+
     def _link_object_params(self):
         deps = getattr(self.object, '_dinfo', {})
         dep_params = list(deps.get('dependencies', [])) + list(deps.get('kw', {}).values())
-        if not dep_params and not self.lazy:
+        if not dep_params and not self.lazy and not self.defer_load:
             fn = getattr(self.object, '__bound_function__', self.object)
             fn_name = getattr(fn, '__name__', repr(self.object))
             self.param.warning(
@@ -939,9 +971,11 @@ class ParamFunction(ParamMethod):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
+    def applies(cls, obj: Any, **kwargs) -> float | bool | None:
         if isinstance(obj, types.FunctionType):
             if hasattr(obj, '_dinfo'):
+                return True
+            if kwargs.get('defer_load') or (cls.param.defer_load.default is None and config.defer_load):
                 return True
             return None
         return False

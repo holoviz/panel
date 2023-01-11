@@ -264,6 +264,14 @@ class MenuButton(_ClickButton):
 
     _widget_type: ClassVar[Type[Model]] = _BkDropdown
 
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('button_click', model=model, doc=doc, comm=comm)
+        return model
+
     def _process_event(self, event):
         if isinstance(event, MenuItemClick):
             item = event.item

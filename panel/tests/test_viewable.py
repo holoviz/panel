@@ -3,7 +3,7 @@ import pytest
 
 from panel import config
 from panel.interact import interactive
-from panel.pane import Str, panel
+from panel.pane import Markdown, Str, panel
 from panel.viewable import Viewable, Viewer
 
 from .util import jb_available
@@ -42,3 +42,25 @@ def test_Viewer_not_initialized():
     # Confirm that initialized also work
     test = panel(Test())
     assert test.object == "# Test"
+
+def test_viewer_wraps_panel():
+    class TestViewer(Viewer):
+        value = param.String()
+
+        def __panel__(self):
+            return self.value
+
+    tv = TestViewer(value="hello")
+
+    assert isinstance(tv._create_view(), Markdown)
+
+
+def test_non_viewer_class():
+    # This test checks that a class with __panel__ (other than Viewer)
+    # does not raise a TypeError: issubclass() arg 1 must be a class
+
+    class Example:
+        def __panel__(self):
+            return 42
+
+    panel(Example())

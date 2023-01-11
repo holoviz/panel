@@ -17,14 +17,87 @@ import ast
 import base64
 import copy
 import io
+import pathlib
+import pkgutil
 import sys
 import traceback
 
 from contextlib import redirect_stderr, redirect_stdout
 from html import escape
-from typing import Any, Dict
+from textwrap import dedent
+from typing import Any, Dict, List
 
 import markdown
+
+#---------------------------------------------------------------------
+# Import API
+#---------------------------------------------------------------------
+
+def _stdlibs():
+    env_dir = str(pathlib.Path(sys.executable).parent.parent)
+    modules = list(sys.builtin_module_names)
+    for m in pkgutil.iter_modules():
+        mpath = getattr(m.module_finder, 'path', '')
+        if mpath.startswith(env_dir) and not 'site-packages' in mpath:
+            modules.append(m.name)
+    return modules
+
+_STDLIBS = _stdlibs()
+_PACKAGE_MAP = {
+    'sklearn': 'scikit-learn',
+    'hvplot': ['holoviews>=1.15.1', 'hvplot'],
+    'holoviews': ['holoviews>=1.15.1']
+}
+_PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
+
+def find_imports(code: str) -> List[str]:
+    """
+    Finds the imports in a string of code.
+
+    Parameters
+    ----------
+    code : str
+       the Python code to run.
+
+    Returns
+    -------
+    ``List[str]``
+        A list of module names that are imported in the code.
+
+    Examples
+    --------
+    >>> code = "import numpy as np; import scipy.stats"
+    >>> find_imports(code)
+    ['numpy', 'scipy']
+    """
+    # handle mis-indented input from multi-line strings
+    code = dedent(code)
+
+    mod = ast.parse(code)
+    imports = set()
+    for node in ast.walk(mod):
+        if isinstance(node, ast.Import):
+            for name in node.names:
+                node_name = name.name
+                imports.add(node_name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom):
+            module_name = node.module
+            if module_name is None:
+                continue
+            imports.add(module_name.split(".")[0])
+
+    packages = []
+    for pkg in sorted(imports):
+        pkg = _PACKAGE_MAP.get(pkg, pkg)
+        if pkg in _STDLIBS:
+            continue
+        elif isinstance(pkg, list):
+            packages.extend(pkg)
+        else:
+            packages.append(pkg)
+    if any(pdd in code for pdd in _PANDAS_AUTODETECT) and 'pandas' not in packages:
+        packages.append('pandas')
+    return packages
 
 #---------------------------------------------------------------------
 # Execution API
@@ -50,6 +123,16 @@ def _convert_expr(expr: ast.Expr) -> ast.Expression:
     expr.lineno = 0
     expr.col_offset = 0
     return ast.Expression(expr.value, lineno=0, col_offset = 0)
+
+_OUT_BUFFER = []
+
+def _display(*objs, **kwargs):
+    """
+    IPython.display compatibility wrapper.
+
+    Note: This only handles a single display.
+    """
+    _OUT_BUFFER.extend(list(objs))
 
 def exec_with_return(
     code: str,
@@ -78,6 +161,7 @@ def exec_with_return(
     The return value of the executed code.
     """
     global_context = global_context if global_context else globals()
+    global_context['display'] = _display
     code_ast = ast.parse(code)
 
     init_ast = copy.deepcopy(code_ast)
@@ -100,9 +184,13 @@ def exec_with_return(
                 out = None
             if code.strip().endswith(';'):
                 out = None
+            if _OUT_BUFFER and out is None:
+                out = _OUT_BUFFER[-1]
         except Exception:
             out = None
             traceback.print_exc(file=stderr)
+        finally:
+            _OUT_BUFFER.clear()
     return out
 
 #---------------------------------------------------------------------

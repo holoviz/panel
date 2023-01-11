@@ -32,6 +32,7 @@ jobs:
     env:
       DESC: "Documentation build"
       MPLBACKEND: "Agg"
+      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       MOZ_HEADLESS: 1
       DISPLAY: ":99.0"
       PANEL_IPYWIDGET: 1
@@ -40,13 +41,11 @@ jobs:
         run: |
           sudo rm /usr/local/bin/node
           sudo rm /usr/local/bin/npm
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: "100"
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          mamba-version: "*"
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           miniconda-version: "latest"
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
@@ -57,61 +56,52 @@ jobs:
           echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: conda setup
         run: |
-          conda config --prepend channels bokeh/label/dev
-          conda create -n test-environment python=3.8 pyctdev
+          conda update -n base -c defaults conda
+          conda create -n test-environment
+          conda activate test-environment
+          conda config --remove channels defaults
+          conda config --env --remove channels defaults
+          conda config --env --append channels pyviz/label/dev --append channels bokeh --append channels conda-forge
+          conda install python=3.9 pyctdev
       - uses: actions/setup-node@v2
         with:
           node-version: '15'
       - name: doit develop_install and other installs
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install "pip<21.2.1"
-          conda list
-          doit develop_install -o doc -o examples
-          pip install pyecharts idom==0.24 "pydata_sphinx_theme==0.9.0"
-      - name: temporarily pin jinja2
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install "jinja2<=3.0.3"
+          doit develop_install -o examples -o doc
+          pip install --use-deprecated=legacy-resolver pyecharts "idom==0.24" "pydata-sphinx-theme<=0.9.0" "pydata-sphinx-theme<=0.9.0" sphinx-copybutton sphinx-design
       - name: doit env_capture
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit env_capture
       - name: opengl
         run: |
           sudo apt-get install libglu1-mesa
-          conda install mesalib
+          conda install -c conda-forge mesalib --no-update-deps
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
           sleep 3
       - name: bokeh sampledata
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           bokeh sampledata
       - name: generate rst
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           nbsite generate-rst --org holoviz --project-name panel
       - name: refmanual
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests
       - name: build docs
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
           nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
           cp -r ./panel/dist ./builtdocs/panel_dist
       - name: convert gallery
         run: |
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
-          panel convert examples/gallery/streaming/*.ipynb examples/gallery/dynamic/*.ipynb examples/gallery/param/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/
+          panel convert examples/gallery/**/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index
       - name: git status and git diff
         run: |
           git status
@@ -135,4 +125,39 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./builtdocs
           cname: panel.holoviz.org
+          force_orphan: true
+  deploy_jupyterlite:
+    name: JupyterLite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install the dependencies
+        run: |
+          python -m pip install -r ./lite/requirements.txt
+      - name: Build pyodide wheels for JupyterLite
+        run: |
+          python ./scripts/build_pyodide_wheels.py lite/pypi
+      - name: Convert content
+        run: |
+          python ./scripts/generate_panelite_content.py
+      - name: Build the JupyterLite site
+        run: |
+          jupyter lite build --lite-dir lite --output-dir lite/dist
+      - name: upload
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
+          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.ACCESS_TOKEN }}
+          external_repository: pyviz-dev/panelite
+          publish_dir: ./lite/dist
+          cname: panelite.holoviz.org
           force_orphan: true

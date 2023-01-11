@@ -1,3 +1,6 @@
+.bk.pn-loading {
+  overflow: hidden;
+}
 .bk.pn-loading:before {
   position: absolute;
   height: 100%;
@@ -14,4 +17,12 @@
 }
 .bk.pn-loading.arcs:hover:before {
   cursor: progress;
+}
+.bk.pn-loading .pn-loading-msg {
+  position: absolute;
+  top: 72%;
+  font-size: 2em;
+  color: black;
+  width: 100%;
+  text-align: center;
 }

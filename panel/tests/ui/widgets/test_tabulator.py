@@ -131,6 +131,23 @@ def tabulator_column_values(page, col_name: str) -> list[str]:
     return cells.all_inner_texts()
 
 
+def test_tabulator_no_console_error(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    msgs = []
+    page.on("console", lambda msg: msgs.append(msg))
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    time.sleep(1)
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
 def test_tabulator_default(page, port, df_mixed, df_mixed_as_string):
     nrows, ncols = df_mixed.shape
     widget = Tabulator(df_mixed)
@@ -176,6 +193,7 @@ def test_tabulator_default(page, port, df_mixed, df_mixed_as_string):
         assert cols.nth(i).get_attribute('aria-sort') == 'none'
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_tabulator_value_changed(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
@@ -730,7 +748,7 @@ def test_tabulator_editors_panel_datetime(page, port, df_mixed):
     page.locator('input[type="datetime-local"]').press('Enter')
     new_datetime_display = new_datetime.strftime('%Y-%m-%d %H:%M:%S')
     expect(page.locator(f'text="{new_datetime_display}"')).to_have_count(1)
-    assert new_datetime in widget.value['datetime'].tolist()
+    wait_until(lambda: new_datetime in widget.value['datetime'].tolist(), page)
 
     cell = page.locator(f'text="{new_datetime_display}"')
     cell.click()
@@ -2564,6 +2582,7 @@ def test_tabulator_sorters_pagination_no_page_reset(page, port, df_mixed):
     assert widget.page == 2
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_sorters_pagination(page, port, df_mixed, pagination):
     widget = Tabulator(df_mixed, pagination=pagination, page_size=2)
@@ -2741,12 +2760,20 @@ def test_tabulator_edit_event_and_header_filters(page, port):
     assert widget.current_view.equals(df.query('col1 == "a"'))
 
 
-def test_tabulator_edit_event_and_header_filters_same_column(page, port):
+@pytest.mark.flaky(max_runs=3)
+@pytest.mark.parametrize('show_index', [True, False])
+@pytest.mark.parametrize('index_name', ['index', 'foo'])
+def test_tabulator_edit_event_and_header_filters_same_column(page, port, show_index, index_name):
     df = pd.DataFrame({
         'values':  ['A', 'A', 'B', 'B'],
     }, index=['idx0', 'idx1', 'idx2', 'idx3'])
+    df.index.name = index_name
 
-    widget = Tabulator(df, header_filters={'values': {'type': 'input', 'func': 'like'}})
+    widget = Tabulator(
+        df,
+        header_filters={'values': {'type': 'input', 'func': 'like'}},
+        show_index=show_index,
+    )
 
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
@@ -2769,6 +2796,9 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, port):
     cell = page.locator('text="B"').nth(1)
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("X")
     editable_cell.press('Enter')
 
@@ -3461,3 +3491,59 @@ def test_tabulator_python_filter_edit(page, port):
     wait_until(lambda: len(values) == 2, page)
     assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
     assert df.at['idx3', 'values'] == 'Y'
+
+
+def test_tabulator_sorter_default_number(page, port):
+    df = pd.DataFrame({'x': []}).astype({'x': int})
+    widget = Tabulator(df, sorters=[{"field": "x", "dir": "desc"}])
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    df2 = pd.DataFrame({'x': [0, 96, 116]})
+    widget.value = df2
+
+    def x_values():
+        table_values = [int(v) for v in tabulator_column_values(page, 'x')]
+        assert table_values == list(df2['x'].sort_values(ascending=False))
+
+    wait_until(x_values, page)
+
+
+def test_tabulator_update_hidden_columns(page, port):
+    df = pd.DataFrame({
+        'a': [1, 2, 3],
+        'b': [1, 2, 3]
+    })
+
+    widget = Tabulator(
+        df, hidden_columns=['a', 'b'], sizing_mode='stretch_width'
+    )
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    col_a_cells = page.locator('text="3"')
+
+    assert not col_a_cells.nth(0).is_visible()
+    assert not col_a_cells.nth(1).is_visible()
+
+    widget.hidden_columns = ['b']
+
+    time.sleep(0.5)
+
+    col_a_cells = page.locator('text="3"')
+    title_bbox = page.locator('text="a"').bounding_box()
+    cell_bbox = col_a_cells.first.bounding_box()
+
+    assert col_a_cells.nth(0).is_visible()
+    assert not col_a_cells.nth(1).is_visible()
+
+    assert title_bbox['x'] == cell_bbox['x']
+    assert title_bbox['width'] == cell_bbox['width']

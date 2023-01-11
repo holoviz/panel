@@ -9,7 +9,6 @@ from panel.pane import Markdown
 from panel.template import FastListTemplate
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_fast_list_template_no_console_errors(page, port):
     tmpl = FastListTemplate()
     md = Markdown('Initial')
@@ -34,6 +33,19 @@ def test_fast_list_template_no_console_errors(page, port):
     assert len([
         msg for msg in msgs if not any(msg.text.startswith(known) for known in known_messages)
     ]) == 0
+
+
+def test_fast_list_template_updates(page, port):
+    tmpl = FastListTemplate()
+    md = Markdown('Initial')
+
+    tmpl.main.append(md)
+
+    serve(tmpl, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}", timeout=40_000)
 
     assert page.text_content(".bk.markdown") == 'Initial'
     md.object = 'Updated'

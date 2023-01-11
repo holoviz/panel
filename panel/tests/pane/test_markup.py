@@ -3,8 +3,10 @@ import json
 
 import numpy as np
 
+import panel as pn
+
 from panel.pane import (
-    HTML, JSON, DataFrame, Markdown, Pane, PaneBase, Str,
+    HTML, JSON, DataFrame, Markdown, PaneBase, Str,
 )
 from panel.tests.util import pd_available, streamz_available
 
@@ -50,7 +52,7 @@ def test_get_streamz_seriess_pane_type():
 
 
 def test_markdown_pane(document, comm):
-    pane = Pane("**Markdown**")
+    pane = pn.panel("**Markdown**")
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -67,7 +69,7 @@ def test_markdown_pane(document, comm):
     assert pane._models == {}
 
 def test_markdown_pane_dedent(document, comm):
-    pane = Pane("    ABC")
+    pane = pn.panel("    ABC")
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -79,7 +81,7 @@ def test_markdown_pane_dedent(document, comm):
 
 
 def test_markdown_pane_extensions(document, comm):
-    pane = Pane("""
+    pane = pn.panel("""
     ```python
     None
     ```

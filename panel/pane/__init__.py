@@ -37,11 +37,11 @@ from .deckgl import DeckGL  # noqa
 from .echarts import ECharts  # noqa
 from .equation import LaTeX  # noqa
 from .holoviews import HoloViews, Interactive  # noqa
-from .idom import IDOM  # noqa0
+from .idom import IDOM  # noqa
 from .image import (  # noqa
     GIF, ICO, JPG, PDF, PNG, SVG,
 )
-from .ipywidget import IPyWidget  # noqa
+from .ipywidget import IPyLeaflet, IPyWidget, Reacton  # noqa
 from .markup import (  # noqa
     HTML, JSON, DataFrame, Markdown, Str,
 )
@@ -69,6 +69,7 @@ __all__ = (
     "IDOM",
     "Interactive",
     "IPyWidget",
+    "IPyLeaflet",
     "JPG",
     "JSON",
     "LaTeX",
@@ -81,6 +82,7 @@ __all__ = (
     "Perspective",
     "Plotly",
     "PNG",
+    "Reacton",
     "RGGPlot",
     "Str",
     "Streamz",
