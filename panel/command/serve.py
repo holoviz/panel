@@ -5,10 +5,10 @@ ways.
 from __future__ import annotations
 
 import ast
-import contextlib
 import base64
-import logging
+import contextlib
 import importlib
+import logging
 import os
 import pathlib
 import sys
