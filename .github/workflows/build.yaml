@@ -45,7 +45,7 @@ jobs:
         run: git fetch --prune --tags --unshallow -f
       - name: Set output
         id: vars
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: conda setup
         run: |
           conda config --set always_yes True
