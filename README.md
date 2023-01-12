@@ -41,7 +41,7 @@ Panel provides bi-directional communication making it possible to react to click
 
 Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot api), [Param](https://param.holoviz.org) (reactive parameters), and [Datashader](https://datashader.org/) (big data viz).
 
-Panel is built on top of [Param](https://param.holoviz.org). Param enables you to annotate your code with parameter ranges, documentation, and dependencies between parameters and code. With this approach, 
+Panel is built on top of [Param](https://param.holoviz.org). Param enables you to annotate your code with parameter ranges, documentation, and dependencies between parameters and code. With this approach,
 
 - you don't ever have to commit to whether your code will be used in a notebook, a data app, in batch processing, or reports.
 - you will write less code and be able to develop large, maintainable code bases!
