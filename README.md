@@ -37,7 +37,7 @@ Panel provides bi-directional communication making it possible to react to click
 
 [![Vega Selections](https://blog.holoviz.org/images/vega_selection.gif)](https://panel.holoviz.org/reference/panes/Vega.html)
 
-## Panel is a member of the HoloViz ecosystem
+### Panel is a member of the HoloViz ecosystem
 
 Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot api), [Param](https://param.holoviz.org) (reactive parameters), and [Datashader](https://datashader.org/) (big data viz).
 
@@ -50,7 +50,7 @@ Panel is built on top of [Param](https://param.holoviz.org). Param enables you t
   <a href="https://holoviz.org">"<img height="200" src="https://holoviz.org/assets/holoviz-logo-stacked.svg"></a>
 </p>
 
-## Panel lets you develop and deploy the way that you prefer
+### Panel lets you develop and deploy the way that you prefer
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
