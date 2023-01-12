@@ -785,7 +785,7 @@ class _EditableContinuousSlider(CompositeWidget):
     __abstract = True
 
     def __init__(self, **params):
-        if not 'width' in params and not 'sizing_mode' in params:
+        if 'width' not in params and 'sizing_mode' not in params:
             params['width'] = 300
         self._validate_init_bounds(params)
         super().__init__(**params)
@@ -1008,7 +1008,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     _composite_type: ClassVar[Type[Panel]] = Column
 
     def __init__(self, **params):
-        if not 'width' in params and not 'sizing_mode' in params:
+        if 'width' not in params and 'sizing_mode' not in params:
             params['width'] = 300
         self._validate_init_bounds(params)
         super().__init__(**params)

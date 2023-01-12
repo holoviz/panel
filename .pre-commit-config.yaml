@@ -15,10 +15,10 @@ repos:
     -   id: end-of-file-fixer
         exclude: \.min\.js$
     -   id: trailing-whitespace
--   repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
+-   repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: 'v0.0.219'
     hooks:
-    -   id: flake8  # See 'setup.cfg' for args
+    -   id: ruff  # See 'setup.cfg' for args
         args: [panel]
         files: panel/
 -   repo: https://github.com/pycqa/isort

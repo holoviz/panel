@@ -38,7 +38,7 @@ def _stdlibs():
     modules = list(sys.builtin_module_names)
     for m in pkgutil.iter_modules():
         mpath = getattr(m.module_finder, 'path', '')
-        if mpath.startswith(env_dir) and not 'site-packages' in mpath:
+        if mpath.startswith(env_dir) and 'site-packages' not in mpath:
             modules.append(m.name)
     return modules
 
