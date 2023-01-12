@@ -29,36 +29,28 @@ Panel makes it easy to combine widgets, plots, tables and other viewable Python 
 
 <br/>
 
-Panel works really well with Pythons dataviz ecosystem including [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [Folium](https://python-visualization.github.io/folium/), [plotnine](https://plotnine.readthedocs.io/en/stable/), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [pyecharts](https://pyecharts.org/#/), [PyVista](https://docs.pyvista.org/), [Seaborn](https://seaborn.pydata.org/) and more. Panel also works with the [ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
+Panel works really well with the visualization tools you already know and love like [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [Datashader](https://datashader.org/), [Folium](https://python-visualization.github.io/folium/), [HoloViews](https://holoviews.org/), [hvPlot](https://hvplot.holoviz.org), [plotnine](https://plotnine.readthedocs.io/en/stable/), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [pyecharts](https://pyecharts.org/#/), [PyVista](https://docs.pyvista.org/), [Seaborn](https://seaborn.pydata.org/) and more. Panel also works with the [ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
 
-Panel provides advanced bi-directional communication making it possible to react to clicks, selections, hover etc. events.
+[![Pythons DataViz works with Panel](https://user-images.githubusercontent.com/42288570/211983400-3315ad0a-866a-4916-8809-6fc38eca34d9.gif)](https://panel.holoviz.org/reference/index.html#panes)
 
-[![Pythons DataViz works with Panel](https://github.com/MarcSkovMadsen/dataviz-in-python/raw/main/assets/dataviz-in-python.gif)](https://panel.holoviz.org/reference/index.html#panes)
+Panel provides bi-directional communication making it possible to react to clicks, selections, hover etc. events.
 
-<br/>
-
-Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot api),  and [Datashader](https://datashader.org/) (big data viz).
-
-<table style="overflow:hidden">
-  <tr>
-    <td border=1 style="width:12%"><a href="https://panel.holoviz.org"><img style="width:100%;" src="https://holoviz.org/assets/panel.png"></a></td>
-    <td border=1 style="width:10%"><a href="https://hvplot.holoviz.org"><img style="width:100%;" src="https://holoviz.org/assets/hvplot.png"></a></td>
-    <td border=1 style="width:15%"><a href="https://holoviews.org"><img style="width:100%;" src="https://holoviz.org/assets/holoviews.png"></a></td>
-    <td border=1 style="width:14%"><a href="https://geoviews.org"><img style="width:100%;" src="https://holoviz.org/assets/geoviews.png"></a></td>
-    <td border=1 style="width:16%"><a href="https://datashader.org"><img style="width:100%;" src="https://holoviz.org/assets/datashader.png"></a></td>
-    <td border=1 style="width:10%"><a href="https://lumen.holoviz.org"><img style="width:100%;" src="https://holoviz.org/assets/lumen.png"></a></td>
-    <td border=1 style="width:10%"><a href="https://param.holoviz.org"><img style="width:100%;" src="https://holoviz.org/assets/param.png"></a></td>
-    <td border=1 style="width:14%"><a href="https://colorcet.holoviz.org"><img style="width:100%;" src="https://holoviz.org/assets/colorcet.png"></a></td>
-  <tr>
-</table>
+[![Vega Selections](https://blog.holoviz.org/images/vega_selection.gif)](https://panel.holoviz.org/reference/panes/Vega.html)
 
 <br/>
 
-Panel is built on top of [Param](https://param.holoviz.org). Param enables you to annotate your code with parameter ranges, documentation, and dependencies between parameters and code. With this approach,
+Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot api), [Param](https://param.holoviz.org) (reactive parameters), and [Datashader](https://datashader.org/) (big data viz).
 
-- you don't ever have to commit to whether your code will be used in a notebook, a data app, or completely behind the scenes in batch processing or reports.
-- you will write less code.
-- you can develop large, maintainable code bases!
+Panel is built on top of [Param](https://param.holoviz.org). Param enables you to annotate your code with parameter ranges, documentation, and dependencies between parameters and code. With this approach, 
+
+- you don't ever have to commit to whether your code will be used in a notebook, a data app, in batch processing, or reports.
+- you will write less code and be able to develop large, maintainable code bases!
+
+<p align="center">
+  <a href="https://holoviz.org">"<img height="200" src="https://holoviz.org/assets/holoviz-logo-stacked.svg"></a>
+</p>
+
+<br>
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
