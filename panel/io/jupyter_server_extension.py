@@ -118,7 +118,7 @@ executor = PanelExecutor(app, '{{ token }}', '{{ root_url }}')
 executor.render()
 """
 
-def generate_executor(cls, path: str, token: str, root_url: str) -> str:
+def generate_executor(path: str, token: str, root_url: str) -> str:
     """
     Generates the code to instantiate a PanelExecutor that is to
     be be run on the kernel to start a server session.
