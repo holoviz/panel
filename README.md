@@ -3,7 +3,7 @@
   <img src="https://github.com/holoviz/panel/raw/main/doc/_static/logo_horizontal_light_theme.png" alt="Panel logo -- text is white in dark theme and black in light theme" width=400/>
 </picture></a>
 
-# Panel is the most flexible data app and dashboarding framework for Python
+# Panel is the most flexible data app framework for Python
 
 <table>
 <tbody>
