@@ -1,11 +1,11 @@
-<picture>
+<a href="https://panel.holoviz.org/"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/holoviz/panel/raw/main/doc/_static/logo_horizontal_dark_theme.png">
   <img src="https://github.com/holoviz/panel/raw/main/doc/_static/logo_horizontal_light_theme.png" alt="Panel logo -- text is white in dark theme and black in light theme" width=400/>
-</picture>
+</picture></a>
 
-<br>
+<br/>
 
-# [Panel](https://panel.holoviz.org/) is the most flexible data app and dashboarding framework for Python
+# Panel is the most flexible data app and dashboarding framework for Python
 
 <table>
 <tbody>
@@ -44,7 +44,7 @@
 
 ## Panel works with the tools you know and love
 
-Panel makes it easy to combine widgets, plots, tables and other viewable Python objects into custom analysis tools, applications, and dashboards.
+[Panel](https://panel.holoviz.org/) makes it easy to combine widgets, plots, tables and other viewable Python objects into custom analysis tools, applications, and dashboards.
 
 [![Panel Example](https://user-images.githubusercontent.com/42288570/211207118-23d1e6d5-0c47-4489-aab5-892de338cc3b.gif)](https://panel.holoviz.org/reference/templates/FastGridTemplate.html)
 
