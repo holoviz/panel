@@ -29,7 +29,7 @@ Panel makes it easy to combine widgets, plots, tables and other viewable Python 
 
 <br/>
 
-Panel works really well with the visualization tools you already know and love like [Altair](https://altair-viz.github.io/), [Bokeh](https://bokeh.pydata.org), [Datashader](https://datashader.org/), [Folium](https://python-visualization.github.io/folium/), [HoloViews](https://holoviews.org/), [hvPlot](https://hvplot.holoviz.org), [plotnine](https://plotnine.readthedocs.io/en/stable/), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/), [pydeck](https://pydeck.gl/), [pyecharts](https://pyecharts.org/#/), [PyVista](https://docs.pyvista.org/), [Seaborn](https://seaborn.pydata.org/) and more. Panel also works with the [ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
+Panel works really well with the visualization tools you already know and love like [Altair/ Vega](https://panel.holoviz.org/reference/panes/Vega.html), [Bokeh](https://panel.holoviz.org/reference/panes/Bokeh.html), [Datashader](https://datashader.org/), [Deck.gl/ pydeck](https://panel.holoviz.org/reference/panes/DeckGL.html), [Echarts/ pyecharts](https://panel.holoviz.org/reference/panes/ECharts.html), [Folium](https://panel.holoviz.org/reference/panes/Folium.html), [HoloViews](https://holoviews.org/), [hvPlot](https://hvplot.holoviz.org), [plotnine](https://panel.holoviz.org/reference/panes/Matplotlib.html), [Matplotlib](https://panel.holoviz.org/reference/panes/Matplotlib.html), [Plotly](https://panel.holoviz.org/reference/panes/Plotly.html), [PyVista/ VTK](https://panel.holoviz.org/reference/panes/VTK.html), [Seaborn](https://panel.holoviz.org/gallery/styles/SeabornStyle.html) and more. Panel also works with the [ipywidgets](https://ipywidgets.readthedocs.io/en/stable/) ecosystem.
 
 [![Pythons DataViz works with Panel](https://user-images.githubusercontent.com/42288570/211983400-3315ad0a-866a-4916-8809-6fc38eca34d9.gif)](https://panel.holoviz.org/reference/index.html#panes)
 
@@ -39,8 +39,12 @@ Panel provides bi-directional communication making it possible to react to click
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
-<a href="https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews"><img src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif" /></a>
-<a href="https://blog.holoviz.org/panel_0.11.0.html#Autoreload"><img src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif" /></a>
+<table>
+  <tr>
+    <td><a href="https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews"><img src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif" /></a></td>
+    <td><a href="https://blog.holoviz.org/panel_0.11.0.html#Autoreload"><img src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif" /></a></td>
+  </tr>
+ </table>
 
 <br/>
 
