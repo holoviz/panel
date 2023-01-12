@@ -67,8 +67,6 @@ You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors li
   </tr>
  </table>
 
-<br/>
-
 Panel provides a unique combination of deployment options. You can share your data and models as
 
 - a web application running on the [Tornado](https://www.tornadoweb.org/en/stable/) (default), [Flask](https://flask.palletsprojects.com/), [Django](https://www.djangoproject.com/) or [Fast API](https://fastapi.tiangolo.com/) web server.
