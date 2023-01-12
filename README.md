@@ -37,7 +37,7 @@ Panel provides bi-directional communication making it possible to react to click
 
 [![Vega Selections](https://blog.holoviz.org/images/vega_selection.gif)](https://panel.holoviz.org/reference/panes/Vega.html)
 
-<br/>
+## Panel is a member of the HoloViz ecosystem
 
 Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot api), [Param](https://param.holoviz.org) (reactive parameters), and [Datashader](https://datashader.org/) (big data viz).
 
@@ -50,7 +50,7 @@ Panel is built on top of [Param](https://param.holoviz.org). Param enables you t
   <a href="https://holoviz.org">"<img height="200" src="https://holoviz.org/assets/holoviz-logo-stacked.svg"></a>
 </p>
 
-<br>
+## Panel lets you develop and deploy the way that you prefer
 
 You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors like [VS Code](https://code.visualstudio.com/), [PyCharm](https://www.jetbrains.com/pycharm/) or [Spyder](https://www.spyder-ide.org/).
 
@@ -59,7 +59,7 @@ You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors li
 
 <br/>
 
-Panel provides a unique combination of end products. You can share your data and models as
+Panel provides a unique combination of deployment options. You can share your data and models as
 
 - a web application running on the [Tornado](https://www.tornadoweb.org/en/stable/) (default), [Flask](https://flask.palletsprojects.com/), [Django](https://www.djangoproject.com/) or [Fast API](https://fastapi.tiangolo.com/) web server.
 - a stand alone client side application powered by [Pyodide](https://pyodide.org/en/stable/) or [PyScript](https://pyscript.net/) via [`panel convert`](https://panel.holoviz.org/user_guide/Running_in_Webassembly.html).
