@@ -32,27 +32,17 @@ import os
 import pathlib
 import textwrap
 import time
-import weakref
 
-from dataclasses import dataclass
 from queue import Empty
-from typing import (
-    Any, Awaitable, Dict, List, Union,
-)
+from typing import Any, Awaitable
 from urllib.parse import urljoin
 
 import tornado
 
-from bokeh.command.util import build_single_handler_application
-from bokeh.document import Document
 from bokeh.embed.bundle import extension_dirs
 from bokeh.protocol import Protocol
 from bokeh.protocol.exceptions import ProtocolError
 from bokeh.protocol.receiver import Receiver
-from bokeh.server.connection import ServerConnection
-from bokeh.server.contexts import BokehSessionContext
-from bokeh.server.protocol_handler import ProtocolHandler
-from bokeh.server.session import ServerSession
 from bokeh.server.tornado import DEFAULT_KEEP_ALIVE_MS
 from bokeh.server.views.multi_root_static_handler import MultiRootStaticHandler
 from bokeh.server.views.static_handler import StaticHandler
@@ -60,19 +50,13 @@ from bokeh.server.views.ws import WSHandler
 from bokeh.util.token import (
     generate_jwt_token, generate_session_id, get_session_id, get_token_payload,
 )
-from ipykernel.comm import Comm
-from IPython.display import HTML, publish_display_data
 from jupyter_server.base.handlers import JupyterHandler
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
 from ..config import config
-from ..util import edit_readonly
-from .resources import (
-    DIST_DIR, ERROR_TEMPLATE, Resources, _env,
-)
-from .server import server_html_page_for_session
-from .state import set_curdoc, state
+from .resources import DIST_DIR, ERROR_TEMPLATE, _env
+from .state import state
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +65,7 @@ CONNECTION_TIMEOUT = 30 # Timeout for WS connection to open
 
 KERNEL_ERROR_TEMPLATE = _env.get_template('kernel_error.html')
 
-async def ensure_async(obj: Union[Awaitable, Any]) -> Any:
+async def ensure_async(obj: Awaitable | Any) -> Any:
     """Convert a non-awaitable object to a coroutine if needed,
     and await it if it was not already awaited.
     """
@@ -122,183 +106,41 @@ def get_server_root_dir(settings):
         root_dir = contents_manager.root_dir
     return os.path.expanduser(root_dir)
 
-@dataclass
-class _RequestProxy:
+EXECUTION_TEMPLATE = """
+import os
+import pathlib
 
-    arguments: Dict[str, List[bytes]]
-    cookies: Dict[str, str]
-    headers: Dict[str, str | List[str]]
+app = '{{ path }}'
+os.chdir(str(pathlib.Path(app).parent))
 
+from panel.io.jupyter_executor import PanelExecutor
+executor = PanelExecutor(app, '{{ token }}', '{{ root_url }}')
+executor.render()
+"""
 
-class PanelExecutor(WSHandler):
+def generate_executor(cls, path: str, token: str, root_url: str) -> str:
     """
-    The PanelExecutor is intended to be run inside a kernel where it
-    runs a Panel application renders the HTML and then establishes a
-    Jupyter Comm channel to communicate with the PanelWSProxy in order
-    to send and receive messages to and from the frontend.
+    Generates the code to instantiate a PanelExecutor that is to
+    be be run on the kernel to start a server session.
+
+    Arguments
+    ---------
+    path: str
+       The path of the Panel application to execute.
+    token: str
+       The Bokeh JWT token containing the session_id, request arguments,
+       headers and cookies.
+    root_url: str
+        The root_url the server is running on.
+
+    Returns
+    -------
+    The code to be executed inside the kernel.
     """
-
-    _code = """
-    import os
-    import pathlib
-
-    app = '{{ path }}'
-    os.chdir(str(pathlib.Path(app).parent))
-
-    from panel.io.jupyter_server_extension import PanelExecutor
-    executor = PanelExecutor(app, '{{ token }}', '{{ root_url }}')
-    executor.render()
-    """
-
-    def __init__(self, path, token, root_url):
-        self.path = path
-        self.token = token
-        self.root_url = root_url
-        self.payload = self._get_payload(token)
-        self.session_id = get_session_id(token)
-        self.comm = Comm(target_name=self.session_id)
-        self.comm.on_msg(self._receive_msg)
-        self.protocol = Protocol()
-        self.receiver = Receiver(self.protocol)
-        self.handler = ProtocolHandler()
-        self.write_lock = tornado.locks.Lock()
-        self._context = None
-
-        self.resources = Resources(
-            mode="server", root_url=self.root_url,
-            path_versioner=StaticHandler.append_version
-        )
-        self._set_state()
-        self.session = self._create_server_session()
-        self.connection = ServerConnection(self.protocol, self, None, self.session)
-
-    def _get_payload(self, token: str) -> Dict[str, Any]:
-        payload = get_token_payload(token)
-        if ('cookies' in payload and 'headers' in payload
-            and not 'Cookie' in payload['headers']):
-            # Restore Cookie header from cookies dictionary
-            payload['headers']['Cookie'] = '; '.join([
-                f'{k}={v}' for k, v in payload['cookies'].items()
-            ])
-        return payload
-
-    def _set_state(self):
-        state._jupyter_kernel_context = True
-        with edit_readonly(state):
-            state.base_url = self.root_url + '/'
-            state.rel_path = self.root_url
-
-    def _receive_msg(self, msg) -> None:
-        asyncio.ensure_future(self._receive_msg_async(msg))
-
-    async def _receive_msg_async(self, msg) -> None:
-        try:
-            message = await self._receive(msg['content']['data'])
-        except Exception as e:
-            # If you go look at self._receive, it's catching the
-            # expected error types... here we have something weird.
-            self._internal_error(f"server failed to parse a message: {e}")
-            message = None
-
-        try:
-            if message:
-                work = await self._handle(message)
-                if work:
-                    await self._schedule(work)
-        except Exception as e:
-            self._internal_error(f"server failed to handle a message: {e}")
-
-    def _internal_error(self, msg: str) -> None:
-        self.comm.send(msg, {'status': 'internal_error'})
-
-    def _protocol_error(self, msg: str) -> None:
-        self.comm.send(msg, {'status': 'protocol_error'})
-
-    def _create_server_session(self) -> ServerSession:
-        doc = Document()
-
-        self._context = session_context = BokehSessionContext(
-            self.session_id, None, doc
-        )
-
-        # using private attr so users only have access to a read-only property
-        session_context._request = _RequestProxy(
-            arguments={k: [v.encode('utf-8') for v in vs] for k, vs in self.payload.get('arguments', {})},
-            cookies=self.payload.get('cookies'),
-            headers=self.payload.get('headers')
-        )
-        session_context._token = self.token
-
-        # expose the session context to the document
-        # use the _attribute to set the public property .session_context
-        doc._session_context = weakref.ref(session_context)
-
-        if self.path.endswith('.yaml') or self.path.endswith('.yml'):
-            from lumen.command import (
-                build_single_handler_application as build_lumen_app,
-            )
-            app = build_lumen_app(self.path, argv=None)
-        else:
-            app = build_single_handler_application(self.path)
-        with set_curdoc(doc):
-            app.initialize_document(doc)
-
-        loop = tornado.ioloop.IOLoop.current()
-        session = ServerSession(self.session_id, doc, io_loop=loop, token=self.token)
-        session_context._set_session(session)
-        return session
-
-    @classmethod
-    def code(cls, path: str, token: str, root_url: str) -> str:
-        """
-        Generates the code to instantiate a PanelExecutor that is to
-        be be run on the kernel to start a server session.
-
-        Arguments
-        ---------
-        path: str
-            The path of the Panel application to execute.
-        token: str
-            The Bokeh JWT token containing the session_id, request arguments,
-            headers and cookies.
-        root_url: str
-            The root_url the server is running on.
-
-        Returns
-        -------
-        The code to be executed inside the kernel.
-        """
-        execute_template = _env.from_string(cls._code)
-        return textwrap.dedent(
-            execute_template.render(path=path, token=token, root_url=root_url)
-        )
-
-    async def write_message(
-        self, message: Union[bytes, str, Dict[str, Any]],
-        binary: bool = False, locked: bool = True
-    ) -> None:
-        metadata = {'binary': binary}
-        if binary:
-            self.comm.send({}, metadata=metadata, buffers=[message])
-        else:
-            self.comm.send(message, metadata=metadata)
-
-    def render(self) -> HTML:
-        """
-        Renders the application to an IPython.display.HTML object to
-        be served by the `PanelJupyterHandler`.
-        """
-        with set_curdoc(self.session.document):
-            html = server_html_page_for_session(
-                self.session,
-                resources=self.resources,
-                title=self.session.document.title,
-                template=self.session.document.template,
-                template_variables=self.session.document.template_variables
-            )
-        publish_display_data({'application/bokeh-extensions': extension_dirs})
-        return HTML(html)
-
+    execute_template = _env.from_string(EXECUTION_TEMPLATE)
+    return textwrap.dedent(
+        execute_template.render(path=path, token=token, root_url=root_url)
+    )
 
 class PanelJupyterHandler(JupyterHandler):
     """
@@ -415,7 +257,7 @@ class PanelJupyterHandler(JupyterHandler):
             'cookies': dict(self.request.cookies.items())
         }
         token = generate_jwt_token(self.session_id, extra_payload=payload)
-        source = PanelExecutor.code(notebook_path, token, root_url)
+        source = generate_executor(notebook_path, token, root_url)
         msg_id = self.kernel.execute(source)
 
         # Wait for comm to open and rendered HTML to be returned by the kernel
