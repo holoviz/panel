@@ -28,6 +28,13 @@ Discover how to use Parameters with Panel to automatically generate UIs without 
 Discover different ways of linking parameters in Python and Javascript.
 :::
 
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Specify Components
+:link: components/index
+:link-type: doc
+
+Discover how to construct, access, set, and arrange visible components
+:::
+
 ::::
 
 
@@ -105,6 +112,13 @@ Discover various approaches telling you how to improve the scalability of your P
 :link-type: doc
 
 Discover how to profile and debug your application using the admin dashboard and other tools.
+:::
+
+:::{grid-item-card} {octicon}`codescan-checkmark;2.5em;sd-mr-1` Set up testing for an application
+:link: profiling/index
+:link-type: doc
+
+Discover how to set up unit tests, UI tests and load testing to ensure your applications are (and stay) robust and scalable.
 :::
 
 ::::

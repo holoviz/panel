@@ -6,7 +6,7 @@ Panel provides a wide range of components for easily composing panels, apps, and
 * ``Widget`` objects provide controls that can trigger Python or JavaScript events.
 * ``Panel`` layout objects allow combining plots into a ``Row``, ``Column``, ``Tabs`` or a ``Grid``.
 
-All objects share an API that makes it easy to [customize their layout behavior and visual appearance](./Customization.md), [link](./Links.md) and [display and export](./Display_and_Export.rst) them. To display any panel objects in a notebook environment ensure you load the extension first:
+All objects share an API that makes it easy to [customize behavior and appearance](../../how_to/components/index.md), [link parameters](../../how_to/links/index.md), and [display or export](../../how_to/display/index.md) them. To display any panel objects in a notebook environment ensure you load the extension first:
 
 
 ```{pyodide}
@@ -18,7 +18,7 @@ Note that to use certain components such as Vega, LaTeX, and Plotly plots in a n
 
     pn.extension('vega', 'katex')
 
-will ensure that the Vega and LaTeX JS dependencies are loaded. Once the extension is loaded, Panel objects will display themselves in the notebook, outside the notebook objects can be displayed in a server using the show method or run from the commandline by appending ``.serveable()`` to the objects to be displayed.
+will ensure that the Vega and LaTeX JS dependencies are loaded. Once the extension is loaded, Panel objects will display themselves in the notebook, outside the notebook objects can be displayed in a server using the show method or run from the commandline by appending ``.servable()`` to the objects to be displayed.
 
 ## Parameterized Components
 
@@ -104,7 +104,7 @@ widget.jslink(string, value='object')
 pn.Row(widget, string)
 ```
 
-See the [Links user guide](./Links.md) for more details about linking widgets to other objects, using either Python or JavaScript.
+See the [How-To > Link section](../../how_to/links/index.md) for recipes on how to link widgets to other objects, using either Python or JavaScript.
 
 ## Panels
 
@@ -123,7 +123,7 @@ There are four main types of ``Panel``s:
 
 The ``Row``, ``Column``, and ``Tabs`` Panels all behave very similarly.  All of them are list-like, which means they have many of the same methods as a simple Python list, making it easy to add, replace, and remove components interactively using ``append``, ``extend``, ``clear``, ``insert``, ``pop``, ``remove`` and ``__setitem__``. These methods make it possible to interactively configure and modify an arrangement of plots, making them an extremely powerful tool for building apps or dashboards.
 
-``Row`` and ``Column`` can be initialized as empty or with the objects to be displayed as arguments. If each of the object(s) provided is not already a ``Widget``, ``Pane``, or ``Panel``, the panel will internaly call the ``pn.panel`` function to convert it to a displayable representation (typically a Pane).
+``Row`` and ``Column`` can be initialized as empty or with the objects to be displayed as arguments. If each of the object(s) provided is not already a ``Widget``, ``Pane``, or ``Panel``, the panel will internally call the ``pn.panel`` function to convert it to a displayable representation (typically a Pane).
 
 To start with, we will declare a ``Column`` and populate it with a title and a widget:
 
@@ -150,7 +150,7 @@ and finally we change our mind and replace the ``Checkbox`` with a button:
 
 
 ```{pyodide}
-column[3] = pn.widgets.Button(name='Click here')
+column[4] = pn.widgets.Button(name='Click here')
 
 column
 ```
@@ -228,4 +228,4 @@ In addition to assignment, we can also slice and index the ``GridSpec`` to acces
 gspec[-1, 1:]
 ```
 
-For more detail about `GridSpec` Panels, see the [reference gallery](../reference/layouts/GridSpec.ipynb).
+For more details on using `GridSpec` Panels, see the [reference gallery](../../reference/layouts/GridSpec.ipynb).

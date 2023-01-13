@@ -115,7 +115,7 @@ class _LogTabulator(Tabulator):
 data = Data()
 log_data_handler = LogDataHandler(data)
 log_handler = logging.StreamHandler()
-log_handler.setLevel('DEBUG')
+log_handler.setLevel(config.admin_log_level)
 panel_logger.addHandler(log_handler)
 panel_logger.addHandler(log_data_handler)
 

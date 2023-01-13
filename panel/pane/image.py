@@ -10,14 +10,17 @@ import base64
 from io import BytesIO
 from pathlib import PurePath
 from typing import (
-    Any, ClassVar, List, Mapping,
+    TYPE_CHECKING, Any, ClassVar, List, Mapping,
 )
 
 import param
 
+from ..models import PDF as _BkPDF
 from ..util import isfile, isurl
 from .markup import DivPaneBase, escape
 
+if TYPE_CHECKING:
+    from bokeh.model import Model
 
 class FileBase(DivPaneBase):
 
@@ -392,20 +395,33 @@ class PDF(FileBase):
     ... )
     """
 
+    start_page = param.Integer(1, doc="""
+        Start page of the pdf, by default the first page.""")
+
     filetype: ClassVar[str] = 'pdf'
+
+    _bokeh_model: ClassVar[Model] = _BkPDF
+
+    _rerender_params: ClassVar[List[str]] = FileBase._rerender_params + ['start_page']
 
     def _get_properties(self):
         p = super()._get_properties()
+        p["embed"] = self.embed
+        p["start_page"] = self.start_page
+        p["width"] = self.width
+        p["height"] = self.height
+
         if self.object is None:
             return dict(p, text='<embed></embed>')
         if self.embed:
+            # This is handled by the Typescript Bokeh model to be able to render large PDF files (>2MB).
             data = self._data()
             if not isinstance(data, bytes):
                 data = data.encode('utf-8')
             base64_pdf = base64.b64encode(data).decode("utf-8")
-            src = f"data:application/pdf;base64,{base64_pdf}"
+            return dict(p, text=base64_pdf)
         else:
             src = self.object
         w, h = self.width or '100%', self.height or '100%'
-        html = f'<embed src="{src}" width={w!r} height={h!r} type="application/pdf">'
+        html = f'<embed src="{src}#page={self.start_page}" width={w!r} height={h!r} type="application/pdf">'
         return dict(p, text=escape(html))

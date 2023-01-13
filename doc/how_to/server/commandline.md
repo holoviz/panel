@@ -50,6 +50,11 @@ The ``panel serve`` command has the following options:
       --mem-log-frequency MILLISECONDS
                             How often to log memory usage information
       --use-xheaders        Prefer X-headers for IP/protocol information
+      --ssl-certfile CERTFILE
+                            Absolute path to a certificate file for SSL termination
+      --ssl-keyfile KEYFILE
+                            Absolute path to a private key file for SSL termination
+      --session-ids MODE    One of: unsigned, signed or external-signed
       --auth-module AUTH_MODULE
                             Absolute path to a Python module that implements auth hooks
       --enable-xsrf-cookies
@@ -81,7 +86,8 @@ The ``panel serve`` command has the following options:
                             separate cores (defaults to None).
       --warm                Whether to execute scripts on startup to warm up the server.
       --autoreload
-                            Whether to automatically reload user sessions when the application or any of its imports change.
+                            Whether to automatically reload user sessions when the
+			    application or any of its imports change.
       --static-dirs KEY=VALUE [KEY=VALUE ...]
                             Static directories to serve specified as key=value
                             pairs mapping from URL route to static file directory.
@@ -135,6 +141,12 @@ The ``panel serve`` command has the following options:
                             (defaults to /liveness but endpoint can be controlled with --liveness-endpoint)
       --liveness-endpoint
                             The endpoint to serve the liveness API at.
+      --admin
+                            Whether to add an admin panel.
+      --admin-log-level
+                            One of: debug, info, warning, error or critical
+      --profiler PROFILER
+                            The profiler to use by default, e.g. pyinstrument or snakeviz.
 
 To turn a notebook into a deployable app simply append ``.servable()`` to one or more Panel objects, which will add the app to Bokeh's ``curdoc``, ensuring it can be discovered by Bokeh server on deployment. In this way it is trivial to build dashboards that can be used interactively in a notebook and then seamlessly deployed on Bokeh server.
 
