@@ -184,7 +184,7 @@ The Panel project is also very grateful for the sponsorship by the organizations
     <a href="https://www.anaconda.com/">
       <img src="https://static.bokeh.org/sponsor/anaconda.png"
          alt="Anaconda Logo" width="200"/>
- </a>
+    </a>
   </td>
   <td colspan="2">
     <a href="https://www.blackstone.com/the-firm/">
