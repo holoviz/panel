@@ -652,17 +652,17 @@ class BasicTemplate(BaseTemplate):
                     )
 
         for name, js in self.config.js_files.items():
-            if not '//' in js and state.rel_path:
+            if '//' not in js and state.rel_path:
                 js = f'{state.rel_path}/{js}'
             js_files[name] = js
         for name, js in self.config.js_modules.items():
-            if not '//' in js and state.rel_path:
+            if '//' not in js and state.rel_path:
                 js = f'{state.rel_path}/{js}'
             js_modules[name] = js
 
         extra_css = resource_types['extra_css']
         for css in list(self.config.css_files):
-            if not '//' in css and state.rel_path:
+            if '//' not in css and state.rel_path:
                 css = f'{state.rel_path}/{css}'
             extra_css.append(css)
 

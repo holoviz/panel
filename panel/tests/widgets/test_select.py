@@ -124,7 +124,7 @@ def test_select_change_groups(document, comm):
     assert widget.options == {'C': [('4', 'd')], 'D': [('5', 'e'), ('6', 'f')]}
 
     select.groups = {}
-    assert select.value == None
+    assert select.value is None
     assert widget.value == ''
 
 
@@ -158,7 +158,7 @@ def test_select_change_options(document, comm):
     assert widget.value == str(opts['A'])
 
     select.options = {}
-    assert select.value == None
+    assert select.value is None
     assert widget.value == ''
 
 
