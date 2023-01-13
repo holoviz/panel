@@ -121,6 +121,9 @@ class _config(_base_config):
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
 
+    loading_indicator = param.Boolean(default=False, doc="""
+        Whether a loading indicator is shown by default while panes are updating.""")
+
     loading_spinner = param.Selector(default='arc', objects=[
         'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
         Loading indicator to use when component loading parameter is set.""")
@@ -164,6 +167,10 @@ class _config(_base_config):
         If sliders and inputs should be throttled until release of mouse.""")
 
     _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
+
+    _admin_log_level = param.Selector(
+        default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        doc="Log level of the Admin Panel logger")
 
     _comms = param.ObjectSelector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
@@ -325,6 +332,11 @@ class _config(_base_config):
     def _update_log_level(self):
         panel_log_handler.setLevel(self._log_level)
 
+    @param.depends('_admin_log_level', watch=True)
+    def _update_admin_log_level(self):
+        from .io.admin import log_handler as admin_log_handler
+        admin_log_handler.setLevel(self._log_level)
+
     def __getattribute__(self, attr):
         """
         Ensures that configuration parameters that are defined per
@@ -366,6 +378,10 @@ class _config(_base_config):
     @property
     def _doc_build(self):
         return os.environ.get('PANEL_DOC_BUILD')
+
+    def admin_log_level(self):
+        admin_log_level = os.environ.get('PANEL_ADMIN_LOG_LEVEL', self._admin_log_level)
+        return admin_log_level.upper() if admin_log_level else None
 
     @property
     def console_output(self):
@@ -545,7 +561,7 @@ class panel_extension(_pyviz_extension):
             if arg in self._imports:
                 try:
                     if (arg == 'ipywidgets' and get_ipython() and # noqa (get_ipython)
-                        not "PANEL_IPYWIDGET" in os.environ):
+                        "PANEL_IPYWIDGET" not in os.environ):
                         continue
                 except Exception:
                     pass

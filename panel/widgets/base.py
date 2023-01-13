@@ -157,7 +157,7 @@ class CompositeWidget(Widget):
         layout_params = [p for p in Layoutable.param if p != 'name']
         layout = {p: getattr(self, p) for p in layout_params
                   if getattr(self, p) is not None}
-        if layout.get('width', self.width) is None and not 'sizing_mode' in layout:
+        if layout.get('width', self.width) is None and 'sizing_mode' not in layout:
             layout['sizing_mode'] = 'stretch_width'
         self._composite = self._composite_type(**layout)
         self._models = self._composite._models

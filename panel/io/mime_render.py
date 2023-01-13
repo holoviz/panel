@@ -38,7 +38,7 @@ def _stdlibs():
     modules = list(sys.builtin_module_names)
     for m in pkgutil.iter_modules():
         mpath = getattr(m.module_finder, 'path', '')
-        if mpath.startswith(env_dir) and not 'site-packages' in mpath:
+        if mpath.startswith(env_dir) and 'site-packages' not in mpath:
             modules.append(m.name)
     return modules
 
@@ -124,6 +124,16 @@ def _convert_expr(expr: ast.Expr) -> ast.Expression:
     expr.col_offset = 0
     return ast.Expression(expr.value, lineno=0, col_offset = 0)
 
+_OUT_BUFFER = []
+
+def _display(*objs, **kwargs):
+    """
+    IPython.display compatibility wrapper.
+
+    Note: This only handles a single display.
+    """
+    _OUT_BUFFER.extend(list(objs))
+
 def exec_with_return(
     code: str,
     global_context: Dict[str, Any] = None,
@@ -151,6 +161,7 @@ def exec_with_return(
     The return value of the executed code.
     """
     global_context = global_context if global_context else globals()
+    global_context['display'] = _display
     code_ast = ast.parse(code)
 
     init_ast = copy.deepcopy(code_ast)
@@ -173,9 +184,13 @@ def exec_with_return(
                 out = None
             if code.strip().endswith(';'):
                 out = None
+            if _OUT_BUFFER and out is None:
+                out = _OUT_BUFFER[-1]
         except Exception:
             out = None
             traceback.print_exc(file=stderr)
+        finally:
+            _OUT_BUFFER.clear()
     return out
 
 #---------------------------------------------------------------------

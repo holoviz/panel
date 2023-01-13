@@ -170,10 +170,11 @@ class ReactiveHTMLParser(HTMLParser):
             match = None
 
         # Handle looped variables
-        if match and (match in self.loop_map or '[' in match) and self._open_for:
-            if match in self.loop_map:
-                matches[matches.index('${%s}' % match)] = '${%s}' % self.loop_map[match]
-                match = self.loop_map[match]
+        if match and (match.strip() in self.loop_map or '[' in match) and self._open_for:
+            if match.strip() in self.loop_map:
+                loop_match = self.loop_map[match.strip()]
+                matches[matches.index('${%s}' % match)] = '${%s}' % loop_match
+                match = loop_match
             elif '[' in match:
                 match, _ = match.split('[')
             dom_id = dom_id.replace('-{{ loop.index0 }}', '')

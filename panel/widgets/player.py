@@ -96,7 +96,7 @@ class Player(PlayerBase):
                 raise ValueError('Supply either length or start and end to Player not both')
             params['start'] = 0
             params['end'] = params.pop('length')-1
-        elif params.get('start', 0) > 0 and not 'value' in params:
+        elif params.get('start', 0) > 0 and 'value' not in params:
             params['value'] = params['start']
         super().__init__(**params)
 

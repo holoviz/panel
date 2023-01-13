@@ -22,6 +22,9 @@ The `pn.config` object allows setting various configuration variables, the confi
 `exception_handler`
 : A custom exception handler can be defined which should accept any exceptions raised while processing events originating from the frontend and onload callbacks.
 
+`loading_indicator`
+: Whether a loading indicator is shown by default when panes are updating.
+
 `nthreads`
 : If set will start a `ThreadPoolExecutor` to dispatch events to for concurrent execution on separate cores. By default no thread pool is launched, while setting nthreads=0 launches `min(32, os.cpu_count() + 4)` threads.
 
@@ -50,8 +53,12 @@ The `pn.config` object allows setting various configuration variables, the confi
 
 ### Python and Environment variables
 
+`admin_log_level` (`PANEL_ADMIN_LOG_LEVEL`):
+Log level of Panel admin's logger (default=DEBUG).
+
 `comms` (`PANEL_COMMS`)
 : Whether to render output in Jupyter with the default Jupyter extension or use the `jupyter_bokeh` ipywidget model.
+
 `console_output` (`PANEL_CONSOLE_OUTPUT`): How to log errors and stdout output triggered by callbacks from Javascript in the notebook. Options include `'accumulate'`, `'replace'` and `'disable'`.
 
 `embed` (`PANEL_EMBED`)
@@ -71,6 +78,9 @@ The `pn.config` object allows setting various configuration variables, the confi
 
 `inline` (`PANEL_INLINE`)
 : Whether to inline JS and CSS resources. If disabled, resources are loaded from CDN if one is available.
+
+`log_level` (`PANEL_LOG_LEVEL`)
+: Log level of Panel's logger (default=WARNING).
 
 `npm_cdn` (`PANEL_NPM_CDN`)
 : The CDN to load NPM packages from if resources are served from CDN. Allows switching between 'https://unpkg.com' (default) and 'https://cdn.jsdelivr.net/npm' for most resources.

@@ -172,6 +172,12 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to add an admin panel."
         )),
+        ('--admin-log-level', dict(
+            action  = 'store',
+            default = None,
+            choices = ('debug', 'info', 'warning', 'error', 'critical'),
+            help    = "One of: debug (default), info, warning, error or critical",
+        )),
         ('--profiler', dict(
             action  = 'store',
             type    = str,
@@ -343,6 +349,15 @@ class Serve(_BkServe):
             except Exception:
                 pass
             patterns.extend(app_patterns)
+            if args.admin_log_level is not None:
+                if os.environ.get('PANEL_ADMIN_LOG_LEVEL'):
+                    raise ValueError(
+                        "admin_log_level supplied both using the environment variable "
+                        "PANEL_ADMIN_LOG_LEVEL and as an explicit argument, only the "
+                        "value supplied to the environment variable is used "
+                    )
+                else:
+                    config.admin_log_level = args.admin_log_level.upper()
 
         config.session_history = args.session_history
         if args.rest_session_info:
