@@ -44,13 +44,13 @@
 
 [Panel](https://panel.holoviz.org/) makes it easy to combine widgets, plots, tables and other viewable Python objects into custom analysis tools, applications, and dashboards.
 
-[![Panel Example](https://user-images.githubusercontent.com/42288570/211207118-23d1e6d5-0c47-4489-aab5-892de338cc3b.gif)](https://panel.holoviz.org/reference/templates/FastGridTemplate.html)
+[![Panel NYC Taxi Linked Brushing](https://assets.holoviz.org/panel/readme/linked_brushing.gif)](https://panel.holoviz.org/reference/templates/FastGridTemplate.html)
 
 <br/>
 
 Panel works really well with the visualization tools you already know and love like [Altair/ Vega](https://panel.holoviz.org/reference/panes/Vega.html), [Bokeh](https://panel.holoviz.org/reference/panes/Bokeh.html), [Datashader](https://datashader.org/), [Deck.gl/ pydeck](https://panel.holoviz.org/reference/panes/DeckGL.html), [Echarts/ pyecharts](https://panel.holoviz.org/reference/panes/ECharts.html), [Folium](https://panel.holoviz.org/reference/panes/Folium.html), [HoloViews](https://holoviews.org/), [hvPlot](https://hvplot.holoviz.org), [plotnine](https://panel.holoviz.org/reference/panes/Matplotlib.html), [Matplotlib](https://panel.holoviz.org/reference/panes/Matplotlib.html), [Plotly](https://panel.holoviz.org/reference/panes/Plotly.html), [PyVista/ VTK](https://panel.holoviz.org/reference/panes/VTK.html), [Seaborn](https://panel.holoviz.org/gallery/styles/SeabornStyle.html) and more. Panel also works with the [ipywidgets](https://panel.holoviz.org/reference/panes/IPyWidget.html) ecosystem.
 
-[![Pythons DataViz works with Panel](https://user-images.githubusercontent.com/42288570/211983400-3315ad0a-866a-4916-8809-6fc38eca34d9.gif)](https://panel.holoviz.org/reference/index.html#panes)
+[![Pythons DataViz works with Panel](https://assets.holoviz.org/panel/readme/dataviz.gif)](https://panel.holoviz.org/reference/index.html#panes)
 
 Panel provides bi-directional communication making it possible to react to clicks, selections, hover etc. events.
 
@@ -60,8 +60,8 @@ You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors li
 
 <table>
   <tr>
-    <td><a href="https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews"><img src="https://user-images.githubusercontent.com/42288570/211206926-e8300669-07ad-4fa9-b326-18790e0a2758.gif" /></a></td>
-    <td><a href="https://blog.holoviz.org/panel_0.11.0.html#Autoreload"><img src="https://user-images.githubusercontent.com/42288570/211208453-b574a257-aa0e-42be-bcce-879fcb5ecc86.gif" /></a></td>
+    <td><a href="https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews"><img src="https://assets.holoviz.org/panel/readme/jupyterlab.gif" /></a></td>
+    <td><a href="https://blog.holoviz.org/panel_0.11.0.html#Autoreload"><img src="https://assets.holoviz.org/panel/readme/editor.gif" /></a></td>
   </tr>
  </table>
 
@@ -126,7 +126,7 @@ interactive_model = pn.bind(model, n=slider)
 layout = pn.Column(slider, interactive_model)
 ```
 
-![Panel Notebook Example](https://user-images.githubusercontent.com/42288570/211216829-a9090722-66b2-486c-b798-a9e2fd043240.gif)
+![Panel Notebook Example](https://assets.holoviz.org/panel/readme/notebook.gif)
 
 For deployment on a web server wrap it in a nice template.
 
@@ -148,7 +148,7 @@ or
 panel serve name_of_notebook.ipynb --show
 ```
 
-![Panel Example App](https://user-images.githubusercontent.com/42288570/211216020-c1d120ba-7cf6-44a7-abe3-53e73cb7bea6.gif)
+![Panel Example App](https://assets.holoviz.org/panel/readme/example_app.gif)
 
 ## Environments
 
@@ -191,9 +191,9 @@ If your development environment offers embedded Python processes but does not su
 
 ## Examples
 
-[![Panel Gallery](https://user-images.githubusercontent.com/42288570/211242707-f4a41f20-3265-4dca-9a17-d8babd54ce71.jpg)](https://panel.holoviz.org/gallery/index.html)
+[![Panel Gallery](https://assets.holoviz.org/panel/readme/gallery.jpg)](https://panel.holoviz.org/gallery/index.html)
 
-[![Awesome Panel Gallery](https://user-images.githubusercontent.com/42288570/211242719-b6f1035e-98bc-40ba-b986-954d3c10d607.jpg)](https://www.awesome-panel.org/gallery?theme=default)
+[![Awesome Panel Gallery](https://assets.holoviz.org/panel/readme/awesome_panel.jpg)](https://www.awesome-panel.org/gallery?theme=default)
 
 ## Support & Feedback
 
