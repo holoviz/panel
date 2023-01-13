@@ -318,7 +318,7 @@ def cache(
             to_disk=to_disk,
             cache_path=cache_path
         )
-    func_hash = None
+    func_hash = None # noqa
 
     lock = threading.RLock()
 

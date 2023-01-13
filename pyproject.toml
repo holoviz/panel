@@ -10,3 +10,36 @@ requires = [
     "packaging",
     "tqdm >=4.48.0"
 ]
+
+[tool.ruff]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".tox",
+    ".eggs",
+    "*.egg",
+    "doc",
+    "dist",
+    "build",
+    "_build",
+    "examples",
+    ".ipynb_checkpoints",
+    "node_modules",
+    "apps",
+]
+ignore = [
+    "E402",
+    "E712",
+    "E731",
+    "E741",
+    "W605"
+]
+line-length = 165
+select = [
+    "E",
+    "F",
+    "W",
+]
+
+[tool.ruff.per-file-ignores]
+"panel/tests/ui/jupyter_server_test_config.py" = ["F821"]

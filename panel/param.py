@@ -211,7 +211,7 @@ class Param(PaneBase):
 
     def __init__(self, object=None, **params):
         if isinstance(object, param.Parameter):
-            if not 'show_name' in params:
+            if 'show_name' not in params:
                 params['show_name'] = False
             params['parameters'] = [object.name]
             object = object.owner

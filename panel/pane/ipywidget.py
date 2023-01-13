@@ -43,7 +43,7 @@ class IPyWidget(PaneBase):
         return (hasattr(obj, 'traits') and hasattr(obj, 'get_manager_state') and hasattr(obj, 'comm'))
 
     def _get_ipywidget(self, obj, doc, root, comm, **kwargs):
-        if isinstance(comm, JupyterComm) and not config.embed and not "PANEL_IPYWIDGET" in os.environ:
+        if isinstance(comm, JupyterComm) and not config.embed and "PANEL_IPYWIDGET" not in os.environ:
             IPyWidget = _BkIPyWidget
         else:
             from ipywidgets_bokeh.widget import IPyWidget
