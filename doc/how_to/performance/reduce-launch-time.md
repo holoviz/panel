@@ -26,7 +26,7 @@ This is what happens when a user launches a page
 As you can see the bottlenecks can be
 
 - on the server side,
-- on the client side, or 
+- on the client side, or
 - in the network between the server and client
 
 ## Install the requirements
@@ -237,7 +237,7 @@ from panel.template.fast.list import FastListTemplate
 FastListTemplate(
     main=[Markdown("Hello World!", sizing_mode="stretch_width")]
 ).servable()
-``` 
+```
 
 I get 417ms total and 73ms for the html page.
 
@@ -326,11 +326,10 @@ In the *network* tab you will see something like
 
 ![Static Index Page](https://user-images.githubusercontent.com/42288570/212561757-428953a1-28c3-41b6-a212-abcc857f7cec.jpg)
 
-You can see that 
+You can see that
 
 - the interaction with `localhost` is reduced to 4ms!
 - the `.js` and `.css` files are no longer served by the Panel server.
 - the `load` time is reduced from +1.01sec to 442msec.
 
 Thus your Panel server will be able to handle more than 100 times as many users visiting your *Home* page compared to the initial *Home* page. And the users will have a much improved user experience.
-
