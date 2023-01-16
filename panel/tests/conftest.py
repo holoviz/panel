@@ -344,6 +344,13 @@ def py_file():
     finally:
         tf.close()
 
+@pytest.fixture
+def html_file():
+    tf = tempfile.NamedTemporaryFile(mode='w', suffix='.html')
+    try:
+        yield tf
+    finally:
+        tf.close()
 
 @pytest.fixture
 def threads():

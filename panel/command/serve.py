@@ -232,6 +232,8 @@ class Serve(_BkServe):
         kwargs = dict(server_kwargs)
         if 'index' not in kwargs:
             kwargs['index'] = INDEX_HTML
+        elif kwargs['index'].endswith('.html'):
+            kwargs['index'] = os.path.abspath(kwargs['index'])
 
         # Handle tranquilized functions in the supplied functions
         kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
