@@ -203,6 +203,10 @@ If your development environment offers embedded Python processes but does not su
 
 For more detail check out the [HoloViz Community Guide](https://holoviz.org/community.html).
 
+## Contributing ❤️
+
+Check out the [Contributing Guide](CONTRIBUTING.MD).
+
 ## License
 
 Panel is completely free and open-source. It is licensed under the [BSD 3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
