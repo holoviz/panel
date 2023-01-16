@@ -6,6 +6,7 @@ import pathlib
 import param
 
 from ...layout import Card
+from ...util.warnings import deprecated
 from ..base import BasicTemplate
 from ..theme import DarkTheme, DefaultTheme
 
@@ -25,6 +26,15 @@ class VanillaTemplate(BasicTemplate):
             'margin': (5, 5)
         }
     }
+
+    def __init__(self, **params):
+        extra = (
+            "Use one of 'panel.template.FastListTemplate', "
+            "'panel.template.MaterialTemplate' or 'panel.template.BootstrapTemplate' "
+            "instead."
+        )
+        deprecated('1.0', 'panel.template.VanillaTemplate', extra=extra)
+        super().__init__(**params)
 
     def _apply_root(self, name, model, tags):
         if 'main' in tags:
