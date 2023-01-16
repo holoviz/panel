@@ -230,17 +230,20 @@ class BaseTable(ReactiveData, Widget):
             columns.append(column)
         return columns
 
+    def _update_index_mapping(self):
+        if self._processed is None or isinstance(self._processed, list) and not self._processed:
+            self._index_mapping = {}
+            return
+        self._index_mapping = {
+            i: index
+            for i, index in enumerate(self._processed.index)
+        }
+
     @updating
     def _update_cds(self, *events: param.parameterized.Event):
         old_processed = self._processed
         self._processed, data = self._get_data()
-        if self._processed is not None and not (isinstance(self._processed, list) and not self._processed):
-            self._index_mapping = {
-                i: index
-                for i, index in enumerate(self._processed.index)
-            }
-        else:
-            self._index_mapping = {}
+        self._update_index_mapping()
         # If there is a selection we have to compute new index
         if self.selection and old_processed is not None:
             indexes = list(self._processed.index)
@@ -1155,7 +1158,7 @@ class Tabulator(BaseTable):
             nrows = self.page_size
             event.row = event.row+(self.page-1)*nrows
 
-        idx = self._index_mapping[event.row]
+        idx = self._index_mapping.get(event.row, event.row)
         iloc = self.value.index.get_loc(idx)
         self._validate_iloc(idx, iloc)
         event.row = iloc
@@ -1405,6 +1408,7 @@ class Tabulator(BaseTable):
         super()._stream(stream, rollover)
         self._update_style()
         self._update_selectable()
+        self._update_index_mapping()
 
     def stream(self, stream_value, rollover=None, reset_index=True, follow=True):
         for ref, (model, _) in self._models.items():

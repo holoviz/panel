@@ -2679,6 +2679,50 @@ def test_tabulator_click_event_and_header_filters(page, port):
     assert values[0] == ('col2', 4, 'Z')
 
 
+def test_tabulator_click_event_and_header_filters_and_streamed_data(page, port):
+    df = pd.DataFrame({
+        'col1': list('ABCDD'),
+        'col2': list('XXXXZ'),
+    })
+    widget = Tabulator(
+        df,
+        header_filters={'col1': {'type': 'input', 'func': 'like'}},
+    )
+
+    values = []
+    widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.5)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Set a filter on col1
+    str_header = page.locator('input[type="search"]')
+    str_header.click()
+    str_header.fill('D')
+    str_header.press('Enter')
+    wait_until(lambda: len(widget.filters) == 1, page)
+
+    # Stream data in ensuring that it does not mess up the index
+    widget.stream(pd.DataFrame([('D', 'Y')], columns=['col1', 'col2'], index=[5]))
+
+    # Click on the last cell
+    cell = page.locator('text="Z"')
+    cell.click()
+
+    wait_until(lambda: len(values) == 1, page)
+    # This cell was at index 4 in col2 of the original dataframe
+    assert values[0] == ('col2', 4, 'Z')
+
+    cell = page.locator('text="Y"')
+    cell.click()
+
+    wait_until(lambda: len(values) == 2, page)
+    # This cell was at index 5 in col2 of the original dataframe
+    assert values[1] == ('col2', 5, 'Y')
+
 def test_tabulator_edit_event_and_header_filters_last_row(page, port):
     df = pd.DataFrame({
         'col1': list('ABCDD'),
