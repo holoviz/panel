@@ -30,25 +30,39 @@ pn.extension() # for notebook
 
 pn.Row(
     pn.Column(pn.widgets.Button(name='B1', width=100, margin=25), background='#f0f0f0'),
-    pn.Column(pn.widgets.Button(name='B2', width=100, margin=(25, 50)), background='#f0f0f0'),
+    pn.Column(pn.widgets.Button(name='B2', width=100, margin=(40, 50)), background='#f0f0f0'),
     pn.Column(pn.widgets.Button(name='B3', width=100, margin=(25, 50, 75, 100)), background='#f0f0f0'))
 
 ```
 
 ## Spacer Components
 
-Spacer components makes it easy to put fixed or responsive spacing between objects. Like all other components spacers support both absolute and responsive sizing modes:
+Spacer components make it easy to put fixed or responsive spacing between objects.
 
 First, let's add fixed-width Spacers in between some numbers:
 
 ```{pyodide}
-pn.Row(1, pn.Spacer(width=200), 2, pn.Spacer(width=100), 3, pn.Spacer(width=50), 4, pn.Spacer(width=25), 5)
+pn.Row(
+    1,
+    pn.Spacer(width=200),
+    2,
+    pn.Spacer(width=100),
+    3,
+    pn.Spacer(width=50),
+    4,
+    pn.Spacer(width=25),
+    5
+)
 ```
 
 Instead of absolute spacing, we could use ``VSpacer`` or ``HSpacer`` components to provide responsive vertical and horizontal spacing, respectively. Using these components we can space objects equidistantly in a layout and allow the empty space to shrink when the browser is resized.
 
 ```{pyodide}
 pn.Row(
-    pn.layout.HSpacer(), '* Item 1\n* Item2', pn.layout.HSpacer(), '1. First\n2. Second', pn.layout.HSpacer()
+    pn.layout.HSpacer(),
+    '* Item 1\n* Item2',
+    pn.layout.HSpacer(),
+    '1. First\n2. Second',
+    pn.layout.HSpacer()
 )
 ```

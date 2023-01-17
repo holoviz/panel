@@ -1,8 +1,8 @@
 # Control Visibility
 
-All components provide a `visible` parameter which allows toggling whether the component should be visible or not.
+All components provide a `visible` parameter which toggles a component's visibility.
 
-Let's create three simple components with different colors and set the visibility parameter to only display two of them in a `Row` layout:
+Let's create three simple components with different colors. We'll set the visibility parameter of the blue one to `False`:
 
 ```{pyodide}
 

@@ -8,7 +8,7 @@ To start, we will declare a ``Column`` and populate it with some text and a widg
 
 ```{pyodide}
 import panel as pn
-pn.extension()
+pn.extension() # for notebook
 
 column = pn.Column('# some text', pn.widgets.FloatSlider())
 

@@ -1,6 +1,6 @@
 # Apply CSS
 
-CSS styles can be embedded in raw form or by referencing an external .css file by providing a list to the ``pn.config.raw_css`` or ``pn.config.js_files`` config parameters, respectively. Then, the ``css_classes`` parameter can be used to apply this CSS styling to a Panel component.
+CSS styles can be embedded in raw form or by referencing an external .css file. All that is needed is to provide a list to the ``pn.config.raw_css`` or ``pn.config.js_files`` config parameters, respectively. Then, the ``css_classes`` parameter can be used to apply this CSS styling to a Panel component.
 
 First, we define custom CSS classes:
 
@@ -31,7 +31,7 @@ If we are working in a notebook, we can now activate the panel extension after h
 
 ```{pyodide}
 
-pn.extension()
+pn.extension() # for notebook
 
 ```
 
