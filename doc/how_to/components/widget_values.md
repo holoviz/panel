@@ -7,7 +7,7 @@ Let's first create a `TextInput` widget:
 
 ```{pyodide}
 import panel as pn
-pn.extension()
+pn.extension() # for notebook
 
 widget = pn.widgets.TextInput(name='A widget', value='A string')
 widget

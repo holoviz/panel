@@ -6,7 +6,7 @@ To explicitly construct a pane, use one of the pane types listed in the [referen
 
 ```{pyodide}
 import panel as pn
-pn.extension()
+pn.extension() # for notebook
 
 pn.pane.Markdown('''
 # H1

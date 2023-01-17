@@ -14,11 +14,11 @@ The Panel How-to Guides provide step by step recipes for solving essential probl
 Discover the different APIs offered by Panel and how to choose between them.
 :::
 
-:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1` Declare UIs with parameters
-:link: param/index
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Create Components
+:link: components/index
 :link-type: doc
 
-Discover how to use Parameters with Panel to automatically generate UIs without writing GUI code.
+Discover how to construct and customize visible components
 :::
 
 :::{grid-item-card} {octicon}`link;2.5em;sd-mr-1` Link Parameters
@@ -28,11 +28,11 @@ Discover how to use Parameters with Panel to automatically generate UIs without 
 Discover different ways of linking parameters in Python and Javascript.
 :::
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Specify Components
-:link: components/index
+:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1` Declare UIs with parameters
+:link: param/index
 :link-type: doc
 
-Discover how to construct, access, set, and arrange visible components
+Discover how to use Parameters with Panel to automatically generate UIs without writing GUI code.
 :::
 
 ::::
