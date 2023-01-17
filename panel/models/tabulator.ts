@@ -292,7 +292,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     const p = this.model.properties
     const {configuration, layout, columns, theme, groupby} = p;
-    this.on_change([configuration, layout, columns, groupby], debounce(() => this.invalidate_render(), 20, false))
+    this.on_change([configuration, layout, groupby], debounce(() => this.invalidate_render(), 20, false))
+
+    this.on_change([columns], () => {
+      this.tabulator.setColumns(this.getColumns())
+      this.setHidden()
+    })
 
     this.on_change([theme], () => this.setCSS())
 
