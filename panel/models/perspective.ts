@@ -1,4 +1,4 @@
-import {StyleSheetLike, ImportedStyleSheet, div} from "@bokehjs/core/dom"
+import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {DocumentEvent} from "@bokehjs/document/events"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
@@ -108,13 +108,6 @@ export class PerspectiveView extends HTMLBoxView {
       this.model.document.remove_on_change(this._event_listener)
     this._event_listener = null
     super.disconnect_signals()
-  }
-
-  override styles(): StyleSheetLike[] {
-    const styles = super.styles()
-    for (const css of this.model.css)
-      styles.push(new ImportedStyleSheet(css))
-    return styles
   }
 
   async render(): Promise<void> {
@@ -227,7 +220,6 @@ export class PerspectiveView extends HTMLBoxView {
 export namespace Perspective {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    css: p.Property<string[]>
     aggregates: p.Property<any>
     split_by: p.Property<any[] | null>
     columns: p.Property<any[]>
@@ -262,7 +254,6 @@ export class Perspective extends HTMLBox {
 
     this.define<Perspective.Props>(({Any, Array, Boolean, Ref, Nullable, String}) => ({
       aggregates:       [ Any,                                 {} ],
-      css:              [ Array(String),                       [] ],
       columns:          [ Array(Nullable(String)),             [] ],
       expressions:      [ Nullable(Array(String)),           null ],
       split_by:         [ Nullable(Array(String)),           null ],

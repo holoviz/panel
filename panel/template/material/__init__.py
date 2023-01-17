@@ -5,11 +5,13 @@ import pathlib
 
 import param
 
+from bokeh.models import ImportedStyleSheet
 from bokeh.themes import Theme as _BkTheme
 
 from ...config import config
 from ...layout import Card
-from ..base import BasicTemplate, TemplateActions
+from ...viewable import Viewable
+from ..base import BasicTemplate, Inherit, TemplateActions
 from ..theme import DarkTheme, DefaultTheme
 
 
@@ -46,6 +48,9 @@ class MaterialTemplate(BasicTemplate):
             'button_css_classes': ['mdc-button', 'mdc-card-button'],
             'margin': (10, 5)
         },
+        Viewable: {
+            'stylesheets': [Inherit, ImportedStyleSheet(url='./components.css')]
+        }
     }
 
     _resources = {

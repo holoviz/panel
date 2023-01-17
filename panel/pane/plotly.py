@@ -11,7 +11,7 @@ from typing import (
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
 from ..util import isdatetime, lazy_load
@@ -257,7 +257,10 @@ class Plotly(PaneBase):
             json = self._plotly_json_wrapper(fig)
             sources = Plotly._get_sources(json)
 
-        params['css'] = ['css/plotly.css']
+        params['stylesheets'] = (
+            params.get('stylesheets', []) +
+            [ImportedStyleSheet(url='css/plotly.css')]
+        )
         params['_render_count'] = self._render_count
         params['config'] = self.config or {}
         params['data'] = json.get('data', [])

@@ -29,7 +29,7 @@ from typing import (
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource, FixedTicker
+from bokeh.models import ColumnDataSource, FixedTicker, ImportedStyleSheet
 from bokeh.plotting import figure
 from tqdm.asyncio import tqdm as _tqdm
 
@@ -180,7 +180,12 @@ class LoadingSpinner(BooleanIndicator):
 
     def _init_params(self) -> dict[str, Any]:
         properties = super()._init_params()
-        properties['css'] = ['css/loadingspinner.css', 'css/variables.css']
+        properties['stylesheets'] = (
+            properties.get('stylesheets', []) + [
+                ImportedStyleSheet(url='css/loadingspinner.css'),
+                ImportedStyleSheet(url='css/variables.css')
+            ]
+        )
         return properties
 
 

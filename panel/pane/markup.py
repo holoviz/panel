@@ -8,10 +8,12 @@ import json
 import textwrap
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Type,
 )
 
 import param
+
+from bokeh.models import ImportedStyleSheet
 
 from ..models import HTML as _BkHTML, JSON as _BkJSON
 from ..util import escape
@@ -32,12 +34,11 @@ class DivPaneBase(PaneBase):
     the supported options like style and sizing_mode.
     """
 
-    styles = param.Dict(default=None, doc="""
-        Dictionary of CSS property:value pairs to apply to this Div.""")
-
     _bokeh_model: ClassVar[Model] = _BkHTML
 
     _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
+
+    _stylesheets = []
 
     _updates: ClassVar[bool] = True
 
@@ -51,8 +52,18 @@ class DivPaneBase(PaneBase):
         super().__init__(object=object, **params)
 
     def _get_properties(self):
-        return {p : getattr(self, p) for p in list(Layoutable.param) + ['styles']
-                if getattr(self, p) is not None}
+        return {
+            p : getattr(self, p) for p in list(Layoutable.param)
+            if getattr(self, p) is not None
+        }
+
+    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        params = super()._process_param_change(params)
+        if 'stylesheets' in params:
+            params['stylesheets'] += [
+                ImportedStyleSheet(url=sts) for sts in self._stylesheets
+            ]
+        return params
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -65,7 +76,7 @@ class DivPaneBase(PaneBase):
         return model
 
     def _update(self, ref: str, model: Model) -> None:
-        model.update(**self._get_properties())
+        model.update(**self._process_param_change(self._get_properties()))
 
 
 class HTML(DivPaneBase):
@@ -201,6 +212,8 @@ class DataFrame(HTML):
         'sparsify', 'sizing_mode'
     ]
 
+    _stylesheets = ['css/dataframe.css']
+
     def __init__(self, object=None, **params):
         self._stream = None
         super().__init__(object, **params)
@@ -244,7 +257,6 @@ class DataFrame(HTML):
 
     def _get_properties(self):
         properties = DivPaneBase._get_properties(self)
-        properties['css'] = ['css/dataframe.css']
         if self._stream:
             df = self._object
         else:
@@ -343,6 +355,8 @@ class Markdown(DivPaneBase):
         'object', 'dedent', 'extensions', 'css_classes'
     ]
 
+    _stylesheets = ['css/markdown.css']
+
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         if hasattr(obj, '_repr_markdown_'):
@@ -362,8 +376,6 @@ class Markdown(DivPaneBase):
         if self.dedent:
             data = textwrap.dedent(data)
         properties = super()._get_properties()
-        properties['css'] = properties.get('css', []) + ['css/markdown.css']
-        properties['styles'] = properties.get('style', {})
         css_classes = properties.pop('css_classes', []) + ['markdown']
         html = markdown.markdown(data, extensions=self.extensions,
                                  output_format='html5')
@@ -414,6 +426,8 @@ class JSON(DivPaneBase):
         'object', 'depth', 'encoder', 'hover_preview', 'theme'
     ]
 
+    _stylesheets = ['css/json.css']
+
     @classmethod
     def applies(cls, obj: Any, **params) -> float | bool | None:
         if isinstance(obj, (list, dict)):
@@ -430,7 +444,6 @@ class JSON(DivPaneBase):
 
     def _get_properties(self):
         properties = super()._get_properties()
-        properties['css'] = ['css/json.css']
         try:
             data = json.loads(self.object)
         except Exception:

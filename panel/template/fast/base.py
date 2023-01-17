@@ -2,9 +2,12 @@ import pathlib
 
 import param
 
+from bokeh.models import ImportedStyleSheet
+
 from ...config import config
 from ...io.state import state
-from ..base import BasicTemplate
+from ...viewable import Viewable
+from ..base import BasicTemplate, Inherit
 from ..react import ReactTemplate
 from ..theme import THEMES, DefaultTheme
 
@@ -61,6 +64,12 @@ class FastBaseTemplate(BasicTemplate):
         _ROOT / "css/fast_panel_markdown.css",
         _ROOT / "css/fast_awesome.css"
     ]
+
+    _modifiers = {
+        Viewable: {
+            'stylesheets': [Inherit, ImportedStyleSheet(url='./components.css')]
+        }
+    }
 
     _js = _ROOT / "js/fast_template.js"
 

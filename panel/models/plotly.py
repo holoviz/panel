@@ -36,8 +36,6 @@ class PlotlyPlot(LayoutDOM):
         'exports': {'plotly': 'Plotly'}
     }
 
-    css = List(String)
-
     data = List(Any)
 
     layout = Dict(String, Any)

@@ -1,8 +1,3 @@
-button.bk.mdc-card__primary-action {
-  color: white;
-  background-color: #292929 !important;
-}
-
 :root {
   --mdc-theme-primary: #2f2f2f !important;
   --mdc-theme-on-primary: #ffffff !important;

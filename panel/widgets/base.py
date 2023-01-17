@@ -14,6 +14,8 @@ from typing import (
 
 import param  # type: ignore
 
+from bokeh.models import ImportedStyleSheet
+
 from ..layout.base import Row
 from ..reactive import Reactive
 from ..viewable import Layoutable, Viewable
@@ -91,11 +93,13 @@ class Widget(Reactive):
         )
         return layout[0]
 
-    def _init_params(self) -> Dict[str, Any]:
-        msg = super()._init_params()
-        if self._widget_type is not None and 'css' in self._widget_type.properties():
-            msg['css'] = getattr(self._widget_type, '__css__', [])
-        return msg
+    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        if self._widget_type is not None and 'stylesheets' in params:
+            css = getattr(self._widget_type, '__css__', [])
+            params['stylesheets'] += [
+                ImportedStyleSheet(url=ss) for ss in css
+            ]
+        return params
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,

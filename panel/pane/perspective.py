@@ -11,7 +11,7 @@ from typing import (
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
 from ..reactive import ReactiveData
@@ -367,7 +367,10 @@ class Perspective(PaneBase, ReactiveData):
     def _init_params(self):
         props = super()._init_params()
         Perspective = lazy_load('panel.models.perspective', 'Perspective')
-        props['css'] = Perspective.__css__
+        props['stylesheets'] = (
+            props.get('stylesheets', []) +
+            [ImportedStyleSheet(url=ss) for ss in Perspective.__css__]
+        )
         props['source'] = ColumnDataSource(data=self._data)
         props['schema'] = schema = {}
         for col, array in self._data.items():

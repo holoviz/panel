@@ -171,45 +171,46 @@ class PaneBase(Reactive):
         old_model = self._models[ref][0]
         if self._updates:
             self._update(ref, old_model)
-        else:
-            new_model = self._get_model(doc, root, parent, comm)
-            try:
-                if isinstance(parent, _BkGridBox):
-                    indexes = [
-                        i for i, child in enumerate(parent.children)
-                        if child[0] is old_model
-                    ]
-                    if indexes:
-                        index = indexes[0]
-                    else:
-                        raise ValueError
-                    new_model = (new_model,) + parent.children[index][1:]
-                elif isinstance(parent, _BkReactiveHTML):
-                    for node, children in parent.children.items():
-                        if old_model in children:
-                            index = children.index(old_model)
-                            new_models = list(children)
-                            new_models[index] = new_model
-                            break
-                elif isinstance(parent, _BkTabs):
-                    index = [tab.child for tab in parent.tabs].index(old_model)
+            return
+
+        new_model = self._get_model(doc, root, parent, comm)
+        try:
+            if isinstance(parent, _BkGridBox):
+                indexes = [
+                    i for i, child in enumerate(parent.children)
+                    if child[0] is old_model
+                ]
+                if indexes:
+                    index = indexes[0]
                 else:
-                    index = parent.children.index(old_model)
-            except ValueError:
-                self.param.warning(
-                    f'{type(self).__name__} pane model {old_model!r} could not be '
-                    f'replaced with new model {new_model!r}, ensure that the parent '
-                    'is not modified at the same time the panel is being updated.'
-                )
+                    raise ValueError
+                new_model = (new_model,) + parent.children[index][1:]
+            elif isinstance(parent, _BkReactiveHTML):
+                for node, children in parent.children.items():
+                    if old_model in children:
+                        index = children.index(old_model)
+                        new_models = list(children)
+                        new_models[index] = new_model
+                        break
+            elif isinstance(parent, _BkTabs):
+                index = [tab.child for tab in parent.tabs].index(old_model)
             else:
-                if isinstance(parent, _BkReactiveHTML):
-                    parent.children[node] = new_models
-                elif isinstance(parent, _BkTabs):
-                    old_tab = parent.tabs[index]
-                    props = dict(old_tab.properties_with_values(), child=new_model)
-                    parent.tabs[index] = _BkTabPanel(**props)
-                else:
-                    parent.children[index] = new_model
+                index = parent.children.index(old_model)
+        except ValueError:
+            self.param.warning(
+                f'{type(self).__name__} pane model {old_model!r} could not be '
+                f'replaced with new model {new_model!r}, ensure that the parent '
+                'is not modified at the same time the panel is being updated.'
+            )
+        else:
+            if isinstance(parent, _BkReactiveHTML):
+                parent.children[node] = new_models
+            elif isinstance(parent, _BkTabs):
+                old_tab = parent.tabs[index]
+                props = dict(old_tab.properties_with_values(), child=new_model)
+                parent.tabs[index] = _BkTabPanel(**props)
+            else:
+                parent.children[index] = new_model
 
         from ..io import state
         ref = root.ref['id']

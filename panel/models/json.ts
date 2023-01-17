@@ -1,4 +1,3 @@
-import {StyleSheetLike, ImportedStyleSheet} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
@@ -12,13 +11,6 @@ export class JSONView extends PanelMarkupView {
     super.connect_signals()
     const {depth, hover_preview, theme} = this.model.properties
     this.on_change([depth, hover_preview, theme], () => this.render())
-  }
-
-  override styles(): StyleSheetLike[] {
-    const styles = super.styles()
-    for (const css of this.model.css)
-      styles.push(new ImportedStyleSheet(css))
-    return styles
   }
 
   render(): void {

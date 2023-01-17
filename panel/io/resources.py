@@ -20,7 +20,7 @@ from bokeh.embed.bundle import (
     CSS_RESOURCES as BkCSS_RESOURCES, Bundle as BkBundle, _bundle_extensions,
     _use_mathjax, bundle_models, extension_dirs,
 )
-from bokeh.model import Model
+from bokeh.models import ImportedStyleSheet
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
 from jinja2.environment import Environment
@@ -183,10 +183,10 @@ def patch_model_css(root, dist_url):
     ALERT: Should find better solution before official Bokeh 3.x compatible release
     """
     # Patch model CSS properties
-    for model in root.select({'type': Model}):
-        if hasattr(model, 'css'):
+    for stylesheet in root.select({'type': ImportedStyleSheet}):
+        if not stylesheet.url.startswith('http'):
             try:
-                model.css = [css if css.startswith('http') else f'{dist_url}{css}' for css in model.css]
+                stylesheet.url = f'{dist_url}{stylesheet.url}'
             except Exception:
                 pass
 

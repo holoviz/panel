@@ -64,10 +64,6 @@ img.app-logo {
   margin: 4px 0;
 }
 
-.bk-canvas {
-  padding-right: 2px !important;
-}
-
 #content {
   height: calc(100vh - 76px);
   margin: 0px;
@@ -106,18 +102,10 @@ img.app-logo {
   border: none;
 }
 
-p.bk.card-button {
-  display: none;
-}
-
 .sidenav {
   padding-top: 15px;
   position: absolute;
   overflow-y: scroll;
-}
-
-.bk.card-title {
-  position: absolute !important;
 }
 
 .sidenav a {

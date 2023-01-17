@@ -16,6 +16,7 @@ from typing import (
 
 import bokeh
 import bokeh.embed.notebook
+import param
 
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import MACROS
@@ -32,7 +33,6 @@ from pyviz_comms import (
     PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js,
 )
 
-from ..compiler import require_components
 from ..util import escape
 from .embed import embed_state
 from .model import add_to_doc, diff
@@ -215,6 +215,63 @@ def mimebundle_to_html(bundle: Dict[str, Any]) -> str:
         js = data['application/javascript']
         html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
     return html
+
+
+def require_components():
+    """
+    Returns JS snippet to load the required dependencies in the classic
+    notebook using REQUIRE JS.
+    """
+    from ..config import config
+
+    configs, requirements, exports = [], [], {}
+    js_requires = []
+
+    for qual_name, model in Model.model_class_reverse_map.items():
+        # We need to enable Models from Panel as well as Panel extensions
+        # like awesome_panel_extensions.
+        # The Bokeh models do not have "." in the qual_name
+        if "." in qual_name:
+            js_requires.append(model)
+
+    from ..reactive import ReactiveHTML
+    js_requires += list(param.concrete_descendents(ReactiveHTML).values())
+
+    for export, js in config.js_files.items():
+        name = js.split('/')[-1].replace('.min', '').split('.')[-2]
+        conf = {'paths': {name: js[:-3]}, 'exports': {name: export}}
+        js_requires.append(conf)
+
+    skip_import = {}
+    for model in js_requires:
+        if hasattr(model, '__js_skip__'):
+            skip_import.update(model.__js_skip__)
+
+        if not (hasattr(model, '__js_require__') or isinstance(model, dict)):
+            continue
+
+        if isinstance(model, dict):
+            model_require = model
+        else:
+            model_require = dict(model.__js_require__)
+
+        model_exports = model_require.pop('exports', {})
+        if not any(model_require == config for config in configs):
+            configs.append(model_require)
+
+        for req in list(model_require.get('paths', [])):
+            if isinstance(req, tuple):
+                model_require['paths'] = dict(model_require['paths'])
+                model_require['paths'][req[0]] = model_require['paths'].pop(req)
+
+            reqs = req[1] if isinstance(req, tuple) else (req,)
+            for r in reqs:
+                if r not in requirements:
+                    requirements.append(r)
+                    if r in model_exports:
+                        exports[r] = model_exports[r]
+
+    return configs, requirements, exports, skip_import
 
 #---------------------------------------------------------------------
 # Public API

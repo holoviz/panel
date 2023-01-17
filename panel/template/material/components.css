@@ -1,0 +1,38 @@
+:host(.mdc-card) {
+    border-radius: 0px;
+    background: red;
+}
+
+.mdc-card__primary-action {
+  color: var(--mdc-theme-on-primary);
+  background-color: var(--mdc-theme-primary);
+}
+
+button.mdc-button.mdc-card-button {
+  color: transparent;
+  height: 50px;
+}
+
+p.mdc-button {
+  display: none;
+}
+
+:host(.mdc-card) .card-header {
+  display: flex;
+}
+
+.mdc-card-title {
+  font-size: 1.4em;
+  font-weight: bold;
+  align-items: center;
+  display: flex !important;
+  position: relative !important;
+}
+
+.mdc-card-title:nth-child(2) {
+  margin-left: -1.4em;
+}
+
+:host-context(.mdc-top-app-bar) .bk-menu {
+  color: black;
+}
