@@ -646,7 +646,7 @@ def serve(
     each app is served, e.g. `serve({'app': panel1, 'app2': panel2})`
     will serve apps at /app and /app2 on the server.
 
-    Reference: https://panel.holoviz.org/user_guide/Deploy_and_Export.html#serving-multiple-apps
+    Reference: https://panel.holoviz.org/user_guide/Server_Configuration.html#serving-multiple-apps
 
     Arguments
     ---------
