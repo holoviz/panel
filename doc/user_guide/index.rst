@@ -23,9 +23,6 @@ The reference guides provide a more in-depth treatment of some of the
 APIs and components in Panel, with detailed information that you can refer to
 when needed.
 
-`Customization <Customization.html>`_
- How to customize the visual appearance, layout, and size of Panel components.
-
 `Interact <Interact.html>`_
  Quickly making a panel using `interact()`.
 
