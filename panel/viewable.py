@@ -42,7 +42,8 @@ from .io.notebook import (
 )
 from .io.save import save
 from .io.state import curdoc_locked, state
-from .util import deprecation_warning, escape, param_reprs
+from .util import escape, param_reprs
+from .util.warnings import deprecated
 
 if TYPE_CHECKING:
     from bokeh.model import Model
@@ -610,13 +611,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             return
 
         # Warning
-        prev = f'{type(self).name}(background="{self.background}")'
-        new = f'{type(self).name}(styles={{"background": "{self.background}"}}'
-        deprecation_warning(
-            f"{prev!r} is deprecated and will stop working, "
-            f"use {new!r} instead of."
-        )
-
+        prev = f'{type(self).name}(background={self.background!r})'
+        new = f'{type(self).name}(styles={{"background": {self.background!r}}}'
+        deprecated("1.1", prev, new)
         self.styles["background"] = self.background
         self.param.trigger("styles")
 
