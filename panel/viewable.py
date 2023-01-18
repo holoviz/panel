@@ -606,7 +606,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             stop_loading_spinner(self)
 
     def _set_background(self, *_) -> None:
-        if self.background == self.styles.get("background", None):
+        if self.background == self.styles.get("background", None) or self.background is None:
             return
 
         # Warning
