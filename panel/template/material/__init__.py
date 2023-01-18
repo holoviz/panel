@@ -49,7 +49,7 @@ class MaterialTemplate(BasicTemplate):
             'margin': (10, 5)
         },
         Viewable: {
-            'stylesheets': [Inherit, ImportedStyleSheet(url='./components.css')]
+            'stylesheets': [Inherit, ImportedStyleSheet(url='components.css')]
         }
     }
 

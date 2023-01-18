@@ -81,6 +81,12 @@ RESOURCE_URLS = {
         'exclude': [],
         'dest': ''
     },
+    'bootstrap5': {
+        'tar': 'https://registry.npmjs.org/bootstrap/-/bootstrap-5.3.0-alpha1.tgz',
+        'src': 'package/dist',
+        'exclude': [],
+        'dest': ''
+    },
     'jQuery': {
         'tar': 'https://registry.npmjs.org/jquery/-/jquery-3.5.1.tgz',
         'src': 'package/dist',
@@ -91,12 +97,14 @@ RESOURCE_URLS = {
 
 CSS_URLS = {
     'font-awesome': f'{CDN_DIST}bundled/font-awesome/css/all.min.css',
-    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/css/bootstrap.min.css'
+    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/css/bootstrap.min.css',
+    'bootstrap5': f'{CDN_DIST}bundled/bootstrap5/css/bootstrap.min.css'
 }
 
 JS_URLS = {
     'jQuery': f'{CDN_DIST}bundled/jquery/jquery.slim.min.js',
-    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/js/bootstrap.bundle.min.js'
+    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/js/bootstrap.bundle.min.js',
+    'bootstrap5': f'{CDN_DIST}bundled/bootstrap5/js/bootstrap.bundle.min.js'
 }
 
 extension_dirs['panel'] = str(DIST_DIR)

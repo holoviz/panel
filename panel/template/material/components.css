@@ -1,38 +1,320 @@
-:host(.mdc-card) {
-    border-radius: 0px;
-    background: red;
-}
+/* Variables */
 
-.mdc-card__primary-action {
-  color: var(--mdc-theme-on-primary);
-  background-color: var(--mdc-theme-primary);
-}
-
-button.mdc-button.mdc-card-button {
-  color: transparent;
-  height: 50px;
-}
-
-p.mdc-button {
-  display: none;
-}
-
-:host(.mdc-card) .card-header {
-  display: flex;
-}
-
-.mdc-card-title {
-  font-size: 1.4em;
-  font-weight: bold;
-  align-items: center;
-  display: flex !important;
-  position: relative !important;
-}
-
-.mdc-card-title:nth-child(2) {
-  margin-left: -1.4em;
+:host {
+    --handle-width: 20px;
+    --handle-height: 20px;
+    --switch-size: 20px;
+    --slider-size: 7px;
+    --padding-vertical: 10px;
 }
 
 :host-context(.mdc-top-app-bar) .bk-menu {
   color: black;
+}
+
+/* Card layout */
+
+:host(.mdc-card), :host(.accordion) {
+    background-color: var(--mdc-theme-surface);
+    box-shadow: rgb(0 0 0 / 20%) 0px 2px 1px -1px, rgb(0 0 0 / 14%) 0px 1px 1px 0px, rgb(0 0 0 / 12%) 0px 1px 3px 0px;
+    color: var(--mdc-theme-on-surface);
+}
+
+:host(.mdc-card) {
+    border-radius: 4px;
+
+}
+
+.card-header, .accordion-header {
+    background-color: var(--mdc-theme-surface);
+    border: unset;
+    border-bottom: 0.2px solid var(--mdc-theme-surface);
+}
+
+button.mdc-button.mdc-card-button {
+    color: transparent;
+    height: 50px;
+}
+
+:host(.mdc-card) .card-header {
+    display: flex;
+}
+
+/* Tabs styling */
+
+.bk-header {
+  --pn-tab-padding-x: 1rem;
+  --pn-tab-padding-y: 0.5rem;
+  --pn-tabs-border-width: 1px;
+  --pn-tabs-border-width: 1px;
+  --pn-tab-color: var(--mdc-theme-secondary);
+  --pn-tabs-border-radius: var(--border-radius);
+  --pn-tab-active-color: var(--mdc-theme-primary);
+}
+
+:host(.bk-above) .bk-header {
+    border-bottom: var(--pn-tabs-border-width) solid var(--pn-tab-color);
+}
+
+:host(.bk-left) .bk-header {
+    border-right: var(--pn-tabs-border-width) solid var(--pn-tab-color);
+}
+
+:host(.bk-right) .bk-header {
+    border-left: var(--pn-tabs-border-width) solid var(--pn-tab-color);
+}
+
+:host(.bk-below) .bk-header {
+    border-top: var(--pn-tabs-border-width) solid var(--pn-tab-color);
+}
+
+:host(.bk-above) .bk-header .bk-tab,
+:host(.bk-left) .bk-header .bk-tab,
+:host(.bk-right) .bk-header .bk-tab,
+:host(.bk-below) .bk-header .bk-tab {
+    background: transparent;
+    border: none;
+    padding: var(--pn-tab-padding-y) var(--pn-tab-padding-x);
+    border-style: solid;
+    border-width: 0;
+}
+
+:host(.bk-above) .bk-header .bk-tab {
+    margin-bottom: calc(-1 * var(--pn-tabs-border-width));
+    border-bottom-width: 2px;
+}
+
+:host(.bk-left) .bk-header .bk-tab {
+    margin-right: calc(-1 * var(--pn-tabs-border-width));
+    border-right-width: 2px;
+}
+
+:host(.bk-right) .bk-header .bk-tab {
+    margin-left: calc(-1 * var(--pn-tabs-border-width));
+    border-left-width: 2px;
+}
+
+:host(.bk-below) .bk-header .bk-tab {
+    margin-top: calc(-1 * var(--pn-tabs-border-width));
+    border-top-width: 2px;
+}
+
+:host(.bk-above) .bk-header .bk-tab:hover, .bk-header .bk-tab:focus,
+:host(.bk-left) .bk-header .bk-tab:hover, .bk-header .bk-tab:focus,
+:host(.bk-right) .bk-header .bk-tab:hover, .bk-header .bk-tab:focus,
+:host(.bk-below) .bk-header .bk-tab:hover, .bk-header .bk-tab:focus {
+    isolation: isolate;
+    border-color: var(--pn-tab-hover-border-color);
+}
+
+:host(.bk-above) .bk-header .bk-tab.bk-active,
+:host(.bk-left) .bk-header .bk-tab.bk-active,
+:host(.bk-right) .bk-header .bk-tab.bk-active,
+:host(.bk-below) .bk-header .bk-tab.bk-active {
+    color: var(--pn-tab-active-color);
+    border-color: var(--pn-tab-active-color);
+}
+
+/* Slider styling */
+
+.noUi-target {
+    border: unset;
+}
+
+.noUi-connects {
+    background-color: var(--mdc-theme-primary);
+    border: 0px;
+    border-radius: 10px;
+}
+
+.noUi-connect {
+    border: 0px;
+    background-color: var(--mdc-theme-primary);
+}
+
+.noUi-handle {
+    background-color: var(--mdc-theme-primary);
+    border: 0px;
+    border-radius: 50%;
+    box-shadow: unset;
+    transition: box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, left 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, bottom 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+.noUi-handle:hover {
+    box-shadow: var(--mdc-theme-primary-lightened) 0px 0px 0px 8px;
+}
+
+/* Input/TextArea widgets */
+
+input.bk-input, textarea.bk-input {
+    background-color: transparent;
+    color: var(--mdc-theme-on-surface);
+    border: unset;
+    border-radius: 0;
+    border-bottom: 1px solid var(--mdc-theme-secondary-lightened);
+    height: 1.4375em;
+    padding: 4px 0px 5px;
+    transform: 200ms cubic-bezier(0, 0, 0.2, 1) 0ms;
+}
+
+input.bk-input:hover, textarea.bk-input:hover {
+    border-bottom: 2px solid var(--mdc-theme-secondary);
+}
+
+input.bk-input:focus, textarea.bk-input:focus {
+    border-bottom: 2px solid var(--mdc-theme-primary);
+    box-shadow: unset;
+}
+
+/* Number input */
+
+
+/* Select widgets */
+
+select.bk-input {
+    background-color: transparent;
+    color: var(--mdc-theme-on-surface);
+    border: 1px solid var(--mdc-theme-secondary-lightened);
+    line-height: 1.4375em;
+    margin: 0.5rem 0;
+}
+
+select:not([multiple]).bk-input, select:not([size]).bk-input {
+    background-image: url('data:image/svg+xml;utf8,<svg version="1.1" viewBox="0 0 25 20" xmlns="http://www.w3.org/2000/svg"><path d="M 0,0 25,0 12.5,20 Z" fill="black" /></svg>');
+    min-height: 1.4375em;
+    padding: 12px 10px;
+}
+
+
+select[multiple].bk-input {
+    padding: 10px 10px;
+}
+
+select.bk-input:hover {
+    border: 1px solid var(--mdc-theme-secondary);
+    transform: 200ms cubic-bezier(0, 0, 0.2, 1) 0ms;
+}
+
+select.bk-input:focus {
+    border: 1px solid var(--mdc-theme-primary);
+    box-shadow: unset;
+}
+
+.bk-input-group > label:has(+ select) {
+    background-color: var(--mdc-theme-surface);
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(10px, -5px) scale(0.75);
+    line-height: 1.4375em;
+    font-size: 1rem;
+    transform-origin: top left;
+    z-index: 1;
+    padding: 0 10px;
+    margin: 5px 0;
+}
+
+/* MultiChoice */
+
+.choices__inner {
+    border: 1px solid var(--mdc-theme-secondary-lightened);
+    padding-top: 20px;
+}
+
+.bk-input-group > label:has(+ div.choices) {
+    background-color: var(--mdc-theme-surface);
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(10px, -12px) scale(0.75);
+    line-height: 1.4375em;
+    font-size: 1rem;
+    transform-origin: top left;
+    z-index: 1;
+    padding: 0 10px;
+    margin: 5px 0;
+}
+
+.choices__inner:hover {
+    border: 1px solid var(--mdc-theme-secondary);
+    transform: 200ms cubic-bezier(0, 0, 0.2, 1) 0ms;
+}
+
+.choices__inner:focus {
+    border: 1px solid var(--mdc-theme-primary);
+    box-shadow: unset;
+}
+
+/* Button widgets */
+
+.bk-btn-group > button {
+    padding: 5px 15px;
+    line-height: 2.5;
+    font-weight: 500;
+}
+
+.bk-btn-default {
+    background-color: unset;
+    color: var(--mdc-theme-primary);
+    border: 1px solid var(--mdc-theme-primary);
+}
+
+.bk-menu {
+    color: var(--mdc-theme-primary);
+    border: 1px solid var(--mdc-theme-primary);
+}
+
+.bk-btn.bk-active {
+    box-shadow: unset;
+}
+
+.bk-active.bk-btn-default {
+    border: 1px solid var(--mdc-theme-primary);
+}
+
+/* Checkbox */
+
+input[type="checkbox"] {
+    width: 1.25em;
+    height: 1.25em;
+}
+
+input[type="checkbox"] + span {
+    line-height: 1.5;
+    font-weight: 400;
+    top: -3px;
+}
+
+/* Switch */
+
+.body > .knob {
+    background-color: var(--mdc-theme-primary);
+    border-radius: 50%;
+    transition: box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, left 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, bottom 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+:host(.active) .bar {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+:host(.active) .knob {
+    background-color: var(--mdc-theme-primary);
+    left: calc(100% - var(--switch-size)/2);
+}
+
+/* Radio */
+
+input[type="radio"] {
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 50%;
+}
+
+input[type="radio"] + span {
+    top: -0.4em;
+}
+
+.bk-input-group > label {
+    padding: 5px 0;
 }

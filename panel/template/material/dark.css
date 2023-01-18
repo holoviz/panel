@@ -1,17 +1,19 @@
 :root {
-  --mdc-theme-primary: #2f2f2f !important;
+  --mdc-theme-primary: #0072B5 !important;
+  --mdc-theme-primary-lightened: rgba(0, 114, 181, 0.25);
   --mdc-theme-on-primary: #ffffff !important;
   --mdc-theme-secondary: #6f6f6f !important;
+  --mdc-theme-secondary-lightened: rgba(111, 111, 111, 0.25) !important;
   --mdc-theme-on-secondary:  #ffffff !important;
   --mdc-theme-error: #b00020 !important;
   --mdc-theme-on-error: #ffffff !important;
-  --mdc-theme-surface: #2f2f2f !important;
+  --mdc-theme-surface: #212529 !important;
   --mdc-theme-on-surface: #ffffff !important;
   --mdc-theme-background: #121212 !important;
   --mdc-theme-on-background: #fffff !important;
   --mdc-shape-small:  4px;
   --mdc-shape-medium:  4px;
   --mdc-shape-large:  0px;
-  --mdc-typography--font-family:  "Roboto";
+  --mdc-typography--font-family: "Roboto";
   --mdc-theme-text-primary-on-background: #ffffff !important;
 }

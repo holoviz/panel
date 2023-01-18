@@ -86,10 +86,6 @@ img.app-logo {
   max-width: inherit;
 }
 
-p.bk.card-button {
-  display: none;
-}
-
 .pn-modal {
   overflow-y: auto;
 }

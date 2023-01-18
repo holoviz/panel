@@ -147,9 +147,14 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         for v in value:
             if v is Inherit:
                 new_value.extend(inherited)
-            elif isinstance(v, ImportedStyleSheet) and not v.url.startswith('http'):
-                bundled_path = os.path.join('bundled', defining_cls.__name__.lower(), v.url)
-                new_value.append(ImportedStyleSheet(url=bundled_path))
+            elif isinstance(v, ImportedStyleSheet):
+                if v.url.startswith('http'):
+                    continue
+                elif v.url.startswith('/'):
+                    url = v.url[1:]
+                else:
+                    url = os.path.join('bundled', defining_cls.__name__.lower(), v.url)
+                new_value.append(ImportedStyleSheet(url=url))
             else:
                 new_value.append(v)
         return new_value
@@ -825,6 +830,7 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width
         self._render_variables['sidebar_width'] = self.sidebar_width
+        self._render_variables['theme'] = self._get_theme()
 
     def _update_busy(self) -> None:
         if self.busy_indicator:

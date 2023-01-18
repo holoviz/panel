@@ -1,3 +1,7 @@
+:root {
+    --bs-form-control-bg: #121212;
+}
+
 body {
   color: white;
   background-color: #121212;

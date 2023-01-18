@@ -45,8 +45,8 @@
 
 <!-- goes in body -->
 {% block contents %}
-<div class="container-fluid d-flex flex-column vh-100 overflow-hidden" id="container">
-  <nav class="navbar navbar-expand-md navbar-dark sticky-top shadow" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+<div class="container-fluid d-flex flex-column vh-100 overflow-hidden" id="container" data-bs-theme="{{ theme._bs_theme }}">
+  <nav class="navbar navbar-expand-md sticky-top shadow" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
     {% if nav %}
     <button type="button" class="navbar-toggle collapsed" id="sidebarCollapse">
       <span class="navbar-toggler-icon"></span>
