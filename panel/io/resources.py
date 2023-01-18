@@ -184,7 +184,8 @@ def patch_model_css(root, dist_url):
     """
     # Patch model CSS properties
     for stylesheet in root.select({'type': ImportedStyleSheet}):
-        if not stylesheet.url.startswith('http'):
+        url = stylesheet.url
+        if not url.startswith('http') and not url.startswith(dist_url):
             try:
                 stylesheet.url = f'{dist_url}{stylesheet.url}'
             except Exception:
