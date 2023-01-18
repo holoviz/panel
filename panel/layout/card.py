@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Type,
+    TYPE_CHECKING, Callable, ClassVar, List, Mapping, Type,
 )
 
 import param
+
+from bokeh.models import ImportedStyleSheet
 
 from ..models import Card as BkCard
 from .base import Column, ListPanel, Row
 
 if TYPE_CHECKING:
     from bokeh.model import Model
+
+    from ..viewable import Viewable
 
 
 class Card(Column):
@@ -84,6 +88,11 @@ class Card(Column):
         self.param.watch(self._update_header, ['title', 'header', 'title_css_classes'])
         self._update_header()
 
+    def select(
+        self, selector: type | Callable[[Viewable], bool] | None = None
+    ) -> List[Viewable]:
+        return self._header_layout.select(selector) + super().select(selector)
+
     def _cleanup(self, root: Model | None = None) -> None:
         super()._cleanup(root)
         self._header_layout._cleanup(root)
@@ -95,6 +104,10 @@ class Card(Column):
             params['css_classes'] = css_classes + ['scrollable']
         elif scroll == False:
             params['css_classes'] = css_classes
+        if 'stylesheets' in params:
+            params['stylesheets'] = (
+                params['stylesheets'] + [ImportedStyleSheet(url='css/card.css')]
+            )
         return super(ListPanel, self)._process_param_change(params)
 
     def _update_header(self, *events):
