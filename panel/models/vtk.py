@@ -5,7 +5,7 @@ from bokeh.core.enums import enumeration
 from bokeh.core.has_props import abstract
 from bokeh.core.properties import (
     Any, Bool, Dict, Enum, Float, Instance, Int, List, Nullable, Override,
-    PositiveInt, String,
+    Positive, String,
 )
 from bokeh.models import ColorMapper, Model
 
@@ -25,7 +25,7 @@ class VTKAxes(Model):
 
     digits = Int(default=1)
 
-    fontsize = PositiveInt(default=12)
+    fontsize = Positive(Int, default=12)
 
     grid_opacity = Float(default=0.1)
 
