@@ -94,9 +94,10 @@ class Widget(Reactive):
         return layout[0]
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        params = super()._process_param_change(params)
         if self._widget_type is not None and 'stylesheets' in params:
             css = getattr(self._widget_type, '__css__', [])
-            params['stylesheets'] += [
+            params['stylesheets'] = params['stylesheets'] + [
                 ImportedStyleSheet(url=ss) for ss in css
             ]
         return params

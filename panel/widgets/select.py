@@ -37,6 +37,8 @@ class SelectBase(Widget):
 
     options = param.ClassSelector(default=[], class_=(dict, list))
 
+    width = param.Integer(default=300)
+
     __abstract = True
 
     @property
@@ -448,6 +450,8 @@ class AutocompleteInput(Widget):
 
     value_input = param.String(default='', allow_None=True, doc="""
       Initial or entered text value updated on every key press.""")
+
+    width = param.Integer(default=300)
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
