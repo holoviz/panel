@@ -14,7 +14,8 @@ from typing import (
 import param
 
 from ..models import HTML as _BkHTML, JSON as _BkJSON
-from ..util import escape, style_to_styles
+from ..util import escape
+from ..util.warnings import deprecated
 from ..viewable import Layoutable
 from .base import PaneBase
 
@@ -43,7 +44,10 @@ class DivPaneBase(PaneBase):
     __abstract = True
 
     def __init__(self, object=None, **params):
-        params = style_to_styles(params)
+        if "style" in params:
+            # In Bokeh 3 'style' was changed to 'styles'.
+            params["styles"] = params.pop("style")
+            deprecated("1.1", "style",  "styles")
         super().__init__(object=object, **params)
 
     def _get_properties(self):

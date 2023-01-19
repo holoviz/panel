@@ -34,7 +34,6 @@ from .checks import (  # noqa
     datetime_types, is_dataframe, is_holoviews, is_number, is_parameterized,
     is_series, isdatetime, isfile, isIn, isurl,
 )
-from .warnings import deprecated
 
 bokeh_version = Version(bokeh.__version__)
 
@@ -381,16 +380,3 @@ def base_version(version: str) -> str:
         return match.group()
     else:
         return version
-
-
-def style_to_styles(params):
-    """
-    In Bokeh 3.0.0 'style' was changed to 'styles'.
-    This small function will change it and emit a warning.
-
-    """
-    if "style" in params:
-        params["styles"] = params.pop("style")
-        deprecated("1.1", "style",  "styles")
-
-    return params
