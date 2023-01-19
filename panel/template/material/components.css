@@ -9,7 +9,7 @@
 }
 
 :host-context(.mdc-top-app-bar) .bk-menu {
-  color: black;
+    color: black;
 }
 
 /* Card layout */

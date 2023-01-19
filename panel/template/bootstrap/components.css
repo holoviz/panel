@@ -249,7 +249,6 @@ input[type="radio"] + span {
     padding: 5px 0;
 }
 
-
 /* Switch */
 
 .body > .knob {
@@ -258,7 +257,6 @@ input[type="radio"] + span {
 }
 
 .body > .bar {
-
     background-color: transparent;
     border: var(--bs-border-width) solid var(--bs-border-color);
     width: calc(var(--switch-size) * 2);
@@ -266,7 +264,7 @@ input[type="radio"] + span {
 
 :host(.active) .bar {
     background-color: #0d6efd;
-    box-shadow: var(--mdc-theme-primary-lightened) 0px 0px 0px 8px;
+    box-shadow: var(--bs-border-color) 0px 0px 0px 8px;
     border-color: #0d6efd;
 }
 

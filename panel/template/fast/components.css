@@ -498,6 +498,12 @@ input[type=file]:active {
     left: calc(100% - var(--switch-size)/2 - 2px);
 }
 
+/* TextEditor */
+
+.ql-container.ql-snow {
+  border: 1px solid #ccc;
+}
+
 /* Progress Indicator */
 
 progress {
