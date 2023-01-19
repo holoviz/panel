@@ -1,4 +1,5 @@
 import datetime as dt
+import warnings
 
 from collections import OrderedDict
 
@@ -22,6 +23,7 @@ import panel as pn
 from panel.layout import Column, FlexBox, Row
 from panel.pane import HoloViews, PaneBase
 from panel.tests.util import hv_available, mpl_available
+from panel.util.warnings import PanelDeprecationWarning
 from panel.widgets import DiscreteSlider, FloatSlider, Select
 
 
@@ -584,10 +586,24 @@ def test_holoviews_link_within_pane(document, comm):
 
 
 @hv_available
+def test_holoviews_property_override_old_method(document, comm):
+    c1 = hv.Curve([])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", PanelDeprecationWarning)
+        pane = pn.panel(c1, backend='bokeh', background='red',
+                        css_classes=['test_class'])
+    model = pane.get_root(document, comm=comm)
+
+    assert model.styles["background"] == 'red'
+    assert model.css_classes == ['test_class']
+
+@hv_available
 def test_holoviews_property_override(document, comm):
     c1 = hv.Curve([])
 
-    pane = pn.panel(c1, backend='bokeh', background='red',
+    pane = pn.panel(c1, backend='bokeh',
+                styles={'background': 'red'},
                 css_classes=['test_class'])
     model = pane.get_root(document, comm=comm)
 
