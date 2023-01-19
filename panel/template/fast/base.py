@@ -7,6 +7,7 @@ from bokeh.models import ImportedStyleSheet
 from ...config import config
 from ...io.state import state
 from ...viewable import Viewable
+from ...widgets import Tabulator
 from ..base import BasicTemplate, Inherit
 from ..react import ReactTemplate
 from ..theme import THEMES, DefaultTheme
@@ -56,18 +57,19 @@ class FastBaseTemplate(BasicTemplate):
 
     _css = [
         _ROOT / "css/fast_root.css",
-        _ROOT / "css/fast_bokeh.css",
         _ROOT / "css/fast_bokeh_slickgrid.css",
         _ROOT / "css/fast_panel.css",
         _ROOT / "css/fast_panel_dataframe.css",
-        _ROOT / "css/fast_panel_widgets.css",
         _ROOT / "css/fast_panel_markdown.css",
         _ROOT / "css/fast_awesome.css"
     ]
 
     _modifiers = {
+        Tabulator: {
+            'theme': 'fast'
+        },
         Viewable: {
-            'stylesheets': [Inherit, ImportedStyleSheet(url='./components.css')]
+            'stylesheets': [Inherit, ImportedStyleSheet(url='components.css')]
         }
     }
 

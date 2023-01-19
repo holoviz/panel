@@ -204,7 +204,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             return
         model, _ = viewable._models[mref]
         modifiers, child_modifiers = cls._resolve_modifiers(type(viewable))
-        if 'stylesheets':
+        if 'stylesheets' in modifiers:
             modifiers['stylesheets'] = [
                 ImportedStyleSheet(url=sts.url) if isinstance(sts, ImportedStyleSheet) else sts
                 for sts in modifiers['stylesheets']
