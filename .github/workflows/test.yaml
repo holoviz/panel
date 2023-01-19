@@ -58,7 +58,7 @@ jobs:
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           # Remove when Python 3.11 is well supported on latest conda/conda-forge.
           conda-update: ${{ matrix.python-version == '3.11' && 'false' || 'true' }}
           nodejs: true
@@ -80,7 +80,7 @@ jobs:
       - name: Install bokeh 3.0 compatibility packages
         run: |
           conda activate test-environment
-          conda uninstall holoviews jupyter_bokeh --force -y --offline
+          conda uninstall holoviews jupyter_bokeh --force -y --offline || echo "packages already removed"
           pip install "git+https://github.com/holoviz/holoviews.git@bokeh3.0"
           pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: doit env_capture
