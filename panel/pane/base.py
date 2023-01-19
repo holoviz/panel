@@ -23,7 +23,6 @@ from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
 from ..util import param_reprs
-from ..util.warnings import deprecated
 from ..viewable import (
     Layoutable, ServableMixin, Viewable, Viewer,
 )
@@ -32,16 +31,6 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
-
-
-def Pane(obj: Any, **kwargs) -> 'PaneBase':
-    """
-    Converts any object to a Pane if a matching Pane class exists.
-    """
-    deprecated("1.0", "panel.Pane", "panel.panel")
-    if isinstance(obj, Viewable):
-        return obj
-    return PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
 
 
 def panel(obj: Any, **kwargs) -> Viewable:

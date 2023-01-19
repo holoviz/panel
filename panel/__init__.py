@@ -63,7 +63,7 @@ from .layout import (  # noqa
     Accordion, Card, Column, FlexBox, GridBox, GridSpec, Row, Spacer, Tabs,
     WidgetBox,
 )
-from .pane import Pane, panel  # noqa
+from .pane import panel  # noqa
 from .param import Param  # noqa
 from .template import Template  # noqa
 from .widgets import indicators, widget  # noqa
@@ -76,7 +76,6 @@ __all__ = (
     "FlexBox",
     "GridBox",
     "GridSpec",
-    "Pane", # deprecated
     "Param",
     "Row",
     "Spacer",
