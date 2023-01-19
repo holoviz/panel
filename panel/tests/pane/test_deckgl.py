@@ -9,7 +9,7 @@ except Exception:
 pydeck_available = pytest.mark.skipif(pydeck is None, reason="requires pydeck")
 
 from panel.models.deckgl import DeckGLPlot
-from panel.pane import DeckGL, Pane, PaneBase
+from panel.pane import DeckGL, PaneBase, panel
 
 
 @pydeck_available
@@ -21,7 +21,7 @@ def test_get_pydeck_pane_type_from_deck():
 @pydeck_available
 def test_pydeck_pane_deck(document, comm):
     deck = pydeck.Deck(tooltip=True, api_keys={'mapbox': 'ABC'})
-    pane = Pane(deck)
+    pane = panel(deck)
 
     # Create pane
     model = pane.get_root(document, comm=comm)

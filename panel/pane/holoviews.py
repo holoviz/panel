@@ -24,7 +24,7 @@ from ..layout import (
 )
 from ..viewable import Layoutable, Viewable
 from ..widgets import Player
-from .base import Pane, PaneBase, RerenderError
+from .base import PaneBase, RerenderError, panel
 from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
 
@@ -297,7 +297,7 @@ class HoloViews(PaneBase):
         return model
 
     def _get_pane(self, backend, state, **kwargs):
-        pane_type = self._panes.get(backend, Pane)
+        pane_type = self._panes.get(backend, panel)
         if isinstance(pane_type, type):
             if issubclass(pane_type, Matplotlib):
                 kwargs['tight'] = True
