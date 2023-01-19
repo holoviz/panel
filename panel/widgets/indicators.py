@@ -1123,7 +1123,7 @@ class ptqdm(_tqdm):
     def display(self, msg=None, pos=None, bar_style=None):
         super().display(msg, pos)
         styles = self._indicator.text_pane.styles or {}
-        if "color" not in style:
+        if "color" not in styles:
             color = self.colour or 'black'
             self._indicator.text_pane.styles = dict(styles, color=color)
         if self.total is not None and self.n is not None:
