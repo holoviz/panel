@@ -8,12 +8,10 @@ import json
 import textwrap
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Type,
 )
 
 import param
-
-from bokeh.models import ImportedStyleSheet
 
 from ..models import HTML as _BkHTML, JSON as _BkJSON
 from ..util import escape
@@ -38,8 +36,6 @@ class DivPaneBase(PaneBase):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
 
-    _stylesheets = []
-
     _updates: ClassVar[bool] = True
 
     __abstract = True
@@ -56,14 +52,6 @@ class DivPaneBase(PaneBase):
             p : getattr(self, p) for p in list(Layoutable.param)
             if getattr(self, p) is not None
         }
-
-    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        params = super()._process_param_change(params)
-        if 'stylesheets' in params:
-            params['stylesheets'] += [
-                ImportedStyleSheet(url=sts) for sts in self._stylesheets
-            ]
-        return params
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,

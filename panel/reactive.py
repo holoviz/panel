@@ -26,6 +26,7 @@ import param
 
 from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
+from bokeh.models import ImportedStyleSheet
 from packaging.version import Version
 from param.parameterized import ParameterizedMetaclass, Watcher
 
@@ -96,6 +97,10 @@ class Syncable(Renderable):
     _source_transforms: ClassVar[Mapping[str, str | None]] = {}
     _target_transforms: ClassVar[Mapping[str, str | None]] = {}
 
+    # A list of stylesheets specified as paths relative to the
+    # panel/dist directory
+    _stylesheets: ClassVar[List[str]] = []
+
     __abstract = True
 
     def __init__(self, **params):
@@ -148,6 +153,10 @@ class Syncable(Renderable):
             properties['min_width'] = properties['width']
         if 'height' in properties and self.sizing_mode is None:
             properties['min_height'] = properties['height']
+        if 'stylesheets' in properties:
+            properties['stylesheets'] = properties['stylesheets'] + [
+                ImportedStyleSheet(url=sts) for sts in self._stylesheets
+            ]
         return properties
 
     @property
