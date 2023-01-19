@@ -115,6 +115,8 @@ class BooleanStatus(BooleanIndicator):
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None}
 
+    _stylesheets = ['css/booleanstatus.css', 'css/variables.css']
+
     _widget_type: ClassVar[Type[Model]] = HTML
 
     def _process_param_change(self, msg):
@@ -126,10 +128,6 @@ class BooleanStatus(BooleanIndicator):
         msg['css_classes'] = ['dot-filled', self.color] if self.value else ['dot']
         return msg
 
-    def _init_params(self) -> dict[str, Any]:
-        properties = super()._init_params()
-        properties['css'] = ['css/booleanstatus.css', 'css/variables.css']
-        return properties
 
 class LoadingSpinner(BooleanIndicator):
     """
@@ -234,6 +232,8 @@ class Progress(ValueIndicator):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
+    _stylesheets: ClassVar[List[str]] = ['css/progress.css', 'css/variables.css']
+
     _widget_type: ClassVar[Type[Model]] = _BkProgress
 
     @param.depends('max', watch=True)
@@ -245,11 +245,6 @@ class Progress(ValueIndicator):
             params["sizing_mode"] = None
         super().__init__(**params)
         self._update_value_bounds()
-
-    def _init_params(self) -> dict[str, Any]:
-        properties = super()._init_params()
-        properties['css'] = ['css/progress.css', 'css/variables.css']
-        return properties
 
 
 class Number(ValueIndicator):
