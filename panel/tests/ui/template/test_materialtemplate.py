@@ -39,7 +39,7 @@ def test_material_template_updates(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    assert page.text_content(".bk.markdown") == 'Initial'
+    assert page.text_content(".markdown") == 'Initial'
     md.object = 'Updated'
     time.sleep(0.1)
-    assert page.text_content(".bk.markdown") == 'Updated'
+    assert page.text_content(".markdown") == 'Updated'

@@ -38,7 +38,7 @@ def test_accordion_default(page, port, accordion_components):
     accordion = Accordion(d0, d1)
     serve_panel_widget(page, port, accordion)
 
-    accordion_elements = page.locator('.bk.accordion')
+    accordion_elements = page.locator('.accordion')
     # there are 2 card in this accordion
     expect(accordion_elements).to_have_count(len(accordion_components))
 
@@ -71,7 +71,7 @@ def test_accordion_card_name(page, port, accordion_components):
     )
     serve_panel_widget(page, port, accordion)
 
-    accordion_elements = page.locator('.bk.accordion')
+    accordion_elements = page.locator('.accordion')
     d0_object = accordion_elements.nth(0)
     d1_object = accordion_elements.nth(1)
     # cards name
@@ -84,7 +84,7 @@ def test_accordion_active(page, port, accordion_components):
     accordion = Accordion(d0, d1, active=[0])
     serve_panel_widget(page, port, accordion)
 
-    accordion_elements = page.locator('.bk.accordion')
+    accordion_elements = page.locator('.accordion')
     # there are 2 card in this accordion
     expect(accordion_elements).to_have_count(len(accordion_components))
 
@@ -107,7 +107,7 @@ def test_accordion_objects(page, port, accordion_components):
     # change the entire list of objects in the accordion
     new_objects = [d0]
     accordion.objects = new_objects
-    accordion_elements = page.locator('.bk.accordion')
+    accordion_elements = page.locator('.accordion')
     expect(accordion_elements).to_have_count(len(new_objects))
 
 
@@ -116,7 +116,7 @@ def test_accordion_toggle(page, port, accordion_components):
     accordion = Accordion(d0, d1, toggle=True)
     serve_panel_widget(page, port, accordion)
 
-    accordion_elements = page.locator('.bk.accordion')
+    accordion_elements = page.locator('.accordion')
     # there are 2 card in this accordion
     expect(accordion_elements).to_have_count(len(accordion_components))
 
@@ -141,7 +141,7 @@ def test_accordion_append(page, port, accordion_components):
     accordion = Accordion()
     serve_panel_widget(page, port, accordion)
 
-    accordion_elements = page.locator('.bk.accordion')
+    accordion_elements = page.locator('.accordion')
     # empty accordion
     expect(accordion_elements).to_have_count(0)
 
@@ -168,7 +168,7 @@ def test_accordion_extend(page, port, accordion_components):
     accordion = Accordion(d0, d1)
     serve_panel_widget(page, port, accordion)
 
-    accordion_elements = page.locator('.bk.accordion')
+    accordion_elements = page.locator('.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))
 
     d2 = Div(name='Div 2', text='Text 2')
@@ -191,7 +191,7 @@ def test_accordion_clear(page, port, accordion_components):
     accordion = Accordion(d0, d1)
     serve_panel_widget(page, port, accordion)
 
-    accordion_elements = page.locator('.bk.accordion')
+    accordion_elements = page.locator('.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))
 
     # clear all contents of the accordion
@@ -205,7 +205,7 @@ def test_accordion_insert(page, port, accordion_components):
     accordion = Accordion(d0, d1)
     serve_panel_widget(page, port, accordion)
 
-    accordion_elements = page.locator('.bk.accordion')
+    accordion_elements = page.locator('.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))
 
     # order of the elements
@@ -235,7 +235,7 @@ def test_accordion_pop(page, port, accordion_components):
     accordion = Accordion(d0, d1)
     serve_panel_widget(page, port, accordion)
 
-    accordion_elements = page.locator('.bk.accordion')
+    accordion_elements = page.locator('.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))
 
     # remove first component
@@ -251,7 +251,7 @@ def test_accordion_remove(page, port, accordion_components):
     accordion = Accordion(d0, d1)
     serve_panel_widget(page, port, accordion)
 
-    accordion_elements = page.locator('.bk.accordion')
+    accordion_elements = page.locator('.accordion')
     expect(accordion_elements).to_have_count(len(accordion_components))
 
     # remove first component

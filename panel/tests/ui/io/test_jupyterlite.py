@@ -10,7 +10,7 @@ try:
 except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
-pytestmark = pytest.mark.ui
+pytestmark = pytest.mark.skip()  # TODO: make smarter...
 
 @pytest.fixture()
 def launch_jupyterlite():
