@@ -168,12 +168,6 @@ jobs:
         with:
           resource: http-get://localhost:8887/lab
           timeout: 180000
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall holoviews jupyter_bokeh --force -y --offline
-          pip install "git+https://github.com/holoviz/holoviews.git@bokeh3.0"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: doit env_capture
         run: |
           conda activate test-environment
