@@ -5,8 +5,6 @@ import pathlib
 
 import param
 
-from bokeh.models import ImportedStyleSheet
-
 from ...config import config
 from ...depends import depends
 from ...io.resources import CSS_URLS
@@ -52,7 +50,7 @@ class ReactTemplate(BasicTemplate):
             'margin': (10, 5)
         },
         Viewable: {
-            'stylesheets': [Inherit, ImportedStyleSheet(url='./components.css')]
+            'stylesheets': [Inherit, './components.css']
         }
     }
 

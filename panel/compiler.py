@@ -207,9 +207,9 @@ def bundle_templates(verbose=False, external=True):
             ][0]
             def_path = pathlib.Path(inspect.getmodule(def_cls).__file__).parent
             for sts in cls_modifiers['stylesheets']:
-                if hasattr(sts, 'url'):
-                    bundled_path = BUNDLE_DIR / def_cls.__name__.lower() / sts.url
-                    shutil.copyfile(def_path / sts.url, bundled_path)
+                if sts.endswith('.css') and not (sts.startswith('http:') or sts.startswith('/')):
+                    bundled_path = BUNDLE_DIR / def_cls.__name__.lower() / sts
+                    shutil.copyfile(def_path / sts, bundled_path)
 
 
 def bundle_themes(verbose=False, external=True):

@@ -2,8 +2,6 @@ import pathlib
 
 import param
 
-from bokeh.models import ImportedStyleSheet
-
 from ...config import config
 from ...io.state import state
 from ...viewable import Viewable
@@ -69,7 +67,7 @@ class FastBaseTemplate(BasicTemplate):
             'theme': 'fast'
         },
         Viewable: {
-            'stylesheets': [Inherit, ImportedStyleSheet(url='components.css')]
+            'stylesheets': [Inherit, 'components.css']
         }
     }
 

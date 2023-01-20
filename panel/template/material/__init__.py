@@ -5,12 +5,12 @@ import pathlib
 
 import param
 
-from bokeh.models import ImportedStyleSheet
 from bokeh.themes import Theme as _BkTheme
 
 from ...config import config
 from ...layout import Card
 from ...viewable import Viewable
+from ...widgets import Tabulator
 from ..base import BasicTemplate, Inherit, TemplateActions
 from ..theme import DarkTheme, DefaultTheme
 
@@ -18,11 +18,13 @@ from ..theme import DarkTheme, DefaultTheme
 class MaterialTemplateActions(TemplateActions):
 
     _scripts = {
-        'open_modal': ["""
-        modal.open();
-        setTimeout(function() {{ window.dispatchEvent(new Event('resize')); }}, 200);
-        """],
-        'close_modal': ["modal.close()"]
+        'open_modal': """
+          modal.open();
+          setTimeout(function() {{
+            window.dispatchEvent(new Event('resize'));
+          }}, 200);
+        """,
+        'close_modal': "modal.close()"
     }
 
 
@@ -34,11 +36,10 @@ class MaterialTemplate(BasicTemplate):
     sidebar_width = param.Integer(370, doc="""
         The width of the sidebar in pixels. Default is 370.""")
 
-    _actions = param.ClassSelector(default=MaterialTemplateActions(), class_=TemplateActions)
+    _actions = param.ClassSelector(
+        default=MaterialTemplateActions(), class_=TemplateActions)
 
     _css = pathlib.Path(__file__).parent / 'material.css'
-
-    _template = pathlib.Path(__file__).parent / 'material.html'
 
     _modifiers = {
         Card: {
@@ -48,8 +49,11 @@ class MaterialTemplate(BasicTemplate):
             'button_css_classes': ['mdc-button', 'mdc-card-button'],
             'margin': (10, 5)
         },
+        Tabulator: {
+            'theme': 'materialize'
+        },
         Viewable: {
-            'stylesheets': [Inherit, ImportedStyleSheet(url='components.css')]
+            'stylesheets': [Inherit, 'components.css']
         }
     }
 
@@ -62,6 +66,7 @@ class MaterialTemplate(BasicTemplate):
         }
     }
 
+    _template = pathlib.Path(__file__).parent / 'material.html'
 
 
 MATERIAL_FONT = "Roboto, sans-serif, Verdana"
@@ -161,11 +166,14 @@ MATERIAL_DARK_THEME = {
 
 
 class MaterialDefaultTheme(DefaultTheme):
+    """
+    The MaterialDefaultTheme is a light theme.
+    """
+
+    bokeh_theme = param.ClassSelector(
+        class_=(_BkTheme, str), default=_BkTheme(json=MATERIAL_THEME))
 
     css = param.Filename(default=pathlib.Path(__file__).parent / 'default.css')
-
-    bokeh_theme = param.ClassSelector(class_=(_BkTheme, str),
-                                      default=_BkTheme(json=MATERIAL_THEME))
 
     _template = MaterialTemplate
 
@@ -175,9 +183,9 @@ class MaterialDarkTheme(DarkTheme):
     The MaterialDarkTheme is a Dark Theme in the style of Material Design
     """
 
-    css = param.Filename(default=pathlib.Path(__file__).parent / 'dark.css')
+    bokeh_theme = param.ClassSelector(
+        class_=(_BkTheme, str), default=_BkTheme(json=MATERIAL_DARK_THEME))
 
-    bokeh_theme = param.ClassSelector(class_=(_BkTheme, str),
-                                      default=_BkTheme(json=MATERIAL_DARK_THEME))
+    css = param.Filename(default=pathlib.Path(__file__).parent / 'dark.css')
 
     _template = MaterialTemplate

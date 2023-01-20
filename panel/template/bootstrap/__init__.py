@@ -5,12 +5,9 @@ import pathlib
 
 import param
 
-from bokeh.models import ImportedStyleSheet
-
 from ...io.resources import CSS_URLS, JS_URLS
 from ...layout import Card
 from ...viewable import Viewable
-from ...widgets.select import SelectBase
 from ..base import BasicTemplate, Inherit
 from ..theme import DarkTheme, DefaultTheme
 
@@ -33,11 +30,8 @@ class BootstrapTemplate(BasicTemplate):
             'button_css_classes': ['card-button'],
             'margin': (10, 5)
         },
-        SelectBase: {
-            'stylesheets': [Inherit, ImportedStyleSheet(url='/bundled/bootstrap5/css/bootstrap.min.css')]
-        },
         Viewable: {
-            'stylesheets': [Inherit, ImportedStyleSheet(url='components.css')]
+            'stylesheets': [Inherit, 'components.css']
         }
     }
 

@@ -147,14 +147,14 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         for v in value:
             if v is Inherit:
                 new_value.extend(inherited)
-            elif isinstance(v, ImportedStyleSheet):
-                if v.url.startswith('http'):
-                    continue
-                elif v.url.startswith('/'):
-                    url = v.url[1:]
+            elif isinstance(v, str) and v.endswith('.css'):
+                if v.startswith('http'):
+                    url = v
+                elif v.startswith('/'):
+                    url = v[1:]
                 else:
-                    url = os.path.join('bundled', defining_cls.__name__.lower(), v.url)
-                new_value.append(ImportedStyleSheet(url=url))
+                    url = os.path.join('bundled', defining_cls.__name__.lower(), v)
+                new_value.append(url)
             else:
                 new_value.append(v)
         return new_value
@@ -204,9 +204,10 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             return
         model, _ = viewable._models[mref]
         modifiers, child_modifiers = cls._resolve_modifiers(type(viewable))
+        modifiers = dict(modifiers)
         if 'stylesheets' in modifiers:
             modifiers['stylesheets'] = [
-                ImportedStyleSheet(url=sts.url) if isinstance(sts, ImportedStyleSheet) else sts
+                ImportedStyleSheet(url=sts) if sts.endswith('.css') else sts
                 for sts in modifiers['stylesheets']
             ]
         if child_modifiers:
