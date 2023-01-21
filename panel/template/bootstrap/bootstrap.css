@@ -1,124 +1,159 @@
+:root {
+    --bs-form-control-bg: var(--panel-body-background);
+    --bs-body-bg: var(--panel-body-background);
+    --bs-body-color: var(--panel-body-color);
+}
+
+html {
+  scrollbar-face-color: #646464;
+  scrollbar-base-color: #646464;
+  scrollbar-3dlight-color: #646464;
+  scrollbar-highlight-color: #646464;
+  scrollbar-track-color: #000;
+  scrollbar-arrow-color: #000;
+  scrollbar-shadow-color: #646464;
+  scrollbar-dark-shadow-color: #646464;
+}
+
+::-webkit-scrollbar-button {  background-color: #666; }
+::-webkit-scrollbar-track {  background-color: #646464;}
+::-webkit-scrollbar-track-piece { background-color: #000;}
+::-webkit-scrollbar-thumb { height: 50px; background-color: #666; border-radius: 3px;}
+::-webkit-scrollbar-corner { background-color: #646464;}}
+::-webkit-resizer { background-color: #666;}
+
 body {
-  height: 100vh
+    color: var(--panel-body-color);
+    background-color: var(--bs-body-bg);
+    height: 100vh
 }
 
-#container {
-  padding:0px;
+#header {
+    background-color: var(--panel-primary-color);
+    color: var(--panel-on-primary-color);
 }
 
-#content {
-  height: 100vh;
-  margin: 0px;
-}
-
-#sidebar {
-  padding-top: 15px;
-  padding-bottom: 15px;
-  padding-left: 5px;
-  padding-right: 10px;
-  transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
-  transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
-  overflow-y: auto;
-  height: 100%;
-}
-
-#sidebar.active {
-  width: 0px;
-  overflow-y: hidden;
-  padding: 0px;
-}
-
-#main {
-  overflow-y: auto;
-  padding-right: 20px;
-  padding-bottom: 20px;
-  padding-top: 10px;
-  padding-left: 10px;
-}
-
-#sidebarCollapse {
-  background: none;
-  border: none;
-}
-
-#header-items {
-  width: 100%;
-  margin-left: 15px;
-}
-
-.navbar .bk-menu {
-  color: black
-}
-
-a.navbar-brand {
-  padding-left: 10px;
-  display: flex;
-  align-items: center;
-  font-size: 1.5em;
-}
-
-.title {
-  color: #fff;
-  text-decoration: none;
-  text-decoration-line: none;
-  text-decoration-style: initial;
-  text-decoration-color: initial;
-  font-weight: 400;
-  font-size: 1.5em;
-  line-height: 2em;
-  white-space: nowrap;
+#header .title {
+    color: var(--panel-on-primary-color);
+    text-decoration: none;
+    text-decoration-line: none;
+    text-decoration-style: initial;
+    text-decoration-color: initial;
+    font-weight: 400;
+    font-size: 1.5em;
+    padding-left: 1em;
+    line-height: 2em;
+    white-space: nowrap;
 }
 
 .app-header {
-  display: contents;
-  padding-left: 10px;
+    display: contents;
+    padding-left: 10px;
 }
 
 .app-header a.title:hover {
-  text-decoration: none;
-  color: white;
+    color: var(--panel-on-primary-color);
+    text-decoration: none;
 }
 
 img.app-logo {
-  padding-right: 10px;
-  font-size: 28px;
-  height: 30px;
-  max-width: inherit;
+    padding-right: 10px;
+    font-size: 28px;
+    height: 30px;
+    max-width: inherit;
+}
+
+#main {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+#sidebar {
+    border-color: #2f2f2f !important;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 5px;
+    padding-right: 10px;
+    transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+    transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
+    overflow-y: auto;
+    height: 100%;
+}
+
+#sidebar.active {
+    width: 0px;
+    overflow-y: hidden;
+    padding: 0px;
+}
+
+#sidebarCollapse {
+    background: none;
+    border: none;
+}
+
+#container {
+    padding: 0px;
+}
+
+#content {
+    height: 100vh;
+    margin: 0px;
+}
+
+#main {
+    overflow-y: auto;
+    padding-right: 20px;
+    padding-bottom: 20px;
+    padding-top: 10px;
+    padding-left: 10px;
+}
+
+
+#header-items {
+    width: 100%;
+    margin-left: 15px;
+}
+
+a.navbar-brand {
+    padding-left: 10px;
+    display: flex;
+    align-items: center;
+    font-size: 1.5em;
 }
 
 .pn-modal {
-  overflow-y: auto;
+    overflow-y: auto;
 }
 
 .pn-modal-content {
-  display: block;
+    display: block;
 }
 
 .pn-modal-close {
-  position: relative;
-  float: right;
-  z-index: 100;
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  border: 1px solid rgba(0,0,0,.2);
-  padding: 0px;
-  background: transparent;
-  border-top: 0;
-  border-right: 0;
+    position: relative;
+    float: right;
+    z-index: 100;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,.2);
+    padding: 0px;
+    background: transparent;
+    border-top: 0;
+    border-right: 0;
 }
 
 .pn-modal-close:hover,
 .pn-modal-close:focus {
-  text-decoration: none;
-  cursor: pointer;
+    text-decoration: none;
+    cursor: pointer;
 }
 
 .pn-busy-container {
-  align-items: center;
-  justify-content: center;
-  display: flex;
-  margin-left: auto;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    margin-left: auto;
 }
 
 @media (min-width: 576px) {

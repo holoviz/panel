@@ -1,51 +1,72 @@
-{% extends base %}
+{% extends "base.html" %}
 
 <!-- goes in body -->
 {% block preamble %}
-{% if app_favicon %}<link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">{% endif %}
-{% if manifest %}<link rel="manifest" href="{{ manifest }}">{% endif %}
-{% if meta_name %}<meta name="name" content="{{ meta_name }}">{% endif %}
-{% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
-{% if meta_keywords %}<meta name="keywords" content="{{ meta_keywords }}">{% endif %}
-{% if meta_author %}<meta name="author" content="{{ meta_author }}">{% endif %}
-{% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
-{% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
-{% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
-{% if manifest %}<link rel="manifest" href="{{ manifest_url }}">{% endif %}
+    {%- if app_favicon %}
+    <link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">
+    {% endif -%}
+    {%- if manifest %}
+    <link rel="manifest" href="{{ manifest }}">
+    {% endif -%}
+    {%- if meta_name %}
+    <meta name="name" content="{{ meta_name }}">
+    {% endif -%}
+    {%- if meta_description %}
+    <meta name="description" content="{{ meta_description }}">
+    {% endif -%}
+    {%- if meta_keywords %}
+    <meta name="keywords" content="{{ meta_keywords }}">
+    {% endif -%}
+    {%- if meta_author %}
+    <meta name="author" content="{{ meta_author }}">
+    {% endif -%}
+    {%- if meta_refresh %}
+    <meta http-equiv="refresh" content="{{ meta_refresh }}">
+    {% endif -%}
+    {%- if meta_viewport %}
+    <meta name="viewport" content="{{ meta_viewport }}">
+    {% endif -%}
+    {%- if base_url and base_target %}
+    <base href="{{ base_url }}" target="{{ base_target }}">
+    {%- endif %}
+    {%- if manifest %}
+    <link rel="manifest" href="{{ manifest_url }}">
+    {% endif -%}
 {% endblock %}
 
 {% block postamble %}
-<!-- Template CSS -->
-{% for css in template_resources['css'].values() %}
-<link rel="stylesheet" href="{{ css }}">
-{% endfor %}
-{% for src in template_resources['extra_css'] %}
-<link rel="stylesheet"  href="{{ src }}">
-{% endfor %}
-{% for raw_css in template_resources['raw_css'] %}
-<style type="text/css">
-{{ raw_css }}
-</style>
-{% endfor %}
 
-<style>
-  #sidebar {
-    width: {{ sidebar_width }}px;
-  }
-</style>
+    <!-- Template CSS -->
+    {% for css in template_resources['css'].values() %}
+    <link rel="stylesheet" href="{{ css }}">
+    {% endfor %}
+    {% for src in template_resources['extra_css'] %}
+    <link rel="stylesheet"  href="{{ src }}">
+    {% endfor %}
+    {% for raw_css in template_resources['raw_css'] %}
+    <style type="text/css">
+    {{ raw_css }}
+    </style>
+    {% endfor %}
 
-<!-- Template JS -->
-{% for src in template_resources['js'].values() %}
-<script src="{{ src }}"></script>
-{% endfor %}
-{% for src in template_resources['js_modules'].values() %}
-<script src="{{ src }}" type="module"></script>
-{% endfor %}
+    <style>
+      #sidebar {
+        width: {{ sidebar_width }}px;
+      }
+    </style>
+
+    <!-- Template JS -->
+    {% for src in template_resources['js'].values() %}
+    <script src="{{ src }}"></script>
+    {% endfor %}
+    {% for src in template_resources['js_modules'].values() %}
+    <script src="{{ src }}" type="module"></script>
+    {% endfor %}
 {% endblock %}
 
 <!-- goes in body -->
 {% block contents %}
-<div class="container-fluid d-flex flex-column vh-100 overflow-hidden" id="container" data-bs-theme="{{ theme._bs_theme }}">
+<div class="container-fluid d-flex flex-column vh-100 overflow-hidden" id="container">
   <nav class="navbar navbar-expand-md sticky-top shadow" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
     {% if nav %}
     <button type="button" class="navbar-toggle collapsed" id="sidebarCollapse">
@@ -54,7 +75,9 @@
     {% endif %}
     <div class="app-header">
       {% if app_logo %}<a class="navbar-brand app-logo" href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
-      {% if site_title %}<a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>{% endif %}
+      {% if site_title %}
+      <a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>
+      {% endif %}
       {% if site_title and app_title%}<span class="title">-</span>{% endif %}
       {% if app_title %}<a class="title" href="" >&nbsp;{{ app_title }}</a>{% endif %}
     </div>

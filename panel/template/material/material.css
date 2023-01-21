@@ -1,13 +1,13 @@
+:root {
+  --bokeh-base-font: inherit;
+}
+
 body {
   display: flex;
   height: 100vh;
   margin: 0px;
   overflow-x: hidden;
   overflow-y: hidden;
-}
-
-:root {
-  --bokeh-base-font: inherit;
 }
 
 img {

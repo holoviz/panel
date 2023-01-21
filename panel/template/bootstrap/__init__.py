@@ -8,6 +8,7 @@ import param
 from ...io.resources import CSS_URLS, JS_URLS
 from ...layout import Card
 from ...viewable import Viewable
+from ...widgets import Tabulator
 from ..base import BasicTemplate, Inherit
 from ..theme import DarkTheme, DefaultTheme
 
@@ -30,6 +31,9 @@ class BootstrapTemplate(BasicTemplate):
             'button_css_classes': ['card-button'],
             'margin': (10, 5)
         },
+        Tabulator: {
+            'theme': 'bootstrap4'
+        },
         Viewable: {
             'stylesheets': [Inherit, 'components.css']
         }
@@ -44,6 +48,10 @@ class BootstrapTemplate(BasicTemplate):
             'bootstrap': JS_URLS['bootstrap5']
         }
     }
+    def _update_vars(self, *args) -> None:
+        super()._update_vars(*args)
+        theme = self._render_variables['theme']
+        self._render_variables['html_attrs'] = f'data-bs-theme="{theme._bs_theme}"'
 
 
 class BootstrapDefaultTheme(DefaultTheme):

@@ -27,7 +27,7 @@ from pyviz_comms import JupyterComm
 from ..depends import param_value_if_widget
 from ..io.resources import LOCAL_DIST, set_resource_mode
 from ..io.state import state
-from ..reactive import ReactiveData
+from ..reactive import Reactive, ReactiveData
 from ..util import (
     clone_model, isdatetime, lazy_load, updating,
 )
@@ -1240,7 +1240,7 @@ class Tabulator(BaseTable):
 
     def _process_param_change(self, msg):
         import pandas as pd
-        msg = super()._process_param_change(msg)
+        msg = Reactive._process_param_change(self, msg)
         if 'hidden_columns' in msg:
             if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):
                 msg['hidden_columns'] += [self.value.index.name or 'index']

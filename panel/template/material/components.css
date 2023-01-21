@@ -318,3 +318,9 @@ input[type="radio"] + span {
 .bk-input-group > label {
     padding: 5px 0;
 }
+
+/* Tabulator */
+
+.tabulator {
+    background-color: var(--mdc-theme-surface);
+}

@@ -1,3 +1,6 @@
-#header {
-  background-color: #0072B5;
+:root {
+    --panel-primary-color: #0072B5;
+    --panel-on-primary-color: #fff;
+    --panel-body-background: #fff;
+    --panel-body-color: #212529;
 }
