@@ -28,7 +28,7 @@ Explore the reasoning for each of Panel's APIs.
 Discover why Panel utilizes the Param library.
 :::
 
-:::{grid-item-card} {octicon}`multi-select;2.5em;sd-mr-1` Widget Abbreviations for `Interact`
+:::{grid-item-card} {octicon}`sliders;2.5em;sd-mr-1` Widget Abbreviations for `Interact`
 :link: interact/interact_abbreviations
 :link-type: doc
 
