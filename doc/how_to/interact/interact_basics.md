@@ -1,6 +1,6 @@
-# ``Interact`` with Functions
+# Generate Widgets for Function Arguments
 
-This guide addresses how to customize the layout of the widgets and display from the output of Panel `interact`.
+This guide addresses how to autogenerate widgets for function arguments with Panel `interact`.
 
 First, let's declare a simple function that just returns the arguments:
 
@@ -48,6 +48,6 @@ bar
 
 ## Further Resources
 
-- Read [Background > Widget Abbreviations for Panel Interact](../../background/interact_abbreviations.md) for explanation.
+- Read [Background > Widget Abbreviations for Panel Interact](../../background/interact/interact_abbreviations.md) for explanation.
 - See [How-to > Autogenerate Widgets for Functions](../interact/index.md) for solutions.
 - Consult [Reference > panel.interact] for technical details.

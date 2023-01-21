@@ -1,6 +1,6 @@
 # Customize Layout with Interact
 
-This guide addresses how to autogenerate widgets for function arguments with Panel `interact`.
+This guide addresses how to customize the layout of the widgets and display from the output of Panel `interact`.
 
 First, let's create a function and call `interact` to return a Panel containing the widgets and the display output.
 

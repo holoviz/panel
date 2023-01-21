@@ -21,6 +21,6 @@ pn.interact(f, x=1, y=fixed(10))
 
 ## Further Resources
 
-- Read [Background > Widget Abbreviations for Panel Interact](../../background/interact_abbreviations.md) for explanation.
+- Read [Background > Widget Abbreviations for Panel Interact](../../background/interact/interact_abbreviations.md) for explanation.
 - See [How-to > Autogenerate Widgets for Functions](../interact/index.md) for solutions.
 - Consult [Reference > panel.interact] for technical details.
