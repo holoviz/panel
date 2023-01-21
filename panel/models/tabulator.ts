@@ -393,11 +393,12 @@ export class DataTabulatorView extends HTMLBoxView {
   render(): void {
     super.render()
     this._initializing = true
-    const container = div({class: "pnx-tabulator"})
-    //set_size(container, this.model)
+    const container = div({})
+    const el = div({class: "pnx-tabulator"})
+    container.appendChild(el)
     let configuration = this.getConfiguration()
 
-    this.tabulator = new Tabulator(container, configuration)
+    this.tabulator = new Tabulator(el, configuration)
     this.init_callbacks()
     this.renderChildren(true)
 
