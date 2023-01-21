@@ -4,7 +4,7 @@ This page provides explanation for the abbreviations used to create widgets with
 
 At the most basic level, `interact` autogenerates UI controls for function arguments, and then calls the function with those arguments when you manipulate the controls interactively.
 
-To use `interact`, you need to define a function that you want to explore. Here is a function that return its arguments.
+To use `interact`, you need to define a function that you want to explore. Here is a function that return its argument.
 
 ```{pyodide}
 import panel as pn
@@ -13,26 +13,26 @@ from panel import widgets
 
 pn.extension() # for notebook
 
-def f(x, y):
-    return x, y
+def f(x):
+    return x
 ```
 
-When you pass this function to `interact` along with `x=10, y=True`, a slider and a checkbox are generated and bound to the function parameters, such that when you interact with the widgets, the function is called.
+When you pass this function to `interact` along with `x=10`, a slider is generated and bound to the function parameter, such that when you interact with the widget, the function is called.
 
 ```{pyodide}
-interact(f, x=10, y=True)
+interact(f, x=10)
 ```
 
 When you pass an integer-valued keyword argument of `10` (`x=10`) to `interact`, it generates an integer-valued slider control with a range of `[-10,+3*10]`. In this case, `10` is an *abbreviation* for an actual slider widget:
 
 ```{pyodide}
-slider_widget = widgets.IntSlider(min=-10,max=30,step=1,value=10)
+slider_widget = widgets.IntSlider(start=-10,end=30,step=1,value=10)
 ```
 
 In fact, we can get the same result if we pass this `IntSlider` as the keyword argument for `x`:
 
 ```{pyodide}
-interact(f, x=slider_widget, y=True)
+interact(f, x=slider_widget)
 ```
 
 This examples clarifies how `interact` processes its keyword arguments:
@@ -52,7 +52,7 @@ The following table gives an overview of different widget abbreviations:
 </table>
 Note that a dropdown is used if a list or a dict is given (signifying discrete choices), and a slider is used if a tuple is given (signifying a range).
 
-You have seen how the Checkbox and IntSlider widgets work above. Here, more details about the different abbreviations for sliders and dropdowns are given.
+You have seen how the IntSlider widget works above. Here, more details about the different abbreviations for sliders and dropdowns are given.
 
 If a 2-tuple of integers is passed `(min,max)`, an integer-valued slider is produced with those minimum and maximum values (inclusively). In this case, the default step size of `1` is used.
 
