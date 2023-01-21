@@ -329,12 +329,6 @@ class Perspective(PaneBase, ReactiveData):
 
     _updates: ClassVar[bool] = True
 
-    _deprecations = {
-        'computed_columns': 'expressions',
-        'column_pivots': 'split_by',
-        'row_pivots': 'group_by'
-    }
-
     @classmethod
     def applies(cls, object):
         if isinstance(object, dict) and all(isinstance(v, (list, np.ndarray)) for v in object.values()):
