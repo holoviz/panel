@@ -1,6 +1,8 @@
 # Customize Layout with Interact
 
-First, create a function and call `interact` to return a Panel containing the widgets and the display output.
+This guide addresses how to autogenerate widgets for function arguments with Panel `interact`.
+
+First, let's create a function and call `interact` to return a Panel containing the widgets and the display output.
 
 ```{pyodide}
 import panel as pn

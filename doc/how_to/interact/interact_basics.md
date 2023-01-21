@@ -1,34 +1,53 @@
 # ``Interact`` with Functions
 
-The `interact` approach provides a very simple way to autogenerate widgets linked to function arguments.
+This guide addresses how to customize the layout of the widgets and display from the output of Panel `interact`.
 
-First, let's declare a simple function.
+First, let's declare a simple function that just returns the arguments:
 
 ```{pyodide}
 import panel as pn
 pn.extension() # for notebook
 
-def f(a, b, c, d):
-    return a, b, c, d
+def foo(a, b, c, d, e, f):
+    return f'Arguments: {a, b, c, d, e, f}'
 ```
 
 Next, let's call `interact` with the function and it's arguments. The values of the arguments will be inspected to infer an appropriate set of widgets to autogenerate. Changing any of the resulting widgets will cause the function to be re-run, updating the displayed output.
 
 ```{pyodide}
-pn.interact(f, a=True, b=10, c=(-10, 10, 0.1, 5.4), d='text')
+pn.interact(
+    foo,
+    a=True,
+    b=10,
+    c=(-10, 10, 0.1, 5.4),
+    d='text',
+    e=['apples', 'oranges'],
+    f=dict([('one', 10), ('two', 20)])
+)
+```
+
+We can also explicitly pass a widget as one of the values:
+
+```{pyodide}
+def create_block(c):
+    return pn.pane.HTML(width=100, height=100, background=c)
+
+color_widget = pn.widgets.ColorPicker(name='Color', value='#4f4fdf')
+
+pn.interact(create_block, c=color_widget)
 ```
 
 Alternatively, this `interact` approach can be used as a decorator:
 
 ```{pyodide}
-@pn.interact(a=True, b=10, c=(-10, 10, 0.1, 5.4), d='text')
-def f(a, b, c, d):
-    return a, b, c, d
-f
+@pn.interact(x=True, y=10)
+def bar(x, y):
+    return x, y
+bar
 ```
 
 ## Further Resources
 
-- Read [Background > Interact with Functions] for context.
-- See [How-to > Autogenerate Widgets for Functions] for solutions.
+- Read [Background > Widget Abbreviations for Panel Interact](../../background/interact_abbreviations.md) for explanation.
+- See [How-to > Autogenerate Widgets for Functions](../interact/index.md) for solutions.
 - Consult [Reference > panel.interact] for technical details.
