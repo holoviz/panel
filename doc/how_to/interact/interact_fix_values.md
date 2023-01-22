@@ -7,7 +7,7 @@ First, let's declare a simple function.
 ```{pyodide}
 import panel as pn
 from panel.interact import fixed
-pn.extension() $ for notebook
+pn.extension() # for notebook
 
 def f(x, y):
     return x, y

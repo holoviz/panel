@@ -27,7 +27,7 @@ How to fix the value for certain arguments with Panel `interact`.
 :::
 
 :::{grid-item-card} {octicon}`blocked;2.5em;sd-mr-1` Disable Continuous Updates with `Interact`
-:link: interact_fix_values
+:link: interact_throttle
 :link-type: doc
 
 How to disable continuous updating with Panel `interact`.

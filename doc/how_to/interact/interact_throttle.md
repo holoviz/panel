@@ -13,7 +13,7 @@ def f(x):
     return x
 ```
 
-Now, let's call `interact` and set the argument `throttled` to `True`. The function will now only be run after the release of the mouse button.
+Now, let's call `interact` and set the argument `throttled` to `True`. The function will now only be run after the release of the mouse button (run the code cell to activate this callback).
 
 ```{pyodide}
 pn.interact(f, x=10, throttled=True)

@@ -1,6 +1,6 @@
 # Generate Widgets for Function Arguments
 
-This guide addresses how to autogenerate widgets for function arguments with Panel `interact`.
+This guide addresses how to generate widgets for function arguments with Panel `interact`.
 
 First, let's declare a simple function that just returns the arguments:
 
@@ -22,7 +22,7 @@ pn.interact(
     c=(-10, 10, 0.1, 5.4),
     d='text',
     e=['apples', 'oranges'],
-    f=dict([('one', 10), ('two', 20)])
+    f=dict([('first', 10), ('second', 20)])
 )
 ```
 

@@ -1,6 +1,6 @@
 # Customize Layout with Interact
 
-This guide addresses how to customize the layout of the widgets and display from the output of Panel `interact`.
+This guide addresses how to customize the layout of the widgets and displays from the output of Panel `interact`.
 
 First, let's create a function and call `interact` to return a Panel containing the widgets and the display output.
 
@@ -16,7 +16,13 @@ layout = pn.interact(f, x=True, y=10, z='text')
 layout
 ```
 
-Now, by indexing into this Panel we can lay out the objects precisely how we want.
+We can always print the Panel contents to check the indexing:
+
+```{pyodide}
+layout.pprint()
+```
+
+Now, by indexing into this Panel we can lay out the objects precisely how we want:
 
 ```{pyodide}
 pn.Row(pn.Column('First Column', layout[0][0], layout[0][1], width=200),
@@ -25,11 +31,7 @@ pn.Row(pn.Column('First Column', layout[0][0], layout[0][1], width=200),
       )
 ```
 
-We can always print the Panel contents to check the indexing:
 
-```{pyodide}
-layout.pprint()
-```
 
 ## Further Resources
 
