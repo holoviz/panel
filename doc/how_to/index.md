@@ -36,7 +36,7 @@ Discover how to use Parameters with Panel to automatically generate UIs without 
 :::
 
 :::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1` Apply Templates
-:link: template/index
+:link: templates/index
 :link-type: doc
 
 Discover how to use a Template to customize the look and feel of a deployed Panel app.
