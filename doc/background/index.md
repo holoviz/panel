@@ -39,7 +39,11 @@ Compare Panel with similar libraries.
 :link: comms
 :link-type: doc
 
-An overview explaining how Panel communicates between Python and Javascript in different contexts, such as Jupyter, server environments and in exported files.
+:::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1` Templates
+:link: templates/templates_overview
+:link-type: doc
+
+Learn about context for using Templates in Panel.
 :::
 
 
