@@ -1,14 +1,12 @@
-# Arrange Components in a Template
+# Toggle Modal
 
-This guide addresses how to arrange components in a template layout.
+This guide addresses how to toggle the modal area of a template.
 
-The default templates that are provided with Panel define four content areas on the page, which can be populated as desired: `header`, `sidebar`, `main`, and `modal` (a dialog box/popup window).
-
-Let's create a simple app and place components in the `header`, `sidebar`, and `main` areas (see the dedicated guide on the [`modal`](./template_modal.md)). We'll first save this script below into a file called `app.py`:
+A modal can be toggled opened and closed with `.open_modal()` and `.close_modal()` methods. Let's create a modal that is activated by a button on the sidebar. We'll first save this script below into a file called `app.py`:
 
 :::{card} app.py
-
 ```python
+:emphasize-lines: 25-37
 import panel as pn
 import numpy as np
 import holoviews as hv
@@ -50,16 +48,15 @@ bootstrap.servable()
 ```
 :::
 
-Now, we can activate this app on the command line:
+Now we can activate this app on the command line. When we click the button in the sidebar, we see the modal pop up:
 
-``` bash
+```bash
 panel serve app.py --show --autoreload
 ```
 
-<img src="../../_static/template_arrange.png" alt="example panel app">
+<img src="../../_static/template_arrange_modal.png" alt="example panel app with an active modal">
 
 ## Related Resources
 
-- See [How-to > Apply Templates > Toggle Modal](./template_modal.md) for a dedicated guide to toggling the modal.
 - See [How-to > Apply Templates > Set a Template](./template_set.md) for alternate approaches to set a template.
 - Read [Background > Templates](../../background/templates/templates_overview.md) for explanation.
