@@ -42,6 +42,13 @@ Discover how to use Parameters with Panel to automatically generate UIs without 
 Discover how to use Panel `interact` to easily generate UIs for function arguments.
 :::
 
+:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1` Apply Templates
+:link: templates/index
+:link-type: doc
+
+Discover how to use a Template to customize the look and feel of a deployed Panel app.
+:::
+
 ::::
 
 

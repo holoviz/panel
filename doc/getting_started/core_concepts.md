@@ -269,7 +269,7 @@ pn.config.template = 'fast'
 The `pn.config` object provides a range of options that will allow you to configure your application, however as a shortcut you may also provide options for the `config` object as keywords to the `pn.extension`. In other words `pn.extension(template='fast')` is equivalent to `pn.config.template = 'fast'`. This provides a clean way to set multiple config options at once.
 :::
 
-Once you have configured a template you can control where to render your components using the `target` argument of the `.servable()` method. Most templates have multiple targets including 'main', 'sidebar', 'header' and 'modal'. As an example you might want to render your widgets into the sidebar and your plots into the main area:
+Once you have configured a template you can control where to render your components using the `area` argument of the `.servable()` method. Most templates have multiple areas including 'main', 'sidebar', 'header' and 'modal'. As an example you might want to render your widgets into the sidebar and your plots into the main area:
 
 ```python
 import numpy as np
@@ -280,11 +280,11 @@ pn.extension(template='fast')
 
 freq = pn.widgets.FloatSlider(
     name='Frequency', start=0, end=10, value=5
-).servable(target='sidebar')
+).servable(area='sidebar')
 
 ampl = pn.widgets.FloatSlider(
     name='Amplitude', start=0, end=1, value=0.5
-).servable(target='sidebar')
+).servable(area='sidebar')
 
 def plot(freq, ampl):
     fig = plt.figure()
@@ -297,7 +297,7 @@ def plot(freq, ampl):
 pn.Column(
     '# Sine curve',
     pn.bind(plot, freq, ampl),
-).servable(target='main')
+).servable(area='main')
 ```
 
 ## Exploring further
