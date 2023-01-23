@@ -6,8 +6,6 @@ from typing import (
 
 import param
 
-from bokeh.models import ImportedStyleSheet
-
 from ..models import Card as BkCard
 from .base import Column, ListPanel, Row
 
@@ -80,6 +78,8 @@ class Card(Column):
         Column._rename, title=None, header=None, title_css_classes=None
     )
 
+    _stylesheets: ClassVar[List[str]] = ['css/card.css']
+
     def __init__(self, *objects, **params):
         self._header_layout = Row(css_classes=['card-header-row'],
                                   sizing_mode='stretch_width')
@@ -104,10 +104,6 @@ class Card(Column):
             params['css_classes'] = css_classes + ['scrollable']
         elif scroll == False:
             params['css_classes'] = css_classes
-        if 'stylesheets' in params:
-            params['stylesheets'] = (
-                params['stylesheets'] + [ImportedStyleSheet(url='css/card.css')]
-            )
         return super(ListPanel, self)._process_param_change(params)
 
     def _update_header(self, *events):

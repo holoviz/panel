@@ -23,13 +23,13 @@ import sys
 
 from math import pi
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Type,
+    TYPE_CHECKING, ClassVar, Dict, List, Mapping, Optional, Type,
 )
 
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource, FixedTicker, ImportedStyleSheet
+from bokeh.models import ColumnDataSource, FixedTicker
 from bokeh.plotting import figure
 from tqdm.asyncio import tqdm as _tqdm
 
@@ -115,7 +115,9 @@ class BooleanStatus(BooleanIndicator):
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None}
 
-    _stylesheets = ['css/booleanstatus.css', 'css/variables.css']
+    _stylesheets: ClassVar[List[str]] = [
+        'css/booleanstatus.css', 'css/variables.css'
+    ]
 
     _widget_type: ClassVar[Type[Model]] = HTML
 
@@ -163,6 +165,8 @@ class LoadingSpinner(BooleanIndicator):
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None, 'bgcolor': None}
 
+    _stylesheets: ClassVar[List[str]] = ['css/variables.css', 'css/loadingspinner.css']
+
     _widget_type: ClassVar[Type[Model]] = HTML
 
     def _process_param_change(self, msg):
@@ -175,16 +179,6 @@ class LoadingSpinner(BooleanIndicator):
         color_cls = f'{self.color}-{self.bgcolor}'
         msg['css_classes'] = ['loader', 'spin', color_cls] if self.value else ['loader', self.bgcolor]
         return msg
-
-    def _init_params(self) -> dict[str, Any]:
-        properties = super()._init_params()
-        properties['stylesheets'] = (
-            properties.get('stylesheets', []) + [
-                ImportedStyleSheet(url='css/loadingspinner.css'),
-                ImportedStyleSheet(url='css/variables.css')
-            ]
-        )
-        return properties
 
 
 class ValueIndicator(Indicator):
@@ -229,6 +223,8 @@ class Progress(ValueIndicator):
         The current value of the progress bar. If set to -1 the progress
         bar will be indeterminate and animate depending on the active
         parameter.""")
+
+    width = param.Integer(default=300)
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 

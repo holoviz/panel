@@ -5,13 +5,13 @@ bokeh model.
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Optional,
+    TYPE_CHECKING, Any, ClassVar, List, Optional,
 )
 
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource, ImportedStyleSheet
+from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from ..util import isdatetime, lazy_load
@@ -78,6 +78,8 @@ class Plotly(PaneBase):
         Number of renders, increment to trigger re-render""")
 
     priority: ClassVar[float | bool | None] = 0.8
+
+    _stylesheets: ClassVar[List[str]] = ['css/plotly.css']
 
     _updates: ClassVar[bool] = True
 
@@ -257,10 +259,6 @@ class Plotly(PaneBase):
             json = self._plotly_json_wrapper(fig)
             sources = Plotly._get_sources(json)
 
-        params['stylesheets'] = (
-            params.get('stylesheets', []) +
-            [ImportedStyleSheet(url='css/plotly.css')]
-        )
         params['_render_count'] = self._render_count
         params['config'] = self.config or {}
         params['data'] = json.get('data', [])
