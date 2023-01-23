@@ -2,6 +2,7 @@
   border: 1px solid rgba(0,0,0,.125);
   border-radius: 0.25rem;
 }
+
 .accordion {
   border: 1px solid rgba(0,0,0,.125);
 }
@@ -13,6 +14,7 @@
   justify-content: start;
   width: 100%;
 }
+
 .accordion-header {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.03);
@@ -24,6 +26,7 @@
 .card-button {
   background-color: transparent;
   margin-left: 0.5em;
+  margin-right: 0.5em;
 }
 .card-header-row {
   position: relative !important;

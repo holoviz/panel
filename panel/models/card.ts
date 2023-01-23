@@ -10,7 +10,23 @@ export class CardView extends ColumnView {
     super.connect_signals()
     this.connect(this.model.properties.collapsed.change, () => this._collapse())
     const {active_header_background, header_background, header_color, hide_header} = this.model.properties
-    this.on_change([active_header_background, header_background, header_color, hide_header], () => this.render())
+    this.on_change([header_color, hide_header], () => this.render())
+
+    this.on_change([active_header_background, header_background], () => {
+      const header_background = this.header_background
+      if (header_background == null)
+	return
+      const header = this.shadow_el.children[0]
+      this.child_views[0].el.style.backgroundColor = header_background
+      header.style.backgroundColor = header_background
+    })
+  }
+
+  get header_background(): string | null {
+    let header_background = this.model.header_background
+    if (!this.model.collapsed && this.model.active_header_background)
+      header_background = this.model.active_header_background
+    return header_background
   }
 
   render(): void {
@@ -25,9 +41,7 @@ export class CardView extends ColumnView {
 
     const {button_css_classes, header_color, header_tag, header_css_classes} = this.model
 
-    let header_background = this.model.header_background
-    if (!this.model.collapsed && this.model.active_header_background)
-      header_background = this.model.active_header_background
+    const header_background = this.header_background
     const header = this.child_views[0]
 
     let header_el
@@ -65,7 +79,14 @@ export class CardView extends ColumnView {
   }
 
   _collapse(): void {
-    this.invalidate_render()
+    for (const child_view of this.child_views.slice(1)) {
+      if (this.model.collapsed)
+        this.shadow_el.removeChild(child_view.el)
+      else
+        this.shadow_el.appendChild(child_view.el)
+    }
+    this.button_el.children[0].innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
+
   }
 
   protected _createElement(): HTMLElement {
