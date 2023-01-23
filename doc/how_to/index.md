@@ -35,7 +35,7 @@ Discover different ways of linking parameters in Python and Javascript.
 Discover how to use Parameters with Panel to automatically generate UIs without writing GUI code.
 :::
 
-:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1` Apply Templates
+:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1` Apply Templates
 :link: templates/index
 :link-type: doc
 

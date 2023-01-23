@@ -2,11 +2,12 @@
 
 This guide addresses how to toggle the modal area of a template.
 
-A modal can be toggled opened and closed with `.open_modal()` and `.close_modal()` methods. Let's create a modal that is activated by a button on the sidebar. We'll first save this script below into a file called `app.py`:
+A modal can be opened and closed with `.open_modal()` and `.close_modal()` methods, respectively. Let's create a modal that is activated by a button on the sidebar. We'll first save this script below into a file called `app.py`:
 
 :::{card} app.py
-```python
-:emphasize-lines: 25-37
+``` {code-block} python
+:emphasize-lines: 24-36
+
 import panel as pn
 import numpy as np
 import holoviews as hv

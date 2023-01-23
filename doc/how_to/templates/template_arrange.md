@@ -7,8 +7,9 @@ The default templates that are provided with Panel define four content areas on 
 Let's create a simple app and place components in the `header`, `sidebar`, and `main` areas (see the dedicated guide on the [`modal`](./template_modal.md)). We'll first save this script below into a file called `app.py`:
 
 :::{card} app.py
+``` {code-block} python
+:emphasize-lines: 19-23
 
-```python
 import panel as pn
 import numpy as np
 import holoviews as hv
@@ -31,20 +32,6 @@ def sine(freq, phase):
 bootstrap.sidebar.extend([freq, phase])
 bootstrap.main.append(pn.Card(hv.DynamicMap(sine), title='Sine'))
 bootstrap.header.append('## Header')
-
-# Add some content to the modal area
-bootstrap.modal.append("## This is a modal")
-
-# Create a button
-modal_btn = pn.widgets.Button(name="Click for modal")
-
-# Callback that will open the modal when the button is clicked
-def about_callback(event):
-    bootstrap.open_modal()
-
-# Link the button to the callback and append it to the sidebar
-modal_btn.on_click(about_callback)
-bootstrap.sidebar.append(modal_btn)
 
 bootstrap.servable()
 ```

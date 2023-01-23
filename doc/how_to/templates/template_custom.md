@@ -51,7 +51,7 @@ That said it is usually easiest to simply extend an existing template by overrid
 
 In this case we will extend the postamble block of the header to load some additional resources, and the contents block to redefine how the components will be laid out. Specifically, we will load bootstrap.css in the preamble allowing us to use the bootstrap grid system to lay out the output.
 
-```{pyodide}
+```python
 template = """
 {% extends base %}
 
@@ -83,7 +83,10 @@ If you look closely we defined two different roots in the template using the `em
 
 Additionally we have also declared a new `app_title` variable in the template, which we can populate by using the `add_variable` method:
 
-```{pyodide}
+```python
+import panel as pn
+import holoviews as hv
+
 tmpl = pn.Template(template)
 
 tmpl.add_variable('app_title', '<h1>Custom Template App</h1>')
@@ -91,12 +94,15 @@ tmpl.add_variable('app_title', '<h1>Custom Template App</h1>')
 tmpl.add_panel('A', hv.Curve([1, 2, 3]))
 tmpl.add_panel('B', hv.Curve([1, 2, 3]))
 
-tmpl
 ```
 
 Embedding a different CSS framework (like Bootstrap) in the notebook can have undesirable side-effects so a `Template` may also be given a separate `nb_template` that will be used when rendering inside the notebook:
 
-```{pyodide}
+```python
+import panel as pn
+import holoviews as hv
+pn.extension() # for notebook
+
 nb_template = """
 {% extends base %}
 
@@ -122,7 +128,6 @@ tmpl.add_variable('app_title', '<h1>Custom Template App</h1>')
 tmpl.add_panel('A', hv.Curve([1, 2, 3]))
 tmpl.add_panel('B', hv.Curve([1, 2, 3]))
 
-tmpl
 ```
 
 ## Loading Template from File
