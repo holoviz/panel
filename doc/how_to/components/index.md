@@ -98,3 +98,25 @@ How to control the size of components.
 :::
 
 ::::
+
+## Build Custom Components
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`filter;2.5em;sd-mr-1` Combine Existing Components
+:link: custom_viewer
+:link-type: doc
+
+How to build custom components that are combinations of existing components.
+:::
+
+:::{grid-item-card} {octicon}`filter;2.5em;sd-mr-1` Build Components from Scratch
+:link: custom_reactiveHTML
+:link-type: doc
+
+{bdg-warning}`Advanced`
+How to build custom components from scratch.
+:::
+
+::::
