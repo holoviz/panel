@@ -8,7 +8,7 @@ Let's create a simple app and place components in the `header`, `sidebar`, and `
 
 :::{card} app.py
 ``` {code-block} python
-:emphasize-lines: 19-23
+:emphasize-lines: 19-22
 
 import panel as pn
 import numpy as np
