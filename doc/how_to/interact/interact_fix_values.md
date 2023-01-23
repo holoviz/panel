@@ -19,7 +19,7 @@ Now, call `interact` using the `panel.interact.fixed` function to fix one of the
 pn.interact(f, x=1, y=fixed(10))
 ```
 
-## Further Resources
+## Related Resources
 
 - Read [Background > Widget Abbreviations for Panel Interact](../../background/interact/interact_abbreviations.md) for explanation.
 - See [How-to > Autogenerate Widgets for Functions](../interact/index.md) for solutions.

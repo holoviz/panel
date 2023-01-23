@@ -19,7 +19,7 @@ Now, let's call `interact` and set the argument `throttled` to `True`. The funct
 pn.interact(f, x=10, throttled=True)
 ```
 
-## Further Resources
+## Related Resources
 
 - Read [Background > Widget Abbreviations for Panel Interact](../../background/interact/interact_abbreviations.md) for explanation.
 - See [How-to > Autogenerate Widgets for Functions](../interact/index.md) for solutions.
