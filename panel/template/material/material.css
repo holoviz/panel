@@ -1,17 +1,35 @@
 :root {
-  --bokeh-base-font: inherit;
+    --bokeh-base-font: inherit;
+    --mdc-theme-primary: var(--panel-primary-color);
+    --mdc-theme-primary-lightened: rgba(var(--panel-primary-rgb), 0.25);
+    --mdc-theme-on-primary: var(--panel-on-primary-color);
+    --mdc-theme-secondary: var(--panel-secondary-color);
+    --mdc-theme-secondary-lightened: rgba(var(--panel-secondary-rgb), 0.25);
+    --mdc-theme-on-secondary: var(--panel-on-secondary-color);
+    --mdc-theme-background: var(--panel-body-background);
+    --mdc-theme-on-background: var(--panel-body-color);
+    --mdc-typography--font-family: var(--bokeh-base-font);
+    --mdc-shape-small: 4px;
+    --mdc-shape-medium: 4px;
+    --mdc-shape-large: 0px;
 }
 
 body {
-  display: flex;
-  height: 100vh;
-  margin: 0px;
-  overflow-x: hidden;
-  overflow-y: hidden;
+    background-color: var(--mdc-theme-background);
+    color: var(--mdc-theme-on-background);
+    display: flex;
+    height: 100vh;
+    margin: 0px;
+    overflow-x: hidden;
+    overflow-y: hidden;
 }
 
 img {
   max-width: 100%;
+}
+
+#header {
+  box-shadow: 5px 5px 20px silver;
 }
 
 #container {

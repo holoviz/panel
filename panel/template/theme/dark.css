@@ -1,6 +1,10 @@
 :root {
     --panel-primary-color: #0072B5;
-    --panel-on-primary-color: #fff;
+    --panel-primary-rgb: 0,114,181;
+    --panel-on-primary-color: #ffffff;
+    --panel-secondary-color: #6f6f6f;
+    --panel-secondary-rgb: 111,111,111;
+    --panel-on-secondary-color: #ffffff;
     --panel-body-background: #212529;
-    --panel-body-color: #fff;
+    --panel-body-color: #ffffff;
 }
