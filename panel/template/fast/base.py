@@ -53,14 +53,7 @@ class FastBaseTemplate(BasicTemplate):
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
         Could be extended to Accordion, Tab etc. in the future.""")
 
-    _css = [
-        _ROOT / "css/fast_root.css",
-        _ROOT / "css/fast_bokeh_slickgrid.css",
-        _ROOT / "css/fast_panel.css",
-        _ROOT / "css/fast_panel_dataframe.css",
-        _ROOT / "css/fast_panel_markdown.css",
-        _ROOT / "css/fast_awesome.css"
-    ]
+    _css = [_ROOT / "css/fast_root.css"]
 
     _modifiers = {
         Tabulator: {
