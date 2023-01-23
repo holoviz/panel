@@ -1,4 +1,4 @@
-# How-to Guide
+# How-to Guides
 
 The Panel How-to Guides provide step by step recipes for solving essential problems and tasks. They are more advanced than the Getting Started material and assume some knowledge of how Panel works.
 

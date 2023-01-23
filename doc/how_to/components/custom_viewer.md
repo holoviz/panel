@@ -2,7 +2,7 @@
 
 This guide addresses how to build custom components that are combinations of existing components.
 
-The simplest way to extend Panel is to implement a so called `Viewer` component that can wrap multiple existing Panel components into a easily reusable unit that behaves like a native Panel component.
+The simplest way to extend Panel is to implement a so called `Viewer` component that can wrap multiple existing Panel components into an easily reusable unit that behaves like a native Panel component.
 
 Let's create a composite `EditableRange` component made up of two `FloatInput` widgets. First, we will create the widgets:
 
