@@ -42,6 +42,13 @@ Compare Panel with similar libraries.
 An overview explaining how Panel communicates between Python and Javascript in different contexts, such as Jupyter, server environments and in exported files.
 :::
 
+:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1` Templates
+:link: templates/templates_overview
+:link-type: doc
+
+Learn about context for using Templates in Panel.
+:::
+
 
 ::::
 
