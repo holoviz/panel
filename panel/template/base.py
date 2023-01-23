@@ -195,6 +195,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             k: v for k, v in modifiers.items() if k != 'children' and
             getattr(viewable, k) == viewable.param[k].default
         }
+        if 'stylesheets' in modifiers:
+            params['stylesheets'] = modifiers['stylesheets'] + viewable.stylesheets
         props = viewable._process_param_change(params)
         model.update(**props)
 

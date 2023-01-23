@@ -154,9 +154,9 @@ class Syncable(Renderable):
         if 'height' in properties and self.sizing_mode is None:
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
-            properties['stylesheets'] = properties['stylesheets'] + [
+            properties['stylesheets'] = [
                 ImportedStyleSheet(url=sts) for sts in self._stylesheets
-            ]
+            ] + properties['stylesheets']
         return properties
 
     @property
