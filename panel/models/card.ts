@@ -5,6 +5,7 @@ import * as p from "@bokehjs/core/properties"
 export class CardView extends ColumnView {
   model: Card
   button_el: HTMLButtonElement
+  header_el: HTMLElement
 
   connect_signals(): void {
     super.connect_signals()
@@ -16,9 +17,8 @@ export class CardView extends ColumnView {
       const header_background = this.header_background
       if (header_background == null)
 	return
-      const header = this.shadow_el.children[0]
       this.child_views[0].el.style.backgroundColor = header_background
-      header.style.backgroundColor = header_background
+      this.header_el.style.backgroundColor = header_background
     })
   }
 
@@ -61,6 +61,7 @@ export class CardView extends ColumnView {
       header_el.style.backgroundColor = header_background != null ? header_background : ""
       header_el.appendChild(header.el)
     }
+    this.header_el = header_el
 
     if (!this.model.hide_header) {
       header_el.style.color = header_color != null ? header_color : ""
