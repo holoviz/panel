@@ -207,7 +207,8 @@ def bundle_templates(verbose=False, external=True):
             ][0]
             def_path = pathlib.Path(inspect.getmodule(def_cls).__file__).parent
             for sts in cls_modifiers['stylesheets']:
-                if sts.endswith('.css') and not (sts.startswith('http:') or sts.startswith('/')):
+                if not isinstance(sts, str) or not sts.endswith('.css') or sts.startswith('http') or sts.startswith('/'):
+                    continue
                     bundled_path = BUNDLE_DIR / def_cls.__name__.lower() / sts
                     shutil.copyfile(def_path / sts, bundled_path)
 
