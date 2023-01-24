@@ -1221,7 +1221,6 @@ class Tabulator(BaseTable):
         from ..io.resources import RESOURCE_MODE
         from ..models.tabulator import (
             _TABULATOR_THEMES_MAPPING, PANEL_CDN, THEME_PATH, THEME_URL,
-            _get_theme_url,
         )
         if RESOURCE_MODE == 'server' and resources in (None, 'server'):
             theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
@@ -1230,12 +1229,10 @@ class Tabulator(BaseTable):
         else:
             theme_url = PANEL_CDN
         # Ensure theme_url updates before theme
-        cdn_url = _get_theme_url(THEME_URL, theme)
-        theme_url = _get_theme_url(theme_url, theme)
         theme_ = _TABULATOR_THEMES_MAPPING.get(self.theme, self.theme)
         fname = 'tabulator' if theme_ == 'default' else 'tabulator_' + theme_
         if self._widget_type is not None:
-            self._widget_type.__css_raw__ = [f'{cdn_url}{fname}.min.css']
+            self._widget_type.__css_raw__ = [f'{THEME_URL}{fname}.min.css']
         return theme_url, theme
 
     def _process_param_change(self, msg):

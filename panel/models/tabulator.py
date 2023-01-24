@@ -68,22 +68,15 @@ class CellClickEvent(ModelEvent):
             f'value={self.value})'
         )
 
-def _get_theme_url(url, theme):
-    if 'fast' in theme:
-        if url.startswith(THEME_URL):
-            url = url.replace(THEME_URL, PANEL_CDN)
-        url += 'fast/'
-    return url
 
 CSS_URLS = []
 for theme in TABULATOR_THEMES:
-    _url = _get_theme_url(THEME_URL, theme)
     if theme == 'default':
-        _url += 'tabulator.min.css'
+        _theme_file = 'tabulator.min.css'
     else:
         theme = _TABULATOR_THEMES_MAPPING.get(theme, theme)
-        _url += f'tabulator_{theme}.min.css'
-    CSS_URLS.append(_url)
+        _theme_file += f'tabulator_{theme}.min.css'
+    CSS_URLS.append(f'{THEME_URL}{_theme_file}')
 
 
 class DataTabulator(HTMLBox):
