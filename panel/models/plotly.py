@@ -31,7 +31,7 @@ class PlotlyPlot(LayoutDOM):
 
     __js_require__ = {
         'paths': {
-            'plotly': 'https://cdn.plot.ly/plotly-2.10.1.min'
+            'plotly': 'https://cdn.plot.ly/plotly-2.18.0.min'
         },
         'exports': {'plotly': 'Plotly'}
     }
