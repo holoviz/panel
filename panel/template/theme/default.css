@@ -4,7 +4,9 @@
     --panel-on-primary-color: #ffffff;
     --panel-secondary-color: #424342;
     --panel-secondary-rgb: 66,67,66;
-    --panel-on-secondary-color: #ffffff;
+    --panel-on-secondary-color: #fffff;
     --panel-body-background: #ffffff;
     --panel-body-color: #212529;
+    --panel-surface-color: #D1D1D1;
+    --panel-on-surface-color: #000000;
 }

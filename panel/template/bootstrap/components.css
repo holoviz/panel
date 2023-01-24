@@ -571,6 +571,10 @@ input[type="radio"] + span {
 
 /* Tabulator */
 
+.tabulator {
+    width: 100%;
+}
+
 .tabulator .tabulator-headers, .tabulator .tabulator-header .tabulator-col {
     background-color: var(--bs-secondary-bg);
 }

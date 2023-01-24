@@ -8,7 +8,7 @@ import param
 from ...io.resources import CSS_URLS, JS_URLS
 from ...layout import Card
 from ...viewable import Viewable
-from ...widgets import Tabulator
+from ...widgets import Number, Tabulator
 from ..base import BasicTemplate, Inherit
 from ..theme import DarkTheme, DefaultTheme
 
@@ -68,5 +68,11 @@ class BootstrapDarkTheme(DarkTheme):
     css = param.Filename(default=pathlib.Path(__file__).parent / 'dark.css')
 
     _bs_theme = 'dark'
+
+    _modifiers = {
+        Number: {
+            'default_color': 'var(--bs-body-color)'
+        }
+    }
 
     _template = BootstrapTemplate

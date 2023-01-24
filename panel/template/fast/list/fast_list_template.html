@@ -31,7 +31,8 @@
 
 <style>
   :root {
-    --body-font: {{ style.font }};
+      --body-font: {{ style.font }};
+      --corner-radius: {{ style.corner_radius }};
   }
   body {
       color: {{ style.color }};
@@ -43,9 +44,6 @@
   }
   #header-design-provider {
       --neutral-foreground-rest: {{ style.header_color }};
-  }
-  #body-design-provider {
-      --corner-radius = {{ style.corner_radius }};
   }
   #sidebar {
       width: {{ sidebar_width }}px;
@@ -131,7 +129,7 @@
   function setBackgroundColor(color, selector){
     color = standardize_color(color);
     const provider = document.querySelector(selector);
-    provider.backgroundColor=color;
+    provider.backgroundColor = color;
   }
   setBackgroundColor("{{ style.header_background }}", "#header-design-provider");
   setBackgroundColor("{{ style.background_color }}", "#body-design-provider");

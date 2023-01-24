@@ -1,6 +1,7 @@
 /* Variables */
 
 :host {
+    --track-width: 4;
     --thumb-size: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 0.5 - var(--design-unit));
     --handle-width: calc(var(--thumb-size) * 1px);
     --handle-height: calc(var(--thumb-size) * 1px);
@@ -11,16 +12,23 @@
     --base-font: var(--body-font);
     --font-size: var(--type-ramp-base-font-size);
     --switch-size: 12px;
+    --container-background: var(--panel-surface-color);
+}
+
+/* Track */
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
 }
 
 /* Separator */
 
 hr {
-  color: var(--neutral-divider-rest);
-  border-color: var(--neutral-divider-rest);
-  background: var(--neutral-divider-rest);
-  border-style: solid;
-  border-radius: calc(var(--corner-radius) * 1px);
+    color: var(--neutral-divider-rest);
+    border-color: var(--neutral-divider-rest);
+    background: var(--neutral-divider-rest);
+    border-style: solid;
+    border-radius: calc(var(--corner-radius) * 1px);
 }
 
 /* Loading */
@@ -120,10 +128,8 @@ canvas, img {
 
 /* Card */
 
-.card-button {
-    display: block;
-    margin-left: 0.5em;
-    padding-right: 1em;
+:host(.accordion), :host(.card) {
+    background-color: var(--neutral-fill-rest);
 }
 
 .card {
@@ -131,14 +137,28 @@ canvas, img {
     color: var(--neutral-foreground-rest);
 }
 
-.card-header {
-    background-color: var(--neutral-fill-active) !important;
+.card-header, .accordion-header {
+    background-color: var(--neutral-fill-rest);
+    border: unset;
+    box-shadow: unset;
     color: var(--neutral-foreground-rest);
     height: unset;
 }
 
 .card-margin {
     margin: 1em;
+}
+
+.card-button {
+    display: block;
+    margin-left: 0.5em;
+    padding-right: 1em;
+}
+
+:host(.card-title) h1, :host(.card-title) h2, :host(.card-title) h3,
+:host(.card-title) h4, :host(.card-title) h5, :host(.card-title) h6 {
+    margin-block-end: 0;
+    margin-block-start: 0;
 }
 
 /* Tabs */
@@ -241,8 +261,14 @@ table.panel-df {
 
 /* Slider Widgets */
 
-.noUi-base {
+.noUi-target {
+    background: var(--neutral-outline-rest);
     border-color: var(--neutral-outline-rest);
+    box-shadow: unset;
+}
+
+.noUi-base {
+    border-radius: calc(var(--corner-radius) * 1px);
 }
 
 .noUi-handle {
@@ -294,6 +320,10 @@ textarea.bk-input {
 
 /* Choices widget */
 
+.choices.is-disabled .choices__inner, .choices.is-disabled .choices__input {
+    background: unset;
+    opacity: var(--disabled-opacity);
+}
 
 .choices[data-type*='select-one'] .choices__input {
     display: block;
@@ -323,8 +353,8 @@ textarea.bk-input {
     border-color: var(--accent-fill-active);
 }
 
-.is-disabled .choices__list--multiple .choices__item {
-    background-color: #aaaaaa;
+.choices__list--dropdown, .choices__list[aria-expanded] {
+    background-color: var(--neutral-fill-rest);
     border: 1px solid var(--accent-fill-rest);
 }
 
@@ -332,23 +362,13 @@ textarea.bk-input {
     border: 1px solid var(--accent-fill-rest);
 }
 
-.is-open .choices__list--dropdown {
+.is-open .choices__list--dropdown, .is-open .choices__list[aria-expanded] {
     border-color: var(--accent-fill-rest);
 }
 
-.choices__heading {
-    font-weight: 600;
-    font-size: 12px;
-    padding: 10px;
-    border-bottom: 1px solid var(--accent-fill-rest);
-    color: gray;
-}
 
-.choices__inner .choices__item.light {
-    background-color: rgba(0, 126, 255, 0.08);
-    border-radius: calc(var(--corner-radius) * 1px);
-    border: 1px solid rgba(0, 126, 255, 0.24);
-    color: #007eff;
+.choices__list--dropdown .choices__item--selectable.is-highlighted, .choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
+    background-color: var(--accent-fill-rest);
 }
 
 .choices__inner .choices__item.solid {
@@ -398,23 +418,27 @@ input[type=file]:active {
 /* Buttons */
 
 .bk-btn {
-    background-color:  var(--neutral-fill-rest);
-    border-radius: calc(var(--control-corner-radius) * 1px);
     border: unset;
-    color: var(--neutral-foreground-rest);
+    border-radius: calc(var(--control-corner-radius) * 1px);
     line-height: var(--type-ramp-base-line-height);
     height: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px);
     min-width: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px);
     padding: 0 calc((10 + (var(--design-unit) * 2 * var(--density))) * 1px);
 }
 
-.bk-btn:hover {
+.bk-btn.bk-btn-default {
+    background-color:  var(--neutral-fill-rest);
+    color: var(--neutral-foreground-rest);
+}
+
+.bk-btn.bk-btn-default:hover {
     background-color: var(--neutral-fill-hover);
 }
 
-.bk-btn.bk-active {
+.bk-btn.bk-btn-default.bk-active {
     background-color: var(--neutral-fill-active);
     border: 1px solid var(--accent-fill-active);
+    box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
     filter: brightness(0.9);
 }
 
@@ -573,76 +597,34 @@ input[type=file]:active {
 /* Progress Indicator */
 
 progress {
-    appearance: none;
-    -moz-appearance: none;
-    -webkit-appearance: none;
-    border: none;
-    height: 5px;
-    background-color: var(--neutral-focus);
     border-radius: calc(var(--corner-radius) * 1px);
-    box-shadow: none;
-    color: var(--accent-foreground-rest);
-    position: relative;
+    height: 5px;
     margin: 0 0 0.5em;
 }
 
 progress[value]::-moz-progress-bar {
-    background-color: var(--neutral-focus);
-    background-size: 35px 20px, 100% 100%, 100% 100%;
-    border-radius:3px;
-}
-
-progress:not([value])::-moz-progress-bar {
-    background-color: var(--neutral-focus);
-    border-radius: 3px;
-    background: linear-gradient(-45deg, transparent 33%, rgba(0, 0, 0, 0.2) 33%, rgba(0, 0, 0, 0.2) 66%, transparent 66%) left/2.5em 1.5em;
-}
-
-progress.active:not([value])::-moz-progress-bar {
-    background-color: var(--neutral-focus);
-    background-position: 10%;
-    animation-name: stripes;
-    animation-duration: 3s;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-}
-
-progress[value]::-webkit-progress-bar {
-    background-color: var(--neutral-focus);
     border-radius: calc(var(--corner-radius) * 1px);
 }
 
-progress.primary[value]::-webkit-progress-value {
-    background-color: var(--accent-foreground-rest);
+progress:not([value])::-moz-progress-bar {
+    border-radius: calc(var(--corner-radius) * 1px);
 }
 
-progress.primary:not([value])::before {
-    background-color: var(--accent-foreground-rest);
+progress[value]::-webkit-progress-value {
+    border-radius: calc(var(--corner-radius) * 1px);
 }
 
-progress.primary:not([value])::-webkit-progress-bar {
-    background-color: var(--accent-foreground-rest);
-}
-
-progress.primary::-moz-progress-bar {
-    background-color: var(--accent-foreground-rest);
+progress[value]::-webkit-progress-bar {
+    border-radius: calc(var(--corner-radius) * 1px);
 }
 
 progress:not([value])::-webkit-progress-bar {
     border-radius: calc(var(--corner-radius) * 1px);
-    background: linear-gradient(-45deg, transparent 33%, rgba(0, 0, 0, 0.2) 33%, rgba(0, 0, 0, 0.2) 66%, transparent 66%) left/2.5em 1.5em;
 }
 
 progress:not([value])::before {
-    content: " ";
-    position: absolute;
-    height: 20px;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     border-radius: calc(var(--corner-radius) * 1px);
-    background: linear-gradient(-45deg, transparent 33%, rgba(0, 0, 0, 0.2) 33%, rgba(0, 0, 0, 0.2) 66%, transparent 66%) left/2.5em 1.5em;
+    height: 5px;
 }
 
 /* Panes */
@@ -666,8 +648,7 @@ iframe {
 /* Markdown */
 
 .markdown {
-    padding-right: 1em;
-    padding-left: 1em;
+    padding: 0.5em;
 }
 
 .markdown a img {

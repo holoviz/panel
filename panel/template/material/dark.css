@@ -1,6 +1,4 @@
 :root {
-    --mdc-theme-error: #b00020;
-    --mdc-theme-on-error: #ffffff;
-    --mdc-theme-surface: #212529;
-    --mdc-theme-on-surface: #ffffff;
+  --mdc-theme-error: #b00020;
+  --mdc-theme-on-error: #ffffff;
 }
