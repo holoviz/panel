@@ -409,7 +409,7 @@ class ComponentResourceHandler(StaticFileHandler):
     """
 
     _resource_attrs = [
-        '__css__', '__javascript__', '__js_module__',  '_resources',
+        '__css__', '__javascript__', '__js_module__', '__javascript_modules__',  '_resources',
         '_css', '_js', 'base_css', 'css'
     ]
 

@@ -409,7 +409,7 @@ class Bundle(BkBundle):
             if getattr(model, '__javascript_modules__', None) and model._loaded():
                 for js_module in model.__javascript_modules__:
                     if js_module not in js_modules:
-                        js_modules.append(js_module)
+                        js_modules.append(component_resource_path(model, '__javascript_modules__', js_module))
         self.js_modules = kwargs.pop("js_modules", js_modules)
         super().__init__(**kwargs)
 
