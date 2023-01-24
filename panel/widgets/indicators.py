@@ -228,7 +228,7 @@ class Progress(ValueIndicator):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
-    _stylesheets: ClassVar[List[str]] = ['css/progress.css', 'css/variables.css']
+    _stylesheets: ClassVar[List[str]] = ['css/variables.css', 'css/progress.css']
 
     _widget_type: ClassVar[Type[Model]] = _BkProgress
 
