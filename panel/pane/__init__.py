@@ -54,7 +54,6 @@ from .streamz import Streamz  # noqa
 from .vega import Vega  # noqa
 from .vtk import VTK, VTKVolume  # noqa
 
-
 __all__ = (
     "Alert",
     "Audio",

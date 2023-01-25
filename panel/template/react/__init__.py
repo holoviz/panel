@@ -9,8 +9,8 @@ from ...config import config
 from ...depends import depends
 from ...io.resources import CSS_URLS
 from ...layout import Card, GridSpec
-from ...viewable import Viewable
 from ...util.warnings import deprecated
+from ...viewable import Viewable
 from ..base import BasicTemplate, Inherit
 from ..theme import DarkTheme, DefaultTheme
 
