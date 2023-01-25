@@ -138,8 +138,9 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
     def _apply_hooks(self, viewable: Viewable, root: Model) -> None:
         ref = root.ref['id']
+        theme = self._get_theme()
         for o in viewable.select():
-            self._apply_modifiers(o, ref)
+            self._apply_modifiers(o, ref, theme)
 
     @classmethod
     def _resolve_stylesheets(cls, value, defining_cls, inherited):
@@ -161,30 +162,29 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
     @classmethod
     @functools.cache
-    def _resolve_modifiers(cls, vtype):
+    def _resolve_modifiers(cls, vtype, theme):
         """
         Iterate over the class hierarchy in reverse order and accumulate
         all modifiers that apply to the objects class and its super classes.
         """
         modifiers, child_modifiers = {}, {}
         for scls in vtype.__mro__[::-1]:
-            if scls not in cls._modifiers:
-                continue
-            cls_modifiers = cls._modifiers[scls]
+            cls_modifiers = cls._modifiers.get(scls, {})
+            if cls_modifiers:
+                # Find the Template class the options were first defined on
+                def_cls = [
+                    super_cls for super_cls in cls.__mro__[::-1]
+                    if getattr(super_cls, '_modifiers', {}).get(scls) is cls_modifiers
+                ][0]
 
-            # Find the Template class the options were first defined on
-            def_cls = [
-                super_cls for super_cls in cls.__mro__[::-1]
-                if getattr(super_cls, '_modifiers', {}).get(scls) is cls_modifiers
-            ][0]
-
-            for prop, value in cls_modifiers.items():
-                if prop == 'children':
-                    continue
-                elif prop == 'stylesheets':
-                    modifiers[prop] = cls._resolve_stylesheets(value, def_cls, modifiers.get(prop, []))
-                else:
-                    modifiers[prop] = value
+                for prop, value in cls_modifiers.items():
+                    if prop == 'children':
+                        continue
+                    elif prop == 'stylesheets':
+                        modifiers[prop] = cls._resolve_stylesheets(value, def_cls, modifiers.get(prop, []))
+                    else:
+                        modifiers[prop] = value
+            modifiers.update(theme._modifiers.get(scls, {}))
             child_modifiers.update(cls_modifiers.get('children', {}))
         return modifiers, child_modifiers
 
@@ -201,11 +201,11 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         model.update(**props)
 
     @classmethod
-    def _apply_modifiers(cls, viewable: Viewable, mref: str) -> None:
+    def _apply_modifiers(cls, viewable: Viewable, mref: str, theme: Theme) -> None:
         if mref not in viewable._models:
             return
         model, _ = viewable._models[mref]
-        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable))
+        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme)
         modifiers = dict(modifiers)
         if 'stylesheets' in modifiers:
             modifiers['stylesheets'] = [
