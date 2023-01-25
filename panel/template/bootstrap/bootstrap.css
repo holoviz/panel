@@ -1,68 +1,75 @@
-:root {
-    --bs-form-control-bg: var(--panel-body-background);
-    --bs-body-bg: var(--panel-body-background);
-    --bs-body-color: var(--panel-body-color);
+:root, :host {
+    --bs-primary-color: var(--panel-on-primary-color);
+    --bs-primary-bg: var(--panel-primary-color);
+    --bs-secondary-color: var(--panel-on-secondary-color);
+    --bs-secondary-bg: var(--panel-secondary-color);
+    --bs-form-control-bg: var(--panel-body-color);
+    --bs-body-bg: var(--panel-body-color);
+    --bs-body-color: var(--panel-on-body-color);
+    --bs-surface-bg: var(--panel-surface-color);
+    --bs-surface-color: var(--panel-on-surface-color);
     --bokeh-base-font: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
 }
-
-html {
-    scrollbar-face-color: #646464;
-    scrollbar-base-color: #646464;
-    scrollbar-3dlight-color: #646464;
-    scrollbar-highlight-color: #646464;
-    scrollbar-track-color: #000;
-    scrollbar-arrow-color: #000;
-    scrollbar-shadow-color: #646464;
-    scrollbar-dark-shadow-color: #646464;
-}
-
-::-webkit-scrollbar-button {
-    background-color: #666;
+::-webkit-scrollbar {
+    width: 12px;
 }
 
 ::-webkit-scrollbar-track {
-    background-color: #646464;
-}
-
-::-webkit-scrollbar-track-piece {
-    background-color: #000;
+    background-color: var(--bs-body-bg);
+    border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: #666;
-    border-radius: 3px;
-    height: 50px;
-}
-
-::-webkit-scrollbar-corner {
-    background-color: #646464;
-}
-
-::-webkit-resizer {
-    background-color: #666;
+    background-color: var(--bs-surface-bg);
 }
 
 body {
-    color: var(--panel-body-color);
+    color: var(--bs-body-color);
     background-color: var(--bs-body-bg);
     height: 100vh
 }
 
+#container {
+    padding: 0px;
+}
+
+/* Header */
+
 #header {
-    background-color: var(--panel-primary-color);
-    color: var(--panel-on-primary-color);
+    background-color: var(--bs-primary-bg);
+    color: var(--bs-primary-color);
+}
+
+.navbar-toggle {
+    background: none;
+    border: none;
+    padding-left: 10px;
+}
+
+a.navbar-brand {
+    padding-left: 10px;
+    display: flex;
+    align-items: center;
+    font-size: 1.5em;
 }
 
 #header .title {
-    color: var(--panel-on-primary-color);
+    color: var(--bs-primary-color);
     text-decoration: none;
     text-decoration-line: none;
     text-decoration-style: initial;
     text-decoration-color: initial;
     font-weight: 400;
     font-size: 1.5em;
-    padding-left: 1em;
+    padding-left: 0.5em;
     line-height: 2em;
+    white-space: nowrap;
+}
+
+#header-items {
+    display: block;
+    margin-left: 15px;
+    overflow: hidden;
     white-space: nowrap;
 }
 
@@ -72,7 +79,7 @@ body {
 }
 
 .app-header a.title:hover {
-    color: var(--panel-on-primary-color);
+    color: var(--bs-primary-color);
     text-decoration: none;
 }
 
@@ -83,37 +90,21 @@ img.app-logo {
     max-width: inherit;
 }
 
-#main {
-    background-color: var(--bs-body-bg);
-    color: var(--bs-body-color);
-}
+/* Sidebar */
 
 #sidebar {
-    border-color: #2f2f2f !important;
-    padding-top: 15px;
-    padding-bottom: 15px;
-    padding-left: 5px;
-    padding-right: 10px;
-    transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
-    transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
-    overflow-y: auto;
+    border-right: 1px solid var(--bs-border-color);
     height: 100%;
+    overflow: hidden auto;
+    padding: 15px 10px 15px 5px;
 }
 
-#sidebar.active {
-    width: 0px;
-    overflow-y: hidden;
-    padding: 0px;
+#sidebar.collapsing {
+    display: block;
+    width: 0;
 }
 
-#sidebarCollapse {
-    background: none;
-    border: none;
-}
-
-#container {
-    padding: 0px;
-}
+/* Main Area */
 
 #content {
     height: 100vh;
@@ -121,25 +112,13 @@ img.app-logo {
 }
 
 #main {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
     overflow-y: auto;
-    padding-right: 20px;
-    padding-bottom: 20px;
-    padding-top: 10px;
-    padding-left: 10px;
+    padding: 10px 20px 20px 10px;
 }
 
-
-#header-items {
-    width: 100%;
-    margin-left: 15px;
-}
-
-a.navbar-brand {
-    padding-left: 10px;
-    display: flex;
-    align-items: center;
-    font-size: 1.5em;
-}
+/* Modal */
 
 .pn-modal {
     overflow-y: auto;
@@ -147,26 +126,23 @@ a.navbar-brand {
 
 .pn-modal-content {
     display: block;
+    min-height: 42px;
 }
 
 .pn-modal-close {
-    position: relative;
-    float: right;
-    z-index: 100;
-    width: 40px;
     height: 40px;
-    border-radius: 4px;
-    border: 1px solid rgba(0,0,0,.2);
+    float: right;
     padding: 0px;
-    background: transparent;
-    border-top: 0;
-    border-right: 0;
+    position: relative;
+    width: 40px;
+    z-index: 100;
 }
 
 .pn-modal-close:hover,
 .pn-modal-close:focus {
-    text-decoration: none;
     cursor: pointer;
+    font-weight: 800;
+    text-decoration: none;
 }
 
 .pn-busy-container {

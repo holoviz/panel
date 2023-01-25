@@ -7,6 +7,25 @@
     --bar-height: 16px;
 }
 
+:host-context(.navbar) h1, :host-context(.navbar) h2, :host-context(.navbar) h3,
+:host-context(.navbar) h4, :host-context(.navbar) h5, :host-context(.navbar) h6 {
+    margin-block-start: 0em;
+    margin-block-end: 0em;
+}
+
+html {
+    scrollbar-face-color: var(--bs-surface-bg);
+    scrollbar-base-color: var(--bs-body-bg);
+}
+
+:root::-webkit-scrollbar-track {
+    background-color: var(--bs-body-bg);
+}
+
+:root::-webkit-scrollbar-thumb {
+    background-color: var(--bs-surface-bg);
+}
+
 /* Card styling */
 
 :host(.card), :host(.accordion) {
@@ -267,7 +286,7 @@ input.bk-input, textarea.bk-input {
 }
 
 .bk-btn-default {
-  --bs-btn-color: var(--bs-body-color);
+  --bs-btn-color: var(--bs-primary-color);
   --bs-btn-bg: var(--bs-primary-bg);
   --bs-btn-border-color: var(--bs-border-color);
   --bs-btn-hover-color: var(--panel-on-primary-color);
@@ -572,21 +591,25 @@ input[type="radio"] + span {
 /* Tabulator */
 
 .tabulator {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
     width: 100%;
 }
 
-.tabulator .tabulator-headers, .tabulator .tabulator-header .tabulator-col {
-    background-color: var(--bs-secondary-bg);
+.tabulator-row {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
 }
 
-.tabulator .tabulator-table .tabulator-row-odd {
-    background-color: var(--bs-secondary-bg);
+.tabulator .tabulator-headers, .tabulator .tabulator-header .tabulator-col {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
 }
 
 .tabulator .tabulator-table .tabulator-row-even {
-    background-color: var(--bs-tertiary-bg);
+    background-color: var(--bs-secondary-bg);
 }
 
 .tabulator .tabulator-table .tabulator-row.tabulator-selected {
-    background-color: var(--bs-emphasis-color);
+    background-color: var(--panel-primary-color);
 }

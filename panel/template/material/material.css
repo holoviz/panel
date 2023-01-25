@@ -1,15 +1,16 @@
 :root {
     --bokeh-base-font: inherit;
     --mdc-theme-primary: var(--panel-primary-color);
-    --mdc-theme-primary-lightened: rgba(var(--panel-primary-rgb), 0.25);
+    --mdc-theme-primary-lightened: rgba(var(--panel-primary-rgb), 0.35);
     --mdc-theme-on-primary: var(--panel-on-primary-color);
     --mdc-theme-secondary: var(--panel-secondary-color);
-    --mdc-theme-secondary-lightened: rgba(var(--panel-secondary-rgb), 0.25);
+    --mdc-theme-secondary-lightened: rgba(var(--panel-secondary-rgb), 0.8);
     --mdc-theme-on-secondary: var(--panel-on-secondary-color);
-    --mdc-theme-background: var(--panel-body-background);
-    --mdc-theme-on-background: var(--panel-body-color);
+    --mdc-theme-background: var(--panel-body-color);
+    --mdc-theme-on-background: var(--panel-on-body-color);
     --mdc-theme-surface: var(--panel-surface-color);
     --mdc-theme-on-surface: var(--panel-on-surface-color);
+    --mdc-theme-text-primary-on-background: rgba(var(--panel-on-body-rgb), 0.87);
     --mdc-typography--font-family: var(--bokeh-base-font);
     --mdc-shape-small: 4px;
     --mdc-shape-medium: 4px;
@@ -49,7 +50,8 @@ img {
 }
 
 .mdc-drawer {
-    background: #FAFAFA; /* GRAY 50 */
+    background: var(--mdc-theme-background);
+    color: var(--mdc-theme-on-background);
 }
 
 .mdc-drawer-app-content {
@@ -139,8 +141,12 @@ img.app-logo {
     left: 0;
 }
 
+.mdc-dialog .mdc-dialog__content {
+    color: var(--mdc-theme-on-surface);
+}
+
 .pn-modal-content {
-    background-color: #fefefe;
+    background-color: var(--mdc-theme-surface);
     margin: auto;
     margin-top: 25px;
     margin-bottom: 25px;

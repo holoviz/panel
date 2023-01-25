@@ -697,6 +697,13 @@ table.panel-df {
     cursor: pointer;
 }
 
+/* Tabulator */
+
+.pnx-tabulator.tabulator {
+    max-width: 100%;
+    overflow-x:
+}
+
 /* SlickGrid */
 
 /* fast_bokeh_slickgrid.css */

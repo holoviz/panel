@@ -2,11 +2,17 @@
     --panel-primary-color: #0072B5;
     --panel-primary-rgb: 0,114,181;
     --panel-on-primary-color: #ffffff;
-    --panel-secondary-color: #6f6f6f;
-    --panel-secondary-rgb: 111,111,111;
+    --panel-on-primary-rgb: 255,255,255;
+    --panel-secondary-color: #343a40;
+    --panel-secondary-rgb: 52,58,64;
     --panel-on-secondary-color: #ffffff;
-    --panel-body-background: #212529;
-    --panel-body-color: #ffffff;
-    --panel-surface-color: #3B3B3B;
+    --panel-on-secondary-rgb: 255,255,255;
+    --panel-body-color: #212529;
+    --panel-body-rgb: 33,37,41;
+    --panel-on-body-color: #ffffff;
+    --panel-on-body-rgb: 255,255,255;
+    --panel-surface-color: #2b3035;
+    --panel-surface-rgb: 59,59,59;
     --panel-on-surface-color: #ffffff;
+    --panel-on-surface-rgb: 255,255,255;
 }

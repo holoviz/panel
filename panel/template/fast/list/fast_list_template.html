@@ -263,27 +263,33 @@
       </div>
       {% endif %}
 
-      <div class="main" id="main"
-      style="margin-left: {{ sidebar_width + 30 if nav or siderbar_footer else 0 }}px;"
-      >
+      <div class="main" id="main" style="margin-left: {{ sidebar_width + 30 if nav or siderbar_footer else 0 }}px;">
 	{% if main_max_width %}
 	<div style="margin-left: auto; margin-right: auto; max-width: {{ main_max_width }}">
 	{% endif %}
 	{% for doc in docs %}
 	{% for root in doc.roots %}
 	{% if "main" in root.tags %}
-          <div class="card-margin">
-	    {% if main_layout %}<fast-card class="pn-wrapper">{% else %}<div class="pn-wrapper">{% endif %}
-		<span class="fullscreen-button" onclick="toggleFullScreen(this)">
-		  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>
-		</span>
-		{{ embed(root) | indent(4) }}
-		{% if main_layout %}</fast-card>{% else %}</div>{% endif %}
+        <div class="card-margin">
+	  {% if main_layout %}
+	  <fast-card class="pn-wrapper">
+	  {% else %}
+	  <div class="pn-wrapper">
+	  {% endif %}
+	    <span class="fullscreen-button" onclick="toggleFullScreen(this)">
+	      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>
+	    </span>
+	    {{ embed(root) | indent(4) }}
+	  {% if main_layout %}
+	  </fast-card>
+	  {% else %}
 	  </div>
 	  {% endif %}
-	  {% endfor %}
-	  {% endfor %}
-	  {% if main_max_width %}
+	</div>
+	{% endif %}
+	{% endfor %}
+	{% endfor %}
+	{% if main_max_width %}
 	</div>
 	{% endif %}
 
@@ -304,11 +310,11 @@
   </div>
 </fast-design-system-provider>
 
-<script>
+<script type="text/javascript">
   {{ js }}
 </script>
 
-<script>
+<script type="text/javascript">
   function openNav() {
     document.getElementById("sidebar").style.left = 0;
     document.getElementById("main").style.marginLeft = "{{ sidebar_width + 30 }}px";

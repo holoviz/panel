@@ -1,7 +1,7 @@
 /* fast fast_template.css */
 :root {
     --neutral-fill-rest: var(--panel-surface-color);
-    --background-color: var(--panel-body-background);
+    --background-color: var(--panel-body-color);
 }
 
 html {
