@@ -4,6 +4,7 @@ documents.
 """
 from __future__ import annotations
 
+import functools
 import os
 import sys
 import uuid
@@ -17,6 +18,7 @@ from typing import (
 import param
 
 from bokeh.document.document import Document
+from bokeh.models import ImportedStyleSheet
 from bokeh.settings import settings as _settings
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
@@ -66,6 +68,12 @@ _server_info: str = (
 )
 
 FAVICON_URL: str = "/static/extensions/panel/images/favicon.ico"
+
+
+class Inherit:
+    """
+    Singleton object to declare stylesheet inheritance.
+    """
 
 
 class BaseTemplate(param.Parameterized, ServableMixin):
@@ -134,28 +142,81 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             self._apply_modifiers(o, ref)
 
     @classmethod
-    def _apply_modifiers(cls, viewable: Viewable, mref: str) -> None:
-        if mref not in viewable._models:
-            return
+    def _resolve_stylesheets(cls, value, defining_cls, inherited):
+        new_value = []
+        for v in value:
+            if v is Inherit:
+                new_value.extend(inherited)
+            elif isinstance(v, str) and v.endswith('.css'):
+                if v.startswith('http'):
+                    url = v
+                elif v.startswith('/'):
+                    url = v[1:]
+                else:
+                    url = os.path.join('bundled', defining_cls.__name__.lower(), v)
+                new_value.append(url)
+            else:
+                new_value.append(v)
+        return new_value
+
+    @classmethod
+    @functools.lru_cache(maxsize=None)
+    def _resolve_modifiers(cls, vtype, theme):
+        """
+        Iterate over the class hierarchy in reverse order and accumulate
+        all modifiers that apply to the objects class and its super classes.
+        """
+        modifiers, child_modifiers = {}, {}
+        for scls in vtype.__mro__[::-1]:
+            cls_modifiers = cls._modifiers.get(scls, {})
+            if cls_modifiers:
+                # Find the Template class the options were first defined on
+                def_cls = [
+                    super_cls for super_cls in cls.__mro__[::-1]
+                    if getattr(super_cls, '_modifiers', {}).get(scls) is cls_modifiers
+                ][0]
+
+                for prop, value in cls_modifiers.items():
+                    if prop == 'children':
+                        continue
+                    elif prop == 'stylesheets':
+                        modifiers[prop] = cls._resolve_stylesheets(value, def_cls, modifiers.get(prop, []))
+                    else:
+                        modifiers[prop] = value
+            if theme:
+                modifiers.update(theme._modifiers.get(scls, {}))
+            child_modifiers.update(cls_modifiers.get('children', {}))
+        return modifiers, child_modifiers
+
+    @classmethod
+    def _apply_params(cls, viewable, mref, modifiers):
         model, _ = viewable._models[mref]
-        modifiers = cls._modifiers.get(type(viewable), {})
-        child_modifiers = modifiers.get('children', {})
-        if child_modifiers:
-            for child in viewable:
-                child_params = {
-                    k: v for k, v in child_modifiers.items()
-                    if getattr(child, k) == child.param[k].default
-                }
-                child.param.set_param(**child_params)
-                child_props = child._process_param_change(child_params)
-                child._models[mref][0].update(**child_props)
         params = {
             k: v for k, v in modifiers.items() if k != 'children' and
             getattr(viewable, k) == viewable.param[k].default
         }
-        viewable.param.update(**params)
+        if 'stylesheets' in modifiers:
+            params['stylesheets'] = modifiers['stylesheets'] + viewable.stylesheets
         props = viewable._process_param_change(params)
         model.update(**props)
+
+    @classmethod
+    def _apply_modifiers(cls, viewable: Viewable, mref: str, theme: Theme | None = None) -> None:
+        if mref not in viewable._models:
+            return
+        model, _ = viewable._models[mref]
+        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme)
+        modifiers = dict(modifiers)
+        if 'stylesheets' in modifiers:
+            modifiers['stylesheets'] = [
+                ImportedStyleSheet(url=sts) if sts.endswith('.css') else sts
+                for sts in modifiers['stylesheets']
+            ]
+        if child_modifiers:
+            for child in viewable:
+                cls._apply_params(child, mref, child_modifiers)
+        if modifiers:
+            cls._apply_params(viewable, mref, modifiers)
 
     def _apply_root(self, name: str, model: Model, tags: List[str]) -> None:
         pass
@@ -581,12 +642,13 @@ class BasicTemplate(BaseTemplate):
                 document.theme = theme.bokeh_theme
         return document
 
-    def _apply_hooks(self, viewable: Viewable, root: Model):
-        super()._apply_hooks(viewable, root)
+    def _apply_hooks(self, viewable: Viewable, root: Model) -> None:
+        ref = root.ref['id']
         theme = self._get_theme()
+        for o in viewable.select():
+            self._apply_modifiers(o, ref, theme)
         if theme and theme.bokeh_theme and root.document:
             root.document.theme = theme.bokeh_theme
-        return
 
     def _get_theme(self) -> Theme | None:
         for cls in type(self).__mro__:
@@ -772,6 +834,7 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width
         self._render_variables['sidebar_width'] = self.sidebar_width
+        self._render_variables['theme'] = self._get_theme()
 
     def _update_busy(self) -> None:
         if self.busy_indicator:

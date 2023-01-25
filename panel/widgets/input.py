@@ -65,6 +65,8 @@ class TextInput(Widget):
     value_input = param.String(default='', allow_None=True, doc="""
         Initial or entered text value updated on every key press.""")
 
+    width = param.Integer(default=300)
+
     _widget_type: ClassVar[Type[Model]] = _BkTextInput
 
     @classmethod

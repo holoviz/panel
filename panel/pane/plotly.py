@@ -83,6 +83,8 @@ class Plotly(PaneBase):
 
     priority: ClassVar[float | bool | None] = 0.8
 
+    _stylesheets: ClassVar[List[str]] = ['css/plotly.css']
+
     _updates: ClassVar[bool] = True
 
     _rename: ClassVar[Mapping[str, str | None]] = {'link_figure': None}
@@ -263,7 +265,6 @@ class Plotly(PaneBase):
             json = self._plotly_json_wrapper(fig)
             sources = Plotly._get_sources(json)
 
-        params['css'] = ['css/plotly.css']
         params['_render_count'] = self._render_count
         params['config'] = self.config or {}
         params['data'] = json.get('data', [])
