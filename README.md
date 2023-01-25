@@ -196,6 +196,4 @@ The Panel project is also very grateful for the sponsorship by the organizations
 </table>
 ## Get started
 
-## Get started
-
 Develop applications in your favorite notebook or editor environment, including Jupyter(Lab) notebooks, VSCode, Google Colab and many more, [see our getting started guide](https://panel.holoviz.org/getting_started/installation.html#developing-in-different-editors) for more details.
