@@ -138,9 +138,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
     def _apply_hooks(self, viewable: Viewable, root: Model) -> None:
         ref = root.ref['id']
-        theme = self._get_theme()
         for o in viewable.select():
-            self._apply_modifiers(o, ref, theme)
+            self._apply_modifiers(o, ref)
 
     @classmethod
     def _resolve_stylesheets(cls, value, defining_cls, inherited):
@@ -184,7 +183,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
                         modifiers[prop] = cls._resolve_stylesheets(value, def_cls, modifiers.get(prop, []))
                     else:
                         modifiers[prop] = value
-            modifiers.update(theme._modifiers.get(scls, {}))
+            if theme:
+                modifiers.update(theme._modifiers.get(scls, {}))
             child_modifiers.update(cls_modifiers.get('children', {}))
         return modifiers, child_modifiers
 
@@ -201,7 +201,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         model.update(**props)
 
     @classmethod
-    def _apply_modifiers(cls, viewable: Viewable, mref: str, theme: Theme) -> None:
+    def _apply_modifiers(cls, viewable: Viewable, mref: str, theme: Theme | None = None) -> None:
         if mref not in viewable._models:
             return
         model, _ = viewable._models[mref]
@@ -642,12 +642,13 @@ class BasicTemplate(BaseTemplate):
                 document.theme = theme.bokeh_theme
         return document
 
-    def _apply_hooks(self, viewable: Viewable, root: Model):
-        super()._apply_hooks(viewable, root)
+    def _apply_hooks(self, viewable: Viewable, root: Model) -> None:
+        ref = root.ref['id']
         theme = self._get_theme()
+        for o in viewable.select():
+            self._apply_modifiers(o, ref, theme)
         if theme and theme.bokeh_theme and root.document:
             root.document.theme = theme.bokeh_theme
-        return
 
     def _get_theme(self) -> Theme | None:
         for cls in type(self).__mro__:
