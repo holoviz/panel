@@ -75,7 +75,7 @@ for theme in TABULATOR_THEMES:
         _theme_file = 'tabulator.min.css'
     else:
         theme = _TABULATOR_THEMES_MAPPING.get(theme, theme)
-        _theme_file += f'tabulator_{theme}.min.css'
+        _theme_file = f'tabulator_{theme}.min.css'
     CSS_URLS.append(f'{THEME_URL}{_theme_file}')
 
 
