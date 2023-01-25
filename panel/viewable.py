@@ -43,6 +43,7 @@ from .io.notebook import (
 from .io.save import save
 from .io.state import curdoc_locked, state
 from .util import escape, param_reprs
+from .util.warnings import deprecated
 
 if TYPE_CHECKING:
     from bokeh.model import Model
@@ -751,6 +752,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         port: int (optional, default=0)
           Allows specifying a specific port
         """
+        deprecated("1.0", "Viewable.app", "panel.io.notebook.show_server")
         return show_server(self, notebook_url, port)
 
     def embed(

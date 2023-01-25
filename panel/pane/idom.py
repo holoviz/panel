@@ -15,6 +15,7 @@ from ..io.notebook import push_on_root
 from ..io.resources import DIST_DIR, LOCAL_DIST
 from ..io.state import state
 from ..models import IDOM as _BkIDOM
+from ..util.warnings import deprecated
 from .base import PaneBase
 
 if TYPE_CHECKING:
@@ -73,6 +74,8 @@ class IDOM(PaneBase):
             raise RuntimeError(
                 f"Expected idom>={_IDOM_MIN_VER},<{_IDOM_MAX_VER}, but found {idom_version}"
             )
+        else:
+            deprecated('1.0', 'panel.pane.IDOM', extra='It may be reimplemented as a separate package in future.')
         super().__init__(object, **params)
         self._idom_loop = None
         self._idom_model = {}
