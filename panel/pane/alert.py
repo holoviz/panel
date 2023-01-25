@@ -9,7 +9,7 @@ from typing import Any, ClassVar, Mapping
 
 import param
 
-from panel.pane.markup import Markdown
+from .markup import Markdown
 
 ALERT_TYPES = ["primary", "secondary", "success", "danger", "warning", "info", "light", "dark"]
 
@@ -32,6 +32,8 @@ class Alert(Markdown):
 
     _rename: ClassVar[Mapping[str, str | None]] = dict(Markdown._rename, alert_type=None)
 
+    _stylesheets = ['css/alerts.css', 'css/variables.css']
+
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         priority = Markdown.applies(obj)
@@ -43,11 +45,6 @@ class Alert(Markdown):
         if "sizing_mode" not in params:
             params["sizing_mode"] = "stretch_width"
         super().__init__(object, **params)
-
-    def _get_properties(self):
-        props = super()._get_properties()
-        props['css'] = props.get('css', []) + ['css/alerts.css', 'css/variables.css']
-        return props
 
     @param.depends("alert_type", watch=True, on_init=True)
     def _set_css_classes(self):

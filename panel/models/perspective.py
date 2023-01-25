@@ -9,8 +9,6 @@ from .layout import HTMLBox
 
 class Perspective(HTMLBox):
 
-    css = List(String)
-
     aggregates = Either(Dict(String, Any), Null())
 
     split_by = Either(List(String), Null())

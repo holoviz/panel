@@ -20,7 +20,7 @@ from bokeh.embed.bundle import (
     CSS_RESOURCES as BkCSS_RESOURCES, Bundle as BkBundle, _bundle_extensions,
     _use_mathjax, bundle_models, extension_dirs,
 )
-from bokeh.model import Model
+from bokeh.models import ImportedStyleSheet
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
 from jinja2.environment import Environment
@@ -81,6 +81,12 @@ RESOURCE_URLS = {
         'exclude': [],
         'dest': ''
     },
+    'bootstrap5': {
+        'tar': 'https://registry.npmjs.org/bootstrap/-/bootstrap-5.3.0-alpha1.tgz',
+        'src': 'package/dist',
+        'exclude': [],
+        'dest': ''
+    },
     'jQuery': {
         'tar': 'https://registry.npmjs.org/jquery/-/jquery-3.5.1.tgz',
         'src': 'package/dist',
@@ -91,12 +97,14 @@ RESOURCE_URLS = {
 
 CSS_URLS = {
     'font-awesome': f'{CDN_DIST}bundled/font-awesome/css/all.min.css',
-    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/css/bootstrap.min.css'
+    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/css/bootstrap.min.css',
+    'bootstrap5': f'{CDN_DIST}bundled/bootstrap5/css/bootstrap.min.css'
 }
 
 JS_URLS = {
     'jQuery': f'{CDN_DIST}bundled/jquery/jquery.slim.min.js',
-    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/js/bootstrap.bundle.min.js'
+    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/js/bootstrap.bundle.min.js',
+    'bootstrap5': f'{CDN_DIST}bundled/bootstrap5/js/bootstrap.bundle.min.js'
 }
 
 extension_dirs['panel'] = str(DIST_DIR)
@@ -183,10 +191,11 @@ def patch_model_css(root, dist_url):
     ALERT: Should find better solution before official Bokeh 3.x compatible release
     """
     # Patch model CSS properties
-    for model in root.select({'type': Model}):
-        if hasattr(model, 'css'):
+    for stylesheet in root.select({'type': ImportedStyleSheet}):
+        url = stylesheet.url
+        if not url.startswith('http') and not url.startswith(dist_url):
             try:
-                model.css = [css if css.startswith('http') else f'{dist_url}{css}' for css in model.css]
+                stylesheet.url = f'{dist_url}{stylesheet.url}'
             except Exception:
                 pass
 

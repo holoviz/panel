@@ -28,6 +28,8 @@ class Theme(param.Parameterized):
 
     bokeh_theme = param.ClassSelector(class_=(_BkTheme, str))
 
+    _modifiers = {}
+
     _template = None
 
     __abstract = True
