@@ -161,7 +161,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         return new_value
 
     @classmethod
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def _resolve_modifiers(cls, vtype, theme):
         """
         Iterate over the class hierarchy in reverse order and accumulate
