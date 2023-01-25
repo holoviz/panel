@@ -146,7 +146,7 @@ _tests = [
     'markdown-it-py',
     'ipyvuetify',
     'reacton',
-    # Added lxml temporarily as installing pyechars or idom on Python 3.11
+    # Added lxml temporarily as installing pyecharts or idom on Python 3.11
     # via pip tries to build it and fails. To be removed.
     'lxml',
     'numpy <1.24', # Avoid VTK test fail
