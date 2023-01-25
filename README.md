@@ -156,6 +156,10 @@ panel serve name_of_notebook.ipynb --show
 
 [![Awesome Panel Gallery](https://assets.holoviz.org/panel/readme/awesome_panel.jpg)](https://www.awesome-panel.org/gallery?theme=default)
 
+## Get started
+
+Develop applications in your favorite notebook or editor environment, including Jupyter(Lab) notebooks, VSCode, Google Colab and many more, [see our getting started guide](https://panel.holoviz.org/getting_started/installation.html#developing-in-different-editors) for more details.
+
 ## Support & Feedback
 
 - Usage questions and showcases -> [HoloViz Community](https://holoviz.org/community.html)
@@ -198,6 +202,3 @@ The Panel project is also very grateful for the sponsorship by the organizations
   </td>
 </tr>
 </table>
-## Get started
-
-Develop applications in your favorite notebook or editor environment, including Jupyter(Lab) notebooks, VSCode, Google Colab and many more, [see our getting started guide](https://panel.holoviz.org/getting_started/installation.html#developing-in-different-editors) for more details.
