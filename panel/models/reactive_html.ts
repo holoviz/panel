@@ -234,7 +234,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     this.empty()
     this._apply_stylesheets(this.styles())
     this._apply_stylesheets(this.stylesheets)
-    this._apply_stylesheets(this.model.stylesheets)
+    this._apply_stylesheets(this.computed_stylesheets)
     this._apply_styles()
     this._apply_classes(this.classes)
     this._apply_classes(this.model.classes)

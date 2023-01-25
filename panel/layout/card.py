@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Type,
+    TYPE_CHECKING, Callable, ClassVar, List, Mapping, Type,
 )
 
 import param
@@ -11,6 +11,8 @@ from .base import Column, ListPanel, Row
 
 if TYPE_CHECKING:
     from bokeh.model import Model
+
+    from ..viewable import Viewable
 
 
 class Card(Column):
@@ -76,6 +78,8 @@ class Card(Column):
         Column._rename, title=None, header=None, title_css_classes=None
     )
 
+    _stylesheets: ClassVar[List[str]] = ['css/card.css']
+
     def __init__(self, *objects, **params):
         self._header_layout = Row(css_classes=['card-header-row'],
                                   sizing_mode='stretch_width')
@@ -83,6 +87,11 @@ class Card(Column):
         self._header = None
         self.param.watch(self._update_header, ['title', 'header', 'title_css_classes'])
         self._update_header()
+
+    def select(
+        self, selector: type | Callable[[Viewable], bool] | None = None
+    ) -> List[Viewable]:
+        return self._header_layout.select(selector) + super().select(selector)
 
     def _cleanup(self, root: Model | None = None) -> None:
         super()._cleanup(root)

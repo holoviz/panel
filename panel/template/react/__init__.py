@@ -9,7 +9,8 @@ from ...config import config
 from ...depends import depends
 from ...io.resources import CSS_URLS
 from ...layout import Card, GridSpec
-from ..base import BasicTemplate
+from ...viewable import Viewable
+from ..base import BasicTemplate, Inherit
 from ..theme import DarkTheme, DefaultTheme
 
 
@@ -47,6 +48,9 @@ class ReactTemplate(BasicTemplate):
         Card: {
             'children': {'margin': (20, 20)},
             'margin': (10, 5)
+        },
+        Viewable: {
+            'stylesheets': [Inherit, './components.css']
         }
     }
 
