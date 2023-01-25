@@ -66,7 +66,6 @@ class ReactTemplate(BasicTemplate):
 
     def __init__(self, **params):
         deprecated('1.0', 'panel.template.ReactTemplate', 'panel.template.FastGridTemplate')
-        super().__init__(**params)
         if 'main' not in params:
             params['main'] = GridSpec(ncols=12, mode='override')
         super().__init__(**params)
