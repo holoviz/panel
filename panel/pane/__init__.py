@@ -37,7 +37,6 @@ from .deckgl import DeckGL  # noqa
 from .echarts import ECharts  # noqa
 from .equation import LaTeX  # noqa
 from .holoviews import HoloViews, Interactive  # noqa
-from .idom import IDOM  # noqa
 from .image import (  # noqa
     GIF, ICO, JPG, PDF, PNG, SVG,
 )
@@ -66,7 +65,6 @@ __all__ = (
     "HoloViews",
     "HTML",
     "ICO",
-    "IDOM",
     "Interactive",
     "IPyWidget",
     "IPyLeaflet",
