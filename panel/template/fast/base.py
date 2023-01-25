@@ -4,7 +4,9 @@ import param
 
 from ...config import config
 from ...io.state import state
-from ..base import BasicTemplate
+from ...viewable import Viewable
+from ...widgets import Tabulator
+from ..base import BasicTemplate, Inherit
 from ..react import ReactTemplate
 from ..theme import THEMES, DefaultTheme
 
@@ -51,16 +53,16 @@ class FastBaseTemplate(BasicTemplate):
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
         Could be extended to Accordion, Tab etc. in the future.""")
 
-    _css = [
-        _ROOT / "css/fast_root.css",
-        _ROOT / "css/fast_bokeh.css",
-        _ROOT / "css/fast_bokeh_slickgrid.css",
-        _ROOT / "css/fast_panel.css",
-        _ROOT / "css/fast_panel_dataframe.css",
-        _ROOT / "css/fast_panel_widgets.css",
-        _ROOT / "css/fast_panel_markdown.css",
-        _ROOT / "css/fast_awesome.css"
-    ]
+    _css = [_ROOT / "fast.css"]
+
+    _modifiers = {
+        Tabulator: {
+            'theme': 'fast'
+        },
+        Viewable: {
+            'stylesheets': [Inherit, 'components.css']
+        }
+    }
 
     _js = _ROOT / "js/fast_template.js"
 
@@ -105,28 +107,10 @@ class FastBaseTemplate(BasicTemplate):
 
         super().__init__(**params)
         theme = self._get_theme()
-        if "background_color" not in params:
-            self.background_color = theme.style.background_color
-        if "accent_base_color" not in params:
-            self.accent_base_color = theme.style.accent_base_color
-        if "header_color" not in params:
-            self.header_color = theme.style.header_color
-        if "header_accent_base_color" not in params:
-            self.header_accent_base_color = theme.style.header_accent_base_color
-        if "header_background" not in params:
-            self.header_background = theme.style.header_background
-        if "neutral_color" not in params:
-            self.neutral_color = theme.style.neutral_color
-        if "header_neutral_color" not in params:
-            self.header_neutral_color = theme.style.header_neutral_color
-        if "corner_radius" not in params:
-            self.corner_radius = theme.style.corner_radius
-        if "font" not in params:
-            self.font = theme.style.font
-        if "font_url" not in params:
-            self.font_url = theme.style.font_url
-        if "shadow" not in params:
-            self.shadow = theme.style.shadow
+        self.param.update({
+            p: v for p, v in theme.style.param.values().items()
+            if p != 'name' and p in self.param and p not in params
+        })
 
     @staticmethod
     def _get_theme_from_query_args():
@@ -139,17 +123,10 @@ class FastBaseTemplate(BasicTemplate):
     def _update_vars(self):
         super()._update_vars()
         style = self._get_theme().style
-        style.background_color = self.background_color
-        style.accent_base_color = self.accent_base_color
-        style.header_color = self.header_color
-        style.header_background = self.header_background
-        style.header_accent_base_color = self.header_accent_base_color
-        style.neutral_color = self.neutral_color
-        style.header_neutral_color = self.header_neutral_color
-        style.corner_radius = self.corner_radius
-        style.font = self.font
-        style.font_url = self.font_url
-        style.shadow = self.shadow
+        style.param.update({
+            p: getattr(self, p) for p in style.param
+            if p != 'name' and p in self.param
+        })
         self._render_variables["style"] = style
         self._render_variables["theme_toggle"] = self.theme_toggle
         self._render_variables["theme"] = self.theme.__name__[:-5].lower()

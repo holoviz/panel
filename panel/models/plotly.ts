@@ -1,4 +1,3 @@
-import {StyleSheetLike, ImportedStyleSheet} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {clone} from "@bokehjs/core/util/object"
@@ -165,13 +164,6 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.connect(this.model.properties.visibility.change, () => {
       this.el.style.visibility = this.model.visibility ? 'visible' : 'hidden'
     })
-  }
-
-  override styles(): StyleSheetLike[] {
-    const styles = super.styles()
-    for (const css of this.model.css)
-      styles.push(new ImportedStyleSheet(css))
-    return styles
   }
 
   async render(): Promise<void> {
@@ -394,7 +386,6 @@ export class PlotlyPlotView extends HTMLBoxView {
 export namespace PlotlyPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    css: p.Property<string[]>
     data: p.Property<any[]>
     frames: p.Property<any[] | null>
     layout: p.Property<any>
@@ -431,7 +422,6 @@ export class PlotlyPlot extends HTMLBox {
     this.prototype.default_view = PlotlyPlotView
 
     this.define<PlotlyPlot.Props>(({Array, Any, Boolean, Nullable, Number, Ref, String}) => ({
-      css: [ Array(String), [] ],
       data: [ Array(Any), [] ],
       layout: [ Any, {} ],
       config: [ Any, {} ],
