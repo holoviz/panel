@@ -10,6 +10,7 @@ from bokeh.command.util import die
 from bokeh.util.strings import nice_join
 
 from .. import __version__
+from .bundle import Bundle
 from .convert import Convert
 from .oauth_secret import OAuthSecret
 from .serve import Serve
@@ -46,7 +47,7 @@ def transform_cmds(argv):
 def main(args=None):
     """Merges commands offered by pyct and bokeh and provides help for both"""
     from bokeh.command.subcommands import all as bokeh_commands
-    bokeh_commands = bokeh_commands + [OAuthSecret, Convert]
+    bokeh_commands = bokeh_commands + [OAuthSecret, Convert, Bundle]
 
     try:
         import pyct.cmd
@@ -76,6 +77,10 @@ def main(args=None):
             subparser = subs.add_parser(Convert.name, help=Convert.help)
             subcommand = Convert(parser=subparser)
             subparser.set_defaults(invoke=subcommand.invoke)
+        elif cls is Bundle:
+            subparser = subs.add_parser(Bundle.name, help=Bundle.help)
+            subcommand = Bundle(parser=subparser)
+            subparser.set_defaults(invoke=subcommand.invoke)
         else:
             subs.add_parser(cls.name, help=cls.help)
 
@@ -101,6 +106,9 @@ def main(args=None):
         elif sys.argv[1] == 'convert':
             args = parser.parse_args(sys.argv[1:])
             ret = Convert(parser).invoke(args)
+        elif sys.argv[1] == 'bundle':
+            args = parser.parse_args(sys.argv[1:])
+            ret = Bundle(parser).invoke(args)
         else:
             ret = bokeh_entry_point()
     elif sys.argv[1] in pyct_commands:

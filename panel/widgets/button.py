@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from ..links import JSLinkTarget, Link
 
 
-BUTTON_TYPES: List[str] = ['default', 'primary', 'success', 'warning', 'danger','light']
+BUTTON_TYPES: List[str] = ['default', 'primary', 'success', 'warning', 'danger', 'light']
 
 
 class _ButtonBase(Widget):
