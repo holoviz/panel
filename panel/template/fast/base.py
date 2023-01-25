@@ -109,7 +109,7 @@ class FastBaseTemplate(BasicTemplate):
         theme = self._get_theme()
         self.param.update({
             p: v for p, v in theme.style.param.values().items()
-            if p != 'name' and p in self.param
+            if p != 'name' and p in self.param and p not in params
         })
 
     @staticmethod

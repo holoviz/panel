@@ -166,7 +166,7 @@ class Syncable(Renderable):
         transforms.
         """
         return [p for p in self._synced_params if self._rename.get(p, False) is not None
-                and self._source_transforms.get(p, False) is not None] + ['loading']
+                and self._source_transforms.get(p, False) is not None and p != 'stylesheets'] + ['loading']
 
     @property
     def _synced_params(self) -> List[str]:
