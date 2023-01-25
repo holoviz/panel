@@ -41,7 +41,8 @@
 
 <style>
   :root {
-    --body-font: {{ style.font }};
+      --body-font: {{ style.font }};
+      --corner-radius: {{ style.corner_radius }};
   }
   body {
     color: {{ style.color }};
@@ -133,8 +134,6 @@
   }
   setBackgroundColor("{{ style.header_background }}", "#header-design-provider");
   setBackgroundColor("{{ style.background_color }}", "#body-design-provider");
-
-  document.querySelector("#body-design-provider").cornerRadius={{ style.corner_radius }};
 
   function registerCSSCustomProperties(selector)  {
     const provider = document.querySelector(selector);

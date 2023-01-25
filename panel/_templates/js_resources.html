@@ -15,16 +15,16 @@ configuration in a Resources object.
 :type js_raw: list[str]
 
 #}
-{%- for file in js_files %}
+{% for file in js_files %}
 <script type="text/javascript" src="{{ file }}"></script>
-{%- endfor %}
+{% endfor %}
 
-{%- for file in js_modules %}
+{% for file in js_modules %}
 <script type="module" src="{{ file }}"></script>
-{%- endfor %}
+{% endfor %}
 
 {%- for js in js_raw %}
 <script type="text/javascript">
-    {{ js|indent(8) }}
+  {{ js }}
 </script>
 {%- endfor %}

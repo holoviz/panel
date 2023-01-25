@@ -5,19 +5,35 @@ import * as p from "@bokehjs/core/properties"
 export class CardView extends ColumnView {
   model: Card
   button_el: HTMLButtonElement
+  header_el: HTMLElement
 
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.collapsed.change, () => this._collapse())
     const {active_header_background, header_background, header_color, hide_header} = this.model.properties
-    this.on_change([active_header_background, header_background, header_color, hide_header], () => this.render())
+    this.on_change([header_color, hide_header], () => this.render())
+
+    this.on_change([active_header_background, header_background], () => {
+      const header_background = this.header_background
+      if (header_background == null)
+	return
+      this.child_views[0].el.style.backgroundColor = header_background
+      this.header_el.style.backgroundColor = header_background
+    })
+  }
+
+  get header_background(): string | null {
+    let header_background = this.model.header_background
+    if (!this.model.collapsed && this.model.active_header_background)
+      header_background = this.model.active_header_background
+    return header_background
   }
 
   render(): void {
     this.empty()
     this._apply_stylesheets(this.styles())
     this._apply_stylesheets(this.stylesheets)
-    this._apply_stylesheets(this.model.stylesheets)
+    this._apply_stylesheets(this.computed_stylesheets)
     this._apply_styles()
     this._apply_classes(this.classes)
     this._apply_classes(this.model.classes)
@@ -25,9 +41,7 @@ export class CardView extends ColumnView {
 
     const {button_css_classes, header_color, header_tag, header_css_classes} = this.model
 
-    let header_background = this.model.header_background
-    if (!this.model.collapsed && this.model.active_header_background)
-      header_background = this.model.active_header_background
+    const header_background = this.header_background
     const header = this.child_views[0]
 
     let header_el
@@ -47,6 +61,7 @@ export class CardView extends ColumnView {
       header_el.style.backgroundColor = header_background != null ? header_background : ""
       header_el.appendChild(header.el)
     }
+    this.header_el = header_el
 
     if (!this.model.hide_header) {
       header_el.style.color = header_color != null ? header_color : ""
@@ -65,7 +80,14 @@ export class CardView extends ColumnView {
   }
 
   _collapse(): void {
-    this.invalidate_render()
+    for (const child_view of this.child_views.slice(1)) {
+      if (this.model.collapsed)
+        this.shadow_el.removeChild(child_view.el)
+      else
+        this.shadow_el.appendChild(child_view.el)
+    }
+    this.button_el.children[0].innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
+
   }
 
   protected _createElement(): HTMLElement {

@@ -12,8 +12,6 @@ class HTML(Div):
     A bokeh model to render HTML markup including embedded script tags.
     """
 
-    css = List(String)
-
     events = Dict(String, List(String))
 
 
@@ -21,8 +19,6 @@ class JSON(Markup):
     """
     A bokeh model that renders JSON as tree.
     """
-
-    css = List(String)
 
     depth = Either(Int, Float, Null, default=1, help="Depth to which the JSON tree is expanded.")
 
