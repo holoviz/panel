@@ -52,6 +52,10 @@ class Plotly(PaneBase):
 
     hover_data = param.Dict(doc="Hover callback data")
 
+    link_figure = param.Boolean(default=True, doc="""
+       Attach callbacks to the Plotly figure to update output when it
+       is modified in place.""")
+
     relayout_data = param.Dict(doc="Relayout callback data")
 
     restyle_data = param.List(doc="Restyle callback data")
@@ -134,12 +138,12 @@ class Plotly(PaneBase):
                         element, data=data, parent_path=element_path
                     )
 
-    @param.depends('object', watch=True)
+    @param.depends('object', 'link_figure', watch=True)
     def _update_figure(self):
         import plotly.graph_objs as go
 
         if (self.object is None or type(self.object) is not go.Figure or
-            self.object is self._figure):
+            self.object is self._figure or not self._link_figure):
             return
 
         # Monkey patch the message stubs used by FigureWidget.
