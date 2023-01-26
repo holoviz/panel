@@ -32,7 +32,7 @@ For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
 from .alert import Alert  # noqa
-from .base import Pane, panel  # noqa
+from .base import PaneBase, panel  # noqa
 from .deckgl import DeckGL  # noqa
 from .echarts import ECharts  # noqa
 from .equation import LaTeX  # noqa
