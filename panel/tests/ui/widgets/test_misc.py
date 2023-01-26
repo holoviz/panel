@@ -1,4 +1,5 @@
 import io
+import sys
 import tempfile
 import time
 
@@ -10,8 +11,10 @@ from panel.layout import Column, Tabs
 from panel.widgets import FileDownload, TextInput
 
 pytestmark = pytest.mark.ui
+not_windows = pytest.mark.skipif(sys.platform=='win32', reason="Does not work on Windows")
 
 
+@not_windows
 def test_file_download_updates_when_navigating_between_dynamic_tabs(page, port):
     text_input = TextInput(value='abc')
 
@@ -39,7 +42,7 @@ def test_file_download_updates_when_navigating_between_dynamic_tabs(page, port):
         page.click('a.bk-btn')
 
     download = download_info.value
-    tmp = tempfile.NamedTemporaryFile(suffix='txt')
+    tmp = tempfile.NamedTemporaryFile(suffix='.txt')
     download.save_as(tmp.name)
     assert tmp.file.read().decode('utf-8') == 'abc'
 
@@ -55,6 +58,6 @@ def test_file_download_updates_when_navigating_between_dynamic_tabs(page, port):
         page.click('a.bk-btn')
 
     download = download_info.value
-    tmp = tempfile.NamedTemporaryFile(suffix='txt')
+    tmp = tempfile.NamedTemporaryFile(suffix='.txt')
     download.save_as(tmp.name)
     assert tmp.file.read().decode('utf-8') == 'abcdef'
