@@ -145,7 +145,7 @@ class Plotly(PaneBase):
         import plotly.graph_objs as go
 
         if (self.object is None or type(self.object) is not go.Figure or
-            self.object is self._figure or not self._link_figure):
+            self.object is self._figure or not self.link_figure):
             return
 
         # Monkey patch the message stubs used by FigureWidget.
