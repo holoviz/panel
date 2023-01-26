@@ -623,14 +623,28 @@ class panel_extension(_pyviz_extension):
         self._detect_comms(params)
 
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
+        custom_resources = [
+            resource for resource in ('css_files', 'js_files', 'js_modules', 'raw_css')
+            if getattr(config, resource)
+        ]
         if loaded and newly_loaded:
             self.param.warning(
                 "A HoloViz extension was loaded previously. This means "
                 "the extension is already initialized and the following "
-                "Panel extensions could not be properly loaded: %s. "
+                f"Panel extensions could not be properly loaded: {newly_loaded}."
                 "If you are loading custom extensions with pn.extension(...) "
                 "ensure that this is called before any other HoloViz "
-                "extension such as hvPlot or HoloViews." % newly_loaded)
+                "extension such as hvPlot or HoloViews."
+            )
+        elif loaded and custom_resources:
+            resources_string = ', '.join(custom_resources)
+            self.param.warning(
+                "A HoloViz extension was loaded previously. This means the "
+                f"extension is already initialized and custom {resources_string} "
+                "resources could not be loaded. If you are loading custom "
+                "extensions with pn.extension(...) ensure that this is called"
+                "before any other HoloViz extension such as hvPlot or HoloViews."
+            )
         else:
             panel_extension._loaded_extensions += newly_loaded
 
