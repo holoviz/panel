@@ -662,11 +662,12 @@ class panel_extension(_pyviz_extension):
         nb_loaded = getattr(self, '_repeat_execution_in_cell', False)
         if 'holoviews' in sys.modules:
             if getattr(hv.extension, '_loaded', False):
-                return
-            with param.logging_level('ERROR'):
-                hv.plotting.Renderer.load_nb(config.inline)
-                if hasattr(hv.plotting.Renderer, '_render_with_panel'):
-                    nb_loaded = True
+                nb_loaded = True
+            else:
+                with param.logging_level('ERROR'):
+                    hv.plotting.Renderer.load_nb(config.inline)
+                    if hasattr(hv.plotting.Renderer, '_render_with_panel'):
+                        nb_loaded = True
 
         if not nb_loaded and hasattr(ip, 'kernel'):
             load_notebook(config.inline)
