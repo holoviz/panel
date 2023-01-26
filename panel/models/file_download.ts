@@ -31,18 +31,10 @@ export class FileDownloadView extends InputWidgetView {
   anchor_el: HTMLAnchorElement
   _downloadable: boolean = false
   _click_listener: any
-  _embed: boolean = false
   _prev_href: string | null = ""
   _prev_download: string | null = ""
 
   protected input_el: HTMLInputElement
-
-  initialize(): void {
-    super.initialize()
-    if ( this.model.data && this.model.filename ) {
-      this._embed = true
-    }
-  }
 
   connect_signals(): void {
     super.connect_signals()
@@ -72,28 +64,25 @@ export class FileDownloadView extends InputWidgetView {
 
     // Changing the disabled property calls render() so it needs to be handled here.
     // This callback is inherited from ControlView in bokehjs.
-    if ( this.model.disabled ) {
+    if (this.model.disabled) {
       this.anchor_el.setAttribute("disabled", "")
       this._downloadable = false
     } else {
       this.anchor_el.removeAttribute("disabled")
       // auto=False + toggle Disabled ==> Needs to reset the link as it was.
-      if ( this._prev_download ) {
+      if (this._prev_download)
         this.anchor_el.download = this._prev_download
-      }
-      if ( this._prev_href ) {
+      if (this._prev_href)
         this.anchor_el.href = this._prev_href
-      }
-      if ( this.anchor_el.download && this.anchor_el.download ) {
+      if (this.anchor_el.download && this.anchor_el.download)
         this._downloadable = true
-      }
     }
 
     // If embedded the button is just a download link.
     // Otherwise clicks will be handled by the code itself, allowing for more interactivity.
-    if ( this._embed ) {
+    if (this.model.embed)
       this._make_link_downloadable()
-    } else {
+    else {
       // Add a "click" listener, note that it's not going to
       // handle right clicks (they won't increment 'clicks')
       this._click_listener = this._increment_clicks.bind(this)
@@ -120,16 +109,14 @@ export class FileDownloadView extends InputWidgetView {
   }
 
   _handle_click() : void {
-
     // When auto=False the button becomes a link which no longer
     // requires being updated.
-    if ( !this.model.auto && this._downloadable) {
+    if ( !this.model.auto && this._downloadable)
       return
-    }
 
     this._make_link_downloadable()
 
-    if ( !this._embed && this.model.auto ) {
+    if ( !this.model.embed && this.model.auto ) {
       // Temporarily removing the event listener to emulate a click
       // event on the anchor link which will trigger a download.
       this.anchor_el.removeEventListener("click", this._click_listener)
@@ -201,6 +188,7 @@ export namespace FileDownload {
     button_type: p.Property<ButtonType>
     clicks: p.Property<number>
     data: p.Property<string | null>
+    embed: p.Property<boolean>
     label: p.Property<string>
     filename: p.Property<string | null>
     _transfers: p.Property<number>
@@ -225,6 +213,7 @@ export class FileDownload extends InputWidget {
       auto:         [ Boolean,          false ],
       clicks:       [ Int,                  0 ],
       data:         [ Nullable(String),  null ],
+      embed:        [ Boolean,          false ],
       label:        [ String,      "Download" ],
       filename:     [ Nullable(String),  null ],
       button_type:  [ ButtonType,   "default" ], // TODO (bev)
