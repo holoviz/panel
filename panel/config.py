@@ -379,6 +379,7 @@ class _config(_base_config):
     def _doc_build(self):
         return os.environ.get('PANEL_DOC_BUILD')
 
+    @property
     def admin_log_level(self):
         admin_log_level = os.environ.get('PANEL_ADMIN_LOG_LEVEL', self._admin_log_level)
         return admin_log_level.upper() if admin_log_level else None
