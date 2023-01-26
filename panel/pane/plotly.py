@@ -5,7 +5,7 @@ bokeh model.
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Optional,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
 )
 
 import numpy as np
@@ -84,6 +84,8 @@ class Plotly(PaneBase):
     priority: ClassVar[float | bool | None] = 0.8
 
     _updates: ClassVar[bool] = True
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'link_figure': None}
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
