@@ -333,9 +333,9 @@ def cache(
         )
         hash_args, hash_kwargs = args, kwargs
         if (is_method and isinstance(args[0], param.Parameterized)):
-            dinfo = getattr(wrapped_func, '_dinfo')
-            hash_args = tuple(getattr(args[0], d) for d in dinfo['dependencies']) + args[1:]
-            hash_kwargs = dict(dinfo['kw'], **kwargs)
+            dinfo = getattr(wrapped_func, '_dinfo', {})
+            hash_args = tuple(getattr(args[0], d) for d in dinfo.get('dependencies', ())) + args[1:]
+            hash_kwargs = dict(dinfo.get('kw', {}), **kwargs)
         hash_value = compute_hash(func, hash_funcs, hash_args, hash_kwargs)
 
         time = _TIME_FN()

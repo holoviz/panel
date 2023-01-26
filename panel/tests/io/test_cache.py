@@ -4,6 +4,7 @@ import pathlib
 import time
 
 import numpy as np
+import param
 import pytest
 
 try:
@@ -257,3 +258,24 @@ def test_cache_ttl(to_disk):
     assert fn(0, 0) == 0
     time.sleep(0.2)
     assert fn(0, 0) == 1
+
+@pytest.mark.xdist_group("cache")
+def test_cache_on_undecorated_parameterized_method():
+    class Model(param.Parameterized):
+        data = param.Parameter(default=1)
+        executions = param.Integer(default=0)
+
+        @cache
+        def expensive_calculation(self, value):
+            self.executions += 1
+            return 2*value
+
+    model = Model()
+    assert model.expensive_calculation(1) == 2
+    assert model.expensive_calculation(1) == 2
+
+    assert model.executions == 1
+
+    assert model.expensive_calculation(2) == 4
+
+    assert model.executions == 2
