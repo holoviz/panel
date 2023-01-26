@@ -136,8 +136,7 @@ class FileDownload(Widget):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'callback': None, 'embed': None, 'file': None,
-        '_clicks': 'clicks', 'name': 'title'
+        'callback': None, 'file': None, '_clicks': 'clicks', 'name': 'title'
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkFileDownload
