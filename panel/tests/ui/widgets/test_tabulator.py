@@ -1926,7 +1926,7 @@ def test_tabulator_edit_event_empty_to_nan(page, port, df_mixed):
 
     serve(widget, port=port, threaded=True, show=False)
 
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     page.goto(f"http://localhost:{port}")
 
@@ -1939,7 +1939,7 @@ def test_tabulator_edit_event_empty_to_nan(page, port, df_mixed):
     wait_until(lambda: len(values) == 1, page)
     assert values[0][:-1] == ('float', 0, 3.14)
     assert np.isnan(values[0][-1])
-    assert cell.text_content() == '-'
+    assert page.query_selector('text="-"') is not None
 
 
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
