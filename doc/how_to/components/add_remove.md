@@ -39,9 +39,10 @@ column[4] = pn.widgets.Button(name='Click here')
 column
 ```
 
-Finally, we decide to remove the FloatSlider widget, but we forget its index. We can use `.pprint` to see the index of the components:
+Finally, we decide to remove the FloatSlider widget, but we forget its index. We can use `print` to see the index of the components:
+
 ```{pyodide}
-column.pprint()
+print(column)
 ```
 
 and then `.pop` to remove the FloatSlider:
