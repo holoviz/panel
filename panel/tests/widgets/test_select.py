@@ -460,7 +460,7 @@ def test_cross_select_constructor():
     assert cross_select._lists[False].size == 5
 
     # Query unselected item
-    cross_select._search[False].value = 'D'
+    cross_select._search[False].value_input = 'D'
     assert cross_select._lists[False].value == ['D']
 
     # Move queried item
@@ -471,14 +471,14 @@ def test_cross_select_constructor():
     assert cross_select._lists[False].value == []
 
     # Query selected item
-    cross_select._search[True].value = 'D'
+    cross_select._search[True].value_input = 'D'
     cross_select._buttons[False].param.trigger('clicks')
     assert cross_select._lists[False].options == ['D', '4']
     assert cross_select._lists[False].value == ['D']
     assert cross_select._lists[True].options == []
 
     # Clear query
-    cross_select._search[False].value = ''
+    cross_select._search[False].value_input = ''
     assert cross_select._lists[False].value == []
 
 
