@@ -341,8 +341,8 @@ def script_to_html(
 
 
 def convert_app(
-    app: str,
-    dest_path: str,
+    app: str | os.PathLike,
+    dest_path: str | os.PathLike | None = None,
     requirements: List[str] | Literal['auto'] | os.PathLike = 'auto',
     runtime: Runtimes = 'pyodide-worker',
     prerender: bool = True,
@@ -351,6 +351,11 @@ def convert_app(
     http_patch: bool = True,
     verbose: bool = True,
 ):
+    if dest_path is None:
+        dest_path = pathlib.Path('./')
+    elif not isinstance(dest_path, pathlib.PurePath):
+        dest_path = pathlib.Path(dest_path)
+
     try:
         with set_resource_mode('cdn'):
             html, js_worker = script_to_html(
@@ -365,6 +370,7 @@ def convert_app(
         return
     name = '.'.join(os.path.basename(app).split('.')[:-1])
     filename = f'{name}.html'
+
     with open(dest_path / filename, 'w', encoding="utf-8") as out:
         out.write(html)
     if runtime == 'pyodide-worker':
@@ -403,8 +409,8 @@ def _convert_process_pool(
     return files
 
 def convert_apps(
-    apps: List[str],
-    dest_path: str | None = None,
+    apps: str | os.PathLike | List[str | os.PathLike],
+    dest_path: str | os.PathLike | None = None,
     title: str | None = None,
     runtime: Runtimes = 'pyodide-worker',
     requirements: List[str] | Literal['auto'] | os.PathLike = 'auto',
