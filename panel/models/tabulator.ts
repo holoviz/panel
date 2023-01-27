@@ -849,7 +849,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       const value = view.serializeValue()
       const old_value = cell.getValue()
       const validation = view.validate()
-      console.log(validation, view.serializeValue())
       if (!validation.valid)
         cancel(validation.msg)
       if (old_value != null && typeof value != typeof old_value)
