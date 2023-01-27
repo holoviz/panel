@@ -2,6 +2,73 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual summary of the major features added in each release.
 
+## Version 0.14.3
+
+Date: 2023-01-27
+
+This release introduces a large number of bug fixes and minor enhancements. Due to the upcoming release of Panel 1.0 we have also made the unconventional decision to issue new deprecation in a micro release. Specifically the `IDOM` pane and `Viewable.app` and `Viewable.pprint` methods have been scheduled for deprecation. Many thanks to the contributors to this release which include @droumis and the core team @MarcSkovMadsen, @maximlt, @Hoxbro and @philippjfr.
+
+### Bugs
+
+#### Tabulator
+
+- Ensure streamed rows on `Tabulator` can be edited ([#4292](https://github.com/holoviz/panel/pull/4292))
+- Ensure changes on `Tabulator` `formatter` and `editor` models are reflected in frontend ([#4296](https://github.com/holoviz/panel/pull/4296))
+- Ensure cancelling edit does not clear cell on `Tabulator` ([#4343](https://github.com/holoviz/panel/pull/4343))
+- Ensure inserting empty data on numeric column in `Tabulator` does not error ([#4343](https://github.com/holoviz/panel/pull/4343))
+
+#### Notebook
+
+- Fix issues rendering components as ipywidgets for some versions of ipykernel ([#4289](https://github.com/holoviz/panel/pull/4289))
+- Add warning if custom resources could not be loaded in notebook ([#4329](https://github.com/holoviz/panel/pull/4329))
+- Ensure notifications are enabled even if `hv.extension` has been loaded ([#4330](https://github.com/holoviz/panel/pull/4330))
+- Ensure global notification object can be used inside notebook callbacks ([#4331](https://github.com/holoviz/panel/pull/4331))
+
+#### Type definitions
+
+- Fix return type of `Widget.from_param` ([#4335](https://github.com/holoviz/panel/pull/4335))
+- Ensure type annotation allows `str` and `PathLike` objects on `panel.serve` ([#4336](https://github.com/holoviz/panel/pull/4336))
+- Fix type annotations on `panel.io.convert.convert_app`(s) ([#4342](https://github.com/holoviz/panel/pull/4342))
+
+#### Misc
+
+- Ensure markdown links render correctly in template sidebar ([#4222](https://github.com/holoviz/panel/pull/4222))
+- Improve .applies for `ECharts` and `DeckGL` ([#4224](https://github.com/holoviz/panel/pull/4224))
+- Fix specifying custom `--index` with relative path ([#4288](https://github.com/holoviz/panel/pull/4288))
+- Skip `on_load` callbacks in liveness check ([#4302](https://github.com/holoviz/panel/pull/4302))
+- Ensure re-rendered `FileDownload` still fetches live data ([#4328](https://github.com/holoviz/panel/pull/4328))
+- Fix handling of `panel.cache` on undecorated `Parameterized` method ([#4332](https://github.com/holoviz/panel/pull/4332))
+- Ensure user provided `hash_funcs` are applied in `panel.cache` ([#4334](https://github.com/holoviz/panel/pull/4334))
+
+### Minor enhancements
+
+- Allow to set the log level of the Admin logger ([#3495](https://github.com/holoviz/panel/pull/3495))
+- Make `refresh_token` available in Auth ([#4227](https://github.com/holoviz/panel/pull/4227))
+- Simplify determining whether script is executed as application with `pn.state.served` property ([#4252](https://github.com/holoviz/panel/pull/4252))
+- Add `loading_indicator` to global `config` ([#4259](https://github.com/holoviz/panel/pull/4259))
+- IPython `display` compatibility in pyodide builds ([#4270](https://github.com/holoviz/panel/pull/4270))
+- Split `PanelJupyterExecutor` into separate module ([#4276](https://github.com/holoviz/panel/pull/4276))
+- Allow dynamic loading of javascript modules in `ReactiveHTML` ([#4319](https://github.com/holoviz/panel/pull/4319))
+- Add `Plotly.link_figure` parameter ([#4333](https://github.com/holoviz/panel/pull/4333))
+- Ensure `CrossSelector` filters apply on each keystroke ([#4339](https://github.com/holoviz/panel/pull/4339))
+
+### Compatibility and Version Updates
+
+- Upgrade plotly.js to 2.10.1 ([#4320](https://github.com/holoviz/panel/pull/4320))
+- Upgrade to pyodide 0.22.1 in `panel convert` ([#4334](https://github.com/holoviz/panel/pull/4334))
+- Upgrade to pyscript 2022.12.01 in `panel convert` ([#4334](https://github.com/holoviz/panel/pull/4334))
+
+### Deprecations
+
+- Add deprecation warning to `IDOM` pane ([#4293](https://github.com/holoviz/panel/pull/4293))
+- Add deprecation warning for `Viewable.app` and `Viewable.pprint` methods ([#4293](https://github.com/holoviz/panel/pull/4293), [#4347](https://github.com/holoviz/panel/pull/4347))
+
+### Documentation
+
+- Add CONTRIBUTING.md ([#4262](https://github.com/holoviz/panel/pull/4262))
+- Add Gallery VideoStream example ([#4047](https://github.com/holoviz/panel/pull/4047))
+- Add description of literal options to the docs for `ReactiveHTML` ([#3803](https://github.com/holoviz/panel/pull/3803))
+
 ## Version 0.14.2
 
 Date: 2022-12-14
