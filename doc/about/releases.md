@@ -14,8 +14,8 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 
 - Ensure streamed rows on `Tabulator` can be edited ([#4292](https://github.com/holoviz/panel/pull/4292))
 - Ensure changes on `Tabulator` `formatter` and `editor` models are reflected in frontend ([#4296](https://github.com/holoviz/panel/pull/4296))
-- Ensure cancelling edit does not clear cell on `Tabulator` ([[#4343](https://github.com/holoviz/panel/pull/4343)](https://github.com/holoviz/panel/pull/4343))
-- Ensure inserting empty data on numeric column in `Tabulator` does not error ([[#4343](https://github.com/holoviz/panel/pull/4343)](https://github.com/holoviz/panel/pull/4343))
+- Ensure cancelling edit does not clear cell on `Tabulator` ([#4343](https://github.com/holoviz/panel/pull/4343))
+- Ensure inserting empty data on numeric column in `Tabulator` does not error ([#4343](https://github.com/holoviz/panel/pull/4343))
 
 #### Notebook
 
@@ -38,7 +38,7 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 - Skip `on_load` callbacks in liveness check ([#4302](https://github.com/holoviz/panel/pull/4302))
 - Ensure re-rendered `FileDownload` still fetches live data ([#4328](https://github.com/holoviz/panel/pull/4328))
 - Fix handling of `panel.cache` on undecorated `Parameterized` method ([#4332](https://github.com/holoviz/panel/pull/4332))
-- Ensure user provided `hash_funcs` are applied in `panel.cache` ([[[#4334](https://github.com/holoviz/panel/pull/4334)](https://github.com/holoviz/panel/pull/4334)](https://github.com/holoviz/panel/pull/4334))
+- Ensure user provided `hash_funcs` are applied in `panel.cache` ([#4334](https://github.com/holoviz/panel/pull/4334))
 
 ### Minor enhancements
 
@@ -55,13 +55,13 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 ### Compatibility and Version Updates
 
 - Upgrade plotly.js to 2.10.1 ([#4320](https://github.com/holoviz/panel/pull/4320))
-- Upgrade to pyodide 0.22.1 in `panel convert` ([[[#4334](https://github.com/holoviz/panel/pull/4334)](https://github.com/holoviz/panel/pull/4334)](https://github.com/holoviz/panel/pull/4334))
-- Upgrade to pyscript 2022.12.01 in `panel convert` ([[[#4334](https://github.com/holoviz/panel/pull/4334)](https://github.com/holoviz/panel/pull/4334)](https://github.com/holoviz/panel/pull/4334))
+- Upgrade to pyodide 0.22.1 in `panel convert` ([#4334](https://github.com/holoviz/panel/pull/4334))
+- Upgrade to pyscript 2022.12.01 in `panel convert` ([#4334](https://github.com/holoviz/panel/pull/4334))
 
 ### Deprecations
 
-- Add deprecation warning to `IDOM` pane ([[#4293](https://github.com/holoviz/panel/pull/4293)](https://github.com/holoviz/panel/pull/4293))
-- Add deprecation warning for `Viewable.app` and `Viewable.pprint` methods ([[#4293](https://github.com/holoviz/panel/pull/4293)](https://github.com/holoviz/panel/pull/4293), [#4347](https://github.com/holoviz/panel/pull/4347))
+- Add deprecation warning to `IDOM` pane ([#4293](https://github.com/holoviz/panel/pull/4293))
+- Add deprecation warning for `Viewable.app` and `Viewable.pprint` methods ([#4293](https://github.com/holoviz/panel/pull/4293), [#4347](https://github.com/holoviz/panel/pull/4347))
 
 ### Documentation
 
