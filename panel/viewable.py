@@ -715,6 +715,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         Prints a compositional repr of the class.
         """
+        deprecated('1.0', f'{type(self).__name__}.pprint', 'print')
         print(self)
 
     def select(
@@ -752,7 +753,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         port: int (optional, default=0)
           Allows specifying a specific port
         """
-        deprecated("1.0", "Viewable.app", "panel.io.notebook.show_server")
+        deprecated('1.0', f'{type(self).__name__}.app', 'panel.io.notebook.show_server')
         return show_server(self, notebook_url, port)
 
     def embed(
