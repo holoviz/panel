@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import time
 
+import numpy as np
 import param
 import pytest
 
@@ -19,11 +20,6 @@ except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
 pytestmark = pytest.mark.ui
-
-try:
-    import numpy as np
-except ImportError:
-    pytestmark = pytest.mark.skip('numpy not available')
 
 try:
     import pandas as pd
@@ -1896,6 +1892,54 @@ def test_tabulator_edit_event(page, port, df_mixed):
     wait_until(lambda: len(values) >= 1, page)
     assert values[0] == ('str', 0, 'A', 'AA')
     assert df_mixed.at['idx0', 'str'] == 'AA'
+
+
+def test_tabulator_edit_event_abort(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    values = []
+    widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="3.14"')
+    cell.click()
+    editable_cell = page.locator('input[type="number"]')
+    editable_cell.fill('0')
+    editable_cell.press('Escape')
+
+    time.sleep(0.2)
+
+    assert not values
+    assert cell.text_content() == '3.14'
+
+
+def test_tabulator_edit_event_empty_to_nan(page, port, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    values = []
+    widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.5)
+
+    page.goto(f"http://localhost:{port}")
+
+    cell = page.locator('text="3.14"')
+    cell.click()
+    editable_cell = page.locator('input[type="number"]')
+    editable_cell.fill('')
+    editable_cell.press('Enter')
+
+    wait_until(lambda: len(values) == 1, page)
+    assert values[0][:-1] == ('float', 0, 3.14)
+    assert np.isnan(values[0][-1])
+    assert page.query_selector('text="-"') is not None
 
 
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
