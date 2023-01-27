@@ -28,7 +28,7 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 - Ensure type annotation allows `str` and `PathLike` objects on `panel.serve` ([#4336](https://github.com/holoviz/panel/pull/4336))
 - Fix type annotations on `panel.io.convert.convert_app`(s) ([#4342](https://github.com/holoviz/panel/pull/4342))
 
-### Misc
+#### Misc
 
 - Ensure markdown links render correctly in template sidebar ([#4222](https://github.com/holoviz/panel/pull/4222))
 - Improve .applies for `ECharts` and `DeckGL` ([#4224](https://github.com/holoviz/panel/pull/4224))
