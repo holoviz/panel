@@ -1143,10 +1143,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const field = cell._cell.column.field;
     const column_def = this.columns.get(field)
     const index = cell.getData()._index
-    let value = cell._cell.value
+    const value = cell._cell.value
     if (column_def.validator === 'numeric' && value === '') {
-      value = NaN
-      cell.setValue(value, true)
+      cell.setValue(NaN, true)
       return
     }
     this._tabulator_cell_updating = true
