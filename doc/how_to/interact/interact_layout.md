@@ -19,7 +19,7 @@ layout
 We can always print the Panel contents to check the indexing:
 
 ```{pyodide}
-layout.pprint()
+print(layout)
 ```
 
 Now, by indexing into this Panel we can lay out the objects precisely how we want:
