@@ -1,4 +1,24 @@
 /* fast_root_dark.css */
 :root {
   --container-background: #3B3B3B;
+  --neutral-foreground-rest: #E5E5E5;
+  --background-color: #181818;
+  --neutral-fill-rest: #2B2B2B;
+  --neutral-fill-hover: #333333;
+  --neutral-fill-active: #262626;
+  --neutral-divider-rest: #2E2E2E;
+  --neutral-fill-input-active: #181818;
+  --neutral-fill-input-hover: #181818;
+  --neutral-fill-input-rest: #181818;
+  --neutral-fill-stealth-active: #212121;
+  --neutral-fill-stealth-hover: #262626;
+  --neutral-fill-stealth-rest: #181818;
+  --neutral-focus: #6F6F6F;
+  --neutral-focus-inner-accent: #001B2B;
+  --neutral-foreground-active: #E5E5E5;
+  --neutral-foreground-hover: #E5E5E5;
+  --neutral-layer-floating: #4A4A4A;
+  --neutral-outline-active: #434343;
+  --neutral-outline-hover: #818181;
+  --neutral-outline-rest: #5A5A5A;
 }

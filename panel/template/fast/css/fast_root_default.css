@@ -1,4 +1,24 @@
 /* fast_root_default.css */
 :root {
     --container-background: #D1D1D1;
+    --neutral-foreground-rest: #2B2B2B;
+    --background-color: #ffffff;
+    --neutral-fill-rest: #EDEDED;
+    --neutral-fill-hover: #E5E5E5;
+    --neutral-fill-active: #F2F2F2;
+    --neutral-divider-rest: #EAEAEA;
+    --neutral-fill-input-active: #FFFFFF;
+    --neutral-fill-input-hover: #FFFFFF;
+    --neutral-fill-input-rest: #FFFFFF;
+    --neutral-fill-stealth-active: #F7F7F7;
+    --neutral-fill-stealth-hover: #F2F2F2;
+    --neutral-fill-stealth-rest: #FFFFFF;
+    --neutral-focus: #888888;
+    --neutral-focus-inner-accent: #FFFFFF;
+    --neutral-foreground-active: #2B2B2B;
+    --neutral-foreground-hover: #2B2B2B;
+    --neutral-layer-floating: #FFFFFF;
+    --neutral-outline-active: #D6D6D6;
+    --neutral-outline-hover: #989898;
+    --neutral-outline-rest: #BFBFBF;
 }
