@@ -245,13 +245,3 @@ template.main[0:3, 8:12] = pn.Column(
 )
 template.main[3:5, 0:12] = summary_table
 template.servable()
-
-# Bugs
-# - Fast select styling
-# - Keyboard navition
-# - plotly function sizing
-# - Make it easy to update specific cells after changing other cells
-# - Cannot click donut
-
-# Todo:
-# Enable downloading data
