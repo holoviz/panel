@@ -9,7 +9,6 @@ https://github.com/holoviz/panel/issues/4341
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import yfinance as yf
 
 import panel as pn
 
@@ -28,6 +27,7 @@ CSS = """
 RED = "#D94467"
 GREEN = "#5AD534"
 
+CSV_URL = "https://cdn.jsdelivr.net/gh/awesome-panel/awesome-panel-assets@master/data/portfolio_analyser.csv"
 EQUITIES = {
     "AAPL": "Apple",
     "MSFT": "Microsoft",
@@ -45,10 +45,18 @@ pn.extension("tabulator", sizing_mode="stretch_both", raw_css=[CSS])
 # Extract Data
 
 
+
 @pn.cache(ttl=600)
 def get_historical_data(tickers=EQUITY_LIST, period="2y"):
     """Downloads the historical data from Yahoo Finance"""
-    return yf.download(tickers=tickers, period=period, group_by="ticker")
+    df = pd.read_csv(CSV_URL, header=[0,1], index_col=0, parse_dates=[])
+    df.index = pd.to_datetime(df.index, utc=True)
+    
+    # import yfinance as yf
+    # df =yf.download(tickers=tickers, period=period, group_by="ticker")
+    # df.to_csv("portfolio_analyser.csv", index=True)
+
+    return df
 
 
 historical_data = get_historical_data()
@@ -213,7 +221,6 @@ def candlestick(selection, data=summary_data):
 
 def portfolio_distribution(patches=0):
     """Returns the distribution of the portfolio"""
-    print("updating")
     data = summary_table.value
     portfolio_total = data["value"].sum()
 

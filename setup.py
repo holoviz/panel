@@ -193,7 +193,6 @@ extras_require = {
         'ipyvuetify',
         'reacton',
         'scikit-image',
-        'yfinance',
     ],
     'tests': _tests,
     'recommended': _recommended,
