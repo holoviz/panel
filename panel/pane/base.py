@@ -376,6 +376,8 @@ class ReplacementPane(PaneBase):
     on.
     """
 
+    _pane = param.ClassSelector(class_=Viewable)
+
     _updates: bool = True
 
     __abstract = True
@@ -388,12 +390,19 @@ class ReplacementPane(PaneBase):
         self._internal = True
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
         self.param.watch(self._update_inner_layout, list(Layoutable.param))
+        self._sync_layout()
+
+    @param.depends('_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
+    def _sync_layout(self):
+        if not hasattr(self, '_inner_layout'):
+            return
+        self._inner_layout.param.update({
+            k: v for k, v in self._pane.param.values().items()
+            if k in ('sizing_mode', 'width_policy', 'height_policy')
+        })
 
     def _update_inner_layout(self, *events):
-        for event in events:
-            setattr(self._pane, event.name, event.new)
-            if event.name in ['sizing_mode', 'width_policy', 'height_policy']:
-                setattr(self._inner_layout, event.name, event.new)
+        self._pane.param.update({event.name: event.new for event in events})
 
     def _update_pane(self, *events):
         """
