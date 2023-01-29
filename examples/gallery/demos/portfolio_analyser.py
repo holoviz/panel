@@ -163,6 +163,7 @@ summary_table.style.applymap(style_of_action_cell, subset=["action"]).set_proper
     **{"background-color": "#444"}, subset=["quantity"]
 )
 
+patches = pn.widgets.IntInput()
 
 def handle_cell_edit(event, table=summary_table):
     """Updates the `value` cell when the `quantity` cell is updated"""
@@ -174,8 +175,11 @@ def handle_cell_edit(event, table=summary_table):
         value = quantity * price
         table.patch({"value": [(row, value)]})
 
+        patches.value +=1
+
 
 # Define the plots
+
 
 def candlestick(selection, data=summary_data):
     """Returns a candlestick plot"""
@@ -207,8 +211,10 @@ def candlestick(selection, data=summary_data):
     return fig
 
 
-def portfolio_distribution(data=summary_data):
+def portfolio_distribution(patches=0):
     """Returns the distribution of the portfolio"""
+    print("updating")
+    data = summary_table.value
     portfolio_total = data["value"].sum()
 
     fig = px.pie(
@@ -228,10 +234,8 @@ def portfolio_distribution(data=summary_data):
 summary_table.on_edit(handle_cell_edit)
 
 candlestick = pn.bind(candlestick, selection=summary_table.param.selection)
-portfolio_distribution = pn.panel(
-    pn.bind(portfolio_distribution, data=summary_table.param.value),
-    sizing_mode="stretch_both",
-)
+portfolio_distribution = pn.bind(portfolio_distribution, patches=patches)
+
 
 # Layout it out in the FastGridTemplate
 
@@ -254,7 +258,12 @@ template.main[0:3, 0:8] = pn.panel(
     margin=(2, 0, 0, 0),
 )
 template.main[0:3, 8:12] = pn.Column(
-    portfolio_distribution, sizing_mode="stretch_both", margin=(0, 5, 5, 0)
+    pn.panel(
+        portfolio_distribution,
+        sizing_mode="stretch_both",
+    ),
+    sizing_mode="stretch_both",
+    margin=(0, 5, 5, 0),
 )
 template.main[3:5, 0:12] = summary_table
 template.servable()
