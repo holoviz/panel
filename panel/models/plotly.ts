@@ -55,7 +55,7 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
               const val = fullPoint[property];
               if (fullPoint.hasOwnProperty(property) &&
                   !Array.isArray(val) && !isPlainObject(val) &&
-                  val!==undefined)  {
+                  val !== undefined)  {
                 pointData[property] = val;
               }
             }
