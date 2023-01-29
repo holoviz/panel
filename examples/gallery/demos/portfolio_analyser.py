@@ -7,10 +7,11 @@ Having both its possible to compare them. See also
 https://github.com/holoviz/panel/issues/4341
 """
 import pandas as pd
-import panel as pn
 import plotly.express as px
 import plotly.graph_objects as go
 import yfinance as yf
+
+import panel as pn
 
 ACCENT = "#BB2649"
 LINK_SVG = """
@@ -107,7 +108,10 @@ editors = {
     "quantity": {"type": "number", "min": 0, "step": 1},
     "price": None,
     "value": None,
-    "action": {"type": "list", "values": {"buy": "buy", "sell": "sell", "hold": "hold"}},
+    "action": {
+        "type": "list",
+        "values": {"buy": "buy", "sell": "sell", "hold": "hold"},
+    },
     "notes": {
         "type": "textarea",
         "elementAttributes": {"maxlength": "100"},
@@ -160,14 +164,18 @@ summary_table.style.applymap(style_of_action_cell, subset=["action"]).set_proper
 )
 
 
-def update_market_value(data, table=summary_table):
-    """Updates the 'value' column of the table"""
-    value = get_value_series(data=data)
-    table.patch({"value": [(slice(0, len(value)), value)]})
+def handle_cell_edit(event, table=summary_table):
+    """Updates the `value` cell when the `quantity` cell is updated"""
+    row = event.row
+    column = event.column
+    if column == "quantity":
+        quantity = event.value
+        price = summary_table.value.loc[row, "price"]
+        value = quantity * price
+        table.patch({"value": [(row, value)]})
 
 
 # Define the plots
-
 
 def candlestick(selection, data=summary_data):
     """Returns a candlestick plot"""
@@ -217,10 +225,12 @@ def portfolio_distribution(data=summary_data):
 
 # Setup bindings
 
+summary_table.on_edit(handle_cell_edit)
+
 candlestick = pn.bind(candlestick, selection=summary_table.param.selection)
-pn.bind(update_market_value, data=summary_table.param.value, watch=True)
 portfolio_distribution = pn.panel(
-    pn.bind(portfolio_distribution, data=summary_table.param.value), sizing_mode="stretch_both"
+    pn.bind(portfolio_distribution, data=summary_table.param.value),
+    sizing_mode="stretch_both",
 )
 
 # Layout it out in the FastGridTemplate
@@ -238,7 +248,10 @@ template = pn.template.FastGridTemplate(
 )
 
 template.main[0:3, 0:8] = pn.panel(
-    candlestick, config={"responsive": True}, sizing_mode="stretch_both", margin=(2, 0, 0, 0)
+    candlestick,
+    config={"responsive": True},
+    sizing_mode="stretch_both",
+    margin=(2, 0, 0, 0),
 )
 template.main[0:3, 8:12] = pn.Column(
     portfolio_distribution, sizing_mode="stretch_both", margin=(0, 5, 5, 0)
