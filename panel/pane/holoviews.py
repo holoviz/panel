@@ -105,16 +105,17 @@ class HoloViews(PaneBase):
     _rerender_params = ['object', 'backend']
 
     def __init__(self, object=None, **params):
-        super().__init__(object, **params)
         self._initialized = False
         self._responsive_content = False
         self._restore_plot = None
+        super().__init__(object, **params)
         self.widget_box = self.widget_layout()
         self._widget_container = []
         self._update_widgets()
         self._plots = {}
         self.param.watch(self._update_widgets, self._rerender_params)
         self._initialized = True
+        self._update_responsive()
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
@@ -173,6 +174,22 @@ class HoloViews(PaneBase):
         for (model, _) in self._models.values():
             if model.document:
                 model.document.theme = self.theme
+
+    @param.depends('object', watch=True)
+    def _update_responsive(self):
+        from holoviews import HoloMap
+        obj = self.object.last if isinstance(self.object, HoloMap) else self.object
+        if obj is None:
+            return
+        opts = obj.opts.get('plot', backend=self.backend)
+        if 'sizing_mode' in opts.kwargs:
+            mode = opts.kwargs.get('sizing_mode')
+            self._responsive_content = 'stretch' in mode
+            self.sizing_mode = mode
+        else:
+            responsive = opts.kwargs.get('responsive', None)
+            self._responsive_content = responsive
+            self.sizing_mode = 'stretch_both' if responsive else None
 
     @param.depends('widget_type', 'widgets', watch=True)
     def _update_widgets(self, *events):
@@ -280,8 +297,6 @@ class HoloViews(PaneBase):
             self._update_layout()
             self._restore_plot = plot
             raise RerenderError()
-        else:
-            self._responsive_content = False
 
         kwargs = {p: v for p, v in self.param.values().items()
                   if p in Layoutable.param and p != 'name'}
