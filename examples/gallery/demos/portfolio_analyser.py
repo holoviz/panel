@@ -143,6 +143,9 @@ text_align = {
     "action": "center",
     "info": "center",
 }
+base_configuration = {
+    "clipboard": "copy"
+}
 summary_table = pn.widgets.Tabulator(
     summary_data,
     editors=editors,
@@ -155,6 +158,7 @@ summary_table = pn.widgets.Tabulator(
     theme="fast",
     titles=titles,
     widths=widths,
+    configuration=base_configuration,
 )
 
 
