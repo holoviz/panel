@@ -51,7 +51,7 @@ def get_historical_data(tickers=EQUITY_LIST, period="2y"):
     """Downloads the historical data from Yahoo Finance"""
     df = pd.read_csv(CSV_URL, header=[0,1], index_col=0, parse_dates=[])
     df.index = pd.to_datetime(df.index, utc=True)
-    
+
     # import yfinance as yf
     # df =yf.download(tickers=tickers, period=period, group_by="ticker")
     # df.to_csv("portfolio_analyser.csv", index=True)
