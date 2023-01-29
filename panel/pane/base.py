@@ -392,7 +392,7 @@ class ReplacementPane(PaneBase):
         self.param.watch(self._update_inner_layout, list(Layoutable.param))
         self._sync_layout()
 
-    @param.depends('_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
+    @param.depends('_pane', '_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
     def _sync_layout(self):
         if not hasattr(self, '_inner_layout'):
             return
