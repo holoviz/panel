@@ -62,6 +62,7 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 - Upgrade plotly.js to 2.10.1 ([#4320](https://github.com/holoviz/panel/pull/4320))
 - Upgrade to pyodide 0.22.1 in `panel convert` ([#4334](https://github.com/holoviz/panel/pull/4334))
 - Upgrade to pyscript 2022.12.01 in `panel convert` ([#4334](https://github.com/holoviz/panel/pull/4334))
+- Fix compatibility of Perspective pane with Numpy 1.24 ([#4362](https://github.com/holoviz/panel/issues/4362))
 
 ### Deprecations
 
