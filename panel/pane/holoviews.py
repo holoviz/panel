@@ -314,9 +314,11 @@ class HoloViews(PaneBase):
         self._syncing_props = True
         try:
             self.param.update({k: v for k, v in params.items() if k not in self._overrides})
-            plot.state.update(**{
+            props = {
                 o: getattr(self, o) for o in self._overrides
-            })
+            }
+            if props:
+                plot.state.update(**props)
         finally:
             self._syncing_props = False
 
