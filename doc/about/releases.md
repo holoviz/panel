@@ -6,7 +6,7 @@ See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual sum
 
 Date: 2023-01-27
 
-This release introduces a large number of bug fixes and minor enhancements. Due to the upcoming release of Panel 1.0 we have also made the unconventional decision to issue new deprecation in a micro release. Specifically the `IDOM` pane and `Viewable.app` and `Viewable.pprint` methods have been scheduled for deprecation. Many thanks to the contributors to this release which include @droumis and the core team @MarcSkovMadsen, @maximlt, @Hoxbro and @philippjfr.
+This release introduces a large number of bug fixes and minor enhancements. Due to the upcoming release of Panel 1.0 we have also made the unconventional decision to issue new deprecation in a micro release. Specifically the `IDOM` pane and `Viewable.app` and `Viewable.pprint` methods have been scheduled for deprecation. Many thanks to the contributors to this release which include @wendrul, @droumis and the core team @MarcSkovMadsen, @maximlt, @Hoxbro and @philippjfr.
 
 ### Bugs
 
@@ -23,6 +23,7 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 - Add warning if custom resources could not be loaded in notebook ([#4329](https://github.com/holoviz/panel/pull/4329))
 - Ensure notifications are enabled even if `hv.extension` has been loaded ([#4330](https://github.com/holoviz/panel/pull/4330))
 - Ensure global notification object can be used inside notebook callbacks ([#4331](https://github.com/holoviz/panel/pull/4331))
+- Improve startup, error handling and shutdown of Jupyter kernels in `jupyter_server_extension` ([#4364](https://github.com/holoviz/panel/pull/4364))
 
 #### Type definitions
 
@@ -39,6 +40,10 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 - Ensure re-rendered `FileDownload` still fetches live data ([#4328](https://github.com/holoviz/panel/pull/4328))
 - Fix handling of `panel.cache` on undecorated `Parameterized` method ([#4332](https://github.com/holoviz/panel/pull/4332))
 - Ensure user provided `hash_funcs` are applied in `panel.cache` ([#4334](https://github.com/holoviz/panel/pull/4334))
+- Fix plotly eventdata undefined val ([#4355](https://github.com/holoviz/panel/pull/4355))
+- Ensure `panel convert` respects `panel.config` options ([#4359](https://github.com/holoviz/panel/pull/4359))
+- Propagate options from HoloViews and Bokeh plots to enclosing Pane ([#4360](https://github.com/holoviz/panel/pull/4360))
+- Propagate options from dynamic components such as ParamMethod and Interactive to enclosing layout ([#4360](https://github.com/holoviz/panel/pull/4360))
 
 ### Minor enhancements
 
