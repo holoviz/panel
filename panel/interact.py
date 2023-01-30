@@ -17,7 +17,7 @@ from collections.abc import Iterable, Mapping
 from inspect import (
     Parameter, getcallargs, getfullargspec as check_argspec, signature,
 )
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -70,9 +70,11 @@ class interactive(PaneBase):
     manual_update = param.Boolean(default=False, doc="""
         Whether to update manually by clicking on button.""")
 
+    manual_name = param.String(default='Run Interact')
+
     _pane = param.ClassSelector(class_=Viewable)
 
-    manual_name = param.String(default='Run Interact')
+    _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None}
 
     def __init__(self, object, params={}, **kwargs):
         if signature is None:

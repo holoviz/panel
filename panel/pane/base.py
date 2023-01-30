@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, List, Optional, Type, TypeVar,
+    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional, Type,
+    TypeVar,
 )
 
 import param
@@ -174,7 +175,7 @@ class PaneBase(Reactive):
     @property
     def _synced_params(self) -> List[str]:
         ignored_params = ['name', 'default_layout', 'loading']+self._rerender_params
-        return [p for p in self.param if p not in ignored_params]
+        return [p for p in self.param if p not in ignored_params and not p.startswith('_')]
 
     def _update_object(
         self, ref: str, doc: 'Document', root: Model, parent: Model, comm: Optional[Comm]
@@ -377,6 +378,8 @@ class ReplacementPane(PaneBase):
     """
 
     _pane = param.ClassSelector(class_=Viewable)
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None}
 
     _updates: bool = True
 
