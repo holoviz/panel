@@ -189,7 +189,7 @@ class HoloViews(PaneBase):
     def _update_responsive(self):
         from holoviews import HoloMap, Store
         obj = self.object.last if isinstance(self.object, HoloMap) else self.object
-        if obj is None:
+        if obj is None or not Store.renderers:
             return
         backend = self.backend or Store.current_backend
         renderer = self.renderer or Store.renderers[backend]
