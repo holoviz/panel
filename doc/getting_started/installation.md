@@ -62,7 +62,7 @@ Now you can navigate through the getting started and user guides and the various
 You can edit your Panel code as a ``.py`` file in any text editor, marking the objects you want to render as ``.servable()``, then launch a server with:
 
 ```bash
-panel serve my_script.py --show --autoreload``
+panel serve my_script.py --show --autoreload
 ```
 
 to open a browser tab showing your app or dashboard and backed by a live Python process. The ``--autoreload`` flag ensures that the app reloads whenever you make a change to the Python source.
