@@ -147,7 +147,7 @@ class Bokeh(PaneBase):
                 if p not in self._overrides and p in Layoutable.param and
                 p not in ('css_classes', 'name')
             })
-            self.object.update({
+            self.object.update(**{
                 o: getattr(self, o) for o in self._overrides
             })
         finally:

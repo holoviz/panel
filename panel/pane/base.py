@@ -152,7 +152,7 @@ class PaneBase(Reactive):
         kwargs = {
             event.name: event.new for event in events
             if event.name in Layoutable.param
-            and event.name not in ('css_classes', 'margin')
+            and event.name not in ('css_classes', 'margin', 'name')
         }
         self.layout.param.update(kwargs)
 
