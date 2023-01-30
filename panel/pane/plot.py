@@ -78,6 +78,18 @@ class Bokeh(PaneBase):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'autodispatch': None, 'theme': None}
 
+    def __init__(self, object=None, **params):
+        super().__init__(object, **params)
+        self._syncing_props = False
+        self._overrides = [
+            p for p, v in params.items()
+            if p in Layoutable.param and v != self.param[p].default
+        ]
+
+    def _param_change(self, *events: param.parameterized.Event) -> None:
+        self._track_overrides(*(e for e in events if e.name in Layoutable.param))
+        super()._param_change(*(e for e in events if e.name in self._overrides))
+
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         return isinstance(obj, LayoutDOM)
@@ -112,6 +124,35 @@ class Bokeh(PaneBase):
                     for cb in cbs
                 ]
 
+    def _track_overrides(self, *events):
+        if self._syncing_props:
+            return
+        overrides = list(self._overrides)
+        for e in events:
+            if e.name in overrides and self.param[e.name].default == e.new:
+                overrides.remove(e.name)
+            else:
+                overrides.append(e.name)
+        self._overrides = overrides
+        self._sync_properties()
+
+    @param.depends('object', watch=True)
+    def _sync_properties(self):
+        if self.object is None:
+            return
+        self._syncing_props = True
+        try:
+            self.param.update({
+                p: v for p, v in self.object.properties_with_values().items()
+                if p not in self._overrides and p in Layoutable.param and
+                p not in ('css_classes', 'name')
+            })
+            self.object.update(**{
+                o: getattr(self, o) for o in self._overrides
+            })
+        finally:
+            self._syncing_props = False
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
@@ -124,13 +165,6 @@ class Bokeh(PaneBase):
         else:
             model = self.object
 
-        properties = {}
-        for p, value in self.param.values().items():
-            if (p not in Layoutable.param or p == 'name' or
-                value is self.param[p].default):
-                continue
-            properties[p] = value
-        model.update(**properties)
         if comm and self.autodispatch:
             self._wrap_bokeh_callbacks(root, model, doc, comm)
 
