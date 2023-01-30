@@ -144,8 +144,17 @@ class PaneBase(Reactive):
         super().__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
-        watcher = self.param.watch(self._update_pane, self._rerender_params)
-        self._callbacks.append(watcher)
+        w1 = self.param.watch(self._sync_layoutable, list(Layoutable.param))
+        w2 = self.param.watch(self._update_pane, self._rerender_params)
+        self._callbacks.extend([w1, w2])
+
+    def _sync_layoutable(self, *events):
+        kwargs = {
+            event.name: event.new for event in events
+            if event.name in Layoutable.param
+            and event.name not in ('css_classes', 'margin')
+        }
+        self.layout.param.update(kwargs)
 
     def _type_error(self, object):
         raise ValueError("%s pane does not support objects of type '%s'." %
