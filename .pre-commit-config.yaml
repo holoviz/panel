@@ -30,6 +30,7 @@ repos:
     rev: 0.1.5
     hooks:
       - id: clean-notebook
+        exclude: 'examples/homepage\.ipynb$'
 ci:
   autofix_prs: false
   autoupdate_schedule: quarterly
