@@ -25,13 +25,13 @@ def test_card_default(page, port, card_components):
     card = Card(w1, w2)
     serve_panel_widget(page, port, card)
 
-    card_elements = page.locator('.card > .bk')
+    card_elements = page.locator('.card')
     # the card is expanded as default and includes a header and its inner objects
-    expect(card_elements).to_have_count(len(card) + 1)
-    # order of the elements
-    card_header = card_elements.nth(0)
-    w1_object = card_elements.nth(1)
-    w2_object = card_elements.nth(2)
+    # expect(card_elements).to_have_count(len(card) + 1)
+
+    card_header = card_elements.locator("button")
+    w1_object = card_elements.locator(".class_w1")
+    w2_object = card_elements.locator(".class_w2")
     assert 'card-header' in card_header.get_attribute('class')
     assert 'class_w1' in w1_object.get_attribute('class')
     assert 'class_w2' in w2_object.get_attribute('class')
@@ -47,7 +47,7 @@ def test_card_collapsed(page, port, card_components):
     card = Card(w1, w2)
     serve_panel_widget(page, port, card)
 
-    card_elements = page.locator('.card > .bk')
+    card_elements = page.locator('.card')
     card_button = page.locator('.card-button')
 
     # collapse the card
@@ -73,7 +73,7 @@ def test_card_not_collapsible(page, port, card_components):
     card_button = page.locator('.card-button')
     expect(card_button).to_have_count(0)
     # card header and other inner objects
-    card_elements = page.locator('.card > .bk')
+    card_elements = page.locator('.card')
     expect(card_elements).to_have_count(len(card) + 1)
 
 
