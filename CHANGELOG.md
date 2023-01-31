@@ -2,7 +2,7 @@
 
 ## Version 0.14.3
 
-Date: 2023-01-27
+Date: 2023-01-28
 
 This release introduces a large number of bug fixes and minor enhancements. Due to the upcoming release of Panel 1.0 we have also made the unconventional decision to issue new deprecation in a micro release. Specifically the `IDOM` pane and `Viewable.app` and `Viewable.pprint` methods have been scheduled for deprecation. Many thanks to the contributors to this release which include @wendrul, @droumis and the core team @MarcSkovMadsen, @maximlt, @Hoxbro and @philippjfr.
 
@@ -14,7 +14,6 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 - Ensure changes on `Tabulator` `formatter` and `editor` models are reflected in frontend ([#4296](https://github.com/holoviz/panel/pull/4296))
 - Ensure cancelling edit does not clear cell on `Tabulator` ([#4343](https://github.com/holoviz/panel/pull/4343))
 - Ensure inserting empty data on numeric column in `Tabulator` does not error ([#4343](https://github.com/holoviz/panel/pull/4343))
-- Improve startup, error handling and shutdown of Jupyter kernels in `jupyter_server_extension` ([#4364](https://github.com/holoviz/panel/pull/4364))
 
 #### Notebook
 
@@ -54,6 +53,7 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 - Allow dynamic loading of javascript modules in `ReactiveHTML` ([#4319](https://github.com/holoviz/panel/pull/4319))
 - Add `Plotly.link_figure` parameter ([#4333](https://github.com/holoviz/panel/pull/4333))
 - Ensure `CrossSelector` filters apply on each keystroke ([#4339](https://github.com/holoviz/panel/pull/4339))
+- Improve startup, error handling and shutdown of Jupyter kernels in `jupyter_server_extension` ([#4364](https://github.com/holoviz/panel/pull/4364))
 
 ### Compatibility and Version Updates
 

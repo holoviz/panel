@@ -4,7 +4,7 @@ See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual sum
 
 ## Version 0.14.3
 
-Date: 2023-01-27
+Date: 2023-01-28
 
 This release introduces a large number of bug fixes and minor enhancements. Due to the upcoming release of Panel 1.0 we have also made the unconventional decision to issue new deprecation in a micro release. Specifically the `IDOM` pane and `Viewable.app` and `Viewable.pprint` methods have been scheduled for deprecation. Many thanks to the contributors to this release which include @wendrul, @droumis and the core team @MarcSkovMadsen, @maximlt, @Hoxbro and @philippjfr.
 
@@ -23,7 +23,6 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 - Add warning if custom resources could not be loaded in notebook ([#4329](https://github.com/holoviz/panel/pull/4329))
 - Ensure notifications are enabled even if `hv.extension` has been loaded ([#4330](https://github.com/holoviz/panel/pull/4330))
 - Ensure global notification object can be used inside notebook callbacks ([#4331](https://github.com/holoviz/panel/pull/4331))
-- Improve startup, error handling and shutdown of Jupyter kernels in `jupyter_server_extension` ([#4364](https://github.com/holoviz/panel/pull/4364))
 
 #### Type definitions
 
@@ -56,6 +55,7 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 - Allow dynamic loading of javascript modules in `ReactiveHTML` ([#4319](https://github.com/holoviz/panel/pull/4319))
 - Add `Plotly.link_figure` parameter ([#4333](https://github.com/holoviz/panel/pull/4333))
 - Ensure `CrossSelector` filters apply on each keystroke ([#4339](https://github.com/holoviz/panel/pull/4339))
+- Improve startup, error handling and shutdown of Jupyter kernels in `jupyter_server_extension` ([#4364](https://github.com/holoviz/panel/pull/4364))
 
 ### Compatibility and Version Updates
 
