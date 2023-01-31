@@ -188,7 +188,23 @@ class HoloViews(PaneBase):
     @param.depends('object', watch=True)
     def _update_responsive(self):
         from holoviews import HoloMap, Store
-        obj = self.object.last if isinstance(self.object, HoloMap) else self.object
+        from holoviews.plotting import Plot
+        obj = self.object
+        if isinstance(obj, Plot):
+            if 'responsive' in obj.param:
+                responsive = obj.responsive
+            elif 'sizing_mode' in obj.param:
+                mode = obj.sizing_mode
+                if mode:
+                    responsive = '_width' in mode or '_both' in mode
+                else:
+                    responsive = False
+            else:
+                responsive = False
+            self._responsive_content = responsive
+            return
+
+        obj = obj.last if isinstance(obj, HoloMap) else obj
         if obj is None or not Store.renderers:
             return
         backend = self.backend or Store.current_backend
@@ -203,7 +219,10 @@ class HoloViews(PaneBase):
             self._responsive_content = responsive and not width
         elif 'sizing_mode' in plot_cls.param:
             mode = opts.get('sizing_mode')
-            self._responsive_content = '_width' in mode if mode else False
+            if mode:
+                self._responsive_content = '_width' in mode or '_both' in mode
+            else:
+                self._responsive_content = False
         else:
             responsive = opts.get('responsive', None)
             width = opts.get('width', None)
