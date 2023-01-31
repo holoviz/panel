@@ -321,7 +321,7 @@ class HoloViews(PaneBase):
                 'height': None
             }
         elif backend == 'plotly':
-            if state.get('config').get('responsive'):
+            if state.get('config', {}).get('responsive'):
                 sizing_mode = 'stretch_both'
             else:
                 sizing_mode = None
