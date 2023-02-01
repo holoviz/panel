@@ -67,7 +67,7 @@ def test_bootstrap_template_updates(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    assert page.text_content(".markdown") == 'Initial'
+    assert page.locator(".markdown").locator(".bk-clearfix").text_content() == 'Initial'
     md.object = 'Updated'
     time.sleep(0.1)
-    assert page.text_content(".markdown") == 'Updated'
+    assert page.locator(".markdown").locator(".bk-clearfix").text_content() == 'Updated'
