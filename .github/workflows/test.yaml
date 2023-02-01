@@ -136,11 +136,11 @@ jobs:
           playwright: true
           conda-mamba: mamba
         id: install
-      - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
-        run: |
-          conda activate test-environment
-          pip install ipywidgets_bokeh
+      # - name: doit develop_install
+      #   if: steps.install.outputs.cache-hit != 'true'
+      #   run: |
+      #     conda activate test-environment
+      #     pip install ipywidgets_bokeh
       - name: Install bokeh 3.0 compatibility packages
         run: |
           conda activate test-environment
