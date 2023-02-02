@@ -5,7 +5,7 @@ bokeh model.
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional,
 )
 
 import numpy as np
