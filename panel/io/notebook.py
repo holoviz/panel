@@ -74,7 +74,7 @@ def push(doc: 'Document', comm: 'Comm', binary: bool = True) -> None:
     for buffer in msg.buffers:
         header = json.dumps(buffer.ref)
         payload = buffer.to_bytes()
-        comm.send(json.dumps(header))
+        comm.send(header)
         comm.send(buffers=[payload])
 
 def push_on_root(ref: str):

@@ -1,7 +1,5 @@
 import unittest
 
-from bokeh.document import Document
-
 from panel.config import config
 from panel.io.notifications import NotificationArea
 from panel.io.state import set_curdoc, state
@@ -18,7 +16,7 @@ def test_notification_instantiate_on_config(document):
     session_context = unittest.mock.Mock()
     document._session_context = lambda: session_context
 
-    with set_curdoc(doc):
+    with set_curdoc(document):
         assert state.notifications is tmpl.notifications
 
 
@@ -31,5 +29,5 @@ def test_notification_explicit(document):
     session_context = unittest.mock.Mock()
     document._session_context = lambda: session_context
 
-    with set_curdoc(doc):
+    with set_curdoc(document):
         assert state.notifications is tmpl.notifications
