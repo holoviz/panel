@@ -49,8 +49,7 @@ def df_mixed():
 
 @pytest.fixture(scope='session')
 def df_mixed_as_string():
-    return """
-        index
+    return """index
         int
         float
         str
@@ -614,7 +613,7 @@ def test_tabulator_editors_bokeh_int(page, port, df_mixed):
 
     page.goto(f"http://localhost:{port}")
 
-    cell = page.locator('text="1" >> visible=true')
+    cell = page.locator('text="1"').first
     cell.click()
     # An IntEditor with step is turned into a number tabulator editor
     # with step respected
@@ -882,7 +881,7 @@ def test_tabulator_alignment_text_default(page, port, df_mixed):
 
     val = df_mixed.at[findex, 'int']
     # Selecting the visible 1 as there's a non displayed 1 in the hidden index
-    cell = page.locator(f'text="{val}" >> visible=true')
+    cell = page.locator(f'text="{val}"').first
     # Integers are right aligned
     expect(cell).to_have_css('text-align', 'right')
 

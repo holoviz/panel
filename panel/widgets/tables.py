@@ -50,6 +50,11 @@ if TYPE_CHECKING:
     from ..models.tabulator import CellClickEvent, TableEditEvent
 
 
+def _convert_datetime_array_ignore_list(v):
+    if isinstance(v, np.ndarray):
+        return convert_datetime_array(v)
+    return v
+
 class BaseTable(ReactiveData, Widget):
 
     aggregators = param.Dict(default={}, doc="""
@@ -283,7 +288,7 @@ class BaseTable(ReactiveData, Widget):
                 except Exception:
                     continue
             self.selection = selection
-        self._data = {k: convert_datetime_array(v) for k, v in data.items()}
+        self._data = {k: _convert_datetime_array_ignore_list(v) for k, v in data.items()}
         msg = {'data': self._data}
         for ref, (m, _) in self._models.items():
             self._apply_update(events, msg, m.source, ref)
@@ -553,6 +558,9 @@ class BaseTable(ReactiveData, Widget):
     def _process_column(self, values):
         if not isinstance(values, (list, np.ndarray)):
             return [str(v) for v in values]
+        if isinstance(values, np.ndarray) and values.dtype.kind == "b":
+            # Work-around for https://github.com/bokeh/bokeh/issues/12776
+            return values.tolist()
         return values
 
     def _get_data(self) -> Tuple[DataFrameType, DataDict]:
