@@ -230,7 +230,7 @@ export class SpeechToText extends HTMLBox {
       button_hide: [ Boolean,   false ],
       button_not_started: [ String,   '' ],
       button_started: [ String,   '' ],
-      results: [ Array(String), []],
+      results: [ Array(Any), [] ],
     }))
   }
 }
