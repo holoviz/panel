@@ -2,9 +2,9 @@
 
 ## Version 0.14.3
 
-Date: 2023-01-27
+Date: 2023-01-28
 
-This release introduces a large number of bug fixes and minor enhancements. Due to the upcoming release of Panel 1.0 we have also made the unconventional decision to issue new deprecation in a micro release. Specifically the `IDOM` pane and `Viewable.app` and `Viewable.pprint` methods have been scheduled for deprecation. Many thanks to the contributors to this release which include @droumis and the core team @MarcSkovMadsen, @maximlt, @Hoxbro and @philippjfr.
+This release introduces a large number of bug fixes and minor enhancements. Due to the upcoming release of Panel 1.0 we have also made the unconventional decision to issue new deprecation in a micro release. Specifically the `IDOM` pane and `Viewable.app` and `Viewable.pprint` methods have been scheduled for deprecation. Many thanks to the contributors to this release which include @wendrul, @droumis and the core team @MarcSkovMadsen, @maximlt, @Hoxbro and @philippjfr.
 
 ### Bugs
 
@@ -37,6 +37,10 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 - Ensure re-rendered `FileDownload` still fetches live data ([#4328](https://github.com/holoviz/panel/pull/4328))
 - Fix handling of `panel.cache` on undecorated `Parameterized` method ([#4332](https://github.com/holoviz/panel/pull/4332))
 - Ensure user provided `hash_funcs` are applied in `panel.cache` ([#4334](https://github.com/holoviz/panel/pull/4334))
+- Fix plotly eventdata undefined val ([#4355](https://github.com/holoviz/panel/pull/4355))
+- Ensure `panel convert` respects `panel.config` options ([#4359](https://github.com/holoviz/panel/pull/4359))
+- Propagate options from HoloViews and Bokeh plots to enclosing Pane ([#4360](https://github.com/holoviz/panel/pull/4360))
+- Propagate options from dynamic components such as ParamMethod and Interactive to enclosing layout ([#4360](https://github.com/holoviz/panel/pull/4360))
 
 ### Minor enhancements
 
@@ -49,12 +53,14 @@ This release introduces a large number of bug fixes and minor enhancements. Due 
 - Allow dynamic loading of javascript modules in `ReactiveHTML` ([#4319](https://github.com/holoviz/panel/pull/4319))
 - Add `Plotly.link_figure` parameter ([#4333](https://github.com/holoviz/panel/pull/4333))
 - Ensure `CrossSelector` filters apply on each keystroke ([#4339](https://github.com/holoviz/panel/pull/4339))
+- Improve startup, error handling and shutdown of Jupyter kernels in `jupyter_server_extension` ([#4364](https://github.com/holoviz/panel/pull/4364))
 
 ### Compatibility and Version Updates
 
 - Upgrade plotly.js to 2.10.1 ([#4320](https://github.com/holoviz/panel/pull/4320))
 - Upgrade to pyodide 0.22.1 in `panel convert` ([#4334](https://github.com/holoviz/panel/pull/4334))
 - Upgrade to pyscript 2022.12.01 in `panel convert` ([#4334](https://github.com/holoviz/panel/pull/4334))
+- Fix compatibility of Perspective pane with Numpy 1.24 ([#4362](https://github.com/holoviz/panel/issues/4362))
 
 ### Deprecations
 

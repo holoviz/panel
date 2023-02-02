@@ -11,6 +11,12 @@ try:
 except Exception:
     hv = None
 
+try:
+    import holoviews.plotting.plotly as hv_plotly
+except Exception:
+    hv_plotly = None
+plotly_available = pytest.mark.skipif(hv_plotly is None, reason="requires plotly backend")
+
 from bokeh.models import (
     Column as BkColumn, ColumnDataSource, GlyphRenderer, GridPlot, Line,
     Row as BkRow, Scatter, Select as BkSelect, Slider as BkSlider,
@@ -20,11 +26,14 @@ from bokeh.plotting import figure
 
 import panel as pn
 
+from panel.depends import bind
 from panel.layout import Column, FlexBox, Row
-from panel.pane import HoloViews, PaneBase
+from panel.pane import HoloViews, PaneBase, panel
 from panel.tests.util import hv_available, mpl_available
 from panel.util.warnings import PanelDeprecationWarning
-from panel.widgets import DiscreteSlider, FloatSlider, Select
+from panel.widgets import (
+    Checkbox, DiscreteSlider, FloatSlider, Select,
+)
 
 
 @hv_available
@@ -116,7 +125,6 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     pane._cleanup(row)
     assert pane._models == {}
 
-
 @pytest.mark.usefixtures("hv_bokeh")
 @hv_available
 def test_holoviews_pane_initialize_empty(document, comm):
@@ -134,6 +142,86 @@ def test_holoviews_pane_initialize_empty(document, comm):
     model = row.children[0]
     assert isinstance(model, figure)
 
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_pane_reflect_responsive(document, comm):
+    curve = hv.Curve([1, 2, 3]).opts(responsive=True)
+    pane = HoloViews(curve)
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    assert row.sizing_mode == 'stretch_both'
+    assert pane.sizing_mode == 'stretch_both'
+
+    pane.object = hv.Curve([1, 2, 3])
+
+    assert row.sizing_mode == 'fixed'
+    assert pane.sizing_mode == 'fixed'
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_pane_reflect_responsive_override(document, comm):
+    curve = hv.Curve([1, 2, 3]).opts(responsive=True)
+    pane = HoloViews(curve, sizing_mode='fixed')
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    assert row.sizing_mode == 'fixed'
+    assert pane.sizing_mode == 'fixed'
+
+    # Unset override
+    pane.sizing_mode = None
+
+    row = pane.get_root(document, comm=comm)
+
+    assert row.sizing_mode == 'stretch_both'
+    assert pane.sizing_mode == 'stretch_both'
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_pane_reflect_responsive_interact_function(document, comm):
+    curve_fn = lambda: hv.Curve([1, 2, 3]).opts(responsive=True)
+    pane = panel(curve_fn)
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    assert row.sizing_mode == 'stretch_both'
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_pane_reflect_responsive_bind_function(document, comm):
+    checkbox = Checkbox(value=True)
+    curve_fn = lambda responsive: hv.Curve([1, 2, 3]).opts(responsive=responsive)
+    pane = panel(bind(curve_fn, responsive=checkbox))
+
+    # Create pane
+    col = pane.get_root(document, comm=comm)
+
+    assert col.sizing_mode == 'stretch_both'
+
+    checkbox.value = False
+
+    assert col.sizing_mode == 'fixed'
+
+@hv_available
+@plotly_available
+def test_holoviews_pane_reflect_responsive_plotly(document, comm):
+    curve = hv.Curve([1, 2, 3]).opts(responsive=True, backend='plotly')
+    pane = HoloViews(curve, backend='plotly')
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+
+    assert row.sizing_mode == 'stretch_both'
+    assert pane.sizing_mode == 'stretch_both'
+
+    pane.object = hv.Curve([1, 2, 3])
+
+    assert row.sizing_mode is None
+    assert pane.sizing_mode is None
 
 @hv_available
 def test_holoviews_widgets_from_dynamicmap(document, comm):

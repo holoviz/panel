@@ -396,10 +396,10 @@ class Perspective(PaneBase, ReactiveData):
                         schema[col] = 'datetime'
                     elif isinstance(value, str):
                         schema[col] = 'string'
-                    elif isinstance(value, (float, np.float)):
+                    elif isinstance(value, (float, np.floating)):
                         schema[col] = 'float'
-                    elif isinstance(value, (int, np.int)):
-                        schema[col] = 'float'
+                    elif isinstance(value, (int, np.integer)):
+                        schema[col] = 'integer'
                     else:
                         schema[col] = 'string'
                 else:

@@ -105,16 +105,27 @@ class HoloViews(PaneBase):
     _rerender_params = ['object', 'backend']
 
     def __init__(self, object=None, **params):
-        super().__init__(object, **params)
         self._initialized = False
         self._responsive_content = False
         self._restore_plot = None
+        super().__init__(object, **params)
         self.widget_box = self.widget_layout()
         self._widget_container = []
-        self._update_widgets()
         self._plots = {}
-        self.param.watch(self._update_widgets, self._rerender_params)
+        self._syncing_props = False
+        self._overrides = [
+            p for p, v in params.items()
+            if p in Layoutable.param and v != self.param[p].default
+        ]
+        watcher = self.param.watch(self._update_widgets, self._rerender_params)
+        self._callbacks.append(watcher)
         self._initialized = True
+        self._update_responsive()
+        self._update_widgets()
+
+    def _param_change(self, *events: param.parameterized.Event) -> None:
+        self._track_overrides(*(e for e in events if e.name in Layoutable.param))
+        super()._param_change(*(e for e in events if e.name in self._overrides))
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
@@ -173,6 +184,50 @@ class HoloViews(PaneBase):
         for (model, _) in self._models.values():
             if model.document:
                 model.document.theme = self.theme
+
+    @param.depends('object', watch=True)
+    def _update_responsive(self):
+        from holoviews import HoloMap, Store
+        from holoviews.plotting import Plot
+        obj = self.object
+        if isinstance(obj, Plot):
+            if 'responsive' in obj.param:
+                responsive = obj.responsive
+            elif 'sizing_mode' in obj.param:
+                mode = obj.sizing_mode
+                if mode:
+                    responsive = '_width' in mode or '_both' in mode
+                else:
+                    responsive = False
+            else:
+                responsive = False
+            self._responsive_content = responsive
+            return
+
+        obj = obj.last if isinstance(obj, HoloMap) else obj
+        if obj is None or not Store.renderers:
+            return
+        backend = self.backend or Store.current_backend
+        renderer = self.renderer or Store.renderers[backend]
+        opts = obj.opts.get('plot', backend=backend).kwargs
+        plot_cls = renderer.plotting_class(obj)
+        if backend == 'matplotlib':
+            self._responsive_content = False
+        elif backend == 'plotly':
+            responsive = opts.get('responsive', None)
+            width = opts.get('width', None)
+            self._responsive_content = responsive and not width
+        elif 'sizing_mode' in plot_cls.param:
+            mode = opts.get('sizing_mode')
+            if mode:
+                self._responsive_content = '_width' in mode or '_both' in mode
+            else:
+                self._responsive_content = False
+        else:
+            responsive = opts.get('responsive', None)
+            width = opts.get('width', None)
+            frame_width = opts.get('frame_width', None)
+            self._responsive_content = responsive and not width and not frame_width
 
     @param.depends('widget_type', 'widgets', watch=True)
     def _update_widgets(self, *events):
@@ -239,6 +294,53 @@ class HoloViews(PaneBase):
         for _, (plot, pane) in self._plots.items():
             self._update_plot(plot, pane)
 
+    def _track_overrides(self, *events):
+        if self._syncing_props:
+            return
+        overrides = list(self._overrides)
+        for e in events:
+            if e.name in overrides and self.param[e.name].default == e.new:
+                overrides.remove(e.name)
+            else:
+                overrides.append(e.name)
+        self._overrides = overrides
+
+    def _sync_sizing_mode(self, plot):
+        state = plot.state
+        backend = plot.renderer.backend
+        if backend == 'bokeh':
+            params = {
+                'sizing_mode': state.sizing_mode,
+                'width': state.width,
+                'height': state.height
+            }
+        elif backend == 'matplotlib':
+            params = {
+                'sizing_mode': None,
+                'width': None,
+                'height': None
+            }
+        elif backend == 'plotly':
+            if state.get('config', {}).get('responsive'):
+                sizing_mode = 'stretch_both'
+            else:
+                sizing_mode = None
+            params = {
+                'sizing_mode': sizing_mode,
+                'width': None,
+                'height': None
+            }
+        self._syncing_props = True
+        try:
+            self.param.update({k: v for k, v in params.items() if k not in self._overrides})
+            props = {
+                o: getattr(self, o) for o in self._overrides
+            }
+            if props:
+                plot.state.update(**props)
+        finally:
+            self._syncing_props = False
+
     #----------------------------------------------------------------
     # Model API
     #----------------------------------------------------------------
@@ -273,15 +375,13 @@ class HoloViews(PaneBase):
             state = plot.state
 
         # Ensure rerender if content is responsive but layout is centered
-        if (backend == 'bokeh' and self.center and
-            state.sizing_mode not in ('fixed', None)
-            and not self._responsive_content):
+        self._sync_sizing_mode(plot)
+        responsive = self.sizing_mode not in ('fixed', None) and not self.width
+        if self.center and responsive and not self._responsive_content:
             self._responsive_content = True
             self._update_layout()
             self._restore_plot = plot
             raise RerenderError()
-        else:
-            self._responsive_content = False
 
         kwargs = {p: v for p, v in self.param.values().items()
                   if p in Layoutable.param and p != 'name'}

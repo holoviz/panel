@@ -169,17 +169,21 @@ class PanelJupyterHandler(JupyterHandler):
                 msg = await ensure_async(self.kernel.iopub_channel.get_msg(timeout=None))
             except Empty:
                 if not await ensure_async(self.kernel.is_alive()):
-                    raise RuntimeError("Kernel died before establishing Comm connection to Panel app.")
+                    raise RuntimeError("Kernel died before establishing Comm connection to Panel application.")
                 continue
             if msg['parent_header'].get('msg_id') != msg_id:
                 continue
             msg_type = msg['header']['msg_type']
-            if msg_type == 'display_data' and 'application/bokeh-extensions' in msg['content']['data']:
-                extension_dirs = msg['content']['data']['application/bokeh-extensions']
-            elif msg_type == 'execute_result':
-                result = msg
+            if msg_type == 'execute_result':
+                data = msg['content']['data']
+                if 'text/error' in data:
+                    raise RuntimeError("Panel application errored during startup.")
+                extension_dirs = data['application/bokeh-extensions']
+                result = data['text/html']
             elif msg_type == 'comm_open' and msg['content']['target_name'] == self.session_id:
                 comm_id = msg['content']['comm_id']
+            elif msg_type == 'stream' and msg['content']['name'] == 'stderr':
+                logger.info(msg['content']['text'])
         return result, comm_id, extension_dirs
 
     @tornado.web.authenticated
@@ -262,7 +266,7 @@ class PanelJupyterHandler(JupyterHandler):
 
         # Wait for comm to open and rendered HTML to be returned by the kernel
         try:
-            msg, comm_id, ext_dirs = await self._get_info(msg_id)
+            html, comm_id, ext_dirs = await self._get_info(msg_id)
         except (TimeoutError, RuntimeError) as e:
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
             html = ERROR_TEMPLATE.render(
@@ -280,7 +284,6 @@ class PanelJupyterHandler(JupyterHandler):
             state._kernels[self.session_id] = (self.kernel, comm_id, kernel_id, False)
             loop = tornado.ioloop.IOLoop.current()
             loop.call_later(CONNECTION_TIMEOUT, self._check_connected)
-            html = msg['content']['data']['text/html']
             self.finish(html)
 
     async def _check_connected(self):
@@ -289,7 +292,6 @@ class PanelJupyterHandler(JupyterHandler):
         _, _, kernel_id, connected = state._kernels[self.session_id]
         if not connected:
             await self.kernel_manager.shutdown_kernel(kernel_id, now=True)
-
 
 
 class PanelWSProxy(WSHandler, JupyterHandler):
@@ -414,7 +416,9 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         if self.session_id in state._kernels:
             del state._kernels[self.session_id]
         self._ping_job.stop()
+        reply = self.kernel.shutdown(reply=True)
         future = self.kernel_manager.shutdown_kernel(self.kernel_id, now=True)
+        asyncio.ensure_future(reply)
         asyncio.ensure_future(future)
         self.kernel = None
 

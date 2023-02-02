@@ -89,6 +89,12 @@ if pn.state._is_pyodide:
     raise RuntimeError('This app is broken')
 """
 
+config_app = """
+import panel as pn
+pn.config.raw_css = ['body { background-color: blue; }']
+pn.Row('Output').servable();
+"""
+
 
 def write_app(app):
     """
@@ -192,6 +198,13 @@ def test_pyodide_test_convert_slider_app(page, runtime, launch_app):
     expect(page.locator(".bk-clearfix")).to_have_text('0.1')
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyscript', 'pyodide-worker'])
+def test_pyodide_test_convert_custom_config(page, runtime, launch_app):
+    wait_for_app(launch_app, config_app, page, runtime)
+
+    assert page.locator("body").evaluate("""(element) =>
+        window.getComputedStyle(element).getPropertyValue('background-color')""") == 'rgb(0, 0, 255)'
 
 @pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
 def test_pyodide_test_convert_tabulator_app(page, runtime, launch_app):
