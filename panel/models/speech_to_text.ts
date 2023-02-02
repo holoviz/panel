@@ -221,7 +221,7 @@ export class SpeechToText extends HTMLBox {
       continuous: [ Boolean,   false ],
       interim_results: [ Boolean,   false ],
       max_alternatives: [ Number,   1 ],
-      service_uri: [String, ],
+      service_uri: [ String, '' ],
       started: [ Boolean,   false ],
       audio_started: [ Boolean,   false ],
       sound_started: [ Boolean,   false ],
