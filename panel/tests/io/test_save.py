@@ -30,7 +30,6 @@ vega_example = {
 }
 
 
-@bokeh3_failing
 def test_save_external():
     sio = StringIO()
     pane = Vega(vega_example)
@@ -42,7 +41,6 @@ def test_save_external():
         assert js.replace(config.npm_cdn, f'{CDN_DIST}bundled/vegaplot') in html
 
 
-@bokeh3_failing
 def test_save_inline_resources():
     alert = Alert('# Save test')
 
