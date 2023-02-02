@@ -268,6 +268,10 @@ class Syncable(Renderable):
                 continue
             if not model.lookup(attr).property.matches(model_val, value):
                 attrs.append(attr)
+
+            # Do not apply model change that is in flight
+            if attr in self._events:
+                del self._events[attr]
         try:
             model.update(**msg)
         finally:
