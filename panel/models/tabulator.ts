@@ -394,8 +394,8 @@ export class DataTabulatorView extends HTMLBoxView {
   render(): void {
     super.render()
     this._initializing = true
-    const container = div({})
-    const el = div({class: "pnx-tabulator"})
+    const container = div({style: "display: contents;"})
+    const el = div({class: "pnx-tabulator", style: "width: 100%; height: 100%;"})
     container.appendChild(el)
     let configuration = this.getConfiguration()
 
