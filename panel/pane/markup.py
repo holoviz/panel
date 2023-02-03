@@ -8,7 +8,7 @@ import json
 import textwrap
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Type,
 )
 
 import param
@@ -82,7 +82,7 @@ class HTML(DivPaneBase):
         else:
             return False
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
@@ -226,7 +226,7 @@ class DataFrame(HTML):
             self._stream.destroy()
             self._stream = None
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         if hasattr(obj, 'to_frame'):
             obj = obj.to_frame()
 
@@ -284,7 +284,7 @@ class Str(DivPaneBase):
     def applies(cls, obj: Any) -> bool:
         return True
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         if obj is None or (isinstance(obj, str) and obj == ''):
             text = '<pre> </pre>'
         else:
@@ -343,7 +343,7 @@ class Markdown(DivPaneBase):
         else:
             return False
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         import markdown
         if obj is None:
             obj = ''
@@ -422,7 +422,7 @@ class JSON(DivPaneBase):
         else:
             return None
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         try:
             data = json.loads(obj)
         except Exception:

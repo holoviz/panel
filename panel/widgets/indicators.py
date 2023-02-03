@@ -63,16 +63,11 @@ class Indicator(Widget):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
+    _linked_properties: ClassVar[Tuple[str]] = ()
+
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
     __abstract = True
-
-    @property
-    def _linked_properties(self) -> Tuple[str]:
-        """
-        Indicators are solely display units so we do not need to sync properties.
-        """
-        return ()
 
 
 class BooleanIndicator(Indicator):

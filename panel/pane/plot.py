@@ -8,7 +8,7 @@ import sys
 from contextlib import contextmanager
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
 )
 
 import param
@@ -409,7 +409,7 @@ class Folium(HTML):
         return (getattr(obj, '__module__', '').startswith('folium.') and
                 hasattr(obj, "_repr_html_"))
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_().replace(FOLIUM_BEFORE, FOLIUM_AFTER)

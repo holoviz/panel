@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional, Tuple,
-    Type, TypeVar,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    Tuple, Type, TypeVar,
 )
 
 import param
@@ -406,7 +406,7 @@ class ModelPane(PaneBase):
         params['object'] = self.object
         return params
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         return dict(object=obj)
 
     def _process_param_change(self, params):

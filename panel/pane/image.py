@@ -10,7 +10,7 @@ import base64
 from io import BytesIO
 from pathlib import PurePath
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping,
 )
 
 import param
@@ -152,7 +152,7 @@ class ImageBase(FileBase):
         """Calculate and return image width,height"""
         raise NotImplementedError
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         data = self._data(obj)
         if data is None:
             return dict(object='<img></img>')
@@ -207,7 +207,7 @@ class Image(ImageBase):
                 return applies
         return False
 
-    def _transform_object(self, obj: Any):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         for img_cls in param.concrete_descendents(ImageBase).values():
             if img_cls is not Image and img_cls.applies(obj):
                 return img_cls(obj)._transform_object(obj)
@@ -376,7 +376,7 @@ class SVG(ImageBase):
     def _imgshape(self, data):
         return (self.width, self.height)
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         if obj is None:
             return dict(object='<img></img>')
         data = self._data(obj)

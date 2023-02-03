@@ -8,7 +8,7 @@ import os
 from base64 import b64encode
 from io import BytesIO
 from typing import (
-    Any, ClassVar, List, Mapping,
+    Any, ClassVar, Dict, List, Mapping,
 )
 
 import numpy as np
@@ -85,7 +85,7 @@ class _MediaBase(ModelPane):
             del msg['js_property_callbacks']
         return msg
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         fmt = self._default_mime
         if obj is None:
             data = b''
