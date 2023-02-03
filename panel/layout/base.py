@@ -84,7 +84,7 @@ class Panel(Reactive):
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         msg = dict(msg)
-        inverse = {v: k for k, v in self._rename.items() if v is not None}
+        inverse = {v: k for k, v in self._property_mapping.items() if v is not None}
         preprocess = any(inverse.get(k, k) in self._preprocess_params for k in msg)
 
         obj_key = self._property_mapping['objects']
@@ -146,12 +146,14 @@ class Panel(Reactive):
     ) -> Model:
         if self._bokeh_model is None:
             raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
-        model = self._bokeh_model(**self._get_properties())
+        model = self._bokeh_model()
         if root is None:
             root = model
-        objects = self._get_objects(model, [], doc, root, comm)
-        model.update(**{self._property_mapping['objects']: objects})
         self._models[root.ref['id']] = (model, parent)
+        objects = self._get_objects(model, [], doc, root, comm)
+        properties = self._get_properties()
+        properties[self._property_mapping['objects']] = objects
+        model.update(**properties)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 

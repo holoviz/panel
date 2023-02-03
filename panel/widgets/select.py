@@ -234,7 +234,6 @@ class Select(SingleSelectBase):
                 'as it is one of the disabled options.'
             )
 
-
     def _validate_options_groups(self, *events):
         if self.options and self.groups:
             raise ValueError(
@@ -248,11 +247,10 @@ class Select(SingleSelectBase):
             )
 
     def _process_param_change(self, msg):
+        groups_provided = 'groups' in msg
         msg = super()._process_param_change(msg)
-        if msg.get('size') == 1:
-            msg.pop('size')
-        groups = msg.pop('groups', None)
-        if groups is not None:
+        if groups_provided or 'options' in msg and self.groups:
+            groups = self.groups
             if (all(isinstance(values, dict) for values in groups.values()) is False
                and  all(isinstance(values, list) for values in groups.values()) is False):
                 raise ValueError(

@@ -8,7 +8,7 @@ import math
 from collections import OrderedDict, namedtuple
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple,
 )
 
 import numpy as np
@@ -52,13 +52,17 @@ class GridBox(ListPanel):
     ncols = param.Integer(default=None, bounds=(0, None),  doc="""
       Number of columns to reflow the layout into.""")
 
-    _bokeh_model = BkGridBox
+    _bokeh_model: ClassVar[Model] = BkGridBox
+
+    _linked_properties: ClassVar[Tuple[str]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'objects': 'children', 'nrows': None, 'ncols': None
     }
 
-    _source_transforms = {'scroll': None, 'objects': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'scroll': None, 'objects': None
+    }
 
     @classmethod
     def _flatten_grid(cls, layout, nrows=None, ncols=None):
@@ -85,7 +89,7 @@ class GridBox(ListPanel):
                 if not children:
                     return Grid(0, 0, [])
 
-                nrows = lcm(*[ child.nrows for child in children ])
+                nrows = lcm(*[child.nrows for child in children])
                 if not ncols: # This differs from bokeh.layout.grid
                     ncols = sum([ child.ncols for child in children ])
 
@@ -153,13 +157,15 @@ class GridBox(ListPanel):
         return cls._flatten_grid(layout, nrows, ncols)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = self._bokeh_model(**self._get_properties())
+        model = self._bokeh_model()
         if root is None:
             root = model
+        self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
         children = self._get_children(objects, self.nrows, self.ncols)
-        model.update(**{'children': children})
-        self._models[root.ref['id']] = (model, parent)
+        properties = self._get_properties()
+        properties['children'] = children
+        model.update(**properties)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
@@ -213,15 +219,19 @@ class GridSpec(Panel):
 
     height = param.Integer(default=600)
 
-    _bokeh_model = BkGridBox
+    _bokeh_model: ClassVar[Model] = BkGridBox
 
-    _source_transforms = {'objects': None, 'mode': None}
+    _linked_properties: ClassVar[Tuple[str]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'objects': None, 'mode': None, 'ncols': None, 'nrows': None
+        'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None
     }
 
-    _preprocess_params = ['objects']
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'objects': None, 'mode': None
+    }
+
+    _preprocess_params: ClassVar[List[str]] = ['objects']
 
     def __init__(self, **params):
         if 'objects' not in params:

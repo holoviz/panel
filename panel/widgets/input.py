@@ -699,6 +699,7 @@ class LiteralInput(Widget):
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'serializer': None,
         'value': """JSON.parse(value.replace(/'/g, '"'))"""
     }
 
@@ -801,9 +802,13 @@ class ArrayInput(LiteralInput):
         restriction helps avoid overwhelming the browser and lets
         other widgets remain usable.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'max_array_size': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'max_array_size': None
+    }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'serializer': None, 'type': None, 'value': None
+    }
 
     def __init__(self, **params):
         super().__init__(**params)

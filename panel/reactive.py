@@ -13,7 +13,7 @@ import sys
 import textwrap
 
 from collections import Counter, defaultdict, namedtuple
-from functools import partial
+from functools import lru_cache, partial
 from pprint import pformat
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Set,
@@ -37,7 +37,9 @@ from .io.state import set_curdoc, state
 from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
-from .util import edit_readonly, escape, updating
+from .util import (
+    classproperty, edit_readonly, escape, updating,
+)
 from .viewable import Layoutable, Renderable, Viewable
 
 if TYPE_CHECKING:
@@ -128,12 +130,13 @@ class Syncable(Renderable):
     # Model API
     #----------------------------------------------------------------
 
-    @property
-    def _property_mapping(self):
+    @classproperty
+    @lru_cache(maxsize=None)
+    def _property_mapping(cls):
         rename = {}
-        for cls in self.__class__.__mro__[::-1]:
-            if issubclass(cls, Syncable):
-                rename.update(cls._rename)
+        for scls in cls.__mro__[::-1]:
+            if issubclass(scls, Syncable):
+                rename.update(scls._rename)
         return rename
 
     @property
