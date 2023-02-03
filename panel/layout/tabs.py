@@ -67,7 +67,7 @@ class Tabs(NamedListPanel):
     _manual_params: ClassVar[List[str]] = ['closable']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'objects': 'tabs', 'dynamic': None
+        'closable': None, 'dynamic': None, 'name': None, 'objects': 'tabs'
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {

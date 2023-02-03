@@ -53,7 +53,8 @@ class _MediaBase(ModelPane):
     _media_type: ClassVar[str]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'sample_rate': None, 'object': 'value'}
+        'sample_rate': None, 'object': 'value'
+    }
 
     _rerender_params: ClassVar[List[str]] = []
 
@@ -84,27 +85,27 @@ class _MediaBase(ModelPane):
             del msg['js_property_callbacks']
         return msg
 
-    def _process_param_change(self, msg):
-        if 'object' in msg:
-            value = msg['object']
-            fmt = self._default_mime
-            if isinstance(value, np.ndarray):
-                fmt = 'wav'
-                buffer = self._from_numpy(value)
-                data = b64encode(buffer.getvalue())
-            elif os.path.isfile(value):
-                fmt = value.split('.')[-1]
-                with open(value, 'rb') as f:
-                    data = f.read()
-                data = b64encode(data)
-            elif value.lower().startswith('http'):
-                return msg
-            elif not value or value == f'data:{self._media_type}/{fmt};base64,':
-                data = b''
-            else:
-                raise ValueError(f'Object should be either path to a {self._media_type} file or numpy array.')
-            msg['object'] = f"data:{self._media_type}/{fmt};base64,{data.decode('utf-8')}"
-        return super()._process_param_change(msg)
+    def _transform_object(self, obj):
+        fmt = self._default_mime
+        if obj is None:
+            data = b''
+        elif isinstance(obj, np.ndarray):
+            fmt = 'wav'
+            buffer = self._from_numpy(obj)
+            data = b64encode(buffer.getvalue())
+        elif os.path.isfile(obj):
+            fmt = obj.split('.')[-1]
+            with open(obj, 'rb') as f:
+                data = f.read()
+            data = b64encode(data)
+        elif obj.lower().startswith('http'):
+            return dict(object=obj)
+        elif not obj or obj == f'data:{self._media_type}/{fmt};base64,':
+            data = b''
+        else:
+            raise ValueError(f'Object should be either path to a {self._media_type} file or numpy array.')
+        b64 = f"data:{self._media_type}/{fmt};base64,{data.decode('utf-8')}"
+        return dict(object=b64)
 
 
 class Audio(_MediaBase):

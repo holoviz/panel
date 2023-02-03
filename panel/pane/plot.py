@@ -76,7 +76,9 @@ class Bokeh(PaneBase):
 
     priority: ClassVar[float | bool | None] = 0.8
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'autodispatch': None, 'theme': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'autodispatch': None, 'theme': None
+    }
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -217,7 +219,8 @@ class Matplotlib(PNG, IPyWidget):
         subplots and other artist elements.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'object': 'text', 'interactive': None, 'dpi': None,  'tight': None, 'high_dpi': None
+        'object': 'text', 'interactive': None, 'dpi': None,  'tight': None,
+        'high_dpi': None
     }
 
     _rerender_params = PNG._rerender_params + ['object', 'dpi', 'tight']
@@ -356,6 +359,8 @@ class RGGPlot(PNG):
     dpi = param.Integer(default=144, bounds=(1, None))
 
     _rerender_params = PNG._rerender_params + ['object', 'dpi', 'width', 'height']
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'dpi': None}
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:

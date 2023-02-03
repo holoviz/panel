@@ -30,7 +30,7 @@ class Alert(Markdown):
 
     priority: ClassVar[float | bool | None] = 0
 
-    _rename: ClassVar[Mapping[str, str | None]] = dict(Markdown._rename, alert_type=None)
+    _rename: ClassVar[Mapping[str, str | None]] = {'alert_type': None}
 
     _stylesheets = ['css/alerts.css', 'css/variables.css']
 

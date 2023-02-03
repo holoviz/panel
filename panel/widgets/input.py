@@ -160,7 +160,7 @@ class FileInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'filename': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'filename': None, 'name': None}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': "'data:' + source.mime_type + ';base64,' + value"
@@ -299,7 +299,7 @@ class DatePicker(Widget):
     _source_transforms: ClassVar[Mapping[str, str | None]] = {}
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'start': 'min_date', 'end': 'max_date', 'name': 'title'
+        'start': 'min_date', 'end': 'max_date'
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkDatePicker
@@ -343,7 +343,7 @@ class _DatetimePickerBase(Widget):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'start': 'min_date', 'end': 'max_date', 'name': 'title'
+        'start': 'min_date', 'end': 'max_date'
     }
 
     _widget_type: ClassVar[Type[Model]] = _bkDatetimePicker
@@ -482,7 +482,7 @@ class ColorPicker(Widget):
 
     _widget_type: ClassVar[Type[Model]] = _BkColorPicker
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'color', 'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'color'}
 
 
 class _NumericInputBase(Widget):
@@ -505,7 +505,7 @@ class _NumericInputBase(Widget):
     end = param.Parameter(default=None, allow_None=True, doc="""
         Optional maximum allowable value.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'start': 'low', 'end': 'high'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
     _widget_type: ClassVar[Type[Model]] = _BkNumericInput
 
@@ -692,7 +692,7 @@ class LiteralInput(Widget):
     value = param.Parameter(default=None)
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'type': None, 'serializer': None
+        'type': None, 'serializer': None
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -798,7 +798,7 @@ class ArrayInput(LiteralInput):
         restriction helps avoid overwhelming the browser and lets
         other widgets remain usable.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = dict(LiteralInput._rename, max_array_size=None)
+    _rename: ClassVar[Mapping[str, str | None]] = {'max_array_size': None}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None}
 
@@ -876,8 +876,8 @@ class DatetimeInput(LiteralInput):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'format': None, 'type': None, 'name': 'title', 'start': None,
-        'end': None, 'serializer': None
+        'format': None, 'type': None, 'start': None, 'end': None,
+        'serializer': None
     }
 
     def __init__(self, **params):
@@ -1062,6 +1062,8 @@ class Switch(_BooleanWidget):
     >>> Switch(name='Works with the tools you know and love', value=True)
     """
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': None, 'value': 'active'
+    }
 
     _widget_type: ClassVar[Type[Model]] = _BkSwitch

@@ -120,6 +120,11 @@ class PaneBase(Reactive):
     # Declares whether Pane supports updates to the Bokeh model
     _updates: ClassVar[bool] = False
 
+    # Mapping from parameter name to bokeh model property name
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'default_layout': None, 'loading': None
+    }
+
     # List of parameters that trigger a rerender of the Bokeh model
     _rerender_params: ClassVar[List[str]] = ['object']
 
@@ -394,7 +399,9 @@ class ModelPane(PaneBase):
         model.update(**self._get_properties())
 
     def _init_params(self):
-        return self.param.values()
+        params = {p: v for p, v in self.param.values().items() if v is not None}
+        params['object'] = self.object
+        return params
 
     def _get_properties(self):
         return self._process_param_change(self._init_params())

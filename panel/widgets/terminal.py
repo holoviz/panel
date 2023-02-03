@@ -257,6 +257,7 @@ class Terminal(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         "clear": None,
+        "name": None,
         "output": None,
         "_output": "output",
         "write_to_console": None,

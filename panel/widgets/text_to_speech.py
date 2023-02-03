@@ -226,6 +226,7 @@ class TextToSpeech(Utterance, Widget):
     _rename: ClassVar[Mapping[str, str | None]] = {
         "auto_speak": None,
         "lang": None,
+        'name': None,
         "pitch": None,
         "rate": None,
         "speak": None,

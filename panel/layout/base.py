@@ -75,6 +75,13 @@ class Panel(Reactive):
     # Callback API
     #----------------------------------------------------------------
 
+    def _init_params(self):
+        return {p: v for p, v in self.param.values().items()
+                if v is not None and p != 'objects'}
+
+    def _get_properties(self):
+        return self._process_param_change(self._init_params())
+
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
@@ -82,9 +89,11 @@ class Panel(Reactive):
         msg = dict(msg)
         inverse = {v: k for k, v in self._rename.items() if v is not None}
         preprocess = any(inverse.get(k, k) in self._preprocess_params for k in msg)
-        if self._rename['objects'] in msg:
+
+        obj_key = self._property_mapping['objects']
+        if obj_key in msg:
             old = events['objects'].old
-            msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
+            msg[obj_key] = self._get_objects(model, old, doc, root, comm)
 
         with hold(doc):
             update = Panel._batch_update
@@ -140,12 +149,11 @@ class Panel(Reactive):
     ) -> Model:
         if self._bokeh_model is None:
             raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
-        model = self._bokeh_model()
+        model = self._bokeh_model(**self._get_properties())
         if root is None:
             root = model
         objects = self._get_objects(model, [], doc, root, comm)
-        props = dict(self._init_params(), objects=objects)
-        model.update(**self._process_param_change(props))
+        model.update(**{self._property_mapping['objects']: objects})
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
@@ -663,6 +671,8 @@ class NamedListPanel(NamedListLike, Panel):
         Whether to add scrollbars if the content overflows the size
         of the container.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
     __abstract = True
@@ -704,7 +714,7 @@ class Row(ListPanel):
 
     _bokeh_model: ClassVar[Type[Model]] = BkRow
 
-    _rename: ClassVar[Mapping[str, str | None]] = dict(ListPanel._rename, col_sizing='cols')
+    _rename: ClassVar[Mapping[str, str | None]] = {'col_sizing': 'cols'}
 
 
 class Column(ListPanel):
@@ -727,7 +737,7 @@ class Column(ListPanel):
 
     _bokeh_model: ClassVar[Type[Model]] = BkColumn
 
-    _rename: ClassVar[Mapping[str, str | None]] = dict(ListPanel._rename, row_sizing='rows')
+    _rename: ClassVar[Mapping[str, str | None]] = {'row_sizing': 'rows'}
 
 
 class WidgetBox(ListPanel):

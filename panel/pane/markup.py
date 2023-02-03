@@ -86,7 +86,7 @@ class HTML(DivPaneBase):
         text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
-        return escape(text)
+        return dict(object=escape(text))
 
 
 class DataFrame(HTML):
@@ -179,6 +179,10 @@ class DataFrame(HTML):
         'sparsify', 'sizing_mode'
     ]
 
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        rp: None for rp in _rerender_params[1:-1]
+    }
+
     _stylesheets = ['css/dataframe.css']
 
     def __init__(self, object=None, **params):
@@ -239,7 +243,7 @@ class DataFrame(HTML):
                 html = obj.to_html(**kwargs)
         else:
             html = ''
-        return html
+        return dict(object=escape(html))
 
     def _init_params(self):
         params = DivPaneBase._init_params(self)
@@ -285,7 +289,7 @@ class Str(DivPaneBase):
             text = '<pre> </pre>'
         else:
             text = '<pre>'+str(obj)+'</pre>'
-        return escape(text)
+        return dict(object=escape(text))
 
 
 class Markdown(DivPaneBase):
@@ -316,11 +320,17 @@ class Markdown(DivPaneBase):
     # Priority depends on the data type
     priority: ClassVar[float | bool | None] = None
 
-    _target_transforms: ClassVar[Mapping[str, str | None]] = {'object': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'dedent': None, 'disable_math': None, 'extensions': None
+    }
 
     _rerender_params: ClassVar[List[str]] = [
         'object', 'dedent', 'extensions', 'css_classes'
     ]
+
+    _target_transforms: ClassVar[Mapping[str, str | None]] = {
+        'object': None
+    }
 
     _stylesheets = ['css/markdown.css']
 
@@ -341,9 +351,10 @@ class Markdown(DivPaneBase):
             obj = obj._repr_markdown_()
         if self.dedent:
             obj = textwrap.dedent(obj)
-        return markdown.markdown(
+        html = markdown.markdown(
             obj, extensions=self.extensions, output_format='html5'
         )
+        return dict(object=escape(html))
 
     def _process_param_change(self, params):
         if 'css_classes' in params:
@@ -388,7 +399,7 @@ class JSON(DivPaneBase):
     _bokeh_model: ClassVar[Model] = _BkJSON
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        "name": None, "object": "text", "encoder": None, "style": "styles"
+        "object": "text", "encoder": None, "style": "styles"
     }
 
     _rerender_params: ClassVar[List[str]] = [
@@ -417,7 +428,7 @@ class JSON(DivPaneBase):
         except Exception:
             data = obj
         text = json.dumps(data or {}, cls=self.encoder)
-        return text
+        return dict(object=text)
 
     def _process_param_change(self, params):
         params = super()._process_param_change(params)

@@ -10,7 +10,7 @@ import base64
 from io import BytesIO
 from pathlib import PurePath
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping,
 )
 
 import param
@@ -29,6 +29,8 @@ class FileBase(DivPaneBase):
 
     filetype: ClassVar[str]
 
+    _rename: ClassVar[Dict[str, str | None]] = {'embed': None}
+
     _rerender_params: ClassVar[List[str]] = [
         'embed', 'object', 'styles', 'width', 'height'
     ]
@@ -42,8 +44,10 @@ class FileBase(DivPaneBase):
 
     def _type_error(self, object):
         if isinstance(object, str):
-            raise ValueError("%s pane cannot parse string that is not a filename "
-                             "or URL." % type(self).__name__)
+            raise ValueError(
+                "%s pane cannot parse string that is not a filename "
+                "or URL." % type(self).__name__
+            )
         super()._type_error(object)
 
     @classmethod
@@ -79,7 +83,7 @@ class FileBase(DivPaneBase):
     def _data(self, obj):
         if hasattr(obj, '_repr_{}_'.format(self.filetype)):
             return getattr(obj, '_repr_' + self.filetype + '_')()
-        elif isinstance(obj, str):
+        elif isinstance(obj, (str, PurePath)):
             if isfile(obj):
                 with open(obj, 'rb') as f:
                     return f.read()
@@ -133,6 +137,10 @@ class ImageBase(FileBase):
     _rerender_params: ClassVar[List[str]] = [
         'alt_text', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
     ]
+
+    _rename: ClassVar[Mapping[str, str | None ]] = {
+        'alt_text': None, 'link_url': None
+    }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
         'object': """'<img src="' + value + '"></img>'"""
@@ -191,7 +199,7 @@ class Image(ImageBase):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        for img_cls in param.concrete_descendants(ImageBase):
+        for img_cls in param.concrete_descendents(ImageBase).values():
             if img_cls is Image:
                 continue
             applies = img_cls.applies(obj)
@@ -200,9 +208,10 @@ class Image(ImageBase):
         return False
 
     def _transform_object(self, obj: Any):
-        for img_cls in param.concrete_descendants(ImageBase):
+        for img_cls in param.concrete_descendents(ImageBase).values():
             if img_cls is not Image and img_cls.applies(obj):
                 return img_cls(obj)._transform_object(obj)
+        return {'object': '<img></img>'}
 
 
 class PNG(ImageBase):
@@ -344,6 +353,8 @@ class SVG(ImageBase):
 
     filetype: ClassVar[str] = 'svg'
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'encode': None}
+
     _rerender_params: ClassVar[List[str]] = ImageBase._rerender_params + ['encode']
 
     @classmethod
@@ -371,10 +382,8 @@ class SVG(ImageBase):
         data = self._data(obj)
         width, height = self._imgshape(data)
         if self.encode:
-            html = f"<img src='{self._b64(data)}' width={width} height={height}></img>"
-        else:
-            html = data.decode("utf-8")
-        return dict(width=width, height=height, text=escape(html))
+            data = f"<img src='{self._b64(data)}' width={width} height={height}></img>"
+        return dict(width=width, height=height, text=escape(data))
 
 
 class PDF(FileBase):
@@ -398,6 +407,8 @@ class PDF(FileBase):
     filetype: ClassVar[str] = 'pdf'
 
     _bokeh_model: ClassVar[Model] = _BkPDF
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'start_page': None}
 
     _rerender_params: ClassVar[List[str]] = FileBase._rerender_params + ['start_page']
 

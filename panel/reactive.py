@@ -87,7 +87,7 @@ class Syncable(Renderable):
     _manual_params: ClassVar[List[str]] = []
 
     # Mapping from parameter name to bokeh model property name
-    _rename: ClassVar[Mapping[str, str | None]] = {}
+    _rename: ClassVar[Mapping[str, str | None]] = {'loading': None}
 
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
@@ -128,6 +128,14 @@ class Syncable(Renderable):
     # Model API
     #----------------------------------------------------------------
 
+    @property
+    def _property_mapping(self):
+        rename = {}
+        for cls in self.__class__.__mro__[::-1]:
+            if issubclass(cls, Syncable):
+                rename.update(cls._rename)
+        return rename
+
     def _process_property_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         """
         Transform bokeh model property changes into parameter updates.
@@ -136,7 +144,7 @@ class Syncable(Renderable):
         _rename class level attribute to map between parameter and
         property names.
         """
-        inverted = {v: k for k, v in self._rename.items()}
+        inverted = {v: k for k, v in self._property_mapping.items()}
         return {inverted.get(k, k): v for k, v in msg.items()}
 
     def _process_param_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
@@ -147,8 +155,11 @@ class Syncable(Renderable):
         _rename class level attribute to map between parameter and
         property names.
         """
-        properties = {self._rename.get(k) or k: v for k, v in msg.items()
-                      if self._rename.get(k, False) is not None}
+        properties = {
+            self._property_mapping.get(k) or k: v for k, v in msg.items()
+            if self._property_mapping.get(k, False) is not None and
+            k not in self._manual_params
+        }
         if 'width' in properties and self.sizing_mode is None:
             properties['min_width'] = properties['width']
         if 'height' in properties and self.sizing_mode is None:
@@ -589,7 +600,7 @@ class Reactive(Syncable, Viewable):
         controls = Param(self.param, parameters=params, default_layout=WidgetBox,
                          name='Controls', **kwargs)
         layout_params = [p for p in linkable if p in Viewable.param]
-        if 'name' not in layout_params and self._rename.get('name', False) is not None and not parameters:
+        if 'name' not in layout_params and self._property_mapping.get('name', False) is not None and not parameters:
             layout_params.insert(0, 'name')
         style = Param(self.param, parameters=layout_params, default_layout=WidgetBox,
                       name='Layout', **kwargs)
