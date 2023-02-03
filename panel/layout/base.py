@@ -621,6 +621,8 @@ class ListPanel(ListLike, Panel):
         Whether to add scrollbars if the content overflows the size
         of the container.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
     __abstract = True
@@ -636,6 +638,13 @@ class ListPanel(ListLike, Panel):
         elif 'objects' in params:
             params['objects'] = [panel(pane) for pane in params['objects']]
         super(Panel, self).__init__(**params)
+
+    @property
+    def _linked_properties(self):
+        return tuple(
+            self._property_mapping.get(p, p) for p in self.param
+            if p not in ListPanel.param and self._property_mapping.get(p, p) is not None
+        )
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         scroll = params.pop('scroll', None)
@@ -707,11 +716,7 @@ class Row(ListPanel):
     >>> pn.Row(some_widget, some_pane, some_python_object)
     """
 
-    col_sizing = param.Parameter()
-
     _bokeh_model: ClassVar[Type[Model]] = BkRow
-
-    _rename: ClassVar[Mapping[str, str | None]] = {'col_sizing': 'cols'}
 
 
 class Column(ListPanel):
@@ -730,11 +735,7 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    row_sizing = param.Parameter()
-
     _bokeh_model: ClassVar[Type[Model]] = BkColumn
-
-    _rename: ClassVar[Mapping[str, str | None]] = {'row_sizing': 'rows'}
 
 
 class WidgetBox(ListPanel):

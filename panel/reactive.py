@@ -140,7 +140,7 @@ class Syncable(Renderable):
     def _linked_properties(self):
         return tuple(
             self._property_mapping.get(p, p) for p in self.param
-            if p not in Syncable.param and self._property_mapping.get(p, p) is not None
+            if p not in Viewable.param and self._property_mapping.get(p, p) is not None
         )
 
     def _get_properties(self):

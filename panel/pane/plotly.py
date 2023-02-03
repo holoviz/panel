@@ -87,7 +87,9 @@ class Plotly(PaneBase):
 
     _updates: ClassVar[bool] = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'link_figure': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'link_figure': None, 'object': None
+    }
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:

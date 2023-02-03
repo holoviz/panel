@@ -430,6 +430,12 @@ class JSON(DivPaneBase):
         text = json.dumps(data or {}, cls=self.encoder)
         return dict(object=text)
 
+    def _process_property_change(self, properties):
+        properties = super()._process_property_change(properties)
+        if 'depth' in properties:
+            properties['depth'] = -1 if properties['depth'] is None else properties['depth']
+        return properties
+
     def _process_param_change(self, params):
         params = super()._process_param_change(params)
         if 'depth' in params:

@@ -180,8 +180,8 @@ class FileInput(Widget):
 
     @property
     def _linked_properties(self):
-        properties = super().linked_properties
-        return properties + ['filename']
+        properties = super()._linked_properties
+        return properties + ('filename',)
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)

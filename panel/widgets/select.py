@@ -173,6 +173,10 @@ class Select(SingleSelectBase):
         If set to 1 displays options as dropdown otherwise displays
         scrollable area.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'groups': None, 'size': None
+    }
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'size': None, 'groups': None
     }

@@ -172,8 +172,15 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
 
     @property
+    def _linked_properties(self):
+        return tuple(
+            self._property_mapping.get(p, p) for p in self.param
+            if p not in PaneBase.param and self._property_mapping.get(p, p) is not None
+        )
+
+    @property
     def _linkable_params(self) -> List[str]:
-        return [p for p in self._synced_params if self._propert_mapping.get(p, False) is not None]
+        return [p for p in self._synced_params if self._property_mapping.get(p, False) is not None]
 
     @property
     def _synced_params(self) -> List[str]:
