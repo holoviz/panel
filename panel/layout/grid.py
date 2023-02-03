@@ -151,15 +151,14 @@ class GridBox(ListPanel):
         return cls._flatten_grid(layout, nrows, ncols)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = self._bokeh_model()
+        model = self._bokeh_model(**self._get_properties())
         if root is None:
             root = model
         objects = self._get_objects(model, [], doc, root, comm)
-        properties = self._process_param_change(self._init_params())
-        properties['children'] = self._get_children(objects, self.nrows, self.ncols)
-        model.update(**properties)
+        children = self._get_children(objects, self.nrows, self.ncols)
+        model.update(**{'children': children})
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, self._linked_props, doc, root, comm)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
     def _update_model(

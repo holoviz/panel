@@ -62,8 +62,6 @@ class Tabs(NamedListPanel):
     var value = ids;
     """}
 
-    _linked_props: ClassVar[List[str]] = ['active', 'tabs']
-
     _manual_params: ClassVar[List[str]] = ['closable']
 
     _rename: ClassVar[Mapping[str, str | None]] = {

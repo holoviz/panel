@@ -67,8 +67,11 @@ class Indicator(Widget):
 
     __abstract = True
 
-    def _filter_properties(self, properties):
-        "Indicators are solely display units so we do not need to sync properties."
+    @property
+    def _linked_properties(self, properties):
+        """
+        Indicators are solely display units so we do not need to sync properties.
+        """
         return []
 
 

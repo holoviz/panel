@@ -10,7 +10,7 @@ import base64
 from io import BytesIO
 from pathlib import PurePath
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping,
+    TYPE_CHECKING, Any, ClassVar, List, Mapping,
 )
 
 import param
@@ -29,7 +29,7 @@ class FileBase(DivPaneBase):
 
     filetype: ClassVar[str]
 
-    _rename: ClassVar[Dict[str, str | None]] = {'embed': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'embed': None}
 
     _rerender_params: ClassVar[List[str]] = [
         'embed', 'object', 'styles', 'width', 'height'

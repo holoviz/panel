@@ -173,7 +173,7 @@ class PaneBase(Reactive):
 
     @property
     def _linkable_params(self) -> List[str]:
-        return [p for p in self._synced_params if self._rename.get(p, False) is not None]
+        return [p for p in self._synced_params if self._propert_mapping.get(p, False) is not None]
 
     @property
     def _synced_params(self) -> List[str]:
@@ -391,10 +391,6 @@ class ModelPane(PaneBase):
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
-    @property
-    def _linked_properties(self):
-        return tuple(self._rename.get(p, p) for p in self._linkable_params)
-
     def _update(self, ref: str, model: Model) -> None:
         model.update(**self._get_properties())
 
@@ -402,9 +398,6 @@ class ModelPane(PaneBase):
         params = {p: v for p, v in self.param.values().items() if v is not None}
         params['object'] = self.object
         return params
-
-    def _get_properties(self):
-        return self._process_param_change(self._init_params())
 
     def _transform_object(self, obj):
         return dict(object=obj)

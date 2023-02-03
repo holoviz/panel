@@ -160,7 +160,9 @@ class FileInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'filename': None, 'name': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'filename': None, 'name': None
+    }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': "'data:' + source.mime_type + ';base64,' + value"
@@ -176,9 +178,10 @@ class FileInput(Widget):
             msg.pop('mime_type')
         return msg
 
-    def _filter_properties(self, properties):
-        properties = super()._filter_properties(properties)
-        return properties + ['value', 'mime_type', 'filename']
+    @property
+    def _linked_properties(self):
+        properties = super().linked_properties
+        return properties + ['filename']
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)

@@ -286,7 +286,7 @@ class Plotly(PaneBase):
         model = PlotlyPlot(**self._process_param_change(self._init_params()))
         if root is None:
             root = model
-        self._link_props(model, self._linkable_params, doc, root, comm)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 

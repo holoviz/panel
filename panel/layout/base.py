@@ -41,9 +41,6 @@ class Panel(Reactive):
     # Bokeh model used to render this Panel
     _bokeh_model: ClassVar[Type[Model]]
 
-    # Properties that should sync JS -> Python
-    _linked_props: ClassVar[List[str]] = []
-
     # Parameters which require the preprocessors to be re-run
     _preprocess_params: ClassVar[List[str]] = []
 
@@ -155,7 +152,7 @@ class Panel(Reactive):
         objects = self._get_objects(model, [], doc, root, comm)
         model.update(**{self._property_mapping['objects']: objects})
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, self._linked_props, doc, root, comm)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
     #----------------------------------------------------------------
@@ -678,11 +675,11 @@ class NamedListPanel(NamedListLike, Panel):
     __abstract = True
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        scroll = params.pop('scroll', None)
-        css_classes = self.css_classes or []
-        if scroll:
-            params['css_classes'] = css_classes + ['scrollable']
-        elif scroll == False:
+        if 'scroll' in params:
+            scroll = params.pop('scroll')
+            css_classes = list(self.css_classes or [])
+            if scroll:
+                css_classes += ['scrollable']
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 

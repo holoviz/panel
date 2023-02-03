@@ -72,11 +72,9 @@ class Card(Column):
 
     _bokeh_model: ClassVar[Type[Model]] = BkCard
 
-    _linked_props: ClassVar[List[str]] = ['collapsed']
-
-    _rename: ClassVar[Mapping[str, str | None]] = dict(
-        Column._rename, title=None, header=None, title_css_classes=None
-    )
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'title': None, 'header': None, 'title_css_classes': None
+    }
 
     _stylesheets: ClassVar[List[str]] = ['css/card.css']
 

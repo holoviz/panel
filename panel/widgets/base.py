@@ -108,19 +108,13 @@ class Widget(Reactive):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        model = self._widget_type(**self._process_param_change(self._init_params()))
+        model = self._widget_type(**self._get_properties())
         if root is None:
             root = model
         # Link parameters and bokeh model
-        values = self.param.values()
-        properties = self._filter_properties(list(self._process_param_change(values)))
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, properties, doc, root, comm)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         return model
-
-    def _filter_properties(self, properties: List[str]) -> List[str]:
-        ignored = list(Layoutable.param)+['loading']
-        return [p for p in properties if p not in ignored]
 
     def _get_embed_state(
         self, root: 'Model', values: Optional[List[Any]] = None, max_opts: int = 3
