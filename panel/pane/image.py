@@ -52,15 +52,15 @@ class FileBase(DivPaneBase):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        filetype = cls.filetype
-        if hasattr(obj, '_repr_{}_'.format(filetype)):
+        filetype = cls.filetype.split('+')[0]
+        if hasattr(obj, f'_repr_{filetype}_'):
             return True
         if isinstance(obj, PurePath):
             obj = str(obj.absolute())
         if isinstance(obj, str):
-            if isfile(obj) and obj.endswith('.'+filetype):
+            if isfile(obj) and obj.endswith(f'.{filetype}'):
                 return True
-            if isurl(obj, [cls.filetype]):
+            if isurl(obj, [filetype]):
                 return True
             elif isurl(obj, None):
                 return 0
@@ -81,8 +81,9 @@ class FileBase(DivPaneBase):
         return f"data:image/{self.filetype};base64,{b64}"
 
     def _data(self, obj):
-        if hasattr(obj, '_repr_{}_'.format(self.filetype)):
-            return getattr(obj, '_repr_' + self.filetype + '_')()
+        filetype = self.filetype.split('+')[0]
+        if hasattr(obj, f'_repr_{filetype}_'):
+            return getattr(obj, f'_repr_{filetype}_')()
         elif isinstance(obj, (str, PurePath)):
             if isfile(obj):
                 with open(obj, 'rb') as f:
@@ -364,7 +365,7 @@ class SVG(ImageBase):
         Whether to enable base64 encoding of the SVG, base64 encoded
         SVGs do not support links.""")
 
-    filetype: ClassVar[str] = 'svg'
+    filetype: ClassVar[str] = 'svg+xml'
 
     _rename: ClassVar[Mapping[str, str | None]] = {'encode': None}
 
@@ -431,7 +432,10 @@ class PDF(FileBase):
         elif self.embed:
             # This is handled by the Typescript Bokeh model to be able to render large PDF files (>2MB).
             data = self._data(obj)
-            return dict(object=self._b64(data))
+            if not isinstance(data, bytes):
+                data = data.encode('utf-8')
+            b64 = base64.b64encode(data).decode("utf-8")
+            return dict(object=b64)
         w, h = self.width or '100%', self.height or '100%'
         html = f'<embed src="{obj}#page={self.start_page}" width={w!r} height={h!r} type="application/pdf">'
         return dict(object=escape(html))
