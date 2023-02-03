@@ -38,7 +38,7 @@ from .echarts import ECharts  # noqa
 from .equation import LaTeX  # noqa
 from .holoviews import HoloViews, Interactive  # noqa
 from .image import (  # noqa
-    GIF, ICO, JPG, PDF, PNG, SVG,
+    GIF, ICO, JPG, PDF, PNG, SVG, Image,
 )
 from .ipywidget import IPyLeaflet, IPyWidget, Reacton  # noqa
 from .markup import (  # noqa

@@ -78,7 +78,7 @@ class FileBase(DivPaneBase):
         if not isinstance(data, bytes):
             data = data.encode('utf-8')
         b64 = base64.b64encode(data).decode("utf-8")
-        return f"data:image/svg+xml;base64,{b64}"
+        return f"data:image/{self.filetype};base64,{b64}"
 
     def _data(self, obj):
         if hasattr(obj, '_repr_{}_'.format(self.filetype)):
@@ -196,6 +196,19 @@ class ImageBase(FileBase):
 
 
 class Image(ImageBase):
+    """
+    The `Image` pane embeds any known image format in a panel if
+    provided a local path, bytes or remote image link.
+
+    :Example:
+
+    >>> Image(
+    ...     'https://panel.holoviz.org/_static/logo_horizontal.png',
+    ...     alt_text='The Panel Logo',
+    ...     link_url='https://panel.holoviz.org/index.html',
+    ...     width=500
+    ... )
+    """
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
