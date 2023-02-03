@@ -357,7 +357,7 @@ class BaseTable(ReactiveData, Widget):
             if col.dtype.kind not in 'SUO':
                 return col
             try:
-                return col.str.lower()
+                return col.fillna("").str.lower()
             except Exception:
                 return col
 

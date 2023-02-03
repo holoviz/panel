@@ -760,7 +760,9 @@ export class DataTabulatorView extends HTMLBoxView {
       if (tab_column.sorter == 'timestamp') {
         tab_column.sorter = timestampSorter
       }
-
+      if (tab_column.sorter === undefined) {
+        tab_column.sorter = "string"
+      }
       const editor: any = column.editor
       const ctype = editor.type
       if (tab_column.editor != null) {
