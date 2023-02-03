@@ -157,6 +157,8 @@ class CompositeWidget(Widget):
 
     _composite_type: ClassVar[Type[ListPanel]] = Row
 
+    _linked_properties: ClassVar[Tuple[str]] = ()
+
     __abstract = True
 
     def __init__(self, **params):

@@ -497,6 +497,8 @@ class Reactive(Syncable, Viewable):
     the parameters to other objects.
     """
 
+    __abstract = True
+
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
@@ -1075,6 +1077,8 @@ class ReactiveData(SyncableData):
     An extension of SyncableData which bi-directionally syncs a data
     parameter between frontend and backend using a ColumnDataSource.
     """
+
+    __abstract = True
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -1689,7 +1693,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         for children_param in self._parser.children.values():
             if children_param in self._data_model.properties():
                 linked_properties.append(children_param)
-        return linked_properties
+        return tuple(linked_properties)
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,

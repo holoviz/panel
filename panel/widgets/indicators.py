@@ -23,7 +23,7 @@ import sys
 
 from math import pi
 from typing import (
-    TYPE_CHECKING, ClassVar, Dict, List, Mapping, Optional, Type,
+    TYPE_CHECKING, ClassVar, Dict, List, Mapping, Optional, Tuple, Type,
 )
 
 import numpy as np
@@ -68,11 +68,11 @@ class Indicator(Widget):
     __abstract = True
 
     @property
-    def _linked_properties(self, properties):
+    def _linked_properties(self) -> Tuple[str]:
         """
         Indicators are solely display units so we do not need to sync properties.
         """
-        return []
+        return ()
 
 
 class BooleanIndicator(Indicator):

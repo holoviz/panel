@@ -777,7 +777,7 @@ class WidgetBox(ListPanel):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'objects': 'children', 'horizontal': None
+        'disabled': None, 'objects': 'children', 'horizontal': None
     }
 
     @property
@@ -786,9 +786,9 @@ class WidgetBox(ListPanel):
 
     @param.depends('disabled', 'objects', watch=True)
     def _disable_widgets(self) -> None:
-        for obj in self:
-            if hasattr(obj, 'disabled'):
-                obj.disabled = self.disabled
+        from ..widget import Widget
+        for obj in self.select(Widget):
+            obj.disabled = self.disabled
 
     def __init__(self, *objects: Any, **params: Any):
         super().__init__(*objects, **params)

@@ -316,6 +316,8 @@ class _MultiSelectBase(SingleSelectBase):
 
     _supports_embed: ClassVar[bool] = False
 
+    __abstract = True
+
     def _process_param_change(self, msg):
         msg = super(SingleSelectBase, self)._process_param_change(msg)
         labels, values = self.labels, self.values

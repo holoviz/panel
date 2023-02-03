@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional, Type,
-    TypeVar,
+    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional, Tuple,
+    Type, TypeVar,
 )
 
 import param
@@ -423,6 +423,8 @@ class ReplacementPane(PaneBase):
     """
 
     _pane = param.ClassSelector(class_=Viewable)
+
+    _linkable_properties: ClassVar[Tuple[str]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None}
 

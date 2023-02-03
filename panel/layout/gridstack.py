@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import ClassVar, Mapping
 
 import param
 
@@ -131,8 +130,6 @@ class GridStack(ReactiveHTML, GridSpec):
         return {
             'GridStack': cls.__javascript__[0:1],
         }
-
-    _rename: ClassVar[Mapping[str, str | None]] = {}
 
     @classproperty
     def __javascript__(cls):
