@@ -8,7 +8,7 @@ import os
 from base64 import b64encode
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional,
+    Any, ClassVar, List, Mapping,
 )
 
 import numpy as np
@@ -16,15 +16,10 @@ import param
 
 from ..models import Audio as _BkAudio, Video as _BkVideo
 from ..util import isfile, isurl
-from .base import PaneBase
-
-if TYPE_CHECKING:
-    from bokeh.document import Document
-    from bokeh.model import Model
-    from pyviz_comms import Comm
+from .base import ModelPane
 
 
-class _MediaBase(PaneBase):
+class _MediaBase(ModelPane):
 
     loop = param.Boolean(default=False, doc="""
         Whether the meida should loop""")
@@ -77,18 +72,6 @@ class _MediaBase(PaneBase):
             return True
         return False
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        props = self._process_param_change(self._init_params())
-        model = self._bokeh_model(**props)
-        if root is None:
-            root = model
-        self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, list(model.properties()), doc, root, comm)
-        return model
-
     def _from_numpy(self, data):
         from scipy.io import wavfile
         buffer = BytesIO()
@@ -102,9 +85,8 @@ class _MediaBase(PaneBase):
         return msg
 
     def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            value = msg['value']
+        if 'object' in msg:
+            value = msg['object']
             fmt = self._default_mime
             if isinstance(value, np.ndarray):
                 fmt = 'wav'
@@ -121,8 +103,8 @@ class _MediaBase(PaneBase):
                 data = b''
             else:
                 raise ValueError(f'Object should be either path to a {self._media_type} file or numpy array.')
-            msg['value'] = f"data:{self._media_type}/{fmt};base64,{data.decode('utf-8')}"
-        return msg
+            msg['object'] = f"data:{self._media_type}/{fmt};base64,{data.decode('utf-8')}"
+        return super()._process_param_change(msg)
 
 
 class Audio(_MediaBase):

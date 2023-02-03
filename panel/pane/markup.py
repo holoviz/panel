@@ -16,8 +16,7 @@ import param
 from ..models import HTML as _BkHTML, JSON as _BkJSON
 from ..util import escape
 from ..util.warnings import deprecated
-from ..viewable import Layoutable
-from .base import PaneBase
+from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -25,7 +24,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-class DivPaneBase(PaneBase):
+class DivPaneBase(ModelPane):
     """
     Baseclass for Panes which render HTML inside a Bokeh Div.
     See the documentation for Bokeh Div for more detail about
@@ -46,25 +45,6 @@ class DivPaneBase(PaneBase):
             params["styles"] = params.pop("style")
             deprecated("1.1", "style",  "styles")
         super().__init__(object=object, **params)
-
-    def _get_properties(self):
-        return {
-            p : getattr(self, p) for p in list(Layoutable.param)
-            if getattr(self, p) is not None
-        }
-
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        model = self._bokeh_model(**self._process_param_change(self._get_properties()))
-        if root is None:
-            root = model
-        self._models[root.ref['id']] = (model, parent)
-        return model
-
-    def _update(self, ref: str, model: Model) -> None:
-        model.update(**self._process_param_change(self._get_properties()))
 
 
 class HTML(DivPaneBase):
@@ -102,12 +82,11 @@ class HTML(DivPaneBase):
         else:
             return False
 
-    def _get_properties(self):
-        properties = super()._get_properties()
-        text = '' if self.object is None else self.object
+    def _transform_object(self, obj):
+        text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
-        return dict(properties, text=escape(text))
+        return escape(text)
 
 
 class DataFrame(HTML):
@@ -243,29 +222,30 @@ class DataFrame(HTML):
             self._stream.destroy()
             self._stream = None
 
-    def _get_properties(self):
-        properties = DivPaneBase._get_properties(self)
-        if self._stream:
-            df = self._object
-        else:
-            df = self.object
-        if hasattr(df, 'to_frame'):
-            df = df.to_frame()
+    def _transform_object(self, obj):
+        if hasattr(obj, 'to_frame'):
+            obj = obj.to_frame()
 
-        module = getattr(df, '__module__', '')
-        if hasattr(df, 'to_html'):
+        module = getattr(obj, '__module__', '')
+        if hasattr(obj, 'to_html'):
             if 'dask' in module:
-                html = df.to_html(max_rows=self.max_rows).replace('border="1"', '')
+                html = obj.to_html(max_rows=self.max_rows).replace('border="1"', '')
             elif 'style' in module:
                 classes = ' '.join(self.classes)
-                html = df.to_html(table_attributes=f'class="{classes}"')
+                html = obj.to_html(table_attributes=f'class="{classes}"')
             else:
                 kwargs = {p: getattr(self, p) for p in self._rerender_params
                           if p not in DivPaneBase.param and p != '_object'}
-                html = df.to_html(**kwargs)
+                html = obj.to_html(**kwargs)
         else:
             html = ''
-        return dict(properties, text=escape(html))
+        return html
+
+    def _init_params(self):
+        params = DivPaneBase._init_params(self)
+        if self._stream:
+            params['object'] = self._object
+        return params
 
 
 class Str(DivPaneBase):
@@ -300,13 +280,12 @@ class Str(DivPaneBase):
     def applies(cls, obj: Any) -> bool:
         return True
 
-    def _get_properties(self):
-        properties = super()._get_properties()
-        if self.object is None or (isinstance(self.object, str) and self.object == ''):
+    def _transform_object(self, obj):
+        if obj is None or (isinstance(obj, str) and obj == ''):
             text = '<pre> </pre>'
         else:
-            text = '<pre>'+str(self.object)+'</pre>'
-        return dict(properties, text=escape(text))
+            text = '<pre>'+str(obj)+'</pre>'
+        return escape(text)
 
 
 class Markdown(DivPaneBase):
@@ -354,20 +333,22 @@ class Markdown(DivPaneBase):
         else:
             return False
 
-    def _get_properties(self):
+    def _transform_object(self, obj):
         import markdown
-        data = self.object
-        if data is None:
-            data = ''
-        elif not isinstance(data, str):
-            data = data._repr_markdown_()
+        if obj is None:
+            obj = ''
+        elif not isinstance(obj, str):
+            obj = obj._repr_markdown_()
         if self.dedent:
-            data = textwrap.dedent(data)
-        properties = super()._get_properties()
-        css_classes = properties.pop('css_classes', []) + ['markdown']
-        html = markdown.markdown(data, extensions=self.extensions,
-                                 output_format='html5')
-        return dict(properties, text=escape(html), css_classes=css_classes)
+            obj = textwrap.dedent(obj)
+        return markdown.markdown(
+            obj, extensions=self.extensions, output_format='html5'
+        )
+
+    def _process_param_change(self, params):
+        if 'css_classes' in params:
+            params['css_classes'] = params['css_classes'] + ['markdown']
+        return super()._process_param_change(params)
 
 
 
@@ -430,13 +411,16 @@ class JSON(DivPaneBase):
         else:
             return None
 
-    def _get_properties(self):
-        properties = super()._get_properties()
+    def _transform_object(self, obj):
         try:
-            data = json.loads(self.object)
+            data = json.loads(obj)
         except Exception:
-            data = self.object
+            data = obj
         text = json.dumps(data or {}, cls=self.encoder)
-        depth = None if self.depth < 0 else self.depth
-        return dict(text=text, theme=self.theme, depth=depth,
-                    hover_preview=self.hover_preview, **properties)
+        return text
+
+    def _process_param_change(self, params):
+        params = super()._process_param_change(params)
+        if 'depth' in params:
+            params['depth'] = None if params['depth'] < 0 else params['depth']
+        return params

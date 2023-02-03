@@ -327,9 +327,9 @@ class Matplotlib(PNG, IPyWidget):
             manager.canvas.handle_resize(event)
         manager.canvas.draw_idle()
 
-    def _data(self):
+    def _data(self, obj):
         try:
-            self.object.set_dpi(self.dpi)
+            obj.set_dpi(self.dpi)
         except Exception as ex:
             raise Exception("The Matplotlib backend is not configured. Try adding `matplotlib.use('agg')`") from ex
         b = BytesIO()
@@ -339,7 +339,7 @@ class Matplotlib(PNG, IPyWidget):
         else:
             bbox_inches = None
 
-        self.object.canvas.print_figure(b, bbox_inches=bbox_inches)
+        obj.canvas.print_figure(b, bbox_inches=bbox_inches)
         return b.getvalue()
 
 
@@ -387,25 +387,6 @@ class YT(HTML):
                 hasattr(obj, "plots") and
                 hasattr(obj, "_repr_html_"))
 
-    def _get_properties(self):
-        p = super()._get_properties()
-        if self.object is None:
-            return p
-
-        width = height = 0
-        if self.width  is None or self.height is None:
-            for k,v in self.object.plots.items():
-                if hasattr(v, "_repr_png_"):
-                    img = v._repr_png_()
-                    w,h = PNG._imgshape(img)
-                    height += h
-                    width = max(w, width)
-
-        if self.width  is None: p["width"]  = width
-        if self.height is None: p["height"] = height
-
-        return p
-
 
 class Folium(HTML):
     """
@@ -423,9 +404,8 @@ class Folium(HTML):
         return (getattr(obj, '__module__', '').startswith('folium.') and
                 hasattr(obj, "_repr_html_"))
 
-    def _get_properties(self):
-        properties = super()._get_properties()
-        text = '' if self.object is None else self.object
+    def _transform_object(self, obj):
+        text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_().replace(FOLIUM_BEFORE, FOLIUM_AFTER)
-        return dict(properties, text=escape(text))
+        return dict(object=escape(text))

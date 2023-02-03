@@ -369,6 +369,45 @@ class PaneBase(Reactive):
 
 
 
+class ModelPane(PaneBase):
+
+    _bokeh_model: ClassVar[Model]
+
+    __abstract = True
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        model = self._bokeh_model(**self._get_properties())
+        if root is None:
+            root = model
+        self._models[root.ref['id']] = (model, parent)
+        self._link_props(model, self._linked_properties, doc, root, comm)
+        return model
+
+    @property
+    def _linked_properties(self):
+        return tuple(self._rename.get(p, p) for p in self._linkable_params)
+
+    def _update(self, ref: str, model: Model) -> None:
+        model.update(**self._get_properties())
+
+    def _init_params(self):
+        return self.param.values()
+
+    def _get_properties(self):
+        return self._process_param_change(self._init_params())
+
+    def _transform_object(self, obj):
+        return dict(object=obj)
+
+    def _process_param_change(self, params):
+        if 'object' in params:
+            params.update(self._transform_object(params['object']))
+        return super()._process_param_change(params)
+
+
 class ReplacementPane(PaneBase):
     """
     A Pane type which allows for complete replacement of the underlying
