@@ -40,7 +40,9 @@ DEPENDENCY_MAP = {
     "reference/panes/Alert.ipynb": ["panel"],
     "reference/panes/Audio.ipynb": ['panel', 'scipy'],
     "reference/panes/Bokeh.ipynb": ['panel'],
-    "reference/panes/DataFrame.ipynb": ['panel'] # 'streamz' does currently not work. See https://github.com/python-streamz/streamz/issues/467
+    "reference/panes/DataFrame.ipynb": ['panel'], # 'streamz' does currently not work. See https://github.com/python-streamz/streamz/issues/467
+    "reference/panes/DeckGL.ipynb": ['panel', 'pydeck'],
+    "reference/panes/ECharts.ipynb": ["panel"], # 'pyecharts' does currently not work. See https://github.com/simplejson/simplejson/issues/307
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
