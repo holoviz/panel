@@ -25,6 +25,22 @@ DEPENDENCY_MAP = {
     "reference/indicators/Number.ipynb": ["panel"],
     "reference/indicators/Progress.ipynb": ["panel"],
     "reference/indicators/Tqdm.ipynb": ["panel"],
+    "reference/indicators/Trend.ipynb": ["panel"],
+    "reference/layouts/Accordion.ipynb": ["panel"],
+    "reference/layouts/Card.ipynb": ["panel"],
+    "reference/layouts/Column.ipynb": ["panel"],
+    "reference/layouts/Divider.ipynb": ["panel"],
+    "reference/layouts/FlexBox.ipynb": ["panel"],
+    "reference/layouts/GridBox.ipynb": ["panel"],
+    "reference/layouts/GridSpec.ipynb": ['panel', "holoviews"],
+    "reference/layouts/GridStack.ipynb": ['panel', "holoviews"],
+    "reference/layouts/Row.ipynb": ["panel"],
+    "reference/layouts/Tabs.ipynb": ["panel"],
+    "reference/layouts/WidgetBox.ipynb": ["panel"],
+    "reference/panes/Alert.ipynb": ["panel"],
+    "reference/panes/Audio.ipynb": ['panel', 'scipy'],
+    "reference/panes/Bokeh.ipynb": ['panel'],
+    "reference/panes/DataFrame.ipynb": ['panel'] # 'streamz' does currently not work. See https://github.com/python-streamz/streamz/issues/467
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
