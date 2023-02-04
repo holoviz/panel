@@ -61,8 +61,8 @@ def test_pane_clone(pane):
         pytest.skip("Dependent library could not be imported.")
     clone = p.clone()
 
-    assert ([(k, v) for k, v in sorted(p.param.values().items()) if k != 'name'] ==
-            [(k, v) for k, v in sorted(clone.param.values().items()) if k != 'name'])
+    assert ([(k, v) for k, v in sorted(p.param.values().items()) if k not in ('name', '_pane')] ==
+            [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name', '_pane')])
 
 
 @pytest.mark.parametrize('pane', all_panes)

@@ -23,7 +23,6 @@ from bokeh.server.views.static_handler import StaticHandler
 from bokeh.server.views.ws import WSHandler
 from bokeh.util.token import get_session_id, get_token_payload
 from ipykernel.comm import Comm
-from IPython.display import HTML, publish_display_data
 
 from ..util import edit_readonly
 from .resources import Resources
@@ -37,6 +36,14 @@ class _RequestProxy:
     arguments: Dict[str, List[bytes]]
     cookies: Dict[str, str]
     headers: Dict[str, str | List[str]]
+
+class Mimebundle:
+
+    def __init__(self, mimebundle):
+        self._mimebundle = mimebundle
+
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        return self._mimebundle, {}
 
 
 class PanelExecutor(WSHandler):
@@ -66,8 +73,11 @@ class PanelExecutor(WSHandler):
             path_versioner=StaticHandler.append_version
         )
         self._set_state()
-        self.session = self._create_server_session()
-        self.connection = ServerConnection(self.protocol, self, None, self.session)
+        try:
+            self.session = self._create_server_session()
+            self.connection = ServerConnection(self.protocol, self, None, self.session)
+        except Exception:
+            self.session = None
 
     def _get_payload(self, token: str) -> Dict[str, Any]:
         payload = get_token_payload(token)
@@ -145,7 +155,6 @@ class PanelExecutor(WSHandler):
         session_context._set_session(session)
         return session
 
-
     async def write_message(
         self, message: Union[bytes, str, Dict[str, Any]],
         binary: bool = False, locked: bool = True
@@ -156,11 +165,13 @@ class PanelExecutor(WSHandler):
         else:
             self.comm.send(message, metadata=metadata)
 
-    def render(self) -> HTML:
+    def render(self) -> Mimebundle:
         """
         Renders the application to an IPython.display.HTML object to
         be served by the `PanelJupyterHandler`.
         """
+        if self.session is None:
+            return Mimebundle({'text/error': 'Session did not start correctly'})
         with set_curdoc(self.session.document):
             html = server_html_page_for_session(
                 self.session,
@@ -169,5 +180,4 @@ class PanelExecutor(WSHandler):
                 template=self.session.document.template,
                 template_variables=self.session.document.template_variables
             )
-        publish_display_data({'application/bokeh-extensions': extension_dirs})
-        return HTML(html)
+        return Mimebundle({'text/html': html, 'application/bokeh-extensions': extension_dirs})

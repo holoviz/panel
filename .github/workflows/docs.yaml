@@ -37,50 +37,23 @@ jobs:
       DISPLAY: ":99.0"
       PANEL_IPYWIDGET: 1
     steps:
-      - name: remove nodejs
-        run: |
-          sudo rm /usr/local/bin/node
-          sudo rm /usr/local/bin/npm
-      - uses: actions/checkout@v3
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a10
         with:
-          fetch-depth: "100"
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-      - name: Fetch unshallow
-        run: git fetch --prune --tags --unshallow -f
-      - name: Set and echo git ref
-        id: vars
-        run: |
-          echo "Deploying from ref ${GITHUB_REF#refs/*/}"
-          echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: conda setup
-        run: |
-          conda update -n base -c defaults conda
-          conda create -n test-environment
-          conda activate test-environment
-          conda config --remove channels defaults
-          conda config --env --remove channels defaults
-          conda config --env --append channels pyviz/label/dev --append channels bokeh --append channels conda-forge
-          conda install python=3.9 pyctdev
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '15'
-      - name: doit develop_install and other installs
+          name: doc_build
+          python-version: "3.9"
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          conda-update: 'true'
+          nodejs: true
+          # Remove when all examples tools can be installed on 3.10
+          envs: -o examples -o doc
+          cache: true
+          opengl: true
+          conda-mamba: mamba
+      - name: doit develop_install
+        if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
-          doit develop_install -o examples -o doc
-          pip install --use-deprecated=legacy-resolver pyecharts "idom==0.24" "pydata-sphinx-theme<=0.9.0" "pydata-sphinx-theme<=0.9.0" sphinx-copybutton sphinx-design
-      - name: doit env_capture
-        run: |
-          conda activate test-environment
-          doit env_capture
-      - name: opengl
-        run: |
-          sudo apt-get install libglu1-mesa
-          conda install -c conda-forge mesalib --no-update-deps
-          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
-          sleep 3
+          pip install pyecharts "idom==0.24"
       - name: bokeh sampledata
         run: |
           conda activate test-environment
@@ -106,6 +79,11 @@ jobs:
         run: |
           git status
           git diff
+      - name: Set and echo git ref
+        id: vars
+        run: |
+          echo "Deploying from ref ${GITHUB_REF#refs/*/}"
+          echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Deploy dev
         uses: peaceiris/actions-gh-pages@v3
         if: |
