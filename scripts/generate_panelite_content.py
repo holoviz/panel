@@ -43,6 +43,12 @@ DEPENDENCY_MAP = {
     "reference/panes/DataFrame.ipynb": ['panel'], # 'streamz' does currently not work. See https://github.com/python-streamz/streamz/issues/467
     "reference/panes/DeckGL.ipynb": ['panel', 'pydeck'],
     "reference/panes/ECharts.ipynb": ["panel"], # 'pyecharts' does currently not work. See https://github.com/simplejson/simplejson/issues/307
+    "reference/panes/Folium.ipynb": ["panel", "folium"],
+    "reference/panes/GIF.ipynb": ["panel"],
+    "reference/panes/HoloViews.ipynb": ['panel', 'holoviews', 'hvplot', 'matplotlib', 'plotly', 'scipy'], # Example currently does not work. See https://github.com/holoviz/panel/issues/4393
+    "reference/panes/HTML.ipynb": ['panel'],
+
+
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
