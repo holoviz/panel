@@ -22,7 +22,9 @@ DEPENDENCY_MAP = {
     "reference/indicators/Gauge.ipynb": ["panel"],
     "reference/indicators/LinearGauge.ipynb": ["panel"],
     "reference/indicators/LoadingSpinner.ipynb": ["panel"],
-    "reference/indicators/Number.ipynb": ["panel"]
+    "reference/indicators/Number.ipynb": ["panel"],
+    "reference/indicators/Progress.ipynb": ["panel"],
+    "reference/indicators/Tqdm.ipynb": ["panel"],
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
