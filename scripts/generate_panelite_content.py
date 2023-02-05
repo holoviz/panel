@@ -32,6 +32,9 @@ NOTEBOOK_ISSUES = {
     "reference/panes/Streamz.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
     "reference/panes/VTK.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
     "reference/panes/VTKVolume.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "reference/widgets/CrossSelector.ipynb": ["https://github.com/holoviz/panel/issues/4398"],
+    "reference/widgets/Debugger.ipynb": ["https://github.com/holoviz/panel/issues/4399"],
+    "reference/widgets/EditableIntSlider.ipynb": ["https://github.com/holoviz/panel/issues/4400"],
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
