@@ -35,6 +35,13 @@ NOTEBOOK_ISSUES = {
     "reference/widgets/CrossSelector.ipynb": ["https://github.com/holoviz/panel/issues/4398"],
     "reference/widgets/Debugger.ipynb": ["https://github.com/holoviz/panel/issues/4399"],
     "reference/widgets/EditableIntSlider.ipynb": ["https://github.com/holoviz/panel/issues/4400"],
+    "reference/widgets/FileDownload.ipynb": ["https://github.com/holoviz/panel/issues/4401"],
+    "reference/widgets/IntRangeSlider.ipynb": ["https://github.com/holoviz/panel/issues/4402"],
+    "reference/widgets/MultiChoice.ipynb": ["https://github.com/holoviz/panel/issues/4403"],
+    "reference/widgets/RangeSlider.ipynb": ["https://github.com/holoviz/panel/issues/4402"],
+    "reference/widgets/SpeechToText.ipynb": ["https://github.com/holoviz/panel/issues/4404"],
+    "reference/widgets/Terminal.ipynb": ["https://github.com/holoviz/panel/issues/4407"],
+
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
