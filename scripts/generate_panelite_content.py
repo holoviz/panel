@@ -14,48 +14,35 @@ PANEL_BASE = pathlib.Path(__file__).parent.parent
 EXAMPLES_DIR = PANEL_BASE / 'examples'
 
 # Add piplite command to notebooks
-DEPENDENCIES = ['panel', 'pyodide-http', 'altair', 'hvplot', 'matplotlib', 'plotly', 'pydeck', 'scikit-learn']
-DEPENDENCY_MAP = {
-    "reference/global/Notifications.ipynb": ["panel"],
-    "reference/indicators/BooleanStatus.ipynb": ["panel"],
-    "reference/indicators/Dial.ipynb": ["panel"],
-    "reference/indicators/Gauge.ipynb": ["panel"],
-    "reference/indicators/LinearGauge.ipynb": ["panel"],
-    "reference/indicators/LoadingSpinner.ipynb": ["panel"],
-    "reference/indicators/Number.ipynb": ["panel"],
-    "reference/indicators/Progress.ipynb": ["panel"],
-    "reference/indicators/Tqdm.ipynb": ["panel"],
-    "reference/indicators/Trend.ipynb": ["panel"],
-    "reference/layouts/Accordion.ipynb": ["panel"],
-    "reference/layouts/Card.ipynb": ["panel"],
-    "reference/layouts/Column.ipynb": ["panel"],
-    "reference/layouts/Divider.ipynb": ["panel"],
-    "reference/layouts/FlexBox.ipynb": ["panel"],
-    "reference/layouts/GridBox.ipynb": ["panel"],
-    "reference/layouts/GridSpec.ipynb": ['panel', "holoviews"],
-    "reference/layouts/GridStack.ipynb": ['panel', "holoviews"],
-    "reference/layouts/Row.ipynb": ["panel"],
-    "reference/layouts/Tabs.ipynb": ["panel"],
-    "reference/layouts/WidgetBox.ipynb": ["panel"],
-    "reference/panes/Alert.ipynb": ["panel"],
-    "reference/panes/Audio.ipynb": ['panel', 'scipy'],
-    "reference/panes/Bokeh.ipynb": ['panel'],
-    "reference/panes/DataFrame.ipynb": ['panel'], # 'streamz' does currently not work. See https://github.com/python-streamz/streamz/issues/467
-    "reference/panes/DeckGL.ipynb": ['panel', 'pydeck'],
-    "reference/panes/ECharts.ipynb": ["panel"], # 'pyecharts' does currently not work. See https://github.com/simplejson/simplejson/issues/307
-    "reference/panes/Folium.ipynb": ["panel", "folium"],
-    "reference/panes/GIF.ipynb": ["panel"],
-    "reference/panes/HoloViews.ipynb": ['panel', 'holoviews', 'hvplot', 'matplotlib', 'plotly', 'scipy'], # Example currently does not work. See https://github.com/holoviz/panel/issues/4393
-    "reference/panes/HTML.ipynb": ['panel'],
-
-
+DEFAULT_DEPENDENCIES = ['panel', 'pyodide-http', 'altair', 'hvplot', 'matplotlib', 'plotly', 'pydeck', 'scikit-learn']
+with open(PANEL_BASE/"scripts"/"panelite_dependencies.json", "r", encoding="utf8") as file:
+    DEPENDENCIES = json.load(file)
+DEPENDENCY_NOT_IMPORTABLE = [
+    "streamz", # https://github.com/python-streamz/streamz/issues/467,
+    "vtk", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
+]
+NOTEBOOK_ISSUES = {
+    "reference/panes/DataFrame.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
+    "reference/panes/HoloViews.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "reference/panes/IPyWidget.ipynb": ["https://github.com/holoviz/panel/issues/4394", "https://github.com/widgetti/ipyvolume/issues/427"],
+    "reference/panes/JPG.ipynb": ["https://github.com/holoviz/panel/issues/4395"],
+    "reference/panes/Matplotlib.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
+    "reference/panes/Param.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "reference/panes/PDF.ipynb": ["https://github.com/holoviz/panel/issues/4395"],
+    "reference/panes/Reacton.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
+    "reference/panes/Str.ipynb": ["https://github.com/holoviz/panel/issues/4396"],
+    "reference/panes/Streamz.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
+    "reference/panes/Video.ipynb": ["https://github.com/holoviz/panel/issues/4397"],
+    "reference/panes/VTK.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
     key = str(nbpath).split("examples/")[-1]
-    dependencies = DEPENDENCY_MAP.get(key, DEPENDENCIES)
-    dependencies = [repr(d) for d in dependencies]
+    dependencies = DEPENDENCIES.get(key, DEFAULT_DEPENDENCIES)
+    dependencies = [repr(d) for d in dependencies if not d in DEPENDENCY_NOT_IMPORTABLE]
     return dependencies
+
+assert _get_dependencies("reference/panes/Folium.ipynb")==["'panel'", "'folium'"]
 
 def _to_source(dependencies):
     return f"import piplite\nawait piplite.install([{', '.join(dependencies)}])"
