@@ -91,17 +91,14 @@ T = TypeVar('T', bound='PaneBase')
 class PaneBase(Reactive):
     """
     PaneBase is the abstract baseclass for all atomic displayable units
-    in the panel library. We call any child class of `PaneBase` a `Pane`.
+    in the Panel library. We call any child class of `PaneBase` a `Pane`.
 
-    Panes defines an extensible interface for
-    wrapping arbitrary objects and transforming them into Bokeh models.
+    Panes defines an extensible interface for wrapping arbitrary
+    objects and transforming them into Bokeh models.
 
     Panes are reactive in the sense that when the object they are
-    wrapping is changed any dashboard containing the pane will update
-    in response.
-
-    To define a concrete Pane type subclass this class and implement
-    the applies classmethod and the _get_model private method.
+    wrapping is replaced or modified the `bokeh.model.Model` that
+    is rendered should reflect these changes.
     """
 
     default_layout = param.ClassSelector(default=Row, class_=(Panel),
@@ -146,9 +143,10 @@ class PaneBase(Reactive):
         super().__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
-        w1 = self.param.watch(self._sync_layoutable, list(Layoutable.param))
-        w2 = self.param.watch(self._update_pane, self._rerender_params)
-        self._callbacks.extend([w1, w2])
+        self._callbacks.extend([
+            self.param.watch(self._sync_layoutable, list(Layoutable.param)),
+            self.param.watch(self._update_pane, self._rerender_params)
+        ])
 
     def _sync_layoutable(self, *events):
         kwargs = {
@@ -390,6 +388,16 @@ class PaneBase(Reactive):
 
 
 class ModelPane(PaneBase):
+    """
+    ModelPane provides a baseclass that allows quickly wrapping a
+    Bokeh model and translating parameters defined on the class
+    with properties defined on the model.
+
+    In simple cases subclasses only have to define the Bokeh model to
+    render to and the `_transform_object` method which transforms the
+    Python object being wrapped into properties that the
+    `bokeh.model.Model` can consume.
+    """
 
     _bokeh_model: ClassVar[Model]
 
@@ -425,9 +433,13 @@ class ModelPane(PaneBase):
 
 class ReplacementPane(PaneBase):
     """
-    A Pane type which allows for complete replacement of the underlying
-    bokeh model by creating an internal layout to replace the children
-    on.
+    ReplacementPane provides a baseclass for dynamic components that
+    may have to dynamically update or switch out their contents, e.g.
+    a dynamic callback that may return different objects to be rendered.
+
+    When the pane updates it either entirely replaces the underlying
+    `bokeh.model.Model`, by creating an internal layout to replace the
+    children on, or updates the existing model in place.
     """
 
     _pane = param.ClassSelector(class_=Viewable)
@@ -450,6 +462,20 @@ class ReplacementPane(PaneBase):
         self.param.watch(self._update_inner_layout, list(Layoutable.param))
         self._sync_layout()
 
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        if root:
+            ref = root.ref['id']
+            if ref in self._models:
+                self._cleanup(root)
+        model = self._inner_layout._get_model(doc, root, parent, comm)
+        if root is None:
+            ref = model.ref['id']
+        self._models[ref] = (model, parent)
+        return model
+
     @param.depends('_pane', '_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
     def _sync_layout(self):
         if not hasattr(self, '_inner_layout'):
@@ -461,11 +487,6 @@ class ReplacementPane(PaneBase):
 
     def _update_inner_layout(self, *events):
         self._pane.param.update({event.name: event.new for event in events})
-
-    def _update_pane(self, *events):
-        """
-        Updating of the object should be handled manually.
-        """
 
     @classmethod
     def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, **kwargs):
@@ -524,23 +545,22 @@ class ReplacementPane(PaneBase):
         self._inner_layout[0] = self._pane
         self._internal = internal
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        if root:
-            ref = root.ref['id']
-            if ref in self._models:
-                self._cleanup(root)
-        model = self._inner_layout._get_model(doc, root, parent, comm)
-        if root is None:
-            ref = model.ref['id']
-        self._models[ref] = (model, parent)
-        return model
-
     def _cleanup(self, root: Model | None = None) -> None:
         self._inner_layout._cleanup(root)
         super()._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Developer API
+    #----------------------------------------------------------------
+
+    def _update_pane(self, *events) -> None:
+        """
+        Updating of the object should be handled manually.
+        """
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
 
     def select(self, selector: type | Callable | None = None) -> List[Viewable]:
         """
