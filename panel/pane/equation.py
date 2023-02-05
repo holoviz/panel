@@ -13,7 +13,7 @@ import param
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
-from .markup import DivPaneBase
+from .base import ModelPane
 
 
 def is_sympy_expr(obj):
@@ -25,7 +25,7 @@ def is_sympy_expr(obj):
     return False
 
 
-class LaTeX(DivPaneBase):
+class LaTeX(ModelPane):
     """
     The `LaTeX` pane allows rendering LaTeX equations. It uses either
     `MathJax` or `KaTeX` depending on the defined renderer.
@@ -73,15 +73,13 @@ class LaTeX(DivPaneBase):
         return lazy_load(f'panel.models.{module}', model, isinstance(comm, JupyterComm), root)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = self._get_model_type(root, comm)(**self._process_param_change(self._get_properties()))
+        model = self._get_model_type(root, comm)(**self._get_properties())
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _get_properties(self):
-        properties = super()._get_properties()
-        obj = self.object
+    def _transform_object(self, obj):
         if obj is None:
             obj = ''
         elif hasattr(obj, '_repr_latex_'):
@@ -89,4 +87,4 @@ class LaTeX(DivPaneBase):
         elif is_sympy_expr(obj):
             import sympy
             obj = r'$'+sympy.latex(obj)+'$'
-        return dict(properties, text=obj)
+        return dict(object=obj)

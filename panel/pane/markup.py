@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-class DivPaneBase(ModelPane):
+class HTMLBasePane(ModelPane):
     """
     Baseclass for Panes which render HTML inside a Bokeh Div.
     See the documentation for Bokeh Div for more detail about
@@ -47,7 +47,7 @@ class DivPaneBase(ModelPane):
         super().__init__(object=object, **params)
 
 
-class HTML(DivPaneBase):
+class HTML(HTMLBasePane):
     """
     `HTML` panes renders HTML strings and objects with a `_repr_html_` method.
 
@@ -239,20 +239,20 @@ class DataFrame(HTML):
                 html = obj.to_html(table_attributes=f'class="{classes}"')
             else:
                 kwargs = {p: getattr(self, p) for p in self._rerender_params
-                          if p not in DivPaneBase.param and p != '_object'}
+                          if p not in HTMLBasePane.param and p != '_object'}
                 html = obj.to_html(**kwargs)
         else:
             html = ''
         return dict(object=escape(html))
 
     def _init_params(self):
-        params = DivPaneBase._init_params(self)
+        params = HTMLBasePane._init_params(self)
         if self._stream:
             params['object'] = self._object
         return params
 
 
-class Str(DivPaneBase):
+class Str(HTMLBasePane):
     """
     The `Str` pane allows rendering arbitrary text and objects in a panel.
 
@@ -292,7 +292,7 @@ class Str(DivPaneBase):
         return dict(object=escape(text))
 
 
-class Markdown(DivPaneBase):
+class Markdown(HTMLBasePane):
     """
     The `Markdown` pane allows rendering arbitrary markdown strings in a panel.
 
@@ -363,7 +363,7 @@ class Markdown(DivPaneBase):
 
 
 
-class JSON(DivPaneBase):
+class JSON(HTMLBasePane):
     """
     The `JSON` pane allows rendering arbitrary JSON strings, dicts and other
     json serializable objects in a panel.

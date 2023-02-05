@@ -17,12 +17,12 @@ import param
 
 from ..models import PDF as _BkPDF
 from ..util import isfile, isurl
-from .markup import DivPaneBase, escape
+from .markup import HTMLBasePane, escape
 
 if TYPE_CHECKING:
     from bokeh.model import Model
 
-class FileBase(DivPaneBase):
+class FileBase(HTMLBasePane):
 
     embed = param.Boolean(default=True, doc="""
         Whether to embed the file as base64.""")
