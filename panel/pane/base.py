@@ -36,16 +36,22 @@ if TYPE_CHECKING:
 
 def panel(obj: Any, **kwargs) -> Viewable:
     """
-    Creates a panel from any supplied object by wrapping it in a pane
-    and returning a corresponding Panel.
+    Creates a displayable Panel object given any valid Python object.
 
-    If you provide a "reactive function" as `obj` and set
-    `loading_indicator=True`, then Panel will display a loading indicator
-    when invoking the function.
+    The appropriate Pane to render a specific object is determined by
+    iterating over all defined Pane types and querying it's `.applies`
+    method for a priority value.
 
-    Reference: https://panel.holoviz.org/user_guide/Components.html#panes
+    Any keyword arguments are passed down to the applicable Pane.
 
-    >>> pn.panel(some_python_object, width=500, background="whitesmoke")
+    To lazily render components you may also provide a Python
+    function, with or without bound parameter dependencies and set
+    `defer_load=True`. Setting `loading_indicator=True` will display a
+    loading indicator while the function is being evaluated.
+
+    Reference: https://panel.holoviz.org/background/components/components_overview.html#panes
+
+    >>> pn.panel(some_python_object, width=500)
 
     Arguments
     ---------
@@ -62,7 +68,9 @@ def panel(obj: Any, **kwargs) -> Viewable:
     if isinstance(obj, (Viewable, ServableMixin)):
         return obj
     elif hasattr(obj, '__panel__'):
-        if not isinstance(obj, Viewer) and (isinstance(obj, type) and issubclass(obj, Viewer)):
+        if isinstance(obj, Viewer):
+            return obj._create_view()
+        if isinstance(obj, type) and issubclass(obj, Viewer):
             return panel(obj().__panel__())
         return panel(obj.__panel__())
     if kwargs.get('name', False) is None:
