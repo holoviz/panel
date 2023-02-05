@@ -47,5 +47,6 @@
     "reference/panes/Vega.ipynb": ["panel", "altair", "vega_datasets"],
     "reference/panes/Video.ipynb": ["panel"],
     "reference/panes/VTK.ipynb": ["panel", "vtk", "pyvista"],
-    "reference/panes/VTKJS.ipynb": [["panel", "pyodide-http"]]
+    "reference/panes/VTKJS.ipynb": ["panel", "pyodide-http"],
+    "reference/panes/VTKVolume.ipynb": ["panel", "pyvista"],
 }

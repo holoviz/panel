@@ -34,6 +34,7 @@ NOTEBOOK_ISSUES = {
     "reference/panes/Streamz.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
     "reference/panes/Video.ipynb": ["https://github.com/holoviz/panel/issues/4397"],
     "reference/panes/VTK.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "reference/panes/VTKVolume.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
