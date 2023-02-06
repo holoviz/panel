@@ -19,10 +19,12 @@ Let's create a simple example that fixes the height or width of several componen
 import panel as pn
 pn.extension() # for notebook
 
+styles = dict(background='#f0f0f0')
+
 pn.Row(
-    pn.pane.Markdown('ABCDE', background='#f0f0f0', width=75, height=100),
-    pn.widgets.FloatSlider(width=200, background='#f0f0f0'),
-    pn.pane.PNG('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png', width=300, background='#f0f0f0'),
+    pn.pane.Markdown('ABCDE', styles=styles, width=75, height=100),
+    pn.widgets.FloatSlider(width=200, styles=styles),
+    pn.pane.PNG('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png', width=300, styles=styles),
 )
 ```
 
@@ -40,7 +42,7 @@ Most panel objects support reactive sizing which adjusts depending on the size o
 
 ```{pyodide}
 pn.Row(
-    pn.pane.Str(background='#f0f0f0', height=100, sizing_mode='stretch_width'),
+    pn.pane.Str(styles=styles, height=100, sizing_mode='stretch_width'),
     width_policy='max', height=200
 )
 ```
@@ -49,7 +51,7 @@ pn.Row(
 
 ```{pyodide}
 pn.Column(
-    pn.pane.Str(background='#f0f0f0', sizing_mode='stretch_height', width=200),
+    pn.pane.Str(styles=styles, sizing_mode='stretch_height', width=200),
     height=200
 )
 ```
@@ -58,7 +60,7 @@ pn.Column(
 
 ```{pyodide}
 pn.Column(
-    pn.pane.Str(background='#f0f0f0', sizing_mode='stretch_both'),
+    pn.pane.Str(styles=styles, sizing_mode='stretch_both'),
     height=200, width_policy='max'
 )
 ```
@@ -71,5 +73,5 @@ pn.Column(
 ```{pyodide}
 pn.Column(
     pn.pane.PNG('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png', sizing_mode='scale_both'),
-    height=400, width=500, background='#f0f0f0')
+    height=400, width=500, styles=styles)
 ```

@@ -28,7 +28,7 @@ Next, let's display a simple component and set `loading=True`:
 
 ```{pyodide}
 
-pn.pane.HTML(background='#00aa41', width=100, height=100, loading=True)
+pn.pane.HTML(styles=dict(background='#00aa41'), width=100, height=100, loading=True)
 
 ```
 
