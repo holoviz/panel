@@ -30,7 +30,7 @@ We can also explicitly pass a widget as one of the values:
 
 ```{pyodide}
 def create_block(c):
-    return pn.pane.HTML(width=100, height=100, background=c)
+    return pn.pane.HTML(width=100, height=100, styles=dict(background=c))
 
 color_widget = pn.widgets.ColorPicker(name='Color', value='#4f4fdf')
 

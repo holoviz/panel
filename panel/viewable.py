@@ -76,7 +76,7 @@ class Layoutable(param.Parameterized):
     background = param.Parameter(default=None, doc="""
         Background color of the component.""")
 
-    css_classes = param.List(default=None, doc="""
+    css_classes = param.List(default=[], doc="""
         CSS classes to apply to the layout.""")
 
     width = param.Integer(default=None, bounds=(0, None), doc="""

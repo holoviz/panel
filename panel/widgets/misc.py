@@ -136,7 +136,7 @@ class FileDownload(Widget):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'callback': None, 'file': None, '_clicks': 'clicks', 'name': 'title'
+        'callback': None, 'file': None, '_clicks': 'clicks'
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkFileDownload
@@ -291,7 +291,9 @@ class JSONEditor(Widget):
     value = param.Parameter(default={}, doc="""
         JSON data to be edited.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'data'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': None, 'value': 'data'
+    }
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:

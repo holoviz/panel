@@ -120,7 +120,18 @@ def test_card_title(page, port, card_components):
 def test_card_background(page, port, card_components):
     w1, w2 = card_components
     background = 'rgb(128, 128, 128)'
-    card = Card(w1, w2, styles={"background": background})
+    card = Card(w1, w2, styles=dict(background=background))
+
+    serve_panel_widget(page, port, card)
+
+    card_widget = page.locator('.card')
+    assert f'background: {background};' in card_widget.get_attribute('style')
+
+
+def test_card_background_legacy(page, port, card_components):
+    w1, w2 = card_components
+    background = 'rgb(128, 128, 128)'
+    card = Card(w1, w2, background=background)
 
     serve_panel_widget(page, port, card)
 

@@ -523,7 +523,7 @@ def test_reactive_html_scripts_linked_properties_assignment_operator():
 
                 _scripts = {'render': f'test.onclick = () => {{ data.clicks{sep}{operator}= 1 }}'}
 
-            assert TestScripts()._linked_properties() == ['clicks']
+            assert TestScripts()._linked_properties == ('clicks',)
 
 
 def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var():

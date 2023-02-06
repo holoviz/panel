@@ -88,8 +88,7 @@ def manualtest_app():
         HTML(
             "<h1>Panel - Streaming to TrendIndicator<h1>",
             sizing_mode="stretch_width",
-            background="black",
-            styles={"color": "white", "padding": "15px"},
+            styles={"color": "white", "padding": "15px", "background": "black"},
         ),
         Row(WidgetBox(settings_panel), trend, sizing_mode="stretch_both"),
         sizing_mode="stretch_both",

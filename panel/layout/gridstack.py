@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import ClassVar, Mapping
 
 import param
 
@@ -28,11 +27,11 @@ class GridStack(ReactiveHTML, GridSpec):
 
     >>> pn.extension('gridstack')
     >>> gstack = GridStack(sizing_mode='stretch_both')
-    >>> gstack[ : , 0: 3] = pn.Spacer(background='red',    margin=0)
-    >>> gstack[0:2, 3: 9] = pn.Spacer(background='green',  margin=0)
-    >>> gstack[2:4, 6:12] = pn.Spacer(background='orange', margin=0)
-    >>> gstack[4:6, 3:12] = pn.Spacer(background='blue',   margin=0)
-    >>> gstack[0:2, 9:12] = pn.Spacer(background='purple', margin=0)
+    >>> gstack[ : , 0: 3] = pn.Spacer(styles=dict(background='red'),    margin=0)
+    >>> gstack[0:2, 3: 9] = pn.Spacer(styles=dict(background='green'),  margin=0)
+    >>> gstack[2:4, 6:12] = pn.Spacer(styles=dict(background='orange'), margin=0)
+    >>> gstack[4:6, 3:12] = pn.Spacer(styles=dict(background='blue'),   margin=0)
+    >>> gstack[0:2, 9:12] = pn.Spacer(styles=dict(background='purple'), margin=0)
     """
 
     allow_resize = param.Boolean(default=True, doc="""
@@ -131,8 +130,6 @@ class GridStack(ReactiveHTML, GridSpec):
         return {
             'GridStack': cls.__javascript__[0:1],
         }
-
-    _rename: ClassVar[Mapping[str, str | None]] = {}
 
     @classproperty
     def __javascript__(cls):

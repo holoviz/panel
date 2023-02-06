@@ -1,20 +1,25 @@
 # Change Background
 
-Many components have a `background` argument that can take a color either as a hex string or color name. See the list of available color names for modern browsers in the [bokeh docs](https://docs.bokeh.org/en/latest/docs/reference/colors.html#bokeh-colors-groups).
+Panel components have a `styles` parameter that takes a dictionary of CSS styles to apply to the component. To customize the background you can set the [background](https://developer.mozilla.org/en-US/docs/Web/CSS/background) property  with a CSS [color](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value), or really any value that is accepted by the `background` property.
 
-First, define a simple HTML pane, set the width and height, and then change the background color to '#f307eb'.
+First, define a simple HTML pane with a default *skyblue* color. Set the width and height to make it visible.
 
 ```{pyodide}
 import panel as pn
 pn.extension() # for notebook
 
-block1 = pn.pane.HTML(width=100, height=100)
-block1.background='#f307eb'
-block1
+block = pn.pane.HTML(width=100, height=100, styles=dict(background='skyblue'))
+block
 ```
 
-Now, create another block with the color of 'mediumseagreen':
+Now, update the background to *crimson* by re-setting the `styles` parameter.
 
 ```{pyodide}
-pn.pane.HTML(background='mediumseagreen', width=200, height=100)
+block.styles = dict(background='crimson')
+```
+
+Let's be more creative and set a CSS radial-gradient background, radiating from *crimson* in the center to *skyblue*.
+
+```{pyodide}
+block.styles = dict(background='radial-gradient(crimson, skyblue)')
 ```
