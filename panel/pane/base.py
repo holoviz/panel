@@ -1,6 +1,6 @@
 """
-Defines the PaneBase class defining the API for panes which convert
-objects to a visual representation expressed as a bokeh model.
+Defines base classes for Pane components which allow wrapping a Python
+object transforming it into a Bokeh model that can be rendered.
 """
 from __future__ import annotations
 
@@ -148,7 +148,7 @@ class PaneBase(Reactive):
             self.param.watch(self._update_pane, self._rerender_params)
         ])
 
-    def _sync_layoutable(self, *events):
+    def _sync_layoutable(self, *events: param.parameterized.Event):
         kwargs = {
             event.name: event.new for event in events
             if event.name in Layoutable.param
@@ -160,14 +160,14 @@ class PaneBase(Reactive):
         raise ValueError("%s pane does not support objects of type '%s'." %
                          (type(self).__name__, type(object).__name__))
 
-    def __repr__(self, depth=0):
+    def __repr__(self, depth: int = 0) -> str:
         cls = type(self).__name__
         params = param_reprs(self, ['object'])
         obj = 'None' if self.object is None else type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int | str) -> Viewable:
         """
         Allows pane objects to behave like the underlying layout
         """
@@ -178,7 +178,7 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
 
     @property
-    def _linked_properties(self):
+    def _linked_properties(self) -> Tuple[str]:
         return tuple(
             self._property_mapping.get(p, p) for p in self.param
             if p not in PaneBase.param and self._property_mapping.get(p, p) is not None
@@ -194,7 +194,7 @@ class PaneBase(Reactive):
         return [p for p in self.param if p not in ignored_params and not p.startswith('_')]
 
     def _update_object(
-        self, ref: str, doc: 'Document', root: Model, parent: Model, comm: Optional[Comm]
+        self, ref: str, doc: 'Document', root: Model, parent: Model, comm: Comm | None
     ) -> None:
         old_model = self._models[ref][0]
         if self._updates:
@@ -306,7 +306,7 @@ class PaneBase(Reactive):
         return type(self)(object, **params)
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        self, doc: Optional[Document] = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> Model:
         """
@@ -404,8 +404,8 @@ class ModelPane(PaneBase):
     __abstract = True
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = self._bokeh_model(**self._get_properties())
         if root is None:
@@ -444,7 +444,7 @@ class ReplacementPane(PaneBase):
 
     _pane = param.ClassSelector(class_=Viewable)
 
-    _linkable_properties: ClassVar[Tuple[str]] = ()
+    _linked_properties: ClassVar[Tuple[str]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None}
 
@@ -463,8 +463,8 @@ class ReplacementPane(PaneBase):
         self._sync_layout()
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         if root:
             ref = root.ref['id']

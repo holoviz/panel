@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import sys
 
-from typing import Any, ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Type,
+)
 
 import param
 
@@ -15,8 +17,14 @@ from pyviz_comms import JupyterComm
 from ..util import lazy_load
 from .base import ModelPane
 
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
+    from pyviz_comms import Comm
 
-def is_sympy_expr(obj):
+
+
+def is_sympy_expr(obj: Any) -> bool:
     """Test for sympy.Expr types without usually needing to import sympy"""
     if 'sympy' in sys.modules and 'sympy' in str(type(obj).__class__):
         import sympy
@@ -51,7 +59,9 @@ class LaTeX(ModelPane):
     # Priority is dependent on the data type
     priority: ClassVar[float | bool | None] = None
 
-    _rename: ClassVar[Mapping[str, str | None]] = {"renderer": None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'renderer': None, 'object': 'text'
+    }
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -62,7 +72,7 @@ class LaTeX(ModelPane):
         else:
             return False
 
-    def _get_model_type(self, root, comm):
+    def _get_model_type(self, root: Model, comm: Comm | None) -> Type[Model]:
         module = self.renderer
         if module is None:
             if 'panel.models.mathjax' in sys.modules and 'panel.models.katex' not in sys.modules:
@@ -72,14 +82,17 @@ class LaTeX(ModelPane):
         model = 'KaTeX' if module == 'katex' else 'MathJax'
         return lazy_load(f'panel.models.{module}', model, isinstance(comm, JupyterComm), root)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
         model = self._get_model_type(root, comm)(**self._get_properties())
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         if obj is None:
             obj = ''
         elif hasattr(obj, '_repr_latex_'):

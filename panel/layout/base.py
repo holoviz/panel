@@ -72,11 +72,13 @@ class Panel(Reactive):
     # Callback API
     #----------------------------------------------------------------
 
-    def _init_params(self):
-        return {p: v for p, v in self.param.values().items()
-                if v is not None and p != 'objects'}
+    def _init_params(self) -> Dict[str, Any]:
+        return {
+            p: v for p, v in self.param.values().items()
+            if v is not None and p != 'objects'
+        }
 
-    def _get_properties(self):
+    def _get_properties(self) -> Dict[str, Any]:
         return self._process_param_change(self._init_params())
 
     def _update_model(
