@@ -1,6 +1,8 @@
 """Tests of the Tqdm indicator"""
 import time
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from tqdm.contrib.concurrent import process_map
@@ -60,11 +62,6 @@ def test_tqdm_color():
 
 
 def get_tqdm_app():
-    import time
-
-    import numpy as np
-    import pandas as pd
-
     tqdm = Tqdm(layout="row", sizing_mode="stretch_width")
 
     def run(*events):
