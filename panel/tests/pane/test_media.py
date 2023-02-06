@@ -55,6 +55,7 @@ def test_local_audio(document, comm):
     assert model.value == 'data:audio/mp3;base64,/+MYxAAAAANIAAAAAExBTUUzLjk4LjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' # noqa
 
 
+@scipy_available
 def test_numpy_audio(document, comm):
     sps = 8000 # Samples per second
     duration = 0.01 # Duration in seconds
