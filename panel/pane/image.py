@@ -80,7 +80,7 @@ class FileBase(HTMLBasePane):
         b64 = base64.b64encode(data).decode("utf-8")
         return f"data:image/{self.filetype};base64,{b64}"
 
-    def _data(self, obj):
+    def _data(self, obj: Any) -> bytes | None:
         filetype = self.filetype.split('+')[0]
         if hasattr(obj, f'_repr_{filetype}_'):
             return getattr(obj, f'_repr_{filetype}_')()
@@ -90,12 +90,14 @@ class FileBase(HTMLBasePane):
                     return f.read()
         elif isinstance(obj, bytes):
             return obj
+        elif isinstance(obj, str):
+            return obj.encode('utf-8')
         elif hasattr(obj, 'read'):
             if hasattr(obj, 'seek'):
                 obj.seek(0)
             return obj.read()
         elif not isurl(obj, None):
-            return
+            return None
 
         from ..io.state import state
         if state._is_pyodide:
@@ -397,7 +399,7 @@ class SVG(ImageBase):
         width, height = self._imgshape(data)
         if self.encode:
             data = f"<img src='{self._b64(data)}' width={width} height={height}></img>"
-        return dict(width=width, height=height, text=escape(data))
+        return dict(width=width, height=height, text=escape(data.decode('utf-8')))
 
 
 class PDF(FileBase):
