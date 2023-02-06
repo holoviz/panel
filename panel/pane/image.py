@@ -90,8 +90,6 @@ class FileBase(HTMLBasePane):
                     return f.read()
         elif isinstance(obj, bytes):
             return obj
-        elif isinstance(obj, str):
-            return obj.encode('utf-8')
         elif hasattr(obj, 'read'):
             if hasattr(obj, 'seek'):
                 obj.seek(0)
@@ -399,7 +397,9 @@ class SVG(ImageBase):
         width, height = self._imgshape(data)
         if self.encode:
             data = f"<img src='{self._b64(data)}' width={width} height={height}></img>"
-        return dict(width=width, height=height, text=escape(data.decode('utf-8')))
+        if isinstance(data, bytes):
+            data = data.decode('utf-8')
+        return dict(width=width, height=height, text=escape(data))
 
 
 class PDF(FileBase):
