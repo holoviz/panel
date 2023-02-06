@@ -45,7 +45,7 @@ def panel(obj: Any, **kwargs) -> Viewable:
 
     Reference: https://panel.holoviz.org/user_guide/Components.html#panes
 
-    >>> pn.panel(some_python_object, width=500, background="whitesmoke")
+    >>> pn.panel(some_python_object, width=500, styles=dict(background="whitesmoke"))
 
     Arguments
     ---------
