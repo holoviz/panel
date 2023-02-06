@@ -245,7 +245,7 @@ class DataFrame(HTML):
             html = ''
         return dict(object=escape(html))
 
-    def _init_params(self):
+    def _init_params(self) -> Dict[str, Any]:
         params = HTMLBasePane._init_params(self)
         if self._stream:
             params['object'] = self._object
@@ -436,7 +436,7 @@ class JSON(HTMLBasePane):
             properties['depth'] = -1 if properties['depth'] is None else properties['depth']
         return properties
 
-    def _process_param_change(self, params):
+    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any] :
         params = super()._process_param_change(params)
         if 'depth' in params:
             params['depth'] = None if params['depth'] < 0 else params['depth']

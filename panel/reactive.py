@@ -140,13 +140,13 @@ class Syncable(Renderable):
         return rename
 
     @property
-    def _linked_properties(self):
+    def _linked_properties(self) -> Tuple[str]:
         return tuple(
             self._property_mapping.get(p, p) for p in self.param
             if p not in Viewable.param and self._property_mapping.get(p, p) is not None
         )
 
-    def _get_properties(self):
+    def _get_properties(self) -> Dict[str, Any]:
         return self._process_param_change(self._init_params())
 
     def _process_property_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:

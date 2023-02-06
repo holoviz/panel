@@ -426,7 +426,7 @@ class PDF(FileBase):
 
     _rerender_params: ClassVar[List[str]] = FileBase._rerender_params + ['start_page']
 
-    def _transform_object(self, obj):
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         if obj is None:
             return dict(object='<embed></embed>')
         elif self.embed:

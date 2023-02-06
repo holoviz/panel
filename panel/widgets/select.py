@@ -246,7 +246,7 @@ class Select(SingleSelectBase):
                 ' `groups` parameter, use `options` instead.'
             )
 
-    def _process_param_change(self, msg):
+    def _process_param_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         groups_provided = 'groups' in msg
         msg = super()._process_param_change(msg)
         if groups_provided or 'options' in msg and self.groups:
