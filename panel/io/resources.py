@@ -408,6 +408,8 @@ class Bundle(BkBundle):
         for model in param.concrete_descendents(ReactiveHTML).values():
             if getattr(model, '__javascript_modules__', None) and model._loaded():
                 for js_module in model.__javascript_modules__:
+                    if not isurl(js_module) and not js_module.startswith('static/extensions'):
+                        js_module = component_resource_path(model, '__javascript_modules__', js_module)
                     if js_module not in js_modules:
                         js_modules.append(js_module)
         self.js_modules = kwargs.pop("js_modules", js_modules)

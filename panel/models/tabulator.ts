@@ -277,6 +277,7 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
 export class DataTabulatorView extends PanelHTMLBoxView {
   model: DataTabulator;
   tabulator: any;
+  columns: Map<string, any> = new Map();
   _tabulator_cell_updating: boolean=false
   _updating_page: boolean = true
   _updating_sort: boolean = false
@@ -685,6 +686,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   getColumns(): any {
+    this.columns = new Map()
     const config_columns: (any[] | undefined) = this.model.configuration?.columns;
     let columns = []
     columns.push({field: '_index', frozen: true})
@@ -735,6 +737,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }
       if (tab_column == null)
         tab_column = {field: column.field}
+      this.columns.set(column.field, tab_column)
       if (tab_column.title == null)
         tab_column.title = column.title
       if (tab_column.width == null && column.width != null && column.width != 0)
@@ -781,6 +784,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       else if (ctype === "IntEditor" || ctype === "NumberEditor") {
         tab_column.editor = "number"
         tab_column.editorParams = {step: editor.step}
+	if (ctype === "IntEditor")
+	  tab_column.validator = "integer"
+	else
+	  tab_column.validator = "numeric"
       } else if (ctype === "CheckboxEditor") {
         tab_column.editor = "tickCross"
       } else if (ctype === "DateEditor") {
@@ -829,7 +836,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     return columns
   }
 
-  renderEditor(column: any, cell: any, onRendered: any, success: any, error: any): any {
+  renderEditor(column: any, cell: any, onRendered: any, success: any, cancel: any): any {
     const editor = column.editor
     const view = new editor.default_view({column: column, model: editor, parent: this, container: cell._cell.element})
     view.initialize()
@@ -838,14 +845,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       view.setValue(cell.getValue())
     })
 
-    view.inputEl.addEventListener('change', () => {
+    view.inputEl.addEventListener('input', () => {
       const value = view.serializeValue()
       const old_value = cell.getValue()
       const validation = view.validate()
       if (!validation.valid)
-        error(validation.msg)
+        cancel(validation.msg)
       if (old_value != null && typeof value != typeof old_value)
-        error("Mismatching type")
+        cancel("Mismatching type")
       else
         success(view.serializeValue())
     });
@@ -1134,8 +1141,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   cellEdited(cell: any): void {
     const field = cell._cell.column.field;
+    const column_def = this.columns.get(field)
     const index = cell.getData()._index
     const value = cell._cell.value
+    if (column_def.validator === 'numeric' && value === '') {
+      cell.setValue(NaN, true)
+      return
+    }
     this._tabulator_cell_updating = true
     comm_settings.debounce = false
     this.model.trigger_event(new TableEditEvent(field, index, true))

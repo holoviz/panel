@@ -35,6 +35,13 @@ Discover different ways of linking parameters in Python and Javascript.
 Discover how to use Parameters with Panel to automatically generate UIs without writing GUI code.
 :::
 
+:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1` ``Interact`` with Functions
+:link: interact/index
+:link-type: doc
+
+Discover how to use Panel `interact` to easily generate UIs for function arguments.
+:::
+
 :::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1` Apply Templates
 :link: templates/index
 :link-type: doc

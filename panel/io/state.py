@@ -948,11 +948,11 @@ class _state(param.Parameterized):
     @property
     def notifications(self) -> NotificationArea | None:
         from ..config import config
-        if config.notifications and self.curdoc and self.curdoc not in self._notifications:
+        if config.notifications and self.curdoc and self.curdoc.session_context and self.curdoc not in self._notifications:
             from .notifications import NotificationArea
             self._notifications[self.curdoc] = notifications = NotificationArea()
             return notifications
-        elif self.curdoc is None:
+        elif self.curdoc is None or self.curdoc.session_context is None:
             return self._notification
         else:
             return self._notifications.get(self.curdoc) if self.curdoc else None

@@ -379,6 +379,7 @@ class _config(_base_config):
     def _doc_build(self):
         return os.environ.get('PANEL_DOC_BUILD')
 
+    @property
     def admin_log_level(self):
         admin_log_level = os.environ.get('PANEL_ADMIN_LOG_LEVEL', self._admin_log_level)
         return admin_log_level.upper() if admin_log_level else None
@@ -622,14 +623,28 @@ class panel_extension(_pyviz_extension):
         self._detect_comms(params)
 
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
+        custom_resources = [
+            resource for resource in ('css_files', 'js_files', 'js_modules', 'raw_css')
+            if getattr(config, resource)
+        ]
         if loaded and newly_loaded:
             self.param.warning(
                 "A HoloViz extension was loaded previously. This means "
                 "the extension is already initialized and the following "
-                "Panel extensions could not be properly loaded: %s. "
+                f"Panel extensions could not be properly loaded: {newly_loaded}."
                 "If you are loading custom extensions with pn.extension(...) "
                 "ensure that this is called before any other HoloViz "
-                "extension such as hvPlot or HoloViews." % newly_loaded)
+                "extension such as hvPlot or HoloViews."
+            )
+        elif loaded and custom_resources:
+            resources_string = ', '.join(custom_resources)
+            self.param.warning(
+                "A HoloViz extension was loaded previously. This means the "
+                f"extension is already initialized and custom {resources_string} "
+                "resources could not be loaded. If you are loading custom "
+                "extensions with pn.extension(...) ensure that this is called"
+                "before any other HoloViz extension such as hvPlot or HoloViews."
+            )
         else:
             panel_extension._loaded_extensions += newly_loaded
 
@@ -647,11 +662,12 @@ class panel_extension(_pyviz_extension):
         nb_loaded = getattr(self, '_repeat_execution_in_cell', False)
         if 'holoviews' in sys.modules:
             if getattr(hv.extension, '_loaded', False):
-                return
-            with param.logging_level('ERROR'):
-                hv.plotting.Renderer.load_nb(config.inline)
-                if hasattr(hv.plotting.Renderer, '_render_with_panel'):
-                    nb_loaded = True
+                nb_loaded = True
+            else:
+                with param.logging_level('ERROR'):
+                    hv.plotting.Renderer.load_nb(config.inline)
+                    if hasattr(hv.plotting.Renderer, '_render_with_panel'):
+                        nb_loaded = True
 
         if not nb_loaded and hasattr(ip, 'kernel'):
             load_notebook(config.inline)

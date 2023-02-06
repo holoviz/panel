@@ -28,10 +28,10 @@ pane = pn.panel('<marquee>Here is some custom HTML</marquee>')
 pane
 ```
 
-To instead see a textual representation of the component, you can use the ``pprint`` method on any Panel object:
+To instead see a textual representation of the component, you can use the `print` function on any Panel object:
 
 ```{pyodide}
-pane.pprint()
+print(pane)
 ```
 
 ### The ``display`` function

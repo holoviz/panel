@@ -43,9 +43,9 @@ PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "
 BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
-PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js'
-PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/releases/2022.09.1/pyscript.css" />'
-PYSCRIPT_JS = '<script defer src="https://pyscript.net/releases/2022.09.1/pyscript.js"></script>'
+PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.22.1/full/pyodide.js'
+PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/releases/2022.12.1/pyscript.css" />'
+PYSCRIPT_JS = '<script defer src="https://pyscript.net/releases/2022.12.1/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
 
 ICON_DIR = DIST_DIR / 'images'
@@ -71,6 +71,9 @@ init_doc()
 
 POST = """
 await write_doc()"""
+
+POST_PYSCRIPT = """
+asyncio.ensure_future(write_doc());"""
 
 PYODIDE_SCRIPT = """
 <script type="text/javascript">
@@ -249,7 +252,7 @@ def script_to_html(
     ]
 
     # Execution
-    post_code = f'{POST};' if runtime == 'pyscript' else POST
+    post_code = POST_PYSCRIPT if runtime == 'pyscript' else POST
     code = '\n'.join([PRE, source, post_code])
     web_worker = None
     if css_resources is None:
@@ -306,7 +309,8 @@ def script_to_html(
 
     # Collect resources
     resources = Resources(mode='cdn')
-    bokeh_js, bokeh_css = bundle_resources(document.roots, resources)
+    with set_curdoc(document):
+        bokeh_js, bokeh_css = bundle_resources(document.roots, resources)
     extra_js = [INIT_SERVICE_WORKER, bokeh_js] if manifest else [bokeh_js]
     bokeh_js = '\n'.join(extra_js+js_resources)
     bokeh_css = '\n'.join([bokeh_css]+css_resources)
@@ -341,8 +345,8 @@ def script_to_html(
 
 
 def convert_app(
-    app: str,
-    dest_path: str,
+    app: str | os.PathLike,
+    dest_path: str | os.PathLike | None = None,
     requirements: List[str] | Literal['auto'] | os.PathLike = 'auto',
     runtime: Runtimes = 'pyodide-worker',
     prerender: bool = True,
@@ -351,6 +355,11 @@ def convert_app(
     http_patch: bool = True,
     verbose: bool = True,
 ):
+    if dest_path is None:
+        dest_path = pathlib.Path('./')
+    elif not isinstance(dest_path, pathlib.PurePath):
+        dest_path = pathlib.Path(dest_path)
+
     try:
         with set_resource_mode('cdn'):
             html, js_worker = script_to_html(
@@ -365,6 +374,7 @@ def convert_app(
         return
     name = '.'.join(os.path.basename(app).split('.')[:-1])
     filename = f'{name}.html'
+
     with open(dest_path / filename, 'w', encoding="utf-8") as out:
         out.write(html)
     if runtime == 'pyodide-worker':
@@ -403,8 +413,8 @@ def _convert_process_pool(
     return files
 
 def convert_apps(
-    apps: List[str],
-    dest_path: str | None = None,
+    apps: str | os.PathLike | List[str | os.PathLike],
+    dest_path: str | os.PathLike | None = None,
     title: str | None = None,
     runtime: Runtimes = 'pyodide-worker',
     requirements: List[str] | Literal['auto'] | os.PathLike = 'auto',

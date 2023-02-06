@@ -776,8 +776,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
             True: TextInput(placeholder='Filter selected options',
                             margin=(0, 0, 10, 0), width_policy='max')
         }
-        self._search[False].param.watch(self._filter_options, 'value')
-        self._search[True].param.watch(self._filter_options, 'value')
+        self._search[False].param.watch(self._filter_options, 'value_input')
+        self._search[True].param.watch(self._filter_options, 'value_input')
 
         self._placeholder = TextAreaInput(
             placeholder=("To select an item highlight it on the left "

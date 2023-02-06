@@ -91,7 +91,7 @@ if TYPE_CHECKING:
     from .location import Location
 
     TViewable = Union[Viewable, Viewer, BaseTemplate]
-    TViewableOrFunc = Union[TViewable, Callable[[], TViewable]]
+    TViewableFuncOrPath = Union[TViewable, Callable[[], TViewable], os.PathLike, str]
 
 #---------------------------------------------------------------------
 # Private API
@@ -111,8 +111,8 @@ def _server_url(url: str, port: int) -> str:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
 def _eval_panel(
-    panel: 'TViewableOrFunc', server_id: str, title: str,
-    location: bool | Location, admin: bool, doc: 'Document'
+    panel: TViewableFuncOrPath, server_id: str, title: str,
+    location: bool | Location, admin: bool, doc: Document
 ):
     from ..pane import panel as as_panel
     from ..template import BaseTemplate
@@ -409,7 +409,7 @@ class ComponentResourceHandler(StaticFileHandler):
     """
 
     _resource_attrs = [
-        '__css__', '__javascript__', '__js_module__',  '_resources',
+        '__css__', '__javascript__', '__js_module__', '__javascript_modules__',  '_resources',
         '_css', '_js', 'base_css', 'css'
     ]
 
@@ -624,7 +624,7 @@ if (
 #---------------------------------------------------------------------
 
 def serve(
-    panels: 'TViewableOrFunc' | Mapping[str, 'TViewableOrFunc'],
+    panels: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
     port: int = 0,
     address: Optional[str] = None,
     websocket_origin: Optional[str | list[str]] = None,
@@ -747,7 +747,7 @@ def get_static_routes(static_dirs):
     return patterns
 
 def get_server(
-    panel: 'TViewableOrFunc' | Mapping[str, 'TViewableOrFunc'],
+    panel: TViewableFuncOrPath | Mapping[str, TViewableFuncOrPath],
     port: int = 0,
     address: Optional[str] = None,
     websocket_origin: Optional[str | list[str]] = None,
@@ -878,8 +878,14 @@ def get_server(
                 handler = FunctionHandler(partial(_eval_panel, app, server_id, title_, location, admin))
                 apps[slug] = Application(handler, admin=admin)
     else:
-        handler = FunctionHandler(partial(_eval_panel, panel, server_id, title, location, admin))
-        apps = {'/': Application(handler, admin=admin)}
+        if isinstance(panel, pathlib.Path):
+            panel = str(panel) # enables serving apps from Paths
+        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb"))
+            and os.path.isfile(panel)):
+            apps = {'/': build_single_handler_application(panel)}
+        else:
+            handler = FunctionHandler(partial(_eval_panel, panel, server_id, title, location, admin))
+            apps = {'/': Application(handler, admin=admin)}
 
     if admin:
         if '/admin' in apps:

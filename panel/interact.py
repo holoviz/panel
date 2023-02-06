@@ -17,7 +17,7 @@ from collections.abc import Iterable, Mapping
 from inspect import (
     Parameter, getcallargs, getfullargspec as check_argspec, signature,
 )
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import param
 
@@ -72,6 +72,10 @@ class interactive(PaneBase):
 
     manual_name = param.String(default='Run Interact')
 
+    _pane = param.ClassSelector(class_=Viewable)
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None}
+
     def __init__(self, object, params={}, **kwargs):
         if signature is None:
             raise ImportError('interact requires either recent Python version '
@@ -110,6 +114,7 @@ class interactive(PaneBase):
         self.widget_box = Column(*widgets)
         self.layout.objects = [self.widget_box, self._inner_layout]
         self._link_widgets()
+        self._sync_layout()
 
     #----------------------------------------------------------------
     # Model API
@@ -117,6 +122,17 @@ class interactive(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         return self._inner_layout._get_model(doc, root, parent, comm)
+
+    @param.depends('_pane', '_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
+    def _sync_layout(self):
+        if not hasattr(self, '_inner_layout'):
+            return
+        opts = {
+            k: v for k, v in self._pane.param.values().items()
+            if k in ('sizing_mode', 'width_policy', 'height_policy')
+        }
+        self._inner_layout.param.update(opts)
+        self.layout.param.update(opts)
 
     #----------------------------------------------------------------
     # Callback API

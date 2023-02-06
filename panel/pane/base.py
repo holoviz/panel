@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, List, Optional, Type, TypeVar,
+    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional, Type,
+    TypeVar,
 )
 
 import param
@@ -143,8 +144,17 @@ class PaneBase(Reactive):
         super().__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
-        watcher = self.param.watch(self._update_pane, self._rerender_params)
-        self._callbacks.append(watcher)
+        w1 = self.param.watch(self._sync_layoutable, list(Layoutable.param))
+        w2 = self.param.watch(self._update_pane, self._rerender_params)
+        self._callbacks.extend([w1, w2])
+
+    def _sync_layoutable(self, *events):
+        kwargs = {
+            event.name: event.new for event in events
+            if event.name in Layoutable.param
+            and event.name not in ('css_classes', 'margin', 'name')
+        }
+        self.layout.param.update(kwargs)
 
     def _type_error(self, object):
         raise ValueError("%s pane does not support objects of type '%s'." %
@@ -174,7 +184,7 @@ class PaneBase(Reactive):
     @property
     def _synced_params(self) -> List[str]:
         ignored_params = ['name', 'default_layout', 'loading']+self._rerender_params
-        return [p for p in self.param if p not in ignored_params]
+        return [p for p in self.param if p not in ignored_params and not p.startswith('_')]
 
     def _update_object(
         self, ref: str, doc: 'Document', root: Model, parent: Model, comm: Optional[Comm]
@@ -376,6 +386,10 @@ class ReplacementPane(PaneBase):
     on.
     """
 
+    _pane = param.ClassSelector(class_=Viewable)
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None}
+
     _updates: bool = True
 
     __abstract = True
@@ -388,12 +402,19 @@ class ReplacementPane(PaneBase):
         self._internal = True
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
         self.param.watch(self._update_inner_layout, list(Layoutable.param))
+        self._sync_layout()
+
+    @param.depends('_pane', '_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
+    def _sync_layout(self):
+        if not hasattr(self, '_inner_layout'):
+            return
+        self._inner_layout.param.update({
+            k: v for k, v in self._pane.param.values().items()
+            if k in ('sizing_mode', 'width_policy', 'height_policy')
+        })
 
     def _update_inner_layout(self, *events):
-        for event in events:
-            setattr(self._pane, event.name, event.new)
-            if event.name in ['sizing_mode', 'width_policy', 'height_policy']:
-                setattr(self._inner_layout, event.name, event.new)
+        self._pane.param.update({event.name: event.new for event in events})
 
     def _update_pane(self, *events):
         """

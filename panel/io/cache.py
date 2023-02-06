@@ -16,6 +16,8 @@ import unittest
 import unittest.mock
 import weakref
 
+from contextlib import contextmanager
+
 import param
 
 from .state import state
@@ -154,11 +156,9 @@ _hash_funcs = {
 for name in _FFI_TYPE_NAMES:
     _hash_funcs[name] = b'0'
 
-def _find_hash_func(obj, hash_funcs={}):
+def _find_hash_func(obj):
     fqn_type = _get_fqn(obj)
-    if fqn_type in hash_funcs:
-        return hash_funcs[fqn_type]
-    elif fqn_type in _hash_funcs:
+    if fqn_type in _hash_funcs:
         return _hash_funcs[fqn_type]
     for otype, hash_func in _hash_funcs.items():
         if isinstance(otype, str):
@@ -170,8 +170,8 @@ def _find_hash_func(obj, hash_funcs={}):
         elif isinstance(obj, otype):
             return hash_func
 
-def _generate_hash_inner(obj, hash_funcs={}):
-    hash_func = _find_hash_func(obj, hash_funcs)
+def _generate_hash_inner(obj):
+    hash_func = _find_hash_func(obj)
     if hash_func is not None:
         try:
             output = hash_func(obj)
@@ -192,14 +192,14 @@ def _generate_hash_inner(obj, hash_funcs={}):
         return h.digest()
     return _int_to_bytes(id(obj))
 
-def _generate_hash(obj, hash_funcs={}):
+def _generate_hash(obj):
     # Break recursive cycles.
     hash_stack = state._current_stack
     if obj in hash_stack:
         return _CYCLE_PLACEHOLDER
     hash_stack.push(obj)
     try:
-        hash_value = _generate_hash_inner(obj, hash_funcs)
+        hash_value = _generate_hash_inner(obj)
     finally:
         hash_stack.pop()
     return hash_value
@@ -245,6 +245,16 @@ def _cleanup_ttl(cache, ttl, time):
         if (time-ts) > ttl:
             del cache[key]
 
+@contextmanager
+def _override_hash_funcs(hash_funcs):
+    backup = dict(_hash_funcs)
+    _hash_funcs.update(hash_funcs)
+    try:
+        yield
+    finally:
+        _hash_funcs.clear()
+        _hash_funcs.update(backup)
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -268,10 +278,11 @@ def compute_hash(func, hash_funcs, args, kwargs):
     if _INDETERMINATE not in key and key in _HASH_MAP:
         return _HASH_MAP[key]
     hasher = hashlib.new("md5")
-    if args:
-        hasher.update(_generate_hash(args, hash_funcs))
-    if kwargs:
-        hasher.update(_generate_hash(kwargs, hash_funcs))
+    with _override_hash_funcs(hash_funcs):
+        if args:
+            hasher.update(_generate_hash(args))
+        if kwargs:
+            hasher.update(_generate_hash(kwargs))
     hash_value = hasher.hexdigest()
     if _INDETERMINATE not in key:
         _HASH_MAP[key] = hash_value
@@ -333,9 +344,9 @@ def cache(
         )
         hash_args, hash_kwargs = args, kwargs
         if (is_method and isinstance(args[0], param.Parameterized)):
-            dinfo = getattr(wrapped_func, '_dinfo')
-            hash_args = tuple(getattr(args[0], d) for d in dinfo['dependencies']) + args[1:]
-            hash_kwargs = dict(dinfo['kw'], **kwargs)
+            dinfo = getattr(wrapped_func, '_dinfo', {})
+            hash_args = tuple(getattr(args[0], d) for d in dinfo.get('dependencies', ())) + args[1:]
+            hash_kwargs = dict(dinfo.get('kw', {}), **kwargs)
         hash_value = compute_hash(func, hash_funcs, hash_args, hash_kwargs)
 
         time = _TIME_FN()

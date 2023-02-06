@@ -59,11 +59,11 @@ png = pn.panel('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transpar
 png
 ```
 
-To see the type of the pane use the ``pprint`` method, which works with any Widget, Pane, or (perhaps most usefully) Panel:
+To see the type of the pane use the `print` function, which works with any Widget, Pane, or (perhaps most usefully) Panel:
 
 
 ```{pyodide}
-png.pprint()
+print(png)
 ```
 
 All Panel objects store the object they are wrapping on the ``object`` parameter.  By setting that parameter, existing views of this object (whether in other notebook cells or on a server instance) will update:

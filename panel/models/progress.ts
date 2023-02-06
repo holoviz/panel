@@ -55,7 +55,6 @@ export class ProgressView extends HTMLBoxView {
       this.progressEl.value = this.model.value
     else if (this.model.value < 0)
       this.progressEl.removeAttribute("value")
-    console.log(this.progressEl)
   }
 
   setMax(): void {

@@ -157,6 +157,8 @@ class FileDownload(InputWidget):
 
     data = String(help="""Encoded URI data.""")
 
+    embed = Bool(False, help="""Whether the data is pre-embedded.""")
+
     label = String("", help="""The text label for the button to display.""")
 
     filename = String(help="""Filename to use on download""")
