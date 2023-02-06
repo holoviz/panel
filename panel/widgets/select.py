@@ -9,7 +9,7 @@ import re
 
 from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Type,
 )
 
 import param

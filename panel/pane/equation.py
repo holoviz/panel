@@ -10,9 +10,9 @@ from typing import (
     TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Type,
 )
 
-import param
+import param  # type: ignore
 
-from pyviz_comms import JupyterComm
+from pyviz_comms import Comm, JupyterComm  # type: ignore
 
 from ..util import lazy_load
 from .base import ModelPane
@@ -20,14 +20,12 @@ from .base import ModelPane
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
-    from pyviz_comms import Comm
-
 
 
 def is_sympy_expr(obj: Any) -> bool:
     """Test for sympy.Expr types without usually needing to import sympy"""
     if 'sympy' in sys.modules and 'sympy' in str(type(obj).__class__):
-        import sympy
+        import sympy  # type: ignore
         if isinstance(obj, sympy.Expr):
             return True
     return False
@@ -62,6 +60,8 @@ class LaTeX(ModelPane):
     _rename: ClassVar[Mapping[str, str | None]] = {
         'renderer': None, 'object': 'text'
     }
+
+    _updates: ClassVar[bool] = True
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:

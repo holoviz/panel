@@ -8,10 +8,10 @@ import json
 import textwrap
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
 )
 
-import param
+import param  # type: ignore
 
 from ..models import HTML as _BkHTML, JSON as _BkJSON
 from ..util import escape
@@ -21,7 +21,7 @@ from .base import ModelPane
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
-    from pyviz_comms import Comm
+    from pyviz_comms import Comm  # type: ignore
 
 
 class HTMLBasePane(ModelPane):
@@ -213,8 +213,8 @@ class DataFrame(HTML):
         self._stream.sink(self._set_object)
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         model = super()._get_model(doc, root, parent, comm)
         self._setup_stream()
@@ -358,7 +358,7 @@ class Markdown(HTMLBasePane):
 
     def _process_param_change(self, params):
         if 'css_classes' in params:
-            params['css_classes'] = params['css_classes'] + ['markdown']
+            params['css_classes'] = ['markdown'] + params['css_classes']
         return super()._process_param_change(params)
 
 
@@ -430,7 +430,7 @@ class JSON(HTMLBasePane):
         text = json.dumps(data or {}, cls=self.encoder)
         return dict(object=text)
 
-    def _process_property_change(self, properties):
+    def _process_property_change(self, properties: Dict[str, Any]) -> Dict[str, Any]:
         properties = super()._process_property_change(properties)
         if 'depth' in properties:
             properties['depth'] = -1 if properties['depth'] is None else properties['depth']
