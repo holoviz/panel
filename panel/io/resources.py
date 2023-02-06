@@ -186,12 +186,15 @@ def loading_css():
 def patch_stylesheet(stylesheet, dist_url):
     url = stylesheet.url
     if not url.startswith('http') and not url.startswith(dist_url):
-        try:
-            stylesheet.url = f'{dist_url}{url}'
-        except Exception:
-            pass
+        patched_url = f'{dist_url}{url}'
     elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
-        stylesheet.url = url.replace(CDN_DIST, dist_url)
+        patched_url = url.replace(CDN_DIST, dist_url)
+    else:
+        return
+    try:
+        stylesheet.url = patched_url
+    except Exception:
+        pass
 
 def patch_model_css(root, dist_url):
     """
