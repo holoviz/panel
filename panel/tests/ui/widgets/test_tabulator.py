@@ -4,6 +4,7 @@ import datetime as dt
 import time
 
 import numpy as np
+import pandas as pd
 import param
 import pytest
 
@@ -20,11 +21,6 @@ except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
 pytestmark = pytest.mark.ui
-
-try:
-    import pandas as pd
-except ImportError:
-    pytestmark = pytest.mark.skip('pandas not available')
 
 from panel import state
 from panel.depends import bind

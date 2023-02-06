@@ -7,7 +7,7 @@ from functools import partial
 from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    Tuple, Type, TypeVar,
+    Tuple, Type,
 )
 
 import numpy as np
@@ -37,11 +37,7 @@ from .button import Button
 from .input import TextInput
 
 if TYPE_CHECKING:
-    try:
-        import pandas as pd
-        DataFrameType = pd.DataFrame
-    except Exception:
-        DataFrameType = TypeVar('DataFrameType')
+    import pandas as pd
 
     from bokeh.document import Document
     from bokeh.models.sources import DataDict
@@ -155,7 +151,7 @@ class BaseTable(ReactiveData, Widget):
         df = self.value.reset_index() if len(indexes) > 1 else self.value
         return self._get_column_definitions(fields, df)
 
-    def _get_column_definitions(self, col_names: List[str], df: DataFrameType) -> List[TableColumn]:
+    def _get_column_definitions(self, col_names: List[str], df: pd.DataFrame) -> List[TableColumn]:
         import pandas as pd
         indexes = self.indexes
         columns = []
@@ -326,7 +322,7 @@ class BaseTable(ReactiveData, Widget):
             else:
                 self._update_columns(event, model)
 
-    def _sort_df(self, df: DataFrameType) -> DataFrameType:
+    def _sort_df(self, df: pd.DataFrame) -> pd.DataFrame:
         if not self.sorters:
             return df
         fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
@@ -367,7 +363,7 @@ class BaseTable(ReactiveData, Widget):
         df_sorted.drop(columns=['_index_'], inplace=True)
         return df_sorted
 
-    def _filter_dataframe(self, df: DataFrameType) -> DataFrameType:
+    def _filter_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Filter the DataFrame.
 
@@ -555,10 +551,10 @@ class BaseTable(ReactiveData, Widget):
             return [str(v) for v in values]
         return values
 
-    def _get_data(self) -> Tuple[DataFrameType, DataDict]:
+    def _get_data(self) -> Tuple[pd.DataFrame, DataDict]:
         return self._process_df_and_convert_to_cds(self.value)
 
-    def _process_df_and_convert_to_cds(self, df: DataFrameType) -> Tuple[DataFrameType, DataDict]:
+    def _process_df_and_convert_to_cds(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, DataDict]:
         import pandas as pd
         df = self._filter_dataframe(df)
         if df is None:
@@ -1896,7 +1892,7 @@ class Tabulator(BaseTable):
         self._on_click_callbacks[column].append(callback)
 
     @property
-    def current_view(self) -> DataFrameType:
+    def current_view(self) -> pd.DataFrame:
         """
         Returns the current view of the table after filtering and
         sorting are applied.
