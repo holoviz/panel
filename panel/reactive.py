@@ -33,7 +33,7 @@ from param.parameterized import ParameterizedMetaclass, Watcher
 from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
-from .io.resources import loading_css, patch_stylesheet
+from .io.resources import CDN_DIST, loading_css, patch_stylesheet
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
@@ -149,12 +149,14 @@ class Syncable(Renderable):
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
         properties = self._process_param_change(self._init_params())
-        if 'dist_url' in doc._template_variables and 'stylesheets' in properties:
-            dist_url = doc._template_variables['dist_url']
+        if 'stylesheets' in properties:
+            if doc and 'dist_url' in doc._template_variables:
+                dist_url = doc._template_variables['dist_url']
+            else:
+                dist_url = CDN_DIST
             for stylesheet in properties['stylesheets']:
-                if not isinstance(stylesheet, ImportedStyleSheet):
-                    continue
-                patch_stylesheet(stylesheet, dist_url)
+                if isinstance(stylesheet, ImportedStyleSheet):
+                    patch_stylesheet(stylesheet, dist_url)
         return properties
 
     def _process_property_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
@@ -308,7 +310,8 @@ class Syncable(Renderable):
         if 'stylesheets' in msg:
             dist_url = doc._template_variables.get('dist_dir')
             for stylesheet in msg['stylesheets']:
-                patch_stylesheet(stylesheet, dist_url)
+                if isinstance(stylesheet, ImportedStyleSheet):
+                    patch_stylesheet(stylesheet, dist_url)
 
         try:
             model.update(**msg)

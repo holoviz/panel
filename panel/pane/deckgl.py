@@ -196,7 +196,7 @@ class DeckGL(ModelPane):
                 sources.append(cds)
             layer['data'] = sources.index(cds)
 
-    def _transform_obj(self, obj) -> Dict[str, Any]:
+    def _transform_object(self, obj) -> Dict[str, Any]:
         if self.object is None:
             data, mapbox_api_key, tooltip = {}, self.mapbox_api_key, self.tooltips
         elif isinstance(self.object, (str, dict)):
@@ -221,7 +221,7 @@ class DeckGL(ModelPane):
             if view.get('height', False) is None:
                 view.pop('height')
 
-        return dict(data=data, tooltip=tooltip, mapbox_api_key=mapbox_api_key or "",)
+        return dict(data=data, tooltip=tooltip, mapbox_api_key=mapbox_api_key or "")
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,

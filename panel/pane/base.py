@@ -430,7 +430,7 @@ class ModelPane(PaneBase):
 
     def _process_param_change(self, params):
         if 'object' in params:
-            params.update(self._transform_object(params['object']))
+            params.update(self._transform_object(params.pop('object')))
         return super()._process_param_change(params)
 
 

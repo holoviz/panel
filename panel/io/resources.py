@@ -187,9 +187,11 @@ def patch_stylesheet(stylesheet, dist_url):
     url = stylesheet.url
     if not url.startswith('http') and not url.startswith(dist_url):
         try:
-            stylesheet.url = f'{dist_url}{stylesheet.url}'
+            stylesheet.url = f'{dist_url}{url}'
         except Exception:
             pass
+    elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
+        stylesheet.url = url.replace(CDN_DIST, dist_url)
 
 def patch_model_css(root, dist_url):
     """
