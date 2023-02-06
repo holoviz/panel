@@ -223,7 +223,9 @@ class Matplotlib(PNG, IPyWidget):
         'high_dpi': None
     }
 
-    _rerender_params = PNG._rerender_params + ['object', 'dpi', 'tight']
+    _rerender_params = PNG._rerender_params + [
+        'interactive', 'object', 'dpi', 'tight', 'high_dpi'
+    ]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -299,9 +301,11 @@ class Matplotlib(PNG, IPyWidget):
             return model
         self.object.set_dpi(self.dpi)
         manager = self._get_widget(self.object)
-        props = self._process_param_change(self._init_params())
-        kwargs = {k: v for k, v in props.items()
-                  if k not in self._rerender_params+['interactive']}
+        props = self._init_params()
+        kwargs = {
+            k: v for k, v in props.items()
+            if k not in self._rerender_params+['loading']
+        }
         kwargs['width'] = self.width
         kwargs['height'] = self.height
         kwargs['sizing_mode'] = self.sizing_mode
@@ -317,7 +321,7 @@ class Matplotlib(PNG, IPyWidget):
     def _update(self, ref: str, model: Model) -> None:
         if not self.interactive:
             self._update_dimensions()
-            model.update(**self._process_param_change(self._get_properties()))
+            model.update(**self._get_properties())
             return
         manager = self._managers[ref]
         if self.object is not manager.canvas.figure:
