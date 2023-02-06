@@ -53,6 +53,7 @@ except Exception:
     jupyter_bokeh = None
 jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
 
+from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
 
 
@@ -76,8 +77,11 @@ def check_layoutable_properties(layoutable, model):
     assert model.styles["background"] == '#ffffff'
 
     layoutable.css_classes = ['custom_class']
-    if isinstance(layoutable, Markdown):
-        assert model.css_classes == ['custom_class', 'markdown']
+    if isinstance(layoutable, Alert):
+        print(model.css_classes)
+        assert model.css_classes == ['markdown', 'custom_class', 'alert', 'alert-primary']
+    elif isinstance(layoutable, Markdown):
+        assert model.css_classes == ['markdown', 'custom_class']
     else:
         assert model.css_classes == ['custom_class']
 

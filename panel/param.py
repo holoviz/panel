@@ -17,7 +17,7 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Tuple, Type,
 )
 
 import param
@@ -202,9 +202,11 @@ class Param(PaneBase):
 
     priority: ClassVar[float | bool | None] = 0.1
 
-    _unpack: ClassVar[bool] = True
+    _linkable_properties: ClassVar[Tuple[str]] = ()
 
     _rerender_params: ClassVar[List[str]] = []
+
+    _unpack: ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
         if isinstance(object, param.Parameter):
