@@ -72,10 +72,8 @@ class Location(Syncable):
     ) -> 'Model':
         model = _BkLocation(**self._process_param_change(self._init_params()))
         root = root or model
-        values = self.param.values()
-        properties = list(self._process_param_change(values))
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, properties, doc, root, comm)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
     def get_root(

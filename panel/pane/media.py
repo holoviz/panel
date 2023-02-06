@@ -8,7 +8,7 @@ import os
 from base64 import b64encode
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional,
+    Any, ClassVar, Dict, List, Mapping,
 )
 
 import numpy as np
@@ -16,15 +16,10 @@ import param
 
 from ..models import Audio as _BkAudio, Video as _BkVideo
 from ..util import isfile, isurl
-from .base import PaneBase
-
-if TYPE_CHECKING:
-    from bokeh.document import Document
-    from bokeh.model import Model
-    from pyviz_comms import Comm
+from .base import ModelPane
 
 
-class _MediaBase(PaneBase):
+class _MediaBase(ModelPane):
 
     loop = param.Boolean(default=False, doc="""
         Whether the meida should loop""")
@@ -58,7 +53,8 @@ class _MediaBase(PaneBase):
     _media_type: ClassVar[str]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': None, 'sample_rate': None, 'object': 'value'}
+        'sample_rate': None, 'object': 'value'
+    }
 
     _rerender_params: ClassVar[List[str]] = []
 
@@ -77,18 +73,6 @@ class _MediaBase(PaneBase):
             return True
         return False
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        props = self._process_param_change(self._init_params())
-        model = self._bokeh_model(**props)
-        if root is None:
-            root = model
-        self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, list(model.properties()), doc, root, comm)
-        return model
-
     def _from_numpy(self, data):
         from scipy.io import wavfile
         buffer = BytesIO()
@@ -101,28 +85,27 @@ class _MediaBase(PaneBase):
             del msg['js_property_callbacks']
         return msg
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            value = msg['value']
-            fmt = self._default_mime
-            if isinstance(value, np.ndarray):
-                fmt = 'wav'
-                buffer = self._from_numpy(value)
-                data = b64encode(buffer.getvalue())
-            elif os.path.isfile(value):
-                fmt = value.split('.')[-1]
-                with open(value, 'rb') as f:
-                    data = f.read()
-                data = b64encode(data)
-            elif value.lower().startswith('http'):
-                return msg
-            elif not value or value == f'data:{self._media_type}/{fmt};base64,':
-                data = b''
-            else:
-                raise ValueError(f'Object should be either path to a {self._media_type} file or numpy array.')
-            msg['value'] = f"data:{self._media_type}/{fmt};base64,{data.decode('utf-8')}"
-        return msg
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        fmt = self._default_mime
+        if obj is None:
+            data = b''
+        elif isinstance(obj, np.ndarray):
+            fmt = 'wav'
+            buffer = self._from_numpy(obj)
+            data = b64encode(buffer.getvalue())
+        elif os.path.isfile(obj):
+            fmt = obj.split('.')[-1]
+            with open(obj, 'rb') as f:
+                data = f.read()
+            data = b64encode(data)
+        elif obj.lower().startswith('http'):
+            return dict(object=obj)
+        elif not obj or obj == f'data:{self._media_type}/{fmt};base64,':
+            data = b''
+        else:
+            raise ValueError(f'Object should be either path to a {self._media_type} file or numpy array.')
+        b64 = f"data:{self._media_type}/{fmt};base64,{data.decode('utf-8')}"
+        return dict(object=b64)
 
 
 class Audio(_MediaBase):

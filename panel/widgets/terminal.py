@@ -256,15 +256,12 @@ class Terminal(Widget):
     _output = param.String(default="")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        "clear": None,
-        "output": None,
-        "_output": "output",
-        "write_to_console": None,
-        "value": None
+        'clear': None, 'name': None, 'output': None, '_output': 'output',
+        'value': None, 'write_to_console': None,
     }
 
     def __init__(self, output=None, **params):
-        params['_output'] = output = output or ""
+        params['_output'] = output = output or ''
         params['clear'] = self._clear
         super().__init__(output=output, **params)
         self._subprocess = None
@@ -274,13 +271,13 @@ class Terminal(Widget):
         if isinstance(__s, str):
             cleaned = __s
         elif isinstance(__s, bytes):
-            cleaned = __s.decode("utf8")
+            cleaned = __s.decode('utf8')
         else:
             cleaned = str(__s)
 
         if self._output == cleaned:
             # Hack to support writing the same string multiple times in a row
-            self._output = ""
+            self._output = ''
 
         self._output = cleaned
         self.output += cleaned
@@ -300,22 +297,22 @@ class Terminal(Widget):
         with edit_readonly(self):
             self.value = event.key
             with param.discard_events(self):
-                self.value = ""
+                self.value = ''
 
     def _clear(self, *events):
         """
         Clears all output on the terminal.
         """
-        self.output = ""
+        self.output = ''
         self._clears += 1
 
-    @param.depends("_output", watch=True)
+    @param.depends('_output', watch=True)
     def _write(self):
         if self.write_to_console:
             sys.__stdout__.write(self._output)
 
     def __repr__(self, depth=None):
-        return f"Terminal(id={id(self)})"
+        return f'Terminal(id={id(self)})'
 
     @property
     def subprocess(self):

@@ -8,7 +8,7 @@ import sys
 from contextlib import contextmanager
 from io import BytesIO
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
 )
 
 import param
@@ -76,7 +76,9 @@ class Bokeh(PaneBase):
 
     priority: ClassVar[float | bool | None] = 0.8
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'autodispatch': None, 'theme': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'autodispatch': None, 'theme': None
+    }
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -217,10 +219,13 @@ class Matplotlib(PNG, IPyWidget):
         subplots and other artist elements.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'object': 'text', 'interactive': None, 'dpi': None,  'tight': None, 'high_dpi': None
+        'object': 'text', 'interactive': None, 'dpi': None,  'tight': None,
+        'high_dpi': None
     }
 
-    _rerender_params = PNG._rerender_params + ['object', 'dpi', 'tight']
+    _rerender_params = PNG._rerender_params + [
+        'interactive', 'object', 'dpi', 'tight', 'high_dpi'
+    ]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -296,9 +301,11 @@ class Matplotlib(PNG, IPyWidget):
             return model
         self.object.set_dpi(self.dpi)
         manager = self._get_widget(self.object)
-        props = self._process_param_change(self._init_params())
-        kwargs = {k: v for k, v in props.items()
-                  if k not in self._rerender_params+['interactive']}
+        props = self._init_params()
+        kwargs = {
+            k: v for k, v in props.items()
+            if k not in self._rerender_params+['loading']
+        }
         kwargs['width'] = self.width
         kwargs['height'] = self.height
         kwargs['sizing_mode'] = self.sizing_mode
@@ -314,7 +321,7 @@ class Matplotlib(PNG, IPyWidget):
     def _update(self, ref: str, model: Model) -> None:
         if not self.interactive:
             self._update_dimensions()
-            model.update(**self._process_param_change(self._get_properties()))
+            model.update(**self._get_properties())
             return
         manager = self._managers[ref]
         if self.object is not manager.canvas.figure:
@@ -327,9 +334,9 @@ class Matplotlib(PNG, IPyWidget):
             manager.canvas.handle_resize(event)
         manager.canvas.draw_idle()
 
-    def _data(self):
+    def _data(self, obj):
         try:
-            self.object.set_dpi(self.dpi)
+            obj.set_dpi(self.dpi)
         except Exception as ex:
             raise Exception("The Matplotlib backend is not configured. Try adding `matplotlib.use('agg')`") from ex
         b = BytesIO()
@@ -339,7 +346,7 @@ class Matplotlib(PNG, IPyWidget):
         else:
             bbox_inches = None
 
-        self.object.canvas.print_figure(b, bbox_inches=bbox_inches)
+        obj.canvas.print_figure(b, bbox_inches=bbox_inches)
         return b.getvalue()
 
 
@@ -356,6 +363,8 @@ class RGGPlot(PNG):
     dpi = param.Integer(default=144, bounds=(1, None))
 
     _rerender_params = PNG._rerender_params + ['object', 'dpi', 'width', 'height']
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'dpi': None}
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -387,25 +396,6 @@ class YT(HTML):
                 hasattr(obj, "plots") and
                 hasattr(obj, "_repr_html_"))
 
-    def _get_properties(self):
-        p = super()._get_properties()
-        if self.object is None:
-            return p
-
-        width = height = 0
-        if self.width  is None or self.height is None:
-            for k,v in self.object.plots.items():
-                if hasattr(v, "_repr_png_"):
-                    img = v._repr_png_()
-                    w,h = PNG._imgshape(img)
-                    height += h
-                    width = max(w, width)
-
-        if self.width  is None: p["width"]  = width
-        if self.height is None: p["height"] = height
-
-        return p
-
 
 class Folium(HTML):
     """
@@ -423,9 +413,8 @@ class Folium(HTML):
         return (getattr(obj, '__module__', '').startswith('folium.') and
                 hasattr(obj, "_repr_html_"))
 
-    def _get_properties(self):
-        properties = super()._get_properties()
-        text = '' if self.object is None else self.object
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        text = '' if obj is None else obj
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_().replace(FOLIUM_BEFORE, FOLIUM_AFTER)
-        return dict(properties, text=escape(text))
+        return dict(object=escape(text))
