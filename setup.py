@@ -113,6 +113,7 @@ install_requires = [
     'bleach',
     'setuptools >=42',
     'typing_extensions',
+    'pandas >=1.2',
 ]
 
 _recommended = [

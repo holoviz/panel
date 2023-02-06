@@ -14,6 +14,7 @@ import time
 from contextlib import contextmanager
 from subprocess import PIPE, Popen
 
+import pandas as pd
 import pytest
 
 from bokeh.client import pull_session
@@ -160,7 +161,6 @@ def port():
 
 @pytest.fixture
 def dataframe():
-    import pandas as pd
     return pd.DataFrame({
         'int': [1, 2, 3],
         'float': [3.14, 6.28, 9.42],

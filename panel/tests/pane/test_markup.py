@@ -2,27 +2,24 @@ import base64
 import json
 
 import numpy as np
+import pandas as pd
 
 import panel as pn
 
 from panel.pane import (
     HTML, JSON, DataFrame, Markdown, PaneBase, Str,
 )
-from panel.tests.util import pd_available, streamz_available
+from panel.tests.util import streamz_available
 
 
 def test_get_markdown_pane_type():
     assert PaneBase.get_pane_type("**Markdown**") is Markdown
 
-@pd_available
 def test_get_dataframe_pane_type():
-    import pandas as pd
     df = pd._testing.makeDataFrame()
     assert PaneBase.get_pane_type(df) is DataFrame
 
-@pd_available
 def test_get_series_pane_type():
-    import pandas as pd
     df = pd._testing.makeDataFrame()
     assert PaneBase.get_pane_type(df.iloc[:, 0]) is DataFrame
 
@@ -114,9 +111,7 @@ def test_html_pane(document, comm):
     assert pane._models == {}
 
 
-@pd_available
 def test_dataframe_pane_pandas(document, comm):
-    import pandas as pd
     pane = DataFrame(pd._testing.makeDataFrame())
 
     # Create pane
@@ -135,9 +130,7 @@ def test_dataframe_pane_pandas(document, comm):
     pane._cleanup(model)
     assert pane._models == {}
 
-@pd_available
 def test_dataframe_pane_supports_escape(document, comm):
-    import pandas as pd
     url = "<a href='https://panel.holoviz.org/'>Panel</a>"
     df = pd.DataFrame({"url": [url]})
     pane = DataFrame(df)
