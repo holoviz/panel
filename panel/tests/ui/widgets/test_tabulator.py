@@ -3267,6 +3267,7 @@ def test_tabulator_loading_no_horizontal_rescroll(page, port, df_mixed):
 
     cell = page.locator('text="target"').first
     # Scroll to the right
+    page.wait_for_timeout(200)
     cell.scroll_into_view_if_needed()
     page.wait_for_timeout(200)
     bb = page.locator('text="Target"').bounding_box()
@@ -3296,7 +3297,9 @@ def test_tabulator_loading_no_vertical_rescroll(page, port):
     page.goto(f"http://localhost:{port}")
 
     # Scroll to the bottom, and give it a little extra time
-    page.locator('text="T"').scroll_into_view_if_needed()
+    cell = page.locator('text="T"')
+    page.wait_for_timeout(200)
+    cell.scroll_into_view_if_needed()
     page.wait_for_timeout(200)
 
     bb = page.locator('text="T"').bounding_box()
