@@ -26,7 +26,7 @@ class Card(Column):
 
     >>> pn.Card(
     ...     some_widget, some_pane, some_python_object,
-    ...     title='Card', background='WhiteSmoke'
+    ...     title='Card', styles=dict(background='WhiteSmoke'),
     ... )
     """
 
