@@ -42,12 +42,6 @@ except Exception:
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
 
 try:
-    import pandas as pd
-except Exception:
-    pd = None
-pd_available = pytest.mark.skipif(pd is None, reason="requires pandas")
-
-try:
     import streamz
 except Exception:
     streamz = None
