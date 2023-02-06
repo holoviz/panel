@@ -163,7 +163,7 @@ class GridBox(ListPanel):
         self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
         children = self._get_children(objects, self.nrows, self.ncols)
-        properties = self._get_properties()
+        properties = self._get_properties(doc)
         properties['children'] = children
         model.update(**properties)
         self._link_props(model, self._linked_properties, doc, root, comm)

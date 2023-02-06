@@ -108,7 +108,7 @@ class Widget(Reactive):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        model = self._widget_type(**self._get_properties())
+        model = self._widget_type(**self._get_properties(doc))
         if root is None:
             root = model
         # Link parameters and bokeh model

@@ -407,7 +407,7 @@ class ModelPane(PaneBase):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        model = self._bokeh_model(**self._get_properties())
+        model = self._bokeh_model(**self._get_properties(doc))
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
@@ -415,7 +415,7 @@ class ModelPane(PaneBase):
         return model
 
     def _update(self, ref: str, model: Model) -> None:
-        model.update(**self._get_properties())
+        model.update(**self._get_properties(model.document))
 
     def _init_params(self):
         params = {
