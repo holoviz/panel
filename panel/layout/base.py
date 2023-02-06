@@ -790,7 +790,7 @@ class WidgetBox(ListPanel):
 
     @param.depends('disabled', 'objects', watch=True)
     def _disable_widgets(self) -> None:
-        from ..widget import Widget
+        from ..widgets import Widget
         for obj in self.select(Widget):
             obj.disabled = self.disabled
 

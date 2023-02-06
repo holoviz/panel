@@ -418,7 +418,10 @@ class ModelPane(PaneBase):
         model.update(**self._get_properties())
 
     def _init_params(self):
-        params = {p: v for p, v in self.param.values().items() if v is not None}
+        params = {
+            p: v for p, v in self.param.values().items()
+            if v is not None and p not in ('name', 'default_layout')
+        }
         params['object'] = self.object
         return params
 
