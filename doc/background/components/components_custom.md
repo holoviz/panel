@@ -4,8 +4,8 @@
 
 This Background page will focus on the building of entirely new components. Alternatively, to learn how to compose existing Panel components into an easily reusable unit that behaves like a native Panel component, see the [How-to > Combine Existing Components](../../how_to/components/custom_viewer.md) page.
 
-
 ## ReactiveHTML components
+
 
 The `ReactiveHTML` provides bi-directional syncing of arbitrary HTML attributes and DOM properties with parameters on the subclass. This kind of component must declare a HTML template written using Javascript template variables (`${}`) and optionally Jinja2 syntax:
 
@@ -300,7 +300,7 @@ class Canvas(ReactiveHTML):
         """
     }
 
-canvas = Canvas(width=400, height=400)
+canvas = Canvas(width=300, height=300)
 
 # We create a separate HTML element which syncs with the uri parameter of the Canvas
 png_view = pn.pane.HTML()
@@ -327,3 +327,60 @@ It also makes extensive use of the available objects in the namespace:
 - `'render'`: Uses the `state` object to easily access the canvas rendering context in subsequent callbacks and accesses the `canvas` DOM node by name.
 - `'start'`, `'draw'`:  Use the `event` object provided by the `onmousedown` and `onmousemove` inline callbacks
 - `'save'`, `'line_width'`, `'color'`: Use the `data` object to get and set the current state of the parameter values
+
+
+## External dependencies
+
+Often the components you build will have dependencies on some external Javascript or CSS files. To make this possible `ReactiveHTML` components may declare `__javascript__`, `__javascript_modules__` and `__css__` attributes, specifying the external dependencies to load. Note that in a notebook as long as the component is imported before the call to `pn.extension` all its dependencies will be loaded automatically. If you want to require users to load the components as an extension explicitly via a `pn.extension` call you can declare an `_extension_name`.
+
+Below we will create a Material UI text field and declare the Javascript and CSS components to load:
+
+```python
+import panel as pn
+from panel.reactive import ReactiveHTML
+import param
+
+class MaterialTextField(ReactiveHTML):
+
+    value = param.String(default='')
+
+    _template = """
+    <label id="text-field" class="mdc-text-field mdc-text-field--filled">
+      <span class="mdc-text-field__ripple"></span>
+      <span class="mdc-floating-label">Label</span>
+      <input id="text-input" type="text" class="mdc-text-field__input" aria-labelledby="my-label" value="${value}"></input>
+      <span class="mdc-line-ripple"></span>
+    </label>
+    """
+
+    _dom_events = {'text-input': ['change']}
+
+    # By declaring an _extension_name the component should be loaded explicitly with pn.extension('material-components')
+    _extension_name = 'material-components'
+
+    _scripts = {
+        'render': "mdc.textField.MDCTextField.attachTo(text_field);"
+    }
+
+    __javascript__ = [
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js'
+    ]
+
+    __css__ = [
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css'
+    ]
+```
+
+```python
+pn.extension('material-components')
+
+text_field = MaterialTextField()
+
+text_field
+```
+
+In a notebook dependencies for this component will not be loaded unless the user explicitly loads them with a `pn.extension('material-components')`. In a server context you will also have to explicitly load this extension unless the component is rendered on initial page load, i.e. if the component is only added to the page in a callback you will also have to explicitly run `pn.extension('material-components')`.
+
+## Building custom Bokeh models
+
+The last approach to extending Panel with new components is to write custom Bokeh models. This involves writing, compiling and distributing custom Javascript and therefore requires considerably more effort than the other approaches. Detailed documentation on writing such components will be coming to the developer guide in the future.
