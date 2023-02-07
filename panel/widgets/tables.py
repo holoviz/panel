@@ -427,7 +427,7 @@ class BaseTable(ReactiveData, Widget):
                 edited_mask = (df.index.isin(self._edited_indexes))
                 mask = mask | edited_mask
             df = df[mask]
-        return df
+        return df.copy()
 
     def _get_header_filters(self, df):
         filters = []
@@ -1528,14 +1528,14 @@ class Tabulator(BaseTable):
         if self.pagination != 'remote':
             index = self._processed.index.values
             self.value.loc[index, column] = array
-            self._processed[column] = array
+            self._processed.loc[:, column] = array
             return
         nrows = self.page_size
         start = (self.page-1)*nrows
         end = start+nrows
         index = self._processed.iloc[start:end].index.values
-        self.value[column].loc[index] = array
-        self._processed[column].loc[index] = array
+        self.value.loc[index, column] = array
+        self._processed.loc[index, column] = array
 
     def _update_selection(self, indices: List[int]):
         if self.pagination != 'remote':
