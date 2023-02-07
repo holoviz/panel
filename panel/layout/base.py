@@ -78,9 +78,6 @@ class Panel(Reactive):
             if v is not None and p != 'objects'
         }
 
-    def _get_properties(self) -> Dict[str, Any]:
-        return self._process_param_change(self._init_params())
-
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
@@ -153,7 +150,7 @@ class Panel(Reactive):
             root = model
         self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
-        properties = self._get_properties()
+        properties = self._get_properties(doc)
         properties[self._property_mapping['objects']] = objects
         model.update(**properties)
         self._link_props(model, self._linked_properties, doc, root, comm)

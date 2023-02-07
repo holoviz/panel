@@ -460,7 +460,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         )
         scene, arrays, annotations = self._serialize_ren_win(self.object, context)
         self._update_color_mappers()
-        props = self._get_properties()
+        props = self._get_properties(doc)
         props.update(scene=scene, arrays=arrays, annotations=annotations, color_mappers=self.color_mappers)
         model = VTKSynchronizedPlot(**props)
         root = root or model

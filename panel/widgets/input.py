@@ -639,11 +639,28 @@ class FloatInput(_SpinnerBase, _FloatInputBase):
     >>> FloatInput(name='Value', value=5., step=1e-1, start=0, end=10)
     """
 
+    placeholder = param.String(default='', doc="""
+        Placeholder when the value is empty.""")
+
     step = param.Number(default=0.1, doc="""
         The step size.""")
 
     value_throttled = param.Number(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
+
+    def _process_param_change(self, msg):
+        if msg.get('value', False) is None:
+            msg['value'] = float('NaN')
+        if msg.get('value_throttled', False) is None:
+            msg['value_throttled'] = float('NaN')
+        return super()._process_param_change(msg)
+
+    def _process_property_change(self, msg):
+        if msg.get('value', False) and np.isnan(msg['value']):
+            msg['value'] = None
+        if msg.get('value_throttled', False) and np.isnan(msg['value_throttled']):
+            msg['value_throttled'] = None
+        return super()._process_property_change(msg)
 
 
 class NumberInput(_SpinnerBase):

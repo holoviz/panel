@@ -321,7 +321,7 @@ class Matplotlib(PNG, IPyWidget):
     def _update(self, ref: str, model: Model) -> None:
         if not self.interactive:
             self._update_dimensions()
-            model.update(**self._get_properties())
+            model.update(**self._get_properties(model.document))
             return
         manager = self._managers[ref]
         if self.object is not manager.canvas.figure:
