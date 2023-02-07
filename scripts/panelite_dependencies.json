@@ -95,5 +95,12 @@
     "reference/widgets/SpeechToText.ipynb": ["panel"],
     "reference/widgets/StaticText.ipynb": ["panel"],
     "reference/widgets/Tabulator.ipynb": ["panel", "pandas"],
-    "reference/widgets/Terminal.ipynb": ["panel"]
+    "reference/widgets/Terminal.ipynb": ["panel"],
+    "reference/widgets/TextAreaInput.ipynb": ["panel"],
+    "reference/widgets/TextEditor.ipynb": ["panel"],
+    "reference/widgets/TextInput.ipynb": ["panel"],
+    "reference/widgets/TextToSpeech.ipynb": ["panel"],
+    "reference/widgets/Toggle.ipynb": ["panel"],
+    "reference/widgets/ToggleGroup.ipynb": ["panel"],
+    "reference/widgets/VideoStream.ipynb": ["panel"],
 }
