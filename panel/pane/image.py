@@ -424,8 +424,6 @@ class PDF(FileBase):
 
     _bokeh_model: ClassVar[Model] = _BkPDF
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'start_page': None}
-
     _rerender_params: ClassVar[List[str]] = FileBase._rerender_params + ['start_page']
 
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
@@ -437,7 +435,7 @@ class PDF(FileBase):
             if not isinstance(data, bytes):
                 data = data.encode('utf-8')
             b64 = base64.b64encode(data).decode("utf-8")
-            return dict(object=b64)
+            return dict(text=b64)
         w, h = self.width or '100%', self.height or '100%'
         html = f'<embed src="{obj}#page={self.start_page}" width={w!r} height={h!r} type="application/pdf">'
         return dict(object=escape(html))
