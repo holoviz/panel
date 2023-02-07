@@ -177,11 +177,24 @@ def loading_css():
         svg = f.read().replace('\n', '').format(color=config.loading_color)
     b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return f"""
-    .bk.pn-loading.{config.loading_spinner}:before {{
+    .pn-loading.{config.loading_spinner}:before {{
       background-image: url("data:image/svg+xml;base64,{b64}");
       background-size: auto calc(min(50%, {config.loading_max_height}px));
     }}
     """
+
+def patch_stylesheet(stylesheet, dist_url):
+    url = stylesheet.url
+    if not url.startswith('http') and not url.startswith(dist_url):
+        patched_url = f'{dist_url}{url}'
+    elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
+        patched_url = url.replace(CDN_DIST, dist_url)
+    else:
+        return
+    try:
+        stylesheet.url = patched_url
+    except Exception:
+        pass
 
 def patch_model_css(root, dist_url):
     """
@@ -192,12 +205,7 @@ def patch_model_css(root, dist_url):
     """
     # Patch model CSS properties
     for stylesheet in root.select({'type': ImportedStyleSheet}):
-        url = stylesheet.url
-        if not url.startswith('http') and not url.startswith(dist_url):
-            try:
-                stylesheet.url = f'{dist_url}{stylesheet.url}'
-            except Exception:
-                pass
+        patch_stylesheet(stylesheet, dist_url)
 
 def global_css(name):
     if RESOURCE_MODE == 'server':

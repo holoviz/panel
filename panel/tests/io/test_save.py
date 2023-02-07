@@ -51,7 +51,6 @@ def test_save_inline_resources():
     assert 'alert-primary' in html
 
 
-@bokeh3_failing
 def test_save_cdn_resources():
     alert = Alert('# Save test')
 

@@ -14,7 +14,7 @@ import numpy as np
 import param
 
 from bokeh.model import Model
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, Selection
 from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CellFormatter, CheckboxEditor, DataCube,
     DataTable, DateEditor, DateFormatter, GroupingInfo, IntEditor,
@@ -25,13 +25,12 @@ from bokeh.util.serialization import convert_datetime_array
 from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget
-from ..io.resources import LOCAL_DIST, set_resource_mode
+from ..io.resources import LOCAL_DIST
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
     clone_model, isdatetime, lazy_load, updating,
 )
-from ..viewable import Layoutable
 from .base import Widget
 from .button import Button
 from .input import TextInput
@@ -102,7 +101,9 @@ class BaseTable(ReactiveData, Widget):
         'formatters', 'editors', 'widths', 'titles', 'value', 'show_index'
     ]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'disabled': 'editable', 'selection': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'disabled': 'editable', 'hierarchical': None, 'name': None, 'selection': None
+    }
 
     __abstract = True
 
@@ -124,6 +125,10 @@ class BaseTable(ReactiveData, Widget):
             str(col) if str(col) != col else col: col for col in self._get_fields()
         }
 
+    @property
+    def _length(self):
+        return len(self._processed)
+
     def _validate(self, *events: param.parameterized.Event):
         if self.value is None:
             return
@@ -131,12 +136,6 @@ class BaseTable(ReactiveData, Widget):
         if len(cols) != len(cols.drop_duplicates()):
             raise ValueError('Cannot display a pandas.DataFrame with '
                              'duplicate column names.')
-
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'editable' in msg:
-            msg['editable'] = not msg.pop('editable') and len(self.indexes) <= 1
-        return msg
 
     def _get_fields(self) -> List[str]:
         indexes = self.indexes
@@ -289,16 +288,31 @@ class BaseTable(ReactiveData, Widget):
         for ref, (m, _) in self._models.items():
             self._apply_update(events, msg, m.source, ref)
 
+    def _init_params(self) -> Dict[str, Any]:
+        params = super()._init_params()
+        return params
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if 'editable' in msg:
+            msg['editable'] = not msg.pop('editable') and len(self.indexes) <= 1
+        return msg
+
+    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+        properties = super()._get_properties(doc)
+        properties['columns'] = self._get_columns()
+        properties['source']  = ColumnDataSource(
+            data=self._data, selected=Selection(indices=self.selection)
+        )
+        return properties
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        source = ColumnDataSource(data=self._data)
-        source.selected.indices = self.selection # type: ignore
-        properties = self._get_properties(source)
+        properties = self._get_properties(doc)
         model = self._widget_type(**properties)
-        if root is None:
-            root = model
+        root = root or model
         self._link_props(model.source, ['data'], doc, root, comm)
         self._link_props(model.source.selected, ['indices'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
@@ -896,8 +910,10 @@ class DataFrame(BaseTable):
 
     _manual_params: ClassVar[List[str]] = BaseTable._manual_params + ['aggregators']
 
-    _aggregators = {'sum': SumAggregator, 'max': MaxAggregator,
-                    'min': MinAggregator, 'mean': AvgAggregator}
+    _aggregators = {
+        'sum': SumAggregator, 'max': MaxAggregator,
+        'min': MinAggregator, 'mean': AvgAggregator
+    }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'hierarchical': None}
 
@@ -951,30 +967,12 @@ class DataFrame(BaseTable):
                     expanded_aggs.append(agg(field_=str(col)))
         return expanded_aggs
 
-    def _get_properties(self, source):
-        props = {p : getattr(self, p) for p in list(Layoutable.param)
-                 if getattr(self, p) is not None}
-        if props.get('height', None) is None:
-            data = source.data
-            length = max([len(v) for v in data.values()]) if data else 0
-            props['height'] = min([length * self.row_height + 30, 2000])
+    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+        properties = super()._get_properties(doc)
         if self.hierarchical:
-            props['target'] = ColumnDataSource(data=dict(row_indices=[], labels=[]))
-            props['grouping'] = self._get_groupings()
-        props['source'] = source
-        props['columns'] = self._get_columns()
-        props['index_position'] = None
-        props['fit_columns'] = self.fit_columns
-        if 'autosize_mode' in DataTable.properties():
-            props['frozen_columns'] = self.frozen_columns
-            props['frozen_rows'] = self.frozen_rows
-            props['autosize_mode'] = self.autosize_mode
-            props['auto_edit'] = self.auto_edit
-        props['row_height'] = self.row_height
-        props['editable'] = not self.disabled and len(self.indexes) <= 1
-        props['sortable'] = self.sortable
-        props['reorderable'] = self.reorderable
-        return props
+            properties['target'] = ColumnDataSource(data=dict(row_indices=[], labels=[]))
+            properties['grouping'] = self._get_groupings()
+        return properties
 
     def _update_aggregators(self, model):
         for g in model.grouping:
@@ -1103,10 +1101,9 @@ class Tabulator(BaseTable):
     _priority_changes: ClassVar[List[str]] = ['data']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'disabled': 'editable', 'selection': None, 'selectable': 'select_mode',
-        'row_content': None, 'row_height': None, 'text_align': None,
-        'embed_content': None, 'header_align': None, 'header_filters': None,
-        'styles': 'cell_styles'
+        'disabled': 'editable', 'selection': None, 'row_content': None,
+        'row_height': None, 'text_align': None, 'embed_content': None,
+        'header_align': None, 'header_filters': None, 'styles': 'cell_styles'
     }
 
     # Determines the maximum size limits beyond which (local, remote)
@@ -1239,23 +1236,6 @@ class Tabulator(BaseTable):
             self._widget_type.__css_raw__ = [f'{THEME_URL}{fname}.min.css']
         return theme_url, theme
 
-    def _process_param_change(self, msg):
-        import pandas as pd
-        msg = Reactive._process_param_change(self, msg)
-        if 'hidden_columns' in msg:
-            if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):
-                msg['hidden_columns'] += [self.value.index.name or 'index']
-        if 'frozen_rows' in msg:
-            length = self._length
-            msg['frozen_rows'] = [
-                length+r if r < 0 else r for r in msg['frozen_rows']
-            ]
-        if 'theme' in msg:
-            msg['theme_url'], msg['theme'] = self._get_theme(msg.pop('theme'))
-        if msg.get('select_mode') == 'checkbox-single':
-            msg['select_mode'] = 'checkbox'
-        return msg
-
     def _update_columns(self, event, model):
         if event.name not in self._config_params:
             super()._update_columns(event, model)
@@ -1317,10 +1297,6 @@ class Tabulator(BaseTable):
             page_df = page_df.reset_index()
         data = ColumnDataSource.from_df(page_df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
-
-    @property
-    def _length(self):
-        return len(self._processed)
 
     def _get_style_data(self, recompute=True):
         if self.value is None or self.style is None or self.value.empty:
@@ -1556,59 +1532,43 @@ class Tabulator(BaseTable):
                 continue
         self.selection = indices
 
-    def _get_properties(self, source: ColumnDataSource) -> Dict[str, Any]:
-        props = {p : getattr(self, p) for p in list(Layoutable.param)
-                 if getattr(self, p) is not None}
-        columns = self._get_columns()
-        if self.selectable == 'checkbox-single':
-            selectable = 'checkbox'
-        else:
-            selectable = self.selectable
-        props.update({
-            'aggregators': self.aggregators,
-            'buttons': self.buttons,
-            'expanded': self.expanded,
-            'source': source,
-            'cell_styles': self._get_style_data(),
-            'columns': columns,
-            'configuration': self._get_configuration(columns),
-            'page': self.page,
-            'pagination': self.pagination,
-            'page_size': self.page_size,
-            'layout': self.layout,
-            'groupby': self.groupby,
-            'hidden_columns': self.hidden_columns,
-            'editable': not self.disabled,
-            'select_mode': selectable,
-            'selectable_rows': self._get_selectable(),
-            'sorters': self.sorters
-        })
-        process = {'theme': self.theme, 'frozen_rows': self.frozen_rows}
-        props.update(self._process_param_change(process))
+    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+        properties = super()._get_properties(doc)
+        properties['configuration'] = self._get_configuration(properties['columns'])
+        properties['cell_styles'] = self._get_style_data()
         if self.pagination:
-            length = 0 if self._processed is None else len(self._processed)
-            props['max_page'] = max(length//self.page_size + bool(length%self.page_size), 1)
-        if self.frozen_rows and 'height' not in props and 'sizing_mode' not in props:
-            length = self.page_size+2 if self.pagination else self._length
-            props['height'] = min([length * self.row_height + 30, 2000])
-        props['indexes'] = self.indexes
-        return props
+            length = self._length
+            properties['max_page'] = max(length//self.page_size + bool(length%self.page_size), 1)
+        return properties
+
+    def _process_param_change(self, params):
+        params = Reactive._process_param_change(self, params)
+        if 'frozen_rows' in params:
+            length = self._length
+            params['frozen_rows'] = [
+                length+r if r < 0 else r for r in params['frozen_rows']
+            ]
+        if 'hidden_columns' in params:
+            import pandas as pd
+            if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):
+                params['hidden_columns'] += [self.value.index.name or 'index']
+        if 'selectable' in params:
+            params['select_mode'] = 'checkbox' if self.selectable.startswith('checkbox') else self.selectable
+        if 'selectable_rows' in params:
+            params['selectable_rows'] = self._get_selectable()
+        if 'theme' in params:
+            params['theme_url'], params['theme'] = self._get_theme(params.pop('theme'))
+        return params
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        if self._widget_type is None:
-            self._widget_type = lazy_load(
-                'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
-            )
-        if comm:
-            with set_resource_mode('inline'):
-                model = super()._get_model(doc, root, parent, comm)
-        else:
-            model = super()._get_model(doc, root, parent, comm)
-        if root is None:
-            root = model
+        Tabulator._widget_type = lazy_load(
+            'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm), root
+        )
+        model = super()._get_model(doc, root, parent, comm)
+        root = root or model
         self._child_panels = child_panels = self._get_children()
         model.children = self._get_model_children(
             child_panels, doc, root, parent, comm

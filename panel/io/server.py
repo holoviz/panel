@@ -204,6 +204,8 @@ def server_html_page_for_session(
         dist_url = f'{state.rel_path}/{LOCAL_DIST}' if state.rel_path else LOCAL_DIST
     else:
         dist_url = CDN_DIST
+
+    session.document._template_variables['dist_url'] = dist_url
     for root in session.document.roots:
         patch_model_css(root, dist_url=dist_url)
 
