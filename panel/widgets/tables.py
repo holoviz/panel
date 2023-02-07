@@ -299,9 +299,6 @@ class BaseTable(ReactiveData, Widget):
         properties['source']  = ColumnDataSource(
             data=self._data, selected=Selection(indices=self.selection)
         )
-        if self.hierarchical:
-            properties['target'] = ColumnDataSource(data=dict(row_indices=[], labels=[]))
-            properties['grouping'] = self._get_groupings()
         return properties
 
     def _get_model(
@@ -905,8 +902,10 @@ class DataFrame(BaseTable):
 
     _manual_params: ClassVar[List[str]] = BaseTable._manual_params + ['aggregators']
 
-    _aggregators = {'sum': SumAggregator, 'max': MaxAggregator,
-                    'min': MinAggregator, 'mean': AvgAggregator}
+    _aggregators = {
+        'sum': SumAggregator, 'max': MaxAggregator,
+        'min': MinAggregator, 'mean': AvgAggregator
+    }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'hierarchical': None}
 
@@ -959,6 +958,13 @@ class DataFrame(BaseTable):
                 if issubclass(agg, RowAggregator):
                     expanded_aggs.append(agg(field_=str(col)))
         return expanded_aggs
+
+    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+        properties = super()._get_properties(doc)
+        if self.hierarchical:
+            properties['target'] = ColumnDataSource(data=dict(row_indices=[], labels=[]))
+            properties['grouping'] = self._get_groupings()
+        return properties
 
     def _update_aggregators(self, model):
         for g in model.grouping:
