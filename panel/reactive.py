@@ -33,6 +33,7 @@ from param.parameterized import ParameterizedMetaclass, Watcher
 from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
+from .io.resources import CDN_DIST, loading_css, patch_stylesheet
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
@@ -146,8 +147,17 @@ class Syncable(Renderable):
             if p not in Viewable.param and self._property_mapping.get(p, p) is not None
         )
 
-    def _get_properties(self) -> Dict[str, Any]:
-        return self._process_param_change(self._init_params())
+    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+        properties = self._process_param_change(self._init_params())
+        if 'stylesheets' in properties:
+            if doc and 'dist_url' in doc._template_variables:
+                dist_url = doc._template_variables['dist_url']
+            else:
+                dist_url = CDN_DIST
+            for stylesheet in properties['stylesheets']:
+                if isinstance(stylesheet, ImportedStyleSheet):
+                    patch_stylesheet(stylesheet, dist_url)
+        return properties
 
     def _process_property_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -178,7 +188,7 @@ class Syncable(Renderable):
         if 'height' in properties and self.sizing_mode is None:
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
-            properties['stylesheets'] = [
+            properties['stylesheets'] = [loading_css()] + [
                 ImportedStyleSheet(url=sts) for sts in self._stylesheets
             ] + properties['stylesheets']
         return properties
@@ -296,6 +306,13 @@ class Syncable(Renderable):
                 continue
             if not model.lookup(attr).property.matches(model_val, value):
                 attrs.append(attr)
+
+        if 'stylesheets' in msg:
+            dist_url = doc._template_variables.get('dist_dir')
+            for stylesheet in msg['stylesheets']:
+                if isinstance(stylesheet, ImportedStyleSheet):
+                    patch_stylesheet(stylesheet, dist_url)
+
         try:
             model.update(**msg)
         finally:
@@ -1702,7 +1719,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        model = _BkReactiveHTML(**self._get_properties())
+        model = _BkReactiveHTML(**self._get_properties(doc))
         if comm and not self._loaded():
             self.param.warning(
                 f'{type(self).__name__} was not imported on instantiation and may not '

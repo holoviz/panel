@@ -86,7 +86,7 @@ class LaTeX(ModelPane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        model = self._get_model_type(root, comm)(**self._get_properties())
+        model = self._get_model_type(root, comm)(**self._get_properties(doc))
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
