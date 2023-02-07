@@ -22,6 +22,7 @@ DEPENDENCY_NOT_IMPORTABLE = [
     "vtk", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
 ]
 NOTEBOOK_ISSUES = {
+    "Getting_Started.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
     "reference/panes/DataFrame.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
     "reference/panes/HoloViews.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
     "reference/panes/IPyWidget.ipynb": ["https://github.com/holoviz/panel/issues/4394", "https://github.com/widgetti/ipyvolume/issues/427"],
