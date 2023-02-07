@@ -2,8 +2,6 @@
 
 This guide addresses how to build custom Panel components from scratch.
 
-{bdg-warning}`Advanced`
-
 ---
 
 As a how-to guide, the intent of this page is to provide recipes to solve a specific real-world problem without a lot of discussion. However, this is an advanced topic so if you get stuck, please read the associated [Background > Building Custom Components](../../background/components/components_custom) for further explanation.
