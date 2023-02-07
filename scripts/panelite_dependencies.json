@@ -1,4 +1,5 @@
 {
+    "developer_guide/Developing_Custom_Models.ipynb": [],
     "reference/global/Notifications.ipynb": ["panel"],
     "reference/indicators/BooleanStatus.ipynb": ["panel"],
     "reference/indicators/Dial.ipynb": ["panel"],
@@ -49,6 +50,13 @@
     "reference/panes/VTK.ipynb": ["panel", "vtk", "pyvista"],
     "reference/panes/VTKJS.ipynb": ["panel", "pyodide-http"],
     "reference/panes/VTKVolume.ipynb": ["panel", "pyvista"],
+    "reference/templates/Bootstrap.ipynb": ["panel", "holoviews"],
+    "reference/templates/FastGridTemplate.ipynb": ["panel", "holoviews"],
+    "reference/templates/FastListTemplate.ipynb": ["panel", "holoviews"],
+    "reference/templates/GoldenLayout.ipynb": ["panel", "holoviews"],
+    "reference/templates/Material.ipynb": ["panel", "holoviews"],
+    "reference/templates/React.ipynb": ["panel", "holoviews"],
+    "reference/templates/Vanilla.ipynb": ["panel", "holoviews"],
     "reference/widgets/Ace.ipynb": ["panel"],
     "reference/widgets/ArrayInput.ipynb": ["panel"],
     "reference/widgets/AutocompleteInput.ipynb": ["panel"],
@@ -103,4 +111,10 @@
     "reference/widgets/Toggle.ipynb": ["panel"],
     "reference/widgets/ToggleGroup.ipynb": ["panel"],
     "reference/widgets/VideoStream.ipynb": ["panel"],
+    "gallery/apis/stocks_altair.ipynb": ["panel"],
+    "gallery/apis/stocks_hvplot.ipynb": ["panel", "hvplot"],
+    "gallery/apis/stocks_matplotlib.ipynb": ["panel"],
+    "gallery/apis/stocks_plotly.ipynb": ["panel", "plotly"],
+    "gallery/components/CanvasDraw.ipynb": ["panel"],
+
 }
