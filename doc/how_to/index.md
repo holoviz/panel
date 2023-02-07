@@ -128,6 +128,13 @@ Discover various approaches telling you how to improve the scalability of your P
 Discover how to profile and debug your application using the admin dashboard and other tools.
 :::
 
+:::{grid-item-card} {octicon}`git-branch;2.5em;sd-mr-1` Build a `Pipeline`
+:link: pipeline/index
+:link-type: doc
+
+Discover how to build and customize Panel `Pipeline` user interfaces.
+:::
+
 :::{grid-item-card} {octicon}`codescan-checkmark;2.5em;sd-mr-1` Set up testing for an application
 :link: profiling/index
 :link-type: doc
