@@ -480,7 +480,7 @@ class BaseTable(ReactiveData, Widget):
             elif op == 'in':
                 filters.append(col.isin(val))
             elif op == 'like':
-                filters.append(col.str.lower().str.contains(val.lower()))
+                filters.append(col.str.contains(val, case=False, regex=False))
             elif op == 'starts':
                 filters.append(col.str.startsWith(val))
             elif op == 'ends':
@@ -488,14 +488,14 @@ class BaseTable(ReactiveData, Widget):
             elif op == 'keywords':
                 match_all = filt_def.get(col_name, {}).get('matchAll', False)
                 sep = filt_def.get(col_name, {}).get('separator', ' ')
-                matches = val.lower().split(sep)
+                matches = val.split(sep)
                 if match_all:
                     for match in matches:
-                        filters.append(col.str.lower().str.contains(match))
+                        filters.append(col.str.contains(match, case=False, regex=False))
                 else:
-                    filt = col.str.lower().str.contains(matches[0])
+                    filt = col.str.contains(matches[0], case=False, regex=False)
                     for match in matches[1:]:
-                        filt |= col.str.lower().str.contains(match)
+                        filt |= col.str.contains(match, case=False, regex=False)
                     filters.append(filt)
             elif op == 'regex':
                 raise ValueError("Regex filtering not supported.")
