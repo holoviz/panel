@@ -141,7 +141,7 @@ def test_plotly_hover_data(page, port, plotly_2d_plot):
     point = page.locator(':nth-match(.js-plotly-plot .plot-container.plotly path.point, 1)')
     point.hover(force=True)
 
-    time.sleep(0.2)
+    page.wait_for_timeout(200)
 
     assert plotly_2d_plot.hover_data == {
         'points': [{
@@ -157,7 +157,7 @@ def test_plotly_hover_data(page, port, plotly_2d_plot):
     plot = page.locator('.js-plotly-plot .plot-container.plotly g.scatterlayer')
     plot.hover(force=True)
 
-    time.sleep(0.2)
+    page.wait_for_timeout(200)
 
     assert plotly_2d_plot.hover_data is None
 
