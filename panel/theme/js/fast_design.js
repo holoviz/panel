@@ -52,7 +52,7 @@ function setNeutralColor(color, selector) {
   const provider = document.querySelector(selector);
   provider.neutralPalette = palette;
 }
-  
+
 function setBackgroundColor(color, selector) {
   color = standardize_color(color);
   const provider = document.querySelector(selector);
