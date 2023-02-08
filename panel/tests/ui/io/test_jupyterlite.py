@@ -41,6 +41,7 @@ def launch_jupyterlite():
 # ImportError: 'process_document_events' from 'bokeh.protocol.messages.patch_doc'"""
 @pytest.mark.xfail(reason="Jupyterlite: does not work with Bokeh 3.")
 @pytest.mark.flaky(max_runs=3)
+@pytest.mark.skip(reason="Requires a dev release to be available")
 def test_jupyterlite_execution(launch_jupyterlite, page):
     page.goto("http://localhost:8123/index.html")
 
