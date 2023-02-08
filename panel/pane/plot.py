@@ -370,13 +370,13 @@ class RGGPlot(PNG):
     def applies(cls, obj: Any) -> float | bool | None:
         return type(obj).__name__ == 'GGPlot' and hasattr(obj, 'r_repr')
 
-    def _data(self):
+    def _data(self, obj):
         from rpy2 import robjects
         from rpy2.robjects.lib import grdevices
         with grdevices.render_to_bytesio(grdevices.png,
                  type="cairo-png", width=self.width, height=self.height,
                  res=self.dpi, antialias="subpixel") as b:
-            robjects.r("print")(self.object)
+            robjects.r("print")(obj)
         return b.getvalue()
 
 
