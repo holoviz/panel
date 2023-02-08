@@ -4,7 +4,7 @@ This guide addresses how to build a non-linear Panel Pipeline with branching and
 
 ```{admonition} Prerequisites
 1. The [Param with Panel](../param/index.md) How-to Guides describe how to set up classes that declare parameters and link them to some computation or visualization.
-2. The [Create a `Pipeline`](./simple_pipeline.md) How-to Guide walks through the essential components of a pipeline.
+2. The [Create a Pipeline](./simple_pipeline.md) How-to Guide walks through the essential components of a pipeline assumed by this current guide.
 ```
 
 ---
@@ -18,11 +18,9 @@ import param
 import panel as pn
 pn.extension() # for notebook
 
-
 class Input(param.Parameterized):
 
     value1 = param.Integer(default=2, bounds=(0,10))
-
     value2 = param.Integer(default=3, bounds=(0,10))
 
     def panel(self):
@@ -30,8 +28,12 @@ class Input(param.Parameterized):
 
 class Multiply(Input):
 
+    value1 = param.Integer()
+    value2 = param.Integer()
+    operator = param.String('*')
+
     def panel(self):
-        return pn.pane.Markdown('# %d * %d' % (self.value1, self.value2))
+        return pn.pane.Markdown(f'# {self.value1} * {self.value2}')
 
     @param.output('result')
     def output(self):
@@ -39,8 +41,12 @@ class Multiply(Input):
 
 class Add(Input):
 
+    value1 = param.Integer()
+    value2 = param.Integer()
+    operator = param.String('+')
+
     def panel(self):
-        return pn.pane.Markdown('# %d + %d' % (self.value1, self.value2))
+        return pn.pane.Markdown(f'# {self.value1} + {self.value2}')
 
     @param.output('result')
     def output(self):
@@ -48,10 +54,13 @@ class Add(Input):
 
 class Result(Input):
 
-    result = param.Number(default=0)
+    value1 = param.Integer()
+    value2 = param.Integer()
+    operator = param.String('')
+    result = param.Integer(default=0)
 
     def panel(self):
-        return pn.pane.Markdown('# %d' % self.result)
+        return pn.pane.Markdown(f'# {self.value1} {self.operator} {self.value2} = {self.result}')
 ```
 
 Now let's add these stages to a new Pipeline:
@@ -77,8 +86,6 @@ Now let's view our result:
 dag
 ```
 
-This is of course a very simple example of a non-linear pipeline but it demonstrates the ability to express arbitrary workflows with branching and converging steps
-
 ## Related Resources
 - The [Param with Panel](../param/index.md) How-to Guides describe how to set up classes that declare parameters and link them to some computation or visualization.
-- The [Create a `Pipeline`](./simple_pipeline.md) How-to Guide walks through the essential components of a pipeline.
+- The [Create a Pipeline](./simple_pipeline.md) How-to Guide walks through the essential components of a pipeline.
