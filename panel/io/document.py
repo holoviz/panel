@@ -104,7 +104,9 @@ def _cleanup_doc(doc):
 
 def init_doc(doc: Optional[Document]) -> Document:
     curdoc = doc or curdoc_locked()
-    if not isinstance(curdoc, Document):
+    if curdoc is None:
+        curdoc = Document()
+    elif not isinstance(curdoc, Document):
         curdoc = curdoc._doc
     if not curdoc.session_context:
         return curdoc

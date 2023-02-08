@@ -487,9 +487,10 @@ class _config(_base_config):
         if self._theme:
             return self._theme
         from .io.state import state
-        theme = state.session_args.get('theme', [b'default'])[0].decode('utf-8')
-        if theme in self.param._theme.objects:
-            return theme
+        if isinstance(state.session_args, dict) and state.session_args:
+            theme = state.session_args.get('theme', [b'default'])[0].decode('utf-8')
+            if theme in self.param._theme.objects:
+                return theme
         return 'default'
 
     @property

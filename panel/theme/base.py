@@ -78,6 +78,10 @@ class Themer(param.Parameterized):
         super().__init__(theme=theme, **params)
 
     def apply(self, viewable, root: Model, isolated: bool=True):
+        if not root.document:
+            self._reapply(viewable, root)
+            return
+
         with root.document.models.freeze():
             self._reapply(viewable, root)
             if self.theme and self.theme.bokeh_theme and root.document:
