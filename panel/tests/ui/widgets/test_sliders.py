@@ -19,7 +19,7 @@ class _editable_text_input:
 
     def __init__(self, page, nth=0):
         self.page = page
-        self.text_input = page.locator("[placeholder=\"\\30 \"]").nth(nth)
+        self.text_input = page.locator("input.bk-input").nth(nth)
 
     @property
     def value(self):

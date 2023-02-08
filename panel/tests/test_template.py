@@ -1,6 +1,8 @@
 """
 These that verify Templates are working correctly.
 """
+import json
+
 from packaging.version import Version
 
 try:
@@ -183,9 +185,9 @@ def test_react_template(document, comm):
 
     for size in layouts:
         for layout in layouts[size]:
-            layout.update({'minW': 0, 'minH': 0, 'maxW': 'Infinity', 'maxH': 'Infinity'})
+            layout.update({'minW': 0, 'minH': 0})
 
-    assert tvars['layouts'] == layouts
+    assert json.loads(tvars['layouts']) == layouts
 
 @pytest.mark.parametrize(["template_class"], [(t,) for t in LIST_TEMPLATES])
 def test_list_template_insert_order(template_class):

@@ -188,9 +188,14 @@ class Syncable(Renderable):
         if 'height' in properties and self.sizing_mode is None:
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
-            properties['stylesheets'] = [loading_css()] + [
-                ImportedStyleSheet(url=sts) for sts in self._stylesheets
-            ] + properties['stylesheets']
+            stylesheets = [loading_css()] + [
+                ImportedStyleSheet(url=stylesheet) for stylesheet in self._stylesheets
+            ]
+            for stylesheet in properties['stylesheets']:
+                if isinstance(stylesheet, str) and stylesheet.endswith('.css'):
+                    stylesheet = ImportedStyleSheet(url=stylesheet)
+                stylesheets.append(stylesheet)
+            properties['stylesheets'] = stylesheets
         return properties
 
     @property
@@ -306,6 +311,10 @@ class Syncable(Renderable):
                 continue
             if not model.lookup(attr).property.matches(model_val, value):
                 attrs.append(attr)
+
+            # Do not apply model change that is in flight
+            if attr in self._events:
+                del self._events[attr]
 
         if 'stylesheets' in msg:
             dist_url = doc._template_variables.get('dist_dir')

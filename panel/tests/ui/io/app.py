@@ -1,6 +1,6 @@
 import panel as pn
 
-pn.config.raw_css = ['.bk.string { color: purple }']
+pn.config.raw_css = ['.bk-Row { background-color: purple; }']
 
 button = pn.widgets.Button(name='Click')
 

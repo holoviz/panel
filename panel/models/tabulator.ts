@@ -281,7 +281,6 @@ export class DataTabulatorView extends HTMLBoxView {
   _tabulator_cell_updating: boolean=false
   _updating_page: boolean = true
   _updating_sort: boolean = false
-  _relayouting: boolean = false
   _selection_updating: boolean = false
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0;
@@ -370,7 +369,6 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.destroy()
     this.tabulator = null
     this.render()
-    this.relayout()
   }
 
   redraw(): void {
@@ -387,21 +385,21 @@ export class DataTabulatorView extends HTMLBoxView {
 
   after_layout(): void {
     super.after_layout()
-    if (this.tabulator != null && (!this._relayouting || this._initializing))
+    if (this.tabulator != null && this._initializing)
       this.redraw()
   }
 
   render(): void {
     super.render()
     this._initializing = true
-    const container = div({})
-    const el = div({class: "pnx-tabulator"})
+    const container = div({style: "display: contents;"})
+    const el = div({class: "pnx-tabulator", style: "width: 100%; height: 100%;"})
     container.appendChild(el)
     let configuration = this.getConfiguration()
 
     this.tabulator = new Tabulator(el, configuration)
     this.init_callbacks()
-    this.renderChildren(true)
+    this.renderChildren()
 
     this.setHidden()
 
@@ -493,29 +491,6 @@ export class DataTabulatorView extends HTMLBoxView {
     this._initializing = false
   }
 
-  relayout(): void {
-    if (this._relayouting)
-      return
-    this._relayouting = true
-    if (this.tabulator.rowManager.renderer) {
-      this.tabulator.rowManager.adjustTableSize()
-    }
-    this.update_layout()
-    this.compute_layout()
-    if (this.root !== this) {
-      this.invalidate_layout()
-      const parent = (this as any).root._parent
-      if (parent != null && parent.relayout != null)
-        parent.relayout()
-    } else if ((this as any)._parent != null) { // HACK: Support ReactiveHTML
-      if ((this as any)._parent.relayout != null)
-        (this as any)._parent.relayout()
-      else
-        (this as any)._parent.invalidate_layout()
-    }
-    this._relayouting = false
-  }
-
   requestPage(page: number, sorters: any[]): Promise<void> {
     return new Promise((resolve: any, reject: any) => {
       try {
@@ -593,12 +568,12 @@ export class DataTabulatorView extends HTMLBoxView {
     }
   }
 
-  renderChildren(initializing: boolean=false): void {
+  renderChildren(): void {
     new Promise(async (resolve: any) => {
       const children = []
       for (const idx of this.model.expanded) {
-        if (idx in this.model.children)
-          children.push(this.model.children[idx])
+        if (this.model.children.has(idx))
+          children.push(this.model.children.get(idx))
       }
       await build_views(this._child_views, children, {parent: (null as any)})
       resolve(null)
@@ -607,16 +582,14 @@ export class DataTabulatorView extends HTMLBoxView {
         const row = this.tabulator.getRow(r)
         this._render_row(row)
       }
-      if ((!this.model.expanded.length) && (!initializing))
-        setTimeout(() => this.relayout(), 20)
     })
   }
 
   _render_row(row: any): void {
-    const index = row._row.data._index
-    if (this.model.expanded.indexOf(index) < 0 || !(index in this.model.children))
+    const index = row._row?.data._index
+    if (!this.model.expanded.includes(index) || !this.model.children.has(index))
       return
-    const model = this.model.children[index]
+    const model = this.model.children.get(index)
     const view = this._child_views.get(model)
     if (view == null)
       return
@@ -635,7 +608,7 @@ export class DataTabulatorView extends HTMLBoxView {
       const neg_margin = "-" + rowEl.style.paddingLeft
       viewEl = div({style: "background-color: " + bg +"; margin-left:" + neg_margin})
     }
-    row.getElement().appendChild(viewEl);
+    rowEl.appendChild(viewEl)
     view.render_to(viewEl)
   }
 
@@ -760,7 +733,9 @@ export class DataTabulatorView extends HTMLBoxView {
       if (tab_column.sorter == 'timestamp') {
         tab_column.sorter = timestampSorter
       }
-
+      if (tab_column.sorter === undefined) {
+        tab_column.sorter = "string"
+      }
       const editor: any = column.editor
       const ctype = editor.type
       if (tab_column.editor != null) {
@@ -862,9 +837,8 @@ export class DataTabulatorView extends HTMLBoxView {
     const data = this.getData()
     if (this.model.pagination != null)
       this.tabulator.rowManager.setData(data, true, false)
-    else {
+    else
       this.tabulator.setData(data)
-    }
     this.postUpdate()
   }
 
@@ -882,8 +856,6 @@ export class DataTabulatorView extends HTMLBoxView {
     if (!this.model.pagination)
       this.setFrozen()
     this.setSelection()
-    if (this.model.height == null && this.model.pagination == null)
-      this.relayout()
   }
 
   updateOrAddData(): void {
@@ -958,17 +930,19 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setStyles(): void {
-    if (this.tabulator == null || this.tabulator.getDataCount() == 0)
+    const style_data = this.model.cell_styles.data
+    if (this.tabulator == null || this.tabulator.getDataCount() == 0 || !style_data.size)
       return
     this._applied_styles = false
-    for (const r in this.model.cell_styles.data) {
-      const row_style = this.model.cell_styles.data[r]
+    for (const r of style_data.keys()) {
+      const row_style = style_data.get(r)
       const row = this.tabulator.getRow(r)
+      console.log(row, row_style)
       if (!row)
         continue
       const cells = row._row.cells
-      for (const c in row_style) {
-        const style = row_style[c]
+      for (const c of row_style.keys()) {
+        const style = row_style.get(c)
         const cell = cells[c]
         if (cell == null || !style.length)
           continue
@@ -1046,7 +1020,7 @@ export class DataTabulatorView extends HTMLBoxView {
     const selected = this.model.source.selected
     const index: number = row._row.data._index
     if (e.ctrlKey || e.metaKey) {
-      indices = this.model.source.selected.indices
+      indices = [...this.model.source.selected.indices]
     } else if (e.shiftKey && selected.indices.length) {
       const start = selected.indices[selected.indices.length-1]
       if (index>start) {
@@ -1199,7 +1173,7 @@ export class DataTabulator extends HTMLBox {
       selectable_rows: [ Nullable(Array(Number)), null ],
       source:         [ Ref(ColumnDataSource)       ],
       sorters:        [ Array(Any),              [] ],
-      cell_styles:         [ Any,                     {} ],
+      cell_styles:    [ Any,                     {} ],
       theme:          [ String,            "simple" ],
       theme_url:      [ String, "https://unpkg.com/tabulator-tables@5.3.2/dist/css/"]
     }))

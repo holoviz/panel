@@ -42,7 +42,7 @@ def test_fast_grid_template_updates(page, port):
 
     page.goto(f"http://localhost:{port}", timeout=40_000)
 
-    assert page.text_content(".bk.markdown") == 'Initial'
+    assert page.locator(".markdown").locator(".bk-clearfix").text_content() == 'Initial'
     md.object = 'Updated'
     time.sleep(0.1)
-    assert page.text_content(".bk.markdown") == 'Updated'
+    assert page.locator(".markdown").locator(".bk-clearfix").text_content() == 'Updated'

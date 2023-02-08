@@ -78,7 +78,7 @@ export class VTKColorBar {
     const image_ctx = image.getContext("2d")!
     const image_data = image_ctx.getImageData(0, 0, w, h)
     const cmap = new LinearColorMapper({palette}).rgba_mapper
-    const buf8 = cmap.v_compute(range(0, palette.length))
+    const buf8 = cmap.v_compute(range(0, palette.length), 1)
     image_data.data.set(buf8)
     image_ctx.putImageData(image_data, 0, 0)
     this.ctx.drawImage(

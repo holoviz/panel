@@ -27,4 +27,4 @@ def test_on_load(page, port):
 
     time.sleep(0.2)
 
-    assert page.text_content(".bk.markdown") == 'Loaded'
+    assert page.text_content(".bk-clearfix") == 'Loaded'

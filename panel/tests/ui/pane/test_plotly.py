@@ -130,14 +130,18 @@ def test_plotly_3d_plot(page, port, plotly_3d_plot):
 @plotly_available
 def test_plotly_hover_data(page, port, plotly_2d_plot):
     serve(plotly_2d_plot, port=port, threaded=True, show=False)
+
     time.sleep(0.2)
+
     page.goto(f"http://localhost:{port}")
+
+    time.sleep(0.2)
 
     # Select and hover on first point
     point = page.locator(':nth-match(.js-plotly-plot .plot-container.plotly path.point, 1)')
     point.hover(force=True)
 
-    time.sleep(0.2)
+    page.wait_for_timeout(200)
 
     assert plotly_2d_plot.hover_data == {
         'points': [{
@@ -153,7 +157,7 @@ def test_plotly_hover_data(page, port, plotly_2d_plot):
     plot = page.locator('.js-plotly-plot .plot-container.plotly g.scatterlayer')
     plot.hover(force=True)
 
-    time.sleep(0.2)
+    page.wait_for_timeout(200)
 
     assert plotly_2d_plot.hover_data is None
 
@@ -161,8 +165,12 @@ def test_plotly_hover_data(page, port, plotly_2d_plot):
 @plotly_available
 def test_plotly_click_data(page, port, plotly_2d_plot):
     serve(plotly_2d_plot, port=port, threaded=True, show=False)
+
     time.sleep(0.2)
+
     page.goto(f"http://localhost:{port}")
+
+    time.sleep(0.2)
 
     # Select and click on first point
     point = page.locator(':nth-match(.js-plotly-plot .plot-container.plotly path.point, 1)')
