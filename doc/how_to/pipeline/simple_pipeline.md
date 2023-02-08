@@ -1,12 +1,14 @@
 # Create a `Pipeline`
 
-This guide addresses how to create a simple linear Panel `Pipeline`.
+This guide addresses how to connect multiple panels into a `Pipeline` to express complex multi-page workflows where the output of one stage feeds into the next stage.
 
 ___
 
-A Panel `Pipeline` can be used to express complex multi-page workflows where the output of one stage feeds into the next stage.
+```{admonition} Prerequisite
+The [Param with Panel How-to Guides](../param/index.md) describe how to set up classes that declare parameters and link them to some computation or visualization. This is essential to review before using Pipelines.
+```
 
-Let's start by instantiating an empty ``Pipeline``. We will use the 'katex' extension to render some mathematical symbols later.
+To start, lets instantiate an empty `Pipeline`. We will use the 'katex' extension to render mathematical notation in this example.
 
 ```{pyodide}
 import param
@@ -16,22 +18,20 @@ pn.extension('katex')
 pipeline = pn.pipeline.Pipeline()
 ```
 
-Now let's add a stage to our pipeline. Each stage is `Parameterized` class with:
+Now let's populate the pipeline with our first stage which takes two inputs (`a` and `b`) and produces two outputs (`c`, computed by mutiplying the inputs, and `d`, computed by raising `a` to the power `b`).
 
-1. Input parameters, e.g. `a = param.Number(default=5, bounds=(0, 10))`
-2. At least one method decorated with the `param.output` decorator whose returned objects can be passed along to the next stage
-3. A ``panel`` method that returns a view of the object that the ``Pipeline`` can render
+To create this stage, let's:
 
-The example below takes two inputs (``a`` and ``b``) and produces two outputs (``c``, computed by multiplying the inputs, and ``d``, computed by raising ``a`` to the power ``b``).
+1. Declare a Parameterized class with some input parameters.
+2. Declare one or more methods decorated with the `param.output` decorator.
+3. Declare a `panel` method that returns a view of the object that the `Pipeline` can render.
 
 ```{pyodide}
 class Stage1(param.Parameterized):
 
-    a = param.Number(default=5, bounds=(0, 10))
+    a = param.Number(default=2, bounds=(0, 10))
 
-    b = param.Number(default=5, bounds=(0, 10))
-
-    ready = param.Boolean(default=False, precedence=-1)
+    b = param.Number(default=3, bounds=(0, 10))
 
     @param.output(('c', param.Number), ('d', param.Number))
     def output(self):
@@ -40,60 +40,81 @@ class Stage1(param.Parameterized):
     @param.depends('a', 'b')
     def view(self):
         c, d = self.output()
-        return pn.pane.LaTeX('${a} * {b} = {c}$\n${a}^{{{b}}} = {d}$'.format(
-            a=self.a, b=self.b, c=c, d=d), style={'font-size': '2em'})
+        c_out = pn.pane.LaTeX('${a} * {b} = {c}$'.format(
+            a=self.a, b=self.b, c=c), style={'font-size': '2em'})
+        d_out = pn.pane.LaTeX('${a}^{{{b}}} = {d}$'.format(
+            a=self.a, b=self.b, d=d), style={'font-size': '2em'})
+        return pn.Column(c_out, d_out,  margin=(40, 10), background='#f0f0f0')
 
     def panel(self):
-        return pn.Row(self.param, self.view)
+        return pn.Row(self.param, self.view,)
+```
 
+We can now render this stage on its own:
+
+```{pyodide}
 stage1 = Stage1()
 stage1.panel()
 ```
 
-Now let us add this stage to our ``Pipeline`` using the ``add_stage`` method:
-
+Let's add this stage to our `Pipeline` using the `add_stage` method:
 
 ```{pyodide}
 pipeline.add_stage('Stage 1', stage1)
 ```
 
-Now let's add a second stage which .... and add it to our pipeline:
+Before we create a second stage let's briefly discuss the outputs which will be fed across the stages.
+
+To declare the output for our first stage, we decorated one of its methods with `param.output`. Let's take a look at our outputs:
+
+```{pyodide}
+stage1.param.outputs()
+```
+
+A `Pipeline` will use this information to determine what outputs are available to be fed into the next stage of the workflow.
+
+The signature of this `param.output` decorator allows a number of different ways of declaring the outputs:
+
+* `param.output()`: Declaring an output without arguments will declare that the method returns an output that will inherit the name of the method and does not make any specific type declarations.
+* `param.output(param.Number)`: Declaring an output with a specific `Parameter` or Python type also declares an output with the name of the method but declares that the output will be of a specific type.
+* `param.output(c=param.Number)`: Declaring an output using a keyword argument allows overriding the method name as the name of the output and declares the type.
+
+It is also possible to declare multiple outputs, either as keywords or tuples:
+
+* `param.output(c=param.Number, d=param.String)` or
+* `param.output(('c', param.Number), ('d', param.String))`
+
+Importantly, in addition to passing along the outputs designated with `param.output()`, the Pipeline will also pass along the values of any input parameters whose names match input parameters on the next stage (unless `inherit_params` is set to `False`).
+
+Now let's set up a second stage that will also declare a `c` input Parameter to consume the `c` output of the first stage. Note, the second stage does not have to consume all parameters, and here we will ignore output `d`. In other respects this class is very similar to the first one; it declares both a ``view`` method that depends on the parameters of the class, and a ``panel`` method that returns a view of the object. As this is our last stage, we don't need to define any outputs.
+
 
 ```{pyodide}
 class Stage2(param.Parameterized):
 
-    c = param.Number(default=5, bounds=(0, None))
+    c = param.Number(default=6, bounds=(0, None), precedence=1)
 
-    exp = param.Number(default=0.1, bounds=(0, 3))
+    exp = param.Number(default=0.1, bounds=(0, 3), precedence=1)
 
     @param.depends('c', 'exp')
     def view(self):
-        return pn.pane.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
-                             style={'font-size': '2em'})
+        out = pn.pane.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
+                      style={'font-size': '2em'})
+        return pn.Column(out, margin=(40, 10), background='#f0f0f0')
 
     def panel(self):
         return pn.Row(self.param, self.view)
 
-stage2 = Stage2(c=stage1.output()[0])
-
-pipeline.add_stage('Stage 2', stage2)
+pipeline.add_stage('Stage 2', Stage2)
 ```
 
-And that's it! we have now declared a two-stage pipeline, where the output ``c`` flows from the first stage into the second stage.
-
-To display the `pipeline` we simply let it render itself:
-
+To display the `pipeline` UI we simply let it render itself:
 
 ```{pyodide}
 pipeline
 ```
 
-
-
-
-
-
-
+As you can see the ``Pipeline`` renders a diagram displaying the available stages in the workflow along with previous and next buttons to move between each stage. This allows setting up complex workflows with multiple stages, where each component is a self-contained unit, with minimal declarations about stage outputs (using the ``param.output`` decorator) and how to render the stage (by declaring a ``panel`` method).  Note also when progressing to Stage 2, the `c` parameter widget is not rendered because its value has been provided by the previous stage.
 
 ## Related Resources
 - The [Param with Panel How-to Guides](../param/index.md) demonstrate how to set up classes that declare parameters and link them to some computation or visualization.
