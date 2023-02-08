@@ -30,7 +30,6 @@ To create this stage, let's:
 class Stage1(param.Parameterized):
 
     a = param.Integer(default=2, bounds=(0, 10))
-
     b = param.Integer(default=3, bounds=(0, 10))
 
     @param.output(('c', param.Integer), ('d', param.Integer))
@@ -84,7 +83,6 @@ Now let's set up a second stage that will also declare a `c` input Parameter to 
 class Stage2(param.Parameterized):
 
     c = param.Integer(default=6, bounds=(0, None))
-
     exp = param.Number(default=0.1, bounds=(0, 3))
 
     @param.depends('c', 'exp')
@@ -114,4 +112,4 @@ As you can see the ``Pipeline`` renders a diagram displaying the available stage
 
 ## Related Resources
 
-- The [Param with Panel How-to Guides](../param/index.md) demonstrate how to set up classes that declare parameters and link them to some computation or visualization.
+- The [How to > Param with Panel](../param/index.md) guides demonstrate how to set up classes that declare parameters and link them to some computation or visualization.

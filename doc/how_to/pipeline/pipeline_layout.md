@@ -91,4 +91,4 @@ pn.Column(
 ```
 
 ## Related Resources
-- The [Create a Non-Linear Pipeline](./complex_pipeline.md) How-to Guide contains a walk-through of the type of pipeline used on the current page.
+- The [How to > Create a Non-Linear Pipeline](./complex_pipeline.md) guide contains a walk-through of the type of pipeline used on the current page.

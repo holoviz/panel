@@ -26,7 +26,7 @@ class Input(param.Parameterized):
     def panel(self):
         return pn.Column(self.param.value1, self.param.value2)
 
-class Multiply(Input):
+class Multiply(param.Parameterized):
 
     value1 = param.Integer()
     value2 = param.Integer()
@@ -39,7 +39,7 @@ class Multiply(Input):
     def output(self):
         return self.value1 * self.value2
 
-class Add(Input):
+class Add(param.Parameterized):
 
     value1 = param.Integer()
     value2 = param.Integer()
@@ -52,7 +52,7 @@ class Add(Input):
     def output(self):
         return self.value1 + self.value2
 
-class Result(Input):
+class Result(param.Parameterized):
 
     value1 = param.Integer()
     value2 = param.Integer()
@@ -87,5 +87,5 @@ dag
 ```
 
 ## Related Resources
-- The [Param with Panel](../param/index.md) How-to Guides describe how to set up classes that declare parameters and link them to some computation or visualization.
-- The [Create a Pipeline](./simple_pipeline.md) How-to Guide walks through the essential components of a pipeline.
+- The [How to > Param with Panel](../param/index.md) guide describe how to set up classes that declare parameters and link them to some computation or visualization.
+- The [How to > Create a Pipeline](./simple_pipeline.md) guide walks through the essential components of a pipeline.
