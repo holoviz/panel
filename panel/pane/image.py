@@ -52,13 +52,13 @@ class FileBase(HTMLBasePane):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        filetype = cls.filetype.split('+')[0].lower()
+        filetype = cls.filetype.split('+')[0]
         if hasattr(obj, f'_repr_{filetype}_'):
             return True
         if isinstance(obj, PurePath):
             obj = str(obj.absolute())
         if isinstance(obj, str):
-            if isfile(obj) and obj.endswith(f'.{filetype}'):
+            if isfile(obj) and obj.lower().endswith(f'.{filetype}'):
                 return True
             if isurl(obj, [filetype]):
                 return True
