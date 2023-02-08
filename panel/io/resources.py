@@ -386,6 +386,8 @@ class Resources(BkResources):
 
         js_files = self.adjust_paths(files)
         js_files += list(config.js_files.values())
+        if config.themer:
+            js_files += list(config.themer._resources.get('js', {}).values())
 
         # Load requirejs last to avoid interfering with other libraries
         dist_dir = self.dist_dir

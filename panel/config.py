@@ -5,6 +5,7 @@ components.
 """
 import ast
 import copy
+import importlib
 import inspect
 import os
 import sys
@@ -21,6 +22,7 @@ from pyviz_comms import (
 
 from .io.logging import panel_log_handler
 from .io.state import state
+from .theme import Themer
 
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
@@ -115,6 +117,9 @@ class _config(_base_config):
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
+    design_system = param.ObjectSelector(default=None, objects=[], doc="""
+        The design system to use to style components.""")
+
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
 
@@ -159,9 +164,6 @@ class _config(_base_config):
 
     template = param.ObjectSelector(default=None, doc="""
         The default template to render served applications into.""")
-
-    theme = param.ObjectSelector(default='default', objects=['default', 'dark'], doc="""
-        The theme to apply to the selected global template.""")
 
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
@@ -244,6 +246,9 @@ class _config(_base_config):
     _inline = param.Boolean(default=_LOCAL_DEV_VERSION, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
+
+    _theme = param.ObjectSelector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
+        The theme to apply to components.""")
 
     # Global parameters that are shared across all sessions
     _globals = [
@@ -476,6 +481,27 @@ class _config(_base_config):
             return ast.literal_eval(os.environ['PANEL_OAUTH_EXTRA_PARAMS'])
         else:
             return self._oauth_extra_params
+
+    @property
+    def theme(self):
+        if self._theme:
+            return self._theme
+        from .io.state import state
+        theme = state.session_args.get('theme', [b'default'])[0].decode('utf-8')
+        if theme in self.param._theme.objects:
+            return theme
+        return 'default'
+
+    @property
+    def themer(self):
+        try:
+            importlib.import_module(f'panel.theme.{self.design_system}')
+        except Exception:
+            pass
+        themers = {
+            p.lower(): t for p, t in param.concrete_descendents(Themer).items()
+        }
+        return themers.get(self.design_system, Themer)(theme=self.theme)
 
 
 if hasattr(_config.param, 'objects'):

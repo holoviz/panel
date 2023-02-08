@@ -1,11 +1,11 @@
 from ..config import _config
+from ..theme import DarkTheme, DefaultTheme  # noqa
 from .base import BaseTemplate, Template  # noqa
 from .bootstrap import BootstrapTemplate  # noqa
 from .fast import FastGridTemplate, FastListTemplate  # noqa
 from .golden import GoldenTemplate  # noqa
 from .material import MaterialTemplate  # noqa
 from .react import ReactTemplate  # noqa
-from .theme import DarkTheme, DefaultTheme  # noqa
 from .vanilla import VanillaTemplate  # noqa
 
 templates = {

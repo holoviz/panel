@@ -20,7 +20,7 @@ from .config import config, panel_extension
 from .io.resources import RESOURCE_URLS
 from .reactive import ReactiveHTML
 from .template.base import BasicTemplate
-from .template.theme import Theme
+from .theme import Theme, Themer
 
 BUNDLE_DIR = pathlib.Path(__file__).parent / 'dist' / 'bundled'
 
@@ -137,6 +137,17 @@ def write_bundled_zip(name, resource):
                 f.write(fdata.decode('utf-8'))
     zip_obj.close()
 
+def write_component_resources(name, component):
+    write_bundled_files(name, list(component._resources.get('css', {}).values()), BUNDLE_DIR, 'css')
+    write_bundled_files(name, list(component._resources.get('js', {}).values()), BUNDLE_DIR, 'js')
+    js_modules = []
+    for tar_name, js_module in component._resources.get('js_modules', {}).items():
+        if tar_name not in component._resources.get('tarball', {}):
+            js_modules.append(js_module)
+    write_bundled_files(name, js_modules, 'js', ext='mjs')
+    for tarball in component._resources.get('tarball', {}).values():
+        write_bundled_tarball(tarball)
+
 def bundle_resource_urls(verbose=False, external=True):
     # Collect shared resources
     for name, resource in RESOURCE_URLS.items():
@@ -152,17 +163,10 @@ def bundle_templates(verbose=False, external=True):
     for name, template in param.concrete_descendents(BasicTemplate).items():
         if verbose:
             print(f'Bundling {name} resources')
+
         # Bundle Template._resources
         if template._resources.get('bundle', True) and external:
-            write_bundled_files(name, list(template._resources.get('css', {}).values()), BUNDLE_DIR, 'css')
-            write_bundled_files(name, list(template._resources.get('js', {}).values()), BUNDLE_DIR, 'js')
-            js_modules = []
-            for tar_name, js_module in template._resources.get('js_modules', {}).items():
-                if tar_name not in template._resources.get('tarball', {}):
-                    js_modules.append(js_module)
-            write_bundled_files(name, js_modules, 'js', ext='mjs')
-            for tarball in template._resources.get('tarball', {}).values():
-                write_bundled_tarball(tarball)
+            write_component_resources(name, template)
 
         # Bundle CSS files in template dir
         template_dir = pathlib.Path(inspect.getfile(template)).parent
@@ -198,33 +202,8 @@ def bundle_templates(verbose=False, external=True):
             tmpl_dest_dir = BUNDLE_DIR / tmpl_name
             shutil.copyfile(js, tmpl_dest_dir / os.path.basename(js))
 
-        # Bundle template stylesheets
-        for scls, modifiers in template._modifiers.items():
-            cls_modifiers = template._modifiers.get(scls, {})
-            if 'stylesheets' not in cls_modifiers:
-                continue
-            # Find the Template class the options were first defined on
-            def_cls = [
-                super_cls for super_cls in template.__mro__[::-1]
-                if getattr(super_cls, '_modifiers', {}).get(scls) is cls_modifiers
-            ][0]
-            def_path = pathlib.Path(inspect.getmodule(def_cls).__file__).parent
-            for sts in cls_modifiers['stylesheets']:
-
-                if not isinstance(sts, str) or not sts.endswith('.css') or sts.startswith('http') or sts.startswith('/'):
-                    continue
-                bundled_path = BUNDLE_DIR / def_cls.__name__.lower() / sts
-                shutil.copyfile(def_path / sts, bundled_path)
-
 
 def bundle_themes(verbose=False, external=True):
-    # Bundle base themes
-    dest_dir = BUNDLE_DIR / 'theme'
-    theme_dir = pathlib.Path(inspect.getfile(Theme)).parent
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    for css in glob.glob(str(theme_dir / '*.css')):
-        shutil.copyfile(css, dest_dir / os.path.basename(css))
-
     # Bundle Theme classes
     for name, theme in param.concrete_descendents(Theme).items():
         if verbose:
@@ -237,6 +216,33 @@ def bundle_themes(verbose=False, external=True):
             tmplt_bundle_dir = BUNDLE_DIR / theme._template.__name__.lower()
             tmplt_bundle_dir.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(theme.css, tmplt_bundle_dir / os.path.basename(theme.css))
+
+    # Bundle themer stylesheets
+    for name, themer in param.concrete_descendents(Themer).items():
+        if verbose:
+            print(f'Bundling {name} themer resources')
+
+        # Bundle Themer._resources
+        if themer._resources.get('bundle', True) and external:
+            write_component_resources(name, themer)
+
+        for scls, modifiers in themer._modifiers.items():
+            cls_modifiers = themer._modifiers.get(scls, {})
+            if 'stylesheets' not in cls_modifiers:
+                continue
+
+            # Find the Themer class the options were first defined on
+            def_cls = [
+                super_cls for super_cls in themer.__mro__[::-1]
+                if getattr(super_cls, '_modifiers', {}).get(scls) is cls_modifiers
+            ][0]
+            def_path = pathlib.Path(inspect.getmodule(def_cls).__file__).parent
+            for sts in cls_modifiers['stylesheets']:
+                if not isinstance(sts, str) or not sts.endswith('.css') or sts.startswith('http') or sts.startswith('/'):
+                    continue
+                bundled_path = BUNDLE_DIR / def_cls.__name__.lower() / sts
+                bundled_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(def_path / sts, bundled_path)
 
 def bundle_models(verbose=False, external=True):
     for imp in panel_extension._imports.values():

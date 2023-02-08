@@ -565,6 +565,8 @@ class Renderable(param.Parameterized):
         doc = init_doc(doc)
         root = self._get_model(doc, comm=comm)
         if preprocess:
+            if config.themer:
+                config.themer.apply(self, root, comm)
             self._preprocess(root)
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)

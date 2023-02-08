@@ -2,13 +2,11 @@ import pathlib
 
 import param
 
-from ...config import config
 from ...io.state import state
-from ...viewable import Viewable
-from ...widgets import Tabulator
-from ..base import BasicTemplate, Inherit
+from ...theme import THEMES, DefaultTheme
+from ...theme.fast import Fast, Themer
+from ..base import BasicTemplate
 from ..react import ReactTemplate
-from ..theme import THEMES, DefaultTheme
 
 _ROOT = pathlib.Path(__file__).parent
 
@@ -53,40 +51,13 @@ class FastBaseTemplate(BasicTemplate):
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
         Could be extended to Accordion, Tab etc. in the future.""")
 
+    themer = param.ClassSelector(class_=Themer, default=Fast, constant=True,
+                                 is_instance=False, instantiate=False, doc="""
+        A Themer applies a specific design system to a template.""")
+
     _css = [_ROOT / "fast.css"]
 
-    _modifiers = {
-        Tabulator: {
-            'theme': 'fast'
-        },
-        Viewable: {
-            'stylesheets': [Inherit, 'components.css']
-        }
-    }
-
     _js = _ROOT / "js/fast_template.js"
-
-    _resources = {
-        'js_modules': {
-            'fast-colors': f'{config.npm_cdn}/@microsoft/fast-colors@5.3.1/dist/index.js',
-            'fast': f'{config.npm_cdn}/@microsoft/fast-components@1.21.8/dist/fast-components.js'
-        },
-        'bundle': True,
-        'tarball': {
-            'fast-colors': {
-                'tar': 'https://registry.npmjs.org/@microsoft/fast-colors/-/fast-colors-5.3.1.tgz',
-                'src': 'package/',
-                'dest': '@microsoft/fast-colors@5.3.1',
-                'exclude': ['*.d.ts', '*.json', '*.md', '*/esm/*']
-            },
-            'fast': {
-                'tar': 'https://registry.npmjs.org/@microsoft/fast-components/-/fast-components-1.21.8.tgz',
-                'src': 'package/',
-                'dest': '@microsoft/fast-components@1.21.8',
-                'exclude': ['*.d.ts', '*.json', '*.md', '*/esm/*']
-            }
-        }
-    }
 
     __abstract = True
 
@@ -106,9 +77,8 @@ class FastBaseTemplate(BasicTemplate):
                 params["header_background"] = accent
 
         super().__init__(**params)
-        theme = self._get_theme()
         self.param.update({
-            p: v for p, v in theme.style.param.values().items()
+            p: v for p, v in self._themer.theme.style.param.values().items()
             if p != 'name' and p in self.param and p not in params
         })
 
@@ -122,7 +92,7 @@ class FastBaseTemplate(BasicTemplate):
 
     def _update_vars(self):
         super()._update_vars()
-        style = self._get_theme().style
+        style = self._themer.theme.style
         style.param.update({
             p: getattr(self, p) for p in style.param
             if p != 'name' and p in self.param
@@ -139,6 +109,6 @@ class FastGridBaseTemplate(FastBaseTemplate, ReactTemplate):
     Combines the FastTemplate and the React template.
     """
 
-    _resources = dict(FastBaseTemplate._resources, js=ReactTemplate._resources['js'])
+    _resources = dict(js=ReactTemplate._resources['js'])
 
     __abstract = True

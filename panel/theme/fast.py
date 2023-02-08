@@ -1,16 +1,13 @@
-"""
-Functionality for styling according to Fast.design
-"""
-import pathlib
-
 import param
 
 from bokeh.themes import Theme as _BkTheme
 
-from ...widgets import Number
-from ..theme import DarkTheme, DefaultTheme
-
-_ROOT = pathlib.Path(__file__).parent / "css"
+from ..config import config
+from ..viewable import Viewable
+from ..widgets import Number, Tabulator
+from .base import (
+    DarkTheme, DefaultTheme, Inherit, Themer,
+)
 
 COLLAPSED_SVG_ICON = """
 <svg style="stroke: var(--accent-fill-rest);" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
@@ -28,6 +25,7 @@ EXPANDED_SVG_ICON = """
 """ # noqa
 
 FONT_URL = "//fonts.googleapis.com/css?family=Open+Sans"
+
 
 class FastStyle(param.Parameterized):
     """
@@ -133,6 +131,7 @@ DARK_STYLE = FastStyle(
     shadow = False,
 )
 
+
 class FastDefaultTheme(DefaultTheme):
 
     style = param.ClassSelector(default=DEFAULT_STYLE, class_=FastStyle)
@@ -159,3 +158,42 @@ class FastDarkTheme(DarkTheme):
     @property
     def bokeh_theme(self):
         return _BkTheme(json=self.style.create_bokeh_theme())
+
+
+class Fast(Themer):
+
+    _modifiers = {
+        Tabulator: {
+            'theme': 'fast'
+        },
+        Viewable: {
+            'stylesheets': [Inherit, 'css/fast.css']
+        }
+    }
+
+    _resources = {
+        'js_modules': {
+            'fast-colors': f'{config.npm_cdn}/@microsoft/fast-colors@5.3.1/dist/index.js',
+            'fast': f'{config.npm_cdn}/@microsoft/fast-components@1.21.8/dist/fast-components.js'
+        },
+        'bundle': True,
+        'tarball': {
+            'fast-colors': {
+                'tar': 'https://registry.npmjs.org/@microsoft/fast-colors/-/fast-colors-5.3.1.tgz',
+                'src': 'package/',
+                'dest': '@microsoft/fast-colors@5.3.1',
+                'exclude': ['*.d.ts', '*.json', '*.md', '*/esm/*']
+            },
+            'fast': {
+                'tar': 'https://registry.npmjs.org/@microsoft/fast-components/-/fast-components-1.21.8.tgz',
+                'src': 'package/',
+                'dest': '@microsoft/fast-components@1.21.8',
+                'exclude': ['*.d.ts', '*.json', '*.md', '*/esm/*']
+            }
+        }
+    }
+
+    _themes = {
+        'default': FastDefaultTheme,
+        'dark': FastDarkTheme
+    }
