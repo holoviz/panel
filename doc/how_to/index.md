@@ -1,4 +1,4 @@
-# How-to Guide
+# How-to Guides
 
 The Panel How-to Guides provide step by step recipes for solving essential problems and tasks. They are more advanced than the Getting Started material and assume some knowledge of how Panel works.
 
@@ -133,6 +133,13 @@ Discover how to profile and debug your application using the admin dashboard and
 :link-type: doc
 
 Discover how to set up unit tests, UI tests and load testing to ensure your applications are (and stay) robust and scalable.
+:::
+
+:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1` Build Custom Components
+:link: custom_components/index
+:link-type: doc
+
+Discover how to extend Panel by building custom components.
 :::
 
 ::::
