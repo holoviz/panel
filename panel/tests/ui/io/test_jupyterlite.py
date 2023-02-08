@@ -10,12 +10,12 @@ try:
 except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
-pytestmark = pytest.mark.skip()  # TODO: make smarter...
+pytestmark = pytest.mark.ui
 
 @pytest.fixture()
 def launch_jupyterlite():
     process = Popen(
-        ["python", "-m", "http.server", "8123", "--directory", str('lite/dist/')], stdout=PIPE
+        ["python", "-m", "http.server", "8123", "--directory", 'lite/dist/'], stdout=PIPE
     )
     retries = 5
     while retries > 0:
@@ -49,6 +49,6 @@ def test_jupyterlite_execution(launch_jupyterlite, page):
 
     page.locator('.noUi-handle').click(timeout=120 * 1000)
 
-    page.keyboard.press('ArrowRight');
+    page.keyboard.press('ArrowRight')
 
     expect(page.locator('.bk-clearfix').first).to_have_text('0.1')
