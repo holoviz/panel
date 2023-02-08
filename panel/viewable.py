@@ -76,7 +76,7 @@ class Layoutable(param.Parameterized):
     background = param.Parameter(default=None, doc="""
         Background color of the component.""")
 
-    css_classes = param.List(default=None, doc="""
+    css_classes = param.List(default=[], doc="""
         CSS classes to apply to the layout.""")
 
     width = param.Integer(default=None, bounds=(0, None), doc="""
@@ -103,6 +103,12 @@ class Layoutable(param.Parameterized):
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
+
+    styles = param.Dict(default={}, doc="""
+        Styles to apply to DOM node.""")
+
+    stylesheets = param.List(default=[], doc="""
+        List of stylesheets.""")
 
     width_policy = param.ObjectSelector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
@@ -441,12 +447,12 @@ class Renderable(param.Parameterized):
     __abstract = True
 
     def __init__(self, **params):
-        super().__init__(**params)
         self._callbacks = []
         self._documents = {}
         self._models = {}
         self._comms = {}
         self._kernels = {}
+        super().__init__(**params)
         self._found_links = set()
         self._logger = logging.getLogger(f'{__name__}.{type(self).__name__}')
 
@@ -585,8 +591,13 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         hooks = params.pop('hooks', [])
         super().__init__(**params)
         self._hooks = hooks
+
         self._update_loading()
         watcher = self.param.watch(self._update_loading, 'loading')
+        self._callbacks.append(watcher)
+
+        self._set_background()
+        watcher = self.param.watch(self._set_background, 'background')
         self._callbacks.append(watcher)
 
     def _update_loading(self, *_) -> None:
@@ -594,6 +605,17 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             start_loading_spinner(self)
         else:
             stop_loading_spinner(self)
+
+    def _set_background(self, *_) -> None:
+        if self.background == self.styles.get("background", None) or self.background is None:
+            return
+
+        # Warning
+        prev = f'{type(self).name}(background={self.background!r})'
+        new = f'{type(self).name}(styles={{"background": {self.background!r}}}'
+        deprecated("1.1", prev, new)
+        self.styles["background"] = self.background
+        self.param.trigger("styles")
 
     def __repr__(self, depth: int = 0) -> str:
         return '{cls}({params})'.format(cls=type(self).__name__,

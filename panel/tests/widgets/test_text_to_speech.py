@@ -233,13 +233,13 @@ def test_to_voices_dict_firefox_win10():
     assert len(actual["en-US"]) == 2
 
 
-def test_can_speak():
+def test_can_speak(document, comm):
     text = "Give me back my money!"
     # When
     speaker = TextToSpeech()
     speaker.value = text
 
-    model = speaker.get_root()
+    model = speaker.get_root(document, comm)
     assert model.speak["text"] == text
 
 

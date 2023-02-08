@@ -9,12 +9,12 @@ from bokeh.core.properties import (
 )
 from bokeh.events import ModelEvent
 from bokeh.models import ColumnDataSource, LayoutDOM
-from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets.tables import TableColumn
 
 from ..config import config
 from ..io.resources import JS_VERSION, bundled_files
 from ..util import classproperty
+from .layout import HTMLBox
 
 TABULATOR_VERSION = "5.3.2"
 
@@ -68,22 +68,15 @@ class CellClickEvent(ModelEvent):
             f'value={self.value})'
         )
 
-def _get_theme_url(url, theme):
-    if 'fast' in theme:
-        if url.startswith(THEME_URL):
-            url = url.replace(THEME_URL, PANEL_CDN)
-        url += 'fast/'
-    return url
 
 CSS_URLS = []
 for theme in TABULATOR_THEMES:
-    _url = _get_theme_url(THEME_URL, theme)
     if theme == 'default':
-        _url += 'tabulator.min.css'
+        _theme_file = 'tabulator.min.css'
     else:
         theme = _TABULATOR_THEMES_MAPPING.get(theme, theme)
-        _url += f'tabulator_{theme}.min.css'
-    CSS_URLS.append(_url)
+        _theme_file = f'tabulator_{theme}.min.css'
+    CSS_URLS.append(f'{THEME_URL}{_theme_file}')
 
 
 class DataTabulator(HTMLBox):
@@ -127,7 +120,7 @@ class DataTabulator(HTMLBox):
 
     source = Instance(ColumnDataSource)
 
-    styles = Dict(String, Either(String, Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))))
+    cell_styles = Dict(String, Either(String, Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))))
 
     pagination = Nullable(String)
 

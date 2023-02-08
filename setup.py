@@ -103,7 +103,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=2.4.0,<2.5.0',
+    'bokeh >=3.1.0.dev2',
     'param >=1.12.0',
     'pyviz_comms >=0.7.4',
     'markdown',
@@ -113,6 +113,7 @@ install_requires = [
     'bleach',
     'setuptools >=42',
     'typing_extensions',
+    'pandas >=1.2',
 ]
 
 _recommended = [
@@ -146,7 +147,7 @@ _tests = [
     'markdown-it-py',
     'ipyvuetify',
     'reacton',
-    # Added lxml temporarily as installing pyechars or idom on Python 3.11
+    # Added lxml temporarily as installing pyecharts or idom on Python 3.11
     # via pip tries to build it and fails. To be removed.
     'lxml',
     'numpy <1.24', # Avoid VTK test fail
@@ -216,10 +217,10 @@ extras_require['build'] = [
     'param >=1.9.2',
     'pyct >=0.4.4',
     'setuptools >=42',
-    'bokeh >=2.4.3,<2.5.0',
-    'pyviz_comms >=0.7.4',
     'requests',
     'packaging',
+    'bokeh >=3.1.0.dev1',
+    'pyviz_comms >=0.7.4',
     'bleach',
     'tqdm >=4.48.0',
 ]
@@ -259,7 +260,6 @@ setup_args = dict(
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -280,7 +280,7 @@ setup_args = dict(
         "Topic :: Office/Business",
         "Topic :: Office/Business :: Financial",
         "Topic :: Software Development :: Libraries"],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     entry_points={
         'console_scripts': [
             'panel = panel.command:main'

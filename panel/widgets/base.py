@@ -8,11 +8,13 @@ from __future__ import annotations
 import math
 
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional, Tuple,
-    Type,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    Tuple, Type,
 )
 
 import param  # type: ignore
+
+from bokeh.models import ImportedStyleSheet
 
 from ..layout.base import Row
 from ..reactive import Reactive
@@ -93,23 +95,26 @@ class Widget(Reactive):
         )
         return layout[0]
 
+    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        params = super()._process_param_change(params)
+        if self._widget_type is not None and 'stylesheets' in params:
+            css = getattr(self._widget_type, '__css__', [])
+            params['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + params['stylesheets']
+        return params
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        model = self._widget_type(**self._process_param_change(self._init_params()))
+        model = self._widget_type(**self._get_properties(doc))
         if root is None:
             root = model
         # Link parameters and bokeh model
-        values = self.param.values()
-        properties = self._filter_properties(list(self._process_param_change(values)))
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, properties, doc, root, comm)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         return model
-
-    def _filter_properties(self, properties: List[str]) -> List[str]:
-        ignored = list(Layoutable.param)+['loading']
-        return [p for p in properties if p not in ignored]
 
     def _get_embed_state(
         self, root: 'Model', values: Optional[List[Any]] = None, max_opts: int = 3
@@ -151,6 +156,8 @@ class CompositeWidget(Widget):
     """
 
     _composite_type: ClassVar[Type[ListPanel]] = Row
+
+    _linked_properties: ClassVar[Tuple[str]] = ()
 
     __abstract = True
 

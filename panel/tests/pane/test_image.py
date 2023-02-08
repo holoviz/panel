@@ -74,7 +74,7 @@ def test_load_from_byteio():
         memory.write(image_file.read())
 
     image_pane = PNG(memory)
-    image_data = image_pane._data()
+    image_data = image_pane._data(memory)
     assert b'PNG' in image_data
 
 def test_load_from_stringio():
@@ -86,7 +86,7 @@ def test_load_from_stringio():
         memory.write(str(image_file.read()))
 
     image_pane = PNG(memory)
-    image_data = image_pane._data()
+    image_data = image_pane._data(memory)
     assert 'PNG' in image_data
 
 def test_loading_a_image_from_url():
@@ -94,7 +94,7 @@ def test_loading_a_image_from_url():
     url = 'https://raw.githubusercontent.com/holoviz/panel/main/doc/_static/logo.png'
 
     image_pane = PNG(url)
-    image_data = image_pane._data()
+    image_data = image_pane._data(url)
     assert b'PNG' in image_data
 
 def test_image_from_bytes():
@@ -103,7 +103,7 @@ def test_image_from_bytes():
         img = f.read()
 
     image_pane = PNG(img)
-    image_data = image_pane._data()
+    image_data = image_pane._data(img)
     assert b'PNG' in image_data
 
 def test_loading_a_image_from_pathlib():
@@ -111,7 +111,7 @@ def test_loading_a_image_from_pathlib():
     filepath = Path(__file__).parent.parent / "test_data" / "logo.png"
 
     image_pane = PNG(filepath)
-    image_data = image_pane._data()
+    image_data = image_pane._data(filepath)
     assert b'PNG' in image_data
 
 def test_image_alt_text(document, comm):

@@ -14,7 +14,7 @@ export class JSONView extends PanelMarkupView {
   }
 
   render(): void {
-    super.render();
+    super.render()
     const text = this.model.text.replace(/(\r\n|\n|\r)/gm, "")
     let json;
     try {
@@ -41,6 +41,7 @@ export const JSONTheme = Enum("dark", "light")
 export namespace JSON {
   export type Attrs = p.AttrsOf<Props>
   export type Props = Markup.Props & {
+    css: p.Property<string[]>
     depth: p.Property<number | null>
     hover_preview: p.Property<boolean>
     theme: p.Property<typeof JSONTheme["__type__"]>
@@ -58,9 +59,10 @@ export class JSON extends Markup {
 
   static __module__ = "panel.models.markup"
 
-  static init_JSON(): void {
+  static {
     this.prototype.default_view = JSONView
-    this.define<JSON.Props>(({Boolean, Int, Nullable}) => ({
+    this.define<JSON.Props>(({Array, Boolean, Int, Nullable, String}) => ({
+      css:           [ Array(String), [] ],
       depth:         [ Nullable(Int),  1 ],
       hover_preview: [ Boolean,    false ],
       theme:         [ JSONTheme, "dark" ],

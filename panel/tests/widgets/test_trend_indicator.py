@@ -15,23 +15,23 @@ def manualtest_constructor():
     return Trend(title="Test")
 
 
-def test_trend_auto_value():
+def test_trend_auto_value(document, comm):
     data = {"x": [1, 2, 3, 4, 5], "y": [3800, 3700, 3800, 3900, 4000]}
 
     trend = Trend(data=data)
 
-    model = trend.get_root()
+    model = trend.get_root(document, comm)
 
     assert model.value == 4000
     assert model.value_change == ((4000/3900) - 1)
 
 
-def test_trend_auto_value_stream():
+def test_trend_auto_value_stream(document, comm):
     data = {"x": [1, 2, 3, 4, 5], "y": [3800, 3700, 3800, 3900, 4000]}
 
     trend = Trend(data=data)
 
-    model = trend.get_root()
+    model = trend.get_root(document, comm)
 
     trend.stream({'x': [6], 'y': [4100]}, rollover=5)
 
@@ -88,8 +88,7 @@ def manualtest_app():
         HTML(
             "<h1>Panel - Streaming to TrendIndicator<h1>",
             sizing_mode="stretch_width",
-            background="black",
-            style={"color": "white", "padding": "15px"},
+            styles={"color": "white", "padding": "15px", "background": "black"},
         ),
         Row(WidgetBox(settings_panel), trend, sizing_mode="stretch_both"),
         sizing_mode="stretch_both",

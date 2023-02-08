@@ -27,7 +27,7 @@ def test_notifications_no_template(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    page.click('.bk.bk-btn')
+    page.click('.bk-btn')
 
     time.sleep(0.1)
 
@@ -49,7 +49,7 @@ def test_notifications_with_template(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    page.click('.bk.bk-btn')
+    page.click('.bk-btn')
 
     time.sleep(0.1)
 

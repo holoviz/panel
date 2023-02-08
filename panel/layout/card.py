@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Type,
+    TYPE_CHECKING, Callable, ClassVar, List, Mapping, Type,
 )
 
 import param
@@ -11,6 +11,8 @@ from .base import Column, ListPanel, Row
 
 if TYPE_CHECKING:
     from bokeh.model import Model
+
+    from ..viewable import Viewable
 
 
 class Card(Column):
@@ -24,7 +26,7 @@ class Card(Column):
 
     >>> pn.Card(
     ...     some_widget, some_pane, some_python_object,
-    ...     title='Card', background='WhiteSmoke'
+    ...     title='Card', styles=dict(background='WhiteSmoke'),
     ... )
     """
 
@@ -70,11 +72,11 @@ class Card(Column):
 
     _bokeh_model: ClassVar[Type[Model]] = BkCard
 
-    _linked_props: ClassVar[List[str]] = ['collapsed']
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'title': None, 'header': None, 'title_css_classes': None
+    }
 
-    _rename: ClassVar[Mapping[str, str | None]] = dict(
-        Column._rename, title=None, header=None, title_css_classes=None
-    )
+    _stylesheets: ClassVar[List[str]] = ['css/card.css']
 
     def __init__(self, *objects, **params):
         self._header_layout = Row(css_classes=['card-header-row'],
@@ -83,6 +85,11 @@ class Card(Column):
         self._header = None
         self.param.watch(self._update_header, ['title', 'header', 'title_css_classes'])
         self._update_header()
+
+    def select(
+        self, selector: type | Callable[[Viewable], bool] | None = None
+    ) -> List[Viewable]:
+        return self._header_layout.select(selector) + super().select(selector)
 
     def _cleanup(self, root: Model | None = None) -> None:
         super()._cleanup(root)

@@ -1,9 +1,8 @@
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
-import {PanelHTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
-export class VideoView extends PanelHTMLBoxView {
+export class VideoView extends HTMLBoxView {
   model: Video
   protected videoEl: HTMLVideoElement
   protected dialogEl: HTMLElement
@@ -55,7 +54,7 @@ export class VideoView extends PanelHTMLBoxView {
     this.videoEl.onplay = () => this.model.paused = false
     this.videoEl.ontimeupdate = () => this.update_time(this)
     this.videoEl.onvolumechange = () => this.update_volume(this)
-    this.el.appendChild(this.videoEl)
+    this.shadow_el.appendChild(this.videoEl)
     if (!this.model.paused)
       this.videoEl.play()
   }
@@ -149,10 +148,10 @@ export class Video extends HTMLBox {
 
   static __module__ = "panel.models.widgets"
 
-  static init_Video(): void {
+  static {
     this.prototype.default_view = VideoView
 
-    this.define<Video.Props>(({Any, Boolean, Int, Number}) => ({
+    this.define<Video.Props>(({Any, Boolean, Int, Number, Nullable}) => ({
       loop:     [ Boolean, false ],
       paused:   [ Boolean,  true ],
       muted:    [ Boolean, false ],
@@ -160,7 +159,7 @@ export class Video extends HTMLBox {
       time:     [ Number,      0 ],
       throttle: [ Int,       250 ],
       value:    [ Any,        '' ],
-      volume:   [ Int            ],
+      volume:   [ Nullable(Int), null ],
     }))
   }
 }

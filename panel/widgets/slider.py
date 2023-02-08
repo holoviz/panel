@@ -355,7 +355,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                              'is one of the declared options.'
                              % self.value)
 
-        self._text = StaticText(margin=(5, 0, 0, 5), style={'white-space': 'nowrap'})
+        self._text = StaticText(margin=(5, 0, 0, 5), styles={'white-space': 'nowrap'})
         self._slider = None
         self._composite = Column(self._text, self._slider)
         self._update_options()
@@ -797,7 +797,8 @@ class _EditableContinuousSlider(CompositeWidget):
         self._slider.param.watch(self._sync_value, 'value_throttled')
 
         self._value_edit = self._input_widget(
-            margin=0, align='end', css_classes=['slider-edit']
+            margin=0, align='end', css_classes=['slider-edit'],
+            stylesheets=['css/editable_slider.css']
         )
         self._value_edit.param.watch(self._sync_value, 'value')
         self._value_edit.param.watch(self._sync_value, 'value_throttled')
@@ -1016,10 +1017,14 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self._slider = RangeSlider(margin=(0, 0, 5, 0), show_value=False)
         self._slider.param.watch(self._sync_value, 'value')
         self._slider.param.watch(self._sync_value, 'value_throttled')
-        self._start_edit = FloatInput(min_width=50, margin=0, format=self.format,
-                                      css_classes=['slider-edit'])
-        self._end_edit = FloatInput(min_width=50, margin=(0, 0, 0, 10), format=self.format,
-                                    css_classes=['slider-edit'])
+        self._start_edit = FloatInput(
+            css_classes=['slider-edit'], stylesheets=['css/editable_slider.css'],
+            min_width=50, margin=0, format=self.format
+        )
+        self._end_edit = FloatInput(
+            css_classes=['slider-edit'], stylesheets=['css/editable_slider.css'],
+            min_width=50, margin=(0, 0, 0, 10), format=self.format
+        )
         self._start_edit.param.watch(self._sync_start_value, 'value')
         self._start_edit.param.watch(self._sync_start_value, 'value_throttled')
         self._end_edit.param.watch(self._sync_end_value, 'value')

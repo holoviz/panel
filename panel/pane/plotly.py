@@ -5,7 +5,7 @@ bokeh model.
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional,
 )
 
 import numpy as np
@@ -83,9 +83,13 @@ class Plotly(PaneBase):
 
     priority: ClassVar[float | bool | None] = 0.8
 
+    _stylesheets: ClassVar[List[str]] = ['css/plotly.css']
+
     _updates: ClassVar[bool] = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'link_figure': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'link_figure': None, 'object': None
+    }
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -271,6 +275,9 @@ class Plotly(PaneBase):
         params['frames'] = json.get('frames', [])
         if layout.get('autosize') and self.sizing_mode is self.param.sizing_mode.default:
             params['sizing_mode'] = 'stretch_both'
+            if 'styles' not in params:
+                params['styles'] = {}
+            params['styles']['display'] = 'contents'
         return params
 
     def _get_model(
@@ -278,10 +285,10 @@ class Plotly(PaneBase):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         PlotlyPlot = lazy_load('panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root)
-        model = PlotlyPlot(**self._init_params())
+        model = PlotlyPlot(**self._process_param_change(self._init_params()))
         if root is None:
             root = model
-        self._link_props(model, self._linkable_params, doc, root, comm)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -339,10 +346,14 @@ class Plotly(PaneBase):
         updates = {}
         if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
             autosize = layout.get('autosize')
+            styles = dict(model.styles)
             if autosize and model.sizing_mode != 'stretch_both':
                 updates['sizing_mode'] = 'stretch_both'
+                styles['display'] = 'contents'
             elif not autosize and model.sizing_mode != 'fixed':
                 updates['sizing_mode'] = 'fixed'
+                if 'display' in styles:
+                    del styles['display']
 
         if new_sources:
             updates['data_sources'] = model.data_sources + new_sources

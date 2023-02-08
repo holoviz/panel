@@ -3,6 +3,7 @@ import {View} from "@bokehjs/core/view"
 import {copy} from "@bokehjs/core/util/array"
 import {Model} from "@bokehjs/model"
 import {Receiver} from "@bokehjs/protocol/receiver"
+import {Patch} from "@bokehjs/document"
 
 function get_json(file: string, callback: any): void {
   var xobj = new XMLHttpRequest();
@@ -18,9 +19,6 @@ function get_json(file: string, callback: any): void {
 
 export class StateView extends View {
   model: State
-
-  renderTo(): void {
-  }
 }
 
 export namespace State {
@@ -52,14 +50,14 @@ export class State extends Model {
     this._receiver.consume(state.metadata)
     this._receiver.consume(state.content)
     if (this._receiver.message && this.document) {
-      this.document.apply_json_patch(this._receiver.message.content)
+      this.document.apply_json_patch(this._receiver.message.content as Patch)
     }
   }
 
   _receive_json(result: string, path: string): void {
     const state = JSON.parse(result)
     this._cache[path] = state
-	let current: any = this.state
+    let current: any = this.state
     for (const i of this.values) {
       current = current[i]
     }
@@ -75,7 +73,7 @@ export class State extends Model {
     values[index] = value
     let state: any = this.state
     for (const i of values) {
-      state = state[i]
+      state = state.get(i)
     }
     this.values = values
     if (this.json) {
@@ -91,7 +89,7 @@ export class State extends Model {
 
   static __module__ = "panel.models.state"
 
-  static init_State(): void {
+  static {
     this.prototype.default_view = StateView
 
     this.define<State.Props>(({Any, Boolean}) => ({

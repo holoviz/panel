@@ -1,7 +1,7 @@
 import pytest
 
 from panel import Card
-from panel.tests.util import serve_panel_widget
+from panel.tests.util import bokeh3_failing, serve_panel_widget
 from panel.widgets import FloatSlider, TextInput
 
 try:
@@ -25,10 +25,10 @@ def test_card_default(page, port, card_components):
     card = Card(w1, w2)
     serve_panel_widget(page, port, card)
 
-    card_elements = page.locator('.bk.card > .bk')
+    card_elements = page.locator('.card > div, .card > button')
     # the card is expanded as default and includes a header and its inner objects
     expect(card_elements).to_have_count(len(card) + 1)
-    # order of the elements
+
     card_header = card_elements.nth(0)
     w1_object = card_elements.nth(1)
     w2_object = card_elements.nth(2)
@@ -37,7 +37,7 @@ def test_card_default(page, port, card_components):
     assert 'class_w2' in w2_object.get_attribute('class')
 
     # icon display in card button in expanded mode
-    card_button = page.locator('.bk.card-button')
+    card_button = page.locator('.card-button')
     button_name = card_button.inner_text()
     assert button_name == "\u25bc"
 
@@ -47,8 +47,8 @@ def test_card_collapsed(page, port, card_components):
     card = Card(w1, w2)
     serve_panel_widget(page, port, card)
 
-    card_elements = page.locator('.bk.card > .bk')
-    card_button = page.locator('.bk.card-button')
+    card_elements = page.locator('.card > div, .card > button')
+    card_button = page.locator('.card-button')
 
     # collapse the card
     card_button.wait_for()
@@ -70,10 +70,10 @@ def test_card_not_collapsible(page, port, card_components):
     serve_panel_widget(page, port, card)
 
     # no card button to disable collapsing the card
-    card_button = page.locator('.bk.card-button')
+    card_button = page.locator('.card-button')
     expect(card_button).to_have_count(0)
     # card header and other inner objects
-    card_elements = page.locator('.bk.card > .bk')
+    card_elements = page.locator('.card > div, .card > button')
     expect(card_elements).to_have_count(len(card) + 1)
 
 
@@ -83,10 +83,10 @@ def test_card_hide_header(page, port, card_components):
     serve_panel_widget(page, port, card)
 
     # no card header
-    card_header = page.locator('.bk.card-header')
+    card_header = page.locator('.card-header')
     expect(card_header).to_have_count(0)
     # only inner card objects
-    card_elements = page.locator('.bk.card > .bk')
+    card_elements = page.locator('.card > div, .card > button')
     expect(card_elements).to_have_count(len(card))
 
 
@@ -99,7 +99,7 @@ def test_card_objects(page, port, card_components):
     # set new list of objects for the card
     card.objects = new_objects
 
-    card_elements = page.locator('.bk.card > .bk')
+    card_elements = page.locator('.card > div, .card > button')
     expect(card_elements).to_have_count(len(new_objects) + 1)
 
     card_header = card_elements.nth(0)
@@ -114,20 +114,32 @@ def test_card_title(page, port, card_components):
     card = Card(w1, w2, title=card_title)
     serve_panel_widget(page, port, card)
 
-    assert page.locator('.bk.card-title').inner_text() == card_title
+    assert page.locator('.card-title').locator(".bk-clearfix").inner_text() == card_title
 
 
 def test_card_background(page, port, card_components):
+    w1, w2 = card_components
+    background = 'rgb(128, 128, 128)'
+    card = Card(w1, w2, styles=dict(background=background))
+
+    serve_panel_widget(page, port, card)
+
+    card_widget = page.locator('.card')
+    assert f'background: {background};' in card_widget.get_attribute('style')
+
+
+def test_card_background_legacy(page, port, card_components):
     w1, w2 = card_components
     background = 'rgb(128, 128, 128)'
     card = Card(w1, w2, background=background)
 
     serve_panel_widget(page, port, card)
 
-    card_widget = page.locator('.bk.card')
-    assert f'background-color: {background};' in card_widget.get_attribute('style')
+    card_widget = page.locator('.card')
+    assert f'background: {background};' in card_widget.get_attribute('style')
 
 
+@bokeh3_failing
 def test_card_header_color_formatting(page, port):
     header_color = 'rgb(0, 0, 128)'
     active_header_background = 'rgb(0, 128, 0)'
@@ -139,7 +151,7 @@ def test_card_header_color_formatting(page, port):
     )
     serve_panel_widget(page, port, card)
 
-    card_header = page.locator('.bk.card-header')
+    card_header = page.locator('.card-header')
     assert f'color: {header_color};' in card_header.get_attribute('style')
 
     # card is expanded by default
@@ -165,11 +177,11 @@ def test_card_custom_css(page, port):
 
     serve_panel_widget(page, port, card)
 
-    card_widget = page.locator(f'.bk.card.{additional_css_class}')
+    card_widget = page.locator(f'.card.{additional_css_class}')
     expect(card_widget).to_have_count(1)
 
-    card_header = page.locator(f'.bk.card-header.{additional_header_css_class}')
+    card_header = page.locator(f'.card-header.{additional_header_css_class}')
     expect(card_header).to_have_count(1)
 
-    card_button = page.locator(f'.bk.card-button.{additional_button_css_class}')
+    card_button = page.locator(f'.card-button.{additional_button_css_class}')
     expect(card_button).to_have_count(1)

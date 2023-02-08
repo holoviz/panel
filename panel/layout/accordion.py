@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Callable, ClassVar, List, Mapping,
+)
 
 import param
 
@@ -11,6 +13,8 @@ from .card import Card
 
 if TYPE_CHECKING:
     from bokeh.model import Model
+
+    from ..viewable import Viewable
 
 
 class Accordion(NamedListPanel):
@@ -49,9 +53,11 @@ class Accordion(NamedListPanel):
 
     _bokeh_model = BkColumn
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'active': None, 'active_header_background': None,
-               'header_background': None, 'objects': 'children',
-               'dynamic': None, 'toggle': None, 'header_color': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'active': None, 'active_header_background': None,
+        'header_background': None, 'objects': 'children',
+        'dynamic': None, 'toggle': None, 'header_color': None
+    }
 
     _toggle = """
     for (var child of accordion.children) {
@@ -128,6 +134,17 @@ class Accordion(NamedListPanel):
         self._update_cards()
         self._update_active()
         return new_models
+
+    def select(
+        self, selector: type | Callable[[Viewable], bool] | None = None
+    ) -> List[Viewable]:
+
+        if self._panels:
+            selected = []
+            for card in self._panels.values():
+                selected += card.select(selector)
+            return selected
+        return super().select(selector)
 
     def _cleanup(self, root: Model | None = None) -> None:
         for panel in self._panels.values():

@@ -123,7 +123,7 @@ def test_text_input_controls():
     assert len(controls) == 2
     wb1, wb2 = controls
     assert isinstance(wb1, WidgetBox)
-    assert len(wb1) == 6
+    assert len(wb1) == 7
     name, disabled, *(ws) = wb1
 
     assert isinstance(name, StaticText)
@@ -143,14 +143,23 @@ def test_text_input_controls():
             assert w.value == "Test placeholder..."
         elif w.name == 'Max length':
             assert isinstance(w, IntInput)
+        elif w.name == 'Description':
+            assert isinstance(w, TextInput)
+            text_input.description = "Test description..."
+            assert w.value == "Test description..."
         else:
             not_checked.append(w)
 
     assert not not_checked
 
     assert isinstance(wb2, WidgetBox)
-    assert len(wb2) == len(list(Viewable.param)) + 1
 
+    params1 = {w.name.replace(" ", "_").lower() for w in wb2 if len(w.name)}
+    params2 = set(Viewable.param) - {"background", "stylesheets"}
+    # Background should be moved when Layoutable.background is removed.
+
+    assert not len(params1 - params2)
+    assert not len(params2 - params1)
 
 
 def test_text_input_controls_explicit():
@@ -514,7 +523,7 @@ def test_reactive_html_scripts_linked_properties_assignment_operator():
 
                 _scripts = {'render': f'test.onclick = () => {{ data.clicks{sep}{operator}= 1 }}'}
 
-            assert TestScripts()._linked_properties() == ['clicks']
+            assert TestScripts()._linked_properties == ('clicks',)
 
 
 def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var():

@@ -1,19 +1,19 @@
 """
-Defines the PaneBase class defining the API for panes which convert
-objects to a visual representation expressed as a bokeh model.
+Defines base classes for Pane components which allow wrapping a Python
+object transforming it into a Bokeh model that can be rendered.
 """
 from __future__ import annotations
 
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional, Type,
-    TypeVar,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
+    Tuple, Type, TypeVar,
 )
 
 import param
 
 from bokeh.models.layouts import (
-    GridBox as _BkGridBox, Panel as _BkPanel, Tabs as _BkTabs,
+    GridBox as _BkGridBox, TabPanel as _BkTabPanel, Tabs as _BkTabs,
 )
 
 from ..io import (
@@ -24,7 +24,6 @@ from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
 from ..util import param_reprs
-from ..util.warnings import deprecated
 from ..viewable import (
     Layoutable, ServableMixin, Viewable, Viewer,
 )
@@ -35,28 +34,24 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-def Pane(obj: Any, **kwargs) -> 'PaneBase':
-    """
-    Converts any object to a Pane if a matching Pane class exists.
-    """
-    deprecated("1.0", "panel.Pane", "panel.panel")
-    if isinstance(obj, Viewable):
-        return obj
-    return PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
-
-
 def panel(obj: Any, **kwargs) -> Viewable:
     """
-    Creates a panel from any supplied object by wrapping it in a pane
-    and returning a corresponding Panel.
+    Creates a displayable Panel object given any valid Python object.
 
-    If you provide a "reactive function" as `obj` and set
-    `loading_indicator=True`, then Panel will display a loading indicator
-    when invoking the function.
+    The appropriate Pane to render a specific object is determined by
+    iterating over all defined Pane types and querying it's `.applies`
+    method for a priority value.
 
-    Reference: https://panel.holoviz.org/user_guide/Components.html#panes
+    Any keyword arguments are passed down to the applicable Pane.
 
-    >>> pn.panel(some_python_object, width=500, background="whitesmoke")
+    To lazily render components you may also provide a Python
+    function, with or without bound parameter dependencies and set
+    `defer_load=True`. Setting `loading_indicator=True` will display a
+    loading indicator while the function is being evaluated.
+
+    Reference: https://panel.holoviz.org/background/components/components_overview.html#panes
+
+    >>> pn.panel(some_python_object, width=500)
 
     Arguments
     ---------
@@ -73,7 +68,9 @@ def panel(obj: Any, **kwargs) -> Viewable:
     if isinstance(obj, (Viewable, ServableMixin)):
         return obj
     elif hasattr(obj, '__panel__'):
-        if not isinstance(obj, Viewer) and (isinstance(obj, type) and issubclass(obj, Viewer)):
+        if isinstance(obj, Viewer):
+            return obj._create_view()
+        if isinstance(obj, type) and issubclass(obj, Viewer):
             return panel(obj().__panel__())
         return panel(obj.__panel__())
     if kwargs.get('name', False) is None:
@@ -94,17 +91,14 @@ T = TypeVar('T', bound='PaneBase')
 class PaneBase(Reactive):
     """
     PaneBase is the abstract baseclass for all atomic displayable units
-    in the panel library. We call any child class of `PaneBase` a `Pane`.
+    in the Panel library. We call any child class of `PaneBase` a `Pane`.
 
-    Panes defines an extensible interface for
-    wrapping arbitrary objects and transforming them into Bokeh models.
+    Panes defines an extensible interface for wrapping arbitrary
+    objects and transforming them into Bokeh models.
 
     Panes are reactive in the sense that when the object they are
-    wrapping is changed any dashboard containing the pane will update
-    in response.
-
-    To define a concrete Pane type subclass this class and implement
-    the applies classmethod and the _get_model private method.
+    wrapping is replaced or modified the `bokeh.model.Model` that
+    is rendered should reflect these changes.
     """
 
     default_layout = param.ClassSelector(default=Row, class_=(Panel),
@@ -131,6 +125,11 @@ class PaneBase(Reactive):
     # Declares whether Pane supports updates to the Bokeh model
     _updates: ClassVar[bool] = False
 
+    # Mapping from parameter name to bokeh model property name
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'default_layout': None, 'loading': None
+    }
+
     # List of parameters that trigger a rerender of the Bokeh model
     _rerender_params: ClassVar[List[str]] = ['object']
 
@@ -144,11 +143,12 @@ class PaneBase(Reactive):
         super().__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
-        w1 = self.param.watch(self._sync_layoutable, list(Layoutable.param))
-        w2 = self.param.watch(self._update_pane, self._rerender_params)
-        self._callbacks.extend([w1, w2])
+        self._callbacks.extend([
+            self.param.watch(self._sync_layoutable, list(Layoutable.param)),
+            self.param.watch(self._update_pane, self._rerender_params)
+        ])
 
-    def _sync_layoutable(self, *events):
+    def _sync_layoutable(self, *events: param.parameterized.Event):
         kwargs = {
             event.name: event.new for event in events
             if event.name in Layoutable.param
@@ -160,14 +160,14 @@ class PaneBase(Reactive):
         raise ValueError("%s pane does not support objects of type '%s'." %
                          (type(self).__name__, type(object).__name__))
 
-    def __repr__(self, depth=0):
+    def __repr__(self, depth: int = 0) -> str:
         cls = type(self).__name__
         params = param_reprs(self, ['object'])
         obj = 'None' if self.object is None else type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int | str) -> Viewable:
         """
         Allows pane objects to behave like the underlying layout
         """
@@ -178,59 +178,67 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
 
     @property
+    def _linked_properties(self) -> Tuple[str]:
+        return tuple(
+            self._property_mapping.get(p, p) for p in self.param
+            if p not in PaneBase.param and self._property_mapping.get(p, p) is not None
+        )
+
+    @property
     def _linkable_params(self) -> List[str]:
-        return [p for p in self._synced_params if self._rename.get(p, False) is not None]
+        return [p for p in self._synced_params if self._property_mapping.get(p, False) is not None]
 
     @property
     def _synced_params(self) -> List[str]:
-        ignored_params = ['name', 'default_layout', 'loading']+self._rerender_params
+        ignored_params = ['name', 'default_layout', 'loading', 'background', 'stylesheets']+self._rerender_params
         return [p for p in self.param if p not in ignored_params and not p.startswith('_')]
 
     def _update_object(
-        self, ref: str, doc: 'Document', root: Model, parent: Model, comm: Optional[Comm]
+        self, ref: str, doc: 'Document', root: Model, parent: Model, comm: Comm | None
     ) -> None:
         old_model = self._models[ref][0]
         if self._updates:
             self._update(ref, old_model)
-        else:
-            new_model = self._get_model(doc, root, parent, comm)
-            try:
-                if isinstance(parent, _BkGridBox):
-                    indexes = [
-                        i for i, child in enumerate(parent.children)
-                        if child[0] is old_model
-                    ]
-                    if indexes:
-                        index = indexes[0]
-                    else:
-                        raise ValueError
-                    new_model = (new_model,) + parent.children[index][1:]
-                elif isinstance(parent, _BkReactiveHTML):
-                    for node, children in parent.children.items():
-                        if old_model in children:
-                            index = children.index(old_model)
-                            new_models = list(children)
-                            new_models[index] = new_model
-                            break
-                elif isinstance(parent, _BkTabs):
-                    index = [tab.child for tab in parent.tabs].index(old_model)
+            return
+
+        new_model = self._get_model(doc, root, parent, comm)
+        try:
+            if isinstance(parent, _BkGridBox):
+                indexes = [
+                    i for i, child in enumerate(parent.children)
+                    if child[0] is old_model
+                ]
+                if indexes:
+                    index = indexes[0]
                 else:
-                    index = parent.children.index(old_model)
-            except ValueError:
-                self.param.warning(
-                    f'{type(self).__name__} pane model {old_model!r} could not be '
-                    f'replaced with new model {new_model!r}, ensure that the parent '
-                    'is not modified at the same time the panel is being updated.'
-                )
+                    raise ValueError
+                new_model = (new_model,) + parent.children[index][1:]
+            elif isinstance(parent, _BkReactiveHTML):
+                for node, children in parent.children.items():
+                    if old_model in children:
+                        index = children.index(old_model)
+                        new_models = list(children)
+                        new_models[index] = new_model
+                        break
+            elif isinstance(parent, _BkTabs):
+                index = [tab.child for tab in parent.tabs].index(old_model)
             else:
-                if isinstance(parent, _BkReactiveHTML):
-                    parent.children[node] = new_models
-                elif isinstance(parent, _BkTabs):
-                    old_tab = parent.tabs[index]
-                    props = dict(old_tab.properties_with_values(), child=new_model)
-                    parent.tabs[index] = _BkPanel(**props)
-                else:
-                    parent.children[index] = new_model
+                index = parent.children.index(old_model)
+        except ValueError:
+            self.param.warning(
+                f'{type(self).__name__} pane model {old_model!r} could not be '
+                f'replaced with new model {new_model!r}, ensure that the parent '
+                'is not modified at the same time the panel is being updated.'
+            )
+        else:
+            if isinstance(parent, _BkReactiveHTML):
+                parent.children[node] = new_models
+            elif isinstance(parent, _BkTabs):
+                old_tab = parent.tabs[index]
+                props = dict(old_tab.properties_with_values(), child=new_model)
+                parent.tabs[index] = _BkTabPanel(**props)
+            else:
+                parent.children[index] = new_model
 
         from ..io import state
         ref = root.ref['id']
@@ -298,7 +306,7 @@ class PaneBase(Reactive):
         return type(self)(object, **params)
 
     def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        self, doc: Optional[Document] = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> Model:
         """
@@ -379,14 +387,67 @@ class PaneBase(Reactive):
 
 
 
+class ModelPane(PaneBase):
+    """
+    ModelPane provides a baseclass that allows quickly wrapping a
+    Bokeh model and translating parameters defined on the class
+    with properties defined on the model.
+
+    In simple cases subclasses only have to define the Bokeh model to
+    render to and the `_transform_object` method which transforms the
+    Python object being wrapped into properties that the
+    `bokeh.model.Model` can consume.
+    """
+
+    _bokeh_model: ClassVar[Model]
+
+    __abstract = True
+
+    def _get_model(
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
+        model = self._bokeh_model(**self._get_properties(doc))
+        if root is None:
+            root = model
+        self._models[root.ref['id']] = (model, parent)
+        self._link_props(model, self._linked_properties, doc, root, comm)
+        return model
+
+    def _update(self, ref: str, model: Model) -> None:
+        model.update(**self._get_properties(model.document))
+
+    def _init_params(self):
+        params = {
+            p: v for p, v in self.param.values().items()
+            if v is not None and p not in ('name', 'default_layout')
+        }
+        params['object'] = self.object
+        return params
+
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        return dict(object=obj)
+
+    def _process_param_change(self, params):
+        if 'object' in params:
+            params.update(self._transform_object(params.pop('object')))
+        return super()._process_param_change(params)
+
+
 class ReplacementPane(PaneBase):
     """
-    A Pane type which allows for complete replacement of the underlying
-    bokeh model by creating an internal layout to replace the children
-    on.
+    ReplacementPane provides a baseclass for dynamic components that
+    may have to dynamically update or switch out their contents, e.g.
+    a dynamic callback that may return different objects to be rendered.
+
+    When the pane updates it either entirely replaces the underlying
+    `bokeh.model.Model`, by creating an internal layout to replace the
+    children on, or updates the existing model in place.
     """
 
     _pane = param.ClassSelector(class_=Viewable)
+
+    _linked_properties: ClassVar[Tuple[str]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None}
 
@@ -404,6 +465,20 @@ class ReplacementPane(PaneBase):
         self.param.watch(self._update_inner_layout, list(Layoutable.param))
         self._sync_layout()
 
+    def _get_model(
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
+        if root:
+            ref = root.ref['id']
+            if ref in self._models:
+                self._cleanup(root)
+        model = self._inner_layout._get_model(doc, root, parent, comm)
+        if root is None:
+            ref = model.ref['id']
+        self._models[ref] = (model, parent)
+        return model
+
     @param.depends('_pane', '_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
     def _sync_layout(self):
         if not hasattr(self, '_inner_layout'):
@@ -415,11 +490,6 @@ class ReplacementPane(PaneBase):
 
     def _update_inner_layout(self, *events):
         self._pane.param.update({event.name: event.new for event in events})
-
-    def _update_pane(self, *events):
-        """
-        Updating of the object should be handled manually.
-        """
 
     @classmethod
     def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, **kwargs):
@@ -478,23 +548,22 @@ class ReplacementPane(PaneBase):
         self._inner_layout[0] = self._pane
         self._internal = internal
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        if root:
-            ref = root.ref['id']
-            if ref in self._models:
-                self._cleanup(root)
-        model = self._inner_layout._get_model(doc, root, parent, comm)
-        if root is None:
-            ref = model.ref['id']
-        self._models[ref] = (model, parent)
-        return model
-
     def _cleanup(self, root: Model | None = None) -> None:
         self._inner_layout._cleanup(root)
         super()._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Developer API
+    #----------------------------------------------------------------
+
+    def _update_pane(self, *events) -> None:
+        """
+        Updating of the object should be handled manually.
+        """
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
 
     def select(self, selector: type | Callable | None = None) -> List[Viewable]:
         """

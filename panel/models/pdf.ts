@@ -69,7 +69,7 @@ export class PDF extends Markup {
 
   static __module__ = "panel.models.markup";
 
-  static init_PDF(): void {
+  static {
     this.prototype.default_view = PDFView;
     this.define<PDF.Props>(({ Number, Boolean }) => ({
       embed: [Boolean, true],

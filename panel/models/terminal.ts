@@ -1,9 +1,9 @@
-import { HTMLBox } from "@bokehjs/models/layouts/html_box"
 import * as p from "@bokehjs/core/properties"
 import { div } from "@bokehjs/core/dom"
-import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
+import {Attrs} from "@bokehjs/core/types"
 
-import { PanelHTMLBoxView, set_size } from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
 
 export class KeystrokeEvent extends ModelEvent {
@@ -13,12 +13,12 @@ export class KeystrokeEvent extends ModelEvent {
     super()
   }
 
-  protected _to_json(): JSON {
+  protected get event_values(): Attrs {
     return {model: this.origin, key: this.key}
   }
 }
 
-export class TerminalView extends PanelHTMLBoxView {
+export class TerminalView extends HTMLBoxView {
   model: Terminal
   term: any // Element
   webLinksAddon: any
@@ -34,7 +34,7 @@ export class TerminalView extends PanelHTMLBoxView {
   render(): void {
     super.render()
     this.container = div({class: "terminal-container"})
-    set_size(this.container, this.model)
+    //set_size(this.container, this.model)
 
     this.term = this.getNewTerminal()
     this.term.onData((value: any) => {
@@ -53,7 +53,7 @@ export class TerminalView extends PanelHTMLBoxView {
 
     this.write()
 
-    this.el.appendChild(this.container)
+    this.shadow_el.appendChild(this.container)
   }
 
   getNewTerminal(): any {
@@ -88,11 +88,8 @@ export class TerminalView extends PanelHTMLBoxView {
   }
 
   fit(): void {
-    const sizing = this.box_sizing()
-    const vert_margin = sizing.margin == null ? 0 : sizing.margin.top + sizing.margin.bottom
-    const horz_margin = sizing.margin == null ? 0 : sizing.margin.left + sizing.margin.right
-    const width = (this.layout.inner_bbox.width || this.model.width || 0) - horz_margin
-    const height = (this.layout.inner_bbox.height || this.model.height || 0) - vert_margin
+    const width = this.container.offsetWidth;
+    const height = this.container.offsetHeight;
     const renderer = this.term._core._renderService
     const cell_width = renderer.dimensions.actualCellWidth || 9
     const cell_height = renderer.dimensions.actualCellHeight || 18
@@ -109,11 +106,6 @@ export class TerminalView extends PanelHTMLBoxView {
 
   after_layout(): void {
     super.after_layout()
-    this.fit()
-  }
-
-  resize_layout(): void {
-    super.resize_layout()
     this.fit()
   }
 }
@@ -141,7 +133,7 @@ export class Terminal extends HTMLBox {
 
   static __module__ = "panel.models.terminal"
 
-  static init_Terminal(): void {
+  static {
     this.prototype.default_view = TerminalView;
 
     this.define<Terminal.Props>(({Any, Int, String}) => ({

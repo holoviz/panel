@@ -14,6 +14,13 @@ Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md
 Deepen your understanding about Panel's visible objects and layouts types.
 :::
 
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Custom Components
+:link: components/components_custom
+:link-type: doc
+
+Learn about building custom Panel components.
+:::
+
 :::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` APIs
 :link: api/api
 :link-type: doc
@@ -21,11 +28,11 @@ Deepen your understanding about Panel's visible objects and layouts types.
 Explore the reasoning for each of Panel's APIs.
 :::
 
-:::{grid-item-card} {octicon}`multi-select;2.5em;sd-mr-1` Param
+:::{grid-item-card} {octicon}`multi-select;2.5em;sd-mr-1` Panel and Param
 :link: param/param
 :link-type: doc
 
-Discover why Panel utilizes the Param library.
+Discover why and how Panel utilizes the Param library.
 :::
 
 :::{grid-item-card} {octicon}`sliders;2.5em;sd-mr-1` Widget Abbreviations for `Interact`
@@ -42,11 +49,11 @@ Learn about the abbreviations used to create widgets with Panel `interact`.
 Compare Panel with similar libraries.
 :::
 
-:::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1` Panel in Jupyter, Standalone servers, or exported files
-:link: comms
+:::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1` Panel Communications
+:link: comms/comms
 :link-type: doc
 
-An overview explaining how Panel communicates between Python and Javascript in different contexts, such as Jupyter, server environments and in exported files.
+Learn how Panel communicates between Python and Javascript in different contexts.
 :::
 
 :::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1` Templates

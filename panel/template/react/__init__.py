@@ -1,6 +1,8 @@
 """
 React template
 """
+import json
+import math
 import pathlib
 
 import param
@@ -9,7 +11,8 @@ from ...config import config
 from ...depends import depends
 from ...io.resources import CSS_URLS
 from ...layout import Card, GridSpec
-from ..base import BasicTemplate
+from ...viewable import Viewable
+from ..base import BasicTemplate, Inherit
 from ..theme import DarkTheme, DefaultTheme
 
 
@@ -29,7 +32,7 @@ class ReactTemplate(BasicTemplate):
 
     row_height = param.Integer(default=150)
 
-    dimensions = param.Dict(default={'minW': 0, 'maxW': 'Infinity', 'minH': 0, 'maxH': 'Infinity'},
+    dimensions = param.Dict(default={'minW': 0, 'maxW': float('inf'), 'minH': 0, 'maxH': float('inf')},
                             doc="""A dictonary of minimum/maximum width/height in grid units.""")
 
     prevent_collision = param.Boolean(default=False, doc="Prevent collisions between items.")
@@ -47,13 +50,16 @@ class ReactTemplate(BasicTemplate):
         Card: {
             'children': {'margin': (20, 20)},
             'margin': (10, 5)
+        },
+        Viewable: {
+            'stylesheets': [Inherit, './components.css']
         }
     }
 
     _resources = {
         'js': {
-            'react': f"{config.npm_cdn}/react@18/umd/react.production.min.js",
-            'react-dom': f"{config.npm_cdn}/react-dom@18/umd/react-dom.production.min.js",
+            'react': f"{config.npm_cdn}/react@17/umd/react.production.min.js",
+            'react-dom': f"{config.npm_cdn}/react-dom@17/umd/react-dom.production.min.js",
             'babel': f"{config.npm_cdn}/babel-standalone@latest/babel.min.js",
             'react-grid': "https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.1.1/react-grid-layout.min.js"
         },
@@ -80,9 +86,9 @@ class ReactTemplate(BasicTemplate):
             if y0 is None: y0 = 0
             if y1 is None: y1 = self.main.nrows
             elem = {'x': x0, 'y': y0, 'w': x1-x0, 'h': y1-y0, 'i': str(i+1)}
-            elem.update(self.dimensions)
+            elem.update({d: v for d, v in self.dimensions.items() if not math.isinf(v)})
             layouts.append(elem)
-        self._render_variables['layouts'] = {'lg': layouts, 'md': layouts}
+        self._render_variables['layouts'] = json.dumps({'lg': layouts, 'md': layouts})
 
     @depends('cols', 'breakpoints', 'row_height', 'compact', 'dimensions', 'prevent_collision',
              'save_layout', watch=True)
