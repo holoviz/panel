@@ -22,9 +22,9 @@ Now let's populate the pipeline with our first stage which takes two inputs (`a`
 
 To create this stage, let's:
 
-1. Declare a Parameterized class with some input parameters.
-2. Declare one or more methods decorated with the `param.output` decorator.
-3. Declare a `panel` method that returns a view of the object that the `Pipeline` can render.
+1. Declare a Parameterized class with some input parameters (e.g. `a = param.Number`)
+2. Decorate a method with `@param.output` to declare outputs (we'll discuss this more later)
+3. Declare a `panel` method that returns a view of this stage's object
 
 ```{pyodide}
 class Stage1(param.Parameterized):
@@ -57,25 +57,9 @@ stage1 = Stage1()
 stage1.panel()
 ```
 
-Let's add this stage to our `Pipeline` using the `add_stage` method:
+Before we create a second stage let's briefly discuss the some details about the system of outputs that links the stages. To declare the output for our first stage, we decorated one of its methods with `@param.output(('c', param.Number), ('d', param.Number))`. However, there are multiple ways to declare outputs with this decorator:
 
-```{pyodide}
-pipeline.add_stage('Stage 1', stage1)
-```
-
-Before we create a second stage let's briefly discuss the outputs which will be fed across the stages.
-
-To declare the output for our first stage, we decorated one of its methods with `param.output`. Let's take a look at our outputs:
-
-```{pyodide}
-stage1.param.outputs()
-```
-
-A `Pipeline` will use this information to determine what outputs are available to be fed into the next stage of the workflow.
-
-The signature of this `param.output` decorator allows a number of different ways of declaring the outputs:
-
-* `param.output()`: Declaring an output without arguments will declare that the method returns an output that will inherit the name of the method and does not make any specific type declarations.
+* `param.output()`: Declaring an output without arguments will declare that the method returns an output that will inherit the **name of the method** and does not make any specific type declarations.
 * `param.output(param.Number)`: Declaring an output with a specific `Parameter` or Python type also declares an output with the name of the method but declares that the output will be of a specific type.
 * `param.output(c=param.Number)`: Declaring an output using a keyword argument allows overriding the method name as the name of the output and declares the type.
 
@@ -86,8 +70,15 @@ It is also possible to declare multiple outputs, either as keywords or tuples:
 
 Importantly, in addition to passing along the outputs designated with `param.output()`, the Pipeline will also pass along the values of any input parameters whose names match input parameters on the next stage (unless `inherit_params` is set to `False`).
 
-Now let's set up a second stage that will also declare a `c` input Parameter to consume the `c` output of the first stage. Note, the second stage does not have to consume all parameters, and here we will ignore output `d`. In other respects this class is very similar to the first one; it declares both a ``view`` method that depends on the parameters of the class, and a ``panel`` method that returns a view of the object. As this is our last stage, we don't need to define any outputs.
+Ok, enough explanation, let's take a look at the outputs of our first stage:
 
+```{pyodide}
+stage1.param.outputs()
+```
+
+Our `Pipeline` will use this information to determine what outputs are available to be fed into the next stage of the workflow.
+
+Now let's set up a second stage that will also declare a `c` input Parameter to consume the `c` output of the first stage. Note, the second stage does not have to consume all parameters, and here we will ignore the first stage's output `d`. Otherwise, the second stage below is very similar to the first one; it declares both a ``view`` method that depends on the parameters of the class, and a ``panel`` method that returns a view of the object. As this is our last stage, we don't need to define any further outputs.
 
 ```{pyodide}
 class Stage2(param.Parameterized):
@@ -104,18 +95,23 @@ class Stage2(param.Parameterized):
 
     def panel(self):
         return pn.Row(self.param, self.view)
+```
 
+Now let's add our stages to our `Pipeline` using the `add_stage` method
+
+```{pyodide}
+pipeline.add_stage('Stage 1', stage1)
 pipeline.add_stage('Stage 2', Stage2)
 ```
 
-To display the `pipeline` UI we simply let it render itself:
+Finally, to display the `pipeline` UI we simply let it render itself:
 
 ```{pyodide}
 pipeline
 ```
 
-As you can see the ``Pipeline`` renders a diagram displaying the available stages in the workflow along with previous and next buttons to move between each stage. This allows setting up complex workflows with multiple stages, where each component is a self-contained unit, with minimal declarations about stage outputs (using the ``param.output`` decorator) and how to render the stage (by declaring a ``panel`` method).  Note also when progressing to Stage 2, the `c` parameter widget is not rendered because its value has been provided by the previous stage.
+As you can see the ``Pipeline`` renders a diagram displaying the available stages in the workflow along with previous and next buttons to move between each stage. Note also when progressing to Stage 2, the `c` parameter widget is not rendered because its value has been provided by the previous stage.
 
 ## Related Resources
+
 - The [Param with Panel How-to Guides](../param/index.md) demonstrate how to set up classes that declare parameters and link them to some computation or visualization.
--
