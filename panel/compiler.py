@@ -70,8 +70,8 @@ def write_bundled_files(name, files, explicit_dir=None, ext=None):
             with open(f'{filename}.map', 'w', encoding="utf-8") as f:
                 f.write(map_response.content.decode('utf-8'))
 
-def write_bundled_tarball(name, tarball, module=False):
-    model_name = name.split('.')[-1].lower()
+def write_bundled_tarball(tarball, name=None, module=False):
+    model_name = name.split('.')[-1].lower() if name else ''
     try:
         response = requests.get(tarball['tar'])
     except Exception:
@@ -89,7 +89,10 @@ def write_bundled_tarball(name, tarball, module=False):
             continue
         bundle_path = os.path.join(*path.split('/'))
         dest_path = tarball['dest'].replace('/', os.path.sep)
-        filename = BUNDLE_DIR.joinpath(model_name, dest_path, bundle_path)
+        if model_name:
+            filename = BUNDLE_DIR.joinpath(model_name, dest_path, bundle_path)
+        else:
+            filename = BUNDLE_DIR.joinpath(dest_path, bundle_path)
         filename.parent.mkdir(parents=True, exist_ok=True)
         fobj = tar_obj.extractfile(tarf.name)
         filename = str(filename)
@@ -142,7 +145,7 @@ def bundle_resource_urls(verbose=False, external=True):
         if 'zip' in resource:
             write_bundled_zip(name, resource)
         elif 'tar' in resource:
-            write_bundled_tarball(name, resource)
+            write_bundled_tarball(resource, name=name)
 
 def bundle_templates(verbose=False, external=True):
     # Bundle Template resources
@@ -159,7 +162,7 @@ def bundle_templates(verbose=False, external=True):
                     js_modules.append(js_module)
             write_bundled_files(name, js_modules, 'js', ext='mjs')
             for tarball in template._resources.get('tarball', {}).values():
-                write_bundled_tarball('js', tarball)
+                write_bundled_tarball(tarball)
 
         # Bundle CSS files in template dir
         template_dir = pathlib.Path(inspect.getfile(template)).parent
@@ -207,10 +210,11 @@ def bundle_templates(verbose=False, external=True):
             ][0]
             def_path = pathlib.Path(inspect.getmodule(def_cls).__file__).parent
             for sts in cls_modifiers['stylesheets']:
+
                 if not isinstance(sts, str) or not sts.endswith('.css') or sts.startswith('http') or sts.startswith('/'):
                     continue
-                    bundled_path = BUNDLE_DIR / def_cls.__name__.lower() / sts
-                    shutil.copyfile(def_path / sts, bundled_path)
+                bundled_path = BUNDLE_DIR / def_cls.__name__.lower() / sts
+                shutil.copyfile(def_path / sts, bundled_path)
 
 
 def bundle_themes(verbose=False, external=True):
@@ -291,7 +295,7 @@ def bundle_models(verbose=False, external=True):
         if verbose:
             print(f'Bundling {name} model JS resources')
         if isinstance(jsfiles, dict):
-            write_bundled_tarball(name, jsfiles)
+            write_bundled_tarball(jsfiles, name=name)
         else:
             write_bundled_files(name, jsfiles)
 

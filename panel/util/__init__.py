@@ -27,6 +27,7 @@ import bokeh
 import numpy as np
 import param
 
+from bokeh.core.has_props import _default_resolver
 from bokeh.model import Model
 from packaging.version import Version
 
@@ -286,8 +287,9 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
 def lazy_load(module, model, notebook=False, root=None):
     if module in sys.modules:
         model_cls = getattr(sys.modules[module], model)
-        if model not in Model.model_class_reverse_map:
-            Model.model_class_reverse_map[model] = model_cls
+        if f'{model_cls.__module__}.{model}' not in Model.model_class_reverse_map:
+            _default_resolver.add(model_cls)
+
         return model_cls
 
     if notebook:

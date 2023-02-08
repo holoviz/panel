@@ -35,7 +35,7 @@ def test_bootstrap_template_no_console_errors(page, port):
 def test_bootstrap_template_raw_css_on_config(page, port):
     tmpl = BootstrapTemplate()
 
-    tmpl.config.raw_css = ['.bk.markdown { color: rgb(255, 0, 0); }']
+    tmpl.config.raw_css = ['.markdown { color: rgb(255, 0, 0); }']
 
     md = Markdown('Initial')
 
@@ -50,7 +50,7 @@ def test_bootstrap_template_raw_css_on_config(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    expect(page.locator('.bk.markdown')).to_have_css('color', 'rgb(255, 0, 0)')
+    expect(page.locator('.markdown')).to_have_css('color', 'rgb(255, 0, 0)')
 
     assert [msg for msg in msgs if msg.type == 'error'] == []
 
@@ -67,7 +67,7 @@ def test_bootstrap_template_updates(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    assert page.text_content(".bk.markdown") == 'Initial'
+    assert page.locator(".markdown").locator(".bk-clearfix").text_content() == 'Initial'
     md.object = 'Updated'
     time.sleep(0.1)
-    assert page.text_content(".bk.markdown") == 'Updated'
+    assert page.locator(".markdown").locator(".bk-clearfix").text_content() == 'Updated'

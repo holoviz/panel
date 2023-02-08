@@ -25,6 +25,11 @@ bokeh3_failing_all = pytest.mark.skipif(
     reason="Bokeh 3: Not working when running all tests"
 )
 
+ipywidgets_bokeh3 = pytest.mark.skipif(
+    not (pnv.major == 1 and pnv.is_prerelease),
+    reason="Bokeh3: Ipywidgets not working with Bokeh 3 yet"
+)
+
 
 try:
     import holoviews as hv

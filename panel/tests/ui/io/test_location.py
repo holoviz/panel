@@ -17,7 +17,7 @@ def verify_document_location(expected_location, actual_location):
         assert actual_location[param] == expected_location[param]
 
 
-def test_set_url_params_update_documment(page, port):
+def test_set_url_params_update_document(page, port):
     def app():
         """Simple app to set url by widgets' values"""
         w1 = FloatSlider(name='Slider', start=0, end=10)

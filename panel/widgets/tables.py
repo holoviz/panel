@@ -45,6 +45,11 @@ if TYPE_CHECKING:
     from ..models.tabulator import CellClickEvent, TableEditEvent
 
 
+def _convert_datetime_array_ignore_list(v):
+    if isinstance(v, np.ndarray):
+        return convert_datetime_array(v)
+    return v
+
 class BaseTable(ReactiveData, Widget):
 
     aggregators = param.Dict(default={}, doc="""
@@ -97,7 +102,7 @@ class BaseTable(ReactiveData, Widget):
     ]
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'disabled': 'editable', 'hierarchical': None, 'name': None, 'selection': None
+        'hierarchical': None, 'name': None, 'selection': None
     }
 
     __abstract = True
@@ -278,20 +283,16 @@ class BaseTable(ReactiveData, Widget):
                 except Exception:
                     continue
             self.selection = selection
-        self._data = {k: convert_datetime_array(v) for k, v in data.items()}
+        self._data = {k: _convert_datetime_array_ignore_list(v) for k, v in data.items()}
         msg = {'data': self._data}
         for ref, (m, _) in self._models.items():
             self._apply_update(events, msg, m.source, ref)
 
-    def _init_params(self) -> Dict[str, Any]:
-        params = super()._init_params()
+    def _process_param_change(self, params):
+        if 'disabled' in params:
+            params['editable'] = not params.pop('disabled') and len(self.indexes) <= 1
+        params = super()._process_param_change(params)
         return params
-
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'editable' in msg:
-            msg['editable'] = not msg.pop('editable') and len(self.indexes) <= 1
-        return msg
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
         properties = super()._get_properties(doc)
@@ -362,7 +363,7 @@ class BaseTable(ReactiveData, Widget):
             if col.dtype.kind not in 'SUO':
                 return col
             try:
-                return col.str.lower()
+                return col.fillna("").str.lower()
             except Exception:
                 return col
 
@@ -563,6 +564,9 @@ class BaseTable(ReactiveData, Widget):
     def _process_column(self, values):
         if not isinstance(values, (list, np.ndarray)):
             return [str(v) for v in values]
+        if isinstance(values, np.ndarray) and values.dtype.kind == "b":
+            # Workaround for https://github.com/bokeh/bokeh/issues/12776
+            return values.tolist()
         return values
 
     def _get_data(self) -> Tuple[pd.DataFrame, DataDict]:
@@ -910,8 +914,7 @@ class DataFrame(BaseTable):
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'hierarchical': None}
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'disabled': 'editable', 'selection': None, 'sorters': None,
-        'text_align': None
+        'selection': None, 'sorters': None, 'text_align': None
     }
 
     @property
@@ -1093,9 +1096,9 @@ class Tabulator(BaseTable):
     _priority_changes: ClassVar[List[str]] = ['data']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'disabled': 'editable', 'selection': None, 'row_content': None,
-        'row_height': None, 'text_align': None, 'embed_content': None,
-        'header_align': None, 'header_filters': None, 'styles': 'cell_styles'
+        'selection': None, 'row_content': None, 'row_height': None,
+        'text_align': None, 'embed_content': None, 'header_align': None,
+        'header_filters': None, 'styles': 'cell_styles'
     }
 
     # Determines the maximum size limits beyond which (local, remote)
@@ -1528,13 +1531,20 @@ class Tabulator(BaseTable):
         properties = super()._get_properties(doc)
         properties['configuration'] = self._get_configuration(properties['columns'])
         properties['cell_styles'] = self._get_style_data()
+        properties['indexes'] = self.indexes
         if self.pagination:
             length = self._length
             properties['max_page'] = max(length//self.page_size + bool(length%self.page_size), 1)
+        if isinstance(self.selectable, str) and self.selectable.startswith('checkbox'):
+            properties['select_mode'] = 'checkbox'
+        else:
+            properties['select_mode'] = self.selectable
         return properties
 
     def _process_param_change(self, params):
         params = Reactive._process_param_change(self, params)
+        if 'disabled' in params:
+            params['editable'] = not params.pop('disabled') and len(self.indexes) <= 1
         if 'frozen_rows' in params:
             length = self._length
             params['frozen_rows'] = [
@@ -1544,8 +1554,6 @@ class Tabulator(BaseTable):
             import pandas as pd
             if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):
                 params['hidden_columns'] += [self.value.index.name or 'index']
-        if 'selectable' in params:
-            params['select_mode'] = 'checkbox' if self.selectable.startswith('checkbox') else self.selectable
         if 'selectable_rows' in params:
             params['selectable_rows'] = self._get_selectable()
         if 'theme' in params:

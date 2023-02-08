@@ -22,7 +22,7 @@ def test_button_click(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    page.click('.bk.bk-btn')
+    page.click('.bk-btn')
 
     time.sleep(0.1)
 

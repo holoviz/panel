@@ -234,6 +234,8 @@ def test_interact_replaces_model(document, comm):
 
     interact_pane._cleanup(column)
     assert len(interact_pane._callbacks) == 5
+    # Note one of the callbacks is Viewable._set_background
+    # the counter should be reduced when this function is removed.
 
 
 def test_interact_throttled():

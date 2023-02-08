@@ -13,28 +13,6 @@
   overflow: scroll;
 }
 
-/* Slider editor */
-.slider-edit .bk-input-group .bk-input {
-  border: 0;
-  border-radius: 0;
-  min-height: 0;
-  padding-left: 0;
-  padding-right: 0;
-  font-weight: bold;
-}
-
-.slider-edit .bk-input-group .bk-spin-wrapper {
-  display: contents;
-}
-
-.slider-edit .bk-input-group .bk-spin-wrapper .bk.bk-spin-btn-up {
-  top: -6px;
-}
-
-.slider-edit .bk-input-group .bk-spin-wrapper .bk.bk-spin-btn-down {
-  bottom: 3px;
-}
-
 /* JSON Pane */
 .bk-root .json-formatter-row .json-formatter-string, .bk-root .json-formatter-row .json-formatter-stringifiable {
   white-space: pre-wrap;
