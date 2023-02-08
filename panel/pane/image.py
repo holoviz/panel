@@ -52,7 +52,7 @@ class FileBase(HTMLBasePane):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        filetype = cls.filetype.split('+')[0]
+        filetype = cls.filetype.split('+')[0].lower()
         if hasattr(obj, f'_repr_{filetype}_'):
             return True
         if isinstance(obj, PurePath):
@@ -424,6 +424,8 @@ class PDF(FileBase):
 
     _bokeh_model: ClassVar[Model] = _BkPDF
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'embed': 'embed'}
+
     _rerender_params: ClassVar[List[str]] = FileBase._rerender_params + ['start_page']
 
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
@@ -438,4 +440,4 @@ class PDF(FileBase):
             return dict(text=b64)
         w, h = self.width or '100%', self.height or '100%'
         html = f'<embed src="{obj}#page={self.start_page}" width={w!r} height={h!r} type="application/pdf">'
-        return dict(object=escape(html))
+        return dict(text=escape(html))
