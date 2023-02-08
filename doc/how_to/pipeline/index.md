@@ -18,7 +18,7 @@ How to create a simple linear Panel Pipeline.
 :link: complex_pipeline
 :link-type: doc
 
-How to create a non-linear Panel Pipeline with alternative stages that later rejoin.
+This guide addresses how to build a non-linear Panel Pipeline with branching and converging steps.
 :::
 
 :::{grid-item-card} {octicon}`tab;2.5em;sd-mr-1` Customize `Pipeline` Layout

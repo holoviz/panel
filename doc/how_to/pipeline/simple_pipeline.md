@@ -2,11 +2,11 @@
 
 This guide addresses how to connect multiple panels into a `Pipeline` to express complex multi-page workflows where the output of one stage feeds into the next stage.
 
-___
-
-```{admonition} Prerequisite
-The [Param with Panel How-to Guides](../param/index.md) describe how to set up classes that declare parameters and link them to some computation or visualization. This is essential to review before using Pipelines.
+```{admonition} Prerequisites
+1. The [Param with Panel How-to Guides](../param/index.md) describe how to set up classes that declare parameters and link them to some computation or visualization.
 ```
+
+---
 
 To start, lets instantiate an empty `Pipeline`. We will use the 'katex' extension to render mathematical notation in this example.
 
@@ -22,18 +22,18 @@ Now let's populate the pipeline with our first stage which takes two inputs (`a`
 
 To create this stage, let's:
 
-1. Declare a Parameterized class with some input parameters (e.g. `a = param.Number`)
+1. Declare a Parameterized class with some input parameters (e.g. `a = param.Integer`)
 2. Decorate a method with `@param.output` to declare outputs (we'll discuss this more later)
 3. Declare a `panel` method that returns a view of this stage's object
 
 ```{pyodide}
 class Stage1(param.Parameterized):
 
-    a = param.Number(default=2, bounds=(0, 10))
+    a = param.Integer(default=2, bounds=(0, 10))
 
-    b = param.Number(default=3, bounds=(0, 10))
+    b = param.Integer(default=3, bounds=(0, 10))
 
-    @param.output(('c', param.Number), ('d', param.Number))
+    @param.output(('c', param.Integer), ('d', param.Integer))
     def output(self):
         return self.a * self.b, self.a ** self.b
 
@@ -57,16 +57,16 @@ stage1 = Stage1()
 stage1.panel()
 ```
 
-Before we create a second stage let's briefly discuss the some details about the system of outputs that links the stages. To declare the output for our first stage, we decorated one of its methods with `@param.output(('c', param.Number), ('d', param.Number))`. However, there are multiple ways to declare outputs with this decorator:
+Before we create a second stage let's briefly discuss the some details about the system of outputs that links the stages. To declare the output for our first stage, we decorated one of its methods with `@param.output(('c', param.Integer), ('d', param.Integer))`. However, there are multiple ways to declare outputs with this decorator:
 
 * `param.output()`: Declaring an output without arguments will declare that the method returns an output that will inherit the **name of the method** and does not make any specific type declarations.
-* `param.output(param.Number)`: Declaring an output with a specific `Parameter` or Python type also declares an output with the name of the method but declares that the output will be of a specific type.
-* `param.output(c=param.Number)`: Declaring an output using a keyword argument allows overriding the method name as the name of the output and declares the type.
+* `param.output(param.Integer)`: Declaring an output with a specific `Parameter` or Python type also declares an output with the name of the method but declares that the output will be of a specific type.
+* `param.output(c=param.Integer)`: Declaring an output using a keyword argument allows overriding the method name as the name of the output and declares the type.
 
 It is also possible to declare multiple outputs, either as keywords or tuples:
 
-* `param.output(c=param.Number, d=param.String)` or
-* `param.output(('c', param.Number), ('d', param.String))`
+* `param.output(c=param.Integer, d=param.String)` or
+* `param.output(('c', param.Integer), ('d', param.String))`
 
 Importantly, in addition to passing along the outputs designated with `param.output()`, the Pipeline will also pass along the values of any input parameters whose names match input parameters on the next stage (unless `inherit_params` is set to `False`).
 
@@ -83,9 +83,9 @@ Now let's set up a second stage that will also declare a `c` input Parameter to 
 ```{pyodide}
 class Stage2(param.Parameterized):
 
-    c = param.Number(default=6, bounds=(0, None), precedence=1)
+    c = param.Integer(default=6, bounds=(0, None))
 
-    exp = param.Number(default=0.1, bounds=(0, 3), precedence=1)
+    exp = param.Number(default=0.1, bounds=(0, 3))
 
     @param.depends('c', 'exp')
     def view(self):
