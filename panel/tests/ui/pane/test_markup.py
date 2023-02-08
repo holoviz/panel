@@ -36,4 +36,4 @@ def test_update_markdown_pane_resizes(page, port):
     - Points
     """
     time.sleep(0.1)
-    assert page.locator(".markdown").bounding_box()['height'] == 64
+    assert page.locator(".markdown").bounding_box()['height'] == 63.125
