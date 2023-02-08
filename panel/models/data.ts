@@ -8,6 +8,7 @@ export function transform_cds_to_records(cds: ColumnDataSource, addId: boolean =
     return []
 
   // Unpack typed arrays in a array
+  // Workaround for https://github.com/bokeh/bokeh/issues/12788
   let total_length: number = 0
   let arrays: any = {}
   for (let i = start; i < cdsLength; i++) {

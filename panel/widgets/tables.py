@@ -565,10 +565,10 @@ class BaseTable(ReactiveData, Widget):
         if not isinstance(values, (list, np.ndarray)):
             return [str(v) for v in values]
         if isinstance(values, np.ndarray) and values.dtype.kind == "b":
-            # Work-around for https://github.com/bokeh/bokeh/issues/12776
+            # Workaround for https://github.com/bokeh/bokeh/issues/12776
             return values.tolist()
         if isinstance(values, np.ndarray) and values.dtype.kind == "O":
-            # Else streaming values does not work
+            # Workaround for https://github.com/bokeh/bokeh/issues/12788
             return values.tolist()
         return values
 
