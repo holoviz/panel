@@ -18,11 +18,11 @@ import param
 
 from bokeh.models.formatters import TickFormatter
 from bokeh.models.widgets import (
-    CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
+    Checkbox as _BkCheckbox, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, FileInput as _BkFileInput,
     NumericInput as _BkNumericInput, PasswordInput as _BkPasswordInput,
-    Spinner as _BkSpinner, TextAreaInput as _BkTextAreaInput,
-    TextInput as _BkTextInput,
+    Spinner as _BkSpinner, Switch as _BkSwitch,
+    TextAreaInput as _BkTextAreaInput, TextInput as _BkTextInput,
 )
 
 from ..config import config
@@ -50,17 +50,22 @@ class TextInput(Widget):
     >>> TextInput(name='Name', placeholder='Enter your name here ...')
     """
 
+    description = param.String(doc="""
+        An HTML string describing the function of this component.""")
+
     max_length = param.Integer(default=5000, doc="""
-      Max count of characters in the input field.""")
+        Max count of characters in the input field.""")
 
     placeholder = param.String(default='', doc="""
-      Placeholder for empty input field.""")
+        Placeholder for empty input field.""")
 
     value = param.String(default='', allow_None=True, doc="""
-      Initial or entered text value updated when <enter> key is pressed.""")
+        Initial or entered text value updated when <enter> key is pressed.""")
 
     value_input = param.String(default='', allow_None=True, doc="""
-      Initial or entered text value updated on every key press.""")
+        Initial or entered text value updated on every key press.""")
+
+    width = param.Integer(default=300)
 
     _widget_type: ClassVar[Type[Model]] = _BkTextInput
 
@@ -112,7 +117,6 @@ class TextAreaInput(TextInput):
     Lines are joined with the newline character `\n`.
 
     Reference: https://panel.holoviz.org/reference/widgets/TextAreaInput.html
-
     :Example:
 
     >>> TextAreaInput(
@@ -143,6 +147,9 @@ class FileInput(Widget):
 
     accept = param.String(default=None)
 
+    description = param.String(doc="""
+        An HTML string describing the function of this component.""")
+
     filename = param.ClassSelector(default=None, class_=(str, list),
                                is_instance=True)
 
@@ -153,7 +160,9 @@ class FileInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'filename': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'filename': None, 'name': None
+    }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': "'data:' + source.mime_type + ';base64,' + value"
@@ -169,9 +178,10 @@ class FileInput(Widget):
             msg.pop('mime_type')
         return msg
 
-    def _filter_properties(self, properties):
-        properties = super()._filter_properties(properties)
-        return properties + ['value', 'mime_type', 'filename']
+    @property
+    def _linked_properties(self):
+        properties = super()._linked_properties
+        return properties + ('filename',)
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -229,7 +239,7 @@ class StaticText(Widget):
     >>> StaticText(name='Model', value='animagen2')
     """
 
-    style = param.Dict(default=None, doc="""
+    styles = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
 
     value = param.Parameter(default=None, doc="""
@@ -250,9 +260,9 @@ class StaticText(Widget):
     _widget_type: ClassVar[Type[Model]] = _BkDiv
 
     def _process_param_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            text = str(msg.pop('value'))
+        msg = super()._process_param_change(msg)
+        if 'text' in msg:
+            text = str(msg.pop('text'))
             partial = self._format.replace('{value}', '').format(title=self.name)
             if self.name:
                 text = self._format.format(title=self.name, value=text.replace(partial, ''))
@@ -292,7 +302,7 @@ class DatePicker(Widget):
     _source_transforms: ClassVar[Mapping[str, str | None]] = {}
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'start': 'min_date', 'end': 'max_date', 'name': 'title'
+        'start': 'min_date', 'end': 'max_date'
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkDatePicker
@@ -336,7 +346,7 @@ class _DatetimePickerBase(Widget):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'start': 'min_date', 'end': 'max_date', 'name': 'title'
+        'start': 'min_date', 'end': 'max_date'
     }
 
     _widget_type: ClassVar[Type[Model]] = _bkDatetimePicker
@@ -467,15 +477,21 @@ class ColorPicker(Widget):
     >>> ColorPicker(name='Color', value='#99ef78')
     """
 
+    description = param.String(default="""
+        An HTML string describing the function of this component.""")
+
     value = param.Color(default=None, doc="""
         The selected color""")
 
     _widget_type: ClassVar[Type[Model]] = _BkColorPicker
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'color', 'name': 'title'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'color'}
 
 
 class _NumericInputBase(Widget):
+
+    description = param.String(doc="""
+        An HTML string describing the function of this component.""")
 
     value = param.Number(default=0, allow_None=True, doc="""
         The current value of the spinner.""")
@@ -492,7 +508,7 @@ class _NumericInputBase(Widget):
     end = param.Parameter(default=None, allow_None=True, doc="""
         Optional maximum allowable value.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'start': 'low', 'end': 'high'}
+    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
 
     _widget_type: ClassVar[Type[Model]] = _BkNumericInput
 
@@ -623,11 +639,28 @@ class FloatInput(_SpinnerBase, _FloatInputBase):
     >>> FloatInput(name='Value', value=5., step=1e-1, start=0, end=10)
     """
 
+    placeholder = param.String(default='', doc="""
+        Placeholder when the value is empty.""")
+
     step = param.Number(default=0.1, doc="""
         The step size.""")
 
     value_throttled = param.Number(default=None, constant=True, doc="""
         The current value. Updates only on `<enter>` or when the widget looses focus.""")
+
+    def _process_param_change(self, msg):
+        if msg.get('value', False) is None:
+            msg['value'] = float('NaN')
+        if msg.get('value_throttled', False) is None:
+            msg['value_throttled'] = float('NaN')
+        return super()._process_param_change(msg)
+
+    def _process_property_change(self, msg):
+        if msg.get('value', False) and np.isnan(msg['value']):
+            msg['value'] = None
+        if msg.get('value_throttled', False) and np.isnan(msg['value_throttled']):
+            msg['value_throttled'] = None
+        return super()._process_property_change(msg)
 
 
 class NumberInput(_SpinnerBase):
@@ -662,6 +695,9 @@ class LiteralInput(Widget):
     >>> LiteralInput(name='Dictionary', value={'key': [1, 2, 3]}, type=dict)
     """
 
+    description = param.String(doc="""
+        An HTML string describing the function of this component.""")
+
     placeholder = param.String(default='', doc="""
       Placeholder for empty input field.""")
 
@@ -676,10 +712,11 @@ class LiteralInput(Widget):
     value = param.Parameter(default=None)
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'title', 'type': None, 'serializer': None
+        'type': None, 'serializer': None
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'serializer': None,
         'value': """JSON.parse(value.replace(/'/g, '"'))"""
     }
 
@@ -782,9 +819,13 @@ class ArrayInput(LiteralInput):
         restriction helps avoid overwhelming the browser and lets
         other widgets remain usable.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = dict(LiteralInput._rename, max_array_size=None)
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'max_array_size': None
+    }
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'serializer': None, 'type': None, 'value': None
+    }
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -860,8 +901,8 @@ class DatetimeInput(LiteralInput):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'format': None, 'type': None, 'name': 'title', 'start': None,
-        'end': None, 'serializer': None
+        'format': None, 'type': None, 'start': None, 'end': None,
+        'serializer': None
     }
 
     def __init__(self, **params):
@@ -999,7 +1040,23 @@ class DatetimeRangeInput(CompositeWidget):
             self._updating = False
 
 
-class Checkbox(Widget):
+class _BooleanWidget(Widget):
+
+    value = param.Boolean(default=False, doc="""
+        The current value""")
+
+    _supports_embed: ClassVar[bool] = True
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
+
+    __abstract = True
+
+    def _get_embed_state(self, root, values=None, max_opts=3):
+        return (self, self._models[root.ref['id']][0], [False, True],
+                lambda x: x.active, 'active', "cb_obj.active")
+
+
+class Checkbox(_BooleanWidget):
     """
     The `Checkbox` allows toggling a single condition between `True`/`False`
     states by ticking a checkbox.
@@ -1013,40 +1070,25 @@ class Checkbox(Widget):
     >>> Checkbox(name='Works with the tools you know and love', value=True)
     """
 
-    value = param.Boolean(default=False, doc="""
-        The current value""")
+    _widget_type: ClassVar[Type[Model]] = _BkCheckbox
 
-    _supports_embed: ClassVar[bool] = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'labels'}
+class Switch(_BooleanWidget):
+    """
+    The `Switch` allows toggling a single condition between `True`/`False`
+    states by ticking a checkbox.
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'value': "value.indexOf(0) >= 0", 'name': "value[0]"
+    This widget is interchangeable with the `Toggle` widget.
+
+    Reference: https://panel.holoviz.org/reference/widgets/Switch.html
+
+    :Example:
+
+    >>> Switch(name='Works with the tools you know and love', value=True)
+    """
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': None, 'value': 'active'
     }
 
-    _target_transforms: ClassVar[Mapping[str, str | None]] = {
-        'value': "value ? [0] : []", 'name': "[value]"
-    }
-
-    _widget_type: ClassVar[Type[Model]] = _BkCheckboxGroup
-
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = 0 in msg.pop('value')
-        if 'name' in msg:
-            msg['name'] = [msg['name']]
-        return msg
-
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'active' in msg:
-            msg['active'] = [0] if msg.pop('active', None) else []
-        if 'labels' in msg:
-            msg['labels'] = [msg.pop('labels')]
-        return msg
-
-    def _get_embed_state(self, root, values=None, max_opts=3):
-        return (self, self._models[root.ref['id']][0], [False, True],
-                lambda x: str(0 in x.active).lower(), 'active',
-                "String(cb_obj.active.indexOf(0) >= 0)")
+    _widget_type: ClassVar[Type[Model]] = _BkSwitch

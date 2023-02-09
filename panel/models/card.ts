@@ -1,67 +1,47 @@
 import {Column, ColumnView} from "@bokehjs/models/layouts/column"
-import {BBox} from "@bokehjs/core/util/bbox"
 import * as DOM from "@bokehjs/core/dom"
-import {classes, empty} from "@bokehjs/core/dom"
-import {Column as ColumnLayout} from "@bokehjs/core/layout/grid"
 import * as p from "@bokehjs/core/properties"
-import {color2css} from "@bokehjs/core/util/color"
 
 export class CardView extends ColumnView {
   model: Card
   button_el: HTMLButtonElement
+  header_el: HTMLElement
 
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.collapsed.change, () => this._collapse())
     const {active_header_background, header_background, header_color, hide_header} = this.model.properties
-    this.on_change([active_header_background, header_background, header_color, hide_header], () => this.render())
+    this.on_change([header_color, hide_header], () => this.render())
+
+    this.on_change([active_header_background, header_background], () => {
+      const header_background = this.header_background
+      if (header_background == null)
+	return
+      this.child_views[0].el.style.backgroundColor = header_background
+      this.header_el.style.backgroundColor = header_background
+    })
   }
 
-  _update_layout(): void {
-    let views: any[]
-    if (this.model.hide_header)
-      views = this.child_views.slice(1)
-    else
-      views = this.model.collapsed ? this.child_views.slice(0, 1) : this.child_views
-    const items = views.map((child) => child.layout)
-    this.layout = new ColumnLayout(items)
-    this.layout.rows = this.model.rows
-    this.layout.spacing = [this.model.spacing, 0]
-    this.layout.set_sizing(this.box_sizing())
-  }
-
-  update_position(): void {
-    if (this.model.collapsible && !this.model.hide_header) {
-      const header = this.child_views[0]
-      const obbox = header.layout.bbox
-      const ibbox = header.layout.inner_bbox
-      if (obbox.x1 != 0) {
-        let offset: number
-        if (this.model.collapsible) {
-          const icon_style = getComputedStyle(this.button_el.children[0])
-          offset = (parseFloat(icon_style.width) + parseFloat(icon_style.marginLeft)) || 0
-        } else {
-          offset = 0
-        }
-        const outer = new BBox({x0: obbox.x0, x1: obbox.x1-offset, y0: obbox.y0, y1: obbox.y1})
-        const inner = new BBox({x0: ibbox.x0, x1: ibbox.x1-offset, y0: ibbox.y0, y1: ibbox.y1})
-        header.layout.set_geometry(outer, inner)
-      }
-    }
-    super.update_position()
-  }
-
-  render(): void {
-    empty(this.el)
-
-    const {background, button_css_classes, header_color, header_tag, header_css_classes} = this.model
-
-    this.el.style.backgroundColor = background != null ? color2css(background) : ""
-    classes(this.el).clear().add(...this.css_classes())
-
+  get header_background(): string | null {
     let header_background = this.model.header_background
     if (!this.model.collapsed && this.model.active_header_background)
       header_background = this.model.active_header_background
+    return header_background
+  }
+
+  render(): void {
+    this.empty()
+    this._apply_stylesheets(this.styles())
+    this._apply_stylesheets(this.stylesheets)
+    this._apply_stylesheets(this.computed_stylesheets)
+    this._apply_styles()
+    this._apply_classes(this.classes)
+    this._apply_classes(this.model.classes)
+    this._apply_visible()
+
+    const {button_css_classes, header_color, header_tag, header_css_classes} = this.model
+
+    const header_background = this.header_background
     const header = this.child_views[0]
 
     let header_el
@@ -81,15 +61,16 @@ export class CardView extends ColumnView {
       header_el.style.backgroundColor = header_background != null ? header_background : ""
       header_el.appendChild(header.el)
     }
+    this.header_el = header_el
 
     if (!this.model.hide_header) {
       header_el.style.color = header_color != null ? header_color : ""
-      this.el.appendChild(header_el)
+      this.shadow_el.appendChild(header_el)
       header.render()
     }
     for (const child_view of this.child_views.slice(1)) {
       if (!this.model.collapsed)
-        this.el.appendChild(child_view.el)
+        this.shadow_el.appendChild(child_view.el)
       child_view.render()
     }
   }
@@ -99,7 +80,14 @@ export class CardView extends ColumnView {
   }
 
   _collapse(): void {
-    this.invalidate_render()
+    for (const child_view of this.child_views.slice(1)) {
+      if (this.model.collapsed)
+        this.shadow_el.removeChild(child_view.el)
+      else
+        this.shadow_el.appendChild(child_view.el)
+    }
+    this.button_el.children[0].innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
+
   }
 
   protected _createElement(): HTMLElement {
@@ -135,7 +123,7 @@ export class Card extends Column {
 
   static __module__ = "panel.models.layout"
 
-  static init_Card(): void {
+  static {
     this.prototype.default_view = CardView
 
     this.define<Card.Props>(({Array, Boolean, Nullable, String}) => ({

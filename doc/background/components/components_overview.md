@@ -202,8 +202,8 @@ fig.scatter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 2, 1, 0, -1, -2, -3])
 
 gspec = pn.GridSpec(sizing_mode='stretch_both', max_height=800)
 
-gspec[0, :3] = pn.Spacer(background='#FF0000')
-gspec[1:3, 0] = pn.Spacer(background='#0000FF')
+gspec[0, :3] = pn.Spacer(styles=dict(background='#FF0000'))
+gspec[1:3, 0] = pn.Spacer(styles=dict(background='#0000FF'))
 gspec[1:3, 1:3] = fig
 gspec[3:5, 0] = hv.Curve([1, 2, 3])
 gspec[3:5, 1] = 'https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png'

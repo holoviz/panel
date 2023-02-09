@@ -1,22 +1,4 @@
-button.bk.mdc-card__primary-action {
-  color: white;
-  background-color: #292929 !important;
-}
-
 :root {
-  --mdc-theme-primary: #2f2f2f !important;
-  --mdc-theme-on-primary: #ffffff !important;
-  --mdc-theme-secondary: #6f6f6f !important;
-  --mdc-theme-on-secondary:  #ffffff !important;
-  --mdc-theme-error: #b00020 !important;
-  --mdc-theme-on-error: #ffffff !important;
-  --mdc-theme-surface: #2f2f2f !important;
-  --mdc-theme-on-surface: #ffffff !important;
-  --mdc-theme-background: #121212 !important;
-  --mdc-theme-on-background: #fffff !important;
-  --mdc-shape-small:  4px;
-  --mdc-shape-medium:  4px;
-  --mdc-shape-large:  0px;
-  --mdc-typography--font-family:  "Roboto";
-  --mdc-theme-text-primary-on-background: #ffffff !important;
+  --mdc-theme-error: #b00020;
+  --mdc-theme-on-error: #ffffff;
 }

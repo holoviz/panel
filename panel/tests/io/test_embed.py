@@ -34,7 +34,7 @@ def test_embed_param_jslink(document, comm):
     cb1, cb2 = (cb1, cb2) if select._models[ref][0] is cb1.args['target'] else (cb2, cb1)
     assert cb1.code == """
     var value = source['active'];
-    value = value.indexOf(0) >= 0;
+    value = value;
     value = value;
     try {
       var property = target.properties['disabled'];
@@ -53,7 +53,7 @@ def test_embed_param_jslink(document, comm):
     assert cb2.code == """
     var value = source['disabled'];
     value = value;
-    value = value ? [0] : [];
+    value = value;
     try {
       var property = target.properties['active'];
       if (property !== undefined) { property.validate(value); }
@@ -303,7 +303,7 @@ def test_embed_checkbox_str_link(document, comm):
         model = panel.get_root(document, comm)
     embed_state(panel, model, document)
     _, state = document.roots
-    assert set(state.state) == {'false', 'true'}
+    assert set(state.state) == {False, True}
     for k, v in state.state.items():
         content = json.loads(v['content'])
         assert 'events' in content
@@ -313,7 +313,7 @@ def test_embed_checkbox_str_link(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k.title()
+        assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
 
 def test_embed_checkbox_str_jslink(document, comm):
@@ -334,7 +334,7 @@ def test_embed_checkbox_str_jslink(document, comm):
     cb1, cb2 = (cb1, cb2) if checkbox._models[ref][0] is cb1.args['source'] else (cb2, cb1)
     assert cb1.code == """
     var value = source['active'];
-    value = value.indexOf(0) >= 0;
+    value = value;
     value = JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ");
     try {
       var property = target.properties['text'];
@@ -353,7 +353,7 @@ def test_embed_checkbox_str_jslink(document, comm):
     assert cb2.code == """
     var value = source['text'];
     value = value;
-    value = value ? [0] : [];
+    value = value;
     try {
       var property = target.properties['active'];
       if (property !== undefined) { property.validate(value); }
@@ -476,24 +476,24 @@ def test_embed_merged_sliders(document, comm):
     ref4 = model.children[1].children[0].ref['id']
     state0 = json.loads(state_model.state[0]['content'])['events']
     assert state0 == [
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>1</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "1", "hint": None},
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>1</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "1", "hint": None}
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>1</b>',},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "1"},
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>1</b>',},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "1"}
     ]
     state1 = json.loads(state_model.state[1]['content'])['events']
     assert state1 == [
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>5</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "5", "hint": None},
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>5</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "5", "hint": None}
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>5</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "5"},
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>5</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "5"}
     ]
     state2 = json.loads(state_model.state[2]['content'])['events']
     assert state2 == [
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>9</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "9", "hint": None},
-        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>9</b>', 'hint': None},
-        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "9", "hint": None}
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>9</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "9"},
+        {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>9</b>'},
+        {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "9"}
     ]
 
 

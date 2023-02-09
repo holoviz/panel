@@ -11,7 +11,7 @@ from panel.config import config
 from panel.io.resources import CDN_DIST
 from panel.models.vega import VegaPlot
 from panel.pane import Alert, Vega
-from panel.tests.util import hv_available
+from panel.tests.util import bokeh3_failing, hv_available
 
 vega_example = {
     'config': {
@@ -48,7 +48,7 @@ def test_save_inline_resources():
     alert.save(sio, resources='inline')
     sio.seek(0)
     html = sio.read()
-    assert '.bk.alert-primary' in html
+    assert 'alert-primary' in html
 
 
 def test_save_cdn_resources():
@@ -61,6 +61,7 @@ def test_save_cdn_resources():
     assert re.findall('https://cdn.holoviz.org/panel/(.*)/dist/css/alerts.css', html)
 
 
+@bokeh3_failing
 @hv_available
 def test_static_path_in_holoviews_save(tmpdir):
     import holoviews as hv

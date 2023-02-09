@@ -96,8 +96,8 @@ First, declare a ``GridSpec`` and add red and blue blocks. The red block goes in
 ```{pyodide}
 gridspec = pn.GridSpec(sizing_mode='stretch_both', max_height=400)
 
-gridspec[0, :3] = pn.Spacer(background='#FF0000')
-gridspec[1:3, 0] = pn.Spacer(background='#0000FF')
+gridspec[0, :3] = pn.Spacer(styles=dict(background='#FF0000'))
+gridspec[1:3, 0] = pn.Spacer(styles=dict(background='#0000FF'))
 
 gridspec
 ```

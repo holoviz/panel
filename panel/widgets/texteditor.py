@@ -48,7 +48,9 @@ class TextEditor(Widget):
 
     value = param.String(doc="State of the current text in the editor")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {"value": "text"}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': 'name', 'value': 'text'
+    }
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,

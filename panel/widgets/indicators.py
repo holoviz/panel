@@ -23,7 +23,7 @@ import sys
 
 from math import pi
 from typing import (
-    TYPE_CHECKING, ClassVar, Dict, List, Mapping, Optional, Type,
+    TYPE_CHECKING, ClassVar, Dict, List, Mapping, Optional, Tuple, Type,
 )
 
 import numpy as np
@@ -63,11 +63,11 @@ class Indicator(Widget):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    __abstract = True
+    _linked_properties: ClassVar[Tuple[str]] = ()
 
-    def _filter_properties(self, properties):
-        "Indicators are solely display units so we do not need to sync properties."
-        return []
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
+
+    __abstract = True
 
 
 class BooleanIndicator(Indicator):
@@ -111,9 +111,11 @@ class BooleanStatus(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {}
-
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None}
+
+    _stylesheets: ClassVar[List[str]] = [
+        'css/booleanstatus.css', 'css/variables.css'
+    ]
 
     _widget_type: ClassVar[Type[Model]] = HTML
 
@@ -157,9 +159,9 @@ class LoadingSpinner(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {}
-
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None, 'bgcolor': None}
+
+    _stylesheets: ClassVar[List[str]] = ['css/variables.css', 'css/loadingspinner.css']
 
     _widget_type: ClassVar[Type[Model]] = HTML
 
@@ -218,7 +220,9 @@ class Progress(ValueIndicator):
         bar will be indeterminate and animate depending on the active
         parameter.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
+    width = param.Integer(default=300)
+
+    _stylesheets: ClassVar[List[str]] = ['css/variables.css', 'css/progress.css']
 
     _widget_type: ClassVar[Type[Model]] = _BkProgress
 
@@ -227,6 +231,8 @@ class Progress(ValueIndicator):
         self.param.value.bounds = (-1, self.max)
 
     def __init__(self,**params):
+        if "sizing_mode" not in params:
+            params["sizing_mode"] = None
         super().__init__(**params)
         self._update_value_bounds()
 
@@ -262,7 +268,7 @@ class Number(ValueIndicator):
     title_size = param.String(default='18pt', doc="""
         The size of the title given by the name.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {}
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'name'}
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'colors': None, 'default_color': None,
@@ -271,6 +277,11 @@ class Number(ValueIndicator):
     }
 
     _widget_type: ClassVar[Type[Model]] = HTML
+
+    def __init__(self, **params):
+        if "sizing_mode" not in params:
+            params["sizing_mode"] = None
+        super().__init__(**params)
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -320,6 +331,11 @@ class String(ValueIndicator):
     }
 
     _widget_type: ClassVar[Type[Model]] = HTML
+
+    def __init__(self, **params):
+        if "sizing_mode" not in params:
+            params["sizing_mode"] = None
+        super().__init__(**params)
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -763,7 +779,9 @@ class LinearGauge(ValueIndicator):
     _rerender_params = ['horizontal']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'background': 'background_fill_color', 'show_boundaries': None,
+        'background': 'background_fill_color',
+        'name': 'name',
+        'show_boundaries': None,
         'default_color': None
     }
 
@@ -1024,7 +1042,9 @@ class Trend(SyncableData, Indicator):
 
     _manual_params: ClassVar[List[str]] = ['data']
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'data': None, 'selection': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'data': None, 'name': 'name', 'selection': None
+    }
 
     _widget_type: ClassVar[Type[Model]] = _BkTrendIndicator
 
@@ -1096,10 +1116,10 @@ class ptqdm(_tqdm):
 
     def display(self, msg=None, pos=None, bar_style=None):
         super().display(msg, pos)
-        style = self._indicator.text_pane.style or {}
-        if "color" not in style:
+        styles = self._indicator.text_pane.styles or {}
+        if "color" not in styles:
             color = self.colour or 'black'
-            self._indicator.text_pane.style = dict(style, color=color)
+            self._indicator.text_pane.styles = dict(styles, color=color)
         if self.total is not None and self.n is not None:
             self._indicator.max = int(self.total) # Can be numpy.int64
             self._indicator.value = int(self.n)
@@ -1168,7 +1188,7 @@ class Tqdm(Indicator):
     _layouts: ClassVar[Dict[Type[Panel], str]] = {Row: 'row', Column: 'column'}
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'value': None, 'min': None, 'max': None, 'text': None
+        'value': None, 'min': None, 'max': None, 'text': None, 'name': 'name'
     }
 
     def __init__(self, **params):

@@ -4,16 +4,14 @@ import {View} from "@bokehjs/core/view"
 import {Model} from "@bokehjs/model"
 import {Message} from "@bokehjs/protocol/message"
 import {Receiver} from "@bokehjs/protocol/receiver"
+import {Patch} from "@bokehjs/document"
 
 export const comm_settings: any = {
   debounce: true
 }
 
 export class CommManagerView extends View {
-  model: CommManager
-
-  renderTo(): void {
-  }
+  override model: CommManager
 }
 
 export namespace CommManager {
@@ -30,7 +28,9 @@ export namespace CommManager {
 export interface CommManager extends CommManager.Attrs {}
 
 export class CommManager extends Model {
-  properties: CommManager.Props
+  override properties: CommManager.Props
+  override __view_type__: CommManagerView
+
   ns: any
   _receiver: Receiver
   _client_comm: any
@@ -40,6 +40,10 @@ export class CommManager extends Model {
 
   constructor(attrs?: Partial<CommManager.Attrs>) {
     super(attrs)
+  }
+
+  override initialize(): void {
+    super.initialize()
     this._receiver = new Receiver()
     this._event_buffer = []
     this._blocked = false
@@ -74,12 +78,8 @@ export class CommManager extends Model {
   }
 
   protected _document_changed(event: DocumentChangedEvent): void {
-    // Filter out events that were initiated by the ClientSession itself
-    if ((event as any).setter_id === this.id) // XXX: not all document events define this
-      return
-
     // Filter out changes to attributes that aren't server-visible
-    if (event instanceof ModelChangedEvent && !(event.attr in event.model.serializable_attributes()))
+    if (event instanceof ModelChangedEvent && !event.model.properties[event.attr].syncable)
       return
 
     this._event_buffer.push(event);
@@ -101,11 +101,11 @@ export class CommManager extends Model {
     this._client_comm.send(message)
     for (const view of this.ns.shared_views.get(this.plot_id)) {
       if (view !== this && view.document != null)
-	view.document.apply_json_patch(patch, [], this.id)
+        view.document.apply_json_patch(patch, [], this.id)
     }
   }
 
-  disconnect_signals(): void {
+  override disconnect_signals(): void {
     super.disconnect_signals()
     this.ns.shared_views.shared_views.delete(this.plot_id)
   }
@@ -152,20 +152,22 @@ export class CommManager extends Model {
         this._receiver.consume(content)
 
       const comm_msg = this._receiver.message
-      if ((comm_msg != null) && (Object.keys(comm_msg.content).length > 0) && this.document != null)
-        this.document.apply_json_patch(comm_msg.content, comm_msg.buffers, this.id)
+      if ((comm_msg != null) && (Object.keys(comm_msg.content as Patch).length > 0) && this.document != null){
+        const patch = comm_msg.content as Patch
+        this.document.apply_json_patch(patch, comm_msg.buffers)
+      }
     }
   }
 
   static __module__ = "panel.models.comm_manager"
 
-  static init_CommManager(): void {
+  static {
     this.prototype.default_view = CommManagerView
 
-    this.define<CommManager.Props>(({Int, String}) => ({
-      plot_id:        [ String    ],
-      comm_id:        [ String    ],
-      client_comm_id: [ String    ],
+    this.define<CommManager.Props>(({Int, String, Nullable}) => ({
+      plot_id:        [ Nullable(String),  null ],
+      comm_id:        [ Nullable(String),  null ],
+      client_comm_id: [ Nullable(String),  null ],
       timeout:        [ Int, 5000 ],
       debounce:       [ Int,   50 ],
     }))

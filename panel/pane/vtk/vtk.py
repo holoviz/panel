@@ -460,16 +460,12 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         )
         scene, arrays, annotations = self._serialize_ren_win(self.object, context)
         self._update_color_mappers()
-        props = self._process_param_change(self._init_params())
+        props = self._get_properties(doc)
         props.update(scene=scene, arrays=arrays, annotations=annotations, color_mappers=self.color_mappers)
         model = VTKSynchronizedPlot(**props)
-
-        if root is None:
-            root = model
-        self._link_props(model,
-                         ['camera', 'color_mappers', 'enable_keybindings', 'one_time_reset',
-                          'orientation_widget'],
-                         doc, root, comm)
+        root = root or model
+        linked = ['camera', 'color_mappers', 'enable_keybindings', 'one_time_reset', 'orientation_widget']
+        self._link_props(model, linked, doc, root, comm)
         self._contexts[model.id] =  context
         self._models[root.ref['id']] = (model, parent)
         return model

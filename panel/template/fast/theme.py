@@ -7,6 +7,7 @@ import param
 
 from bokeh.themes import Theme as _BkTheme
 
+from ...widgets import Number
 from ..theme import DarkTheme, DefaultTheme
 
 _ROOT = pathlib.Path(__file__).parent / "css"
@@ -62,7 +63,7 @@ class FastStyle(param.Parameterized):
 
         return {
             "attrs": {
-                "Figure": {
+                "figure": {
                     "background_fill_color": self.background_color,
                     "border_fill_color": self.neutral_fill_card_rest,
                     "border_fill_alpha": 0,
@@ -134,8 +135,6 @@ DARK_STYLE = FastStyle(
 
 class FastDefaultTheme(DefaultTheme):
 
-    base_css = param.Filename(default=_ROOT / 'fast_root_default.css')
-
     style = param.ClassSelector(default=DEFAULT_STYLE, class_=FastStyle)
 
     __abstract = True
@@ -147,9 +146,13 @@ class FastDefaultTheme(DefaultTheme):
 
 class FastDarkTheme(DarkTheme):
 
-    base_css = param.Filename(default=_ROOT / 'fast_root_dark.css')
-
     style = param.ClassSelector(default=DARK_STYLE, class_=FastStyle)
+
+    _modifiers = {
+        Number: {
+            'default_color': 'var(--neutral-foreground-rest)'
+        }
+    }
 
     __abstract = True
 

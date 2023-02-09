@@ -11,12 +11,11 @@ from typing import (
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
 from ..reactive import ReactiveData
 from ..util import lazy_load
-from ..util.warnings import deprecated
 from ..viewable import Viewable
 from .base import PaneBase
 
@@ -281,15 +280,9 @@ class Perspective(PaneBase, ReactiveData):
     columns = param.List(default=None, doc="""
         A list of source columns to show as columns. For example ["x", "y"]""")
 
-    computed_columns = param.List(default=None, precedence=-1, doc="""
-      Deprecated alias for expressions.""")
-
     expressions = param.List(default=None, doc="""
       A list of expressions computing new columns from existing columns.
       For example [""x"+"index""]""")
-
-    column_pivots = param.List(None, precedence=-1, doc="""
-      Deprecated alias of split_by.""")
 
     split_by = param.List(None, doc="""
       A list of source columns to pivot by. For example ["x", "y"]""")
@@ -305,9 +298,6 @@ class Perspective(PaneBase, ReactiveData):
 
     group_by = param.List(default=None, doc="""
       A list of source columns to group by. For example ["x", "y"]""")
-
-    row_pivots = param.List(default=None, precedence=-1, doc="""
-      Deprecated alias of group_by.""")
 
     selectable = param.Boolean(default=True, allow_None=True, doc="""
       Whether items are selectable.""")
@@ -334,25 +324,10 @@ class Perspective(PaneBase, ReactiveData):
     _rerender_params: ClassVar[List[str]] = ['object']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'computed_columns': None,
-        'row_pivots': None,
-        'column_pivots': None,
         'selection': None,
     }
 
     _updates: ClassVar[bool] = True
-
-    _deprecations = {
-        'computed_columns': 'expressions',
-        'column_pivots': 'split_by',
-        'row_pivots': 'group_by'
-    }
-
-    def __init__(self, object=None, **params):
-        super().__init__(object=object, **params)
-        self.param.watch(self._deprecated_warning, ['computed_columns', 'column_pivots', 'row_pivots'])
-        ps = [deprecation for deprecation in self._deprecations if deprecation in params]
-        self.param.trigger(*ps)
 
     @classmethod
     def applies(cls, object):
@@ -385,20 +360,17 @@ class Perspective(PaneBase, ReactiveData):
                              "converted to strings.")
         return df, {str(k): v for k, v in data.items()}
 
-    def _deprecated_warning(self, *events):
-        updates = {}
-        for event in events:
-            renamed = self._deprecations[event.name]
-            deprecated("1.0", event.name, renamed)
-            updates[renamed] = event.new
-        self.param.update(**updates)
-
     def _filter_properties(self, properties):
         ignored = list(Viewable.param)
         return [p for p in properties if p not in ignored]
 
     def _init_params(self):
         props = super()._init_params()
+        Perspective = lazy_load('panel.models.perspective', 'Perspective')
+        props['stylesheets'] = (
+            props.get('stylesheets', []) +
+            [ImportedStyleSheet(url=ss) for ss in Perspective.__css__]
+        )
         props['source'] = ColumnDataSource(data=self._data)
         props['schema'] = schema = {}
         for col, array in self._data.items():
@@ -460,12 +432,6 @@ class Perspective(PaneBase, ReactiveData):
             if prop not in msg:
                 continue
             msg[prop] = [self._as_digit(col) for col in msg[prop]]
-            if prop == 'group_by':
-                msg['row_pivots'] = msg['group_by']
-            if prop == 'split_by':
-                msg['column_pivots'] = msg['split_by']
-        if 'expressions' in msg:
-            msg['computed_columns'] = msg['expressions']
         if msg.get('sort'):
             msg['sort'] = [[self._as_digit(col), *args] for col, *args in msg['sort']]
         if msg.get('filters'):

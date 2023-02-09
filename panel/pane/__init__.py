@@ -2,11 +2,9 @@
 Panel panes renders the Python objects you know and love ❤️
 ===========================================================
 
-Panes may render anything including plots, text,
-images, equations etc.
+Panes may render anything including plots, text, images, equations etc.
 
-For example Panel contains Bokeh, HoloViews,
-Matplotlib and Plotly panes.
+For example Panel contains Bokeh, HoloViews, Matplotlib and Plotly panes.
 
 Check out the Panel gallery of panes
 https://panel.holoviz.org/reference/index.html#panes for inspiration.
@@ -32,14 +30,13 @@ For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
 from .alert import Alert  # noqa
-from .base import Pane, PaneBase, panel  # noqa
+from .base import PaneBase, panel  # noqa
 from .deckgl import DeckGL  # noqa
 from .echarts import ECharts  # noqa
 from .equation import LaTeX  # noqa
 from .holoviews import HoloViews, Interactive  # noqa
-from .idom import IDOM  # noqa
 from .image import (  # noqa
-    GIF, ICO, JPG, PDF, PNG, SVG,
+    GIF, ICO, JPG, PDF, PNG, SVG, Image,
 )
 from .ipywidget import IPyLeaflet, IPyWidget, Reacton  # noqa
 from .markup import (  # noqa
@@ -75,7 +72,6 @@ __all__ = (
     "LaTeX",
     "Markdown",
     "Matplotlib",
-    "Pane",
     "PaneBase",
     "panel",
     "PDF",

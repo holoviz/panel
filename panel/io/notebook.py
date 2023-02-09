@@ -16,6 +16,7 @@ from typing import (
 
 import bokeh
 import bokeh.embed.notebook
+import param
 
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import MACROS
@@ -32,12 +33,11 @@ from pyviz_comms import (
     PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js,
 )
 
-from ..compiler import require_components
 from ..util import escape
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    PANEL_DIR, Bundle, Resources, _env, bundle_resources,
+    PANEL_DIR, Bundle, Resources, _env, bundle_resources, patch_model_css,
 )
 from .state import state
 
@@ -71,8 +71,10 @@ def push(doc: 'Document', comm: 'Comm', binary: bool = True) -> None:
     comm.send(msg.header_json)
     comm.send(msg.metadata_json)
     comm.send(msg.content_json)
-    for header, payload in msg.buffers:
-        comm.send(json.dumps(header))
+    for buffer in msg.buffers:
+        header = json.dumps(buffer.ref)
+        payload = buffer.to_bytes()
+        comm.send(header)
         comm.send(buffers=[payload])
 
 def push_on_root(ref: str):
@@ -134,7 +136,7 @@ def render_template(
     document: 'Document', comm: Optional['Comm'] = None, manager: Optional['CommManager'] = None
 ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
     ref = document.roots[0].ref['id']
-    (docs_json, render_items) = standalone_docs_json_and_render_items(document, True)
+    (docs_json, render_items) = standalone_docs_json_and_render_items(document, suppress_callback_warning=True)
 
     # We do not want the CommManager to appear in the roots because
     # the custom template may not reference it
@@ -157,7 +159,12 @@ def render_model(
 
     target = model.ref['id']
 
-    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], True)
+    # ALERT: Replace with better approach before Bokeh 3.x compatible release
+    dist_url = '/panel-preview/static/extensions/panel/'
+    patch_model_css(model, dist_url=dist_url)
+    model.document._template_variables['dist_url'] = dist_url
+
+    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], suppress_callback_warning=True)
     div = div_for_render_item(render_item)
     render_json = render_item.to_json()
     requirements = [pnext._globals[ext] for ext in pnext._loaded_extensions
@@ -211,6 +218,63 @@ def mimebundle_to_html(bundle: Dict[str, Any]) -> str:
         html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
     return html
 
+
+def require_components():
+    """
+    Returns JS snippet to load the required dependencies in the classic
+    notebook using REQUIRE JS.
+    """
+    from ..config import config
+
+    configs, requirements, exports = [], [], {}
+    js_requires = []
+
+    for qual_name, model in Model.model_class_reverse_map.items():
+        # We need to enable Models from Panel as well as Panel extensions
+        # like awesome_panel_extensions.
+        # The Bokeh models do not have "." in the qual_name
+        if "." in qual_name:
+            js_requires.append(model)
+
+    from ..reactive import ReactiveHTML
+    js_requires += list(param.concrete_descendents(ReactiveHTML).values())
+
+    for export, js in config.js_files.items():
+        name = js.split('/')[-1].replace('.min', '').split('.')[-2]
+        conf = {'paths': {name: js[:-3]}, 'exports': {name: export}}
+        js_requires.append(conf)
+
+    skip_import = {}
+    for model in js_requires:
+        if hasattr(model, '__js_skip__'):
+            skip_import.update(model.__js_skip__)
+
+        if not (hasattr(model, '__js_require__') or isinstance(model, dict)):
+            continue
+
+        if isinstance(model, dict):
+            model_require = model
+        else:
+            model_require = dict(model.__js_require__)
+
+        model_exports = model_require.pop('exports', {})
+        if not any(model_require == config for config in configs):
+            configs.append(model_require)
+
+        for req in list(model_require.get('paths', [])):
+            if isinstance(req, tuple):
+                model_require['paths'] = dict(model_require['paths'])
+                model_require['paths'][req[0]] = model_require['paths'].pop(req)
+
+            reqs = req[1] if isinstance(req, tuple) else (req,)
+            for r in reqs:
+                if r not in requirements:
+                    requirements.append(r)
+                    if r in model_exports:
+                        exports[r] = model_exports[r]
+
+    return configs, requirements, exports, skip_import
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -246,10 +310,11 @@ def load_notebook(inline: bool = True, load_timeout: int = 5000) -> None:
     resources = INLINE if inline else CDN
     prev_resources = settings.resources(default="server")
     user_resources = settings.resources._user_value is not _Unset
-    resources = Resources.from_bokeh(resources)
+    nb_endpoint = not state._is_pyodide
+    resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
     try:
         bundle = bundle_resources(None, resources)
-        bundle = Bundle.from_bokeh(bundle)
+        bundle = Bundle.from_bokeh(bundle, notebook=nb_endpoint)
         configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
         bokeh_js = _autoload_js(bundle, configs, requirements, exports,
@@ -364,7 +429,7 @@ def show_embed(
                     states)
     publish_display_data(*render_model(model))
 
-def ipywidget(obj: Any, **kwargs: Any):
+def ipywidget(obj: Any, doc=None, **kwargs: Any):
     """
     Returns an ipywidget model which renders the Panel object.
 
@@ -374,6 +439,8 @@ def ipywidget(obj: Any, **kwargs: Any):
     ---------
     obj: object
       Any Panel object or object which can be rendered with Panel
+    doc: bokeh.Document
+        Bokeh document the bokeh model will be attached to.
     **kwargs: dict
       Keyword arguments passed to the pn.panel utility function
 
@@ -384,7 +451,7 @@ def ipywidget(obj: Any, **kwargs: Any):
     from jupyter_bokeh.widgets import BokehModel
 
     from ..pane import panel
-    model = panel(obj, **kwargs).get_root()
+    model = panel(obj, **kwargs).get_root(doc=doc)
     widget = BokehModel(model, combine_events=True)
     if hasattr(widget, '_view_count'):
         widget._view_count = 0

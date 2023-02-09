@@ -4,6 +4,7 @@ import pathlib
 import time
 
 import numpy as np
+import pandas as pd
 import param
 import pytest
 
@@ -14,7 +15,6 @@ except Exception:
 diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires diskcache")
 
 from panel.io.cache import _find_hash_func, cache
-from panel.tests.util import pd_available
 
 ################
 # Test hashing #
@@ -125,17 +125,13 @@ def test_ndarray_hash():
         np.array([2, 1, 0])
     )
 
-@pd_available
 def test_dataframe_hash():
-    import pandas as pd
     df1, df2 = pd._testing.makeMixedDataFrame(), pd._testing.makeMixedDataFrame()
     assert hashes_equal(df1, df2)
     df2['A'] = df2['A'].values[::-1]
     assert not hashes_equal(df1, df2)
 
-@pd_available
 def test_series_hash():
-    import pandas as pd
     series1 = pd._testing.makeStringSeries()
     series2 = series1.copy()
     assert hashes_equal(series1, series2)

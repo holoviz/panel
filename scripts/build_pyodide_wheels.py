@@ -51,7 +51,7 @@ for item in zin.infolist():
         # remove tornado dependency
         buffer = '\n'.join([
             line for line in buffer.decode('utf-8').split('\n')
-            if not ('Requires-Dist:' in line and 'tornado' in line)
+            if not ('Requires-Dist:' in line and ('tornado' in line or 'contourpy' in line))
         ]).encode('utf-8')
     zout.writestr(item, buffer)
 

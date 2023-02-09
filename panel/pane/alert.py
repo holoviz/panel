@@ -9,9 +9,12 @@ from typing import Any, ClassVar, Mapping
 
 import param
 
-from panel.pane.markup import Markdown
+from .markup import Markdown
 
-ALERT_TYPES = ["primary", "secondary", "success", "danger", "warning", "info", "light", "dark"]
+ALERT_TYPES = [
+    "primary", "secondary", "success", "danger",
+    "warning", "info", "light", "dark"
+]
 
 
 class Alert(Markdown):
@@ -30,7 +33,9 @@ class Alert(Markdown):
 
     priority: ClassVar[float | bool | None] = 0
 
-    _rename: ClassVar[Mapping[str, str | None]] = dict(Markdown._rename, alert_type=None)
+    _rename: ClassVar[Mapping[str, str | None]] = {'alert_type': None}
+
+    _stylesheets = ['css/alerts.css', 'css/variables.css']
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -43,16 +48,10 @@ class Alert(Markdown):
         if "sizing_mode" not in params:
             params["sizing_mode"] = "stretch_width"
         super().__init__(object, **params)
-        self._set_css_classes()
 
-    @param.depends("alert_type", watch=True)
-    def _set_css_classes(self):
-        css_classes = []
-        if self.css_classes:
-            for class_ in self.css_classes:
-                if class_ != "alert" and not class_.startswith("alert-"):
-                    css_classes.append(class_)
-
-        css_classes.append("alert")
-        css_classes.append(f"alert-{self.alert_type}")
-        self.css_classes = css_classes
+    def _process_param_change(self, params):
+        if 'css_classes' in params or 'alert_type' in params:
+            params['css_classes'] = self.css_classes + [
+                'alert', f'alert-{self.alert_type}'
+            ]
+        return super()._process_param_change(params)

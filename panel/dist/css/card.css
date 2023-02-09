@@ -1,11 +1,12 @@
-.bk.card {
+.card {
   border: 1px solid rgba(0,0,0,.125);
   border-radius: 0.25rem;
 }
-.bk.accordion {
+
+.accordion {
   border: 1px solid rgba(0,0,0,.125);
 }
-.bk.card-header {
+.card-header {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.03);
   border-radius: 0.25rem;
@@ -13,7 +14,8 @@
   justify-content: start;
   width: 100%;
 }
-.bk.accordion-header {
+
+.accordion-header {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.03);
   border-radius: 0;
@@ -21,20 +23,21 @@
   justify-content: start;
   width: 100%;
 }
-.bk.card-button {
+.card-button {
   background-color: transparent;
   margin-left: 0.5em;
+  margin-right: 0.5em;
 }
-.bk.card-header-row {
+.card-header-row {
   position: relative !important;
 }
-.bk.card-title {
+.card-title {
   align-items: center;
   font-size: 1.4em;
   font-weight: bold;
   overflow-wrap: break-word;
 }
-.bk.card-header-row > .bk {
+.card-header-row > .bk {
   overflow-wrap: break-word;
   text-align: center;
 }

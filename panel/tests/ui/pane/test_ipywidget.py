@@ -9,6 +9,7 @@ pytestmark = pytest.mark.ui
 from panel.io.server import serve
 from panel.layout import Row
 from panel.pane.ipywidget import Reacton
+from panel.tests.util import ipywidgets_bokeh3
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -18,6 +19,7 @@ def cleanup_ipywidgets():
     Model.model_class_reverse_map = old_models
 
 
+@ipywidgets_bokeh3
 def test_reacton(page, port):
     import reacton
     import reacton.ipywidgets

@@ -10,25 +10,29 @@ import base64
 from io import BytesIO
 from pathlib import PurePath
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping,
 )
 
 import param
 
 from ..models import PDF as _BkPDF
 from ..util import isfile, isurl
-from .markup import DivPaneBase, escape
+from .markup import HTMLBasePane, escape
 
 if TYPE_CHECKING:
     from bokeh.model import Model
 
-class FileBase(DivPaneBase):
+class FileBase(HTMLBasePane):
 
     embed = param.Boolean(default=True, doc="""
         Whether to embed the file as base64.""")
 
+    filetype: ClassVar[str]
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'embed': None}
+
     _rerender_params: ClassVar[List[str]] = [
-        'embed', 'object', 'style', 'width', 'height'
+        'embed', 'object', 'styles', 'width', 'height'
     ]
 
     __abstract = True
@@ -40,21 +44,23 @@ class FileBase(DivPaneBase):
 
     def _type_error(self, object):
         if isinstance(object, str):
-            raise ValueError("%s pane cannot parse string that is not a filename "
-                             "or URL." % type(self).__name__)
+            raise ValueError(
+                "%s pane cannot parse string that is not a filename "
+                "or URL." % type(self).__name__
+            )
         super()._type_error(object)
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        filetype = cls.filetype
-        if hasattr(obj, '_repr_{}_'.format(filetype)):
+        filetype = cls.filetype.split('+')[0]
+        if hasattr(obj, f'_repr_{filetype}_'):
             return True
         if isinstance(obj, PurePath):
             obj = str(obj.absolute())
         if isinstance(obj, str):
-            if isfile(obj) and obj.endswith('.'+filetype):
+            if isfile(obj) and obj.lower().endswith(f'.{filetype}'):
                 return True
-            if isurl(obj, [cls.filetype]):
+            if isurl(obj, [filetype]):
                 return True
             elif isurl(obj, None):
                 return 0
@@ -68,34 +74,43 @@ class FileBase(DivPaneBase):
             return True
         return False
 
-    def _data(self):
-        if hasattr(self.object, '_repr_{}_'.format(self.filetype)):
-            return getattr(self.object, '_repr_' + self.filetype + '_')()
-        if isinstance(self.object, str):
-            if isfile(self.object):
-                with open(self.object, 'rb') as f:
+    def _b64(self, data: str | bytes) -> str:
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
+        b64 = base64.b64encode(data).decode("utf-8")
+        return f"data:image/{self.filetype};base64,{b64}"
+
+    def _data(self, obj: Any) -> bytes | None:
+        filetype = self.filetype.split('+')[0]
+        if hasattr(obj, f'_repr_{filetype}_'):
+            return getattr(obj, f'_repr_{filetype}_')()
+        elif isinstance(obj, (str, PurePath)):
+            if isfile(obj):
+                with open(obj, 'rb') as f:
                     return f.read()
-        elif isinstance(self.object, bytes):
-            return self.object
-        if hasattr(self.object, 'read'):
-            if hasattr(self.object, 'seek'):
-                self.object.seek(0)
-            return self.object.read()
-        if isurl(self.object, None):
-            from ..io.state import state
-            if state._is_pyodide:
-                from ..io.pyodide import _IN_WORKER, fetch_binary
-                if _IN_WORKER:
-                    return fetch_binary(self.object).read()
-                else:
-                    from pyodide.http import pyfetch
-                    async def replace_content():
-                        self.object = await (await pyfetch(self.object)).bytes()
-                    asyncio.create_task(replace_content())
+        elif isinstance(obj, bytes):
+            return obj
+        elif hasattr(obj, 'read'):
+            if hasattr(obj, 'seek'):
+                obj.seek(0)
+            return obj.read()
+        elif not isurl(obj, None):
+            return None
+
+        from ..io.state import state
+        if state._is_pyodide:
+            from ..io.pyodide import _IN_WORKER, fetch_binary
+            if _IN_WORKER:
+                return fetch_binary(obj).read()
             else:
-                import requests
-                r = requests.request(url=self.object, method='GET')
-                return r.content
+                from pyodide.http import pyfetch
+                async def replace_content():
+                    self.object = await (await pyfetch(obj)).bytes()
+                asyncio.create_task(replace_content())
+        else:
+            import requests
+            r = requests.request(url=obj, method='GET')
+            return r.content
 
 
 class ImageBase(FileBase):
@@ -120,11 +135,13 @@ class ImageBase(FileBase):
         A link URL to make the image clickable and link to some other
         website.""")
 
-    filetype: ClassVar[str] = 'None'
-
     _rerender_params: ClassVar[List[str]] = [
-        'alt_text', 'link_url', 'embed', 'object', 'style', 'width', 'height'
+        'alt_text', 'link_url', 'embed', 'object', 'styles', 'width', 'height'
     ]
+
+    _rename: ClassVar[Mapping[str, str | None ]] = {
+        'alt_text': None, 'link_url': None
+    }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
         'object': """'<img src="' + value + '"></img>'"""
@@ -132,24 +149,14 @@ class ImageBase(FileBase):
 
     __abstract = True
 
-    def _b64(self):
-        data = self._data()
-        if not isinstance(data, bytes):
-            data = data.encode('utf-8')
-        b64 = base64.b64encode(data).decode("utf-8")
-        return "data:image/"+self.filetype+f";base64,{b64}"
-
     def _imgshape(self, data):
         """Calculate and return image width,height"""
         raise NotImplementedError
 
-    def _get_properties(self):
-        p = super()._get_properties()
-        if self.object is None:
-            return dict(p, text='<img></img>')
-        data = self._data()
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        data = self._data(obj)
         if data is None:
-            return dict(p, text='<img></img>')
+            return dict(object='<img></img>')
         if not isinstance(data, bytes):
             data = base64.b64decode(data)
         width, height = self._imgshape(data)
@@ -162,11 +169,8 @@ class ImageBase(FileBase):
         elif self.height is not None:
             width = int((self.height/height)*width)
             height = self.height
-        if not self.embed:
-            src = self.object
-        else:
-            b64 = base64.b64encode(data).decode("utf-8")
-            src = "data:image/"+self.filetype+";base64,{b64}".format(b64=b64)
+
+        src = self._b64(data) if self.embed else obj
 
         smode = self.sizing_mode
         if smode in ['fixed', None]:
@@ -189,7 +193,39 @@ class ImageBase(FileBase):
             html = '<a href="{url}" target="_blank">{html}</a>'.format(
                 url=self.link_url, html=html)
 
-        return dict(p, width=width, height=height, text=escape(html))
+        return dict(width=width, height=height, object=escape(html))
+
+
+class Image(ImageBase):
+    """
+    The `Image` pane embeds any known image format in a panel if
+    provided a local path, bytes or remote image link.
+
+    :Example:
+
+    >>> Image(
+    ...     'https://panel.holoviz.org/_static/logo_horizontal.png',
+    ...     alt_text='The Panel Logo',
+    ...     link_url='https://panel.holoviz.org/index.html',
+    ...     width=500
+    ... )
+    """
+
+    @classmethod
+    def applies(cls, obj: Any) -> float | bool | None:
+        for img_cls in param.concrete_descendents(ImageBase).values():
+            if img_cls is Image:
+                continue
+            applies = img_cls.applies(obj)
+            if applies:
+                return applies
+        return False
+
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        for img_cls in param.concrete_descendents(ImageBase).values():
+            if img_cls is not Image and img_cls.applies(obj):
+                return img_cls(obj)._transform_object(obj)
+        return {'object': '<img></img>'}
 
 
 class PNG(ImageBase):
@@ -329,7 +365,9 @@ class SVG(ImageBase):
         Whether to enable base64 encoding of the SVG, base64 encoded
         SVGs do not support links.""")
 
-    filetype: ClassVar[str] = 'svg'
+    filetype: ClassVar[str] = 'svg+xml'
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'encode': None}
 
     _rerender_params: ClassVar[List[str]] = ImageBase._rerender_params + ['encode']
 
@@ -344,40 +382,24 @@ class SVG(ImageBase):
                              "URL or a SVG XML contents." % type(self).__name__)
         super()._type_error(object)
 
-    def _data(self):
-        if (isinstance(self.object, str) and
-            self.object.lstrip().startswith('<svg')):
-            return self.object
-        return super()._data()
-
-    def _b64(self):
-        data = self._data()
-        if not isinstance(data, bytes):
-            data = data.encode('utf-8')
-        b64 = base64.b64encode(data).decode("utf-8")
-        return f"data:image/svg+xml;base64,{b64}"
+    def _data(self, obj):
+        if (isinstance(obj, str) and obj.lstrip().startswith('<svg')):
+            return obj
+        return super()._data(obj)
 
     def _imgshape(self, data):
         return (self.width, self.height)
 
-    def _get_properties(self):
-        p = super(ImageBase, self)._get_properties()
-        if self.object is None:
-            return dict(p, text='<img></img>')
-        data = self._data()
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        if obj is None:
+            return dict(object='<img></img>')
+        data = self._data(obj)
         width, height = self._imgshape(data)
-        if not isinstance(data, bytes):
-            data = data.encode('utf-8')
-
         if self.encode:
-            b64 = base64.b64encode(data).decode("utf-8")
-            src = "data:image/svg+xml;base64,{b64}".format(b64=b64)
-            html = "<img src='{src}' width={width} height={height}></img>".format(
-                src=src, width=width, height=height
-            )
-        else:
-            html = data.decode("utf-8")
-        return dict(p, width=width, height=height, text=escape(html))
+            data = f"<img src='{self._b64(data)}' width={width} height={height}></img>"
+        if isinstance(data, bytes):
+            data = data.decode('utf-8')
+        return dict(width=width, height=height, text=escape(data))
 
 
 class PDF(FileBase):
@@ -402,26 +424,20 @@ class PDF(FileBase):
 
     _bokeh_model: ClassVar[Model] = _BkPDF
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'embed': 'embed'}
+
     _rerender_params: ClassVar[List[str]] = FileBase._rerender_params + ['start_page']
 
-    def _get_properties(self):
-        p = super()._get_properties()
-        p["embed"] = self.embed
-        p["start_page"] = self.start_page
-        p["width"] = self.width
-        p["height"] = self.height
-
-        if self.object is None:
-            return dict(p, text='<embed></embed>')
-        if self.embed:
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        if obj is None:
+            return dict(object='<embed></embed>')
+        elif self.embed:
             # This is handled by the Typescript Bokeh model to be able to render large PDF files (>2MB).
-            data = self._data()
+            data = self._data(obj)
             if not isinstance(data, bytes):
                 data = data.encode('utf-8')
-            base64_pdf = base64.b64encode(data).decode("utf-8")
-            return dict(p, text=base64_pdf)
-        else:
-            src = self.object
+            b64 = base64.b64encode(data).decode("utf-8")
+            return dict(text=b64)
         w, h = self.width or '100%', self.height or '100%'
-        html = f'<embed src="{src}#page={self.start_page}" width={w!r} height={h!r} type="application/pdf">'
-        return dict(p, text=escape(html))
+        html = f'<embed src="{obj}#page={self.start_page}" width={w!r} height={h!r} type="application/pdf">'
+        return dict(text=escape(html))

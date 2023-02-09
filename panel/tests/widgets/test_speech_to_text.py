@@ -163,8 +163,7 @@ def manualtest_get_advanced_app():
     app = pn.Column(
         pn.pane.HTML(
             "<h1>Speech to Text <img style='float:right;height:40px;width:164px;margin-right:40px' src='https://panel.holoviz.org/_static/logo_horizontal.png'></h1>", # noqa
-            background="black",
-            style={"color": "white", "margin-left": "20px"},
+            styles={"color": "white", "margin-left": "20px", "background": "black"},
             margin=(0, 0, 15, 0),
         ),
         speech_to_text,
@@ -260,10 +259,10 @@ def manualtest_get_color_app():
     def update_result_panel(results_last):
         results_last = results_last.lower()
         if results_last in colors:
-            app.background = results_last
+            app.styles = dict(background=results_last)
             result_panel.object = "Result received: " + results_last
         else:
-            app.background = "white"
+            app.styles = dict(background="white")
             result_panel.object = "Result received: " + results_last + " (Not recognized)"
 
     app[:] = [

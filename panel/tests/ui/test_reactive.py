@@ -65,9 +65,9 @@ def test_reactive_html_set_background_no_rerender(page, port):
     page.goto(f"http://localhost:{port}")
 
     assert page.text_content(".reactive") == '1'
-    component.background = 'red'
+    component.styles = dict(background='red')
     time.sleep(0.1)
     assert page.text_content(".reactive") == '1'
-    component.background = 'green'
+    component.styles = dict(background='green')
     time.sleep(0.1)
     assert page.text_content(".reactive") == '1'

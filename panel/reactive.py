@@ -13,7 +13,7 @@ import sys
 import textwrap
 
 from collections import Counter, defaultdict, namedtuple
-from functools import partial
+from functools import lru_cache, partial
 from pprint import pformat
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Set,
@@ -26,17 +26,21 @@ import param
 
 from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
+from bokeh.models import ImportedStyleSheet
 from packaging.version import Version
 from param.parameterized import ParameterizedMetaclass, Watcher
 
 from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
+from .io.resources import CDN_DIST, loading_css, patch_stylesheet
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
-from .util import edit_readonly, escape, updating
+from .util import (
+    classproperty, edit_readonly, escape, updating,
+)
 from .viewable import Layoutable, Renderable, Viewable
 
 if TYPE_CHECKING:
@@ -86,7 +90,7 @@ class Syncable(Renderable):
     _manual_params: ClassVar[List[str]] = []
 
     # Mapping from parameter name to bokeh model property name
-    _rename: ClassVar[Mapping[str, str | None]] = {}
+    _rename: ClassVar[Mapping[str, str | None]] = {'loading': None}
 
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
@@ -95,6 +99,10 @@ class Syncable(Renderable):
     # Transforms from input value to bokeh property value
     _source_transforms: ClassVar[Mapping[str, str | None]] = {}
     _target_transforms: ClassVar[Mapping[str, str | None]] = {}
+
+    # A list of stylesheets specified as paths relative to the
+    # panel/dist directory
+    _stylesheets: ClassVar[List[str]] = []
 
     __abstract = True
 
@@ -123,6 +131,34 @@ class Syncable(Renderable):
     # Model API
     #----------------------------------------------------------------
 
+    @classproperty
+    @lru_cache(maxsize=None)
+    def _property_mapping(cls):
+        rename = {}
+        for scls in cls.__mro__[::-1]:
+            if issubclass(scls, Syncable):
+                rename.update(scls._rename)
+        return rename
+
+    @property
+    def _linked_properties(self) -> Tuple[str]:
+        return tuple(
+            self._property_mapping.get(p, p) for p in self.param
+            if p not in Viewable.param and self._property_mapping.get(p, p) is not None
+        )
+
+    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+        properties = self._process_param_change(self._init_params())
+        if 'stylesheets' in properties:
+            if doc and 'dist_url' in doc._template_variables:
+                dist_url = doc._template_variables['dist_url']
+            else:
+                dist_url = CDN_DIST
+            for stylesheet in properties['stylesheets']:
+                if isinstance(stylesheet, ImportedStyleSheet):
+                    patch_stylesheet(stylesheet, dist_url)
+        return properties
+
     def _process_property_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         """
         Transform bokeh model property changes into parameter updates.
@@ -131,7 +167,7 @@ class Syncable(Renderable):
         _rename class level attribute to map between parameter and
         property names.
         """
-        inverted = {v: k for k, v in self._rename.items()}
+        inverted = {v: k for k, v in self._property_mapping.items()}
         return {inverted.get(k, k): v for k, v in msg.items()}
 
     def _process_param_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
@@ -142,22 +178,36 @@ class Syncable(Renderable):
         _rename class level attribute to map between parameter and
         property names.
         """
-        properties = {self._rename.get(k) or k: v for k, v in msg.items()
-                      if self._rename.get(k, False) is not None}
+        properties = {
+            self._property_mapping.get(k) or k: v for k, v in msg.items()
+            if self._property_mapping.get(k, False) is not None and
+            k not in self._manual_params
+        }
         if 'width' in properties and self.sizing_mode is None:
             properties['min_width'] = properties['width']
         if 'height' in properties and self.sizing_mode is None:
             properties['min_height'] = properties['height']
+        if 'stylesheets' in properties:
+            stylesheets = [loading_css()] + [
+                ImportedStyleSheet(url=stylesheet) for stylesheet in self._stylesheets
+            ]
+            for stylesheet in properties['stylesheets']:
+                if isinstance(stylesheet, str) and stylesheet.endswith('.css'):
+                    stylesheet = ImportedStyleSheet(url=stylesheet)
+                stylesheets.append(stylesheet)
+            properties['stylesheets'] = stylesheets
         return properties
 
     @property
     def _linkable_params(self) -> List[str]:
         """
-        Parameters that can be linked in JavaScript via source
-        transforms.
+        Parameters that can be linked in JavaScript via source transforms.
         """
-        return [p for p in self._synced_params if self._rename.get(p, False) is not None
-                and self._source_transforms.get(p, False) is not None] + ['loading']
+        return [
+            p for p in self._synced_params if self._rename.get(p, False) is not None
+            and self._source_transforms.get(p, False) is not None and
+            p != 'stylesheets'
+        ] + ['loading']
 
     @property
     def _synced_params(self) -> List[str]:
@@ -165,12 +215,14 @@ class Syncable(Renderable):
         Parameters which are synced with properties using transforms
         applied in the _process_param_change method.
         """
-        ignored = ['default_layout', 'loading']
+        ignored = ['default_layout', 'loading', 'background']
         return [p for p in self.param if p not in self._manual_params+ignored]
 
     def _init_params(self) -> Dict[str, Any]:
-        return {k: v for k, v in self.param.values().items()
-                if k in self._synced_params and v is not None}
+        return {
+            k: v for k, v in self.param.values().items()
+            if k in self._synced_params and v is not None
+        }
 
     def _link_params(self) -> None:
         params = self._synced_params
@@ -259,6 +311,17 @@ class Syncable(Renderable):
                 continue
             if not model.lookup(attr).property.matches(model_val, value):
                 attrs.append(attr)
+
+            # Do not apply model change that is in flight
+            if attr in self._events:
+                del self._events[attr]
+
+        if 'stylesheets' in msg:
+            dist_url = doc._template_variables.get('dist_dir')
+            for stylesheet in msg['stylesheets']:
+                if isinstance(stylesheet, ImportedStyleSheet):
+                    patch_stylesheet(stylesheet, dist_url)
+
         try:
             model.update(**msg)
         finally:
@@ -463,6 +526,8 @@ class Reactive(Syncable, Viewable):
     the parameters to other objects.
     """
 
+    __abstract = True
+
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
@@ -580,7 +645,7 @@ class Reactive(Syncable, Viewable):
         controls = Param(self.param, parameters=params, default_layout=WidgetBox,
                          name='Controls', **kwargs)
         layout_params = [p for p in linkable if p in Viewable.param]
-        if 'name' not in layout_params and self._rename.get('name', False) is not None and not parameters:
+        if 'name' not in layout_params and self._property_mapping.get('name', False) is not None and not parameters:
             layout_params.insert(0, 'name')
         style = Param(self.param, parameters=layout_params, default_layout=WidgetBox,
                       name='Layout', **kwargs)
@@ -1041,6 +1106,8 @@ class ReactiveData(SyncableData):
     An extension of SyncableData which bi-directionally syncs a data
     parameter between frontend and backend using a ColumnDataSource.
     """
+
+    __abstract = True
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -1642,6 +1709,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 html = html.replace('${%s}' % child_name, '')
         return html, parser.nodes, p_attrs
 
+    @property
     def _linked_properties(self) -> List[str]:
         linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
         for scripts in self._scripts.values():
@@ -1654,14 +1722,13 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         for children_param in self._parser.children.values():
             if children_param in self._data_model.properties():
                 linked_properties.append(children_param)
-        return linked_properties
+        return tuple(linked_properties)
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        properties = self._process_param_change(self._init_params())
-        model = _BkReactiveHTML(**properties)
+        model = _BkReactiveHTML(**self._get_properties(doc))
         if comm and not self._loaded():
             self.param.warning(
                 f'{type(self).__name__} was not imported on instantiation and may not '
@@ -1688,7 +1755,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 v.tags.append(f"__ref:{root.ref['id']}")
         model.update(children=self._get_children(doc, root, model, comm))
         self._register_events('dom_event', model=model, doc=doc, comm=comm)
-        self._link_props(data_model, self._linked_properties(), doc, root, comm)
+        self._link_props(data_model, self._linked_properties, doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 

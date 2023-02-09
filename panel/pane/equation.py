@@ -6,26 +6,32 @@ from __future__ import annotations
 
 import sys
 
-from typing import Any, ClassVar, Mapping
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Type,
+)
 
-import param
+import param  # type: ignore
 
-from pyviz_comms import JupyterComm
+from pyviz_comms import Comm, JupyterComm  # type: ignore
 
 from ..util import lazy_load
-from .markup import DivPaneBase
+from .base import ModelPane
+
+if TYPE_CHECKING:
+    from bokeh.document import Document
+    from bokeh.model import Model
 
 
-def is_sympy_expr(obj):
+def is_sympy_expr(obj: Any) -> bool:
     """Test for sympy.Expr types without usually needing to import sympy"""
     if 'sympy' in sys.modules and 'sympy' in str(type(obj).__class__):
-        import sympy
+        import sympy  # type: ignore
         if isinstance(obj, sympy.Expr):
             return True
     return False
 
 
-class LaTeX(DivPaneBase):
+class LaTeX(ModelPane):
     """
     The `LaTeX` pane allows rendering LaTeX equations. It uses either
     `MathJax` or `KaTeX` depending on the defined renderer.
@@ -51,7 +57,11 @@ class LaTeX(DivPaneBase):
     # Priority is dependent on the data type
     priority: ClassVar[float | bool | None] = None
 
-    _rename: ClassVar[Mapping[str, str | None]] = {"renderer": None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'renderer': None, 'object': 'text'
+    }
+
+    _updates: ClassVar[bool] = True
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -62,7 +72,7 @@ class LaTeX(DivPaneBase):
         else:
             return False
 
-    def _get_model_type(self, root, comm):
+    def _get_model_type(self, root: Model, comm: Comm | None) -> Type[Model]:
         module = self.renderer
         if module is None:
             if 'panel.models.mathjax' in sys.modules and 'panel.models.katex' not in sys.modules:
@@ -72,16 +82,17 @@ class LaTeX(DivPaneBase):
         model = 'KaTeX' if module == 'katex' else 'MathJax'
         return lazy_load(f'panel.models.{module}', model, isinstance(comm, JupyterComm), root)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = self._get_model_type(root, comm)(**self._get_properties())
+    def _get_model(
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
+        model = self._get_model_type(root, comm)(**self._get_properties(doc))
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _get_properties(self):
-        properties = super()._get_properties()
-        obj = self.object
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
         if obj is None:
             obj = ''
         elif hasattr(obj, '_repr_latex_'):
@@ -89,4 +100,4 @@ class LaTeX(DivPaneBase):
         elif is_sympy_expr(obj):
             import sympy
             obj = r'$'+sympy.latex(obj)+'$'
-        return dict(properties, text=obj)
+        return dict(object=obj)

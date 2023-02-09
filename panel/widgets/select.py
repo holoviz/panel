@@ -9,7 +9,7 @@ import re
 
 from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Type,
 )
 
 import param
@@ -36,6 +36,8 @@ if TYPE_CHECKING:
 class SelectBase(Widget):
 
     options = param.ClassSelector(default=[], class_=(dict, list))
+
+    width = param.Integer(default=300)
 
     __abstract = True
 
@@ -171,6 +173,10 @@ class Select(SingleSelectBase):
         If set to 1 displays options as dropdown otherwise displays
         scrollable area.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'groups': None, 'size': None
+    }
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'size': None, 'groups': None
     }
@@ -228,7 +234,6 @@ class Select(SingleSelectBase):
                 'as it is one of the disabled options.'
             )
 
-
     def _validate_options_groups(self, *events):
         if self.options and self.groups:
             raise ValueError(
@@ -241,12 +246,11 @@ class Select(SingleSelectBase):
                 ' `groups` parameter, use `options` instead.'
             )
 
-    def _process_param_change(self, msg):
+    def _process_param_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
+        groups_provided = 'groups' in msg
         msg = super()._process_param_change(msg)
-        if msg.get('size') == 1:
-            msg.pop('size')
-        groups = msg.pop('groups', None)
-        if groups is not None:
+        if groups_provided or 'options' in msg and self.groups:
+            groups = self.groups
             if (all(isinstance(values, dict) for values in groups.values()) is False
                and  all(isinstance(values, list) for values in groups.values()) is False):
                 raise ValueError(
@@ -309,6 +313,8 @@ class _MultiSelectBase(SingleSelectBase):
     value = param.List(default=[])
 
     _supports_embed: ClassVar[bool] = False
+
+    __abstract = True
 
     def _process_param_change(self, msg):
         msg = super(SingleSelectBase, self)._process_param_change(msg)
@@ -448,6 +454,8 @@ class AutocompleteInput(Widget):
 
     value_input = param.String(default='', allow_None=True, doc="""
       Initial or entered text value updated on every key press.""")
+
+    width = param.Integer(default=300)
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
@@ -754,7 +762,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
         selected = [labels[indexOf(v, values)] for v in params.get('value', [])
                     if isIn(v, values)]
         unselected = [k for k in labels if k not in selected]
-        layout = dict(sizing_mode='stretch_both', background=self.background, margin=0)
+        layout = dict(
+            sizing_mode='stretch_both', margin=0,
+            styles=dict(background=self.background),
+        )
         self._lists = {
             False: MultiSelect(options=unselected, size=self.size, **layout),
             True: MultiSelect(options=selected, size=self.size, **layout)

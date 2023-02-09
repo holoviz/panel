@@ -1,9 +1,8 @@
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
-import {PanelHTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
-export class AudioView extends PanelHTMLBoxView {
+export class AudioView extends HTMLBoxView {
   model: Audio
   protected audioEl: HTMLAudioElement
   protected dialogEl: HTMLElement
@@ -46,7 +45,7 @@ export class AudioView extends PanelHTMLBoxView {
     this.audioEl.onplay = () => this.model.paused = false
     this.audioEl.ontimeupdate = () => this.update_time(this)
     this.audioEl.onvolumechange = () => this.update_volume(this)
-    this.el.appendChild(this.audioEl)
+    this.shadow_el.appendChild(this.audioEl)
     if (!this.model.paused)
       this.audioEl.play()
   }
@@ -141,10 +140,10 @@ export class Audio extends HTMLBox {
 
   static __module__ = "panel.models.widgets"
 
-  static init_Audio(): void {
+  static {
     this.prototype.default_view = AudioView
 
-    this.define<Audio.Props>(({Any, Boolean, Int, Number}) => ({
+    this.define<Audio.Props>(({Any, Boolean, Int, Number, Nullable}) => ({
       loop:     [ Boolean, false ],
       paused:   [ Boolean,  true ],
       muted:    [ Boolean, false ],
@@ -152,7 +151,7 @@ export class Audio extends HTMLBox {
       time:     [ Number,      0 ],
       throttle: [ Number,    250 ],
       value:    [ Any,        '' ],
-      volume:   [ Int            ],
+      volume:   [ Nullable(Int), null ],
     }))
   }
 }

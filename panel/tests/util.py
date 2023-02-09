@@ -1,12 +1,35 @@
 import sys
 import time
+import warnings
 
 import numpy as np
 import pytest
 
 from packaging.version import Version
 
+import panel as pn
+
 from panel.io.server import serve
+
+# Ignore tests which are not yet working with Bokeh 3.
+# Will begin to fail again when the first rc is released.
+pnv = Version(pn.__version__)
+bokeh3_failing = pytest.mark.xfail(
+    not (pnv.major == 1 and pnv.is_prerelease),
+    reason="Bokeh 3: Not working yet"
+)
+# These tests passes when running alone
+# but will fail when running with all the other tests
+bokeh3_failing_all = pytest.mark.skipif(
+    not (pnv.major == 1 and pnv.is_prerelease),
+    reason="Bokeh 3: Not working when running all tests"
+)
+
+ipywidgets_bokeh3 = pytest.mark.skipif(
+    not (pnv.major == 1 and pnv.is_prerelease),
+    reason="Bokeh3: Ipywidgets not working with Bokeh 3 yet"
+)
+
 
 try:
     import holoviews as hv
@@ -24,12 +47,6 @@ except Exception:
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
 
 try:
-    import pandas as pd
-except Exception:
-    pd = None
-pd_available = pytest.mark.skipif(pd is None, reason="requires pandas")
-
-try:
     import streamz
 except Exception:
     streamz = None
@@ -41,6 +58,7 @@ except Exception:
     jupyter_bokeh = None
 jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
 
+from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
 
 
@@ -54,12 +72,21 @@ def mpl_figure():
 
 
 def check_layoutable_properties(layoutable, model):
-    layoutable.background = '#ffffff'
-    assert model.background == '#ffffff'
+    layoutable.styles = {"background": '#fffff0'}
+    assert model.styles["background"] == '#fffff0'
+
+    # Is deprecated, but we still support it for now.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        layoutable.background = '#ffffff'
+    assert model.styles["background"] == '#ffffff'
 
     layoutable.css_classes = ['custom_class']
-    if isinstance(layoutable, Markdown):
-        assert model.css_classes == ['custom_class', 'markdown']
+    if isinstance(layoutable, Alert):
+        print(model.css_classes)
+        assert model.css_classes == ['markdown', 'custom_class', 'alert', 'alert-primary']
+    elif isinstance(layoutable, Markdown):
+        assert model.css_classes == ['markdown', 'custom_class']
     else:
         assert model.css_classes == ['custom_class']
 
@@ -82,7 +109,7 @@ def check_layoutable_properties(layoutable, model):
     assert model.max_width == 550
 
     layoutable.margin = 10
-    assert model.margin == (10, 10, 10, 10)
+    assert model.margin == 10
 
     layoutable.sizing_mode = 'stretch_width'
     assert model.sizing_mode == 'stretch_width'

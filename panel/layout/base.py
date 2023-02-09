@@ -41,9 +41,6 @@ class Panel(Reactive):
     # Bokeh model used to render this Panel
     _bokeh_model: ClassVar[Type[Model]]
 
-    # Properties that should sync JS -> Python
-    _linked_props: ClassVar[List[str]] = []
-
     # Parameters which require the preprocessors to be re-run
     _preprocess_params: ClassVar[List[str]] = []
 
@@ -75,16 +72,24 @@ class Panel(Reactive):
     # Callback API
     #----------------------------------------------------------------
 
+    def _init_params(self) -> Dict[str, Any]:
+        return {
+            p: v for p, v in self.param.values().items()
+            if v is not None and p != 'objects'
+        }
+
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         msg = dict(msg)
-        inverse = {v: k for k, v in self._rename.items() if v is not None}
+        inverse = {v: k for k, v in self._property_mapping.items() if v is not None}
         preprocess = any(inverse.get(k, k) in self._preprocess_params for k in msg)
-        if self._rename['objects'] in msg:
+
+        obj_key = self._property_mapping['objects']
+        if obj_key in msg:
             old = events['objects'].old
-            msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
+            msg[obj_key] = self._get_objects(model, old, doc, root, comm)
 
         with hold(doc):
             update = Panel._batch_update
@@ -143,11 +148,12 @@ class Panel(Reactive):
         model = self._bokeh_model()
         if root is None:
             root = model
-        objects = self._get_objects(model, [], doc, root, comm)
-        props = dict(self._init_params(), objects=objects)
-        model.update(**self._process_param_change(props))
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, self._linked_props, doc, root, comm)
+        objects = self._get_objects(model, [], doc, root, comm)
+        properties = self._get_properties(doc)
+        properties[self._property_mapping['objects']] = objects
+        model.update(**properties)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
     #----------------------------------------------------------------
@@ -616,6 +622,8 @@ class ListPanel(ListLike, Panel):
         Whether to add scrollbars if the content overflows the size
         of the container.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
     __abstract = True
@@ -631,6 +639,13 @@ class ListPanel(ListLike, Panel):
         elif 'objects' in params:
             params['objects'] = [panel(pane) for pane in params['objects']]
         super(Panel, self).__init__(**params)
+
+    @property
+    def _linked_properties(self):
+        return tuple(
+            self._property_mapping.get(p, p) for p in self.param
+            if p not in ListPanel.param and self._property_mapping.get(p, p) is not None
+        )
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         scroll = params.pop('scroll', None)
@@ -663,16 +678,18 @@ class NamedListPanel(NamedListLike, Panel):
         Whether to add scrollbars if the content overflows the size
         of the container.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'scroll': None}
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'scroll': None}
 
     __abstract = True
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        scroll = params.pop('scroll', None)
-        css_classes = self.css_classes or []
-        if scroll:
-            params['css_classes'] = css_classes + ['scrollable']
-        elif scroll == False:
+        if 'scroll' in params:
+            scroll = params.pop('scroll')
+            css_classes = list(self.css_classes or [])
+            if scroll:
+                css_classes += ['scrollable']
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
@@ -700,11 +717,7 @@ class Row(ListPanel):
     >>> pn.Row(some_widget, some_pane, some_python_object)
     """
 
-    col_sizing = param.Parameter()
-
     _bokeh_model: ClassVar[Type[Model]] = BkRow
-
-    _rename: ClassVar[Mapping[str, str | None]] = dict(ListPanel._rename, col_sizing='cols')
 
 
 class Column(ListPanel):
@@ -723,11 +736,7 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    row_sizing = param.Parameter()
-
     _bokeh_model: ClassVar[Type[Model]] = BkColumn
-
-    _rename: ClassVar[Mapping[str, str | None]] = dict(ListPanel._rename, row_sizing='rows')
 
 
 class WidgetBox(ListPanel):
@@ -769,7 +778,7 @@ class WidgetBox(ListPanel):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'objects': 'children', 'horizontal': None
+        'disabled': None, 'objects': 'children', 'horizontal': None
     }
 
     @property
@@ -778,9 +787,9 @@ class WidgetBox(ListPanel):
 
     @param.depends('disabled', 'objects', watch=True)
     def _disable_widgets(self) -> None:
-        for obj in self:
-            if hasattr(obj, 'disabled'):
-                obj.disabled = self.disabled
+        from ..widgets import Widget
+        for obj in self.select(Widget):
+            obj.disabled = self.disabled
 
     def __init__(self, *objects: Any, **params: Any):
         super().__init__(*objects, **params)

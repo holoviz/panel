@@ -21,15 +21,15 @@ def test_checkbox(document, comm):
     widget = checkbox.get_root(document, comm=comm)
 
     assert isinstance(widget, checkbox._widget_type)
-    assert widget.labels == ['Checkbox']
-    assert widget.active == [0]
+    assert widget.label == 'Checkbox'
+    assert widget.active == True
 
-    widget.active = []
-    checkbox._process_events({'active': []})
+    widget.active = False
+    checkbox._process_events({'active': False})
     assert checkbox.value == False
 
     checkbox.value = True
-    assert widget.active == [0]
+    assert widget.active == True
 
 
 def test_date_picker(document, comm):

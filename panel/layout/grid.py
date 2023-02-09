@@ -8,13 +8,13 @@ import math
 from collections import OrderedDict, namedtuple
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Optional, Tuple,
 )
 
 import numpy as np
 import param
 
-from bokeh.models import Box as BkBox, GridBox as BkGridBox
+from bokeh.models import FlexBox as BkFlexBox, GridBox as BkGridBox
 
 from ..io.model import hold
 from .base import (
@@ -52,11 +52,17 @@ class GridBox(ListPanel):
     ncols = param.Integer(default=None, bounds=(0, None),  doc="""
       Number of columns to reflow the layout into.""")
 
-    _bokeh_model = BkGridBox
+    _bokeh_model: ClassVar[Model] = BkGridBox
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'objects': 'children', 'nrows': None, 'ncols': None}
+    _linked_properties: ClassVar[Tuple[str]] = ()
 
-    _source_transforms = {'scroll': None, 'objects': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'objects': 'children', 'nrows': None, 'ncols': None
+    }
+
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'scroll': None, 'objects': None
+    }
 
     @classmethod
     def _flatten_grid(cls, layout, nrows=None, ncols=None):
@@ -83,7 +89,7 @@ class GridBox(ListPanel):
                 if not children:
                     return Grid(0, 0, [])
 
-                nrows = lcm(*[ child.nrows for child in children ])
+                nrows = lcm(*[child.nrows for child in children])
                 if not ncols: # This differs from bokeh.layout.grid
                     ncols = sum([ child.ncols for child in children ])
 
@@ -154,12 +160,13 @@ class GridBox(ListPanel):
         model = self._bokeh_model()
         if root is None:
             root = model
-        objects = self._get_objects(model, [], doc, root, comm)
-        properties = self._process_param_change(self._init_params())
-        properties['children'] = self._get_children(objects, self.nrows, self.ncols)
-        model.update(**properties)
         self._models[root.ref['id']] = (model, parent)
-        self._link_props(model, self._linked_props, doc, root, comm)
+        objects = self._get_objects(model, [], doc, root, comm)
+        children = self._get_children(objects, self.nrows, self.ncols)
+        properties = self._get_properties(doc)
+        properties['children'] = children
+        model.update(**properties)
+        self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
     def _update_model(
@@ -212,13 +219,19 @@ class GridSpec(Panel):
 
     height = param.Integer(default=600)
 
-    _bokeh_model = BkGridBox
+    _bokeh_model: ClassVar[Model] = BkGridBox
 
-    _source_transforms = {'objects': None, 'mode': None}
+    _linked_properties: ClassVar[Tuple[str]] = ()
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None
+    }
 
-    _preprocess_params = ['objects']
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'objects': None, 'mode': None
+    }
+
+    _preprocess_params: ClassVar[List[str]] = ['objects']
 
     def __init__(self, **params):
         if 'objects' not in params:
@@ -307,7 +320,7 @@ class GridSpec(Panel):
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
 
-            if isinstance(child, BkBox) and len(child.children) == 1:
+            if isinstance(child, BkFlexBox) and len(child.children) == 1:
                 child.children[0].update(**properties)
             else:
                 child.update(**properties)

@@ -28,6 +28,8 @@ class Theme(param.Parameterized):
 
     bokeh_theme = param.ClassSelector(class_=(_BkTheme, str))
 
+    _modifiers = {}
+
     _template = None
 
     __abstract = True
@@ -53,7 +55,7 @@ class DefaultTheme(Theme):
 
 BOKEH_DARK = dict(_dark_minimal.json)
 
-BOKEH_DARK['attrs']['Figure'].update({
+BOKEH_DARK['attrs']['Plot'].update({
     "background_fill_color": "#3f3f3f",
     "border_fill_color": "#2f2f2f",
 })

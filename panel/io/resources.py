@@ -3,7 +3,6 @@ Patches bokeh resources to make it easy to add external JS and CSS
 resources via the panel.config object.
 """
 import copy
-import glob
 import importlib
 import json
 import logging
@@ -21,6 +20,7 @@ from bokeh.embed.bundle import (
     CSS_RESOURCES as BkCSS_RESOURCES, Bundle as BkBundle, _bundle_extensions,
     _use_mathjax, bundle_models, extension_dirs,
 )
+from bokeh.models import ImportedStyleSheet
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
 from jinja2.environment import Environment
@@ -81,6 +81,12 @@ RESOURCE_URLS = {
         'exclude': [],
         'dest': ''
     },
+    'bootstrap5': {
+        'tar': 'https://registry.npmjs.org/bootstrap/-/bootstrap-5.3.0-alpha1.tgz',
+        'src': 'package/dist',
+        'exclude': [],
+        'dest': ''
+    },
     'jQuery': {
         'tar': 'https://registry.npmjs.org/jquery/-/jquery-3.5.1.tgz',
         'src': 'package/dist',
@@ -91,12 +97,14 @@ RESOURCE_URLS = {
 
 CSS_URLS = {
     'font-awesome': f'{CDN_DIST}bundled/font-awesome/css/all.min.css',
-    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/css/bootstrap.min.css'
+    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/css/bootstrap.min.css',
+    'bootstrap5': f'{CDN_DIST}bundled/bootstrap5/css/bootstrap.min.css'
 }
 
 JS_URLS = {
     'jQuery': f'{CDN_DIST}bundled/jquery/jquery.slim.min.js',
-    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/js/bootstrap.bundle.min.js'
+    'bootstrap4': f'{CDN_DIST}bundled/bootstrap4/js/bootstrap.bundle.min.js',
+    'bootstrap5': f'{CDN_DIST}bundled/bootstrap5/js/bootstrap.bundle.min.js'
 }
 
 extension_dirs['panel'] = str(DIST_DIR)
@@ -169,17 +177,46 @@ def loading_css():
         svg = f.read().replace('\n', '').format(color=config.loading_color)
     b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return f"""
-    .bk.pn-loading.{config.loading_spinner}:before {{
+    .pn-loading.{config.loading_spinner}:before {{
       background-image: url("data:image/svg+xml;base64,{b64}");
       background-size: auto calc(min(50%, {config.loading_max_height}px));
     }}
     """
 
-def bundled_files(model, file_type='javascript'):
-    bdir = BUNDLE_DIR / model.__name__.lower()
-    name = model.__name__.lower()
-    shared = list((JS_URLS if file_type == 'javascript' else CSS_URLS).values())
+def patch_stylesheet(stylesheet, dist_url):
+    url = stylesheet.url
+    if not url.startswith('http') and not url.startswith(dist_url):
+        patched_url = f'{dist_url}{url}'
+    elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
+        patched_url = url.replace(CDN_DIST, dist_url)
+    else:
+        return
+    try:
+        stylesheet.url = patched_url
+    except Exception:
+        pass
 
+def patch_model_css(root, dist_url):
+    """
+    Temporary patch for Model.css property used by Panel to provide
+    stylesheets for components.
+
+    ALERT: Should find better solution before official Bokeh 3.x compatible release
+    """
+    # Patch model CSS properties
+    for stylesheet in root.select({'type': ImportedStyleSheet}):
+        patch_stylesheet(stylesheet, dist_url)
+
+def global_css(name):
+    if RESOURCE_MODE == 'server':
+        return f'static/extensions/panel/css/{name}.css'
+    else:
+        return f'{CDN_DIST}css/{name}.css'
+
+def bundled_files(model, file_type='javascript'):
+    name = model.__name__.lower()
+    bdir = BUNDLE_DIR / name
+    shared = list((JS_URLS if file_type == 'javascript' else CSS_URLS).values())
     files = []
     for url in getattr(model, f"__{file_type}_raw__", []):
         if url.startswith(CDN_DIST):
@@ -258,18 +295,19 @@ def bundle_resources(roots, resources):
 
 class Resources(BkResources):
 
-    def __init__(self, *args, absolute=False, **kwargs):
+    def __init__(self, *args, absolute=False, notebook=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.absolute = absolute
+        self.notebook = notebook
 
     @classmethod
-    def from_bokeh(cls, bkr, absolute=False):
+    def from_bokeh(cls, bkr, absolute=False, notebook=False):
         kwargs = {}
         if bkr.mode.startswith("server"):
             kwargs['root_url'] = bkr.root_url
         return cls(
             mode=bkr.mode, version=bkr.version, minified=bkr.minified,
-            legacy=bkr.legacy, log_level=bkr.log_level,
+            log_level=bkr.log_level, notebook=notebook,
             path_versioner=bkr.path_versioner,
             components=bkr._components, base_dir=bkr.base_dir,
             root_dir=bkr.root_dir, absolute=absolute, **kwargs
@@ -295,10 +333,13 @@ class Resources(BkResources):
         """
         new_resources = []
         for resource in resources:
-            if (resource.startswith(state.base_url) or resource.startswith('static/')):
+            if resource.startswith(CDN_DIST) and self.notebook:
+                resource = resource.replace(CDN_DIST, '')
+                resource = f'/panel-preview/static/extensions/panel/{resource}'
+            elif (resource.startswith(state.base_url) or resource.startswith('static/')):
                 if resource.startswith(state.base_url):
                     resource = resource[len(state.base_url):]
-                if state.rel_path:
+                elif state.rel_path:
                     resource = f'{state.rel_path}/{resource}'
                 elif self.absolute and self.mode == 'server':
                     resource = f'{self.root_url}{resource}'
@@ -307,7 +348,9 @@ class Resources(BkResources):
 
     @property
     def dist_dir(self):
-        if self.mode == 'server':
+        if self.notebook:
+            dist_dir = '/panel-preview/static/extensions/panel/'
+        elif self.mode == 'server':
             if state.rel_path:
                 dist_dir = f'{state.rel_path}/{LOCAL_DIST}'
             else:
@@ -329,13 +372,6 @@ class Resources(BkResources):
                 css_txt = f.read()
                 if css_txt not in raw:
                     raw.append(css_txt)
-        for cssf in glob.glob(str(DIST_DIR / 'css' / '*.css')):
-            if self.mode != 'inline':
-                break
-            with open(cssf, encoding='utf-8') as f:
-                css_txt = f.read()
-            if css_txt not in raw:
-                raw.append(css_txt)
 
         if config.loading_spinner:
             raw.append(loading_css())
@@ -383,12 +419,6 @@ class Resources(BkResources):
             if os.path.isfile(cssf) or cssf in files:
                 continue
             css_files.append(cssf)
-
-        dist_dir = self.dist_dir
-        for cssf in glob.glob(str(DIST_DIR / 'css' / '*.css')):
-            if self.mode == 'inline':
-                break
-            css_files.append(dist_dir + f'css/{os.path.basename(cssf)}')
         return css_files
 
     @property
@@ -401,9 +431,10 @@ class Resources(BkResources):
 
 class Bundle(BkBundle):
 
-    def __init__(self, **kwargs):
+    def __init__(self, notebook=False, **kwargs):
         from ..config import config
         from ..reactive import ReactiveHTML
+        self.notebook = notebook
         js_modules = list(config.js_modules.values())
         for model in param.concrete_descendents(ReactiveHTML).values():
             if getattr(model, '__javascript_modules__', None) and model._loaded():
@@ -422,15 +453,19 @@ class Bundle(BkBundle):
             resource = resource.replace('https://unpkg.com', config.npm_cdn)
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
-            if (resource.startswith('static/') and state.rel_path):
+            if resource.startswith(CDN_DIST) and self.notebook:
+                resource = resource.replace(CDN_DIST, '')
+                resource = f'/panel-preview/static/extensions/panel/{resource}'
+            elif (resource.startswith('static/') and state.rel_path):
                 if state.rel_path:
                     resource = f'{state.rel_path}/{resource}'
             redirected.append(resource)
         return redirected
 
     @classmethod
-    def from_bokeh(cls, bk_bundle):
+    def from_bokeh(cls, bk_bundle, notebook=False):
         return cls(
+            notebook=notebook,
             js_files=bk_bundle.js_files,
             js_raw=bk_bundle.js_raw,
             css_files=bk_bundle.css_files,

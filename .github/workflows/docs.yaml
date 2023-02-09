@@ -53,7 +53,7 @@ jobs:
         if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
-          pip install pyecharts "idom==0.24"
+          pip install --use-deprecated=legacy-resolver pyecharts
       - name: bokeh sampledata
         run: |
           conda activate test-environment

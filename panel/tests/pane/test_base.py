@@ -7,12 +7,15 @@ from panel.interact import interactive
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.pane import (
-    IDOM, Bokeh, HoloViews, Interactive, IPyWidget, PaneBase, Vega,
+    Bokeh, HoloViews, Interactive, IPyWidget, PaneBase, RGGPlot, Vega,
 )
 from panel.param import ParamMethod
 from panel.tests.util import check_layoutable_properties
 
-SKIP_PANES = (Bokeh, HoloViews, ParamMethod, interactive, IPyWidget, Interactive, IDOM, Vega)
+SKIP_PANES = (
+    Bokeh, HoloViews, Interactive, IPyWidget, ParamMethod, RGGPlot,
+    Vega, interactive
+)
 
 all_panes = [w for w in param.concrete_descendents(PaneBase).values()
              if not w.__name__.startswith('_') and not
@@ -36,7 +39,7 @@ def test_pane_layout_properties(pane, document, comm):
 
 
 @pytest.mark.parametrize('pane', all_panes+[Bokeh])
-def test_pane_linkable_params(pane):
+def test_pane_linkable_params(pane, document, comm):
     try:
         p = pane()
     except ImportError:
@@ -46,7 +49,7 @@ def test_pane_linkable_params(pane):
 
     try:
         CallbackGenerator.error = True
-        layout.get_root()
+        layout.get_root(document, comm)
     except Exception as e:
         raise e
     finally:

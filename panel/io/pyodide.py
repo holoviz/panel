@@ -7,7 +7,9 @@ import json
 import os
 import sys
 
-from typing import Any, Callable, Tuple
+from typing import (
+    Any, Callable, List, Tuple,
+)
 
 import bokeh
 import param
@@ -15,13 +17,14 @@ import param
 import pyodide # isort: split
 
 from bokeh import __version__
+from bokeh.core.serialization import Serializer
 from bokeh.document import Document
+from bokeh.document.json import PatchJson
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
-from bokeh.protocol.messages.patch_doc import process_document_events
 from js import JSON, XMLHttpRequest
 
 from ..config import config
@@ -163,6 +166,16 @@ def _model_json(model: Model, target: str) -> Tuple[Document, str]:
         version   = __version__,
     ))
 
+def _process_document_events(doc: Document, events: List[Any]):
+    serializer = Serializer(references=doc.models.synced_references)
+    patch_json = PatchJson(events=serializer.encode(events))
+    doc.models.flush()
+
+    buffer_map = {}
+    for buffer in serializer.buffers:
+        buffer_map[buffer.id] = pyodide.ffi.to_js(buffer.to_bytes()).buffer
+    return patch_json, buffer_map
+
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
     Links Python and JS documents in Pyodide ensuring taht messages
@@ -188,11 +201,8 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         setter = getattr(event, 'setter', None)
         if setter is not None and setter == 'js':
             return
-        json_patch, buffers = process_document_events([event], use_buffers=True)
-        buffer_map = {}
-        for (ref, buffer) in buffers:
-            buffer_map[ref['id']] = pyodide.ffi.to_js(buffer).buffer
-        jsdoc.apply_json_patch(JSON.parse(json_patch), pyodide.ffi.to_js(buffer_map), setter_id='python')
+        json_patch, buffer_map = _process_document_events(pydoc, [event])
+        jsdoc.apply_json_patch(json_patch, pyodide.ffi.to_js(buffer_map), setter_id='python')
 
     pydoc.on_change(pysync)
     pydoc.unhold()
@@ -220,10 +230,7 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
     def pysync(event):
         if setter is not None and getattr(event, 'setter', None) == setter:
             return
-        json_patch, buffers = process_document_events([event], use_buffers=True)
-        buffer_map = {}
-        for (ref, buffer) in buffers:
-            buffer_map[ref['id']] = pyodide.to_js(buffer).buffer
+        json_patch, buffer_map = _process_document_events(doc, [event])
         dispatch_fn(json_patch, pyodide.ffi.to_js(buffer_map), msg_id)
 
     doc.on_change(pysync)

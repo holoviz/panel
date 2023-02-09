@@ -4,6 +4,7 @@ import datetime as dt
 import time
 
 import numpy as np
+import pandas as pd
 import param
 import pytest
 
@@ -20,11 +21,6 @@ except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
 pytestmark = pytest.mark.ui
-
-try:
-    import pandas as pd
-except ImportError:
-    pytestmark = pytest.mark.skip('pandas not available')
 
 from panel import state
 from panel.depends import bind
@@ -49,8 +45,7 @@ def df_mixed():
 
 @pytest.fixture(scope='session')
 def df_mixed_as_string():
-    return """
-        index
+    return """index
         int
         float
         str
@@ -157,7 +152,7 @@ def test_tabulator_default(page, port, df_mixed, df_mixed_as_string):
     expected_ncols = ncols + 2  # _index + index + data columns
 
     # Check that the whole table content is on the page
-    table = page.locator('.bk.pnx-tabulator.tabulator')
+    table = page.locator('.pnx-tabulator.tabulator')
     expect(table).to_have_text(
         df_mixed_as_string,
         use_inner_text=True
@@ -282,7 +277,7 @@ def test_tabulator_hidden_columns(page, port, df_mixed):
         false
     """
     # Check that the whole table content is on the page
-    table = page.locator('.bk.pnx-tabulator.tabulator')
+    table = page.locator('.pnx-tabulator.tabulator')
     expect(table).to_have_text(expected_text, use_inner_text=True)
 
 
@@ -614,7 +609,7 @@ def test_tabulator_editors_bokeh_int(page, port, df_mixed):
 
     page.goto(f"http://localhost:{port}")
 
-    cell = page.locator('text="1" >> visible=true')
+    cell = page.locator('text="1"').first
     cell.click()
     # An IntEditor with step is turned into a number tabulator editor
     # with step respected
@@ -882,7 +877,7 @@ def test_tabulator_alignment_text_default(page, port, df_mixed):
 
     val = df_mixed.at[findex, 'int']
     # Selecting the visible 1 as there's a non displayed 1 in the hidden index
-    cell = page.locator(f'text="{val}" >> visible=true')
+    cell = page.locator(f'text="{val}"').first
     # Integers are right aligned
     expect(cell).to_have_css('text-align', 'right')
 
@@ -1007,7 +1002,7 @@ def test_tabulator_frozen_columns(page, port, df_mixed):
     """
     # Check that the whole table content is on the page, it is not in the
     # same order as if the table was displayed without frozen columns
-    table = page.locator('.bk.pnx-tabulator.tabulator')
+    table = page.locator('.pnx-tabulator.tabulator')
     expect(table).to_have_text(
         expected_text,
         use_inner_text=True
@@ -1247,7 +1242,7 @@ def test_tabulator_theming(page, port, df_mixed, df_mixed_as_string, theme):
     page.goto(f"http://localhost:{port}")
 
     # Check that the whole table content is on the page
-    table = page.locator('.bk.pnx-tabulator.tabulator')
+    table = page.locator('.pnx-tabulator.tabulator')
     expect(table).to_have_text(
         df_mixed_as_string,
         use_inner_text=True
@@ -2285,7 +2280,7 @@ def test_tabulator_streaming_default(page, port):
 
     expect(page.locator('.tabulator-row')).to_have_count(len(df))
 
-    height_start = page.locator('.bk.pnx-tabulator.tabulator').bounding_box()['height']
+    height_start = page.locator('.pnx-tabulator.tabulator').bounding_box()['height']
 
 
     def stream_data():
@@ -2299,7 +2294,7 @@ def test_tabulator_streaming_default(page, port):
     assert len(widget.value) == expected_len
     assert widget.current_view.equals(widget.value)
 
-    assert page.locator('.bk.pnx-tabulator.tabulator').bounding_box()['height'] > height_start
+    assert page.locator('.pnx-tabulator.tabulator').bounding_box()['height'] > height_start
 
 
 def test_tabulator_streaming_no_follow(page, port):
@@ -2319,7 +2314,7 @@ def test_tabulator_streaming_no_follow(page, port):
     expect(page.locator('.tabulator-row')).to_have_count(len(df))
     assert page.locator('text="-1"').count() == 2
 
-    height_start = page.locator('.bk.pnx-tabulator.tabulator').bounding_box()['height']
+    height_start = page.locator('.pnx-tabulator.tabulator').bounding_box()['height']
 
     recs = []
     nrows2 = 5
@@ -2346,7 +2341,7 @@ def test_tabulator_streaming_no_follow(page, port):
     assert len(widget.value) == nrows1 + repetitions * nrows2
     assert widget.current_view.equals(widget.value)
 
-    assert page.locator('.bk.pnx-tabulator.tabulator').bounding_box()['height'] == height_start
+    assert page.locator('.pnx-tabulator.tabulator').bounding_box()['height'] == height_start
 
 
 def test_tabulator_patching(page, port, df_mixed):
@@ -2723,6 +2718,7 @@ def test_tabulator_click_event_and_header_filters(page, port):
     assert values[0] == ('col2', 4, 'Z')
 
 
+@pytest.mark.skip(reason="Bokeh bug: https://github.com/bokeh/bokeh/issues/12788")
 def test_tabulator_click_event_and_header_filters_and_streamed_data(page, port):
     df = pd.DataFrame({
         'col1': list('ABCDD'),
@@ -3268,6 +3264,7 @@ def test_tabulator_loading_no_horizontal_rescroll(page, port, df_mixed):
 
     cell = page.locator('text="target"').first
     # Scroll to the right
+    page.wait_for_timeout(200)
     cell.scroll_into_view_if_needed()
     page.wait_for_timeout(200)
     bb = page.locator('text="Target"').bounding_box()
@@ -3297,7 +3294,9 @@ def test_tabulator_loading_no_vertical_rescroll(page, port):
     page.goto(f"http://localhost:{port}")
 
     # Scroll to the bottom, and give it a little extra time
-    page.locator('text="T"').scroll_into_view_if_needed()
+    cell = page.locator('text="T"')
+    page.wait_for_timeout(200)
+    cell.scroll_into_view_if_needed()
     page.wait_for_timeout(200)
 
     bb = page.locator('text="T"').bounding_box()
