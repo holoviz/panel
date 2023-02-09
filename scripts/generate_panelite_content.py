@@ -42,7 +42,7 @@ NOTEBOOK_ISSUES = {
     "reference/widgets/RangeSlider.ipynb": ["https://github.com/holoviz/panel/issues/4402"],
     "reference/widgets/SpeechToText.ipynb": ["https://github.com/holoviz/panel/issues/4404"],
     "reference/widgets/Terminal.ipynb": ["https://github.com/holoviz/panel/issues/4407"],
-
+    "gallery/components/VuePdbInput.ipynb": ["https://github.com/holoviz/panel/issues/4417"],
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
@@ -54,7 +54,15 @@ def _get_dependencies(nbpath: pathlib.Path):
 assert _get_dependencies("reference/panes/Folium.ipynb")==["'panel'", "'folium'"]
 
 def _to_source(dependencies):
-    return f"import piplite\nawait piplite.install([{', '.join(dependencies)}])"
+    source = f"import piplite\nawait piplite.install([{', '.join(dependencies)}])"
+
+    if "'pyodide-http'" in dependencies:
+        source += "\n\nimport pyodide_http\npyodide_http.patch_all()"
+
+    return source
+
+assert _to_source(["'panel'"])=="import piplite\nawait piplite.install(['panel'])"
+assert _to_source(["'pyodide-http'"])=="import piplite\nawait piplite.install(['pyodide-http'])\n\nimport pyodide_http\npyodide_http.patch_all()"
 
 def _get_install_code_cell(nbpath: pathlib.Path):
     dependencies = _get_dependencies(nbpath)
