@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm
 
+DEFAULT_DATAFRAME_STYLE = {"overflow": "auto", "padding-right": "1px"}
 
 class DivPaneBase(PaneBase):
     """
@@ -128,7 +129,7 @@ class DataFrame(HTML):
     classes = param.List(default=['panel-df'], doc="""
         CSS class(es) to apply to the resulting html table.""")
 
-    col_space = param.ClassSelector(default=None, class_=(str, int), doc="""
+    col_space = param.ClassSelector(default=None, class_=(str, int, dict), doc="""
         The minimum width of each column in CSS length units. An int
         is assumed to be px units.""")
 
@@ -237,6 +238,12 @@ class DataFrame(HTML):
 
     def _get_properties(self):
         properties = DivPaneBase._get_properties(self)
+
+        if "style" not in properties:
+            properties["style"]=DEFAULT_DATAFRAME_STYLE.copy()
+        else:
+            properties["style"]={**DEFAULT_DATAFRAME_STYLE, **properties["style"]}
+
         if self._stream:
             df = self._object
         else:

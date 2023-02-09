@@ -6,7 +6,7 @@ table.panel-df {
     border-spacing: 0;
     color: black;
     font-size: 12px;
-    table-layout: fixed;
+    table-layout: auto;
     width: 100%;
 }
 
