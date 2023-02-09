@@ -116,5 +116,7 @@
     "gallery/apis/stocks_matplotlib.ipynb": ["panel"],
     "gallery/apis/stocks_plotly.ipynb": ["panel", "plotly"],
     "gallery/components/CanvasDraw.ipynb": ["panel"],
-
+    "gallery/components/LeafletHeatMap.ipynb": ["panel"],
+    "gallery/components/MaterialUI.ipynb": ["panel"],
+    "gallery/components/VuePdbInput.ipynb": ["panel", "pyodide-http"]
 }
