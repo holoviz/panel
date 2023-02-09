@@ -340,20 +340,21 @@ class BaseTable(ReactiveData, Widget):
     def _sort_df(self, df: pd.DataFrame | None) -> pd.DataFrame | None:
         if not self.sorters or df is None:
             return df
+        df_copy = df.copy()
         fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
         ascending = [s['dir'] == 'asc' for s in self.sorters]
 
         # Temporarily add _index_ column because Tabulator uses internal _index
         # as additional sorter to break ties
-        df['_index_'] = np.arange(len(df)).astype(str)
+        df_copy['_index_'] = np.arange(len(df_copy)).astype(str)
         fields.append('_index_')
         ascending.append(True)
 
         # Handle sort on index column if show_index=True
         if self.show_index:
-            rename = 'index' in fields and df.index.name is None
+            rename = 'index' in fields and df_copy.index.name is None
             if rename:
-                df.index.name = 'index'
+                df_copy.index.name = 'index'
         else:
             rename = False
 
@@ -367,15 +368,16 @@ class BaseTable(ReactiveData, Widget):
             except Exception:
                 return col
 
-        df_sorted = df.sort_values(fields, ascending=ascending, kind='mergesort',
+        df_sorted = df_copy.sort_values(fields, ascending=ascending, kind='mergesort',
                                   key=tabulator_sorter)
 
         # Revert temporary changes to DataFrames
         if rename:
-            df.index.name = None
             df_sorted.index.name = None
-        df.drop(columns=['_index_'], inplace=True)
-        df_sorted.drop(columns=['_index_'], inplace=True)
+        df_sorted = df_sorted.drop(columns=['_index_'])
+        # Columns can actually change when inserting another column, e.g.
+        # from RangeIndex to Index. Resetting the original columns.
+        df_sorted.columns = df.columns
         return df_sorted
 
     def _filter_dataframe(self, df: pd.DataFrame | None) -> pd.DataFrame | None:
