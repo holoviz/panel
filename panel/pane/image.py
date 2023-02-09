@@ -308,7 +308,7 @@ class ICO(ImageBase):
 
 class JPG(ImageBase):
     """
-    The `JPG` pane embeds a .jpg or .jpeg image file in a panel if provided a
+    The `JPG` pane embeds a .jpg image file in a panel if provided a
     local path, or will link to a remote image if provided a URL.
 
     Reference: https://panel.holoviz.org/reference/panes/JPG.html
@@ -342,6 +342,26 @@ class JPG(ImageBase):
                 b.read(int(struct.unpack(">H", b.read(2))[0])-2)
             c = b.read(1)
         return int(w), int(h)
+
+
+class JPEG(JPG):
+    """
+    The `JPEG` pane embeds a .jpeg image file in a panel if provided a
+    local path, or will link to a remote image if provided a URL.
+
+    Reference: https://panel.holoviz.org/reference/panes/JPEG.html
+
+    :Example:
+
+    >>> JPEG(
+    ...     'test-image.jpeg',
+    ...     alt_text='A nice tree',
+    ...     link_url='https://en.wikipedia.org/wiki/JPEG',
+    ...     width=500
+    ... )
+    """
+
+    filetype: ClassVar[str] = 'jpeg'
 
 
 class SVG(ImageBase):
