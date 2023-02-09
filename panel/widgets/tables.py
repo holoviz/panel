@@ -337,8 +337,8 @@ class BaseTable(ReactiveData, Widget):
             else:
                 self._update_columns(event, model)
 
-    def _sort_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        if not self.sorters:
+    def _sort_df(self, df: pd.DataFrame | None) -> pd.DataFrame | None:
+        if not self.sorters or df is None:
             return df
         fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
         ascending = [s['dir'] == 'asc' for s in self.sorters]
@@ -378,20 +378,22 @@ class BaseTable(ReactiveData, Widget):
         df_sorted.drop(columns=['_index_'], inplace=True)
         return df_sorted
 
-    def _filter_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _filter_dataframe(self, df: pd.DataFrame | None) -> pd.DataFrame | None:
         """
         Filter the DataFrame.
 
         Parameters
         ----------
-        df : DataFrame
+        df : DataFrame | None
            The DataFrame to filter
 
         Returns
         -------
-        DataFrame
+        DataFrame | None
             The filtered DataFrame
         """
+        if df is None:
+            return df
         filters = []
         for col_name, filt in self._filters:
             if col_name is not None and col_name not in df.columns:
