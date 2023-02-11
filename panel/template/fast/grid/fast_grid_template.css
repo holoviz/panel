@@ -418,5 +418,7 @@ img.app-logo {
 
 div.pn-wrapper {
     position: relative;
-    background: var(--background-color)
+    background: var(--background-color);
+    margin-right: 0px;
+    margin-left: 0px;
 }
