@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from bokeh.model import Model
     from pyviz_comms import Comm  # type: ignore
 
-
 class HTMLBasePane(ModelPane):
     """
     Baseclass for Panes which render HTML inside a Bokeh Div.
@@ -114,7 +113,7 @@ class DataFrame(HTML):
     classes = param.List(default=['panel-df'], doc="""
         CSS class(es) to apply to the resulting html table.""")
 
-    col_space = param.ClassSelector(default=None, class_=(str, int), doc="""
+    col_space = param.ClassSelector(default=None, class_=(str, int, dict), doc="""
         The minimum width of each column in CSS length units. An int
         is assumed to be px units.""")
 
@@ -185,6 +184,8 @@ class DataFrame(HTML):
 
     _stylesheets = ['css/dataframe.css']
 
+    _default_styles = {"overflow": "auto", "padding-right": "1px"}
+
     def __init__(self, object=None, **params):
         self._stream = None
         super().__init__(object, **params)
@@ -247,8 +248,15 @@ class DataFrame(HTML):
 
     def _init_params(self) -> Dict[str, Any]:
         params = HTMLBasePane._init_params(self)
+
+        if "styles" not in params:
+            params["styles"]={**self._default_styles}
+        else:
+            params["styles"]={**self._default_styles, **params["styles"]}
+
         if self._stream:
             params['object'] = self._object
+
         return params
 
 
