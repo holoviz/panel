@@ -184,8 +184,6 @@ class DataFrame(HTML):
 
     _stylesheets = ['css/dataframe.css']
 
-    _default_styles = {"overflow": "auto", "padding-right": "1px"}
-
     def __init__(self, object=None, **params):
         self._stream = None
         super().__init__(object, **params)
@@ -248,11 +246,6 @@ class DataFrame(HTML):
 
     def _init_params(self) -> Dict[str, Any]:
         params = HTMLBasePane._init_params(self)
-
-        if "styles" not in params:
-            params["styles"]={**self._default_styles}
-        else:
-            params["styles"]={**self._default_styles, **params["styles"]}
 
         if self._stream:
             params['object'] = self._object
