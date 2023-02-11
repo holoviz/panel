@@ -40,7 +40,7 @@ class FastStyle(param.Parameterized):
     accent_base_color = param.String(default="#0072B5")
     collapsed_icon = param.String(default=COLLAPSED_SVG_ICON)
     expanded_icon = param.String(default=EXPANDED_SVG_ICON)
-    color = param.String(default="#00aa41")
+    color = param.String(default="#2B2B2B")
     neutral_fill_card_rest = param.String(default="#F7F7F7")
     neutral_focus = param.String(default="#888888")
     neutral_foreground_rest = param.String(default="#2B2B2B")
