@@ -428,9 +428,9 @@
          >
           {% set count = [] %}
           {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}
-            <div className="card-margin" key="{{count|length + 1 }}" style={% raw %}{{borderRadius: '5px'}}{% endraw %}>
+            <div className="fast-card-margin" key="{{count|length + 1 }}" style={% raw %}{{borderRadius: '5px'}}{% endraw %}>
               {% if main_layout %}
-              <fast-card class="pn-wrapper">
+              <fast-card class="pn-wrapper"><div class="pn-overflow-auto">
 	      {% else %}
               <div class="pn-wrapper">
 	      {% endif %}
@@ -442,7 +442,7 @@
                 </span>
                 {{ embed(root) | indent(4) | replace("class", "className") | replace('style="display: contents;"', 'style={{display: "contents"}}') }}
              {% if main_layout %}
-             </fast-card>
+            </div></fast-card>
 	     {% else %}
              </div>
 	     {% endif %}

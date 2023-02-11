@@ -270,9 +270,9 @@
 	{% for doc in docs %}
 	{% for root in doc.roots %}
 	{% if "main" in root.tags %}
-        <div class="card-margin">
+        <div class="fast-card-margin">
 	  {% if main_layout %}
-	  <fast-card class="pn-wrapper">
+	  <fast-card class="pn-wrapper"><div class="pn-overflow-auto">
 	  {% else %}
 	  <div class="pn-wrapper">
 	  {% endif %}
@@ -281,7 +281,7 @@
 	    </span>
 	    {{ embed(root) | indent(4) }}
 	  {% if main_layout %}
-	  </fast-card>
+    </div></fast-card>
 	  {% else %}
 	  </div>
 	  {% endif %}

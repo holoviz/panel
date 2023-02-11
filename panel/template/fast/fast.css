@@ -61,5 +61,18 @@ h1, h2, h3, h4, h5, h6 {
 fast-card {
     margin: 0px;
     padding: 1em;
+}
+
+.pn-overflow-auto {
     overflow: auto;
+}
+
+fast-card div[class^='bk-panel'], fast-card div[class*=' bk-panel']{
+    margin-right: 0px;
+    margin-left: 0px;
+}
+
+.fast-card-margin {
+    margin: 1em;
+    margin-right: 0em;
 }
