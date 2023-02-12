@@ -6,7 +6,7 @@ from ..config import config
 from ..viewable import Viewable
 from ..widgets import Number, Tabulator
 from .base import (
-    DarkTheme, DefaultTheme, Inherit, Themer,
+    DarkTheme, DefaultTheme, Design, Inherit,
 )
 
 COLLAPSED_SVG_ICON = """
@@ -38,7 +38,7 @@ class FastStyle(param.Parameterized):
     accent_base_color = param.String(default="#0072B5")
     collapsed_icon = param.String(default=COLLAPSED_SVG_ICON)
     expanded_icon = param.String(default=EXPANDED_SVG_ICON)
-    color = param.String(default="#00aa41")
+    color = param.String(default="#2B2B2B")
     neutral_fill_card_rest = param.String(default="#F7F7F7")
     neutral_focus = param.String(default="#888888")
     neutral_foreground_rest = param.String(default="#2B2B2B")
@@ -51,6 +51,7 @@ class FastStyle(param.Parameterized):
     font_url = param.String(default=FONT_URL)
     corner_radius = param.Integer(default=3)
     shadow = param.Boolean(default=True)
+    luminance = param.Magnitude(default=1.0)
 
     def create_bokeh_theme(self):
         """Returns a custom bokeh theme based on the style parameters
@@ -79,8 +80,7 @@ class FastStyle(param.Parameterized):
                     "axis_line_color": self.neutral_foreground_rest,
                     "major_label_text_color": self.neutral_foreground_rest,
                     "major_label_text_font": self.font,
-                    # Should be added back when bokeh 2.3.3 is released and https://github.com/bokeh/bokeh/issues/11110 fixed
-                    # "major_label_text_font_size": "1.025em",
+                    "major_label_text_font_size": "1.025em",
                     "axis_label_standoff": 10,
                     "axis_label_text_color": self.neutral_foreground_rest,
                     "axis_label_text_font": self.font,
@@ -121,10 +121,12 @@ class FastStyle(param.Parameterized):
 
 
 DEFAULT_STYLE = FastStyle()
+
 DARK_STYLE = FastStyle(
     background_color="#181818",
     color="#ffffff",
     header_color="#ffffff",
+    luminance=0.23,
     neutral_fill_card_rest="#212121",
     neutral_focus="#717171",
     neutral_foreground_rest="#e5e5e5",
@@ -160,7 +162,7 @@ class FastDarkTheme(DarkTheme):
         return _BkTheme(json=self.style.create_bokeh_theme())
 
 
-class Fast(Themer):
+class Fast(Design):
 
     _modifiers = {
         Tabulator: {
@@ -173,21 +175,15 @@ class Fast(Themer):
 
     _resources = {
         'js_modules': {
-            'fast-colors': f'{config.npm_cdn}/@microsoft/fast-colors@5.3.1/dist/index.js',
-            'fast': f'{config.npm_cdn}/@microsoft/fast-components@1.21.8/dist/fast-components.js'
+            'fast': f'{config.npm_cdn}/@microsoft/fast-components@2.30.6/dist/fast-components.js',
+            'fast-design': 'js/fast_design.js'
         },
         'bundle': True,
         'tarball': {
-            'fast-colors': {
-                'tar': 'https://registry.npmjs.org/@microsoft/fast-colors/-/fast-colors-5.3.1.tgz',
-                'src': 'package/',
-                'dest': '@microsoft/fast-colors@5.3.1',
-                'exclude': ['*.d.ts', '*.json', '*.md', '*/esm/*']
-            },
             'fast': {
-                'tar': 'https://registry.npmjs.org/@microsoft/fast-components/-/fast-components-1.21.8.tgz',
+                'tar': 'https://registry.npmjs.org/@microsoft/fast-components/-/fast-components-2.30.6.tgz',
                 'src': 'package/',
-                'dest': '@microsoft/fast-components@1.21.8',
+                'dest': '@microsoft/fast-components@2.30.6',
                 'exclude': ['*.d.ts', '*.json', '*.md', '*/esm/*']
             }
         }

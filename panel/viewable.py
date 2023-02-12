@@ -79,9 +79,8 @@ class Layoutable(param.Parameterized):
     css_classes = param.List(default=[], doc="""
         CSS classes to apply to the layout.""")
 
-    width = param.Integer(default=None, bounds=(0, None), doc="""
-        The width of the component (in pixels). This can be either
-        fixed or preferred width, depending on width sizing policy.""")
+    design = param.ObjectSelector(default=None, objects=[], doc="""
+        The design system to use to style components.""")
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
         The height of the component (in pixels).  This can be either
@@ -105,10 +104,16 @@ class Layoutable(param.Parameterized):
         or a four-tuple (top, right, bottom, left).""")
 
     styles = param.Dict(default={}, doc="""
-        Styles to apply to DOM node.""")
+        Dictionary of CSS rules to apply to DOM node wrapping the
+        component.""")
 
     stylesheets = param.List(default=[], doc="""
-        List of stylesheets.""")
+        List of stylesheets defined as URLs pointing to .css files
+        or raw CSS defined as a string.""")
+
+    width = param.Integer(default=None, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
 
     width_policy = param.ObjectSelector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
@@ -251,7 +256,16 @@ class Layoutable(param.Parameterized):
                 params['sizing_mode'] = config.sizing_mode
             elif config.sizing_mode == 'stretch_height' and 'height' not in params:
                 params['sizing_mode'] = config.sizing_mode
+        if 'design' not in params and self.param.design.default is None:
+            params['design'] = config.design
         super().__init__(**params)
+
+    @param.depends('design', watch=True, on_init=True)
+    def _update_design(self):
+        if self.design:
+            self._design = self.design(theme=config.theme)
+        else:
+            self._design = None
 
 
 _Self = TypeVar('_Self', bound='ServableMixin')
@@ -565,8 +579,6 @@ class Renderable(param.Parameterized):
         doc = init_doc(doc)
         root = self._get_model(doc, comm=comm)
         if preprocess:
-            if config.themer:
-                config.themer.apply(self, root, comm)
             self._preprocess(root)
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)

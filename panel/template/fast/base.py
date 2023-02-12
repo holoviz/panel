@@ -4,7 +4,7 @@ import param
 
 from ...io.state import state
 from ...theme import THEMES, DefaultTheme
-from ...theme.fast import Fast, Themer
+from ...theme.fast import Design, Fast
 from ..base import BasicTemplate
 from ..react import ReactTemplate
 
@@ -51,9 +51,9 @@ class FastBaseTemplate(BasicTemplate):
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
         Could be extended to Accordion, Tab etc. in the future.""")
 
-    themer = param.ClassSelector(class_=Themer, default=Fast, constant=True,
+    design = param.ClassSelector(class_=Design, default=Fast, constant=True,
                                  is_instance=False, instantiate=False, doc="""
-        A Themer applies a specific design system to a template.""")
+        A Design applies a specific design system to a template.""")
 
     _css = [_ROOT / "fast.css"]
 
@@ -78,7 +78,7 @@ class FastBaseTemplate(BasicTemplate):
 
         super().__init__(**params)
         self.param.update({
-            p: v for p, v in self._themer.theme.style.param.values().items()
+            p: v for p, v in self._design.theme.style.param.values().items()
             if p != 'name' and p in self.param and p not in params
         })
 
@@ -92,7 +92,7 @@ class FastBaseTemplate(BasicTemplate):
 
     def _update_vars(self):
         super()._update_vars()
-        style = self._themer.theme.style
+        style = self._design.theme.style
         style.param.update({
             p: getattr(self, p) for p in style.param
             if p != 'name' and p in self.param

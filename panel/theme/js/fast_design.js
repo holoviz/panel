@@ -1,107 +1,84 @@
 import {
-  parseColorHexRGB
-} from "../../js/@microsoft/fast-colors@5.3.1/dist/index.js";
+  accentPalette,
+  baseLayerLuminance,
+  fillColor,
+  neutralPalette,
+  PaletteRGB,
+  SwatchRGB,
+  provideFASTDesignSystem,
+} from "../../@microsoft/fast-components@2.30.6/dist/fast-components.js";
 
-import {
-  createColorPalette,
-  accentFillActiveBehavior,
-  accentFillHoverBehavior,
-  accentFillRestBehavior,
-  accentForegroundActiveBehavior,
-  accentForegroundCutRestBehavior,
-  accentForegroundFocusBehavior,
-  accentForegroundHoverBehavior,
-  accentForegroundRestBehavior,
-  neutralDividerRestBehavior,
-  neutralFillHoverBehavior,
-  neutralFillInputActiveBehavior,
-  neutralFillInputHoverBehavior,
-  neutralFillInputRestBehavior,
-  neutralFillRestBehavior,
-  neutralFillStealthActiveBehavior,
-  neutralFillStealthHoverBehavior,
-  neutralFillStealthRestBehavior,
-  neutralFocusBehavior,
-  neutralFocusInnerAccentBehavior,
-  neutralForegroundActiveBehavior,
-  neutralForegroundHoverBehavior,
-  neutralLayerFloatingBehavior,
-  neutralOutlineActiveBehavior,
-  neutralOutlineHoverBehavior,
-  neutralOutlineRestBehavior
-} from "../../js/@microsoft/fast-components@1.21.8/dist/fast-components.js";
+const hexRGBRegex = /^#((?:[0-9a-f]{6}|[0-9a-f]{3}))$/i;
 
-function standardize_color(str) {
-  var ctx = document.createElement('canvas').getContext('2d');
-  ctx.fillStyle = str;
-  return ctx.fillStyle;
+export function normalize(i, min, max) {
+    if (isNaN(i) || i <= min) {
+        return 0.0;
+    } else if (i >= max) {
+        return 1.0;
+    }
+    return i / (max - min);
 }
 
-function setAccentColor(color, selector) {
-  color = standardize_color(color);
-  const accent = color;
-  const palette = createColorPalette(parseColorHexRGB(accent));
-  const provider = document.querySelector(selector);
-  provider.accentBaseColor = accent;
-  provider.accentPalette = palette;
-  }
+function parseColorHexRGB(raw) {
+    const result = hexRGBRegex.exec(raw);
 
-function setNeutralColor(color, selector) {
-  color = standardize_color(color);
-  const palette = createColorPalette(parseColorHexRGB(color));
-  const provider = document.querySelector(selector);
-  provider.neutralPalette = palette;
+    if (result === null) {
+        return null;
+    }
+
+    let digits = result[1];
+
+    if (digits.length === 3) {
+        const r = digits.charAt(0);
+        const g = digits.charAt(1);
+        const b = digits.charAt(2);
+
+        digits = r.concat(r, g, g, b, b);
+    }
+
+    const rawInt = parseInt(digits, 16);
+
+    if (isNaN(rawInt)) {
+        return null;
+    }
+  console.log(
+        normalize((rawInt & 0xff0000) >>> 16, 0, 255),
+        normalize((rawInt & 0x00ff00) >>> 8, 0, 255),
+        normalize(rawInt & 0x0000ff, 0, 255),
+             )
+    // Note the use of >>> rather than >> as we want JS to manipulate these as unsigned numbers
+    return SwatchRGB.create(
+        normalize((rawInt & 0xff0000) >>> 16, 0, 255),
+        normalize((rawInt & 0x00ff00) >>> 8, 0, 255),
+        normalize(rawInt & 0x0000ff, 0, 255),
+        1
+    );
 }
 
-function setBackgroundColor(color, selector) {
-  color = standardize_color(color);
-  const provider = document.querySelector(selector);
-  provider.backgroundColor = color;
-}
-
-function registerCSSCustomProperties(selector) {
-  const provider = document.querySelector(selector);
-  provider.registerCSSCustomProperty(accentFillActiveBehavior)
-  provider.registerCSSCustomProperty(neutralFillRestBehavior)
-  provider.registerCSSCustomProperty(accentFillHoverBehavior)
-  provider.registerCSSCustomProperty(accentFillRestBehavior)
-  provider.registerCSSCustomProperty(accentForegroundActiveBehavior)
-  provider.registerCSSCustomProperty(accentForegroundCutRestBehavior)
-  provider.registerCSSCustomProperty(accentForegroundFocusBehavior)
-  provider.registerCSSCustomProperty(accentForegroundHoverBehavior)
-  provider.registerCSSCustomProperty(accentForegroundRestBehavior)
-  provider.registerCSSCustomProperty(neutralDividerRestBehavior)
-  provider.registerCSSCustomProperty(neutralFillHoverBehavior)
-  provider.registerCSSCustomProperty(neutralFillInputActiveBehavior)
-  provider.registerCSSCustomProperty(neutralFillInputHoverBehavior)
-  provider.registerCSSCustomProperty(neutralFillInputRestBehavior)
-  provider.registerCSSCustomProperty(neutralFillRestBehavior)
-  provider.registerCSSCustomProperty(neutralFillStealthActiveBehavior)
-  provider.registerCSSCustomProperty(neutralFillStealthHoverBehavior)
-  provider.registerCSSCustomProperty(neutralFillStealthRestBehavior)
-  provider.registerCSSCustomProperty(neutralFocusBehavior)
-  provider.registerCSSCustomProperty(neutralFocusInnerAccentBehavior)
-  provider.registerCSSCustomProperty(neutralForegroundActiveBehavior)
-  provider.registerCSSCustomProperty(neutralForegroundHoverBehavior)
-  provider.registerCSSCustomProperty(neutralLayerFloatingBehavior)
-  provider.registerCSSCustomProperty(neutralOutlineActiveBehavior)
-  provider.registerCSSCustomProperty(neutralOutlineHoverBehavior)
-  provider.registerCSSCustomProperty(neutralOutlineRestBehavior)
-}
 
 class FastDesignProvider {
-  register(element) {
-    registerCSSCustomProperties(element)
+  constructor(selector) {
+    this.provider = document.querySelector(selector);
+    provideFASTDesignSystem(this.provider)
   }
-  setAccentColor(value, element){
-    setAccentColor(value, element);
+
+  setAccentColor(value) {
+    accentPalette.setValueFor(this.provider, PaletteRGB.create(parseColorHexRGB(value)));
   }
-  setNeutralColor(value, element){
-    setNeutralColor(value, element);
+
+  setNeutralColor(value) {
+    console.log('neutral', value)
+    neutralPalette.setValueFor(this.provider, PaletteRGB.create(parseColorHexRGB(value)));
   }
-  setBackgroundColor(value, element){
-    setBackgroundColor(value, element)
+
+  setBackgroundColor(value) {
+    fillColor.setValueFor(this.provider, parseColorHexRGB(value));
+    this.provider.style.setProperty("background-color", `var(${fillColor.cssCustomProperty})`);
+  }
+
+  setLuminance(value) {
+    baseLayerLuminance.withDefault(value);
   }
 }
 
-window.fastDesignProvider = new FastDesignProvider()
+window.fastDesignProvider = FastDesignProvider

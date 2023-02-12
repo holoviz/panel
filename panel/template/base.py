@@ -38,7 +38,7 @@ from ..pane import (
 from ..pane.image import ImageBase
 from ..reactive import ReactiveHTML
 from ..theme import (
-    THEMES, DefaultTheme, Theme, Themer,
+    THEMES, DefaultTheme, Design, Theme,
 )
 from ..util import isurl, url_path
 from ..viewable import Renderable, ServableMixin, Viewable
@@ -81,9 +81,9 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     theme = param.ClassSelector(class_=Theme, default=DefaultTheme,
                                 constant=True, is_instance=False, instantiate=False)
 
-    themer = param.ClassSelector(class_=Themer, default=Themer, constant=True,
+    design = param.ClassSelector(class_=Design, default=Design, constant=True,
                                  is_instance=False, instantiate=False, doc="""
-        A Themer applies a specific design system to a template.""")
+        A Design applies a specific design system to a template.""")
 
     # Dictionary of property overrides by Viewable type
     _modifiers: ClassVar[Dict[Type[Viewable], Dict[str, Any]]] = {}
@@ -110,7 +110,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         self._documents: List[Document] = []
         self._server = None
         self._layout = self._build_layout()
-        self._themer = self.themer(theme=self.theme)
+        self._design = self.design(theme=self.theme)
 
     def _build_layout(self) -> Column:
         str_repr = Str(repr(self))
@@ -171,7 +171,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         # link objects across multiple roots in a template.
         col = Column()
         preprocess_root = col.get_root(document, comm, preprocess=False)
-        col._hooks.append(self._themer._apply_hooks)
+        col._hooks.append(self._design._apply_hooks)
         ref = preprocess_root.ref['id']
 
         # Add all render items to the document
@@ -184,9 +184,10 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             model.tags = tags
             mref = model.ref['id']
 
-            # Insert themer as pre-processor
-            if self._themer._apply_hooks not in obj._hooks:
-                obj._hooks.append(self._themer._apply_hooks)
+            # Insert design as pre-processor and run it
+            self._design.apply(obj, model, isolated=False)
+            if self._design._apply_hooks not in obj._hooks:
+                obj._hooks.append(self._design._apply_hooks)
 
             # Alias model ref with the fake root ref to ensure that
             # pre-processor correctly operates on fake root
@@ -224,8 +225,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             document.template = self.nb_template
         else:
             document.template = self.template
-        document._template_variables.update(self._render_variables)
 
+        document._template_variables.update(self._render_variables)
         return document
 
     def _repr_mimebundle_(
@@ -566,8 +567,8 @@ class BasicTemplate(BaseTemplate):
         document = super()._init_doc(doc, comm, title, notebook, location)
         if self.notifications:
             state._notifications[document] = self.notifications
-        if self._themer.theme.bokeh_theme:
-            document.theme = self._themer.theme.bokeh_theme
+        if self._design.theme.bokeh_theme:
+            document.theme = self._design.theme.bokeh_theme
         return document
 
     def _template_resources(self) -> ResourcesType:
@@ -593,7 +594,7 @@ class BasicTemplate(BaseTemplate):
             'raw_css': list(self.config.raw_css)
         }
 
-        theme = self._themer.theme
+        theme = self._design.theme
         if theme and theme.base_css:
             basename = os.path.basename(theme.base_css)
             owner = type(theme).param.base_css.owner
@@ -604,6 +605,7 @@ class BasicTemplate(BaseTemplate):
                 css_files['theme_base'] = theme.base_css
             elif resolve_custom_path(theme, theme.base_css):
                 css_files['theme_base'] = component_resource_path(owner, 'base_css', theme.base_css)
+
         if theme and theme.css:
             basename = os.path.basename(theme.css)
             if (BUNDLE_DIR / name / basename).is_file():
@@ -614,8 +616,16 @@ class BasicTemplate(BaseTemplate):
                 css_files['theme'] = component_resource_path(theme, 'css', theme.css)
 
         resolved_resources: List[Literal['css', 'js', 'js_modules']] = ['css', 'js', 'js_modules']
+
+        # Resolve Design resources
         resources = dict(self._resources)
-        for rt, res in self._themer._resources.items():
+        for rt, res in self._design._resources.items():
+            if not isinstance(res, dict):
+                continue
+            res = {
+                name: url if isurl(url) else f'{type(self._design).__name__.lower()}/{url}'
+                for name, url in res.items()
+            }
             if rt in resources:
                 resources[rt] = dict(resources[rt], **res)
             else:
@@ -630,22 +640,26 @@ class BasicTemplate(BaseTemplate):
                     resource_path = resource.replace(f'{CDN_DIST}bundled/', '')
                 elif resource.startswith(config.npm_cdn):
                     resource_path = resource.replace(config.npm_cdn, '')[1:]
-                else:
+                elif resource.startswith('http:'):
                     resource_path = url_path(resource)
-                prefixed = resource_path
+                else:
+                    resource_path = resource
+
                 if resource_type == 'js_modules' and not (state.rel_path or use_cdn):
                     prefixed_dist = f'./{dist_path}'
                 else:
                     prefixed_dist = dist_path
-                bundlepath = BUNDLE_DIR / prefixed.replace('/', os.path.sep)
-                if bundlepath:
-                    resource_files[rname] = f'{prefixed_dist}bundled/{prefixed}'
+
+                bundlepath = BUNDLE_DIR / resource_path.replace('/', os.path.sep)
+                if bundlepath.is_file():
+                    resource_files[rname] = f'{prefixed_dist}bundled/{resource_path}'
                 elif isurl(resource):
                     resource_files[rname] = resource
                 elif resolve_custom_path(self, resource):
                     resource_files[rname] = component_resource_path(
                         self, f'_resources/{resource_type}', resource
                     )
+        print(resources, resource_files)
 
         for name, js in self.config.js_files.items():
             if '//' not in js and state.rel_path:
@@ -747,7 +761,7 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width
         self._render_variables['sidebar_width'] = self.sidebar_width
-        self._render_variables['theme'] = self._themer.theme
+        self._render_variables['theme'] = self._design.theme
 
     def _update_busy(self) -> None:
         if self.busy_indicator:
@@ -775,12 +789,12 @@ class BasicTemplate(BaseTemplate):
                 del self._render_items[ref]
 
         new = event.new if isinstance(event.new, list) else event.new.values()
-        if self._themer.theme.bokeh_theme:
+        if self._design.theme.bokeh_theme:
             for o in new:
                 if o in old:
                     continue
                 for hvpane in o.select(HoloViews):
-                    hvpane.theme = self._themer.theme.bokeh_theme
+                    hvpane.theme = self._design.theme.bokeh_theme
 
         labels = {}
         for obj in new:

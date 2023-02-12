@@ -1,4 +1,4 @@
-:root {
+:host, :root {
     --panel-primary-color: #0072B5;
     --panel-primary-rgb: 0,114,181;
     --panel-on-primary-color: #ffffff;

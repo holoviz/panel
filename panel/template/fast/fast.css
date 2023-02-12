@@ -63,3 +63,9 @@ fast-card {
     padding: 1em;
     overflow: auto;
 }
+
+#pn-Modal {
+    --dialog-width: 80%;
+    --dialog-height: auto;
+    --background-color: var(--neutral-layer-floating);
+}

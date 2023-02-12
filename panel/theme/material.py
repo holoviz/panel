@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import pathlib
+
 import param
 
 from bokeh.themes import Theme as _BkTheme
@@ -7,7 +11,7 @@ from ..layout import Card
 from ..viewable import Viewable
 from ..widgets import Number, Tabulator
 from .base import (
-    DarkTheme, DefaultTheme, Inherit, Themer,
+    DarkTheme, DefaultTheme, Design, Inherit,
 )
 
 MATERIAL_FONT = "Roboto, sans-serif, Verdana"
@@ -113,6 +117,8 @@ class MaterialDefaultTheme(DefaultTheme):
     bokeh_theme = param.ClassSelector(
         class_=(_BkTheme, str), default=_BkTheme(json=MATERIAL_THEME))
 
+    css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'material_default.css')
+
 
 class MaterialDarkTheme(DarkTheme):
     """
@@ -122,6 +128,8 @@ class MaterialDarkTheme(DarkTheme):
     bokeh_theme = param.ClassSelector(
         class_=(_BkTheme, str), default=_BkTheme(json=MATERIAL_DARK_THEME))
 
+    css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'material_dark.css')
+
     _modifiers = {
         Number: {
             'default_color': 'var(--mdc-theme-on-background)'
@@ -129,7 +137,7 @@ class MaterialDarkTheme(DarkTheme):
     }
 
 
-class Material(Themer):
+class Material(Design):
 
     _modifiers = {
         Card: {

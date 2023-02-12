@@ -9,7 +9,7 @@ from typing import ClassVar, Dict, List
 
 import param
 
-from ...theme import Themer
+from ...theme import Design
 from ...theme.bootstrap import Bootstrap
 from ..base import BasicTemplate, TemplateActions
 
@@ -33,9 +33,9 @@ class BootstrapTemplate(BasicTemplate):
     sidebar_width = param.Integer(350, doc="""
         The width of the sidebar in pixels. Default is 350.""")
 
-    themer = param.ClassSelector(class_=Themer, default=Bootstrap, constant=True,
+    design = param.ClassSelector(class_=Design, default=Bootstrap, constant=True,
                                  is_instance=False, instantiate=False, doc="""
-        A Themer applies a specific design system to a template.""")
+        A Design applies a specific design system to a template.""")
 
     _actions = param.ClassSelector(default=BootstrapTemplateActions(), class_=TemplateActions)
 
@@ -45,5 +45,5 @@ class BootstrapTemplate(BasicTemplate):
 
     def _update_vars(self, *args) -> None:
         super()._update_vars(*args)
-        themer = self.themer(theme=self.theme)
-        self._render_variables['html_attrs'] = f'data-bs-theme="{themer.theme._bs_theme}"'
+        design = self.design(theme=self.theme)
+        self._render_variables['html_attrs'] = f'data-bs-theme="{design.theme._bs_theme}"'

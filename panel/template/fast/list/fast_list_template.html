@@ -44,6 +44,8 @@
   }
   #header-design-provider {
       --neutral-foreground-rest: {{ style.header_color }};
+      background: {{ style.header_background }};
+      color: {{ style.header_color }};
   }
   #sidebar {
       width: {{ sidebar_width }}px;
@@ -67,130 +69,26 @@
 {% endfor %}
 
 <!-- Fast Script -->
-<script type="module">
-  import {
-    parseColorHexRGB
-  } from "{{ template_resources['js_modules']['fast-colors'] }}";
-  import {
-    createColorPalette,
-    accentFillActiveBehavior,
-    accentFillHoverBehavior,
-    accentFillRestBehavior,
-    accentForegroundActiveBehavior,
-    accentForegroundCutRestBehavior,
-    accentForegroundFocusBehavior,
-    accentForegroundHoverBehavior,
-    accentForegroundRestBehavior,
-    neutralDividerRestBehavior,
-    neutralFillHoverBehavior,
-    neutralFillInputActiveBehavior,
-    neutralFillInputHoverBehavior,
-    neutralFillInputRestBehavior,
-    neutralFillRestBehavior,
-    neutralFillStealthActiveBehavior,
-    neutralFillStealthHoverBehavior,
-    neutralFillStealthRestBehavior,
-    neutralFocusBehavior,
-    neutralFocusInnerAccentBehavior,
-    neutralForegroundActiveBehavior,
-    neutralForegroundHoverBehavior,
-    neutralLayerFloatingBehavior,
-    neutralOutlineActiveBehavior,
-    neutralOutlineHoverBehavior,
-    neutralOutlineRestBehavior
-  } from "{{ template_resources['js_modules']['fast'] }}";
-
-  function standardize_color(str){
-    var ctx = document.createElement('canvas').getContext('2d');
-    ctx.fillStyle = str;
-    return ctx.fillStyle;
-  }
-
-  function setAccentColor(color, selector){
-    color = standardize_color(color);
-    const accent = color;
-    const palette = createColorPalette(parseColorHexRGB(accent));
-    const provider = document.querySelector(selector);
-    provider.accentBaseColor = accent;
-    provider.accentPalette = palette;
-  }
-  setAccentColor("{{ style.accent_base_color }}", "#body-design-provider");
-  setAccentColor("{{ style.header_accent_base_color }}", "#header-design-provider");
-
-  function setNeutralColor(color, selector){
-    color = standardize_color(color);
-    const palette = createColorPalette(parseColorHexRGB(color));
-    const provider = document.querySelector(selector);
-    provider.neutralPalette = palette;
-  }
-  setNeutralColor("{{ style.header_neutral_color }}", "#header-design-provider");
-  setNeutralColor("{{ style.neutral_color }}", "#body-design-provider");
-
-  function setBackgroundColor(color, selector){
-    color = standardize_color(color);
-    const provider = document.querySelector(selector);
-    provider.backgroundColor = color;
-  }
-  setBackgroundColor("{{ style.header_background }}", "#header-design-provider");
-  setBackgroundColor("{{ style.background_color }}", "#body-design-provider");
-
-  function registerCSSCustomProperties(selector)  {
-    const provider = document.querySelector(selector);
-    provider.registerCSSCustomProperty(accentFillActiveBehavior)
-    provider.registerCSSCustomProperty(neutralFillRestBehavior)
-    provider.registerCSSCustomProperty(accentFillHoverBehavior)
-    provider.registerCSSCustomProperty(accentFillRestBehavior)
-    provider.registerCSSCustomProperty(accentForegroundActiveBehavior)
-    provider.registerCSSCustomProperty(accentForegroundCutRestBehavior)
-    provider.registerCSSCustomProperty(accentForegroundFocusBehavior)
-    provider.registerCSSCustomProperty(accentForegroundHoverBehavior)
-    provider.registerCSSCustomProperty(accentForegroundRestBehavior)
-    provider.registerCSSCustomProperty(neutralDividerRestBehavior)
-    provider.registerCSSCustomProperty(neutralFillHoverBehavior)
-    provider.registerCSSCustomProperty(neutralFillInputActiveBehavior)
-    provider.registerCSSCustomProperty(neutralFillInputHoverBehavior)
-    provider.registerCSSCustomProperty(neutralFillInputRestBehavior)
-    provider.registerCSSCustomProperty(neutralFillRestBehavior)
-    provider.registerCSSCustomProperty(neutralFillStealthActiveBehavior)
-    provider.registerCSSCustomProperty(neutralFillStealthHoverBehavior)
-    provider.registerCSSCustomProperty(neutralFillStealthRestBehavior)
-    provider.registerCSSCustomProperty(neutralFocusBehavior)
-    provider.registerCSSCustomProperty(neutralFocusInnerAccentBehavior)
-    provider.registerCSSCustomProperty(neutralForegroundActiveBehavior)
-    provider.registerCSSCustomProperty(neutralForegroundHoverBehavior)
-    provider.registerCSSCustomProperty(neutralLayerFloatingBehavior)
-    provider.registerCSSCustomProperty(neutralOutlineActiveBehavior)
-    provider.registerCSSCustomProperty(neutralOutlineHoverBehavior)
-    provider.registerCSSCustomProperty(neutralOutlineRestBehavior)
-  }
-  registerCSSCustomProperties("#header-design-provider")
-  registerCSSCustomProperties("#body-design-provider")
-
-  class FastDesignProvider {
-    setAccentColor(value, element){
-      setAccentColor(value, element);
-    }
-    setNeutralColor(value, element){
-      setNeutralColor(value, element);
-    }
-    setBackgroundColor(value, element){
-      setBackgroundColor(value, element)
-    }
-  }
-  window.fastDesignProvider = new FastDesignProvider()
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', (event) => {
+  const header_design = new window.fastDesignProvider("#header-design-provider");
+  const body_design = new window.fastDesignProvider("#body-design-provider");
+  body_design.setAccentColor("{{ style.accent_base_color }}")
+  body_design.setBackgroundColor("{{ style.background_color }}");
+  body_design.setLuminance({{ style.luminance }});
+  body_design.setNeutralColor("{{ style.neutral_color }}");
+  header_design.setAccentColor("{{ style.header_accent_base_color }}");
+  header_design.setBackgroundColor("{{ style.header_background }}");
+  header_design.setNeutralColor("{{ style.header_neutral_color }}");
+});
 </script>
 {% endblock %}
 
 <!-- goes in body -->
 {% block contents %}
-<fast-design-system-provider id="body-design-provider" use-defaults accent-foreground-cut-rest="#FFFFFF"
-  {% if style.background_color and style.background_color.startswith("#") %}background-color="{{ style.background_color }}"{% endif %}
-  {% if style.accent_base_color and style.accent_base_color.startswith("#") %}accent-base-color="{{ style.accent_base_color }}"{% endif %}
->
+<fast-design-system-provider id="body-design-provider" use-defaults>
   <div id="container">
-    <fast-design-system-provider id="header-design-provider"
-  {% if style.header_background and style.header_background.startswith('#') %}background-color="{{ style.header_background }}"{% endif %}
-    >
+    <fast-design-system-provider id="header-design-provider">
       <nav id="header">
 	{% if nav or sidebar_footer %}
 	<span onclick="closeNav()" id="sidebar-button">

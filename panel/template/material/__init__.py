@@ -5,7 +5,7 @@ import pathlib
 
 import param
 
-from ...theme import Themer
+from ...theme import Design
 from ...theme.material import Material
 from ..base import BasicTemplate, TemplateActions
 
@@ -33,9 +33,9 @@ class MaterialTemplate(BasicTemplate):
     sidebar_width = param.Integer(370, doc="""
         The width of the sidebar in pixels. Default is 370.""")
 
-    themer = param.ClassSelector(class_=Themer, default=Material, constant=True,
+    design = param.ClassSelector(class_=Design, default=Material, constant=True,
                                  is_instance=False, instantiate=False, doc="""
-        A Themer applies a specific design system to a template.""")
+        A Design applies a specific design system to a template.""")
 
     _actions = param.ClassSelector(
         default=MaterialTemplateActions(), class_=TemplateActions)

@@ -4,7 +4,7 @@ import functools
 import os
 import pathlib
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar, Dict
 
 import param
 
@@ -24,6 +24,25 @@ class Inherit:
 
 
 class Theme(param.Parameterized):
+    """
+    Theme objects declare the styles to switch between different color
+    modes. Each `Design` may declare any number of color themes.
+
+    A `Theme` consists of a number of items:
+
+    `base_css`
+       A stylesheet declaring the base variables that define the color
+       scheme. By default this is inherited from a base class.
+    `css`
+       A stylesheet thats overrides variables specifically for the
+       Theme subclass. In most cases this is not necessary.
+    `bokeh_theme`
+       A Bokeh Theme class that declares properties to apply to Bokeh
+       models. This is necessary to ensure that plots and other canvas
+       based components are styled appropriately.
+    `_modifiers`
+       The modifiers override parameter values of Panel components.
+    """
 
     base_css = param.Filename()
 
@@ -45,7 +64,7 @@ class DefaultTheme(Theme):
 
     base_css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'default.css')
 
-    _name = 'default'
+    _name: ClassVar[str] = 'default'
 
 
 class DarkTheme(Theme):
@@ -55,16 +74,17 @@ class DarkTheme(Theme):
     bokeh_theme = param.ClassSelector(class_=(_BkTheme, str),
                                       default=_BkTheme(json=BOKEH_DARK))
 
-    _name = 'dark'
+    _name: ClassVar[str] = 'dark'
 
 
-class Themer(param.Parameterized):
+class Design(param.Parameterized):
 
-    theme = param.ClassSelector(class_=Theme)
+    theme = param.ClassSelector(class_=Theme, constant=True)
 
     _modifiers = {}
 
-    _resources = {}
+    # Defines the resources required to render this theme
+    _resources: ClassVar[Dict[str, Dict[str, str]]] = {}
 
     _themes = {
         'default': DefaultTheme,
@@ -74,6 +94,8 @@ class Themer(param.Parameterized):
     def __init__(self, theme=None, **params):
         if isinstance(theme, type) and issubclass(theme, Theme):
             theme = theme._name
+        elif theme is None:
+            theme = 'default'
         theme = self._themes[theme]()
         super().__init__(theme=theme, **params)
 
@@ -90,33 +112,46 @@ class Themer(param.Parameterized):
     def _reapply(self, viewable: Viewable, root: Model, isolated: bool=True) -> None:
         ref = root.ref['id']
         for o in viewable.select():
+            if o.design and isolated:
+                continue
             self._apply_modifiers(o, ref, self.theme, isolated)
 
     def _apply_hooks(self, viewable: Viewable, root: Model) -> None:
         with root.document.models.freeze():
             self._reapply(viewable, root, isolated=False)
 
+    def params(self, viewable: Viewable):
+        return self._get_modifiers(viewable, theme=self.theme)
+
     @classmethod
-    def _apply_modifiers(cls, viewable: Viewable, mref: str, theme: Theme, isolated: bool) -> None:
-        if mref not in viewable._models:
-            return
-        model, _ = viewable._models[mref]
+    def _get_modifiers(cls, viewable: Viewable, theme: Theme, isolated: bool=True):
         modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme)
         modifiers = dict(modifiers)
         if 'stylesheets' in modifiers:
             if isolated:
-                pre = list(cls._resources.get('css', []))
-                if theme.base_css:
-                    base_css = theme.base_css
-                    if os.path.isfile(base_css):
-                        base_css = os.path.join('bundled', 'theme', os.path.basename(base_css))
-                    pre.append(base_css)
+                pre = list(cls._resources.get('css', []).values())
+                for p in ('base_css', 'css'):
+                    css = getattr(theme, p)
+                    if css is None:
+                        continue
+                    owner = type(theme).param[p].owner.__name__.lower()
+                    if os.path.isfile(css):
+                        css_file = os.path.join('bundled', owner, os.path.basename(css))
+                        pre.append(css_file)
             else:
                 pre = []
             modifiers['stylesheets'] = [
                 ImportedStyleSheet(url=sts) if sts.endswith('.css') else sts
                 for sts in pre+modifiers['stylesheets']
             ]
+        return modifiers, child_modifiers
+
+    @classmethod
+    def _apply_modifiers(cls, viewable: Viewable, mref: str, theme: Theme, isolated: bool) -> None:
+        if mref not in viewable._models:
+            return
+        model, _ = viewable._models[mref]
+        modifiers, child_modifiers = cls._get_modifiers(viewable, theme, isolated)
         if child_modifiers:
             for child in viewable:
                 cls._apply_params(child, mref, child_modifiers)

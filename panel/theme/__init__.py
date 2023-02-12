@@ -1,3 +1,3 @@
 from .base import (  # noqa
-    THEMES, DarkTheme, DefaultTheme, Theme, Themer,
+    THEMES, DarkTheme, DefaultTheme, Design, Theme,
 )

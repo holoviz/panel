@@ -1,5 +1,4 @@
 /* Variables */
-
 :host {
     --handle-width: 20px;
     --handle-height: 20px;
@@ -179,7 +178,7 @@ button.mdc-button.mdc-card-button {
 .bk-input {
     background-color: unset;
     border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.23);
+    border: 1px solid var(--panel-secondary-color);
     color: var(--mdc-theme-on-surface);
     height: 1.4375em;
     line-height: 1.4375em;
@@ -190,8 +189,8 @@ button.mdc-button.mdc-card-button {
 .bk-input[disabled] {
     background-color: unset;
     border: unset;
-    border: 1px dotted rgba(255, 255, 255, 0.23);
-    color: rgba(255, 255, 255, 0.23);
+    border: 1px dotted var(--panel-secondary-color);
+    color: var(--panel-secondary-color);
 }
 
 .bk-input:not([disabled]):hover {

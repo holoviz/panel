@@ -90,7 +90,7 @@ class Syncable(Renderable):
     _manual_params: ClassVar[List[str]] = []
 
     # Mapping from parameter name to bokeh model property name
-    _rename: ClassVar[Mapping[str, str | None]] = {'loading': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {}
 
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
@@ -107,6 +107,7 @@ class Syncable(Renderable):
     __abstract = True
 
     def __init__(self, **params):
+        self._themer = None
         super().__init__(**params)
 
         # Useful when updating model properties which trigger potentially
@@ -148,16 +149,7 @@ class Syncable(Renderable):
         )
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
-        properties = self._process_param_change(self._init_params())
-        if 'stylesheets' in properties:
-            if doc and 'dist_url' in doc._template_variables:
-                dist_url = doc._template_variables['dist_url']
-            else:
-                dist_url = CDN_DIST
-            for stylesheet in properties['stylesheets']:
-                if isinstance(stylesheet, ImportedStyleSheet):
-                    patch_stylesheet(stylesheet, dist_url)
-        return properties
+        return self._process_param_change(self._init_params())
 
     def _process_property_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -315,12 +307,6 @@ class Syncable(Renderable):
             # Do not apply model change that is in flight
             if attr in self._events:
                 del self._events[attr]
-
-        if 'stylesheets' in msg:
-            dist_url = doc._template_variables.get('dist_dir')
-            for stylesheet in msg['stylesheets']:
-                if isinstance(stylesheet, ImportedStyleSheet):
-                    patch_stylesheet(stylesheet, dist_url)
 
         try:
             model.update(**msg)
@@ -526,7 +512,48 @@ class Reactive(Syncable, Viewable):
     the parameters to other objects.
     """
 
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'design': None, 'loading': None
+    }
+
     __abstract = True
+
+    #----------------------------------------------------------------
+    # Private API
+    #----------------------------------------------------------------
+
+    def _init_params(self) -> Dict[str, Any]:
+        params, _ = self._design.params(self) if self._design else ({}, None)
+        for k, v in self.param.values().items():
+            if k in self._synced_params and v is not None:
+                if k == 'stylesheets' and 'stylesheets' in params:
+                    params['stylesheets'] = params['stylesheets'] + v
+                else:
+                    params[k] = v
+        return params
+
+    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+        properties = super()._get_properties(doc)
+        if 'stylesheets' in properties:
+            if doc and 'dist_url' in doc._template_variables:
+                dist_url = doc._template_variables['dist_url']
+            else:
+                dist_url = CDN_DIST
+            for stylesheet in properties['stylesheets']:
+                if isinstance(stylesheet, ImportedStyleSheet):
+                    patch_stylesheet(stylesheet, dist_url)
+        return properties
+
+    def _update_model(
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+    ) -> None:
+        if 'stylesheets' in msg:
+            dist_url = doc._template_variables.get('dist_dir')
+            for stylesheet in msg['stylesheets']:
+                if isinstance(stylesheet, ImportedStyleSheet):
+                    patch_stylesheet(stylesheet, dist_url)
+        super()._update_model(events, msg, root, model, doc, comm)
 
     #----------------------------------------------------------------
     # Public API

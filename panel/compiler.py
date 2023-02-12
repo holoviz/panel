@@ -20,8 +20,9 @@ from .config import config, panel_extension
 from .io.resources import RESOURCE_URLS
 from .reactive import ReactiveHTML
 from .template.base import BasicTemplate
-from .theme import Theme, Themer
+from .theme import Design, Theme
 
+BASE_DIR = pathlib.Path(__file__).parent
 BUNDLE_DIR = pathlib.Path(__file__).parent / 'dist' / 'bundled'
 
 #---------------------------------------------------------------------
@@ -31,6 +32,12 @@ BUNDLE_DIR = pathlib.Path(__file__).parent / 'dist' / 'bundled'
 def write_bundled_files(name, files, explicit_dir=None, ext=None):
     model_name = name.split('.')[-1].lower()
     for bundle_file in files:
+        if not bundle_file.startswith('http'):
+            dest_path = BUNDLE_DIR / name.lower() / bundle_file
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(BASE_DIR / 'theme' / bundle_file, dest_path)
+            continue
+
         bundle_file = bundle_file.split('?')[0]
         try:
             response = requests.get(bundle_file)
@@ -213,27 +220,27 @@ def bundle_themes(verbose=False, external=True):
             theme_bundle_dir.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(theme.base_css, theme_bundle_dir / os.path.basename(theme.base_css))
         if theme.css:
-            tmplt_bundle_dir = BUNDLE_DIR / theme._template.__name__.lower()
+            tmplt_bundle_dir = BUNDLE_DIR / theme.param.css.owner.__name__.lower()
             tmplt_bundle_dir.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(theme.css, tmplt_bundle_dir / os.path.basename(theme.css))
 
-    # Bundle themer stylesheets
-    for name, themer in param.concrete_descendents(Themer).items():
+    # Bundle design stylesheets
+    for name, design in param.concrete_descendents(Design).items():
         if verbose:
-            print(f'Bundling {name} themer resources')
+            print(f'Bundling {name} design resources')
 
-        # Bundle Themer._resources
-        if themer._resources.get('bundle', True) and external:
-            write_component_resources(name, themer)
+        # Bundle Design._resources
+        if design._resources.get('bundle', True) and external:
+            write_component_resources(name, design)
 
-        for scls, modifiers in themer._modifiers.items():
-            cls_modifiers = themer._modifiers.get(scls, {})
+        for scls, modifiers in design._modifiers.items():
+            cls_modifiers = design._modifiers.get(scls, {})
             if 'stylesheets' not in cls_modifiers:
                 continue
 
-            # Find the Themer class the options were first defined on
+            # Find the Design class the options were first defined on
             def_cls = [
-                super_cls for super_cls in themer.__mro__[::-1]
+                super_cls for super_cls in design.__mro__[::-1]
                 if getattr(super_cls, '_modifiers', {}).get(scls) is cls_modifiers
             ][0]
             def_path = pathlib.Path(inspect.getmodule(def_cls).__file__).parent
