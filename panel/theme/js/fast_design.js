@@ -41,11 +41,7 @@ function parseColorHexRGB(raw) {
     if (isNaN(rawInt)) {
         return null;
     }
-  console.log(
-        normalize((rawInt & 0xff0000) >>> 16, 0, 255),
-        normalize((rawInt & 0x00ff00) >>> 8, 0, 255),
-        normalize(rawInt & 0x0000ff, 0, 255),
-             )
+
     // Note the use of >>> rather than >> as we want JS to manipulate these as unsigned numbers
     return SwatchRGB.create(
         normalize((rawInt & 0xff0000) >>> 16, 0, 255),
@@ -67,7 +63,6 @@ class FastDesignProvider {
   }
 
   setNeutralColor(value) {
-    console.log('neutral', value)
     neutralPalette.setValueFor(this.provider, PaletteRGB.create(parseColorHexRGB(value)));
   }
 

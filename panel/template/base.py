@@ -659,7 +659,6 @@ class BasicTemplate(BaseTemplate):
                     resource_files[rname] = component_resource_path(
                         self, f'_resources/{resource_type}', resource
                     )
-        print(resources, resource_files)
 
         for name, js in self.config.js_files.items():
             if '//' not in js and state.rel_path:
