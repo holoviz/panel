@@ -72,8 +72,8 @@ Learn about context for using Templates in Panel.
 :hidden:
 :maxdepth: 2
 
+apis/index
 components/components_overview
-api/api
 param/param
 comparisons
 comms
