@@ -48,13 +48,6 @@ How to add or remove components from a panel.
 How to apply custom CSS styling.
 :::
 
-:::{grid-item-card} {octicon}`star-fill;2.5em;sd-mr-1` Change Background
-:link: change_background
-:link-type: doc
-
-How to change the background color for most components.
-:::
-
 :::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Customize Loading Icon
 :link: load_icon
 :link-type: doc
