@@ -395,10 +395,11 @@ class Resources(BkResources):
         files = super(Resources, self).js_files
         self.extra_resources(files, '__javascript__')
 
-        js_files = self.adjust_paths(files)
-        js_files += list(config.js_files.values())
+        files += list(config.js_files.values())
         if config.design:
-            js_files += list(config.design._resources.get('js', {}).values())
+            files += list(config.design._resources.get('js', {}).values())
+
+        js_files = self.adjust_paths(files)
 
         # Load requirejs last to avoid interfering with other libraries
         dist_dir = self.dist_dir
@@ -425,7 +426,6 @@ class Resources(BkResources):
         for resource in config.design._resources.get('js_modules').values():
             if resource not in modules:
                 modules.append(resource)
-
         modules = self.adjust_paths(modules)
 
         return modules
