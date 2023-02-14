@@ -1,4 +1,14 @@
-# Parameter subobjects
+# Create nested UIs
+
+This guide addresses how to structure `Parameterized` classes with subobjects to create nested UIs automatically.
+
+```{admonition} Prerequisites
+1. The [How to > Generate Widgets from Parameters](./uis.md) guide demonstrates the generation of widgets.
+2. The [How to > ](./dependencies.md) guide demonstrates how to use `@param.depends` to express dependencies between parameters and functions.
+
+```
+
+---
 
 ``Parameterized`` objects often have parameter values which are themselves ``Parameterized`` objects, forming a tree-like structure. Panel allows you to edit not just the main object's parameters but also lets you drill down to the subobject. Let us first define some classes declaring a hierarchy of Shape classes which draw a Bokeh plot of the selected shape:
 
@@ -101,3 +111,8 @@ pn.Row(
         expand_layout),
     viewer.panel())
 ```
+
+---
+
+## Related Resources
+- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs
