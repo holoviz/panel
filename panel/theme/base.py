@@ -4,7 +4,10 @@ import functools
 import os
 import pathlib
 
-from typing import TYPE_CHECKING, ClassVar, Dict
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type,
+)
+from weakref import WeakKeyDictionary
 
 import param
 
@@ -12,6 +15,7 @@ from bokeh.models import ImportedStyleSheet
 from bokeh.themes import Theme as _BkTheme, _dark_minimal
 
 if TYPE_CHECKING:
+    from bokeh.document import Document
     from bokeh.model import Model
 
     from ..viewable import Viewable
@@ -50,7 +54,7 @@ class Theme(param.Parameterized):
 
     css = param.Filename()
 
-    _modifiers = {}
+    _modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
 
 
 BOKEH_DARK = dict(_dark_minimal.json)
@@ -61,6 +65,9 @@ BOKEH_DARK['attrs']['Plot'].update({
 
 
 class DefaultTheme(Theme):
+    """
+    Baseclass for default or light themes.
+    """
 
     base_css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'default.css')
 
@@ -68,6 +75,9 @@ class DefaultTheme(Theme):
 
 
 class DarkTheme(Theme):
+    """
+    Baseclass for dark themes.
+    """
 
     base_css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'dark.css')
 
@@ -81,15 +91,19 @@ class Design(param.Parameterized):
 
     theme = param.ClassSelector(class_=Theme, constant=True)
 
-    _modifiers = {}
+    # Defines parameter overrides to apply to each model
+    _modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
 
     # Defines the resources required to render this theme
     _resources: ClassVar[Dict[str, Dict[str, str]]] = {}
 
-    _themes = {
+    # Declares valid themes for this Design
+    _themes: ClassVar[Dict[str, Type[Theme]]] = {
         'default': DefaultTheme,
         'dark': DarkTheme
     }
+
+    _caches: ClassVar[WeakKeyDictionary[Document, Dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
 
     def __init__(self, theme=None, **params):
         if isinstance(theme, type) and issubclass(theme, Theme):
@@ -99,64 +113,20 @@ class Design(param.Parameterized):
         theme = self._themes[theme]()
         super().__init__(theme=theme, **params)
 
-    def apply(self, viewable, root: Model, isolated: bool=True):
-        if not root.document:
-            self._reapply(viewable, root)
-            return
-
-        with root.document.models.freeze():
-            self._reapply(viewable, root)
-            if self.theme and self.theme.bokeh_theme and root.document:
-                root.document.theme = self.theme.bokeh_theme
-
-    def _reapply(self, viewable: Viewable, root: Model, isolated: bool=True) -> None:
+    def _reapply(self, viewable: Viewable, root: Model, isolated: bool=True, cache=None) -> None:
         ref = root.ref['id']
         for o in viewable.select():
             if o.design and isolated:
                 continue
-            self._apply_modifiers(o, ref, self.theme, isolated)
+            self._apply_modifiers(o, ref, self.theme, isolated, cache)
 
     def _apply_hooks(self, viewable: Viewable, root: Model) -> None:
+        if root.document in self._caches:
+            cache = self._caches[root.document]
+        else:
+            self._caches[root.document] = cache = {}
         with root.document.models.freeze():
-            self._reapply(viewable, root, isolated=False)
-
-    def params(self, viewable: Viewable):
-        return self._get_modifiers(viewable, theme=self.theme)
-
-    @classmethod
-    def _get_modifiers(cls, viewable: Viewable, theme: Theme, isolated: bool=True):
-        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme)
-        modifiers = dict(modifiers)
-        if 'stylesheets' in modifiers:
-            if isolated:
-                pre = list(cls._resources.get('css', []).values())
-                for p in ('base_css', 'css'):
-                    css = getattr(theme, p)
-                    if css is None:
-                        continue
-                    owner = type(theme).param[p].owner.__name__.lower()
-                    if os.path.isfile(css):
-                        css_file = os.path.join('bundled', owner, os.path.basename(css))
-                        pre.append(css_file)
-            else:
-                pre = []
-            modifiers['stylesheets'] = [
-                ImportedStyleSheet(url=sts) if sts.endswith('.css') else sts
-                for sts in pre+modifiers['stylesheets']
-            ]
-        return modifiers, child_modifiers
-
-    @classmethod
-    def _apply_modifiers(cls, viewable: Viewable, mref: str, theme: Theme, isolated: bool) -> None:
-        if mref not in viewable._models:
-            return
-        model, _ = viewable._models[mref]
-        modifiers, child_modifiers = cls._get_modifiers(viewable, theme, isolated)
-        if child_modifiers:
-            for child in viewable:
-                cls._apply_params(child, mref, child_modifiers)
-        if modifiers:
-            cls._apply_params(viewable, mref, modifiers)
+            self._reapply(viewable, root, isolated=False, cache=cache)
 
     @classmethod
     def _resolve_stylesheets(cls, value, defining_cls, inherited):
@@ -205,7 +175,56 @@ class Design(param.Parameterized):
         return modifiers, child_modifiers
 
     @classmethod
+    def _get_modifiers(
+        cls, viewable: Viewable, theme: Theme = None, isolated: bool = True
+    ):
+        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme)
+        modifiers = dict(modifiers)
+        if 'stylesheets' in modifiers:
+            if isolated:
+                pre = list(cls._resources.get('css', {}).values())
+                for p in ('base_css', 'css'):
+                    css = getattr(theme, p)
+                    if css is None:
+                        continue
+                    owner = type(theme).param[p].owner.__name__.lower()
+                    if os.path.isfile(css):
+                        css_file = os.path.join('bundled', owner, os.path.basename(css))
+                        pre.append(css_file)
+            else:
+                pre = []
+        return modifiers, child_modifiers
+
+    @classmethod
+    def _patch_modifiers(cls, doc, modifiers, cache):
+        if 'stylesheets' in modifiers:
+            stylesheets = []
+            for sts in modifiers['stylesheets']:
+                if sts.endswith('.css'):
+                    if sts in cache:
+                        sts = cache[sts]
+                    else:
+                        cache[sts] = ImportedStyleSheet(url=sts)
+                stylesheets.append(sts)
+            modifiers['stylesheets'] = stylesheets
+
+    @classmethod
+    def _apply_modifiers(cls, viewable: Viewable, mref: str, theme: Theme, isolated: bool, cache={}) -> None:
+        if mref not in viewable._models:
+            return
+        model, _ = viewable._models[mref]
+        modifiers, child_modifiers = cls._get_modifiers(viewable, theme, isolated)
+        cls._patch_modifiers(model.document, modifiers, cache)
+        if child_modifiers:
+            for child in viewable:
+                cls._apply_params(child, mref, child_modifiers)
+        if modifiers:
+            cls._apply_params(viewable, mref, modifiers)
+
+    @classmethod
     def _apply_params(cls, viewable, mref, modifiers):
+        from ..io.resources import CDN_DIST, patch_stylesheet
+
         model, _ = viewable._models[mref]
         params = {
             k: v for k, v in modifiers.items() if k != 'children' and
@@ -214,7 +233,88 @@ class Design(param.Parameterized):
         if 'stylesheets' in modifiers:
             params['stylesheets'] = modifiers['stylesheets'] + viewable.stylesheets
         props = viewable._process_param_change(params)
+        doc = model.document
+        if doc and 'dist_url' in doc._template_variables:
+            dist_url = doc._template_variables['dist_url']
+        else:
+            dist_url = CDN_DIST
+        for stylesheet in props.get('stylesheets', []):
+            if isinstance(stylesheet, ImportedStyleSheet):
+                patch_stylesheet(stylesheet, dist_url)
         model.update(**props)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def apply(self, viewable: Viewable, root: Model, isolated: bool=True):
+        """
+        Applies the Design to a Viewable and all it children.
+
+        Arguments
+        ---------
+        viewable: Viewable
+            The Viewable to apply the Design to.
+        root: Model
+            The root Bokeh model to apply the Design to.
+        isolated: bool
+            Whether the Design is applied to an individual component
+            or embedded in a template that ensures the resources,
+            such as CSS variable definitions and JS are already
+            initialized.
+        """
+        if not root.document:
+            self._reapply(viewable, root)
+            return
+
+        with root.document.models.freeze():
+            self._reapply(viewable, root)
+            if self.theme and self.theme.bokeh_theme and root.document:
+                root.document.theme = self.theme.bokeh_theme
+
+    def modify_doc(self, doc: Document):
+        """
+        Applies modifications to the Document required to correctly
+        render a component.
+
+        The implementation of this method should be idempotent,
+        i.e. multiple applications of this method should not modify
+        the Document multiple times.
+        """
+        return
+
+    def params(
+        self, viewable: Viewable, doc: Document | None = None
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        Provides parameter values to apply the provided Viewable.
+
+        Arguments
+        ---------
+        viewable: Viewable
+            The Viewable to return modifiers for.
+        doc: Document | None
+            Document the Viewable will be rendered into. Useful
+            for caching any stylesheets that are created.
+
+        Returns
+        -------
+        modifiers: Dict[str, Any]
+            Dictionary of parameter values to apply to the Viewable.
+        child_modifiers: Dict[str, Any]
+            Dictionary of parameter values to apply to the children
+            of the Viewable.
+        """
+        if doc is None:
+            cache = {}
+        elif doc in self._caches:
+            cache = self._caches[doc]
+        else:
+            self._caches[doc] = cache = {}
+        modifiers, child_modifiers = self._get_modifiers(viewable, theme=self.theme)
+        self._patch_modifiers(doc, modifiers, cache)
+        modifiers['tags'] = ['fast']
+        return modifiers, child_modifiers
 
 
 THEMES = {
