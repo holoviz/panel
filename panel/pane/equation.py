@@ -63,6 +63,8 @@ class LaTeX(ModelPane):
 
     _updates: ClassVar[bool] = True
 
+    _stylesheets = ['css/katex.css']
+
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         if is_sympy_expr(obj) or hasattr(obj, '_repr_latex_'):
