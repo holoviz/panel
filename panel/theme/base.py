@@ -193,6 +193,7 @@ class Design(param.Parameterized):
                         pre.append(css_file)
             else:
                 pre = []
+            modifiers['stylesheets'] = pre + modifiers['stylesheets']
         return modifiers, child_modifiers
 
     @classmethod

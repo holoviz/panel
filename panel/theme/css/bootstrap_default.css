@@ -118,16 +118,3 @@
   --bs-breakpoint-xl: 1200px;
   --bs-breakpoint-xxl: 1400px;
 }
-
-:host, :root {
-    --bs-primary-color: var(--panel-on-primary-color);
-    --bs-primary-bg: var(--panel-primary-color);
-    --bs-secondary-color: var(--panel-on-secondary-color);
-    --bs-secondary-bg: var(--panel-secondary-color);
-    --bs-form-control-bg: var(--panel-body-color);
-    --bs-body-bg: var(--panel-body-color);
-    --bs-body-color: var(--panel-on-body-color);
-    --bs-surface-bg: var(--panel-surface-color);
-    --bs-surface-color: var(--panel-on-surface-color);
-    --bokeh-base-font: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
-}

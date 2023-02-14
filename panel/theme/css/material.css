@@ -32,6 +32,7 @@
     background-color: var(--mdc-theme-surface);
     border: unset;
     border-bottom: 0.2px solid var(--mdc-theme-surface);
+    padding: 0px 6px;
 }
 
 button.mdc-button.mdc-card-button {
@@ -182,8 +183,12 @@ button.mdc-button.mdc-card-button {
     color: var(--mdc-theme-on-surface);
     height: 1.4375em;
     line-height: 1.4375em;
-    padding: 12px 10px;
+    padding: 4px 10px;
     margin: 0.5rem 0;
+}
+
+textarea.bk-input {
+    padding: 12px 10px;
 }
 
 .bk-input[disabled] {
@@ -219,19 +224,6 @@ button.mdc-button.mdc-card-button {
     margin: 5px 0;
 }
 
-/* Choices */
-
-.choices.is-disabled .choices__inner {
-    background-color: unset;
-    border: unset;
-    border: 1px dotted rgba(255, 255, 255, 0.23);
-    color: rgba(255, 255, 255, 0.23);
-}
-
-.choices.is-disabled .choices__input {
-    background-color: unset;
-}
-
 /* Number input */
 
 .bk-input-group > .bk-spin-wrapper > .bk-spin-btn {
@@ -257,8 +249,19 @@ select.bk-input:focus {
 /* MultiChoice */
 
 .choices__inner {
-    border: 1px solid var(--mdc-theme-secondary-lightened);
+    border: 1px solid var(--mdc-theme-secondary);
     padding-top: 20px;
+}
+
+.choices.is-disabled .choices__inner {
+    color: var(--mdc-theme-secondary);
+    background-color: unset;
+    border: unset;
+    border: 1px dotted var(--mdc-theme-secondary-lightened);
+}
+
+.choices.is-disabled .choices__input {
+    background-color: unset;
 }
 
 .bk-input-group > label:has(+ div.choices) {
@@ -275,8 +278,12 @@ select.bk-input:focus {
     margin: 5px 0;
 }
 
+.choices.is-disabled .choices__list--multiple .choices__item {
+    opacity: 0.7;
+}
+
 .choices__inner:hover {
-    border: 1px solid var(--mdc-theme-secondary);
+    border: 1px solid var(--mdc-theme-on-background);
     transform: 200ms cubic-bezier(0, 0, 0.2, 1) 0ms;
 }
 

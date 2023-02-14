@@ -1,4 +1,19 @@
 /* Variables */
+:host, :root {
+    --bs-primary-color: var(--jp-ui-font-color0, --panel-on-primary-color);
+    --bs-primary-bg: var(--jp-brand-color0, --panel-primary-color);
+    --bs-secondary-color: var(--panel-on-secondary-color);
+    --bs-secondary-bg: var(--panel-secondary-color);
+    --bs-form-control-bg: var(--panel-body-color);
+    --bs-body-bg: var(--jp-layout-color0, --panel-body-color);
+    --bs-body-color: var(--jp-widgets-label-color, --panel-on-body-color);
+    --bs-surface-bg: var(--jp-layout-color2, --panel-surface-color);
+    --bs-surface-color: var(--jp-ui-font-color1, --panel-on-surface-color);
+    --bs-form-control-bg: var(--jp-layout-color1, --panel-surface-color);
+    --bokeh-base-font: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    color: var(--bs-body-color);
+}
+
 :host {
     --handle-width: 15px;
     --handle-height: 15px;
@@ -44,12 +59,12 @@ button.card-header, button.accordion-header {
     border: unset;
     box-shadow: unset;
     color: var(--bs-body-color);
+    padding: 0px 6px;
 }
 
 button.accordion-header {
     border-radius: 0;
 }
-
 
 :host(.card-title) h1, :host(.card-title) h2, :host(.card-title) h3,
 :host(.card-title) h4, :host(.card-title) h5, :host(.card-title) h6 {
@@ -170,7 +185,7 @@ button.accordion-header {
 }
 
 .noUi-target[disabled="true"] .noUi-handle {
-    background-color: var(--bs-secondary-color);
+    background-color: var(--bs-secondary-bg);
 }
 
 .noUi-target[disabled="true"] .noUi-handle:focus {
@@ -498,6 +513,10 @@ select.bk-input {
 
 .choices.is-disabled .choices__inner, .choices.is-disabled .choices__input {
     background-color: var(--bs-form-control-disabled-bg);
+}
+
+.choices.is-disabled .choices__list--multiple .choices__item {
+    opacity: 0.7;
 }
 
 .choices__list--dropdown, .choices__list[aria-expanded] {

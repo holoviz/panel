@@ -117,7 +117,7 @@ class MaterialDefaultTheme(DefaultTheme):
     bokeh_theme = param.ClassSelector(
         class_=(_BkTheme, str), default=_BkTheme(json=MATERIAL_THEME))
 
-    css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'material_default.css')
+    css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'material_variables.css')
 
 
 class MaterialDarkTheme(DarkTheme):
@@ -128,7 +128,7 @@ class MaterialDarkTheme(DarkTheme):
     bokeh_theme = param.ClassSelector(
         class_=(_BkTheme, str), default=_BkTheme(json=MATERIAL_DARK_THEME))
 
-    css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'material_dark.css')
+    css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'material_variables.css')
 
     _modifiers = {
         Number: {
