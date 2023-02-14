@@ -272,17 +272,6 @@ class Design(param.Parameterized):
             if self.theme and self.theme.bokeh_theme and root.document:
                 root.document.theme = self.theme.bokeh_theme
 
-    def modify_doc(self, doc: Document):
-        """
-        Applies modifications to the Document required to correctly
-        render a component.
-
-        The implementation of this method should be idempotent,
-        i.e. multiple applications of this method should not modify
-        the Document multiple times.
-        """
-        return
-
     def params(
         self, viewable: Viewable, doc: Document | None = None
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:

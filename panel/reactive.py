@@ -341,20 +341,19 @@ class Syncable(Renderable):
             except Exception:
                 pass
 
+    def _update_properties(
+        self, *events: param.parameterized.Event, doc: Document
+    ) -> Dict[str, Any]:
+        changes = {event.name: event.new for event in events}
+        return self._process_param_change(changes)
+
     def _param_change(self, *events: param.parameterized.Event) -> None:
-        msgs = []
-        for event in events:
-            msg = self._process_param_change({event.name: event.new})
-            if msg:
-                msgs.append(msg)
-
         named_events = {event.name: event for event in events}
-        msg = {k: v for msg in msgs for k, v in msg.items()}
-        if not msg:
-            return
-
         for ref, (model, _) in self._models.copy().items():
-            self._apply_update(named_events, msg, model, ref)
+            properties = self._update_properties(*events, doc=model.document)
+            if not properties:
+                return
+            self._apply_update(named_events, properties, model, ref)
 
     def _process_events(self, events: Dict[str, Any]) -> None:
         self._log('received events %s', events)
@@ -522,18 +521,13 @@ class Reactive(Syncable, Viewable):
     # Private API
     #----------------------------------------------------------------
 
-    def _init_params(self) -> Dict[str, Any]:
-        params, _ = self._design.params(self) if self._design else ({}, None)
-        for k, v in self.param.values().items():
-            if k in self._synced_params and v is not None:
-                if k == 'stylesheets' and 'stylesheets' in params:
-                    params['stylesheets'] = params['stylesheets'] + v
-                else:
-                    params[k] = v
-        return params
-
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
-        properties = super()._get_properties(doc)
+        params, _ = self._design.params(self, doc) if self._design else ({}, None)
+        for k, v in self._init_params().items():
+            if k in ('stylesheets', 'tags') and k in params:
+                v = params[k] + v
+            params[k] = v
+        properties = self._process_param_change(params)
         if 'stylesheets' in properties:
             if doc and 'dist_url' in doc._template_variables:
                 dist_url = doc._template_variables['dist_url']
@@ -543,6 +537,13 @@ class Reactive(Syncable, Viewable):
                 if isinstance(stylesheet, ImportedStyleSheet):
                     patch_stylesheet(stylesheet, dist_url)
         return properties
+
+    def _update_properties(self, *events: param.parameterized.Event, doc: Document) -> Dict[str, Any]:
+        params, _ = self._design.params(self, doc) if self._design else ({}, None)
+        changes = {event.name: event.new for event in events}
+        if 'stylesheets' in changes and 'stylsheets' in params:
+            changes['stylesheets'] = params['stylesheets'] + changes['stylesheets']
+        return self._process_param_change(changes)
 
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
