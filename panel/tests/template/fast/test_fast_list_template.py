@@ -21,7 +21,7 @@ def test_template_theme_parameter():
     doc = template.server_doc(Document())
     assert doc.theme._json['attrs']['figure']['background_fill_color']=="#181818"
 
-    assert isinstance(template._themer.theme, FastDarkTheme)
+    assert isinstance(template._design.theme, FastDarkTheme)
 
 
 def test_accepts_colors_by_name():

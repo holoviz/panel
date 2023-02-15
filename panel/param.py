@@ -711,6 +711,15 @@ class Param(PaneBase):
                 return wtype(pobj)
             return wtype
 
+    def get_root(
+        self, doc: Optional[Document] = None, comm: Comm | None = None,
+        preprocess: bool = True
+    ) -> Model:
+        root = super().get_root(doc, comm, preprocess)
+        ref = root.ref['id']
+        self._models[ref] = (root, None)
+        return root
+
     def select(self, selector=None):
         """
         Iterates over the Viewable and any potential children in the

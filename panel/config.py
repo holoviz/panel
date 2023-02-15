@@ -117,7 +117,7 @@ class _config(_base_config):
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
-    design = param.ClassSelector(class_=Design, is_instance=False, default=Design, doc="""
+    design = param.ClassSelector(class_=Design, is_instance=False, doc="""
         The design system to use to style components.""")
 
     exception_handler = param.Callable(default=None, doc="""

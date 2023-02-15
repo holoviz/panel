@@ -205,10 +205,12 @@ class Design(param.Parameterized):
             stylesheets = []
             for sts in modifiers['stylesheets']:
                 if sts.endswith('.css'):
-                    if sts in cache:
+                    if cache and sts in cache:
                         sts = cache[sts]
                     else:
-                        cache[sts] = ImportedStyleSheet(url=sts)
+                        sts = ImportedStyleSheet(url=sts)
+                        if cache:
+                            cache[sts.url] = sts
                 stylesheets.append(sts)
             modifiers['stylesheets'] = stylesheets
 
@@ -267,14 +269,19 @@ class Design(param.Parameterized):
             such as CSS variable definitions and JS are already
             initialized.
         """
-        if not root.document:
+        doc = root.document
+        if not doc:
             self._reapply(viewable, root)
             return
 
-        with root.document.models.freeze():
-            self._reapply(viewable, root)
-            if self.theme and self.theme.bokeh_theme and root.document:
-                root.document.theme = self.theme.bokeh_theme
+        if doc in self._caches:
+            cache = self._caches[doc]
+        else:
+            self._caches[doc] = cache = {}
+        with doc.models.freeze():
+            self._reapply(viewable, root, cache=cache)
+            if self.theme and self.theme.bokeh_theme and doc:
+                doc.theme = self.theme.bokeh_theme
 
     def params(
         self, viewable: Viewable, doc: Document | None = None

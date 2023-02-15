@@ -184,8 +184,6 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             model.tags = tags
             mref = model.ref['id']
 
-            # Insert design as pre-processor and run it
-            self._design.apply(obj, model, isolated=False)
             if self._design._apply_hooks not in obj._hooks:
                 obj._hooks.append(self._design._apply_hooks)
 
@@ -216,6 +214,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         col.objects = objs
         preprocess_root.children[:] = models
         preprocess_root.document = document
+        self._design.apply(col, preprocess_root, isolated=False)
         col._preprocess(preprocess_root)
         col._documents[document] = preprocess_root
         document.on_session_destroyed(col._server_destroy) # type: ignore

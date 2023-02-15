@@ -260,14 +260,6 @@ class Layoutable(param.Parameterized):
             params['design'] = config.design
         super().__init__(**params)
 
-    @param.depends('design', watch=True, on_init=True)
-    def _update_design(self):
-        from .theme import Design
-        if self.design:
-            self._design = self.design if isinstance(self.design, Design) else self.design(theme=config.theme)
-        else:
-            self._design = None
-
 
 _Self = TypeVar('_Self', bound='ServableMixin')
 
@@ -619,12 +611,22 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         self._hooks = hooks
 
         self._update_loading()
-        watcher = self.param.watch(self._update_loading, 'loading')
-        self._callbacks.append(watcher)
+        self._update_background()
+        self._update_design()
+        self._callbacks.extend([
+            self.param.watch(self._update_background, 'background'),
+            self.param.watch(self._update_design, 'design'),
+            self.param.watch(self._update_loading, 'loading')
+        ])
 
-        self._set_background()
-        watcher = self.param.watch(self._set_background, 'background')
-        self._callbacks.append(watcher)
+    def _update_design(self, *_):
+        from .theme import Design
+        if isinstance(self.design, Design):
+            self._design = self.design
+        elif self.design:
+            self._design = self.design(theme=config.theme)
+        else:
+            self._design = Design()
 
     def _update_loading(self, *_) -> None:
         if self.loading:
@@ -632,7 +634,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         else:
             stop_loading_spinner(self)
 
-    def _set_background(self, *_) -> None:
+    def _update_background(self, *_) -> None:
         if self.background == self.styles.get("background", None) or self.background is None:
             return
 
@@ -640,8 +642,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         prev = f'{type(self).name}(background={self.background!r})'
         new = f'{type(self).name}(styles={{"background": {self.background!r}}}'
         deprecated("1.1", prev, new)
-        self.styles["background"] = self.background
-        self.param.trigger("styles")
+
+        self.styles = dict(self.styles, background=self.background)
 
     def __repr__(self, depth: int = 0) -> str:
         return '{cls}({params})'.format(cls=type(self).__name__,

@@ -198,7 +198,7 @@ class Syncable(Renderable):
         return [
             p for p in self._synced_params if self._rename.get(p, False) is not None
             and self._source_transforms.get(p, False) is not None and
-            p != 'stylesheets'
+            p not in ('design', 'stylesheets')
         ] + ['loading']
 
     @property
