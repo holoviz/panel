@@ -262,8 +262,9 @@ class Layoutable(param.Parameterized):
 
     @param.depends('design', watch=True, on_init=True)
     def _update_design(self):
+        from .theme import Design
         if self.design:
-            self._design = self.design(theme=config.theme)
+            self._design = self.design if isinstance(self.design, Design) else self.design(theme=config.theme)
         else:
             self._design = None
 
@@ -577,11 +578,22 @@ class Renderable(param.Parameterized):
         Returns the bokeh model corresponding to this panel object
         """
         doc = init_doc(doc)
-        root = self._get_model(doc, comm=comm)
-        if preprocess:
-            self._preprocess(root)
+        if self._design and comm:
+            wrapper = self._design._wrapper(self)
+            if wrapper is self:
+                root = self._get_model(doc, comm=comm)
+                if preprocess:
+                    self._preprocess(root)
+            else:
+                root = wrapper.get_root(doc, comm, preprocess)
+            root_view = wrapper
+        else:
+            root = self._get_model(doc, comm=comm)
+            root_view = self
+            if preprocess:
+                self._preprocess(root)
         ref = root.ref['id']
-        state._views[ref] = (self, root, doc, comm)
+        state._views[ref] = (root_view, root, doc, comm)
         return root
 
 

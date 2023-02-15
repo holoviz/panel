@@ -3,6 +3,7 @@ import param
 from bokeh.themes import Theme as _BkTheme
 
 from ..config import config
+from ..reactive import ReactiveHTML
 from ..viewable import Viewable
 from ..widgets import Number, Tabulator
 from .base import (
@@ -120,6 +121,45 @@ class FastStyle(param.Parameterized):
         }
 
 
+class FastWrapper(ReactiveHTML):
+    """
+    Wraps any Panel component and initializes the Fast design provider.
+
+    Wrapping a component in this way ensures that so that any children
+    using the Fast design system have access to the Fast CSS variables.
+    """
+
+    object = param.ClassSelector(class_=Viewable)
+
+    style = param.ClassSelector(class_=FastStyle)
+
+    _template = '<div id="fast-wrapper" class="fast-wrapper">${object}</div>'
+
+    _scripts = {
+        'render': """
+        let accent, bg, luminance
+        if (window._JUPYTERLAB) {
+          accent = getComputedStyle(view.el).getPropertyValue('--jp-brand-color0').trim();
+          bg = getComputedStyle(view.el).getPropertyValue('--jp-layout-color0').trim();
+          let color = getComputedStyle(view.el).getPropertyValue('--jp-ui-font-color0').trim();
+          luminance = color == 'rgba(255, 255, 255, 1)' ? 0.23 : 1.0;
+        } else {
+          accent = data.style.accent_base_color;
+          bg = data.style.background_color;
+          luminance = data.style.luminance;
+        }
+        bg = bg === 'white' ? '#ffffff' : bg;
+        bg = bg === 'black' ? '#000000' : bg;
+        state.design = design = new window.fastDesignProvider(view.el)
+        design.setLuminance(luminance);
+        design.setNeutralColor(data.style.neutral_color);
+        design.setAccentColor(accent);
+        design.setBackgroundColor(bg);
+        design.setCornerRadius(data.style.corner_radius);
+        """
+    }
+
+
 DEFAULT_STYLE = FastStyle()
 
 DARK_STYLE = FastStyle(
@@ -193,3 +233,6 @@ class Fast(Design):
         'default': FastDefaultTheme,
         'dark': FastDarkTheme
     }
+
+    def _wrapper(self, model):
+        return FastWrapper(design=None, object=model, style=self.theme.style)

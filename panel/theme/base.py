@@ -128,6 +128,9 @@ class Design(param.Parameterized):
         with root.document.models.freeze():
             self._reapply(viewable, root, isolated=False, cache=cache)
 
+    def _wrapper(self, viewable):
+        return viewable
+
     @classmethod
     def _resolve_stylesheets(cls, value, defining_cls, inherited):
         new_value = []

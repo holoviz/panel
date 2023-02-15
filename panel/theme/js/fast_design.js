@@ -54,7 +54,11 @@ function parseColorHexRGB(raw) {
 
 class FastDesignProvider {
   constructor(selector) {
-    this.provider = document.querySelector(selector);
+    if (typeof selector === 'string') {
+      this.provider = document.querySelector(selector);
+    } else {
+      this.provider = selector;
+    }
     provideFASTDesignSystem(this.provider)
   }
 
@@ -73,6 +77,10 @@ class FastDesignProvider {
 
   setLuminance(value) {
     baseLayerLuminance.withDefault(value);
+  }
+
+  setCornerRadius(value) {
+    this.provider.style.setProperty("--corner-radius", value);
   }
 }
 

@@ -295,7 +295,7 @@ div.pn-wrapper {
 
 #menu a[disabled=""] {
     pointer-events: none;
-    color: var(--neutral-outline-rest)
+    color: var(--neutral-stroke-rest)
 }
 
 h1, h2, h3, h4, h5, h6 {
