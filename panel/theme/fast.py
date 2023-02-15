@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import pathlib
+
 import param
 
 from bokeh.themes import Theme as _BkTheme
@@ -172,6 +176,10 @@ DARK_STYLE = FastStyle(
     neutral_foreground_rest="#e5e5e5",
     shadow = False,
 )
+
+class FastThemeMixin(param.Parameterized):
+
+    css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'fast_variables.css')
 
 
 class FastDefaultTheme(DefaultTheme):

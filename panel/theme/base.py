@@ -271,7 +271,7 @@ class Design(param.Parameterized):
         """
         doc = root.document
         if not doc:
-            self._reapply(viewable, root)
+            self._reapply(viewable, root, isolated=isolated)
             return
 
         if doc in self._caches:
@@ -279,7 +279,7 @@ class Design(param.Parameterized):
         else:
             self._caches[doc] = cache = {}
         with doc.models.freeze():
-            self._reapply(viewable, root, cache=cache)
+            self._reapply(viewable, root, isolated=isolated, cache=cache)
             if self.theme and self.theme.bokeh_theme and doc:
                 doc.theme = self.theme.bokeh_theme
 
