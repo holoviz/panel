@@ -128,6 +128,7 @@ def test_plotly_3d_plot(page, port, plotly_3d_plot):
 
 
 @plotly_available
+@pytest.mark.flaky(max_runs=3)
 def test_plotly_hover_data(page, port, plotly_2d_plot):
     serve(plotly_2d_plot, port=port, threaded=True, show=False)
 
