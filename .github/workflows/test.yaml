@@ -54,7 +54,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a11
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
@@ -82,7 +82,7 @@ jobs:
           conda activate test-environment
           conda uninstall holoviews jupyter_bokeh --force -y --offline || echo "packages already removed"
           pip install "git+https://github.com/holoviz/holoviews.git"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git@nodejs_18"
+          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: doit env_capture
         run: |
           conda activate test-environment
@@ -126,7 +126,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a11
         with:
           name: ui_test_suite
           python-version: 3.9
