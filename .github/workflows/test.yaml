@@ -82,7 +82,7 @@ jobs:
           conda activate test-environment
           conda uninstall holoviews jupyter_bokeh --force -y --offline || echo "packages already removed"
           pip install "git+https://github.com/holoviz/holoviews.git"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
+          pip install "git+https://github.com/bokeh/jupyter_bokeh.git@nodejs_18"
       - name: doit env_capture
         run: |
           conda activate test-environment
