@@ -11,35 +11,35 @@ The Panel How-to Guides provide step by step recipes for solving essential probl
 :link: components/index
 :link-type: doc
 
-Discover how to construct and customize visible components
+How to construct and customize visible components.
 :::
 
-:::{grid-item-card} {octicon}`link;2.5em;sd-mr-1` Link Parameters
-:link: links/index
-:link-type: doc
-
-Discover different ways of linking parameters in Python and Javascript.
-:::
-
-:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1` Declare UIs with parameters
+:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1` Declare UIs with the `Param` API
 :link: param/index
 :link-type: doc
 
-Discover how to use Parameters with Panel to automatically generate UIs without writing GUI code.
+How to use Param with Panel to automatically generate UIs without writing GUI code.
 :::
 
-:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1` ``Interact`` with Functions
+:::{grid-item-card} {octicon}`link;2.5em;sd-mr-1` Link Parameters with the Callbacks API
+:link: links/index
+:link-type: doc
+
+How to link parameters in Python and Javascript.
+:::
+
+:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1` Build UIs with the `Interact` API
 :link: interact/index
 :link-type: doc
 
-Discover how to use Panel `interact` to easily generate UIs for function arguments.
+How to use Panel `interact` to easily generate UIs for function arguments.
 :::
 
 :::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1` Apply Templates
 :link: templates/index
 :link-type: doc
 
-Discover how to use a Template to customize the look and feel of a deployed Panel app.
+How to use a Template to customize the look and feel of a deployed Panel app.
 :::
 
 ::::
@@ -186,6 +186,7 @@ How to configure OAuth to add authentication to a server deployment.
 :hidden:
 :maxdepth: 2
 
+components/index
 param/index
 links/index
 display/index

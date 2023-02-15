@@ -91,3 +91,20 @@ How to control the size of components.
 :::
 
 ::::
+
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+construct_panes
+pane_type
+add_remove
+apply_css
+load_icon
+visibility
+spacing
+align
+size
+```

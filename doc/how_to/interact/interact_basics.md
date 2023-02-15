@@ -12,7 +12,7 @@ def foo(a, b, c, d, e, f):
     return f'Arguments: {a, b, c, d, e, f}'
 ```
 
-Next, let's call `interact` with the function and it's arguments. The values of the arguments will be inspected to infer an appropriate set of widgets to autogenerate. Changing any of the resulting widgets will cause the function to be re-run, updating the displayed output.
+Next, let's call `interact` with the function and it's arguments. The values of the arguments will be inspected to infer an appropriate set of widgets to autogenerate. After running the code block, changing any of the resulting widgets will cause the function to be re-run, updating the displayed output.
 
 ```{pyodide}
 pn.interact(

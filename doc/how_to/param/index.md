@@ -1,6 +1,6 @@
 # Declare UIs with the `Param` API
 
-Panel is built on [Param](https://param.holoviz.org) - a library for handling all the user-modifiable parameters, arguments, and attributes that control your code. This section contains guides for using `Param` objects and declared dependencies to generate user interfaces with Panel.
+Panel is built on [Param](https://param.holoviz.org) - a library for handling all the user-modifiable parameters, arguments, and attributes that control your code. This section contains how-to guides for using `Param` objects and declared dependencies to generate user interfaces with Panel.
 
 ::::{grid} 1 2 2 4
 :gutter: 1 1 1 2
