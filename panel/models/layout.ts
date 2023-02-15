@@ -7,7 +7,7 @@ export class PanelMarkupView extends MarkupView {
 
   render(): void {
     super.render()
-    set_size(this.markup_el, this.model)
+    set_size(this.el, this.model)
   }
 }
 
