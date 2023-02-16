@@ -143,7 +143,7 @@ class Design(param.Parameterized):
                 elif v.startswith('/'):
                     url = v[1:]
                 else:
-                    url = os.path.join('bundled', cls.__name__.lower(), v)
+                    url = '/'.join(['bundled', cls.__name__.lower(), v])
                 new_value.append(url)
             else:
                 new_value.append(v)
@@ -192,7 +192,7 @@ class Design(param.Parameterized):
                         continue
                     owner = type(theme).param[p].owner.__name__.lower()
                     if os.path.isfile(css):
-                        css_file = os.path.join('bundled', owner, os.path.basename(css))
+                        css_file = '/'.join(['bundled', owner, os.path.basename(css)])
                         pre.append(css_file)
             else:
                 pre = []
