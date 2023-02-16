@@ -52,6 +52,8 @@ export function set_size(el: HTMLElement, model: HTMLBox): void {
       hm = margin[0] * 2
       wm = margin[1] * 2
     }
+  } else if (margin == null) {
+    hm = wm = 0
   } else {
     wm = hm = margin * 2
   }
