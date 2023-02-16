@@ -1,0 +1,4 @@
+:host {
+    color: var(--neutral-foreground-rest);
+    background-color: var(--fill-color);
+}

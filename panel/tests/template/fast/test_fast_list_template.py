@@ -4,10 +4,11 @@ from holoviews import opts
 import panel as pn
 
 from panel.pane import HoloViews, Markdown
-from panel.template.fast.list import FastListDarkTheme, FastListTemplate
+from panel.template.fast.list import FastListTemplate
 from panel.tests.template.fast.test_fast_grid_template import (
     INFO, _create_hvplot, _fast_button_card, _sidebar_items,
 )
+from panel.theme.fast import FastDarkTheme
 
 ACCENT_COLOR = "#D2386C"
 
@@ -20,7 +21,7 @@ def test_template_theme_parameter():
     doc = template.server_doc(Document())
     assert doc.theme._json['attrs']['figure']['background_fill_color']=="#181818"
 
-    assert isinstance(template._get_theme(), FastListDarkTheme)
+    assert isinstance(template._design.theme, FastDarkTheme)
 
 
 def test_accepts_colors_by_name():

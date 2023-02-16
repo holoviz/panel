@@ -181,8 +181,8 @@ class Bokeh(PaneBase):
 
         self._models[ref] = (model, parent)
 
-        if self.theme:
-            doc.theme = self.theme
+        # Apply theme
+        self._design.apply_bokeh_theme_to_model(model, self.theme)
 
         return model
 

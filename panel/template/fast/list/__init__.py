@@ -5,10 +5,7 @@ use of Fast components.
 """
 import pathlib
 
-import param
-
 from ..base import FastBaseTemplate
-from ..theme import FastDarkTheme, FastDefaultTheme
 
 
 class FastListTemplate(FastBaseTemplate):
@@ -43,25 +40,4 @@ class FastListTemplate(FastBaseTemplate):
     Please note the `FastListTemplate` cannot display in a notebook output cell.
     """
 
-    _css = FastBaseTemplate._css + [
-        pathlib.Path(__file__).parent / "fast_list_template.css"
-    ]
-
     _template = pathlib.Path(__file__).parent / "fast_list_template.html"
-
-
-
-class FastListDefaultTheme(FastDefaultTheme):
-    """The Default Theme of the FastListTemplate"""
-
-    css = param.Filename(default=pathlib.Path(__file__).parent / "default.css")
-
-    _template = FastListTemplate
-
-
-class FastListDarkTheme(FastDarkTheme):
-    """The Dark Theme of the FastListTemplate"""
-
-    css = param.Filename(default=pathlib.Path(__file__).parent / "dark.css")
-
-    _template = FastListTemplate

@@ -10,10 +10,8 @@ import param
 from ...config import config
 from ...depends import depends
 from ...io.resources import CSS_URLS
-from ...layout import Card, GridSpec
-from ...viewable import Viewable
-from ..base import BasicTemplate, Inherit
-from ..theme import DarkTheme, DefaultTheme
+from ...layout import GridSpec
+from ..base import BasicTemplate
 
 
 class ReactTemplate(BasicTemplate):
@@ -46,16 +44,6 @@ class ReactTemplate(BasicTemplate):
 
     _template = pathlib.Path(__file__).parent / 'react.html'
 
-    _modifiers = {
-        Card: {
-            'children': {'margin': (20, 20)},
-            'margin': (10, 5)
-        },
-        Viewable: {
-            'stylesheets': [Inherit, './components.css']
-        }
-    }
-
     _resources = {
         'js': {
             'react': f"{config.npm_cdn}/react@17/umd/react.production.min.js",
@@ -64,7 +52,6 @@ class ReactTemplate(BasicTemplate):
             'react-grid': "https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.1.1/react-grid-layout.min.js"
         },
         'css': {
-            'bootstrap': CSS_URLS['bootstrap4'],
             'font-awesome': CSS_URLS['font-awesome']
         }
     }
@@ -100,16 +87,3 @@ class ReactTemplate(BasicTemplate):
         self._render_variables['dimensions'] = self.dimensions
         self._render_variables['preventCollision'] = self.prevent_collision
         self._render_variables['saveLayout'] = self.save_layout
-
-class ReactDefaultTheme(DefaultTheme):
-
-    css = param.Filename(default=pathlib.Path(__file__).parent / 'default.css')
-
-    _template = ReactTemplate
-
-
-class ReactDarkTheme(DarkTheme):
-
-    css = param.Filename(default=pathlib.Path(__file__).parent / 'dark.css')
-
-    _template = ReactTemplate

@@ -54,7 +54,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a12
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
@@ -126,13 +126,14 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a9
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a12
         with:
           name: ui_test_suite
           python-version: 3.9
           channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
           cache: true
+          nodejs: true
           playwright: true
           conda-mamba: mamba
         id: install

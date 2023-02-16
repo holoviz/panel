@@ -1,3 +1,4 @@
+import {isArray} from "@bokehjs/core/util/types"
 import {MarkupView} from "@bokehjs/models/widgets/markup"
 import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import * as p from "@bokehjs/core/properties"
@@ -6,14 +7,14 @@ export class PanelMarkupView extends MarkupView {
 
   render(): void {
     super.render()
-    set_size(this.markup_el, this.model)
+    set_size(this.el, this.model)
   }
 }
 
 export function set_size(el: HTMLElement, model: HTMLBox): void {
   let width_policy = model.width != null ? "fixed" : "fit"
   let height_policy = model.height != null ? "fixed" : "fit"
-  const {sizing_mode} = model
+  const {sizing_mode, margin} = model
   if (sizing_mode != null) {
     if (sizing_mode == "fixed")
       width_policy = height_policy = "fixed"
@@ -42,19 +43,30 @@ export function set_size(el: HTMLElement, model: HTMLBox): void {
       }
     }
   }
+  let wm: number, hm: number
+  if (isArray(margin)) {
+    if (margin.length === 4) {
+      hm = margin[0] + margin[2]
+      wm = margin[1] + margin[3]
+    } else {
+      hm = margin[0] * 2
+      wm = margin[1] * 2
+    }
+  } else {
+    wm = hm = margin * 2
+  }
   if (width_policy == "fixed" && model.width)
     el.style.width = model.width + "px";
   else if (width_policy == "max")
-    el.style.width = "100%";
+    el.style.width = wm ? `calc(100% - ${wm}px)`: "100%";
   if (model.min_width != null)
     el.style.minWidth = model.min_width + "px";
   if (model.max_width != null)
     el.style.maxWidth = model.max_width + "px";
-
   if (height_policy == "fixed" && model.height)
     el.style.height = model.height + "px";
   else if (height_policy == "max")
-    el.style.height = "100%";
+    el.style.height = hm ? `calc(100% - ${hm}px)`: "100%";
   if (model.min_height != null)
     el.style.minHeight = model.min_height + "px";
   if (model.max_width != null)
@@ -93,6 +105,11 @@ export abstract class HTMLBoxView extends LayoutDOMView {
         this.invalidate_render()
       this._prev_css_classes = css
     })
+  }
+
+  render(): void {
+    super.render()
+    set_size(this.el, this.model)
   }
 
   on_change(properties: any, fn: () => void): void {

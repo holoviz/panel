@@ -113,9 +113,7 @@ class BooleanStatus(BooleanIndicator):
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None}
 
-    _stylesheets: ClassVar[List[str]] = [
-        'css/booleanstatus.css', 'css/variables.css'
-    ]
+    _stylesheets: ClassVar[List[str]] = ['css/booleanstatus.css']
 
     _widget_type: ClassVar[Type[Model]] = HTML
 
@@ -161,7 +159,7 @@ class LoadingSpinner(BooleanIndicator):
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None, 'bgcolor': None}
 
-    _stylesheets: ClassVar[List[str]] = ['css/variables.css', 'css/loadingspinner.css']
+    _stylesheets: ClassVar[List[str]] = ['css/loadingspinner.css']
 
     _widget_type: ClassVar[Type[Model]] = HTML
 
@@ -222,7 +220,7 @@ class Progress(ValueIndicator):
 
     width = param.Integer(default=300)
 
-    _stylesheets: ClassVar[List[str]] = ['css/variables.css', 'css/progress.css']
+    _stylesheets: ClassVar[List[str]] = ['css/progress.css']
 
     _widget_type: ClassVar[Type[Model]] = _BkProgress
 
@@ -683,6 +681,9 @@ class Dial(ValueIndicator):
             angle='rot'
         )
 
+        # Apply theme
+        self._design.apply_bokeh_theme_to_model(model)
+
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
@@ -869,6 +870,7 @@ class LinearGauge(ValueIndicator):
         self._update_axes(model)
         self._update_renderers(model)
         self._update_bounds(model)
+        self._design.apply_bokeh_theme_to_model(model)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)

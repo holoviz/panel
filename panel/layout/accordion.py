@@ -78,6 +78,10 @@ class Accordion(NamedListPanel):
         self.param.watch(self._update_active, ['active'])
         self.param.watch(self._update_cards, self._synced_properties)
 
+    def _process_property_change(self, props):
+        props.pop('children', None)
+        return super()._process_property_change(props)
+
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
         Returns new child models for the layout while reusing unchanged

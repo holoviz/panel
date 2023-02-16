@@ -6,15 +6,38 @@
     --mdc-theme-secondary: var(--panel-secondary-color);
     --mdc-theme-secondary-lightened: rgba(var(--panel-secondary-rgb), 0.8);
     --mdc-theme-on-secondary: var(--panel-on-secondary-color);
-    --mdc-theme-background: var(--panel-body-color);
-    --mdc-theme-on-background: var(--panel-on-body-color);
+    --mdc-theme-background: var(--panel-background-color);
+    --mdc-theme-on-background: var(--panel-on-background-color);
     --mdc-theme-surface: var(--panel-surface-color);
     --mdc-theme-on-surface: var(--panel-on-surface-color);
-    --mdc-theme-text-primary-on-background: rgba(var(--panel-on-body-rgb), 0.87);
+    --mdc-theme-text-primary-on-background: rgba(var(--panel-on-background-rgb), 0.87);
     --mdc-typography--font-family: var(--bokeh-base-font);
     --mdc-shape-small: 4px;
     --mdc-shape-medium: 4px;
     --mdc-shape-large: 0px;
+}
+
+html {
+    scrollbar-face-color: var(--mdc-theme-surface);
+    scrollbar-base-color: var(--mdc-theme-surface);
+    scrollbar-3dlight-color: var(--mdc-theme-surface);
+    scrollbar-highlight-color: var(--mdc-theme-surface);
+    scrollbar-track-color: var(--mdc-theme-background);
+    scrollbar-arrow-color: var(--mdc-theme-background);
+    scrollbar-shadow-color: var(--mdc-theme-surface);
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: var(--mdc-theme-background);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--mdc-theme-surface);
 }
 
 body {

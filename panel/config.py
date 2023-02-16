@@ -5,6 +5,7 @@ components.
 """
 import ast
 import copy
+import importlib
 import inspect
 import os
 import sys
@@ -21,6 +22,7 @@ from pyviz_comms import (
 
 from .io.logging import panel_log_handler
 from .io.state import state
+from .theme import Design
 
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
@@ -115,6 +117,9 @@ class _config(_base_config):
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
+    design = param.ClassSelector(class_=Design, is_instance=False, doc="""
+        The design system to use to style components.""")
+
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
 
@@ -159,9 +164,6 @@ class _config(_base_config):
 
     template = param.ObjectSelector(default=None, doc="""
         The default template to render served applications into.""")
-
-    theme = param.ObjectSelector(default='default', objects=['default', 'dark'], doc="""
-        The theme to apply to the selected global template.""")
 
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
@@ -244,6 +246,9 @@ class _config(_base_config):
     _inline = param.Boolean(default=_LOCAL_DEV_VERSION, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
+
+    _theme = param.ObjectSelector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
+        The theme to apply to components.""")
 
     # Global parameters that are shared across all sessions
     _globals = [
@@ -359,7 +364,7 @@ class _config(_base_config):
             curdoc and attr not in session_config[curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
-        if attr in global_params:
+        if attr in global_params or attr == 'theme':
             return super().__getattribute__(attr)
         elif curdoc and curdoc in session_config and attr in session_config[curdoc]:
             return session_config[curdoc][attr]
@@ -477,6 +482,20 @@ class _config(_base_config):
         else:
             return self._oauth_extra_params
 
+    @property
+    def theme(self):
+        from .io.state import state
+        curdoc = state.curdoc
+        if curdoc and 'theme' in self._session_config.get(curdoc, {}):
+            return self._session_config[curdoc]['theme']
+        elif self._theme_:
+            return self._theme_
+        elif isinstance(state.session_args, dict) and state.session_args:
+            theme = state.session_args.get('theme', [b'default'])[0].decode('utf-8')
+            if theme in self.param._theme.objects:
+                return theme
+        return 'default'
+
 
 if hasattr(_config.param, 'objects'):
     _params = _config.param.objects()
@@ -575,7 +594,21 @@ class panel_extension(_pyviz_extension):
                                    'will be skipped.' % arg)
 
         for k, v in params.items():
-            if k in ['raw_css', 'css_files']:
+            if k == 'design' and isinstance(v, str):
+                try:
+                    importlib.import_module(f'panel.theme.{self._design}')
+                except Exception:
+                    pass
+                designs = {
+                    p.lower(): t for p, t in param.concrete_descendents(Design).items()
+                }
+                if v not in designs:
+                    raise ValueError(
+                        f'Design {v!r} was not recognized, available design '
+                        f'systems include: {list(designs)}.'
+                    )
+                setattr(config, k, designs[v])
+            elif k in ('css_files', 'raw_css'):
                 if not isinstance(v, list):
                     raise ValueError('%s should be supplied as a list, '
                                      'not as a %s type.' %

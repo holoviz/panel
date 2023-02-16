@@ -5,7 +5,9 @@ See https://getbootstrap.com/docs/4.0/components/alerts/
 """
 from __future__ import annotations
 
-from typing import Any, ClassVar, Mapping
+from typing import (
+    Any, ClassVar, List, Mapping,
+)
 
 import param
 
@@ -35,7 +37,7 @@ class Alert(Markdown):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'alert_type': None}
 
-    _stylesheets = ['css/alerts.css', 'css/variables.css']
+    _stylesheets: ClassVar[List[str]] = ['css/alerts.css']
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:

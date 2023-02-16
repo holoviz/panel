@@ -11,7 +11,8 @@ from panel.io.state import state
 from panel.layout import Column
 from panel.pane import HTML, HoloViews, Markdown
 from panel.param import Param
-from panel.template.fast.grid import FastGridDarkTheme, FastGridTemplate
+from panel.template.fast.grid import FastGridTemplate
+from panel.theme.fast import FastDarkTheme
 from panel.widgets import Button
 
 hv.extension("bokeh")
@@ -27,7 +28,7 @@ def test_template_theme_parameter():
     doc = template.server_doc(Document())
     assert doc.theme._json['attrs']['figure']['background_fill_color']=="#181818"
 
-    assert isinstance(template._get_theme(), FastGridDarkTheme)
+    assert isinstance(template._design.theme, FastDarkTheme)
 
 COLLAPSED_ICON = """
 <svg style="stroke: var(--accent-fill-rest);" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
