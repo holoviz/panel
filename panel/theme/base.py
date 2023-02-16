@@ -204,7 +204,7 @@ class Design(param.Parameterized):
                         sts = cache[sts]
                     else:
                         sts = ImportedStyleSheet(url=sts)
-                        if cache:
+                        if cache is not None:
                             cache[sts.url] = sts
                 stylesheets.append(sts)
             modifiers['stylesheets'] = stylesheets
