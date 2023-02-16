@@ -22,7 +22,7 @@ from bokeh.models.widgets import (
     RadioGroup as _BkRadioBoxGroup,
 )
 
-from ..layout import Column, VSpacer
+from ..layout import Column
 from ..models import CustomSelect, SingleSelect as _BkSingleSelect
 from ..util import PARAM_NAME_PATTERN, indexOf, isIn
 from .base import CompositeWidget, Widget
@@ -311,6 +311,8 @@ class Select(SingleSelectBase):
 class _MultiSelectBase(SingleSelectBase):
 
     value = param.List(default=[])
+
+    width = param.Integer(default=300)
 
     _supports_embed: ClassVar[bool] = False
 
@@ -759,8 +761,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
         # Compute selected and unselected values
 
         labels, values = self.labels, self.values
-        selected = [labels[indexOf(v, values)] for v in params.get('value', [])
-                    if isIn(v, values)]
+        selected = [
+            labels[indexOf(v, values)] for v in params.get('value', [])
+            if isIn(v, values)
+        ]
         unselected = [k for k in labels if k not in selected]
         layout = dict(
             sizing_mode='stretch_both', margin=0,
@@ -774,18 +778,24 @@ class CrossSelector(CompositeWidget, MultiSelect):
         self._lists[True].param.watch(self._update_selection, 'value')
 
         # Define buttons
-        self._buttons = {False: Button(name='<<', width=50),
-                         True: Button(name='>>', width=50)}
+        self._buttons = {
+            False: Button(name='\u276e\u276e', width=50),
+            True: Button(name='\u276f\u276f', width=50)
+        }
 
         self._buttons[False].param.watch(self._apply_selection, 'clicks')
         self._buttons[True].param.watch(self._apply_selection, 'clicks')
 
         # Define search
         self._search = {
-            False: TextInput(placeholder='Filter available options',
-                             margin=(0, 0, 10, 0), width_policy='max'),
-            True: TextInput(placeholder='Filter selected options',
-                            margin=(0, 0, 10, 0), width_policy='max')
+            False: TextInput(
+                placeholder='Filter available options',
+                margin=(0, 0, 10, 0), width_policy='max'
+            ),
+            True: TextInput(
+                placeholder='Filter selected options',
+                margin=(0, 0, 10, 0), width_policy='max'
+            )
         }
         self._search[False].param.watch(self._filter_options, 'value_input')
         self._search[True].param.watch(self._filter_options, 'value_input')
@@ -800,16 +810,25 @@ class CrossSelector(CompositeWidget, MultiSelect):
         # Define Layout
         self._unselected = Column(self._search[False], self._lists[False], **layout)
         self._selected = Column(self._search[True], right, **layout)
-        buttons = Column(self._buttons[True], self._buttons[False], margin=(0, 5))
+        buttons = Column(self._buttons[True], self._buttons[False], margin=(0, 5), align='center')
 
         self._composite[:] = [
-            self._unselected, Column(VSpacer(), buttons, VSpacer()), self._selected
+            self._unselected, buttons, self._selected
         ]
 
         self._selections = {False: [], True: []}
         self._query = {False: '', True: ''}
 
         self._update_disabled()
+        self._update_width()
+
+    @param.depends('width', watch=True)
+    def _update_width(self):
+        width = int(self.width // 2. - 50)
+        self._search[False].width = width
+        self._search[True].width = width
+        self._lists[False].width = width
+        self._lists[True].width = width
 
     @param.depends('size', watch=True)
     def _update_size(self):

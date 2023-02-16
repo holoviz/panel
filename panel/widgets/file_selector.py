@@ -122,22 +122,23 @@ class FileSelector(CompositeWidget):
         # Set up layout
         layout = {p: getattr(self, p) for p in Layoutable.param
                   if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
-        sel_layout = dict(layout, sizing_mode='stretch_both', height=None, margin=0)
-        self._selector = CrossSelector(filter_fn=lambda p, f: fnmatch(f, p),
-                                       size=self.size, **sel_layout)
-        self._back = Button(name='◀', width=25, margin=(5, 10, 0, 0), disabled=True)
-        self._forward = Button(name='▶', width=25, margin=(5, 10), disabled=True)
-        self._up = Button(name='⬆', width=25, margin=(5, 10), disabled=True)
+        sel_layout = dict(layout, sizing_mode='stretch_width', height=300, margin=0)
+        self._selector = CrossSelector(
+            filter_fn=lambda p, f: fnmatch(f, p), size=self.size, **sel_layout
+        )
+        self._back = Button(name='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True)
+        self._forward = Button(name='▶', width=40, height=40, margin=(5, 10), disabled=True)
+        self._up = Button(name='⬆', width=40, height=40, margin=(5, 10), disabled=True)
         self._directory = TextInput(value=self.directory, margin=(5, 10), width_policy='max')
-        self._go = Button(name='⬇', disabled=True, width=25, margin=(5, 10, 0, 0))
-        self._reload = Button(name='↻', width=25, margin=(5, 15, 0, 10))
+        self._go = Button(name='⬇', disabled=True, width=40, height=40, margin=(5, 10, 0, 0))
+        self._reload = Button(name='↻', width=40, height=40, margin=(5, 15, 0, 10))
         self._nav_bar = Row(
             self._back, self._forward, self._up, self._directory, self._go, self._reload,
             **dict(layout, width=None, margin=0, width_policy='max')
         )
         self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
-        self._selector._selected.insert(0, Markdown('### Selected files', margin=0))
-        self._selector._unselected.insert(0, Markdown('### File Browser', margin=0))
+        self._selector._selected.insert(0, Markdown('##### Selected files', margin=0))
+        self._selector._unselected.insert(0, Markdown('##### File Browser', margin=0))
         self.link(self._selector, size='size')
 
         # Set up state
