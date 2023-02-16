@@ -289,7 +289,7 @@ class Design(param.Parameterized):
         if not theme:
             return
         for sm in model.references():
-            self.theme.bokeh_theme.apply_to_model(sm)
+            theme.apply_to_model(sm)
 
     def params(
         self, viewable: Viewable, doc: Document | None = None
