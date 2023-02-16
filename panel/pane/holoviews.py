@@ -427,6 +427,8 @@ class HoloViews(PaneBase):
                 params['theme'] = self.theme
             elif doc.theme and getattr(doc.theme, '_json') != {'attrs': {}}:
                 params['theme'] = doc.theme
+            elif self._design.theme.bokeh_theme:
+                params['theme'] = self._design.theme.bokeh_theme
             if mode != renderer.mode:
                 params['mode'] = mode
             if params:

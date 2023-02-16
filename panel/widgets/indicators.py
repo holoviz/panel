@@ -681,6 +681,9 @@ class Dial(ValueIndicator):
             angle='rot'
         )
 
+        # Apply theme
+        self._design.apply_bokeh_theme_to_model(model)
+
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
@@ -867,6 +870,7 @@ class LinearGauge(ValueIndicator):
         self._update_axes(model)
         self._update_renderers(model)
         self._update_bounds(model)
+        self._design.apply_bokeh_theme_to_model(model)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)

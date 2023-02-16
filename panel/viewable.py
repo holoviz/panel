@@ -621,12 +621,13 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def _update_design(self, *_):
         from .theme import Design
+        from .theme.native import Native
         if isinstance(self.design, Design):
             self._design = self.design
         elif self.design:
             self._design = self.design(theme=config.theme)
         else:
-            self._design = Design()
+            self._design = Native()
 
     def _update_loading(self, *_) -> None:
         if self.loading:

@@ -12,7 +12,7 @@ from weakref import WeakKeyDictionary
 import param
 
 from bokeh.models import ImportedStyleSheet
-from bokeh.themes import Theme as _BkTheme, _dark_minimal
+from bokeh.themes import Theme as _BkTheme, _dark_minimal, built_in_themes
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -32,27 +32,22 @@ class Theme(param.Parameterized):
     Theme objects declare the styles to switch between different color
     modes. Each `Design` may declare any number of color themes.
 
-    A `Theme` consists of a number of items:
-
-    `base_css`
-       A stylesheet declaring the base variables that define the color
-       scheme. By default this is inherited from a base class.
-    `css`
-       A stylesheet thats overrides variables specifically for the
-       Theme subclass. In most cases this is not necessary.
-    `bokeh_theme`
-       A Bokeh Theme class that declares properties to apply to Bokeh
-       models. This is necessary to ensure that plots and other canvas
-       based components are styled appropriately.
     `_modifiers`
        The modifiers override parameter values of Panel components.
     """
 
-    base_css = param.Filename()
+    base_css = param.Filename(doc="""
+        A stylesheet declaring the base variables that define the color
+        scheme. By default this is inherited from a base class.""")
 
-    bokeh_theme = param.ClassSelector(class_=(_BkTheme, str), default=None)
+    bokeh_theme = param.ClassSelector(class_=(_BkTheme, str), default=None, doc="""
+        A Bokeh Theme class that declares properties to apply to Bokeh
+        models. This is necessary to ensure that plots and other canvas
+        based components are styled appropriately.""")
 
-    css = param.Filename()
+    css = param.Filename(doc="""
+       A stylesheet thats overrides variables specifically for the
+       Theme subclass. In most cases this is not necessary.""")
 
     _modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
 
@@ -282,6 +277,19 @@ class Design(param.Parameterized):
             self._reapply(viewable, root, isolated=isolated, cache=cache)
             if self.theme and self.theme.bokeh_theme and doc:
                 doc.theme = self.theme.bokeh_theme
+
+    def apply_bokeh_theme_to_model(self, model: Model, theme_override=None):
+        """
+        Applies the Bokeh theme associated with this Design system
+        to a model.
+        """
+        theme = theme_override or self.theme.bokeh_theme
+        if isinstance(theme, str):
+            theme = built_in_themes.get(theme)
+        if not theme:
+            return
+        for sm in model.references():
+            self.theme.bokeh_theme.apply_to_model(sm)
 
     def params(
         self, viewable: Viewable, doc: Document | None = None
