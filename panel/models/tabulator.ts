@@ -1,4 +1,4 @@
-import {StyleSheetLike, ImportedStyleSheet, undisplay} from "@bokehjs/core/dom"
+import {undisplay} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
 import {build_views} from "@bokehjs/core/build_views"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
@@ -291,8 +291,8 @@ export class DataTabulatorView extends HTMLBoxView {
     super.connect_signals()
 
     const p = this.model.properties
-    const {configuration, layout, columns, theme, groupby} = p;
-    this.on_change([configuration, layout, groupby, theme], debounce(() => this.invalidate_render(), 20, false))
+    const {configuration, layout, columns, groupby} = p;
+    this.on_change([configuration, layout, groupby], debounce(() => this.invalidate_render(), 20, false))
 
     this.on_change([columns], () => {
       this.tabulator.setColumns(this.getColumns())
@@ -905,30 +905,6 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.setSort(this.sorters)
   }
 
-  override styles(): StyleSheetLike[] {
-    const styles = super.styles()
-    let theme: string
-    let theme_: string
-    if (this.model.theme == "default") {
-      theme = "tabulator"
-    }
-    else {
-      if (this.model.theme == "bootstrap") {
-        theme_ = "bootstrap3"
-      }
-      else if (this.model.theme == "semantic-ui") {
-        theme_ = "semanticui"
-      }
-      else {
-        theme_ = this.model.theme
-      }
-      theme = "tabulator_" + theme_
-    }
-    const css = this.model.theme_url + theme + ".min.css"
-    styles.push(new ImportedStyleSheet(css))
-    return styles
-  }
-
   setStyles(): void {
     const style_data = this.model.cell_styles.data
     if (this.tabulator == null || this.tabulator.getDataCount() == 0 || !style_data.size)
@@ -1128,8 +1104,6 @@ export namespace DataTabulator {
     source: p.Property<ColumnDataSource>
     sorters: p.Property<any[]>
     cell_styles: p.Property<any>
-    theme: p.Property<string>
-    theme_url: p.Property<string>
   }
 }
 
@@ -1174,8 +1148,6 @@ export class DataTabulator extends HTMLBox {
       source:         [ Ref(ColumnDataSource)       ],
       sorters:        [ Array(Any),              [] ],
       cell_styles:    [ Any,                     {} ],
-      theme:          [ String,            "simple" ],
-      theme_url:      [ String, "https://unpkg.com/tabulator-tables@5.3.2/dist/css/"]
     }))
   }
 }
