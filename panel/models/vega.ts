@@ -119,6 +119,10 @@ export class VegaPlotView extends HTMLBoxView {
 
     (window as any).vegaEmbed(this.container, this.model.data, config).then((result: any) => {
       this.vega_view = result.view
+      result.view.addResizeListener(() => {
+	this.resize_view(result.view)
+      });
+      this.resize_view(result.view)
       const callback = (name: string, value: any) => this._dispatch_event(name, value)
       for (const event of this.model.events) {
         this._callbacks.push(event)
@@ -126,6 +130,14 @@ export class VegaPlotView extends HTMLBoxView {
         this.vega_view.addSignalListener(event, debounce(callback, timeout, false))
       }
     })
+  }
+
+  resize_view(view: any): void {
+    let rect = this.container.getBoundingClientRect()
+    console.log(rect.width, rect.height)
+    view._el.children[0].style.width = `${rect.width}px`
+    view._el.children[0].style.height = `${rect.height}px`
+    view.resize().runAsync()
   }
 }
 
