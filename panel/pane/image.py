@@ -158,7 +158,7 @@ class ImageBase(FileBase):
     ):
         width = self.width or width
         height = self.height or height
-        alt_text = {self.alt_text or ''}
+        alt_text = self.alt_text or ''
         width = f'width="{width}"' if width else ""
         height = f'height="{height}"' if height else ""
         html = f'<img src="{src}" {width} {height} alt="{alt_text}"></img>'
