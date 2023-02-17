@@ -37,10 +37,6 @@ class SelectBase(Widget):
 
     options = param.ClassSelector(default=[], class_=(dict, list))
 
-    width = param.Integer(default=300, allow_None=True, doc="""
-      Width of this component. If sizing_mode is set to stretch
-      or scale mode this will merely be used as a suggestion.""")
-
     __abstract = True
 
     @property
@@ -174,6 +170,10 @@ class Select(SingleSelectBase):
         Declares how many options are displayed at the same time.
         If set to 1 displays options as dropdown otherwise displays
         scrollable area.""")
+
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'groups': None, 'size': None
@@ -411,6 +411,10 @@ class MultiChoice(_MultiSelectBase):
 
     solid = param.Boolean(default=True, doc="""
         Whether to display widget with solid or light style.""")
+
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
 
     _widget_type: ClassVar[Type[Model]] = _BkMultiChoice
 
