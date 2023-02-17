@@ -37,7 +37,9 @@ class SelectBase(Widget):
 
     options = param.ClassSelector(default=[], class_=(dict, list))
 
-    width = param.Integer(default=300)
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
 
     __abstract = True
 
@@ -312,7 +314,9 @@ class _MultiSelectBase(SingleSelectBase):
 
     value = param.List(default=[])
 
-    width = param.Integer(default=300)
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
 
     _supports_embed: ClassVar[bool] = False
 
@@ -457,7 +461,9 @@ class AutocompleteInput(Widget):
     value_input = param.String(default='', allow_None=True, doc="""
       Initial or entered text value updated on every key press.""")
 
-    width = param.Integer(default=300)
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
