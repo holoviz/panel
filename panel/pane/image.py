@@ -27,7 +27,7 @@ class FileBase(HTMLBasePane):
     embed = param.Boolean(default=False, doc="""
         Whether to embed the file as base64.""")
 
-    filetype: ClassVar[str | Tuple[str, ...]]
+    filetype: ClassVar[str]
 
     _rename: ClassVar[Mapping[str, str | None]] = {'embed': None}
 
