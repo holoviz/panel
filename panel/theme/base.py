@@ -145,7 +145,7 @@ class Design(param.Parameterized):
         return new_value
 
     @classmethod
-    @functools.cache
+    @functools.lru_cache
     def _resolve_modifiers(cls, vtype, theme):
         """
         Iterate over the class hierarchy in reverse order and accumulate
