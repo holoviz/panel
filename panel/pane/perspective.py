@@ -14,8 +14,6 @@ import param
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
-from ..io.resources import LOCAL_DIST
-from ..io.state import state
 from ..reactive import ReactiveData
 from ..util import lazy_load
 from ..viewable import Viewable
@@ -396,14 +394,7 @@ class Perspective(PaneBase, ReactiveData):
         return props
 
     def _get_theme(self, theme, resources=None):
-        from ..io.resources import RESOURCE_MODE
-        from ..models.perspective import PANEL_CDN, THEME_PATH, THEME_URL
-        if RESOURCE_MODE == 'server' and resources in (None, 'server'):
-            theme_url = f'{LOCAL_DIST}bundled/perspective/{THEME_PATH}'
-            if state.rel_path:
-                theme_url = f'{state.rel_path}/{theme_url}'
-        else:
-            theme_url = PANEL_CDN
+        from ..models.perspective import THEME_URL
         theme_url = f'{THEME_URL}{theme}.css'
         if self._bokeh_model is not None:
             self._bokeh_model.__css_raw__ = self._bokeh_model.__css_raw__[:3] + [theme_url]

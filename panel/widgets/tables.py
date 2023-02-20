@@ -25,7 +25,6 @@ from bokeh.util.serialization import convert_datetime_array
 from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget
-from ..io.resources import LOCAL_DIST
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
@@ -1214,17 +1213,7 @@ class Tabulator(BaseTable):
                 state.execute(partial(cb, event), schedule=False)
 
     def _get_theme(self, theme, resources=None):
-        from ..io.resources import RESOURCE_MODE
-        from ..models.tabulator import (
-            _TABULATOR_THEMES_MAPPING, PANEL_CDN, THEME_PATH, THEME_URL,
-        )
-        if RESOURCE_MODE == 'server' and resources in (None, 'server'):
-            theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
-            if state.rel_path:
-                theme_url = f'{state.rel_path}/{theme_url}'
-        else:
-            theme_url = PANEL_CDN
-        # Ensure theme_url updates before theme
+        from ..models.tabulator import _TABULATOR_THEMES_MAPPING, THEME_URL
         theme_ = _TABULATOR_THEMES_MAPPING.get(self.theme, self.theme)
         fname = 'tabulator' if theme_ == 'default' else f'tabulator_{theme_}'
         theme_url = f'{THEME_URL}{fname}.min.css'
