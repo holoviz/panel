@@ -22,8 +22,7 @@ def test_param_defer_load(page, port):
     page.goto(f"http://localhost:{port}")
 
     assert page.locator(".pn-loading")
-    assert page.locator('.markdown').count() == 0
 
     time.sleep(0.5)
 
-    assert page.locator(".markdown").locator(".bk-clearfix").text_content() == 'I render after load!'
+    assert page.locator(".markdown").locator("div").text_content() == 'I render after load!'

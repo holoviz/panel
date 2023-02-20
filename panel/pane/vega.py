@@ -13,7 +13,6 @@ from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
-from ..viewable import Layoutable
 from .base import PaneBase
 
 if TYPE_CHECKING:
@@ -208,26 +207,6 @@ class Vega(PaneBase):
         if json is None:
             return
 
-        if 'config' in json and 'view' in json['config']:
-            size_config = json['config']['view']
-        else:
-            size_config = json
-
-        view = {}
-        for w in ('width', 'continuousWidth'):
-            if w in size_config:
-                view['width'] = size_config[w]
-        for h in ('height', 'continuousHeight'):
-            if h in size_config:
-                view['height'] = size_config[h]
-
-        for p in ('width', 'height'):
-            if p not in view or isinstance(view[p], str):
-                continue
-            if props.get(p) is None or p in view and props.get(p) < view[p]:
-                v = view[p]
-                props[p] = v+22 if isinstance(v, int) else v
-
         responsive_height = json.get('height') == 'container'
         responsive_width = json.get('width') == 'container'
         if responsive_height and responsive_width:
@@ -269,13 +248,12 @@ class Vega(PaneBase):
         return model
 
     def _update(self, ref: str, model: Model) -> None:
+        props = self._get_properties(model.document)
         if self.object is None:
             json = None
         else:
             json = self._to_json(self.object)
             self._get_sources(json, model.data_sources)
-        props = {p : getattr(self, p) for p in list(Layoutable.param)
-                 if getattr(self, p) is not None}
         props['throttle'] = self._throttle
         props['events'] = list(self._selections)
         self._get_dimensions(json, props)

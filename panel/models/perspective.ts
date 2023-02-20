@@ -1,6 +1,5 @@
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-import {DocumentEvent} from "@bokehjs/document/events"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
@@ -8,8 +7,6 @@ import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 const THEMES: any = {
   'material-dark': 'Material Dark',
   'material': 'Material Light',
-  'material-dense': 'Material Light',
-  'material-dense-dark': 'Material Dark',
   'vaporwave': 'Vaporwave',
   'solarized': 'Solarized',
   'solarized-dark': 'Solarized Dark',
@@ -51,13 +48,14 @@ export class PerspectiveView extends HTMLBoxView {
   _updating: boolean = false
   _config_listener: any = null
   _current_config: any = null
-  _event_listener: any = null
   _loaded: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
 
     this.connect(this.model.source.properties.data.change, () => this.setData());
+    this.connect(this.model.source.streaming, () => this.stream())
+    this.connect(this.model.source.patching, () => this.patch())
     this.connect(this.model.properties.toggle_config.change, () => {
       this.perspective_element.toggleConfig()
     })
@@ -94,19 +92,12 @@ export class PerspectiveView extends HTMLBoxView {
     this.connect(this.model.properties.theme.change, () => {
       this.perspective_element.restore({"theme": THEMES[this.model.theme as string]}).catch(() => {})
     })
-    if (this.model.document != null) {
-      this._event_listener = (event: DocumentEvent) => this.on_event(event)
-      this.model.document.on_change(this._event_listener)
-    }
   }
 
   disconnect_signals(): void {
     if (this._config_listener != null)
       this.perspective_element.removeEventListener("perspective-config-update", this._config_listener)
     this._config_listener = null
-    if (this.model.document != null && this._event_listener != null)
-      this.model.document.remove_on_change(this._event_listener)
-    this._event_listener = null
     super.disconnect_signals()
   }
 
@@ -121,7 +112,6 @@ export class PerspectiveView extends HTMLBoxView {
         zIndex: 0,
       }
     })
-    //set_size(container, this.model)
     container.innerHTML = "<perspective-viewer style='height:100%; width:100%;'></perspective-viewer>";
     this.perspective_element = container.children[0]
     this.perspective_element.resetThemes([...Object.values(THEMES)]).catch(() => {})
@@ -181,16 +171,6 @@ export class PerspectiveView extends HTMLBoxView {
     return true
   }
 
-  on_event(event: any): void {
-    event = event.hint
-    if (event == null || event.column_source == null || event.column_source.id != this.model.source.id)
-      return
-    else if (event.rollover !== undefined)
-      this.stream(event.data, event.rollover)
-    else if (event.patches !== undefined)
-      this.patch(event.patches)
-  }
-
   get data(): any {
     const data: any = {}
     for (const column of this.model.source.columns())
@@ -198,22 +178,19 @@ export class PerspectiveView extends HTMLBoxView {
     return data
   }
 
-  stream(data: any, rollover: any): void {
-    if (!this._loaded)
-      return
-    else if (rollover == null)
-      this.table.update(data)
-    else
-      this.table.replace(this.data)
-  }
-
-  patch(_: any): void {
-    this.table.replace(this.data)
-  }
-
   setData(): void {
     if (this._loaded)
       this.table.load(this.data)
+  }
+
+  stream(): void {
+    if (this._loaded)
+      this.table.replace(this.data)
+  }
+
+  patch(): void {
+    if (this._loaded)
+      this.table.replace(this.data)
   }
 }
 
@@ -267,7 +244,7 @@ export class Perspective extends HTMLBox {
       toggle_config:    [ Boolean,                           true ],
       sort:             [ Nullable(Array(Array(String))),    null ],
       source:           [ Ref(ColumnDataSource),                  ],
-      theme:            [ String,                                 ],
+      theme:            [ String,                      'material' ]
     }))
   }
 }

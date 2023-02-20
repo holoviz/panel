@@ -1,5 +1,3 @@
-.bk-root, .bk-root .bk:before, .bk-root .bk:after {
-  font-family: var(--jp-ui-font-size1);
-  font-size: var(--jp-ui-font-size1);
-  color: var(--jp-ui-font-color1);
+*[data-root-id], *[data-root-id] > * {
+    box-sizing: border-box;
 }

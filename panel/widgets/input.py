@@ -65,7 +65,9 @@ class TextInput(Widget):
     value_input = param.String(default='', allow_None=True, doc="""
         Initial or entered text value updated on every key press.""")
 
-    width = param.Integer(default=300)
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
 
     _widget_type: ClassVar[Type[Model]] = _BkTextInput
 
@@ -299,6 +301,10 @@ class DatePicker(Widget):
 
     enabled_dates = param.List(default=None, class_=(date, str))
 
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {}
 
     _rename: ClassVar[Mapping[str, str | None]] = {
@@ -340,6 +346,10 @@ class _DatetimePickerBase(Widget):
 
     start = param.Date(default=None, doc="""
       Inclusive lower bound of the allowed date selection.""")
+
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None, 'mode': None
@@ -559,6 +569,10 @@ class _SpinnerBase(_NumericInputBase):
         Defines the debounce time in ms before updating `value_throttled` when
         the mouse wheel is used to change the input.""")
 
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
+
     _widget_type: ClassVar[Type[Model]] = _BkSpinner
 
     __abstract = True
@@ -710,6 +724,10 @@ class LiteralInput(Widget):
                                is_instance=True)
 
     value = param.Parameter(default=None)
+
+    width = param.Integer(default=300, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'type': None, 'serializer': None

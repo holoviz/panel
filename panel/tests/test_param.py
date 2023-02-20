@@ -13,6 +13,7 @@ from bokeh.models import (
 from panel import config
 from panel.io.state import set_curdoc, state
 from panel.layout import Row, Tabs
+from panel.models import HTML as BkHTML
 from panel.pane import (
     HTML, Bokeh, Matplotlib, PaneBase, Str, panel,
 )
@@ -117,9 +118,9 @@ def test_get_root(document, comm):
     assert isinstance(model, BkColumn)
     assert len(model.children) == 1
 
-    div = model.children[0]
-    assert isinstance(div, Div)
-    assert div.text == '<b>'+test.name[:-5]+'</b>'
+    html = model.children[0]
+    assert isinstance(html, Div)
+    assert html.text == '<b>'+test.name[:-5]+'</b>'
 
 
 def test_single_param(document, comm):
@@ -1082,7 +1083,7 @@ def test_param_function_pane_defer_load(document, comm):
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
-    assert isinstance(model, Div)
+    assert isinstance(model, BkHTML)
     assert model.text == '&lt;pre&gt; &lt;/pre&gt;'
 
     # Test on_load

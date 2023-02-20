@@ -1,9 +1,9 @@
-import * as p from "@bokehjs/core/properties"
-import {Markup} from "@bokehjs/models/widgets/markup"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
-import {PanelMarkupView} from "./layout"
-import {serializeEvent} from "./event-to-object";
+import * as p from "@bokehjs/core/properties"
 import {Attrs} from "@bokehjs/core/types"
+import {Markup} from "@bokehjs/models/widgets/markup"
+import {PanelMarkupView} from "./layout";
+import {serializeEvent} from "./event-to-object";
 
 export class DOMEvent extends ModelEvent {
   event_name: string = "dom_event"
@@ -52,14 +52,18 @@ export class HTMLView extends PanelMarkupView {
 
   render(): void {
     super.render()
+    this.shadow_el.appendChild(this.container)
+
+    if (this.provider.status == "failed" || this.provider.status == "loaded")
+      this._has_finished = true
+
     const html = this.process_tex()
-    if (!html) {
-      this.markup_el.innerHTML = '';
-      return;
+    if (html) {
+      this.container.innerHTML = html
+      if (this.model.run_scripts)
+	runScripts(this.container)
+      this._setup_event_listeners()
     }
-    this.markup_el.innerHTML = html
-    runScripts(this.markup_el)
-    this._setup_event_listeners()
   }
 
   process_tex(): string {
@@ -90,7 +94,7 @@ export class HTMLView extends PanelMarkupView {
       return false
 
     return this.provider.MathJax.find_tex(html).length > 0
-  };
+  }
 
   private _remove_event_listeners(): void {
     for (const node in this._event_listeners) {
@@ -132,6 +136,7 @@ export namespace HTML {
 
   export type Props = Markup.Props & {
     events: p.Property<any>
+    run_scripts: p.Property<boolean>
   }
 }
 
@@ -148,8 +153,9 @@ export class HTML extends Markup {
 
   static {
     this.prototype.default_view = HTMLView
-    this.define<HTML.Props>(({Any}) => ({
-      events: [ Any, {} ]
+    this.define<HTML.Props>(({Any, Boolean}) => ({
+      events: [ Any, {} ],
+      run_scripts: [ Boolean, true ]
     }))
   }
 }

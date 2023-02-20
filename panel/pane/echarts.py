@@ -71,8 +71,6 @@ class ECharts(PaneBase):
         responsive = props.get('data', {}).get('responsive')
         if responsive:
             props['sizing_mode'] = 'stretch_both'
-        else:
-            props['sizing_mode'] = 'fixed'
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -80,7 +78,7 @@ class ECharts(PaneBase):
     ) -> Model:
         ECharts = lazy_load('panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root)
         props = self._get_echart_dict(self.object)
-        props.update(self._process_param_change(self._init_params()))
+        props.update(self._get_properties(doc))
         self._get_dimensions(props)
         model = ECharts(**props)
         if root is None:

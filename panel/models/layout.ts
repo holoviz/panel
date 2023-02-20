@@ -1,13 +1,44 @@
+import {div} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
-import {MarkupView} from "@bokehjs/models/widgets/markup"
+import {WidgetView} from "@bokehjs/models/widgets/widget"
+import {Markup} from "@bokehjs/models/widgets/markup"
 import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import * as p from "@bokehjs/core/properties"
 
-export class PanelMarkupView extends MarkupView {
+export class PanelMarkupView extends WidgetView {
+  container: HTMLDivElement
+  model: Markup
 
-  render(): void {
+  override async lazy_initialize() {
+    await super.lazy_initialize()
+
+    if (this.provider.status == "not_started" || this.provider.status == "loading")
+      this.provider.ready.connect(() => {
+        if (this.contains_tex_string(this.model.text))
+          this.render()
+      })
+  }
+
+  override connect_signals(): void {
+    super.connect_signals()
+    this.connect(this.model.change, () => {
+      this.render()
+    })
+  }
+
+  has_math_disabled() {
+    return this.model.disable_math || !this.contains_tex_string(this.model.text)
+  }
+
+  override render(): void {
     super.render()
     set_size(this.el, this.model)
+    this.container = div()
+    set_size(this.container, this.model)
+    this.shadow_el.appendChild(this.container)
+
+    if (this.provider.status == "failed" || this.provider.status == "loaded")
+      this._has_finished = true
   }
 }
 
@@ -52,6 +83,8 @@ export function set_size(el: HTMLElement, model: HTMLBox): void {
       hm = margin[0] * 2
       wm = margin[1] * 2
     }
+  } else if (margin == null) {
+    hm = wm = 0
   } else {
     wm = hm = margin * 2
   }

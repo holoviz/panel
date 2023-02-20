@@ -10,10 +10,10 @@ from panel.pane import PDF
 
 def test_pdf_embed(page, port):
     url = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-    pdf_pane = PDF(url)
+    pdf_pane = PDF(url, embed=True)
 
     serve(pdf_pane, port=port, threaded=True, show=False)
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     page.goto(f"http://localhost:{port}")
 
@@ -26,7 +26,7 @@ def test_pdf_embed(page, port):
 def test_pdf_embed_start_page(page, port):
     # The pdf does not have 2 pages just to verify #page is set
     url = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-    pdf_pane = PDF(url, start_page=22)
+    pdf_pane = PDF(url, start_page=22, embed=True)
 
     serve(pdf_pane, port=port, threaded=True, show=False)
     time.sleep(0.2)
