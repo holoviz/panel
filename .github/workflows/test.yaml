@@ -71,7 +71,7 @@ jobs:
         if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
-          pip install pyecharts idom
+          pip install pyecharts
       - name: bokeh_sampledata
         run: |
           conda activate test-environment
