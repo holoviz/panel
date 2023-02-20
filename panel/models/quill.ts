@@ -5,17 +5,12 @@ import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class QuillInputView extends HTMLBoxView {
   override model: QuillInput
-  protected _container: HTMLDivElement
+  protected container: HTMLDivElement
   protected _editor: HTMLDivElement
   protected _editing: boolean
   protected _toolbar: HTMLDivElement | null
 
   quill: any
-
-  initialize(): void {
-    super.initialize()
-    this._container = div({})
-  }
 
   connect_signals(): void {
     super.connect_signals()
@@ -52,9 +47,10 @@ export class QuillInputView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    this.shadow_el.appendChild(this._container)
+    this.container = div({})
+    this.shadow_el.appendChild(this.container)
     const theme = (this.model.mode === 'bubble') ? 'bubble' : 'snow'
-    this.quill = new (window as any).Quill(this._container, {
+    this.quill = new (window as any).Quill(this.container, {
       modules: {
         toolbar: this.model.toolbar
       },
@@ -62,8 +58,8 @@ export class QuillInputView extends HTMLBoxView {
       placeholder: this.model.placeholder,
       theme: theme
     });
-    this._editor = (this.el.querySelector('.ql-editor') as HTMLDivElement)
-    this._toolbar = (this.el.querySelector('.ql-toolbar') as HTMLDivElement)
+    this._editor = (this.shadow_el.querySelector('.ql-editor') as HTMLDivElement)
+    this._toolbar = (this.shadow_el.querySelector('.ql-toolbar') as HTMLDivElement)
     this.quill.clipboard.dangerouslyPasteHTML(this.model.text)
     this.quill.on('text-change', () => {
       if (this._editing)

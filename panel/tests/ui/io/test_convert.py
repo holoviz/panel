@@ -178,11 +178,11 @@ def test_pyodide_test_error_handling_worker(page, launch_app):
 def test_pyodide_test_convert_button_app(page, runtime, launch_app):
     msgs = wait_for_app(launch_app, button_app, page, runtime)
 
-    expect(page.locator(".bk-clearfix")).to_have_text('0')
+    expect(page.locator('.markdown').locator("div")).to_have_text('0')
 
     page.click('.bk-btn')
 
-    expect(page.locator(".bk-clearfix")).to_have_text('1')
+    expect(page.locator('.markdown').locator("div")).to_have_text('1')
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
@@ -190,12 +190,12 @@ def test_pyodide_test_convert_button_app(page, runtime, launch_app):
 def test_pyodide_test_convert_slider_app(page, runtime, launch_app):
     msgs = wait_for_app(launch_app, slider_app, page, runtime)
 
-    expect(page.locator(".bk-clearfix")).to_have_text('0.0')
+    expect(page.locator('.markdown').locator("div")).to_have_text('0.0')
 
     page.click('.noUi-handle')
     page.keyboard.press('ArrowRight')
 
-    expect(page.locator(".bk-clearfix")).to_have_text('0.1')
+    expect(page.locator('.markdown').locator("div")).to_have_text('0.1')
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 

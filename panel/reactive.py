@@ -550,7 +550,10 @@ class Reactive(Syncable, Viewable):
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
     ) -> None:
         if 'stylesheets' in msg:
-            dist_url = doc._template_variables.get('dist_dir')
+            if doc and 'dist_url' in doc._template_variables:
+                dist_url = doc._template_variables['dist_url']
+            else:
+                dist_url = CDN_DIST
             for stylesheet in msg['stylesheets']:
                 if isinstance(stylesheet, ImportedStyleSheet):
                     patch_stylesheet(stylesheet, dist_url)

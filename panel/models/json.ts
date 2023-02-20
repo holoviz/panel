@@ -20,19 +20,19 @@ export class JSONView extends PanelMarkupView {
     try {
       json = window.JSON.parse(text)
     } catch(err) {
-      this.markup_el.innerHTML = "<b>Invalid JSON:</b> " + err.toString()
+      this.container.innerHTML = "<b>Invalid JSON:</b> " + err.toString()
       return
     }
     const config = {hoverPreviewEnabled: this.model.hover_preview, theme: this.model.theme}
     const depth = this.model.depth == null ? Infinity : this.model.depth
     const formatter = new JSONFormatter(json, depth, config)
     const rendered = formatter.render()
-    let style = "border-radius: 5px; padding: 10px;";
+    let style = "border-radius: 5px; padding: 10px; width: 100%; height: 100%;";
     if (this.model.theme == "dark")
       rendered.style.cssText = "background-color: rgb(30, 30, 30);" + style;
     else
       rendered.style.cssText = style;
-    this.markup_el.append(rendered)
+    this.container.append(rendered)
   }
 }
 

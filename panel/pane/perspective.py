@@ -5,7 +5,7 @@ import sys
 
 from enum import Enum
 from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Optional,
+    TYPE_CHECKING, ClassVar, List, Mapping, Optional, Type,
 )
 
 import numpy as np
@@ -25,22 +25,10 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 DEFAULT_THEME = "material"
-THEMES_MAP = {
-    "material": "perspective-viewer-material",
-    "material-dark": "perspective-viewer-material-dark",
-    "material-dense": "perspective-viewer-material-dense",
-    "material-dense-dark": "perspective-viewer-material-dense-dark",
-    "vaporwave": "perspective-viewer-vaporwave",
-    "solarized": "solarized",
-    "solarized-dark": "solarized-dark",
-    "monokai": "monokai"
-}
 
-THEMES = [*THEMES_MAP.keys()]
-
-# Hack: When the user drags some of the columns, then the class attribute contains "dragging" also.
-CSS_CLASS_MAP = {v: k for k, v in THEMES_MAP.items()}
-DEFAULT_CSS_CLASS = THEMES_MAP[DEFAULT_THEME]
+THEMES = [
+    'material', 'material-dark', 'monokai', 'solarized', 'solarized-dark', 'vaporwave'
+]
 
 class Plugin(Enum):
     """The plugins (grids/charts) available in Perspective.  Pass these into
@@ -314,10 +302,12 @@ class Perspective(PaneBase, ReactiveData):
     toggle_config = param.Boolean(default=True, doc="""
       Whether to show the config menu.""")
 
-    theme = param.ObjectSelector(default=DEFAULT_THEME, objects=THEMES, doc="""
+    theme = param.ObjectSelector(default='material', objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example material-dark""")
 
     priority: ClassVar[float | bool | None] = None
+
+    _bokeh_model: ClassVar[Type[Model] | None] = None
 
     _data_params: ClassVar[List[str]] = ['object']
 
@@ -328,6 +318,8 @@ class Perspective(PaneBase, ReactiveData):
     }
 
     _updates: ClassVar[bool] = True
+
+    _stylesheets = ['css/perspective-datatable.css']
 
     @classmethod
     def applies(cls, object):
@@ -366,11 +358,6 @@ class Perspective(PaneBase, ReactiveData):
 
     def _init_params(self):
         props = super()._init_params()
-        Perspective = lazy_load('panel.models.perspective', 'Perspective')
-        props['stylesheets'] = (
-            props.get('stylesheets', []) +
-            [ImportedStyleSheet(url=ss) for ss in Perspective.__css__]
-        )
         props['source'] = ColumnDataSource(data=self._data)
         props['schema'] = schema = {}
         for col, array in self._data.items():
@@ -406,18 +393,31 @@ class Perspective(PaneBase, ReactiveData):
                     schema[col] = 'string'
         return props
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
+    def _get_theme(self, theme, resources=None):
+        from ..models.perspective import THEME_URL
+        theme_url = f'{THEME_URL}{theme}.css'
+        if self._bokeh_model is not None:
+            self._bokeh_model.__css_raw__ = self._bokeh_model.__css_raw__[:3] + [theme_url]
+        return theme_url
+
+    def _process_param_change(self, params):
+        if 'stylesheets' in params or 'theme' in params:
+            self._get_theme(params.get('theme', self.theme))
+            css = getattr(self._bokeh_model, '__css__', [])
+            params['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + params.get('stylesheets', self.stylesheets)
+        props = super()._process_param_change(params)
         for p in ('columns', 'group_by', 'split_by'):
-            if msg.get(p):
-                msg[p] = [None if col is None else str(col) for col in msg[p]]
-        if msg.get('sort'):
-            msg['sort'] = [[str(col), *args] for col, *args in msg['sort']]
-        if msg.get('filters'):
-            msg['filters'] = [[str(col), *args] for col, *args in msg['filters']]
-        if msg.get('aggregates'):
-            msg['aggregates'] = {str(col): agg for col, agg in msg['aggregates'].items()}
-        return msg
+            if props.get(p):
+                props[p] = [None if col is None else str(col) for col in props[p]]
+        if props.get('sort'):
+            props['sort'] = [[str(col), *args] for col, *args in props['sort']]
+        if props.get('filters'):
+            props['filters'] = [[str(col), *args] for col, *args in props['filters']]
+        if props.get('aggregates'):
+            props['aggregates'] = {str(col): agg for col, agg in props['aggregates'].items()}
+        return props
 
     def _as_digit(self, col):
         if self._processed is None or col in self._processed or col is None:
@@ -444,8 +444,8 @@ class Perspective(PaneBase, ReactiveData):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        Perspective = lazy_load('panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root)
-        properties = self._process_param_change(self._init_params())
+        self._bokeh_model = Perspective = lazy_load('panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root)
+        properties = self._get_properties(doc)
         if properties.get('toggle_config'):
             properties['height'] = self.height or 300
         else:

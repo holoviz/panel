@@ -5,12 +5,7 @@ import {HTMLBox, HTMLBoxView} from "./layout"
 export class EChartsView extends HTMLBoxView {
   model: ECharts
   _chart: any
-  _layout_wrapper: Element
-
-  initialize(): void {
-    super.initialize()
-    this._layout_wrapper = div({style: "height: 100%; width: 100%;"})
-  }
+  container: Element
 
   connect_signals(): void {
     super.connect_signals()
@@ -24,14 +19,16 @@ export class EChartsView extends HTMLBoxView {
     if (this._chart != null)
       (window as any).echarts.dispose(this._chart);
     super.render()
+    this.container = div({style: "height: 100%; width: 100%;"})
     const config = {width: this.model.width, height: this.model.height, renderer: this.model.renderer}
     this._chart = (window as any).echarts.init(
-      this._layout_wrapper,
+      this.container,
       this.model.theme,
       config
     )
     this._plot()
-    this.shadow_el.append(this._layout_wrapper)
+    this.shadow_el.append(this.container)
+    this._chart.resize()
   }
 
   override remove(): void {

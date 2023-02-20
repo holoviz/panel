@@ -16,6 +16,7 @@ from weakref import WeakKeyDictionary
 
 import param
 
+from bokeh.settings import settings as bk_settings
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
 )
@@ -701,6 +702,9 @@ class panel_extension(_pyviz_extension):
                     hv.plotting.Renderer.load_nb(config.inline)
                     if hasattr(hv.plotting.Renderer, '_render_with_panel'):
                         nb_loaded = True
+
+        # Disable simple ids, old state and multiple tabs in notebooks can cause IDs to clash
+        bk_settings.simple_ids.set_value(False)
 
         if not nb_loaded and hasattr(ip, 'kernel'):
             load_notebook(config.inline)

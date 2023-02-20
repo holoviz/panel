@@ -164,7 +164,7 @@ class Param(PaneBase):
         for example lambda x: x[1].label[::-1] will sort by the reversed
         label.""")
 
-    width = param.Integer(default=300, allow_None=True, bounds=(0, None), doc="""
+    width = param.Integer(default=None, allow_None=True, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
 
     widgets = param.Dict(doc="""
@@ -608,13 +608,19 @@ class Param(PaneBase):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
             and (self.expand_button or (self.expand_button is None and not self.expand))):
-            widget.margin = (5, 0, 5, 10)
-            toggle = Toggle(name='\u22EE', button_type='primary',
-                            disabled=not is_parameterized(value), max_height=30,
-                            max_width=20, height_policy='fit', align='end',
-                            margin=(0, 0, 5, 10))
-            widget.width = self._widget_box.width-60
-            return Row(widget, toggle, width_policy='max', margin=0)
+            toggle = Toggle(
+                name='\u22EE', button_type='primary',
+                disabled=not is_parameterized(value), max_height=30,
+                max_width=20, height_policy='fit', align='end',
+                margin=(0, 0, 5, 10)
+            )
+            width = widget.width
+            widget.param.update(
+                margin=(5, 0, 5, 10),
+                sizing_mode='stretch_width',
+                width=None
+            )
+            return Row(widget, toggle, width=width, margin=0)
         else:
             return widget
 

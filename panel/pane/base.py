@@ -12,6 +12,7 @@ from typing import (
 
 import param
 
+from bokeh.models import ImportedStyleSheet
 from bokeh.models.layouts import (
     GridBox as _BkGridBox, TabPanel as _BkTabPanel, Tabs as _BkTabs,
 )
@@ -448,6 +449,11 @@ class ModelPane(PaneBase):
     def _process_param_change(self, params):
         if 'object' in params:
             params.update(self._transform_object(params.pop('object')))
+        if self._bokeh_model is not None and 'stylesheets' in params:
+            css = getattr(self._bokeh_model, '__css__', [])
+            params['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + params['stylesheets']
         return super()._process_param_change(params)
 
 

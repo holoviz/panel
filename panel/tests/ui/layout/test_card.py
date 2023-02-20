@@ -114,7 +114,7 @@ def test_card_title(page, port, card_components):
     card = Card(w1, w2, title=card_title)
     serve_panel_widget(page, port, card)
 
-    assert page.locator('.card-title').locator(".bk-clearfix").inner_text() == card_title
+    assert page.locator('.card-title').locator("div").inner_text() == card_title
 
 
 def test_card_background(page, port, card_components):
