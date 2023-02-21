@@ -2,6 +2,8 @@
 
 This guide addresses how to build custom components that are combinations of existing components.
 
+---
+
 The simplest way to extend Panel is to implement a so called `Viewer` component that can wrap multiple existing Panel components into an easily reusable unit that behaves like a native Panel component.
 
 Let's create a composite `EditableRange` component made up of two `FloatInput` widgets. First, we will create the widgets:
@@ -62,7 +64,6 @@ class EditableRange(Viewer):
     def _sync_params(self):
         self.value = (self._start_input.value, self._end_input.value)
 
-)
 ```
 
 Finally, we'll implement the required ``__panel__`` method, which returns the Panel layout to be rendered. Panel will call this method when displaying the component.

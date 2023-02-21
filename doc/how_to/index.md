@@ -46,14 +46,14 @@ How to use a Template to customize the look and feel of a deployed Panel app.
 :link: pipeline/index
 :link-type: doc
 
-Discover how to build and customize Panel `Pipeline` user interfaces.
+How to build and customize Panel `Pipeline` user interfaces.
 :::
 
 :::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1` Build Custom Components
 :link: custom_components/index
 :link-type: doc
 
-Discover how to extend Panel by building custom components.
+How to extend Panel by building custom components.
 :::
 
 ::::
