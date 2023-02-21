@@ -155,6 +155,20 @@ class PaneBase(Reactive):
             if event.name in Layoutable.param
             and event.name not in ('background', 'css_classes', 'margin', 'name')
         }
+        if self.margin:
+            margin = self.margin
+            if isinstance(margin, tuple):
+                if len(margin) == 2:
+                    t = b = margin[0]
+                    r = l = margin[1]
+                else:
+                    t, r, b, l = margin
+            else:
+                t = r = b = l = margin
+            if kwargs.get('width') is not None:
+                kwargs['width'] = kwargs['width'] + l + r
+            if kwargs.get('height') is not None:
+                kwargs['height'] = kwargs['height'] + t + b
         self.layout.param.update(kwargs)
 
     def _type_error(self, object):
