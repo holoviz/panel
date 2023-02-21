@@ -148,13 +148,21 @@ class PaneBase(Reactive):
             self.param.watch(self._sync_layoutable, list(Layoutable.param)),
             self.param.watch(self._update_pane, self._rerender_params)
         ])
+        self._sync_layoutable()
 
     def _sync_layoutable(self, *events: param.parameterized.Event):
-        kwargs = {
-            event.name: event.new for event in events
-            if event.name in Layoutable.param
-            and event.name not in ('background', 'css_classes', 'margin', 'name')
-        }
+        included = list(Layoutable.param)
+        skipped = ('background', 'css_classes', 'margin', 'name')
+        if events:
+            kwargs = {
+                event.name: event.new for event in events
+                if event.name in included and event.name not in skipped
+            }
+        else:
+            kwargs = {
+                k: v for k, v in self.param.values().items()
+                if k in included and k not in skipped
+            }
         if self.margin:
             margin = self.margin
             if isinstance(margin, tuple):
