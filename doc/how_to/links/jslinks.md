@@ -4,11 +4,11 @@ This guide addresses how to link parameters of two objects in Javascript.
 
 ---
 
-Linking objects in Python is often very convenient, because it allows writing code entirely in Python. However, it also requires a live Python kernel. If instead we want a static example (e.g. on a simple website or in an email) to have custom interactivity, or we simply want to avoid the overhead of having to call back into Python, we can define links in JavaScript.
+Linking objects in Python is often very convenient because it allows writing code entirely in Python. However, it also requires a live Python kernel. If instead we want a static example (e.g. on a simple website or in an email) to have custom interactivity, or we simply want to avoid the overhead of having to call back into Python, we can define links in JavaScript.
 
 ## Link model properties
 
-Let us start by linking the ``value`` of the ``TextInput`` widget to the ``object`` property of the ``Markdown`` pane:
+Let us start by linking the ``value`` of the ``TextInput`` widget to the ``object`` property of a ``Markdown`` pane:
 
 ```{pyodide}
 import panel as pn

@@ -8,9 +8,15 @@ This guide addresses how to use the low-level `.watch` API to trigger callbacks 
 
 ---
 
-If we need more control than what `.link` provides, we can fall back to the underlying `.watch` method. The main differences are that `.watch` 1) does not assume you are linking two objects, providing more control over what you are watching, 2) allows batched callbacks when multiple parameters change at once, and 3) allows you to specify that an event should be triggered every time the parameter is set (instead of the default of only when the parameter value actually changes).
+If we need more control than what `.link` provides, we can fall back to the underlying `.watch` method. The main differences are that `.watch`:
+1) does not assume you are linking two objects (providing more control over what you are watching)
+2) allows batched callbacks when multiple parameters change at once
+3) allows you to specify that an event should be triggered every time the parameter is set (instead of the default of only when the parameter value actually changes)
 
-To demonstrate `.watch`, let us set up three different models: 1) a `Markdown` pane to display the possible options, 2) a ``Markdown`` pane to display the _selected_ options, and 3) a ``ToggleGroup`` widget that allows us to toggle between a number of options:
+To demonstrate `.watch`, let us set up three different models:
+1) `Markdown` pane to display the possible options
+2) `Markdown` pane to display the _selected_ options
+3) `ToggleGroup` widget that allows us to toggle between a number of options
 
 ```{pyodide}
 import panel as pn
@@ -81,8 +87,8 @@ Now that the widgets are visible, you can toggle the option values and see the s
 
 If for whatever reason we want to stop watching parameter changes we can unsubscribe by passing our ``watcher`` (returned in the ``watch`` call above) to the ``unwatch`` method:
 
-```{pyodide}
-#toggle.param.unwatch(watcher)
+```python
+toggle.param.unwatch(watcher)
 ```
 
 ---
