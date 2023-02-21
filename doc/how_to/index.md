@@ -2,7 +2,7 @@
 
 The Panel How-to Guides provide step by step recipes for solving essential problems and tasks. They are more advanced than the Getting Started material and assume some knowledge of how Panel works.
 
-## Basics
+## Build Apps
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -18,7 +18,7 @@ How to construct and customize visible components.
 :link: param/index
 :link-type: doc
 
-How to use Param with Panel to automatically generate UIs without writing GUI code.
+How to use `Param` with Panel to automatically generate UIs without writing GUI code.
 :::
 
 :::{grid-item-card} {octicon}`link;2.5em;sd-mr-1` Link Parameters with the Callbacks API
@@ -40,6 +40,20 @@ How to use Panel `interact` to easily generate UIs for function arguments.
 :link-type: doc
 
 How to use a Template to customize the look and feel of a deployed Panel app.
+:::
+
+:::{grid-item-card} {octicon}`git-branch;2.5em;sd-mr-1` Build a `Pipeline`
+:link: pipeline/index
+:link-type: doc
+
+Discover how to build and customize Panel `Pipeline` user interfaces.
+:::
+
+:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1` Build Custom Components
+:link: custom_components/index
+:link-type: doc
+
+Discover how to extend Panel by building custom components.
 :::
 
 ::::
@@ -74,7 +88,7 @@ How to run Panel applications entirely in the browser using WebAssembly, Pyodide
 ::::
 
 
-## Advanced
+## Improve Performance
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -121,31 +135,17 @@ Discover various approaches telling you how to improve the scalability of your P
 Discover how to profile and debug your application using the admin dashboard and other tools.
 :::
 
-:::{grid-item-card} {octicon}`git-branch;2.5em;sd-mr-1` Build a `Pipeline`
-:link: pipeline/index
-:link-type: doc
-
-Discover how to build and customize Panel `Pipeline` user interfaces.
-:::
-
 :::{grid-item-card} {octicon}`codescan-checkmark;2.5em;sd-mr-1` Set up testing for an application
-:link: profiling/index
+:link: test/index
 :link-type: doc
 
 Discover how to set up unit tests, UI tests and load testing to ensure your applications are (and stay) robust and scalable.
 :::
 
-:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1` Build Custom Components
-:link: custom_components/index
-:link-type: doc
-
-Discover how to extend Panel by building custom components.
-:::
-
 ::::
 
 
-## Server configuration and deployment
+## Deploy
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -191,6 +191,8 @@ interact/index
 param/index
 links/index
 templates/index
+pipeline/index
+custom_components/index
 display/index
 export/index
 wasm/index
@@ -200,6 +202,7 @@ caching/index
 performance/index
 concurrency/index
 profiling/index
+test/index
 server/index
 integrations/index
 deployment/index
