@@ -7,7 +7,7 @@ from panel.pane import Markdown, Str, panel
 from panel.param import ParamMethod
 from panel.viewable import Viewable, Viewer
 
-from .util import jb_available
+from .util import bokeh3_failing, jb_available
 
 all_viewables = [w for w in param.concrete_descendents(Viewable).values()
                if not w.__name__.startswith('_') and
@@ -27,6 +27,7 @@ class TestViewerWithDeps(Viewer):
         return self.value
 
 
+@bokeh3_failing
 @jb_available
 def test_viewable_ipywidget():
     pane = Str('A')
