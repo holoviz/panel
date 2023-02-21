@@ -2,7 +2,7 @@
 
 If you need full control over how your GUI is set up then you can manually define widgets that link directly to other objects using either Python or JavaScript (JS) callbacks. Python callbacks are simple for Python users to write and can directly access Python data structures, while JS callbacks can directly manipulate the displayed HTML document and allow setting up dynamic behavior even for exported HTML files (with no Python process running). This section contains how-to guides that address common tasks related the use of callbacks.
 
-::::{grid} 1 3 3 3
+::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
 :::{grid-item-card} Create High-Level Python Links with `.link`
