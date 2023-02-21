@@ -1,5 +1,9 @@
 # Embedding state
 
+This guide addresses how to embed app state for usage entirely within Javascript.
+
+---
+
 Panel generally relies on either the Jupyter kernel or a Bokeh Server to be running in the background to provide interactive behavior. However for simple apps with a limited amount of state it is also possible to `embed` all the widget state, allowing the app to be used entirely from within Javascript. To demonstrate this we will create a simple app which simply takes a slider value, multiplies it by 5 and then display the result.
 
 ```
@@ -41,3 +45,5 @@ row.embed(states={slider: list(range(0, 12, 2))})
 * **`progress`** (default=False): Whether to report progress
 
 As you might imagine if there are multiple widgets there can quickly be a combinatorial explosion of states so by default the output is limited to about 1000 states. For larger apps the states can also be exported to json files, e.g. if you want to serve the app on a website specify the ``save_path`` to declare where it will be stored and the ``load_path`` to declare where the JS code running on the website will look for the files.
+
+## Related Resources

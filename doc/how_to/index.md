@@ -56,14 +56,6 @@ How to build and customize Panel `Pipeline` user interfaces.
 How to extend Panel by building custom components.
 :::
 
-::::
-
-
-## Display and Export
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
 :::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1` Display Components and Apps
 :link: display/index
 :link-type: doc
@@ -71,22 +63,7 @@ How to extend Panel by building custom components.
 How to display Panel components and effectively develop apps in your favorite notebook or editor environment.
 :::
 
-:::{grid-item-card} {octicon}`file;2.5em;sd-mr-1` Export and Save Output
-:link: export/index
-:link-type: doc
-
-How to export and save Panel applications as static files.
-:::
-
-:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Run Panel in WebAssembly
-:link: wasm/index
-:link-type: doc
-
-How to run Panel applications entirely in the browser using WebAssembly, Pyodide and PyScript.
-:::
-
 ::::
-
 
 ## Improve Performance
 
@@ -144,8 +121,7 @@ Discover how to set up unit tests, UI tests and load testing to ensure your appl
 
 ::::
 
-
-## Deploy
+## Share Your Work
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -178,6 +154,20 @@ How to deploy Panel applications to various cloud providers (e.g. Azure, GCP, AW
 How to configure OAuth to add authentication to a server deployment.
 :::
 
+:::{grid-item-card} {octicon}`file;2.5em;sd-mr-1` Export Apps
+:link: export/index
+:link-type: doc
+
+How to export and save Panel applications as static files.
+:::
+
+:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Run Panel in WebAssembly
+:link: wasm/index
+:link-type: doc
+
+How to run Panel applications entirely in the browser using WebAssembly, Pyodide and PyScript.
+:::
+
 ::::
 
 
@@ -194,8 +184,6 @@ templates/index
 pipeline/index
 custom_components/index
 display/index
-export/index
-wasm/index
 callbacks/index
 state/index
 caching/index
@@ -207,4 +195,6 @@ server/index
 integrations/index
 deployment/index
 authentication/index
+export/index
+wasm/index
 ```
