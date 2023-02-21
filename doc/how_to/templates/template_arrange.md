@@ -2,6 +2,12 @@
 
 This guide addresses how to arrange components in a template layout.
 
+```{admonition} Prerequisites
+1. The [How to > Set a Template](./template_set.md) guide demonstrates how to set a template for a deployable app.
+```
+
+---
+
 The default templates that are provided with Panel define four content areas on the page, which can be populated as desired: `header`, `sidebar`, `main`, and `modal` (a dialog box/popup window).
 
 Let's create a simple app and place components in the `header`, `sidebar`, and `main` areas (see the dedicated guide on the [`modal`](./template_modal.md)). We'll first save this script below into a file called `app.py`:
@@ -26,7 +32,7 @@ phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi)
 @pn.depends(freq=freq, phase=phase)
 def sine(freq, phase):
     return hv.Curve((xs, np.sin(xs*freq+phase))).opts(
-        height=400, width=400)
+        height=200, width=400)
 
 # Add components to the sidebar, main, and header
 bootstrap.sidebar.extend([freq, phase])

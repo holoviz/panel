@@ -2,6 +2,12 @@
 
 This guide addresses how to toggle the modal area of a template.
 
+```{admonition} Prerequisites
+1. The [How to > Set a Template](./template_set.md) guide demonstrates how to set a template for a deployable app.
+```
+
+---
+
 A modal can be opened and closed with `.open_modal()` and `.close_modal()` methods, respectively. Let's create a modal that is activated by a button on the sidebar. We'll first save this script below into a file called `app.py`:
 
 :::{card} app.py

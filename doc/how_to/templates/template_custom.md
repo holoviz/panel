@@ -2,7 +2,16 @@
 
 This guide addresses how to build a custom template.
 
-Completely custom templates extend the default jinja2 template in various ways. Before we dive into modifying such a template let us take a look at the default template used by Panel:
+```{admonition} Prerequisites
+1. The [How to > Set a Template](./template_set.md) guide demonstrates how to set a template for a deployable app.
+2. The [How to > Customize Template Theme](./template_theme.md) guide addresses how to customize the theme of a template, which may be sufficient in many cases.
+```
+
+---
+
+## Build a Template in a Single File
+
+Completely custom templates extend the default jinja2 template in various ways. Before we dive into modifying such a template, let us take a look at the default template used by Panel:
 
 ```html
 {% from macros import embed %}
@@ -130,7 +139,7 @@ tmpl.add_panel('B', hv.Curve([1, 2, 3]))
 
 ```
 
-## Loading Template from File
+## Load Template from a Separate File
 
 If the template is larger it is often cleaner to define it in a separate file. You can either read it in as a string, or use the official loading mechanism available for Jinja2 templates by defining a `Environment` along with a `loader`.
 

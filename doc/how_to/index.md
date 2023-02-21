@@ -187,8 +187,10 @@ How to configure OAuth to add authentication to a server deployment.
 :maxdepth: 2
 
 components/index
+interact/index
 param/index
 links/index
+templates/index
 display/index
 export/index
 wasm/index
