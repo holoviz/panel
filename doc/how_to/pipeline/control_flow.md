@@ -102,6 +102,80 @@ pn.Column(
 
 As you can see, a panel Pipeline can be used to set up complex workflows when needed, with each stage controlled either manually or from within the stage, without having to define complex callbacks or other GUI logic.
 
+
+Here is the complete code for this section in case you want to easily copy it:
+
+
+```{pyodide}
+import param
+import panel as pn
+pn.extension() # for notebook
+
+class Input(param.Parameterized):
+
+    value1 = param.Integer(default=2, bounds=(0,10))
+    value2 = param.Integer(default=3, bounds=(0,10))
+    operator = param.Selector(default='Multiply', objects=['Multiply', 'Add'])
+    ready = param.Boolean(default=False)
+
+    def panel(self):
+        button = pn.widgets.Button(name='Go', button_type='success')
+        button.on_click(lambda event: setattr(self, 'ready', True)) # allows auto-advance to proceed
+        widgets = pn.Row(self.param.value1, self.param.operator, self.param.value2)
+        for w in widgets:
+            w.width = 85
+        return pn.Column(widgets, button)
+
+class Multiply(param.Parameterized):
+
+    value1 = param.Integer()
+    value2 = param.Integer()
+    ready = param.Boolean(default=True)
+
+    def panel(self):
+        return pn.pane.Markdown(f'# {self.value1} * {self.value2}')
+
+    @param.output('equation')
+    def output(self):
+        return f'# {self.value1} * {self.value2} = {self.value1 * self.value2}'
+
+class Add(param.Parameterized):
+
+    value1 = param.Integer()
+    value2 = param.Integer()
+    ready = param.Boolean(default=True)
+
+    def panel(self):
+        return pn.pane.Markdown(f'# {self.value1} + {self.value2} =')
+
+    @param.output('equation')
+    def output(self):
+        return f'# {self.value1} + {self.value2} = {self.value1 + self.value2}'
+
+class Result(param.Parameterized):
+
+    equation = param.String()
+
+    def panel(self):
+        return pn.pane.Markdown(self.equation)
+
+dag = pn.pipeline.Pipeline()
+
+dag.add_stage('Input', Input, ready_parameter='ready', auto_advance=True, next_parameter='operator')
+dag.add_stage('Multiply', Multiply, ready_parameter='ready', auto_advance=True)
+dag.add_stage('Add', Add, ready_parameter='ready', auto_advance=True)
+dag.add_stage('Result', Result)
+
+dag.define_graph({'Input': ('Multiply', 'Add'), 'Multiply': 'Result', 'Add': 'Result'})
+
+pn.Column(
+    dag.title,
+    dag.network,
+    dag.stage,
+    dag.prev_button
+)
+```
+
 ## Related Resources
 - The [How to > Customize Pipeline Layout](./pipeline_layout.md) guide provides some context for the custom layout used here.
 - The [How to > Create a Non-Linear Pipeline](./complex_pipeline.md) guide walks through the creation of branching pipeline that commonly used in the context of controlling pipeline flow.

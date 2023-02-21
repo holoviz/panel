@@ -98,7 +98,7 @@ class Stage2(param.Parameterized):
 Now let's add our stages to our `Pipeline` using the `add_stage` method
 
 ```{pyodide}
-pipeline.add_stage('Stage 1', stage1)
+pipeline.add_stage('Stage 1', Stage1)
 pipeline.add_stage('Stage 2', Stage2)
 ```
 
@@ -109,6 +109,56 @@ pipeline
 ```
 
 As you can see the ``Pipeline`` renders a diagram displaying the available stages in the workflow along with previous and next buttons to move between each stage. Note also when progressing to Stage 2, the `c` parameter widget is not rendered because its value has been provided by the previous stage.
+
+Here is the complete code for this section in case you want to easily copy it:
+
+```{pyodide}
+import param
+import panel as pn
+pn.extension('katex')
+
+pipeline = pn.pipeline.Pipeline()
+
+class Stage1(param.Parameterized):
+
+    a = param.Integer(default=2, bounds=(0, 10))
+    b = param.Integer(default=3, bounds=(0, 10))
+
+    @param.output(('c', param.Integer), ('d', param.Integer))
+    def output(self):
+        return self.a * self.b, self.a ** self.b
+
+    @param.depends('a', 'b')
+    def view(self):
+        c, d = self.output()
+        c_out = pn.pane.LaTeX('${a} * {b} = {c}$'.format(
+            a=self.a, b=self.b, c=c), style={'font-size': '2em'})
+        d_out = pn.pane.LaTeX('${a}^{{{b}}} = {d}$'.format(
+            a=self.a, b=self.b, d=d), style={'font-size': '2em'})
+        return pn.Column(c_out, d_out,  margin=(40, 10), background='#f0f0f0')
+
+    def panel(self):
+        return pn.Row(self.param, self.view,)
+
+class Stage2(param.Parameterized):
+
+    c = param.Integer(default=6, bounds=(0, None))
+    exp = param.Number(default=0.1, bounds=(0, 3))
+
+    @param.depends('c', 'exp')
+    def view(self):
+        out = pn.pane.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
+                      style={'font-size': '2em'})
+        return pn.Column(out, margin=(40, 10), background='#f0f0f0')
+
+    def panel(self):
+        return pn.Row(self.param, self.view)
+
+pipeline.add_stage('Stage 1', Stage1)
+pipeline.add_stage('Stage 2', Stage2)
+
+pipeline
+```
 
 ## Related Resources
 
