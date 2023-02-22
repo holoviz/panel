@@ -4,6 +4,7 @@ SymPy objects.
 """
 from __future__ import annotations
 
+import re
 import sys
 
 from typing import (
@@ -73,6 +74,13 @@ class LaTeX(ModelPane):
             return None
         else:
             return False
+
+    def _process_param_change(self, params) -> Dict[str, Any]:
+        if self.renderer == "mathjax":
+            # Replace $$math$$ with \[math\] and $math$ with \(math\)
+            msg = re.sub(r"(\$\$)(.*?)(\$\$)", r"\[\2\]", params["object"])
+            params["object"] = re.sub(r"(\$)(.*?)(\$)", r"\(\2\)", msg)
+        return super()._process_param_change(params)
 
     def _get_model_type(self, root: Model, comm: Comm | None) -> Type[Model]:
         module = self.renderer
