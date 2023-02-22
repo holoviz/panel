@@ -183,11 +183,7 @@ def loading_css():
     }}
     """
 
-def patch_stylesheet(stylesheet, dist_url) -> None:
-    global RESOURCE_MODE
-    if RESOURCE_MODE == "server":
-        return
-
+def patch_stylesheet(stylesheet, dist_url):
     url = stylesheet.url
     if not url.startswith('http') and not url.startswith(dist_url):
         patched_url = f'{dist_url}{url}'
