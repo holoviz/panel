@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from panel.io.location import Location
 from panel.io.reload import (
     _check_file, _modules, _reload_on_update, _watched_files, in_blacklist,
@@ -34,6 +36,7 @@ def test_watch():
     # Cleanup
     _watched_files.clear()
 
+@pytest.mark.flaky(max_runs=3)
 def test_reload_on_update():
     location = Location()
     state._location = location

@@ -63,7 +63,6 @@ __all__ = (
     "HoloViews",
     "HTML",
     "ICO",
-    "IDOM",
     "Interactive",
     "IPyWidget",
     "IPyLeaflet",
