@@ -16,10 +16,10 @@ def test_update_markdown_pane(page, port):
     time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
 
-    assert page.locator(".markdown").locator(".bk-clearfix").text_content() == 'Initial'
+    assert page.locator(".markdown").locator("div").text_content() == 'Initial'
     md.object = 'Updated'
     time.sleep(0.1)
-    assert page.locator(".markdown").locator(".bk-clearfix").text_content() == 'Updated'
+    assert page.locator(".markdown").locator("div").text_content() == 'Updated'
 
 
 def test_update_markdown_pane_resizes(page, port):
@@ -30,10 +30,12 @@ def test_update_markdown_pane_resizes(page, port):
     time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
 
-    assert page.locator(".markdown").bounding_box()['height'] == 18.5625
+    height = page.locator(".markdown").bounding_box()['height']
+    assert int(height) == 18
     md.object = """
     - Bullet
     - Points
     """
     time.sleep(0.1)
-    assert page.locator(".markdown").bounding_box()['height'] == 63.125
+    height = page.locator(".markdown").bounding_box()['height']
+    assert int(height) == 37

@@ -781,6 +781,8 @@ class WidgetBox(ListPanel):
         'disabled': None, 'objects': 'children', 'horizontal': None
     }
 
+    _stylesheets = ['css/widgetbox.css']
+
     @property
     def _bokeh_model(self) -> Type[Model]: # type: ignore
         return BkRow if self.horizontal else BkColumn

@@ -92,8 +92,6 @@ file_download = pn.widgets.FileDownload(_sio, embed=True, filename="autompg.csv"
 # Model: html (py: Markup)
 html = pn.pane.HTML("<h1>TEST<h1>")
 
-# Model: idom
-
 # Model: ipywidget
 try:
     import ipywidgets as _ipw

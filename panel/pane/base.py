@@ -12,6 +12,7 @@ from typing import (
 
 import param
 
+from bokeh.models import ImportedStyleSheet
 from bokeh.models.layouts import (
     GridBox as _BkGridBox, TabPanel as _BkTabPanel, Tabs as _BkTabs,
 )
@@ -152,7 +153,7 @@ class PaneBase(Reactive):
         kwargs = {
             event.name: event.new for event in events
             if event.name in Layoutable.param
-            and event.name not in ('css_classes', 'margin', 'name')
+            and event.name not in ('background', 'css_classes', 'margin', 'name')
         }
         self.layout.param.update(kwargs)
 
@@ -270,6 +271,20 @@ class PaneBase(Reactive):
         """
         raise NotImplementedError
 
+    def _get_root_model(
+        self, doc: Optional[Document] = None, comm: Comm | None = None,
+        preprocess: bool = True
+    ) -> Tuple[Viewable, Model]:
+        if self._updates:
+            root = self._get_model(doc, comm=comm)
+            root_view = self
+        else:
+            root = self.layout._get_model(doc, comm=comm)
+            root_view = self.layout
+        if preprocess:
+            self._preprocess(root)
+        return root_view, root
+
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
@@ -326,14 +341,17 @@ class PaneBase(Reactive):
         Returns the bokeh model corresponding to this panel object
         """
         doc = init_doc(doc)
-        if self._updates:
-            root = self._get_model(doc, comm=comm)
+        if self._design and comm:
+            wrapper = self._design._wrapper(self)
+            if wrapper is self:
+                root_view, root = self._get_root_model(doc, comm, preprocess)
+            else:
+                root_view = wrapper
+                root = wrapper.get_root(doc, comm, preprocess)
         else:
-            root = self.layout._get_model(doc, comm=comm)
-        if preprocess:
-            self._preprocess(root)
+            root_view, root = self._get_root_model(doc, comm, preprocess)
         ref = root.ref['id']
-        state._views[ref] = (self, root, doc, comm)
+        state._views[ref] = (root_view, root, doc, comm)
         return root
 
     @classmethod
@@ -431,6 +449,11 @@ class ModelPane(PaneBase):
     def _process_param_change(self, params):
         if 'object' in params:
             params.update(self._transform_object(params.pop('object')))
+        if self._bokeh_model is not None and 'stylesheets' in params:
+            css = getattr(self._bokeh_model, '__css__', [])
+            params['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + params['stylesheets']
         return super()._process_param_change(params)
 
 

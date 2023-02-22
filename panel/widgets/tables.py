@@ -14,7 +14,7 @@ import numpy as np
 import param
 
 from bokeh.model import Model
-from bokeh.models import ColumnDataSource, Selection
+from bokeh.models import ColumnDataSource, ImportedStyleSheet, Selection
 from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CellFormatter, CheckboxEditor, DataCube,
     DataTable, DateEditor, DateFormatter, GroupingInfo, IntEditor,
@@ -25,7 +25,6 @@ from bokeh.util.serialization import convert_datetime_array
 from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget
-from ..io.resources import LOCAL_DIST
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
@@ -1214,22 +1213,13 @@ class Tabulator(BaseTable):
                 state.execute(partial(cb, event), schedule=False)
 
     def _get_theme(self, theme, resources=None):
-        from ..io.resources import RESOURCE_MODE
-        from ..models.tabulator import (
-            _TABULATOR_THEMES_MAPPING, PANEL_CDN, THEME_PATH, THEME_URL,
-        )
-        if RESOURCE_MODE == 'server' and resources in (None, 'server'):
-            theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
-            if state.rel_path:
-                theme_url = f'{state.rel_path}/{theme_url}'
-        else:
-            theme_url = PANEL_CDN
-        # Ensure theme_url updates before theme
+        from ..models.tabulator import _TABULATOR_THEMES_MAPPING, THEME_URL
         theme_ = _TABULATOR_THEMES_MAPPING.get(self.theme, self.theme)
-        fname = 'tabulator' if theme_ == 'default' else 'tabulator_' + theme_
+        fname = 'tabulator' if theme_ == 'default' else f'tabulator_{theme_}'
+        theme_url = f'{THEME_URL}{fname}.min.css'
         if self._widget_type is not None:
-            self._widget_type.__css_raw__ = [f'{THEME_URL}{fname}.min.css']
-        return theme_url, theme
+            self._widget_type.__css_raw__ = [theme_url]
+        return theme_url
 
     def _update_columns(self, event, model):
         if event.name not in self._config_params:
@@ -1542,6 +1532,11 @@ class Tabulator(BaseTable):
         return properties
 
     def _process_param_change(self, params):
+        if 'theme' in params or 'stylesheets' in params:
+            theme_url = self._get_theme(params.pop('theme', self.theme))
+            params['stylesheets'] = params.get('stylesheets', self.stylesheets) + [
+                ImportedStyleSheet(url=theme_url)
+            ]
         params = Reactive._process_param_change(self, params)
         if 'disabled' in params:
             params['editable'] = not params.pop('disabled') and len(self.indexes) <= 1
@@ -1556,8 +1551,6 @@ class Tabulator(BaseTable):
                 params['hidden_columns'] += [self.value.index.name or 'index']
         if 'selectable_rows' in params:
             params['selectable_rows'] = self._get_selectable()
-        if 'theme' in params:
-            params['theme_url'], params['theme'] = self._get_theme(params.pop('theme'))
         return params
 
     def _get_model(
@@ -1576,16 +1569,6 @@ class Tabulator(BaseTable):
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
         self._register_events('cell-click', 'table-edit', model=model, doc=doc, comm=comm)
         return model
-
-    def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
-    ) -> None:
-        if comm and 'theme_url' in msg:
-            msg['theme_url'], msg['theme'] = self._get_theme(
-                msg.pop('theme'), 'inline'
-            )
-        super()._update_model(events, msg, root, model, doc, comm)
 
     def _get_filter_spec(self, column: TableColumn) -> Dict[str, Any]:
         fspec = {}

@@ -79,9 +79,8 @@ class Layoutable(param.Parameterized):
     css_classes = param.List(default=[], doc="""
         CSS classes to apply to the layout.""")
 
-    width = param.Integer(default=None, bounds=(0, None), doc="""
-        The width of the component (in pixels). This can be either
-        fixed or preferred width, depending on width sizing policy.""")
+    design = param.ObjectSelector(default=None, objects=[], doc="""
+        The design system to use to style components.""")
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
         The height of the component (in pixels).  This can be either
@@ -105,10 +104,16 @@ class Layoutable(param.Parameterized):
         or a four-tuple (top, right, bottom, left).""")
 
     styles = param.Dict(default={}, doc="""
-        Styles to apply to DOM node.""")
+        Dictionary of CSS rules to apply to DOM node wrapping the
+        component.""")
 
     stylesheets = param.List(default=[], doc="""
-        List of stylesheets.""")
+        List of stylesheets defined as URLs pointing to .css files
+        or raw CSS defined as a string.""")
+
+    width = param.Integer(default=None, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
 
     width_policy = param.ObjectSelector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
@@ -251,6 +256,8 @@ class Layoutable(param.Parameterized):
                 params['sizing_mode'] = config.sizing_mode
             elif config.sizing_mode == 'stretch_height' and 'height' not in params:
                 params['sizing_mode'] = config.sizing_mode
+        if 'design' not in params and self.param.design.default is None:
+            params['design'] = config.design
         super().__init__(**params)
 
 
@@ -563,11 +570,22 @@ class Renderable(param.Parameterized):
         Returns the bokeh model corresponding to this panel object
         """
         doc = init_doc(doc)
-        root = self._get_model(doc, comm=comm)
-        if preprocess:
-            self._preprocess(root)
+        if self._design and comm:
+            wrapper = self._design._wrapper(self)
+            if wrapper is self:
+                root = self._get_model(doc, comm=comm)
+                if preprocess:
+                    self._preprocess(root)
+            else:
+                root = wrapper.get_root(doc, comm, preprocess)
+            root_view = wrapper
+        else:
+            root = self._get_model(doc, comm=comm)
+            root_view = self
+            if preprocess:
+                self._preprocess(root)
         ref = root.ref['id']
-        state._views[ref] = (self, root, doc, comm)
+        state._views[ref] = (root_view, root, doc, comm)
         return root
 
 
@@ -593,12 +611,23 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         self._hooks = hooks
 
         self._update_loading()
-        watcher = self.param.watch(self._update_loading, 'loading')
-        self._callbacks.append(watcher)
+        self._update_background()
+        self._update_design()
+        self._callbacks.extend([
+            self.param.watch(self._update_background, 'background'),
+            self.param.watch(self._update_design, 'design'),
+            self.param.watch(self._update_loading, 'loading')
+        ])
 
-        self._set_background()
-        watcher = self.param.watch(self._set_background, 'background')
-        self._callbacks.append(watcher)
+    def _update_design(self, *_):
+        from .theme import Design
+        from .theme.native import Native
+        if isinstance(self.design, Design):
+            self._design = self.design
+        elif self.design:
+            self._design = self.design(theme=config.theme)
+        else:
+            self._design = Native()
 
     def _update_loading(self, *_) -> None:
         if self.loading:
@@ -606,7 +635,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         else:
             stop_loading_spinner(self)
 
-    def _set_background(self, *_) -> None:
+    def _update_background(self, *_) -> None:
         if self.background == self.styles.get("background", None) or self.background is None:
             return
 
@@ -614,8 +643,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         prev = f'{type(self).name}(background={self.background!r})'
         new = f'{type(self).name}(styles={{"background": {self.background!r}}}'
         deprecated("1.1", prev, new)
-        self.styles["background"] = self.background
-        self.param.trigger("styles")
+
+        self.styles = dict(self.styles, background=self.background)
 
     def __repr__(self, depth: int = 0) -> str:
         return '{cls}({params})'.format(cls=type(self).__name__,

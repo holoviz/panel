@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 class FileBase(HTMLBasePane):
 
-    embed = param.Boolean(default=True, doc="""
+    embed = param.Boolean(default=False, doc="""
         Whether to embed the file as base64.""")
 
     filetype: ClassVar[str]
@@ -153,8 +153,25 @@ class ImageBase(FileBase):
         """Calculate and return image width,height"""
         raise NotImplementedError
 
+    def _format_html(
+        self, src: str, width: str | None = None, height: str | None = None
+    ):
+        width = self.width or width
+        height = self.height or height
+        alt_text = self.alt_text or ''
+        width = f'width="{width}"' if width else ""
+        height = f'height="{height}"' if height else ""
+        html = f'<img src="{src}" {width} {height} alt="{alt_text}"></img>'
+        if self.link_url:
+            html = f'<a href="{self.link_url}" target="_blank">{html}</a>'
+        return escape(html)
+
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
-        data = self._data(obj)
+        if self.embed or not isurl(obj):
+            data = self._data(obj)
+        else:
+            return dict(object=self._format_html(obj))
+
         if data is None:
             return dict(object='<img></img>')
         if not isinstance(data, bytes):
@@ -170,8 +187,7 @@ class ImageBase(FileBase):
             width = int((self.height/height)*width)
             height = self.height
 
-        src = self._b64(data) if self.embed else obj
-
+        src = self._b64(data)
         smode = self.sizing_mode
         if smode in ['fixed', None]:
             w, h = '%spx' % width, '%spx' % height
@@ -186,14 +202,8 @@ class ImageBase(FileBase):
         else:
             w, h = '100%', 'auto'
 
-        html = '<img src="{src}" width="{width}" height="{height}" alt="{alt}"></img>'.format(
-            src=src, width=w, height=h, alt=self.alt_text or '')
-
-        if self.link_url:
-            html = '<a href="{url}" target="_blank">{html}</a>'.format(
-                url=self.link_url, html=html)
-
-        return dict(width=width, height=height, object=escape(html))
+        html = self._format_html(src, w, h)
+        return dict(width=width, height=height, object=html)
 
 
 class Image(ImageBase):
@@ -391,7 +401,11 @@ class SVG(ImageBase):
         return (self.width, self.height)
 
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
-        if obj is None:
+        if self.embed or not isurl(obj):
+            data = self._data(obj)
+        else:
+            return dict(object=self._format_html(obj))
+        if data is None:
             return dict(object='<img></img>')
         data = self._data(obj)
         width, height = self._imgshape(data)

@@ -2,7 +2,7 @@ import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {isArray} from "@bokehjs/core/util/types"
-import {HTMLBox, HTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 import {Attrs} from "@bokehjs/core/types"
 
 import {debounce} from  "debounce"
@@ -22,6 +22,7 @@ export class VegaEvent extends ModelEvent {
 export class VegaPlotView extends HTMLBoxView {
   model: VegaPlot
   vega_view: any
+  container: HTMLDivElement
   _callbacks: string[]
   _connected: string[]
 
@@ -86,10 +87,11 @@ export class VegaPlotView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    this.el = div()
+    this.container = div()
+    set_size(this.container, this.model)
     this._callbacks = []
     this._plot()
-    this.shadow_el.append(this.el)
+    this.shadow_el.append(this.container)
   }
 
   _plot(): void {
@@ -115,11 +117,12 @@ export class VegaPlotView extends HTMLBoxView {
     }
     const config: any = {actions: this.model.show_actions, theme: this.model.theme};
 
-    (window as any).vegaEmbed(this.el, this.model.data, config).then((result: any) => {
+    (window as any).vegaEmbed(this.container, this.model.data, config).then((result: any) => {
       this.vega_view = result.view
-      if (this.vega_view._viewHeight <= 0 || this.vega_view._viewWidth <= 0) {
-        (window as any).dispatchEvent(new Event('resize'));
-      }
+      result.view.addResizeListener(() => {
+	this.resize_view(result.view)
+      });
+      this.resize_view(result.view)
       const callback = (name: string, value: any) => this._dispatch_event(name, value)
       for (const event of this.model.events) {
         this._callbacks.push(event)
@@ -127,6 +130,14 @@ export class VegaPlotView extends HTMLBoxView {
         this.vega_view.addSignalListener(event, debounce(callback, timeout, false))
       }
     })
+  }
+
+  resize_view(view: any): void {
+    let rect = this.container.getBoundingClientRect()
+    console.log(rect.width, rect.height)
+    view._el.children[0].style.width = `${rect.width}px`
+    view._el.children[0].style.height = `${rect.height}px`
+    view.resize().runAsync()
   }
 }
 

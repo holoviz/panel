@@ -45,10 +45,11 @@ export class AcePlotView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    if (!(this._container === this.el.childNodes[0]))
-      this.shadow_el.appendChild(this._container)
+    if (!(this._container === this.shadow_el.childNodes[0]))
+      this.shadow_el.append(this._container)
       this._container.textContent = this.model.code
-      this._editor = (window as any).ace.edit(this._container.id)
+      this._editor = (window as any).ace.edit(this._container)
+      this._editor.renderer.attachToShadowRoot()
       this._langTools = (window as any).ace.require('ace/ext/language_tools')
       this._modelist = (window as any).ace.require("ace/ext/modelist")
       this._editor.setOptions({
@@ -111,7 +112,7 @@ export namespace AcePlot {
   export type Props = HTMLBox.Props & {
     code: p.Property<string>
     language: p.Property<string>
-    filename: p.Property<string>
+    filename: p.Property<string | null>
     theme: p.Property<string>
     annotations: p.Property<any[]>
     print_margin: p.Property<boolean>
@@ -133,10 +134,10 @@ export class AcePlot extends HTMLBox {
   static {
     this.prototype.default_view = AcePlotView
 
-    this.define<AcePlot.Props>(({Any, Array, Boolean, String}) => ({
+    this.define<AcePlot.Props>(({Any, Array, Boolean, String, Nullable}) => ({
       code:         [ String,       '' ],
-      filename:     [ String           ],
-      language:     [ String           ],
+      filename:     [ Nullable(String), null],
+      language:     [ String,       '' ],
       theme:        [ String, 'chrome' ],
       annotations:  [ Array(Any),   [] ],
       readonly:     [ Boolean,   false ],

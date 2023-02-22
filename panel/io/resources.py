@@ -204,8 +204,19 @@ def patch_model_css(root, dist_url):
     ALERT: Should find better solution before official Bokeh 3.x compatible release
     """
     # Patch model CSS properties
+    doc = root.document
+    if doc:
+        held = doc.callbacks.hold_value
+        events = list(doc.callbacks._held_events)
+        doc.hold()
     for stylesheet in root.select({'type': ImportedStyleSheet}):
         patch_stylesheet(stylesheet, dist_url)
+    if doc:
+        doc.callbacks._held_events = events
+        if held:
+            doc.callbacks._hold = held
+        else:
+            doc.unhold()
 
 def global_css(name):
     if RESOURCE_MODE == 'server':
@@ -384,8 +395,11 @@ class Resources(BkResources):
         files = super(Resources, self).js_files
         self.extra_resources(files, '__javascript__')
 
+        files += list(config.js_files.values())
+        if config.design:
+            files += list(config.design._resources.get('js', {}).values())
+
         js_files = self.adjust_paths(files)
-        js_files += list(config.js_files.values())
 
         # Load requirejs last to avoid interfering with other libraries
         dist_dir = self.dist_dir
@@ -405,6 +419,15 @@ class Resources(BkResources):
         from ..config import config
         modules = list(config.js_modules.values())
         self.extra_resources(modules, '__javascript_modules__')
+
+        if not config.design:
+            return modules
+
+        for resource in config.design._resources.get('js_modules').values():
+            if resource not in modules:
+                modules.append(resource)
+        modules = self.adjust_paths(modules)
+
         return modules
 
     @property
@@ -443,7 +466,17 @@ class Bundle(BkBundle):
                         js_module = component_resource_path(model, '__javascript_modules__', js_module)
                     if js_module not in js_modules:
                         js_modules.append(js_module)
-        self.js_modules = kwargs.pop("js_modules", js_modules)
+
+        if config.design:
+            design_name = config.design.__name__.lower()
+            for resource in config.design._resources.get('js_modules', {}).values():
+                if resource in js_modules:
+                    continue
+                elif not isurl(resource):
+                    resource = f'{CDN_DIST}bundled/{design_name}/{resource}'
+                js_modules.append(resource)
+
+        self.js_modules = self._adjust_paths(kwargs.pop("js_modules", js_modules))
         super().__init__(**kwargs)
 
     def _adjust_paths(self, resources):

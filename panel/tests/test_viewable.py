@@ -7,19 +7,21 @@ from panel.pane import Markdown, Str, panel
 from panel.param import ParamMethod
 from panel.viewable import Viewable, Viewer
 
-from .util import bokeh3_failing_all, jb_available
+from .util import bokeh3_failing, jb_available
 
 all_viewables = [w for w in param.concrete_descendents(Viewable).values()
                if not w.__name__.startswith('_') and
                not issubclass(w, interactive)]
 
-class TestViewer(Viewer):
+
+class ExampleViewer(Viewer):
     value = param.String()
 
     def __panel__(self):
         return self.value
 
-class TestViewerWithDeps(Viewer):
+
+class ExampleViewerWithDeps(Viewer):
     value = param.String()
 
     @param.depends('value')
@@ -27,7 +29,7 @@ class TestViewerWithDeps(Viewer):
         return self.value
 
 
-@bokeh3_failing_all
+@bokeh3_failing
 @jb_available
 def test_viewable_ipywidget():
     pane = Str('A')
@@ -58,14 +60,14 @@ def test_Viewer_not_initialized():
     assert test.object == "# Test"
 
 def test_viewer_wraps_panel():
-    tv = TestViewer(value="hello")
+    tv = ExampleViewer(value="hello")
 
     view = tv._create_view()
     assert isinstance(view, Markdown)
     assert view.object == "hello"
 
 def test_viewer_wraps_panel_with_deps(document, comm):
-    tv = TestViewerWithDeps(value="hello")
+    tv = ExampleViewerWithDeps(value="hello")
 
     view = tv._create_view()
 
@@ -79,7 +81,7 @@ def test_viewer_wraps_panel_with_deps(document, comm):
     assert view._pane.object == "goodbye"
 
 def test_viewer_with_deps_resolved_by_panel_func(document, comm):
-    tv = TestViewerWithDeps(value="hello")
+    tv = ExampleViewerWithDeps(value="hello")
 
     view = panel(tv)
 

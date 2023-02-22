@@ -1,5 +1,4 @@
 /* Variables */
-
 :host {
     --track-width: 4;
     --thumb-size: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 0.5 - var(--design-unit));
@@ -13,6 +12,7 @@
     --font-size: var(--type-ramp-base-font-size);
     --switch-size: 12px;
     --container-background: var(--panel-surface-color);
+    color: var(--neutral-foreground-rest);
 }
 
 /* Track */
@@ -262,8 +262,8 @@ table.panel-df {
 /* Slider Widgets */
 
 .noUi-target {
-    background: var(--neutral-outline-rest);
-    border-color: var(--neutral-outline-rest);
+    background: var(--neutral-stroke-rest);
+    border-color: var(--neutral-stroke-rest);
     box-shadow: unset;
 }
 
@@ -291,8 +291,8 @@ table.panel-df {
 }
 
 .bk-input:focus {
-    border: 2px solid var(--neutral-outline-active);
-    box-shadow: 0 0 0 2px var(--neutral-outline-active) inset;
+    border: 1px solid var(--neutral-stroke-active);
+    box-shadow: 0 0 0 1px var(--neutral-stroke-active) inset;
 }
 
 .bk-input[disabled], .bk-input[disabled]:hover {
@@ -396,7 +396,7 @@ input[type=file] {
     background: transparent;
     width: 100%;
     height: 100px;
-    border: 3px dashed var(--neutral-outline-rest);
+    border: 3px dashed var(--neutral-stroke-rest);
     border-radius: calc(var(--corner-radius) * 1px);
     text-align: center;
     margin: auto;
@@ -404,15 +404,15 @@ input[type=file] {
 
 input[type=file][disabled]:hover {
     cursor: not-allowed;
-    border-color: var(--neutral-outline-rest);
+    border-color: var(--neutral-stroke-rest);
 }
 
 input[type=file]:hover {
-    border-color: var(--neutral-outline-hover);
+    border-color: var(--neutral-stroke-hover);
 }
 
 input[type=file]:active {
-    border: 3px dashed var(--neutral-outline-active);
+    border: 3px dashed var(--neutral-stroke-active);
 }
 
 /* Buttons */
@@ -476,7 +476,7 @@ input[type=file]:active {
     -moz-appearance: none;
     -o-appearance: none;
     appearance: none;
-    border: calc(var(--outline-width) * 1px) solid var(--neutral-outline-rest);
+    border: calc(var(--stroke-width) * 1px) solid var(--neutral-stroke-rest);
     outline: none;
     background-color: var(--neutral-fill-input-rest);
     cursor: pointer;
@@ -489,7 +489,7 @@ input[type=file]:active {
 
 .bk-input-group input[type="checkbox"]:hover, .bk-input-group input[type="radio"]:hover {
     background: var(--neutral-fill-input-hover);
-    border-color: var(--neutral-outline-hover);
+    border-color: var(--neutral-stroke-hover);
 }
 
 .bk-input-group input[type="checkbox"]:active, .bk-input-group input[type="radio"]:active {
@@ -566,7 +566,7 @@ input[type=file]:active {
 
 .body > .bar {
     background: var(--neutral-fill-input-rest);
-    border: 1px solid var(--neutral-outline-rest);
+    border: 1px solid var(--neutral-stroke-rest);
     border-radius: calc(var(--control-corner-radius) * 1px);
     height: calc(((var(--base-height-multiplier) + var(--density)) * var(--design-unit) / 2 + var(--design-unit)) * 1px);
     top: 0;
@@ -574,7 +574,7 @@ input[type=file]:active {
 }
 
 .body > .bar:hover {
-    border-color: var(--neutral-outline-hover);
+    border-color: var(--neutral-stroke-hover);
 }
 
 :host(.active) .bar {

@@ -284,7 +284,7 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
             p.constant = constant
 
 
-def lazy_load(module, model, notebook=False, root=None):
+def lazy_load(module, model, notebook=False, root=None, ext=None):
     if module in sys.modules:
         model_cls = getattr(sys.modules[module], model)
         if f'{model_cls.__module__}.{model}' not in Model.model_class_reverse_map:
@@ -292,8 +292,8 @@ def lazy_load(module, model, notebook=False, root=None):
 
         return model_cls
 
+    ext = ext or module.split('.')[-1]
     if notebook:
-        ext = module.split('.')[-1]
         param.main.param.warning(
             f'{model} was not imported on instantiation and may not '
             'render in a notebook. Restart the notebook kernel and '
@@ -302,7 +302,6 @@ def lazy_load(module, model, notebook=False, root=None):
         )
     elif root is not None:
         from ..io.state import state
-        ext = module.split('.')[-1]
         if root.ref['id'] in state._views:
             param.main.param.warning(
                 f'{model} was not imported on instantiation may not '

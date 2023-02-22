@@ -7,7 +7,7 @@ export class KaTeXView extends PanelMarkupView {
 
   render(): void {
     super.render();
-    this.markup_el.innerHTML = this.model.text;
+    this.container.innerHTML = this.model.text;
     if (!(window as any).renderMathInElement) {
       return
     }

@@ -114,16 +114,11 @@ export class PlotlyPlotView extends HTMLBoxView {
   _plotInitialized: boolean = false
   _reacting: boolean = false
   _relayouting: boolean = false
-  _layout_wrapper: PlotlyHTMLElement
+  container: PlotlyHTMLElement
   _watched_sources: string[]
   _end_relayouting = debounce(() => {
     this._relayouting = false
   }, 2000, false)
-
-  initialize(): void {
-    super.initialize()
-    this._layout_wrapper = <PlotlyHTMLElement>div()
-  }
 
   connect_signals(): void {
     super.connect_signals();
@@ -138,13 +133,13 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.on_change([relayout], () => {
       if (this.model.relayout == null)
         return
-      (window as any).Plotly.relayout(this._layout_wrapper, this.model.relayout)
+      (window as any).Plotly.relayout(this.container, this.model.relayout)
       this.model.relayout = null
     })
     this.on_change([restyle], () => {
       if (this.model.restyle == null)
         return
-      (window as any).Plotly.restyle(this._layout_wrapper, this.model.restyle.data, this.model.restyle.traces)
+      (window as any).Plotly.restyle(this.container, this.model.restyle.data, this.model.restyle.traces)
       this.model.restyle = null
     })
 
@@ -168,12 +163,14 @@ export class PlotlyPlotView extends HTMLBoxView {
 
   async render(): Promise<void> {
     super.render()
-    set_size(this._layout_wrapper, this.model)
-    this._layout_wrapper.style.visibility = this.model.visibility ? 'visible' : 'hidden'
+    this.container = <PlotlyHTMLElement>div()
+    set_size(this.container, this.model)
+    this.container.style.visibility = this.model.visibility ? 'visible' : 'hidden'
+    this.shadow_el.appendChild(this.container)
     await this.plot();
     if (this.model.relayout != null)
-      (window as any).Plotly.relayout(this._layout_wrapper, this.model.relayout)
-    this.shadow_el.appendChild(this._layout_wrapper)
+      (window as any).Plotly.relayout(this.container, this.model.relayout)
+    (window as any).Plotly.Plots.resize(this.container)
   }
 
   _trace_data(): any {
@@ -186,7 +183,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _layout_data(): any {
     const newLayout = deepCopy(this.model.layout);
     if (this._relayouting) {
-      const {layout} = this._layout_wrapper;
+      const {layout} = this.container;
 
       // For each xaxis* and yaxis* property of layout, if the value has a 'range'
       // property then use this in newLayout
@@ -201,10 +198,10 @@ export class PlotlyPlotView extends HTMLBoxView {
 
   _install_callbacks(): void {
     //  - plotly_relayout
-    this._layout_wrapper.on('plotly_relayout', (eventData: any) => {
+    this.container.on('plotly_relayout', (eventData: any) => {
       if (eventData['_update_from_property'] !== true) {
         this.model.relayout_data = filterEventData(
-          this._layout_wrapper, eventData, 'relayout');
+          this.container, eventData, 'relayout');
 
         this._updateViewportProperty();
 
@@ -213,7 +210,7 @@ export class PlotlyPlotView extends HTMLBoxView {
     });
 
     //  - plotly_relayouting
-    this._layout_wrapper.on('plotly_relayouting', () => {
+    this.container.on('plotly_relayouting', () => {
       if (this.model.viewport_update_policy !== 'mouseup') {
         this._relayouting = true;
         this._updateViewportProperty();
@@ -221,45 +218,45 @@ export class PlotlyPlotView extends HTMLBoxView {
     });
 
     //  - plotly_restyle
-    this._layout_wrapper.on('plotly_restyle', (eventData: any) => {
+    this.container.on('plotly_restyle', (eventData: any) => {
       this.model.restyle_data = filterEventData(
-        this._layout_wrapper, eventData, 'restyle');
+        this.container, eventData, 'restyle');
 
       this._updateViewportProperty();
     });
 
     //  - plotly_click
-    this._layout_wrapper.on('plotly_click', (eventData: any) => {
+    this.container.on('plotly_click', (eventData: any) => {
       this.model.click_data = filterEventData(
-        this._layout_wrapper, eventData, 'click');
+        this.container, eventData, 'click');
     });
 
     //  - plotly_hover
-    this._layout_wrapper.on('plotly_hover', (eventData: any) => {
+    this.container.on('plotly_hover', (eventData: any) => {
       this.model.hover_data = filterEventData(
-        this._layout_wrapper, eventData, 'hover');
+        this.container, eventData, 'hover');
     });
 
     //  - plotly_selected
-    this._layout_wrapper.on('plotly_selected', (eventData: any) => {
+    this.container.on('plotly_selected', (eventData: any) => {
       this.model.selected_data = filterEventData(
-        this._layout_wrapper, eventData, 'selected');
+        this.container, eventData, 'selected');
     });
 
     //  - plotly_clickannotation
-    this._layout_wrapper.on('plotly_clickannotation', (eventData: any) => {
+    this.container.on('plotly_clickannotation', (eventData: any) => {
       delete eventData["event"];
       delete eventData["fullAnnotation"];
       this.model.clickannotation_data = eventData
     });
 
     //  - plotly_deselect
-    this._layout_wrapper.on('plotly_deselect', () => {
+    this.container.on('plotly_deselect', () => {
       this.model.selected_data = null;
     });
 
     //  - plotly_unhover
-    this._layout_wrapper.on('plotly_unhover', () => {
+    this.container.on('plotly_unhover', () => {
       this.model.hover_data = null;
     });
   }
@@ -272,26 +269,20 @@ export class PlotlyPlotView extends HTMLBoxView {
     this._reacting = true
     if (new_plot) {
       const obj = {data: data, layout: newLayout, config: this.model.config, frames: this.model.frames}
-      await (window as any).Plotly.newPlot(this._layout_wrapper, obj)
+      await (window as any).Plotly.newPlot(this.container, obj)
     } else {
-      await (window as any).Plotly.react(this._layout_wrapper, data, newLayout, this.model.config)
+      await (window as any).Plotly.react(this.container, data, newLayout, this.model.config)
       if (this.model.frames != null)
-        await (window as any).Plotly.addFrames(this._layout_wrapper, this.model.frames)
+        await (window as any).Plotly.addFrames(this.container, this.model.frames)
     }
     this._updateSetViewportFunction()
     this._updateViewportProperty()
     if (!this._plotInitialized)
       this._install_callbacks()
-    else if (!_isHidden(this._layout_wrapper))
-      (window as any).Plotly.Plots.resize(this._layout_wrapper)
+    else if (!_isHidden(this.container))
+      (window as any).Plotly.Plots.resize(this.container)
     this._reacting = false
     this._plotInitialized = true
-  }
-
-  after_layout(): void{
-    super.after_layout()
-    if ((window as any).Plotly && this._plotInitialized)
-      (window as any).Plotly.Plots.resize(this._layout_wrapper)
   }
 
   _get_trace(index: number, update: boolean): any {
@@ -326,7 +317,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _updateViewportFromProperty(): void {
     if (!(window as any).Plotly || this._settingViewport || this._reacting || !this.model.viewport ) { return }
 
-    const fullLayout = this._layout_wrapper._fullLayout;
+    const fullLayout = this.container._fullLayout;
 
     // Call relayout if viewport differs from fullLayout
     Object.keys(this.model.viewport).reduce((value: any, key: string) => {
@@ -345,7 +336,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   }
 
   _updateViewportProperty(): void {
-    const fullLayout = this._layout_wrapper._fullLayout;
+    const fullLayout = this.container._fullLayout;
     let viewport: any = {};
 
     // Get range for all xaxis and yaxis properties

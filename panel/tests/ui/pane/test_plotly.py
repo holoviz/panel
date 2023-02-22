@@ -136,13 +136,13 @@ def test_plotly_hover_data(page, port, plotly_2d_plot):
 
     page.goto(f"http://localhost:{port}")
 
-    time.sleep(0.2)
+    page.wait_for_timeout(200)
 
     # Select and hover on first point
     point = page.locator(':nth-match(.js-plotly-plot .plot-container.plotly path.point, 1)')
     point.hover(force=True)
 
-    page.wait_for_timeout(200)
+    page.wait_for_timeout(500)
 
     assert plotly_2d_plot.hover_data == {
         'points': [{

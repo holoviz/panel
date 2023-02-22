@@ -4,21 +4,10 @@ import {PanelMarkupView} from "./layout"
 
 export class MathJaxView extends PanelMarkupView {
   model: MathJax
-  private _hub: any
 
-  initialize(): void {
-    super.initialize()
-    this._hub = (window as any).MathJax.Hub;
-    this._hub.Config({
-      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
-    });
-  }
-
-  render(): void {
-    super.render();
-    if (!this._hub) { return }
-    this.markup_el.innerHTML = this.model.text;
-    this._hub.Queue(["Typeset", this._hub, this.markup_el]);
+  override render(): void {
+    super.render()
+    this.container.innerHTML = this.has_math_disabled() ? this.model.text : this.process_tex(this.model.text)
   }
 }
 

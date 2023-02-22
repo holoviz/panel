@@ -3,13 +3,24 @@
     --bs-primary-bg: var(--panel-primary-color);
     --bs-secondary-color: var(--panel-on-secondary-color);
     --bs-secondary-bg: var(--panel-secondary-color);
-    --bs-form-control-bg: var(--panel-body-color);
-    --bs-body-bg: var(--panel-body-color);
-    --bs-body-color: var(--panel-on-body-color);
+    --bs-form-control-bg: var(--panel-background-color);
+    --bs-body-bg: var(--panel-background-color);
+    --bs-body-color: var(--panel-on-background-color);
     --bs-surface-bg: var(--panel-surface-color);
     --bs-surface-color: var(--panel-on-surface-color);
     --bokeh-base-font: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
 }
+
+html {
+    scrollbar-face-color: var(--bs-surface-bg);
+    scrollbar-base-color: var(--bs-surface-bg);
+    scrollbar-3dlight-color: var(--bs-surface-bg);
+    scrollbar-highlight-color: var(--bs-surface-bg);
+    scrollbar-track-color: var(--bs-body-bg);
+    scrollbar-arrow-color: var(--bs-body-bg);
+    scrollbar-shadow-color: var(--bs-surface-bg);
+}
+
 ::-webkit-scrollbar {
     width: 12px;
 }
