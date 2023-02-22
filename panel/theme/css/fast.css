@@ -129,12 +129,7 @@ canvas, img {
 /* Card */
 
 :host(.accordion), :host(.card) {
-    background-color: var(--neutral-fill-rest);
-}
-
-.card {
-    background-color: var(--neutral-fill-rest);
-    color: var(--neutral-foreground-rest);
+    background-color: var(--neutral-fill-layer-rest);
 }
 
 .card-header, .accordion-header {
@@ -147,6 +142,10 @@ canvas, img {
 
 .card-margin {
     margin: 1em;
+}
+
+.card-header > .card-header-row {
+    margin-left: 15px;
 }
 
 .card-button {

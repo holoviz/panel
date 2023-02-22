@@ -201,6 +201,8 @@ img.app-logo {
 
 .nav.flex-column {
     padding-inline-start: 0px;
+    margin-block-start: 0;
+    margin-block-end: 0;
 }
 
 .pn-modal-close {
