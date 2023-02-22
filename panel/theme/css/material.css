@@ -16,23 +16,24 @@
 
 :host(.mdc-card), :host(.accordion) {
     color: var(--mdc-theme-on-surface);
-    background-color: var(--mdc-theme-surface);
+    background-color: var(--mdc-theme-background);
     box-shadow: rgb(0 0 0 / 20%) 0px 2px 1px -1px, rgb(0 0 0 / 14%) 0px 1px 1px 0px, rgb(0 0 0 / 12%) 0px 1px 3px 0px;
 }
 
 :host(.accordion) button, :host(.mdc-card) button {
-    color: var(--mdc-theme-on-surface);
-}
-
-:host(.mdc-card) {
-    border-radius: 4px;
+    color: var(--mdc-theme-on-background);
 }
 
 .card-header, .accordion-header {
     background-color: var(--mdc-theme-surface);
     border: unset;
+    border-radius: 0;
     border-bottom: 0.2px solid var(--mdc-theme-surface);
     padding: 0px 6px;
+}
+
+.card-header > .card-header-row {
+    margin-left: 15px;
 }
 
 button.mdc-button.mdc-card-button {
@@ -49,7 +50,6 @@ button.mdc-button.mdc-card-button {
     margin-block-end: 0;
     margin-block-start: 0;
 }
-
 
 /* Tabs styling */
 

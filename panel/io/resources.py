@@ -187,6 +187,8 @@ def patch_stylesheet(stylesheet, dist_url):
     url = stylesheet.url
     if not url.startswith('http') and not url.startswith(dist_url):
         patched_url = f'{dist_url}{url}'
+    elif url.startswith(CDN_DIST+dist_url) and dist_url != CDN_DIST:
+        patched_url = url.replace(CDN_DIST+dist_url, dist_url)
     elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
         patched_url = url.replace(CDN_DIST, dist_url)
     else:
