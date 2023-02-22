@@ -7,8 +7,8 @@ from panel.interact import interactive
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.pane import (
-    Bokeh, HoloViews, Interactive, IPyWidget, Markdown, PaneBase,
-    RGGPlot, Vega,
+    Bokeh, HoloViews, Interactive, IPyWidget, Markdown, PaneBase, RGGPlot,
+    Vega,
 )
 from panel.param import Param, ParamMethod
 from panel.tests.util import check_layoutable_properties
