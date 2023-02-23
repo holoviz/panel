@@ -11,7 +11,7 @@ export class KaTeXView extends PanelMarkupView {
     if (!(window as any).renderMathInElement) {
       return
     }
-    (window as any).renderMathInElement(this.el, {
+    (window as any).renderMathInElement(this.shadow_el, {
       delimiters: [
         {left: "$$", right: "$$", display: true},
         {left: "\\[", right: "\\]", display: true},
