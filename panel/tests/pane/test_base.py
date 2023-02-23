@@ -7,13 +7,14 @@ from panel.interact import interactive
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.pane import (
-    Bokeh, HoloViews, Interactive, IPyWidget, PaneBase, RGGPlot, Vega,
+    Bokeh, HoloViews, Interactive, IPyWidget, Markdown, PaneBase, RGGPlot,
+    Vega,
 )
-from panel.param import ParamMethod
+from panel.param import Param, ParamMethod
 from panel.tests.util import check_layoutable_properties
 
 SKIP_PANES = (
-    Bokeh, HoloViews, Interactive, IPyWidget, ParamMethod, RGGPlot,
+    Bokeh, HoloViews, Interactive, IPyWidget, Param, ParamMethod, RGGPlot,
     Vega, interactive
 )
 
@@ -75,3 +76,10 @@ def test_pane_signature(pane):
     assert len(parameters) == 2
     assert 'object' in parameters
     assert parameters['object'] == Parameter('object', Parameter.POSITIONAL_OR_KEYWORD, default=None)
+
+
+def test_pane_pad_layout_by_margin():
+    md = Markdown(width=300, height=300, margin=(25, 12, 14, 42))
+
+    assert md.layout.width == 354
+    assert md.layout.height == 339
