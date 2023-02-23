@@ -1,22 +1,34 @@
+import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 
-import {PanelHTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView} from "./layout"
 
-export class VizzuChartView extends PanelHTMLBoxView {
+export class VizzuChartView extends HTMLBoxView {
+  container: HTMLDivElement
+  timeout: number
   model: VizzuChart
   vizzu_view: any
+  last_updated: number
 
   connect_signals(): void {
+    if (this.timeout)
+      clearTimeout(this.timeout)
     super.connect_signals()
     this.connect(this.model.properties.config.change, () => {
       this.vizzu_view.animate({config: this.model.config}, this.model.duration+'ms')
     })
-    this.connect(this.model.source.properties.data.change, () => {
-      console.log(this.data())
-      this.vizzu_view.animate({data: this.data()}, this.model.duration+'ms')
-    })
+    const update = () => {
+      const now = Date.now()
+      const diff = now-this.last_updated
+      if (diff < this.model.duration)
+	setTimeout(update, diff)
+      else {
+	this.vizzu_view.animate({data: this.data()}, this.model.duration+'ms')
+	this.last_updated = now
+      }
+    }
+    this.connect(this.model.source.properties.data.change, update)
   }
 
   private data(): any {
@@ -28,7 +40,9 @@ export class VizzuChartView extends PanelHTMLBoxView {
 
   render(): void {
     super.render()
-    this.vizzu_view = new (window as any).Vizzu(this.el, {
+    this.container = div({style: "display: contents;"})
+    this.shadow_el.append(this.container)
+    this.vizzu_view = new (window as any).Vizzu(this.container, {
       config: this.model.config,
       data: this.data(),
       style: this.model.style
