@@ -1,5 +1,9 @@
 # Display Output in Notebooks
 
+This guide addresses how to display output in Jupyter and non-Jupyter based notebook environments.
+
+---
+
 Once you have installed Panel it should automatically set up class Jupyter notebook and JupyterLab extensions for rendering Panel output and configuring communication channels to ensure the rendered output syncs bi-directionally with the Python process.
 
 ## Loading the extension
@@ -87,3 +91,4 @@ or using conda:
 ```
 conda install -c bokeh jupyter_bokeh
 ```
+## Related Resources

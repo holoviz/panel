@@ -3,8 +3,8 @@
 This guide addresses how to build a non-linear Panel Pipeline with branching and converging steps, i.e., an acyclic graph.
 
 ```{admonition} Prerequisites
-1. The [Param with Panel](../param/index.md) How-to Guides describe how to set up classes that declare parameters and link them to some computation or visualization.
-2. The [Create a Pipeline](./simple_pipeline.md) How-to Guide walks through the essential components of a pipeline assumed by this current guide.
+1. The [How-to > Param with Panel](../param/index.md) guides describe how to set up classes that declare parameters and link them to some computation or visualization.
+2. The [How-to > Create a Pipeline](./simple_pipeline.md) guide walks through the essential steps of pipeline construction.
 ```
 
 ---
@@ -85,6 +85,70 @@ Now let's view our result:
 ```{pyodide}
 dag
 ```
+
+Here is the complete code for this section in case you want to easily copy it:
+
+```{pyodide}
+import param
+import panel as pn
+pn.extension() # for notebook
+
+class Input(param.Parameterized):
+
+    value1 = param.Integer(default=2, bounds=(0,10))
+    value2 = param.Integer(default=3, bounds=(0,10))
+
+    def panel(self):
+        return pn.Column(self.param.value1, self.param.value2)
+
+class Multiply(param.Parameterized):
+
+    value1 = param.Integer()
+    value2 = param.Integer()
+    operator = param.String('*')
+
+    def panel(self):
+        return pn.pane.Markdown(f'# {self.value1} * {self.value2}')
+
+    @param.output('result')
+    def output(self):
+        return self.value1 * self.value2
+
+class Add(param.Parameterized):
+
+    value1 = param.Integer()
+    value2 = param.Integer()
+    operator = param.String('+')
+
+    def panel(self):
+        return pn.pane.Markdown(f'# {self.value1} + {self.value2}')
+
+    @param.output('result')
+    def output(self):
+        return self.value1 + self.value2
+
+class Result(param.Parameterized):
+
+    value1 = param.Integer()
+    value2 = param.Integer()
+    operator = param.String('')
+    result = param.Integer(default=0)
+
+    def panel(self):
+        return pn.pane.Markdown(f'# {self.value1} {self.operator} {self.value2} = {self.result}')
+
+dag = pn.pipeline.Pipeline()
+
+dag.add_stage('Input', Input)
+dag.add_stage('Multiply', Multiply)
+dag.add_stage('Add', Add)
+dag.add_stage('Result', Result)
+
+dag.define_graph({'Input': ('Multiply', 'Add'), 'Multiply': 'Result', 'Add': 'Result'})
+
+dag
+```
+
 
 ## Related Resources
 - The [How to > Param with Panel](../param/index.md) guide describe how to set up classes that declare parameters and link them to some computation or visualization.

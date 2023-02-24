@@ -1,6 +1,6 @@
 # Build Custom Components
 
-Extend Panel with custom components.
+These How-to pages provide solutions for common tasks related to extending Panel with custom components.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2

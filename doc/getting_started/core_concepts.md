@@ -302,15 +302,8 @@ pn.Column(
 
 ## Exploring further
 
-For a quick reference of different Panel functionality refer to the [overview](../user_guide/Overview.md). If you want a more detailed description of different ways of using Panel, each appropriate for different applications see the following materials:
+While `Getting Started`, you have built a simple Panel app and reviewed the core concepts - the basic foundations for you to start using Panel for your own work.
 
-- [APIs](../user_guide/APIs.rst): An overview of the different APIs offered by Panel.
-- [Parameters](../user_guide/Param.rst): Capturing parameters and their links to actions declaratively
+While working, you can find solutions to specific problems in the [How-to](../how_to/index.md) section and you can consult the [API Reference](../api/index.md) or [Reference Gallery](../reference/index.rst) sections for technical descriptions or examples.
 
-Just pick the style that seems most appropriate for the task you want to do, then study that section of the user guide. Regardless of which approach you take, you'll want to learn more about Panel's panes and layouts:
-
-- [Components](../user_guide/Components.rst): An overview of the core components of Panel including Panes, Widgets and Layouts
-- [Customization](../user_guide/Customization.rst): How to set styles and sizes of Panel components
-- [Display & Export](../user_guide/Display_and_Export.rst): An overview on how to display and export Panel components and apps.
-- [Server Configuration](../user_guide/Server_Configuration.md): An overview on how to configure applications and dashboards for deployment.
-- [Templates](../user_guide/Templates.rst): Composing one or more Panel objects into a template with full control over layout and styling.
+If you want to gain clarity or deepen your understanding on particular topics, refer to the [Background](../background/index.md). For example, the [Background > APIs](../background/api/api.md) subsection covers the benefits and drawbacks of each Panel API.

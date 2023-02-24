@@ -2,6 +2,8 @@
 
 This guide addresses how to generate widgets for function arguments with Panel `interact`.
 
+---
+
 First, let's declare a simple function that just returns the arguments:
 
 ```{pyodide}
@@ -12,7 +14,7 @@ def foo(a, b, c, d, e, f):
     return f'Arguments: {a, b, c, d, e, f}'
 ```
 
-Next, let's call `interact` with the function and it's arguments. The values of the arguments will be inspected to infer an appropriate set of widgets to autogenerate. Changing any of the resulting widgets will cause the function to be re-run, updating the displayed output.
+Next, let's call `interact` with the function and it's arguments. The values of the arguments will be inspected to infer an appropriate set of widgets to autogenerate. After running the code block, changing any of the resulting widgets will cause the function to be re-run, updating the displayed output.
 
 ```{pyodide}
 pn.interact(
@@ -30,7 +32,7 @@ We can also explicitly pass a widget as one of the values:
 
 ```{pyodide}
 def create_block(c):
-    return pn.pane.HTML(width=100, height=100, styles=dict(background=c))
+    return pn.pane.HTML(width=100, height=100, background=c)
 
 color_widget = pn.widgets.ColorPicker(name='Color', value='#4f4fdf')
 
@@ -46,8 +48,34 @@ def bar(x, y):
 bar
 ```
 
+Let's put this all together:
+
+```{pyodide}
+import panel as pn
+pn.extension() # for notebook
+
+def foo(a, b, c, d, e, f):
+    return f'Arguments: {a, b, c, d, e, f}'
+
+pn.interact(
+    foo,
+    a=True,
+    b=10,
+    c=(-10, 10, 0.1, 5.4),
+    d='text',
+    e=['apples', 'oranges'],
+    f=dict([('first', 10), ('second', 20)])
+)
+
+def create_block(c):
+    return pn.pane.HTML(width=100, height=100, background=c)
+
+color_widget = pn.widgets.ColorPicker(name='Color', value='#4f4fdf')
+
+pn.interact(create_block, c=color_widget)
+```
+
 ## Related Resources
 
 - Read [Background > Widget Abbreviations for Panel Interact](../../background/interact/interact_abbreviations.md) for explanation.
 - See [How-to > Autogenerate Widgets for Functions](../interact/index.md) for solutions.
-- Consult [Reference > panel.interact] for technical details.

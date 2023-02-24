@@ -2,6 +2,8 @@
 
 This guide addresses how to set a template for a deployable app.
 
+---
+
 There are two ways of building an application using templates; either we explicitly construct the template or we change the global template.
 
 ## Explicit Constructor

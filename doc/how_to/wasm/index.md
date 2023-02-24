@@ -31,7 +31,7 @@ Discover how to set up and use Panel from Pyodide and PyScript.
 :::
 
 :::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` Sphinx Integration
-:link: user_info
+:link: sphinx
 :link-type: doc
 
 Discover how to integrate live Panel components in your Sphinx based documentation.

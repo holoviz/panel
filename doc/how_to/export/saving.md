@@ -1,8 +1,12 @@
-# Saving output
+# Save App to File
+
+This guide addresses how to export an app to a HTML or PNG file.
+
+---
 
 In case you don't need an actual server or simply want to export a static snapshot of a panel app, you can use the ``save`` method, which allows exporting the app to a standalone HTML or PNG file.
 
-By default, the HTML file generated will depend on loading JavaScript code for BokehJS from the online ``CDN`` repository, to reduce the file size. If you need to work in an airgapped or no-network environment, you can declare that ``INLINE`` resources should be used instead of ``CDN``:
+By default, the HTML file generated will depend on loading JavaScript code for BokehJS from the online ``CDN`` repository, to reduce the file size. If you need to work in an air-gapped or no-network environment, you can declare that ``INLINE`` resources should be used instead of ``CDN``:
 
 ```python
 from bokeh.resources import INLINE
@@ -16,3 +20,5 @@ Finally, if a 'png' file extension is specified, the exported plot will be rende
 ```python
 pane.save('test.png')
 ```
+
+## Related Resources

@@ -2,6 +2,12 @@
 
 This guide addresses how to customize the layout of the widgets and displays from the output of Panel `interact`.
 
+```{admonition} Prerequisites
+1. The [How to > Generate Widgets for Function Arguments](./interact_basics.md) guide covers how to generate widgets for function arguments with Panel interact.
+```
+
+---
+
 First, let's create a function and call `interact` to return a Panel containing the widgets and the display output.
 
 ```{pyodide}
@@ -31,10 +37,7 @@ pn.Row(pn.Column('First Column', layout[0][0], layout[0][1], width=200),
       )
 ```
 
-
-
 ## Related Resources
 
 - Read [Background > Widget Abbreviations for Panel Interact](../../background/interact/interact_abbreviations.md) for explanation.
 - See [How-to > Autogenerate Widgets for Functions](../interact/index.md) for solutions.
-- Consult [Reference > panel.interact] for technical details.
