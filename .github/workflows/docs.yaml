@@ -41,7 +41,7 @@ jobs:
         with:
           name: doc_build
           python-version: "3.9"
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
           conda-update: 'true'
           nodejs: true
           # Remove when all examples tools can be installed on 3.10
