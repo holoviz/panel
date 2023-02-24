@@ -37,7 +37,7 @@ jobs:
       DISPLAY: ":99.0"
       PANEL_IPYWIDGET: 1
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a10
+      - uses: pyviz-dev/holoviz_tasks/install@v0.1a12
         with:
           name: doc_build
           python-version: "3.9"
@@ -45,7 +45,7 @@ jobs:
           conda-update: 'true'
           nodejs: true
           # Remove when all examples tools can be installed on 3.10
-          envs: -o examples -o doc
+          envs: -o examples -o doc -o build
           cache: true
           opengl: true
           conda-mamba: mamba
