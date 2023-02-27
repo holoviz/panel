@@ -176,6 +176,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
         # Add all render items to the document
         objs, models = [], []
+        sizing_modes = {}
         for name, (obj, tags) in self._render_items.items():
 
             # Render root without pre-processing
@@ -183,6 +184,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             model.name = name
             model.tags = tags
             mref = model.ref['id']
+            sizing_modes[mref] = model.sizing_mode
 
             if self._design._apply_hooks not in obj._hooks:
                 obj._hooks.append(self._design._apply_hooks)
@@ -225,6 +227,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         else:
             document.template = self.template
 
+        document._template_variables['sizing_modes'] = sizing_modes
         document._template_variables.update(self._render_variables)
         return document
 
