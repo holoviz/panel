@@ -683,10 +683,6 @@ div .tabulator .tabulator-headers, div .tabulator .tabulator-header .tabulator-c
 
 /* Quill editor */
 
-.ql-editor {
-    color: var(--bs-body-color);
-}
-
-.ql-editor.ql-blank::before {
+.ql-editor, .ql-editor.ql-blank::before {
     color: var(--bs-body-color);
 }

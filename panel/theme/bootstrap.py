@@ -59,8 +59,8 @@ class Bootstrap(Design):
     }
 
     _themes = {
+        'dark': BootstrapDarkTheme,
         'default': BootstrapDefaultTheme,
-        'dark': BootstrapDarkTheme
     }
 
     _resources = {

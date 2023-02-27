@@ -438,10 +438,6 @@ progress:not([value])::before {
 
 /* Quill editor */
 
-.ql-editor {
-    color: var(--mdc-theme-on-background);
-}
-
-.ql-editor.ql-blank::before {
+.ql-editor, .ql-editor.ql-blank::before {
     color: var(--mdc-theme-on-background);
 }
