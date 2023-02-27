@@ -159,8 +159,14 @@ class ImageBase(FileBase):
         width = self.width or width
         height = self.height or height
         alt_text = self.alt_text or ''
-        width = f'width="{width}"' if width else ""
-        height = f'height="{height}"' if height else ""
+        if self.sizing_mode in ('stretch_width', 'stretch_both'):
+            width = 'width="100%"'
+        else:
+            width = f'width="{width}"' if width else ""
+        if self.sizing_mode == 'stretch_height':
+            width = 'height="100%"'
+        else:
+            height = f'height="{height}"' if height else ""
         html = f'<img src="{src}" {width} {height} alt="{alt_text}"></img>'
         if self.link_url:
             html = f'<a href="{self.link_url}" target="_blank">{html}</a>'
