@@ -162,7 +162,11 @@ class Material(Design):
 
     _resources = {
         'css': {
-            'material': f"{config.npm_cdn}/material-components-web@7.0.0/dist/material-components-web.min.css",
+            'material': f"{config.npm_cdn}/material-components-web@7.0.0/dist/material-components-web.min.css"
+        },
+        'font': {
+            'roboto': 'https://fonts.googleapis.com/css?family=Roboto:300,400,500',
+            'icons': 'https://fonts.googleapis.com/css?family=Material+Icons&display=block'
         },
         'js': {
             'material': f"{config.npm_cdn}/material-components-web@7.0.0/dist/material-components-web.min.js"

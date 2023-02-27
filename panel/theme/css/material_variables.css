@@ -1,5 +1,5 @@
 :host, :root {
-    --bokeh-base-font: inherit;
+    --bokeh-base-font: Roboto, sans-serif, Verdana;
     --mdc-theme-primary: var(--jp-brand-color0, var(--panel-primary-color));
     --mdc-theme-primary-lightened: rgba(var(--panel-primary-rgb), 0.35);
     --mdc-theme-on-primary: var(--jp-ui-font-color0, var(--panel-on-primary-color));
