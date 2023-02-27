@@ -1555,7 +1555,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _process_param_change(self, params):
         props = super()._process_param_change(params)
         if 'stylesheets' in params:
-            css = getattr(self, '__css__', [])
+            css = getattr(self, '__css__', []) or []
             props['stylesheets'] = [
                 ImportedStyleSheet(url=ss) for ss in css
             ] + props['stylesheets']
