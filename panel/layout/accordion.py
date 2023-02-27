@@ -94,7 +94,7 @@ class Accordion(NamedListPanel):
             raise ValueError(
                 'Accordion names do not match objects, ensure that the '
                 'Accordion.objects are not modified directly. Found '
-                '{len(self._names)} names, expected {len(self)}.'
+                f'{len(self._names)} names, expected {len(self)}.'
             )
         for i, (name, pane) in enumerate(zip(self._names, self)):
             pane = panel(pane, name=name)
