@@ -8,6 +8,7 @@ import param
 
 from bokeh.models import Column as BkColumn, CustomJS
 
+from ..reactive import Reactive
 from .base import NamedListPanel
 from .card import Card
 
@@ -90,10 +91,11 @@ class Accordion(NamedListPanel):
         from panel.pane.base import RerenderError, panel
         new_models = []
         if len(self._names) != len(self):
-            raise ValueError('Accordion names do not match objects, ensure '
-                             'that the Tabs.objects are not modified '
-                             'directly. Found %d names, expected %d.' %
-                             (len(self._names), len(self)))
+            raise ValueError(
+                'Accordion names do not match objects, ensure that the '
+                'Accordion.objects are not modified directly. Found '
+                f'{len(self._names)} names, expected {len(self)}.'
+            )
         for i, (name, pane) in enumerate(zip(self._names, self)):
             pane = panel(pane, name=name)
             self.objects[i] = pane
@@ -102,8 +104,10 @@ class Accordion(NamedListPanel):
             if obj not in self.objects:
                 self._panels[id(obj)]._cleanup(root)
 
-        params = {k: v for k, v in self.param.values().items()
-                  if k in self._synced_properties}
+        params = {
+            k: v for k, v in self.param.values().items()
+            if k in self._synced_properties
+        }
 
         ref = root.ref['id']
         current_objects = list(self)
@@ -112,15 +116,15 @@ class Accordion(NamedListPanel):
             params.update(self._apply_style(i))
             if id(pane) in self._panels:
                 card = self._panels[id(pane)]
+                card.param.update(**params)
             else:
                 card = Card(
                     pane, title=name, css_classes=['accordion'],
                     header_css_classes=['accordion-header'],
-                    margin=self.margin
+                    **params
                 )
                 card.param.watch(self._set_active, ['collapsed'])
                 self._panels[id(pane)] = card
-            card.param.update(**params)
             if ref in card._models:
                 panel = card._models[ref][0]
             else:
@@ -130,7 +134,9 @@ class Accordion(NamedListPanel):
                         cb = CustomJS(args={'accordion': model}, code=self._toggle)
                         panel.js_on_change('collapsed', cb)
                 except RerenderError:
-                    return self._get_objects(model, current_objects[:i], doc, root, comm)
+                    return self._get_objects(
+                        model, current_objects[:i], doc, root, comm
+                    )
             new_models.append(panel)
 
         self._updating_active = False
@@ -138,17 +144,6 @@ class Accordion(NamedListPanel):
         self._update_cards()
         self._update_active()
         return new_models
-
-    def select(
-        self, selector: type | Callable[[Viewable], bool] | None = None
-    ) -> List[Viewable]:
-
-        if self._panels:
-            selected = []
-            for card in self._panels.values():
-                selected += card.select(selector)
-            return selected
-        return super().select(selector)
 
     def _cleanup(self, root: Model | None = None) -> None:
         for panel in self._panels.values():
@@ -197,7 +192,21 @@ class Accordion(NamedListPanel):
             self._updating_active = False
 
     def _update_cards(self, *events):
-        params = {k: v for k, v in self.param.values().items()
-                  if k in self._synced_properties}
+        params = {
+            k: v for k, v in self.param.values().items()
+            if k in self._synced_properties
+        }
         for panel in self._panels.values():
             panel.param.update(**params)
+
+    # Public API
+
+    def select(
+        self, selector: type | Callable[[Viewable], bool] | None = None
+    ) -> List[Viewable]:
+        selected = Reactive.select(self, selector)
+        if self._panels:
+            for card in self._panels.values():
+                selected += card.select(selector)
+            return selected
+        return selected

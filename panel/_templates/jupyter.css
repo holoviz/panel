@@ -1,3 +1,6 @@
 *[data-root-id], *[data-root-id] > * {
     box-sizing: border-box;
+    font-family: var(--jp-ui-font-family);
+    font-size: var(--jp-ui-font-size1);
+    color: var(--jp-ui-font-color1);
 }

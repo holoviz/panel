@@ -135,13 +135,16 @@ class TerminalSubprocess(param.Parameterized):
 
     @param.depends('_terminal.ncols', '_terminal.nrows', watch=True)
     def _set_winsize(self):
-        if self._fd is None:
+        if self._fd is None or not self._terminal.nrows or not self._terminal.ncols:
             return
         import fcntl
         import struct
         import termios
         winsize = struct.pack("HHHH", self._terminal.nrows, self._terminal.ncols, 0, 0)
-        fcntl.ioctl(self._fd, termios.TIOCSWINSZ, winsize)
+        try:
+            fcntl.ioctl(self._fd, termios.TIOCSWINSZ, winsize)
+        except OSError:
+            pass
 
     def _kill(self, *events):
         child_pid = self._child_pid

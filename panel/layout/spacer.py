@@ -28,6 +28,8 @@ class Spacer(Reactive):
     ... )
     """
 
+    margin = param.Parameter(default=0)
+
     _bokeh_model = BkSpacer
 
     def _get_model(self, doc, root=None, parent=None, comm=None):

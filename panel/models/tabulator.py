@@ -12,7 +12,7 @@ from bokeh.models import ColumnDataSource, LayoutDOM
 from bokeh.models.widgets.tables import TableColumn
 
 from ..config import config
-from ..io.resources import JS_VERSION, bundled_files
+from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import HTMLBox
 
@@ -23,7 +23,6 @@ MOMENT_SRC = f"{config.npm_cdn}/luxon/build/global/luxon.min.js"
 
 THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
-PANEL_CDN = f"{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/bundled/datatabulator/{THEME_PATH}"
 TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
     'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'

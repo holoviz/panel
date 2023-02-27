@@ -525,8 +525,9 @@ class Reactive(Syncable, Viewable):
         params, _ = self._design.params(self, doc) if self._design else ({}, None)
         for k, v in self._init_params().items():
             if k in ('stylesheets', 'tags') and k in params:
-                v = params[k] + v
-            params[k] = v
+                params[k] = v = params[k] + v
+            elif k not in params or self.param[k].default is not v:
+                params[k] = v
         properties = self._process_param_change(params)
         if 'stylesheets' in properties:
             if doc and 'dist_url' in doc._template_variables:
@@ -1550,6 +1551,15 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         children: Dict[str, List[Model]]
     ) -> Dict[str, List[Model]]:
         return children
+
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'stylesheets' in params:
+            css = getattr(self, '__css__', []) or []
+            props['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + props['stylesheets']
+        return props
 
     def _init_params(self) -> Dict[str, Any]:
         ignored = list(Reactive.param)

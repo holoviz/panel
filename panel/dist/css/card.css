@@ -1,11 +1,12 @@
-.card {
+:host(.card) {
   border: 1px solid rgba(0,0,0,.125);
   border-radius: 0.25rem;
 }
 
-.accordion {
+:host(.accordion) {
   border: 1px solid rgba(0,0,0,.125);
 }
+
 .card-header {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.03);
@@ -23,20 +24,24 @@
   justify-content: start;
   width: 100%;
 }
+
 .card-button {
   background-color: transparent;
   margin-left: 0.5em;
   margin-right: 0.5em;
 }
+
 .card-header-row {
   position: relative !important;
 }
+
 .card-title {
   align-items: center;
   font-size: 1.4em;
   font-weight: bold;
   overflow-wrap: break-word;
 }
+
 .card-header-row > .bk {
   overflow-wrap: break-word;
   text-align: center;

@@ -621,6 +621,8 @@ class BasicTemplate(BaseTemplate):
         for rt, res in self._design._resources.items():
             if not isinstance(res, dict):
                 continue
+            if rt == 'font':
+                rt = 'css'
             res = {
                 name: url if isurl(url) else f'{type(self._design).__name__.lower()}/{url}'
                 for name, url in res.items()
