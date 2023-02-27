@@ -521,6 +521,9 @@ class Renderable(param.Parameterized):
             comm = state._comm_manager.get_server_comm()
         model = self.get_root(doc, comm)
 
+        if self._design and self._design.theme.bokeh_theme:
+            doc.theme = self._design.theme.bokeh_theme
+
         if config.embed:
             embed_state(self, model, doc,
                         json=config.embed_json,
