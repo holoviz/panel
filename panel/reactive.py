@@ -525,8 +525,9 @@ class Reactive(Syncable, Viewable):
         params, _ = self._design.params(self, doc) if self._design else ({}, None)
         for k, v in self._init_params().items():
             if k in ('stylesheets', 'tags') and k in params:
-                v = params[k] + v
-            params[k] = v
+                params[k] = v = params[k] + v
+            elif k not in params or self.param[k].default is not v:
+                params[k] = v
         properties = self._process_param_change(params)
         if 'stylesheets' in properties:
             if doc and 'dist_url' in doc._template_variables:
