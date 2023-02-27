@@ -1552,6 +1552,15 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     ) -> Dict[str, List[Model]]:
         return children
 
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'stylesheets' in params:
+            css = getattr(self, '__css__', [])
+            props['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + props['stylesheets']
+        return props
+
     def _init_params(self) -> Dict[str, Any]:
         ignored = list(Reactive.param)
         for child in self._parser.children.values():
