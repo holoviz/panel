@@ -2,11 +2,14 @@
 
 This guide addresses how to leverage asynchronous callbacks to run I/O bound tasks in parallel.
 
+```{admonition} Prerequisites
+1. Python has natively supported asynchronous functions since version 3.5, for a quick overview of some of the concepts involved see [the Python documentation](https://docs.python.org/3/library/asyncio-task.html).
+```
+```{warning}
+ For full asyncio support in Panel you will have to use `python>=3.8`.
+```
 ---
 
-```{warning}
-Python has natively supported asynchronous functions since version 3.5, for a quick overview of some of the concepts involved see [the Python documentation](https://docs.python.org/3/library/asyncio-task.html). For full asyncio support in Panel you will have to use `python>=3.8`.
-```
 ## `.param.watch`
 
 One of the major benefits of leveraging async functions is that it is simple to write callbacks which will perform some longer running IO tasks in the background. Below we simulate this by creating a `Button` which will update some text when it starts and finishes running a long-running background task (here simulated using `asyncio.sleep`. If you are running this in the notebook you will note that you can start multiple tasks and it will update the text immediately but continue in the background:
