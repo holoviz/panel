@@ -34,3 +34,13 @@ How to programmatically control the Pipeline UI flow.
 :::
 
 ::::
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+simple_pipeline
+pipeline_layout
+control_flow
+```

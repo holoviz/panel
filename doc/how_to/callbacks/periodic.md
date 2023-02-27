@@ -1,5 +1,9 @@
 # Periodic callbacks
 
+This guide addresses how to set up per-session callbacks that run periodically.
+
+---
+
 Periodic callbacks allow periodically updating your application with new data. Below we will create a simple Bokeh plot and display it with Panel:
 
 ```{pyodide}
@@ -62,3 +66,5 @@ def panel_app():
 
 pn.serve(panel_app)
 ```
+
+## Related Resources

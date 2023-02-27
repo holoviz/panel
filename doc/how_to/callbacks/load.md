@@ -1,6 +1,12 @@
 # Load callbacks
 
-Another useful callback to define the onload callback, in a server context this will execute when a session is first initialized. Let us for example define a minimal example inside a function which we will pass to `pn.serve`. This emulates what happens when we call `panel serve` on the commandline. We will create a widget without populating its options, then we will add an `onload` callback, which will set the options once the initial page is loaded. Imagine for example that we have to fetch the options from some database which might take a little while, by deferring the loading of the options to the callback we can get something on the screen as quickly as possible and only run the expensive callback when we have already rendered something for the user to look at.
+This guide addresses how to set up callbacks to defer a task until the application is loaded.
+
+---
+
+A useful callback strategy is to define the `onload` callback which will trigger execution when a session is first initialized in a server context. Imagine for example that we have to fetch the options from some database which might take a little while, by deferring the loading of the options to the callback we can get something on the screen as quickly as possible and only run the expensive callback when we have already rendered something for the user to look at.
+
+Let us for example define a minimal example inside a function which we could pass to `pn.serve` (this emulates what happens when we call `panel serve` on the command line). In this example, we will create a widget without populating its options, then we will add an `onload` callback, which will set the options once the initial page is loaded.
 
 ```{pyodide}
 import time
@@ -29,3 +35,5 @@ def render_on_load():
 
 pn.Row(pn.panel(render_on_load, defer_load=True))
 ```
+
+## Related Resources

@@ -20,3 +20,12 @@ How to build custom components from scratch.
 :::
 
 ::::
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+custom_viewer
+custom_reactiveHTML
+```

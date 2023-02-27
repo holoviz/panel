@@ -1,5 +1,9 @@
 # Server Callbacks
 
+This guide addresses how to safely modify Bokeh models to avoid running into issues with the Bokeh `Document` lock.
+
+---
+
 The Bokeh server that Panel builds on is designed to be thread safe which requires a set of locks to avoid multiple threads modifying the Bokeh models simultaneously.  Panel being a high-level wrapper around Bokeh handles this locking for you. However, when you update Bokeh components directly you may need to schedule a callback to get around Bokeh's document lock to avoid errors like this:
 
 ```
@@ -23,3 +27,5 @@ pn.serve(app, threaded=True)
 
 pn.state.execute(lambda: p.y_range.update(start=0, end=4))
 ```
+
+## Related Resources
