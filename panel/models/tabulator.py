@@ -136,10 +136,6 @@ class DataTabulator(HTMLBox):
 
     selectable_rows = Nullable(List(Int))
 
-    theme = Enum(*TABULATOR_THEMES, default="simple")
-
-    theme_url = String(default=THEME_URL)
-
     __css_raw__ = CSS_URLS
 
     @classproperty

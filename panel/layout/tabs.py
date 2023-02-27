@@ -196,7 +196,8 @@ class Tabs(NamedListPanel):
                 child = rendered[pref]
             elif hidden:
                 child = BkSpacer(**{k: v for k, v in pane.param.values().items()
-                                    if k in Layoutable.param and v is not None})
+                                    if k in Layoutable.param and v is not None and
+                                    k not in ('name', 'design')})
                 child.tags = ['hidden']
             else:
                 try:

@@ -16,13 +16,8 @@ from panel.io.server import serve
 pnv = Version(pn.__version__)
 bokeh3_failing = pytest.mark.xfail(
     not (pnv.major == 1 and pnv.is_prerelease),
-    reason="Bokeh 3: Not working yet"
-)
-# These tests passes when running alone
-# but will fail when running with all the other tests
-bokeh3_failing_all = pytest.mark.skipif(
-    not (pnv.major == 1 and pnv.is_prerelease),
-    reason="Bokeh 3: Not working when running all tests"
+    reason="Bokeh 3: Not working yet",
+    strict=False,
 )
 
 ipywidgets_bokeh3 = pytest.mark.skipif(

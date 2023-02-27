@@ -39,6 +39,8 @@ export class CardView extends ColumnView {
     this._apply_classes(this.model.classes)
     this._apply_visible()
 
+    this.class_list.add(...this.css_classes())
+
     const {button_css_classes, header_color, header_tag, header_css_classes} = this.model
 
     const header_background = this.header_background
@@ -67,12 +69,19 @@ export class CardView extends ColumnView {
       header_el.style.color = header_color != null ? header_color : ""
       this.shadow_el.appendChild(header_el)
       header.render()
+      header.after_render()
     }
     for (const child_view of this.child_views.slice(1)) {
       if (!this.model.collapsed)
         this.shadow_el.appendChild(child_view.el)
       child_view.render()
+      child_view.after_render()
     }
+  }
+
+  async update_children(): Promise<void> {
+    this.render()
+    this.invalidate_layout()
   }
 
   _toggle_button(): void {

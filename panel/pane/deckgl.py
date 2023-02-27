@@ -227,7 +227,7 @@ class DeckGL(ModelPane):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        DeckGLPlot = lazy_load(
+        self._bokeh_model = DeckGLPlot = lazy_load(
             'panel.models.deckgl', 'DeckGLPlot', isinstance(comm, JupyterComm), root
         )
         properties = self._get_properties(doc)

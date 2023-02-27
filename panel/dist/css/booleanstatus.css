@@ -1,7 +1,7 @@
 :host(.dot) div {
   height: 100%;
   width: 100%;
-  border: 1px solid #000 !important;
+  border: 1px solid var(--jp-inverse-layout-color0, black) !important;
   background-color: #fff;
   border-radius: 50%;
   display: inline-block;
@@ -10,7 +10,7 @@
 :host(.dot-filled) div {
   height: 100%;
   width: 100%;
-  border: 1px solid #000 !important;
+  border: 1px solid var(--jp-inverse-layout-color0, black) !important;
   border-radius: 50%;
   display: inline-block;
 }

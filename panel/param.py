@@ -25,7 +25,7 @@ import param
 from param.parameterized import classlist, discard_events
 
 from .config import config
-from .io import init_doc, state
+from .io import state
 from .layout import (
     Column, Panel, Row, Spacer, Tabs,
 )
@@ -164,7 +164,7 @@ class Param(PaneBase):
         for example lambda x: x[1].label[::-1] will sort by the reversed
         label.""")
 
-    width = param.Integer(default=300, allow_None=True, bounds=(0, None), doc="""
+    width = param.Integer(default=None, allow_None=True, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
 
     widgets = param.Dict(doc="""
@@ -608,13 +608,19 @@ class Param(PaneBase):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
             and (self.expand_button or (self.expand_button is None and not self.expand))):
-            widget.margin = (5, 0, 5, 10)
-            toggle = Toggle(name='\u22EE', button_type='primary',
-                            disabled=not is_parameterized(value), max_height=30,
-                            max_width=20, height_policy='fit', align='end',
-                            margin=(0, 0, 5, 10))
-            widget.width = self._widget_box.width-60
-            return Row(widget, toggle, width_policy='max', margin=0)
+            toggle = Toggle(
+                name='\u22EE', button_type='primary',
+                disabled=not is_parameterized(value), max_height=30,
+                max_width=20, height_policy='fit', align='end',
+                margin=(0, 0, 5, 10)
+            )
+            width = widget.width
+            widget.param.update(
+                margin=(5, 0, 5, 10),
+                sizing_mode='stretch_width',
+                width=None
+            )
+            return Row(widget, toggle, width=width, margin=0)
         else:
             return widget
 
@@ -711,6 +717,15 @@ class Param(PaneBase):
                 return wtype(pobj)
             return wtype
 
+    def get_root(
+        self, doc: Optional[Document] = None, comm: Comm | None = None,
+        preprocess: bool = True
+    ) -> Model:
+        root = super().get_root(doc, comm, preprocess)
+        ref = root.ref['id']
+        self._models[ref] = (root, None)
+        return root
+
     def select(self, selector=None):
         """
         Iterates over the Viewable and any potential children in the
@@ -727,33 +742,6 @@ class Param(PaneBase):
         viewables: list(Viewable)
         """
         return super().select(selector) + self.layout.select(selector)
-
-    def get_root(
-        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
-        preprocess: bool = True
-    ) -> Model:
-        """
-        Returns the root model and applies pre-processing hooks
-
-        Arguments
-        ---------
-        doc: bokeh.Document
-          Bokeh document the bokeh model will be attached to.
-        comm: pyviz_comms.Comm
-          Optional pyviz_comms when working in notebook
-        preprocess: boolean (default=True)
-          Whether to run preprocessing hooks
-
-        Returns
-        -------
-        Returns the bokeh model corresponding to this panel object
-        """
-        doc = init_doc(doc)
-        root = self.layout.get_root(doc, comm, preprocess)
-        ref = root.ref['id']
-        self._models[ref] = (root, None)
-        state._views[ref] = (self, root, doc, comm)
-        return root
 
 
 class ParamMethod(ReplacementPane):

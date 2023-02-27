@@ -104,7 +104,9 @@ def _cleanup_doc(doc):
 
 def init_doc(doc: Optional[Document]) -> Document:
     curdoc = doc or curdoc_locked()
-    if not isinstance(curdoc, Document):
+    if curdoc is None:
+        curdoc = Document()
+    elif not isinstance(curdoc, Document):
         curdoc = curdoc._doc
     if not curdoc.session_context:
         return curdoc
@@ -150,13 +152,13 @@ def with_lock(func: Callable) -> Callable:
     wrapper.lock = True # type: ignore
     return wrapper
 
-def dispatch_tornado(conn, event):
+def dispatch_tornado(conn, events):
     from tornado.websocket import WebSocketHandler
     socket = conn._socket
     ws_conn = getattr(socket, 'ws_connection', False)
     if not ws_conn or ws_conn.is_closing(): # type: ignore
         return []
-    msg = conn.protocol.create('PATCH-DOC', [event])
+    msg = conn.protocol.create('PATCH-DOC', events)
     futures = [
         WebSocketHandler.write_message(socket, msg.header_json),
         WebSocketHandler.write_message(socket, msg.metadata_json),
@@ -171,9 +173,9 @@ def dispatch_tornado(conn, event):
         ])
     return futures
 
-def dispatch_django(conn, event):
+def dispatch_django(conn, events):
     socket = conn._socket
-    msg = conn.protocol.create('PATCH-DOC', [event])
+    msg = conn.protocol.create('PATCH-DOC', events)
     futures = [
         socket.send(text_data=msg.header_json),
         socket.send(text_data=msg.metadata_json),
@@ -222,16 +224,21 @@ def unlocked() -> Iterator:
 
         events = curdoc.callbacks._held_events
         monkeypatch_events(events)
-        remaining_events, futures = [], []
+        remaining_events, dispatch_events = [], []
         for event in events:
-            if not isinstance(event, ModelChangedEvent) or locked:
+            if isinstance(event, ModelChangedEvent) and not locked:
+                dispatch_events.append(event)
+            else:
                 remaining_events.append(event)
+
+        futures = []
+        for conn in connections:
+            if not dispatch_events:
                 continue
-            for conn in connections:
-                if isinstance(conn._socket, WebSocketHandler):
-                    futures += dispatch_tornado(conn, event)
-                else:
-                    futures += dispatch_django(conn, event)
+            elif isinstance(conn._socket, WebSocketHandler):
+                futures += dispatch_tornado(conn, dispatch_events)
+            else:
+                futures += dispatch_django(conn, dispatch_events)
 
         # Ensure that all write_message calls are awaited and handled
         async def handle_write_errors():
@@ -243,17 +250,19 @@ def unlocked() -> Iterator:
                 except Exception as e:
                     logger.warning(f"Failed sending message due to following error: {e}")
 
-        if state._unblocked(curdoc):
-            try:
-                asyncio.ensure_future(handle_write_errors())
-            except RuntimeError:
+        if futures:
+            if state._unblocked(curdoc):
+                try:
+                    asyncio.ensure_future(handle_write_errors())
+                except RuntimeError:
+                    curdoc.add_next_tick_callback(handle_write_errors)
+            else:
                 curdoc.add_next_tick_callback(handle_write_errors)
-        else:
-            curdoc.add_next_tick_callback(handle_write_errors)
 
         curdoc.callbacks._held_events = remaining_events
     finally:
         try:
             curdoc.unhold()
         except RuntimeError:
-            curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, remaining_events))
+            if remaining_events:
+                curdoc.add_next_tick_callback(partial(_dispatch_events, curdoc, remaining_events))

@@ -49,20 +49,17 @@ class FlexBox(ListLike, ReactiveHTML):
         'nowrap', 'wrap', 'wrap-reverse'], doc="""
         Whether and how to wrap items in the flex container.""")
 
+    margin = param.Parameter(default=0, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
     justify_content = param.Selector(default='flex-start', objects=[
         'flex-start', 'flex-end', 'center', 'space-between', 'space-around',
         'space-evenly', 'start', 'end', 'left', 'right'], doc="""
         Defines the alignment along the main axis.""")
 
     _template = (Path(__file__).parent / 'flexbox.html').read_text('utf-8')
-
-    _scripts = {'after_layout': """
-    if (view.parent != null && view._has_finished && !state.resizing) {
-      state.resizing = true
-      view.parent.invalidate_layout()
-      state.resizing = false
-    }
-    """}
 
     def __init__(self, *objects, **params):
         if 'sizing_mode' not in params:

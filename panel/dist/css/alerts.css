@@ -38,7 +38,6 @@
     background-color: var(--secondary-bg-color);
     border-color: #d6d8db;
 }
-
 :host(.alert-secondary) hr {
     border-top-color: #c8cbcf;
 }
@@ -48,7 +47,6 @@
     background-color: var(--success-bg-color);
     border-color: #c3e6cb;
 }
-
 :host(.alert-success) hr {
     border-top-color: #b1dfbb;
 }
@@ -58,7 +56,6 @@
     background-color: var(--info-bg-color);
     border-color: #bee5eb;
 }
-
 :host(.alert-info) hr {
     border-top-color: #abdde5;
 }
@@ -67,8 +64,7 @@
     color: var(--warning-text-color);
     background-color: var(--warning-bg-color);
     border-color: #ffeeba;
-  }
-
+}
 :host(.alert-warning) hr {
     border-top-color: #ffe8a1;
 }
@@ -86,7 +82,7 @@
     color: var(--light-text-color);
     background-color: var(--light-bg-color);
     border-color: #fdfdfe;
-  }
+}
 :host(.alert-light) hr {
     border-top-color: #ececf6;
 }
@@ -95,7 +91,7 @@
     color: var(--dark-text-color);
     background-color: var(--dark-bg-color);
     border-color: #c6c8ca;
-  }
+}
 :host(.alert-dark) hr {
     border-top-color: #b9bbbe;
 }
@@ -103,33 +99,38 @@
 /* adjfæl */
 
 :host(.alert-primary) a {
-    color: #002752;
+    color: var(--primary-text-color);
 }
 
 :host(.alert-secondary) a {
-    color: #202326;
+    color: var(--secondary-text-color);
 }
 
 :host(.alert-success) a {
-    color: #0b2e13;
+    color: var(--success-text-color);
 }
 
 :host(.alert-info) a {
-    color: #062c33;
+    color: var(--info-text-color);
 }
 
 :host(.alert-warning) a {
-    color: #533f03;
+    color: var(--warning-text-color);
 }
 
 :host(.alert-danger) a {
-    color: #491217;
+    color: var(--danger-text-color);
 }
 
 :host(.alert-light) a {
-    color: #686868;
+    color: var(--light-text-color);
 }
 
 :host(.alert-dark) a {
-    color: #040505;
+    color: var(--dark-text-color);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-block-start: 0;
+    margin-block-end: 0.2em;
 }

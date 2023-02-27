@@ -24,7 +24,7 @@ from panel.models.tabulator import TableEditEvent
 from panel.pane import Markdown
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
-from panel.tests.util import bokeh3_failing, bokeh3_failing_all, wait_until
+from panel.tests.util import bokeh3_failing, wait_until
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
 )
@@ -296,7 +296,6 @@ def test_serve_config_per_session_state():
 # This test seem to fail if run after:
 # - test_server_async_local_state_nested_tasks
 # - test_server_async_local_state
-@bokeh3_failing_all
 def test_server_session_info(port):
     with config.set(session_history=-1):
         html = Markdown('# Title')
@@ -827,7 +826,6 @@ def test_server_component_css_with_prefix_relative_url(port):
     assert 'href="static/extensions/panel/bundled/terminal/xterm@4.11.0/css/xterm.css' in content
 
 
-@bokeh3_failing_all
 def test_server_component_css_with_subpath_and_prefix_relative_url(port):
     component = Terminal()
 

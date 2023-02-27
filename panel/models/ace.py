@@ -48,13 +48,13 @@ class AcePlot(HTMLBox):
         }
     }
 
-    code = String()
+    code = String(default='')
 
     theme = Enum(ace_themes, default='chrome')
 
     filename = Nullable(String())
 
-    language = String()
+    language = String(default='')
 
     annotations = List(Dict(String, Any), default=[])
 

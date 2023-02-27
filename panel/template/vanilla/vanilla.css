@@ -1,205 +1,200 @@
+:host, :root {
+    --background-color: var(--panel-background-color);
+    --text-color: var(--panel-on-background-color);
+    --surface-color: var(--panel-surface-color);
+    --surface-text-color: var(--panel-on-surface-color);
+}
+
+html {
+    scrollbar-face-color: var(--surface-color);
+    scrollbar-base-color: var(--surface-color);
+    scrollbar-3dlight-color: var(--surface-color);
+    scrollbar-highlight-color: var(--surface-color);
+    scrollbar-track-color: var(--background-color);
+    scrollbar-arrow-color: var(--background-color);
+    scrollbar-shadow-color: var(--surface-color);
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: var(--background-color);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--surface-color);
+}
+
 body {
-  height: 100vh;
-  margin: 0px;
-  font-family: "Lato", sans-serif;
-  overflow-x: hidden;
-  overflow-y: hidden;
+    background-color: var(--background-color);
+    height: 100vh;
+    margin: 0px;
+    font-family: "Lato", sans-serif;
+    overflow-x: hidden;
+    overflow-y: hidden;
 }
 
 #container {
-  padding:0px;
-  width: 100vw;
-  max-width: 100vw;
+    max-width: 100vw;
+    padding: 0px;
+    width: 100vw;
 }
 
 #header{
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  box-shadow: 5px 5px 20px silver;
+    align-items: center;
+    display: flex;
+    padding: 0 10px;
 }
 
 #header-items {
-  width: 100%;
-  padding-left:15px;
+    padding-left: 15px;
+    width: 100%;
 }
 
 #app-title {
-  margin-right: 15px;
-  padding-left: 10px;
+    margin-right: 15px;
+    padding-left: 10px;
 }
 
-#header .bk.bk-btn-default {
-  color: black;
-}
-
-#header .bk.bk-menu {
-  color: black;
-}
-
-.title {
-  color: #fff;
-  text-decoration: none;
-  text-decoration-line: none;
-  text-decoration-style: initial;
-  text-decoration-color: initial;
-  font-weight: 400;
-  font-size: 1.5em;
-  line-height: 2em;
-  white-space: nowrap;
+a.title {
+    color: var(--header-color);
+    text-decoration: none;
+    text-decoration-line: none;
+    text-decoration-style: initial;
+    text-decoration-color: initial;
+    font-weight: 400;
+    font-size: 1.5em;
+    line-height: 2em;
+    white-space: nowrap;
 }
 
 .app-header {
-  display: contents;
-  padding-left: 10px;
+    display: contents;
+    padding-left: 10px;
 }
 
 img.app-logo {
-  padding-right: 10px;
-  font-size: 28px;
-  height: 30px;
-  padding-top:11px;
-  padding-bottom: 7px;
-  max-width: inherit;
+    padding-right: 10px;
+    font-size: 28px;
+    height: 30px;
+    padding-top: 11px;
+    padding-bottom: 7px;
+    max-width: inherit;
 }
 
 .pn-bar {
-  width: 20px;
-  height: 2px;
-  background-color: white;
-  margin: 4px 0;
-}
-
-.bk-canvas {
-  padding-right: 2px !important;
+    width: 20px;
+    height: 2px;
+    background-color: var(--header-color);
+    margin: 4px 0;
 }
 
 #content {
-  height: 100%;
-  margin: 0px;
-  width: 100vw;
-  display: inline-flex;
+    color: var(--text-color);
+    height: 100%;
+    margin: 0px;
+    width: 100vw;
+    display: inline-flex;
 }
 
 #sidebar-button {
-  font-size:30px;
-  cursor:pointer;
-  margin-left: 0.25em;
-  margin-right: 0.25em;
+    font-size: 30px;
+    cursor: pointer;
+    margin-left: 0.25em;
+    margin-right: 0.25em;
 }
 
 #sidebar {
-  transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
-  transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
-  height: calc(100vh - 101px);
-  padding-left: 5px;
-  padding-right: 10px;
-  padding-top: 10px;
-  padding-bottom: 20px;
+    height: calc(100vh - 101px);
+    padding: 10px 10px 20px 5px;
+    transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+    transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
 }
 
 #main {
-  transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
-  overflow-y: scroll;
-  width: 100vw;
-  height: calc(100vh - 101px);
-  padding-right: 20px;
-  padding-bottom: 20px;
-  padding-top: 10px;
-  padding-left: 10px;
-  overflow-y: scroll;
+    height: calc(100vh - 101px);
+    overflow-y: scroll;
+    padding-right: 20px;
+    padding-bottom: 20px;
+    padding-top: 10px;
+    padding-left: 10px;
+    transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+    width: 100vw;
 }
 
 #sidebar-button {
-  padding-right: 10px;
+    padding-right: 10px;
 }
 
 a.navbar-brand {
-  padding-left: 10px;
-}
-
-p.bk.card-button {
-  display: none;
+    padding-left: 10px;
 }
 
 .sidenav {
-  height: 100%;
-  padding-top: 10px;
-  padding-left: 10px;
-  position: absolute;
-  overflow-x: hidden;
-  overflow-y: scroll;
+    height: 100%;
+    padding-top: 10px;
+    padding-left: 10px;
+    position: absolute;
+    overflow-x: hidden;
+    overflow-y: scroll;
 }
-
-.bk.card-title {
-  position: absolute !important;
-}
-
-/* .sidenav a {
-  padding: 8px 8px 8px 32px;
-  text-decoration: none;
-  font-size: 25px;
-  color: #818181;
-  display: block;
-  transition: 0.3s;
-} */
-
-/* .sidenav a:hover {
-  color: #f1f1f1;
-} */
 
 .sidenav .closebtn {
-  position: absolute;
-  top: 0;
-  right: 25px;
-  font-size: 36px;
-  margin-left: 50px;
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
 }
 
 @media screen and (max-height: 450px) {
-  .sidenav {padding-top: 15px;}
-  .sidenav a {font-size: 1.2em;}
+    .sidenav {padding-top: 15px;}
+    .sidenav a {font-size: 1.2em;}
 }
 
 .nav.flex-column {
-  padding-inline-start: 0px;
+    padding-inline-start: 0px;
 }
 
 .pn-modal {
-  overflow-y: scroll;
-  width: 100%;
-  position: absolute;
-  display: none;
-  top: 0;
-  left: 0;
+    overflow-y: scroll;
+    width: 100%;
+    position: absolute;
+    display: none;
+    top: 0;
+    left: 0;
 }
 
 .pn-modal-content {
-  background-color: #fefefe;
-  margin: auto;
-  margin-top: 25px;
-  margin-bottom: 25px;
-  padding: 15px 20px 20px 20px;
-  border: 1px solid #888;
-  width: 80% !important;
+    background-color: var(--surface-color);
+    color: var(--surface-text-color);
+    margin: auto;
+    margin-top: 25px;
+    margin-bottom: 25px;
+    padding: 15px 20px 20px 20px;
+    border: 1px solid #888;
+    width: 80% !important;
 }
 
 .pn-modal-close {
-  position: absolute;
-  right: 25px;
-  z-index: 100;
+    position: absolute;
+    right: 25px;
+    z-index: 100;
 }
 
 .pn-modal-close:hover,
 .pn-modal-close:focus {
-  color: #000;
-  text-decoration: none;
-  cursor: pointer;
+    color: var(--surface-text-color);
+    text-decoration: none;
+    cursor: pointer;
 }
 
 .pn-busy-container {
-  align-items: center;
-  justify-content: center;
-  display: flex;
-  margin-left: auto;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    margin-left: auto;
 }

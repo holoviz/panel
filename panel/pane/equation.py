@@ -4,6 +4,7 @@ SymPy objects.
 """
 from __future__ import annotations
 
+import re
 import sys
 
 from typing import (
@@ -63,6 +64,8 @@ class LaTeX(ModelPane):
 
     _updates: ClassVar[bool] = True
 
+    _stylesheets = ['css/katex.css']
+
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         if is_sympy_expr(obj) or hasattr(obj, '_repr_latex_'):
@@ -71,6 +74,13 @@ class LaTeX(ModelPane):
             return None
         else:
             return False
+
+    def _process_param_change(self, params) -> Dict[str, Any]:
+        if self.renderer == "mathjax":
+            # Replace $$math$$ with \[math\] and $math$ with \(math\)
+            msg = re.sub(r"(\$\$)(.*?)(\$\$)", r"\[\2\]", params["object"])
+            params["object"] = re.sub(r"(\$)(.*?)(\$)", r"\(\2\)", msg)
+        return super()._process_param_change(params)
 
     def _get_model_type(self, root: Model, comm: Comm | None) -> Type[Model]:
         module = self.renderer
@@ -86,7 +96,8 @@ class LaTeX(ModelPane):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        model = self._get_model_type(root, comm)(**self._get_properties(doc))
+        self._bokeh_model = self._get_model_type(root, comm)
+        model = self._bokeh_model(**self._get_properties(doc))
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
