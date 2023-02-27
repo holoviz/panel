@@ -243,6 +243,13 @@ class Design(param.Parameterized):
             if isinstance(stylesheet, ImportedStyleSheet):
                 patch_stylesheet(stylesheet, dist_url)
         model.update(**props)
+        if hasattr(viewable, '_synced_properties') and 'objects' in viewable._property_mapping:
+            obj_key = viewable._property_mapping['objects']
+            child_props = {
+                p: v for p, v in params.items() if p in viewable._synced_properties
+            }
+            for child in getattr(model, obj_key):
+                child.update(**child_props)
 
     #----------------------------------------------------------------
     # Public API
@@ -282,6 +289,13 @@ class Design(param.Parameterized):
         """
         Applies the Bokeh theme associated with this Design system
         to a model.
+
+        Arguments
+        ---------
+        model: bokeh.model.Model
+            The Model to apply the theme on.
+        theme_override: str | None
+            A different theme to apply.
         """
         theme = theme_override or self.theme.bokeh_theme
         if isinstance(theme, str):
@@ -321,7 +335,6 @@ class Design(param.Parameterized):
             self._caches[doc] = cache = {}
         modifiers, child_modifiers = self._get_modifiers(viewable, theme=self.theme)
         self._patch_modifiers(doc, modifiers, cache)
-        modifiers['tags'] = ['fast']
         return modifiers, child_modifiers
 
 
