@@ -1,4 +1,4 @@
-# Access session state
+# Access Session State
 
 Whenever a Panel application is being served the `panel.state` object will provide a variety of information about the current user session. This includes the HTTP request that initiated the session, information about the browser and the current URL, and more. These How-to pages provide solutions for common tasks for managing the session state.
 
