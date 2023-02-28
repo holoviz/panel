@@ -223,6 +223,7 @@ extras_require['build'] = [
     'pyviz_comms >=0.7.4',
     'bleach',
     'tqdm >=4.48.0',
+    'cryptography <39' # Avoid pyOpenSSL issue
 ]
 
 setup_args = dict(
