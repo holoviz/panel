@@ -25,7 +25,7 @@ THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
 TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-    'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'
+    'bootstrap4', 'materialize', 'bulma', 'semantic-ui'
 ]
 # Theme names were renamed in Tabulator 5.0.
 _TABULATOR_THEMES_MAPPING = {
