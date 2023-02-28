@@ -112,6 +112,7 @@ p.bk.golden-card-button {
   display: none;
   top: 0;
   left: 0;
+  z-index: 1;
 }
 
 .pn-modal-content {

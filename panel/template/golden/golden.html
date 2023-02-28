@@ -38,7 +38,7 @@
 
 <!-- goes in body -->
 {% block contents %}
-<header class="app-bar" id="header" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }} !important;{% endif %}">
+<header class="app-bar" id="header">
   <div style="display: contents;">
     <div class="app-header">
       {% if app_logo %}<a href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
@@ -46,8 +46,8 @@
       {% if site_title and app_title%}<span class="title">-</span>{% endif %}
       {% if app_title %}<a class="title" href="">{{ app_title }}</a>{% endif %}
     </div>
-	<section class="header-contents">
-	  {% for doc in docs %}
+    <section class="header-contents">
+      {% for doc in docs %}
       {% for root in doc.roots %}
       {% if "header" in root.tags %}
       {{ embed(root) }}
@@ -55,27 +55,27 @@
       {% endfor %}
       {% endfor %}
     </section>
-	{% if busy %}
-	<div class="pn-busy-container">
-	  {{ embed(roots.busy_indicator) | indent(6) }}
-	</div>
-	{% endif %}
+    {% if busy %}
+    <div class="pn-busy-container">
+      {{ embed(roots.busy_indicator) | indent(6) }}
+    </div>
+    {% endif %}
   </div>
 </header>
 
 <div class="main-area header-adjust" id="main">
   <main class="main-content" id="main-content"></main>
   <div id="pn-Modal" class="pn-modal header-adjust">
-	<div class="pn-modal-content">
-	  <span class="pn-modalclose" id="pn-closeModal">&times;</span>
-	  {% for doc in docs %}
-	  {% for root in doc.roots %}
-	  {% if "modal" in root.tags %}
-	  {{ embed(root) | indent(6) }}
-	  {% endif %}
-	  {% endfor %}
-	  {% endfor %}
-	</div>
+    <div class="pn-modal-content">
+      <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+      {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "modal" in root.tags %}
+      {{ embed(root) | indent(6) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+    </div>
   </div>
 </div>
 
@@ -132,6 +132,7 @@
     window.dispatchEvent(new Event("resize"))
     resizing = false;
   }
+
   myLayout.registerComponent('view', function( container, componentState ) {
     const {width, css_classes} = componentState
     if (width) {
