@@ -4,8 +4,10 @@ import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {HTMLBox, HTMLBoxView} from "./layout"
 import {Attrs} from "@bokehjs/core/types"
 
+
 export class JSONEditEvent extends ModelEvent {
   event_name: string = "json_edit"
+  publish: boolean = true
 
   constructor(readonly data: any) {
     super()
