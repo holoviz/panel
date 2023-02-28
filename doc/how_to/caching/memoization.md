@@ -1,4 +1,8 @@
-# Memoization
+# Automatically Cache
+
+This guide addresses how to use the `panel.cache` decorator to memoize (i.e. cache the output of) functions automatically.
+
+---
 
 The `pn.cache` decorator provides an easy way to cache the outputs of a function depending on its inputs (i.e. `memoize`). If you've ever used the Python `@lru_cache` decorator you will be familiar with this concept. However the `pn.cache` functions supports additional cache `policy`'s apart from LRU (least-recently used), including `LFU` (least-frequently-used) and 'FIFO' (first-in-first-out). This means that if the specified number of `max_items` is reached Panel will automatically evict items from the cache based on this `policy`. Additionally items can be deleted from the cache based on a `ttl` (time-to-live) value given in seconds.
 
@@ -43,3 +47,5 @@ If you have `diskcache` installed you can also cache the results to disk by sett
 ## Clearing the cache
 
 Once a function has been decorated with `pn.cache` you can easily clear the cache by calling `.clear()` on that function, e.g. in the example above you could call `load_data.clear()`. If you want to clear all caches you may also call `pn.state.clear_caches()`.
+
+## Related Resources
