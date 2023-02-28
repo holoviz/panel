@@ -743,14 +743,14 @@ class BasicTemplate(BaseTemplate):
             img = _panel(self.logo)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of logo: {self.logo}.")
-            logo = img._b64()
+            logo = img._b64(img._data(img.object))
         else:
             logo = self.logo
         if os.path.isfile(self.favicon):
             img = _panel(self.favicon)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of favicon: {self.favicon}.")
-            favicon = img._b64()
+            favicon = img._b64(img._data(img.object))
         else:
             if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
                 favicon = DOC_DIST + "icons/favicon.ico"
