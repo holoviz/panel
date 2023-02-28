@@ -5,8 +5,10 @@ import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout";
 import {serializeEvent} from "./event-to-object";
 
+
 export class DOMEvent extends ModelEvent {
   event_name: string = "dom_event"
+  publish: boolean = true
 
   constructor(readonly node: string, readonly data: any) {
     super()

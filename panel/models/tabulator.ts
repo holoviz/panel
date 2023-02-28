@@ -17,6 +17,7 @@ import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class TableEditEvent extends ModelEvent {
   event_name: string = "table-edit"
+  publish: boolean = true
 
   constructor(readonly column: string, readonly row: number, readonly pre: boolean) {
     super()
@@ -29,6 +30,7 @@ export class TableEditEvent extends ModelEvent {
 
 export class CellClickEvent extends ModelEvent {
   event_name: string = "cell-click"
+  publish: boolean = true
 
   constructor(readonly column: string, readonly row: number) {
     super()
@@ -785,7 +787,10 @@ export class DataTabulatorView extends HTMLBoxView {
       }
       tab_column.cellClick = (_: any, cell: any) => {
         const index = cell.getData()._index
-        this.model.trigger_event(new CellClickEvent(column.field, index))
+	const event = new CellClickEvent(column.field, index)
+	debugger;
+	console.log(event)
+        this.model.trigger_event(event)
       }
       if (config_columns == null)
         columns.push(tab_column)
@@ -799,7 +804,8 @@ export class DataTabulatorView extends HTMLBoxView {
         hozAlign: "center",
         cellClick: (_: any, cell: any) => {
           const index = cell.getData()._index
-          this.model.trigger_event(new CellClickEvent(col, index))
+	  const event = new CellClickEvent(col, index)
+          this.model.trigger_event(event)
         }
       }
       columns.push(button_column)

@@ -7,8 +7,10 @@ import {Attrs} from "@bokehjs/core/types"
 
 import {debounce} from  "debounce"
 
+
 export class VegaEvent extends ModelEvent {
   event_name: string = "vega_event"
+  publish: boolean = true
 
   constructor(readonly data: any) {
     super()
