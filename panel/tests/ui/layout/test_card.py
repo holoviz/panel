@@ -1,7 +1,7 @@
 import pytest
 
 from panel import Card
-from panel.tests.util import bokeh3_failing, serve_panel_widget
+from panel.tests.util import serve_panel_widget
 from panel.widgets import FloatSlider, TextInput
 
 try:
