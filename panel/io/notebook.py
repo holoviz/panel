@@ -469,7 +469,7 @@ def ipywidget(obj: Any, doc=None, **kwargs: Any):
                         obj._cleanup(current[0])
                     except Exception:
                         pass
-                new_model = obj.get_root()
+                new_model = obj.get_root(doc=doc)
                 widget.update_from_model(new_model)
                 current[:] = [new_model]
         widget.observe(view_count_changed, '_view_count')
