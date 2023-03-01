@@ -39,10 +39,10 @@ class comparable_array(np.ndarray):
     """
 
     def __eq__(self, other: Any) -> bool:
-        return super().__eq__(other).all().item()
+        return np.array_equal(self, other, equal_nan=True)
 
     def __ne__(self, other: Any) -> bool:
-        return super().__ne__(other).all().item()
+        return not np.array_equal(self, other, equal_nan=True)
 
 def monkeypatch_events(events: List['DocumentChangedEvent']) -> None:
     """

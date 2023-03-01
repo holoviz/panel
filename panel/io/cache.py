@@ -364,8 +364,7 @@ def cache(
 
         func_cache = state._memoize_cache.get(func_hash)
 
-        empty = func_cache is None
-        if empty:
+        if func_cache is None:
             if to_disk:
                 from diskcache import Index
                 cache = Index(os.path.join(cache_path, func_hash))
@@ -376,7 +375,7 @@ def cache(
         if ttl is not None:
             _cleanup_ttl(func_cache, ttl, time)
 
-        if not empty and hash_value in func_cache:
+        if hash_value in func_cache:
             with lock:
                 ret, ts, count, _ = func_cache[hash_value]
                 func_cache[hash_value] = (ret, ts, count+1, time)
