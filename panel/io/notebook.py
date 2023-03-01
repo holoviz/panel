@@ -450,6 +450,7 @@ def ipywidget(obj: Any, doc=None, **kwargs: Any):
     from jupyter_bokeh.widgets import BokehModel
 
     from ..pane import panel
+    doc = doc if doc else Document()
     model = panel(obj, **kwargs).get_root(doc=doc)
     widget = BokehModel(model, combine_events=True)
     if hasattr(widget, '_view_count'):
