@@ -243,9 +243,12 @@ def bundled_files(model, file_type='javascript'):
         if url in shared:
             prefixed = filepath
             test_path = BUNDLE_DIR / test_filepath
-        else:
-            prefixed = f'{name}/{filepath}'
+        elif not test_filepath.startswith(name):
+            prefixed = f'{name}/{test_filepath}'
             test_path = bdir / test_filepath
+        else:
+            prefixed = test_filepath
+            test_path = BUNDLE_DIR / test_filepath
         if test_path.is_file():
             if RESOURCE_MODE == 'server':
                 files.append(f'static/extensions/panel/bundled/{prefixed}')
