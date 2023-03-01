@@ -24,7 +24,7 @@ from panel.models.tabulator import TableEditEvent
 from panel.pane import Markdown
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
-from panel.tests.util import bokeh3_failing, wait_until
+from panel.tests.util import wait_until
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
 )
@@ -154,7 +154,6 @@ def test_server_extensions_on_root(port):
     assert r.ok
 
 
-@bokeh3_failing
 def test_autoload_js(port):
     html = Markdown('# Title')
     app_name = 'test'
@@ -167,7 +166,7 @@ def test_autoload_js(port):
     r = requests.get(f"http://localhost:{port}/{app_name}/autoload.js?{args}")
 
     assert r.status_code == 200
-    assert f"http://localhost:{port}/static/extensions/panel/css/alerts.css" in r.content.decode('utf-8')
+    assert f"http://localhost:{port}/static/extensions/panel/panel.min.js" in r.content.decode('utf-8')
 
 
 def test_server_async_callbacks(port):

@@ -1,10 +1,9 @@
 from panel.io.notebook import ipywidget
 from panel.pane import Str
 
-from ..util import bokeh3_failing, jb_available
+from ..util import jb_available
 
 
-@bokeh3_failing
 @jb_available
 def test_ipywidget(document):
     pane = Str('A')
