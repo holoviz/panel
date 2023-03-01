@@ -353,7 +353,7 @@ class Resources(BkResources):
             elif (resource.startswith(state.base_url) or resource.startswith('static/')):
                 if resource.startswith(state.base_url):
                     resource = resource[len(state.base_url):]
-                elif state.rel_path:
+                if state.rel_path:
                     resource = f'{state.rel_path}/{resource}'
                 elif self.absolute and self.mode == 'server':
                     resource = f'{self.root_url}{resource}'

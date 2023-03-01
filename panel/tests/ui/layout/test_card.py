@@ -139,7 +139,6 @@ def test_card_background_legacy(page, port, card_components):
     assert f'background: {background};' in card_widget.get_attribute('style')
 
 
-@bokeh3_failing
 def test_card_header_color_formatting(page, port):
     header_color = 'rgb(0, 0, 128)'
     active_header_background = 'rgb(0, 128, 0)'
