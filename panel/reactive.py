@@ -530,14 +530,25 @@ class Reactive(Syncable, Viewable):
             elif k not in params or self.param[k].default is not v:
                 params[k] = v
         properties = self._process_param_change(params)
-        if 'stylesheets' in properties:
-            if doc and 'dist_url' in doc._template_variables:
-                dist_url = doc._template_variables['dist_url']
-            else:
-                dist_url = CDN_DIST
-            for stylesheet in properties['stylesheets']:
-                if isinstance(stylesheet, ImportedStyleSheet):
-                    patch_stylesheet(stylesheet, dist_url)
+        if 'stylesheets' not in properties:
+            return properties
+        if doc:
+            state._stylesheets[doc] = cache = state._stylesheets.get(doc, {})
+        else:
+            cache = {}
+        if doc and 'dist_url' in doc._template_variables:
+            dist_url = doc._template_variables['dist_url']
+        else:
+            dist_url = CDN_DIST
+        stylesheets = []
+        for stylesheet in properties['stylesheets']:
+            if isinstance(stylesheet, ImportedStyleSheet):
+                if stylesheet.url in cache:
+                    stylesheet = cache[stylesheet.url]
+                else:
+                    cache[stylesheet.url] = stylesheet
+                patch_stylesheet(stylesheet, dist_url)
+        properties['stylesheets'] = stylesheets
         return properties
 
     def _update_properties(self, *events: param.parameterized.Event, doc: Document) -> Dict[str, Any]:
