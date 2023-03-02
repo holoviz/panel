@@ -74,14 +74,16 @@ def test_design_apply(document, comm):
 
     DesignTest().apply(widget, model)
 
-    assert len(model.stylesheets) == 3
-    s1, s2, s3 = model.stylesheets
+    assert len(model.stylesheets) == 4
+    s1, s2, s3, s4 = model.stylesheets
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/bundled/defaulttheme/default.css')
+    assert s2.url.endswith('/dist/css/loading.css')
     assert isinstance(s3, ImportedStyleSheet)
-    assert s3.url.endswith('/dist/bundled/designtest/foo.css')
+    assert s3.url.endswith('/dist/bundled/defaulttheme/default.css')
+    assert isinstance(s4, ImportedStyleSheet)
+    assert s4.url.endswith('/dist/bundled/designtest/foo.css')
 
     assert model.styles == {'color': 'green'}
 
@@ -91,12 +93,14 @@ def test_design_apply_not_isolated(document, comm):
 
     DesignTest().apply(widget, model, isolated=False)
 
-    assert len(model.stylesheets) == 2
-    s1, s2 = model.stylesheets
+    assert len(model.stylesheets) == 3
+    s1, s2, s3 = model.stylesheets
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/bundled/designtest/foo.css')
+    assert s2.url.endswith('/dist/css/loading.css')
+    assert isinstance(s3, ImportedStyleSheet)
+    assert s3.url.endswith('/dist/bundled/designtest/foo.css')
 
     assert model.styles == {'color': 'green'}
 
@@ -106,16 +110,18 @@ def test_design_apply_inherited(document, comm):
 
     DesignTest().apply(widget, model)
 
-    assert len(model.stylesheets) == 4
-    s1, s2, s3, s4 = model.stylesheets
+    assert len(model.stylesheets) == 5
+    s1, s2, s3, s4, s5 = model.stylesheets
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/bundled/defaulttheme/default.css')
+    assert s2.url.endswith('/dist/css/loading.css')
     assert isinstance(s3, ImportedStyleSheet)
-    assert s3.url.endswith('/dist/bundled/designtest/foo.css')
+    assert s3.url.endswith('/dist/bundled/defaulttheme/default.css')
     assert isinstance(s4, ImportedStyleSheet)
-    assert s4.url.endswith('/dist/bundled/designtest/bar.css')
+    assert s4.url.endswith('/dist/bundled/designtest/foo.css')
+    assert isinstance(s5, ImportedStyleSheet)
+    assert s5.url.endswith('/dist/bundled/designtest/bar.css')
 
     assert model.styles == {'color': 'red'}
 
@@ -125,16 +131,18 @@ def test_design_apply_url_inherited(document, comm):
 
     DesignTest().apply(widget, model)
 
-    assert len(model.stylesheets) == 4
-    s1, s2, s3, s4 = model.stylesheets
+    assert len(model.stylesheets) == 5
+    s1, s2, s3, s4, s5 = model.stylesheets
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/bundled/defaulttheme/default.css')
+    assert s2.url.endswith('/dist/css/loading.css')
     assert isinstance(s3, ImportedStyleSheet)
-    assert s3.url.endswith('/dist/bundled/designtest/foo.css')
+    assert s3.url.endswith('/dist/bundled/defaulttheme/default.css')
     assert isinstance(s4, ImportedStyleSheet)
-    assert s4.url == 'http://example.com/baz.css'
+    assert s4.url.endswith('/dist/bundled/designtest/foo.css')
+    assert isinstance(s5, ImportedStyleSheet)
+    assert s5.url == 'http://example.com/baz.css'
 
 def test_design_apply_with_dark_theme(document, comm):
     widget = TextInput()
@@ -143,14 +151,16 @@ def test_design_apply_with_dark_theme(document, comm):
 
     DesignTest(theme='dark').apply(widget, model)
 
-    assert len(model.stylesheets) == 3
-    s1, s2, s3 = model.stylesheets
+    assert len(model.stylesheets) == 4
+    s1, s2, s3, s4 = model.stylesheets
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/bundled/darktheme/dark.css')
+    assert s2.url.endswith('/dist/css/loading.css')
     assert isinstance(s3, ImportedStyleSheet)
-    assert s3.url.endswith('/dist/bundled/designtest/foo.css')
+    assert s3.url.endswith('/dist/bundled/darktheme/dark.css')
+    assert isinstance(s4, ImportedStyleSheet)
+    assert s4.url.endswith('/dist/bundled/designtest/foo.css')
 
     assert document.theme._json == BOKEH_DARK
 
@@ -161,12 +171,14 @@ def test_design_apply_with_dark_theme_not_isolated(document, comm):
 
     DesignTest(theme='dark').apply(widget, model, isolated=False)
 
-    assert len(model.stylesheets) == 2
-    s1, s2 = model.stylesheets
+    assert len(model.stylesheets) == 3
+    s1, s2, s3 = model.stylesheets
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url.endswith('/dist/bundled/designtest/foo.css')
+    assert s2.url.endswith('/dist/css/loading.css')
+    assert isinstance(s3, ImportedStyleSheet)
+    assert s3.url.endswith('/dist/bundled/designtest/foo.css')
 
     assert document.theme._json == BOKEH_DARK
 
@@ -178,14 +190,16 @@ def test_design_apply_with_dist_url(document, comm):
 
     DesignTest().apply(widget, model)
 
-    assert len(model.stylesheets) == 3
-    s1, s2, s3 = model.stylesheets
+    assert len(model.stylesheets) == 4
+    s1, s2, s3, s4 = model.stylesheets
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url == 'https://mock.holoviz.org/bundled/defaulttheme/default.css'
+    assert s2.url.endswith('https://mock.holoviz.org/css/loading.css')
     assert isinstance(s3, ImportedStyleSheet)
-    assert s3.url == 'https://mock.holoviz.org/bundled/designtest/foo.css'
+    assert s3.url == 'https://mock.holoviz.org/bundled/defaulttheme/default.css'
+    assert isinstance(s4, ImportedStyleSheet)
+    assert s4.url == 'https://mock.holoviz.org/bundled/designtest/foo.css'
 
     assert model.styles == {'color': 'green'}
 

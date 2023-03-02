@@ -58,7 +58,7 @@ def test_save_cdn_resources():
     alert.save(sio, resources='cdn')
     sio.seek(0)
     html = sio.read()
-    assert re.findall('https://cdn.holoviz.org/panel/(.*)/dist/css/alerts.css', html)
+    assert re.findall('https://cdn.holoviz.org/panel/(.*)/dist/panel.min.js', html)
 
 
 @hv_available
