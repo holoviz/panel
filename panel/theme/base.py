@@ -274,10 +274,11 @@ class Design(param.Parameterized):
             self._reapply(viewable, root, isolated=isolated)
             return
 
-        if doc in self._caches:
-            cache = self._caches[doc]
+        from ..io.state import state
+        if doc in state._stylesheets:
+            cache = state._stylesheets[doc]
         else:
-            self._caches[doc] = cache = {}
+            state._stylesheets[doc] = cache = {}
         with doc.models.freeze():
             self._reapply(viewable, root, isolated=isolated, cache=cache)
             if self.theme and self.theme.bokeh_theme and doc:
