@@ -16,7 +16,7 @@ from pyviz_comms import JupyterComm
 
 from ..util import isdatetime, lazy_load
 from ..viewable import Layoutable
-from .base import PaneBase
+from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-class Plotly(PaneBase):
+class Plotly(ModelPane):
     """
     The `Plotly` pane renders Plotly plots inside a panel.
 
@@ -284,13 +284,10 @@ class Plotly(PaneBase):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        PlotlyPlot = lazy_load('panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root)
-        model = PlotlyPlot(**self._process_param_change(self._init_params()))
-        if root is None:
-            root = model
-        self._link_props(model, self._linked_properties, doc, root, comm)
-        self._models[root.ref['id']] = (model, parent)
-        return model
+        self._bokeh_model  = lazy_load(
+            'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
+        )
+        return super()._get_model(doc, root, parent, comm)
 
     def _update(self, ref: str, model: Model) -> None:
         if self.object is None:

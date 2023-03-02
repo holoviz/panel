@@ -519,9 +519,8 @@ class ReplacementPane(PaneBase):
             if ref in self._models:
                 self._cleanup(root)
         model = self._inner_layout._get_model(doc, root, parent, comm)
-        if root is None:
-            ref = model.ref['id']
-        self._models[ref] = (model, parent)
+        root = root or model
+        self._models[root.ref['id']] = (model, parent)
         return model
 
     @param.depends('_pane', '_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)

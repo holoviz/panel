@@ -158,8 +158,7 @@ class GridBox(ListPanel):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model()
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
         children = self._get_children(objects, self.nrows, self.ncols)
