@@ -108,7 +108,7 @@ class Card(Column):
         from ..pane import HTML, panel
         if self.header is None:
             params = {
-                'object': '%s' % (self.title or "&#8203;"),
+                'object': f'<h3>{self.title}</h3>' if self.title else "&#8203;",
                 'css_classes': self.title_css_classes,
                 'margin': (5, 0)
             }

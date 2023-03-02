@@ -47,8 +47,8 @@ button.mdc-button.mdc-card-button {
 
 :host(.card-title) h1, :host(.card-title) h2, :host(.card-title) h3,
 :host(.card-title) h4, :host(.card-title) h5, :host(.card-title) h6 {
-    margin-block-end: 0;
-    margin-block-start: 0;
+    margin-block-end: 0.2em;
+    margin-block-start: 0.2em;
 }
 
 /* Tabs styling */
