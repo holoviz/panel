@@ -98,8 +98,7 @@ class LaTeX(ModelPane):
     ) -> Model:
         self._bokeh_model = self._get_model_type(root, comm)
         model = self._bokeh_model(**self._get_properties(doc))
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model
 

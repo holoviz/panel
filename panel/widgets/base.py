@@ -109,9 +109,7 @@ class Widget(Reactive):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         model = self._widget_type(**self._get_properties(doc))
-        if root is None:
-            root = model
-        # Link parameters and bokeh model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
@@ -207,8 +205,7 @@ class CompositeWidget(Widget):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
-        if root is None:
-            root = parent = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model
 

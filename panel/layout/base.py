@@ -146,8 +146,7 @@ class Panel(Reactive):
         if self._bokeh_model is None:
             raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
         model = self._bokeh_model()
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
         properties = self._get_properties(doc)

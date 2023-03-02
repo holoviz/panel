@@ -312,8 +312,7 @@ class Matplotlib(PNG, IPyWidget):
         model = self._get_ipywidget(
             manager.canvas, doc, root, comm, **kwargs
         )
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         self._managers[root.ref['id']] = manager
         return model

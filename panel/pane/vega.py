@@ -14,7 +14,7 @@ from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
-from .base import PaneBase
+from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -60,6 +60,18 @@ def _get_type(spec, version):
         else:
             return getattr(spec, 'type', 'interval')
 
+def _get_dimensions(spec):
+    dimensions = {}
+    responsive_height = spec.get('height') == 'container'
+    responsive_width = spec.get('width') == 'container'
+    if responsive_height and responsive_width:
+        dimensions['sizing_mode'] = 'stretch_both'
+    elif responsive_width:
+        dimensions['sizing_mode'] = 'stretch_width'
+    elif responsive_height:
+        dimensions['sizing_mode'] = 'stretch_height'
+    return dimensions
+
 def _get_schema_version(obj, default_version: int = 5) -> int:
     if Vega.is_altair(obj):
         schema = obj.to_dict().get('$schema', '')
@@ -95,8 +107,20 @@ def _get_selections(obj, version=None):
                 selections.update(_get_selections(subobj, version=version))
     return selections
 
+def _to_json(obj):
+    if isinstance(obj, dict):
+        json = dict(obj)
+        if 'data' in json:
+            data = json['data']
+            if isinstance(data, dict):
+                json['data'] = dict(data)
+            elif isinstance(data, list):
+                json['data'] = [dict(d) for d in data]
+        return json
+    return obj.to_dict()
 
-class Vega(PaneBase):
+
+class Vega(ModelPane):
     """
     The Vega pane renders Vega-lite based plots (including those from Altair)
     inside a panel.
@@ -140,7 +164,8 @@ class Vega(PaneBase):
 
     priority: ClassVar[float | bool | None] = 0.8
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'selection': None, 'debounce': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'selection': None, 'debounce': None, 'object': 'data'}
 
     _updates: ClassVar[bool] = True
 
@@ -185,20 +210,8 @@ class Vega(PaneBase):
             return True
         return cls.is_altair(obj)
 
-    @classmethod
-    def _to_json(cls, obj):
-        if isinstance(obj, dict):
-            json = dict(obj)
-            if 'data' in json:
-                data = json['data']
-                if isinstance(data, dict):
-                    json['data'] = dict(data)
-                elif isinstance(data, list):
-                    json['data'] = [dict(d) for d in data]
-            return json
-        return obj.to_dict()
-
-    def _get_sources(self, json, sources):
+    def _get_sources(self, json, sources=None):
+        sources = {} if sources is None else dict(sources)
         datasets = json.get('datasets', {})
         for name in list(datasets):
             if name in sources or isinstance(datasets[name], dict):
@@ -228,20 +241,7 @@ class Vega(PaneBase):
             for d in data:
                 if 'values' in d:
                     sources[d['name']] = ColumnDataSource(data=ds_as_cds(d.pop('values')))
-
-    @classmethod
-    def _get_dimensions(cls, json, props):
-        if json is None:
-            return
-
-        responsive_height = json.get('height') == 'container'
-        responsive_width = json.get('width') == 'container'
-        if responsive_height and responsive_width:
-            props['sizing_mode'] = 'stretch_both'
-        elif responsive_width:
-            props['sizing_mode'] = 'stretch_width'
-        elif responsive_height:
-            props['sizing_mode'] = 'stretch_height'
+        return sources
 
     def _process_event(self, event):
         name = event.data['type']
@@ -251,38 +251,36 @@ class Vega(PaneBase):
             value = list(value)
         self.selection.param.update(**{name: value})
 
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'data' in props and props['data'] is not None:
+            props['data'] = _to_json(props['data'])
+        return props
+
+    def _get_properties(self, doc, sources={}):
+        props = super()._get_properties(doc)
+        data = props['data']
+        if data is not None:
+            sources = self._get_sources(data, sources)
+        dimensions = _get_dimensions(data)
+        props['data'] = data
+        props['data_sources'] = sources
+        props['events'] = list(self._selections)
+        props['throttle'] = self._throttle
+        props.update(dimensions)
+        return props
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        VegaPlot = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root)
-        sources = {}
-        if self.object is None:
-            json = None
-        else:
-            json = self._to_json(self.object)
-            self._get_sources(json, sources)
-        props = self._process_param_change(self._init_params())
-        self._get_dimensions(json, props)
-        model = VegaPlot(
-            data=json, data_sources=sources, events=list(self._selections),
-            throttle=self._throttle, **props
+        self._bokeh_model = lazy_load(
+            'panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root
         )
+        model = super()._get_model(doc, root, parent, comm)
         self._register_events('vega_event', model=model, doc=doc, comm=comm)
-        if root is None:
-            root = model
-        self._models[root.ref['id']] = (model, parent)
         return model
 
     def _update(self, ref: str, model: Model) -> None:
-        props = self._get_properties(model.document)
-        if self.object is None:
-            json = None
-        else:
-            json = self._to_json(self.object)
-            self._get_sources(json, model.data_sources)
-        props['throttle'] = self._throttle
-        props['events'] = list(self._selections)
-        self._get_dimensions(json, props)
-        props['data'] = json
+        props = self._get_properties(model.document, sources=dict(model.data_sources))
         model.update(**props)

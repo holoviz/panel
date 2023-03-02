@@ -389,16 +389,14 @@ class VTKRenderWindow(BaseVTKRenderWindow):
         VTKSynchronizedPlot = lazy_load(
             'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm), root
         )
-        props = self._process_param_change(self._init_params())
+        props = self._get_properties(doc)
         if self.object is not None:
             props.update(scene=self._scene, arrays=self._arrays, color_mappers=self.color_mappers)
         model = VTKSynchronizedPlot(**props)
-
-        if root is None:
-            root = model
-        self._link_props(model,
-                         ['enable_keybindings', 'orientation_widget'],
-                         doc, root, comm)
+        root = root or model
+        self._link_props(
+            model, ['enable_keybindings', 'orientation_widget'], doc, root, comm
+        )
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -839,13 +837,12 @@ class VTKJS(AbstractVTK):
         Should return the bokeh model to be rendered.
         """
         VTKJSPlot = lazy_load('panel.models.vtk', 'VTKJSPlot', isinstance(comm, JupyterComm), root)
-        props = self._process_param_change(self._init_params())
+        props = self._get_properties(doc)
         vtkjs = self._get_vtkjs()
         if vtkjs is not None:
             props['data'] = base64encode(vtkjs)
         model = VTKJSPlot(**props)
-        if root is None:
-            root = model
+        root = root or model
         self._link_props(model, ['camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model

@@ -877,8 +877,7 @@ class LinearGauge(ValueIndicator):
         self._update_renderers(model)
         self._update_bounds(model)
         self._design.apply_bokeh_theme_to_model(model)
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -1248,8 +1247,7 @@ class Tqdm(Indicator):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         model = self.layout._get_model(doc, root, parent, comm)
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model
 
