@@ -180,8 +180,9 @@ class Syncable(Renderable):
         if 'height' in properties and self.sizing_mode is None:
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
+            base_stylesheets = self._stylesheets+['css/loading.css']
             stylesheets = [loading_css()] + [
-                ImportedStyleSheet(url=stylesheet) for stylesheet in self._stylesheets
+                ImportedStyleSheet(url=stylesheet) for stylesheet in base_stylesheets
             ]
             for stylesheet in properties['stylesheets']:
                 if isinstance(stylesheet, str) and stylesheet.endswith('.css'):
