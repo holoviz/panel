@@ -54,6 +54,7 @@ jobs:
         run: |
           conda activate test-environment
           pip install --use-deprecated=legacy-resolver pyecharts
+          pip install --pre --upgrade altair # Build requires 5.0.0rc1
       - name: Install bokeh 3.0 compatibility packages
         run: |
           conda activate test-environment

@@ -72,6 +72,7 @@ jobs:
         run: |
           conda activate test-environment
           pip install pyecharts
+          pip install --pre --upgrade altair # Build requires 5.0.0rc1
       - name: bokeh_sampledata
         run: |
           conda activate test-environment
