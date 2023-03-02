@@ -85,6 +85,8 @@ class ECharts(ModelPane):
                 props['height'] = int(h.replace('px', ''))
             if not self.width and w:
                 props['width'] = int(w.replace('px', ''))
+        else:
+            props['data'] = data
         if data.get('responsive'):
             props['sizing_mode'] = 'stretch_both'
         return props

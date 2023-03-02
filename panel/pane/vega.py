@@ -80,6 +80,18 @@ def _get_selections(obj):
                 selections.update(_get_selections(subobj))
     return selections
 
+def _to_json(obj):
+    if isinstance(obj, dict):
+        json = dict(obj)
+        if 'data' in json:
+            data = json['data']
+            if isinstance(data, dict):
+                json['data'] = dict(data)
+            elif isinstance(data, list):
+                json['data'] = [dict(d) for d in data]
+        return json
+    return obj.to_dict()
+
 
 class Vega(ModelPane):
     """
@@ -171,20 +183,8 @@ class Vega(ModelPane):
             return True
         return cls.is_altair(obj)
 
-    @classmethod
-    def _to_json(cls, obj):
-        if isinstance(obj, dict):
-            json = dict(obj)
-            if 'data' in json:
-                data = json['data']
-                if isinstance(data, dict):
-                    json['data'] = dict(data)
-                elif isinstance(data, list):
-                    json['data'] = [dict(d) for d in data]
-            return json
-        return obj.to_dict()
-
-    def _get_sources(self, json, sources):
+    def _get_sources(self, json, sources=None):
+        sources = {} if sources is None else dict(sources)
         datasets = json.get('datasets', {})
         for name in list(datasets):
             if name in sources or isinstance(datasets[name], dict):
@@ -214,6 +214,7 @@ class Vega(ModelPane):
             for d in data:
                 if 'values' in d:
                     sources[d['name']] = ColumnDataSource(data=ds_as_cds(d.pop('values')))
+        return sources
 
     def _process_event(self, event):
         name = event.data['type']
@@ -223,12 +224,17 @@ class Vega(ModelPane):
             value = list(value)
         self.selection.param.update(**{name: value})
 
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'data' in props and props['data'] is not None:
+            props['data'] = _to_json(props['data'])
+        return props
+
     def _get_properties(self, doc, sources={}):
         props = super()._get_properties(doc)
         data = props['data']
         if data is not None:
-            data = self._to_json(data)
-            self._get_sources(data, sources)
+            sources = self._get_sources(data, sources)
         dimensions = _get_dimensions(data)
         props['data'] = data
         props['data_sources'] = sources
@@ -241,7 +247,9 @@ class Vega(ModelPane):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        self._bokeh_model = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root)
+        self._bokeh_model = lazy_load(
+            'panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root
+        )
         model = super()._get_model(doc, root, parent, comm)
         self._register_events('vega_event', model=model, doc=doc, comm=comm)
         return model
