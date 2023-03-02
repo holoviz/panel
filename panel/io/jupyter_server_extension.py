@@ -109,9 +109,11 @@ def get_server_root_dir(settings):
 EXECUTION_TEMPLATE = """
 import os
 import pathlib
+import sys
 
 app = '{{ path }}'
 os.chdir(str(pathlib.Path(app).parent))
+sys.path = [os.getcwd()] + sys.path[1:]
 
 from panel.io.jupyter_executor import PanelExecutor
 executor = PanelExecutor(app, '{{ token }}', '{{ root_url }}')
@@ -233,6 +235,7 @@ class PanelJupyterHandler(JupyterHandler):
                 )
                 self.finish(html)
                 return
+
         kernel_env = {**os.environ}
         kernel_id = await ensure_async(
             (
