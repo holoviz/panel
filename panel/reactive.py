@@ -548,6 +548,7 @@ class Reactive(Syncable, Viewable):
                 else:
                     cache[stylesheet.url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
+            stylesheets.append(stylesheet)
         properties['stylesheets'] = stylesheets
         return properties
 
