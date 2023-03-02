@@ -2,6 +2,24 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual summary of the major features added in each release.
 
+## Version 0.14.4
+
+Date: 2023-03-02
+
+This release is a small bug fix release preceding the upcoming major release of Panel 1.0. Many thanks to the contributors to this release which include @MarcSkovMadsen, @maximlt, @Hoxbro and @philippjfr.
+
+### Bugs
+
+- Client-side search filters don't use regex ([4423](https://github.com/holoviz/panel/pull/4423))
+- Fix RGGPlot pane ([#4380](https://github.com/holoviz/panel/pull/4380))
+- Distribute again the examples folder ([#4484](https://github.com/holoviz/panel/pull/4484))
+- Array comparison matches NaNs ([#4481](https://github.com/holoviz/panel/pull/4481))
+- Use cache from previous sessions when using `to_disk` ([#4481](https://github.com/holoviz/panel/pull/4481))
+
+### Misc
+
+- Use latest react-grid from CDN ([#4461](https://github.com/holoviz/panel/pull/4461))
+
 ## Version 0.14.3
 
 Date: 2023-01-28
