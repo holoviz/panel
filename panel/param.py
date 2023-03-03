@@ -202,6 +202,8 @@ class Param(PaneBase):
 
     priority: ClassVar[float | bool | None] = 0.1
 
+    _ignored_refs: ClassVar[Tuple[str]] = ('object',)
+
     _linkable_properties: ClassVar[Tuple[str]] = ()
 
     _rerender_params: ClassVar[List[str]] = []
