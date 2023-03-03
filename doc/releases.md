@@ -10,7 +10,7 @@ This release is a small bug fix release preceding the upcoming major release of 
 
 ### Bugs
 
-- Fix client-side string filters by not parsing them as regex ([4423](https://github.com/holoviz/panel/pull/4423))
+- Fix `Tabulator` client-side string filters by not parsing them as regex ([4423](https://github.com/holoviz/panel/pull/4423))
 - Fix the RGGPlot pane ([#4380](https://github.com/holoviz/panel/pull/4380))
 - Fix `panel examples` command by ensuring examples are correctly packaged ([#4484](https://github.com/holoviz/panel/pull/4484))
 - Fix event generation by considering NaNs as equal when comparing Numpy arrays ([#4481](https://github.com/holoviz/panel/pull/4481))
