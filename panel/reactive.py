@@ -542,7 +542,12 @@ class Reactive(Syncable, Viewable):
         return ref, value
 
     def _validate_ref(self, pname, value):
-        self.param[pname]._validate(value)
+        pobj = self.param[pname]
+        pobj._validate(value)
+        if isinstance(pobj, param.Dynamic) and callable(value) and hasattr(value, '_dinfo'):
+            raise ValueError(
+                'Dynamic parameters should not capture functions with dependencies.'
+            )
 
     def _extract_refs(self, params):
         processed, refs = {}, {}
@@ -558,7 +563,8 @@ class Reactive(Syncable, Viewable):
             except Exception:
                 pass
             else:
-                if type(self.param[pname]) is not param.Parameter:
+                pobj = self.param[pname]
+                if type(pobj) is not param.Parameter:
                     processed[pname] = value
                     continue
 
