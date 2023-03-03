@@ -4,12 +4,20 @@ Defines custom VizzuChart bokeh model to render Vizzu charts.
 from bokeh.core.properties import (
     Any, Dict, Instance, Int, List, String,
 )
+from bokeh.events import ModelEvent
 from bokeh.models import LayoutDOM
 from bokeh.models.sources import DataSource
 
 from ..config import config
-from ..io.resources import bundled_files
-from ..util import classproperty
+
+
+class VizzuEvent(ModelEvent):
+
+    event_name = 'vizzu_event'
+
+    def __init__(self, model, data=None):
+        self.data = data
+        super().__init__(model=model)
 
 
 class VizzuChart(LayoutDOM):
@@ -20,13 +28,9 @@ class VizzuChart(LayoutDOM):
 
     __javascript_module_exports__ = ['Vizzu']
 
-    __javascript_modules_raw__ = [
+    __javascript_modules__ = [
         f"{config.npm_cdn}/vizzu@latest/dist/vizzu.min.js"
     ]
-
-    @classproperty
-    def __javascript_modules__(cls):
-        return bundled_files(cls, 'javascript_modules')
 
     animation = Dict(String, Any)
 

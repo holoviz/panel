@@ -25,8 +25,8 @@ from bokeh.embed.bundle import (
     CSS_RESOURCES as BkCSS_RESOURCES, Bundle as BkBundle, _bundle_extensions,
     _use_mathjax, bundle_models, extension_dirs,
 )
-from bokeh.models import ImportedStyleSheet
 from bokeh.model import Model
+from bokeh.models import ImportedStyleSheet
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
 from jinja2.environment import Environment
@@ -544,7 +544,7 @@ class Bundle(BkBundle):
 
     def __init__(self, notebook=False, **kwargs):
         self.js_modules = kwargs.pop("js_modules", [])
-        self.js_module_exports = kwargs.pop("js_module_exports", exports)
+        self.js_module_exports = kwargs.pop("js_module_exports", {})
         self.notebook = notebook
         super().__init__(**kwargs)
 

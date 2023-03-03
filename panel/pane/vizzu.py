@@ -4,18 +4,19 @@ import datetime as dt
 import sys
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional,
 )
 
 import numpy as np
+import pandas as pd
 import param
 
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from ..reactive import SyncableData
-from ..util import lazy_load
-from .base import PaneBase
+from ..util import isdatetime, lazy_load
+from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-class Vizzu(PaneBase, SyncableData):
+class Vizzu(ModelPane, SyncableData):
     """
     The `Vizzu` pane provides an interactive visualization component for
     large, real-time datasets built on the Vizzu project.
@@ -36,12 +37,17 @@ class Vizzu(PaneBase, SyncableData):
     """
 
     animation = param.Dict(default={}, doc="""
-        Animation settings.""")
+        Animation settings (see https://lib.vizzuhq.com/latest/reference/modules/vizzu.Anim.html).""")
 
     config = param.Dict(default={}, doc="""
-        """)
+        The config contains all of the parameters needed to render a
+        particular static chart or a state of an animated chart
+        (see https://lib.vizzuhq.com/latest/reference/interfaces/vizzu.Config.Chart.html).""")
 
-    columns = param.List(default=[], doc="""
+    click = param.Parameter(doc="""
+        Data associated with the latest click event.""")
+
+    column_types = param.Dict(default={}, doc="""
         Optional column definitions. If not defined will be inferred
         from the data.""")
 
@@ -54,7 +60,17 @@ class Vizzu(PaneBase, SyncableData):
 
     _data_params: ClassVar[List[str]] = ['object']
 
+    _rename: ClassVar[Dict[str, str | None]] = {
+        'click': None, 'column_types': None, 'object': None
+    }
+
+    _rerender_params: ClassVar[List[str]] = []
+
     _updates: ClassVar[bool] = True
+
+    def __init__(self, object=None, **params):
+        super().__init__(object, **params)
+        self._event_handlers = []
 
     @classmethod
     def applies(cls, object):
@@ -65,6 +81,83 @@ class Vizzu(PaneBase, SyncableData):
             if isinstance(object, pd.DataFrame):
                 return 0
         return False
+
+    def _get_data(self):
+        if self.object is None:
+            return {}, {}
+        if isinstance(self.object, dict):
+            data = self.object
+        else:
+            data = {col: self.object[col].values for col in self.object.columns}
+        return data, {str(k): v for k, v in data.items()}
+
+    def _get_columns(self):
+        columns = []
+        for col, array in self._data.items():
+            if col in self.column_types:
+                columns.append({'name': col, 'type': self.column_types[col]})
+                continue
+            if not isinstance(array, np.ndarray):
+                array = np.asarray(array)
+            kind = array.dtype.kind
+            if kind == 'M':
+                columns.append({'name': col, 'type': 'datetime'})
+            elif kind in 'uif':
+                columns.append({'name': col, 'type': 'measure'})
+            elif kind in 'bsU':
+                columns.append({'name': col, 'type': 'dimension'})
+            else:
+                if len(array):
+                    value = array[0]
+                    if isinstance(value, dt.date):
+                        columns.append({'name': col, 'type': 'datetime'})
+                    elif isdatetime(value) or isinstance(value, pd.Period):
+                        columns.append({'name': col, 'type': 'datetime'})
+                    elif isinstance(value, str):
+                        columns.append({'name': col, 'type': 'dimension'})
+                    elif isinstance(value, (float, np.float, int, np.int)):
+                        columns.append({'name': col, 'type': 'measure'})
+                    else:
+                        columns.append({'name': col, 'type': 'dimension'})
+                else:
+                    columns.append({'name': col, 'type': 'dimension'})
+        return columns
+
+    def _get_properties(self, doc, source=None):
+        props = super()._get_properties(doc)
+        props['duration'] = self.duration
+        if source is None:
+            props['source'] = ColumnDataSource(data=self._data)
+        else:
+            source.data = self._data
+            props['source'] = source
+        return props
+
+    def _process_param_change(self, params):
+        if 'object' in params:
+            self._processed, self._data = self._get_data()
+        if 'object' in params or 'column_types' in params:
+            params['columns'] = self._get_columns()
+        return super()._process_param_change(params)
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        self._bokeh_model = lazy_load(
+            'panel.models.vizzu', 'VizzuChart', isinstance(comm, JupyterComm), root
+        )
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('vizzu_event', model=model, doc=doc, comm=comm)
+        return model
+
+    def _process_event(self, event):
+        self.click = event.data
+        for handler in self._event_handlers:
+            handler(event.data)
+
+    def _update(self, ref: str, model: Model) -> None:
+        pass
 
     def animate(
         self, anim: Dict[str, Any], options: int | Dict[str, Any] | None = None
@@ -82,70 +175,23 @@ class Vizzu(PaneBase, SyncableData):
                     'containing config, data and/or style values OR a single '
                     'config dictionary. '
                 )
-            updates[p] = dict(getattr(self, p), value)
+            updates[p] = dict(getattr(self, p), **value)
         if isinstance(options, int):
             self.duration = options
         elif isinstance(options, dict):
             self.animation = options
         self.param.update(updates)
 
-    def _get_data(self):
-        if self.object is None:
-            return {}, {}
-        if isinstance(self.object, dict):
-            data = self.object
-        else:
-            data = {col: self.object[col].values for col in self.object.columns}
-        return data, {str(k): v for k, v in data.items()}
+    # Public API
 
-    def _init_params(self):
-        props = super()._init_params()
-        props['duration'] = self.duration
-        props['source'] = ColumnDataSource(data=self._data)
-        props['columns'] = columns = self.columns
-        if columns:
-            return props
-        for col, array in self._data.items():
-            if not isinstance(array, np.ndarray):
-                array = np.asarray(array)
-            kind = array.dtype.kind
-            if kind == 'M':
-                columns.append({'name': col, 'type': 'datetime'})
-            elif kind in 'uif':
-                columns.append({'name': col, 'type': 'measure'})
-            elif kind in 'bsU':
-                columns.append({'name': col, 'type': 'dimension'})
-            else:
-                if len(array):
-                    value = array[0]
-                    print(value)
-                    if isinstance(value, dt.date):
-                        columns.append({'name': col, 'type': 'date'})
-                    elif isinstance(value, dt.datetime):
-                        columns.append({'name': col, 'type': 'datetime'})
-                    elif isinstance(value, str):
-                        columns.append({'name': col, 'type': 'measure'})
-                    elif isinstance(value, (float, np.float, int, np.int)):
-                        columns.append({'name': col, 'type': 'measure'})
-                    else:
-                        columns.append({'name': col, 'type': 'dimension'})
-                else:
-                    columns.append({'name': col, 'type': 'dimension'})
-        return props
+    def on_click(self, callback: Callable[[Dict], None]):
+        """
+        Register a callback to be executed when any element in the
+        chart is clicked on.
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        VizzuChart = lazy_load('panel.models.vizzu', 'VizzuChart', isinstance(comm, JupyterComm), root)
-        properties = self._process_param_change(self._init_params())
-        model = VizzuChart(**properties)
-        if root is None:
-            root = model
-        synced = list(set([p for p in self.param if (self.param[p].precedence or 0) > -1]) ^ (set(PaneBase.param) | set(SyncableData.param)))
-        self._link_props(model, synced, doc, root, comm)
-        self._models[root.ref['id']] = (model, parent)
-        return model
-
-    def _update(self, ref: str, model: Model) -> None:
-        pass
+        Arguments
+        ---------
+        callback: (callable)
+            The callback to run on click events.
+        """
+        self._event_handlers.append(callback)
