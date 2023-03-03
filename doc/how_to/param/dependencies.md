@@ -1,5 +1,13 @@
 # Declare parameter dependencies
 
+This guide addresses how to leverage `@param.depends` to express dependencies and trigger events based on UI interactions.
+
+```{admonition} Prerequisites
+1. The [How to > Generate Widgets from Parameters](./uis.md) guide demonstrates the automatic generation of widgets without dependencies.
+```
+
+---
+
 Declaring parameters is usually only the beginning of a workflow. In most applications these parameters are then tied to some computation. To express the relationship between a computation and the parameters it depends on, the ``param.depends`` decorator may be used on Parameterized methods. This decorator provides a hint to Panel and other Param-based libraries (e.g. HoloViews) that the method should be re-evaluated when a parameter changes.
 
 As a straightforward example without any additional dependencies we will write a small class that returns an ASCII representation of a sine wave, which depends on `phase` and `frequency` parameters. If we supply the ``.view`` method to a panel, it will automatically recompute and update the view when one or more of the parameters changes:
@@ -72,3 +80,8 @@ pn.Row(viewer.param, viewer.view)
 ```
 
 Whenever the continent changes Param will now eagerly execute the ``_update_countries`` method to change the list of countries that is displayed, which in turn triggers an update in the view method updating the map. Note that there is no need to add ``watch=True`` to decorators of methods that are passed to a Panel layout (e.g. ``viewer.View`` being passed to ``pn.Row`` here), because Panel will already handle dependencies on those methods, executing the method automatically when the dependent parameters change. Indeed, if you specify ``watch=True`` for such a method, the method will get invoked _twice_ each time a dependency changes (once by Param internally and once by Panel), so you should reserve ``watch=True`` only for methods that aren't otherwise being monitored for dependencies.
+
+---
+
+## Related Resources
+- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs

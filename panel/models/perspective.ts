@@ -1,6 +1,5 @@
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-import {DocumentEvent} from "@bokehjs/document/events"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
@@ -8,8 +7,6 @@ import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 const THEMES: any = {
   'material-dark': 'Material Dark',
   'material': 'Material Light',
-  'material-dense': 'Material Light',
-  'material-dense-dark': 'Material Dark',
   'vaporwave': 'Vaporwave',
   'solarized': 'Solarized',
   'solarized-dark': 'Solarized Dark',
@@ -51,13 +48,21 @@ export class PerspectiveView extends HTMLBoxView {
   _updating: boolean = false
   _config_listener: any = null
   _current_config: any = null
-  _event_listener: any = null
   _loaded: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
 
     this.connect(this.model.source.properties.data.change, () => this.setData());
+    this.connect(this.model.source.streaming, () => this.stream())
+    this.connect(this.model.source.patching, () => this.patch())
+    this.connect(this.model.properties.schema.change, () => {
+      this.worker.table(this.model.schema).then((table: any) => {
+	this.table = table
+	this.table.update(this.data)
+	this.perspective_element.load(this.table)
+      })
+    });
     this.connect(this.model.properties.toggle_config.change, () => {
       this.perspective_element.toggleConfig()
     })
@@ -94,72 +99,69 @@ export class PerspectiveView extends HTMLBoxView {
     this.connect(this.model.properties.theme.change, () => {
       this.perspective_element.restore({"theme": THEMES[this.model.theme as string]}).catch(() => {})
     })
-    if (this.model.document != null) {
-      this._event_listener = (event: DocumentEvent) => this.on_event(event)
-      this.model.document.on_change(this._event_listener)
-    }
   }
 
   disconnect_signals(): void {
     if (this._config_listener != null)
       this.perspective_element.removeEventListener("perspective-config-update", this._config_listener)
     this._config_listener = null
-    if (this.model.document != null && this._event_listener != null)
-      this.model.document.remove_on_change(this._event_listener)
-    this._event_listener = null
     super.disconnect_signals()
   }
 
-  async render(): Promise<void> {
+  render(): void {
     super.render()
     this.worker = (window as any).perspective.worker();
-    this.table = await this.worker.table(this.model.schema);
-    this.table.update(this.data);
     const container = div({
       class: "pnx-perspective-viewer",
       style: {
         zIndex: 0,
       }
     })
-    //set_size(container, this.model)
     container.innerHTML = "<perspective-viewer style='height:100%; width:100%;'></perspective-viewer>";
     this.perspective_element = container.children[0]
-    this.perspective_element.resetThemes([...Object.values(THEMES)]).catch(() => {})
-    this.perspective_element.load(this.table)
-    set_size(this.perspective_element, this.model)
-
-    const plugin_config = {
-      ...this.model.plugin_config,
-      editable: this.model.editable,
-      selectable: this.model.selectable
-    }
-
-    this.perspective_element.restore({
-      aggregates: this.model.aggregates,
-      columns: this.model.columns,
-      expressions: this.model.expressions,
-      filter: this.model.filters,
-      split_by: this.model.split_by,
-      group_by: this.model.group_by,
-      plugin: PLUGINS[this.model.plugin as any],
-      plugin_config: plugin_config,
-      sort: this.model.sort,
-      theme: THEMES[this.model.theme as any]
-    }).catch(() => {})
-
-    this._config_listener = () => this.sync_config()
-    this._current_config = await this.perspective_element.save();
+    this.perspective_element.resetThemes([...Object.values(THEMES)]).catch(() => {});
     if (this.model.toggle_config)
       this.perspective_element.toggleConfig()
-    this.perspective_element.addEventListener("perspective-config-update", this._config_listener)
+    set_size(this.perspective_element, this.model)
     this.shadow_el.appendChild(container)
-    this._loaded = true
+
+    this.worker.table(this.model.schema).then((table: any) => {
+      this.table = table
+      this.table.update(this.data)
+      this.perspective_element.load(this.table)
+
+      const plugin_config = {
+	...this.model.plugin_config,
+	editable: this.model.editable,
+	selectable: this.model.selectable
+      }
+
+      this.perspective_element.restore({
+	aggregates: this.model.aggregates,
+	columns: this.model.columns,
+	expressions: this.model.expressions,
+	filter: this.model.filters,
+	split_by: this.model.split_by,
+	group_by: this.model.group_by,
+	plugin: PLUGINS[this.model.plugin as any],
+	plugin_config: plugin_config,
+	sort: this.model.sort,
+	theme: THEMES[this.model.theme as any]
+      }).catch(() => {});
+
+      this.perspective_element.save().then((config: any) => {
+	this._current_config = config
+      })
+      this._config_listener = () => this.sync_config()
+      this.perspective_element.addEventListener("perspective-config-update", this._config_listener)
+      this._loaded = true
+    })
   }
 
   sync_config(): boolean {
     if (this._updating)
       return true
-    this.perspective_element.save().then( (config: any) => {
+    this.perspective_element.save().then((config: any) => {
       this._current_config = config
       const props: any =  {}
       for (let option in config) {
@@ -181,16 +183,6 @@ export class PerspectiveView extends HTMLBoxView {
     return true
   }
 
-  on_event(event: any): void {
-    event = event.hint
-    if (event == null || event.column_source == null || event.column_source.id != this.model.source.id)
-      return
-    else if (event.rollover !== undefined)
-      this.stream(event.data, event.rollover)
-    else if (event.patches !== undefined)
-      this.patch(event.patches)
-  }
-
   get data(): any {
     const data: any = {}
     for (const column of this.model.source.columns())
@@ -198,22 +190,24 @@ export class PerspectiveView extends HTMLBoxView {
     return data
   }
 
-  stream(data: any, rollover: any): void {
+  setData(): void {
     if (!this._loaded)
       return
-    else if (rollover == null)
-      this.table.update(data)
-    else
-      this.table.replace(this.data)
-  }
-
-  patch(_: any): void {
+    for (const col of this.model.source.columns()) {
+      if (!(col in this.model.schema))
+	return
+    }
     this.table.replace(this.data)
   }
 
-  setData(): void {
+  stream(): void {
     if (this._loaded)
-      this.table.load(this.data)
+      this.table.replace(this.data)
+  }
+
+  patch(): void {
+    if (this._loaded)
+      this.table.replace(this.data)
   }
 }
 
@@ -267,7 +261,7 @@ export class Perspective extends HTMLBox {
       toggle_config:    [ Boolean,                           true ],
       sort:             [ Nullable(Array(Array(String))),    null ],
       source:           [ Ref(ColumnDataSource),                  ],
-      theme:            [ String,                                 ],
+      theme:            [ String,                      'material' ]
     }))
   }
 }

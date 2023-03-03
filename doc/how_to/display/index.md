@@ -18,10 +18,10 @@ How to display output in Jupyter and non-Jupyter based notebook environments.
 :link: editor
 :link-type: doc
 
-Discover how to rapidly develop a Panel application in your favorite IDE or editor.
+How to rapidly develop a Panel application in your favorite IDE or editor.
 :::
 
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Develop Apps in JupyterLab
+:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Preview Apps in JupyterLab
 :link: jupyterlab
 :link-type: doc
 

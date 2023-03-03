@@ -1,0 +1,5 @@
+:host {
+    --bokeh-base-font: Open Sans, Roboto, sans-serif;
+    color: var(--neutral-foreground-rest);
+    background-color: var(--fill-color);
+}

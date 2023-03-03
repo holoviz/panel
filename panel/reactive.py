@@ -90,7 +90,7 @@ class Syncable(Renderable):
     _manual_params: ClassVar[List[str]] = []
 
     # Mapping from parameter name to bokeh model property name
-    _rename: ClassVar[Mapping[str, str | None]] = {'loading': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {}
 
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
@@ -107,6 +107,7 @@ class Syncable(Renderable):
     __abstract = True
 
     def __init__(self, **params):
+        self._themer = None
         super().__init__(**params)
 
         # Useful when updating model properties which trigger potentially
@@ -148,16 +149,7 @@ class Syncable(Renderable):
         )
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
-        properties = self._process_param_change(self._init_params())
-        if 'stylesheets' in properties:
-            if doc and 'dist_url' in doc._template_variables:
-                dist_url = doc._template_variables['dist_url']
-            else:
-                dist_url = CDN_DIST
-            for stylesheet in properties['stylesheets']:
-                if isinstance(stylesheet, ImportedStyleSheet):
-                    patch_stylesheet(stylesheet, dist_url)
-        return properties
+        return self._process_param_change(self._init_params())
 
     def _process_property_change(self, msg: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -188,8 +180,9 @@ class Syncable(Renderable):
         if 'height' in properties and self.sizing_mode is None:
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
+            base_stylesheets = self._stylesheets+['css/loading.css']
             stylesheets = [loading_css()] + [
-                ImportedStyleSheet(url=stylesheet) for stylesheet in self._stylesheets
+                ImportedStyleSheet(url=stylesheet) for stylesheet in base_stylesheets
             ]
             for stylesheet in properties['stylesheets']:
                 if isinstance(stylesheet, str) and stylesheet.endswith('.css'):
@@ -206,7 +199,7 @@ class Syncable(Renderable):
         return [
             p for p in self._synced_params if self._rename.get(p, False) is not None
             and self._source_transforms.get(p, False) is not None and
-            p != 'stylesheets'
+            p not in ('design', 'stylesheets')
         ] + ['loading']
 
     @property
@@ -316,12 +309,6 @@ class Syncable(Renderable):
             if attr in self._events:
                 del self._events[attr]
 
-        if 'stylesheets' in msg:
-            dist_url = doc._template_variables.get('dist_dir')
-            for stylesheet in msg['stylesheets']:
-                if isinstance(stylesheet, ImportedStyleSheet):
-                    patch_stylesheet(stylesheet, dist_url)
-
         try:
             model.update(**msg)
         finally:
@@ -355,20 +342,19 @@ class Syncable(Renderable):
             except Exception:
                 pass
 
+    def _update_properties(
+        self, *events: param.parameterized.Event, doc: Document
+    ) -> Dict[str, Any]:
+        changes = {event.name: event.new for event in events}
+        return self._process_param_change(changes)
+
     def _param_change(self, *events: param.parameterized.Event) -> None:
-        msgs = []
-        for event in events:
-            msg = self._process_param_change({event.name: event.new})
-            if msg:
-                msgs.append(msg)
-
         named_events = {event.name: event for event in events}
-        msg = {k: v for msg in msgs for k, v in msg.items()}
-        if not msg:
-            return
-
         for ref, (model, _) in self._models.copy().items():
-            self._apply_update(named_events, msg, model, ref)
+            properties = self._update_properties(*events, doc=model.document)
+            if not properties:
+                return
+            self._apply_update(named_events, properties, model, ref)
 
     def _process_events(self, events: Dict[str, Any]) -> None:
         self._log('received events %s', events)
@@ -526,7 +512,66 @@ class Reactive(Syncable, Viewable):
     the parameters to other objects.
     """
 
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'design': None, 'loading': None
+    }
+
     __abstract = True
+
+    #----------------------------------------------------------------
+    # Private API
+    #----------------------------------------------------------------
+
+    def _get_properties(self, doc: Document) -> Dict[str, Any]:
+        params, _ = self._design.params(self, doc) if self._design else ({}, None)
+        for k, v in self._init_params().items():
+            if k in ('stylesheets', 'tags') and k in params:
+                params[k] = v = params[k] + v
+            elif k not in params or self.param[k].default is not v:
+                params[k] = v
+        properties = self._process_param_change(params)
+        if 'stylesheets' not in properties:
+            return properties
+        if doc:
+            state._stylesheets[doc] = cache = state._stylesheets.get(doc, {})
+        else:
+            cache = {}
+        if doc and 'dist_url' in doc._template_variables:
+            dist_url = doc._template_variables['dist_url']
+        else:
+            dist_url = CDN_DIST
+        stylesheets = []
+        for stylesheet in properties['stylesheets']:
+            if isinstance(stylesheet, ImportedStyleSheet):
+                if stylesheet.url in cache:
+                    stylesheet = cache[stylesheet.url]
+                else:
+                    cache[stylesheet.url] = stylesheet
+                patch_stylesheet(stylesheet, dist_url)
+            stylesheets.append(stylesheet)
+        properties['stylesheets'] = stylesheets
+        return properties
+
+    def _update_properties(self, *events: param.parameterized.Event, doc: Document) -> Dict[str, Any]:
+        params, _ = self._design.params(self, doc) if self._design else ({}, None)
+        changes = {event.name: event.new for event in events}
+        if 'stylesheets' in changes and 'stylsheets' in params:
+            changes['stylesheets'] = params['stylesheets'] + changes['stylesheets']
+        return self._process_param_change(changes)
+
+    def _update_model(
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+    ) -> None:
+        if 'stylesheets' in msg:
+            if doc and 'dist_url' in doc._template_variables:
+                dist_url = doc._template_variables['dist_url']
+            else:
+                dist_url = CDN_DIST
+            for stylesheet in msg['stylesheets']:
+                if isinstance(stylesheet, ImportedStyleSheet):
+                    patch_stylesheet(stylesheet, dist_url)
+        super()._update_model(events, msg, root, model, doc, comm)
 
     #----------------------------------------------------------------
     # Public API
@@ -1519,6 +1564,15 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         children: Dict[str, List[Model]]
     ) -> Dict[str, List[Model]]:
         return children
+
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'stylesheets' in params:
+            css = getattr(self, '__css__', []) or []
+            props['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + props['stylesheets']
+        return props
 
     def _init_params(self) -> Dict[str, Any]:
         ignored = list(Reactive.param)

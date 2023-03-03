@@ -6,7 +6,7 @@ table.panel-df {
     border-spacing: 0;
     color: black;
     font-size: 12px;
-    table-layout: fixed;
+    table-layout: auto;
     width: 100%;
 }
 
@@ -36,6 +36,11 @@ table.panel-df {
 }
 
 .panel-df tr:hover {
-    background: lightblue !important;
+    background: #e1f5fe !important;
     cursor: pointer;
+}
+
+:host {
+    overflow: auto;
+    padding-right: 1px;
 }

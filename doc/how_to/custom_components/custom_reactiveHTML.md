@@ -2,9 +2,11 @@
 
 This guide addresses how to build custom Panel components from scratch.
 
----
+```{admonition} Prerequisites
+1. As a how-to guide, the intent is to provide recipes for specific problems without a lot of discussion. However, this is an advanced topic so if you get stuck, please read the associated [Background > Building Custom Components](../../background/components/components_custom) for further explanation.
+```
 
-As a how-to guide, the intent of this page is to provide recipes to solve a specific real-world problem without a lot of discussion. However, this is an advanced topic so if you get stuck, please read the associated [Background > Building Custom Components](../../background/components/components_custom) for further explanation.
+---
 
 The `ReactiveHTML` class provides bi-directional syncing of arbitrary HTML attributes and DOM properties with parameters on the subclass. The key part of the subclass is the `_template` variable. This is the HTML template that gets rendered and declares how to link parameters on the class to HTML attributes.
 
@@ -174,5 +176,4 @@ It also makes extensive use of the available objects in the namespace:
 
 
 ## Related Resources
-- Read the associated [Background > Building Custom Components](../../background/components/components_custom) for further explanation.
-- Learn how to load external dependencies for your custom components in [Background > Building Custom Components > External Dependencies](../../background/components/components_custom#external-dependencies)
+- Read the associated [Background > Building Custom Components](../../background/components/components_custom) for further explanation, including how to load external dependencies for your custom components.

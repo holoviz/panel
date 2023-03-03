@@ -2,6 +2,12 @@
 
 When interacting with functions which take a long time to run, realtime feedback can be a burden instead of being helpful. This guide addresses how to disable continuous updates with Panel `interact`.
 
+```{admonition} Prerequisites
+1. The [How to > Generate Widgets for Function Arguments](./interact_basics.md) guide covers how to generate widgets for function arguments with Panel interact.
+```
+
+---
+
 Let's first create a simple function:
 
 
@@ -23,4 +29,3 @@ pn.interact(f, x=10, throttled=True)
 
 - Read [Background > Widget Abbreviations for Panel Interact](../../background/interact/interact_abbreviations.md) for explanation.
 - See [How-to > Autogenerate Widgets for Functions](../interact/index.md) for solutions.
-- Consult [Reference > panel.interact] for technical details.

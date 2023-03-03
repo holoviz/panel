@@ -10,10 +10,10 @@ export class CardView extends ColumnView {
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.collapsed.change, () => this._collapse())
-    const {active_header_background, header_background, header_color, hide_header} = this.model.properties
+    const {active_header_background, collapsed, header_background, header_color, hide_header} = this.model.properties
     this.on_change([header_color, hide_header], () => this.render())
 
-    this.on_change([active_header_background, header_background], () => {
+    this.on_change([active_header_background, collapsed, header_background], () => {
       const header_background = this.header_background
       if (header_background == null)
 	return
@@ -38,6 +38,8 @@ export class CardView extends ColumnView {
     this._apply_classes(this.classes)
     this._apply_classes(this.model.classes)
     this._apply_visible()
+
+    this.class_list.add(...this.css_classes())
 
     const {button_css_classes, header_color, header_tag, header_css_classes} = this.model
 
@@ -67,12 +69,19 @@ export class CardView extends ColumnView {
       header_el.style.color = header_color != null ? header_color : ""
       this.shadow_el.appendChild(header_el)
       header.render()
+      header.after_render()
     }
     for (const child_view of this.child_views.slice(1)) {
       if (!this.model.collapsed)
         this.shadow_el.appendChild(child_view.el)
       child_view.render()
+      child_view.after_render()
     }
+  }
+
+  async update_children(): Promise<void> {
+    this.render()
+    this.invalidate_layout()
   }
 
   _toggle_button(): void {

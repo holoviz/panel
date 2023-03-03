@@ -46,14 +46,14 @@ def test_card_get_root_title(document, comm):
 
     assert isinstance(model, CardModel)
     assert model.children == [header, div1, div2]
-    assert header.children[0].text == "Test"
+    assert header.children[0].text == '&lt;h3&gt;Test&lt;/h3&gt;'
 
     div3 = Div()
     layout.header = div3
     assert header.children[0] is div3
 
     layout.header = None
-    assert header.children[0].text == "Test"
+    assert header.children[0].text == '&lt;h3&gt;Test&lt;/h3&gt;'
 
 
 def test_card_get_root_header(document, comm):

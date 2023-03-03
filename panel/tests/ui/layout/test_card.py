@@ -1,7 +1,7 @@
 import pytest
 
 from panel import Card
-from panel.tests.util import bokeh3_failing, serve_panel_widget
+from panel.tests.util import serve_panel_widget
 from panel.widgets import FloatSlider, TextInput
 
 try:
@@ -114,7 +114,7 @@ def test_card_title(page, port, card_components):
     card = Card(w1, w2, title=card_title)
     serve_panel_widget(page, port, card)
 
-    assert page.locator('.card-title').locator(".bk-clearfix").inner_text() == card_title
+    assert page.locator('.card-title').locator("div").inner_text() == card_title
 
 
 def test_card_background(page, port, card_components):
@@ -139,7 +139,6 @@ def test_card_background_legacy(page, port, card_components):
     assert f'background: {background};' in card_widget.get_attribute('style')
 
 
-@bokeh3_failing
 def test_card_header_color_formatting(page, port):
     header_color = 'rgb(0, 0, 128)'
     active_header_background = 'rgb(0, 128, 0)'

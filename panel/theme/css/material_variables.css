@@ -1,0 +1,19 @@
+:host, :root {
+    --bokeh-base-font: Roboto, sans-serif, Verdana;
+    --mdc-theme-primary: var(--jp-brand-color0, var(--panel-primary-color));
+    --mdc-theme-primary-lightened: rgba(var(--panel-primary-rgb), 0.35);
+    --mdc-theme-on-primary: var(--jp-ui-font-color0, var(--panel-on-primary-color));
+    --mdc-theme-secondary: var(--panel-secondary-color);
+    --mdc-theme-secondary-lightened: rgba(var(--panel-secondary-rgb), 0.8);
+    --mdc-theme-on-secondary: var(--panel-on-secondary-color);
+    --mdc-theme-background: var(--jp-layout-color0, var(--panel-body-background));
+    --mdc-theme-on-background: var(--jp-widgets-label-color, var(--panel-background-color));
+    --mdc-theme-surface: var(--jp-layout-color2, var(--panel-surface-color));
+    --mdc-theme-on-surface: var(--jp-ui-font-color2, var(--panel-on-surface-color));
+    --mdc-theme-text-primary-on-background: rgba(var(--panel-on-background-rgb), 0.87);
+    --mdc-typography--font-family: var(--bokeh-base-font);
+    --mdc-shape-small: 4px;
+    --mdc-shape-medium: 4px;
+    --mdc-shape-large: 0px;
+    color: var(--mdc-theme-on-background);
+}

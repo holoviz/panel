@@ -1,6 +1,14 @@
-# Defining Javascript callbacks
+# Link Many Objects in Javascript
 
-Sometimes defining a simple link between to objects is not sufficient, e.g. when there are a number of objects involved. In these cases it is helpful to be able to define arbitrary Javascript callbacks. A very simple example is a very basic calculator which allows multiplying or adding two values, in this case we have two widgets to input numbers, a selector to pick the operation, a display for the result and a button.
+This guide addresses how to write arbitrary JS callbacks linking one or more components.
+
+```{admonition} Prerequisites
+1. The [How to > Link Two Objects in Javascript](./links) guide demonstrates how to use the `.jslink` API to link parameters from two objects in Javascript, which is adequate in most cases.
+```
+
+---
+
+Sometimes defining a simple link between two objects is not sufficient, e.g. when there are a number of objects involved. In these cases it is helpful to be able to define arbitrary Javascript callbacks. A very simple example is a very basic calculator which allows multiplying or adding two values, in this case we have two widgets to input numbers, a selector to pick the operation, a display for the result and a button.
 
 To implement this we define a `jscallback`, which is triggered when the `Button.clicks` property changes and provide a number of `args` allowing us to access the values of the various widgets:
 
@@ -22,3 +30,6 @@ else
 
 pn.Row(value1, operator, value2, button, result)
 ```
+
+## Related Resources
+- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs

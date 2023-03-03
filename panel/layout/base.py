@@ -72,11 +72,10 @@ class Panel(Reactive):
     # Callback API
     #----------------------------------------------------------------
 
-    def _init_params(self) -> Dict[str, Any]:
-        return {
-            p: v for p, v in self.param.values().items()
-            if v is not None and p != 'objects'
-        }
+    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        if ('styles' in params or 'sizing_mode' in params) and self.sizing_mode in ('stretch_width', 'stretch_both'):
+            params['styles'] = dict(params.get('styles', {}), **{'overflow-x': 'auto'})
+        return super()._process_param_change(params)
 
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
@@ -85,6 +84,10 @@ class Panel(Reactive):
         msg = dict(msg)
         inverse = {v: k for k, v in self._property_mapping.items() if v is not None}
         preprocess = any(inverse.get(k, k) in self._preprocess_params for k in msg)
+
+        # ALERT: Find a better way to handle this
+        if 'styles' in msg and root is model and 'overflow-x' in msg['styles']:
+            del msg['styles']['overflow-x']
 
         obj_key = self._property_mapping['objects']
         if obj_key in msg:
@@ -146,8 +149,7 @@ class Panel(Reactive):
         if self._bokeh_model is None:
             raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
         model = self._bokeh_model()
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
         properties = self._get_properties(doc)
@@ -159,6 +161,16 @@ class Panel(Reactive):
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
+
+    def get_root(
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        preprocess: bool = True
+    ) -> Model:
+        root = super().get_root(doc, comm, preprocess)
+        # ALERT: Find a better way to handle this
+        if hasattr(root, 'styles') and 'overflow-x' in root.styles:
+            del root.styles['overflow-x']
+        return root
 
     def select(self, selector=None):
         """
@@ -780,6 +792,8 @@ class WidgetBox(ListPanel):
     _rename: ClassVar[Mapping[str, str | None]] = {
         'disabled': None, 'objects': 'children', 'horizontal': None
     }
+
+    _stylesheets = ['css/widgetbox.css']
 
     @property
     def _bokeh_model(self) -> Type[Model]: # type: ignore

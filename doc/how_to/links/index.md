@@ -1,43 +1,43 @@
-# Linking parameters
+# Link Parameters with the Callbacks API
 
-In the [Param how-to guide](../param/index), we have seen how Parameterized classes can be used to automatically generate a graphical user interface for Python code without any additional effort. If you need full control over how your GUI is set up, you can instead manually define widgets linking directly to other objects using either Python or JavaScript (JS) callbacks. Python callbacks are simple for Python users to write and can directly access Python data structures, while JS callbacks can directly manipulate the displayed HTML document and allow setting up dynamic behavior even for exported HTML files (with no Python process running).
+If you need full control over how your GUI is set up then you can manually define widgets that link directly to other objects using either Python or JavaScript (JS) callbacks. Python callbacks are simple for Python users to write and can directly access Python data structures, while JS callbacks can directly manipulate the displayed HTML document and allow setting up dynamic behavior even for exported HTML files (with no Python process running). This section contains how-to guides that address common tasks related the use of callbacks.
 
-::::{grid} 1 3 3 3
+::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} Watchers
-:link: watchers
-:link-type: doc
-
-Discover how to use the powerful but low-level `.param.watch` API provided by [param](https://param.pyviz.org) to trigger callbacks on parameters.
-:::
-
-:::{grid-item-card} Links in Python
+:::{grid-item-card} Create High-Level Python Links with `.link`
 :link: links
 :link-type: doc
 
-Discover how to use the convenient, high-level `.link` API to link parameters in Python.
+How to use the convenient, high-level `.link` API to link parameters in Python.
 :::
 
-:::{grid-item-card} Links in Javascript
+:::{grid-item-card} Create Low-Level Python Links with `.watch`
+:link: watchers
+:link-type: doc
+
+How to use the flexible, low-level `.watch` API to trigger callbacks in Python.
+:::
+
+:::{grid-item-card} Link Two Objects in Javascript
 :link: jslinks
 :link-type: doc
 
-Discover how to use the convenient, high-level `.jslink` API to link parameters in Javascript.
+How to link parameters of two objects in Javascript.
 :::
 
-:::{grid-item-card} Link plots in Javascript
-:link: jslinks
+:::{grid-item-card} Link Plot Parameters in Javascript
+:link: link_plots
 :link-type: doc
 
-Discover how to use `.jslink` to link Bokeh and HoloViews plot parameters in Javascript.
+How to link Bokeh and HoloViews plot parameters in Javascript.
 :::
 
-:::{grid-item-card} Javascript callbacks
+:::{grid-item-card} Link Many Objects in Javascript
 :link: jscallbacks
 :link-type: doc
 
-Discover how to use the `.jscallback` API to write arbitrary JS callbacks linking one or more components.
+How to write arbitrary Javascript callbacks linking one or more objects.
 :::
 
 ::::
@@ -48,8 +48,8 @@ Discover how to use the `.jscallback` API to write arbitrary JS callbacks linkin
 :hidden:
 :maxdepth: 2
 
-watchers
 links
+watchers
 jslinks
 link_plots
 jscallbacks

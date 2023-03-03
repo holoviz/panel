@@ -1,5 +1,9 @@
 # Access and Set Widget Values
 
+This guide addresses how to access and set widget values.
+
+---
+
 In addition to other parameters that govern widget behavior and appearance, Widget objects have a ``value`` parameter that can be used to access the current value state.
 
 
@@ -25,8 +29,7 @@ We can also use this value parameter to set the widget value:
 widget.value = '3'
 ```
 
-:::{admonition} See Also
-:class: seealso
+---
 
-* Learn more about Widgets in the <a href="../../background/components/components_overview.html#widgets">Background for Components</a>
-:::
+## Related Resources
+- Learn more about Panes in [Background > Components](../../background/components/components_overview.html#panes).

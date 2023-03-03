@@ -1,0 +1,34 @@
+:host, :root {
+    --panel-primary-color: #0072B5;
+    --panel-primary-rgb: 0,114,181;
+    --panel-on-primary-color: #ffffff;
+    --panel-on-primary-rgb: 255,255,255;
+    --panel-secondary-color: #E1E1E1;
+    --panel-secondary-rgb: 66,67,66;
+    --panel-on-secondary-color: #ffffff;
+    --panel-on-secondary-rgb: 255,255,255;
+    --panel-background-color: #ffffff;
+    --panel-background-rgb: 255,255,255;
+    --panel-on-background-color: #212529;
+    --panel-on-background-rgb: 33,37,41;
+    --panel-surface-color: #E1E1E1;
+    --panel-surface-rgb: 209, 209, 209;
+    --panel-on-surface-color: #000000;
+    --panel-on-surface-rgb: 0,0,0;
+    --primary-bg-color: #0d6efd;
+    --secondary-bg-color: #6c757d;
+    --success-bg-color: #198754;
+    --danger-bg-color: #dc3545;
+    --warning-bg-color: #ffc107;
+    --info-bg-color: #0dcaf0;
+    --light-bg-color: #f8f9fa;
+    --dark-bg-color: #212529;
+    --primary-text-color: #ffffff;
+    --secondary-text-color: #ffffff;
+    --success-text-color: #ffffff;
+    --danger-text-color: #ffffff;
+    --warning-text-color: #000000;
+    --info-text-color: #000000;
+    --light-text-color: #000000;
+    --dark-text-color: #ffffff;
+}

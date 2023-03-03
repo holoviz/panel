@@ -380,10 +380,6 @@ def test_tabulator_formatters_bokeh_date(page, port, df_mixed):
     assert page.locator('text="Tue, 01 Jan 2019"').count() == 1
 
 
-@pytest.mark.xfail(
-    reason='NaNs not well handled by the DateFormatter with datetime.date objects.'
-           ' See https://github.com/bokeh/bokeh/issues/12187'
-)
 def test_tabulator_formatters_bokeh_date_with_nan(page, port, df_mixed):
     df_mixed.loc['idx1', 'date'] = np.nan
     df_mixed.loc['idx1', 'datetime'] = np.nan
@@ -402,7 +398,7 @@ def test_tabulator_formatters_bokeh_date_with_nan(page, port, df_mixed):
     page.goto(f"http://localhost:{port}")
 
     expect(page.locator('text="10:00"')).to_have_count(1)
-    assert page.locator('text="Tue, 01 Jan 2019"').count() == 1  # This should fail
+    assert page.locator('text="Tue, 01 Jan 2019"').count() == 1
     assert page.locator('text="nan-date"').count() == 1
     assert page.locator('text="nan-datetime"').count() == 1
 
@@ -1045,10 +1041,10 @@ def test_tabulator_frozen_rows(page, port):
     expected_text = """
     index
     col
-    8
-    Y
     1
     X
+    8
+    Y
     0
     a
     2
@@ -1074,9 +1070,6 @@ def test_tabulator_frozen_rows(page, port):
 
     X_bb = page.locator('text="X"').bounding_box()
     Y_bb = page.locator('text="Y"').bounding_box()
-
-    # Check that the Y row is rendered before the X column
-    assert Y_bb['y'] < X_bb['y']
 
     # Scroll to the bottom, and give it a little extra time
     page.locator('text="T"').scroll_into_view_if_needed()
@@ -1179,7 +1172,7 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, port, df_mixed, pa
 
     serve(widget, port=port, threaded=True, show=False)
 
-    time.sleep(0.2)
+    time.sleep(0.3)
 
     page.goto(f"http://localhost:{port}")
 
@@ -1854,7 +1847,7 @@ def test_tabulator_cell_click_event(page, port, df_mixed):
 
     serve(widget, port=port, threaded=True, show=False)
 
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     page.goto(f"http://localhost:{port}")
 

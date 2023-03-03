@@ -64,7 +64,8 @@ BASE_TEMPLATE = _env.get_template('base.html')
 ERROR_TEMPLATE = _env.get_template('error.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
-CDN_DIST = f"https://cdn.holoviz.org/panel/{JS_VERSION}/dist/"
+CDN_URL = f"https://cdn.holoviz.org/panel/{JS_VERSION}/"
+CDN_DIST = f"{CDN_URL}dist/"
 DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
@@ -187,6 +188,8 @@ def patch_stylesheet(stylesheet, dist_url):
     url = stylesheet.url
     if not url.startswith('http') and not url.startswith(dist_url):
         patched_url = f'{dist_url}{url}'
+    elif url.startswith(CDN_DIST+dist_url) and dist_url != CDN_DIST:
+        patched_url = url.replace(CDN_DIST+dist_url, dist_url)
     elif url.startswith(CDN_DIST) and dist_url != CDN_DIST:
         patched_url = url.replace(CDN_DIST, dist_url)
     else:
@@ -204,8 +207,19 @@ def patch_model_css(root, dist_url):
     ALERT: Should find better solution before official Bokeh 3.x compatible release
     """
     # Patch model CSS properties
+    doc = root.document
+    if doc:
+        held = doc.callbacks.hold_value
+        events = list(doc.callbacks._held_events)
+        doc.hold()
     for stylesheet in root.select({'type': ImportedStyleSheet}):
         patch_stylesheet(stylesheet, dist_url)
+    if doc:
+        doc.callbacks._held_events = events
+        if held:
+            doc.callbacks._hold = held
+        else:
+            doc.unhold()
 
 def global_css(name):
     if RESOURCE_MODE == 'server':
@@ -229,9 +243,12 @@ def bundled_files(model, file_type='javascript'):
         if url in shared:
             prefixed = filepath
             test_path = BUNDLE_DIR / test_filepath
-        else:
-            prefixed = f'{name}/{filepath}'
+        elif not test_filepath.startswith(name):
+            prefixed = f'{name}/{test_filepath}'
             test_path = bdir / test_filepath
+        else:
+            prefixed = test_filepath
+            test_path = BUNDLE_DIR / test_filepath
         if test_path.is_file():
             if RESOURCE_MODE == 'server':
                 files.append(f'static/extensions/panel/bundled/{prefixed}')
@@ -243,7 +260,7 @@ def bundled_files(model, file_type='javascript'):
             files.append(url)
     return files
 
-def bundle_resources(roots, resources):
+def bundle_resources(roots, resources, notebook=False):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
     js_resources = css_resources = resources
@@ -289,7 +306,7 @@ def bundle_resources(roots, resources):
 
     return Bundle(
         js_files=js_files, js_raw=js_raw, css_files=css_files,
-        css_raw=css_raw, hashes=hashes
+        css_raw=css_raw, hashes=hashes, notebook=notebook
     )
 
 
@@ -339,7 +356,7 @@ class Resources(BkResources):
             elif (resource.startswith(state.base_url) or resource.startswith('static/')):
                 if resource.startswith(state.base_url):
                     resource = resource[len(state.base_url):]
-                elif state.rel_path:
+                if state.rel_path:
                     resource = f'{state.rel_path}/{resource}'
                 elif self.absolute and self.mode == 'server':
                     resource = f'{self.root_url}{resource}'
@@ -384,8 +401,11 @@ class Resources(BkResources):
         files = super(Resources, self).js_files
         self.extra_resources(files, '__javascript__')
 
+        files += list(config.js_files.values())
+        if config.design:
+            files += list(config.design._resources.get('js', {}).values())
+
         js_files = self.adjust_paths(files)
-        js_files += list(config.js_files.values())
 
         # Load requirejs last to avoid interfering with other libraries
         dist_dir = self.dist_dir
@@ -405,6 +425,15 @@ class Resources(BkResources):
         from ..config import config
         modules = list(config.js_modules.values())
         self.extra_resources(modules, '__javascript_modules__')
+
+        if not config.design:
+            return modules
+
+        for resource in config.design._resources.get('js_modules').values():
+            if resource not in modules:
+                modules.append(resource)
+        modules = self.adjust_paths(modules)
+
         return modules
 
     @property
@@ -414,6 +443,8 @@ class Resources(BkResources):
         files = super(Resources, self).css_files
         self.extra_resources(files, '__css__')
         css_files = self.adjust_paths(files)
+        if config.design:
+            css_files += list(config.design._resources.get('font', {}).values())
 
         for cssf in config.css_files:
             if os.path.isfile(cssf) or cssf in files:
@@ -443,7 +474,17 @@ class Bundle(BkBundle):
                         js_module = component_resource_path(model, '__javascript_modules__', js_module)
                     if js_module not in js_modules:
                         js_modules.append(js_module)
-        self.js_modules = kwargs.pop("js_modules", js_modules)
+
+        if config.design:
+            design_name = config.design.__name__.lower()
+            for resource in config.design._resources.get('js_modules', {}).values():
+                if resource in js_modules:
+                    continue
+                elif not isurl(resource):
+                    resource = f'{CDN_DIST}bundled/{design_name}/{resource}'
+                js_modules.append(resource)
+
+        self.js_modules = self._adjust_paths(kwargs.pop("js_modules", js_modules))
         super().__init__(**kwargs)
 
     def _adjust_paths(self, resources):

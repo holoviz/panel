@@ -1,5 +1,9 @@
 # Customize Loading Icon
 
+This guide addresses how to customize the loading icon.
+
+---
+
 All components also have a `loading` parameter which indicates that they are currently processing some event. Setting the parameter will display the global `loading_spinner` on top of the component.
 
 First, let's configure the style and color of loading spinner:
@@ -28,7 +32,7 @@ Next, let's display a simple component and set `loading=True`:
 
 ```{pyodide}
 
-pn.pane.HTML(styles=dict(background='#00aa41'), width=100, height=100, loading=True)
+pn.pane.HTML(background='#00aa41', width=100, height=100, loading=True)
 
 ```
 
@@ -38,3 +42,7 @@ pn.pane.HTML(styles=dict(background='#00aa41'), width=100, height=100, loading=T
 Setting the loading icon may not appear to function properly on this page due to incompatibility with the tooling specific to the documentation.
 
 :::
+
+---
+
+## Related Resources

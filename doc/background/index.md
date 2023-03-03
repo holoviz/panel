@@ -2,10 +2,17 @@
 
 The Background section aims to clarify, deepen, and broaden the understanding of Panel with discussions about topics at a high-level or from alternate angles. This may include reasoning about design decisions, historical development, and technical constraints.
 
-Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md) that new users must internalize in order to begin working, this Background section is intended to help practitioners form and strengthen a conceptual web that facilitates new and advanced usage directions.
+Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md), which new users must complete before working with Panel, this Background section is intended to help practitioners form and strengthen a conceptual web that facilitates new and advanced usage directions.`
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Choose an API
+:link: apis/index
+:link-type: doc
+
+Discover the different APIs offered by Panel and how to choose between them.
+:::
 
 :::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Components
 :link: components/components_overview
@@ -19,13 +26,6 @@ Deepen your understanding about Panel's visible objects and layouts types.
 :link-type: doc
 
 Learn about building custom Panel components.
-:::
-
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` APIs
-:link: api/api
-:link-type: doc
-
-Explore the reasoning for each of Panel's APIs.
 :::
 
 :::{grid-item-card} {octicon}`multi-select;2.5em;sd-mr-1` Panel and Param
@@ -72,8 +72,8 @@ Learn about context for using Templates in Panel.
 :hidden:
 :maxdepth: 2
 
+apis/index
 components/components_overview
-api/api
 param/param
 comparisons
 comms

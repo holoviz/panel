@@ -155,13 +155,11 @@ def _model_json(model: Model, target: str) -> Tuple[Document, str]:
     docs_json, _ = standalone_docs_json_and_render_items(
         [model], suppress_callback_warning=True
     )
-
     doc_json = list(docs_json.values())[0]
-    root_id = doc_json['roots']['root_ids'][0]
 
     return doc, json.dumps(dict(
         target_id = target,
-        root_id   = root_id,
+        root_id   = model.ref['id'],
         doc       = doc_json,
         version   = __version__,
     ))

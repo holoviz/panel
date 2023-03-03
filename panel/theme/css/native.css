@@ -1,0 +1,34 @@
+:host, :root {
+    --background-color: var(--jp-layout-color0, var(--panel-background-color));
+    --background-text-color: var(--jp-widgets-label-color, var(--panel-on-background-color));
+    --surface-color: var(--jp-layout-color1, var(--panel-surface-color));
+    --surface-text-color: var(--jp-ui-font-color1, var(--panel-on-surface-color));
+}
+
+.bk-input {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.bk-input[disabled] {
+    background-color: var(--surface-color);
+    color: var(--surface-text-color);
+    opacity: 0.5;
+}
+
+/* Quill editor */
+
+.ql-editor, .ql-editor.ql-blank::before {
+    color: var(--background-text-color);
+}
+
+.ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options {
+    color: var(--surface-text-color);
+    background-color: var(--surface-color);
+}
+
+:host(.card-title) h1, :host(.card-title) h2, :host(.card-title) h3,
+:host(.card-title) h4, :host(.card-title) h5, :host(.card-title) h6 {
+    margin-block-end: 0.2em;
+    margin-block-start: 0.2em;
+}

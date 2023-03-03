@@ -1,6 +1,16 @@
-# Custom widgets
+# Declare Custom Widgets
 
-In the previous section we saw how parameters can automatically be turned into widgets. This is possible because internally Panel maintains a mapping between parameter types and widget types. However, sometimes the default widget does not provide the most convenient UI and we want to provide an explicit hint to Panel to tell it how to render a parameter. This is possible using the ``widgets`` argument to the `Param` pane. Using the ``widgets`` keyword we can declare a mapping between the parameter name and the type of widget that is desired (as long as the widget type supports the types of values held by the parameter type).
+This guide addresses how to extend Param based UIs with custom widgets.
+
+```{admonition} Prerequisites
+1. The [How to > Generate Widgets from Parameters](./uis.md) guide demonstrates the default case of automatically generating widgets.
+```
+
+---
+
+## Custom type
+
+`Param Parameters` can automatically be turned into widgets because Panel maintains a mapping between `Parameter` types and widget types. However, sometimes the default widget does not provide the most convenient UI and we want to provide an explicit hint to Panel to tell it how to render a `Parameter`. Using the `widgets` keyword we can declare a mapping between the parameter name and the type of widget that is desired (as long as the widget type supports the types of values held by the parameter type).
 
 As an example, we can map a string and a number Selector to a `RadioButtonGroup` and `DiscretePlayer` respectively.
 
@@ -51,7 +61,7 @@ By default, a param Pane has a title that is derived from the class name of its 
 pn.Param(CustomExample.param, name="Custom Name")
 ```
 
-## Sort
+## Custom Sort
 
 You can sort the widgets alphabetically by setting `sort=True`
 
@@ -69,3 +79,8 @@ def sort_func(x):
 
 pn.Param(CustomExample.param, sort=sort_func, name="Sort by Label Length Example")
 ```
+
+---
+
+## Related Resources
+- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs

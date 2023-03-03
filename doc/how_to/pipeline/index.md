@@ -2,8 +2,6 @@
 
 A Panel Pipeline allows you to connect multiple panels into a sequential user interface where the output of one stage feeds into the next. These How-to pages provide solutions for common tasks related to creating and customizing pipelines.
 
-## Initialize Components
-
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 

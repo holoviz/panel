@@ -1,4 +1,4 @@
-import {StyleSheetLike, ImportedStyleSheet, undisplay} from "@bokehjs/core/dom"
+import {undisplay} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
 import {build_views} from "@bokehjs/core/build_views"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
@@ -17,6 +17,7 @@ import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class TableEditEvent extends ModelEvent {
   event_name: string = "table-edit"
+  publish: boolean = true
 
   constructor(readonly column: string, readonly row: number, readonly pre: boolean) {
     super()
@@ -29,6 +30,7 @@ export class TableEditEvent extends ModelEvent {
 
 export class CellClickEvent extends ModelEvent {
   event_name: string = "cell-click"
+  publish: boolean = true
 
   constructor(readonly column: string, readonly row: number) {
     super()
@@ -291,8 +293,8 @@ export class DataTabulatorView extends HTMLBoxView {
     super.connect_signals()
 
     const p = this.model.properties
-    const {configuration, layout, columns, theme, groupby} = p;
-    this.on_change([configuration, layout, groupby, theme], debounce(() => this.invalidate_render(), 20, false))
+    const {configuration, layout, columns, groupby} = p;
+    this.on_change([configuration, layout, groupby], debounce(() => this.invalidate_render(), 20, false))
 
     this.on_change([columns], () => {
       this.tabulator.setColumns(this.getColumns())
@@ -353,6 +355,18 @@ export class DataTabulatorView extends HTMLBoxView {
     this.connect(this.model.source.selected.properties.indices.change, () => this.setSelection())
   }
 
+  get groupBy(): boolean | ((data: any) => string) {
+    const groupby = (data: any) => {
+      const groups = []
+      for (const g of this.model.groupby) {
+        const group = g + ': ' + data[g]
+        groups.push(group)
+      }
+      return groups.join(', ')
+    }
+    return this.model.groupby.length ? groupby : false
+  }
+
   get sorters(): any[] {
     const sorters = []
     if (this.model.sorters.length)
@@ -372,14 +386,14 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   redraw(): void {
-    if (!this._building) {
-      if (this.tabulator.columnManager.element != null) {
-	this.tabulator.columnManager.redraw(true);
-      }
-      if (this.tabulator.rowManager.renderer != null) {
-	this.tabulator.rowManager.redraw(true);
-	this.setStyles()
-      }
+    if (this._building)
+      return
+    if (this.tabulator.columnManager.element != null) {
+      this.tabulator.columnManager.redraw(true);
+    }
+    if (this.tabulator.rowManager.renderer != null) {
+      this.tabulator.rowManager.redraw(true)
+      this.setStyles()
     }
   }
 
@@ -387,23 +401,20 @@ export class DataTabulatorView extends HTMLBoxView {
     super.after_layout()
     if (this.tabulator != null && this._initializing)
       this.redraw()
+    this._initializing = false
   }
 
   render(): void {
     super.render()
     this._initializing = true
     const container = div({style: "display: contents;"})
-    const el = div({class: "pnx-tabulator", style: "width: 100%; height: 100%;"})
+    const el = div({class: "pnx-tabulator", style: "width: 100%; height: 100%"})
     container.appendChild(el)
-    let configuration = this.getConfiguration()
+    this.shadow_el.appendChild(container)
 
+    let configuration = this.getConfiguration()
     this.tabulator = new Tabulator(el, configuration)
     this.init_callbacks()
-    this.renderChildren()
-
-    this.setHidden()
-
-    this.shadow_el.appendChild(container)
   }
 
   tableInit(): void {
@@ -423,15 +434,10 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.on("tableBuilding", () => this.tableInit())
     this.tabulator.on("tableBuilt", () => this.tableBuilt())
 
-    // Disable frozenColumns during rendering (see https://github.com/olifolkerd/tabulator/issues/3530)
-    this.tabulator.on("dataLoading", () => {
-      this.tabulator.modules.frozenColumns.active = false
-    })
-
     // Rendering callbacks
     this.tabulator.on("selectableCheck", (row: any) => {
       const selectable = this.model.selectable_rows
-      return (selectable == null) || (selectable.indexOf(row._row.data._index) >= 0)
+      return (selectable == null) || selectable.includes(row._row.data._index)
     })
     this.tabulator.on("tooltips", (cell: any) => {
       return cell.getColumn().getField() + ": " + cell.getValue();
@@ -476,19 +482,14 @@ export class DataTabulatorView extends HTMLBoxView {
 
   tableBuilt(): void {
     this._building = false
-    this.setHidden()
     this.setSelection()
-
-    // For remote pagination initialize on tableBuilt
-    this.setMaxPage()
-    this.tabulator.setPage(this.model.page)
-    this.setStyles()
     this.renderChildren()
-    this.setGroupBy()
-    this.setFrozen()
-    this.tabulator.modules.frozenColumns.active = true
-    this.tabulator.modules.frozenColumns.layout()
-    this._initializing = false
+    this.setStyles()
+
+    if (this.model.pagination) {
+      this.setMaxPage()
+      this.tabulator.setPage(this.model.page)
+    }
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
@@ -548,7 +549,11 @@ export class DataTabulatorView extends HTMLBoxView {
       pagination: this.model.pagination != null,
       paginationMode: this.model.pagination,
       paginationSize: this.model.page_size,
-      paginationInitialPage: 1
+      paginationInitialPage: 1,
+      groupBy: this.groupBy,
+      frozenRows: (row: any) => {
+	return this.model.frozen_rows.length ? this.model.frozen_rows.includes(row._row.data._index) : false
+      }
     }
     if (this.model.pagination === "remote") {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
@@ -658,7 +663,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this.columns = new Map()
     const config_columns: (any[] | undefined) = this.model.configuration?.columns;
     let columns = []
-    columns.push({field: '_index', frozen: true})
+    columns.push({field: '_index', frozen: true, visible: false})
     if (config_columns != null) {
       for (const column of config_columns)
         if (column.columns != null) {
@@ -771,6 +776,7 @@ export class DataTabulatorView extends HTMLBoxView {
           this.renderEditor(column, cell, onRendered, success, cancel)
         }
       }
+      tab_column.visible = (tab_column.visible != false && !this.model.hidden_columns.includes(column.field))
       tab_column.editable = () => (this.model.editable && (editor.default_view != null))
       if (tab_column.headerFilter) {
         if ((typeof tab_column.headerFilter) === 'boolean' &&
@@ -785,7 +791,8 @@ export class DataTabulatorView extends HTMLBoxView {
       }
       tab_column.cellClick = (_: any, cell: any) => {
         const index = cell.getData()._index
-        this.model.trigger_event(new CellClickEvent(column.field, index))
+	const event = new CellClickEvent(column.field, index)
+	this.model.trigger_event(event)
       }
       if (config_columns == null)
         columns.push(tab_column)
@@ -799,7 +806,8 @@ export class DataTabulatorView extends HTMLBoxView {
         hozAlign: "center",
         cellClick: (_: any, cell: any) => {
           const index = cell.getData()._index
-          this.model.trigger_event(new CellClickEvent(col, index))
+	  const event = new CellClickEvent(col, index)
+          this.model.trigger_event(event)
         }
       }
       columns.push(button_column)
@@ -839,6 +847,7 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.rowManager.setData(data, true, false)
     else
       this.tabulator.setData(data)
+
     this.postUpdate()
   }
 
@@ -853,8 +862,6 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   postUpdate(): void {
-    if (!this.model.pagination)
-      this.setFrozen()
     this.setSelection()
   }
 
@@ -869,8 +876,9 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setFrozen(): void {
-    for (const row of this.model.frozen_rows)
+    for (const row of this.model.frozen_rows) {
       this.tabulator.getRow(row).freeze()
+    }
   }
 
   updatePage(pageno: number): void {
@@ -882,51 +890,13 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setGroupBy(): void {
-    if (this.model.groupby.length == 0) {
-      this.tabulator.setGroupBy(false)
-      return
-    }
-    const groupby = (data: any) => {
-      const groups = []
-      for (const g of this.model.groupby) {
-        const group = g + ': ' + data[g]
-        groups.push(group)
-      }
-      return groups.join(', ')
-    }
-    // Need to call it twice, see https://github.com/olifolkerd/tabulator/issues/3666
-    this.tabulator.setGroupBy(groupby)
-    this.tabulator.setGroupBy(groupby)
+    this.tabulator.setGroupBy(this.groupBy)
   }
 
   setSorters(): void {
     if (this._updating_sort)
       return
     this.tabulator.setSort(this.sorters)
-  }
-
-  override styles(): StyleSheetLike[] {
-    const styles = super.styles()
-    let theme: string
-    let theme_: string
-    if (this.model.theme == "default") {
-      theme = "tabulator"
-    }
-    else {
-      if (this.model.theme == "bootstrap") {
-        theme_ = "bootstrap3"
-      }
-      else if (this.model.theme == "semantic-ui") {
-        theme_ = "semanticui"
-      }
-      else {
-        theme_ = this.model.theme
-      }
-      theme = "tabulator_" + theme_
-    }
-    const css = this.model.theme_url + theme + ".min.css"
-    styles.push(new ImportedStyleSheet(css))
-    return styles
   }
 
   setStyles(): void {
@@ -937,7 +907,6 @@ export class DataTabulatorView extends HTMLBoxView {
     for (const r of style_data.keys()) {
       const row_style = style_data.get(r)
       const row = this.tabulator.getRow(r)
-      console.log(row, row_style)
       if (!row)
         continue
       const cells = row._row.cells
@@ -965,7 +934,7 @@ export class DataTabulatorView extends HTMLBoxView {
   setHidden(): void {
     for (const column of this.tabulator.getColumns()) {
       const col = column._column
-      if ((col.field == '_index') || (this.model.hidden_columns.indexOf(col.field) > -1))
+      if ((col.field == '_index') || this.model.hidden_columns.includes(col.field))
         column.hide()
       else
         column.show()
@@ -1128,8 +1097,6 @@ export namespace DataTabulator {
     source: p.Property<ColumnDataSource>
     sorters: p.Property<any[]>
     cell_styles: p.Property<any>
-    theme: p.Property<string>
-    theme_url: p.Property<string>
   }
 }
 
@@ -1174,8 +1141,6 @@ export class DataTabulator extends HTMLBox {
       source:         [ Ref(ColumnDataSource)       ],
       sorters:        [ Array(Any),              [] ],
       cell_styles:    [ Any,                     {} ],
-      theme:          [ String,            "simple" ],
-      theme_url:      [ String, "https://unpkg.com/tabulator-tables@5.3.2/dist/css/"]
     }))
   }
 }

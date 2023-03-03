@@ -1,4 +1,12 @@
-# Generating UIs using Param
+# Generate Widgets from `Parameters`
+
+This guide addresses how to generate UIs from Parameterized classes without writing any GUI related code.
+
+```{admonition} Prerequisites
+1. The [Param User Guide](https://param.holoviz.org/index.html) provides the conceptual foundation for use of `Parameterized` objects.
+```
+
+---
 
 Parameters are Python attributes extended using the [Param library](https://param.holoviz.org) to support types, ranges, and documentation, which turns out to be just the information you need to automatically create widgets for each parameter.
 
@@ -46,7 +54,8 @@ BaseClass.num_int
 The reverse is also true; editing a parameter from Python will automatically update any widgets that were generated from the parameter:
 
 ```{pyodide}
-BaseClass.int_list = [1, 7]
+BaseClass.num_int = 1
+pn.Param(BaseClass.param.num_int)
 ```
 
 Passing the ``.param`` object renders the full set of widgets, while passing a single parameter will display just one widget. In this way we can easily declare exactly which parameters to display:
@@ -83,8 +92,13 @@ example = Example()
 pn.Param(example.param)
 ```
 
-`Example.timestamps` records the times you pressed the "record timestamp" button.
+For example, the `Example.timestamps` Parameter records the timestamps from every "record timestamp" button press above. Rerun the code block below after clicking the button in order to see the output in the docs.
 
 ```{pyodide}
 Example.timestamps
 ```
+
+---
+
+## Related Resources
+- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs

@@ -41,7 +41,9 @@ class PlayerBase(Widget):
 
     height = param.Integer(default=80)
 
-    width = param.Integer(default=510)
+    width = param.Integer(default=510, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
 
