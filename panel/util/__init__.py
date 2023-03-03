@@ -284,6 +284,17 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
             p.constant = constant
 
 
+def eval_function(function):
+    args, kwargs = (), {}
+    if hasattr(function, '_dinfo'):
+        arg_deps = function._dinfo['dependencies']
+        kw_deps = function._dinfo.get('kw', {})
+        if kw_deps or any(isinstance(d, param.Parameter) for d in arg_deps):
+            args = (getattr(dep.owner, dep.name) for dep in arg_deps)
+            kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
+    return function(*args, **kwargs)
+
+
 def lazy_load(module, model, notebook=False, root=None, ext=None):
     if module in sys.modules:
         model_cls = getattr(sys.modules[module], model)

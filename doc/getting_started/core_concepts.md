@@ -42,6 +42,8 @@ Let's start simple and answer the question "what is param?"
 - Param is a framework that lets Python classes have attributes with defaults, type/value validation and callbacks when a value changes.
 - Param is similar to other frameworks like [Python dataclasses](https://docs.python.org/3/library/dataclasses.html), [pydantic](https://pydantic-docs.helpmanual.io/) and [traitlets](https://traitlets.readthedocs.io/en/stable/)
 
+One of the most important concepts to understand in both Param and Panel is the ability to use parameters as references to drive interactivity. This is often called reactivity and the most well known instance of this approach are spreadsheet applications like Excel. When you reference a particular cell in the formula of another cell, changing the original cell will automatically trigger an update in all cells that reference. The same concept applies to parameter objects.
+
 One of the main things to understand about param in the context of its use in Panel is the distinction between the parameter **value** and the parameter **object**. The **value** represents the current value of a parameter at a particular point in time, while the **object** holds metadata about the parameter but also acts as a **reference** to the parameters value across time. In many cases you can pass a parameter **object** and Panel will automatically resolve the current value **and** reactively update when that parameter changes. Let's take a widget as an example:
 
 ```python
@@ -51,6 +53,7 @@ text.value # 👈 this reflects the current value
 text.param.value # 👈 can be used as a reference to the live value
 ```
 
+We will dive into this more deeply later, for now just remember that parameters allow you to pass around a reference to a value that automatically updates if the original value changes.
 
 ## Display and rendering
 
@@ -219,6 +222,7 @@ To build an interactive application you will want to add widget components (such
 
 ```{pyodide}
 import panel as pn
+
 x = pn.widgets.IntSlider(name='x', start=0, end=100)
 
 def square(x):
@@ -229,30 +233,59 @@ pn.Row(pn.bind(square, x))
 
 The `pn.bind` function let's us bind widgets (and parameter **objects**) to a function that returns an object to be displayed. Once bound the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily.
 
-
 :::{admonition} Reminder
 :class: info
 
 Remember how we talked about the difference between a parameter **value** and a parameter **object**. In the previous example the widget itself is effectively an alias for the parameter object, i.e. the binding operation is exactly equivalent to `pn.bind(square, x.param.value)`. This is true for all widgets, the widget itself is an alias for the widgets `value` parameter.
 :::
 
-
-In certain cases reactivity isn't what is needed, e.g. if you want very fine grained control over specific parameters. To achieve this we have to dig a bit further into Param functionality, specifically we need to learn about watching parameters. To `watch` a parameter means to declare a callback that fires when the parameter value changes. As an example let's rewrite the example above using a watcher:
+The approach above is quite heavy handed because whenever the slider value changes Panel will re-create a new Pane and re-render the output. If we want more fine-grained control we can instead explicitly instantiate a `Markdown` pane and pass it bound functions and parameters by reference:
 
 ```{pyodide}
 import panel as pn
+
 x = pn.widgets.IntSlider(name='x', start=0, end=100)
-square = pn.panel(f'{x.value} squared is {x.value**2}')
+background = pn.widgets.ColorPicker(name='Background', value='lightgray')
 
-def update_square(event):
-    square.object = f'{x.value} squared is {x.value**2}'
+def square(x):
+    return f'{x} squared is {x**2}'
 
-x.param.watch(update_square, 'value')
+def styles(background):
+    return {'background-color': background, 'padding': '0 10px'}
 
-pn.Row(x, square)
+pn.Column(
+    x,
+    background,
+    pn.pane.Markdown(pn.bind(square, x), styles=pn.bind(styles, background))
+)
 ```
 
-The first thing you will not is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding. At the same time this is also more explicit however, and also provides more control over very specific, fine-grained updates.
+To achieve the same thing using more classic callbacks we have to dig a bit further into Param functionality, specifically we need to learn about watching parameters. To `watch` a parameter means to declare a callback that fires when the parameter value changes. As an example let's rewrite the example above using a watcher:
+
+```{pyodide}
+import panel as pn
+
+x = pn.widgets.IntSlider(name='x', start=0, end=100)
+background = pn.widgets.ColorPicker(name='Background', value='lightgray')
+
+square = pn.pane.Markdown(
+    f'{x.value} squared is {x.value**2}',
+    styles={'background-color': background.value, 'padding': '0 10px'}
+)
+
+def update_square(event):
+    square.object = f'{event.new} squared is {event.new**2}'
+
+def update_styles(event):
+    square.styles = {'background-color': event.new, 'padding': '0 10px'}
+
+x.param.watch(update_square, 'value')
+background.param.watch(update_styles, 'value')
+
+pn.Row(x, background, square)
+```
+
+The first thing you will not is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding.
 
 ## Templates
 
@@ -261,7 +294,6 @@ Once you have started to build an application you will probably want to make it 
 ```python
 pn.config.template = 'fast'
 ```
-
 
 :::{admonition} Note
 :class: info
@@ -294,9 +326,12 @@ def plot(freq, ampl):
     ax.plot(xs, ys)
     return fig
 
+mpl = pn.pane.Matplotlib(
+    pn.bind(plot, freq, ampl)
+)
+
 pn.Column(
-    '# Sine curve',
-    pn.bind(plot, freq, ampl),
+    '# Sine curve', mpl
 ).servable(area='main')
 ```
 

@@ -168,7 +168,9 @@ class CompositeWidget(Widget):
             layout['sizing_mode'] = 'stretch_width'
         self._composite = self._composite_type(**layout)
         self._models = self._composite._models
-        self.param.watch(self._update_layout_params, layout_params)
+        self._callbacks.append(
+            self.param.watch(self._update_layout_params, layout_params)
+        )
 
     def _update_layout_params(self, *events: param.parameterized.Event) -> None:
         updates = {event.name: event.new for event in events}
