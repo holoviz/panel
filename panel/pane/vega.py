@@ -195,6 +195,8 @@ class Vega(ModelPane):
             e: param.Dict() if stype == 'interval' else param.List()
             for e, stype in self._selections.items()
         }
+        if self.selection and (set(self.selection.param) - {'name'}) == set(params):
+            return
         self.selection = type('Selection', (param.Parameterized,), params)()
 
     @classmethod
