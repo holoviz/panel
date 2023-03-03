@@ -512,11 +512,64 @@ class Reactive(Syncable, Viewable):
     the parameters to other objects.
     """
 
+    # Parameter values which should not be treated like references
+    _ignored_refs: ClassVar[List[str]] = []
+
     _rename: ClassVar[Mapping[str, str | None]] = {
         'design': None, 'loading': None
     }
 
     __abstract = True
+
+    def __init__(self, **params):
+        params, refs = self._extract_refs(params)
+        super().__init__(**params)
+        self._refs = refs
+        self._setup_refs(refs)
+
+    def _extract_refs(self, params):
+        processed, refs = {}, {}
+        for pname, value in params.items():
+            if pname not in self.param or pname in self._ignored_refs:
+                processed[pname] = value
+                continue
+            if isinstance(value, param.Parameter):
+                refs[pname] = value
+                value = getattr(value.owner, value.name)
+                if self.param[pname].allow_None and value is None:
+                    continue
+            elif hasattr(value, '_dinfo'):
+                refs[pname] = value
+                value = value()
+            processed[pname] = value
+        return processed, refs
+
+    def _sync_refs(self, *events):
+        updates = {}
+        for pname, p in self._refs.items():
+            if isinstance(p, param.Parameter):
+                deps = (p,)
+            else:
+                deps = tuple(p._dinfo['dependencies']) + tuple(p._dinfo['kw'].values())
+            if not any((dep.owner is e.obj and dep.name == e.name) for dep in deps for e in events):
+                continue
+            if isinstance(p, param.Parameter):
+                updates[pname] = getattr(p.owner, p.name)
+            else:
+                updates[pname] = p()
+        self.param.update(updates)
+
+    def _setup_refs(self, refs):
+        groups = defaultdict(list)
+        for pname, p in refs.items():
+            if isinstance(p, param.Parameter):
+                groups[p.owner].append(p.name)
+            else:
+                subparameters = list(p._dinfo['dependencies'])+list(p._dinfo['kw'].values())
+                for sp in subparameters:
+                    groups[sp.owner].append(sp.name)
+        for owner, pnames in groups.items():
+            owner.param.watch(self._sync_refs, list(set(pnames)))
 
     #----------------------------------------------------------------
     # Private API
@@ -812,10 +865,12 @@ class SyncableData(Reactive):
         super().__init__(**params)
         self._data = None
         self._processed = None
-        self.param.watch(self._validate, self._data_params)
+        callbacks = [self.param.watch(self._validate, self._data_params)]
         if self._data_params:
-            self.param.watch(self._update_cds, self._data_params)
-        self.param.watch(self._update_selected, 'selection')
+            callbacks.append(
+                self.param.watch(self._update_cds, self._data_params)
+            )
+        callbacks.append(self.param.watch(self._update_selected, 'selection'))
         self._validate()
         self._update_cds()
 
