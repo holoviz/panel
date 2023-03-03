@@ -135,7 +135,7 @@ class FileDownload(Widget):
         }
     }
 
-    _ignore_refs: ClassVar[List[str]] = ['callback']
+    _ignored_refs: ClassVar[List[str]] = ['callback']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'callback': None, 'file': None, '_clicks': 'clicks'

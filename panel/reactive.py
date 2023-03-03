@@ -530,11 +530,28 @@ class Reactive(Syncable, Viewable):
         self._setup_refs(refs)
 
     def _extract_refs(self, params):
+        from .depends import param_value_if_widget
         processed, refs = {}, {}
         for pname, value in params.items():
             if pname not in self.param or pname in self._ignored_refs:
                 processed[pname] = value
                 continue
+
+            # Only consider extracting reference if the provided value is not
+            # a valid value for the parameter (or no validation was defined)
+            pobj = self.param[pname]
+            try:
+                pobj._validate(value)
+            except Exception:
+                pass
+            else:
+                if type(self.param) is not param.Parameter:
+                    processed[pname] = value
+                    continue
+
+            # Resolve references, allowing for Widget, Parameter and
+            # objects with dependencies
+            value = param_value_if_widget(value)
             if isinstance(value, param.Parameter):
                 refs[pname] = value
                 value = getattr(value.owner, value.name)
@@ -553,6 +570,7 @@ class Reactive(Syncable, Viewable):
                 deps = (p,)
             else:
                 deps = tuple(p._dinfo['dependencies']) + tuple(p._dinfo['kw'].values())
+            # Skip updating value if dependency has not changed
             if not any((dep.owner is e.obj and dep.name == e.name) for dep in deps for e in events):
                 continue
             if isinstance(p, param.Parameter):
