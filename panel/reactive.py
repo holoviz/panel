@@ -545,7 +545,7 @@ class Reactive(Syncable, Viewable):
             except Exception:
                 pass
             else:
-                if type(self.param) is not param.Parameter:
+                if type(pobj) is not param.Parameter:
                     processed[pname] = value
                     continue
 
@@ -564,6 +564,9 @@ class Reactive(Syncable, Viewable):
         return processed, refs
 
     def _sync_refs(self, *events):
+        from .config import config
+        if config.loading_indicator:
+            self.loading = True
         updates = {}
         for pname, p in self._refs.items():
             if isinstance(p, param.Parameter):
@@ -577,6 +580,8 @@ class Reactive(Syncable, Viewable):
                 updates[pname] = getattr(p.owner, p.name)
             else:
                 updates[pname] = eval_function(p)
+        if config.loading_indicator:
+            updates['loading'] = False
         self.param.update(updates)
 
     def _setup_refs(self, refs):
