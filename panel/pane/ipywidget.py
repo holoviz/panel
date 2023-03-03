@@ -45,7 +45,7 @@ class IPyWidget(PaneBase):
     def _resolve_ref(self, pname, value):
         if pname == 'object' and self.applies(value):
             return None, value
-        super()._validate_ref(pname, value)
+        return super()._validate_ref(pname, value)
 
     def _get_ipywidget(self, obj, doc, root, comm, **kwargs):
         if isinstance(comm, JupyterComm) and not config.embed and "PANEL_IPYWIDGET" not in os.environ:
