@@ -529,8 +529,22 @@ class Reactive(Syncable, Viewable):
         self._refs = refs
         self._setup_refs(refs)
 
-    def _extract_refs(self, params):
+    def _resolve_ref(self, pname, value):
         from .depends import param_value_if_widget
+        ref = None
+        value = param_value_if_widget(value)
+        if isinstance(value, param.Parameter):
+            ref = value
+            value = getattr(value.owner, value.name)
+        elif hasattr(value, '_dinfo'):
+            ref = value
+            value = eval_function(value)
+        return ref, value
+
+    def _validate_ref(self, pname, value):
+        self.param[pname]._validate(value)
+
+    def _extract_refs(self, params):
         processed, refs = {}, {}
         for pname, value in params.items():
             if pname not in self.param or pname in self._ignored_refs:
@@ -539,27 +553,20 @@ class Reactive(Syncable, Viewable):
 
             # Only consider extracting reference if the provided value is not
             # a valid value for the parameter (or no validation was defined)
-            pobj = self.param[pname]
             try:
-                pobj._validate(value)
+                self._validate_ref(pname, value)
             except Exception:
                 pass
             else:
-                if type(pobj) is not param.Parameter:
+                if type(self.param[pname]) is not param.Parameter:
                     processed[pname] = value
                     continue
 
             # Resolve references, allowing for Widget, Parameter and
             # objects with dependencies
-            value = param_value_if_widget(value)
-            if isinstance(value, param.Parameter):
-                refs[pname] = value
-                value = getattr(value.owner, value.name)
-                if self.param[pname].allow_None and value is None:
-                    continue
-            elif hasattr(value, '_dinfo'):
-                refs[pname] = value
-                value = eval_function(value)
+            ref, value = self._resolve_ref(pname, value)
+            if ref is not None:
+                refs[pname] = ref
             processed[pname] = value
         return processed, refs
 

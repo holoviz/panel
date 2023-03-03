@@ -150,6 +150,13 @@ class PaneBase(Reactive):
         ])
         self._sync_layoutable()
 
+    def _validate_ref(self, pname, value):
+        super()._validate_ref(pname, value)
+        if pname == 'object' and not self._applies_kw:
+            applies = self.applies(value)
+            if isinstance(applies, bool) and not applies:
+                raise RuntimeError('Value is not valid.')
+
     def _sync_layoutable(self, *events: param.parameterized.Event):
         included = list(Layoutable.param)
         skipped = ('background', 'css_classes', 'margin', 'name')
