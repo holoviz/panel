@@ -7,7 +7,7 @@ import os
 
 from base64 import b64encode
 from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
+    TYPE_CHECKING, ClassVar, List, Mapping, Type,
 )
 
 import param
@@ -134,6 +134,8 @@ class FileDownload(Widget):
             'mp4': 'mp4', 'ogg': 'ogg', 'webm': 'webm'
         }
     }
+
+    _ignore_refs: ClassVar[List[str]] = ['callback']
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'callback': None, 'file': None, '_clicks': 'clicks'

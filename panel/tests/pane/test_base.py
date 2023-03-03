@@ -56,6 +56,18 @@ def test_pane_linkable_params(pane, document, comm):
     finally:
         CallbackGenerator.error = False
 
+@pytest.mark.parametrize('pane', all_panes+[Bokeh])
+def test_pane_untracked_watchers(pane, document, comm):
+    # Ensures internal code correctly detects
+    try:
+        p = pane()
+    except ImportError:
+        pytest.skip("Dependent library could not be imported.")
+    watchers = [
+        w for pwatchers in p._param_watchers.values()
+        for awatchers in pwatchers.values() for w in awatchers
+    ]
+    assert len([wfn for wfn in watchers if wfn not in p._callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0
 
 @pytest.mark.parametrize('pane', all_panes)
 def test_pane_clone(pane):

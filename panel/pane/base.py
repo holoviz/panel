@@ -511,7 +511,9 @@ class ReplacementPane(PaneBase):
         self._pane = panel(None)
         self._internal = True
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
-        self.param.watch(self._update_inner_layout, list(Layoutable.param))
+        self._callbacks.append(
+            self.param.watch(self._update_inner_layout, list(Layoutable.param))
+        )
         self._sync_layout()
 
     def _get_model(
@@ -552,7 +554,10 @@ class ReplacementPane(PaneBase):
                 w for pwatchers in object._param_watchers.values()
                 for awatchers in pwatchers.values() for w in awatchers
             ]
-            custom_watchers = [wfn for wfn in watchers if wfn not in object._callbacks]
+            custom_watchers = [
+                wfn for wfn in watchers if wfn not in object._callbacks and
+                not hasattr(wfn.fn, '_watcher_name')
+            ]
 
         pane, internal = None, was_internal
         if type(old_object) is pane_type and ((not links and not custom_watchers and was_internal) or inplace):

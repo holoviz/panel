@@ -126,7 +126,9 @@ class Syncable(Renderable):
 
         # Sets up watchers to process manual updates to models
         if self._manual_params:
-            self.param.watch(self._update_manual, self._manual_params)
+            self._callbacks.append(
+                self.param.watch(self._update_manual, self._manual_params)
+            )
 
     #----------------------------------------------------------------
     # Model API
@@ -871,6 +873,7 @@ class SyncableData(Reactive):
                 self.param.watch(self._update_cds, self._data_params)
             )
         callbacks.append(self.param.watch(self._update_selected, 'selection'))
+        self._callbacks += callbacks
         self._validate()
         self._update_cds()
 

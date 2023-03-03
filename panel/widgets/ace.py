@@ -59,7 +59,9 @@ class Ace(Widget):
         elif 'disabled' in params:
             params['readonly'] = params['disabled']
         super().__init__(**params)
-        self.param.watch(self._update_disabled, ['disabled', 'readonly'])
+        self._callbacks.append(
+            self.param.watch(self._update_disabled, ['disabled', 'readonly'])
+        )
         self.jslink(self, readonly='disabled', bidirectional=True)
 
     def _get_model(
