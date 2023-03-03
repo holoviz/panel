@@ -46,8 +46,8 @@ export class JSONEditorView extends HTMLBoxView {
     })
   }
 
-  override styles(): StyleSheetLike[] {
-    const styles = super.styles()
+  override stylesheets(): StyleSheetLike[] {
+    const styles = super.stylesheets()
     for (const css of this.model.css)
       styles.push(new ImportedStyleSheet(css))
     return styles

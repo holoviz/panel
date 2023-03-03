@@ -100,8 +100,8 @@ export class FileDownloadView extends InputWidgetView {
     this.input_el.addEventListener("change", () => this.change_input())
   }
 
-  styles(): StyleSheetLike[] {
-    return [...super.styles(), buttons_css]
+  stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), buttons_css]
   }
 
   _increment_clicks() : void {
