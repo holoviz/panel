@@ -32,8 +32,8 @@ from .layout import (
 from .pane.base import PaneBase, ReplacementPane
 from .reactive import Reactive
 from .util import (
-    abbreviated_repr, classproperty, full_groupby, fullpath, get_method_owner,
-    is_parameterized, param_name, recursive_parameterized,
+    abbreviated_repr, classproperty, eval_function, full_groupby, fullpath,
+    get_method_owner, is_parameterized, param_name, recursive_parameterized,
 )
 from .viewable import Layoutable, Viewable
 from .widgets import (
@@ -798,14 +798,7 @@ class ParamMethod(ReplacementPane):
 
     @classmethod
     def eval(self, function):
-        args, kwargs = (), {}
-        if hasattr(function, '_dinfo'):
-            arg_deps = function._dinfo['dependencies']
-            kw_deps = function._dinfo.get('kw', {})
-            if kw_deps or any(isinstance(d, param.Parameter) for d in arg_deps):
-                args = (getattr(dep.owner, dep.name) for dep in arg_deps)
-                kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
-        return function(*args, **kwargs)
+        return eval_function(function)
 
     async def _eval_async(self, awaitable):
         try:

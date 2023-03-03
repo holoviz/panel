@@ -39,7 +39,7 @@ from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import (
-    classproperty, edit_readonly, escape, updating,
+    classproperty, edit_readonly, escape, eval_function, updating,
 )
 from .viewable import Layoutable, Renderable, Viewable
 
@@ -559,7 +559,7 @@ class Reactive(Syncable, Viewable):
                     continue
             elif hasattr(value, '_dinfo'):
                 refs[pname] = value
-                value = value()
+                value = eval_function(value)
             processed[pname] = value
         return processed, refs
 
@@ -576,7 +576,7 @@ class Reactive(Syncable, Viewable):
             if isinstance(p, param.Parameter):
                 updates[pname] = getattr(p.owner, p.name)
             else:
-                updates[pname] = p()
+                updates[pname] = eval_function(p)
         self.param.update(updates)
 
     def _setup_refs(self, refs):
