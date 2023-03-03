@@ -14,6 +14,7 @@ This release is a small bug fix release preceding the upcoming major release of 
 - Fix event generation by considering NaNs as equal when comparing Numpy arrays ([#4481](https://github.com/holoviz/panel/pull/4481))
 - Use cache from previous sessions when using `to_disk` ([#4481](https://github.com/holoviz/panel/pull/4481))
 - Fix relative imports when running inside Jupyter Kernel ([#4489](https://github.com/holoviz/panel/pull/4489))
+- Do not re-create `Vega.selections` object unless selections changed ([#4497](https://github.com/holoviz/panel/pull/4497))
 
 ### Enhancements
 
