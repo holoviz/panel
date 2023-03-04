@@ -7,15 +7,16 @@ import {HTMLBox, HTMLBoxView} from "./layout"
 
 
 export class KeystrokeEvent extends ModelEvent {
-  event_name: string = "keystroke"
-  publish: boolean = true
-
   constructor(readonly key: string) {
     super()
   }
 
   protected get event_values(): Attrs {
     return {model: this.origin, key: this.key}
+  }
+
+  static {
+    this.prototype.event_name = "keystroke"
   }
 }
 

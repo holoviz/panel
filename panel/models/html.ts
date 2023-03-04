@@ -7,15 +7,16 @@ import {serializeEvent} from "./event-to-object";
 
 
 export class DOMEvent extends ModelEvent {
-  event_name: string = "dom_event"
-  publish: boolean = true
-
   constructor(readonly node: string, readonly data: any) {
     super()
   }
 
   protected get event_values(): Attrs {
     return {model: this.origin, node: this.node, data: this.data}
+  }
+
+  static {
+    this.prototype.event_name = "dom_event"
   }
 }
 
