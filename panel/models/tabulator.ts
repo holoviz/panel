@@ -16,9 +16,6 @@ import {transform_cds_to_records} from "./data"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 export class TableEditEvent extends ModelEvent {
-  event_name: string = "table-edit"
-  publish: boolean = true
-
   constructor(readonly column: string, readonly row: number, readonly pre: boolean) {
     super()
   }
@@ -26,18 +23,23 @@ export class TableEditEvent extends ModelEvent {
   protected get event_values(): Attrs {
     return {model: this.origin, column: this.column, row: this.row, pre: this.pre}
   }
+
+  static {
+    this.prototype.event_name = "table-edit"
+  }
 }
 
 export class CellClickEvent extends ModelEvent {
-  event_name: string = "cell-click"
-  publish: boolean = true
-
   constructor(readonly column: string, readonly row: number) {
     super()
   }
 
   protected get event_values(): Attrs {
     return {model: this.origin, column: this.column, row: this.row}
+  }
+
+  static {
+    this.prototype.event_name = "cell-click"
   }
 }
 
