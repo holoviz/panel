@@ -250,7 +250,7 @@ def test_tabulator_hidden_columns(page, port, df_mixed):
 
     serve(widget, port=port, threaded=True, show=False)
 
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     page.goto(f"http://localhost:{port}")
 
@@ -1676,12 +1676,12 @@ def test_tabulator_row_content_expand_from_python_after(page, port, df_mixed):
 
     openables = page.locator('text="►"')
     closables = page.locator('text="▼"')
-    # Error here
     assert closables.count() == len(widget.expanded)
     assert openables.count() == len(df_mixed) - len(widget.expanded)
-    # End of error
 
     widget.expanded = []
+
+    time.sleep(0.2)
 
     openables = page.locator('text="►"')
     closables = page.locator('text="▼"')
@@ -3609,6 +3609,8 @@ def test_tabulator_update_hidden_columns(page, port):
 
     page.goto(f"http://localhost:{port}")
 
+    time.sleep(0.2)
+
     col_a_cells = page.locator('text="3"')
 
     assert not col_a_cells.nth(0).is_visible()
@@ -3616,7 +3618,7 @@ def test_tabulator_update_hidden_columns(page, port):
 
     widget.hidden_columns = ['b']
 
-    time.sleep(0.5)
+    time.sleep(0.2)
 
     col_a_cells = page.locator('text="3"')
     title_bbox = page.locator('text="a"').bounding_box()
