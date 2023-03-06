@@ -457,7 +457,7 @@ export class DataTabulatorView extends HTMLBoxView {
       this.model.filters = filters
     })
     this.tabulator.on("dataFiltered", (_: any, rows: any[]) => {
-      if (this._initializing)
+      if (this._building)
 	return
       // Ensure that after filtering empty scroll renders
       if (rows.length === 0)
