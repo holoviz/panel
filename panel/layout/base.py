@@ -92,7 +92,8 @@ class Panel(Reactive):
         obj_key = self._property_mapping['objects']
         if obj_key in msg:
             old = events['objects'].old
-            msg[obj_key] = self._get_objects(model, old, doc, root, comm)
+            msg[obj_key] = children = self._get_objects(model, old, doc, root, comm)
+            msg['sizing_mode'] = self._compute_sizing_mode(children, msg.get('sizing_mode', model.sizing_mode))
 
         with hold(doc):
             update = Panel._batch_update
@@ -154,9 +155,37 @@ class Panel(Reactive):
         objects = self._get_objects(model, [], doc, root, comm)
         properties = self._get_properties(doc)
         properties[self._property_mapping['objects']] = objects
+        properties['sizing_mode'] = self._compute_sizing_mode(objects, properties.get('sizing_mode'))
         model.update(**properties)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
+
+    def _compute_sizing_mode(self, children, sizing_mode):
+        from ..config import config
+        if sizing_mode is not None and (not config.layout_compatibility or sizing_mode == 'fixed'):
+            return sizing_mode
+        expand_width, expand_height = False, False
+        for child in children:
+            if child.sizing_mode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
+                expand_width = True
+            if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
+                expand_height = True
+        new_mode = None
+        if expand_width and expand_height and not self.width and not self.height:
+            new_mode = 'stretch_both'
+        elif expand_width and not self.width:
+            new_mode = 'stretch_width'
+        elif expand_height and not self.height:
+            new_mode = 'stretch_height'
+        if new_mode and config.layout_compatibility and new_mode != sizing_mode:
+            self.param.warning(
+                f'Layout compatibility mode determined that {type(self).__name__} '
+                f'sizing_mode was incorrectly set to {sizing_mode!r} but '
+                f'the contents require {new_mode!r} to avoid collapsing. '
+                'Update the sizing_mode to hide this warning and prevent '
+                'layout issues in future versions of Panel.'
+            )
+        return new_mode or sizing_mode
 
     #----------------------------------------------------------------
     # Public API
