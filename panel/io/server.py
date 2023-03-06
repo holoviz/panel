@@ -919,7 +919,7 @@ def get_server(
 
     opts = dict(kwargs)
     if loop:
-        loop.make_current()
+        asyncio.set_event_loop(loop.asyncio_loop)
         opts['io_loop'] = loop
     elif opts.get('num_procs', 1) == 1:
         opts['io_loop'] = IOLoop.current()
