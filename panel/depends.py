@@ -1,7 +1,10 @@
+import sys
+
 import param
 
 from param.parameterized import iscoroutinefunction
 
+from .util import eval_function
 from .widgets import Widget
 
 ipywidget_classes = {}
@@ -10,6 +13,12 @@ ipywidget_classes = {}
 def param_value_if_widget(arg):
     if isinstance(arg, Widget):
         return arg.param.value
+    elif 'hvplot.interactive' in sys.modules:
+        from hvplot.interactive import Interactive
+        if isinstance(arg, Interactive):
+            def interactive_eval(*args, **kwargs):
+                return arg.eval()
+            return bind(interactive_eval, *arg._params)
 
     from .pane.ipywidget import IPyWidget
     if IPyWidget.applies(arg) and hasattr(arg, 'value'):
@@ -156,8 +165,7 @@ def _param_bind(function, *args, watch=False, **kwargs):
     annotated with all dependencies.
     """
     dependencies = {}
-    for i, arg in enumerate(args):
-        p = param_value_if_widget(arg)
+    for i, p in enumerate(args):
         if hasattr(p, '_dinfo'):
             for j, arg in enumerate(p._dinfo['dependencies']):
                 dependencies[f'__arg{i}_arg{j}'] = arg
@@ -166,20 +174,19 @@ def _param_bind(function, *args, watch=False, **kwargs):
         elif isinstance(p, param.Parameter):
             dependencies[f'__arg{i}'] = p
     for kw, v in kwargs.items():
-        p = param_value_if_widget(v)
-        if hasattr(p, '_dinfo'):
-            for j, arg in enumerate(p._dinfo['dependencies']):
+        if hasattr(v, '_dinfo'):
+            for j, arg in enumerate(v._dinfo['dependencies']):
                 dependencies[f'__kwarg_{kw}_arg{j}'] = arg
-            for pkw, kwarg in p._dinfo['kw'].items():
+            for pkw, kwarg in v._dinfo['kw'].items():
                 dependencies[f'__kwarg_{kw}_{pkw}'] = kwarg
-        elif isinstance(p, param.Parameter):
-            dependencies[kw] = p
+        elif isinstance(v, param.Parameter):
+            dependencies[kw] = v
 
     def combine_arguments(wargs, wkwargs):
         combined_args = []
         for arg in args:
             if hasattr(arg, '_dinfo'):
-                arg = arg()
+                arg = eval_function(arg)
             elif isinstance(arg, param.Parameter):
                 arg = getattr(arg.owner, arg.name)
             combined_args.append(arg)
@@ -187,7 +194,7 @@ def _param_bind(function, *args, watch=False, **kwargs):
         combined_kwargs = {}
         for kw, arg in kwargs.items():
             if hasattr(arg, '_dinfo'):
-                arg = arg()
+                arg = eval_function(arg)
             elif isinstance(arg, param.Parameter):
                 arg = getattr(arg.owner, arg.name)
             combined_kwargs[kw] = arg
