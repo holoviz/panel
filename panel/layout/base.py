@@ -92,7 +92,8 @@ class Panel(Reactive):
         obj_key = self._property_mapping['objects']
         if obj_key in msg:
             old = events['objects'].old
-            msg[obj_key] = self._get_objects(model, old, doc, root, comm)
+            msg[obj_key] = children = self._get_objects(model, old, doc, root, comm)
+            msg['sizing_mode'] = self._compute_sizing_mode(children, msg.get('sizing_mode', model.sizing_mode))
 
         with hold(doc):
             update = Panel._batch_update
@@ -154,9 +155,27 @@ class Panel(Reactive):
         objects = self._get_objects(model, [], doc, root, comm)
         properties = self._get_properties(doc)
         properties[self._property_mapping['objects']] = objects
+        properties['sizing_mode'] = self._compute_sizing_mode(objects, properties.get('sizing_mode'))
         model.update(**properties)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
+
+    def _compute_sizing_mode(self, children, sizing_mode):
+        if sizing_mode is not None:
+            return sizing_mode
+        expand_width, expand_height = False, False
+        for child in children:
+            if child.sizing_mode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
+                expand_width = True
+            if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
+                expand_height = True
+        if expand_width and expand_height:
+            sizing_mode = 'stretch_both'
+        elif expand_width:
+            sizing_mode = 'stretch_width'
+        elif expand_height:
+            sizing_mode = 'stretch_height'
+        return sizing_mode
 
     #----------------------------------------------------------------
     # Public API
