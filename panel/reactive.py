@@ -39,7 +39,8 @@ from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import (
-    classproperty, edit_readonly, escape, eval_function, updating,
+    classproperty, edit_readonly, escape, eval_function, process_raw_css,
+    updating,
 )
 from .viewable import Layoutable, Renderable, Viewable
 
@@ -182,8 +183,9 @@ class Syncable(Renderable):
         if 'height' in properties and self.sizing_mode is None:
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
-            base_stylesheets = self._stylesheets+['css/loading.css']
-            stylesheets = [loading_css()] + [
+            from .config import config
+            base_stylesheets = config.css_files+self._stylesheets+['css/loading.css']
+            stylesheets = [loading_css()] + process_raw_css(config.raw_css) + [
                 ImportedStyleSheet(url=stylesheet) for stylesheet in base_stylesheets
             ]
             for stylesheet in properties['stylesheets']:
