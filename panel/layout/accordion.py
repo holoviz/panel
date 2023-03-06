@@ -146,7 +146,7 @@ class Accordion(NamedListPanel):
         return new_models
 
     def _compute_sizing_mode(self, children, sizing_mode):
-        children = [subchild for child in children for subchild in child.children]
+        children = [subchild for child in children for subchild in child.children[1:]]
         return super()._compute_sizing_mode(children, sizing_mode)
 
     def _cleanup(self, root: Model | None = None) -> None:

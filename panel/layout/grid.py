@@ -326,6 +326,10 @@ class GridSpec(Panel):
             children.append((child, r, c, h, w))
         return children
 
+    def _compute_sizing_mode(self, children, sizing_mode):
+        children = [child for (child, _, _, _, _) in children]
+        return super()._compute_sizing_mode(children, sizing_mode)
+
     @property
     def _xoffset(self):
         min_xidx = [x0 for (_, x0, _, _) in self.objects if x0 is not None]

@@ -79,8 +79,7 @@ class Card(Column):
     _stylesheets: ClassVar[List[str]] = ['css/card.css']
 
     def __init__(self, *objects, **params):
-        self._header_layout = Row(css_classes=['card-header-row'],
-                                  sizing_mode='stretch_width')
+        self._header_layout = Row(css_classes=['card-header-row'], sizing_mode='stretch_width')
         super().__init__(*objects, **params)
         self._header = None
         self.param.watch(self._update_header, ['title', 'header', 'title_css_classes'])
@@ -116,9 +115,7 @@ class Card(Column):
                 self._header.param.set_param(**params)
                 return
             else:
-                self._header = item = HTML(
-                    sizing_mode='stretch_width', **params
-                )
+                self._header = item = HTML(**params)
         else:
             item = panel(self.header)
             self._header = None
@@ -132,3 +129,6 @@ class Card(Column):
             header = self._header_layout._get_model(doc, root, model, comm)
         objects = super()._get_objects(model, old_objects, doc, root, comm)
         return [header]+objects
+
+    def _compute_sizing_mode(self, children, sizing_mode):
+        return super()._compute_sizing_mode(children[1:], sizing_mode)

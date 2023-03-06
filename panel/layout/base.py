@@ -171,11 +171,11 @@ class Panel(Reactive):
             if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
                 expand_height = True
         new_mode = None
-        if expand_width and expand_height:
+        if expand_width and expand_height and not self.width and not self.height:
             new_mode = 'stretch_both'
-        elif expand_width:
+        elif expand_width and not self.width:
             new_mode = 'stretch_width'
-        elif expand_height:
+        elif expand_height and not self.height:
             new_mode = 'stretch_height'
         if new_mode and config.layout_compatibility and new_mode != sizing_mode:
             self.param.warning(
