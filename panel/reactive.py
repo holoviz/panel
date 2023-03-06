@@ -33,14 +33,15 @@ from param.parameterized import ParameterizedMetaclass, Watcher
 from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
-from .io.resources import CDN_DIST, loading_css, patch_stylesheet
+from .io.resources import (
+    CDN_DIST, loading_css, patch_stylesheet, process_raw_css,
+)
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import (
-    classproperty, edit_readonly, escape, eval_function, process_raw_css,
-    updating,
+    classproperty, edit_readonly, escape, eval_function, updating,
 )
 from .viewable import Layoutable, Renderable, Viewable
 
