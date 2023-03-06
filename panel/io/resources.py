@@ -8,6 +8,7 @@ import json
 import logging
 import mimetypes
 import os
+import re
 
 from base64 import b64encode
 from collections import OrderedDict
@@ -70,6 +71,8 @@ DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
 
+BK_PREFIX_RE = re.compile('\.bk\.')
+
 RESOURCE_URLS = {
     'font-awesome': {
         'zip': 'https://use.fontawesome.com/releases/v5.15.4/fontawesome-free-5.15.4-web.zip',
@@ -130,6 +133,12 @@ def set_resource_mode(mode):
     finally:
         RESOURCE_MODE = old_mode
         _settings.resources.set_value(old_resources)
+
+def process_raw_css(raw_css):
+    """
+    Converts old-style Bokeh<3 compatible CSS to Bokeh 3 compatible CSS.
+    """
+    return [BK_PREFIX_RE.sub('.', css) for css in raw_css]
 
 def resolve_custom_path(obj, path):
     """
@@ -392,7 +401,7 @@ class Resources(BkResources):
 
         if config.loading_spinner:
             raw.append(loading_css())
-        return raw + config.raw_css
+        return raw + process_raw_css(config.raw_css)
 
     @property
     def js_files(self):
