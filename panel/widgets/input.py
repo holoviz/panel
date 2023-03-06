@@ -241,9 +241,6 @@ class StaticText(Widget):
     >>> StaticText(name='Model', value='animagen2')
     """
 
-    styles = param.Dict(default=None, doc="""
-        Dictionary of CSS property:value pairs to apply to this Div.""")
-
     value = param.Parameter(default=None, doc="""
         The current value""")
 
