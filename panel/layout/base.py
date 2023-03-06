@@ -161,7 +161,8 @@ class Panel(Reactive):
         return model
 
     def _compute_sizing_mode(self, children, sizing_mode):
-        if sizing_mode is not None:
+        from ..config import config
+        if sizing_mode is not None and (not config.layout_compatibility or sizing_mode == 'fixed'):
             return sizing_mode
         expand_width, expand_height = False, False
         for child in children:
@@ -169,13 +170,22 @@ class Panel(Reactive):
                 expand_width = True
             if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
                 expand_height = True
+        new_mode = None
         if expand_width and expand_height:
-            sizing_mode = 'stretch_both'
+            new_mode = 'stretch_both'
         elif expand_width:
-            sizing_mode = 'stretch_width'
+            new_mode = 'stretch_width'
         elif expand_height:
-            sizing_mode = 'stretch_height'
-        return sizing_mode
+            new_mode = 'stretch_height'
+        if new_mode and config.layout_compatibility and new_mode != sizing_mode:
+            self.param.warning(
+                f'Layout compatibility mode determined that {type(self).__name__} '
+                f'sizing_mode was incorrectly set to {sizing_mode!r} but '
+                f'the contents require {new_mode!r} to avoid collapsing. '
+                'Update the sizing_mode to hide this warning and prevent '
+                'layout issues in future versions of Panel.'
+            )
+        return new_mode or sizing_mode
 
     #----------------------------------------------------------------
     # Public API
