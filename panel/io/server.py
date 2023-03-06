@@ -705,7 +705,7 @@ def serve(
         location=location, admin=admin
     ))
     if threaded:
-        kwargs['loop'] = loop = IOLoop() if loop is None else loop
+        kwargs['loop'] = loop = IOLoop(make_current=False) if loop is None else loop
         server = StoppableThread(
             target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
         )
