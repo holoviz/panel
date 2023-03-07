@@ -1,6 +1,7 @@
 """
 A module containing testing utilities and fixtures.
 """
+import asyncio
 import atexit
 import os
 import pathlib
@@ -31,6 +32,17 @@ CUSTOM_MARKS = ('ui', 'jupyter')
 JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
+
+# Tornado 6.2 has deprecated the use of IOLoop.current,
+# when no asyncio event loop is running.
+# This will start an event loop.
+try:
+    asyncio.get_running_loop()
+except RuntimeError:
+    # Create a new asyncio event loop for this thread.
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
 
 def port_open(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
