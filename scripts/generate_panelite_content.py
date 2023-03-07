@@ -51,18 +51,10 @@ def _get_dependencies(nbpath: pathlib.Path):
     dependencies = [repr(d) for d in dependencies if not d in DEPENDENCY_NOT_IMPORTABLE]
     return dependencies
 
-assert _get_dependencies("reference/panes/Folium.ipynb")==["'panel'", "'folium'"]
 
 def _to_source(dependencies):
-    source = f"import piplite\nawait piplite.install([{', '.join(dependencies)}])"
+    return f"import piplite\nawait piplite.install([{', '.join(dependencies)}])"
 
-    if "'pyodide-http'" in dependencies:
-        source += "\n\nimport pyodide_http\npyodide_http.patch_all()"
-
-    return source
-
-assert _to_source(["'panel'"])=="import piplite\nawait piplite.install(['panel'])"
-assert _to_source(["'pyodide-http'"])=="import piplite\nawait piplite.install(['pyodide-http'])\n\nimport pyodide_http\npyodide_http.patch_all()"
 
 def _get_install_code_cell(nbpath: pathlib.Path):
     dependencies = _get_dependencies(nbpath)
