@@ -51,7 +51,7 @@ class DaskViewer(pn.viewable.Viewer):
         layout_params = {k:v for k, v in params.items() if k not in VIEWER_PARAMETERS}
 
         self._iframe =  pn.pane.HTML(sizing_mode="stretch_both")
-                
+
         super().__init__(**viewer_params)
 
         self._select = pn.widgets.Select.from_param(self.param.path, size=size, width=300, sizing_mode="fixed", margin=(20,5,10,5))
@@ -70,4 +70,4 @@ class DaskViewer(pn.viewable.Viewer):
 if __name__.startswith("bokeh"):
     pn.extension(sizing_mode="stretch_width")
 
-    DaskViewer(height=500, size=25).servable()   
+    DaskViewer(height=500, size=25).servable()
