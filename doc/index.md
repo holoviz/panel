@@ -152,16 +152,24 @@ alt: Blackstone Logo
 :titlesonly:
 :hidden:
 :maxdepth: 2
+:caption: FOR USERS
 
-self
 getting_started/index
 how_to/index
 gallery/index
 background/index
 reference/index
-developer_guide/index
 api/index
-releases
 FAQ
 about/index.rst
+```
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+:caption: FOR DEVELOPERS
+
+developer_guide/index
+releases
 ```
