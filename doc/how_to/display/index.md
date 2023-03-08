@@ -11,7 +11,6 @@ This guide will provide simple how-to guides on how to display panels interactiv
 :link: notebook
 :link-type: doc
 :class-title: sd-text-center
-:class-card: sd-border-1
 
 How to display output in Jupyter and non-Jupyter based notebook environments.
 :::
@@ -20,7 +19,6 @@ How to display output in Jupyter and non-Jupyter based notebook environments.
 :link: editor
 :link-type: doc
 :class-title: sd-text-center
-:class-card: sd-border-1
 
 How to rapidly develop a Panel application in your favorite IDE or editor.
 :::
@@ -29,7 +27,6 @@ How to rapidly develop a Panel application in your favorite IDE or editor.
 :link: jupyterlab
 :link-type: doc
 :class-title: sd-text-center
-:class-card: sd-border-1
 
 How to use the Preview functionality in JupyterLab to rapidly develop applications.
 :::

@@ -2,7 +2,7 @@
 
 Panel components are the building blocks and visual layouts of your app or dashboard. These How-to pages provide solutions for common tasks related to creating and customizing components.
 
-## Initialize Components
+## Initialize and Access Components
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -96,7 +96,7 @@ How to control the size of components.
 ```{toctree}
 :titlesonly:
 :hidden:
-:maxdepth: 2
+:maxdepth: 1
 
 construct_panes
 pane_type
