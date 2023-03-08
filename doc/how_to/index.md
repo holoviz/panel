@@ -12,6 +12,7 @@ The Panel How-to guides provide step by step recipes for solving essential probl
 :link: display/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to effectively develop apps in your favorite notebook or code editor environment.
 :::
@@ -20,6 +21,7 @@ How to effectively develop apps in your favorite notebook or code editor environ
 :link: apis/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to choose from the different APIs offered by Panel.
 :::
@@ -36,6 +38,7 @@ How to choose from the different APIs offered by Panel.
 :link: components/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to construct and customize individual components like an image or slider widget.
 :::
@@ -44,6 +47,7 @@ How to construct and customize individual components like an image or slider wid
 :link: reactive/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to link selected widgets to arguments and make a reactive function.
 :::
@@ -52,6 +56,7 @@ How to link selected widgets to arguments and make a reactive function.
 :link: interact/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to autogenerate UIs for function arguments.
 :::
@@ -60,6 +65,7 @@ How to autogenerate UIs for function arguments.
 :link: links/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to link the parameters of Panel components in Python and Javascript.
 :::
@@ -68,7 +74,7 @@ How to link the parameters of Panel components in Python and Javascript.
 :link: param/index
 :link-type: doc
 :class-title: sd-text-center
-
+:class-card: sd-border-1
 How to use Parameterized classes with Panel to generate UIs without writing GUI code.
 :::
 
@@ -84,6 +90,7 @@ How to use Parameterized classes with Panel to generate UIs without writing GUI 
 :link: pipeline/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to build a Panel Pipeline that connects multiple panels into a sequential user interface.
 :::
@@ -92,6 +99,7 @@ How to build a Panel Pipeline that connects multiple panels into a sequential us
 :link: custom_components/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to extend Panel by building custom components.
 :::
@@ -108,6 +116,7 @@ How to extend Panel by building custom components.
 :link: callbacks/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to set up callbacks on session related events (e.g. on page load or when a session is destroyed) and define periodic tasks.
 :::
@@ -116,6 +125,7 @@ How to set up callbacks on session related events (e.g. on page load or when a s
 :link: state/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to access and manipulate state related to the user session, HTTP request and URL arguments.
 :::
@@ -132,6 +142,7 @@ How to access and manipulate state related to the user session, HTTP request and
 :link: profiling/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to profile and debug your application using the admin dashboard and other tools.
 :::
@@ -140,6 +151,7 @@ How to profile and debug your application using the admin dashboard and other to
 :link: test/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to set up unit tests, UI tests and load testing to ensure your applications are (and stay) robust and scalable.
 :::
@@ -156,6 +168,7 @@ How to set up unit tests, UI tests and load testing to ensure your applications 
 :link: templates/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to use a Template to customize the look and feel of a deployed Panel app.
 :::
@@ -164,6 +177,7 @@ How to use a Template to customize the look and feel of a deployed Panel app.
 :link: performance/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 Discover some tips and tricks instructing you on how you can improve the performance of your application.
 :::
@@ -172,6 +186,7 @@ Discover some tips and tricks instructing you on how you can improve the perform
 :link: caching/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to cache data across sessions and memoize the output of functions.
 :::
@@ -180,6 +195,7 @@ How to cache data across sessions and memoize the output of functions.
 :link: concurrency/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to improve the scalability of your Panel application.
 :::
@@ -188,6 +204,7 @@ How to improve the scalability of your Panel application.
 :link: authentication/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to configure OAuth to add authentication to a server deployment.
 :::
@@ -203,6 +220,7 @@ How to configure OAuth to add authentication to a server deployment.
 :link: server/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to configure the Panel server.
 :::
@@ -211,6 +229,7 @@ How to configure the Panel server.
 :link: integrations/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to integrate Panel in other application based on Flask, FastAPI or Django.
 :::
@@ -219,6 +238,7 @@ How to integrate Panel in other application based on Flask, FastAPI or Django.
 :link: deployment/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to deploy Panel applications to various cloud providers (e.g. Azure, GCP, AWS etc.)
 :::
@@ -227,6 +247,7 @@ How to deploy Panel applications to various cloud providers (e.g. Azure, GCP, AW
 :link: export/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to export and save Panel applications as static files.
 :::
@@ -235,6 +256,7 @@ How to export and save Panel applications as static files.
 :link: wasm/index
 :link-type: doc
 :class-title: sd-text-center
+:class-card: sd-border-1
 
 How to run Panel applications entirely in the browser using WebAssembly (Wasm), Pyodide, and PyScript.
 :::
