@@ -171,8 +171,11 @@ class ImageBase(FileBase):
 
     def _img_dims(self, width, height):
         smode = self.sizing_mode
-        if smode in ['fixed', None] and width and height:
-            w, h = '%spx' % width, '%spx' % height
+        if smode in ['fixed', None]:
+            w, h = (
+                (f'{width}px' if width else 'auto'),
+                (f'{height}px' if height else 'auto')
+            )
         elif smode == 'stretch_both' and not self.fixed_aspect:
             w, h = '100%', '100%'
         elif smode == 'stretch_width' and not self.fixed_aspect:

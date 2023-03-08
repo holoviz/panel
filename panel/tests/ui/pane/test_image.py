@@ -30,6 +30,40 @@ def test_png_native_size(embed, page, port):
     assert bbox['height'] == 600
 
 @pytest.mark.parametrize('embed', [False, True])
+def test_png_native_size_with_width(embed, page, port):
+    png = PNG(PNG_FILE, embed=embed, width=200)
+
+    serve(png, port=port, threaded=True, show=False)
+
+    time.sleep(0.6)
+
+    page.goto(f"http://localhost:{port}")
+
+    time.sleep(0.2)
+
+    bbox = page.locator("img").bounding_box()
+
+    assert bbox['width'] == 200
+    assert bbox['height'] == 150
+
+@pytest.mark.parametrize('embed', [False, True])
+def test_png_native_size_with_height(embed, page, port):
+    png = PNG(PNG_FILE, embed=embed, height=200)
+
+    serve(png, port=port, threaded=True, show=False)
+
+    time.sleep(0.6)
+
+    page.goto(f"http://localhost:{port}")
+
+    time.sleep(0.2)
+
+    bbox = page.locator("img").bounding_box()
+
+    assert int(bbox['width']) == 266
+    assert bbox['height'] == 200
+
+@pytest.mark.parametrize('embed', [False, True])
 def test_png_scaled_fixed_size(embed, page, port):
     png = PNG(PNG_FILE, width=400, embed=embed)
 
