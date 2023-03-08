@@ -213,7 +213,7 @@ class Matplotlib(Image, IPyWidget):
     encode = param.Boolean(default=True, doc="""
         Whether to encode SVG out as base64.""")
 
-    format = param.Selector(default='png', objects=['png', 'svg', 'pdf'], doc="""
+    format = param.Selector(default='png', objects=['png', 'svg'], doc="""
         The format to render the plot as if the plot is not interactive.""")
 
     high_dpi = param.Boolean(default=True, doc="""
@@ -335,16 +335,10 @@ class Matplotlib(Image, IPyWidget):
             return self._img_type._get_model(self, doc, root, parent, comm)
         self.object.set_dpi(self.dpi)
         manager = self._get_widget(self.object)
-        props = self._init_params()
-        kwargs = {
-            k: v for k, v in props.items()
-            if k not in self._rerender_params+['loading']
-        }
-        kwargs['width'] = self.width
-        kwargs['height'] = self.height
-        kwargs['sizing_mode'] = self.sizing_mode
+        properties = self._get_properties(doc)
+        del properties['text']
         model = self._get_ipywidget(
-            manager.canvas, doc, root, comm, **kwargs
+            manager.canvas, doc, root, comm, **properties
         )
         root = root or model
         self._models[root.ref['id']] = (model, parent)

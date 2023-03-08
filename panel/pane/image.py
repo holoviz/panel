@@ -459,7 +459,7 @@ class PDF(FileBase):
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
         if obj is None:
             return dict(object='<embed></embed>')
-        elif self.embed:
+        elif self.embed or not isurl(obj):
             # This is handled by the Typescript Bokeh model to be able to render large PDF files (>2MB).
             data = self._data(obj)
             if not isinstance(data, bytes):
@@ -468,5 +468,6 @@ class PDF(FileBase):
             return dict(text=b64)
 
         w, h = self.width or '100%', self.height or '100%'
-        html = f'<embed src="{obj}#page={self.start_page}" width={w!r} height={h!r} type="application/pdf">'
+        page = f'#{self.start_page}' if getattr(self, 'start_page', None) else ''
+        html = f'<embed src="{obj}{page}" width={w!r} height={h!r} type="application/pdf">'
         return dict(text=escape(html))
