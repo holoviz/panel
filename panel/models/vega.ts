@@ -135,9 +135,15 @@ export class VegaPlotView extends HTMLBoxView {
     })
   }
 
+  after_layout(): void {
+    super.after_layout()
+    if (this.vega_view != null) {
+      window.dispatchEvent(new Event('resize'));
+    }
+  }
+
   resize_view(view: any): void {
     let rect = this.container.getBoundingClientRect()
-    console.log(rect.width, rect.height)
     view._el.children[0].style.width = `${rect.width}px`
     view._el.children[0].style.height = `${rect.height}px`
     view.resize().runAsync()

@@ -64,6 +64,8 @@ class GridBox(ListPanel):
         'scroll': None, 'objects': None
     }
 
+    _stylesheets = ['css/gridbox.css']
+
     @classmethod
     def _flatten_grid(cls, layout, nrows=None, ncols=None):
         Item = namedtuple("Item", ["layout", "r0", "c0", "r1", "c1"])
@@ -91,7 +93,7 @@ class GridBox(ListPanel):
 
                 nrows = lcm(*[child.nrows for child in children])
                 if not ncols: # This differs from bokeh.layout.grid
-                    ncols = sum([ child.ncols for child in children ])
+                    ncols = sum([child.ncols for child in children])
 
                 items = []
                 offset = 0

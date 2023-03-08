@@ -164,24 +164,30 @@ class Panel(Reactive):
         from ..config import config
         if sizing_mode is not None and (not config.layout_compatibility or sizing_mode == 'fixed'):
             return sizing_mode
-        expand_width, expand_height = False, False
+        expand_width, expand_height, scale = False, False, False
         for child in children:
+            if child.sizing_mode and 'scale' in child.sizing_mode:
+                scale = True
             if child.sizing_mode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
                 expand_width = True
             if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
                 expand_height = True
         new_mode = None
+        mode = 'scale' if scale else 'stretch'
+        extra = ''
         if expand_width and expand_height and not self.width and not self.height:
-            new_mode = 'stretch_both'
+            new_mode = f'{mode}_both'
         elif expand_width and not self.width:
-            new_mode = 'stretch_width'
+            new_mode = f'{mode}_width'
+            extra = ' or a fixed width '
         elif expand_height and not self.height:
-            new_mode = 'stretch_height'
+            new_mode = f'{mode}_height'
+            extra = ' or a fixed height '
         if new_mode and config.layout_compatibility and new_mode != sizing_mode:
             self.param.warning(
                 f'Layout compatibility mode determined that {type(self).__name__} '
                 f'sizing_mode was incorrectly set to {sizing_mode!r} but '
-                f'the contents require {new_mode!r} to avoid collapsing. '
+                f'the contents require {new_mode!r}{extra} to avoid collapsing. '
                 'Update the sizing_mode to hide this warning and prevent '
                 'layout issues in future versions of Panel.'
             )
