@@ -7,13 +7,6 @@ Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Choose an API
-:link: apis/index
-:link-type: doc
-
-Discover the different APIs offered by Panel and how to choose between them.
-:::
-
 :::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Components
 :link: components/components_overview
 :link-type: doc
