@@ -8,16 +8,18 @@ The Panel How-to guides provide step by step recipes for solving essential probl
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1` Develop in a notebook or editor
+:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1 sd-animate-grow50` Develop in a notebook or editor
 :link: display/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to effectively develop apps in your favorite notebook or code editor environment.
 :::
 
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Choose an API
+:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1 sd-animate-grow50` Choose an API
 :link: apis/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to choose from the different APIs offered by Panel.
 :::
@@ -30,37 +32,42 @@ How to choose from the different APIs offered by Panel.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Construct components
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Construct components
 :link: components/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to construct and customize individual components like an image or slider widget.
 :::
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Bind widgets to functions (`Reactive API`)
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Bind widgets to functions (`Reactive API`)
 :link: reactive/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to link selected widgets to arguments and make a reactive function.
 :::
 
-:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1` Autogenerate UIs (`Interact API`)
+:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1 sd-animate-grow50` Autogenerate UIs (`Interact API`)
 :link: interact/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to autogenerate UIs for function arguments.
 :::
 
-:::{grid-item-card} {octicon}`link;2.5em;sd-mr-1` Explicitly link parameters (`Callbacks API`)
+:::{grid-item-card} {octicon}`link;2.5em;sd-mr-1 sd-animate-grow50` Explicitly link parameters (`Callbacks API`)
 :link: links/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to link the parameters of Panel components in Python and Javascript.
 :::
 
-:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1` Generate UIs from declared parameters (`Param API`)
+:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1 sd-animate-grow50` Generate UIs from declared parameters (`Param API`)
 :link: param/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to use Parameterized classes with Panel to generate UIs without writing GUI code.
 :::
@@ -73,16 +80,18 @@ How to use Parameterized classes with Panel to generate UIs without writing GUI 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`git-branch;2.5em;sd-mr-1` Build a sequential UI
+:::{grid-item-card} {octicon}`git-branch;2.5em;sd-mr-1 sd-animate-grow50` Build a sequential UI
 :link: pipeline/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to build a Panel Pipeline that connects multiple panels into a sequential user interface.
 :::
 
-:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1` Build custom components
+:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1 sd-animate-grow50` Build custom components
 :link: custom_components/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to extend Panel by building custom components.
 :::
@@ -95,16 +104,18 @@ How to extend Panel by building custom components.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1` Register session callbacks
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1 sd-animate-grow50` Register session callbacks
 :link: callbacks/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to set up callbacks on session related events (e.g. on page load or when a session is destroyed) and define periodic tasks.
 :::
 
-:::{grid-item-card} {octicon}`note;2.5em;sd-mr-1` Access session state
+:::{grid-item-card} {octicon}`note;2.5em;sd-mr-1 sd-animate-grow50` Access session state
 :link: state/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to access and manipulate state related to the user session, HTTP request and URL arguments.
 :::
@@ -117,16 +128,18 @@ How to access and manipulate state related to the user session, HTTP request and
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`meter;2.5em;sd-mr-1` Enable profiling and debugging
+:::{grid-item-card} {octicon}`meter;2.5em;sd-mr-1 sd-animate-grow50` Enable profiling and debugging
 :link: profiling/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to profile and debug your application using the admin dashboard and other tools.
 :::
 
-:::{grid-item-card} {octicon}`codescan-checkmark;2.5em;sd-mr-1` Set up testing for an application
+:::{grid-item-card} {octicon}`codescan-checkmark;2.5em;sd-mr-1 sd-animate-grow50` Set up testing for an application
 :link: test/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to set up unit tests, UI tests and load testing to ensure your applications are (and stay) robust and scalable.
 :::
@@ -139,37 +152,42 @@ How to set up unit tests, UI tests and load testing to ensure your applications 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1` Apply templates
+:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1 sd-animate-grow50` Apply templates
 :link: templates/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to use a Template to customize the look and feel of a deployed Panel app.
 :::
 
-:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Improve performance
+:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1 sd-animate-grow50` Improve performance
 :link: performance/index
 :link-type: doc
+:class-title: sd-text-center
 
 Discover some tips and tricks instructing you on how you can improve the performance of your application.
 :::
 
-:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Cache data
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1 sd-animate-grow50` Cache data
 :link: caching/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to cache data across sessions and memoize the output of functions.
 :::
 
-:::{grid-item-card} {octicon}`duplicate;2.5em;sd-mr-1` Improve scalability
+:::{grid-item-card} {octicon}`duplicate;2.5em;sd-mr-1 sd-animate-grow50` Improve scalability
 :link: concurrency/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to improve the scalability of your Panel application.
 :::
 
-:::{grid-item-card} {octicon}`shield-check;2.5em;sd-mr-1` Add authentication
+:::{grid-item-card} {octicon}`shield-check;2.5em;sd-mr-1 sd-animate-grow50` Add authentication
 :link: authentication/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to configure OAuth to add authentication to a server deployment.
 :::
@@ -181,37 +199,42 @@ How to configure OAuth to add authentication to a server deployment.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`server;2.5em;sd-mr-1` Configure the server
+:::{grid-item-card} {octicon}`server;2.5em;sd-mr-1 sd-animate-grow50` Configure the server
 :link: server/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to configure the Panel server.
 :::
 
-:::{grid-item-card} {octicon}`package-dependencies;2.5em;sd-mr-1` Integrate with other servers
+:::{grid-item-card} {octicon}`package-dependencies;2.5em;sd-mr-1 sd-animate-grow50` Integrate with other servers
 :link: integrations/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to integrate Panel in other application based on Flask, FastAPI or Django.
 :::
 
-:::{grid-item-card} {octicon}`share;2.5em;sd-mr-1` Deploy applications
+:::{grid-item-card} {octicon}`share;2.5em;sd-mr-1 sd-animate-grow50` Deploy applications
 :link: deployment/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to deploy Panel applications to various cloud providers (e.g. Azure, GCP, AWS etc.)
 :::
 
-:::{grid-item-card} {octicon}`file;2.5em;sd-mr-1` Export apps
+:::{grid-item-card} {octicon}`file;2.5em;sd-mr-1 sd-animate-grow50` Export apps
 :link: export/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to export and save Panel applications as static files.
 :::
 
-:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Run panel in WebAssembly
+:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1 sd-animate-grow50` Run panel in WebAssembly
 :link: wasm/index
 :link-type: doc
+:class-title: sd-text-center
 
 How to run Panel applications entirely in the browser using WebAssembly (Wasm), Pyodide, and PyScript.
 :::
