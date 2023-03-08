@@ -421,7 +421,9 @@ class SVG(ImageBase):
         if data is None:
             return dict(object='<img></img>')
         if self.encode:
-            data = f'<img src="{self._b64(data)}" width={w!r} height={h!r} style="object-fit: contain;"></img>'
+            ws = f' width: {w};' if w else ''
+            hs = f' height: {h};' if h else ''
+            data = f'<img src="{self._b64(data)}" style="object-fit: contain;{ws}{hs}"></img>'
         elif self.width or self.height or self.sizing_mode not in (None, 'fixed'):
             self.param.warning(
                 'SVG sizing cannot be scaled if the SVG has been embedded '
@@ -471,6 +473,6 @@ class PDF(FileBase):
             return dict(text=b64)
 
         w, h = self.width or '100%', self.height or '100%'
-        page = f'#{self.start_page}' if getattr(self, 'start_page', None) else ''
+        page = f'#page={self.start_page}' if getattr(self, 'start_page', None) else ''
         html = f'<embed src="{obj}{page}" width={w!r} height={h!r} type="application/pdf">'
         return dict(text=escape(html))
