@@ -53,7 +53,7 @@ pyodideWorker.onmessage = async (event) => {
     const root_ids = JSON.parse(msg.root_ids)
 
     // Remap roots in message to element IDs
-    const root_els = document.getElementsByClassName('bk-root')
+    const root_els = document.querySelector('div[data-root-id="*"]')
     const data_roots = []
     for (const el of root_els) {
        el.innerHTML = ''
@@ -71,7 +71,7 @@ pyodideWorker.onmessage = async (event) => {
     const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
 
     // Remove loading spinner and message
-    body.classList.remove("bk", "pn-loading", "{{ loading_spinner }}")
+    body.classList.remove("pn-loading", "{{ loading_spinner }}")
     for (const loading_msg of loading_msgs) {
       loading_msg.remove()
     }

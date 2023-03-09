@@ -414,7 +414,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
     # Test whether we have access to DOM
     try:
         from js import Bokeh, document
-        root_els = document.getElementsByClassName('bk-root')
+        root_els = document.querySelector('div[data-root-id="*"]')
         for el in root_els:
             el.innerHTML = ''
     except Exception:
