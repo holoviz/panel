@@ -13,7 +13,7 @@ Discover how to split up layouts in a template to avoid bottlenecks with Bokeh's
 :::
 
 :::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Enable throttling
-:link: processes
+:link: throttling
 :link-type: doc
 
 Discover how to enable throttling to reduce the number of events being processed.

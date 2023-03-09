@@ -1,4 +1,4 @@
-# `Interact` with Functions
+# Build UIs with `Interact` API
 
 These How-to pages provide solutions for common tasks related to the use of Panel `interact`.
 
@@ -34,3 +34,14 @@ How to disable continuous updating with Panel `interact`.
 :::
 
 ::::
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+interact_basics
+interact_layout
+interact_fix_values
+interact_throttle
+```

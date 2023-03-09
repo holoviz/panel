@@ -1,11 +1,22 @@
-# Add Unit and Performance tests with Pytest
+# Test functionality and performance
 
-Testing is key to developing robust and performant applications. You can test Panel data apps using
-Python and the test tools you know and love.
+This guide addresses how to use unit and performance testing on a Panel app with Pytest.
 
-[![pytest](https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Pytest_logo.svg/600px-Pytest_logo.svg.png)](https://docs.pytest.org/en/latest/)
+---
 
-[Pytest](https://docs.pytest.org/en/latest/) is the most used Python testing framework. We will use it below to write *unit* and *performance* tests.
+Testing is key to developing robust and performant applications. You can test Panel data apps using familiar Python testing tools.
+
+[Pytest](https://docs.pytest.org/en/latest/) is the most common Python testing framework. We will use it below to write unit and performance tests.
+
+::::{grid} 4
+:::{grid-item-card}
+:link: https://docs.pytest.org/en/latest/
+:link-type: url
+
+```{image} https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Pytest_logo.svg/600px-Pytest_logo.svg.png
+```
+:::
+::::
 
 Before we get started, you should
 
@@ -21,8 +32,10 @@ Let's create a simple data app for testing. The app sleeps 0.5 seconds (default)
 
 Create the file `app.py` and add the code below (don't worry about the contents of the app for now):
 
-```python
-# app.py
+:::{card} app.py
+
+```{code-block} python
+
 import time
 
 import panel as pn
@@ -90,6 +103,8 @@ if pn.state.served:
     App().servable()
 ```
 
+:::
+
 Now serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app) in your browser to see what it does.
 
 ## Create the unit tests
@@ -101,8 +116,10 @@ Let's test:
 
 Create the file `test_app.py` and add the code below.
 
-```python
-# test_app.py
+:::{card} test_app.py
+
+```{code-block} python
+
 import pytest
 
 from app import App
@@ -136,6 +153,8 @@ def test_run_twice(app):
     assert app.status.startswith("Finished run 2 in")
 ```
 
+:::
+
 Let's run `pytest test_app.py`:
 
 ```bash
@@ -159,7 +178,9 @@ Let's test that:
 
 Create the file `test_app_performance.py`:
 
-```python
+:::{card} test_app_performance.py
+
+```{code-block} python
 # test_app_performance.py
 import pytest
 from app import App
@@ -179,6 +200,8 @@ def test_run_performance(app: App, benchmark):
     assert benchmark.stats['min'] >= 0.3
     assert benchmark.stats['max'] < 0.4
 ```
+
+:::
 
 Run `pytest test_app_performance.py`.
 
@@ -203,3 +226,5 @@ Legend:
 ```
 
 Notice how we used the `benchmark` *fixture* of [pytest-benchmark](https://pytest-benchmark.readthedocs.io/en/latest/) to test the performance of the `run` event.
+
+## Related Resources

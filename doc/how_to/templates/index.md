@@ -41,3 +41,16 @@ How to build a custom template.
 :::
 
 ::::
+
+
+```{toctree}
+:titlesonly:
+:hidden:
+:maxdepth: 2
+
+template_set
+template_arrange
+template_modal
+template_theme
+template_custom
+```

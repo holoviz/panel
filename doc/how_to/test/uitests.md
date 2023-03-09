@@ -1,6 +1,10 @@
-# Add UI tests with Pytest and Playwright
+# Test UI rendering
 
-Testing is key to developing robust and performant applications. Particularly when you build complex UIs you will want to ensure that it behaves as expected. Unit tests will allow you test that the logic on the backend behaves correctly, but to test that the UI is rendered correctly and responds appropriately, it can be useful to also test the UI.
+This guide addresses how to test the UI with Pytest and Playwright.
+
+---
+
+Testing is key to developing robust and performant applications. Particularly when you build complex UIs you will want to ensure that it behaves as expected. Unit tests will allow you test that the logic on the backend behaves correctly, but it is also useful to test that the UI is rendered correctly and responds appropriately.
 
 For testing the UI we recommend the framework [Playwright](https://playwright.dev/). Panel itself is tested with this framework.
 
@@ -24,8 +28,10 @@ Let's create a simple data app for testing. The app sleeps 0.5 seconds (default)
 
 Create the file `app.py` and add the code below (don't worry about the contents of the app for now):
 
-```python
-# app.py
+:::{card} app.py
+
+```{code-block} python
+
 import time
 
 import panel as pn
@@ -92,6 +98,8 @@ if pn.state.served:
     App().servable()
 ```
 
+:::
+
 Serve the app via `panel serve app.py` and open [http://localhost:5006/app](http://localhost:5006/app) in your browser to see what it does.
 
 ## Create a conftest.py
@@ -103,8 +111,10 @@ The `conftest.py` file should be placed alongside your tests and will be loaded 
 
 Create the file `conftest.py` and add the code below.
 
-```python
-# conftest.py
+:::{card} conftest.py
+
+```{code-block} python
+
 """Shared configuration and fixtures for testing Panel"""
 import panel as pn
 import pytest
@@ -127,6 +137,8 @@ def server_cleanup():
         pn.state.reset()
 ```
 
+:::
+
 For more inspiration see the [Panel `conftest.py` file](https://github.com/holoviz/panel/blob/main/panel/tests/conftest.py)
 
 ### Test the app UI
@@ -139,8 +151,10 @@ Now let us actually set up some UI tests, we will want to assert that the app:
 
 Create the file `test_app_frontend.py` and add the code below.
 
-```python
-# test_app_frontend.py
+:::{card} test_app_frontend.py
+
+```{code-block} python
+
 import time
 
 import panel as pn
@@ -165,6 +179,8 @@ def test_component(page, port):
     # Clean up
     server.stop()
 ```
+
+:::
 
 Let's run `pytest`. We will add the `--headed` and `--slowmo` arguments to see what is going on in the browser. This is very illustrative and also helpful for debugging purposes.
 
@@ -191,3 +207,5 @@ playwright codegen http://localhost:5006/app
 ```
 
 ![Playwright Code generation demo](https://assets.holoviz.org/panel/gifs/codegen.gif)
+
+## Related Resources

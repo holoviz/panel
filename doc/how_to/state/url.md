@@ -1,8 +1,10 @@
-# Accessing and manipulating the URL
+# Access and Manipulate the URL
 
-## Accessing
+This guide addresses how to access and manipulate the URL.
 
-When starting a server session Panel will attach a `Location` component which can be accessed using `pn.state.location`. The `Location` component servers a number of functions:
+## Access
+
+When starting a server session Panel will attach a `Location` component which can be accessed using `pn.state.location`. The `Location` component serves a number of functions:
 
 - Navigation between pages via ``pathname``
 - Sharing (parts of) the page state in the url as ``search`` parameters for bookmarking and sharing.
@@ -23,7 +25,7 @@ When starting a server session Panel will attach a `Location` component which ca
 * **``protocol``** (string): protocol part of the url, e.g. 'http:' or 'https:'
 * **``port``** (string): port number, e.g. '80'
 
-## Manipulating
+## Manipulate
 
 By default the current [query parameters](https://en.wikipedia.org/wiki/Query_string) in the URL (specified as a URL suffix such as `?color=blue`) are made available on `pn.state.location.query_params`. To make working with query parameters straightforward the `Location` object also provides a `sync` method which allows syncing query parameters with the parameters on a `Parameterized` object.
 
@@ -53,3 +55,5 @@ QueryExample.integer = 5
 ```
 
 Note to unsync the Parameterized object you can simply call `pn.state.location.unsync(QueryExample)`.
+
+## Related Resources
