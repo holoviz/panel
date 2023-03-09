@@ -57,7 +57,7 @@ class GridBox(ListPanel):
     _linked_properties: ClassVar[Tuple[str]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'objects': 'children', 'nrows': None, 'ncols': None
+        'objects': 'children'
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -158,13 +158,33 @@ class GridBox(ListPanel):
             layout = traverse(children)
         return cls._flatten_grid(layout, nrows, ncols)
 
+    def _compute_css_classes(self, children):
+        equal_widths, equal_heights = True, True
+        for (child, _, _, _, _) in children:
+            if child.sizing_mode.endswith('_both') or child.sizing_mode.endswith('_width'):
+                equal_widths &= True
+            else:
+                equal_widths = False
+            if child.sizing_mode.endswith('_both') or child.sizing_mode.endswith('_height'):
+                equal_heights &= True
+            else:
+                equal_heights = False
+        css_classes = []
+        if equal_widths:
+            css_classes.append('equal-width')
+        if equal_heights:
+            css_classes.append('equal-height')
+        return css_classes
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model()
         root = root or model
         self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
         children = self._get_children(objects, self.nrows, self.ncols)
-        properties = self._get_properties(doc)
+        css_classes = self._compute_css_classes(children)
+        properties = {k: v for k, v in self._get_properties(doc).items() if k not in ('ncols', 'nrows')}
+        properties['css_classes'] = css_classes + properties.get('css_classes', [])
         properties['children'] = children
         model.update(**properties)
         self._link_props(model, self._linked_properties, doc, root, comm)
