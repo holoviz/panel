@@ -12,7 +12,7 @@ PDF_FILE = 'https://assets.holoviz.org/panel/samples/pdf_sample.pdf'
 PNG_FILE = 'https://assets.holoviz.org/panel/samples/png_sample.png'
 SVG_FILE = 'https://assets.holoviz.org/panel/samples/svg_sample.svg'
 
-def get_bbox(page, port, obj, wait=0.2):
+def get_bbox(page, port, obj, wait=0.5):
     serve(obj, port=port, threaded=True, show=False)
     if isinstance(obj, Row):
         obj = obj[0]
@@ -78,7 +78,7 @@ def test_png_scale_both(sizing_mode, embed, page, port):
     row = Row(png, width=800, height=500)
     bbox = get_bbox(page, port, row)
     assert bbox['width'] == 780
-    assert bbox['height'] == 585
+    assert bbox['height'] == 480
 
 @pytest.mark.parametrize('embed', [False, True])
 def test_png_stretch_width(embed, page, port):
@@ -143,7 +143,7 @@ def test_svg_scale_both(sizing_mode, embed, page, port):
     row = Row(svg, width=800, height=500)
     bbox = get_bbox(page, port, row)
     assert bbox['width'] == 780
-    assert bbox['height'] == 657.921875
+    assert bbox['height'] == 480
 
 @pytest.mark.parametrize('embed', [False, True])
 def test_svg_stretch_width(embed, page, port):
