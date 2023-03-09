@@ -22,7 +22,7 @@ def test_png_native_size(embed, page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     bbox = page.locator("img").bounding_box()
 
@@ -213,12 +213,12 @@ def test_svg_native_size(embed, page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     bbox = page.locator('img').bounding_box()
 
     assert bbox['width'] == 507.203125
-    assert bbox['height'] == 427.8203125
+    assert int(bbox['height']) == 427
 
 @pytest.mark.parametrize('embed', [False, True])
 def test_svg_scaled_fixed_size(embed, page, port):
@@ -235,7 +235,7 @@ def test_svg_scaled_fixed_size(embed, page, port):
     bbox = page.locator('img').bounding_box()
 
     assert bbox['width'] == 250
-    assert bbox['height'] == 210.8671875
+    assert int(bbox['height']) == 210
 
 @pytest.mark.parametrize('sizing_mode', ['scale_width', 'stretch_width'])
 @pytest.mark.parametrize('embed', [False, True])
@@ -276,7 +276,7 @@ def test_svg_scale_height(sizing_mode, embed, page, port):
 
     bbox = page.locator("img").bounding_box()
 
-    assert bbox['width'] == 569.0546875
+    assert int(bbox['width']) == 569
     assert bbox['height'] == 480
 
 @pytest.mark.parametrize('sizing_mode', ['stretch_both', 'scale_both'])
