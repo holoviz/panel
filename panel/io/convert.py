@@ -10,6 +10,8 @@ from typing import (
     IO, Any, Dict, List,
 )
 
+import bokeh
+
 from bokeh.application.application import Application, SessionContext
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.command.util import build_single_handler_application
@@ -37,7 +39,7 @@ WEB_WORKER_TEMPLATE = _pn_env.get_template('pyodide_worker.js')
 WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
-BOKEH_VERSION = '2.4.3'
+BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
 PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
