@@ -426,7 +426,6 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
 
     # If we have DOM access render and sync the document
     if root_els is not None:
-        from js import console 
         views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
         jsdoc = list(views[0].roots.values())[0].model.document
         _link_docs(pydoc, jsdoc)
