@@ -42,11 +42,11 @@ def test_get_matplotlib_pane_type():
 
 @mpl_available
 def test_matplotlib_pane(document, comm):
-    pane = pn.panel(mpl_figure())
+    pane = pn.pane.Matplotlib(mpl_figure())
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert model.text.startswith('&lt;img')
+    assert model.text.startswith('&lt;img src=&quot;data:image/png;base64,')
     text = model.text
     assert pane._models[model.ref['id']][0] is model
 
@@ -58,3 +58,10 @@ def test_matplotlib_pane(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
+
+
+@mpl_available
+def test_matplotlib_pane_svg_render(document, comm):
+    pane = pn.pane.Matplotlib(mpl_figure(), format='svg')
+    model = pane.get_root(document, comm=comm)
+    assert model.text.startswith('&lt;img src=&quot;data:image/svg+xml;base64,')

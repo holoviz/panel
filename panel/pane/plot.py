@@ -23,7 +23,9 @@ from ..io.notebook import push
 from ..util import escape
 from ..viewable import Layoutable
 from .base import PaneBase
-from .image import PNG
+from .image import (
+    PDF, PNG, SVG, Image,
+)
 from .ipywidget import IPyWidget
 from .markup import HTML
 
@@ -187,7 +189,7 @@ class Bokeh(PaneBase):
         return model
 
 
-class Matplotlib(PNG, IPyWidget):
+class Matplotlib(Image, IPyWidget):
     """
     The `Matplotlib` pane allows displaying any displayable Matplotlib figure
     inside a Panel app.
@@ -208,6 +210,12 @@ class Matplotlib(PNG, IPyWidget):
     dpi = param.Integer(default=144, bounds=(1, None), doc="""
         Scales the dpi of the matplotlib figure.""")
 
+    encode = param.Boolean(default=True, doc="""
+        Whether to encode SVG out as base64.""")
+
+    format = param.Selector(default='png', objects=['png', 'svg'], doc="""
+        The format to render the plot as if the plot is not interactive.""")
+
     high_dpi = param.Boolean(default=True, doc="""
         Whether to optimize output for high-dpi displays.""")
 
@@ -220,7 +228,7 @@ class Matplotlib(PNG, IPyWidget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'object': 'text', 'interactive': None, 'dpi': None,  'tight': None,
-        'high_dpi': None
+        'high_dpi': None, 'format': None, 'encode': None
     }
 
     _rerender_params = PNG._rerender_params + [
@@ -274,6 +282,15 @@ class Matplotlib(PNG, IPyWidget):
     def _set_explicict_height(self):
         self._explicit_height = self.height is not None
 
+    @property
+    def _img_type(self):
+        if self.format == 'png':
+            return PNG
+        elif self.format == 'svg':
+            return SVG
+        else:
+            return PDF
+
     def _update_dimensions(self):
         w, h = self.object.get_size_inches()
         dpi = self.dpi / 2. if self.high_dpi else self.dpi
@@ -291,26 +308,37 @@ class Matplotlib(PNG, IPyWidget):
                     self.height = self.height or int(dpi * h)
                 self._explicit_height = False
 
+    @property
+    def filetype(self):
+        return self._img_type.filetype
+
+    def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        return self._img_type._transform_object(self, obj)
+
+    def _imgshape(self, data):
+        try:
+            return self._img_type._imgshape(data)
+        except TypeError:
+            return self._img_type._imgshape(self, data)
+
+    def _format_html(
+        self, src: str, width: str | None = None, height: str | None = None
+    ):
+        return self._img_type._format_html(self, src, width, height)
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         self._update_dimensions()
         if not self.interactive:
-            model = PNG._get_model(self, doc, root, parent, comm)
-            return model
+            return self._img_type._get_model(self, doc, root, parent, comm)
         self.object.set_dpi(self.dpi)
         manager = self._get_widget(self.object)
-        props = self._init_params()
-        kwargs = {
-            k: v for k, v in props.items()
-            if k not in self._rerender_params+['loading']
-        }
-        kwargs['width'] = self.width
-        kwargs['height'] = self.height
-        kwargs['sizing_mode'] = self.sizing_mode
+        properties = self._get_properties(doc)
+        del properties['text']
         model = self._get_ipywidget(
-            manager.canvas, doc, root, comm, **kwargs
+            manager.canvas, doc, root, comm, **properties
         )
         root = root or model
         self._models[root.ref['id']] = (model, parent)
@@ -345,7 +373,14 @@ class Matplotlib(PNG, IPyWidget):
         else:
             bbox_inches = None
 
-        obj.canvas.print_figure(b, bbox_inches=bbox_inches)
+        obj.canvas.print_figure(
+            b,
+            format=self.format,
+            facecolor=obj.get_facecolor(),
+            edgecolor=obj.get_edgecolor(),
+            dpi=self.dpi,
+            bbox_inches=bbox_inches
+        )
         return b.getvalue()
 
 
