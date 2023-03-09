@@ -71,10 +71,11 @@ class GridStack(ReactiveHTML, GridSpec):
           disableDrag: !data.allow_drag,
           margin: 0
         }
-        if (data.nrows)
+        if (data.nrows) {
           options.row = data.nrows
-          if (model.height)
-            options.cellHeight = Math.floor(model.height/data.nrows)
+          const height = model.height || grid.offsetHeight;
+          options.cellHeight = Math.floor(height/data.nrows);
+        }
         const gridstack = GridStack.init(options, grid);
         function sync_state(load=false) {
           const items = []
@@ -92,16 +93,18 @@ class GridStack(ReactiveHTML, GridSpec):
         sync_state()
         state.gridstack = gridstack
         """,
-        'after_layout': "state.gridstack.engine._notify()",
+        'after_layout': "self.nrows(); state.gridstack.engine._notify();",
         'allow_drag':   "state.gridstack.enableMove(data.allow_drag)",
         'allow_resize': "state.gridstack.enableResize(data.allow_resize)",
         'ncols':        "state.gridstack.column(data.ncols)",
-        'nrows':        """
-          state.gristack.opts.row = data.nrows
-          if (data.nrows && model.height)
-            state.gridstack.cellHeight(Math.floor(model.height/data.nrows))
-          else
-            state.gridstack.cellHeight('auto')
+        'nrows': """
+        state.gridstack.opts.row = data.nrows
+        if (data.nrows) {
+          const height = model.height || grid.offsetHeight;
+          state.gridstack.cellHeight(Math.floor(height/data.nrows))
+        } else {
+          state.gridstack.cellHeight('auto')
+        }
         """
     }
 
@@ -129,7 +132,7 @@ class GridStack(ReactiveHTML, GridSpec):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'nrows': 'nrows', 'ncols': 'ncols'
+        'nrows': 'nrows', 'ncols': 'ncols', 'objects': 'objects'
     }
 
     _stylesheets: ClassVar[List[str]] = ['css/gridstack.css']

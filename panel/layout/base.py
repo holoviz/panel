@@ -35,6 +35,11 @@ class Panel(Reactive):
     Abstract baseclass for a layout of Viewables.
     """
 
+    margin = param.Parameter(default=0, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
     # Used internally to optimize updates
     _batch_update: ClassVar[bool] = False
 
@@ -659,11 +664,6 @@ class ListPanel(ListLike, Panel):
     """
     An abstract baseclass for Panel objects with list-like children.
     """
-
-    margin = param.Parameter(default=0, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
 
     scroll = param.Boolean(default=False, doc="""
         Whether to add scrollbars if the content overflows the size
