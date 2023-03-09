@@ -65,7 +65,7 @@ def test_gridstack(page, port):
 
     gspec[1, 1] = Spacer(styles=dict(background='black'))
 
-    time.sleep(0.25)
+    time.sleep(0.5)
 
     children = page.locator(".grid-stack > div > div > div")
     bbox6 = children.nth(5).bounding_box()
@@ -135,7 +135,7 @@ def test_gridstack_stretch(page, port):
 
     gspec[1, 1] = Spacer(styles=dict(background='black'))
 
-    time.sleep(0.3)
+    time.sleep(0.5)
 
     children = page.locator(".grid-stack > div > div > div")
     bbox6 = children.nth(5).bounding_box()
