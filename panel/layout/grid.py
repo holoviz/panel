@@ -216,10 +216,6 @@ class GridSpec(Panel):
     nrows = param.Integer(default=None, bounds=(0, None), doc="""
         Limits the number of rows that can be assigned.""")
 
-    width = param.Integer(default=600)
-
-    height = param.Integer(default=600)
-
     _bokeh_model: ClassVar[Model] = BkGridBox
 
     _linked_properties: ClassVar[Tuple[str]] = ()
@@ -233,6 +229,8 @@ class GridSpec(Panel):
     }
 
     _preprocess_params: ClassVar[List[str]] = ['objects']
+
+    _stylesheets: ClassVar[List[str]] = ['css/gridspec.css']
 
     def __init__(self, **params):
         if 'objects' not in params:
@@ -276,13 +274,13 @@ class GridSpec(Panel):
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         from ..pane.base import RerenderError
 
-        if self.ncols:
-            width = int(float(self.width)/self.ncols)
+        if self.ncols and self.width:
+            width = self.width/self.ncols
         else:
             width = 0
 
-        if self.nrows:
-            height = int(float(self.height)/self.nrows)
+        if self.nrows and self.height:
+            height = self.height/self.nrows
         else:
             height = 0
 
@@ -302,14 +300,19 @@ class GridSpec(Panel):
             y1 = (self.nrows) if y1 is None else y1
             r, c, h, w = (y0, x0, y1-y0, x1-x0)
 
+            properties = {}
             if self.sizing_mode in ['fixed', None]:
-                properties = {'width': w*width, 'height': h*height}
+                if width:
+                    properties['width'] = int(w*width)
+                if height:
+                    properties['height'] = int(h*height)
             else:
-                properties = {'sizing_mode': self.sizing_mode}
-                if 'width' in self.sizing_mode:
-                    properties['height'] = h*height
-                elif 'height' in self.sizing_mode:
-                    properties['width'] = w*width
+                properties['sizing_mode'] = self.sizing_mode
+                if 'width' in self.sizing_mode and height:
+                    properties['height'] = int(h*height)
+                elif 'height' in self.sizing_mode and width:
+                    properties['width'] = int(w*width)
+
             obj.param.set_param(**{k: v for k, v in properties.items()
                                    if not obj.param[k].readonly})
 
@@ -417,9 +420,8 @@ class GridSpec(Panel):
 
         subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
-            params = self.param.values()
-            params['objects'] = OrderedDict([list(o)[0] for o in subgrid.flatten()])
-            gspec = type(self)(**params)
+            objects = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            gspec = self.clone(objects=objects)
             xoff, yoff = gspec._xoffset, gspec._yoffset
             adjusted = []
             for (y0, x0, y1, x1), obj in gspec.objects.items():
