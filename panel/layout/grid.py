@@ -161,11 +161,11 @@ class GridBox(ListPanel):
     def _compute_css_classes(self, children):
         equal_widths, equal_heights = True, True
         for (child, _, _, _, _) in children:
-            if child.sizing_mode.endswith('_both') or child.sizing_mode.endswith('_width'):
+            if child.sizing_mode and (child.sizing_mode.endswith('_both') or child.sizing_mode.endswith('_width')):
                 equal_widths &= True
             else:
                 equal_widths = False
-            if child.sizing_mode.endswith('_both') or child.sizing_mode.endswith('_height'):
+            if child.sizing_mode and (child.sizing_mode.endswith('_both') or child.sizing_mode.endswith('_height')):
                 equal_heights &= True
             else:
                 equal_heights = False
