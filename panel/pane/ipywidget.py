@@ -42,6 +42,11 @@ class IPyWidget(PaneBase):
     def applies(cls, obj: Any) -> float | bool | None:
         return (hasattr(obj, 'traits') and hasattr(obj, 'get_manager_state') and hasattr(obj, 'comm'))
 
+    def _resolve_ref(self, pname, value):
+        if pname == 'object' and self.applies(value):
+            return None, value
+        return super()._resolve_ref(pname, value)
+
     def _get_ipywidget(self, obj, doc, root, comm, **kwargs):
         if isinstance(comm, JupyterComm) and not config.embed and "PANEL_IPYWIDGET" not in os.environ:
             IPyWidget = _BkIPyWidget

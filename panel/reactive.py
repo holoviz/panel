@@ -33,13 +33,15 @@ from param.parameterized import ParameterizedMetaclass, Watcher
 from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
-from .io.resources import CDN_DIST, loading_css, patch_stylesheet
+from .io.resources import (
+    CDN_DIST, loading_css, patch_stylesheet, process_raw_css,
+)
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import (
-    classproperty, edit_readonly, escape, updating,
+    classproperty, edit_readonly, escape, eval_function, updating,
 )
 from .viewable import Layoutable, Renderable, Viewable
 
@@ -126,7 +128,9 @@ class Syncable(Renderable):
 
         # Sets up watchers to process manual updates to models
         if self._manual_params:
-            self.param.watch(self._update_manual, self._manual_params)
+            self._callbacks.append(
+                self.param.watch(self._update_manual, self._manual_params)
+            )
 
     #----------------------------------------------------------------
     # Model API
@@ -180,8 +184,10 @@ class Syncable(Renderable):
         if 'height' in properties and self.sizing_mode is None:
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
-            stylesheets = [loading_css()] + [
-                ImportedStyleSheet(url=stylesheet) for stylesheet in self._stylesheets
+            from .config import config
+            base_stylesheets = config.css_files+self._stylesheets+['css/loading.css']
+            stylesheets = [loading_css()] + process_raw_css(config.raw_css) + [
+                ImportedStyleSheet(url=stylesheet) for stylesheet in base_stylesheets
             ]
             for stylesheet in properties['stylesheets']:
                 if isinstance(stylesheet, str) and stylesheet.endswith('.css'):
@@ -511,11 +517,100 @@ class Reactive(Syncable, Viewable):
     the parameters to other objects.
     """
 
+    # Parameter values which should not be treated like references
+    _ignored_refs: ClassVar[List[str]] = []
+
     _rename: ClassVar[Mapping[str, str | None]] = {
         'design': None, 'loading': None
     }
 
     __abstract = True
+
+    def __init__(self, **params):
+        params, refs = self._extract_refs(params)
+        super().__init__(**params)
+        self._refs = refs
+        self._setup_refs(refs)
+
+    def _resolve_ref(self, pname, value):
+        from .depends import param_value_if_widget
+        ref = None
+        value = param_value_if_widget(value)
+        if isinstance(value, param.Parameter):
+            ref = value
+            value = getattr(value.owner, value.name)
+        elif hasattr(value, '_dinfo'):
+            ref = value
+            value = eval_function(value)
+        return ref, value
+
+    def _validate_ref(self, pname, value):
+        pobj = self.param[pname]
+        pobj._validate(value)
+        if isinstance(pobj, param.Dynamic) and callable(value) and hasattr(value, '_dinfo'):
+            raise ValueError(
+                'Dynamic parameters should not capture functions with dependencies.'
+            )
+
+    def _extract_refs(self, params):
+        processed, refs = {}, {}
+        for pname, value in params.items():
+            if pname not in self.param or pname in self._ignored_refs:
+                processed[pname] = value
+                continue
+
+            # Only consider extracting reference if the provided value is not
+            # a valid value for the parameter (or no validation was defined)
+            try:
+                self._validate_ref(pname, value)
+            except Exception:
+                pass
+            else:
+                pobj = self.param[pname]
+                if type(pobj) is not param.Parameter:
+                    processed[pname] = value
+                    continue
+
+            # Resolve references, allowing for Widget, Parameter and
+            # objects with dependencies
+            ref, value = self._resolve_ref(pname, value)
+            if ref is not None:
+                refs[pname] = ref
+            processed[pname] = value
+        return processed, refs
+
+    def _sync_refs(self, *events):
+        from .config import config
+        if config.loading_indicator:
+            self.loading = True
+        updates = {}
+        for pname, p in self._refs.items():
+            if isinstance(p, param.Parameter):
+                deps = (p,)
+            else:
+                deps = tuple(p._dinfo['dependencies']) + tuple(p._dinfo['kw'].values())
+            # Skip updating value if dependency has not changed
+            if not any((dep.owner is e.obj and dep.name == e.name) for dep in deps for e in events):
+                continue
+            if isinstance(p, param.Parameter):
+                updates[pname] = getattr(p.owner, p.name)
+            else:
+                updates[pname] = eval_function(p)
+        if config.loading_indicator:
+            updates['loading'] = False
+        self.param.update(updates)
+
+    def _setup_refs(self, refs):
+        groups = defaultdict(list)
+        for pname, p in refs.items():
+            if isinstance(p, param.Parameter):
+                groups[p.owner].append(p.name)
+            else:
+                subparameters = list(p._dinfo['dependencies'])+list(p._dinfo['kw'].values())
+                for sp in subparameters:
+                    groups[sp.owner].append(sp.name)
+        for owner, pnames in groups.items():
+            owner.param.watch(self._sync_refs, list(set(pnames)))
 
     #----------------------------------------------------------------
     # Private API
@@ -525,17 +620,30 @@ class Reactive(Syncable, Viewable):
         params, _ = self._design.params(self, doc) if self._design else ({}, None)
         for k, v in self._init_params().items():
             if k in ('stylesheets', 'tags') and k in params:
-                v = params[k] + v
-            params[k] = v
+                params[k] = v = params[k] + v
+            elif k not in params or self.param[k].default is not v:
+                params[k] = v
         properties = self._process_param_change(params)
-        if 'stylesheets' in properties:
-            if doc and 'dist_url' in doc._template_variables:
-                dist_url = doc._template_variables['dist_url']
-            else:
-                dist_url = CDN_DIST
-            for stylesheet in properties['stylesheets']:
-                if isinstance(stylesheet, ImportedStyleSheet):
-                    patch_stylesheet(stylesheet, dist_url)
+        if 'stylesheets' not in properties:
+            return properties
+        if doc:
+            state._stylesheets[doc] = cache = state._stylesheets.get(doc, {})
+        else:
+            cache = {}
+        if doc and 'dist_url' in doc._template_variables:
+            dist_url = doc._template_variables['dist_url']
+        else:
+            dist_url = CDN_DIST
+        stylesheets = []
+        for stylesheet in properties['stylesheets']:
+            if isinstance(stylesheet, ImportedStyleSheet):
+                if stylesheet.url in cache:
+                    stylesheet = cache[stylesheet.url]
+                else:
+                    cache[stylesheet.url] = stylesheet
+                patch_stylesheet(stylesheet, dist_url)
+            stylesheets.append(stylesheet)
+        properties['stylesheets'] = stylesheets
         return properties
 
     def _update_properties(self, *events: param.parameterized.Event, doc: Document) -> Dict[str, Any]:
@@ -798,10 +906,13 @@ class SyncableData(Reactive):
         super().__init__(**params)
         self._data = None
         self._processed = None
-        self.param.watch(self._validate, self._data_params)
+        callbacks = [self.param.watch(self._validate, self._data_params)]
         if self._data_params:
-            self.param.watch(self._update_cds, self._data_params)
-        self.param.watch(self._update_selected, 'selection')
+            callbacks.append(
+                self.param.watch(self._update_cds, self._data_params)
+            )
+        callbacks.append(self.param.watch(self._update_selected, 'selection'))
+        self._callbacks += callbacks
         self._validate()
         self._update_cds()
 
@@ -1550,6 +1661,15 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         children: Dict[str, List[Model]]
     ) -> Dict[str, List[Model]]:
         return children
+
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'stylesheets' in params:
+            css = getattr(self, '__css__', []) or []
+            props['stylesheets'] = [
+                ImportedStyleSheet(url=ss) for ss in css
+            ] + props['stylesheets']
+        return props
 
     def _init_params(self) -> Dict[str, Any]:
         ignored = list(Reactive.param)

@@ -139,7 +139,7 @@ nbsite_gallery_conf = {
             'normalize_titles': False
         }
     },
-    'thumbnail_url': 'https://assets.holoviews.org/panel/thumbnails',
+    'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
     'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
 }
 

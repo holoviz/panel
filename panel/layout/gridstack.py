@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from typing import ClassVar, Mapping
 
 import param
 
@@ -43,6 +44,8 @@ class GridStack(ReactiveHTML, GridSpec):
     state = param.List(doc="""
         Current state of the grid (updated as items are resized and
         dragged).""")
+
+    margin = param.Parameter(default=0)
 
     width = param.Integer(default=None)
 
@@ -123,6 +126,10 @@ class GridStack(ReactiveHTML, GridSpec):
                 'exports': 'GridStack'
             }
         }
+    }
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'nrows': 'nrows', 'ncols': 'ncols'
     }
 
     @classproperty

@@ -47,6 +47,8 @@
       color: currentColor;
   }
   #header-design-provider {
+      --neutral-fill-hover: var(--header-background);
+      --neutral-fill-rest: var(--header-background);
       --neutral-foreground-rest: var(--header-color);
       background: var(--header-background);
       color: var(--header-color);
@@ -172,7 +174,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	{% for doc in docs %}
 	{% for root in doc.roots %}
 	{% if "main" in root.tags %}
-        <div class="card-margin">
+        <div class="card-margin {{ sizing_modes[root.id] }}">
 	  {% if main_layout %}
 	  <fast-card class="pn-wrapper">
 	  {% else %}

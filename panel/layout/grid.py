@@ -158,8 +158,7 @@ class GridBox(ListPanel):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model()
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
         children = self._get_children(objects, self.nrows, self.ncols)
@@ -326,6 +325,10 @@ class GridSpec(Panel):
                 child.update(**properties)
             children.append((child, r, c, h, w))
         return children
+
+    def _compute_sizing_mode(self, children, sizing_mode):
+        children = [child for (child, _, _, _, _) in children]
+        return super()._compute_sizing_mode(children, sizing_mode)
 
     @property
     def _xoffset(self):

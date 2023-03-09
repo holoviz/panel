@@ -1,7 +1,8 @@
-.bk.pn-loading {
+:host(.pn-loading) {
   overflow: hidden;
 }
-.bk.pn-loading:before {
+
+:host(.pn-loading):before {
   position: absolute;
   height: 100%;
   width: 100%;
@@ -15,10 +16,8 @@
   border-width: 1px;
   cursor: progress;
 }
-.bk.pn-loading.arcs:hover:before {
-  cursor: progress;
-}
-.bk.pn-loading .pn-loading-msg {
+
+:host(.pn-loading) .pn-loading-msg {
   position: absolute;
   top: 72%;
   font-size: 2em;

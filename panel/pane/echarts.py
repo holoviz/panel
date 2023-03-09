@@ -12,7 +12,7 @@ import param
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
-from .base import PaneBase
+from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-class ECharts(PaneBase):
+class ECharts(ModelPane):
     """
     ECharts panes allow rendering echarts.js dictionaries and pyecharts plots.
 
@@ -64,43 +64,29 @@ class ECharts(PaneBase):
             return isinstance(obj, pyecharts.charts.chart.Chart)
         return False
 
-    @classmethod
-    def _get_dimensions(cls, props):
-        if json is None:
-            return
-        responsive = props.get('data', {}).get('responsive')
-        if responsive:
-            props['sizing_mode'] = 'stretch_both'
-
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        ECharts = lazy_load('panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root)
-        props = self._get_echart_dict(self.object)
-        props.update(self._get_properties(doc))
-        self._get_dimensions(props)
-        model = ECharts(**props)
-        if root is None:
-            root = model
-        self._models[root.ref['id']] = (model, parent)
-        return model
+        self._bokeh_model = lazy_load(
+            'panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root
+        )
+        return super()._get_model(doc, root, parent, comm)
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if 'data' in msg:
-            msg.update(self._get_echart_dict(msg['data']))
-        return msg
-
-    def _get_echart_dict(self, object):
-        if isinstance(object, dict):
-            return {'data': dict(object)}
-        elif object is not None:
-            w, h = object.width, object.height
-            params = {'data': json.loads(object.dump_options())}
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'data' not in props:
+            return props
+        data = props['data'] or {}
+        if not isinstance(data, dict):
+            w, h = data.width, data.height
+            props['data'] = data = json.loads(data.dump_options())
             if not self.height and h:
-                params['height'] = int(h.replace('px', ''))
+                props['height'] = int(h.replace('px', ''))
             if not self.width and w:
-                params['width'] = int(w.replace('px', ''))
-            return params
-        return {}
+                props['width'] = int(w.replace('px', ''))
+        else:
+            props['data'] = data
+        if data.get('responsive'):
+            props['sizing_mode'] = 'stretch_both'
+        return props

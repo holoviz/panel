@@ -137,11 +137,11 @@ class PaneBase(Reactive):
     __abstract = True
 
     def __init__(self, object=None, **params):
-        applies = self.applies(object, **(params if self._applies_kw else {}))
-        if (isinstance(applies, bool) and not applies) and object is not None :
-            self._type_error(object)
-
         super().__init__(object=object, **params)
+        applies = self.applies(self.object, **(params if self._applies_kw else {}))
+        if (isinstance(applies, bool) and not applies) and self.object is not None:
+            self._type_error(self.object)
+
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
         self._callbacks.extend([
@@ -149,6 +149,13 @@ class PaneBase(Reactive):
             self.param.watch(self._update_pane, self._rerender_params)
         ])
         self._sync_layoutable()
+
+    def _validate_ref(self, pname, value):
+        super()._validate_ref(pname, value)
+        if pname == 'object' and not self._applies_kw:
+            applies = self.applies(value)
+            if isinstance(applies, bool) and not applies:
+                raise RuntimeError('Value is not valid.')
 
     def _sync_layoutable(self, *events: param.parameterized.Event):
         included = list(Layoutable.param)
@@ -490,11 +497,15 @@ class ReplacementPane(PaneBase):
     children on, or updates the existing model in place.
     """
 
+    updates = param.Boolean(default=False, doc="""Whether to update the object inplace.""")
+
     _pane = param.ClassSelector(class_=Viewable)
+
+    _ignored_refs: ClassVar[Tuple[str]] = ['object']
 
     _linked_properties: ClassVar[Tuple[str]] = ()
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None, 'updates': None}
 
     _updates: bool = True
 
@@ -507,7 +518,9 @@ class ReplacementPane(PaneBase):
         self._pane = panel(None)
         self._internal = True
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
-        self.param.watch(self._update_inner_layout, list(Layoutable.param))
+        self._callbacks.append(
+            self.param.watch(self._update_inner_layout, list(Layoutable.param))
+        )
         self._sync_layout()
 
     def _get_model(
@@ -519,9 +532,8 @@ class ReplacementPane(PaneBase):
             if ref in self._models:
                 self._cleanup(root)
         model = self._inner_layout._get_model(doc, root, parent, comm)
-        if root is None:
-            ref = model.ref['id']
-        self._models[ref] = (model, parent)
+        root = root or model
+        self._models[root.ref['id']] = (model, parent)
         return model
 
     @param.depends('_pane', '_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
@@ -537,7 +549,7 @@ class ReplacementPane(PaneBase):
         self._pane.param.update({event.name: event.new for event in events})
 
     @classmethod
-    def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, **kwargs):
+    def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, inplace: bool=False, **kwargs):
         pane_type = cls.get_pane_type(object)
         try:
             links = Link.registry.get(object)
@@ -549,10 +561,13 @@ class ReplacementPane(PaneBase):
                 w for pwatchers in object._param_watchers.values()
                 for awatchers in pwatchers.values() for w in awatchers
             ]
-            custom_watchers = [wfn for wfn in watchers if wfn not in object._callbacks]
+            custom_watchers = [
+                wfn for wfn in watchers if wfn not in object._callbacks and
+                not hasattr(wfn.fn, '_watcher_name')
+            ]
 
         pane, internal = None, was_internal
-        if type(old_object) is pane_type and not links and not custom_watchers and was_internal:
+        if type(old_object) is pane_type and ((not links and not custom_watchers and was_internal) or inplace):
             # If the object has not external referrers we can update
             # it inplace instead of replacing it
             if isinstance(object, Reactive):
@@ -584,7 +599,7 @@ class ReplacementPane(PaneBase):
         kwargs = dict(self.param.values(), **self._kwargs)
         del kwargs['object']
         new_pane, internal = self._update_from_object(
-            new_object, self._pane, self._internal, **kwargs
+            new_object, self._pane, self._internal, self.updates, **kwargs
         )
         if new_pane is None:
             return

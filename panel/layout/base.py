@@ -72,11 +72,10 @@ class Panel(Reactive):
     # Callback API
     #----------------------------------------------------------------
 
-    def _init_params(self) -> Dict[str, Any]:
-        return {
-            p: v for p, v in self.param.values().items()
-            if v is not None and p != 'objects'
-        }
+    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        if ('styles' in params or 'sizing_mode' in params) and self.sizing_mode in ('stretch_width', 'stretch_both'):
+            params['styles'] = dict(params.get('styles', {}), **{'overflow-x': 'auto'})
+        return super()._process_param_change(params)
 
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
@@ -86,10 +85,15 @@ class Panel(Reactive):
         inverse = {v: k for k, v in self._property_mapping.items() if v is not None}
         preprocess = any(inverse.get(k, k) in self._preprocess_params for k in msg)
 
+        # ALERT: Find a better way to handle this
+        if 'styles' in msg and root is model and 'overflow-x' in msg['styles']:
+            del msg['styles']['overflow-x']
+
         obj_key = self._property_mapping['objects']
         if obj_key in msg:
             old = events['objects'].old
-            msg[obj_key] = self._get_objects(model, old, doc, root, comm)
+            msg[obj_key] = children = self._get_objects(model, old, doc, root, comm)
+            msg['sizing_mode'] = self._compute_sizing_mode(children, msg.get('sizing_mode', model.sizing_mode))
 
         with hold(doc):
             update = Panel._batch_update
@@ -146,19 +150,56 @@ class Panel(Reactive):
         if self._bokeh_model is None:
             raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
         model = self._bokeh_model()
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
         properties = self._get_properties(doc)
         properties[self._property_mapping['objects']] = objects
+        properties['sizing_mode'] = self._compute_sizing_mode(objects, properties.get('sizing_mode'))
         model.update(**properties)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
+    def _compute_sizing_mode(self, children, sizing_mode):
+        from ..config import config
+        if sizing_mode is not None and (not config.layout_compatibility or sizing_mode == 'fixed'):
+            return sizing_mode
+        expand_width, expand_height = False, False
+        for child in children:
+            if child.sizing_mode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
+                expand_width = True
+            if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
+                expand_height = True
+        new_mode = None
+        if expand_width and expand_height and not self.width and not self.height:
+            new_mode = 'stretch_both'
+        elif expand_width and not self.width:
+            new_mode = 'stretch_width'
+        elif expand_height and not self.height:
+            new_mode = 'stretch_height'
+        if new_mode and config.layout_compatibility and new_mode != sizing_mode:
+            self.param.warning(
+                f'Layout compatibility mode determined that {type(self).__name__} '
+                f'sizing_mode was incorrectly set to {sizing_mode!r} but '
+                f'the contents require {new_mode!r} to avoid collapsing. '
+                'Update the sizing_mode to hide this warning and prevent '
+                'layout issues in future versions of Panel.'
+            )
+        return new_mode or sizing_mode
+
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
+
+    def get_root(
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        preprocess: bool = True
+    ) -> Model:
+        root = super().get_root(doc, comm, preprocess)
+        # ALERT: Find a better way to handle this
+        if hasattr(root, 'styles') and 'overflow-x' in root.styles:
+            del root.styles['overflow-x']
+        return root
 
     def select(self, selector=None):
         """

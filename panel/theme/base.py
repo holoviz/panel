@@ -7,7 +7,6 @@ import pathlib
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type,
 )
-from weakref import WeakKeyDictionary
 
 import param
 
@@ -98,8 +97,6 @@ class Design(param.Parameterized):
         'dark': DarkTheme
     }
 
-    _caches: ClassVar[WeakKeyDictionary[Document, Dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
-
     def __init__(self, theme=None, **params):
         if isinstance(theme, type) and issubclass(theme, Theme):
             theme = theme._name
@@ -116,10 +113,11 @@ class Design(param.Parameterized):
             self._apply_modifiers(o, ref, self.theme, isolated, cache)
 
     def _apply_hooks(self, viewable: Viewable, root: Model) -> None:
-        if root.document in self._caches:
-            cache = self._caches[root.document]
+        from ..io.state import state
+        if root.document in state._stylesheets:
+            cache = state._stylesheets[root.document]
         else:
-            self._caches[root.document] = cache = {}
+            state._stylesheets[root.document] = cache = {}
         with root.document.models.freeze():
             self._reapply(viewable, root, isolated=False, cache=cache)
 
@@ -243,6 +241,13 @@ class Design(param.Parameterized):
             if isinstance(stylesheet, ImportedStyleSheet):
                 patch_stylesheet(stylesheet, dist_url)
         model.update(**props)
+        if hasattr(viewable, '_synced_properties') and 'objects' in viewable._property_mapping:
+            obj_key = viewable._property_mapping['objects']
+            child_props = {
+                p: v for p, v in params.items() if p in viewable._synced_properties
+            }
+            for child in getattr(model, obj_key):
+                child.update(**child_props)
 
     #----------------------------------------------------------------
     # Public API
@@ -269,10 +274,11 @@ class Design(param.Parameterized):
             self._reapply(viewable, root, isolated=isolated)
             return
 
-        if doc in self._caches:
-            cache = self._caches[doc]
+        from ..io.state import state
+        if doc in state._stylesheets:
+            cache = state._stylesheets[doc]
         else:
-            self._caches[doc] = cache = {}
+            state._stylesheets[doc] = cache = {}
         with doc.models.freeze():
             self._reapply(viewable, root, isolated=isolated, cache=cache)
             if self.theme and self.theme.bokeh_theme and doc:
@@ -282,6 +288,13 @@ class Design(param.Parameterized):
         """
         Applies the Bokeh theme associated with this Design system
         to a model.
+
+        Arguments
+        ---------
+        model: bokeh.model.Model
+            The Model to apply the theme on.
+        theme_override: str | None
+            A different theme to apply.
         """
         theme = theme_override or self.theme.bokeh_theme
         if isinstance(theme, str):
@@ -313,15 +326,15 @@ class Design(param.Parameterized):
             Dictionary of parameter values to apply to the children
             of the Viewable.
         """
+        from ..io.state import state
         if doc is None:
             cache = {}
-        elif doc in self._caches:
-            cache = self._caches[doc]
+        elif doc in state._stylesheets:
+            cache = state._stylesheets[doc]
         else:
-            self._caches[doc] = cache = {}
+            state._stylesheets[doc] = cache = {}
         modifiers, child_modifiers = self._get_modifiers(viewable, theme=self.theme)
         self._patch_modifiers(doc, modifiers, cache)
-        modifiers['tags'] = ['fast']
         return modifiers, child_modifiers
 
 

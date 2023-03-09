@@ -8,6 +8,7 @@ import json
 import logging
 import mimetypes
 import os
+import re
 
 from base64 import b64encode
 from collections import OrderedDict
@@ -64,10 +65,13 @@ BASE_TEMPLATE = _env.get_template('base.html')
 ERROR_TEMPLATE = _env.get_template('error.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
-CDN_DIST = f"https://cdn.holoviz.org/panel/{JS_VERSION}/dist/"
+CDN_URL = f"https://cdn.holoviz.org/panel/{JS_VERSION}/"
+CDN_DIST = f"{CDN_URL}dist/"
 DOC_DIST = "https://panel.holoviz.org/_static/"
 LOCAL_DIST = "static/extensions/panel/"
 COMPONENT_PATH = "components/"
+
+BK_PREFIX_RE = re.compile('\.bk\.')
 
 RESOURCE_URLS = {
     'font-awesome': {
@@ -129,6 +133,12 @@ def set_resource_mode(mode):
     finally:
         RESOURCE_MODE = old_mode
         _settings.resources.set_value(old_resources)
+
+def process_raw_css(raw_css):
+    """
+    Converts old-style Bokeh<3 compatible CSS to Bokeh 3 compatible CSS.
+    """
+    return [BK_PREFIX_RE.sub('.', css) for css in raw_css]
 
 def resolve_custom_path(obj, path):
     """
@@ -242,9 +252,12 @@ def bundled_files(model, file_type='javascript'):
         if url in shared:
             prefixed = filepath
             test_path = BUNDLE_DIR / test_filepath
-        else:
-            prefixed = f'{name}/{filepath}'
+        elif not test_filepath.startswith(name):
+            prefixed = f'{name}/{test_filepath}'
             test_path = bdir / test_filepath
+        else:
+            prefixed = test_filepath
+            test_path = BUNDLE_DIR / test_filepath
         if test_path.is_file():
             if RESOURCE_MODE == 'server':
                 files.append(f'static/extensions/panel/bundled/{prefixed}')
@@ -256,7 +269,7 @@ def bundled_files(model, file_type='javascript'):
             files.append(url)
     return files
 
-def bundle_resources(roots, resources):
+def bundle_resources(roots, resources, notebook=False):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
     js_resources = css_resources = resources
@@ -302,7 +315,7 @@ def bundle_resources(roots, resources):
 
     return Bundle(
         js_files=js_files, js_raw=js_raw, css_files=css_files,
-        css_raw=css_raw, hashes=hashes
+        css_raw=css_raw, hashes=hashes, notebook=notebook
     )
 
 
@@ -352,7 +365,7 @@ class Resources(BkResources):
             elif (resource.startswith(state.base_url) or resource.startswith('static/')):
                 if resource.startswith(state.base_url):
                     resource = resource[len(state.base_url):]
-                elif state.rel_path:
+                if state.rel_path:
                     resource = f'{state.rel_path}/{resource}'
                 elif self.absolute and self.mode == 'server':
                     resource = f'{self.root_url}{resource}'
@@ -388,7 +401,7 @@ class Resources(BkResources):
 
         if config.loading_spinner:
             raw.append(loading_css())
-        return raw + config.raw_css
+        return raw + process_raw_css(config.raw_css)
 
     @property
     def js_files(self):
@@ -439,6 +452,8 @@ class Resources(BkResources):
         files = super(Resources, self).css_files
         self.extra_resources(files, '__css__')
         css_files = self.adjust_paths(files)
+        if config.design:
+            css_files += list(config.design._resources.get('font', {}).values())
 
         for cssf in config.css_files:
             if os.path.isfile(cssf) or cssf in files:

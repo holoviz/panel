@@ -1,7 +1,22 @@
 from __future__ import annotations
 
 from ..viewable import Viewable
-from .base import Design, Inherit
+from ..widgets.indicators import Number
+from .base import (
+    DarkTheme, DefaultTheme, Design, Inherit,
+)
+
+
+class NativeDefaultTheme(DefaultTheme):
+    ""
+
+class NativeDarkTheme(DarkTheme):
+
+    _modifiers = {
+        Number: {
+            'default_color': 'white'
+        }
+    }
 
 
 class Native(Design):
@@ -10,4 +25,9 @@ class Native(Design):
         Viewable: {
             'stylesheets': [Inherit, 'css/native.css']
         }
+    }
+
+    _themes = {
+        'dark': NativeDarkTheme,
+        'default': NativeDefaultTheme
     }

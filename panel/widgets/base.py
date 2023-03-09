@@ -109,9 +109,7 @@ class Widget(Reactive):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         model = self._widget_type(**self._get_properties(doc))
-        if root is None:
-            root = model
-        # Link parameters and bokeh model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
@@ -170,7 +168,9 @@ class CompositeWidget(Widget):
             layout['sizing_mode'] = 'stretch_width'
         self._composite = self._composite_type(**layout)
         self._models = self._composite._models
-        self.param.watch(self._update_layout_params, layout_params)
+        self._callbacks.append(
+            self.param.watch(self._update_layout_params, layout_params)
+        )
 
     def _update_layout_params(self, *events: param.parameterized.Event) -> None:
         updates = {event.name: event.new for event in events}
@@ -207,8 +207,7 @@ class CompositeWidget(Widget):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         model = self._composite._get_model(doc, root, parent, comm)
-        if root is None:
-            root = parent = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model
 

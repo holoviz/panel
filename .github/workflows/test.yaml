@@ -79,8 +79,7 @@ jobs:
       - name: Install bokeh 3.0 compatibility packages
         run: |
           conda activate test-environment
-          conda uninstall holoviews jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/holoviz/holoviews.git"
+          conda uninstall jupyter_bokeh --force -y --offline || echo "packages already removed"
           pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: doit env_capture
         run: |
@@ -144,8 +143,7 @@ jobs:
       - name: Install bokeh 3.0 compatibility packages
         run: |
           conda activate test-environment
-          conda uninstall holoviews jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/holoviz/holoviews.git"
+          conda uninstall jupyter_bokeh --force -y --offline || echo "packages already removed"
           pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: build pyodide wheels
         run: |

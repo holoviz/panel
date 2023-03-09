@@ -27,6 +27,18 @@ def test_widget_signature(widget):
     parameters = signature(widget).parameters
     assert len(parameters) == 1
 
+@pytest.mark.parametrize('widget', all_widgets)
+def test_widget_untracked_watchers(widget, document, comm):
+    # Ensures internal code correctly detects
+    try:
+        widg = widget()
+    except ImportError:
+        pytest.skip("Dependent library could not be imported.")
+    watchers = [
+        w for pwatchers in widg._param_watchers.values()
+        for awatchers in pwatchers.values() for w in awatchers
+    ]
+    assert len([wfn for wfn in watchers if wfn not in widg._callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0
 
 @pytest.mark.parametrize('widget', all_widgets)
 def test_widget_linkable_params(widget, document, comm):

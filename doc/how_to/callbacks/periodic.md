@@ -7,13 +7,14 @@ This guide addresses how to set up per-session callbacks that run periodically.
 Periodic callbacks allow periodically updating your application with new data. Below we will create a simple Bokeh plot and display it with Panel:
 
 ```{pyodide}
+import numpy as np
 import panel as pn
 
 from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
 
-source = ColumnDataSource({"x": range(10), "y": range(10)})
-p = figure(height=250, width=250)
+source = ColumnDataSource({"x": np.arange(10), "y": np.arange(10)})
+p = figure()
 p.line(x="x", y="y", source=source)
 
 bokeh_pane = pn.pane.Bokeh(p)
@@ -62,7 +63,7 @@ def update(source):
     source.data.update({"y": data})
 
 def panel_app():
-    source = ColumnDataSource({"x": range(10), "y": range(10)})
+    source = ColumnDataSource({"x": np.arange(10), "y": np.arange(10)})
     p = figure()
     p.line(x="x", y="y", source=source)
     cb = pn.state.add_periodic_callback(partial(update, source), 200, timeout=5000)

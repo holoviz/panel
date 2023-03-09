@@ -7,9 +7,11 @@ import param
 from bokeh.themes import Theme as _BkTheme
 
 from ..config import config
+from ..layout import Accordion
 from ..reactive import ReactiveHTML
 from ..viewable import Viewable
-from ..widgets import Number, Tabulator
+from ..widgets import Tabulator
+from ..widgets.indicators import Dial, Number, String
 from .base import (
     DarkTheme, DefaultTheme, Design, Inherit,
 )
@@ -198,7 +200,13 @@ class FastDarkTheme(DarkTheme):
     style = param.ClassSelector(default=DARK_STYLE, class_=FastStyle)
 
     _modifiers = {
+        Dial: {
+            'label_color': 'white'
+        },
         Number: {
+            'default_color': 'var(--neutral-foreground-rest)'
+        },
+        String: {
             'default_color': 'var(--neutral-foreground-rest)'
         }
     }
@@ -213,6 +221,9 @@ class FastDarkTheme(DarkTheme):
 class Fast(Design):
 
     _modifiers = {
+        Accordion: {
+            'active_header_background': 'var(--neutral-fill-active)'
+        },
         Tabulator: {
             'theme': 'fast'
         },
@@ -222,6 +233,9 @@ class Fast(Design):
     }
 
     _resources = {
+        'font': {
+            'opensans': f'https:{FONT_URL}',
+        },
         'js_modules': {
             'fast': f'{config.npm_cdn}/@microsoft/fast-components@2.30.6/dist/fast-components.js',
             'fast-design': 'js/fast_design.js'

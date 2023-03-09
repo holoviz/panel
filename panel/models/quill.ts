@@ -70,6 +70,11 @@ export class QuillInputView extends HTMLBoxView {
     });
     if (!this.model.disabled)
       this.quill.enable(!this.model.disabled)
+
+    document.addEventListener("selectionchange", (..._args: any[]) => {
+      // Update selection and some other properties
+      this.quill.selection.update()
+    });
   }
 
   after_layout(): void {

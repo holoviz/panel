@@ -176,6 +176,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
         # Add all render items to the document
         objs, models = [], []
+        sizing_modes = {}
         for name, (obj, tags) in self._render_items.items():
 
             # Render root without pre-processing
@@ -183,6 +184,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             model.name = name
             model.tags = tags
             mref = model.ref['id']
+            sizing_modes[mref] = model.sizing_mode
 
             if self._design._apply_hooks not in obj._hooks:
                 obj._hooks.append(self._design._apply_hooks)
@@ -225,6 +227,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         else:
             document.template = self.template
 
+        document._template_variables['sizing_modes'] = sizing_modes
         document._template_variables.update(self._render_variables)
         return document
 
@@ -621,6 +624,8 @@ class BasicTemplate(BaseTemplate):
         for rt, res in self._design._resources.items():
             if not isinstance(res, dict):
                 continue
+            if rt == 'font':
+                rt = 'css'
             res = {
                 name: url if isurl(url) else f'{type(self._design).__name__.lower()}/{url}'
                 for name, url in res.items()
@@ -738,14 +743,14 @@ class BasicTemplate(BaseTemplate):
             img = _panel(self.logo)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of logo: {self.logo}.")
-            logo = img._b64()
+            logo = img._b64(img._data(img.object))
         else:
             logo = self.logo
         if os.path.isfile(self.favicon):
             img = _panel(self.favicon)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of favicon: {self.favicon}.")
-            favicon = img._b64()
+            favicon = img._b64(img._data(img.object))
         else:
             if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
                 favicon = DOC_DIST + "icons/favicon.ico"

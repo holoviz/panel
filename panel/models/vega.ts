@@ -7,15 +7,18 @@ import {Attrs} from "@bokehjs/core/types"
 
 import {debounce} from  "debounce"
 
-export class VegaEvent extends ModelEvent {
-  event_name: string = "vega_event"
 
+export class VegaEvent extends ModelEvent {
   constructor(readonly data: any) {
     super()
   }
 
   protected get event_values(): Attrs {
     return {model: this.origin, data: this.data}
+  }
+
+  static {
+    this.prototype.event_name = "vega_event"
   }
 }
 

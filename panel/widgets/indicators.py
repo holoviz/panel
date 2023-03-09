@@ -510,6 +510,9 @@ class Dial(ValueIndicator):
 
     height = param.Integer(default=250, bounds=(1, None))
 
+    label_color = param.String(default='black', doc="""
+      Color for all extraneous labels.""")
+
     nan_format = param.String(default='-', doc="""
       How to format nan values.""")
 
@@ -544,12 +547,14 @@ class Dial(ValueIndicator):
         'annulus_width', 'format', 'background', 'needle_width',
         'tick_size', 'title_size', 'value_size', 'colors',
         'default_color', 'unfilled_color', 'height',
-        'width', 'nan_format', 'needle_color'
+        'width', 'nan_format', 'needle_color', 'label_color'
     ]
 
     _data_params: ClassVar[List[str]] = _manual_params
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'background': 'background_fill_color'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'background': 'background_fill_color'
+    }
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -559,7 +564,7 @@ class Dial(ValueIndicator):
     def _update_value_bounds(self):
         self.param.value.bounds = self.bounds
 
-    def _get_data(self):
+    def _get_data(self, properties):
         vmin, vmax = self.bounds
         value = self.value
         if value is None:
@@ -633,22 +638,22 @@ class Dial(ValueIndicator):
             'text': [self.name, value, min_value, max_value],
             'rot':  np.array([0, 0, tmin_angle, tmax_angle]),
             'size': [title_size, value_size, tick_size, tick_size],
-            'color': ['black', color, 'black', 'black']
+            'color': [self.label_color, color, self.label_color, self.label_color]
         }
         return annulus_data, needle_data, threshold_data, text_data
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        params = self._process_param_change(self._init_params())
+        properties = self._get_properties(doc)
         model = figure(
             x_range=(-1,1), y_range=(-1,1), tools=[],
             outline_line_color=None, toolbar_location=None,
-            width=self.width, height=self.height, **params
+            width=self.width, height=self.height, **properties
         )
         model.xaxis.visible = False
         model.yaxis.visible = False
         model.grid.visible = False
 
-        annulus, needle, threshold, text = self._get_data()
+        annulus, needle, threshold, text = self._get_data(properties)
 
         # Draw annulus
         annulus_source = ColumnDataSource(data=annulus, name='annulus_source')
@@ -702,7 +707,8 @@ class Dial(ValueIndicator):
                 needle_r.glyph.fill_color = event.new
         if not update_data:
             return
-        annulus, needle, threshold, labels = self._get_data()
+        properties = self._get_properties(doc)
+        annulus, needle, threshold, labels = self._get_data(properties)
         model.select(name='annulus_source').data.update(annulus)
         model.select(name='needle_source').data.update(needle)
         model.select(name='threshold_source').data.update(threshold)
@@ -826,7 +832,7 @@ class LinearGauge(ValueIndicator):
             intervals.append((1, self.unfilled_color))
         return intervals
 
-    def _get_data(self):
+    def _get_data(self, properties):
         vmin, vmax = self.bounds
         value = self.value
         interval = (vmax-vmin)
@@ -853,7 +859,7 @@ class LinearGauge(ValueIndicator):
         )
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        params = self._process_param_change(self._init_params())
+        params = self._get_properties(doc)
         model = figure(
             outline_line_color=None, toolbar_location=None, tools=[],
             x_axis_location='above', y_axis_location='right', **params
@@ -871,8 +877,7 @@ class LinearGauge(ValueIndicator):
         self._update_renderers(model)
         self._update_bounds(model)
         self._design.apply_bokeh_theme_to_model(model)
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -892,7 +897,8 @@ class LinearGauge(ValueIndicator):
 
     def _update_renderers(self, model):
         model.renderers = []
-        data, needle_data = self._get_data()
+        properties = self._get_properties(model.document)
+        data, needle_data = self._get_data(properties)
         bar_source = ColumnDataSource(data=data, name='bar_source')
         needle_source = ColumnDataSource(data=needle_data, name='needle_source')
         if self.horizontal:
@@ -952,7 +958,7 @@ class LinearGauge(ValueIndicator):
             model.yaxis.ticker = ticker
 
     def _update_figure(self, model):
-        params = self._process_param_change(self._init_params())
+        params = self._get_properties(model.document)
         if self.horizontal:
             params.update(width=self.height, height=self.width)
         else:
@@ -986,7 +992,8 @@ class LinearGauge(ValueIndicator):
                 self._update_title_size(model)
         if not update_data:
             return
-        data, needle_data = self._get_data()
+        properties = self._get_properties(model.document)
+        data, needle_data = self._get_data(properties)
         model.select(name='bar_source').data.update(data)
         model.select(name='needle_source').data.update(needle_data)
 
@@ -1240,8 +1247,7 @@ class Tqdm(Indicator):
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
         model = self.layout._get_model(doc, root, parent, comm)
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model
 

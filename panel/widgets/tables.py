@@ -25,6 +25,7 @@ from bokeh.util.serialization import convert_datetime_array
 from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget
+from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
@@ -1104,6 +1105,8 @@ class Tabulator(BaseTable):
     # pagination is enabled
     _MAX_ROW_LIMITS: ClassVar[Tuple[int, int]] = (200, 10000)
 
+    _stylesheets = [CSS_URLS['font-awesome']]
+
     def __init__(self, value=None, **params):
         import pandas.io.formats.style
         if isinstance(value, pandas.io.formats.style.Styler):
@@ -1213,10 +1216,10 @@ class Tabulator(BaseTable):
                 state.execute(partial(cb, event), schedule=False)
 
     def _get_theme(self, theme, resources=None):
-        from ..models.tabulator import _TABULATOR_THEMES_MAPPING, THEME_URL
+        from ..models.tabulator import _TABULATOR_THEMES_MAPPING, THEME_PATH
         theme_ = _TABULATOR_THEMES_MAPPING.get(self.theme, self.theme)
         fname = 'tabulator' if theme_ == 'default' else f'tabulator_{theme_}'
-        theme_url = f'{THEME_URL}{fname}.min.css'
+        theme_url = f'{CDN_DIST}bundled/datatabulator/{THEME_PATH}{fname}.min.css'
         if self._widget_type is not None:
             self._widget_type.__css_raw__ = [theme_url]
         return theme_url

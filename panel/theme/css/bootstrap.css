@@ -26,6 +26,10 @@
     margin-block-end: 0em;
 }
 
+.bk-clearfix {
+    color: var(--bs-body-color);
+}
+
 html {
     scrollbar-face-color: var(--bs-surface-bg);
     scrollbar-base-color: var(--bs-body-bg);
@@ -65,14 +69,18 @@ button.accordion-header {
     border-radius: 0;
 }
 
+:host(.card-header-row) .card-title {
+    margin: 0;
+}
+
 .card-header > .card-header-row {
     margin-left: 15px;
 }
 
 :host(.card-title) h1, :host(.card-title) h2, :host(.card-title) h3,
 :host(.card-title) h4, :host(.card-title) h5, :host(.card-title) h6 {
-    margin-block-end: 0;
-    margin-block-start: 0;
+    margin-block-end: 0.2em;
+    margin-block-start: 0.2em;
 }
 
 /* Tabs styling */
@@ -205,6 +213,10 @@ button.accordion-header {
 
 /* Input widget */
 
+.bk-input-group {
+    color: var(--bs-body-color);
+}
+
 input.bk-input, textarea.bk-input {
     display: block;
     width: 100%;
@@ -227,6 +239,10 @@ input.bk-input, textarea.bk-input {
 }
 
 /* Number input */
+
+:host(.slider-edit) .bk-input-group .bk-spin-wrapper .bk-input {
+    background-color: var(--bs-body-bg);
+}
 
 .bk-input-group > .bk-spin-wrapper > .bk-spin-btn.bk-spin-btn-up:before {
     border-bottom: 5px solid var(--bs-body-color);
@@ -611,19 +627,19 @@ input[type="radio"] + span {
 
 /* Tabulator */
 
-.tabulator {
+.pnx-tabulator.tabulator {
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
     width: 100%;
 }
 
-.tabulator .tabulator-tableholder .tabulator-table {
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table {
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
 }
 
-.tabulator-row {
-    background-color: unset;
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row {
+    background-color: var(--bs-body-bg);
 }
 
 div .tabulator .tabulator-headers, div .tabulator .tabulator-header .tabulator-col {
@@ -631,22 +647,28 @@ div .tabulator .tabulator-headers, div .tabulator .tabulator-header .tabulator-c
     color: var(--bs-body-color);
 }
 
-.tabulator .tabulator-table .tabulator-row-even {
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.tabulator-row-even {
     background-color: var(--bs-surface-bg);
     color: var(--bs-surface-color);
 }
 
-.tabulator-row.tabulator-selectable:hover {
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.tabulator-selectable:hover {
     background-color: rgba(var(--panel-primary-rgb), 0.25);
     color: var(--bs-primary-color);
 }
 
-.tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
+.pnx-tabulator.tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
     background-color: var(--bs-surface-bg);
     color: var(--bs-surface-color);
 }
 
-.tabulator .tabulator-table .tabulator-row.tabulator-selected {
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.tabulator-selected.tabulator-selectable:hover {
+    background-color: var(--bs-primary-bg);
+    color: var(--bs-primary-color);
+}
+
+.pnx-tabulator.tabulator .tabulator-table .tabulator-row.tabulator-selected,
+.pnx-tabulator.tabulator .tabulator-table .tabulator-row.tabulator-selected.tabulator-row-even {
     background-color: var(--bs-primary-bg);
     color: var(--bs-primary-color);
 }
@@ -656,5 +678,11 @@ div .tabulator .tabulator-headers, div .tabulator .tabulator-header .tabulator-c
 }
 
 .tabulator-row .tabulator-cell.tabulator-editing input {
+    color: var(--bs-body-color);
+}
+
+/* Quill editor */
+
+.ql-editor, .ql-editor.ql-blank::before {
     color: var(--bs-body-color);
 }

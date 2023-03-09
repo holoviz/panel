@@ -5,7 +5,7 @@ import pathlib
 import param
 
 from ..io.resources import CSS_URLS, JS_URLS
-from ..layout import Card
+from ..layout import Accordion, Card
 from ..viewable import Viewable
 from ..widgets import Number, Tabulator
 from .base import (
@@ -34,7 +34,7 @@ class BootstrapDarkTheme(DarkTheme):
 
     _modifiers = {
         Number: {
-            'default_color': 'var(--mdc-theme-on-background)'
+            'default_color': 'white'
         }
     }
 
@@ -42,6 +42,9 @@ class BootstrapDarkTheme(DarkTheme):
 class Bootstrap(Design):
 
     _modifiers = {
+        Accordion: {
+            'active_header_background': 'var(--bs-surface-bg)'
+        },
         Card: {
             'children': {'margin': (10, 10)},
             'button_css_classes': ['card-button'],
@@ -56,8 +59,8 @@ class Bootstrap(Design):
     }
 
     _themes = {
+        'dark': BootstrapDarkTheme,
         'default': BootstrapDefaultTheme,
-        'dark': BootstrapDarkTheme
     }
 
     _resources = {

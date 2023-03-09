@@ -124,6 +124,13 @@ class _config(_base_config):
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
 
+    layout_compatibility = param.Boolean(default=True, doc="""
+        Enables the layout compatibility mode. This mode aims to provide
+        backward compatibility for layouts to behave like they did before
+        version 1. When a sizing_mode is incorrectly defined according to
+        the new layout modes a warning will be raised. The compatibility
+        mode will be disabled by default starting in v1.1.0""")
+
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
 

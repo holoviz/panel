@@ -7,14 +7,16 @@ import {HTMLBox, HTMLBoxView} from "./layout"
 
 
 export class KeystrokeEvent extends ModelEvent {
-  event_name: string = "keystroke"
-
   constructor(readonly key: string) {
     super()
   }
 
   protected get event_values(): Attrs {
     return {model: this.origin, key: this.key}
+  }
+
+  static {
+    this.prototype.event_name = "keystroke"
   }
 }
 
@@ -139,9 +141,9 @@ export class Terminal extends HTMLBox {
     this.define<Terminal.Props>(({Any, Int, String}) => ({
       _clears:        [ Int,     0 ],
       options:        [ Any,    {} ],
-      output:         [ String,    ],
-      ncols:          [ Int        ],
-      nrows:          [ Int        ],
+      output:         [ String, '' ],
+      ncols:          [ Int,     0 ],
+      nrows:          [ Int,     0 ],
     }))
   }
 }
