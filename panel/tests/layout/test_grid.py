@@ -200,7 +200,7 @@ def test_gridspec_fixed_with_replacement_pane(document, comm):
     def div(value):
         return Div(text=str(value))
 
-    gspec = GridSpec()
+    gspec = GridSpec(width=600, height=600)
 
     gspec[0, 0:2] = Div()
     gspec[1, 2] = div
@@ -226,7 +226,7 @@ def test_gridspec_stretch_with_replacement_pane(document, comm):
     def div(value):
         return Div(text=str(value))
 
-    gspec = GridSpec(sizing_mode='stretch_width')
+    gspec = GridSpec(sizing_mode='stretch_width', height=600)
 
     gspec[0, 0:2] = Div()
     gspec[1, 2] = div

@@ -161,16 +161,22 @@ export class PlotlyPlotView extends HTMLBoxView {
     })
   }
 
-  async render(): Promise<void> {
+  render(): void {
     super.render()
     this.container = <PlotlyHTMLElement>div()
     set_size(this.container, this.model)
     this.container.style.visibility = this.model.visibility ? 'visible' : 'hidden'
     this.shadow_el.appendChild(this.container)
-    await this.plot();
-    if (this.model.relayout != null)
-      (window as any).Plotly.relayout(this.container, this.model.relayout)
-    (window as any).Plotly.Plots.resize(this.container)
+    this.plot().then(() => {
+      if (this.model.relayout != null)
+	(window as any).Plotly.relayout(this.container, this.model.relayout);
+      (window as any).Plotly.Plots.resize(this.container);
+    })
+  }
+
+  after_layout(): void {
+    super.after_layout();
+    (window as any).Plotly.Plots.resize(this.container);
   }
 
   _trace_data(): any {
