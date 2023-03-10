@@ -52,6 +52,12 @@ except Exception:
     pyodide_http = None
     pass
 
+try:
+    # Patch fsspec with synchronous http support
+    import fsspec.implementations.http_sync  # noqa
+except Exception:
+    pass
+
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
