@@ -159,10 +159,11 @@ def render_model(
 
     target = model.ref['id']
 
-    # ALERT: Replace with better approach before Bokeh 3.x compatible release
-    dist_url = '/panel-preview/static/extensions/panel/'
-    patch_model_css(model, dist_url=dist_url)
-    model.document._template_variables['dist_url'] = dist_url
+    if state._is_pyodide:
+        # ALERT: Replace with better approach before Bokeh 3.x compatible release
+        dist_url = '/panel-preview/static/extensions/panel/'
+        patch_model_css(model, dist_url=dist_url)
+        model.document._template_variables['dist_url'] = dist_url
 
     (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], suppress_callback_warning=True)
     div = div_for_render_item(render_item)
