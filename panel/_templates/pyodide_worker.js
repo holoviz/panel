@@ -80,10 +80,11 @@ self.onmessage = async (event) => {
   } else if (msg.type === 'location') {
     self.pyodide.globals.set('location', msg.location)
     self.pyodide.runPythonAsync(`
+    import json
     from panel.io.state import state
     from panel.util import edit_readonly
     if state.location:
-        loc_data = location.to_py()
+        loc_data = json.loads(location)
         with edit_readonly(state.location):
             state.location.param.update({
                 k: v for k, v in loc_data.items() if k in state.location.param
