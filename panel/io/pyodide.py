@@ -62,7 +62,7 @@ if 'pyolite' in sys.modules and os.path.exists('/drive/assets/sampledata'):
         return '/drive/assets/sampledata'
     bokeh.util.sampledata.external_data_dir = _sampledata_dir
 
-if 'pandas' in sys.modules and pyodide_http is None:
+if pyodide_http is None:
     import pandas
 
     def _read_file(*args, **kwargs):
@@ -87,7 +87,6 @@ if 'pandas' in sys.modules and pyodide_http is None:
         args, kwargs = _read_file(*args, **kwargs)
         return _read_json_original(*args, **kwargs)
     pandas.read_json = _read_json
-
 
 def async_execute(func: Any):
     event_loop = asyncio.get_running_loop()
