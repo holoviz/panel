@@ -307,7 +307,7 @@ def block_comm() -> Iterator:
 def load_notebook(inline: bool = True, load_timeout: int = 5000) -> None:
     from IPython.display import publish_display_data
 
-    resources = INLINE if inline else CDN
+    resources = INLINE if inline and not state._is_pyodide else CDN
     prev_resources = settings.resources(default="server")
     user_resources = settings.resources._user_value is not _Unset
     nb_endpoint = not state._is_pyodide
