@@ -32,8 +32,8 @@ from .layout import (
 from .pane.base import PaneBase, ReplacementPane
 from .reactive import Reactive
 from .util import (
-    abbreviated_repr, classproperty, eval_function, full_groupby, fullpath,
-    get_method_owner, is_parameterized, param_name, recursive_parameterized,
+    abbreviated_repr, eval_function, full_groupby, fullpath, get_method_owner,
+    is_parameterized, param_name, recursive_parameterized,
 )
 from .viewable import Layoutable, Viewable
 from .widgets import (
@@ -252,14 +252,6 @@ class Param(PaneBase):
             'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name',
             'hide_constant'])
         self._update_widgets()
-
-    @classproperty
-    def _mapping(cls):
-        cls.param.warning(
-            "Param._mapping is now deprecated in favor of the public "
-            "Param.mapping attribute. Update your code accordingly."
-        )
-        return cls.mapping
 
     def __repr__(self, depth=0):
         cls = type(self).__name__

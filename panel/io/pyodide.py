@@ -23,9 +23,11 @@ from bokeh.document.json import PatchJson
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
+from bokeh.events import DocumentReady
 from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
-from js import JSON, XMLHttpRequest
+from bokeh.settings import settings as bk_settings
+from js import JSON, Object, XMLHttpRequest
 
 from ..config import config
 from ..util import edit_readonly, is_holoviews, isurl
@@ -50,6 +52,12 @@ except Exception:
     pyodide_http = None
     pass
 
+try:
+    # Patch fsspec with synchronous http support
+    import fsspec.implementations.http_sync  # noqa
+except Exception:
+    pass
+
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
@@ -60,7 +68,7 @@ if 'pyolite' in sys.modules and os.path.exists('/drive/assets/sampledata'):
         return '/drive/assets/sampledata'
     bokeh.util.sampledata.external_data_dir = _sampledata_dir
 
-if 'pandas' in sys.modules and pyodide_http is None:
+if pyodide_http is None:
     import pandas
 
     def _read_file(*args, **kwargs):
@@ -85,7 +93,6 @@ if 'pandas' in sys.modules and pyodide_http is None:
         args, kwargs = _read_file(*args, **kwargs)
         return _read_json_original(*args, **kwargs)
     pandas.read_json = _read_json
-
 
 def async_execute(func: Any):
     event_loop = asyncio.get_running_loop()
@@ -122,7 +129,7 @@ def _doc_json(doc: Document, root_els=None) -> Tuple[str, str, str]:
     render_items_json = [item.to_json() for item in render_items]
     root_ids = [m.id for m in doc.roots]
     if root_els:
-        root_data = sorted([(int(el.getAttribute('data-root-id')), el.id) for el in root_els])
+        root_data = sorted([(el.getAttribute('data-root-id'), el.id) for el in root_els])
         render_items_json[0].update({
             'roots': {model_id: elid for (_, elid), model_id in zip(root_data, root_ids)},
             'root_ids': root_ids
@@ -167,7 +174,7 @@ def _model_json(model: Model, target: str) -> Tuple[Document, str]:
 def _process_document_events(doc: Document, events: List[Any]):
     serializer = Serializer(references=doc.models.synced_references)
     patch_json = PatchJson(events=serializer.encode(events))
-    doc.models.flush()
+    doc.models.flush_synced()
 
     buffer_map = {}
     for buffer in serializer.buffers:
@@ -190,8 +197,8 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         setter_id = getattr(event, 'setter_id', None)
         if (setter_id is not None and setter_id == 'python'):
             return
-        json_patch = jsdoc.create_json_patch_string(pyodide.ffi.to_js([event]))
-        pydoc.apply_json_patch(json.loads(json_patch), setter='js')
+        json_patch = jsdoc.create_json_patch(pyodide.ffi.to_js([event]))
+        pydoc.apply_json_patch(json_patch.to_py(), setter='js')
 
     jsdoc.on_change(pyodide.ffi.create_proxy(jssync), pyodide.ffi.to_js(False))
 
@@ -200,13 +207,13 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         if setter is not None and setter == 'js':
             return
         json_patch, buffer_map = _process_document_events(pydoc, [event])
-        jsdoc.apply_json_patch(json_patch, pyodide.ffi.to_js(buffer_map), setter_id='python')
+        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=Object.fromEntries)
+        buffer_map = pyodide.ffi.to_js(buffer_map)
+        jsdoc.apply_json_patch(json_patch, buffer_map)
 
     pydoc.on_change(pysync)
     pydoc.unhold()
-    pydoc.callbacks.trigger_json_event(
-        {'event_name': 'document_ready', 'event_values': {}
-    })
+    pydoc.callbacks.trigger_event(DocumentReady())
 
 def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None, setter: str | None = None):
     """
@@ -229,13 +236,12 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
         if setter is not None and getattr(event, 'setter', None) == setter:
             return
         json_patch, buffer_map = _process_document_events(doc, [event])
+        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=Object.fromEntries)
         dispatch_fn(json_patch, pyodide.ffi.to_js(buffer_map), msg_id)
 
     doc.on_change(pysync)
     doc.unhold()
-    doc.callbacks.trigger_json_event(
-        {'event_name': 'document_ready', 'event_values': {}
-    })
+    doc.callbacks.trigger_event(DocumentReady())
 
 async def _link_model(ref: str, doc: Document) -> None:
     """
@@ -319,6 +325,7 @@ def init_doc() -> None:
     """
     Creates a Document mocking a server context for embedded Pyodide apps.
     """
+    bk_settings.simple_ids.set_value(False)
     doc = Document()
     set_curdoc(doc)
     doc.hold()
@@ -370,7 +377,7 @@ def hide_loader() -> None:
     from js import document
 
     body = document.getElementsByTagName('body')[0]
-    body.classList.remove("bk", "pn-loading", config.loading_spinner)
+    body.classList.remove("pn-loading", config.loading_spinner)
 
 def sync_location():
     """
@@ -414,7 +421,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
     # Test whether we have access to DOM
     try:
         from js import Bokeh, document
-        root_els = document.getElementsByClassName('bk-root')
+        root_els = document.querySelectorAll('[data-root-id]')
         for el in root_els:
             el.innerHTML = ''
     except Exception:
@@ -425,7 +432,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
     # If we have DOM access render and sync the document
     if root_els is not None:
         views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
-        jsdoc = views[0][0].model.document
+        jsdoc = list(views[0].roots.values())[0].model.document
         _link_docs(pydoc, jsdoc)
         sync_location()
         hide_loader()

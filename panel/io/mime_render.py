@@ -48,6 +48,7 @@ _PACKAGE_MAP = {
     'hvplot': ['holoviews>=1.15.4', 'hvplot'],
     'holoviews': ['holoviews>=1.15.4']
 }
+_IGNORED_PKGS = ['js', 'pyodide']
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
 
 def find_imports(code: str) -> List[str]:
@@ -97,7 +98,7 @@ def find_imports(code: str) -> List[str]:
             packages.append(pkg)
     if any(pdd in code for pdd in _PANDAS_AUTODETECT) and 'pandas' not in packages:
         packages.append('pandas')
-    return packages
+    return [pkg for pkg in packages if pkg not in _IGNORED_PKGS]
 
 #---------------------------------------------------------------------
 # Execution API

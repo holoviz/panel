@@ -1,8 +1,8 @@
-:host(.pn-loading) {
+:host(.pn-loading), .pn-loading {
   overflow: hidden;
 }
 
-:host(.pn-loading):before {
+:host(.pn-loading):before, .pn-loading:before {
   position: absolute;
   height: 100%;
   width: 100%;
@@ -17,7 +17,7 @@
   cursor: progress;
 }
 
-:host(.pn-loading) .pn-loading-msg {
+:host(.pn-loading) .pn-loading-msg, .pn-loading .pn-loading-msg {
   position: absolute;
   top: 72%;
   font-size: 2em;

@@ -159,10 +159,11 @@ def render_model(
 
     target = model.ref['id']
 
-    # ALERT: Replace with better approach before Bokeh 3.x compatible release
-    dist_url = '/panel-preview/static/extensions/panel/'
-    patch_model_css(model, dist_url=dist_url)
-    model.document._template_variables['dist_url'] = dist_url
+    if state._is_pyodide:
+        # ALERT: Replace with better approach before Bokeh 3.x compatible release
+        dist_url = '/panel-preview/static/extensions/panel/'
+        patch_model_css(model, dist_url=dist_url)
+        model.document._template_variables['dist_url'] = dist_url
 
     (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], suppress_callback_warning=True)
     div = div_for_render_item(render_item)
@@ -307,7 +308,7 @@ def block_comm() -> Iterator:
 def load_notebook(inline: bool = True, load_timeout: int = 5000) -> None:
     from IPython.display import publish_display_data
 
-    resources = INLINE if inline else CDN
+    resources = INLINE if inline and not state._is_pyodide else CDN
     prev_resources = settings.resources(default="server")
     user_resources = settings.resources._user_value is not _Unset
     nb_endpoint = not state._is_pyodide

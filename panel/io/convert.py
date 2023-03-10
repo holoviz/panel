@@ -10,11 +10,13 @@ from typing import (
     IO, Any, Dict, List,
 )
 
+import bokeh
+
 from bokeh.application.application import Application, SessionContext
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.core.json_encoder import serialize_json
-from bokeh.core.templates import FILE, MACROS, get_env
+from bokeh.core.templates import MACROS, get_env
 from bokeh.document import Document
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem, standalone_docs_json_and_render_items
@@ -26,8 +28,8 @@ from .. import __version__, config
 from ..util import base_version, escape
 from .mime_render import find_imports
 from .resources import (
-    CDN_DIST, DIST_DIR, INDEX_TEMPLATE, Resources, _env as _pn_env,
-    bundle_resources, set_resource_mode,
+    BASE_TEMPLATE, CDN_DIST, DIST_DIR, INDEX_TEMPLATE, Resources,
+    _env as _pn_env, bundle_resources, loading_css, set_resource_mode,
 )
 from .state import set_curdoc, state
 
@@ -37,7 +39,7 @@ WEB_WORKER_TEMPLATE = _pn_env.get_template('pyodide_worker.js')
 WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
-BOKEH_VERSION = '2.4.3'
+BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
 PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
@@ -309,6 +311,11 @@ def script_to_html(
 
     # Collect resources
     resources = Resources(mode='cdn')
+    loading_base = (DIST_DIR / "css" / "loading.css").read_text()
+    spinner_css = loading_css(shadow_dom=False)
+    css_resources.append(
+        f'<style type="text/css">\n{loading_base}\n{spinner_css}\n</style>'
+    )
     with set_curdoc(document):
         bokeh_js, bokeh_css = bundle_resources(document.roots, resources)
     extra_js = [INIT_SERVICE_WORKER, bokeh_js] if manifest else [bokeh_js]
@@ -325,7 +332,7 @@ def script_to_html(
         bokeh_css = bokeh_css,
         plot_script = plot_script,
         docs = render_items,
-        base = FILE,
+        base = BASE_TEMPLATE,
         macros = MACROS,
         doc = render_item,
         roots = render_item.roots,
@@ -334,12 +341,12 @@ def script_to_html(
 
     # Render
     if template is None:
-        template = FILE
+        template = BASE_TEMPLATE
     elif isinstance(template, str):
         template = get_env().from_string("{% extends base %}\n" + template)
     html = template.render(context)
     html = (html
-        .replace('<body>', f'<body class="bk pn-loading {config.loading_spinner}">')
+        .replace('<body>', f'<body class="pn-loading {config.loading_spinner}">')
     )
     return html, web_worker
 

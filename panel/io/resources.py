@@ -9,6 +9,7 @@ import logging
 import mimetypes
 import os
 import re
+import textwrap
 
 from base64 import b64encode
 from collections import OrderedDict
@@ -181,17 +182,17 @@ def component_resource_path(component, attr, path):
     rel_path = component_rel_path(component, path).replace(os.path.sep, '/')
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
-def loading_css():
+def loading_css(shadow_dom=True):
     from ..config import config
     with open(ASSETS_DIR / f'{config.loading_spinner}_spinner.svg', encoding='utf-8') as f:
         svg = f.read().replace('\n', '').format(color=config.loading_color)
     b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
-    return f"""
-    .pn-loading.{config.loading_spinner}:before {{
+    cls = ':host(.pn-loading)' if shadow_dom else '.pn-loading'
+    return textwrap.dedent(f"""
+    {cls}.{config.loading_spinner}:before {{
       background-image: url("data:image/svg+xml;base64,{b64}");
       background-size: auto calc(min(50%, {config.loading_max_height}px));
-    }}
-    """
+    }}""")
 
 def patch_stylesheet(stylesheet, dist_url):
     url = stylesheet.url
@@ -398,9 +399,6 @@ class Resources(BkResources):
                 css_txt = f.read()
                 if css_txt not in raw:
                     raw.append(css_txt)
-
-        if config.loading_spinner:
-            raw.append(loading_css())
         return raw + process_raw_css(config.raw_css)
 
     @property
