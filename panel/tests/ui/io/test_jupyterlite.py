@@ -51,4 +51,4 @@ def test_jupyterlite_execution(launch_jupyterlite, page):
 
     page.keyboard.press('ArrowRight')
 
-    expect(page.locator('.markdown').locator('div').first).to_have_text('0.1')
+    expect(page.locator('.bk-panel-models-markup-HTML').locator('div').locator('pre')).to_have_text('0.1')
