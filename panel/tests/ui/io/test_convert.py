@@ -161,7 +161,7 @@ def wait_for_app(launch_app, app, page, runtime, wait=True, **kwargs):
 
     page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
 
-    cls = f'bk pn-loading {config.loading_spinner}'
+    cls = f'pn-loading {config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
     if wait:
         expect(page.locator('body')).not_to_have_class(cls, timeout=90 * 1000)

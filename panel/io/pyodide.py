@@ -372,7 +372,7 @@ def hide_loader() -> None:
     from js import document
 
     body = document.getElementsByTagName('body')[0]
-    body.classList.remove("bk", "pn-loading", config.loading_spinner)
+    body.classList.remove("pn-loading", config.loading_spinner)
 
 def sync_location():
     """

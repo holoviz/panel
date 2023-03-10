@@ -82,6 +82,6 @@ pyodideWorker.onmessage = async (event) => {
     pyodideWorker.postMessage({'type': 'rendered'})
     pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
   } else if (msg.type === 'patch') {
-    pyodideWorker.jsdoc.apply_json_patch(JSON.parse(msg.patch), msg.buffers, setter_id='py')
+    pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers, setter_id='py')
   }
 };
