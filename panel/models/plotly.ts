@@ -161,6 +161,11 @@ export class PlotlyPlotView extends HTMLBoxView {
     })
   }
 
+  override remove(): void {
+    (window as any).Plotly.purge(this.container)
+    super.remove()
+  }
+
   render(): void {
     super.render()
     this.container = <PlotlyHTMLElement>div()
@@ -176,7 +181,7 @@ export class PlotlyPlotView extends HTMLBoxView {
 
   after_layout(): void {
     super.after_layout();
-    (window as any).Plotly.Plots.resize(this.container);
+    (window as any).Plotly.Plots.resize(this.container)
   }
 
   _trace_data(): any {
