@@ -5,7 +5,7 @@ import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {debounce} from  "debounce"
 
 import {transform_cds_to_records} from "./data"
-import {HTMLBox, HTMLBoxView} from "./layout"
+import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import {makeTooltip} from "./tooltips"
 
 import GL from '@luma.gl/constants';
@@ -21,7 +21,7 @@ function extractClasses() {
   return classesDict;
 }
 
-export class DeckGLPlotView extends HTMLBoxView {
+export class DeckGLPlotView extends LayoutDOMView {
   model: DeckGLPlot
   jsonConverter: any
   deckGL: any
@@ -38,6 +38,11 @@ export class DeckGLPlotView extends HTMLBoxView {
     this._layer_map = {}
     this._connected = []
     this._connect_sources()
+  }
+
+  override remove(): void {
+    this.deckGL.remove()
+    super.remove()
   }
 
   _update_layers(): void {
@@ -134,6 +139,10 @@ export class DeckGLPlotView extends HTMLBoxView {
     this.model.viewState = view_state
   }
 
+  get child_models(): LayoutDOM[] {
+    return []
+  }
+
   getData(): any {
     const view_timeout = this.model.throttle['view'] || 200
     const hover_timeout = this.model.throttle['hover'] || 100
@@ -174,7 +183,9 @@ export class DeckGLPlotView extends HTMLBoxView {
         map: (window as any).mapboxgl,
         mapboxApiAccessToken: mapboxApiKey,
         container,
-        getTooltip
+        getTooltip,
+	width: '100%',
+	height: '100%'
       });
     } catch (err) {
       console.error(err);
@@ -205,13 +216,18 @@ export class DeckGLPlotView extends HTMLBoxView {
         tooltip
       });
     }
-    this.shadow_el.appendChild(container);
+    this.shadow_el.appendChild(container)
+  }
+
+  after_layout(): void {
+    super.after_layout()
+    this.deckGL.redraw(true);
   }
 }
 
 export namespace DeckGLPlot {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = HTMLBox.Props & {
+  export type Props = LayoutDOM.Props & {
     data: p.Property<any>
     data_sources: p.Property<ColumnDataSource[]>
     initialViewState: p.Property<any>
@@ -227,7 +243,7 @@ export namespace DeckGLPlot {
 
 export interface DeckGLPlot extends DeckGLPlot.Attrs { }
 
-export class DeckGLPlot extends HTMLBox {
+export class DeckGLPlot extends LayoutDOM {
   properties: DeckGLPlot.Props
 
   constructor(attrs?: Partial<DeckGLPlot.Attrs>) {

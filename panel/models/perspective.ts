@@ -108,6 +108,11 @@ export class PerspectiveView extends HTMLBoxView {
     super.disconnect_signals()
   }
 
+  override remove(): void {
+    this.perspective_element.delete(() => this.worker.terminate())
+    super.remove()
+  }
+
   render(): void {
     super.render()
     this.worker = (window as any).perspective.worker();

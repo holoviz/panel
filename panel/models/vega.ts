@@ -2,8 +2,10 @@ import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {isArray} from "@bokehjs/core/util/types"
-import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import {Attrs} from "@bokehjs/core/types"
+
+import {set_size} from "./layout"
 
 import {debounce} from  "debounce"
 
@@ -22,19 +24,22 @@ export class VegaEvent extends ModelEvent {
   }
 }
 
-export class VegaPlotView extends HTMLBoxView {
+export class VegaPlotView extends LayoutDOMView {
   model: VegaPlot
   vega_view: any
   container: HTMLDivElement
   _callbacks: string[]
   _connected: string[]
+  _replot: any
   _resize: any
+  _rendered: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
     const {data, show_actions, theme} = this.model.properties
+    this._replot = debounce(() => this._plot(), 20)
     this.on_change([data, show_actions, theme], () => {
-      this._plot()
+      this._replot()
     })
     this.connect(this.model.properties.data_sources.change, () => this._connect_sources())
     this.connect(this.model.properties.events.change, () => {
@@ -55,10 +60,17 @@ export class VegaPlotView extends HTMLBoxView {
     for (const ds in this.model.data_sources) {
       const cds = this.model.data_sources[ds]
       if (this._connected.indexOf(ds) < 0) {
-        this.connect(cds.properties.data.change, this._plot)
+        this.connect(cds.properties.data.change, () => this._replot())
         this._connected.push(ds)
       }
     }
+  }
+
+  override remove(): void {
+    if (this.vega_view) {
+      this.vega_view.finalize()
+    }
+    super.remove()
   }
 
   _dispatch_event(name: string, value: any): void {
@@ -89,8 +101,13 @@ export class VegaPlotView extends HTMLBoxView {
     return datasets
   }
 
+  get child_models(): LayoutDOM[] {
+    return []
+  }
+
   render(): void {
     super.render()
+    this._rendered = false
     this.container = div()
     set_size(this.container, this.model)
     this._callbacks = []
@@ -124,7 +141,6 @@ export class VegaPlotView extends HTMLBoxView {
     (window as any).vegaEmbed(this.container, this.model.data, config).then((result: any) => {
       this.vega_view = result.view
       this._resize = debounce(() => this.resize_view(result.view), 50)
-      this.resize_view(result.view)
       const callback = (name: string, value: any) => this._dispatch_event(name, value)
       for (const event of this.model.events) {
         this._callbacks.push(event)
@@ -142,16 +158,20 @@ export class VegaPlotView extends HTMLBoxView {
   }
 
   resize_view(view: any): void {
-    let rect = this.container.getBoundingClientRect()
-    view._el.children[0].style.width = `${rect.width}px`
-    view._el.children[0].style.height = `${rect.height}px`
-    view.width(rect.width).height(rect.height).resize().runAsync()
+    const canvas = view._renderer.canvas()
+    if (!this._rendered && canvas !== null) {
+      for (const listener of view._eventListeners) {
+	if (listener.type === 'resize')
+	  listener.handler(new Event('resize'))
+      }
+      this._rendered = true
+    }
   }
 }
 
 export namespace VegaPlot {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = HTMLBox.Props & {
+  export type Props = LayoutDOM.Props & {
     data: p.Property<any>
     data_sources: p.Property<any>
     events: p.Property<string[]>
@@ -163,7 +183,7 @@ export namespace VegaPlot {
 
 export interface VegaPlot extends VegaPlot.Attrs {}
 
-export class VegaPlot extends HTMLBox {
+export class VegaPlot extends LayoutDOM {
   properties: VegaPlot.Props
 
   constructor(attrs?: Partial<VegaPlot.Attrs>) {
