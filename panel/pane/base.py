@@ -618,7 +618,7 @@ class ReplacementPane(PaneBase):
                     cls._recursive_update(old_object, i, old, new)
             elif isinstance(object, Reactive):
                 pvals = dict(old_object.param.values())
-                new_params = {k: v for k, v in object.param.values()
+                new_params = {k: v for k, v in object.param.values().items()
                               if k != 'name' and v is not pvals[k]}
                 old_object.param.update(**new_params)
             else:
@@ -645,7 +645,7 @@ class ReplacementPane(PaneBase):
         kwargs = dict(self.param.values(), **self._kwargs)
         del kwargs['object']
         new_pane, internal = self._update_from_object(
-            new_object, self._pane, self._internal, self.inplace, **kwargs
+            new_object, self._pane, self._internal, **kwargs
         )
         if new_pane is None:
             return
