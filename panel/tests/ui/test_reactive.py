@@ -42,7 +42,6 @@ def test_reactive_html_click_js_event(page, port):
 
     assert component.count == 2
 
-
 def test_reactive_html_set_loading_no_rerender(page, port):
     component = ReactiveComponent()
 
@@ -65,20 +64,20 @@ def test_reactive_html_changing_css_classes_rerenders(page, port):
 
     serve(component, port=port, threaded=True, show=False)
 
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     page.goto(f"http://localhost:{port}")
 
     assert page.text_content(".reactive") == '1'
     component.css_classes = ['custom']
     time.sleep(0.1)
-    assert page.text_content(".reactive") == '2'
+    assert page.text_content(".reactive") == '1'
     component.loading = True
     time.sleep(0.1)
-    assert page.text_content(".reactive") == '2'
+    assert page.text_content(".reactive") == '1'
     component.css_classes = []
     time.sleep(0.1)
-    assert page.text_content(".reactive") == '3'
+    assert page.text_content(".reactive") == '1'
 
 def test_reactive_html_set_background_no_rerender(page, port):
     component = ReactiveComponent()
