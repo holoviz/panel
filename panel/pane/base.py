@@ -21,8 +21,6 @@ from ..io import (
     init_doc, push, state, unlocked,
 )
 from ..layout.base import NamedListPanel, Panel, Row
-from ..io import push, state, unlocked
-from ..layout import Panel, Row
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
@@ -578,7 +576,7 @@ class ReplacementPane(PaneBase):
                 for i, (sub_old, sub_new) in enumerate(zip(old, new)):
                     if isinstance(new, NamedListPanel):
                         old._names[i] = new._names[i]
-                    recursive_update(new, i, sub_old, sub_new)
+                    cls._recursive_update(new, i, sub_old, sub_new)
                 ignored += ('objects',)
         pvals = dict(old.param.values())
         new_params = {}
@@ -617,10 +615,10 @@ class ReplacementPane(PaneBase):
         if type(old_object) is pane_type and ((not links and not custom_watchers and was_internal) or inplace):
             if isinstance(object, Panel) and len(old_object) == len(object):
                 for i, (old, new) in enumerate(zip(old_object, object)):
-                    recursive_update(old_object, i, old, new)
+                    cls._recursive_update(old_object, i, old, new)
             elif isinstance(object, Reactive):
-                pvals = dict(self._pane.get_param_values())
-                new_params = {k: v for k, v in object.get_param_values()
+                pvals = dict(old_object.param.values())
+                new_params = {k: v for k, v in object.param.values()
                               if k != 'name' and v is not pvals[k]}
                 old_object.param.update(**new_params)
             else:
