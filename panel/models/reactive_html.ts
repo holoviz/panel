@@ -189,7 +189,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
       this._state,
       this,
       (s: any) => this.run_script(s),
-      this_ob
+      this_obj
     )
   }
 
