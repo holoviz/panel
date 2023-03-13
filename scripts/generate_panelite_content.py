@@ -20,12 +20,13 @@ with open(PANEL_BASE/"scripts"/"panelite_dependencies.json", "r", encoding="utf8
 DEPENDENCY_NOT_IMPORTABLE = [
     "streamz", # https://github.com/python-streamz/streamz/issues/467,
     "vtk", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
+    "pyvista", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
 ]
 NOTEBOOK_ISSUES = {
     "Getting_Started.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
     "reference/panes/DataFrame.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
     "reference/panes/HoloViews.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
-    "reference/panes/IPyWidget.ipynb": ["https://github.com/holoviz/panel/issues/4394", "https://github.com/widgetti/ipyvolume/issues/427"],
+    "reference/panes/IPyWidget.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
     "reference/panes/Matplotlib.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
     "reference/panes/Param.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
     "reference/panes/Reacton.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
@@ -43,6 +44,11 @@ NOTEBOOK_ISSUES = {
     "reference/widgets/SpeechToText.ipynb": ["https://github.com/holoviz/panel/issues/4404"],
     "reference/widgets/Terminal.ipynb": ["https://github.com/holoviz/panel/issues/4407"],
     "gallery/components/VuePdbInput.ipynb": ["https://github.com/holoviz/panel/issues/4417"],
+    "gallery/demos/VTKInteractive.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "gallery/demos/VTKSlider.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "gallery/demos/VTKInteractive.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "gallery/demos/VTKWarp.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "gallery/dynamic/dynamic_timeseries_image_analysis.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
 }
 
 def _get_dependencies(nbpath: pathlib.Path):

@@ -118,5 +118,20 @@
     "gallery/components/CanvasDraw.ipynb": ["panel"],
     "gallery/components/LeafletHeatMap.ipynb": ["panel"],
     "gallery/components/MaterialUI.ipynb": ["panel"],
-    "gallery/components/VuePdbInput.ipynb": ["panel", "pyodide-http"]
+    "gallery/components/VuePdbInput.ipynb": ["panel", "pyodide-http"],
+    "gallery/demos/attractors.ipynb": [],
+    "gallery/demos/gapminders.ipynb": [],
+    "gallery/demos/glaciers.ipynb": [],
+    "gallery/demos/nyc_taxi.ipynb": [],
+    "gallery/demos/portfolio-optimizer.ipynb": [],
+    "gallery/demos/VTKInteractive.ipynb": ["panel"],
+    "gallery/demos/VTKSlicer.ipynb": ["panel", "holoviews", "scipy"],
+    "gallery/demos/VTKWarp.ipynb": ["panel"],
+    "gallery/dynamic/dynamic_plot_layout.ipynb": ["panel", "holoviews"],   
+    "gallery/dynamic/dynamic_timeseries_image_analysis.ipynb": ["panel", "holoviews", "hvplot"],
+    "gallery/dynamic/dynamic_ui.ipynb": ["panel"],
+    "gallery/dynamic/dynamic_widget_values.ipynb": ["panel"],
+    "gallery/external/DataTable.ipynb": ["panel"],
+    "gallery/external/deck.gl.ipynb": ["panel"],
+    "gallery/external/Folium.ipynb": ["panel", "pandas", "folium"]
 }
