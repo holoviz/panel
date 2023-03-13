@@ -60,7 +60,7 @@ class Layoutable(param.Parameterized):
     for all Panel components with a visual representation.
     """
 
-    align = Align(default='start', class_=(str, tuple), doc="""
+    align = Align(default='start', doc="""
         Whether the object should be aligned with the start, end or
         center of its container. If set as a tuple it will declare
         (vertical, horizontal) alignment.""")
