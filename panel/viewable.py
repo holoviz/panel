@@ -31,6 +31,7 @@ from bokeh.resources import Resources
 from jinja2 import Template
 from pyviz_comms import Comm, JupyterCommManager  # type: ignore
 
+from ._param import Align, Aspect, Margin
 from .config import config, panel_extension
 from .io import serve
 from .io.document import init_doc
@@ -59,12 +60,12 @@ class Layoutable(param.Parameterized):
     for all Panel components with a visual representation.
     """
 
-    align = param.ClassSelector(default='start', class_=(str, tuple), doc="""
+    align = Align(default='start', doc="""
         Whether the object should be aligned with the start, end or
         center of its container. If set as a tuple it will declare
         (vertical, horizontal) alignment.""")
 
-    aspect_ratio = param.Parameter(default=None, doc="""
+    aspect_ratio = Aspect(default=None, doc="""
         Describes the proportional relationship between component's
         width and height.  This works if any of component's dimensions
         are flexible in size. If set to a number, ``width / height =
@@ -98,7 +99,7 @@ class Layoutable(param.Parameterized):
     max_height = param.Integer(default=None, bounds=(0, None), doc="""
         Minimal height of the component (in pixels) if height is adjustable.""")
 
-    margin = param.Parameter(default=5, doc="""
+    margin = Margin(default=0, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")

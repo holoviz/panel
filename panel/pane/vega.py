@@ -146,11 +146,6 @@ class Vega(ModelPane):
         Declares the debounce time in milliseconds either for all
         events or if a dictionary is provided for individual events.""")
 
-    margin = param.Parameter(default=(5, 5, 30, 5), doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     selection = param.ClassSelector(class_=param.Parameterized, doc="""
         The Selection object reflects any selections available on the
         supplied vega plot into Python.""")
