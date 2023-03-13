@@ -11,6 +11,10 @@ on:
   schedule:
     - cron: '0 19 * * SUN'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pre_commit:
     name: Run pre-commit hooks
