@@ -74,7 +74,7 @@ class Layoutable(param.Parameterized):
         be used to determine the aspect (if not set, no aspect will be
         preserved).""")
 
-    background = param.Color(default=None, doc="""
+    background = param.Parameter(default=None, doc="""
         Background color of the component.""")
 
     css_classes = param.List(default=[], doc="""
