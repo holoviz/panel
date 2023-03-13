@@ -17,6 +17,7 @@ from bokeh.models.layouts import (
     GridBox as _BkGridBox, TabPanel as _BkTabPanel, Tabs as _BkTabs,
 )
 
+from .._param import Margin
 from ..io import (
     init_doc, push, state, unlocked,
 )
@@ -106,6 +107,11 @@ class PaneBase(Reactive):
                                          is_instance=False, doc="""
         Defines the layout the model(s) returned by the pane will
         be placed in.""")
+
+    margin = Margin(default=5, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
 
     object = param.Parameter(default=None, doc="""
         The object being wrapped, which will be converted to a

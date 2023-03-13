@@ -378,8 +378,6 @@ class TemplateActions(ReactiveHTML):
 
     close_modal = param.Integer(default=0)
 
-    margin = param.Integer(default=0)
-
     _template: ClassVar[str] = ""
 
     _scripts: ClassVar[Dict[str, List[str] | str]] = {

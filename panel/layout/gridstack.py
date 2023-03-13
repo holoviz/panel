@@ -45,8 +45,6 @@ class GridStack(ReactiveHTML, GridSpec):
         Current state of the grid (updated as items are resized and
         dragged).""")
 
-    margin = param.Parameter(default=0)
-
     width = param.Integer(default=None)
 
     height = param.Integer(default=None)

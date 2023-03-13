@@ -64,8 +64,6 @@ class Card(Column):
     title_css_classes = param.List(['card-title'], doc="""
         CSS classes to apply to the header title.""")
 
-    margin = param.Parameter(default=5)
-
     title = param.String(doc="""
         A title to be displayed in the Card header, will be overridden
         by the header if defined.""")

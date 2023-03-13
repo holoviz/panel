@@ -35,11 +35,6 @@ class Panel(Reactive):
     Abstract baseclass for a layout of Viewables.
     """
 
-    margin = param.Parameter(default=0, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     # Used internally to optimize updates
     _batch_update: ClassVar[bool] = False
 
@@ -716,11 +711,6 @@ class NamedListPanel(NamedListLike, Panel):
     active = param.Integer(default=0, bounds=(0, None), doc="""
         Index of the currently displayed objects.""")
 
-    margin = param.Parameter(default=0, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     scroll = param.Boolean(default=False, doc="""
         Whether to add scrollbars if the content overflows the size
         of the container.""")
@@ -814,11 +804,6 @@ class WidgetBox(ListPanel):
     horizontal = param.Boolean(default=False, doc="""
         Whether to lay out the widgets in a Row layout as opposed
         to a Column layout.""")
-
-    margin = param.Parameter(default=5, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'disabled': None, 'horizontal': None
