@@ -18,10 +18,10 @@ class BeforeAfterSlider(ListLike, ReactiveHTML):
     objects = param.List(default=[], bounds=(0, 2), doc="""
         The list of child objects that make up the layout.""", precedence=-1)
 
-    slider_width = param.Integer(default=12, bounds=(0, 25), doc="""
+    slider_width = param.Integer(default=5, bounds=(0, 25), doc="""
         The width of the slider in pixels""")
 
-    slider_color = param.Color(default="silver", doc="""
+    slider_color = param.Color(default="black", doc="""
         The color of the slider""")
 
     value = param.Integer(50, bounds=(0, 100), doc="""
@@ -47,7 +47,6 @@ class BeforeAfterSlider(ListLike, ReactiveHTML):
 
     _scripts = {
         'render': """
-          set_size(container, model)
           self.adjustSlider()
         """,
         'after_layout': """
@@ -72,7 +71,8 @@ class BeforeAfterSlider(ListLike, ReactiveHTML):
            document.addEventListener('mousemove', handleDrag);
         """,
         'value': """
-           after.style.width = `calc(${data.value}% + 5px)`
+           after.style.clipPath = `polygon(0% 0%, calc(${data.value}% + 5px) 0%, calc(${data.value}% + 5px) 100%, 0% 100%)`
+           before.style.clipPath = `polygon(calc(${data.value}% + 5px) 0%, 100% 0%, 100% 100%, calc(${data.value}% + 5px) 100%)`
            self.adjustSlider()
         """,
         'slider_width': """
@@ -84,6 +84,8 @@ class BeforeAfterSlider(ListLike, ReactiveHTML):
         """
     }
 
+    _stylesheets = ['css/before_after.css']
+
     def __init__(self, *objects, **params):
         if 'objects' in params and objects:
             raise ValueError(
@@ -91,6 +93,8 @@ class BeforeAfterSlider(ListLike, ReactiveHTML):
                 "as a keyword argument, not both."
             )
         objects = params.pop('objects', objects)
+        if not objects:
+            objects = [None, None]
         super().__init__(objects=list(objects), **params)
 
     @param.depends('objects', watch=True, on_init=True)

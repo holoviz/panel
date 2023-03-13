@@ -1,22 +1,22 @@
 .before-after-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  width: fit-content;
-  height: fit-content;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
 }
+
 .before-after-container .outer {
-  grid-row-start: 1;
-  grid-column-start: 1;
-  width: 100%;
-  height: 100%;
+    grid-column: 1;
+    grid-row: 1;
 }
+
 .before-after-container .slider {
-  grid-row-start: 1;
-  grid-column-start: 1;
+  grid-row: 1;
+  grid-column: 1;
   z-index: 1;
   height: 100%;
   cursor: move;
 }
+
 .before-after-container .inner {
   width: 100%;
   height: 100%;
