@@ -33,7 +33,7 @@ class Swipe(ListLike, ReactiveHTML):
     _after = param.Parameter()
 
     _template = """
-    <div id="container" class="before-after-container">
+    <div id="container" class="swipe-container">
       <div id="before" class="outer">
         <div id="before-inner" class="inner">${_before}</div>
       </div>
