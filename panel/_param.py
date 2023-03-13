@@ -3,7 +3,7 @@ from param import Parameter, _is_number
 
 class Align(Parameter):
     """
-    A Parameter type to validate alignment options. Supports 'start',
+    A Parameter type to validate alignment options. Supports 'auto', 'start',
     'center', 'end' or a two-tuple of these values corresponding
     to the (vertical, horizontal) alignment.
     """
@@ -15,14 +15,14 @@ class Align(Parameter):
     def _validate(self, val):
         self._validate_value(val, self.allow_None)
 
-    def _validate_value(self, val, allow_None, valid=('start', 'center', 'end')):
+    def _validate_value(self, val, allow_None, valid=('auto', 'start', 'center', 'end')):
         if ((val is None and allow_None) or val in valid or
             (isinstance(val, tuple) and len(val) == 2 and all(v in valid for v in val))):
             return
         raise ValueError(
             f"Align parameter {self.name!r} must be one of 'start', "
             "'center', 'end' or a two-tuple specifying the (vertical, "
-            "horizontal) values for the alignment."
+            f"horizontal) values for the alignment, not {val!r}."
         )
 
 
@@ -50,10 +50,10 @@ class Aspect(Parameter):
 
 class Margin(Parameter):
     """
-    A Parameter type to validate margins that supports numeric values,
-    and tuples of length 2 and 4 corresponding to (vertical, horizontal)
-    padding and (top, right, bottom, left) padding, following CSS
-    conventions.
+    A Parameter type to validate margins. Following CSS conventions
+    the parameter supports numeric values and tuples of length 2 and 4
+    corresponding to (vertical, horizontal) margins and (top, right,
+    bottom, left) margins.
     """
 
     def __init__(self, default=None, allow_None=True, **params):
