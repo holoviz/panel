@@ -74,7 +74,7 @@ class Margin(Parameter):
             return
         raise ValueError(
             f'Margin parameter {self.name!r} only takes integer and '
-            f'tuple values of length 2 (horizontal, vertical) or 4 '
+            f'tuple values of length 2 (vertical, horizontal) or 4 '
             '(top, right, bottom, left).'
         )
 
