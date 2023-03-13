@@ -32,7 +32,6 @@ from .accordion import Accordion  # noqa
 from .base import (  # noqa
     Column, ListLike, ListPanel, Panel, Row, WidgetBox,
 )
-from .before_after_slider import BeforeAfterSlider  # noqa
 from .card import Card  # noqa
 from .flex import FlexBox  # noqa
 from .grid import GridBox, GridSpec  # noqa
@@ -40,6 +39,7 @@ from .gridstack import GridStack  # noqa
 from .spacer import (  # noqa
     Divider, HSpacer, Spacer, VSpacer,
 )
+from .swipe import Swipe  # noqa
 from .tabs import Tabs  # noqa
 
 __all__ = (
