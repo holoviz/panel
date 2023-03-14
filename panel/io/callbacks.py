@@ -32,6 +32,9 @@ class PeriodicCallback(param.Parameterized):
     callback = param.Callable(doc="""
         The callback to execute periodically.""")
 
+    counter = param.Integer(default=0, doc="""
+        Counts the number of executions.""")
+
     count = param.Integer(default=None, doc="""
         Number of times the callback will be executed, by default
         this is unlimited.""")
@@ -52,7 +55,6 @@ class PeriodicCallback(param.Parameterized):
     def __init__(self, **params):
         self._background = params.pop('background', False)
         super().__init__(**params)
-        self._counter = 0
         self._start_time = None
         self._cb = None
         self._updating = False
@@ -91,17 +93,17 @@ class PeriodicCallback(param.Parameterized):
         cbname = function_name(self.callback)
         if self._doc and self.log:
             _periodic_logger.info(
-                LOG_PERIODIC_END, id(self._doc), cbname, self._counter
+                LOG_PERIODIC_END, id(self._doc), cbname, self.counter
             )
         if not self._background:
             with edit_readonly(state):
                 state._busy_counter -= 1
-        self._counter += 1
+        self.counter += 1
         if self.timeout is not None:
             dt = (time.time() - self._start_time) * 1000
             if dt > self.timeout:
                 self.stop()
-        if self._counter == self.count:
+        if self.counter == self.count:
             self.stop()
 
     async def _periodic_callback(self):
@@ -111,7 +113,7 @@ class PeriodicCallback(param.Parameterized):
         cbname = function_name(self.callback)
         if self._doc and self.log:
             _periodic_logger.info(
-                LOG_PERIODIC_START, id(self._doc), cbname, self._counter
+                LOG_PERIODIC_START, id(self._doc), cbname, self.counter
             )
         is_async = (
             inspect.isasyncgenfunction(self.callback) or
@@ -130,13 +132,6 @@ class PeriodicCallback(param.Parameterized):
             raise
         finally:
             self._post_callback()
-
-    @property
-    def counter(self):
-        """
-        Returns the execution count of the periodic callback.
-        """
-        return self._counter
 
     async def _async_repeat(self, func):
         """
@@ -193,7 +188,8 @@ class PeriodicCallback(param.Parameterized):
                 self.running = False
             finally:
                 self._updating = False
-        self._counter = 0
+        with param.discard_events(self):
+            self.counter = 0
         self._timeout = None
         if state._is_pyodide:
             self._cb.cancel()
