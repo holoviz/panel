@@ -113,7 +113,7 @@ class ECharts(ModelPane):
     def _get_properties(self, document: Document):
         props = super()._get_properties(document)
         props['event_config'] = {
-            event: list(queries) for event, queries in self._callbacks.items()
+            event: list(queries) for event, queries in self._py_callbacks.items()
         }
         return props
 
