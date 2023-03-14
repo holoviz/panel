@@ -564,6 +564,9 @@ class BaseTable(ReactiveData, Widget):
     def _process_column(self, values):
         if not isinstance(values, (list, np.ndarray)):
             return [str(v) for v in values]
+        if isinstance(values, np.ndarray) and values.dtype.kind == "b":
+            # Workaround for https://github.com/bokeh/bokeh/issues/12776
+            return values.tolist()
         return values
 
     def _get_data(self) -> Tuple[pd.DataFrame, DataDict]:
