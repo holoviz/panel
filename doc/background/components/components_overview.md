@@ -16,7 +16,9 @@ pn.extension()
 
 Note that to use certain components such as Vega, LaTeX, and Plotly plots in a notebook, the models must be loaded using the extension. E.g.:
 
-    pn.extension('vega', 'katex')
+``` python
+pn.extension('vega', 'katex')
+```
 
 will ensure that the Vega and LaTeX JS dependencies are loaded. Once the extension is loaded, Panel objects will display themselves in the notebook, outside the notebook objects can be displayed in a server using the show method or run from the commandline by appending ``.servable()`` to the objects to be displayed.
 

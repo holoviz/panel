@@ -2711,7 +2711,6 @@ def test_tabulator_click_event_and_header_filters(page, port):
     assert values[0] == ('col2', 4, 'Z')
 
 
-@pytest.mark.skip(reason="Bokeh bug: https://github.com/bokeh/bokeh/issues/12788")
 def test_tabulator_click_event_and_header_filters_and_streamed_data(page, port):
     df = pd.DataFrame({
         'col1': list('ABCDD'),
