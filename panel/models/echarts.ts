@@ -1,5 +1,9 @@
+import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
+import {Attrs} from "@bokehjs/core/types"
+
+import {serializeEvent} from "./event-to-object"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 const mouse_events = [
@@ -17,18 +21,33 @@ const events = [
 
 const all_events = mouse_events.concat(events);
 
+export class EChartsEvent extends ModelEvent {
+  constructor(readonly type: string, readonly data: any, readonly query: string) {
+    super()
+  }
+
+  protected get event_values(): Attrs {
+    return {model: this.origin, type: this.type, data: this.data, query: this.query}
+  }
+
+  static {
+    this.prototype.event_name = "echarts_event"
+  }
+}
+
 export class EChartsView extends HTMLBoxView {
   model: ECharts
-  _chart: any
   container: Element
-
+  _chart: any
+  _callbacks: Array<any>[] = []
 
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => this._plot())
-    const {width, height, renderer, theme} = this.model.properties
+    const {width, height, renderer, theme, event_config, js_events} = this.model.properties
     this.on_change([width, height], () => this._resize())
     this.on_change([theme, renderer], () => this.render())
+    this.on_change([event_config, js_events], () => this._subscribe())
   }
 
   render(): void {
@@ -43,6 +62,7 @@ export class EChartsView extends HTMLBoxView {
       config
     )
     this._plot()
+    this._subscribe()
     this.shadow_el.append(this.container)
   }
 
@@ -70,52 +90,44 @@ export class EChartsView extends HTMLBoxView {
   _subscribe(): void {
     if ((window as any).echarts == null)
       return
-    for (let key in this.model.event_config) {
-      if (all_events.includes(key)) {
-        let value = this.model.event_config[key];
-        if (value == null) {
-          console.log("Subscribed to Echarts event:", key, "without query - logging events at console.")
-          this._chart.on(key, value, function (params: any) {
-            console.log(params);
-          });
-        } else {
-          if (typeof value === 'object') {
-            if ('query' in value && 'base_url' in value && 'identifier' in value) {
-              console.log("Subscribed with open new browser tab to Echarts event:",
-                key, "with query:", value['query'])
-              this._chart.on(key, value['query'], function (params: any) {
-                if ("data" in params) {
-                  if (value['identifier'] in params.data) {
-                    console.log("Opening new brower tab:", value['base_url'] + params.data[value['identifier']]);
-                    window.open(value['base_url'] + params.data[value['identifier']], '_blank')?.focus();
-                  }
-                }
-              });
-            } else if ('query' in value && 'handler' in value) {
-              console.log("Subscribed with handler to Echarts event:",
-                key, "with query:", value['query'])
-              this._chart.on(key, value['query'], eval(value['handler']))
-            } else if ('query' in value) {
-              console.log("Subscribed to Echarts event:", key, "with query:", value)
-              var select = 'select' in value ? value['select'] : undefined;
-              var filters = 'filters' in value ? value['filters'] : undefined;
-              this._chart.on(key, value, (params: any) => {
-                sendEvent(params, this.model, key, value['query'], select, filters);
-              });
-            } else {
-              this._chart.on(key, value, (params: any) => {
-                sendEvent(params, this.model, key, value);
-              });
-            }
-          } else {
-            console.log("Subscribed to Echarts event:", key, "with query:", value)
-            this._chart.on(key, value, (params: any) => {
-              sendEvent(params, this.model, key, value);
-            });
-          }
+    for (const [event_type, callback] of this._callbacks)
+      this._chart.off(event_type, callback)
+    this._callbacks = []
+    for (const event_type in this.model.event_config) {
+      if (!all_events.includes(event_type)) {
+        console.warn(`Could not subscribe to unknown Echarts event: ${event_type}.`);
+	continue
+      }
+      const queries = this.model.event_config[event_type];
+      for (const query of queries) {
+	const callback = (event: any) => {
+	  const processed = {...event}
+	  processed.event = serializeEvent(event.event?.event)
+	  const serialized = JSON.parse(JSON.stringify(processed))
+	  this.model.trigger_event(new EChartsEvent(event_type, serialized, query))
         }
-      } else {
-        console.warn("Couldn't subscribe to unknown Echarts event:", key, "- ignoring it.");
+	if (query == null)
+          this._chart.on(event_type, query, callback)
+	else
+          this._chart.on(event_type, callback)
+	this._callbacks.push([event_type, callback])
+      }
+    }
+    for (const event_type in this.model.js_events) {
+      if (!all_events.includes(event_type)) {
+        console.warn(`Could not subscribe to unknown Echarts event: ${event_type}.`);
+	continue
+      }
+      const handlers = this.model.js_events[event_type];
+      for (const handler of handlers) {
+	const callback = (event: any) => {
+	  handler.callback.execute(this._chart, event)
+        }
+	if ('query' in handler)
+          this._chart.on(event_type, handler.query, callback)
+	else
+          this._chart.on(event_type, callback)
+	this._callbacks.push([event_type, callback])
       }
     }
   }
@@ -126,7 +138,7 @@ export namespace ECharts {
   export type Props = HTMLBox.Props & {
     data: p.Property<any>
     event_config: p.Property<any>
-    event: p.Property<any>
+    js_events: p.Property<any>
     renderer: p.Property<string>
     theme: p.Property<string>
   }
@@ -147,38 +159,11 @@ export class ECharts extends HTMLBox {
     this.prototype.default_view = EChartsView
 
     this.define<ECharts.Props>(({ Any, String }) => ({
-      data:         [Any, {}],
-      event_config: [Any, {}],
-      event:        [Any, {}],
-      theme:        [String, "default"],
-      renderer:     [String, "canvas"]
+      data:         [ Any,           {} ],
+      event_config: [ Any,           {} ],
+      js_events:    [ Any,           {} ],
+      theme:        [ String,  "default"],
+      renderer:     [ String,   "canvas"]
     }))
   }
-}
-
-function sendEvent(event: any, model: ECharts, type: string, query: string,
-  select: string='data', filters: string[]=['children']): void {
-  const eventData: any = filterEventData(event, select, filters);
-  // To make sure event gets sent we add a uuid
-  // https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid
-  eventData.uuid = uuidv4();
-  eventData.event = type;
-  eventData.query = query;
-  console.log("sendEvent:", eventData);
-  model.event = eventData;
-}
-
-function filterEventData(event: any, select: string, filters: string[]) {
-  var data = {[select]: event[select]}
-  for (const filter of filters) {
-    delete data[select][filter];
-  }
-  return data
-}
-
-function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
 }
