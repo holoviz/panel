@@ -54,7 +54,7 @@ class ECharts(ModelPane):
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
-        self._callbacks = defaultdict(lambda: defaultdict(list))
+        self._py_callbacks = defaultdict(lambda: defaultdict(list))
         self._js_callbacks = defaultdict(list)
 
     @classmethod
@@ -73,7 +73,7 @@ class ECharts(ModelPane):
         return False
 
     def _process_event(self, event):
-        callbacks = self._callbacks.get(event.type, {})
+        callbacks = self._py_callbacks.get(event.type, {})
         for cb in callbacks.get(None, []):
             cb(event)
         if event.query is None:
@@ -143,8 +143,8 @@ class ECharts(ModelPane):
         query: str | None
             A query that determines when the event fires.
         """
-        self._callbacks[event][query].append(callback)
-        event_config = {event: list(queries) for event, queries in self._callbacks.items()}
+        self._py_callbacks[event][query].append(callback)
+        event_config = {event: list(queries) for event, queries in self._py_callbacks.items()}
         for ref, (model, _) in self._models.items():
             self._apply_update({}, {'event_config': event_config}, model, ref)
 
