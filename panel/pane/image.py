@@ -332,8 +332,9 @@ class ICO(ImageBase):
 
 class JPG(ImageBase):
     """
-    The `JPG` pane embeds a .jpg image file in a panel if provided a
-    local path, or will link to a remote image if provided a URL.
+    The `JPG` pane embeds a .jpg or .jpeg image file in a panel if
+    provided a local path, or will link to a remote image if provided
+    a URL.
 
     Reference: https://panel.holoviz.org/reference/panes/JPG.html
 
