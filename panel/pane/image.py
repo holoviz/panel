@@ -10,7 +10,7 @@ import base64
 from io import BytesIO
 from pathlib import PurePath
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Tuple,
 )
 
 import param
@@ -28,6 +28,8 @@ class FileBase(HTMLBasePane):
         Whether to embed the file as base64.""")
 
     filetype: ClassVar[str]
+
+    _extensions: ClassVar[None | Tuple[str, ...]] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {'embed': None}
 
@@ -53,14 +55,15 @@ class FileBase(HTMLBasePane):
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
         filetype = cls.filetype.split('+')[0]
+        exts = cls._extensions or (filetype,)
         if hasattr(obj, f'_repr_{filetype}_'):
             return True
         if isinstance(obj, PurePath):
             obj = str(obj.absolute())
         if isinstance(obj, str):
-            if isfile(obj) and obj.lower().endswith(f'.{filetype}'):
+            if isfile(obj) and any(obj.lower().endswith(f'.{ext}') for ext in exts):
                 return True
-            if isurl(obj, [filetype]):
+            if isurl(obj, exts):
                 return True
             elif isurl(obj, None):
                 return 0
@@ -329,8 +332,9 @@ class ICO(ImageBase):
 
 class JPG(ImageBase):
     """
-    The `JPG` pane embeds a .jpg or .jpeg image file in a panel if provided a
-    local path, or will link to a remote image if provided a URL.
+    The `JPG` pane embeds a .jpg or .jpeg image file in a panel if
+    provided a local path, or will link to a remote image if provided
+    a URL.
 
     Reference: https://panel.holoviz.org/reference/panes/JPG.html
 
@@ -345,6 +349,8 @@ class JPG(ImageBase):
     """
 
     filetype: ClassVar[str] = 'jpg'
+
+    _extensions: ClassVar[Tuple[str, ...]] = ('jpeg', 'jpg')
 
     @classmethod
     def _imgshape(cls, data):

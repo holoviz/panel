@@ -11,8 +11,15 @@ from panel.pane import (
 )
 from panel.pane.markup import escape
 
+JPG_FILE = 'https://assets.holoviz.org/panel/samples/jpg_sample.jpg'
+JPEG_FILE = 'https://assets.holoviz.org/panel/samples/jpeg_sample.jpeg'
 PNG_FILE = 'https://assets.holoviz.org/panel/samples/png_sample.png'
 SVG_FILE = 'https://assets.holoviz.org/panel/samples/svg_sample.svg'
+
+
+def test_jpeg_applies():
+    assert JPG.applies(JPEG_FILE)
+    assert JPG.applies(JPG_FILE)
 
 def test_svg_pane(document, comm):
     rect = """
