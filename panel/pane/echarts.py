@@ -3,15 +3,18 @@ from __future__ import annotations
 import json
 import sys
 
+from collections import defaultdict
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional,
+    TYPE_CHECKING, Any, Callable, ClassVar, List, Mapping, Optional,
 )
 
 import param
 
+from bokeh.models import CustomJS
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
+from ..viewable import Viewable
 from .base import ModelPane
 
 if TYPE_CHECKING:
@@ -49,6 +52,11 @@ class ECharts(ModelPane):
 
     _updates: ClassVar[bool] = True
 
+    def __init__(self, object=None, **params):
+        super().__init__(object, **params)
+        self._py_callbacks = defaultdict(lambda: defaultdict(list))
+        self._js_callbacks = defaultdict(list)
+
     @classmethod
     def applies(cls, obj: Any, **params) -> float | bool | None:
         if isinstance(obj, dict):
@@ -64,14 +72,25 @@ class ECharts(ModelPane):
             return isinstance(obj, pyecharts.charts.chart.Chart)
         return False
 
-    def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
-    ) -> Model:
-        self._bokeh_model = lazy_load(
-            'panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root
-        )
-        return super()._get_model(doc, root, parent, comm)
+    def _process_event(self, event):
+        callbacks = self._py_callbacks.get(event.type, {})
+        for cb in callbacks.get(None, []):
+            cb(event)
+        if event.query is None:
+            return
+        for cb in callbacks.get(event.query, []):
+            cb(event)
+
+    def _get_js_events(self, ref):
+        js_events = defaultdict(list)
+        for event, specs in self._js_callbacks.items():
+            for (query, code, args) in specs:
+                models = {
+                    name: viewable._models[ref][0] for name, viewable in args.items()
+                    if ref in viewable._models
+                }
+                js_events[event].append({'query': query, 'callback': CustomJS(code=code, args=models)})
+        return dict(js_events)
 
     def _process_param_change(self, params):
         props = super()._process_param_change(params)
@@ -90,3 +109,77 @@ class ECharts(ModelPane):
         if data.get('responsive'):
             props['sizing_mode'] = 'stretch_both'
         return props
+
+    def _get_properties(self, document: Document):
+        props = super()._get_properties(document)
+        props['event_config'] = {
+            event: list(queries) for event, queries in self._py_callbacks.items()
+        }
+        return props
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        self._bokeh_model = lazy_load(
+            'panel.models.echarts', 'ECharts', isinstance(comm, JupyterComm), root
+        )
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('echarts_event', model=model, doc=doc, comm=comm)
+        return model
+
+    def on_event(self, event: str, callback: Callable, query: str | None = None):
+        """
+        Register anevent handler which triggers when the specified event is triggered.
+
+        Reference: https://apache.github.io/echarts-handbook/en/concepts/event/
+
+        Arguments
+        ---------
+        event: str
+            The name of the event to register a handler on, e.g. 'click'.
+        callback: str | CustomJS
+            The event handler to be executed when the event fires.
+        query: str | None
+            A query that determines when the event fires.
+        """
+        self._py_callbacks[event][query].append(callback)
+        event_config = {event: list(queries) for event, queries in self._py_callbacks.items()}
+        for ref, (model, _) in self._models.items():
+            self._apply_update({}, {'event_config': event_config}, model, ref)
+
+    def js_on_event(self, event: str, callback: str | CustomJS, query: str | None = None, **args):
+        """
+        Register a Javascript event handler which triggers when the
+        specified event is triggered. The callback can be a snippet
+        of Javascript code or a bokeh CustomJS object making it possible
+        to manipulate other models in response to an event.
+
+        Reference: https://apache.github.io/echarts-handbook/en/concepts/event/
+
+        Arguments
+        ---------
+        event: str
+            The name of the event to register a handler on, e.g. 'click'.
+        code: str
+            The event handler to be executed when the event fires.
+        query: str | None
+            A query that determines when the event fires.
+        args: Viewable
+            A dictionary of Viewables to make available in the namespace
+            of the object.
+        """
+        self._js_callbacks[event].append((query, callback, args))
+        for ref, (model, _) in self._models.items():
+            js_events = self._get_js_events(ref)
+            self._apply_update({}, {'js_events': js_events}, model, ref)
+
+
+def setup_js_callbacks(root_view, root_model):
+    if 'panel.models.echarts' not in sys.modules:
+        return
+    ref = root_model.ref['id']
+    for pane in root_view.select(ECharts):
+        pane._models[ref][0].js_events = pane._get_js_events(ref)
+
+Viewable._preprocessing_hooks.append(setup_js_callbacks)
