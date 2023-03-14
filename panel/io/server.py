@@ -401,14 +401,28 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                 )
             else:
                 token = session.token
+            logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
-                logger.info(LOG_SESSION_CREATED, id(session.document))
-                resources = Resources.from_bokeh(self.application.resources())
-                page = server_html_page_for_session(
-                    session, resources=resources, title=session.document.title,
-                    token=token, template=session.document.template,
-                    template_variables=session.document.template_variables,
-                )
+                if config.authorize_callback and not config.authorize_callback(state.user_info):
+                    if config.auth_template:
+                        with open(config.auth_template) as f:
+                            template = _env.from_string(f.read())
+                    else:
+                        template = ERROR_TEMPLATE
+                    page = template.render(
+                        npm_cdn=config.npm_cdn,
+                        title='Panel: Authorization Error',
+                        error_type='Authorization Error',
+                        error='User is not authorized.',
+                        error_msg=f'{state.user} is not authorized to access this application.'
+                    )
+                else:
+                    resources = Resources.from_bokeh(self.application.resources())
+                    page = server_html_page_for_session(
+                        session, resources=resources, title=session.document.title,
+                        token=token, template=session.document.template,
+                        template_variables=session.document.template_variables,
+                    )
         self.set_header("Content-Type", 'text/html')
         self.write(page)
 
