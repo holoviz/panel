@@ -52,6 +52,8 @@ def test_swipe_fixed_width(page, port):
     assert page.locator('.swipe-container .outer').nth(1).evaluate("""(element) =>
         window.getComputedStyle(element).getPropertyValue('clip-path')""") == 'polygon(calc(75% + 5px) 0%, 100% 0%, 100% 100%, calc(75% + 5px) 100%)'
 
+    time.sleep(0.2)
+
     assert swipe.value == 75
 
     swipe.value = 25
@@ -106,6 +108,8 @@ def test_swipe_stretch_width(page, port):
         window.getComputedStyle(element).getPropertyValue('clip-path')""") == 'polygon(0% 0%, calc(75% + 5px) 0%, calc(75% + 5px) 100%, 0% 100%)'
     assert page.locator('.swipe-container .outer').nth(1).evaluate("""(element) =>
         window.getComputedStyle(element).getPropertyValue('clip-path')""") == 'polygon(calc(75% + 5px) 0%, 100% 0%, 100% 100%, calc(75% + 5px) 100%)'
+
+    time.sleep(0.2)
 
     assert swipe.value == 75
 
