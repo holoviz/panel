@@ -312,7 +312,7 @@ def script_to_html(
     # Collect resources
     resources = Resources(mode='cdn')
     loading_base = (DIST_DIR / "css" / "loading.css").read_text()
-    spinner_css = loading_css(shadow_dom=False)
+    spinner_css = loading_css()
     css_resources.append(
         f'<style type="text/css">\n{loading_base}\n{spinner_css}\n</style>'
     )

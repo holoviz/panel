@@ -447,7 +447,7 @@ class CallbackGenerator(object):
                     if isinstance(v, BkModel) and k not in references:
                         references[k] = v
 
-            if isinstance(target, HoloViews):
+            if isinstance(target, HoloViews) and ref in target._plots:
                 tgt = target._plots[ref][0]
             else:
                 tgt = target
