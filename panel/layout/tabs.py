@@ -138,9 +138,9 @@ class Tabs(NamedListPanel):
                 self.param.trigger('objects')
                 return
 
-    def _compute_sizing_mode(self, children, sizing_mode):
+    def _compute_sizing_mode(self, children, sizing_mode, styles):
         children = [child.child for child in children]
-        return super()._compute_sizing_mode(children, sizing_mode)
+        return super()._compute_sizing_mode(children, sizing_mode, styles)
 
     #----------------------------------------------------------------
     # Model API
