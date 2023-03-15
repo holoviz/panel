@@ -546,6 +546,9 @@ class BasicTemplate(BaseTemplate):
         if 'embed(roots.notifications)' in template and self.notifications:
             self._render_items['notifications'] = (self.notifications, [])
             self._render_variables['notifications'] = True
+        if config.browser_info and 'embed(roots.browser_info)' in template and state.browser_info:
+            self._render_items['browser_info'] = (state.browser_info, [])
+            self._render_variables['browser_info'] = True
         self._update_busy()
         self.main.param.watch(self._update_render_items, ['objects'])
         self.modal.param.watch(self._update_render_items, ['objects'])
