@@ -196,7 +196,7 @@ class Panel(Reactive):
                 'layout issues in future versions of Panel.'
             )
         sizing_mode = new_mode or sizing_mode
-        if (sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and not all_expand:
+        if sizing_mode is not None and (sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and not all_expand:
             styles = dict(styles, **{'overflow-x': 'auto'})
         return sizing_mode, styles
 
