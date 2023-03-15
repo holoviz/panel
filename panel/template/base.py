@@ -17,6 +17,7 @@ from typing import (
 import param
 
 from bokeh.document.document import Document
+from bokeh.models import LayoutDOM
 from bokeh.settings import settings as _settings
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
@@ -184,10 +185,10 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             model.name = name
             model.tags = tags
             mref = model.ref['id']
-            sizing_modes[mref] = model.sizing_mode
-
-            if self._design._apply_hooks not in obj._hooks:
-                obj._hooks.append(self._design._apply_hooks)
+            if isinstance(model, LayoutDOM):
+                sizing_modes[mref] = model.sizing_mode
+                if self._design._apply_hooks not in obj._hooks:
+                    obj._hooks.append(self._design._apply_hooks)
 
             # Alias model ref with the fake root ref to ensure that
             # pre-processor correctly operates on fake root
