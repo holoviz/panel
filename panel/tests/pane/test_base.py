@@ -60,7 +60,10 @@ def test_pane_linkable_params(pane, document, comm):
 
 @pytest.mark.parametrize('pane', all_panes+[Bokeh])
 def test_pane_loading_param(pane, document, comm):
-    p = pane()
+    try:
+        p = pane()
+    except ImportError:
+        pytest.skip("Dependent library could not be imported.")
 
     root = p.get_root(document, comm)
     model = p._models[root.ref['id']][0]
