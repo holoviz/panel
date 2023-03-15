@@ -72,11 +72,6 @@ class Panel(Reactive):
     # Callback API
     #----------------------------------------------------------------
 
-    def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        if ('styles' in params or 'sizing_mode' in params) and self.sizing_mode in ('stretch_width', 'stretch_both'):
-            params['styles'] = dict(params.get('styles', {}), **{'overflow-x': 'auto'})
-        return super()._process_param_change(params)
-
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
@@ -93,7 +88,11 @@ class Panel(Reactive):
         if obj_key in msg:
             old = events['objects'].old
             msg[obj_key] = children = self._get_objects(model, old, doc, root, comm)
-            msg['sizing_mode'] = self._compute_sizing_mode(children, msg.get('sizing_mode', model.sizing_mode))
+            msg['sizing_mode'], msg['styles'] = self._compute_sizing_mode(
+                children,
+                msg.get('sizing_mode', model.sizing_mode),
+                msg.get('styles', model.styles)
+            )
 
         with hold(doc):
             update = Panel._batch_update
@@ -153,23 +152,27 @@ class Panel(Reactive):
         root = root or model
         self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
-        properties = self._get_properties(doc)
-        properties[self._property_mapping['objects']] = objects
-        properties['sizing_mode'] = self._compute_sizing_mode(objects, properties.get('sizing_mode'))
-        model.update(**properties)
+        props = self._get_properties(doc)
+        props[self._property_mapping['objects']] = objects
+        props['sizing_mode'], props['styles'] = self._compute_sizing_mode(
+            objects, props.get('sizing_mode'), props.get('styles')
+        )
+        model.update(**props)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
-    def _compute_sizing_mode(self, children, sizing_mode):
+    def _compute_sizing_mode(self, children, sizing_mode, styles):
         from ..config import config
         if sizing_mode is not None and (not config.layout_compatibility or sizing_mode == 'fixed'):
-            return sizing_mode
-        expand_width, expand_height, scale = False, False, False
+            return sizing_mode, styles
+        all_expand, expand_width, expand_height, scale = True, False, False, False
         for child in children:
             if child.sizing_mode and 'scale' in child.sizing_mode:
                 scale = True
             if child.sizing_mode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
                 expand_width = True
+            else:
+                all_expand = False
             if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
                 expand_height = True
         new_mode = None
@@ -183,6 +186,7 @@ class Panel(Reactive):
         elif expand_height and not self.height:
             new_mode = f'{mode}_height'
             extra = ' or a fixed height '
+
         if new_mode and config.layout_compatibility and new_mode != sizing_mode:
             self.param.warning(
                 f'Layout compatibility mode determined that {type(self).__name__} '
@@ -191,7 +195,10 @@ class Panel(Reactive):
                 'Update the sizing_mode to hide this warning and prevent '
                 'layout issues in future versions of Panel.'
             )
-        return new_mode or sizing_mode
+        sizing_mode = new_mode or sizing_mode
+        if (sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and not all_expand:
+            styles = dict(styles, **{'overflow-x': 'auto'})
+        return sizing_mode, styles
 
     #----------------------------------------------------------------
     # Public API
