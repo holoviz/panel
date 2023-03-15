@@ -132,20 +132,22 @@ def test_plotly_3d_plot(page, port, plotly_3d_plot):
 def test_plotly_hover_data(page, port, plotly_2d_plot):
     serve(plotly_2d_plot, port=port, threaded=True, show=False)
 
-    time.sleep(0.5)
+    hover_data = []
+    plotly_2d_plot.param.watch(lambda e: hover_data.append(e.new), 'hover_data')
 
+    time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
 
     plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
     expect(plotly_plot).to_have_count(1)
 
     # Select and hover on first point
-    point = page.locator(':nth-match(.js-plotly-plot .plot-container.plotly path.point, 1)')
+    point = plotly_plot.locator('g.points path.point').nth(0)
     point.hover(force=True)
 
-    page.wait_for_timeout(500)
+    time.sleep(0.2)
 
-    assert plotly_2d_plot.hover_data == {
+    assert {
         'points': [{
             'curveNumber': 0,
             'pointIndex': 0,
@@ -153,13 +155,13 @@ def test_plotly_hover_data(page, port, plotly_2d_plot):
             'x': 0,
             'y': 2
         }]
-    }
+    } in hover_data
 
     # Hover somewhere else
     plot = page.locator('.js-plotly-plot .plot-container.plotly g.scatterlayer')
     plot.hover(force=True)
 
-    page.wait_for_timeout(200)
+    time.sleep(0.2)
 
     assert plotly_2d_plot.hover_data is None
 
@@ -176,7 +178,7 @@ def test_plotly_click_data(page, port, plotly_2d_plot):
     expect(plotly_plot).to_have_count(1)
 
     # Select and click on first point
-    point = page.locator(':nth-match(.js-plotly-plot .plot-container.plotly path.point, 1)')
+    point = page.locator('.js-plotly-plot .plot-container.plotly path.point').nth(0)
     point.click(force=True)
 
     time.sleep(0.2)
