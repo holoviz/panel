@@ -8,6 +8,7 @@ from __future__ import annotations
 import datetime as dt
 import difflib
 import logging
+import pathlib
 import re
 import sys
 import textwrap
@@ -34,7 +35,8 @@ from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
 from .io.resources import (
-    CDN_DIST, loading_css, patch_stylesheet, process_raw_css,
+    CDN_DIST, component_resource_path, loading_css, patch_stylesheet,
+    process_raw_css, resolve_custom_path,
 )
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
@@ -185,10 +187,20 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
             from .config import config
-            base_stylesheets = config.css_files+self._stylesheets+['css/loading.css']
-            stylesheets = [loading_css()] + process_raw_css(config.raw_css) + [
-                ImportedStyleSheet(url=stylesheet) for stylesheet in base_stylesheets
-            ]
+            stylesheets = [loading_css(), ImportedStyleSheet(url=f'{CDN_DIST}css/loading.css')]
+            stylesheets += process_raw_css(config.raw_css)
+            stylesheets += config.css_files
+            for css_file in self._stylesheets:
+                if css_file.startswith('http'):
+                    stylesheets.append(ImportedStyleSheet(url=css_file))
+                elif resolve_custom_path(self, css_file):
+                    component_path = component_resource_path(self, '_stylesheets', css_file)
+                    stylesheets.append(ImportedStyleSheet(url=component_path))
+                elif ((css_path:= pathlib.Path(css_file)).is_absolute() and
+                      css_path.is_file()):
+                    stylesheets.append(css_path.read_text('utf-8'))
+                else:
+                    stylesheets.append(ImportedStyleSheet(url=css_file))
             for stylesheet in properties['stylesheets']:
                 if isinstance(stylesheet, str) and stylesheet.endswith('.css'):
                     stylesheet = ImportedStyleSheet(url=stylesheet)

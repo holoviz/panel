@@ -11,6 +11,7 @@ from typing import (
 
 import param
 
+from ..io.resources import CDN_DIST
 from .markup import Markdown
 
 ALERT_TYPES = [
@@ -37,7 +38,9 @@ class Alert(Markdown):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'alert_type': None}
 
-    _stylesheets: ClassVar[List[str]] = ['css/alerts.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/alerts.css'
+    ]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:

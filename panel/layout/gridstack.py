@@ -6,7 +6,7 @@ from typing import ClassVar, List, Mapping
 import param
 
 from ..config import config
-from ..io.resources import bundled_files
+from ..io.resources import CDN_DIST, bundled_files
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .grid import GridSpec
@@ -133,7 +133,9 @@ class GridStack(ReactiveHTML, GridSpec):
         'nrows': 'nrows', 'ncols': 'ncols', 'objects': 'objects'
     }
 
-    _stylesheets: ClassVar[List[str]] = ['css/gridstack.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/gridstack.css'
+    ]
 
     @classproperty
     def __js_skip__(cls):

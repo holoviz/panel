@@ -17,6 +17,7 @@ import param
 from bokeh.models import FlexBox as BkFlexBox, GridBox as BkGridBox
 
 from ..io.model import hold
+from ..io.resources import CDN_DIST
 from .base import (
     ListPanel, Panel, _col, _row,
 )
@@ -64,7 +65,9 @@ class GridBox(ListPanel):
         'scroll': None, 'objects': None
     }
 
-    _stylesheets = ['css/gridbox.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/gridbox.css'
+    ]
 
     @classmethod
     def _flatten_grid(cls, layout, nrows=None, ncols=None):

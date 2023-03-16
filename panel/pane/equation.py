@@ -8,13 +8,14 @@ import re
 import sys
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
 )
 
 import param  # type: ignore
 
 from pyviz_comms import Comm, JupyterComm  # type: ignore
 
+from ..io.resources import CDN_DIST
 from ..util import lazy_load
 from .base import ModelPane
 
@@ -64,7 +65,9 @@ class LaTeX(ModelPane):
 
     _updates: ClassVar[bool] = True
 
-    _stylesheets = ['css/katex.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/katex.css'
+    ]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:

@@ -7,7 +7,7 @@ from panel.widgets import FloatSlider, IntSlider, TextInput
 
 class DesignTest(Design):
 
-    _modifiers = {
+    modifiers = {
         IntSlider: {
             'stylesheets': [Inherit, 'http://example.com/baz.css']
         },
