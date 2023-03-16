@@ -264,7 +264,7 @@ class Layoutable(param.Parameterized):
 
 _Self = TypeVar('_Self', bound='ServableMixin')
 
-class ServableMixin(object):
+class ServableMixin:
     """
     Mixin to define methods shared by objects which can served.
     """
@@ -406,7 +406,66 @@ class ServableMixin(object):
         )
 
 
-class Renderable(param.Parameterized):
+class MimeRenderMixin:
+    """
+    Mixin class to allow rendering and syncing objects in notebook
+    contexts.
+    """
+
+    def _on_msg(self, ref: str, manager, msg) -> None:
+        """
+        Handles Protocol messages arriving from the client comm.
+        """
+        root, doc, comm = state._views[ref][1:]
+        patch_cds_msg(root, msg)
+        held = doc.callbacks.hold_value
+        patch = manager.assemble(msg)
+        doc.hold()
+        patch.apply_to_document(doc, comm.id if comm else None)
+        doc.unhold()
+        if held:
+            doc.hold(held)
+
+    def _on_error(self, ref: str, error: Exception) -> None:
+        if ref not in state._handles or config.console_output in [None, 'disable']:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = '\n<pre>'+escape(traceback.format_exc())+'</pre>\n'
+        if config.console_output == 'accumulate':
+            accumulator.append(formatted)
+        elif config.console_output == 'replace':
+            accumulator[:] = [formatted]
+        if accumulator:
+            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
+    def _on_stdout(self, ref: str, stdout: Any) -> None:
+        if ref not in state._handles or config.console_output is [None, 'disable']:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = ["%s</br>" % o for o in stdout]
+        if config.console_output == 'accumulate':
+            accumulator.extend(formatted)
+        elif config.console_output == 'replace':
+            accumulator[:] = formatted
+        if accumulator:
+            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
+    def _render_mimebundle(self, model: Model, doc: Document, comm: Comm, location: Location | None = None):
+        from .models.comm_manager import CommManager
+
+        ref = model.ref['id']
+        manager = CommManager(comm_id=comm.id, plot_id=ref)
+        client_comm = state._comm_manager.get_client_comm(
+            on_msg=partial(self._on_msg, ref, manager),
+            on_error=partial(self._on_error, ref),
+            on_stdout=partial(self._on_stdout, ref)
+        )
+        self._comms[ref] = (comm, client_comm)
+        manager.client_comm_id = client_comm.id
+        return render_mimebundle(model, doc, comm, manager, location)
+
+
+class Renderable(param.Parameterized, MimeRenderMixin):
     """
     Baseclass for objects which can be rendered to a Bokeh model.
 
@@ -477,44 +536,6 @@ class Renderable(param.Parameterized):
         for hook in hooks:
             hook(self, root)
 
-    def _on_msg(self, ref: str, manager, msg) -> None:
-        """
-        Handles Protocol messages arriving from the client comm.
-        """
-        root, doc, comm = state._views[ref][1:]
-        patch_cds_msg(root, msg)
-        held = doc.callbacks.hold_value
-        patch = manager.assemble(msg)
-        doc.hold()
-        patch.apply_to_document(doc, comm.id if comm else None)
-        doc.unhold()
-        if held:
-            doc.hold(held)
-
-    def _on_error(self, ref: str, error: Exception) -> None:
-        if ref not in state._handles or config.console_output in [None, 'disable']:
-            return
-        handle, accumulator = state._handles[ref]
-        formatted = '\n<pre>'+escape(traceback.format_exc())+'</pre>\n'
-        if config.console_output == 'accumulate':
-            accumulator.append(formatted)
-        elif config.console_output == 'replace':
-            accumulator[:] = [formatted]
-        if accumulator:
-            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
-
-    def _on_stdout(self, ref: str, stdout: Any) -> None:
-        if ref not in state._handles or config.console_output is [None, 'disable']:
-            return
-        handle, accumulator = state._handles[ref]
-        formatted = ["%s</br>" % o for o in stdout]
-        if config.console_output == 'accumulate':
-            accumulator.extend(formatted)
-        elif config.console_output == 'replace':
-            accumulator[:] = formatted
-        if accumulator:
-            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
-
     def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
         if doc is None:
             doc = Document()
@@ -532,20 +553,6 @@ class Renderable(param.Parameterized):
         else:
             add_to_doc(model, doc)
         return model
-
-    def _render_mimebundle(self, model: Model, doc: Document, comm: Comm, location: Location | None = None):
-        from .models.comm_manager import CommManager
-
-        ref = model.ref['id']
-        manager = CommManager(comm_id=comm.id, plot_id=ref)
-        client_comm = state._comm_manager.get_client_comm(
-            on_msg=partial(self._on_msg, ref, manager),
-            on_error=partial(self._on_error, ref),
-            on_stdout=partial(self._on_stdout, ref)
-        )
-        self._comms[ref] = (comm, client_comm)
-        manager.client_comm_id = client_comm.id
-        return render_mimebundle(model, doc, comm, manager, location)
 
     def _init_params(self) -> Mapping[str, Any]:
         return {k: v for k, v in self.param.values().items() if v is not None}

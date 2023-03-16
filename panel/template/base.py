@@ -42,7 +42,9 @@ from ..theme.base import (
     THEME_CSS, THEMES, DefaultTheme, Design, Theme,
 )
 from ..util import isurl, relative_to, url_path
-from ..viewable import Renderable, ServableMixin, Viewable
+from ..viewable import (
+    MimeRenderMixin, Renderable, ServableMixin, Viewable,
+)
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
 
@@ -71,7 +73,7 @@ _server_info: str = (
 FAVICON_URL: str = "/static/extensions/panel/images/favicon.ico"
 
 
-class BaseTemplate(param.Parameterized, ServableMixin):
+class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
 
     location = param.Boolean(default=False, doc="""
         Whether to add a Location component to this Template.
