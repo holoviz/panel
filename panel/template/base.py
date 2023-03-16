@@ -190,23 +190,24 @@ class BaseTemplate(param.Parameterized, ServableMixin):
                 if self._design._apply_hooks not in obj._hooks:
                     obj._hooks.append(self._design._apply_hooks)
 
-            # Alias model ref with the fake root ref to ensure that
-            # pre-processor correctly operates on fake root
-            for sub in obj.select(Viewable):
-                submodel = sub._models.get(mref)
-                if submodel is None:
-                    continue
-                sub._models[ref] = submodel
-                if isinstance(sub, HoloViews) and mref in sub._plots:
-                    sub._plots[ref] = sub._plots.get(mref)
+                # Alias model ref with the fake root ref to ensure that
+                # pre-processor correctly operates on fake root
+                for sub in obj.select(Viewable):
+                    submodel = sub._models.get(mref)
+                    if submodel is None:
+                        continue
+                    sub._models[ref] = submodel
+                    if isinstance(sub, HoloViews) and mref in sub._plots:
+                        sub._plots[ref] = sub._plots.get(mref)
 
-            # Apply any template specific hooks to root
-            self._apply_root(name, model, tags)
+                # Apply any template specific hooks to root
+                self._apply_root(name, model, tags)
 
-            # Add document
-            obj._documents[document] = model
-            objs.append(obj)
-            models.append(model)
+                # Add document
+                obj._documents[document] = model
+                objs.append(obj)
+                models.append(model)
+
             add_to_doc(model, document, hold=bool(comm))
             document.on_session_destroyed(obj._server_destroy) # type: ignore
 
