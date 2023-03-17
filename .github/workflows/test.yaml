@@ -48,7 +48,6 @@ jobs:
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       DISPLAY: ":99.0"
       PYTHONIOENCODING: "utf-8"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -75,16 +74,11 @@ jobs:
         if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
-          pip install pyecharts
+          pip install pyecharts ipywidgets_bokeh
       - name: bokeh_sampledata
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: doit env_capture
         run: |
           conda activate test-environment
@@ -122,7 +116,6 @@ jobs:
       PYTHONIOENCODING: "utf-8"
       PANEL_LOG_LEVEL: info
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SETUPTOOLS_ENABLE_FEATURES: "legacy-editable"
       # Without this env var `doit env_create ...` uses by default
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
@@ -139,16 +132,11 @@ jobs:
           playwright: true
           conda-mamba: mamba
         id: install
-      # - name: doit develop_install
-      #   if: steps.install.outputs.cache-hit != 'true'
-      #   run: |
-      #     conda activate test-environment
-      #     pip install ipywidgets_bokeh
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
+       - name: doit develop_install
+         if: steps.install.outputs.cache-hit != 'true'
+         run: |
+           conda activate test-environment
+           pip install ipywidgets_bokeh
       - name: build pyodide wheels
         run: |
           conda activate test-environment
