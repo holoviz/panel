@@ -134,7 +134,6 @@ class Design(param.Parameterized):
                 stylesheets.extend(inherited)
                 continue
             resolved = resolve_stylesheet(defining_cls, stylesheet, 'modifiers')
-            print(resolved)
             stylesheets.append(resolved)
         return stylesheets
 
@@ -148,22 +147,17 @@ class Design(param.Parameterized):
         modifiers, child_modifiers = {}, {}
         for scls in vtype.__mro__[::-1]:
             cls_modifiers = cls.modifiers.get(scls, {})
-            if cls_modifiers:
-                # Find the Template class the options were first defined on
-                def_cls = [
-                    super_cls for super_cls in cls.__mro__[::-1]
-                    if getattr(super_cls, 'modifiers', {}).get(scls) is cls_modifiers
-                ][0]
-
+            modifiers.update(theme.modifiers.get(scls, {}))
+            for super_cls in cls.__mro__[::-1]:
+                cls_modifiers = getattr(super_cls, 'modifiers', {}).get(scls, {})
                 for prop, value in cls_modifiers.items():
                     if prop == 'children':
                         continue
                     elif prop == 'stylesheets':
-                        modifiers[prop] = cls._resolve_stylesheets(value, def_cls, modifiers.get(prop, []))
+                        modifiers[prop] = cls._resolve_stylesheets(value, super_cls, modifiers.get(prop, []))
                     else:
                         modifiers[prop] = value
-            modifiers.update(theme.modifiers.get(scls, {}))
-            child_modifiers.update(cls_modifiers.get('children', {}))
+                child_modifiers.update(cls_modifiers.get('children', {}))
         return modifiers, child_modifiers
 
     @classmethod
