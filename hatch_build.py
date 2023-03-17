@@ -17,7 +17,6 @@ class PanelBuildHook(BuildHookInterface):
 
     def validate_version(self):
         from panel import __version__ as version
-        print(version)
         if 'post' in version:
             return
         with open('./panel/package.json') as f:
@@ -38,6 +37,10 @@ class PanelBuildHook(BuildHookInterface):
         from panel.compiler import bundle_resources
 
         self.validate_version()
+
+        if 'PANEL_LITE' in os.environ:
+            print("Skipping bundling steps for LITE build")
+            return
 
         print("Bundling custom model resources:")
         bundle_resources()
