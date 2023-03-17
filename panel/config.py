@@ -25,10 +25,12 @@ from .io.logging import panel_log_handler
 from .io.state import state
 from .theme import Design
 
-__version__ = str(param.version.Version(
-    fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
+try:
+    from ._version import __version__
+except:
+    __version__ = importlib.metadata.version("panel")
 
-_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty')) and not state._is_pyodide
+_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty', 'dev')) and not state._is_pyodide
 
 #---------------------------------------------------------------------
 # Public API
