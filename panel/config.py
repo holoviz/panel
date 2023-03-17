@@ -27,7 +27,7 @@ from .theme import Design
 
 try:
     from ._version import __version__
-except:
+except Exception:
     __version__ = importlib.metadata.version("panel")
 
 _LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty', 'dev')) and not state._is_pyodide
