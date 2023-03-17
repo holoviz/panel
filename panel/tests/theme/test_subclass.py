@@ -24,7 +24,7 @@ def test_subclassed_inheritance():
     assert isinstance(s1, ImportedStyleSheet)
     assert s1.url == f'{CDN_DIST}bundled/bootstrap5/css/bootstrap.min.css'
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url == 'https://cdn.holoviz.org/panel/1.0.0-b.1/dist/bundled/theme/default.css'
+    assert s2.url == '{CDN_DIST}bundled/theme/default.css'
     assert isinstance(s3, ImportedStyleSheet)
     assert s3.url == f'{CDN_DIST}bundled/theme/bootstrap_default.css'
     assert isinstance(s4, ImportedStyleSheet)
@@ -42,7 +42,7 @@ def test_subclassed_inheritance_server(server_document):
     assert isinstance(s1, ImportedStyleSheet)
     assert s1.url == f'{CDN_DIST}bundled/bootstrap5/css/bootstrap.min.css'
     assert isinstance(s2, ImportedStyleSheet)
-    assert s2.url == 'https://cdn.holoviz.org/panel/1.0.0-b.1/dist/bundled/theme/default.css'
+    assert s2.url == '{CDN_DIST}/dist/bundled/theme/default.css'
     assert isinstance(s3, ImportedStyleSheet)
     assert s3.url == f'{CDN_DIST}bundled/theme/bootstrap_default.css'
     assert isinstance(s4, ImportedStyleSheet)
