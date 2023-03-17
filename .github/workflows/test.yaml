@@ -133,10 +133,10 @@ jobs:
           conda-mamba: mamba
         id: install
       - name: doit develop_install
-         if: steps.install.outputs.cache-hit != 'true'
-         run: |
-           conda activate test-environment
-           pip install ipywidgets_bokeh
+        if: steps.install.outputs.cache-hit != 'true'
+        run: |
+          conda activate test-environment
+          pip install ipywidgets_bokeh
       - name: build pyodide wheels
         run: |
           conda activate test-environment
