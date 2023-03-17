@@ -12,6 +12,8 @@ import param
 from bokeh.models import ImportedStyleSheet
 from bokeh.themes import Theme as _BkTheme, _dark_minimal, built_in_themes
 
+from ..util import relative_to
+
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
@@ -177,7 +179,7 @@ class Design(param.Parameterized):
                     if css is None:
                         continue
                     css = pathlib.Path(css)
-                    if css.is_relative_to(THEME_CSS):
+                    if relative_to(css, THEME_CSS):
                         pre.append(f'{CDN_DIST}bundled/theme/{css.name}')
                     elif resolve_custom_path(theme, css):
                         pre.append(component_resource_path(theme, p, css))

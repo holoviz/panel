@@ -5,7 +5,6 @@ documents.
 from __future__ import annotations
 
 import os
-import pathlib
 import sys
 import uuid
 
@@ -41,7 +40,7 @@ from ..reactive import ReactiveHTML
 from ..theme.base import (
     THEME_CSS, THEMES, DefaultTheme, Design, Theme,
 )
-from ..util import isurl, url_path
+from ..util import isurl, relative_to, url_path
 from ..viewable import Renderable, ServableMixin, Viewable
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
@@ -602,7 +601,7 @@ class BasicTemplate(BaseTemplate):
                 continue
             basename = os.path.basename(css)
             key = 'theme_base' if 'base' in attr else 'theme'
-            if pathlib.Path(css).is_relative_to(THEME_CSS):
+            if relative_to(css, THEME_CSS):
                 css_files[key] = dist_path + f'bundled/theme/{basename}'
             elif resolve_custom_path(theme, css):
                 owner = type(theme).param[attr].owner
