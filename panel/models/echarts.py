@@ -30,8 +30,8 @@ class ECharts(LayoutDOM):
     """
 
     __javascript_raw__ = [
-        f"{config.npm_cdn}/echarts@5.0.2/dist/echarts.min.js",
-        f"{config.npm_cdn}/echarts-gl@2.0.2/dist/echarts-gl.min.js"
+        f"{config.npm_cdn}/echarts@5.4.1/dist/echarts.min.js",
+        f"{config.npm_cdn}/echarts-gl@2.0.9/dist/echarts-gl.min.js"
     ]
 
     @classproperty
@@ -46,8 +46,8 @@ class ECharts(LayoutDOM):
 
     __js_require__ = {
         'paths': {
-            "echarts":  f"{config.npm_cdn}/echarts@5.0.2/dist/echarts.min",
-            "echarts-gl": f"{config.npm_cdn}/echarts-gl@2.0.2/dist/echarts-gl.min.js"
+            "echarts":  f"{config.npm_cdn}/echarts@5.4.1/dist/echarts.min",
+            "echarts-gl": f"{config.npm_cdn}/echarts-gl@2.0.9/dist/echarts-gl.min"
         },
         'exports': {}
     }

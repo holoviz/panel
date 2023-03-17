@@ -131,5 +131,5 @@ class Card(Column):
         objects = super()._get_objects(model, old_objects, doc, root, comm)
         return [header]+objects
 
-    def _compute_sizing_mode(self, children, sizing_mode):
-        return super()._compute_sizing_mode(children[1:], sizing_mode)
+    def _compute_sizing_mode(self, children, sizing_mode, styles):
+        return super()._compute_sizing_mode(children[1:], sizing_mode, styles)

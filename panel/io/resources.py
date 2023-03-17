@@ -144,14 +144,13 @@ def process_raw_css(raw_css):
     """
     return [BK_PREFIX_RE.sub('.', css) for css in raw_css]
 
-def loading_css(shadow_dom=True):
+def loading_css():
     from ..config import config
     with open(ASSETS_DIR / f'{config.loading_spinner}_spinner.svg', encoding='utf-8') as f:
         svg = f.read().replace('\n', '').format(color=config.loading_color)
     b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
-    cls = ':host(.pn-loading)' if shadow_dom else '.pn-loading'
     return textwrap.dedent(f"""
-    {cls}.{config.loading_spinner}:before {{
+    :host(.pn-loading).{config.loading_spinner}:before, .pn-loading.{config.loading_spinner}:before {{
       background-image: url("data:image/svg+xml;base64,{b64}");
       background-size: auto calc(min(50%, {config.loading_max_height}px));
     }}""")
