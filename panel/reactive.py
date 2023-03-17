@@ -8,7 +8,6 @@ from __future__ import annotations
 import datetime as dt
 import difflib
 import logging
-import pathlib
 import re
 import sys
 import textwrap
@@ -35,8 +34,8 @@ from .io.document import unlocked
 from .io.model import hold
 from .io.notebook import push
 from .io.resources import (
-    CDN_DIST, component_resource_path, loading_css, patch_stylesheet,
-    process_raw_css, resolve_custom_path,
+    CDN_DIST, loading_css, patch_stylesheet, process_raw_css,
+    resolve_stylesheet,
 )
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
@@ -187,25 +186,20 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
             from .config import config
-            stylesheets = [loading_css(), ImportedStyleSheet(url=f'{CDN_DIST}css/loading.css')]
+            stylesheets = [loading_css(), f'{CDN_DIST}css/loading.css']
             stylesheets += process_raw_css(config.raw_css)
             stylesheets += config.css_files
-            for css_file in self._stylesheets:
-                if css_file.startswith('http'):
-                    stylesheets.append(ImportedStyleSheet(url=css_file))
-                elif resolve_custom_path(self, css_file):
-                    component_path = component_resource_path(self, '_stylesheets', css_file)
-                    stylesheets.append(ImportedStyleSheet(url=component_path))
-                elif ((css_path:= pathlib.Path(css_file)).is_absolute() and
-                      css_path.is_file()):
-                    stylesheets.append(css_path.read_text('utf-8'))
-                else:
-                    stylesheets.append(ImportedStyleSheet(url=css_file))
-            for stylesheet in properties['stylesheets']:
+            stylesheets += [
+                resolve_stylesheet(self, css_file, '_stylesheets')
+                for css_file in self._stylesheets
+            ]
+            stylesheets += properties['stylesheets']
+            wrapped = []
+            for stylesheet in stylesheets:
                 if isinstance(stylesheet, str) and stylesheet.endswith('.css'):
                     stylesheet = ImportedStyleSheet(url=stylesheet)
-                stylesheets.append(stylesheet)
-            properties['stylesheets'] = stylesheets
+                wrapped.append(stylesheet)
+            properties['stylesheets'] = wrapped
         return properties
 
     @property

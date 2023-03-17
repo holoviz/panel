@@ -10,6 +10,7 @@ import signal
 import socket
 import tempfile
 import time
+import unittest
 
 from contextlib import contextmanager
 from subprocess import PIPE, Popen
@@ -23,7 +24,7 @@ from pyviz_comms import Comm
 
 from panel import config, serve
 from panel.config import panel_extension
-from panel.io import state
+from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
 CUSTOM_MARKS = ('ui', 'jupyter')
@@ -147,6 +148,14 @@ PORT = [get_default_port()]
 def document():
     return Document()
 
+
+@pytest.fixture
+def server_document():
+    doc = Document()
+    session_context = unittest.mock.Mock()
+    doc._session_context = lambda: session_context
+    with set_curdoc(doc):
+        yield doc
 
 @pytest.fixture
 def comm():

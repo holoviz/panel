@@ -127,20 +127,15 @@ class Design(param.Parameterized):
 
     @classmethod
     def _resolve_stylesheets(cls, value, defining_cls, inherited):
+        from ..io.resources import resolve_stylesheet
         stylesheets = []
         for stylesheet in value:
             if stylesheet is Inherit:
                 stylesheets.extend(inherited)
                 continue
-            if (
-                isinstance(stylesheet, str) and
-                stylesheet.endswith('.css') and
-                not stylesheet.startswith('http') and
-                (css_path:= pathlib.Path(stylesheet)).is_absolute() and
-                css_path.is_file()
-            ):
-                stylesheet = css_path.read_text('utf-8')
-            stylesheets.append(stylesheet)
+            resolved = resolve_stylesheet(defining_cls, stylesheet, 'modifiers')
+            print(resolved)
+            stylesheets.append(resolved)
         return stylesheets
 
     @classmethod

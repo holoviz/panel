@@ -2,12 +2,15 @@
 Patches bokeh resources to make it easy to add external JS and CSS
 resources via the panel.config object.
 """
+from __future__ import annotations
+
 import copy
 import importlib
 import json
 import logging
 import mimetypes
 import os
+import pathlib
 import re
 import textwrap
 
@@ -141,47 +144,6 @@ def process_raw_css(raw_css):
     """
     return [BK_PREFIX_RE.sub('.', css) for css in raw_css]
 
-def resolve_custom_path(obj, path):
-    """
-    Attempts to resolve a path relative to some component.
-    """
-    if not path:
-        return
-    path = str(path)
-    if path.startswith(os.path.sep):
-        return os.path.isfile(path)
-    try:
-        mod = importlib.import_module(obj.__module__)
-        return (Path(mod.__file__).parent / path).is_file()
-    except Exception:
-        return None
-
-def component_rel_path(component, path):
-    """
-    Computes the absolute to a component resource.
-    """
-    if not isinstance(component, type):
-        component = type(component)
-    mod = importlib.import_module(component.__module__)
-    rel_dir = Path(mod.__file__).parent
-    if os.path.isabs(path):
-        abs_path = path
-    else:
-        abs_path = os.path.abspath(os.path.join(rel_dir, path))
-    return os.path.relpath(abs_path, rel_dir)
-
-def component_resource_path(component, attr, path):
-    """
-    Generates a canonical URL for a component resource.
-    """
-    if not isinstance(component, type):
-        component = type(component)
-    component_path = COMPONENT_PATH
-    if state.rel_path:
-        component_path = f"{state.rel_path}/{component_path}"
-    rel_path = component_rel_path(component, path).replace(os.path.sep, '/')
-    return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
-
 def loading_css(shadow_dom=True):
     from ..config import config
     with open(ASSETS_DIR / f'{config.loading_spinner}_spinner.svg', encoding='utf-8') as f:
@@ -193,6 +155,62 @@ def loading_css(shadow_dom=True):
       background-image: url("data:image/svg+xml;base64,{b64}");
       background-size: auto calc(min(50%, {config.loading_max_height}px));
     }}""")
+
+def resolve_custom_path(
+    obj, path: str | os.PathLike, relative: bool = False
+) -> pathlib.Path | None:
+    """
+    Attempts to resolve a path relative to some component.
+
+    Arguments
+    ---------
+    obj: type | object
+       The component to resolve the path relative to.
+    path: str | os.PathLike
+        Absolute or relative path to a resource.
+    relative: bool
+        Whether to return a relative path.
+
+    Returns
+    -------
+    path: pathlib.Path | None
+    """
+    if not path:
+        return
+    if not isinstance(obj, type):
+        obj = type(obj)
+    try:
+        mod = importlib.import_module(obj.__module__)
+        module_path = Path(mod.__file__).parent
+        assert module_path.exists()
+    except Exception:
+        return None
+    path = pathlib.Path(path)
+    if path.is_absolute():
+        abs_path = path
+    else:
+        abs_path = module_path / path
+    if not abs_path.is_file():
+        return None
+    abs_path = abs_path.resolve()
+    if not relative:
+        return abs_path
+    return os.path.relpath(abs_path, module_path)
+
+def component_resource_path(component, attr, path):
+    """
+    Generates a canonical URL for a component resource.
+
+    To be used in conjunction with the `panel.io.server.ComponentResourceHandler`
+    which allows dynamically resolving resources defined on components.
+    """
+    if not isinstance(component, type):
+        component = type(component)
+    component_path = COMPONENT_PATH
+    if state.rel_path:
+        component_path = f"{state.rel_path}/{component_path}"
+    rel_path = str(resolve_custom_path(component, path, relative=True)).replace(os.path.sep, '/')
+    return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
 def patch_stylesheet(stylesheet, dist_url):
     url = stylesheet.url
@@ -206,6 +224,32 @@ def patch_stylesheet(stylesheet, dist_url):
         stylesheet.url = patched_url
     except Exception:
         pass
+
+def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
+    """
+    Resolves a stylesheet definition, e.g. originating on a component
+    Reactive._stylesheets or a Design.modifiers attribute. Stylesheets
+    may be defined as one of the following:
+
+    - Absolute URL defined with http(s) protocol
+    - A path relative to the component
+
+    Arguments
+    ---------
+    cls: type | object
+        Object or class defining the stylesheet
+    stylesheet: str
+        The stylesheet definition
+    """
+    stylesheet = str(stylesheet)
+    if not stylesheet.startswith('http') and attribute and (custom_path:= resolve_custom_path(cls, stylesheet)):
+        if state.curdoc and state.curdoc.session_context:
+            stylesheet = component_resource_path(
+                cls, attribute, stylesheet
+            )
+        else:
+            stylesheet = custom_path.read_text('utf-8')
+    return stylesheet
 
 def patch_model_css(root, dist_url):
     """
