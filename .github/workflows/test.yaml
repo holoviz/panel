@@ -132,7 +132,7 @@ jobs:
           playwright: true
           conda-mamba: mamba
         id: install
-       - name: doit develop_install
+      - name: doit develop_install
          if: steps.install.outputs.cache-hit != 'true'
          run: |
            conda activate test-environment
