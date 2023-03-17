@@ -4,6 +4,7 @@ import sys
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
+
 def clean_js_version(version):
     version = version.replace('-', '')
     for dev in ('a', 'b', 'rc'):
@@ -33,6 +34,7 @@ class PanelBuildHook(BuildHookInterface):
 
     def initialize(self, version, build_data):
         from bokeh.ext import build
+
         from panel.compiler import bundle_resources
 
         self.validate_version()
@@ -48,4 +50,3 @@ class PanelBuildHook(BuildHookInterface):
             import fcntl
             flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL)
             fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK)
-
