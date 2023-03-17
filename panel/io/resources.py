@@ -242,10 +242,8 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
     """
     stylesheet = str(stylesheet)
     if not stylesheet.startswith('http') and attribute and (custom_path:= resolve_custom_path(cls, stylesheet)):
-        if state.curdoc and state.curdoc.session_context:
-            stylesheet = component_resource_path(
-                cls, attribute, stylesheet
-            )
+        if not state._is_pydodide and state.curdoc and state.curdoc.session_context:
+            stylesheet = component_resource_path(cls, attribute, stylesheet)
         else:
             stylesheet = custom_path.read_text('utf-8')
     return stylesheet
