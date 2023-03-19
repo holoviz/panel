@@ -111,7 +111,6 @@ examples = [
     "plotly >=4.0",
     "pydeck",
     "pyecharts",
-    "pygraphviz",
     "pyinstrument >=4.0",
     "pyvista<0.33",
     "reacton",
