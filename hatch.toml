@@ -1,0 +1,69 @@
+##################
+# Run unit tests #
+##################
+
+[envs.test]
+type = "conda"
+features = [
+  "examples",
+  "recommended",
+  "tests"
+]
+post-install-commands = [
+  "bokeh sampledata",
+  "panel bundle --all",
+]
+[envs.test.scripts]
+run-coverage = "pytest panel --cov=./panel --cov-report=xml -n logical --dist loadgroup"
+run = "run-coverage --no-cov"
+run-examples = [
+  'pytest panel --docs',
+  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*IDOM.ipynb" --ignore-glob="*VTK*.ipynb" --ignore-glob="*Components.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*deck_gl_global_power_plants.ipynb" --ignore-glob="*Terminal.ipynb" --ignore-glob="*GraphViz.ipynb" --ignore-glob="*NetworkX.ipynb"  --ignore-glob="*clifford_interact.ipynb"  --ignore-glob="*DatePicker.ipynb"'
+]
+[[envs.test.matrix]]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+################
+# Run UI tests #
+################
+
+[envs.test-ui]
+template = "test"
+features = [
+  "recommended",
+  "tests",
+  "ui"
+]
+pre-install-commands = [
+  "python scripts/build_pyodide_wheels.py",
+]
+post-install-commands = [
+  "playwright install chromium",
+  "panel bundle --all",
+]
+[envs.test-ui.scripts]
+run-coverage = "pytest panel --cov=./panel --cov-report=xml --cov-config=.uicoveragerc --ui --jupyter --browser chromium"
+run = "run-coverage --no-cov"
+start-jupyter = [
+  "jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix",
+  "(jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &"
+]
+
+[[envs.test-ui.matrix]]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+#####################
+# Build JupyterLite #
+#####################
+
+[envs.jupyterlite]
+dependencies=[
+  "jupyter",
+  "jupyterlite",
+]
+[envs.jupyterlite.scripts]
+build = [
+  "python ./scripts/build_pyodide_wheels.py lite/pypi",
+  "python ./scripts/generate_panelite_content.py",
+  "jupyter lite build --lite-dir lite --output-dir lite/dist"
+]
