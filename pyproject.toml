@@ -80,11 +80,8 @@ build = [
 ]
 doc = [
     "panel[recommended]",
-    "jupyterlab",
-    "matplotlib",
+    "panel[examples]",
     "nbsite >=0.8.0rc7",
-    "pillow",
-    "plotly",
     "pydata-sphinx-theme ==0.9.0",
     "sphinx-copybutton",
     "sphinx-design",
@@ -217,3 +214,8 @@ select = [
 
 [tool.ruff.per-file-ignores]
 "panel/tests/ui/jupyter_server_test_config.py" = ["F821"]
+
+[tool.pytest.ini_options]
+addopts = "-v --pyargs --doctest-ignore-import-errors"
+norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
+xfail_strict = true
