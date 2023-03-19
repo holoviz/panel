@@ -24,8 +24,9 @@ run-coverage = "pytest panel --cov=./panel --cov-report=xml -n logical --dist lo
 run = "run-coverage --no-cov"
 run-examples = [
   'pytest panel --docs',
-  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*IDOM.ipynb" --ignore-glob="*VTK*.ipynb" --ignore-glob="*Components.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*deck_gl_global_power_plants.ipynb" --ignore-glob="*Terminal.ipynb" --ignore-glob="*GraphViz.ipynb" --ignore-glob="*NetworkX.ipynb"  --ignore-glob="*clifford_interact.ipynb"  --ignore-glob="*DatePicker.ipynb"'
+  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*VTK*.ipynb"  --ignore-glob="*Terminal.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*xgboost_classifier.ipynb"  --ignore-glob="*clifford_interact.ipynb" --ignore-glob="*NetworkX.ipynb" --ignore-glob="*streaming_videostream.ipynb"'
 ]
+
 [[envs.test.matrix]]
 python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
@@ -128,7 +129,7 @@ ui-test = "pytest panel --ui --jupyter --browser chromium"
 lint = "pre-commit run -a"
 example-test = [
   'pytest panel --docs',
-  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*IDOM.ipynb" --ignore-glob="*VTK*.ipynb" --ignore-glob="*Components.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*deck_gl_global_power_plants.ipynb" --ignore-glob="*Terminal.ipynb" --ignore-glob="*GraphViz.ipynb" --ignore-glob="*NetworkX.ipynb"  --ignore-glob="*clifford_interact.ipynb"  --ignore-glob="*DatePicker.ipynb"'
+  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*VTK*.ipynb"  --ignore-glob="*Terminal.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*xgboost_classifier.ipynb"  --ignore-glob="*clifford_interact.ipynb" --ignore-glob="*NetworkX.ipynb" --ignore-glob="*streaming_videostream.ipynb"'
 ]
 pyodide-wheels = "python scripts/build_pyodide_wheels.py"
 
@@ -150,7 +151,7 @@ ui-test = "pytest panel --ui --jupyter --browser chromium"
 lint = "pre-commit run -a"
 example-test = [
   'pytest panel --docs',
-  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*IDOM.ipynb" --ignore-glob="*VTK*.ipynb" --ignore-glob="*Components.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*deck_gl_global_power_plants.ipynb" --ignore-glob="*Terminal.ipynb" --ignore-glob="*GraphViz.ipynb" --ignore-glob="*NetworkX.ipynb"  --ignore-glob="*clifford_interact.ipynb"  --ignore-glob="*DatePicker.ipynb"'
+  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*VTK*.ipynb"  --ignore-glob="*Terminal.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*xgboost_classifier.ipynb"  --ignore-glob="*clifford_interact.ipynb" --ignore-glob="*NetworkX.ipynb" --ignore-glob="*streaming_videostream.ipynb"'
 ]
 pyodide-wheels = "python scripts/build_pyodide_wheels.py"
 
