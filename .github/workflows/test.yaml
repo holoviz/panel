@@ -73,7 +73,7 @@ jobs:
         with:
           node-version: 16.x
       - run: |
-          pip install hatch
+          pip install hatch hatch-conda
           hatch run +py=${{ matrix.python-version }} test:run
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -116,7 +116,7 @@ jobs:
         with:
           node-version: 16.x
       - run: |
-          pip install hatch
+          pip install hatch hatch-conda
           hatch run jupyterlite:build
           hatch run +py=${{ matrix.python-version }} test-ui:start-jupyter
           hatch run +py=${{ matrix.python-version }} test-ui:run
