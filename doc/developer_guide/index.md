@@ -12,7 +12,9 @@ To install Git on any platform, refer to the [Installing Git](https://git-scm.co
 
 ### Conda
 
-Developing Panel requires a wide range of packages that are not easily and quickly available using pip. To make this more manageable, core developers rely heavily on the [conda package manager](https://conda.io/docs/intro.html) for the free [Anaconda](https://anaconda.com/downloads) Python distribution. However, ``conda`` can also install non-Python package dependencies, which helps streamline Panel development greatly. It is *strongly* recommended that anyone developing Panel also use ``conda``, and the remainder of the instructions will assume that ``conda`` is available.
+Developing Panel requires a wide range of packages that are not all easily available using pip. To make this more manageable, core developers rely heavily on the [conda package manager](https://conda.io/docs/intro.html) for the free [Anaconda](https://anaconda.com/downloads) Python distribution.
+
+Particularly for non-Python package dependencies, ``conda`` helps streamline Panel development greatly. It is recommended (but not required) that you use ``conda`` (or ``mamba``).
 
 To install Conda on any platform, see the [Download conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html) section of the `conda documentation`_.
 
@@ -24,84 +26,105 @@ The source code for the Panel project is hosted on [GitHub](https://github.com/h
 git clone https://github.com/holoviz/panel.git
 ```
 
-This will create a ``panel`` directory at your file system location. This ``panel`` directory is referred to as the *source checkout* for the remainder of this document.
-
-## Create a development environment
-
-Since Panel interfaces with a large range of different libraries the full test suite requires a wide range of dependencies. To make it easier to install and run different parts of the test suite across
-different platforms Panel uses a library called `pyctdev` to make things more consistent and general. To start with `cd` into the panel directory and set up conda using the following commands:
+This will create a ``panel`` directory at your file system location. This ``panel`` directory is referred to as the *source checkout* for the remainder of this document. Before continuing `cd` into the panel directory:
 
 ```bash
 cd panel
-conda install -c pyviz "pyctdev>0.5.0"
 ```
 
-Once pyctdev is available and you are in the cloned panel repository you can set up an environment with:
+## Create development environments
+
+Panel uses [hatch](https://hatch.pypa.io/latest/version/) to build the library and set up development environments. It provides a number of environments to perform different tasks such as running tests, building the documentation etc.
+
+Since many tasks require dependencies which are not easily installed with `pip` they use hybrid `conda` + `pip` environments. If you have not set up `conda` you will not be able to run these.
+
+To set up `hatch` install it into your base environment:
 
 ```bash
-doit env_create -c pyviz/label/dev -c conda-forge --name=panel_dev --python=3.9
+pip install hatch hatch-conda
 ```
 
-Specify the desired Python version, currently Panel officially supports Python 3.7, 3.8, 3.9 and 3.10. Once the environment has been created you can activate it with:
+Once set up you can view the available environments with:
 
 ```bash
-conda activate panel_dev
+hatch env show
 ```
 
-## Install Panel in editable mode
+```
+                            Standalone
+┏━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃ Name        ┃ Type    ┃ Features ┃ Dependencies ┃ Scripts       ┃
+┡━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ default     │ virtual │          │              │               │
+├─────────────┼─────────┼──────────┼──────────────┼───────────────┤
+│ docs        │ conda   │ doc      │              │ build         │
+│             │         │          │              │ build-pyodide │
+│             │         │          │              │ generate-rst  │
+│             │         │          │              │ refmanual     │
+├─────────────┼─────────┼──────────┼──────────────┼───────────────┤
+│ jupyterlite │ virtual │          │ jupyter      │ build         │
+│             │         │          │ jupyterlite  │               │
+└─────────────┴─────────┴──────────┴──────────────┴───────────────┘
+                                       Matrices
+┏━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
+┃ Name    ┃ Type    ┃ Envs           ┃ Features    ┃ Dependencies    ┃ Scripts        ┃
+┡━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━┩
+│ test    │ conda   │ test.py3.8     │ examples    │ python-graphviz │ run            │
+│         │         │ test.py3.9     │ recommended │ vtk==9.0.1      │ run-coverage   │
+│         │         │ test.py3.10    │ tests       │ xgboost         │ run-examples   │
+│         │         │ test.py3.11    │             │                 │                │
+│         │         │ test.py3.12    │             │                 │                │
+├─────────┼─────────┼────────────────┼─────────────┼─────────────────┼────────────────┤
+│ test-ui │ conda   │ test-ui.py3.8  │ recommended │ python-graphviz │ run            │
+│         │         │ test-ui.py3.9  │ tests       │ vtk==9.0.1      │ run-coverage   │
+│         │         │ test-ui.py3.10 │ ui          │ xgboost         │ run-examples   │
+│         │         │ test-ui.py3.11 │             │                 │ start-jupyter  │
+│         │         │ test-ui.py3.12 │             │                 │                │
+├─────────┼─────────┼────────────────┼─────────────┼─────────────────┼────────────────┤
+│ pip     │ virtual │ pip.py3.8      │ all         │                 │ bundle         │
+│         │         │ pip.py3.9      │             │                 │ example-test   │
+│         │         │ pip.py3.10     │             │                 │ lint           │
+│         │         │ pip.py3.11     │             │                 │ pyodide-wheels │
+│         │         │ pip.py3.12     │             │                 │ ui-test        │
+│         │         │                │             │                 │ unit-test      │
+├─────────┼─────────┼────────────────┼─────────────┼─────────────────┼────────────────┤
+│ dev     │ conda   │ dev.py3.8      │ all         │                 │ bundle         │
+│         │         │ dev.py3.9      │             │                 │ example-test   │
+│         │         │ dev.py3.10     │             │                 │ lint           │
+│         │         │ dev.py3.11     │             │                 │ pyodide-wheels │
+│         │         │ dev.py3.12     │             │                 │ ui-test        │
+│         │         │                │             │                 │ unit-test      │
+└─────────┴─────────┴────────────────┴─────────────┴─────────────────┴────────────────┘
+```
 
-To perform an editable install of Panel, including all the dependencies required to run the full unit test suite, run the following:
+For development we recommend using the `dev` environment. To create a `dev` environment and launch into the shell you can run:
 
 ```bash
-doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -o build -o tests -o recommended
+hatch -e dev.py3.10 shell
 ```
 
-The above command installs Panel's dependencies using conda, then performs a pip editable install of Panel. If it fails, `nodejs>=14.0.0` may be missing from your environment, fix it with `conda install -c conda-forge nodejs` then rerun above command.
-
-If you also want to run the UI tests run the following:
-``` bash
-pip install playwright pytest-playwright
-playwright install chromium
-```
-
-## Enable the Jupyter extension
-
-If you are running UI tests or intend to use the Panel Preview feature in Jupyter you must enable the server extension. To enable the classic notebook server extension:
+Throughout the documentation we will use the Python 3.10 environmen but you can select any supported Python version by replacing `py3.10` with the desired version. Once you are inside the environment you can confirm it is set up correctly with:
 
 ```bash
-jupyter serverextension enable panel.io.jupyter_server_extension --sys-prefix
+hatch run unit-test
 ```
 
-For Jupyter Server:
+## Pip-only environment
+
+If you do not want to install `conda` we also offer a pure pip installation. We do not guarantee that this environment will be able to run the entire test suite and you also have to make sure you set up your own `nodejs>=16` (e.g. using [nvm](https://github.com/creationix/nvm) or [nvm-windows](https://github.com/coreybutler/nvm-windows)).
+
+Once configured you can set up and launch the pip-only environment with:
 
 ```bash
-jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
-```
+hatch -e pip.py3.10 shell
 
-## Setting up pre-commit
+## Clean up environments
 
-Panel uses [pre-commit](https://pre-commit.com/) to automatically apply linting to Panel code. If you intend to contribute to Panel we recommend you enable it with:
+The Panel environements can quickly grow in size, to clean up (i.e. remove) all the environments simply run:
 
 ```bash
-pre-commit install
+hatch env prune
 ```
-
-This will ensure that every time you make a commit linting will automatically be applied.
-
-## Developing custom models
-
-Panel ships with a number of custom Bokeh models, which have both Python and Javascript components. When developing Panel these custom models have to be compiled. This happens automatically with `SETUPTOOLS_ENABLE_FEATURES=legacy-editable pip install -e .` or `python setup.py develop`, however when runnning actively developing you can rebuild the extension with `panel build panel`. The `build` command is just an alias for `bokeh build`; see
-the [Bokeh developer guide](https://docs.bokeh.org/en/latest/docs/dev_guide/setup.html) for more information about developing bokeh models.
-
-Just like any other Javascript (or Typescript) library Panel defines a `package.json` and `package-lock.json` files. When adding, updating or removing a dependency in the package.json file ensure you commit the changes to the `package-lock.json` after running `npm install`.
-
-## Bundling resources
-
-Panel bundles external resources required for custom models and templates into the `panel/dist` directory. The bundled resources have to be collected whenever they change, so rerun `SETUPTOOLS_ENABLE_FEATURES=legacy-editable pip install -e .` or `python setup.py develop` whenever you change one of the following:
-
-* A new model is added with a `__javascript_raw__` declaration or an existing model is updated
-* A new template with a `_resources` declaration is added or an existing template is updated
-* A CSS file in one of template directories (`panel/template/*/`) is added or modified
 
 ## Next Steps
 
@@ -121,5 +144,6 @@ You will likely want to check out the :ref:`devguide_testing` guide. Meanwhile, 
 :maxdepth: 2
 
 testing
-Developing custom models <Developing_Custom_Models>
+developing
+extensions
 ```

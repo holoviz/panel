@@ -8,9 +8,7 @@ Before attempting to run Panel tests, make sure you have successfully run throug
 
 ### pre-commit
 
-Set up [pre-commit](https://pre-commit.com/) hooks to ensure that your code is linted correctly whenever you commit a change.
-
-To run the `pre-commit` hooks explicitly:
+Panel uses pre-commit to enforce all linting rules and it is enabled automatically in the dev environment. As long as you are working from within the dev environment pre-commit will therefore run automatically on every commit. To invoke `pre-commit` explicitly on all files:
 
 ```bash
 pre-commit run -a
@@ -22,31 +20,24 @@ Currently Panel uses linting and three types of tests:
 
 * *Unit tests*: usually small tests executed with [pytest](https://docs.pytest.org), they can be found in `panel/tests/`.
 * *UI tests*: Panel provides web components that users can interact with through their browser, UI tests allow to check that these components get displayed as expected, and that the backend <-> front-end bi-communication (e.g. updating a widget value in the front end should update its value in Python) works correctly. UI tests are possible thanks to [Playwright](https://playwright.dev/python/), they can be found in the `panel/tests/ui/` folder.
-* *Notebooks smoke tests*: Panel's documentation consists mostly of Jupyter Notebooks, these smoke tests execute all the notebooks and fail if an error is raised during their execution. Notebook smoke tests are possible thanks to [nbval](https://nbval.readthedocs.io/) and can be found in the `examples/` folder.
-
-
-To run flake checking explicitly run:
-
-```bash
-doit test_flakes
-```
+* *Example tests*: Panel's documentation consists of Jupyter Notebooks and Markdown files containing runnable code. To ensure that these examples to not error you can run smoke tests that execute all the examples and fail if an error is raised during their execution. These tests a run using [nbval](https://nbval.readthedocs.io/) and can be found in the `doc/` and `examples/` folder.
 
 To run unit tests use:
 
 ```bash
-doit test_unit
+hatch run dev.py3.10:unit-test
 ```
 
 To run UI tests use:
 
 ```bash
-doit test_ui
+hatch run dev.py3.10:ui-test
 ```
 
 To run example smoke tests use:
 
 ```
-doit test_examples
+hatch run dev.py3.10:example-test
 ```
 
 ## Writing Tests
@@ -96,9 +87,9 @@ There are a number of files that affect the build configuration:
 
     Used to build sdist packages and "dev" installs. This file is the **single source of truth of all dependencies**.
 
-* `tox.ini`
+* `hatch.toml`
 
-    Contains the configuration for the doit commands .
+    Defines the test environments.
 
 ### Etiquette
 

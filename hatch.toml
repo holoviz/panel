@@ -10,8 +10,12 @@ features = [
   "recommended",
   "tests"
 ]
+extra-dependencies = [
+  "python-graphviz",
+  "vtk==9.0.1",
+  "xgboost"
+]
 post-install-commands = [
-  "conda install python-graphviz xgboost vtk==9.0.1 -y -c conda-forge",
   "bokeh sampledata",
   "panel bundle --all",
 ]
@@ -59,6 +63,7 @@ python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 ############
 
 [envs.docs]
+type = "conda"
 features = [
   "doc"
 ]
@@ -75,6 +80,10 @@ refmanual = "python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tes
 build = [
   "nbsite build --what=html --output=builtdocs --org holoviz --project-name panel",
   "cp -r ./panel/dist ./builtdocs/panel_dist"
+]
+serve = [
+  "cd builtdocs",
+  "python -m http.server 8000"
 ]
 build-pyodide = "panel convert examples/gallery/**/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index"
 
@@ -96,3 +105,54 @@ build = [
   "python ./scripts/generate_panelite_content.py",
   "jupyter lite build --lite-dir lite --output-dir lite/dist"
 ]
+
+##################################
+# Set up development environment #
+##################################
+
+[envs.pip]
+features = [
+  "all"
+]
+post-install-commands = [
+  "bokeh sampledata",
+  "playwright install chromium",
+  "pre-commit install",
+  "panel bundle --all",
+]
+
+[envs.pip.scripts]
+bundle = "panel bundle --all"
+unit-test = "pytest panel"
+ui-test = "pytest panel --ui --jupyter --browser chromium"
+lint = "pre-commit run -a"
+example-test = [
+  'pytest panel --docs',
+  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*IDOM.ipynb" --ignore-glob="*VTK*.ipynb" --ignore-glob="*Components.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*deck_gl_global_power_plants.ipynb" --ignore-glob="*Terminal.ipynb" --ignore-glob="*GraphViz.ipynb" --ignore-glob="*NetworkX.ipynb"  --ignore-glob="*clifford_interact.ipynb"  --ignore-glob="*DatePicker.ipynb"'
+]
+pyodide-wheels = "python scripts/build_pyodide_wheels.py"
+
+[[envs.pip.matrix]]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+[envs.dev]
+template = "pip"
+type = "conda"
+conda-forge = true
+pre-install-commands = [
+  "conda install nodejs >=16"
+]
+
+[envs.dev.scripts]
+bundle = "panel bundle --all"
+unit-test = "pytest panel"
+ui-test = "pytest panel --ui --jupyter --browser chromium"
+lint = "pre-commit run -a"
+example-test = [
+  'pytest panel --docs',
+  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*IDOM.ipynb" --ignore-glob="*VTK*.ipynb" --ignore-glob="*Components.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*deck_gl_global_power_plants.ipynb" --ignore-glob="*Terminal.ipynb" --ignore-glob="*GraphViz.ipynb" --ignore-glob="*NetworkX.ipynb"  --ignore-glob="*clifford_interact.ipynb"  --ignore-glob="*DatePicker.ipynb"'
+]
+pyodide-wheels = "python scripts/build_pyodide_wheels.py"
+
+[[envs.dev.matrix]]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12"]

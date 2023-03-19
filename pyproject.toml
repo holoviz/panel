@@ -74,6 +74,7 @@ all = [
     "panel[examples]",
     "panel[recommended]",
     "panel[tests]",
+    "panel[ui]"
 ]
 build = [
     "panel"
@@ -91,9 +92,9 @@ examples = [
     "altair",
     "channels",
     "croniter",
+    "diskcache",
     "django <4",
     "folium",
-    "graphviz",
     "graphviz",
     "ipyleaflet",
     "ipympl",
@@ -110,6 +111,7 @@ examples = [
     "pyinstrument >=4.0",
     "pyvista<0.33",
     "reacton",
+    "scipy",
     "scikit-image",
     "scikit-learn",
     "seaborn",
@@ -127,30 +129,23 @@ recommended = [
     "hvplot",
     "jupyterlab",
     "matplotlib",
+    "pandas >=1.3",
     "pillow",
     "plotly",
 ]
 tests = [
-    "diskcache",
     "flake8",
     "flaky",
-    "folium",
-    "holoviews",
-    "ipympl",
     "ipython >=7.0",
-    "ipyvuetify",
     "lxml",
     "markdown-it-py",
     "nbval",
-    "pandas >=1.3",
     "parameterized",
     "pre-commit",
     "psutil",
     "pytest",
     "pytest-cov",
     "pytest-xdist",
-    "reacton",
-    "scipy",
     "twine",
 ]
 ui = [
