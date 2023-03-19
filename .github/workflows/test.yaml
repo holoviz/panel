@@ -73,6 +73,7 @@ jobs:
           pip install --upgrade pip
           pip install hatch hatch-conda
           hatch run +py=${{ matrix.python-version }} test:run
+          hatch run +py=${{ matrix.python-version }} test:run-examples
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
