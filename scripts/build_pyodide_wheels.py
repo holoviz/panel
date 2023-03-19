@@ -25,7 +25,7 @@ def minify_panel_wheel(out):
     panel_wheel = sorted(panel_wheels)[-1]
     shutil.copyfile(panel_wheel, out / os.path.basename(panel_wheel).replace(".dirty", ""))
 
-def minify_bokeh_wheel():
+def minify_bokeh_wheel(out):
     sp = subprocess.Popen(['pip', 'download', '.', '-d', 'build'])
     sp.wait()
     bokeh_wheels = PANEL_BASE.glob('build/bokeh-*-py3-none-any.whl')
