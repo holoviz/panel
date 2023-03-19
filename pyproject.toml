@@ -107,7 +107,6 @@ examples = [
     "pydeck",
     "pyecharts",
     "pyinstrument >=4.0",
-    "pyvista<0.33",
     "reacton",
     "scipy",
     "scikit-image",
