@@ -16,7 +16,7 @@ class PanelBuildHook(BuildHookInterface):
     PLUGIN_NAME = "bundle"
 
     def validate_version(self):
-        from panel import __version__ as version
+        raise ValueError(self.config, self.app, self.__dict__)
         if 'post' in version:
             return
         with open('./panel/package.json') as f:
@@ -34,20 +34,25 @@ class PanelBuildHook(BuildHookInterface):
     def initialize(self, version, build_data):
         from bokeh.ext import build
 
-        from panel.compiler import bundle_resources
-
-        self.validate_version()
-
         if 'PANEL_LITE' in os.environ:
             print("Skipping bundling steps for LITE build")
             return
 
-        print("Bundling custom model resources:")
-        bundle_resources()
+        if version != 'editable':
+            self.validate_version()
 
         print("Building custom models:")
         panel_dir = os.path.join(os.path.dirname(__file__), "panel")
         build(panel_dir)
+
+        if version == 'editable':
+            print("Skip bundling in editable mode. Ensure you bundle "
+                  "resources manually with `panel bundle --all`.")
+            return
+
+        from panel.compiler import bundle_resources
+        print("Bundling custom model resources:")
+        bundle_resources()
         if sys.platform != "win32":
             # npm can cause non-blocking stdout; so reset it just in case
             import fcntl

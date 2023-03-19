@@ -13,7 +13,7 @@ import zipfile
 
 PANEL_BASE = pathlib.Path(__file__).parent.parent
 
-sp = subprocess.Popen(['pip', 'wheel', '.', '-w', str(PANEL_BASE / 'build')], env=dict(os.environ, PANEL_LITE='1'))
+sp = subprocess.Popen(['hatch', 'build', '.', '-w', str(PANEL_BASE / 'build')], env=dict(os.environ, PANEL_LITE='1'))
 sp.wait()
 
 if len(sys.argv) > 1:
