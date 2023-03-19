@@ -11,8 +11,10 @@ features = [
   "recommended",
   "tests"
 ]
+pre-install-commands = [
+  'conda install -y -c conda-forge "nodejs>=16" graphviz vtk==9.0.1 xgboost'
+]
 post-install-commands = [
-  'conda install -y -c conda-forge "nodejs>=16" graphviz vtk==9.0.1 xgboost',
   "bokeh sampledata",
   "panel bundle --all"
 ]
@@ -63,10 +65,12 @@ python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 [envs.docs]
 type = "conda"
 features = [
+  "conda-extras",
   "doc"
 ]
 pre-install-commands = [
   "python scripts/build_pyodide_wheels.py",
+  'conda install -y -c conda-forge "nodejs>=16" graphviz vtk==9.0.1 xgboost'
 ]
 post-install-commands = [
   "bokeh sampledata",
@@ -85,8 +89,8 @@ serve = [
 ]
 build-pyodide = "panel convert examples/gallery/**/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index"
 
-[[envs.test-ui.matrix]]
-python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+[[envs.docs.matrix]]
+python = ["3.9"]
 
 #####################
 # Build JupyterLite #

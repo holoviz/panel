@@ -66,13 +66,15 @@ jobs:
         with:
           miniconda-version: "latest"
           auto-update-conda: 3.10
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
-      - run: |
+      - name: Set up environment
+        run: |
           pip install --upgrade pip
           pip install hatch hatch-conda wheel
+      - name: Run unit test suite
+        run: |
           hatch run +py=${{ matrix.python-version }} test:run
+      - name: Run example test suite
+        run: |
           hatch run +py=${{ matrix.python-version }} test:run-examples
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -108,12 +110,12 @@ jobs:
         with:
           miniconda-version: "latest"
           auto-update-conda: true
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
-      - run: |
+      - name: Set up environment
+        run: |
           pip install --upgrade pip
-          pip install hatch hatch-conda
+          pip install hatch hatch-conda wheel
+      - name: Run UI test suite
+        run: |
           hatch run jupyterlite:build
           #hatch run +py=${{ matrix.python-version }} test-ui:start-jupyter
           hatch run +py=${{ matrix.python-version }} test-ui:run
