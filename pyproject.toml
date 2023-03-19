@@ -94,7 +94,6 @@ examples = [
     "altair",
     "channels",
     "croniter",
-    "datashader",
     "django <4",
     "folium",
     "graphviz",
