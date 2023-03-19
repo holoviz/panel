@@ -12,7 +12,7 @@ features = [
   "tests"
 ]
 pre-install-commands = [
-  'conda install -y -c conda-forge "nodejs>=16" graphviz vtk==9.0.1 xgboost'
+  'conda install -y -c conda-forge "nodejs>=16" graphviz xgboost'
 ]
 post-install-commands = [
   "bokeh sampledata",
