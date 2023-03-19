@@ -4,6 +4,7 @@
 
 [envs.test]
 type = "conda"
+conda-forge = true
 features = [
   "examples",
   "recommended",
