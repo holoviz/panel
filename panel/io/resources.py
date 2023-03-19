@@ -399,7 +399,7 @@ class Resources(BkResources):
         """
         new_resources = []
         for resource in resources:
-            if resource.startswith(CDN_DIST) and self.notebook:
+            if self.mode == 'server' and self.notebook:
                 resource = resource.replace(CDN_DIST, '')
                 resource = f'/panel-preview/static/extensions/panel/{resource}'
             elif (resource.startswith(state.base_url) or resource.startswith('static/')):
@@ -414,7 +414,7 @@ class Resources(BkResources):
 
     @property
     def dist_dir(self):
-        if self.notebook:
+        if self.notebook and self.mode == 'server':
             dist_dir = '/panel-preview/static/extensions/panel/'
         elif self.mode == 'server':
             if state.rel_path:
@@ -540,7 +540,7 @@ class Bundle(BkBundle):
             resource = resource.replace('https://unpkg.com', config.npm_cdn)
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
-            if resource.startswith(CDN_DIST) and self.notebook:
+            if RESOURCE_MODE == 'server' and self.notebook:
                 resource = resource.replace(CDN_DIST, '')
                 resource = f'/panel-preview/static/extensions/panel/{resource}'
             elif (resource.startswith('static/') and state.rel_path):
