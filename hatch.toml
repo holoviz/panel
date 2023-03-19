@@ -6,18 +6,15 @@
 type = "conda"
 conda-forge = true
 features = [
+  "conda-extras",
   "examples",
   "recommended",
   "tests"
 ]
-extra-dependencies = [
-  "python-graphviz",
-  "vtk==9.0.1",
-  "xgboost"
-]
 post-install-commands = [
+  'conda install -y -c conda-forge "nodejs>=16" graphviz vtk==9.0.1 xgboost',
   "bokeh sampledata",
-  "panel bundle --all",
+  "panel bundle --all"
 ]
 [envs.test.scripts]
 run-coverage = "pytest panel --cov=./panel --cov-report=xml -n logical --dist loadgroup"
@@ -140,8 +137,12 @@ python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 template = "pip"
 type = "conda"
 conda-forge = true
+features = [
+  "all",
+  "conda-extras"
+]
 pre-install-commands = [
-  "conda install nodejs >=16"
+  'conda install -y -c conda-forge "nodejs>=16" graphviz vtk==9.0.1 xgboost',
 ]
 
 [envs.dev.scripts]

@@ -120,9 +120,7 @@ examples = [
     "xarray",
 ]
 conda-extras = [
-    "python-graphviz",
-    "vtk ==9.0.1",
-    "xgboost",
+    "graphviz",
 ]
 recommended = [
     "holoviews >=1.16.0a2",
