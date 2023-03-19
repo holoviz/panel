@@ -115,7 +115,7 @@ jobs:
           pip install --upgrade pip
           pip install hatch hatch-conda
           hatch run jupyterlite:build
-          hatch run +py=${{ matrix.python-version }} test-ui:start-jupyter
+          #hatch run +py=${{ matrix.python-version }} test-ui:start-jupyter
           hatch run +py=${{ matrix.python-version }} test-ui:run
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
