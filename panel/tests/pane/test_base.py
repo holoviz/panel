@@ -10,8 +10,9 @@ from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.pane import (
     Bokeh, HoloViews, Interactive, IPyWidget, Markdown, PaneBase, RGGPlot,
-    Vega, VTKRenderWindow, VTKRenderWindowSynchronized,
+    Vega,
 )
+from panel.pane.vtk.vtk import VTKRenderWindow, VTKRenderWindowSynchronized
 from panel.param import Param, ParamMethod
 from panel.tests.util import check_layoutable_properties
 
