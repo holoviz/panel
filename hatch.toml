@@ -5,12 +5,12 @@
 [envs.test]
 type = "conda"
 features = [
-  "conda-extras",
   "examples",
   "recommended",
   "tests"
 ]
 post-install-commands = [
+  "conda install python-graphviz xgboost vtk==9.0.1 -y",
   "bokeh sampledata",
   "panel bundle --all",
 ]

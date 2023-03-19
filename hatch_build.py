@@ -16,7 +16,7 @@ class PanelBuildHook(BuildHookInterface):
     PLUGIN_NAME = "bundle"
 
     def validate_version(self):
-        raise ValueError(self.config, self.app, self.__dict__)
+        from panel import __version__ as version
         if 'post' in version:
             return
         with open('./panel/package.json') as f:
