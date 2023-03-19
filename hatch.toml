@@ -5,6 +5,7 @@
 [envs.test]
 type = "conda"
 features = [
+  "conda-extras",
   "examples",
   "recommended",
   "tests"

@@ -13,7 +13,7 @@ import zipfile
 
 PANEL_BASE = pathlib.Path(__file__).parent.parent
 
-sp = subprocess.Popen(['hatch', 'build', '.', '-w', str(PANEL_BASE / 'build')], env=dict(os.environ, PANEL_LITE='1'))
+sp = subprocess.Popen(['hatch', 'build', '-t', 'wheel'], env=dict(os.environ, PANEL_LITE='1'))
 sp.wait()
 
 if len(sys.argv) > 1:
@@ -23,7 +23,7 @@ else:
 
 out.mkdir(exist_ok=True)
 
-panel_wheels = list(PANEL_BASE.glob('build/panel-*-py3-none-any.whl'))
+panel_wheels = list(PANEL_BASE.glob('dist/panel-*-py3-none-any.whl'))
 if not panel_wheels:
     raise RuntimeError('Panel wheel not found.')
 panel_wheel = sorted(panel_wheels)[-1]

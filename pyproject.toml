@@ -113,7 +113,6 @@ examples = [
     "pyecharts",
     "pygraphviz",
     "pyinstrument >=4.0",
-    #"python-graphviz",
     "pyvista<0.33",
     "reacton",
     "scikit-image",
@@ -121,9 +120,12 @@ examples = [
     "seaborn",
     "streamz",
     "vega_datasets",
-    #"vtk ==9.0.1",
     "xarray",
-    #"xgboost",
+]
+conda-extra = [
+    "python-graphviz",
+    "vtk ==9.0.1",
+    "xgboost",
 ]
 recommended = [
     "holoviews >=1.16.0a2",
