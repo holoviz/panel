@@ -145,5 +145,6 @@ You will likely want to check out the :ref:`devguide_testing` guide. Meanwhile, 
 
 testing
 developing
+docs
 extensions
 ```
