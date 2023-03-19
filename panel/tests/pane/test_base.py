@@ -10,14 +10,14 @@ from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.pane import (
     Bokeh, HoloViews, Interactive, IPyWidget, Markdown, PaneBase, RGGPlot,
-    Vega,
+    Vega, VTKRenderWindow, VTKRenderWindowSynchronized,
 )
 from panel.param import Param, ParamMethod
 from panel.tests.util import check_layoutable_properties
 
 SKIP_PANES = (
     Bokeh, HoloViews, Interactive, IPyWidget, Param, ParamMethod, RGGPlot,
-    Vega, interactive
+    Vega, VTKRenderWindowSynchronized, VTKRenderWindow, interactive
 )
 
 all_panes = [w for w in param.concrete_descendents(PaneBase).values()
