@@ -122,7 +122,7 @@ examples = [
     "vega_datasets",
     "xarray",
 ]
-conda-extra = [
+conda-extras = [
     "python-graphviz",
     "vtk ==9.0.1",
     "xgboost",
