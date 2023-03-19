@@ -215,6 +215,13 @@ select = [
 [tool.ruff.per-file-ignores]
 "panel/tests/ui/jupyter_server_test_config.py" = ["F821"]
 
+[tool.isort]
+force_grid_wrap = 4
+multi_line_output = 5
+combine_as_imports = true
+lines_between_types = 1
+include_trailing_comma = true
+
 [tool.pytest.ini_options]
 addopts = "-v --pyargs --doctest-ignore-import-errors"
 norecursedirs = "doc .git dist build _build .ipynb_checkpoints panel/examples"
