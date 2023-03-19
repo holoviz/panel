@@ -26,12 +26,14 @@ def minify_panel_wheel(out):
     shutil.copyfile(panel_wheel, out / os.path.basename(panel_wheel).replace(".dirty", ""))
 
 def minify_bokeh_wheel():
+    sp = subprocess.Popen(['pip', 'download', '.', '-d', 'build'])
+    sp.wait()
     bokeh_wheels = PANEL_BASE.glob('build/bokeh-*-py3-none-any.whl')
     if not bokeh_wheels:
         raise RuntimeError('Bokeh wheel not found.')
     bokeh_wheel = sorted(bokeh_wheels)[-1]
 
-    zin = zipfile.ZipFile (bokeh_wheel, 'r')
+    zin = zipfile.ZipFile(bokeh_wheel, 'r')
 
     zout = zipfile.ZipFile(out / os.path.basename(bokeh_wheel), 'w')
     exts = ['.js', '.d.ts', '.tsbuildinfo']
@@ -61,4 +63,4 @@ if __name__ == '__main__':
         out = PANEL_BASE / 'panel/dist/wheels'
     build_wheel()
     minify_panel_wheel(out)
-    #minify_bokeh_wheel(out)
+    minify_bokeh_wheel(out)

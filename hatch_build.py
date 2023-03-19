@@ -38,14 +38,14 @@ class PanelBuildHook(BuildHookInterface):
             print("Skipping bundling steps for LITE build")
             return
 
-        if version != 'editable':
+        if version not in ('editable', 'standard'):
             self.validate_version()
 
         print("Building custom models:")
         panel_dir = os.path.join(os.path.dirname(__file__), "panel")
         build(panel_dir)
 
-        if version == 'editable':
+        if version in ('editable', 'standard'):
             print("Skip bundling in editable mode. Ensure you bundle "
                   "resources manually with `panel bundle --all`.")
             return
