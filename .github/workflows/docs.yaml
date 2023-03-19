@@ -36,54 +36,29 @@ jobs:
       DISPLAY: ":99.0"
       PANEL_IPYWIDGET: 1
     steps:
-      - uses: pyviz-dev/holoviz_tasks/install@v0.1a12
+      - uses: actions/checkout@v3
         with:
-          name: doc_build
-          python-version: "3.9"
-          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
-          conda-update: 'true'
-          nodejs: true
-          # Remove when all examples tools can be installed on 3.10
-          envs: -o examples -o doc -o build
-          cache: true
-          opengl: true
-          conda-mamba: mamba
-      - name: doit develop_install
-        if: steps.install.outputs.cache-hit != 'true'
-        run: |
-          conda activate test-environment
-          pip install --use-deprecated=legacy-resolver pyecharts
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall holoviews jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/holoviz/holoviews.git"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
-      - name: bokeh sampledata
-        run: |
-          conda activate test-environment
-          bokeh sampledata
-      - name: generate rst
-        run: |
-          conda activate test-environment
-          nbsite generate-rst --org holoviz --project-name panel
-      - name: refmanual
-        run: |
-          conda activate test-environment
-          python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests
-      - name: build docs
-        run: |
-          conda activate test-environment
-          nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
-          cp -r ./panel/dist ./builtdocs/panel_dist
-      - name: convert gallery
-        run: |
-          conda activate test-environment
-          panel convert examples/gallery/**/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index
-      - name: git status and git diff
-        run: |
-          git status
-          git diff
+          fetch-depth: "100"
+          # Forcing fetch to avoid 'would clobber existing tag', as the previous step
+          # fetches tags already.
+      - run: git fetch --prune --tags --unshallow --force
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+      - run: |
+          pip install --upgrade pip
+          pip install hatch hatch-conda
+          hatch run docs:generate-rst
+          hatch run docs:refmanual
+          hatch run docs:build
+          hatch run docs:build-pyodide
       - name: Set and echo git ref
         id: vars
         run: |
@@ -113,31 +88,32 @@ jobs:
     name: JupyterLite
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+
+      - uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-      - name: Setup Python
-        uses: actions/setup-python@v4
+          fetch-depth: "100"
+          # Forcing fetch to avoid 'would clobber existing tag', as the previous step
+          # fetches tags already.
+      - run: git fetch --prune --tags --unshallow --force
+      - uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.10"
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+      - run: |
+          pip install --upgrade pip
+          pip install hatch hatch-conda
+          hatch run jupyterlite:build
       - name: Set and echo git ref
         id: vars
         run: |
           echo 'Deploying from ref ${GITHUB_REF#refs/*/}'
           echo 'tag=${GITHUB_REF#refs/*/}' >> $GITHUB_OUTPUT
-      - name: Install the dependencies
-        run: |
-          python -m pip install -r ./lite/requirements.txt
-      - name: Build pyodide wheels for JupyterLite
-        run: |
-          python ./scripts/build_pyodide_wheels.py lite/pypi
-      - name: Convert content
-        run: |
-          python ./scripts/generate_panelite_content.py
-      - name: Build the JupyterLite site
-        run: |
-          jupyter lite build --lite-dir lite --output-dir lite/dist
       - name: upload
         if: |
           (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||

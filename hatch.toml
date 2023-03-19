@@ -54,6 +54,37 @@ start-jupyter = [
 [[envs.test-ui.matrix]]
 python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
+
+############
+# Docs env #
+############
+
+[envs.docs]
+template = "test"
+features = [
+  "doc",
+  "examples",
+  "recommended"
+]
+pre-install-commands = [
+  "python scripts/build_pyodide_wheels.py",
+]
+post-install-commands = [
+  "bokeh sampledata",
+  "panel bundle --all",
+]
+[envs.docs.scripts]
+generate-rst = "nbsite generate-rst --org holoviz --project-name panel"
+refmanual = "python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests"
+build = [
+  "nbsite build --what=html --output=builtdocs --org holoviz --project-name panel",
+  "cp -r ./panel/dist ./builtdocs/panel_dist"
+]
+build-pyodide = "panel convert examples/gallery/**/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index"
+
+[[envs.test-ui.matrix]]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
 #####################
 # Build JupyterLite #
 #####################
