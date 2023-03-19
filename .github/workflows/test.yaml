@@ -42,9 +42,6 @@ jobs:
         # Run on the full set on schedule, workflow_dispatch and push&tags events, otherwise on a subset.
         python-version: ${{ ( github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || ( github.event_name == 'push' && github.ref_type == 'tag' ) ) && fromJSON('["3.8", "3.9", "3.10", "3.11"]') || fromJSON('["3.8", "3.9", "3.11"]') }}
     timeout-minutes: 90
-    defaults:
-      run:
-        shell: bash -l {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
@@ -91,9 +88,6 @@ jobs:
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
     timeout-minutes: 60
-    defaults:
-      run:
-        shell: bash -el {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
       PYTHONIOENCODING: "utf-8"
