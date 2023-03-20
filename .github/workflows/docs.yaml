@@ -59,12 +59,13 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install hatch hatch-conda
+          hatch -v env create docs
       - name: Build docs
         run: |
-          hatch run docs:generate-rst
-          hatch run docs:refmanual
-          hatch run docs:build
-          hatch run docs:build-pyodide
+          hatch -v run docs:generate-rst
+          hatch -v run docs:refmanual
+          hatch -v run docs:build
+          hatch -v run docs:build-pyodide
       - name: Set and echo git ref
         id: vars
         run: |
@@ -114,7 +115,9 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install hatch hatch-conda
+          hatch env create jupyterlite
       - name: Build jupyterlite
+        run: |
           hatch run jupyterlite:build
       - name: Set and echo git ref
         id: vars
