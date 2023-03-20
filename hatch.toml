@@ -12,7 +12,7 @@ features = [
   "tests"
 ]
 pre-install-commands = [
-  'conda install -y -c conda-forge "nodejs==16" graphviz xgboost'
+  'conda install -y -c conda-forge graphviz xgboost'
 ]
 post-install-commands = [
   "bokeh sampledata",
@@ -70,7 +70,7 @@ features = [
   "recommended"
 ]
 pre-install-commands = [
-  'conda install -y -c conda-forge "nodejs==16" graphviz vtk==9.0.1 xgboost'
+  'conda install -y -c conda-forge graphviz vtk==9.0.1 xgboost'
 ]
 post-install-commands = [
   "python scripts/build_pyodide_wheels.py",
@@ -143,7 +143,7 @@ type = "conda"
 conda-forge = true
 pre-install-commands = [
   "pip install toml PyYAML",
-  'python scripts/generate_conda_yaml.py -c conda-forge pyviz/label/dev -o conda-extras doc examples recommended tests ui -e "nodejs==16" --pip-only pip-extras',
+  'python scripts/generate_conda_yaml.py -c conda-forge pyviz/label/dev -o conda-extras doc examples recommended tests ui --pip-only pip-extras',
   "conda env update --file environment.yaml",
 ]
 post-install-commands = [
