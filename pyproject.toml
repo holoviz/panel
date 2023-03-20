@@ -107,17 +107,26 @@ examples = [
     "pydeck",
     "pyecharts",
     "pyinstrument >=4.0",
-    "reacton",
     "scipy",
     "scikit-image",
     "scikit-learn",
     "seaborn",
     "streamz",
-    "vega_datasets",
     "xarray",
 ]
+pip-extras = [
+    "ipywidgets_bokeh",
+    "playwright",
+    "pydeck",
+    "pyecharts",
+    "pytest-playwright",
+    "reacton",
+    "vega_datasets",
+]
 conda-extras = [
-    "graphviz",
+    "python-graphviz",
+    "vtk==9.0.1",
+    "xgboost"
 ]
 recommended = [
     "holoviews >=1.16.0a2",

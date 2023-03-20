@@ -72,16 +72,16 @@ jobs:
           pip install hatch hatch-conda wheel
       - name: Run unit test suite
         run: |
-          hatch run +py=${{ matrix.python-version }} test:run
+          hatch -v run test.py{{ matrix.python-version }}:run
       - name: Run example test suite
         run: |
-          hatch run +py=${{ matrix.python-version }} test:run-examples
+          hatch -v run test.py${{ matrix.python-version }}:run-examples
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml
           flags: unitexamples-tests
-          fail_ci_if_error: false # optional (default = false)
+          fail_ci_if_error: false
   ui_test_suite:
     name: UI tests on ${{ matrix.os }} with Python 3.9
     needs: [pre_commit]
@@ -117,8 +117,7 @@ jobs:
       - name: Run UI test suite
         run: |
           hatch run jupyterlite:build
-          #hatch run +py=${{ matrix.python-version }} test-ui:start-jupyter
-          hatch run +py=${{ matrix.python-version }} test-ui:run
+          hatch -v run test-ui.py${{ matrix.python-version }}:run
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

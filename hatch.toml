@@ -6,7 +6,6 @@
 type = "conda"
 conda-forge = true
 features = [
-  "conda-extras",
   "examples",
   "recommended",
   "tests"
@@ -99,7 +98,7 @@ python = ["3.9"]
 #####################
 
 [envs.jupyterlite]
-dependencies=[
+dependencies = [
   "jupyter",
   "jupyterlite",
 ]
@@ -122,7 +121,7 @@ post-install-commands = [
   "bokeh sampledata",
   "playwright install chromium",
   "pre-commit install",
-  "panel bundle --all",
+  "panel bundle --all"
 ]
 
 [envs.pip.scripts]
@@ -140,15 +139,18 @@ pyodide-wheels = "python scripts/build_pyodide_wheels.py"
 python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
 [envs.dev]
-template = "pip"
 type = "conda"
 conda-forge = true
-features = [
-  "all",
-  "conda-extras"
-]
 pre-install-commands = [
-  'conda install -y -c conda-forge "nodejs>=16" graphviz vtk==9.0.1 xgboost',
+  "pip install toml PyYAML",
+  'python scripts/generate_conda_yaml.py -c conda-forge pyviz/label/dev -o conda-extras doc examples recommended tests ui -e "nodejs>=16" --pip-only pip-extras',
+  "conda env update --file environment.yaml",
+]
+post-install-commands = [
+  "bokeh sampledata",
+  "playwright install chromium",
+  "pre-commit install",
+  "panel bundle --all"
 ]
 
 [envs.dev.scripts]
