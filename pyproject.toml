@@ -77,7 +77,8 @@ all = [
     "panel[ui]"
 ]
 build = [
-    "panel"
+    "panel",
+    "hatchling"
 ]
 doc = [
     "nbsite >=0.8.0rc7",

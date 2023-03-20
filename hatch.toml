@@ -36,6 +36,7 @@ python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 [envs.test-ui]
 template = "test"
 features = [
+  "build",
   "recommended",
   "tests",
   "ui"
@@ -65,6 +66,7 @@ python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 [envs.docs]
 type = "conda"
 features = [
+  "build",
   "conda-extras",
   "doc",
   "examples",
