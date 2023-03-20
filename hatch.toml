@@ -36,15 +36,12 @@ python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 [envs.test-ui]
 template = "test"
 features = [
-  "build",
   "recommended",
   "tests",
   "ui"
 ]
-pre-install-commands = [
-  "python scripts/build_pyodide_wheels.py",
-]
 post-install-commands = [
+  "python scripts/build_pyodide_wheels.py",
   "playwright install chromium",
   "panel bundle --all",
 ]
@@ -66,17 +63,16 @@ python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 [envs.docs]
 type = "conda"
 features = [
-  "build",
   "conda-extras",
   "doc",
   "examples",
   "recommended"
 ]
 pre-install-commands = [
-  "python scripts/build_pyodide_wheels.py",
   'conda install -y -c conda-forge "nodejs>=16" graphviz vtk==9.0.1 xgboost'
 ]
 post-install-commands = [
+  "python scripts/build_pyodide_wheels.py",
   "bokeh sampledata",
   "panel bundle --all",
 ]
