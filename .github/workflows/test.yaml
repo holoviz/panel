@@ -72,7 +72,7 @@ jobs:
           pip install hatch hatch-conda wheel
       - name: Run unit test suite
         run: |
-          hatch -v run test.py{{ matrix.python-version }}:run
+          hatch -v run test.py${{ matrix.python-version }}:run
       - name: Run example test suite
         run: |
           hatch -v run test.py${{ matrix.python-version }}:run-examples
