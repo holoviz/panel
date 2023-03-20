@@ -7,6 +7,7 @@ type = "conda"
 conda-forge = true
 features = [
   "examples",
+  "pip-extras",
   "recommended",
   "tests"
 ]
