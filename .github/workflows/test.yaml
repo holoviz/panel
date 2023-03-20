@@ -65,9 +65,10 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
-          auto-update-conda: 3.10
+          auto-update-conda: true
           auto-activate-base: true
       - name: Set up environment
+        shell: shell: bash -l {0}
         run: |
           pip install --upgrade pip
           pip install hatch hatch-conda wheel
@@ -108,17 +109,17 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
-          auto-activate-base: true
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
           auto-update-conda: true
+          auto-activate-base: true
       - name: Set up environment
+        shell: shell: bash -l {0}
         run: |
           pip install --upgrade pip
           pip install hatch hatch-conda wheel
           hatch -v env create test-ui.py3.10
-
       - name: Run UI test suite
         run: |
           hatch run jupyterlite:build

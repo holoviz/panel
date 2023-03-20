@@ -28,7 +28,7 @@ jobs:
   build_docs:
     name: Documentation
     runs-on: 'ubuntu-latest'
-    timeout-minutes: 120
+    timeout-minutes: 180
     defaults:
       run:
         shell: bash -l {0}
