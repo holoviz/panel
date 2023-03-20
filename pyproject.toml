@@ -107,11 +107,13 @@ examples = [
     "pydeck",
     "pyecharts",
     "pyinstrument >=4.0",
+    "reacton",
     "scipy",
     "scikit-image",
     "scikit-learn",
     "seaborn",
     "streamz",
+    "vega_datasets",
     "xarray",
 ]
 pip-extras = [
