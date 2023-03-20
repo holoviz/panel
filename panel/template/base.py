@@ -37,10 +37,10 @@ from ..pane import (
 )
 from ..pane.image import ImageBase
 from ..reactive import ReactiveHTML
-from ..theme import (
-    THEMES, DefaultTheme, Design, Theme,
+from ..theme.base import (
+    THEME_CSS, THEMES, DefaultTheme, Design, Theme,
 )
-from ..util import isurl, url_path
+from ..util import isurl, relative_to, url_path
 from ..viewable import Renderable, ServableMixin, Viewable
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
@@ -86,7 +86,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         A Design applies a specific design system to a template.""")
 
     # Dictionary of property overrides by Viewable type
-    _modifiers: ClassVar[Dict[Type[Viewable], Dict[str, Any]]] = {}
+    modifiers: ClassVar[Dict[Type[Viewable], Dict[str, Any]]] = {}
 
     __abstract = True
 
@@ -595,25 +595,17 @@ class BasicTemplate(BaseTemplate):
         }
 
         theme = self._design.theme
-        if theme and theme.base_css:
-            basename = os.path.basename(theme.base_css)
-            owner = type(theme).param.base_css.owner
-            owner_name = owner.__name__.lower()
-            if (BUNDLE_DIR / owner_name / basename).is_file():
-                css_files['theme_base'] = dist_path + f'bundled/{owner_name}/{basename}'
-            elif isurl(theme.base_css):
-                css_files['theme_base'] = theme.base_css
-            elif resolve_custom_path(theme, theme.base_css):
-                css_files['theme_base'] = component_resource_path(owner, 'base_css', theme.base_css)
-
-        if theme and theme.css:
-            basename = os.path.basename(theme.css)
-            if (BUNDLE_DIR / name / basename).is_file():
-                css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
-            elif isurl(theme.css):
-                css_files['theme'] = theme.css
-            elif resolve_custom_path(theme, theme.css):
-                css_files['theme'] = component_resource_path(theme, 'css', theme.css)
+        for attr in ('base_css', 'css'):
+            css = getattr(theme, attr, None)
+            if css is None:
+                continue
+            basename = os.path.basename(css)
+            key = 'theme_base' if 'base' in attr else 'theme'
+            if relative_to(css, THEME_CSS):
+                css_files[key] = dist_path + f'bundled/theme/{basename}'
+            elif resolve_custom_path(theme, css):
+                owner = type(theme).param[attr].owner
+                css_files[key] = component_resource_path(owner, attr, css)
 
         resolved_resources: List[Literal['css', 'js', 'js_modules']] = ['css', 'js', 'js_modules']
 

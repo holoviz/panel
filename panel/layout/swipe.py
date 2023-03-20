@@ -1,9 +1,13 @@
 """
 The Swipe layout enables you to quickly compare two panels
 """
+from __future__ import annotations
+
+from typing import ClassVar, List
 
 import param
 
+from ..io.resources import CDN_DIST
 from ..reactive import ReactiveHTML
 from .base import ListLike
 
@@ -83,7 +87,9 @@ class Swipe(ListLike, ReactiveHTML):
         """
     }
 
-    _stylesheets = ['css/swipe.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/swipe.css'
+    ]
 
     def __init__(self, *objects, **params):
         if 'objects' in params and objects:

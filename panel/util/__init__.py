@@ -10,6 +10,7 @@ import inspect
 import json
 import numbers
 import os
+import pathlib
 import re
 import sys
 import urllib.parse as urlparse
@@ -392,3 +393,11 @@ def base_version(version: str) -> str:
         return match.group()
     else:
         return version
+
+
+def relative_to(path, other_path):
+    try:
+        pathlib.Path(path).relative_to(other_path)
+        return True
+    except Exception:
+        return False

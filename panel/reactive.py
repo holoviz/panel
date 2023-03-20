@@ -35,6 +35,7 @@ from .io.model import hold
 from .io.notebook import push
 from .io.resources import (
     CDN_DIST, loading_css, patch_stylesheet, process_raw_css,
+    resolve_stylesheet,
 )
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
@@ -185,15 +186,20 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
             from .config import config
-            base_stylesheets = config.css_files+self._stylesheets+['css/loading.css']
-            stylesheets = [loading_css()] + process_raw_css(config.raw_css) + [
-                ImportedStyleSheet(url=stylesheet) for stylesheet in base_stylesheets
+            stylesheets = [loading_css(), f'{CDN_DIST}css/loading.css']
+            stylesheets += process_raw_css(config.raw_css)
+            stylesheets += config.css_files
+            stylesheets += [
+                resolve_stylesheet(self, css_file, '_stylesheets')
+                for css_file in self._stylesheets
             ]
-            for stylesheet in properties['stylesheets']:
+            stylesheets += properties['stylesheets']
+            wrapped = []
+            for stylesheet in stylesheets:
                 if isinstance(stylesheet, str) and stylesheet.endswith('.css'):
                     stylesheet = ImportedStyleSheet(url=stylesheet)
-                stylesheets.append(stylesheet)
-            properties['stylesheets'] = stylesheets
+                wrapped.append(stylesheet)
+            properties['stylesheets'] = wrapped
         return properties
 
     @property

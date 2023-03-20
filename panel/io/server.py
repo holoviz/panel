@@ -74,7 +74,7 @@ from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
-    Resources, _env, bundle_resources, component_rel_path, patch_model_css,
+    Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
 )
 from .state import set_curdoc, state
 
@@ -421,7 +421,7 @@ class ComponentResourceHandler(StaticFileHandler):
 
     _resource_attrs = [
         '__css__', '__javascript__', '__js_module__', '__javascript_modules__',  '_resources',
-        '_css', '_js', 'base_css', 'css'
+        '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers'
     ]
 
     def initialize(self, path: Optional[str] = None, default_filename: Optional[str] = None):
@@ -462,13 +462,18 @@ class ComponentResourceHandler(StaticFileHandler):
                 raise HTTPError(404, 'Resource type not found')
             resources = resources[rtype]
             rtype = f'_resources/{rtype}'
+        elif rtype == 'modifiers':
+            resources = [
+                st for rs in resources.values() for st in rs.get('stylesheets', [])
+                if isinstance(st, str)
+            ]
 
         if isinstance(resources, dict):
             resources = list(resources.values())
         elif isinstance(resources, (str, pathlib.PurePath)):
             resources = [resources]
         resources = [
-            component_rel_path(component, resource).replace(os.path.sep, '/')
+            str(resolve_custom_path(component, resource, relative=True)).replace(os.path.sep, '/')
             for resource in resources
         ]
 

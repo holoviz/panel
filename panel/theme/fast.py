@@ -7,6 +7,7 @@ import param
 from bokeh.themes import Theme as _BkTheme
 
 from ..config import config
+from ..io.resources import CDN_DIST
 from ..layout import Accordion
 from ..reactive import ReactiveHTML
 from ..viewable import Viewable
@@ -199,7 +200,7 @@ class FastDarkTheme(DarkTheme):
 
     style = param.ClassSelector(default=DARK_STYLE, class_=FastStyle)
 
-    _modifiers = {
+    modifiers = {
         Dial: {
             'label_color': 'white'
         },
@@ -220,7 +221,7 @@ class FastDarkTheme(DarkTheme):
 
 class Fast(Design):
 
-    _modifiers = {
+    modifiers = {
         Accordion: {
             'active_header_background': 'var(--neutral-fill-active)'
         },
@@ -228,7 +229,7 @@ class Fast(Design):
             'theme': 'fast'
         },
         Viewable: {
-            'stylesheets': [Inherit, 'css/fast.css']
+            'stylesheets': [Inherit, f'{CDN_DIST}bundled/theme/fast.css']
         }
     }
 

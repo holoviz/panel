@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ..io.resources import CDN_DIST
 from ..viewable import Viewable
 from ..widgets.indicators import Number
 from .base import (
@@ -12,7 +13,7 @@ class NativeDefaultTheme(DefaultTheme):
 
 class NativeDarkTheme(DarkTheme):
 
-    _modifiers = {
+    modifiers = {
         Number: {
             'default_color': 'white'
         }
@@ -21,9 +22,9 @@ class NativeDarkTheme(DarkTheme):
 
 class Native(Design):
 
-    _modifiers = {
+    modifiers = {
         Viewable: {
-            'stylesheets': [Inherit, 'css/native.css']
+            'stylesheets': [Inherit, f'{CDN_DIST}bundled/theme/native.css']
         }
     }
 

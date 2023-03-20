@@ -14,6 +14,7 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
+from ..io.resources import CDN_DIST
 from ..util import isdatetime, lazy_load
 from ..viewable import Layoutable
 from .base import ModelPane
@@ -83,7 +84,9 @@ class Plotly(ModelPane):
 
     priority: ClassVar[float | bool | None] = 0.8
 
-    _stylesheets: ClassVar[List[str]] = ['css/plotly.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/plotly.css'
+    ]
 
     _updates: ClassVar[bool] = True
 

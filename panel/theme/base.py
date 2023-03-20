@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import functools
-import os
 import pathlib
 
 from typing import (
@@ -12,6 +11,8 @@ import param
 
 from bokeh.models import ImportedStyleSheet
 from bokeh.themes import Theme as _BkTheme, _dark_minimal, built_in_themes
+
+from ..util import relative_to
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -31,7 +32,7 @@ class Theme(param.Parameterized):
     Theme objects declare the styles to switch between different color
     modes. Each `Design` may declare any number of color themes.
 
-    `_modifiers`
+    `modifiers`
        The modifiers override parameter values of Panel components.
     """
 
@@ -48,7 +49,7 @@ class Theme(param.Parameterized):
        A stylesheet thats overrides variables specifically for the
        Theme subclass. In most cases this is not necessary.""")
 
-    _modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
+    modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
 
 
 BOKEH_DARK = dict(_dark_minimal.json)
@@ -57,13 +58,15 @@ BOKEH_DARK['attrs']['Plot'].update({
     "border_fill_color": "#212529",
 })
 
+THEME_CSS = pathlib.Path(__file__).parent / 'css'
+
 
 class DefaultTheme(Theme):
     """
     Baseclass for default or light themes.
     """
 
-    base_css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'default.css')
+    base_css = param.Filename(default=THEME_CSS / 'default.css')
 
     _name: ClassVar[str] = 'default'
 
@@ -73,7 +76,7 @@ class DarkTheme(Theme):
     Baseclass for dark themes.
     """
 
-    base_css = param.Filename(default=pathlib.Path(__file__).parent / 'css' / 'dark.css')
+    base_css = param.Filename(default=THEME_CSS / 'dark.css')
 
     bokeh_theme = param.ClassSelector(class_=(_BkTheme, str),
                                       default=_BkTheme(json=BOKEH_DARK))
@@ -86,7 +89,7 @@ class Design(param.Parameterized):
     theme = param.ClassSelector(class_=Theme, constant=True)
 
     # Defines parameter overrides to apply to each model
-    _modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
+    modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
 
     # Defines the resources required to render this theme
     _resources: ClassVar[Dict[str, Dict[str, str]]] = {}
@@ -126,21 +129,15 @@ class Design(param.Parameterized):
 
     @classmethod
     def _resolve_stylesheets(cls, value, defining_cls, inherited):
-        new_value = []
-        for v in value:
-            if v is Inherit:
-                new_value.extend(inherited)
-            elif isinstance(v, str) and v.endswith('.css'):
-                if v.startswith('http'):
-                    url = v
-                elif v.startswith('/'):
-                    url = v[1:]
-                else:
-                    url = '/'.join(['bundled', cls.__name__.lower(), v])
-                new_value.append(url)
-            else:
-                new_value.append(v)
-        return new_value
+        from ..io.resources import resolve_stylesheet
+        stylesheets = []
+        for stylesheet in value:
+            if stylesheet is Inherit:
+                stylesheets.extend(inherited)
+                continue
+            resolved = resolve_stylesheet(defining_cls, stylesheet, 'modifiers')
+            stylesheets.append(resolved)
+        return stylesheets
 
     @classmethod
     @functools.lru_cache
@@ -151,29 +148,27 @@ class Design(param.Parameterized):
         """
         modifiers, child_modifiers = {}, {}
         for scls in vtype.__mro__[::-1]:
-            cls_modifiers = cls._modifiers.get(scls, {})
-            if cls_modifiers:
-                # Find the Template class the options were first defined on
-                def_cls = [
-                    super_cls for super_cls in cls.__mro__[::-1]
-                    if getattr(super_cls, '_modifiers', {}).get(scls) is cls_modifiers
-                ][0]
-
+            cls_modifiers = cls.modifiers.get(scls, {})
+            modifiers.update(theme.modifiers.get(scls, {}))
+            for super_cls in cls.__mro__[::-1]:
+                cls_modifiers = getattr(super_cls, 'modifiers', {}).get(scls, {})
                 for prop, value in cls_modifiers.items():
                     if prop == 'children':
                         continue
                     elif prop == 'stylesheets':
-                        modifiers[prop] = cls._resolve_stylesheets(value, def_cls, modifiers.get(prop, []))
+                        modifiers[prop] = cls._resolve_stylesheets(value, super_cls, modifiers.get(prop, []))
                     else:
                         modifiers[prop] = value
-            modifiers.update(theme._modifiers.get(scls, {}))
-            child_modifiers.update(cls_modifiers.get('children', {}))
+                child_modifiers.update(cls_modifiers.get('children', {}))
         return modifiers, child_modifiers
 
     @classmethod
     def _get_modifiers(
         cls, viewable: Viewable, theme: Theme = None, isolated: bool = True
     ):
+        from ..io.resources import (
+            CDN_DIST, component_resource_path, resolve_custom_path,
+        )
         modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme)
         modifiers = dict(modifiers)
         if 'stylesheets' in modifiers:
@@ -183,10 +178,13 @@ class Design(param.Parameterized):
                     css = getattr(theme, p)
                     if css is None:
                         continue
-                    owner = type(theme).param[p].owner.__name__.lower()
-                    if os.path.isfile(css):
-                        css_file = '/'.join(['bundled', owner, os.path.basename(css)])
-                        pre.append(css_file)
+                    css = pathlib.Path(css)
+                    if relative_to(css, THEME_CSS):
+                        pre.append(f'{CDN_DIST}bundled/theme/{css.name}')
+                    elif resolve_custom_path(theme, css):
+                        pre.append(component_resource_path(theme, p, css))
+                    else:
+                        pre.append(css.read_text('utf-8'))
             else:
                 pre = []
             modifiers['stylesheets'] = pre + modifiers['stylesheets']
@@ -222,6 +220,11 @@ class Design(param.Parameterized):
 
     @classmethod
     def _apply_params(cls, viewable, mref, modifiers):
+        # Apply params never sync the modifier values with the Viewable
+        # This should not be a concern since most `Layoutable` properties,
+        # e.g. stylesheets or sizing_mode, are not synced between the
+        # Panel component and the model anyway however in certain edge cases
+        # this may end up causing issues.
         from ..io.resources import CDN_DIST, patch_stylesheet
 
         model, _ = viewable._models[mref]
