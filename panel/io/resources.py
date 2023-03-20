@@ -312,6 +312,8 @@ def bundled_files(model, file_type='javascript'):
 def bundle_resources(roots, resources, notebook=False):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
+    if not isinstance(resources, Resources):
+        resources = Resources.from_bokeh(resources, notebook=notebook)
     js_resources = css_resources = resources
     RESOURCE_MODE = mode = js_resources.mode if resources is not None else "inline"
 
@@ -334,6 +336,7 @@ def bundle_resources(roots, resources, notebook=False):
     css_raw.extend(css_resources.css_raw)
 
     extensions = _bundle_extensions(None, js_resources)
+    extra_js = []
     if mode == "inline":
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
     elif mode == "server":
@@ -341,11 +344,12 @@ def bundle_resources(roots, resources, notebook=False):
     elif mode == "cdn":
         for bundle in extensions:
             if bundle.cdn_url is not None:
-                js_files.append(bundle.cdn_url)
+                extra_js.append(bundle.cdn_url)
             else:
                 js_raw.append(Resources._inline(bundle.artifact_path))
     else:
-        js_files.extend([ bundle.artifact_path for bundle in extensions ])
+        extra_js.extend([ bundle.artifact_path for bundle in extensions ])
+    js_files += resources.adjust_paths(extra_js)
 
     ext = bundle_models(None)
     if ext is not None:
@@ -355,7 +359,8 @@ def bundle_resources(roots, resources, notebook=False):
 
     return Bundle(
         js_files=js_files, js_raw=js_raw, css_files=css_files,
-        css_raw=css_raw, hashes=hashes, notebook=notebook
+        css_raw=css_raw, hashes=hashes, notebook=notebook,
+        js_modules=resources.js_modules
     )
 
 
@@ -371,6 +376,7 @@ class Resources(BkResources):
         kwargs = {}
         if bkr.mode.startswith("server"):
             kwargs['root_url'] = bkr.root_url
+
         return cls(
             mode=bkr.mode, version=bkr.version, minified=bkr.minified,
             log_level=bkr.log_level, notebook=notebook,
@@ -398,10 +404,17 @@ class Resources(BkResources):
         Computes relative and absolute paths for resources.
         """
         new_resources = []
+        cdn_base = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/'
         for resource in resources:
+            resource = resource.replace('https://unpkg.com', config.npm_cdn)
+            if resource.startswith(cdn_base):
+                resource = resource.replace(cdn_base, CDN_DIST)
             if self.mode == 'server' and self.notebook:
-                resource = resource.replace(CDN_DIST, '')
-                resource = f'/panel-preview/static/extensions/panel/{resource}'
+                resource = resource.replace(self.root_url, '').replace(CDN_DIST, '')
+                if resource.startswith('static/'):
+                    resource = f'/panel-preview/{resource}'
+                else:
+                    resource = f'/panel-preview/static/extensions/panel/{resource}'
             elif (resource.startswith(state.base_url) or resource.startswith('static/')):
                 if resource.startswith(state.base_url):
                     resource = resource[len(state.base_url):]
@@ -469,18 +482,29 @@ class Resources(BkResources):
     @property
     def js_modules(self):
         from ..config import config
+        from ..reactive import ReactiveHTML
+
         modules = list(config.js_modules.values())
         self.extra_resources(modules, '__javascript_modules__')
 
-        if not config.design:
-            return modules
+        if config.design:
+            design_name = config.design.__name__.lower()
+            for resource in config.design._resources.get('js_modules').values():
+                if not isurl(resource):
+                    resource = f'{CDN_DIST}bundled/{design_name}/{resource}'
+                if resource not in modules:
+                    modules.append(resource)
 
-        for resource in config.design._resources.get('js_modules').values():
-            if resource not in modules:
-                modules.append(resource)
-        modules = self.adjust_paths(modules)
+        for model in param.concrete_descendents(ReactiveHTML).values():
+            if not (getattr(model, '__javascript_modules__', None) and model._loaded()):
+                continue
+            for js_module in model.__javascript_modules__:
+                if not isurl(js_module) and not js_module.startswith('static/extensions'):
+                    js_module = component_resource_path(model, '__javascript_modules__', js_module)
+                if js_module not in modules:
+                    modules.append(js_module)
 
-        return modules
+        return self.adjust_paths(modules)
 
     @property
     def css_files(self):
@@ -509,45 +533,9 @@ class Resources(BkResources):
 class Bundle(BkBundle):
 
     def __init__(self, notebook=False, **kwargs):
-        from ..config import config
-        from ..reactive import ReactiveHTML
+        self.js_modules = kwargs.pop("js_modules", [])
         self.notebook = notebook
-        js_modules = list(config.js_modules.values())
-        for model in param.concrete_descendents(ReactiveHTML).values():
-            if getattr(model, '__javascript_modules__', None) and model._loaded():
-                for js_module in model.__javascript_modules__:
-                    if not isurl(js_module) and not js_module.startswith('static/extensions'):
-                        js_module = component_resource_path(model, '__javascript_modules__', js_module)
-                    if js_module not in js_modules:
-                        js_modules.append(js_module)
-
-        if config.design:
-            design_name = config.design.__name__.lower()
-            for resource in config.design._resources.get('js_modules', {}).values():
-                if resource in js_modules:
-                    continue
-                elif not isurl(resource):
-                    resource = f'{CDN_DIST}bundled/{design_name}/{resource}'
-                js_modules.append(resource)
-
-        self.js_modules = self._adjust_paths(kwargs.pop("js_modules", js_modules))
         super().__init__(**kwargs)
-
-    def _adjust_paths(self, resources):
-        redirected = []
-        cdn_base = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/'
-        for resource in resources:
-            resource = resource.replace('https://unpkg.com', config.npm_cdn)
-            if resource.startswith(cdn_base):
-                resource = resource.replace(cdn_base, CDN_DIST)
-            if RESOURCE_MODE == 'server' and self.notebook:
-                resource = resource.replace(CDN_DIST, '')
-                resource = f'/panel-preview/static/extensions/panel/{resource}'
-            elif (resource.startswith('static/') and state.rel_path):
-                if state.rel_path:
-                    resource = f'{state.rel_path}/{resource}'
-            redirected.append(resource)
-        return redirected
 
     @classmethod
     def from_bokeh(cls, bk_bundle, notebook=False):
@@ -561,10 +549,15 @@ class Bundle(BkBundle):
         )
 
     def _render_css(self) -> str:
-        return BkCSS_RESOURCES.render(css_files=self._adjust_paths(self.css_files), css_raw=self.css_raw)
+        return BkCSS_RESOURCES.render(
+            css_files=self.css_files,
+            css_raw=self.css_raw
+        )
 
     def _render_js(self):
         return JS_RESOURCES.render(
-            js_raw=self.js_raw, js_files=self._adjust_paths(self.js_files),
-            js_modules=self._adjust_paths(self.js_modules), hashes=self.hashes
+            js_raw=self.js_raw,
+            js_files=self.js_files,
+            js_modules=self.js_modules,
+            hashes=self.hashes
         )
