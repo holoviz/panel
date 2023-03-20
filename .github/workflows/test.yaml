@@ -70,6 +70,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install hatch hatch-conda wheel
+          hatch -v env create test.py${{ matrix.python-version }}
       - name: Run unit test suite
         run: |
           hatch -v run test.py${{ matrix.python-version }}:run
@@ -114,10 +115,11 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install hatch hatch-conda wheel
+          hatch -v env create test-ui.py3.10
       - name: Run UI test suite
         run: |
           hatch run jupyterlite:build
-          hatch -v run test-ui.py${{ matrix.python-version }}:run
+          hatch -v run test-ui.py3.10:run
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
