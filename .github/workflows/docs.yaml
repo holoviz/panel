@@ -7,6 +7,9 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+  pull_request:
+    branches:
+    - '*'
   workflow_dispatch:
     inputs:
       target:
@@ -52,9 +55,12 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16.x
-      - run: |
+      - name: Set up base environment
+        run: |
           pip install --upgrade pip
           pip install hatch hatch-conda
+      - name: Build docs
+        run: |
           hatch run docs:generate-rst
           hatch run docs:refmanual
           hatch run docs:build
@@ -88,7 +94,6 @@ jobs:
     name: JupyterLite
     runs-on: ubuntu-latest
     steps:
-
       - uses: actions/checkout@v3
         with:
           fetch-depth: "100"
@@ -105,9 +110,11 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16.x
-      - run: |
+      - name: Set up base env
+        run: |
           pip install --upgrade pip
           pip install hatch hatch-conda
+      - name: Build jupyterlite
           hatch run jupyterlite:build
       - name: Set and echo git ref
         id: vars
