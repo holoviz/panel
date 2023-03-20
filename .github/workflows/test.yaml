@@ -68,7 +68,7 @@ jobs:
           auto-update-conda: true
           auto-activate-base: true
       - name: Set up environment
-        shell: shell: bash -l {0}
+        shell: bash -l {0}
         run: |
           pip install --upgrade pip
           pip install hatch hatch-conda wheel
@@ -115,7 +115,7 @@ jobs:
           auto-update-conda: true
           auto-activate-base: true
       - name: Set up environment
-        shell: shell: bash -l {0}
+        shell: bash -l {0}
         run: |
           pip install --upgrade pip
           pip install hatch hatch-conda wheel
