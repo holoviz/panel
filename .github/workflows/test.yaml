@@ -68,8 +68,8 @@ jobs:
           auto-update-conda: true
           auto-activate-base: true
       - name: Set up environment
-        shell: bash -l {0}
         run: |
+          conda info
           pip install --upgrade pip
           pip install hatch hatch-conda wheel
           hatch -v env create test.py${{ matrix.python-version }}
@@ -115,7 +115,6 @@ jobs:
           auto-update-conda: true
           auto-activate-base: true
       - name: Set up environment
-        shell: bash -l {0}
         run: |
           pip install --upgrade pip
           pip install hatch hatch-conda wheel
