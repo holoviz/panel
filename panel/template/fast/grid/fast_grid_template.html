@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
       </div>
       {% endif %}
 
-      <div class="main" id="main" style="margin-left: {{ 'calc(var(--sidebar-width) + 30px)' if nav or sidebar_footer else '15px' }};">
+      <div class="main" id="main">
 	{% if main_max_width %}
 	<div class="main-margin" style="max-width: {{ main_max_width }};">
 	{% endif %}
@@ -201,14 +201,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
 <script type="text/javascript">
   function openNav() {
-    document.getElementById("sidebar").style.left = 0;
-    document.getElementById("main").style.marginLeft = "calc(var(--sidebar-width) + 30px)";
+    document.getElementById("sidebar").classList.remove("hidden");
     document.getElementById("sidebar-button").onclick = closeNav;
   }
 
   function closeNav() {
-    document.getElementById("sidebar").style.left = "calc(-1 * var(--sidebar-width) - 20px)";
-    document.getElementById("main").style.marginLeft = "15px";
+    document.getElementById("sidebar").classList.add("hidden");
     document.getElementById("sidebar-button").onclick = openNav;
   }
 

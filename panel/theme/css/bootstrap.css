@@ -10,6 +10,7 @@
     --bs-surface-bg: var(--jp-layout-color2, var(--panel-surface-color));
     --bs-surface-color: var(--jp-ui-font-color1, var(--panel-on-surface-color));
     --bs-form-control-bg: var(--jp-layout-color1, var(--panel-surface-color));
+    --bs-form-control-color: var(--jp-ui-color2, var(--panel-on-surface-color));
     --bokeh-base-font: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
 }
 
@@ -473,6 +474,7 @@ input.bk-input, textarea.bk-input {
 
 .bk-menu {
     background-color: var(--bs-form-control-bg);
+    color: var(--bs-form-control-color);
 }
 
 .bk-menu > :not(.bk-divider):hover, .bk-menu > :not(.bk-divider).bk-active {
@@ -645,6 +647,10 @@ input[type="radio"] + span {
 div .tabulator .tabulator-headers, div .tabulator .tabulator-header .tabulator-col {
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
+}
+
+.tabulator .tabulator-header .tabulator-header-contents {
+    background-color: var(--bs-body-bg);
 }
 
 .pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.tabulator-row-even {

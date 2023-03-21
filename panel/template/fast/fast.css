@@ -46,6 +46,12 @@ body {
 #container {
     padding: 0px;
     width: 100vw;
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+#header-design-provider {
+    z-index: 10;
 }
 
 #header{
@@ -149,7 +155,7 @@ img.app-logo {
     overflow-y: scroll;
     padding-right: 15px;
     transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
-    width: 100%;
+    flex-grow: 1;
 }
 
 #sidebarCollapse {
@@ -157,9 +163,14 @@ img.app-logo {
     border: none;
 }
 
+#sidebar.hidden {
+    width: 0px;
+    overflow: hidden;
+    margin: 0px;
+}
+
 .sidenav {
     padding-top: 15px;
-    position: absolute;
     overflow-y: scroll;
 }
 
@@ -301,6 +312,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .main-margin {
+    margin-top: 1em;
     margin-left: auto;
     margin-right: auto;
 }
