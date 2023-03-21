@@ -226,11 +226,11 @@ def script_to_html(
     elif isinstance(requirements, str) and pathlib.Path(requirements).is_file():
         requirements = pathlib.Path(requirements).read_text().split('/n')
         try:
-            import pkg_resources
-            parsed = pkg_resources.parse_requirements(requirements)
-            requirements = [str(requirement) for requirement in parsed]
-        except ImportError:
-            pass
+            from packaging.requirements import Requirement
+            requirements = [
+                r2 for r in requirements
+                if (r2 := r.split("#")[0].strip()) and Requirement(r2)
+            ]
         except Exception as e:
             raise ValueError(
                 f'Requirements parser raised following error: {e}'

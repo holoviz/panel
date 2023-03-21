@@ -786,12 +786,13 @@ class panel_extension(_pyviz_extension):
             )
 
     def _load_entry_points(self):
-        ''' Load entry points from external packages
-        Import is performed here so any importlib/pkg_resources
+        """
+        Load entry points from external packages.
+        Import is performed here, so any importlib
         can be easily bypassed by switching off the configuration flag.
-        also, no reason to waste time on importing this module
-        if it wont be used.
-        '''
+        Also, there is no reason to waste time importing this module
+        if it won't be used.
+        """
         from .entry_points import load_entry_points
         load_entry_points('panel.extension')
 
