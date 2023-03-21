@@ -26,7 +26,7 @@ from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
     BUNDLE_DIR, CDN_DIST, DOC_DIST, LOCAL_DIST, _env, component_resource_path,
-    resolve_custom_path,
+    loading_css, resolve_custom_path,
 )
 from ..io.save import save
 from ..io.state import curdoc_locked, state
@@ -591,7 +591,7 @@ class BasicTemplate(BaseTemplate):
             'js': js_files,
             'js_modules': js_modules,
             'extra_css': [],
-            'raw_css': list(self.config.raw_css)
+            'raw_css': list(self.config.raw_css) + [loading_css()]
         }
 
         theme = self._design.theme
