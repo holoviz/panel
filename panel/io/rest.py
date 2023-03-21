@@ -3,12 +3,12 @@ import os
 import tempfile
 import traceback
 
+from importlib.metadata import entry_points
 from runpy import run_path
 from unittest.mock import MagicMock
 from urllib.parse import parse_qs
 
 import param
-import pkg_resources
 
 from tornado import web
 from tornado.wsgi import WSGIContainer
@@ -178,5 +178,5 @@ REST_PROVIDERS = {
 }
 
 # Populate REST Providers from external extensions
-for entry_point in pkg_resources.iter_entry_points('panel.io.rest'):
+for entry_point in entry_points('panel.io.rest'):
     REST_PROVIDERS[entry_point.name] = entry_point.resolve()

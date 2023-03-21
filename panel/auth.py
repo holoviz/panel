@@ -7,9 +7,9 @@ import re
 import urllib.parse as urlparse
 import uuid
 
+from importlib.metadata import entry_points
 from typing import List, Tuple, Type
 
-import pkg_resources
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
@@ -854,7 +854,7 @@ AUTH_PROVIDERS = {
 }
 
 # Populate AUTH Providers from external extensions
-for entry_point in pkg_resources.iter_entry_points('panel.auth'):
+for entry_point in entry_points('panel.auth'):
     AUTH_PROVIDERS[entry_point.name] = entry_point.resolve()
 
 config.param.objects(False)['_oauth_provider'].objects = list(AUTH_PROVIDERS.keys())
