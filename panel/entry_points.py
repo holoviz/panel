@@ -4,23 +4,23 @@ It is copied almost entirely from the entrypoint handling in the excellent
 Hypothesis package https://github.com/HypothesisWorks/hypothesis.
 """
 
-try:
-    from importlib import metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata  # type: ignore  # mypy thinks this is a redefinition
+import importlib.metadata
 
-def entry_points_for(group):
+from typing import Iterator
+
+
+def entry_points_for(group: str) -> Iterator[importlib.metadata.EntryPoint]:
     try:
-        eps = importlib_metadata.entry_points(group=group)
+        eps = importlib.metadata.entry_points(group=group)
     except TypeError:
         # Load-time selection requires Python >= 3.10 or importlib_metadata >= 3.6,
         # so we'll retain this fallback logic for some time to come.  See also
         # https://importlib-metadata.readthedocs.io/en/latest/using.html
-        eps = importlib_metadata.entry_points().get(group, [])
+        eps = importlib.metadata.entry_points().get(group, [])
     yield from eps
 
 
-def load_entry_points(group):
+def load_entry_points(group: str) -> None:
     for entry in entry_points_for(group):  # pragma: no cover
         hook = entry.load()
         if callable(hook):
