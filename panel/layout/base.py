@@ -41,6 +41,9 @@ class Panel(Reactive):
     # Bokeh model used to render this Panel
     _bokeh_model: ClassVar[Type[Model]]
 
+    # Direction the layout flows in
+    _direction: ClassVar[str | None] = None
+
     # Parameters which require the preprocessors to be re-run
     _preprocess_params: ClassVar[List[str]] = []
 
@@ -88,11 +91,16 @@ class Panel(Reactive):
         if obj_key in msg:
             old = events['objects'].old
             msg[obj_key] = children = self._get_objects(model, old, doc, root, comm)
-            msg['sizing_mode'], msg['styles'] = self._compute_sizing_mode(
+            msg.update(self._compute_sizing_mode(
                 children,
-                msg.get('sizing_mode', model.sizing_mode),
-                msg.get('styles', model.styles)
-            )
+                dict(
+                    sizing_mode=msg.get('sizing_mode', model.sizing_mode),
+                    styles=msg.get('styles', model.styles),
+                    width=msg.get('width', model.width),
+                    min_width=msg.get('min_width', model.min_width),
+                    margin=msg.get('margin', model.margin)
+                )
+            ))
 
         with hold(doc):
             update = Panel._batch_update
@@ -154,17 +162,19 @@ class Panel(Reactive):
         objects = self._get_objects(model, [], doc, root, comm)
         props = self._get_properties(doc)
         props[self._property_mapping['objects']] = objects
-        props['sizing_mode'], props['styles'] = self._compute_sizing_mode(
-            objects, props.get('sizing_mode'), props.get('styles')
-        )
+        props.update(self._compute_sizing_mode(objects, props))
         model.update(**props)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
-    def _compute_sizing_mode(self, children, sizing_mode, styles):
+    def _compute_sizing_mode(self, children, props):
         from ..config import config
+        sizing_mode = props.get('sizing_mode', self.sizing_mode)
+        styles = props.get('styles', self.styles)
+        margin = props.get('margin', self.margin)
         if sizing_mode is not None and (not config.layout_compatibility or sizing_mode == 'fixed'):
-            return sizing_mode, styles
+            return {}
+        widths = []
         all_expand, expand_width, expand_height, scale = True, False, False, False
         for child in children:
             if child.sizing_mode and 'scale' in child.sizing_mode:
@@ -172,6 +182,16 @@ class Panel(Reactive):
             if child.sizing_mode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
                 expand_width = True
             else:
+                width = child.width or child.min_width
+                if width:
+                    if isinstance(margin, tuple):
+                        if len(margin) == 2:
+                            width += margin[1]*2
+                        else:
+                            width += margin[1] + margin[3]
+                    else:
+                        width += margin*2
+                    widths.append(width)
                 all_expand = False
             if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
                 expand_height = True
@@ -196,9 +216,15 @@ class Panel(Reactive):
                 'layout issues in future versions of Panel.'
             )
         sizing_mode = new_mode or sizing_mode
+        extras = {}
         if sizing_mode is not None and (sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and not all_expand:
-            styles = dict(styles, **{'overflow-x': 'auto'})
-        return sizing_mode, styles
+            if len(widths) == len(children) and self._direction == 'vertical':
+                extras['min_width'] = max(widths)
+            elif len(widths) == len(children) and self._direction == 'horizontal':
+                extras['min_width'] = sum(widths)
+            else:
+                styles = dict(styles, **{'overflow-x': 'auto'})
+        return dict(sizing_mode=sizing_mode, **extras)
 
     #----------------------------------------------------------------
     # Public API
@@ -763,6 +789,8 @@ class Row(ListPanel):
 
     _bokeh_model: ClassVar[Type[Model]] = BkRow
 
+    _direction = 'horizontal'
+
 
 class Column(ListPanel):
     """
@@ -781,6 +809,8 @@ class Column(ListPanel):
     """
 
     _bokeh_model: ClassVar[Type[Model]] = BkColumn
+
+    _direction = 'vertical'
 
 
 class WidgetBox(ListPanel):
@@ -825,6 +855,10 @@ class WidgetBox(ListPanel):
     @property
     def _bokeh_model(self) -> Type[Model]: # type: ignore
         return BkRow if self.horizontal else BkColumn
+
+    @property
+    def _direction(self):
+        return 'vertical' if self.horizontal else 'vertical'
 
     @param.depends('disabled', 'objects', watch=True)
     def _disable_widgets(self) -> None:

@@ -354,9 +354,9 @@ class GridSpec(Panel):
             children.append((child, r, c, h, w))
         return children
 
-    def _compute_sizing_mode(self, children, sizing_mode, styles):
+    def _compute_sizing_mode(self, children, props):
         children = [child for (child, _, _, _, _) in children]
-        return super()._compute_sizing_mode(children, sizing_mode, styles)
+        return super()._compute_sizing_mode(children, props)
 
     @property
     def _xoffset(self):

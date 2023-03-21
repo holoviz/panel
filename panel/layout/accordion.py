@@ -54,6 +54,8 @@ class Accordion(NamedListPanel):
 
     _bokeh_model = BkColumn
 
+    _direction: ClassVar[str | None] = 'vertical'
+
     _rename: ClassVar[Mapping[str, str | None]] = {
         'active': None, 'active_header_background': None,
         'header_background': None, 'objects': 'children',
@@ -145,9 +147,9 @@ class Accordion(NamedListPanel):
         self._update_active()
         return new_models
 
-    def _compute_sizing_mode(self, children, sizing_mode, styles):
+    def _compute_sizing_mode(self, children, props):
         children = [subchild for child in children for subchild in child.children[1:]]
-        return super()._compute_sizing_mode(children, sizing_mode, styles)
+        return super()._compute_sizing_mode(children, props)
 
     def _cleanup(self, root: Model | None = None) -> None:
         for panel in self._panels.values():

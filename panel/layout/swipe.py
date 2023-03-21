@@ -36,6 +36,8 @@ class Swipe(ListLike, ReactiveHTML):
 
     _after = param.Parameter()
 
+    _direction: ClassVar[str | None] = 'vertical'
+
     _template = """
     <div id="container" class="swipe-container">
       <div id="before" class="outer">
