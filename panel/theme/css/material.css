@@ -316,7 +316,7 @@ select.bk-input:focus {
 }
 
 .bk-btn-group > button.bk-btn-default:active {
-  background-color: white;
+  background-color: var(--mdc-theme-background);
   background-size: 100%;
   transition: background 0s;
 }
@@ -429,11 +429,60 @@ progress:not([value])::before {
 /* Tabulator */
 
 .pnx-tabulator.tabulator {
-    background-color: var(--mdc-theme-surface);
+    background-color: var(--mdc-theme-background);
+    color: var(--mdc-theme-on-background);
 }
 
-.pnx-tabulator.tabulator .tabulator-headers, .pnx-tabulator.tabulator .tabulator-header .tabulator-col {
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table {
+    background-color: var(--mdc-theme-background);
+    color: var(--mdc-theme-on-background);
+}
+
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row {
+    background-color: var(--mdc-theme-background);
+}
+
+div .tabulator .tabulator-headers, div .tabulator .tabulator-header .tabulator-col {
+    background-color: var(--mdc-theme-background);
+    color: var(--mdc-theme-on-background);
+}
+
+.tabulator .tabulator-header .tabulator-header-contents {
+    background-color: var(--mdc-theme-background);
+}
+
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.tabulator-row-even {
     background-color: var(--mdc-theme-surface);
+    color: var(--mdc-theme-on-surface);
+}
+
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.tabulator-selectable:hover {
+    background-color: rgba(var(--panel-primary-rgb), 0.25);
+    color: var(--mdc-theme-on-primary);
+}
+
+.pnx-tabulator.tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
+    background-color: var(--mdc-theme-surface);
+    color: var(--mdc-theme-on-surface);
+}
+
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.tabulator-selected.tabulator-selectable:hover {
+    background-color: var(--mdc-theme-primary);
+    color: var(--mdc-theme-on-primary);
+}
+
+.pnx-tabulator.tabulator .tabulator-table .tabulator-row.tabulator-selected,
+.pnx-tabulator.tabulator .tabulator-table .tabulator-row.tabulator-selected.tabulator-row-even {
+    background-color: var(--mdc-theme-primary);
+    color: var(--mdc-theme-on-primary);
+}
+
+.tabulator-row .tabulator-cell.tabulator-editing {
+    border: 1px solid var(--mdc-theme-on-background);
+}
+
+.tabulator-row .tabulator-cell.tabulator-editing input {
+    color: var(--mdc-theme-on-background);
 }
 
 /* Quill editor */
