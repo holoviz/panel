@@ -60,7 +60,7 @@ class HTML(HTMLBasePane):
 
     >>> HTML(
     ...     "<h1>This is a HTML pane</h1>",
-    ...     style={'background-color': '#F6F6F6'}
+    ...     styles={'background-color': '#F6F6F6'}
     ... )
     """
 
@@ -272,7 +272,7 @@ class Str(HTMLBasePane):
 
     >>> Str(
     ...    'This raw string will not be formatted, except for the applied style.',
-    ...    style={'font-size': '12pt'}
+    ...    styles={'font-size': '12pt'}
     ... )
     """
 
