@@ -56,6 +56,8 @@ class Tabs(NamedListPanel):
 
     _bokeh_model: ClassVar[Type[Model]] = BkTabs
 
+    _direction: ClassVar[str | None] = 'vertical'
+
     _js_transforms: ClassVar[Mapping[str, str]] = {'tabs': """
     var ids = [];
     for (var t of value) {{ ids.push(t.id) }};
@@ -138,9 +140,9 @@ class Tabs(NamedListPanel):
                 self.param.trigger('objects')
                 return
 
-    def _compute_sizing_mode(self, children, sizing_mode, styles):
+    def _compute_sizing_mode(self, children, props):
         children = [child.child for child in children]
-        return super()._compute_sizing_mode(children, sizing_mode, styles)
+        return super()._compute_sizing_mode(children, props)
 
     #----------------------------------------------------------------
     # Model API
