@@ -48,7 +48,7 @@ class LaTeX(ModelPane):
     >>> pn.extension('katex')
     >>> LaTeX(
     ...     'The LaTeX pane supports two delimiters: $LaTeX$ and \(LaTeX\)',
-    ...     style={'font-size': '18pt'}, width=800
+    ...     styles={'font-size': '18pt'}, width=800
     ... )
     """
 
