@@ -359,7 +359,7 @@ def bundle_resources(roots, resources, notebook=False):
     hashes = js_resources.hashes if js_resources else {}
     return Bundle(
         css_files=css_files, css_raw=css_raw, hashes=hashes,
-        js_files=js_files, js_raw=js_raw
+        js_files=js_files, js_raw=js_raw,
         js_module_exports=resources.js_module_exports,
         js_modules=resources.js_modules, notebook=notebook,
     )
@@ -490,7 +490,7 @@ class Resources(BkResources):
 
         if config.design:
             design_name = config.design.__name__.lower()
-            for resource in config.design._resources.get('js_modules').values():
+            for resource in config.design._resources.get('js_modules', {}).values():
                 if not isurl(resource):
                     resource = f'{CDN_DIST}bundled/{design_name}/{resource}'
                 if resource not in modules:
@@ -512,7 +512,7 @@ class Resources(BkResources):
         modules = {}
         for model in Model.model_class_reverse_map.values():
             if hasattr(model, '__javascript_module_exports__'):
-                modules.update(dict(zip(model.__javascript_module_exports__, model.__javascript_module__)))
+                modules.update(dict(zip(model.__javascript_module_exports__, model.__javascript_modules__)))
         return modules
 
     @property
