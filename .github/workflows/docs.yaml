@@ -24,8 +24,8 @@ on:
 jobs:
   build_docs:
     name: Documentation
-    runs-on: 'ubuntu-latest'
-    timeout-minutes: 120
+    runs-on: 'macos-latest'
+    timeout-minutes: 180
     defaults:
       run:
         shell: bash -l {0}
@@ -54,12 +54,6 @@ jobs:
         run: |
           conda activate test-environment
           pip install --use-deprecated=legacy-resolver pyecharts
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall holoviews jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/holoviz/holoviews.git"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: bokeh sampledata
         run: |
           conda activate test-environment
