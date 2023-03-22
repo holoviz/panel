@@ -139,7 +139,7 @@ export class VizzuChartView extends HTMLBoxView {
       this._animating = false
     })
   }
-  
+
   override remove(): void {
     if (this.vizzu_view) {
       this.vizzu_view.detach()
