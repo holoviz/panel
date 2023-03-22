@@ -29,7 +29,7 @@ class VizzuChart(LayoutDOM):
     __javascript_module_exports__ = ['Vizzu']
 
     __javascript_modules__ = [
-        f"{config.npm_cdn}/vizzu@latest/dist/vizzu.min.js"
+        f"{config.npm_cdn}/vizzu@0.7.1/dist/vizzu.min.js"
     ]
 
     animation = Dict(String, Any)

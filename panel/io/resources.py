@@ -357,11 +357,11 @@ def bundle_resources(roots, resources, notebook=False):
         js_raw.append(ext)
 
     hashes = js_resources.hashes if js_resources else {}
-
     return Bundle(
-        js_files=js_files, js_raw=js_raw, css_files=css_files,
-        css_raw=css_raw, hashes=hashes, notebook=notebook,
-        js_modules=resources.js_modules, resources.js_module_exports
+        css_files=css_files, css_raw=css_raw, hashes=hashes,
+        js_files=js_files, js_raw=js_raw
+        js_module_exports=resources.js_module_exports,
+        js_modules=resources.js_modules, notebook=notebook,
     )
 
 

@@ -86,10 +86,11 @@ class Vizzu(ModelPane, SyncableData):
         if self.object is None:
             return {}, {}
         if isinstance(self.object, dict):
-            data = self.object
+            cols = data = dict(self.object)
         else:
-            data = {col: self.object[col].values for col in self.object.columns}
-        return data, {str(k): v for k, v in data.items()}
+            data = self.object
+            cols = ColumnDataSource.from_df(self.object)
+        return data, {str(k): v for k, v in cols.items()}
 
     def _get_columns(self):
         columns = []
