@@ -118,7 +118,7 @@ install_requires = [
 
 _recommended = [
     'jupyterlab',
-    'holoviews >1.14.1',
+    'holoviews >=1.16.0a2',
     'matplotlib',
     'pillow',
     'plotly'
@@ -142,7 +142,7 @@ _tests = [
     'twine',
     'pandas >=1.3',
     'ipython >=7.0',
-    'holoviews',
+    'holoviews >=1.16.0a2',
     'diskcache',
     'markdown-it-py',
     'ipyvuetify',
