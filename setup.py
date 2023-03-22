@@ -160,6 +160,7 @@ _ui = [
 
 extras_require = {
     'examples': [
+        'holoviews >=1.16.0a2',
         'hvplot',
         'plotly >=4.0',
         'altair',
@@ -168,7 +169,7 @@ extras_require = {
         'vtk ==9.0.1',
         'scikit-learn',
         'datashader',
-        'jupyter_bokeh >=3.0.2',
+        'jupyter_bokeh >=3.0.7',
         'django <4',
         'channels',
         'pyvista<0.33',
