@@ -6,7 +6,6 @@
 :::{grid-item-card} {octicon}`bug;2.5em;sd-mr-1 sd-animate-grow50` Test functionality and performance
 :link: pytest
 :link-type: doc
-:class-title: sd-text-center
 
 How to add unit and performance testing with Pytest.
 :::
@@ -14,7 +13,6 @@ How to add unit and performance testing with Pytest.
 :::{grid-item-card} {octicon}`eye;2.5em;sd-mr-1 sd-animate-grow50` Test UI rendering
 :link: uitests
 :link-type: doc
-:class-title: sd-text-center
 
 This guide addresses how to test the rendered UI with Pytest and Playwright.
 :::
@@ -22,7 +20,6 @@ This guide addresses how to test the rendered UI with Pytest and Playwright.
 :::{grid-item-card} {octicon}`people;2.5em;sd-mr-1 sd-animate-grow50` Test operating capacity
 :link: loadtests
 :link-type: doc
-:class-title: sd-text-center
 
 How to test performance by simulating multiple users accessing an app concurrently.
 :::

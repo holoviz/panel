@@ -8,7 +8,6 @@ Panel can be used to make a first pass at an app or dashboard in minutes, while 
 :::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Reactive API
 :link: reactive
 :link-type: doc
-:class-title: sd-text-center
 
 Linking functions or methods to widgets using ``pn.bind`` or the equivalent ``pn.depends`` decorator.
 :::
@@ -16,7 +15,6 @@ Linking functions or methods to widgets using ``pn.bind`` or the equivalent ``pn
 :::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1 sd-animate-grow50` Interact functions
 :link: interact
 :link-type: doc
-:class-title: sd-text-center
 
 Auto-generates a full UI (including widgets) given a function.
 :::
@@ -24,7 +22,6 @@ Auto-generates a full UI (including widgets) given a function.
 :::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1 sd-animate-grow50` Param API
 :link: parameterized
 :link-type: doc
-:class-title: sd-text-center
 
 Declare parameters and their ranges in `Parameterized` classes, then get GUIs (and value checking!) for free.
 :::
@@ -33,7 +30,6 @@ Declare parameters and their ranges in `Parameterized` classes, then get GUIs (a
 :::{grid-item-card} {octicon}`link;2.5em;sd-mr-1 sd-animate-grow50` Callbacks API
 :link: callbacks
 :link-type: doc
-:class-title: sd-text-center
 
 Generate a UI by manually declaring callbacks that update panels or panes.
 :::
