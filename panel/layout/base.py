@@ -168,12 +168,20 @@ class Panel(Reactive):
         return model
 
     def _compute_sizing_mode(self, children, props):
-        from ..config import config
-        sizing_mode = props.get('sizing_mode', self.sizing_mode)
-        styles = props.get('styles', self.styles)
+        """
+        Handles inference of correct layout sizing mode by inspecting
+        the children and adapting to their layout properties. This
+        aims to provide a layer of backward compatibility for the
+        layout behavior before v1.0 and provide general usability
+        improvements.
+        """
         margin = props.get('margin', self.margin)
-        if sizing_mode is not None and (not config.layout_compatibility or sizing_mode == 'fixed'):
+        sizing_mode = props.get('sizing_mode', self.sizing_mode)
+        if sizing_mode == 'fixed':
             return {}
+
+        # Iterate over children and determine responsiveness along
+        # each axis, scaling and the widths of each component.
         widths = []
         all_expand, expand_width, expand_height, scale = True, False, False, False
         for child in children:
@@ -195,36 +203,23 @@ class Panel(Reactive):
                 all_expand = False
             if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
                 expand_height = True
-        new_mode = None
-        mode = 'scale' if scale else 'stretch'
-        extra = ''
-        if expand_width and expand_height and not self.width and not self.height:
-            new_mode = f'{mode}_both'
-        elif expand_width and not self.width:
-            new_mode = f'{mode}_width'
-            extra = ' or a fixed width '
-        elif expand_height and not self.height:
-            new_mode = f'{mode}_height'
-            extra = ' or a fixed height '
 
-        if new_mode and config.layout_compatibility and new_mode != sizing_mode:
-            self.param.warning(
-                f'Layout compatibility mode determined that {type(self).__name__} '
-                f'sizing_mode was incorrectly set to {sizing_mode!r} but '
-                f'the contents require {new_mode!r}{extra} to avoid collapsing. '
-                'Update the sizing_mode to hide this warning and prevent '
-                'layout issues in future versions of Panel.'
-            )
-        sizing_mode = new_mode or sizing_mode
-        extras = {}
+        # Infer new sizing mode based on children
+        mode = 'scale' if scale else 'stretch'
+        if expand_width and expand_height and not self.width and not self.height:
+            sizing_mode = f'{mode}_both'
+        elif expand_width and not self.width:
+            sizing_mode = f'{mode}_width'
+        elif expand_height and not self.height:
+            sizing_mode = f'{mode}_height'
+
+        properties = {'sizing_mode': sizing_mode}
         if sizing_mode is not None and (sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and not all_expand:
             if len(widths) == len(children) and self._direction == 'vertical':
-                extras['min_width'] = max(widths)
+                properties['min_width'] = max(widths)
             elif len(widths) == len(children) and self._direction == 'horizontal':
-                extras['min_width'] = sum(widths)
-            else:
-                styles = dict(styles, **{'overflow-x': 'auto'})
-        return dict(sizing_mode=sizing_mode, **extras)
+                properties['min_width'] = sum(widths)
+        return properties
 
     #----------------------------------------------------------------
     # Public API
