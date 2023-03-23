@@ -333,8 +333,12 @@ class HoloViews(PaneBase):
         self._syncing_props = True
         try:
             self.param.update({k: v for k, v in params.items() if k not in self._overrides})
+            if backend != 'bokeh':
+                return
+            plot_props = plot.state.properties()
             props = {
                 o: getattr(self, o) for o in self._overrides
+                if o in plot_props
             }
             if props:
                 plot.state.update(**props)

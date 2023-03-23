@@ -8,7 +8,6 @@ When trying to understand the performance profiles or track down issues with an 
 :::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Enable the admin panel
 :link: admin
 :link-type: doc
-:class-title: sd-text-center
 
 How to enable the admin Panel to begin monitoring resource usage and user behavior.
 :::
@@ -16,7 +15,6 @@ How to enable the admin Panel to begin monitoring resource usage and user behavi
 :::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` Profile your application
 :link: profile
 :link-type: doc
-:class-title: sd-text-center
 
 How to enable profilers like snakeviz or memray to track down bottlenecks in your application.
 :::
@@ -24,7 +22,6 @@ How to enable profilers like snakeviz or memray to track down bottlenecks in you
 :::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1` View application logs
 :link: logs
 :link-type: doc
-:class-title: sd-text-center
 
 How to view application logs in the admin dashboard.
 :::
