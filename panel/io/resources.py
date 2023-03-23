@@ -25,6 +25,7 @@ from bokeh.embed.bundle import (
     CSS_RESOURCES as BkCSS_RESOURCES, Bundle as BkBundle, _bundle_extensions,
     _use_mathjax, bundle_models, extension_dirs,
 )
+from bokeh.model import Model
 from bokeh.models import ImportedStyleSheet
 from bokeh.resources import Resources as BkResources
 from bokeh.settings import settings as _settings
@@ -356,11 +357,11 @@ def bundle_resources(roots, resources, notebook=False):
         js_raw.append(ext)
 
     hashes = js_resources.hashes if js_resources else {}
-
     return Bundle(
-        js_files=js_files, js_raw=js_raw, css_files=css_files,
-        css_raw=css_raw, hashes=hashes, notebook=notebook,
-        js_modules=resources.js_modules
+        css_files=css_files, css_raw=css_raw, hashes=hashes,
+        js_files=js_files, js_raw=js_raw,
+        js_module_exports=resources.js_module_exports,
+        js_modules=resources.js_modules, notebook=notebook,
     )
 
 
@@ -489,7 +490,7 @@ class Resources(BkResources):
 
         if config.design:
             design_name = config.design.__name__.lower()
-            for resource in config.design._resources.get('js_modules').values():
+            for resource in config.design._resources.get('js_modules', {}).values():
                 if not isurl(resource):
                     resource = f'{CDN_DIST}bundled/{design_name}/{resource}'
                 if resource not in modules:
@@ -505,6 +506,14 @@ class Resources(BkResources):
                     modules.append(js_module)
 
         return self.adjust_paths(modules)
+
+    @property
+    def js_module_exports(self):
+        modules = {}
+        for model in Model.model_class_reverse_map.values():
+            if hasattr(model, '__javascript_module_exports__'):
+                modules.update(dict(zip(model.__javascript_module_exports__, model.__javascript_modules__)))
+        return modules
 
     @property
     def css_files(self):
@@ -526,7 +535,8 @@ class Resources(BkResources):
     def render_js(self):
         return JS_RESOURCES.render(
             js_raw=self.js_raw, js_files=self.js_files,
-            js_modules=self.js_modules, hashes=self.hashes
+            js_modules=self.js_modules, hashes=self.hashes,
+            js_module_exports=self.js_module_exports
         )
 
 
@@ -534,6 +544,7 @@ class Bundle(BkBundle):
 
     def __init__(self, notebook=False, **kwargs):
         self.js_modules = kwargs.pop("js_modules", [])
+        self.js_module_exports = kwargs.pop("js_module_exports", {})
         self.notebook = notebook
         super().__init__(**kwargs)
 
@@ -559,5 +570,6 @@ class Bundle(BkBundle):
             js_raw=self.js_raw,
             js_files=self.js_files,
             js_modules=self.js_modules,
+            js_module_exports=self.js_module_exports,
             hashes=self.hashes
         )

@@ -557,7 +557,8 @@ class panel_extension(_pyviz_extension):
         'terminal': 'panel.models.terminal',
         'tabulator': 'panel.models.tabulator',
         'texteditor': 'panel.models.quill',
-        'jsoneditor': 'panel.models.jsoneditor'
+        'jsoneditor': 'panel.models.jsoneditor',
+        'vizzu': 'panel.models.vizzu'
     }
 
     # Check whether these are loaded before rendering (if any item
