@@ -14,7 +14,7 @@ WIP
 
 In many cases it is useful to define `on_session_destroyed` callbacks to perform any custom cleanup that is required, e.g,  dispose  a database engine, log out a user etc.
 
-These callbacks should have the signature
+The callbacks must have the signature
 
 ```python
 def callback(session_context):
