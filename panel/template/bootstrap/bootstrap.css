@@ -83,6 +83,7 @@ a.navbar-brand {
 
 #header-items {
     display: block;
+    flex-grow: 1;
     margin-left: 15px;
     overflow: hidden;
     white-space: nowrap;
