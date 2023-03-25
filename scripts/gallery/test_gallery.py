@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 
 from gallery_utils import get_urls
-from playwright.sync_api import Page, ConsoleMessage
+from playwright.sync_api import ConsoleMessage, Page
 
 INDEX_URL = "https://panel-gallery-dev.pyviz.demo.anaconda.com/"
 RESPONSE_TIMEOUT = 10000  # ms
@@ -86,7 +86,6 @@ def test_page(page_url: str, page: Page, screenshot: Path):
     ), "Page is empty. No divs found in body"
 
     # One day
-    # - Test that there are no errors in the browser console
     # - Test that the page loads fast enough
     # - Test that each page is wrapped in a nice looking template
     # - Test that the page looks as expected. For example by comparing to reference screenshot.
