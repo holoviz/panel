@@ -3,7 +3,7 @@
 - Retrieving the list of pages from the index page
 - Loading each page and running various tests
 
-We use Playright to run these tests
+We use Playwright to run these tests
 
 When the tests have run there will be screenshots in the 'screenshots' folder. Its very
 quick to skim through these to identify obvious issues.
