@@ -10,7 +10,6 @@ quick to skim through these to identify obvious issues.
 
 Usefull commands
 
-- Run: pytest scripts/gallery/test_gallery.py
 - Run headed: pytest --headed scripts/gallery/test_gallery.py
 """
 from pathlib import Path
@@ -56,7 +55,6 @@ def test_page(page_url: str, page: Page, screenshot: Path):
     """We load the page and run a lot of tests"""
     # When
     page.goto(page_url, timeout=PAGE_TIMEOUT)
-    # Should maybe be page.expect_event ?
     page.wait_for_event(
         event="console", predicate=bokeh_items_rendered
     ), "Page is empty. Never got 'Bokeh items rendered' message in console"
@@ -66,8 +64,10 @@ def test_page(page_url: str, page: Page, screenshot: Path):
         page.locator("body").locator("div").all()
     ), "Page is empty. No divs found in body"
 
-    # Some day
-    # 1. Test that there are no errors in the browser console
-    # 2. Test that the page loads fast enough
-    # 3. Test that the page looks as expected. For example by comparing to reference screenshot.
-    # 4. Test that the page works as expected when you interact with it
+    # One day
+    # - Test that there are no errors in the browser console
+    # - Test that the page loads fast enough
+    # - Test that each page is wrapped in a nice looking template
+    # - Test that the page looks as expected. For example by comparing to reference screenshot.
+    # - Test that the page works as expected when you interact with it
+    # - Test that the page works for different devices, browsers and screen sizes
