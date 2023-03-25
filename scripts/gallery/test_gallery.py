@@ -17,13 +17,18 @@ from pathlib import Path
 import pytest
 
 from gallery_utils import get_urls
-from playwright.sync_api import Page
+from playwright.sync_api import Page, ConsoleMessage
 
 INDEX_URL = "https://panel-gallery-dev.pyviz.demo.anaconda.com/"
-PAGE_TIMEOUT = 10000  # ms
+RESPONSE_TIMEOUT = 10000  # ms
+RENDER_TIMEOUT = 10000  # ms
 PAGE_URLS = get_urls(INDEX_URL)
 
-# PAGE_URLS = ["https://panel-gallery-dev.pyviz.demo.anaconda.com/altair_choropleth"]
+# PAGE_URLS = ["https://panel-gallery-dev.pyviz.demo.anaconda.com/deck_gl_global_power_plants"]
+
+CONSOLE_ERRORS_TO_IGNORE = [
+    "loaders.gl: The __VERSION__ variable is not injected using babel plugin. Latest unstable workers would be fetched from the CDN."
+]
 
 
 @pytest.fixture(params=PAGE_URLS)
@@ -43,21 +48,37 @@ def screenshots():
 @pytest.fixture
 def screenshot(page_url: str, screenshots: Path):
     """Returns the path where the specific screenshot should be saved"""
-    return screenshots / (page_url.split("/")[-1] + ".png")
+    path = screenshots / (page_url.split("/")[-1] + ".png")
+    path.unlink(missing_ok=True)
+    return path
 
 
-def bokeh_items_rendered(message) -> bool:
+def bokeh_document_idle(message: ConsoleMessage) -> bool:
     """Used to wait for the page to finish rendering"""
-    return message.text == "Bokeh items were rendered successfully"
+    return message.text.startswith("[bokeh] document idle")
+
+
+def handle_console_error(message: ConsoleMessage) -> bool:
+    if message.type == "error" and not message.text in CONSOLE_ERRORS_TO_IGNORE:
+        raise ValueError(f"Console error: {message.text}")
+    return True
+
+
+def handle_page_error(error):
+    raise ValueError(f"Page error: {error.text}")
 
 
 def test_page(page_url: str, page: Page, screenshot: Path):
     """We load the page and run a lot of tests"""
+    # Given
+    page.on("console", handle_console_error)
+    # For some unknown reason this does not catch the "Uncaught Error: [object Undefined] is not serializable" in https://panel-gallery-dev.pyviz.demo.anaconda.com/deck_gl_global_power_plants
+    page.on("pageerror", handle_page_error)
     # When
-    page.goto(page_url, timeout=PAGE_TIMEOUT)
+    page.goto(page_url, timeout=RESPONSE_TIMEOUT)
     page.wait_for_event(
-        event="console", predicate=bokeh_items_rendered
-    ), "Page is empty. Never got 'Bokeh items rendered' message in console"
+        event="console", predicate=bokeh_document_idle, timeout=RENDER_TIMEOUT
+    ), "Page is empty. Never got '[bokeh] document idle...' message in console"
     page.screenshot(path=screenshot, full_page=True)
     # Then
     assert (
