@@ -274,7 +274,6 @@ class _config(_base_config):
 
     @param.depends('_nthreads', watch=True, on_init=True)
     def _set_thread_pool(self):
-        from .io.state import state
         if self.nthreads is None:
             if state._thread_pool is not None:
                 state._thread_pool.shutdown(wait=False)
@@ -288,7 +287,6 @@ class _config(_base_config):
     @param.depends('notifications', watch=True)
     def _enable_notifications(self):
         from .io.notifications import NotificationArea
-        from .io.state import state
         from .reactive import ReactiveHTMLMetaclass
         if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
             ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
@@ -485,7 +483,6 @@ class _config(_base_config):
 
     @property
     def theme(self):
-        from .io.state import state
         curdoc = state.curdoc
         if curdoc and 'theme' in self._session_config.get(curdoc, {}):
             return self._session_config[curdoc]['theme']
@@ -579,6 +576,8 @@ class panel_extension(_pyviz_extension):
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
         }
+        if state.curdoc and state.curdoc not in state._extensions_:
+            state._extensions_[state.curdoc] = []
         for arg in args:
             if arg in self._imports:
                 try:
@@ -589,7 +588,13 @@ class panel_extension(_pyviz_extension):
                     pass
                 __import__(self._imports[arg])
                 self._loaded_extensions.append(arg)
+
+                if state.curdoc:
+                    state._extensions_[state.curdoc].append(arg)
+
             elif arg in reactive_exts:
+                if state.curdoc:
+                    state._loaded_extensions[state.curdoc].append(arg)
                 ReactiveHTMLMetaclass._loaded_extensions.add(arg)
             else:
                 self.param.warning('%s extension not recognized and '

@@ -1645,7 +1645,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         """
         return (
             cls._extension_name is None or
-            cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions
+            (cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions and
+             (state._extensions is None or (cls._extension_name in state._extensions)))
         )
 
     def _cleanup(self, root: Model | None = None) -> None:
