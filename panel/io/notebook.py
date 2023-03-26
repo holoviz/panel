@@ -151,7 +151,7 @@ def render_template(
     return ({'text/html': html, EXEC_MIME: ''}, {EXEC_MIME: {'id': ref}})
 
 def render_model(
-    model: 'Model', comm: Optional['Comm'] = None
+    model: 'Model', comm: Optional['Comm'] = None, resources: str = 'cdn'
 ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
     if not isinstance(model, Model):
         raise ValueError("notebook_content expects a single Model instance")
@@ -159,7 +159,7 @@ def render_model(
 
     target = model.ref['id']
 
-    if not state._is_pyodide:
+    if not state._is_pyodide and resources == 'server':
         # ALERT: Replace with better approach before Bokeh 3.x compatible release
         dist_url = '/panel-preview/static/extensions/panel/'
         patch_model_css(model, dist_url=dist_url)
@@ -187,8 +187,10 @@ def render_model(
 
 
 def render_mimebundle(
-    model: 'Model', doc: 'Document', comm: 'Comm', manager: Optional['CommManager'] = None,
-    location: Optional['Location'] = None
+    model: 'Model', doc: 'Document', comm: 'Comm',
+    manager: Optional['CommManager'] = None,
+    location: Optional['Location'] = None,
+    resources: str = 'cdn'
 ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
     """
     Displays bokeh output inside a notebook using the PyViz display
@@ -202,7 +204,7 @@ def render_mimebundle(
     if location is not None:
         loc = location._get_model(doc, model, model, comm)
         doc.add_root(loc)
-    return render_model(model, comm)
+    return render_model(model, comm, resources)
 
 
 def mimebundle_to_html(bundle: Dict[str, Any]) -> str:
