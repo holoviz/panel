@@ -297,10 +297,10 @@ def eval_function(function):
 
 
 def lazy_load(module, model, notebook=False, root=None, ext=None):
-    from ..config import config
+    from ..config import panel_extension as extension
     from ..io.state import state
     external_modules = {
-        module: ext for ext, module in config._imports.items()
+        module: ext for ext, module in extension._imports.items()
     }
     ext = ext or module.split('.')[-1]
     loaded = not state._extensions or external_modules[module] in state._extensions

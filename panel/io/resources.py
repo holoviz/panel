@@ -34,7 +34,7 @@ from jinja2.environment import Environment
 from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
-from ..config import config
+from ..config import config, panel_extension as extension
 from ..util import isurl, url_path
 from .state import state
 
@@ -395,7 +395,7 @@ class Resources(BkResources):
 
         if state._extensions is not None:
             external_modules = {
-                module: ext for ext, module in config._imports.items()
+                module: ext for ext, module in extension._imports.items()
             }
         else:
             external_modules = None
