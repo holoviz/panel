@@ -196,6 +196,9 @@ class _state(param.Parameterized):
     # Style cache
     _stylesheets: ClassVar[WeakKeyDictionary[Document, Dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
 
+    # Loaded extensions
+    _extensions_: ClassVar[WeakKeyDictionary[Document, List[str]]] = WeakKeyDictionary()
+
     # Locks
     _cache_locks: ClassVar[Dict[str, threading.Lock]] = {'main': threading.Lock()}
 
@@ -216,6 +219,13 @@ class _state(param.Parameterized):
         else:
             from tornado.ioloop import IOLoop
             return IOLoop.current()
+
+    @property
+    def _extensions(self):
+        doc = self.curdoc
+        if not (doc and doc.session_context and doc in self._extensions_):
+            return
+        return self._extensions_[doc]
 
     @property
     def _current_thread(self) -> str | None:

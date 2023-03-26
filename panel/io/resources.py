@@ -18,6 +18,7 @@ from base64 import b64encode
 from collections import OrderedDict
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Literal
 
 import param
 
@@ -33,11 +34,13 @@ from jinja2.environment import Environment
 from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
-from ..config import config
+from ..config import config, panel_extension as extension
 from ..util import isurl, url_path
 from .state import state
 
 logger = logging.getLogger(__name__)
+
+ResourceAttr = Literal["__css__", "__javascript__"]
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
@@ -385,6 +388,33 @@ class Resources(BkResources):
             components=bkr._components, base_dir=bkr.base_dir,
             root_dir=bkr.root_dir, absolute=absolute, **kwargs
         )
+
+    def _collect_external_resources(self, resource_attr: ResourceAttr) -> list[str]:
+        """ Collect external resources set on resource_attr attribute of all models."""
+        external_resources: list[str] = []
+
+        if state._extensions is not None:
+            external_modules = {
+                module: ext for ext, module in extension._imports.items()
+            }
+        else:
+            external_modules = None
+
+        for _, cls in sorted(Model.model_class_reverse_map.items(), key=lambda arg: arg[0]):
+            if external_modules is not None and cls.__module__ in external_modules:
+                if external_modules[cls.__module__] not in state._extensions:
+                    continue
+            external: list[str] | str | None = getattr(cls, resource_attr, None)
+
+            if isinstance(external, str):
+                if external not in external_resources:
+                    external_resources.append(external)
+            elif isinstance(external, list):
+                for e in external:
+                    if e not in external_resources:
+                        external_resources.append(e)
+
+        return external_resources
 
     def extra_resources(self, resources, resource_type):
         """

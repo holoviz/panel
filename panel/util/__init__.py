@@ -297,14 +297,20 @@ def eval_function(function):
 
 
 def lazy_load(module, model, notebook=False, root=None, ext=None):
-    if module in sys.modules:
+    from ..config import panel_extension as extension
+    from ..io.state import state
+    external_modules = {
+        module: ext for ext, module in extension._imports.items()
+    }
+    ext = ext or module.split('.')[-1]
+    loaded = not state._extensions or external_modules[module] in state._extensions
+    if module in sys.modules and loaded:
         model_cls = getattr(sys.modules[module], model)
         if f'{model_cls.__module__}.{model}' not in Model.model_class_reverse_map:
             _default_resolver.add(model_cls)
 
         return model_cls
 
-    ext = ext or module.split('.')[-1]
     if notebook:
         param.main.param.warning(
             f'{model} was not imported on instantiation and may not '
@@ -312,15 +318,20 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
             'ensure you load it as part of the extension using:'
             f'\n\npn.extension(\'{ext}\')\n'
         )
-    elif root is not None:
-        from ..io.state import state
-        if root.ref['id'] in state._views:
-            param.main.param.warning(
-                f'{model} was not imported on instantiation may not '
-                'render in the served application. Ensure you add the '
-                'following to the top of your application:'
-                f'\n\npn.extension(\'{ext}\')\n'
-            )
+    elif not loaded:
+        param.main.param.warning(
+            f'pn.extension was initialized but {ext!r} extension was not'
+            'loaded. In order for the required resources to be initialized '
+            'ensure the extension using is loaded with the extension:'
+            f'\n\npn.extension({ext!r})\n'
+        )
+    elif root is not None and root.ref['id'] in state._views:
+        param.main.param.warning(
+            f'{model} was not imported on instantiation may not '
+            'render in the served application. Ensure you add the '
+            'following to the top of your application:'
+            f'\n\npn.extension(\'{ext}\')\n'
+        )
     return getattr(import_module(module), model)
 
 
