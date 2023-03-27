@@ -594,7 +594,7 @@ class panel_extension(_pyviz_extension):
 
             elif arg in reactive_exts:
                 if state.curdoc:
-                    state._loaded_extensions[state.curdoc].append(arg)
+                    state._extensions.append(arg)
                 ReactiveHTMLMetaclass._loaded_extensions.add(arg)
             else:
                 self.param.warning('%s extension not recognized and '
