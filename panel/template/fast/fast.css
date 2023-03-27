@@ -164,6 +164,7 @@ img.app-logo {
 }
 
 #sidebar.hidden {
+    min-width: 0px;
     width: 0px;
     overflow: hidden;
     margin: 0px;

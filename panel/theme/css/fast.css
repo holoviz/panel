@@ -420,9 +420,7 @@ input[type=file]:active {
     border: unset;
     border-radius: calc(var(--control-corner-radius) * 1px);
     line-height: var(--type-ramp-base-line-height);
-    height: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px);
     min-width: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px);
-    padding: 0 calc((10 + (var(--design-unit) * 2 * var(--density))) * 1px);
 }
 
 .bk-btn.bk-btn-default {
