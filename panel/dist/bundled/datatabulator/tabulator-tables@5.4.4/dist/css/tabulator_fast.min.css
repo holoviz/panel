@@ -1,7 +1,7 @@
 .tabulator {
   position: relative;
   border: 1px solid var(--neutral-divider-rest);
-  background-color: var(--background-color);
+  background-color: var(--fill-color);
   font-size: 14px;
   text-align: left;
   overflow: hidden;
@@ -20,8 +20,8 @@
     position: relative;
     box-sizing: border-box;
     width: 100%;
-    border-bottom: 1px solid var(--neutral-divider-rest);
-    background-color: var(--background-color);
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+    background-color: var(--fill-color);
     color: var(--neutral-foreground-rest);
     font-weight: bold;
     white-space: nowrap;
@@ -43,15 +43,15 @@
       box-sizing: border-box;
       flex-direction: column;
       justify-content: flex-start;
-      border-right: 1px solid var(--accent-fill-rest);
-      background: var(--background-color);
+      border-right: 1px solid var(--neutral-stroke-divider-rest);
+      background: var(--fill-color);
       text-align: left;
       vertical-align: bottom;
       overflow: hidden; }
       .tabulator .tabulator-header .tabulator-col.tabulator-moving {
         position: absolute;
         border: 1px solid var(--neutral-divider-rest);
-        background: var(--background-color);
+        background: var(--fill-color);
         pointer-events: none; }
       .tabulator .tabulator-header .tabulator-col .tabulator-col-content {
         box-sizing: border-box;
@@ -118,7 +118,7 @@
         padding-right: 25px; }
       .tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
         cursor: pointer;
-        background-color: var(--background-color); }
+        background-color: var(--fill-color); }
       .tabulator .tabulator-header .tabulator-col.tabulator-sortable[aria-sort="none"] .tabulator-col-content .tabulator-col-sorter {
         color: #bbb; }
         .tabulator .tabulator-header .tabulator-col.tabulator-sortable[aria-sort="none"] .tabulator-col-content .tabulator-col-sorter.tabulator-col-sorter-element .tabulator-arrow:hover {
@@ -174,11 +174,11 @@
         border-left: 2px solid var(--neutral-divider-rest); }
     .tabulator .tabulator-header .tabulator-calcs-holder {
       box-sizing: border-box;
-      background: var(--background-color) !important;
+      background: var(--fill-color) !important;
       border-top: 1px solid var(--neutral-divider-rest);
       border-bottom: 1px solid var(--accent-fill-rest); }
       .tabulator .tabulator-header .tabulator-calcs-holder .tabulator-row {
-        background: var(--background-color) !important; }
+        background: var(--fill-color) !important; }
         .tabulator .tabulator-header .tabulator-calcs-holder .tabulator-row .tabulator-col-resize-handle {
           display: none; }
     .tabulator .tabulator-header .tabulator-frozen-rows-holder:empty {
@@ -211,7 +211,7 @@
     .tabulator .tabulator-tableholder .tabulator-table {
       position: relative;
       display: inline-block;
-      background-color: var(--background-color);
+      background-color: var(--fill-color);
       white-space: nowrap;
       overflow: visible;
       color: var(--neutral-foreground-rest); }
@@ -224,7 +224,7 @@
           border-top: 2px solid var(--neutral-divider-rest); }
   .tabulator .tabulator-footer {
     border-top: 1px solid var(--neutral-divider-rest);
-    background-color: var(--background-color);
+    background-color: var(--fill-color);
     color: var(--neutral-foreground-rest);
     font-weight: bold;
     white-space: nowrap;
@@ -245,13 +245,13 @@
       box-sizing: border-box;
       width: 100%;
       text-align: left;
-      background: var(--background-color) !important;
+      background: var(--fill-color) !important;
       border-bottom: 1px solid var(--neutral-divider-rest);
       border-top: 1px solid var(--neutral-divider-rest);
       overflow: hidden; }
       .tabulator .tabulator-footer .tabulator-calcs-holder .tabulator-row {
         display: inline-block;
-        background: var(--background-color) !important; }
+        background: var(--fill-color) !important; }
         .tabulator .tabulator-footer .tabulator-calcs-holder .tabulator-row .tabulator-col-resize-handle {
           display: none; }
       .tabulator .tabulator-footer .tabulator-calcs-holder:only-child {
@@ -334,7 +334,7 @@
   position: relative;
   box-sizing: border-box;
   min-height: 22px;
-  background-color: var(--background-color); }
+  background-color: var(--fill-color); }
   .tabulator-row.tabulator-row-even {
     background-color: var(--neutral-fill-rest); }
   .tabulator-row.tabulator-selectable:hover {
@@ -405,6 +405,7 @@
       .tabulator-row .tabulator-cell.tabulator-editing input, .tabulator-row .tabulator-cell.tabulator-editing select {
         border: 1px;
         background: transparent;
+	color: var(--neutral-foreground-rest);
         outline: none; }
     .tabulator-row .tabulator-cell.tabulator-validation-fail {
       border: 1px solid #dd0000; }
@@ -492,7 +493,7 @@
       width: 15px;
       border-radius: 20px;
       background: #666;
-      color: var(--background-color);
+      color: var(--fill-color);
       font-weight: bold;
       font-size: 1.1em; }
       .tabulator-row .tabulator-cell .tabulator-responsive-collapse-toggle:hover {
@@ -503,7 +504,7 @@
       .tabulator-row .tabulator-cell .tabulator-responsive-collapse-toggle.open .tabulator-responsive-collapse-toggle-open {
         display: none; }
       .tabulator-row .tabulator-cell .tabulator-responsive-collapse-toggle svg {
-        stroke: var(--background-color); }
+        stroke: var(--fill-color); }
       .tabulator-row .tabulator-cell .tabulator-responsive-collapse-toggle .tabulator-responsive-collapse-toggle-close {
         display: none; }
     .tabulator-row .tabulator-cell .tabulator-traffic-light {
@@ -560,7 +561,7 @@
   position: absolute;
   display: inline-block;
   box-sizing: border-box;
-  background: var(--background-color);
+  background: var(--fill-color);
   border: 1px solid var(--neutral-divider-rest);
   box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.2);
   font-size: 14px;
@@ -619,15 +620,15 @@
     color: var(--neutral-foreground-rest);
     outline: none; }
     .tabulator-edit-list .tabulator-edit-list-item.active {
-      color: var(--background-color);
+      color: var(--fill-color);
       background: #999; }
       .tabulator-edit-list .tabulator-edit-list-item.active.focused {
-        outline: 1px solid rgba(var(--background-color), 0.5); }
+        outline: 1px solid rgba(var(--fill-color), 0.5); }
     .tabulator-edit-list .tabulator-edit-list-item.focused {
       outline: 1px solid #999; }
     .tabulator-edit-list .tabulator-edit-list-item:hover {
       cursor: pointer;
-      color: var(--background-color);
+      color: var(--fill-color);
       background: #999; }
   .tabulator-edit-list .tabulator-edit-list-placeholder {
     padding: 4px;
@@ -803,9 +804,9 @@ body.tabulator-print-fullscreen-hide > *:not(.tabulator-print-fullscreen) {
         background: var(--neutral-foreground-rest); }
 
 .tabulator {
-  background-color: var(--background-color); }
+  background-color: var(--fill-color); }
   .tabulator .tabulator-header .tabulator-col {
-    background-color: var(--background-color); }
+    background-color: var(--fill-color); }
     .tabulator .tabulator-header .tabulator-col .tabulator-col-content .tabulator-col-title .tabulator-title-editor {
       color: #fff; }
     .tabulator .tabulator-header .tabulator-col .tabulator-header-filter input, .tabulator .tabulator-header .tabulator-col .tabulator-header-filter select {
@@ -813,13 +814,13 @@ body.tabulator-print-fullscreen-hide > *:not(.tabulator-print-fullscreen) {
       background: #444;
       color: #fff; }
   .tabulator .tabulator-header .tabulator-calcs-holder {
-    background: var(--background-color) !important; }
+    background: var(--fill-color) !important; }
     .tabulator .tabulator-header .tabulator-calcs-holder .tabulator-row {
-      background: var(--background-color) !important; }
+      background: var(--fill-color) !important; }
   .tabulator .tabulator-footer .tabulator-calcs-holder {
-    background: var(--background-color) !important; }
+    background: var(--fill-color) !important; }
     .tabulator .tabulator-footer .tabulator-calcs-holder .tabulator-row {
-      background: var(--background-color) !important; }
+      background: var(--fill-color) !important; }
   .tabulator .tabulator-footer .tabulator-paginator label {
     color: #fff; }
   .tabulator .tabulator-footer .tabulator-page-counter {
@@ -842,7 +843,7 @@ body.tabulator-print-fullscreen-hide > *:not(.tabulator-print-fullscreen) {
 .tabulator-edit-select-list {
   background: var(--neutral-foreground-rest); }
   .tabulator-edit-select-list .tabulator-edit-select-list-item {
-    color: var(--background-color); }
+    color: var(--fill-color); }
     .tabulator-edit-select-list .tabulator-edit-select-list-item.active {
       color: #999;
       background: var(--neutral-fill-rest); }
@@ -852,7 +853,7 @@ body.tabulator-print-fullscreen-hide > *:not(.tabulator-print-fullscreen) {
       outline: 1px solid var(--neutral-fill-rest); }
     .tabulator-edit-select-list .tabulator-edit-select-list-item:hover {
       color: #999;
-      background: var(--background-color); }
+      background: var(--fill-color); }
 
 .tabulator-print-table .tabulator-print-table-group {
   color: #333; }
