@@ -216,7 +216,7 @@ export class SpeechToText extends HTMLBox {
       start: [ Boolean, false ],
       stop: [ Boolean, false ],
       abort: [ Boolean, false ],
-      grammars: [ Array(String), [] ],
+      grammars: [ Array(Any), [] ],
       lang: [ String, '' ],
       continuous: [ Boolean,   false ],
       interim_results: [ Boolean,   false ],
