@@ -28,7 +28,7 @@ Learn about building custom Panel components.
 Discover why and how Panel utilizes the Param library.
 :::
 
-:::{grid-item-card} {octicon}`sliders;2.5em;sd-mr-1` Widget Abbreviations for `Interact`
+:::{grid-item-card} {octicon}`ellipsis;2.5em;sd-mr-1` Widget Abbreviations for `Interact`
 :link: interact/interact_abbreviations
 :link-type: doc
 
