@@ -311,25 +311,9 @@ select.bk-input:focus {
     border: unset;
 }
 
-.bk-btn-group > button.bk-btn-default:hover {
-    background: var(--mdc-theme-primary) radial-gradient(circle, transparent 1%, var(--mdc-theme-primary) 1%) center/15000%;
-}
-
-.bk-btn-group > button.bk-btn-default:active {
-  background-color: var(--mdc-theme-background);
-  background-size: 100%;
-  transition: background 0s;
-}
-
 .bk-menu {
     color: var(--mdc-theme-primary);
     border: 1px solid var(--mdc-theme-primary);
-}
-
-.bk-active.bk-btn-default {
-    background-color: var(--mdc-theme-primary);
-    border: 1px solid var(--mdc-theme-primary);
-    color: var(--mdc-theme-on-primary);
 }
 
 /* Checkbox */

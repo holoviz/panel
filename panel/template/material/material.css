@@ -133,6 +133,8 @@ img.app-logo {
 }
 
 #header-items {
+    align-items: center;
+    display: flex;
     width: 100%;
     margin-left: 25px;
 }
