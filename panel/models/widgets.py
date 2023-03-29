@@ -177,3 +177,5 @@ class CustomSelect(Select):
     disabled_options = List(Any, default=[], help="""
     List of options to disable.
     """)
+
+    size = Int(default=1)
