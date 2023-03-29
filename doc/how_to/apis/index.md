@@ -5,7 +5,7 @@ Panel can be used to make a first pass at an app or dashboard in minutes, while 
 ::::{grid} 1 2 2 4
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Reactive API
+:::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` Reactive API
 :link: reactive
 :link-type: doc
 

@@ -37,7 +37,7 @@ How to choose from the different APIs offered by Panel.
 How to construct and customize individual components like an image or slider widget.
 :::
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Bind widgets to functions (`Reactive API`)
+:::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` Bind widgets to functions (`Reactive API`)
 :link: reactive/index
 :link-type: doc
 
