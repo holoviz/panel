@@ -1217,7 +1217,7 @@ class Tabulator(BaseTable):
 
     def _get_theme(self, theme, resources=None):
         from ..models.tabulator import _TABULATOR_THEMES_MAPPING, THEME_PATH
-        theme_ = _TABULATOR_THEMES_MAPPING.get(self.theme, self.theme)
+        theme_ = _TABULATOR_THEMES_MAPPING.get(theme, theme)
         fname = 'tabulator' if theme_ == 'default' else f'tabulator_{theme_}'
         theme_url = f'{CDN_DIST}bundled/datatabulator/{THEME_PATH}{fname}.min.css'
         if self._widget_type is not None:
