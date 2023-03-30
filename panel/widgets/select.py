@@ -176,7 +176,7 @@ class Select(SingleSelectBase):
       or scale mode this will merely be used as a suggestion.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'groups': None, 'size': None
+        'groups': None,
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
