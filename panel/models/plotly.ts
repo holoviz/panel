@@ -156,9 +156,6 @@ export class PlotlyPlotView extends HTMLBoxView {
       this.plot(true)
     });
     this.connect(this.model.properties.viewport.change, () => this._updateViewportFromProperty());
-    this.connect(this.model.properties.visibility.change, () => {
-      this.el.style.visibility = this.model.visibility ? 'visible' : 'hidden'
-    })
   }
 
   override remove(): void {
@@ -170,7 +167,6 @@ export class PlotlyPlotView extends HTMLBoxView {
     super.render()
     this.container = <PlotlyHTMLElement>div()
     set_size(this.container, this.model)
-    this.container.style.visibility = this.model.visibility ? 'visible' : 'hidden'
     this.shadow_el.appendChild(this.container)
     this.plot().then(() => {
       if (this.model.relayout != null)
@@ -404,7 +400,6 @@ export namespace PlotlyPlot {
     viewport: p.Property<any>
     viewport_update_policy: p.Property<string>
     viewport_update_throttle: p.Property<number>
-    visibility: p.Property<boolean>
     _render_count: p.Property<number>
   }
 }
@@ -423,7 +418,7 @@ export class PlotlyPlot extends HTMLBox {
   static {
     this.prototype.default_view = PlotlyPlotView
 
-    this.define<PlotlyPlot.Props>(({Array, Any, Boolean, Nullable, Number, Ref, String}) => ({
+    this.define<PlotlyPlot.Props>(({Array, Any, Nullable, Number, Ref, String}) => ({
       data: [ Array(Any), [] ],
       layout: [ Any, {} ],
       config: [ Any, {} ],
@@ -440,7 +435,6 @@ export class PlotlyPlot extends HTMLBox {
       viewport: [ Any, {} ],
       viewport_update_policy: [ String, "mouseup" ],
       viewport_update_throttle: [ Number, 200 ],
-      visibility: [ Boolean, true],
       _render_count: [ Number, 0 ],
     }))
   }

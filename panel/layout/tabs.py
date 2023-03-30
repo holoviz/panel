@@ -10,10 +10,9 @@ from typing import (
 
 import param
 
-from bokeh.models import (
-    Spacer as BkSpacer, TabPanel as BkTabPanel, Tabs as BkTabs,
-)
+from bokeh.models import Spacer as BkSpacer, TabPanel as BkTabPanel
 
+from ..models.tabs import Tabs as BkTabs
 from ..viewable import Layoutable
 from .base import NamedListPanel
 
