@@ -180,6 +180,7 @@ def setup_js_callbacks(root_view, root_model):
         return
     ref = root_model.ref['id']
     for pane in root_view.select(ECharts):
-        pane._models[ref][0].js_events = pane._get_js_events(ref)
+        if ref in pane._models:
+            pane._models[ref][0].js_events = pane._get_js_events(ref)
 
 Viewable._preprocessing_hooks.append(setup_js_callbacks)
