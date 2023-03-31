@@ -15,6 +15,7 @@ import param
 from bokeh.models import Column as BkColumn, Row as BkRow
 
 from ..io.model import hold
+from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..reactive import Reactive
 from ..util import param_name, param_reprs
@@ -845,7 +846,7 @@ class WidgetBox(ListPanel):
         'disabled': None, 'objects': 'children', 'horizontal': None
     }
 
-    _stylesheets = ['css/widgetbox.css']
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/widgetbox.css']
 
     @property
     def _bokeh_model(self) -> Type[Model]: # type: ignore
