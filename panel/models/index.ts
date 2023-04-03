@@ -1,5 +1,6 @@
 export {AcePlot} from "./ace"
 export {Audio} from "./audio"
+export {BrowserInfo} from "./browser"
 export {Card} from "./card"
 export {CommManager} from "./comm_manager"
 export {CustomSelect} from "./customselect"
