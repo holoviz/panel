@@ -2,7 +2,7 @@
 
 The Background section aims to clarify, deepen, and broaden the understanding of Panel with discussions about topics at a high-level or from alternate angles. This may include reasoning about design decisions, historical development, and technical constraints.
 
-Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md), which new users must complete before working with Panel, this Background section is intended to help practitioners form and strengthen a conceptual web that facilitates new and advanced usage directions.`
+Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md), which new users must complete before working with Panel, this Background section is intended to help practitioners form and strengthen a conceptual web that facilitates new and advanced usage directions.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2

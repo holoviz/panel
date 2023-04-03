@@ -5,14 +5,14 @@ Caching data and computation is one of the most effective ways to speed up your 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Manually Cache
+:::{grid-item-card} {octicon}`squirrel;2.5em;sd-mr-1 sd-animate-grow50` Manually Cache
 :link: manual
 :link-type: doc
 
 How to manually cache data and objects on `pn.state.cache`.
 :::
 
-:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1` Automatically Cache
+:::{grid-item-card} {octicon}`dependabot;2.5em;sd-mr-1 sd-animate-grow50` Automatically Cache
 :link: memoization
 :link-type: doc
 
