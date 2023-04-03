@@ -18,6 +18,8 @@ export class BrowserInfoView extends View {
     }
     this.model.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     this.model.timezone_offset = new Date().getTimezoneOffset();
+    this._has_finished = true
+    this.notify_finished()
   }
 }
 
