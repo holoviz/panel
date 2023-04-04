@@ -168,10 +168,6 @@ jobs:
       - name: Install dependencies
         run:
           conda install -c ae5-admin anaconda-project ae5-tools
-      - name: Archive Gallery
-        run:
-          cd examples/gallery
-          anaconda-project archive panel-gallery.tar.gz
       - name: Upload and deploy gallery
         run:
           ae5 login --hostname pyviz.demo.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
