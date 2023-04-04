@@ -80,11 +80,6 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: doit env_capture
         run: |
           conda activate test-environment
@@ -144,11 +139,6 @@ jobs:
       #   run: |
       #     conda activate test-environment
       #     pip install ipywidgets_bokeh
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: build pyodide wheels
         run: |
           conda activate test-environment
@@ -161,7 +151,7 @@ jobs:
       - name: build jupyterlite
         run: |
           conda activate test-environment
-          pip install jupyterlite==0.1.0b22
+          pip install jupyterlite-core=0.1.0b22 jupyterlite-pyodide-kernel
           python ./scripts/build_pyodide_wheels.py lite/pypi
           python ./scripts/generate_panelite_content.py
           jupyter lite build --lite-dir lite --output-dir lite/dist
