@@ -106,6 +106,7 @@ install_requires = [
     'bokeh >=3.1.0,<3.2.0',
     'param >=1.12.0',
     'pyviz_comms >=0.7.4',
+    'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
     'requests',
     'tqdm >=4.48.0',

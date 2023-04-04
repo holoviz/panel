@@ -80,11 +80,6 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: doit env_capture
         run: |
           conda activate test-environment
@@ -144,11 +139,6 @@ jobs:
       #   run: |
       #     conda activate test-environment
       #     pip install ipywidgets_bokeh
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: build pyodide wheels
         run: |
           conda activate test-environment
