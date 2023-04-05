@@ -145,14 +145,14 @@ def test_custom_html_index(relative, html_file):
 md_app = """
 # My app
 
-```panel
+```python
 import panel as pn
 pn.extension(template='fast')
 ```
 
 A description
 
-```panel
+```python
 pn.Row('# Example').servable()
 ```
 """

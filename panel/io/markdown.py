@@ -13,7 +13,7 @@ from bokeh.command.util import (
 
 
 def extract_code(
-    filehandle: IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'panel')
+    filehandle: IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
 ) -> str:
     """
     Extracts Panel application code from a Markdown file.

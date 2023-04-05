@@ -3,7 +3,7 @@ from io import StringIO
 from panel.io.markdown import extract_code
 
 md1 = """
-```panel
+```python
 import panel as pn
 
 pn.Row(1, 2, 3).servable()
@@ -19,14 +19,14 @@ pn.Row(1, 2, 3).servable()
 """
 
 md3 = """
-```panel
+```python
 import panel as pn
 pn.extension()
 ```
 
 My description
 
-```panel
+```python
 pn.Row(1, 2, 3).servable()
 ```
 """
@@ -34,7 +34,7 @@ pn.Row(1, 2, 3).servable()
 md4 = """
 # My app
 
-```panel
+```python
 import panel as pn
 pn.extension(template='fast')
 
