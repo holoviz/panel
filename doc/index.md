@@ -122,7 +122,7 @@ The Panel project is grateful for the sponsorship by the organizations and compa
 :link: https://www.anaconda.com/
 :link-type: url
 :text-align: center
-:columns: 6
+:columns: 3
 
 ```{image} https://static.bokeh.org/sponsor/anaconda.png
 ---
@@ -136,11 +136,37 @@ alt: Anaconda Logo
 :link: https://www.blackstone.com/the-firm/
 :link-type: url
 :text-align: center
-:columns: 6
+:columns: 3
 
 ```{image} https://static.bokeh.org/sponsor/blackstone.png
 ---
 alt: Blackstone Logo
+---
+```
+:::
+
+:::{grid-item-card}
+:link: https://numfocus.org/
+:link-type: url
+:text-align: center
+:columns: 3
+
+```{image} https://numfocus.org/wp-content/uploads/2017/03/numfocusweblogo_orig-1.png
+---
+alt: NumFOCUS Logo
+---
+```
+:::
+
+:::{grid-item-card}
+:link: https://quansight.com/
+:link-type: url
+:text-align: center
+:columns: 3
+
+```{image} https://assets.holoviz.org/logos/Quansight-logo.svg
+---
+alt: Quansight Logo
 ---
 ```
 :::
