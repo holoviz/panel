@@ -8,7 +8,7 @@ import bokeh.command.util
 
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.command.util import (
-    build_single_handler_applications as _build_application,
+    build_single_handler_application as _build_application,
 )
 
 
@@ -81,7 +81,7 @@ class MarkdownHandler(CodeHandler):
         kwargs['source'] = code
         super().__init__(*args, **kwargs)
 
-def build_single_handler_application(path, argv):
+def build_single_handler_application(path, argv=None):
     if not os.path.isfile(path) or not path.endswith(".md"):
         return _build_application(path, argv)
 
