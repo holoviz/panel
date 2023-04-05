@@ -26,7 +26,7 @@ Now you are ready to go, all Panel components will render themselves. In other w
 :::{admonition} Tip
 :class: success
 
-When working in JupyterLab you will see a little Panel icon (<img src="/_static/favicon.ico" alt="Panel Icon" width="20px"/>) in your toolbar. This will let you preview the application you are building quickly and easily.
+When working in JupyterLab you will see a little Panel icon (<img src="https://panel.holoviz.org/_static/icons/favicon.ico" alt="Panel Icon" width="20px"/>) in your toolbar. This will let you preview the application you are building quickly and easily.
 :::
 
 ### Editor/IDE
