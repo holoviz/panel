@@ -139,7 +139,7 @@ To support a particular domain, you can create hierarchies of such classes encap
 
 ## Get help
 
-Now that we have given you a taste of how easy it is to build a little application in Panel its time to introduce you to some of the [core concepts](core_concepts.md) behing Panel. Go to the next guide or visit some of the other resources to help you dive a little deeper:
+Now that we have given you a taste of how easy it is to build a little application in Panel its time to introduce you to some of the [core concepts](core_concepts.md) behind Panel. Go to the next guide or visit some of the other resources to help you dive a little deeper:
 
 ::::{grid} 1 2 2 4
 :gutter: 1 1 1 2

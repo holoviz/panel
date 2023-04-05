@@ -19,7 +19,7 @@ How to access and manipulate the URL.
 How to access information about the HTTP request associated with a session.
 :::
 
-:::{grid-item-card} {octicon}`no-entry;2.5em;sd-mr-1  sd-animate-grow50` Access Busyiness State
+:::{grid-item-card} {octicon}`no-entry;2.5em;sd-mr-1  sd-animate-grow50` Access the Busyness State
 :link: busy
 :link-type: doc
 

@@ -231,7 +231,7 @@ def square(x):
 pn.Row(pn.bind(square, x))
 ```
 
-The `pn.bind` function let's us bind widgets (and parameter **objects**) to a function that returns an object to be displayed. Once bound the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily.
+The `pn.bind` function lets us bind widgets (and parameter **objects**) to a function that returns an object to be displayed. Once bound the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily.
 
 :::{admonition} Reminder
 :class: info
@@ -285,7 +285,7 @@ background.param.watch(update_styles, 'value')
 pn.Row(x, background, square)
 ```
 
-The first thing you will not is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding.
+The first thing you will note is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding.
 
 ## Templates
 
