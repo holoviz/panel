@@ -38,7 +38,6 @@ from bokeh.application.handlers.code import (
     CodeHandler, _monkeypatch_io, patch_curdoc,
 )
 from bokeh.application.handlers.function import FunctionHandler
-from bokeh.command.util import build_single_handler_application
 from bokeh.core.templates import AUTOLOAD_JS
 from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
@@ -70,6 +69,7 @@ from .document import init_doc, unlocked, with_lock  # noqa
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
 )
+from .markdown import build_single_handler_application
 from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import (
@@ -884,7 +884,7 @@ def get_server(
                     continue
             if isinstance(app, pathlib.Path):
                 app = str(app) # enables serving apps from Paths
-            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb"))
+            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb") or app.endswith('.md'))
                 and os.path.isfile(app)):
                 apps[slug] = app = build_single_handler_application(app)
                 app._admin = admin
@@ -896,7 +896,7 @@ def get_server(
     else:
         if isinstance(panel, pathlib.Path):
             panel = str(panel) # enables serving apps from Paths
-        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb"))
+        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb") or panel.endswith('.md'))
             and os.path.isfile(panel)):
             apps = {'/': build_single_handler_application(panel)}
         else:

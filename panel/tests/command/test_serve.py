@@ -58,6 +58,7 @@ class NBSR:
 
             while True:
                 line = stream.readline()
+                print(line)
                 if line:
                     queue.put(line)
                 else:
@@ -140,3 +141,29 @@ def test_custom_html_index(relative, html_file):
         r = requests.get(f"http://localhost:{port}/")
         assert r.status_code == 200
         assert r.content.decode('utf-8') == index
+
+md_app = """
+# My app
+
+```python
+import panel as pn
+pn.extension(template='fast')
+```
+
+A description
+
+```python
+pn.Row('# Example').servable()
+```
+"""
+
+@not_windows
+def test_serve_markdown():
+    md = tempfile.NamedTemporaryFile(mode='w', suffix='.md')
+    write_file(md_app, md.file)
+
+    with run_panel_serve(["--port", "0", md.name]) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/")
+        assert r.status_code == 200
+        assert '<title>My app</title>' in r.content.decode('utf-8')
