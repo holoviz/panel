@@ -1,4 +1,4 @@
-# Access Pane Type
+# Access the Pane Type
 
 This guide addresses how to access the Pane Type.
 
