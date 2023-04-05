@@ -264,7 +264,7 @@ class Layoutable(param.Parameterized):
 
 _Self = TypeVar('_Self', bound='ServableMixin')
 
-class ServableMixin(object):
+class ServableMixin:
     """
     Mixin to define methods shared by objects which can served.
     """
@@ -298,44 +298,6 @@ class ServableMixin(object):
         loc_model.name = 'location'
         doc.add_root(loc_model)
         return loc
-
-    def _on_msg(self, ref: str, manager, msg) -> None:
-        """
-        Handles Protocol messages arriving from the client comm.
-        """
-        root, doc, comm = state._views[ref][1:]
-        patch_cds_msg(root, msg)
-        held = doc.callbacks.hold_value
-        patch = manager.assemble(msg)
-        doc.hold()
-        patch.apply_to_document(doc, comm.id if comm else None)
-        doc.unhold()
-        if held:
-            doc.hold(held)
-
-    def _on_error(self, ref: str, error: Exception) -> None:
-        if ref not in state._handles or config.console_output in [None, 'disable']:
-            return
-        handle, accumulator = state._handles[ref]
-        formatted = '\n<pre>'+escape(traceback.format_exc())+'</pre>\n'
-        if config.console_output == 'accumulate':
-            accumulator.append(formatted)
-        elif config.console_output == 'replace':
-            accumulator[:] = [formatted]
-        if accumulator:
-            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
-
-    def _on_stdout(self, ref: str, stdout: Any) -> None:
-        if ref not in state._handles or config.console_output is [None, 'disable']:
-            return
-        handle, accumulator = state._handles[ref]
-        formatted = ["%s</br>" % o for o in stdout]
-        if config.console_output == 'accumulate':
-            accumulator.extend(formatted)
-        elif config.console_output == 'replace':
-            accumulator[:] = formatted
-        if accumulator:
-            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
 
     #----------------------------------------------------------------
     # Public API
@@ -444,7 +406,66 @@ class ServableMixin(object):
         )
 
 
-class Renderable(param.Parameterized):
+class MimeRenderMixin:
+    """
+    Mixin class to allow rendering and syncing objects in notebook
+    contexts.
+    """
+
+    def _on_msg(self, ref: str, manager, msg) -> None:
+        """
+        Handles Protocol messages arriving from the client comm.
+        """
+        root, doc, comm = state._views[ref][1:]
+        patch_cds_msg(root, msg)
+        held = doc.callbacks.hold_value
+        patch = manager.assemble(msg)
+        doc.hold()
+        patch.apply_to_document(doc, comm.id if comm else None)
+        doc.unhold()
+        if held:
+            doc.hold(held)
+
+    def _on_error(self, ref: str, error: Exception) -> None:
+        if ref not in state._handles or config.console_output in [None, 'disable']:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = '\n<pre>'+escape(traceback.format_exc())+'</pre>\n'
+        if config.console_output == 'accumulate':
+            accumulator.append(formatted)
+        elif config.console_output == 'replace':
+            accumulator[:] = [formatted]
+        if accumulator:
+            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
+    def _on_stdout(self, ref: str, stdout: Any) -> None:
+        if ref not in state._handles or config.console_output is [None, 'disable']:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = ["%s</br>" % o for o in stdout]
+        if config.console_output == 'accumulate':
+            accumulator.extend(formatted)
+        elif config.console_output == 'replace':
+            accumulator[:] = formatted
+        if accumulator:
+            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
+    def _render_mimebundle(self, model: Model, doc: Document, comm: Comm, location: Location | None = None):
+        from .models.comm_manager import CommManager
+
+        ref = model.ref['id']
+        manager = CommManager(comm_id=comm.id, plot_id=ref)
+        client_comm = state._comm_manager.get_client_comm(
+            on_msg=partial(self._on_msg, ref, manager),
+            on_error=partial(self._on_error, ref),
+            on_stdout=partial(self._on_stdout, ref)
+        )
+        self._comms[ref] = (comm, client_comm)
+        manager.client_comm_id = client_comm.id
+        return render_mimebundle(model, doc, comm, manager, location)
+
+
+class Renderable(param.Parameterized, MimeRenderMixin):
     """
     Baseclass for objects which can be rendered to a Bokeh model.
 
@@ -522,9 +543,6 @@ class Renderable(param.Parameterized):
             comm = state._comm_manager.get_server_comm()
         model = self.get_root(doc, comm)
 
-        if self._design and self._design.theme.bokeh_theme:
-            doc.theme = self._design.theme.bokeh_theme
-
         if config.embed:
             embed_state(self, model, doc,
                         json=config.embed_json,
@@ -552,6 +570,10 @@ class Renderable(param.Parameterized):
         del self._documents[doc]
         if ref in state._views:
             del state._views[ref]
+
+    def __repr__(self, depth: int = 0) -> str:
+        return '{cls}({params})'.format(cls=type(self).__name__,
+                                        params=', '.join(param_reprs(self)))
 
     def get_root(
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
@@ -650,12 +672,26 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
         self.styles = dict(self.styles, background=self.background)
 
-    def __repr__(self, depth: int = 0) -> str:
-        return '{cls}({params})'.format(cls=type(self).__name__,
-                                        params=', '.join(param_reprs(self)))
+    def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
+        if doc is None:
+            doc = Document()
+        if comm is None:
+            comm = state._comm_manager.get_server_comm()
+        model = self.get_root(doc, comm)
 
-    def __str__(self) -> str:
-        return self.__repr__()
+        if self._design and self._design.theme.bokeh_theme:
+            doc.theme = self._design.theme.bokeh_theme
+
+        if config.embed:
+            embed_state(self, model, doc,
+                        json=config.embed_json,
+                        json_prefix=config.embed_json_prefix,
+                        save_path=config.embed_save_path,
+                        load_path=config.embed_load_path,
+                        progress=False)
+        else:
+            add_to_doc(model, doc)
+        return model
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         if state._is_pyodide:
@@ -723,28 +759,23 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
         from IPython.display import display
 
-        from .models.comm_manager import CommManager
-
         doc = Document()
         comm = state._comm_manager.get_server_comm()
         model = self._render_model(doc, comm)
-        ref = model.ref['id']
-        manager = CommManager(comm_id=comm.id, plot_id=ref)
-        client_comm = state._comm_manager.get_client_comm(
-            on_msg=partial(self._on_msg, ref, manager),
-            on_error=partial(self._on_error, ref),
-            on_stdout=partial(self._on_stdout, ref)
-        )
-        self._comms[ref] = (comm, client_comm)
-        manager.client_comm_id = client_comm.id
+        if config.embed:
+            return render_model(model)
+
+        bundle, meta = self._render_mimebundle(model, doc, comm, location)
 
         if config.console_output != 'disable':
+            ref = model.ref['id']
             handle = display(display_id=uuid.uuid4().hex)
             state._handles[ref] = (handle, [])
 
-        if config.embed:
-            return render_model(model)
-        return render_mimebundle(model, doc, comm, manager, location)
+        return bundle, meta
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
     #----------------------------------------------------------------
     # Public API
@@ -937,6 +968,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             notification_model = state.notifications._get_model(doc, model)
             notification_model.name = 'notifications'
             doc.add_root(notification_model)
+        if config.browser_info and doc is state.curdoc:
+            browser_model = state.browser_info._get_model(doc, model)
+            browser_model.name = 'browser_info'
+            doc.add_root(browser_model)
         return doc
 
 

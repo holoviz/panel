@@ -360,5 +360,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
 {% if notifications %}
 {{ embed(roots.notifications) }}
 {% endif %}
+{% if browser_info %}
+{{ embed(roots.browser_info) }}
+{% endif %}
 
 {% endblock %}

@@ -53,6 +53,7 @@ if TYPE_CHECKING:
     from ..template.base import BaseTemplate
     from ..viewable import Viewable
     from ..widgets.indicators import BooleanIndicator
+    from .browser import BrowserInfo
     from .callbacks import PeriodicCallback
     from .location import Location
     from .notifications import NotificationArea
@@ -142,6 +143,10 @@ class _state(param.Parameterized):
     _jupyter_kernel_context: ClassVar[bool] = False
     _kernels = {}
     _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
+
+    # Locations
+    _browser: ClassVar[BrowserInfo | None] = None # Global BrowserInfo, e.g. for notebook context
+    _browsers: ClassVar[WeakKeyDictionary[Document, BrowserInfo]] = WeakKeyDictionary() # Server browser indexed by document
 
     # Locations
     _location: ClassVar[Location | None] = None # Global location, e.g. for notebook context
@@ -880,6 +885,20 @@ class _state(param.Parameterized):
         app_url = self.curdoc.session_context.server_context.application_context.url
         app_url = app_url[1:] if app_url.startswith('/') else app_url
         return urljoin(self.base_url, app_url)
+
+    @property
+    def browser_info(self) -> BrowserInfo | None:
+        from ..config import config
+        from .browser import BrowserInfo
+        if config.browser_info and self.curdoc and self.curdoc.session_context and self.curdoc not in self._browsers:
+            browser = self._browsers[self.curdoc] = BrowserInfo()
+        elif self.curdoc is None:
+            if self._browser is None and config.browser_info:
+                self._browser = BrowserInfo()
+            browser = self._browser
+        else:
+            browser = self._browsers.get(self.curdoc) if self.curdoc else None
+        return browser
 
     @property
     def curdoc(self) -> Document | None:

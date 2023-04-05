@@ -25,7 +25,7 @@ from bokeh.embed import server_document
 from bokeh.embed.elements import div_for_render_item, script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.models import LayoutDOM, Model
+from bokeh.models import Model
 from bokeh.resources import CDN, INLINE
 from bokeh.settings import _Unset, settings
 from bokeh.util.serialization import make_id
@@ -196,7 +196,7 @@ def render_mimebundle(
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
     """
-    if not isinstance(model, LayoutDOM):
+    if not isinstance(model, Model):
         raise ValueError('Can only render bokeh LayoutDOM models')
     add_to_doc(model, doc, True)
     if manager is not None:

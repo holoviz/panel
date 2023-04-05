@@ -16,6 +16,7 @@ from weakref import WeakKeyDictionary
 
 import param
 
+from bokeh.document import Document
 from bokeh.settings import settings as bk_settings
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
@@ -114,6 +115,9 @@ class _config(_base_config):
 
     autoreload = param.Boolean(default=False, doc="""
         Whether to autoreload server when script changes.""")
+
+    browser_info = param.Boolean(default=True, doc="""
+        Whether to request browser info from the frontend.""")
 
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
@@ -716,8 +720,14 @@ class panel_extension(_pyviz_extension):
             load_notebook(config.inline)
         panel_extension._loaded = True
 
+        if config.browser_info:
+            doc = Document()
+            comm = state._comm_manager.get_server_comm()
+            model = state.browser_info._render_model(doc, comm)
+            bundle, meta = state.browser_info._render_mimebundle(model, doc, comm)
+            display(bundle, metadata=meta, raw=True)  # noqa
         if config.notifications:
-            display(state.notifications) # noqa
+            display(state.notifications)  # noqa
 
         if config.load_entry_points:
             self._load_entry_points()
