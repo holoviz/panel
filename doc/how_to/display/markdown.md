@@ -12,7 +12,7 @@ To begin simply create a Markdown file with the `.md` file extension, e.g. `app.
 # My App
 ```
 
-Before adding any actual content add a code block with any imports your application needs. The code block should have one of two type declarations, either `python` or `{pyodide}`. The latter is useful if you also want to use [the Sphinx Pyodide integration](../wasm/sphinx.md). In this case we will simply declare a code block that imports Panel and calls the extension with a specific template:
+Before adding any actual content add a code block with any imports your application needs. The code block should have one of two type declarations, either `python` or `{pyodide}`. The latter is useful if you also want to use [the Sphinx Pyodide integration](../wasm/sphinx.md). In this case we will simply declare a `python` code block that imports Panel and calls the extension with a specific template:
 
 ````markdown
 ```python
@@ -22,7 +22,7 @@ pn.extension(template='fast')
 ```
 ````
 
-Once we have initialized the extension any subsequent Markdown blocks will be rendered as part of the application, e.g. we can put some description in our application. If you also want to render some Python code with having Panel interpret it as code use `.py` as the language declaration:
+Once we have initialized the extension any subsequent Markdown will be rendered as part of the application, e.g. we can put some description in our application. If you also want to render some Python code without having Panel interpret it as code, use `.py` as the language declaration:
 
 ````markdown
 This application provides a minimal example demonstrating how to write an app in a Markdown file.
@@ -37,7 +37,7 @@ pn.Row(widget, pn.bind(hello_world, widget)).servable()
 ```
 ````
 
-Now we can add some actual Panel contents, again inside a Panel code block:
+Now we can add some actual Panel contents, again inside a `python` code block:
 
 ````markdown
 ```python
