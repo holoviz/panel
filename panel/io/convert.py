@@ -174,6 +174,7 @@ def script_to_html(
     panel_version: Literal['auto', 'local'] | str = 'auto',
     manifest: str | None = None,
     http_patch: bool = True,
+    inline: bool = False
 ) -> str:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
@@ -182,22 +183,24 @@ def script_to_html(
     Arguments
     ---------
     filename: str | Path | IO
-      The filename of the Panel/Bokeh application to convert.
+        The filename of the Panel/Bokeh application to convert.
     requirements: 'auto' | List[str]
-      The list of requirements to include (in addition to Panel).
+        The list of requirements to include (in addition to Panel).
     js_resources: 'auto' | List[str]
-      The list of JS resources to include in the exported HTML.
+        The list of JS resources to include in the exported HTML.
     css_resources: 'auto' | List[str] | None
-      The list of CSS resources to include in the exported HTML.
+        The list of CSS resources to include in the exported HTML.
     runtime: 'pyodide' | 'pyscript'
-      The runtime to use for running Python in the browser.
+        The runtime to use for running Python in the browser.
     prerender: bool
-      Whether to pre-render the components so the page loads.
+        Whether to pre-render the components so the page loads.
     panel_version: 'auto' | str
-      The panel release version to use in the exported HTML.
+        The panel release version to use in the exported HTML.
     http_patch: bool
         Whether to patch the HTTP request stack with the pyodide-http library
         to allow urllib3 and requests to work.
+    inline: bool
+        Whether to inline resources.
     """
     # Run script
     if hasattr(filename, 'read'):
@@ -310,7 +313,7 @@ def script_to_html(
         render_items = [render_item]
 
     # Collect resources
-    resources = Resources(mode='cdn')
+    resources = Resources(mode='inline' if inline else 'cdn')
     loading_base = (DIST_DIR / "css" / "loading.css").read_text()
     spinner_css = loading_css()
     css_resources.append(
@@ -360,6 +363,7 @@ def convert_app(
     manifest: str | None = None,
     panel_version: Literal['auto', 'local'] | str = 'auto',
     http_patch: bool = True,
+    inline: bool = False,
     verbose: bool = True,
 ):
     if dest_path is None:
@@ -368,11 +372,12 @@ def convert_app(
         dest_path = pathlib.Path(dest_path)
 
     try:
-        with set_resource_mode('cdn'):
+        with set_resource_mode('inline' if inline else 'cdn'):
             html, js_worker = script_to_html(
                 app, requirements=requirements, runtime=runtime,
                 prerender=prerender, manifest=manifest,
-                panel_version=panel_version, http_patch=http_patch
+                panel_version=panel_version, http_patch=http_patch,
+                inline=inline
             )
     except KeyboardInterrupt:
         return
@@ -432,6 +437,7 @@ def convert_apps(
     max_workers: int = 4,
     panel_version: Literal['auto', 'local'] | str = 'auto',
     http_patch: bool = True,
+    inline: bool = False,
     verbose: bool = True,
 ):
     """
@@ -471,6 +477,8 @@ def convert_apps(
     http_patch: bool
         Whether to patch the HTTP request stack with the pyodide-http library
         to allow urllib3 and requests to work.
+    inline: bool
+        Whether to inline resources.
     """
     if isinstance(apps, str):
         apps = [apps]
@@ -486,7 +494,7 @@ def convert_apps(
         'requirements': requirements, 'runtime': runtime,
         'prerender': prerender, 'manifest': manifest,
         'panel_version': panel_version, 'http_patch': http_patch,
-        'verbose': verbose
+        'inline': inline, 'verbose': verbose
     }
     if state._is_pyodide:
         files = dict((convert_app(app, dest_path, **kwargs) for app in apps))
