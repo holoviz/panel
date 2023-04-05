@@ -14,7 +14,6 @@ import bokeh
 
 from bokeh.application.application import Application, SessionContext
 from bokeh.application.handlers.code import CodeHandler
-from bokeh.command.util import build_single_handler_application
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import MACROS, get_env
 from bokeh.document import Document
@@ -26,6 +25,7 @@ from typing_extensions import Literal
 
 from .. import __version__, config
 from ..util import base_version, escape
+from .markdown import build_single_handler_application
 from .mime_render import find_imports
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, DIST_DIR, INDEX_TEMPLATE, Resources,
