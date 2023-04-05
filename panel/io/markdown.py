@@ -53,6 +53,10 @@ def extract_code(
             title = line[1:].lstrip()
         else:
             markdown.append(line)
+    if markdown:
+        md = '\n'.join(markdown)
+        if any('pn.extension' in o for o in out):
+            out.append(f"pn.pane.Markdown({md!r}).servable()\n")
     if title and any('template=' in o for o in out if 'pn.extension' in o):
         out.append(f'pn.state.template.title = {title.strip()!r}')
     return '\n'.join(out)
