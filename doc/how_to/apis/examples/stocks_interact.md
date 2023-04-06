@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 from bokeh.sampledata import stocks
 from matplotlib.figure import Figure
 
-pn.extension('plotly', 'vega', template='fast')
+pn.extension('plotly', 'vega', template='bootstrap')
 import hvplot.pandas
 
 tickers = ['AAPL', 'FB', 'GOOG', 'IBM', 'MSFT']
@@ -24,12 +24,12 @@ def get_df(ticker, window_size):
 def get_altair(ticker, window_size):
     df = get_df(ticker, window_size)
     return alt.Chart(df).mark_line().encode(x='date', y='close').properties(
-        width="container", height=500
+        width="container", height=400
     )
 
 def get_hvplot(ticker, window_size):
     df = get_df(ticker, window_size)
-    return df.hvplot.line('date', 'close', grid=True, responsive=True, height=500)
+    return df.hvplot.line('date', 'close', grid=True, responsive=True, height=400)
 
 def get_mpl(ticker, window_size):
     fig = Figure(figsize=(10, 6))
