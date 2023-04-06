@@ -43,7 +43,7 @@ from .models.reactive_html import (
 )
 from .util import (
     BOKEH_JS_NAT, classproperty, edit_readonly, escape, eval_function,
-    updating,
+    extract_dependencies, updating,
 )
 from .viewable import Layoutable, Renderable, Viewable
 
@@ -595,7 +595,7 @@ class Reactive(Syncable, Viewable):
             if isinstance(p, param.Parameter):
                 deps = (p,)
             else:
-                deps = tuple(p._dinfo['dependencies']) + tuple(p._dinfo['kw'].values())
+                deps = extract_dependencies(p)
             # Skip updating value if dependency has not changed
             if not any((dep.owner is e.obj and dep.name == e.name) for dep in deps for e in events):
                 continue
@@ -605,7 +605,8 @@ class Reactive(Syncable, Viewable):
                 updates[pname] = eval_function(p)
         if config.loading_indicator:
             updates['loading'] = False
-        self.param.update(updates)
+        with param.edit_constant(self):
+            self.param.update(updates)
 
     def _setup_refs(self, refs):
         groups = defaultdict(list)
@@ -613,8 +614,7 @@ class Reactive(Syncable, Viewable):
             if isinstance(p, param.Parameter):
                 groups[p.owner].append(p.name)
             else:
-                subparameters = list(p._dinfo['dependencies'])+list(p._dinfo['kw'].values())
-                for sp in subparameters:
+                for sp in extract_dependencies(p):
                     groups[sp.owner].append(sp.name)
         for owner, pnames in groups.items():
             owner.param.watch(self._sync_refs, list(set(pnames)))
