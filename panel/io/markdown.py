@@ -28,9 +28,6 @@ def extract_code(
             # EOF
             break
 
-        if line.strip() == "":
-            continue
-
         lsline = line.lstrip()
         if lsline.startswith("```"):
             if inblock:
@@ -40,7 +37,7 @@ def extract_code(
             syntax = line.strip()[num_leading_backticks:]
             if syntax in supported_syntax:
                 if markdown:
-                    md = '\n'.join(markdown)
+                    md = ''.join(markdown)
                     markdown.clear()
                     if any('pn.extension' in o for o in out):
                         out.append(f"pn.pane.Markdown({md!r}).servable()\n")
@@ -54,7 +51,7 @@ def extract_code(
         else:
             markdown.append(line)
     if markdown:
-        md = '\n'.join(markdown)
+        md = ''.join(markdown)
         if any('pn.extension' in o for o in out):
             out.append(f"pn.pane.Markdown({md!r}).servable()\n")
     if title and any('template=' in o for o in out if 'pn.extension' in o):
