@@ -88,10 +88,6 @@ nbsite_gallery_conf = {
                 {'path': 'simple',
                  'title': 'Simple Apps',
                  'description': 'Simple example apps meant to provide a quick introduction to Panel.'},
-                {'path': 'apis',
-                 'title': 'APIs',
-                 'description': ('Examples meant to demonstrate the usage of different Panel APIs '
-                                 'such as interact and reactive functions.')},
                 {'path': 'layout',
                  'title': 'Layouts',
                  'description': 'How to leverage Panel layout components to achieve complex layouts.'},
@@ -99,9 +95,6 @@ nbsite_gallery_conf = {
                  'title': 'Dynamic UIs',
                  'description': ('Examples demonstrating how to build dynamic UIs with components that '
                                  'are added or removed interactively.')},
-                {'path': 'param',
-                 'title': 'Param based apps',
-                 'description': 'Using the Param library to express UIs independently of Panel.'},
                 {'path': 'streaming',
                  'title': 'Streaming',
                  'description': ('Streaming data to a visual component.')},
