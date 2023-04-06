@@ -44,16 +44,16 @@ pn.Row(1, 2, 3).servable()
 
 def test_extract_panel_block():
     f = StringIO(md1)
-    assert extract_code(f) == "import panel as pn\n\npn.Row(1, 2, 3).servable()\n"
+    assert extract_code(f) == "import panel as pn\n\n\n\npn.Row(1, 2, 3).servable()\n"
 
 def test_extract_pyodide_block():
     f = StringIO(md2)
-    assert extract_code(f) == "import panel as pn\n\npn.Row(1, 2, 3).servable()\n"
+    assert extract_code(f) == "import panel as pn\n\n\n\npn.Row(1, 2, 3).servable()\n"
 
 def test_extract_description_block():
     f = StringIO(md3)
-    assert extract_code(f) == "import panel as pn\n\npn.extension()\n\npn.pane.Markdown('My description\\n').servable()\n\npn.Row(1, 2, 3).servable()\n"
+    assert extract_code(f) == "import panel as pn\n\npn.extension()\n\npn.pane.Markdown('\\nMy description\\n\\n').servable()\n\npn.Row(1, 2, 3).servable()\n"
 
 def test_extract_title_block():
     f = StringIO(md4)
-    assert extract_code(f) == "import panel as pn\n\npn.extension(template='fast')\n\npn.Row(1, 2, 3).servable()\n\npn.state.template.title = 'My app'"
+    assert extract_code(f) == "import panel as pn\n\npn.extension(template='fast')\n\n\n\npn.Row(1, 2, 3).servable()\n\npn.state.template.title = 'My app'"
