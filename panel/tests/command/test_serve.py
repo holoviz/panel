@@ -4,7 +4,6 @@ import re
 import subprocess
 import sys
 import tempfile
-import time
 
 from queue import Empty, Queue
 from threading import Thread
@@ -15,13 +14,12 @@ import requests
 not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
 
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
-
+ON_POSIX = 'posix' in sys.builtin_module_names
 
 @contextlib.contextmanager
 def run_panel_serve(args, cwd=None):
     cmd = [sys.executable, "-m", "panel", "serve"] + args
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd)
-    time.sleep(1)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd, close_fds=ON_POSIX)
     try:
         yield p
     except Exception as e:
@@ -55,24 +53,21 @@ class NBSR:
             '''
             Collect lines from 'stream' and put them in 'queue'.
             '''
-
-            while True:
-                line = stream.readline()
-                print(line)
-                if line:
-                    queue.put(line)
-                else:
-                    break
+            for line in iter(stream.readline, b''):
+                queue.put(line)
+            stream.close()
 
         self._t = Thread(target = _populateQueue,
                 args = (self._s, self._q))
         self._t.daemon = True
         self._t.start() #start collecting lines from the stream
 
-    def readline(self, timeout = None):
+    def readline(self, timeout=None):
         try:
-            return self._q.get(block = timeout is not None,
-                    timeout = timeout)
+            return self._q.get(
+                block=timeout is not None,
+                timeout=timeout
+            )
         except Empty:
             return None
 
@@ -84,7 +79,7 @@ def wait_for_port(stdout):
         o = nbsr.readline(0.5)
         if not o:
             continue
-        m = APP_PATTERN.search(o.decode())
+        m = APP_PATTERN.search(o.decode('utf-8'))
         if m is not None:
             break
     if m is None:
