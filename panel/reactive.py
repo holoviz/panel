@@ -42,7 +42,8 @@ from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import (
-    classproperty, edit_readonly, escape, eval_function, updating,
+    BOKEH_JS_NAT, classproperty, edit_readonly, escape, eval_function,
+    updating,
 )
 from .viewable import Layoutable, Renderable, Viewable
 
@@ -1270,7 +1271,8 @@ class ReactiveData(SyncableData):
         converted: List | np.ndarray | None = None
         if dtype.kind == 'M':
             if values.dtype.kind in 'if':
-                converted = (values * 10e5).astype(dtype)
+                NATs = values == BOKEH_JS_NAT
+                converted = np.where(NATs, np.nan, values * 10e5).astype(dtype)
         elif dtype.kind == 'O':
             if (all(isinstance(ov, dt.date) for ov in old_values) and
                 not all(isinstance(iv, dt.date) for iv in values)):
