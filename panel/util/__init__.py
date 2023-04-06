@@ -39,6 +39,9 @@ from .checks import (  # noqa
 
 bokeh_version = Version(bokeh.__version__)
 
+# Bokeh serializes NaT as this value
+# Discussion on why https://github.com/bokeh/bokeh/pull/10449/files#r479988469
+BOKEH_JS_NAT = -9223372036854776.0
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
