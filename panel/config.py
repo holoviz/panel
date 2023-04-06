@@ -545,6 +545,7 @@ class panel_extension(_pyviz_extension):
         'vega': 'panel.models.vega',
         'vtk': 'panel.models.vtk',
         'ace': 'panel.models.ace',
+        'myst': 'panel.models.myst',
         'echarts': 'panel.models.echarts',
         'ipywidgets': 'panel.io.ipywidget',
         'perspective': 'panel.models.perspective',

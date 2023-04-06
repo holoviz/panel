@@ -13,9 +13,11 @@ from typing import (
 
 import param  # type: ignore
 
+from pyviz_comms import JupyterComm
+
 from ..io.resources import CDN_DIST
 from ..models import HTML as _BkHTML, JSON as _BkJSON
-from ..util import escape
+from ..util import escape, lazy_load
 from ..util.warnings import deprecated
 from .base import ModelPane
 
@@ -294,6 +296,37 @@ class Str(HTMLBasePane):
         else:
             text = '<pre>'+str(obj)+'</pre>'
         return dict(object=escape(text))
+
+
+class MyST(ModelPane):
+
+    """
+    Baseclass for Panes which render HTML inside a Bokeh Div.
+    See the documentation for Bokeh Div for more detail about
+    the supported options like style and sizing_mode.
+    """
+
+    priority: ClassVar[float | bool | None] = 0
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'object': 'text'}
+
+    _updates: ClassVar[bool] = True
+
+    @classmethod
+    def applies(cls, obj: Any) -> float | bool | None:
+        if isinstance(obj, str) or hasattr(obj, '_repr_markdown_'):
+            return True
+        return False
+
+    def _get_model(
+        self, doc: Document, root: Model | None = None,
+        parent: Model | None = None, comm: Comm | None = None
+    ) -> Model:
+        self._bokeh_model = lazy_load(
+            'panel.models.myst', 'MyST', isinstance(comm, JupyterComm), root
+        )
+        model = super()._get_model(doc, root, parent, comm)
+        return model
 
 
 class Markdown(HTMLBasePane):
