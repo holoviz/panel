@@ -1,7 +1,11 @@
 import * as p from "@bokehjs/core/properties"
 import * as tabs from "@bokehjs/styles/tabs.css"
 
+import {Container} from "@bokehjs/core/layout/grid"
+import {Location} from "@bokehjs/core/enums"
+import {GridAlignmentLayout} from "@bokehjs/models/layouts/alignments"
 import {Tabs as BkTabs, TabsView as BkTabsView} from "@bokehjs/models/layouts/tabs"
+import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 
 function show(element: HTMLElement): void {
   element.style.visibility = ""
@@ -51,8 +55,7 @@ export class TabsView extends BkTabsView {
     const {child_views} = this
     for (const child_view of child_views) {
       if (child_view != null && child_view.el != null) {
-	console.log(child_view.el)
-        child_view.el.style.zIndex = ""
+	child_view.el.style.zIndex = ""
       }
     }
     if (this.is_visible) {
@@ -63,16 +66,46 @@ export class TabsView extends BkTabsView {
   }
 
   override _after_layout(): void {
-    super._after_layout()
+    (LayoutDOMView as any).prototype._after_layout.call(this)
 
     const {child_views} = this
-    for (const child_view of child_views)
-      hide(child_view.el)
+    for (const child_view of child_views) {
+      if (child_view !== undefined)
+        hide(child_view.el)
+    }
 
     const {active} = this.model
     if (active in child_views) {
       const tab = child_views[active]
-      show(tab.el)
+      if (tab !== undefined)
+        show(tab.el)
+    }
+  }
+
+  override _update_layout(): void {
+    (LayoutDOMView as any).prototype._update_layout.call(this)
+
+    const loc = this.model.tabs_location
+    this.class_list.remove([...Location].map((loc) => tabs[loc]))
+    this.class_list.add(tabs[loc])
+
+    const layoutable = new Container<LayoutDOMView>()
+
+    for (const view of this.child_views) {
+      if (view == undefined)
+        continue
+      view.style.append(":host", {grid_area: "stack"})
+
+      if (view instanceof LayoutDOMView && view.layout != null) {
+        layoutable.add({r0: 0, c0: 0, r1: 1, c1: 1}, view)
+      }
+    }
+
+    if (layoutable.size != 0) {
+      this.layout = new GridAlignmentLayout(layoutable)
+      this.layout.set_sizing()
+    } else {
+      delete this.layout
     }
   }
 
