@@ -1,4 +1,4 @@
-:root[data-theme="light"] {
+:root[data-theme="light"], :root[data-theme="dark"] {
     --pst-color-primary: rgb(47, 47, 47);
     --pst-color-link: rgb(0, 170, 65);
     --pst-color-inline-code: #0072B5;

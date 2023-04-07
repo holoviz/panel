@@ -196,6 +196,7 @@ extras_require = {
         'ipyvuetify',
         'reacton',
         'scikit-image',
+        'fastparquet'
     ],
     'tests': _tests,
     'recommended': _recommended,

@@ -35,6 +35,44 @@ How to structure Parameterized classes with subobjects to create nested UIs auto
 
 ::::
 
+## Examples
+
+::::{grid} 1 2 2 4
+:gutter: 1 1 1 2
+
+:::{grid-item-card} Action Button
+:img-top: https://assets.holoviz.org/panel/how_to/param/action_button.png
+:link: examples/action_button
+:link-type: doc
+
+A demonstration of a `param.Action` to define a UI with a button.
+:::
+
+:::{grid-item-card} Automatic Loading Indicator
+:img-top: https://assets.holoviz.org/panel/how_to/param/loading.png
+:link: examples/loading
+:link-type: doc
+
+A demonstration showing how to automatically enable a loading indicator for components rendered dynamically.
+:::
+
+:::{grid-item-card} Param Subobjects
+:img-top: https://assets.holoviz.org/panel/how_to/param/subobjects.png
+:link: examples/subobjects
+:link-type: doc
+
+A demonstration that demonstrates how to use Param to express a nested UI using a hierachy of classes.
+:::
+
+:::{grid-item-card} Precedence
+:img-top: https://assets.holoviz.org/panel/how_to/param/precedence.png
+:link: examples/precedence
+:link-type: doc
+
+A demonstration of using Parameter precedence to control the visibility of components.
+:::
+
+::::
 
 ```{toctree}
 :titlesonly:

@@ -4,7 +4,7 @@ description: An environment to serve all Panel gallery examples
 commands:
   default:
     description: Serve the Panel gallery
-    unix: bokeh sampledata && panel serve */*.ipynb
+    unix: bokeh sampledata && panel serve */*.ipynb --static-dirs thumbnails=thumbnails
     supports_http_options: true
 
 channels:

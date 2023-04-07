@@ -37,6 +37,20 @@ How to choose from the different APIs offered by Panel.
 How to construct and customize individual components like an image or slider widget.
 :::
 
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Arrange Components
+:link: layout/index
+:link-type: doc
+
+How to arrange and size components on the page.
+:::
+
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1 sd-animate-grow50` Style components
+:link: styling/index
+:link-type: doc
+
+How to apply designs, themes and custom styling to components to achieve a polished look and feel.
+:::
+
 :::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` Bind widgets to functions (`Reactive API`)
 :link: reactive/index
 :link-type: doc
