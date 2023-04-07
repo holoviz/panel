@@ -59,7 +59,6 @@ html_theme_options = {
         "copyright",
         "last-updated",
     ],
-    "navbar_end": ["navbar-icon-links"],
     "google_analytics_id": "UA-154795830-2",
     "pygment_light_style": "material",
     "pygment_dark_style": "material"
