@@ -653,7 +653,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         elif self.design:
             self._design = self.design(theme=config.theme)
         else:
-            self._design = Native()
+            self._design = Native(theme=config.theme)
 
     def _update_loading(self, *_) -> None:
         if self.loading:
