@@ -53,7 +53,7 @@ stylesheet = """
 """
 
 pn.widgets.FloatSlider(
-    name='Number', styles=custom_styles, stylesheets=[stylesheet]
+    name='Number', styles=custom_style, stylesheets=[stylesheet]
 )
 ```
 
@@ -103,7 +103,7 @@ stylesheet = """
 """
 
 pn.widgets.FloatSlider(
-    name='Number', styles=custom_styles, stylesheets=[stylesheet]
+    name='Number', styles=custom_style, stylesheets=[stylesheet]
 )
 ```
 
