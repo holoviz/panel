@@ -4,7 +4,7 @@
 import param
 import panel as pn
 
-pn.extension(template="fast")
+pn.extension(template='bootstrap')
 ```
 
 This example demonstrates how to use ``param.Action`` to trigger an update in a method that depends on that parameter. Actions can trigger any function, but if we simply want to trigger a method that depends on that action, then we can define a small ``lambda`` function that triggers the parameter explicitly:

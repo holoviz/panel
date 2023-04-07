@@ -5,7 +5,7 @@ import panel as pn
 import param
 import numpy as np
 
-pn.extension(template='fast')
+pn.extension(template='bootstrap')
 ```
 
 This example demonstrates how to use the Param library to express nested hierarchies of classes whose parameters can be edited in a GUI, without tying those classes to Panel or any other GUI framework.

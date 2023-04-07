@@ -7,7 +7,7 @@ import holoviews as hv
 import numpy as np
 import holoviews.plotting.bokeh
 
-pn.extension(loading_spinner='dots', loading_color='#00aa41', template='fast')
+pn.extension(loading_spinner='dots', loading_color='#00aa41', template='bootstrap')
 hv.extension('bokeh')
 ```
 
@@ -28,12 +28,12 @@ pn.param.ParamMethod.loading_indicator = True
 Alternatively we can enable it for a specific function by passing the `loading_indicator=True` argument to `pn.panel` or directly to the underlying  `ParamMethod`/`ParamFunction` object:
 
 ```{pyodide}
-button = pn.widgets.Button(name="UPDATE", button_type="primary", align='center')
+button = pn.widgets.Button(name="UPDATE", button_type="primary", sizing_mode='stretch_width')
 
 def random_plot(event):
-    if event: time.sleep(2)
+    if event: time.sleep(5)
     return hv.Points(np.random.rand(100, 2)).opts(
-        width=400, height=400, size=8, color="green")
+        responsive=True, height=400, size=8, color="green")
 
 pn.Column(
     button,
