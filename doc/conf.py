@@ -61,7 +61,8 @@ html_theme_options = {
     ],
     "google_analytics_id": "UA-154795830-2",
     "pygment_light_style": "material",
-    "pygment_dark_style": "material"
+    "pygment_dark_style": "material",
+    "header_links_before_dropdown": 6
 }
 
 extensions += [
