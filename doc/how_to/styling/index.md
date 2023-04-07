@@ -12,7 +12,7 @@ Panel provides a comprehensive system for applying designs, themes and custom st
 How to switch between different design systems.
 :::
 
-:::{grid-item-card} {octicon}`painbrush;2.5em;sd-mr-1 sd-animate-grow50` Toggle themes
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1 sd-animate-grow50` Toggle themes
 :link: themes
 :link-type: doc
 
