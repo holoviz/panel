@@ -38,7 +38,7 @@ from bokeh.application.handlers.code import (
     CodeHandler, _monkeypatch_io, patch_curdoc,
 )
 from bokeh.application.handlers.function import FunctionHandler
-from bokeh.core.templates import AUTOLOAD_JS
+from bokeh.core.templates import AUTOLOAD_JS, FILE
 from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.embed.bundle import Script
@@ -205,6 +205,10 @@ def server_html_page_for_session(
     else:
         dist_url = CDN_DIST
 
+    if template is FILE:
+        template = BASE_TEMPLATE
+
+    session.document._template_variables['theme_name'] = config.theme
     session.document._template_variables['dist_url'] = dist_url
     for root in session.document.roots:
         patch_model_css(root, dist_url=dist_url)
