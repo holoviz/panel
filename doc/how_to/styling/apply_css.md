@@ -124,7 +124,7 @@ pn.widgets.FloatSlider(
 When building complex stylesheets you will sometimes want to have multiple styles for one component. While it is possible to include a separate stylesheet for each you can also use CSS classes to distinguish between different components. The `css_classes` parameter will apply the CSS class to the shadow root (or container). Let us create two sliders with different CSS classes:
 
 ```{pyodide}
-color_stylesheet = {
+color_stylesheet = """
 :host(.red) .noUi-handle {
   background-color: red
 }
