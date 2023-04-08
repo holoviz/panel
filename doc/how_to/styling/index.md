@@ -47,6 +47,8 @@ How to control the visibility of a component.
 :hidden:
 :maxdepth: 1
 
+design
+themes
 apply_css
 load_icon
 visibility

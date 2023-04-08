@@ -9,6 +9,7 @@ from bokeh.models import LayoutDOM
 from bokeh.models.sources import DataSource
 
 from ..config import config
+from ..util import classproperty
 
 
 class VizzuEvent(ModelEvent):
@@ -31,6 +32,12 @@ class VizzuChart(LayoutDOM):
     __javascript_modules__ = [
         f"{config.npm_cdn}/vizzu@0.7.1/dist/vizzu.min.js"
     ]
+
+    @classproperty
+    def __js_skip__(cls):
+        return {
+            'Vizzu': cls.__javascript__[0]
+        }
 
     animation = Dict(String, Any)
 
