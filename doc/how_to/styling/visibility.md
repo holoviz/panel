@@ -13,9 +13,9 @@ Let's create three simple components with different colors. We'll set the visibi
 import panel as pn
 pn.extension() # for notebook
 
-a = pn.pane.HTML(width=60, height=60, background='green')
-b = pn.pane.HTML(width=60, height=60, background='blue', visible=False)
-c = pn.pane.HTML(width=60, height=60, background='red')
+a = pn.pane.HTML(width=60, height=60, styles={'background': 'green'})
+b = pn.pane.HTML(width=60, height=60, styles={'background': 'blue'}, visible=False)
+c = pn.pane.HTML(width=60, height=60, styles={'background': 'red'})
 
 layout = pn.Row(a, b, c)
 layout

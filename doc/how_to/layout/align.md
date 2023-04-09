@@ -16,7 +16,7 @@ pn.extension() # for notebook
 button = pn.widgets.Button(name='Test', height=100)
 slider = pn.widgets.IntSlider(align='center')
 
-pn.Row(button, slider, background='lightgrey')
+pn.Row(button, slider, styles={'background': 'lightgrey'})
 ```
 
 Now, let's look at aligning components in a grid with an instance of passing in `(horizontal, vertical)`:
@@ -28,7 +28,7 @@ pn.GridBox(
     pn.widgets.TextInput(name='Test', height=100, width=100, align=('center')),
     pn.widgets.TextInput(width=150, align=('start', 'end')),
     ncols=2,
-    background='lightgrey'
+    styles={'background': 'lightgrey'}
 )
 ```
 

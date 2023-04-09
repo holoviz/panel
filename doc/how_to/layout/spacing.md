@@ -33,9 +33,9 @@ import panel as pn
 pn.extension() # for notebook
 
 pn.Row(
-    pn.Column(pn.widgets.Button(name='B1', width=100, margin=25), background='#f0f0f0'),
-    pn.Column(pn.widgets.Button(name='B2', width=100, margin=(40, 50)), background='#f0f0f0'),
-    pn.Column(pn.widgets.Button(name='B3', width=100, margin=(25, 50, 75, 100)), background='#f0f0f0'))
+    pn.Column(pn.widgets.Button(name='B1', width=100, margin=25), styles={'background': '#f0f0f0'}),
+    pn.Column(pn.widgets.Button(name='B2', width=100, margin=(40, 50)), styles={'background': '#f0f0f0'}),
+    pn.Column(pn.widgets.Button(name='B3', width=100, margin=(25, 50, 75, 100)), styles={'background': '#f0f0f0'}))
 
 ```
 

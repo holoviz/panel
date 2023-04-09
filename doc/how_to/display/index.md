@@ -45,4 +45,5 @@ How to write Panel applications inside Markdown files.
 notebook
 editor
 jupyterlab
+markdown
 ```

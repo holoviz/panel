@@ -538,21 +538,21 @@ class panel_extension(_pyviz_extension):
     _loaded = False
 
     _imports = {
-        'katex': 'panel.models.katex',
-        'mathjax': 'panel.models.mathjax',
-        'plotly': 'panel.models.plotly',
-        'deckgl': 'panel.models.deckgl',
-        'vega': 'panel.models.vega',
-        'vtk': 'panel.models.vtk',
         'ace': 'panel.models.ace',
+        'deckgl': 'panel.models.deckgl',
         'echarts': 'panel.models.echarts',
         'ipywidgets': 'panel.io.ipywidget',
-        'perspective': 'panel.models.perspective',
-        'terminal': 'panel.models.terminal',
-        'tabulator': 'panel.models.tabulator',
-        'texteditor': 'panel.models.quill',
         'jsoneditor': 'panel.models.jsoneditor',
-        'vizzu': 'panel.models.vizzu'
+        'katex': 'panel.models.katex',
+        'mathjax': 'panel.models.mathjax',
+        'perspective': 'panel.models.perspective',
+        'plotly': 'panel.models.plotly',
+        'tabulator': 'panel.models.tabulator',
+        'terminal': 'panel.models.terminal',
+        'texteditor': 'panel.models.quill',
+        'vizzu': 'panel.models.vizzu',
+        'vega': 'panel.models.vega',
+        'vtk': 'panel.models.vtk'
     }
 
     # Check whether these are loaded before rendering (if any item
@@ -561,14 +561,15 @@ class panel_extension(_pyviz_extension):
     _globals = {
         'deckgl': ['deck'],
         'echarts': ['echarts'],
+        'gridstack': ['GridStack'],
         'katex': ['katex'],
         'mathjax': ['MathJax'],
         'plotly': ['Plotly'],
-        'vega': ['vega'],
-        'vtk': ['vtk'],
-        'terminal': ['Terminal', 'xtermjs'],
         'tabulator': ['Tabulator'],
-        'gridstack': ['GridStack']
+        'terminal': ['Terminal', 'xtermjs'],
+        'vega': ['vega'],
+        'vizzu': ['Vizzu'],
+        'vtk': ['vtk']
     }
 
     _loaded_extensions = []

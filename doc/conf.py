@@ -101,10 +101,6 @@ nbsite_gallery_conf = {
                 {'path': 'components',
                  'title': 'Custom components',
                  'description': "Components created using Panel's ReactiveHTML class."},
-                {'path': 'links',
-                 'title': 'Linking',
-                 'description': ('Using Javascript based links to define interactivity without '
-                                 'without requiring a live kernel.')},
                 {'path': 'styles',
                  'title': 'Styling & Theming',
                  'description': "Examples demonstrating how to style and theme different components."},

@@ -201,7 +201,7 @@ pn.pane.Str(df)
 :::{admonition} Learn More
 :class: info
 
-Learn more about Panes in the (Background for Components)[../background/components/components_overview.md#Panes]
+Learn more about Panes in the [Background for Components](../background/components/components_overview.md#Panes)
 :::
 
 So far we have only learned how to display data, to actually add it to your application you need to mark it as `servable`. To mark an object as servable adds it to the current template, something we will get into later. You can either mark multiple objects as servable which will add it to the page sequentially or you can use layouts to arrange objects explicitly.
@@ -312,11 +312,11 @@ pn.extension(template='fast')
 
 freq = pn.widgets.FloatSlider(
     name='Frequency', start=0, end=10, value=5
-).servable(area='sidebar')
+).servable(target='sidebar')
 
 ampl = pn.widgets.FloatSlider(
     name='Amplitude', start=0, end=1, value=0.5
-).servable(area='sidebar')
+).servable(target='sidebar')
 
 def plot(freq, ampl):
     fig = plt.figure()
@@ -332,7 +332,7 @@ mpl = pn.pane.Matplotlib(
 
 pn.Column(
     '# Sine curve', mpl
-).servable(area='main')
+).servable(target='main')
 ```
 
 ## Exploring further

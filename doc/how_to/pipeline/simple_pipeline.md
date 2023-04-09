@@ -43,7 +43,9 @@ class Stage1(param.Parameterized):
             a=self.a, b=self.b, c=c), style={'font-size': '2em'})
         d_out = pn.pane.LaTeX('${a}^{{{b}}} = {d}$'.format(
             a=self.a, b=self.b, d=d), style={'font-size': '2em'})
-        return pn.Column(c_out, d_out,  margin=(40, 10), background='#f0f0f0')
+        return pn.Column(
+		    c_out, d_out,  margin=(40, 10), styles={'background': '#f0f0f0'}
+		)
 
     def panel(self):
         return pn.Row(self.param, self.view,)
@@ -89,7 +91,7 @@ class Stage2(param.Parameterized):
     def view(self):
         out = pn.pane.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
                       style={'font-size': '2em'})
-        return pn.Column(out, margin=(40, 10), background='#f0f0f0')
+        return pn.Column(out, margin=(40, 10), styles={'background': '#f0f0f0'})
 
     def panel(self):
         return pn.Row(self.param, self.view)
@@ -135,7 +137,7 @@ class Stage1(param.Parameterized):
             a=self.a, b=self.b, c=c), style={'font-size': '2em'})
         d_out = pn.pane.LaTeX('${a}^{{{b}}} = {d}$'.format(
             a=self.a, b=self.b, d=d), style={'font-size': '2em'})
-        return pn.Column(c_out, d_out,  margin=(40, 10), background='#f0f0f0')
+        return pn.Column(c_out, d_out,  margin=(40, 10), styles={'background': '#f0f0f0'})
 
     def panel(self):
         return pn.Row(self.param, self.view,)
@@ -149,7 +151,7 @@ class Stage2(param.Parameterized):
     def view(self):
         out = pn.pane.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
                       style={'font-size': '2em'})
-        return pn.Column(out, margin=(40, 10), background='#f0f0f0')
+        return pn.Column(out, margin=(40, 10), styles={'background': '#f0f0f0'})
 
     def panel(self):
         return pn.Row(self.param, self.view)

@@ -40,6 +40,10 @@ print(pane)
 
 ### The ``display`` function
 
+:::{attention}
+The `display` function is an IPython built-in and will only work in notebooks.
+:::
+
 To avoid having to put a Panel on the last line of a notebook cell, e.g. to display it from inside a function call, you can use the IPython built-in ``display`` function:
 
 ```{pyodide}
