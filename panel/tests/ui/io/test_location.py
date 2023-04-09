@@ -27,19 +27,23 @@ def test_set_url_params_update_document(page, port):
 
         if pn.state.location:
             pn.state.location.sync(w1, {'value': 'slider_value'})
+            time.sleep(0.1)
             pn.state.location.sync(w2, {'value': 'text_value'})
+            time.sleep(0.1)
             pn.state.location.sync(w3, {'value': 'range_value'})
 
         def cb():
             w1.value = 2
+            time.sleep(0.1)
             w2.value = 'Simple Text'
+            time.sleep(0.1)
             w3.value = (1, 2)
 
         pn.state.onload(cb)
         return widgets
 
     serve_panel_widget(page, port, app)
-    page.wait_for_timeout(200)
+    page.wait_for_timeout(500)
 
     expected_location = {
         'href': f'http://localhost:{port}/?slider_value=2&range_value=%5B1%2C+2%5D&text_value=Simple+Text',

@@ -154,7 +154,7 @@ def wait_for_app(launch_app, app, page, runtime, wait=True, **kwargs):
 
     convert_apps(
         [app_path], app_path.parent, runtime=runtime, build_pwa=False,
-        prerender=False, panel_version='local', **kwargs
+        prerender=False, panel_version='local', inline=True, **kwargs
     )
 
     msgs = []

@@ -14,6 +14,7 @@ import param
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
+from ..io.resources import CDN_DIST
 from ..reactive import ReactiveData
 from ..util import lazy_load
 from ..viewable import Viewable
@@ -317,7 +318,9 @@ class Perspective(ModelPane, ReactiveData):
 
     _updates: ClassVar[bool] = True
 
-    _stylesheets = ['css/perspective-datatable.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/perspective-datatable.css'
+    ]
 
     @classmethod
     def applies(cls, object):

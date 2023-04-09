@@ -17,8 +17,8 @@ templates = {
     'vanilla'   : VanillaTemplate
 }
 
-_config.param.template.names = templates
 _config.param.template.objects = list(templates)
+_config.param.template.names = templates
 
 __all__ = [
     "BaseTemplate",

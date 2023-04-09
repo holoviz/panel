@@ -20,9 +20,9 @@
 
   <!-- Favicon
   -------------------------------------------------- -->
-  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/latest/images/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.holoviz.org/panel/latest/images/favicon.ico">
-  <link rel="manifest" href="https://cdn.holoviz.org/panel/latest/images/site.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/latest/dist/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.holoviz.org/panel/latest/dist/images/favicon.ico">
+  <link rel="manifest" href="https://cdn.holoviz.org/panel/latest/dist/images/site.webmanifest">
   <meta name="msapplication-TileColor" content="#da532c">
   <meta name="theme-color" content="#ffffff">
   <script type="module" src="https://cdn.holoviz.org/panel/latest/dist/bundled/js/@microsoft/fast-colors@5.3.1/dist/index.js"></script>
@@ -113,6 +113,7 @@
     }
     .gallery-item {
 	cursor: pointer;
+	text-align: center;
     }
     .header {
 	background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('https://cdn.holoviz.org/panel/latest/dist/images/index_background.png');
@@ -194,6 +195,9 @@
 	width: 100%;
 	margin-top: 25px;
     }
+    object {
+	height: 125px;
+    }
     .card-content {
 	padding: 10px 10px 10px;
 	color: var(--neutral-foreground-rest);
@@ -250,15 +254,16 @@
         <li class="card">
           <a class="card-link" href=".{{ item }}" id="{{ item }}">
             <fast-card class="gallery-item">
-              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
-                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
-                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
-              </svg>
+	      <object data="thumbnails{{ item }}.png" type="image/png">
+                <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+                  <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                  <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
+                </svg>
+              </object>
               <div class="card-content">
                 <h2 class="card-header">{{ item[1:].replace("_", " ").title() }}</h2>
               </div>
             </fast-card>
-            <fast-tooltip anchor="{{ item }}">Click to start the application</fast-tooltip>
           </a>
         </li>
         {% end %}

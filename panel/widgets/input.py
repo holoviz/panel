@@ -1002,7 +1002,7 @@ class DatetimeRangeInput(CompositeWidget):
     _composite_type: ClassVar[Type[Panel]] = Column
 
     def __init__(self, **params):
-        self._text = StaticText(margin=(5, 0, 0, 0), style={'white-space': 'nowrap'})
+        self._text = StaticText(margin=(5, 0, 0, 0), styles={'white-space': 'nowrap'})
         self._start = DatetimeInput(sizing_mode='stretch_width', margin=(5, 0, 0, 0))
         self._end = DatetimeInput(sizing_mode='stretch_width', margin=(5, 0, 0, 0))
         if 'value' not in params:

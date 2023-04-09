@@ -125,7 +125,7 @@ class HoloViews(PaneBase):
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         self._track_overrides(*(e for e in events if e.name in Layoutable.param))
-        super()._param_change(*(e for e in events if e.name in self._overrides))
+        super()._param_change(*(e for e in events if e.name in self._overrides+['css_classes']))
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
@@ -333,8 +333,12 @@ class HoloViews(PaneBase):
         self._syncing_props = True
         try:
             self.param.update({k: v for k, v in params.items() if k not in self._overrides})
+            if backend != 'bokeh':
+                return
+            plot_props = plot.state.properties()
             props = {
                 o: getattr(self, o) for o in self._overrides
+                if o in plot_props
             }
             if props:
                 plot.state.update(**props)

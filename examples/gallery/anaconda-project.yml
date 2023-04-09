@@ -1,0 +1,40 @@
+name: panel_gallery
+description: An environment to serve all Panel gallery examples
+
+commands:
+  default:
+    description: Serve the Panel gallery
+    unix: bokeh sampledata && panel serve */*.ipynb --static-dirs thumbnails=thumbnails
+    supports_http_options: true
+
+channels:
+  - pyviz/label/dev
+  - bokeh/label/dev
+  - conda-forge
+
+variables:
+  MPLBACKEND: Agg
+
+packages:
+  - panel
+  - holoviews
+  - pandas
+  - scikit-learn
+  - scikit-image
+  - fastparquet
+  - hvplot
+  - datashader
+  - graphviz
+  - networkx
+  - ipywidgets
+  - pygraphviz
+  - plotly
+  - altair
+  - pydeck
+  - pyvista
+  - pip:
+    - vega_datasets
+    - ipyvolume
+
+env_specs:
+  default: {}

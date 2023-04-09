@@ -23,19 +23,28 @@ that accepts these same parameters.
     <meta charset="utf-8">
     <title>{% block title %}{{ title | e if title else "Panel App" }}{% endblock %}</title>
     {% if manifest_url %}<link rel="manifest" href="{{ manifest_url }}">{% endif %}
-  {%   block preamble -%}{% endblock %}
-  {%   block resources -%}
+    {% if theme_name == "dark"%}<style>html { background-color: #121212 }</style>{% endif %}
+  {%  block preamble -%}{%- endblock %}
+  {%  block resources %}
+    <style>
+      html, body {
+        box-sizing: border-box;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
   {%   block css_resources -%}
-    {{  bokeh_css if bokeh_css }}
-  {%   endblock css_resources %}
-  {%   block js_resources %}
-    {{  bokeh_js if bokeh_js | indent(4) }}
-  {%  endblock js_resources %}
-  {% endblock  resources %}
-  {% block postamble %}{% endblock %}
+    {{- bokeh_css if bokeh_css }}
+  {%-  endblock css_resources %}
+  {%   block js_resources -%}
+    {{  bokeh_js if bokeh_js }}
+  {%-  endblock js_resources %}
+  {%  endblock resources %}
+  {%  block postamble %}{% endblock %}
   {% endblock inner_head %}
   </head>
-  {% endblock head %}
+  {% endblock head%}
   {% block body %}
   <body>
   {%  block inner_body %}
@@ -52,5 +61,5 @@ that accepts these same parameters.
   {{ plot_script | indent(4) }}
   {%  endblock inner_body %}
   </body>
-  {% endblock body %}
+  {% endblock body%}
 </html>

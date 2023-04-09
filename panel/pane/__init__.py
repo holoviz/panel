@@ -50,6 +50,7 @@ from .plot import (  # noqa
 from .plotly import Plotly  # noqa
 from .streamz import Streamz  # noqa
 from .vega import Vega  # noqa
+from .vizzu import Vizzu  # noqa
 from .vtk import VTK, VTKVolume  # noqa
 
 __all__ = (
@@ -84,6 +85,7 @@ __all__ = (
     "SVG",
     "Vega",
     "Video",
+    "Vizzu",
     "VTK",
     "VTKVolume",
     "YT"

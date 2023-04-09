@@ -84,7 +84,9 @@ def _get_schema_version(obj, default_version: int = 5) -> int:
     return int(match.groups()[0])
 
 def _get_selections(obj, version=None):
-    if version is None:
+    if obj is None:
+        return {}
+    elif version is None:
         version = _get_schema_version(obj)
     key = 'params' if version >= 5 else 'selection'
     selections = {}

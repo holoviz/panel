@@ -10,7 +10,6 @@ This guide will provide simple how-to guides on how to display panels interactiv
 :::{grid-item-card} {octicon}`note;2.5em;sd-mr-1 sd-animate-grow50` Display output in notebooks
 :link: notebook
 :link-type: doc
-:class-title: sd-text-center
 
 How to display output in Jupyter and non-Jupyter based notebook environments.
 :::
@@ -18,7 +17,6 @@ How to display output in Jupyter and non-Jupyter based notebook environments.
 :::{grid-item-card} {octicon}`code-square;2.5em;sd-mr-1 sd-animate-grow50` Develop apps in an editor
 :link: editor
 :link-type: doc
-:class-title: sd-text-center
 
 How to rapidly develop a Panel application in your favorite IDE or editor.
 :::
@@ -26,9 +24,15 @@ How to rapidly develop a Panel application in your favorite IDE or editor.
 :::{grid-item-card} {octicon}`moon;2.5em;sd-mr-1 sd-animate-grow50` Preview apps in JupyterLab
 :link: jupyterlab
 :link-type: doc
-:class-title: sd-text-center
 
 How to use the Preview functionality in JupyterLab to rapidly develop applications.
+:::
+
+:::{grid-item-card} {octicon}`markdown;2.5em;sd-mr-1 sd-animate-grow50` Write apps in Markdown
+:link: markdown
+:link-type: doc
+
+How to write Panel applications inside Markdown files.
 :::
 
 ::::
@@ -41,4 +45,5 @@ How to use the Preview functionality in JupyterLab to rapidly develop applicatio
 notebook
 editor
 jupyterlab
+markdown
 ```

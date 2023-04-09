@@ -101,11 +101,11 @@ Walks you through setting up your Python environment, installing Panel into it a
 A more hands on tour taking you through the process of loading some data, displaying it and then building an application around it with some of the rich features that Panel supports.
 :::
 
-:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` User Guide
-:link: user_guide/index
+:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` How-to
+:link: how_to/index
 :link-type: doc
 
-For a more in-depth guide through a range of topics, starting from the various APIs of Panel, through to building custom components and authentication visit our user guide.
+How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work.
 :::
 
 ::::
@@ -122,7 +122,7 @@ The Panel project is grateful for the sponsorship by the organizations and compa
 :link: https://www.anaconda.com/
 :link-type: url
 :text-align: center
-:columns: 6
+:columns: 3
 
 ```{image} https://static.bokeh.org/sponsor/anaconda.png
 ---
@@ -136,11 +136,37 @@ alt: Anaconda Logo
 :link: https://www.blackstone.com/the-firm/
 :link-type: url
 :text-align: center
-:columns: 6
+:columns: 3
 
 ```{image} https://static.bokeh.org/sponsor/blackstone.png
 ---
 alt: Blackstone Logo
+---
+```
+:::
+
+:::{grid-item-card}
+:link: https://numfocus.org/
+:link-type: url
+:text-align: center
+:columns: 3
+
+```{image} https://numfocus.org/wp-content/uploads/2017/03/numfocusweblogo_orig-1.png
+---
+alt: NumFOCUS Logo
+---
+```
+:::
+
+:::{grid-item-card}
+:link: https://quansight.com/
+:link-type: url
+:text-align: center
+:columns: 3
+
+```{image} https://assets.holoviz.org/logos/Quansight-logo.svg
+---
+alt: Quansight Logo
 ---
 ```
 :::

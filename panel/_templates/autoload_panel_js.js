@@ -11,6 +11,9 @@ calls it with the rendered model.
 :param js_modules: URLs of JS modules making up Bokeh library
 :type js_modules: list
 
+:param js_exports: URLs of JS modules to be exported
+:type js_exports: dict
+
 :param css_urls: CSS urls to inject
 :type css_urls: list
 
@@ -44,17 +47,18 @@ calls it with the rendered model.
     console.debug("Bokeh: all callbacks have finished");
   }
 
-  function load_libs(css_urls, js_urls, js_modules, callback) {
+  function load_libs(css_urls, js_urls, js_modules, js_exports, callback) {
     if (css_urls == null) css_urls = [];
     if (js_urls == null) js_urls = [];
     if (js_modules == null) js_modules = [];
+    if (js_exports == null) js_exports = {};
 
     root._bokeh_onload_callbacks.push(callback);
     if (root._bokeh_is_loading > 0) {
       console.debug("Bokeh: BokehJS is being loaded, scheduling callback at", now());
       return null;
     }
-    if (js_urls.length === 0 && js_modules.length === 0) {
+    if (js_urls.length === 0 && js_modules.length === 0 && Object.keys(js_exports).length === 0) {
       run_callbacks();
       return null;
     }
@@ -67,6 +71,7 @@ calls it with the rendered model.
         run_callbacks()
       }
     }
+    window._bokeh_on_load = on_load
 
     function on_error() {
       console.error("failed to load " + url);
@@ -97,7 +102,7 @@ calls it with the rendered model.
       {% endfor %}
       root._bokeh_is_loading = css_urls.length + {{ requirements|length }};
     } else {
-      root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length;
+      root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length + Object.keys(js_exports).length;
     }
     {%- for lib, urls in skip_imports.items() %}
     if (((window['{{ lib }}'] !== undefined) && (!(window['{{ lib }}'] instanceof HTMLElement))) || window.requirejs) {
@@ -140,6 +145,26 @@ calls it with the rendered model.
       console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
       document.head.appendChild(element);
     }
+    for (const name in js_exports) {
+      var url = js_exports[name];
+      if (skip.indexOf(url) >= 0) {
+	if (!window.requirejs) {
+	  on_load();
+	}
+	continue;
+      }
+      var element = document.createElement('script');
+      element.onerror = on_error;
+      element.async = false;
+      element.type = "module";
+      console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
+      element.textContent = `
+      import ${name} from "${url}"
+      window.${name} = ${name}
+      window._bokeh_on_load()
+      `
+      document.head.appendChild(element);
+    }
     if (!js_urls.length && !js_modules.length) {
       on_load()
     }
@@ -153,6 +178,7 @@ calls it with the rendered model.
 
   var js_urls = {{ bundle.js_urls|json }};
   var js_modules = {{ bundle.js_modules|json }};
+  var js_exports = {{ bundle.js_module_exports|json }};
   var css_urls = {{ bundle.css_urls|json }};
   var inline_js = [
     {%- for css in bundle.css_raw %}
@@ -190,7 +216,7 @@ calls it with the rendered model.
     console.debug("Bokeh: BokehJS loaded, going straight to plotting");
     run_inline_js();
   } else {
-    load_libs(css_urls, js_urls, js_modules, function() {
+    load_libs(css_urls, js_urls, js_modules, js_exports, function() {
       console.debug("Bokeh: BokehJS plotting callback run at", now());
       run_inline_js();
     });

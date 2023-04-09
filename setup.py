@@ -106,6 +106,7 @@ install_requires = [
     'bokeh >=3.1.0,<3.2.0',
     'param >=1.12.0',
     'pyviz_comms >=0.7.4',
+    'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
     'requests',
     'tqdm >=4.48.0',
@@ -118,7 +119,7 @@ install_requires = [
 
 _recommended = [
     'jupyterlab',
-    'holoviews >1.14.1',
+    'holoviews >=1.16.0a2',
     'matplotlib',
     'pillow',
     'plotly'
@@ -142,7 +143,7 @@ _tests = [
     'twine',
     'pandas >=1.3',
     'ipython >=7.0',
-    'holoviews',
+    'holoviews >=1.16.0a2',
     'diskcache',
     'markdown-it-py',
     'ipyvuetify',
@@ -160,6 +161,7 @@ _ui = [
 
 extras_require = {
     'examples': [
+        'holoviews >=1.16.0a2',
         'hvplot',
         'plotly >=4.0',
         'altair',
@@ -168,7 +170,7 @@ extras_require = {
         'vtk ==9.0.1',
         'scikit-learn',
         'datashader',
-        'jupyter_bokeh >=3.0.2',
+        'jupyter_bokeh >=3.0.7',
         'django <4',
         'channels',
         'pyvista<0.33',
@@ -194,12 +196,13 @@ extras_require = {
         'ipyvuetify',
         'reacton',
         'scikit-image',
+        'fastparquet'
     ],
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
         'nbsite >=0.8.0rc7',
-        'pydata-sphinx-theme ==0.9.0',
+        'pydata-sphinx-theme ==0.13.3',
         'sphinx-copybutton',
         'sphinx-design',
     ],

@@ -2254,7 +2254,7 @@ def test_tabulator_download(page, port, df_mixed, df_mixed_as_string):
     saved_df = pd.read_csv(path, index_col='index')
     # Some transformations required to reform the dataframe as the original one.
     saved_df['date'] = pd.to_datetime(saved_df['date'], unit='ms')
-    saved_df['date'] = saved_df['date'].astype(object)
+    saved_df['date'] = [d.to_pydatetime().date() for d in saved_df['date']]
     saved_df['datetime'] = pd.to_datetime(saved_df['datetime'], unit='ms')
     saved_df.index.name = None
 
@@ -2711,7 +2711,6 @@ def test_tabulator_click_event_and_header_filters(page, port):
     assert values[0] == ('col2', 4, 'Z')
 
 
-@pytest.mark.skip(reason="Bokeh bug: https://github.com/bokeh/bokeh/issues/12788")
 def test_tabulator_click_event_and_header_filters_and_streamed_data(page, port):
     df = pd.DataFrame({
         'col1': list('ABCDD'),

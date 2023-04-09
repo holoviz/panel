@@ -38,8 +38,7 @@ from bokeh.application.handlers.code import (
     CodeHandler, _monkeypatch_io, patch_curdoc,
 )
 from bokeh.application.handlers.function import FunctionHandler
-from bokeh.command.util import build_single_handler_application
-from bokeh.core.templates import AUTOLOAD_JS
+from bokeh.core.templates import AUTOLOAD_JS, FILE
 from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.embed.bundle import Script
@@ -70,11 +69,12 @@ from .document import init_doc, unlocked, with_lock  # noqa
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
 )
+from .markdown import build_single_handler_application
 from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, ERROR_TEMPLATE, LOCAL_DIST,
-    Resources, _env, bundle_resources, component_rel_path, patch_model_css,
+    Resources, _env, bundle_resources, patch_model_css, resolve_custom_path,
 )
 from .state import set_curdoc, state
 
@@ -205,6 +205,10 @@ def server_html_page_for_session(
     else:
         dist_url = CDN_DIST
 
+    if template is FILE:
+        template = BASE_TEMPLATE
+
+    session.document._template_variables['theme_name'] = config.theme
     session.document._template_variables['dist_url'] = dist_url
     for root in session.document.roots:
         patch_model_css(root, dist_url=dist_url)
@@ -421,7 +425,7 @@ class ComponentResourceHandler(StaticFileHandler):
 
     _resource_attrs = [
         '__css__', '__javascript__', '__js_module__', '__javascript_modules__',  '_resources',
-        '_css', '_js', 'base_css', 'css'
+        '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers'
     ]
 
     def initialize(self, path: Optional[str] = None, default_filename: Optional[str] = None):
@@ -462,13 +466,18 @@ class ComponentResourceHandler(StaticFileHandler):
                 raise HTTPError(404, 'Resource type not found')
             resources = resources[rtype]
             rtype = f'_resources/{rtype}'
+        elif rtype == 'modifiers':
+            resources = [
+                st for rs in resources.values() for st in rs.get('stylesheets', [])
+                if isinstance(st, str)
+            ]
 
         if isinstance(resources, dict):
             resources = list(resources.values())
         elif isinstance(resources, (str, pathlib.PurePath)):
             resources = [resources]
         resources = [
-            component_rel_path(component, resource).replace(os.path.sep, '/')
+            str(resolve_custom_path(component, resource, relative=True)).replace(os.path.sep, '/')
             for resource in resources
         ]
 
@@ -879,7 +888,7 @@ def get_server(
                     continue
             if isinstance(app, pathlib.Path):
                 app = str(app) # enables serving apps from Paths
-            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb"))
+            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb") or app.endswith('.md'))
                 and os.path.isfile(app)):
                 apps[slug] = app = build_single_handler_application(app)
                 app._admin = admin
@@ -891,7 +900,7 @@ def get_server(
     else:
         if isinstance(panel, pathlib.Path):
             panel = str(panel) # enables serving apps from Paths
-        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb"))
+        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb") or panel.endswith('.md'))
             and os.path.isfile(panel)):
             apps = {'/': build_single_handler_application(panel)}
         else:

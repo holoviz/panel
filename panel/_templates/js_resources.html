@@ -23,6 +23,13 @@ configuration in a Resources object.
 <script type="module" src="{{ file }}"></script>
 {% endfor %}
 
+{%- for name, file in js_module_exports.items() %}
+<script type="module">
+  import {{ name }} from "{{ file }}";
+  window.{{ name }} = {{ name }}
+</script>
+{%- endfor %}
+
 {%- for js in js_raw %}
 <script type="text/javascript">
   {{ js }}

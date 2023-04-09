@@ -26,7 +26,7 @@ Now you are ready to go, all Panel components will render themselves. In other w
 :::{admonition} Tip
 :class: success
 
-When working in JupyterLab you will see a little Panel icon (<img src="/_static/favicon.ico" alt="Panel Icon" width="20px"/>) in your toolbar. This will let you preview the application you are building quickly and easily.
+When working in JupyterLab you will see a little Panel icon (<img src="https://panel.holoviz.org/_static/icons/favicon.ico" alt="Panel Icon" width="20px"/>) in your toolbar. This will let you preview the application you are building quickly and easily.
 :::
 
 ### Editor/IDE
@@ -201,7 +201,7 @@ pn.pane.Str(df)
 :::{admonition} Learn More
 :class: info
 
-Learn more about Panes in the (Background for Components)[../background/components/components_overview.md#Panes]
+Learn more about Panes in the [Background for Components](../background/components/components_overview.md#Panes)
 :::
 
 So far we have only learned how to display data, to actually add it to your application you need to mark it as `servable`. To mark an object as servable adds it to the current template, something we will get into later. You can either mark multiple objects as servable which will add it to the page sequentially or you can use layouts to arrange objects explicitly.
@@ -231,7 +231,7 @@ def square(x):
 pn.Row(pn.bind(square, x))
 ```
 
-The `pn.bind` function let's us bind widgets (and parameter **objects**) to a function that returns an object to be displayed. Once bound the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily.
+The `pn.bind` function lets us bind widgets (and parameter **objects**) to a function that returns an object to be displayed. Once bound the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily.
 
 :::{admonition} Reminder
 :class: info
@@ -285,7 +285,7 @@ background.param.watch(update_styles, 'value')
 pn.Row(x, background, square)
 ```
 
-The first thing you will not is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding.
+The first thing you will note is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding.
 
 ## Templates
 
@@ -312,11 +312,11 @@ pn.extension(template='fast')
 
 freq = pn.widgets.FloatSlider(
     name='Frequency', start=0, end=10, value=5
-).servable(area='sidebar')
+).servable(target='sidebar')
 
 ampl = pn.widgets.FloatSlider(
     name='Amplitude', start=0, end=1, value=0.5
-).servable(area='sidebar')
+).servable(target='sidebar')
 
 def plot(freq, ampl):
     fig = plt.figure()
@@ -332,7 +332,7 @@ mpl = pn.pane.Matplotlib(
 
 pn.Column(
     '# Sine curve', mpl
-).servable(area='main')
+).servable(target='main')
 ```
 
 ## Exploring further

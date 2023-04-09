@@ -165,6 +165,8 @@ def _param_bind(function, *args, watch=False, **kwargs):
     annotated with all dependencies.
     """
     dependencies = {}
+    if isinstance(function, (param.Parameter, Widget)):
+        dependencies['__fn'] = param_value_if_widget(function)
     for i, p in enumerate(args):
         if hasattr(p, '_dinfo'):
             for j, arg in enumerate(p._dinfo['dependencies']):
@@ -199,21 +201,33 @@ def _param_bind(function, *args, watch=False, **kwargs):
                 arg = getattr(arg.owner, arg.name)
             combined_kwargs[kw] = arg
         for kw, arg in wkwargs.items():
-            if kw.startswith('__arg') or kw.startswith('__kwarg'):
+            if kw.startswith('__arg') or kw.startswith('__kwarg') or kw.startswith('__fn'):
                 continue
             combined_kwargs[kw] = arg
         return combined_args, combined_kwargs
+
+    def eval_fn():
+        if callable(function):
+            fn = function
+        else:
+            p = param_value_if_widget(function)
+            if isinstance(p, param.Parameter):
+                fn = getattr(p.owner, p.name)
+            else:
+                fn = eval_function(p)
+        return fn
 
     if iscoroutinefunction(function):
         @depends(**dependencies, watch=watch)
         async def wrapped(*wargs, **wkwargs):
             combined_args, combined_kwargs = combine_arguments(wargs, wkwargs)
-            return await function(*combined_args, **combined_kwargs)
+
+            return await eval_fn()(*combined_args, **combined_kwargs)
     else:
         @depends(**dependencies, watch=watch)
         def wrapped(*wargs, **wkwargs):
             combined_args, combined_kwargs = combine_arguments(wargs, wkwargs)
-            return function(*combined_args, **combined_kwargs)
+            return eval_fn()(*combined_args, **combined_kwargs)
     wrapped.__bound_function__ = function
     return wrapped
 

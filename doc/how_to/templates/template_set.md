@@ -75,8 +75,8 @@ import holoviews as hv
 pn.extension(template='bootstrap')
 
 xs = np.linspace(0, np.pi)
-freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2).servable(area='sidebar')
-phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi).servable(area='sidebar')
+freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2).servable(target='sidebar')
+phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi).servable(target='sidebar')
 
 @pn.depends(freq=freq, phase=phase)
 def sine(freq, phase):
@@ -91,7 +91,7 @@ def cosine(freq, phase):
 pn.Row(
     pn.Card(hv.DynamicMap(sine), title='Sine'),
     pn.Card(hv.DynamicMap(cosine), title='Cosine')
-).servable(area='main')
+).servable(target='main')
 ```
 :::
 

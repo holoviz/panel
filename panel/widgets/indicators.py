@@ -33,6 +33,7 @@ from bokeh.models import ColumnDataSource, FixedTicker
 from bokeh.plotting import figure
 from tqdm.asyncio import tqdm as _tqdm
 
+from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
 from ..models import (
     HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator,
@@ -113,7 +114,7 @@ class BooleanStatus(BooleanIndicator):
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None}
 
-    _stylesheets: ClassVar[List[str]] = ['css/booleanstatus.css']
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/booleanstatus.css']
 
     _widget_type: ClassVar[Type[Model]] = HTML
 
@@ -159,7 +160,7 @@ class LoadingSpinner(BooleanIndicator):
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None, 'bgcolor': None}
 
-    _stylesheets: ClassVar[List[str]] = ['css/loadingspinner.css']
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/loadingspinner.css']
 
     _widget_type: ClassVar[Type[Model]] = HTML
 
@@ -220,7 +221,7 @@ class Progress(ValueIndicator):
 
     width = param.Integer(default=300)
 
-    _stylesheets: ClassVar[List[str]] = ['css/progress.css']
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/progress.css']
 
     _widget_type: ClassVar[Type[Model]] = _BkProgress
 

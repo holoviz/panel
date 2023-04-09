@@ -10,7 +10,6 @@ from typing import (
 
 import tornado
 
-from bokeh.command.util import build_single_handler_application
 from bokeh.document import Document
 from bokeh.embed.bundle import extension_dirs
 from bokeh.protocol import Protocol
@@ -25,6 +24,7 @@ from bokeh.util.token import get_session_id, get_token_payload
 from ipykernel.comm import Comm
 
 from ..util import edit_readonly
+from .markdown import build_single_handler_application
 from .resources import Resources
 from .server import server_html_page_for_session
 from .state import set_curdoc, state

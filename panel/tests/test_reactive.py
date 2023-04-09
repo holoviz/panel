@@ -196,6 +196,33 @@ def test_pass_bind_function_by_reference():
 
     assert text_input.width == 111
 
+def test_pass_parameterized_method_by_reference():
+
+    class Test(param.Parameterized):
+
+        a = param.Parameter(1)
+        b = param.Parameter(2)
+
+        @param.depends('a')
+        def dep_a(self):
+            return self.a
+
+        @param.depends('dep_a', 'b')
+        def dep_ab(self):
+            return self.dep_a() + self.b
+
+    test = Test()
+    int_input = IntInput(start=0, end=400, value=test.dep_ab)
+
+    assert int_input.value == 3
+
+    test.a = 3
+
+    assert int_input.value == 5
+
+    test.b = 5
+
+    assert int_input.value == 8
 
 def test_pass_depends_function_by_reference():
     int_input = IntInput(start=0, end=400, value=42)

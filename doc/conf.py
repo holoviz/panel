@@ -59,10 +59,10 @@ html_theme_options = {
         "copyright",
         "last-updated",
     ],
-    "navbar_end": ["navbar-icon-links"],
     "google_analytics_id": "UA-154795830-2",
     "pygment_light_style": "material",
-    "pygment_dark_style": "material"
+    "pygment_dark_style": "material",
+    "header_links_before_dropdown": 6
 }
 
 extensions += [
@@ -88,10 +88,6 @@ nbsite_gallery_conf = {
                 {'path': 'simple',
                  'title': 'Simple Apps',
                  'description': 'Simple example apps meant to provide a quick introduction to Panel.'},
-                {'path': 'apis',
-                 'title': 'APIs',
-                 'description': ('Examples meant to demonstrate the usage of different Panel APIs '
-                                 'such as interact and reactive functions.')},
                 {'path': 'layout',
                  'title': 'Layouts',
                  'description': 'How to leverage Panel layout components to achieve complex layouts.'},
@@ -99,19 +95,12 @@ nbsite_gallery_conf = {
                  'title': 'Dynamic UIs',
                  'description': ('Examples demonstrating how to build dynamic UIs with components that '
                                  'are added or removed interactively.')},
-                {'path': 'param',
-                 'title': 'Param based apps',
-                 'description': 'Using the Param library to express UIs independently of Panel.'},
                 {'path': 'streaming',
                  'title': 'Streaming',
                  'description': ('Streaming data to a visual component.')},
                 {'path': 'components',
                  'title': 'Custom components',
                  'description': "Components created using Panel's ReactiveHTML class."},
-                {'path': 'links',
-                 'title': 'Linking',
-                 'description': ('Using Javascript based links to define interactivity without '
-                                 'without requiring a live kernel.')},
                 {'path': 'styles',
                  'title': 'Styling & Theming',
                  'description': "Examples demonstrating how to style and theme different components."},
@@ -152,7 +141,7 @@ else:
     bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
 nbsite_pyodide_conf = {
-    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.15.1']
+    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.16.0a2']
 }
 
 templates_path = [

@@ -81,7 +81,11 @@ const elementTransformCategories: any = {
 };
 
 function defaultElementTransform(element: Element) {
-  return { boundingClientRect: {...element.getBoundingClientRect()} };
+  try {
+    return { boundingClientRect: {...element.getBoundingClientRect()} };
+  } catch {
+    return {}
+  }
 }
 
 const elementTagCategories: any = {

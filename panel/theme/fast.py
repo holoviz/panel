@@ -7,6 +7,7 @@ import param
 from bokeh.themes import Theme as _BkTheme
 
 from ..config import config
+from ..io.resources import CDN_DIST
 from ..layout import Accordion
 from ..reactive import ReactiveHTML
 from ..viewable import Viewable
@@ -145,9 +146,9 @@ class FastWrapper(ReactiveHTML):
         'render': """
         let accent, bg, luminance
         if (window._JUPYTERLAB) {
-          accent = getComputedStyle(view.el).getPropertyValue('--jp-brand-color0').trim();
-          bg = getComputedStyle(view.el).getPropertyValue('--jp-layout-color0').trim();
-          let color = getComputedStyle(view.el).getPropertyValue('--jp-ui-font-color0').trim();
+          accent = getComputedStyle(document.body).getPropertyValue('--jp-brand-color0').trim();
+          bg = getComputedStyle(document.body).getPropertyValue('--jp-layout-color0').trim();
+          let color = getComputedStyle(document.body).getPropertyValue('--jp-ui-font-color0').trim();
           luminance = color == 'rgba(255, 255, 255, 1)' ? 0.23 : 1.0;
         } else {
           accent = data.style.accent_base_color;
@@ -199,7 +200,7 @@ class FastDarkTheme(DarkTheme):
 
     style = param.ClassSelector(default=DARK_STYLE, class_=FastStyle)
 
-    _modifiers = {
+    modifiers = {
         Dial: {
             'label_color': 'white'
         },
@@ -220,7 +221,7 @@ class FastDarkTheme(DarkTheme):
 
 class Fast(Design):
 
-    _modifiers = {
+    modifiers = {
         Accordion: {
             'active_header_background': 'var(--neutral-fill-active)'
         },
@@ -228,7 +229,7 @@ class Fast(Design):
             'theme': 'fast'
         },
         Viewable: {
-            'stylesheets': [Inherit, 'css/fast.css']
+            'stylesheets': [Inherit, f'{CDN_DIST}bundled/theme/fast.css']
         }
     }
 

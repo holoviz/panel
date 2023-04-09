@@ -417,12 +417,9 @@ input[type=file]:active {
 /* Buttons */
 
 .bk-btn {
-    border: unset;
     border-radius: calc(var(--control-corner-radius) * 1px);
     line-height: var(--type-ramp-base-line-height);
-    height: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px);
     min-width: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px);
-    padding: 0 calc((10 + (var(--design-unit) * 2 * var(--density))) * 1px);
 }
 
 .bk-btn.bk-btn-default {
@@ -435,8 +432,6 @@ input[type=file]:active {
 }
 
 .bk-btn.bk-btn-default.bk-active {
-    background-color: var(--neutral-fill-active);
-    border: 1px solid var(--accent-fill-active);
     box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
     filter: brightness(0.9);
 }
@@ -464,6 +459,7 @@ input[type=file]:active {
 .bk-menu > :not(.bk-divider):hover,
 .bk-menu > :not(.bk-divider).bk-active {
     background-color: var(--accent-fill-hover);
+    color: var(--foreground-on-accent-hover);
 }
 
 /* Checkbox/Radio */

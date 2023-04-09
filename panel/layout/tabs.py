@@ -10,10 +10,9 @@ from typing import (
 
 import param
 
-from bokeh.models import (
-    Spacer as BkSpacer, TabPanel as BkTabPanel, Tabs as BkTabs,
-)
+from bokeh.models import Spacer as BkSpacer, TabPanel as BkTabPanel
 
+from ..models.tabs import Tabs as BkTabs
 from ..viewable import Layoutable
 from .base import NamedListPanel
 
@@ -55,6 +54,8 @@ class Tabs(NamedListPanel):
     width = param.Integer(default=None, bounds=(0, None))
 
     _bokeh_model: ClassVar[Type[Model]] = BkTabs
+
+    _direction: ClassVar[str | None] = 'vertical'
 
     _js_transforms: ClassVar[Mapping[str, str]] = {'tabs': """
     var ids = [];
@@ -138,9 +139,9 @@ class Tabs(NamedListPanel):
                 self.param.trigger('objects')
                 return
 
-    def _compute_sizing_mode(self, children, sizing_mode):
+    def _compute_sizing_mode(self, children, props):
         children = [child.child for child in children]
-        return super()._compute_sizing_mode(children, sizing_mode)
+        return super()._compute_sizing_mode(children, props)
 
     #----------------------------------------------------------------
     # Model API

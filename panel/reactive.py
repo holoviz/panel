@@ -35,13 +35,15 @@ from .io.model import hold
 from .io.notebook import push
 from .io.resources import (
     CDN_DIST, loading_css, patch_stylesheet, process_raw_css,
+    resolve_stylesheet,
 )
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import (
-    classproperty, edit_readonly, escape, eval_function, updating,
+    BOKEH_JS_NAT, classproperty, edit_readonly, escape, eval_function,
+    extract_dependencies, updating,
 )
 from .viewable import Layoutable, Renderable, Viewable
 
@@ -185,15 +187,20 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
             from .config import config
-            base_stylesheets = config.css_files+self._stylesheets+['css/loading.css']
-            stylesheets = [loading_css()] + process_raw_css(config.raw_css) + [
-                ImportedStyleSheet(url=stylesheet) for stylesheet in base_stylesheets
+            stylesheets = [loading_css(), f'{CDN_DIST}css/loading.css']
+            stylesheets += process_raw_css(config.raw_css)
+            stylesheets += config.css_files
+            stylesheets += [
+                resolve_stylesheet(self, css_file, '_stylesheets')
+                for css_file in self._stylesheets
             ]
-            for stylesheet in properties['stylesheets']:
+            stylesheets += properties['stylesheets']
+            wrapped = []
+            for stylesheet in stylesheets:
                 if isinstance(stylesheet, str) and stylesheet.endswith('.css'):
                     stylesheet = ImportedStyleSheet(url=stylesheet)
-                stylesheets.append(stylesheet)
-            properties['stylesheets'] = stylesheets
+                wrapped.append(stylesheet)
+            properties['stylesheets'] = wrapped
         return properties
 
     @property
@@ -588,7 +595,7 @@ class Reactive(Syncable, Viewable):
             if isinstance(p, param.Parameter):
                 deps = (p,)
             else:
-                deps = tuple(p._dinfo['dependencies']) + tuple(p._dinfo['kw'].values())
+                deps = extract_dependencies(p)
             # Skip updating value if dependency has not changed
             if not any((dep.owner is e.obj and dep.name == e.name) for dep in deps for e in events):
                 continue
@@ -598,7 +605,8 @@ class Reactive(Syncable, Viewable):
                 updates[pname] = eval_function(p)
         if config.loading_indicator:
             updates['loading'] = False
-        self.param.update(updates)
+        with param.edit_constant(self):
+            self.param.update(updates)
 
     def _setup_refs(self, refs):
         groups = defaultdict(list)
@@ -606,8 +614,7 @@ class Reactive(Syncable, Viewable):
             if isinstance(p, param.Parameter):
                 groups[p.owner].append(p.name)
             else:
-                subparameters = list(p._dinfo['dependencies'])+list(p._dinfo['kw'].values())
-                for sp in subparameters:
+                for sp in extract_dependencies(p):
                     groups[sp.owner].append(sp.name)
         for owner, pnames in groups.items():
             owner.param.watch(self._sync_refs, list(set(pnames)))
@@ -1264,7 +1271,8 @@ class ReactiveData(SyncableData):
         converted: List | np.ndarray | None = None
         if dtype.kind == 'M':
             if values.dtype.kind in 'if':
-                converted = (values * 10e5).astype(dtype)
+                NATs = values == BOKEH_JS_NAT
+                converted = np.where(NATs, np.nan, values * 10e5).astype(dtype)
         elif dtype.kind == 'O':
             if (all(isinstance(ov, dt.date) for ov in old_values) and
                 not all(isinstance(iv, dt.date) for iv in values)):
@@ -1639,7 +1647,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         """
         return (
             cls._extension_name is None or
-            cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions
+            (cls._extension_name in ReactiveHTMLMetaclass._loaded_extensions and
+             (state._extensions is None or (cls._extension_name in state._extensions)))
         )
 
     def _cleanup(self, root: Model | None = None) -> None:

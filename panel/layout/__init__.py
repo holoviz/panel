@@ -39,6 +39,7 @@ from .gridstack import GridStack  # noqa
 from .spacer import (  # noqa
     Divider, HSpacer, Spacer, VSpacer,
 )
+from .swipe import Swipe  # noqa
 from .tabs import Tabs  # noqa
 
 __all__ = (

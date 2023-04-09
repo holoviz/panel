@@ -6,6 +6,7 @@ from typing import (
 
 import param
 
+from ..io.resources import CDN_DIST
 from ..models import Card as BkCard
 from .base import Column, ListPanel, Row
 
@@ -74,7 +75,9 @@ class Card(Column):
         'title': None, 'header': None, 'title_css_classes': None
     }
 
-    _stylesheets: ClassVar[List[str]] = ['css/card.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/card.css'
+    ]
 
     def __init__(self, *objects, **params):
         self._header_layout = Row(css_classes=['card-header-row'], sizing_mode='stretch_width')
@@ -128,5 +131,5 @@ class Card(Column):
         objects = super()._get_objects(model, old_objects, doc, root, comm)
         return [header]+objects
 
-    def _compute_sizing_mode(self, children, sizing_mode):
-        return super()._compute_sizing_mode(children[1:], sizing_mode)
+    def _compute_sizing_mode(self, children, props):
+        return super()._compute_sizing_mode(children[1:], props)

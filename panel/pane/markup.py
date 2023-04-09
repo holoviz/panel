@@ -13,6 +13,7 @@ from typing import (
 
 import param  # type: ignore
 
+from ..io.resources import CDN_DIST
 from ..models import HTML as _BkHTML, JSON as _BkJSON
 from ..util import escape
 from ..util.warnings import deprecated
@@ -59,7 +60,7 @@ class HTML(HTMLBasePane):
 
     >>> HTML(
     ...     "<h1>This is a HTML pane</h1>",
-    ...     style={'background-color': '#F6F6F6'}
+    ...     styles={'background-color': '#F6F6F6'}
     ... )
     """
 
@@ -182,7 +183,9 @@ class DataFrame(HTML):
         rp: None for rp in _rerender_params[1:-1]
     }
 
-    _stylesheets = ['css/dataframe.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/dataframe.css'
+    ]
 
     def __init__(self, object=None, **params):
         self._stream = None
@@ -269,7 +272,7 @@ class Str(HTMLBasePane):
 
     >>> Str(
     ...    'This raw string will not be formatted, except for the applied style.',
-    ...    style={'font-size': '12pt'}
+    ...    styles={'font-size': '12pt'}
     ... )
     """
 
@@ -333,7 +336,9 @@ class Markdown(HTMLBasePane):
         'object': None
     }
 
-    _stylesheets = ['css/markdown.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/markdown.css'
+    ]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -402,7 +407,9 @@ class JSON(HTMLBasePane):
         'object', 'depth', 'encoder', 'hover_preview', 'theme'
     ]
 
-    _stylesheets = ['css/json.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/json.css'
+    ]
 
     @classmethod
     def applies(cls, obj: Any, **params) -> float | bool | None:

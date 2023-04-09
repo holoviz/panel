@@ -1,11 +1,15 @@
 """
 Spacer components to add horizontal or vertical space to a layout.
 """
+from __future__ import annotations
+
+from typing import ClassVar, List
 
 import param
 
 from bokeh.models import Div as BkDiv, Spacer as BkSpacer
 
+from ..io.resources import CDN_DIST
 from ..reactive import Reactive
 
 
@@ -101,7 +105,9 @@ class Divider(Reactive):
 
     _bokeh_model = BkDiv
 
-    _stylesheets = ["css/divider.css"]
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/divider.css'
+    ]
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         properties = self._process_param_change(self._init_params())
