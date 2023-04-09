@@ -133,5 +133,17 @@
     "gallery/dynamic/dynamic_widget_values.ipynb": ["panel"],
     "gallery/external/DataTable.ipynb": ["panel"],
     "gallery/external/deck.gl.ipynb": ["panel"],
-    "gallery/external/Folium.ipynb": ["panel", "pandas", "folium"]
+    "gallery/external/Folium.ipynb": ["panel", "pandas", "folium"],
+    "gallery/layout/distribution_tabs.ipynb": ["panel", "holoviews"],
+    "gallery/layout/dynamic_tabs.ipynb": ["panel", "altair", "vega-datasets", "holoviews", "hvplot", "matplotlib", "plotly"],
+    "gallery/layout/plot_with_columns.ipynb": ["panel", "hvplot"],
+    "gallery/links/bokeh_property_editor.ipynb": ["panel"],
+    "gallery/links/deck_gl_json_editor.ipynb": ["panel"],
+    "gallery/links/holoviews_glyph_link.ipynb": ["panel", "holoviews"],
+    "gallery/links/plotly_link.ipynb": ["panel", "plotly"],
+    "gallery/links/vega_heatmap_link.ipynb": ["panel"],
+    "gallery/param/action_button.ipynb": ["panel"],
+    "gallery/param/deck_gl_global_power_plants.ipynb": ["pandas", "panel", "pydeck", "pyodide-http"],
+    "gallery/param/download_upload_csv.ipynb": ["panel", "plotly"],
+    "gallery/param/loading_indicator.ipynb": ["panel", "holoviews"]
 }

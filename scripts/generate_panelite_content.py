@@ -49,6 +49,12 @@ NOTEBOOK_ISSUES = {
     "gallery/demos/VTKInteractive.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
     "gallery/demos/VTKWarp.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
     "gallery/dynamic/dynamic_timeseries_image_analysis.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/layout/dynamic_tabs.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/layout/plot_with_columns.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/param/action_button.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/param/deck_gl_global_power_plants.ipynb": ["https://github.com/holoviz/panel/issues/4612"],
+    "gallery/param/download_upload_csv.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/param/loading_indicator.ipynb": ["https://github.com/holoviz/panel/issues/4613"],
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
