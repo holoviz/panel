@@ -44,7 +44,7 @@ Finally, if you need low-level control or want to complement any of the other ap
 
 ## Examples
 
-::::{grid} 1 2 2 4
+::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
 :::{grid-item-card} Stock Explorer - Callback API
@@ -52,7 +52,7 @@ Finally, if you need low-level control or want to complement any of the other ap
 :link: examples/stocks_callbacks
 :link-type: doc
 
-A demonstration of building a stock explorer app using the `.param.watch` callback API.
+Build a stock explorer app using the `.param.watch` callback API.
 :::
 
 :::{grid-item-card} Stock Explorer - Declarative API
@@ -60,7 +60,7 @@ A demonstration of building a stock explorer app using the `.param.watch` callba
 :link: examples/stocks_declarative
 :link-type: doc
 
-A demonstration of building a stock explorer app using the Param based declarative API.
+Build a stock explorer app using the Param based declarative API.
 :::
 
 :::{grid-item-card} Stock Explorer - Interact API
@@ -68,7 +68,7 @@ A demonstration of building a stock explorer app using the Param based declarati
 :link: examples/stocks_interact
 :link-type: doc
 
-A demonstration of building a stock explorer app using the interact API.
+Build a stock explorer app using the interact API.
 :::
 
 :::{grid-item-card} Stock Explorer - Reactive API
@@ -76,7 +76,7 @@ A demonstration of building a stock explorer app using the interact API.
 :link: examples/stocks_reactive
 :link-type: doc
 
-A demonstration of building a stock explorer app using  the reactive API.
+Build a stock explorer app using the reactive API.
 :::
 
 ::::

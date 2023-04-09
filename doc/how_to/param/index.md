@@ -37,7 +37,7 @@ How to structure Parameterized classes with subobjects to create nested UIs auto
 
 ## Examples
 
-::::{grid} 1 2 2 4
+::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
 :::{grid-item-card} Action Button
@@ -45,7 +45,7 @@ How to structure Parameterized classes with subobjects to create nested UIs auto
 :link: examples/action_button
 :link-type: doc
 
-A demonstration of a `param.Action` to define a UI with a button.
+Using `param.Action` to define a UI with a button.
 :::
 
 :::{grid-item-card} Automatic Loading Indicator
@@ -53,7 +53,7 @@ A demonstration of a `param.Action` to define a UI with a button.
 :link: examples/loading
 :link-type: doc
 
-A demonstration showing how to automatically enable a loading indicator for components rendered dynamically.
+Automatically enable a loading indicator for components rendered dynamically.
 :::
 
 :::{grid-item-card} Param Subobjects
@@ -61,7 +61,7 @@ A demonstration showing how to automatically enable a loading indicator for comp
 :link: examples/subobjects
 :link-type: doc
 
-A demonstration that demonstrates how to use Param to express a nested UI using a hierachy of classes.
+Using Param to express a nested UI using a hierachy of classes.
 :::
 
 :::{grid-item-card} Precedence
@@ -69,7 +69,7 @@ A demonstration that demonstrates how to use Param to express a nested UI using 
 :link: examples/precedence
 :link-type: doc
 
-A demonstration of using Parameter precedence to control the visibility of components.
+Using Parameter precedence to control the visibility of components.
 :::
 
 ::::

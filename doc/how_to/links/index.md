@@ -42,6 +42,54 @@ How to write arbitrary Javascript callbacks linking one or more objects.
 
 ::::
 
+## Examples
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} Bokeh Property Editor
+:img-top: https://assets.holoviz.org/panel/how_to/links/bokeh_property_editor.png
+:link: examples/bokeh_property_editor
+:link-type: doc
+
+Build a UI that allows editing a Bokeh figure in JS.
+:::
+
+:::{grid-item-card} Deck.gl
+:img-top: https://assets.holoviz.org/panel/how_to/links/deckgl.png
+:link: examples/deckgl
+:link-type: doc
+
+JS Link JSON editors to allow live editing a Deck.gl plot.
+:::
+
+:::{grid-item-card} HoloViews
+:img-top: https://assets.holoviz.org/panel/how_to/links/holoviews_glyph_link.png
+:link: examples/holoviews_glyph_link
+:link-type: doc
+
+JS Link widgets to a glyph in a HoloViews plot.
+:::
+
+:::{grid-item-card} Plotly
+:img-top: https://assets.holoviz.org/panel/how_to/links/plotly.png
+:link: examples/plotly
+:link-type: doc
+
+JS Link a widget to a Plotly plot.
+:::
+
+:::{grid-item-card} Vega
+:img-top: https://assets.holoviz.org/panel/how_to/links/vega.png
+:link: examples/vega_link
+:link-type: doc
+
+JS Link a widget to a Vega plot.
+:::
+
+::::
+
+
 
 ```{toctree}
 :titlesonly:
