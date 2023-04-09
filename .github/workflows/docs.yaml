@@ -173,6 +173,7 @@ jobs:
           conda activate test
           conda install -c ae5-admin anaconda-project ae5-tools
       - name: Upload and deploy gallery
+        continue-on-error: true
         run: |
           conda activate test
           python scripts/collect_thumbnails.py
