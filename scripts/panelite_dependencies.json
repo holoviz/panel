@@ -127,7 +127,7 @@
     "gallery/demos/VTKInteractive.ipynb": ["panel"],
     "gallery/demos/VTKSlicer.ipynb": ["panel", "holoviews", "scipy"],
     "gallery/demos/VTKWarp.ipynb": ["panel"],
-    "gallery/dynamic/dynamic_plot_layout.ipynb": ["panel", "holoviews"],   
+    "gallery/dynamic/dynamic_plot_layout.ipynb": ["panel", "holoviews"],
     "gallery/dynamic/dynamic_timeseries_image_analysis.ipynb": ["panel", "holoviews", "hvplot"],
     "gallery/dynamic/dynamic_ui.ipynb": ["panel"],
     "gallery/dynamic/dynamic_widget_values.ipynb": ["panel"],
