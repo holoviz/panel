@@ -73,19 +73,19 @@ export class VTKAxes extends Model {
   }
 
   get xlabels(): string[] {
-    return this.xticker.labels
+    return this.xticker?.labels
       ? this.xticker.labels
       : this.xticks.map((elem) => elem.toFixed(this.digits))
   }
 
   get ylabels(): string[] {
-    return this.yticker.labels
+    return this.yticker?.labels
       ? this.yticker.labels
       : this.yticks.map((elem) => elem.toFixed(this.digits))
   }
 
   get zlabels(): string[] {
-    return this.zticker.labels
+    return this.zticker?.labels
       ? this.zticker.labels
       : this.zticks.map((elem) => elem.toFixed(this.digits))
   }
