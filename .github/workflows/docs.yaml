@@ -173,12 +173,11 @@ jobs:
           conda activate test
           conda install -c ae5-admin anaconda-project ae5-tools
       - name: Upload and deploy gallery
-        continue-on-error: true
         run: |
           conda activate test
           python scripts/collect_thumbnails.py
           ae5 login --hostname pyviz.demo.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
-          ae5 deployment stop panel-gallery-dev --yes
-          ae5 project delete panel-gallery-dev --yes
+          ae5 deployment stop panel-gallery-dev --yes || :
+          ae5 project delete panel-gallery-dev --yes || :
           ae5 project upload examples/gallery --name panel-gallery-dev --tag ${{ steps.vars.outputs.tag }}
           ae5 deployment start panel-gallery-dev --endpoint panel-gallery-dev --command default --public --command default --resource-profile medium --wait
