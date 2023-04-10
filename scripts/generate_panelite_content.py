@@ -69,7 +69,13 @@ NOTEBOOK_ISSUES = {
     "gallery/simple/hvplot_explorer.ipynb": ["https://github.com/holoviz/panel/issues/4393", "https://github.com/holoviz/panel/issues/4416"],
     "gallery/simple/iris_kmeans.ipynb": ["https://github.com/holoviz/panel/issues/4393", "https://github.com/holoviz/panel/issues/4416"],
     "gallery/simple/loading_spinner.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
-
+    "gallery/simple/temperature_distribution.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/simple/xgboost_classifier.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/streaming/hardware_automation.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/streaming/streaming_indicator.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/streaming/streaming_perspective.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/styles/PlotlyStyle.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/styles/SeabornStyle.ipynb": ["https://github.com/holoviz/panel/issues/4615"]
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
