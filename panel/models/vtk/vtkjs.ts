@@ -26,7 +26,7 @@ export class VTKJSPlotView extends AbstractVTKView {
 
   init_vtk_renwin(): void {
     this._vtk_renwin = vtkns.FullScreenRenderWindow.newInstance({
-      rootContainer: this.el,
+      rootContainer: this._vtk_container,
       container: this._vtk_container,
     })
   }
@@ -37,7 +37,7 @@ export class VTKJSPlotView extends AbstractVTKView {
       return
     }
     const dataAccessHelper = vtkns.DataAccessHelper.get("zip", {
-      zipContent: atob(this.model.data as string),
+      zipContent: this.model.data,
       callback: (_zip: unknown) => {
         const sceneImporter = vtkns.HttpSceneLoader.newInstance({
           renderer: this._vtk_renwin.getRenderer(),
@@ -72,8 +72,8 @@ export class VTKJSPlot extends AbstractVTKPlot {
   static {
     this.prototype.default_view = VTKJSPlotView
 
-    this.define<VTKJSPlot.Props>(({Boolean, Nullable, String}) => ({
-      data:               [ Nullable(String)  ],
+    this.define<VTKJSPlot.Props>(({Boolean, Bytes, Nullable}) => ({
+      data:               [ Nullable(Bytes)  ],
       enable_keybindings: [ Boolean, false    ],
     }))
   }
