@@ -187,7 +187,7 @@ background/index
 reference/index
 api/index
 FAQ
-about/index.rst
+about/index
 ```
 
 ```{toctree}
@@ -197,5 +197,4 @@ about/index.rst
 :caption: FOR DEVELOPERS
 
 developer_guide/index
-releases
 ```
