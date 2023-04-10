@@ -1,6 +1,6 @@
 # HoloViews Glyph Link
 
-```{pydodide}
+```{pyodide}
 import numpy as np
 import panel as pn
 
