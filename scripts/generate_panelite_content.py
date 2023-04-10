@@ -18,9 +18,11 @@ DEFAULT_DEPENDENCIES = ['panel', 'pyodide-http', 'altair', 'hvplot', 'matplotlib
 with open(PANEL_BASE/"scripts"/"panelite_dependencies.json", "r", encoding="utf8") as file:
     DEPENDENCIES = json.load(file)
 DEPENDENCY_NOT_IMPORTABLE = [
+    "datashader", # https://github.com/holoviz/datashader/issues/1200
+    "pyarrow", # https://github.com/apache/arrow/issues/34996
+    "pyvista", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
     "streamz", # https://github.com/python-streamz/streamz/issues/467,
     "vtk", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
-    "pyvista", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
 ]
 NOTEBOOK_ISSUES = {
     "Getting_Started.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
@@ -55,6 +57,19 @@ NOTEBOOK_ISSUES = {
     "gallery/param/deck_gl_global_power_plants.ipynb": ["https://github.com/holoviz/panel/issues/4612"],
     "gallery/param/download_upload_csv.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
     "gallery/param/loading_indicator.ipynb": ["https://github.com/holoviz/panel/issues/4613"],
+    "gallery/param/precedence.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/param/reactive_plots.ipynb": ["https://github.com/holoviz/panel/issues/4393", "https://github.com/holoviz/panel/issues/4416"],
+    "gallery/param/reactive_tables.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/altair_brushing.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/clifford_interact.ipynb": ["https://github.com/holoviz/datashader/issues/1200"],
+    "gallery/simple/color_speech_recognition.ipynb": ["https://github.com/holoviz/panel/issues/4404"],
+    "gallery/simple/deckgl_game_of_life.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/defer_data_load.ipynb": ["https://github.com/holoviz/panel/issues/4393", "https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/file_download_examples.ipynb": ["https://github.com/apache/arrow/issues/34996"],
+    "gallery/simple/hvplot_explorer.ipynb": ["https://github.com/holoviz/panel/issues/4393", "https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/iris_kmeans.ipynb": ["https://github.com/holoviz/panel/issues/4393", "https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/loading_spinner.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+
 }
 
 def _get_dependencies(nbpath: pathlib.Path):

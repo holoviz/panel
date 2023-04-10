@@ -145,5 +145,16 @@
     "gallery/param/action_button.ipynb": ["panel"],
     "gallery/param/deck_gl_global_power_plants.ipynb": ["pandas", "panel", "pydeck", "pyodide-http"],
     "gallery/param/download_upload_csv.ipynb": ["panel", "plotly"],
-    "gallery/param/loading_indicator.ipynb": ["panel", "holoviews"]
+    "gallery/param/loading_indicator.ipynb": ["panel", "holoviews"],
+    "gallery/param/param_subobjects.ipynb": ["panel"],
+    "gallery/param/precedence.ipynb": ["panel"],
+    "gallery/param/reactive_plots.ipynb": ["panel", "hvplot"],
+    "gallery/param/reactive_tables.ipynb": ["panel", "pandas"],
+    "gallery/simple/altair_brushing.ipynb": ["panel", "altair"],
+    "gallery/simple/clifford_interact.ipynb": ["panel", "datashader", "colorcet"],
+    "gallery/simple/color_speech_recognition.ipynb": ["panel"],
+    "gallery/simple/file_download_examples.ipynb": ["panel", "xslxwriter", "pyarrow"],
+    "gallery/simple/hvplot_explorer.ipynb": ["panel", "hvplot", "scipy"],
+    "gallery/simple/iris_kmeans.ipynb": ["panel", "hvplot", "scikit-learn"],
+    "gallery/simple/loading_spinner.ipynb": ["panel", "holoviews"]
 }
