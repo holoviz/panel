@@ -55,10 +55,6 @@ html_theme_options = {
             "icon": "fab fa-discourse",
         },
     ],
-    "footer_items": [
-        "copyright",
-        "last-updated",
-    ],
     "google_analytics_id": "UA-154795830-2",
     "pygment_light_style": "material",
     "pygment_dark_style": "material",
@@ -111,6 +107,7 @@ nbsite_gallery_conf = {
         },
         'reference': {
             'title': 'Reference Gallery',
+            'as_pyodide': True,
             'sections': [
                 'panes',
                 'layouts',
@@ -129,7 +126,8 @@ nbsite_gallery_conf = {
         }
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
-    'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
+    'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/',
+    'jupyterlite_url': 'https://panelite.holoviz.org/lab/index.html'
 }
 
 if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
