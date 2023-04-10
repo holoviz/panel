@@ -7,3 +7,4 @@ jupyterlite
 nbformat
 pkginfo
 pyviz_comms
+jupyterlite-open-url-parameter
