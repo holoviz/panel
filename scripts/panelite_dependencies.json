@@ -156,5 +156,19 @@
     "gallery/simple/file_download_examples.ipynb": ["panel", "xslxwriter", "pyarrow"],
     "gallery/simple/hvplot_explorer.ipynb": ["panel", "hvplot", "scipy"],
     "gallery/simple/iris_kmeans.ipynb": ["panel", "hvplot", "scikit-learn"],
-    "gallery/simple/loading_spinner.ipynb": ["panel", "holoviews"]
+    "gallery/simple/loading_spinner.ipynb": ["panel", "holoviews"],
+    "gallery/simple/random_number_generator.ipynb": ["panel"],
+    "gallery/simple/save_filtered_df.ipynb": ["panel", "pandas"],
+    "gallery/simple/sync_location.ipynb": ["panel"],
+    "gallery/simple/temperature_distribution.ipynb": ["panel", "hvplot", "holoviews", "scipy"],
+    "gallery/simple/xgboost_classifier.ipynb": ["panel", "pandas", "scikit-learn", "xgboost"],
+    "gallery/streaming/streaming_bokeh.ipynb": ["panel"],
+    "gallery/streaming/streaming_indicator.ipynb": ["panel"],
+    "gallery/streaming/streaming_perspective.ipynb": ["panel"],
+    "gallery/streaming/streaming_tabulator.ipynb": ["panel"],
+    "gallery/streaming/streaming_videostream.ipynb": ["panel", "pillow", "scikit-image"],
+    "gallery/styles/MatplotlibStyle.ipynb": ["panel"],
+    "gallery/styles/PlotlyStyle.ipynb": ["panel", "plotly"],
+    "gallery/styles/SeabornStyle.ipynb": ["panel", "seaborn"],
+    "gallery/styles/VegaAltairStyle.ipynb": ["panel", "altair", "vega-datasets"]
 }
