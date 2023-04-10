@@ -93,3 +93,8 @@ def test_format_mime_repr_png():
     img, mime_type = format_mime(PNG())
     assert mime_type == 'text/html'
     assert img.startswith('<img src="data:image/png')
+
+def test_format_mime_type():
+    string, mime_type = format_mime(HTML)
+    assert mime_type == 'text/plain'
+    assert string == '&lt;class &#x27;panel.tests.io.test_mime_render.HTML&#x27;&gt;'
