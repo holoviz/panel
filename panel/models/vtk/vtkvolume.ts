@@ -308,6 +308,10 @@ export class VTKVolumePlotView extends AbstractVTKView {
     const dataRange = dataArray.getRange()
 
     const lookupTable = vtkns.ColorTransferFunction.newInstance()
+    if (this.model.colormap != null) {
+      const preset = vtkns.ColorTransferFunction.vtkColorMaps.getPresetByName(this.model.colormap);
+      lookupTable.applyColorMap(preset);
+    }
     lookupTable.onModified(
       () => (this.model.mapper = vtkLutToMapper(lookupTable))
     )
