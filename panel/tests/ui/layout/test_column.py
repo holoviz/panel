@@ -23,5 +23,5 @@ def test_column_scroll(page, port):
 
     bbox = page.locator(".bk-Column").bounding_box()
 
-    assert bbox['width'] == 215
+    assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
