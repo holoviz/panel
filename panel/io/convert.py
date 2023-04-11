@@ -330,16 +330,17 @@ def script_to_html(
     template_variables = document._template_variables
     context = template_variables.copy()
     context.update(dict(
-        title = document.title,
-        bokeh_js = bokeh_js,
-        bokeh_css = bokeh_css,
-        plot_script = plot_script,
-        docs = render_items,
-        base = BASE_TEMPLATE,
-        macros = MACROS,
-        doc = render_item,
-        roots = render_item.roots,
-        manifest = manifest
+        title=document.title,
+        bokeh_js=bokeh_js,
+        bokeh_css=bokeh_css,
+        plot_script=plot_script,
+        docs=render_items,
+        base=BASE_TEMPLATE,
+        macros=MACROS,
+        doc=render_item,
+        roots=render_item.roots,
+        manifest=manifest,
+        dist_url=CDN_DIST
     ))
 
     # Render
