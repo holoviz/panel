@@ -1,5 +1,6 @@
 import contextlib
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -11,7 +12,7 @@ from threading import Thread
 import pytest
 import requests
 
-not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
+unix_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
 
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
 ON_POSIX = 'posix' in sys.builtin_module_names
@@ -92,7 +93,7 @@ def write_file(content, file_obj):
     os.fsync(file_obj)
     file_obj.seek(0)
 
-@not_windows
+@unix_only
 def test_autoreload_app(py_file):
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     app2 = "import panel as pn; pn.Row('# Example 2').servable(title='B')"
@@ -112,7 +113,7 @@ def test_autoreload_app(py_file):
         assert r2.status_code == 200
         assert "<title>B</title>" in r2.content.decode('utf-8')
 
-@not_windows
+@unix_only
 @pytest.mark.parametrize('relative', [True, False])
 def test_custom_html_index(relative, html_file):
     index = '<html><body>Foo</body></html>'
@@ -152,7 +153,7 @@ pn.Row('# Example').servable()
 ```
 """
 
-@not_windows
+@unix_only
 def test_serve_markdown():
     md = tempfile.NamedTemporaryFile(mode='w', suffix='.md')
     write_file(md_app, md.file)
