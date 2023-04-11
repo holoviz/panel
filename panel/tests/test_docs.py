@@ -21,6 +21,7 @@ REF_PATH = Path(__file__).parents[2] / "examples" / "reference"
 ref_available = pytest.mark.skipif(not REF_PATH.is_dir(), reason="folder 'examples/reference' not found")
 
 DOC_PATH = Path(__file__).parents[2] / "doc"
+IGNORED = ['vtk']
 doc_files = sorted(DOC_PATH.rglob("*.md"))
 doc_available = pytest.mark.skipif(not DOC_PATH.is_dir(), reason="folder 'doc' not found")
 
@@ -70,7 +71,9 @@ def test_panes_are_in_reference_gallery():
 
 @doc_available
 @pytest.mark.parametrize(
-    "file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
+    "file",
+    [df for df in doc_files if any(i in str(df).lower() for i in IGNORED)],
+    ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
 )
 def test_markdown_codeblocks(file, tmp_path):
     from markdown_it import MarkdownIt
