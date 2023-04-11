@@ -17,7 +17,7 @@ repos:
         exclude: \.min\.js$
     -   id: trailing-whitespace
 -   repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.0.260'
+    rev: 'v0.0.261'
     hooks:
     -   id: ruff  # See 'setup.cfg' for args
         args: [panel]
