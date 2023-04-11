@@ -1500,8 +1500,8 @@ class Tabulator(BaseTable):
         start = (self.page-1)*nrows
         end = start+nrows
         index = self._processed.iloc[start:end].index.values
-        self.value[column].loc[index] = array
-        self._processed[column].loc[index] = array
+        self.value.loc[index, column] = array
+        self._processed.loc[index, column] = array
 
     def _update_selection(self, indices: List[int]):
         if self.pagination != 'remote':
