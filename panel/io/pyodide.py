@@ -189,12 +189,11 @@ def _serialize_buffers(obj, buffers={}):
     """
     if isinstance(obj, dict):
         return {
-            key: _serialize_buffers(obj, buffers=buffers)
-            for key, obj in obj.items()
+            key: _serialize_buffers(o, buffers=buffers) for key, o in obj.items()
         }
     elif isinstance(obj, list):
         return [
-            _serialize_buffers(obj, buffers=buffers) for obj in obj
+            _serialize_buffers(o, buffers=buffers) for o in obj
         ]
     elif isinstance(obj, Buffer):
         if obj.id in buffers: # TODO: and len(obj.data) > _threshold:
