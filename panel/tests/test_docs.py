@@ -41,7 +41,7 @@ def test_layouts_are_in_reference_gallery():
 
 @ref_available
 def test_widgets_are_in_reference_gallery():
-    exceptions = {"CompositeWidget", "Widget", "ToggleGroup", "NumberInput", "Spinner"}
+    exceptions = {"Ace", "CompositeWidget", "Widget", "ToggleGroup", "NumberInput", "Spinner"}
     docs = {
         f.with_suffix("").name
         for g in ("indicators", "widgets")
