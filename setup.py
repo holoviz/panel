@@ -173,7 +173,7 @@ extras_require = {
         'jupyter_bokeh >=3.0.7',
         'django <4',
         'channels',
-        'pyvista',
+        'pyvista <0.33',
         'ipywidgets',
         'ipywidgets_bokeh',
         'ipyvolume',
