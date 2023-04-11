@@ -58,10 +58,6 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: generate rst
-        run: |
-          conda activate test-environment
-          nbsite generate-rst --org holoviz --project-name panel
       - name: refmanual
         run: |
           conda activate test-environment
