@@ -50,7 +50,7 @@ class TextInput(Widget):
     >>> TextInput(name='Name', placeholder='Enter your name here ...')
     """
 
-    description = param.String(doc="""
+    description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
     max_length = param.Integer(default=5000, doc="""
@@ -149,7 +149,7 @@ class FileInput(Widget):
 
     accept = param.String(default=None)
 
-    description = param.String(doc="""
+    description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
     filename = param.ClassSelector(default=None, class_=(str, list),
@@ -484,7 +484,7 @@ class ColorPicker(Widget):
     >>> ColorPicker(name='Color', value='#99ef78')
     """
 
-    description = param.String(default="""
+    description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
     value = param.Color(default=None, doc="""
@@ -497,7 +497,7 @@ class ColorPicker(Widget):
 
 class _NumericInputBase(Widget):
 
-    description = param.String(doc="""
+    description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
     value = param.Number(default=0, allow_None=True, doc="""
@@ -706,7 +706,7 @@ class LiteralInput(Widget):
     >>> LiteralInput(name='Dictionary', value={'key': [1, 2, 3]}, type=dict)
     """
 
-    description = param.String(doc="""
+    description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
     placeholder = param.String(default='', doc="""
