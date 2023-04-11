@@ -787,6 +787,8 @@ class Row(ListPanel):
 
     _direction = 'horizontal'
 
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
+
 
 class Column(ListPanel):
     """
@@ -807,6 +809,8 @@ class Column(ListPanel):
     _bokeh_model: ClassVar[Type[Model]] = BkColumn
 
     _direction = 'vertical'
+
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
 
 
 class WidgetBox(ListPanel):
@@ -846,7 +850,9 @@ class WidgetBox(ListPanel):
         'disabled': None, 'objects': 'children', 'horizontal': None
     }
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/widgetbox.css']
+    _stylesheets: ClassVar[list[str]] = [
+        f'{CDN_DIST}css/widgetbox.css', f'{CDN_DIST}css/listpanel.css'
+    ]
 
     @property
     def _bokeh_model(self) -> Type[Model]: # type: ignore
