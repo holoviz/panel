@@ -593,9 +593,12 @@ class BaseTable(ReactiveData, Widget):
         return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
 
     def _update_column(self, column, array):
+        import pandas as pd
+
         self.value[column] = array
         if self._processed is not None and self.value is not self._processed:
-            self._processed[column] = array
+            with pd.option_context('mode.chained_assignment', None):
+                self._processed[column] = array
 
     #----------------------------------------------------------------
     # Public API
@@ -1491,17 +1494,22 @@ class Tabulator(BaseTable):
         super()._update_selected(*events, **kwargs)
 
     def _update_column(self, column: str, array: np.ndarray):
+        import pandas as pd
+
         if self.pagination != 'remote':
             index = self._processed.index.values
             self.value.loc[index, column] = array
-            self._processed[column] = array
+            with pd.option_context('mode.chained_assignment', None):
+                self._processed[column] = array
             return
         nrows = self.page_size
         start = (self.page-1)*nrows
         end = start+nrows
         index = self._processed.iloc[start:end].index.values
-        self.value[column].loc[index] = array
-        self._processed[column].loc[index] = array
+        self.value.loc[index, column] = array
+
+        with pd.option_context('mode.chained_assignment', None):
+            self._processed.loc[index, column] = array
 
     def _update_selection(self, indices: List[int]):
         if self.pagination != 'remote':

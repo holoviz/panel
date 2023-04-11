@@ -1317,10 +1317,18 @@ class ReactiveData(SyncableData):
             values = self._convert_column(
                 np.asarray(values), old_raw[col]
             )
-            try:
-                isequal = (old_raw[col] == values).all() # type: ignore
-            except Exception:
-                isequal = False
+
+            isequal = None
+            if hasattr(old_raw, 'columns') and isinstance(values, np.ndarray):
+                try:
+                    isequal = np.array_equal(old_raw[col], values, equal_nan=True)
+                except Exception:
+                    pass
+            if isequal is None:
+                try:
+                    isequal = (old_raw[col] == values).all() # type: ignore
+                except Exception:
+                    isequal = False
             if not isequal:
                 self._update_column(col, values)
                 updated = True
