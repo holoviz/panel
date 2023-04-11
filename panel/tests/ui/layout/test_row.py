@@ -24,4 +24,4 @@ def test_row_scroll(page, port):
     bbox = page.locator(".bk-Row").bounding_box()
 
     assert bbox['width'] == 420
-    assert bbox['height'] == 215 # Ignore if browser hides empty scrollbar
+    assert bbox['height'] in (200, 215) # Ignore if browser hides empty scrollbar

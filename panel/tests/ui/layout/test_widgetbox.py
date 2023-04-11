@@ -23,7 +23,7 @@ def test_widgetbox_vertical_scroll(page, port):
 
     bbox = page.locator(".bk-Column").bounding_box()
 
-    assert bbox['width'] == (202, 217) # Ignore if browser hides empty scrollbar
+    assert bbox['width'] in (202, 217) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
 
 def test_widgetbox_horizontal_scroll(page, port):
