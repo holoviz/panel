@@ -13,7 +13,7 @@ from pyviz_comms import JupyterComm
 
 from ..models.enums import ace_themes
 from ..util import lazy_load
-from ..util.warning import deprecated
+from ..util.warnings import deprecated
 from .base import Widget
 
 if TYPE_CHECKING:
