@@ -47,18 +47,18 @@ html_theme_options = {
         {
             "name": "Twitter",
             "url": "https://twitter.com/Panel_Org",
-            "icon": "fab fa-twitter-square",
+            "icon": "fa-brands fa-twitter-square",
         },
         {
             "name": "Discourse",
             "url": "https://discourse.holoviz.org/c/panel/5",
-            "icon": "fab fa-discourse",
+            "icon": "fa-brands fa-discourse",
         },
     ],
     "google_analytics_id": "UA-154795830-2",
     "pygment_light_style": "material",
     "pygment_dark_style": "material",
-    "header_links_before_dropdown": 6
+    "header_links_before_dropdown": 5
 }
 
 extensions += [

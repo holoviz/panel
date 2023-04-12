@@ -195,6 +195,10 @@ def _serialize_buffers(obj, buffers={}):
         return [
             _serialize_buffers(o, buffers=buffers) for o in obj
         ]
+    elif isinstance(obj, tuple):
+        return tuple(
+            _serialize_buffers(o, buffers=buffers) for o in obj
+        )
     elif isinstance(obj, Buffer):
         if obj.id in buffers: # TODO: and len(obj.data) > _threshold:
             return obj.ref

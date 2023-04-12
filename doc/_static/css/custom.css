@@ -25,7 +25,8 @@ html[data-theme=dark] .bd-content div.cell_output .text_html {
 
 /* Align navbar item in center */
 .navbar-header-items__center {
-    margin-left: 8%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Ensure content fills full space */
@@ -60,11 +61,7 @@ html[data-theme=light] .bd-content div.cell_output .text_html {
     padding: 0;
 }
 
-@media (min-width: 1200px) {
-    .bd-page-width {
-	max-width: 80%;
-    }
-
+@media (min-width: 1400px) {
     .bd-sidebar {
 	max-width: 300px;
     }
@@ -72,6 +69,16 @@ html[data-theme=light] .bd-content div.cell_output .text_html {
     .bd-main .bd-content .bd-article-container .bd-article {
 	padding-left: 0.5rem;
 	padding-top: 0.5rem;
+    }
+
+    .bd-page-width {
+	max-width: 100%;
+    }
+}
+
+@media (min-width: 1600px) {
+    .bd-page-width {
+	max-width: 80%;
     }
 }
 
@@ -93,8 +100,13 @@ html[data-theme=light] .bd-content div.cell_output .text_html {
     color: white;
 }
 
-.fa-discourse:before {
+#navbar-icon-links i.fa-discourse:before {
     color: white;
+}
+
+.sd-card-body.sponsor-logo {
+    flex-grow: unset;
+    margin: auto;
 }
 
 button.toggle-button {
