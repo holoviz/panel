@@ -49,9 +49,8 @@ export class State extends Model {
     this._receiver.consume(state.header)
     this._receiver.consume(state.metadata)
     this._receiver.consume(state.content)
-    if (this._receiver.message && this.document) {
+    if (this._receiver.message && this.document)
       this.document.apply_json_patch(this._receiver.message.content as Patch)
-    }
   }
 
   _receive_json(result: string, path: string): void {
@@ -73,7 +72,10 @@ export class State extends Model {
     values[index] = value
     let state: any = this.state
     for (const i of values) {
-      state = state.get(i)
+      if (state instanceof Map)
+	state = state.get(i)
+      else
+	state = state[i]
     }
     this.values = values
     if (this.json) {

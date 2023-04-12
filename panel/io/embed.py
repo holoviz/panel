@@ -51,7 +51,7 @@ def always_changed(enable):
 
 
 def record_events(doc):
-    msg = diff(doc, False)
+    msg = diff(doc, binary=False)
     if msg is None:
         return {'header': '{}', 'metadata': '{}', 'content': '{}'}
     return {'header': msg.header_json, 'metadata': msg.metadata_json,
