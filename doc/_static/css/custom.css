@@ -104,6 +104,11 @@ html[data-theme=light] .bd-content div.cell_output .text_html {
     color: white;
 }
 
+.sd-card-body.sponsor-logo {
+    flex-grow: unset;
+    margin: auto;
+}
+
 button.toggle-button {
     display: none;
 }
