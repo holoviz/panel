@@ -29,7 +29,7 @@ import param  # type: ignore
 from bokeh.document import Document
 from bokeh.resources import Resources
 from jinja2 import Template
-from pyviz_comms import Comm, JupyterCommManager  # type: ignore
+from pyviz_comms import Comm  # type: ignore
 
 from ._param import Align, Aspect, Margin
 from .config import config, panel_extension
@@ -39,7 +39,8 @@ from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
-    ipywidget, render_mimebundle, render_model, show_embed, show_server,
+    JupyterCommManagerBinary as JupyterCommManager, ipywidget,
+    render_mimebundle, render_model, show_embed, show_server,
 )
 from .io.save import save
 from .io.state import curdoc_locked, state

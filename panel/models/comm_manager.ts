@@ -92,13 +92,38 @@ export class CommManager extends Model {
     }
   }
 
+  protected _extract_buffers(value: any, buffers: ArrayBuffer[]): any {
+    let extracted: any;
+    if (value instanceof Array) {
+      extracted = []
+      for (const val of value)
+	extracted.push(this._extract_buffers(val, buffers))
+    } else if (value instanceof Object) {
+      extracted = {}
+      for (const key in value) {
+	if (key === 'buffer' && value[key] instanceof ArrayBuffer) {
+	  const id = Object.keys(buffers).length
+	  extracted = {id}
+	  buffers.push(value[key])
+	  break
+	}
+	extracted[key] = this._extract_buffers(value[key], buffers)
+      }
+    } else {
+      extracted = value
+    }
+    return extracted
+  }
+
   process_events() {
     if ((this.document == null) || (this._client_comm == null))
       return
     const patch = this.document.create_json_patch(this._event_buffer)
     this._event_buffer = [];
-    const message = Message.create('PATCH-DOC', {}, patch)
-    this._client_comm.send(message)
+    const message = {...Message.create('PATCH-DOC', {}, patch)}
+    const buffers: ArrayBuffer[] = []
+    message.content = this._extract_buffers(message.content, buffers)
+    this._client_comm.send(message, {}, buffers)
     for (const view of this.ns.shared_views.get(this.plot_id)) {
       if (view !== this && view.document != null)
         view.document.apply_json_patch(patch, [], this.id)

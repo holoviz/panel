@@ -23,5 +23,10 @@ class CommManager(Model):
 
     def assemble(self, msg):
         header = msg['header']
+        buffers = msg.pop('_buffers')
+        header['num_buffers'] = len(buffers)
         cls = self._protocol._messages[header['msgtype']]
-        return cls(header, msg['metadata'], msg['content'])
+        msg_obj = cls(header, msg['metadata'], msg['content'])
+        for (bid, buff) in buffers.items():
+            msg_obj.assemble_buffer({'id': bid}, buff.tobytes())
+        return msg_obj
