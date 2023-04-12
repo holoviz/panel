@@ -4,7 +4,7 @@
 import json
 import panel as pn
 
-pn.extension('codeeditor, 'deckgl', template='bootstrap')
+pn.extension('codeeditor', 'deckgl', template='bootstrap')
 ```
 
 This example demonstrates how to `jslink` a JSON editor to a DeckGL pane to enable super fast, live editing of a plot:
