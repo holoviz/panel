@@ -19,6 +19,7 @@ def extract_code(
     Extracts Panel application code from a Markdown file.
     """
     inblock = False
+    block_opener = None
     title = None
     markdown = []
     out = []
@@ -29,11 +30,14 @@ def extract_code(
             break
 
         lsline = line.lstrip()
-        if lsline.startswith("```"):
-            if inblock:
+        if inblock:
+            if lsline.startswith(block_opener):
                 inblock = False
-                continue
+            else:
+                out.append(line)
+        elif lsline.startswith("```"):
             num_leading_backticks = len(lsline) - len(lsline.lstrip("`"))
+            block_opener = '`'*num_leading_backticks
             syntax = line.strip()[num_leading_backticks:]
             if syntax in supported_syntax:
                 if markdown:
@@ -44,8 +48,6 @@ def extract_code(
                 inblock = True
             else:
                 markdown.append(line)
-        elif inblock:
-            out.append(line)
         elif line.startswith('# '):
             title = line[1:].lstrip()
         else:
