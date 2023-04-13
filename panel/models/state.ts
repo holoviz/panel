@@ -58,11 +58,14 @@ export class State extends Model {
     this._cache[path] = state
     let current: any = this.state
     for (const i of this.values) {
-      current = current[i]
+      if (current instanceof Map)
+	current = current.get(i)
+      else
+	current = current[i]
     }
     if (current === path)
       this.apply_state(state)
-	else if (this._cache[current])
+    else if (this._cache[current])
       this.apply_state(this._cache[current])
   }
 
