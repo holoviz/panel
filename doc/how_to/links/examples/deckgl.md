@@ -39,7 +39,7 @@ json_spec = {
 
 
 view_editor = pn.widgets.CodeEditor(
-	value=json.dumps(json_spec['initialViewState'], indent=4),
+    value=json.dumps(json_spec['initialViewState'], indent=4),
     theme= 'monokai', width=500, height=225
 )
 layer_editor = pn.widgets.CodeEditor(
