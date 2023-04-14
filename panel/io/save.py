@@ -26,7 +26,7 @@ from ..config import config
 from .embed import embed_state
 from .model import add_to_doc
 from .resources import (
-    BASE_TEMPLATE, DEFAULT_TITLE, Resources, bundle_resources,
+    BASE_TEMPLATE, CDN_DIST, DEFAULT_TITLE, Resources, bundle_resources,
     set_resource_mode,
 )
 from .state import state
@@ -152,6 +152,8 @@ def file_html(
         models_seq = models.roots
     else:
         models_seq = models
+
+    template_variables['dist_url'] = CDN_DIST
 
     with OutputDocumentFor(models_seq, apply_theme=theme, always_new=_always_new):
         (docs_json, render_items) = standalone_docs_json_and_render_items(

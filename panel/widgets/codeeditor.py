@@ -1,5 +1,5 @@
 """
-Defines the Ace code editor widget.
+Defines the CodeEditor widget based on Ace.
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from pyviz_comms import JupyterComm
 
 from ..models.enums import ace_themes
 from ..util import lazy_load
+from ..util.warnings import deprecated
 from .base import Widget
 
 if TYPE_CHECKING:
@@ -21,16 +22,16 @@ if TYPE_CHECKING:
     from pyviz_comms import Comm
 
 
-class Ace(Widget):
+class CodeEditor(Widget):
     """
-    The Ace widget allows displaying and editing code in the powerful
-    Ace editor.
+    The CodeEditor widget allows displaying and editing code in the
+    powerful Ace editor.
 
-    Reference: https://panel.holoviz.org/reference/widgets/Ace.html
+    Reference: https://panel.holoviz.org/reference/widgets/CodeEditor.html
 
     :Example:
 
-    >>> Ace(value=py_code, language='python', theme='monokai')
+    >>> CodeEditor(value=py_code, language='python', theme='monokai')
     """
 
     annotations = param.List(default=[], doc="""
@@ -70,7 +71,8 @@ class Ace(Widget):
     ) -> Model:
         if self._widget_type is None:
             self._widget_type = lazy_load(
-                'panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm), root
+                'panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm),
+                root, ext='codeeditor'
             )
         return super()._get_model(doc, root, parent, comm)
 
@@ -80,3 +82,9 @@ class Ace(Widget):
                 self.readonly = event.new
             elif event.name == 'readonly':
                 self.disabled = event.new
+
+
+class Ace(CodeEditor):
+    def __init__(self, **params):
+        deprecated("1.1", "Ace", "CodeEditor")
+        super().__init__(**params)

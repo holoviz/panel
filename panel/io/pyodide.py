@@ -17,7 +17,7 @@ import param
 import pyodide # isort: split
 
 from bokeh import __version__
-from bokeh.core.serialization import Serializer
+from bokeh.core.serialization import Buffer, Serializer
 from bokeh.document import Document
 from bokeh.document.json import PatchJson
 from bokeh.embed.elements import script_for_render_items
@@ -171,6 +171,41 @@ def _model_json(model: Model, target: str) -> Tuple[Document, str]:
         version   = __version__,
     ))
 
+def _serialize_buffers(obj, buffers={}):
+    """
+    Recursively iterates over a JSON patch and converts Buffer objects
+    to a reference or base64 serialized representation.
+
+    Arguments
+    ---------
+    obj: dict
+        Dictionary containing events to patch the JS Document with.
+    buffers: dict
+        Binary array buffers.
+
+    Returns
+    --------
+    Serialization safe version of the original object.
+    """
+    if isinstance(obj, dict):
+        return {
+            key: _serialize_buffers(o, buffers=buffers) for key, o in obj.items()
+        }
+    elif isinstance(obj, list):
+        return [
+            _serialize_buffers(o, buffers=buffers) for o in obj
+        ]
+    elif isinstance(obj, tuple):
+        return tuple(
+            _serialize_buffers(o, buffers=buffers) for o in obj
+        )
+    elif isinstance(obj, Buffer):
+        if obj.id in buffers: # TODO: and len(obj.data) > _threshold:
+            return obj.ref
+        else:
+            return obj.to_base64()
+    return obj
+
 def _process_document_events(doc: Document, events: List[Any]):
     serializer = Serializer(references=doc.models.synced_references)
     patch_json = PatchJson(events=serializer.encode(events))
@@ -179,6 +214,7 @@ def _process_document_events(doc: Document, events: List[Any]):
     buffer_map = {}
     for buffer in serializer.buffers:
         buffer_map[buffer.id] = pyodide.ffi.to_js(buffer.to_bytes()).buffer
+    patch_json = _serialize_buffers(patch_json, buffers=buffer_map)
     return patch_json, buffer_map
 
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:

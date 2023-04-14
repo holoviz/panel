@@ -30,7 +30,8 @@ from bokeh.resources import CDN, INLINE
 from bokeh.settings import _Unset, settings
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
-    PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js,
+    PYVIZ_PROXY, Comm, JupyterCommJS,
+    JupyterCommManager as _JupyterCommManager, nb_mime_js,
 )
 
 from ..util import escape
@@ -277,6 +278,22 @@ def require_components():
                         exports[r] = model_exports[r]
 
     return configs, requirements, exports, skip_import
+
+
+class JupyterCommJSBinary(JupyterCommJS):
+    """
+    Extends pyviz_comms.JupyterCommJS with support for repacking
+    binary buffers.
+    """
+
+    @classmethod
+    def decode(cls, msg):
+        buffers = {i: v for i, v in enumerate(msg['buffers'])}
+        return dict(msg['content']['data'], _buffers=buffers)
+
+class JupyterCommManagerBinary(_JupyterCommManager):
+
+    client_comm = JupyterCommJSBinary
 
 #---------------------------------------------------------------------
 # Public API

@@ -55,6 +55,12 @@ export class VTKVolumePlotView extends AbstractVTKView {
       this.volume.getProperty().setDiffuse(this.model.diffuse)
       this._vtk_renwin.getRenderWindow().render()
     })
+    this.connect(this.model.properties.camera.change, () => {
+      if (!this._setting_camera) {
+	this._set_camera_state()
+	this._vtk_renwin.getRenderWindow().render()
+      }
+    })
     this.connect(this.model.properties.specular.change, () => {
       this.volume.getProperty().setSpecular(this.model.specular)
       this._vtk_renwin.getRenderWindow().render()
@@ -118,9 +124,8 @@ export class VTKVolumePlotView extends AbstractVTKView {
     super.render()
     this._create_orientation_widget()
     this._set_axes()
-    if (!this.model.camera)
-      this._vtk_renwin.getRenderer().resetCamera()
-    else
+    this._vtk_renwin.getRenderer().resetCamera()
+    if (Object.keys(this.model.camera).length)
       this._set_camera_state()
     this._get_camera_state()
   }
@@ -132,7 +137,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
 
   init_vtk_renwin(): void {
     this._vtk_renwin = vtkns.FullScreenRenderWindow.newInstance({
-      rootContainer: this.el,
+      rootContainer: this.shadow_el,
       container: this._vtk_container,
     })
   }
@@ -303,6 +308,10 @@ export class VTKVolumePlotView extends AbstractVTKView {
     const dataRange = dataArray.getRange()
 
     const lookupTable = vtkns.ColorTransferFunction.newInstance()
+    if (this.model.colormap != null) {
+      const preset = vtkns.ColorTransferFunction.vtkColorMaps.getPresetByName(this.model.colormap);
+      lookupTable.applyColorMap(preset);
+    }
     lookupTable.onModified(
       () => (this.model.mapper = vtkLutToMapper(lookupTable))
     )
@@ -426,7 +435,7 @@ export class VTKVolumePlot extends AbstractVTKPlot {
       display_volume:       [ Boolean,          true ],
       edge_gradient:        [ Number,            0.2 ],
       interpolation:        [ Interpolation, 'fast_linear'],
-      mapper:               [ Struct({palette: Array(String), low: Number, high: Number}) ],
+      mapper:               [ Struct({palette: Array(String), low: Number, high: Number}), {palette: [], low: 0, high: 0} ],
       nan_opacity:          [ Number,              1 ],
       render_background:    [ String,      '#52576e' ],
       rescale:              [ Boolean,         false ],
@@ -439,5 +448,10 @@ export class VTKVolumePlot extends AbstractVTKPlot {
       specular_power:       [ Number,            8.0 ],
       controller_expanded:  [ Boolean,          true ],
     }))
+
+    this.override<VTKVolumePlot.Props>({
+      height: 300,
+      width: 300,
+    })
   }
 }

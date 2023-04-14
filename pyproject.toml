@@ -33,7 +33,8 @@ ignore = [
     "E712",
     "E731",
     "E741",
-    "W605"
+    "W605",
+    "E701", # Multiple statements on one line
 ]
 line-length = 165
 select = [

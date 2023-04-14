@@ -151,7 +151,7 @@ _tests = [
     # Added lxml temporarily as installing pyecharts or idom on Python 3.11
     # via pip tries to build it and fails. To be removed.
     'lxml',
-    'numpy <1.24', # Avoid VTK test fail
+    'numpy <1.24',
 ]
 
 _ui = [
@@ -167,13 +167,13 @@ extras_require = {
         'altair',
         'streamz',
         'vega_datasets',
-        'vtk ==9.0.1',
+        'vtk',
         'scikit-learn',
         'datashader',
         'jupyter_bokeh >=3.0.7',
         'django <4',
         'channels',
-        'pyvista<0.33',
+        'pyvista <0.33',
         'ipywidgets',
         'ipywidgets_bokeh',
         'ipyvolume',

@@ -285,6 +285,8 @@ def format_mime(obj):
     for method, mime_type in reversed(list(MIME_METHODS.items())):
         if mime_type in format_dict:
             output = format_dict[mime_type]
+        elif isinstance(obj, type) and method != '__repr__':
+            output = None
         else:
             output = eval_formatter(obj, method)
 

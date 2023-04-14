@@ -10,7 +10,7 @@ import zipfile
 
 from abc import abstractmethod
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
 )
 from urllib.request import urlopen
 
@@ -344,9 +344,10 @@ class BaseVTKRenderWindow(AbstractVTK):
         ren_win.Render()
         scene = rws.serializeInstance(None, ren_win, context.getReferenceId(ren_win), context, 0)
         scene['properties']['numberOfLayers'] = 2 #On js side the second layer is for the orientation widget
-        arrays = {name: context.getCachedDataArray(name, binary=binary, compression=compression)
-                    for name in context.dataArrayCache.keys()
-                    if name not in exclude_arrays}
+        arrays = {
+            name: context.getCachedDataArray(name, binary=True, compression=False)
+            for name in context.dataArrayCache.keys() if name not in exclude_arrays
+        }
         annotations = context.getAnnotations()
         return scene, arrays, annotations
 
@@ -514,7 +515,8 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
             'physicalTranslation',
             'physicalScale',
             'physicalViewUp',
-            'physicalViewNorth'
+            'physicalViewNorth',
+            'remoteId',
         ]
         if self.camera is not None:
             for k, v in self.camera.items():
@@ -729,19 +731,21 @@ class VTKVolume(AbstractVTK):
     @classmethod
     def register_serializer(cls, class_type, serializer):
         """
-        Register a seriliazer for a given type of class.
+        Register a serializer for a given type of class.
         A serializer is a function which take an instance of `class_type`
         (like a vtk.vtkImageData) as input and return a numpy array of the data
         """
         cls._serializers.update({class_type:serializer})
 
     def _volume_from_array(self, sub_array):
-        return dict(buffer=base64encode(sub_array.ravel(order='F')),
-                    dims=sub_array.shape,
-                    spacing=self._sub_spacing,
-                    origin=self.origin,
-                    data_range=(np.nanmin(sub_array), np.nanmax(sub_array)),
-                    dtype=sub_array.dtype.name)
+        return dict(
+            buffer=base64encode(sub_array.ravel(order='F')),
+            dims=sub_array.shape,
+            spacing=self._sub_spacing,
+            origin=self.origin,
+            data_range=(np.nanmin(sub_array), np.nanmax(sub_array)),
+            dtype=sub_array.dtype.name
+        )
 
     def _get_volume_data(self):
         if self.object is None:
@@ -819,7 +823,6 @@ class VTKJS(AbstractVTK):
 
     _updates = True
 
-
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._vtkjs = None
@@ -840,7 +843,7 @@ class VTKJS(AbstractVTK):
         props = self._get_properties(doc)
         vtkjs = self._get_vtkjs()
         if vtkjs is not None:
-            props['data'] = base64encode(vtkjs)
+            props['data'] = vtkjs
         model = VTKJSPlot(**props)
         root = root or model
         self._link_props(model, ['camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
@@ -863,9 +866,18 @@ class VTKJS(AbstractVTK):
 
     def _update(self, ref: str, model: Model) -> None:
         self._vtkjs = None
-        vtkjs = self._get_vtkjs()
-        model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
+        model.data = self._get_vtkjs()
 
-    def export_vtkjs(self, filename='vtk_panel.vtkjs'):
-        with open(filename, 'wb') as f:
-            f.write(self._get_vtkjs())
+    def export_vtkjs(self, filename: str | IO ='vtk_panel.vtkjs'):
+        """
+        Exports current VTK data to .vtkjs file.
+
+        Arguments
+        ---------
+        filename: str | IO
+        """
+        if hasattr(filename, 'write'):
+            filename.write(self._get_vtkjs())
+        else:
+            with open(filename, 'wb') as f:
+                f.write(self._get_vtkjs())

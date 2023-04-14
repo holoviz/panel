@@ -4,7 +4,7 @@
 import json
 import panel as pn
 
-pn.extension('ace', 'deckgl', template='bootstrap')
+pn.extension('codeeditor', 'deckgl', template='bootstrap')
 ```
 
 This example demonstrates how to `jslink` a JSON editor to a DeckGL pane to enable super fast, live editing of a plot:
@@ -38,10 +38,14 @@ json_spec = {
 }
 
 
-view_editor = pn.widgets.Ace(value=json.dumps(json_spec['initialViewState'], indent=4),
-                             theme= 'monokai', width=500, height=225)
-layer_editor = pn.widgets.Ace(value=json.dumps(json_spec['layers'][0], indent=4),
-                             theme= 'monokai', width=500, height=365)
+view_editor = pn.widgets.CodeEditor(
+	value=json.dumps(json_spec['initialViewState'], indent=4),
+    theme= 'monokai', width=500, height=225
+)
+layer_editor = pn.widgets.CodeEditor(
+    value=json.dumps(json_spec['layers'][0], indent=4),
+    theme= 'monokai', width=500, height=365
+)
 
 deck_gl = pn.pane.DeckGL(json_spec, mapbox_api_key=MAPBOX_KEY, sizing_mode='stretch_width', height=600)
 

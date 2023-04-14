@@ -12,13 +12,15 @@ from typing import (
 
 import numpy as np
 
+from bokeh.core.serialization import Serializer
 from bokeh.document import Document
 from bokeh.document.events import (
     ColumnDataChangedEvent, DocumentPatchedEvent, ModelChangedEvent,
 )
+from bokeh.document.json import PatchJson
 from bokeh.model import DataModel
 from bokeh.models import ColumnDataSource, FlexBox, Model
-from bokeh.protocol import Protocol
+from bokeh.protocol.messages.patch_doc import patch_doc
 
 from .state import state
 
@@ -27,7 +29,6 @@ if TYPE_CHECKING:
     from bokeh.document.events import DocumentChangedEvent
     from bokeh.protocol.message import Message
     from pyviz_comms import Comm
-    from typing_extensions import Literal
 
 #---------------------------------------------------------------------
 # Private API
@@ -80,9 +81,12 @@ def diff(
     if not patch_events:
         return
     monkeypatch_events(events)
-    msg_type: Literal["PATCH-DOC"] = "PATCH-DOC"
-    msg = Protocol().create(msg_type, patch_events, use_buffers=binary)
+    serializer = Serializer(references=doc.models.synced_references, deferred=binary)
+    patch_json = PatchJson(events=serializer.encode(events))
+    header = patch_doc.create_header()
+    msg = patch_doc(header, {'use_buffers': binary}, patch_json)
     doc.callbacks._held_events = [e for e in doc.callbacks._held_events if e not in events]
+    doc.models.flush_synced(lambda model: not serializer.has_ref(model))
     return msg
 
 def remove_root(obj: 'Model', replace: Optional['Document'] = None) -> None:

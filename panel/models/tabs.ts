@@ -127,7 +127,10 @@ export class TabsView extends BkTabsView {
     }
 
     if (i in child_views) {
-      show(child_views[i].el)
+      const view: any = child_views[i]
+      show(view.el)
+      if (view.invalidate_render == null)
+	view.invalidate_render()
     }
   }
 }

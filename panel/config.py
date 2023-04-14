@@ -539,6 +539,7 @@ class panel_extension(_pyviz_extension):
 
     _imports = {
         'ace': 'panel.models.ace',
+        'codeeditor': 'panel.models.ace',
         'deckgl': 'panel.models.deckgl',
         'echarts': 'panel.models.echarts',
         'ipywidgets': 'panel.io.ipywidget',

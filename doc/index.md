@@ -119,6 +119,7 @@ The Panel project is grateful for the sponsorship by the organizations and compa
 ::::{grid} 2
 
 :::{grid-item-card}
+:class-body: sponsor-logo
 :link: https://www.anaconda.com/
 :link-type: url
 :text-align: center
@@ -133,6 +134,7 @@ alt: Anaconda Logo
 
 
 :::{grid-item-card}
+:class-body: sponsor-logo
 :link: https://www.blackstone.com/the-firm/
 :link-type: url
 :text-align: center
@@ -146,6 +148,7 @@ alt: Blackstone Logo
 :::
 
 :::{grid-item-card}
+:class-body: sponsor-logo
 :link: https://numfocus.org/
 :link-type: url
 :text-align: center
@@ -159,6 +162,7 @@ alt: NumFOCUS Logo
 :::
 
 :::{grid-item-card}
+:class-body: sponsor-logo
 :link: https://quansight.com/
 :link-type: url
 :text-align: center
@@ -187,7 +191,7 @@ background/index
 reference/index
 api/index
 FAQ
-about/index.rst
+about/index
 ```
 
 ```{toctree}
@@ -197,5 +201,4 @@ about/index.rst
 :caption: FOR DEVELOPERS
 
 developer_guide/index
-releases
 ```

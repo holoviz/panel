@@ -47,22 +47,18 @@ html_theme_options = {
         {
             "name": "Twitter",
             "url": "https://twitter.com/Panel_Org",
-            "icon": "fab fa-twitter-square",
+            "icon": "fa-brands fa-twitter-square",
         },
         {
             "name": "Discourse",
             "url": "https://discourse.holoviz.org/c/panel/5",
-            "icon": "fab fa-discourse",
+            "icon": "fa-brands fa-discourse",
         },
-    ],
-    "footer_items": [
-        "copyright",
-        "last-updated",
     ],
     "google_analytics_id": "UA-154795830-2",
     "pygment_light_style": "material",
     "pygment_dark_style": "material",
-    "header_links_before_dropdown": 6
+    "header_links_before_dropdown": 5
 }
 
 extensions += [
@@ -111,6 +107,7 @@ nbsite_gallery_conf = {
         },
         'reference': {
             'title': 'Reference Gallery',
+            'as_pyodide': True,
             'sections': [
                 'panes',
                 'layouts',
@@ -129,7 +126,8 @@ nbsite_gallery_conf = {
         }
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
-    'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
+    'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/',
+    'jupyterlite_url': 'https://panelite.holoviz.org/lab/index.html'
 }
 
 if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
