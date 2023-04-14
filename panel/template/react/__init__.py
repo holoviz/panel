@@ -37,7 +37,7 @@ class ReactTemplate(BasicTemplate):
 
     save_layout = param.Boolean(default=False, doc="Save layout to local storage.")
 
-    sidebar_width = param.Integer(350, doc="""
+    sidebar_width = param.Integer(default=350, doc="""
         The width of the sidebar in pixels. Default is 350.""")
 
     _css = pathlib.Path(__file__).parent / 'react.css'
