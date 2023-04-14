@@ -302,6 +302,9 @@ class DatePicker(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {}
 
     _rename: ClassVar[Mapping[str, str | None]] = {
@@ -347,6 +350,9 @@ class _DatetimePickerBase(Widget):
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
+
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None, 'mode': None
