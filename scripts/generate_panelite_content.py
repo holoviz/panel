@@ -17,7 +17,8 @@ EXAMPLES_DIR = PANEL_BASE / 'examples'
 DEFAULT_DEPENDENCIES = ['panel', 'pyodide-http', 'altair', 'hvplot', 'matplotlib', 'plotly', 'pydeck', 'scikit-learn']
 with open(PANEL_BASE/"scripts"/"panelite_dependencies.json", "r", encoding="utf8") as file:
     DEPENDENCIES = json.load(file)
-DEPENDENCY_NOT_IMPORTABLE = [
+DEPENDENCY_NOT_INSTALLABLE = [
+    "aiohttp", # https://github.com/aio-libs/aiohttp/issues/7253
     "datashader", # https://github.com/holoviz/datashader/issues/1200
     "pyarrow", # https://github.com/apache/arrow/issues/34996
     "pygraphviz", # https://github.com/pygraphviz/pygraphviz/issues/453
@@ -26,30 +27,10 @@ DEPENDENCY_NOT_IMPORTABLE = [
     "vtk", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
 ]
 NOTEBOOK_ISSUES = {
-    "Getting_Started.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
-    "reference/panes/DataFrame.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
-    "reference/panes/HoloViews.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
-    "reference/panes/IPyWidget.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
-    "reference/panes/Matplotlib.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
-    "reference/panes/Param.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
-    "reference/panes/Reacton.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
-    "reference/panes/Str.ipynb": ["https://github.com/holoviz/panel/issues/4396"],
-    "reference/panes/Streamz.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
-    "reference/panes/VTK.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
-    "reference/panes/VTKVolume.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
-    "reference/widgets/CrossSelector.ipynb": ["https://github.com/holoviz/panel/issues/4398"],
-    "reference/widgets/Debugger.ipynb": ["https://github.com/holoviz/panel/issues/4399"],
-    "reference/widgets/EditableIntSlider.ipynb": ["https://github.com/holoviz/panel/issues/4400"],
-    "reference/widgets/FileDownload.ipynb": ["https://github.com/holoviz/panel/issues/4401"],
-    "reference/widgets/IntRangeSlider.ipynb": ["https://github.com/holoviz/panel/issues/4402"],
-    "reference/widgets/MultiChoice.ipynb": ["https://github.com/holoviz/panel/issues/4403"],
-    "reference/widgets/RangeSlider.ipynb": ["https://github.com/holoviz/panel/issues/4402"],
-    "reference/widgets/SpeechToText.ipynb": ["https://github.com/holoviz/panel/issues/4404"],
-    "reference/widgets/Terminal.ipynb": ["https://github.com/holoviz/panel/issues/4407"],
     "gallery/components/VuePdbInput.ipynb": ["https://github.com/holoviz/panel/issues/4417"],
     "gallery/demos/VTKInteractive.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
-    "gallery/demos/VTKSlider.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
     "gallery/demos/VTKInteractive.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "gallery/demos/VTKSlider.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
     "gallery/demos/VTKWarp.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
     "gallery/dynamic/dynamic_timeseries_image_analysis.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
     "gallery/layout/dynamic_tabs.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
@@ -73,19 +54,41 @@ NOTEBOOK_ISSUES = {
     "gallery/simple/temperature_distribution.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
     "gallery/simple/xgboost_classifier.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
     "gallery/streaming/hardware_automation.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/streaming/hardware_automation.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
     "gallery/streaming/streaming_indicator.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
     "gallery/streaming/streaming_perspective.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
     "gallery/styles/PlotlyStyle.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
     "gallery/styles/SeabornStyle.ipynb": ["https://github.com/holoviz/panel/issues/4615"],
-    "gallery/streaming/hardware_automation.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
     "gallery/viz/GraphViz.ipynb": ["https://github.com/xflr6/graphviz/issues/197"],
     "gallery/viz/NetworkX.ipynb": ["https://github.com/pygraphviz/pygraphviz/issues/453"],
+    "Getting_Started.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "reference/panes/DataFrame.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
+    "reference/panes/HoloViews.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "reference/panes/IPyWidget.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
+    "reference/panes/Matplotlib.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
+    "reference/panes/Param.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "reference/panes/Reacton.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
+    "reference/panes/Str.ipynb": ["https://github.com/holoviz/panel/issues/4396"],
+    "reference/panes/Streamz.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
+    "reference/panes/VTK.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "reference/panes/VTKVolume.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "reference/widgets/CrossSelector.ipynb": ["https://github.com/holoviz/panel/issues/4398"],
+    "reference/widgets/Debugger.ipynb": ["https://github.com/holoviz/panel/issues/4399"],
+    "reference/widgets/EditableIntSlider.ipynb": ["https://github.com/holoviz/panel/issues/4400"],
+    "reference/widgets/FileDownload.ipynb": ["https://github.com/holoviz/panel/issues/4401"],
+    "reference/widgets/IntRangeSlider.ipynb": ["https://github.com/holoviz/panel/issues/4402"],
+    "reference/widgets/MultiChoice.ipynb": ["https://github.com/holoviz/panel/issues/4403"],
+    "reference/widgets/RangeSlider.ipynb": ["https://github.com/holoviz/panel/issues/4402"],
+    "reference/widgets/SpeechToText.ipynb": ["https://github.com/holoviz/panel/issues/4404"],
+    "reference/widgets/Terminal.ipynb": ["https://github.com/holoviz/panel/issues/4407"],
+    "user_guide/Async_and_Concurrency.ipynb": ["https://github.com/pyodide/pyodide/issues/237"],
+    "user_guide/Performance_and_Debugging.ipynb": ["https://github.com/aio-libs/aiohttp/issues/7253"],
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
     key = str(nbpath).split("examples/")[-1]
     dependencies = DEPENDENCIES.get(key, DEFAULT_DEPENDENCIES)
-    dependencies = [repr(d) for d in dependencies if not d in DEPENDENCY_NOT_IMPORTABLE]
+    dependencies = [repr(d) for d in dependencies if not d in DEPENDENCY_NOT_INSTALLABLE]
     return dependencies
 
 
