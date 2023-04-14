@@ -21,8 +21,8 @@ The `plot` method watches the `X_variable` and `Y_variable` using the `param.dep
 inputs = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width']
 
 class IrisDashboard(Viewer):
-    X_variable = param.Selector(inputs, default=inputs[0])
-    Y_variable = param.Selector(inputs, default=inputs[1])
+    X_variable = param.Selector(objects=inputs, default=inputs[0])
+    Y_variable = param.Selector(objects=inputs, default=inputs[1])
 
     @param.depends('X_variable', 'Y_variable')
     def plot(self):

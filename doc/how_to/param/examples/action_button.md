@@ -15,7 +15,7 @@ class ActionExample(param.Parameterized):
     Demonstrates how to use param.Action to trigger an update.
     """
 
-    action = param.Action(lambda x: x.param.trigger('action'), label='Click here!')
+    action = param.Action(default=lambda x: x.param.trigger('action'), label='Click here!')
 
     number = param.Integer(default=0)
 
