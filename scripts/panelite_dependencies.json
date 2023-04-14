@@ -170,5 +170,8 @@
     "gallery/styles/MatplotlibStyle.ipynb": ["panel"],
     "gallery/styles/PlotlyStyle.ipynb": ["panel", "plotly"],
     "gallery/styles/SeabornStyle.ipynb": ["panel", "seaborn"],
-    "gallery/styles/VegaAltairStyle.ipynb": ["panel", "altair", "vega-datasets"]
+    "gallery/styles/VegaAltairStyle.ipynb": ["panel", "altair", "vega-datasets"],
+    "gallery/templates/material_template.ipynb": ["panel", "holoviews"],
+    "gallery/viz/GraphViz.ipynb": ["panel", "graphviz"],
+    "gallery/viz/NetworkX.ipynb": ["panel", "networkx", "pygraphviz"]
 }

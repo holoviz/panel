@@ -20,6 +20,7 @@ with open(PANEL_BASE/"scripts"/"panelite_dependencies.json", "r", encoding="utf8
 DEPENDENCY_NOT_IMPORTABLE = [
     "datashader", # https://github.com/holoviz/datashader/issues/1200
     "pyarrow", # https://github.com/apache/arrow/issues/34996
+    "pygraphviz", # https://github.com/pygraphviz/pygraphviz/issues/453
     "pyvista", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
     "streamz", # https://github.com/python-streamz/streamz/issues/467,
     "vtk", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
@@ -75,7 +76,10 @@ NOTEBOOK_ISSUES = {
     "gallery/streaming/streaming_indicator.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
     "gallery/streaming/streaming_perspective.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
     "gallery/styles/PlotlyStyle.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
-    "gallery/styles/SeabornStyle.ipynb": ["https://github.com/holoviz/panel/issues/4615"]
+    "gallery/styles/SeabornStyle.ipynb": ["https://github.com/holoviz/panel/issues/4615"],
+    "gallery/streaming/hardware_automation.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/viz/GraphViz.ipynb": ["https://github.com/xflr6/graphviz/issues/197"],
+    "gallery/viz/NetworkX.ipynb": ["https://github.com/pygraphviz/pygraphviz/issues/453"],
 }
 
 def _get_dependencies(nbpath: pathlib.Path):
