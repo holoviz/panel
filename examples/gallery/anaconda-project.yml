@@ -32,9 +32,12 @@ packages:
   - altair
   - pydeck
   - pyvista
+  - seaborn
+  - xgboost
   - pip:
-    - vega_datasets
     - ipyvolume
+    - folium
+    - vega_datasets
 
 env_specs:
   default: {}
