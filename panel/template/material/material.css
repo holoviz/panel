@@ -121,10 +121,9 @@ img.app-logo {
 }
 
 .main-content {
-    height: calc(100vh - 70px);
-    overflow-y: scroll;
-    overflow-x: auto;
-    padding: 5px 25px 0px 15px;
+    height: calc(100vh - 64px);
+    overflow: auto;
+    padding: 5px 15px 0px 15px;
 }
 
 #header {

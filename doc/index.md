@@ -15,40 +15,40 @@ width: 125
 ::::{grid} 2 2 5 5
 :gutter: 1
 
-:::{grid-item-card} Attractors
-:link: https://attractors.pyviz.demo.anaconda.com/attractors_panel
+:::{grid-item-card} Streaming Videostream
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/attractors.png
+```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
 ```
 :::
 
-:::{grid-item-card} Gapminders
-:link: https://gapminders.pyviz.demo.anaconda.com
+:::{grid-item-card}
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtkslicer
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/gapminders.png
+```{image} https://assets.holoviz.org/panel/gallery/vtkslicer.png
 ```
 :::
 
 :::{grid-item-card} Penguins
-:link: https://penguin-crossfilter.pyviz.demo.anaconda.com
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/penguins.png
+```{image} https://assets.holoviz.org/panel/gallery/penguin_crossfilter
 ```
 :::
 
-:::{grid-item-card} Glaciers
-:link: https://glaciers.pyviz.demo.anaconda.com
+:::{grid-item-card} OGGM Glaciers
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/glaciers
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/glaciers.png
+```{image} https://assets.holoviz.org/panel/gallery/glaciers.png
 ```
 :::
 
 :::{grid-item-card} Portfolio Optimizer
-:link: https://portfolio-optimizer.pyviz.demo.anaconda.com
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
 
 ```{image} https://assets.holoviews.org/panel/thumbnails/index/portfolio_optimizer.png

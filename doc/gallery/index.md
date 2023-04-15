@@ -44,7 +44,7 @@ Visually explore the worlds glaciers in this application built in collaboration 
 :::
 
 :::{grid-item-card} VTK Slicer
-:img-top: https://assets.holoviz.org/panel/gallery/vtk_slicer.png
+:img-top: https://assets.holoviz.org/panel/gallery/vtkslicer.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/vtkslicer
 :link-type: external
 
