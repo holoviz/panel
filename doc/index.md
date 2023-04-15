@@ -12,6 +12,35 @@ width: 125
 
 <h2 style="margin-top: 0.3em;">A high-level app and dashboarding solution for Python</h2>
 
+Panel is an [open-source and free](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you create interactive tools, dashboards and data apps by connecting user-defined widgets to plots, images, tables, text and more.
+
+```{eval-rst}
+.. notebook:: panel ../examples/homepage.ipynb
+    :disable_interactivity_warning: True
+```
+
+Compared to other approaches, Panel is novel in the number of visualization libraries, development environments and deployment options that it supports.
+
+Panel makes it simple to:
+
+- Use the PyData tools and visualization libraries that you know and love
+- Develop in your favorite editor or notebook environment
+- Iterate quickly to prototype apps and dashboards
+- Support deep bi-directional interactivity between the frontend and the backend
+- Stream data large and small to the frontend
+- Test and maintain your applications
+- Develop server-, pyodide- and pyscript-backed applications
+- Wrap your applications in polished templates for your final deployment
+- Add authentication to your applications using the inbuilt OAuth providers
+
+## Useful Links
+
+Project: [Source Repository](https://github.com/holoviz/panel) | [Issues & Ideas](https://github.com/holoviz/panel/issues) | [Q&A Support](https://discourse.holoviz.org/) | [Chat](https://discord.gg/rb6gPXbdAr)
+
+Live Environments: [Panelite](https://panelite.holoviz.org/) | [Panelite Repl](https://panelite.holoviz.org/repl/) | [Binder](https://mybinder.org/v2/gh/holoviz/panel/v0.14.4?urlpath=lab/tree/examples)
+
+## Demo Apps
+
 ::::{grid} 2 2 5 5
 :gutter: 1
 
@@ -57,24 +86,6 @@ width: 125
 
 ::::
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you create custom interactive web apps and dashboards by connecting user-defined widgets to plots, images, tables, or text.
-
-```{eval-rst}
-.. notebook:: panel ../examples/homepage.ipynb
-    :disable_interactivity_warning: True
-```
-
-Compared to other approaches, Panel is novel in that it supports nearly all plotting libraries, works just as well in a Jupyter notebook as on a standalone secure web server, uses the same code for both those cases, supports both Python-backed and static HTML/JavaScript exported applications, and can be used to develop rich interactive applications without tying your domain-specific code to any particular GUI or web tools.
-
-Panel makes it simple to:
-
-- Use the PyData tools and plotting libraries that you know and love
-- Develop in your favorite editor or notebook environment and seamlessly deploy the resulting application
-- Iterate quickly to prototype apps and dashboards while offering polished templates for your final deployment
-- Support deep interactivity by communicating client-side interactions and events to Python
-- Stream data large and small to the frontend
-- Add authentication to your application using the inbuilt OAuth providers
-
 ## Usage
 
 ::::{grid} 1 2 2 4
@@ -111,6 +122,15 @@ How-to guides provide step by step recipes for solving essential problems and ta
 ::::
 
 For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/). If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
+
+## HoloViz
+
+Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot plotting api), [HoloViews](https://holoviews.org/) (powerful plotting api), and [Datashader](https://datashader.org/) (big data viz).
+
+Panel is built on top of [Param](https://param.holoviz.org). Param enables you to annotate your code with parameter ranges, documentation, and dependencies between parameters and code. With this approach,
+
+- you don't ever have to commit to whether your code will be used in a notebook, a data app, in batch processing, or reports.
+- you will write less code and be able to develop large, maintainable code bases!
 
 ## Sponsors
 
