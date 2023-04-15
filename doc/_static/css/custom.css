@@ -96,9 +96,8 @@ html[data-theme=light] .bd-content div.cell_output .text_html {
     }
 }
 
-#navbar-icon-links i.fa-github-square:before,
-#navbar-icon-links i.fa-discourse:before,
-#navbar-icon-links i.fa-discord:before {
+#navbar-icon-links i.fa-solid:before,
+#navbar-icon-links i.fa-brands:before {
     color: white;
 }
 

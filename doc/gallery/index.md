@@ -6,7 +6,7 @@
 :::{grid-item-card} Portfolio Optimizer
 :img-top: https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/portfolio_optimizer
-:link-type: external
+:link-type: url
 
 Stock portfolio optimization by exploring the efficient frontier and optimizing the Sharpe ratio.
 +++
@@ -16,7 +16,7 @@ Stock portfolio optimization by exploring the efficient frontier and optimizing 
 :::{grid-item-card} Streaming Videostream
 :img-top: https://assets.holoviz.org/panel/gallery/streaming_videostream.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/streaming_videostream
-:link-type: external
+:link-type: url
 
 Applying face detection and other image transforms on your webcam input using scikit-image.
 +++
@@ -26,7 +26,7 @@ Applying face detection and other image transforms on your webcam input using sc
 :::{grid-item-card} Windturbines Explorer
 :img-top: https://assets.holoviz.org/panel/gallery/windturbines.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/windturbines
-:link-type: external
+:link-type: url
 
 Visually explore a dataset of US Windturbines.
 +++
@@ -36,7 +36,7 @@ Visually explore a dataset of US Windturbines.
 :::{grid-item-card} OGGM Glaciers
 :img-top: https://assets.holoviz.org/panel/gallery/glaciers.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/glaciers
-:link-type: external
+:link-type: url
 
 Visually explore the worlds glaciers in this application built in collaboration with OGGM.
 +++
@@ -46,7 +46,7 @@ Visually explore the worlds glaciers in this application built in collaboration 
 :::{grid-item-card} VTK Slicer
 :img-top: https://assets.holoviz.org/panel/gallery/vtkslicer.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/vtkslicer
-:link-type: external
+:link-type: url
 
 Visualizing MRI brain scans and their cross-sections using a VTK volume and linked 2D slices.
 +++
@@ -56,7 +56,7 @@ Visualizing MRI brain scans and their cross-sections using a VTK volume and link
 :::{grid-item-card} Deck.GL: NYC Taxi
 :img-top: https://assets.holoviz.org/panel/gallery/nyc_deckgl.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/nyc_deckgl
-:link-type: external
+:link-type: url
 
 NYC Taxi trips visualized and animated using Deck.GL.
 +++
@@ -66,7 +66,7 @@ NYC Taxi trips visualized and animated using Deck.GL.
 :::{grid-item-card} Gapminders
 :img-top: https://assets.holoviz.org/panel/gallery/nyc_deckgl.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/nyc_deckgl
-:link-type: external
+:link-type: url
 
 Visualizing the Gapminders data using the most common Python plotting libraries.
 +++
@@ -76,7 +76,7 @@ Visualizing the Gapminders data using the most common Python plotting libraries.
 :::{grid-item-card} VTK: St. Helens
 :img-top: https://assets.holoviz.org/panel/gallery/vtkinteractive.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/vtkinteractive
-:link-type: external
+:link-type: url
 
 Visualizing the surface of Mount St. Helens using VTK and linked widgets to control the rendering.
 +++
@@ -86,7 +86,7 @@ Visualizing the surface of Mount St. Helens using VTK and linked widgets to cont
 :::{grid-item-card} Penguin Crossfiltering
 :img-top: https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/penguin_crossfilter
-:link-type: external
+:link-type: url
 
 Palmer Penguins data visualized using a set of linked cross-filtering plots.
 +++
@@ -96,7 +96,7 @@ Palmer Penguins data visualized using a set of linked cross-filtering plots.
 :::{grid-item-card} Deck.GL: Game of Life
 :img-top: https://assets.holoviz.org/panel/gallery/deckgl_game_of_life.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/deckgl_game_of_life
-:link-type: external
+:link-type: url
 
 Game of Life simulation rendered on a 3D plane using Deck.gl.
 +++
@@ -106,7 +106,7 @@ Game of Life simulation rendered on a 3D plane using Deck.gl.
 :::{grid-item-card} hvPlot Explorer
 :img-top: https://assets.holoviz.org/panel/gallery/hvplot_explorer.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/hvplot_explorer
-:link-type: external
+:link-type: url
 
 Use the hvPlot explorer to interactive visualize your dataset.
 +++
@@ -116,7 +116,7 @@ Use the hvPlot explorer to interactive visualize your dataset.
 :::{grid-item-card} Iris KMeans Clustering
 :img-top: https://assets.holoviz.org/panel/gallery/iris_kmeans.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/iris_kmeans
-:link-type: external
+:link-type: url
 
 Interactively apply KMeans clustering on the Iris dataset.
 +++
@@ -126,7 +126,7 @@ Interactively apply KMeans clustering on the Iris dataset.
 :::{grid-item-card} XGBoost Classifier
 :img-top: https://assets.holoviz.org/panel/gallery/xgboost_classifier.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/xgboost_classifier
-:link-type: external
+:link-type: url
 
 Interactively apply a XGBoost classifier on the Iris dataset.
 +++
@@ -136,7 +136,7 @@ Interactively apply a XGBoost classifier on the Iris dataset.
 :::{grid-item-card} Altair Brushing
 :img-top: https://assets.holoviz.org/panel/gallery/altair_brushing.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.org/altair_brushing
-:link-type: external
+:link-type: url
 
 Try interactive brushing on an Altair plot linked with a table.
 +++
@@ -155,13 +155,16 @@ portfolio_optimizer
 streaming_videostream
 windturbines
 glaciers
-vtkslicer
+VTKSlicer
 nyc_deckgl
 gapminders
-vtkinteractive
+VTKInteractive
 penguin_crossfilter
 deckgl_game_of_life
 hvplot_explorer
 xgboost_classifier
 altair_brushing
+VTKWarp
+iris_kmeans
+penguin_kmeans
 ```

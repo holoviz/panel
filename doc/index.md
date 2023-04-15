@@ -15,7 +15,7 @@ width: 125
 ::::{grid} 2 2 5 5
 :gutter: 1
 
-:::{grid-item-card} Streaming Videostream
+:::{grid-item-card} Videostream
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
 
@@ -31,7 +31,7 @@ width: 125
 ```
 :::
 
-:::{grid-item-card} Penguin Crossfiltering
+:::{grid-item-card} Crossfiltering
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
 
@@ -51,7 +51,7 @@ width: 125
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/portfolio_optimizer.png
+```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
 ```
 :::
 
