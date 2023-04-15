@@ -263,7 +263,7 @@ class Perspective(ModelPane, ReactiveData):
     >>> Perspective(df, plugin='hypergrid', theme='material-dark')
     """
 
-    aggregates = param.Dict(None, doc="""
+    aggregates = param.Dict(default=None, doc="""
       How to aggregate. For example {"x": "distinct count"}""")
 
     columns = param.List(default=None, doc="""
@@ -273,7 +273,7 @@ class Perspective(ModelPane, ReactiveData):
       A list of expressions computing new columns from existing columns.
       For example [""x"+"index""]""")
 
-    split_by = param.List(None, doc="""
+    split_by = param.List(default=None, doc="""
       A list of source columns to pivot by. For example ["x", "y"]""")
 
     filters = param.List(default=None, doc="""

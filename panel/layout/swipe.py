@@ -29,7 +29,7 @@ class Swipe(ListLike, ReactiveHTML):
     slider_color = param.Color(default="black", doc="""
         The color of the slider""")
 
-    value = param.Integer(50, bounds=(0, 100), doc="""
+    value = param.Integer(default=50, bounds=(0, 100), doc="""
         The percentage of the *after* panel to show.""")
 
     _before = param.Parameter()

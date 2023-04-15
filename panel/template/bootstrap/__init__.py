@@ -30,7 +30,7 @@ class BootstrapTemplate(BasicTemplate):
     BootstrapTemplate
     """
 
-    sidebar_width = param.Integer(350, doc="""
+    sidebar_width = param.Integer(default=350, doc="""
         The width of the sidebar in pixels. Default is 350.""")
 
     design = param.ClassSelector(class_=Design, default=Bootstrap, constant=True,

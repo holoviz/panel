@@ -94,7 +94,7 @@ class _config(_base_config):
     >>> pn.config.loading_spinner = 'bar'
     """
 
-    admin_plugins = param.List([], item_type=tuple, doc="""
+    admin_plugins = param.List(default=[], item_type=tuple, doc="""
         A list of tuples containing a title and a function that returns
         an additional panel to be rendered into the admin page.""")
 

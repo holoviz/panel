@@ -34,7 +34,7 @@ class Card(Column):
     active_header_background = param.String(doc="""
         A valid CSS color for the header background when not collapsed.""")
 
-    button_css_classes = param.List(['card-button'], doc="""
+    button_css_classes = param.List(default=['card-button'], doc="""
         CSS classes to apply to the button element.""")
 
     collapsible = param.Boolean(default=True, doc="""
@@ -43,7 +43,7 @@ class Card(Column):
     collapsed = param.Boolean(default=False, doc="""
         Whether the contents of the Card are collapsed.""")
 
-    css_classes = param.List(['card'], doc="""
+    css_classes = param.List(default=['card'], doc="""
         CSS classes to apply to the overall Card.""")
 
     header = param.Parameter(doc="""
@@ -56,13 +56,13 @@ class Card(Column):
     header_color = param.String(doc="""
         A valid CSS color to apply to the header text.""")
 
-    header_css_classes = param.List(['card-header'], doc="""
+    header_css_classes = param.List(default=['card-header'], doc="""
         CSS classes to apply to the header element.""")
 
     hide_header = param.Boolean(default=False, doc="""
         Whether to skip rendering the header.""")
 
-    title_css_classes = param.List(['card-title'], doc="""
+    title_css_classes = param.List(default=['card-title'], doc="""
         CSS classes to apply to the header title.""")
 
     title = param.String(doc="""
