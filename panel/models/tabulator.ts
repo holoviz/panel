@@ -396,6 +396,7 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     if (this.tabulator.rowManager.renderer != null) {
       this.tabulator.rowManager.redraw(true)
+      this.renderChildren()
       this.setStyles()
     }
   }
