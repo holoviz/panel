@@ -5,7 +5,7 @@ At this point you should have [set up your environment and installed Panel](inst
 In this section we're going to be building a basic application using a public dataset and add some interactivity.
 
 :::{important}
-This guide renders static output by default (denoted by the golden border) but you can execute the code cells below by clicking the play button. Only run this if you are willing to download ~40 MB.
+This guide renders static output by default (denoted by the golden border), but you can execute the code cells below by clicking the play button. Only run this if you are willing to download ~40 MB once. The download will be cached and reused the next time you click the play button on any page across the site.
 :::
 
 ## Fetch some data
