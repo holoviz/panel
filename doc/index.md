@@ -57,7 +57,7 @@ width: 125
 
 ::::
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/master/LICENSE.txt) Python library that lets you create powerful dashboards and data apps **using the tools you know and love**. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem.
+Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you create powerful dashboards and data apps **using the tools you know and love**. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem.
 
 ```{eval-rst}
 .. notebook:: panel ../examples/homepage.ipynb
