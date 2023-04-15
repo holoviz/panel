@@ -65,6 +65,7 @@ jobs:
       - name: build docs
         run: |
           conda activate test-environment
+          python scripts/gallery/convert_gallery.py
           nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
           cp -r ./panel/dist ./builtdocs/panel_dist
       - name: convert gallery

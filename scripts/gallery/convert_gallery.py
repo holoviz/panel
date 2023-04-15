@@ -1,4 +1,5 @@
 import glob
+import json
 import pathlib
 
 
@@ -6,7 +7,7 @@ def convert_notebook_to_md(filename, directive='{pyodide}'):
     with open(filename, encoding='utf-8') as nb:
         nb_json = json.loads(nb.read())
 
-    md = ''
+    md = f"# {filename.name[:-6].replace('_', ' ').title()}"
     for cell in nb_json['cells']:
         ctype = cell['cell_type']
         if ctype == 'raw':
@@ -27,5 +28,5 @@ if __name__ == '__main__':
     GALLERY = ROOT / 'doc' / 'gallery'
     for nb in ROOT.glob('./examples/gallery/*.ipynb'):
         md = convert_notebook_to_md(nb)
-        with open(GALLERY / f'{name[:-5]}.md', 'w', encoding='utf-8') as f:
+        with open(GALLERY / f'{nb.name[:-6]}.md', 'w', encoding='utf-8') as f:
             f.write(md)
