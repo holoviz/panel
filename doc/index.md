@@ -23,7 +23,7 @@ width: 125
 ```
 :::
 
-:::{grid-item-card}
+:::{grid-item-card} MRI Cross-sections
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtkslicer
 :link-type: url
 
@@ -31,11 +31,11 @@ width: 125
 ```
 :::
 
-:::{grid-item-card} Penguins
+:::{grid-item-card} Penguin Crossfiltering
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
 
-```{image} https://assets.holoviz.org/panel/gallery/penguin_crossfilter
+```{image} https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
 ```
 :::
 

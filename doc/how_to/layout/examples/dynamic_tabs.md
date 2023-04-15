@@ -1,6 +1,8 @@
 # Dynamic Tabs
 
 ```{pyodide}
+import numpy as np
+import pandas as pd
 import panel as pn
 
 pn.extension('deckgl', 'echarts', 'plotly', 'vega', template='material')
@@ -28,7 +30,6 @@ altair_pane
 
 ```{pyodide}
 from math import pi
-import pandas as pd
 
 from bokeh.palettes import Category20c, Category20
 from bokeh.plotting import figure
@@ -131,7 +132,6 @@ echarts_pane
 ```
 
 ```{pyodide}
-import pandas as pd
 import holoviews as hv
 import hvplot.pandas
 import holoviews.plotting.bokeh
@@ -176,7 +176,6 @@ mpl_pane
 ```
 
 ```{pyodide}
-import numpy as np
 import plotly.graph_objs as go
 
 xx = np.linspace(-3.5, 3.5, 100)
