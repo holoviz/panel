@@ -1,6 +1,6 @@
 import pytest
 
-from utils import MaxRetriesExceeded, Retrier
+from scripts.test_panelite.utils import MaxRetriesExceeded, Retrier
 
 
 def test_retrier_no_exception():

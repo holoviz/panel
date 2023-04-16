@@ -33,7 +33,7 @@ Reset your files as described in https://github.com/jupyterlite/jupyterlite/issu
 Run the tests
 
 ```bash
-pytest scripts/test_panelite.py --headed
+pytest scripts/test_panelite/test_panelite.py --headed
 ```
 """
 import pathlib
@@ -41,12 +41,16 @@ import pathlib
 import pytest
 
 from playwright.sync_api import Page, expect
-from utils import Retrier
+
+from scripts.test_panelite.notebooks_with_panelite_issues import (
+    NOTEBOOK_ISSUES,
+)
+from scripts.test_panelite.utils import Retrier
 
 URL = "https://panelite.holoviz.org"
 URL = "http://localhost:8000"
 
-PANEL_BASE = pathlib.Path(__file__).parent.parent
+PANEL_BASE = pathlib.Path(__file__).parent.parent.parent
 FILES = PANEL_BASE / 'lite' / 'files'
 
 def get_panelite_nb_paths():
@@ -55,12 +59,16 @@ def get_panelite_nb_paths():
         path = str(nb).replace("\\", "/").split("files/")[-1]
         if path.endswith(".ipynb") and not ".ipynb_checkpoints" in path:
             yield path
-
-PATHS = list(get_panelite_nb_paths())
-
-PATHS_WITH_KNOWN_ISSUES = [
-    "gallery/apis/stocks_altair.ipynb"
+PATHS_WITH_NOTHING_TO_TEST = [
+    "gallery/demos/attractors.ipynb",
+    "gallery/demos/gapminders.ipynb",
+    "gallery/demos/glaciers.ipynb",
+    "gallery/demos/nyc_taxi.ipynb",
+    "gallery/demos/portfolio-optimizer.ipynb",
 ]
+PATHS = list(path for path in get_panelite_nb_paths() if not path in PATHS_WITH_NOTHING_TO_TEST)
+PATHS_WITHOUT_ISSUES = list(path for path in PATHS if path not in NOTEBOOK_ISSUES)
+PATHS_WITH_ISSUES = list(path for path in PATHS if path in NOTEBOOK_ISSUES)
 
 def _wait_for_notebook_tab(page, notebook):
     tabs = page.get_by_role("tablist")
@@ -77,8 +85,8 @@ def _run_all_cells(page):
 class RunCells(Exception):
     """Raised if an exception is raised while running all cells"""
 
-@pytest.mark.parametrize(["path"], [(path,) for path in PATHS])
-def test_homepage_has_Playwright_in_title_and_get_started_link_linking_to_the_intro_page(path, page: Page):
+def run_notebook(path, page):
+    """Opens the notebook and runs all cells"""
     url =URL + f"/lab/index.html?path={path}"
     notebook = path.split("/")[-1]
 
@@ -100,9 +108,18 @@ def test_homepage_has_Playwright_in_title_and_get_started_link_linking_to_the_in
             expect(execution_indicator).to_have_attribute("data-status", "busy", timeout=10000)
             expect(execution_indicator).to_have_attribute("data-status", "idle", timeout=45000)
 
-    traceback = page.locator('div[data-mime-type="application/vnd.jupyter.stderr"]')
-    if traceback.count()>0:
-        if path in PATHS_WITH_KNOWN_ISSUES:
-            raise RunCells(traceback.first.inner_text())
-    elif path in PATHS_WITH_KNOWN_ISSUES:
-        raise Exception(f"Expected issue for notebook {notebook}, but no issue was found")
+
+@pytest.mark.parametrize(["path"], [(path,) for path in PATHS_WITHOUT_ISSUES])
+def test_notebooks_without_issues(path, page: Page):
+    run_notebook(path, page)
+    cells_with_err = page.locator('div[data-mime-type="application/vnd.jupyter.stderr"]')
+    if cells_with_err.count()>0:
+        raise RunCells(cells_with_err.first.inner_text())
+
+@pytest.mark.xfail
+@pytest.mark.parametrize(["path"], [(path,) for path in PATHS_WITH_ISSUES])
+def test_notebooks_with_issues(path, page: Page):
+    run_notebook(path, page)
+    cells_with_err = page.locator('div[data-mime-type="application/vnd.jupyter.stderr"]')
+    if cells_with_err.count()>0:
+        raise RunCells(cells_with_err.first.inner_text())
