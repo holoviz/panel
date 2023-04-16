@@ -96,17 +96,22 @@ html[data-theme=light] .bd-content div.cell_output .text_html {
     }
 }
 
-#navbar-icon-links i.fa-github-square:before {
+#navbar-icon-links i.fa-solid:before,
+#navbar-icon-links i.fa-brands:before {
     color: white;
 }
 
-#navbar-icon-links i.fa-discourse:before {
-    color: white;
+.theme-switch-button {
+    font-size: unset;
 }
 
 .sd-card-body.sponsor-logo {
     flex-grow: unset;
     margin: auto;
+}
+
+.sponsor-logo img {
+    min-height: 80px;
 }
 
 button.toggle-button {

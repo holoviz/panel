@@ -28,6 +28,22 @@ How to control the size of components.
 
 ::::
 
+
+## Examples
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card}
+:img-top: https://assets.holoviz.org/panel/how_to/layout/dynamic_tabs.png
+:link: examples/dynamic_tabs
+:link-type: doc
+
+Use the `dynamic` parameter of `Tabs` to defer rendering until a tab is selected.
+:::
+
+::::
+
 ```{toctree}
 :titlesonly:
 :hidden:
