@@ -85,10 +85,16 @@ NOTEBOOK_ISSUES = {
     "user_guide/Performance_and_Debugging.ipynb": ["https://github.com/aio-libs/aiohttp/issues/7253"],
 }
 
+class DependencyNotFound(Exception):
+    """Raised if a dependency cannot be found"""
+
 def _get_dependencies(nbpath: pathlib.Path):
-    key = str(nbpath).split("examples/")[-1]
-    dependencies = DEPENDENCIES.get(key, DEFAULT_DEPENDENCIES)
-    dependencies = [repr(d) for d in dependencies if not d in DEPENDENCY_NOT_INSTALLABLE]
+    key = str(nbpath).replace("\\", "/").split("examples/")[-1]
+    try:
+        dependencies = DEPENDENCIES[key]
+    except KeyError as ex:
+        raise DependencyNotFound(f"Could not find the dependencies for '{key}'. Please add them") from ex
+    dependencies = [repr(d) for d in dependencies if not d in DEPENDENCY_NOT_IMPORTABLE]
     return dependencies
 
 
