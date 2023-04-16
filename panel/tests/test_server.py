@@ -457,9 +457,8 @@ def test_server_schedule_at_callable(port):
     server.stop()
 
 @pytest.mark.xdist_group(name="server")
-def test_server_reuse_sessions(port):
+def test_server_reuse_sessions(port, reuse_sessions):
     def app(counts=[0]):
-        config.reuse_sessions = True
         content = f'# Count {counts[0]}'
         counts[0] += 1
         return content
@@ -482,12 +481,9 @@ def test_server_reuse_sessions(port):
 
 
 @pytest.mark.xdist_group(name="server")
-def test_server_reuse_sessions_with_session_key_func(port):
+def test_server_reuse_sessions_with_session_key_func(port, reuse_sessions):
+    config.session_key_func = lambda r: (r.path, r.arguments.get('arg', [''])[0])
     def app(counts=[0]):
-        config.param.update(
-            reuse_sessions=True,
-            session_key_func = lambda r: (r.path, r.arguments.get('arg', [''])[0])
-        )
         if 'arg' in state.session_args:
             title = state.session_args['arg'][0].decode('utf-8')
         else:

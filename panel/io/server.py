@@ -359,7 +359,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
         from ..config import config
         path = self.request.path
         session = None
-        if path in self._session_key_funcs:
+        if config.reuse_sessions and path in self._session_key_funcs:
             key = self._session_key_funcs[path](self.request)
             session = state._sessions.get(key)
         if session is None:

@@ -9,9 +9,8 @@ from panel.io.server import serve
 from panel.template import BootstrapTemplate
 
 
-def test_server_reuse_sessions(page, port):
+def test_server_reuse_sessions(page, port, reuse_sessions):
     def app(counts=[0]):
-        config.reuse_sessions = True
         content = f'# Count {counts[0]}'
         counts[0] += 1
         return content
@@ -29,12 +28,9 @@ def test_server_reuse_sessions(page, port):
     assert page.text_content(".bk.markdown") == 'Count 1'
 
 
-def test_server_reuse_sessions_with_session_key_func(page, port):
+def test_server_reuse_sessions_with_session_key_func(page, port, reuse_sessions):
+    config.session_key_func = lambda r: (r.path, r.arguments.get('arg', [''])[0])
     def app(counts=[0]):
-        config.param.update(
-            reuse_sessions=True,
-            session_key_func = lambda r: (r.path, r.arguments.get('arg', [''])[0])
-        )
         title = state.session_args.get('arg', [b''])[0].decode('utf-8')
         content = f"# Count {counts[0]}"
         tmpl = BootstrapTemplate(title=title)

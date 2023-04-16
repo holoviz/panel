@@ -734,6 +734,7 @@ class _state(param.Parameterized):
         if self._thread_pool is not None:
             self._thread_pool.shutdown(wait=False)
             self._thread_pool = None
+        self._sessions.clear()
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
