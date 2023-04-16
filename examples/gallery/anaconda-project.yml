@@ -4,7 +4,7 @@ description: An environment to serve all Panel gallery examples
 commands:
   default:
     description: Serve the Panel gallery
-    unix: sudo yum install -y http://mirror.centos.org/centos/7/os/x86_64/Packages/libxkbfile-1.0.9-3.el7.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/xorg-x11-xkb-utils-7.7-14.el7.x86_64.rpm http://mirror.centos.org/centos/7/updates/x86_64/Packages/xorg-x11-server-common-1.20.4-23.el7_9.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/libXdmcp-1.1.2-6.el7.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/libXfont2-2.0.3-1.el7.x86_64.rpm http://mirror.centos.org/centos/7/updates/x86_64/Packages/xorg-x11-server-Xvfb-1.20.4-23.el7_9.x86_64.rpm && Xvfb -- :99 -ac -screen 0 1280x1024x24 > /dev/null 2>&1 & bokeh sampledata && sleep 10 && panel serve */*.ipynb --static-dirs thumbnails=thumbnails --num-threads 8
+    unix: sudo yum install -y http://mirror.centos.org/centos/7/os/x86_64/Packages/libxkbfile-1.0.9-3.el7.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/xorg-x11-xkb-utils-7.7-14.el7.x86_64.rpm http://mirror.centos.org/centos/7/updates/x86_64/Packages/xorg-x11-server-common-1.20.4-23.el7_9.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/libXdmcp-1.1.2-6.el7.x86_64.rpm http://mirror.centos.org/centos/7/os/x86_64/Packages/libXfont2-2.0.3-1.el7.x86_64.rpm http://mirror.centos.org/centos/7/updates/x86_64/Packages/xorg-x11-server-Xvfb-1.20.4-23.el7_9.x86_64.rpm && Xvfb -- :99 -ac -screen 0 1280x1024x24 > /dev/null 2>&1 & bokeh sampledata && sleep 10 && panel serve */*.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --num-procs 8
     supports_http_options: true
 
 channels:
