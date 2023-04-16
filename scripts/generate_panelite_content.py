@@ -17,15 +17,54 @@ EXAMPLES_DIR = PANEL_BASE / 'examples'
 DEFAULT_DEPENDENCIES = ['panel', 'pyodide-http', 'altair', 'hvplot', 'matplotlib', 'plotly', 'pydeck', 'scikit-learn']
 with open(PANEL_BASE/"scripts"/"panelite_dependencies.json", "r", encoding="utf8") as file:
     DEPENDENCIES = json.load(file)
-DEPENDENCY_NOT_IMPORTABLE = [
+DEPENDENCY_NOT_INSTALLABLE = [
+    "aiohttp", # https://github.com/aio-libs/aiohttp/issues/7253
+    "datashader", # https://github.com/holoviz/datashader/issues/1200
+    "pyarrow", # https://github.com/apache/arrow/issues/34996
+    "pygraphviz", # https://github.com/pygraphviz/pygraphviz/issues/453
+    "pyvista", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
     "streamz", # https://github.com/python-streamz/streamz/issues/467,
     "vtk", # https://gitlab.kitware.com/vtk/vtk/-/issues/18806
 ]
 NOTEBOOK_ISSUES = {
+    "gallery/components/VuePdbInput.ipynb": ["https://github.com/holoviz/panel/issues/4417"],
+    "gallery/demos/VTKInteractive.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "gallery/demos/VTKInteractive.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "gallery/demos/VTKSlider.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "gallery/demos/VTKWarp.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
+    "gallery/dynamic/dynamic_timeseries_image_analysis.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/layout/dynamic_tabs.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/layout/plot_with_columns.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/param/action_button.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/param/deck_gl_global_power_plants.ipynb": ["https://github.com/holoviz/panel/issues/4612"],
+    "gallery/param/download_upload_csv.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/param/loading_indicator.ipynb": ["https://github.com/holoviz/panel/issues/4613"],
+    "gallery/param/precedence.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/param/reactive_plots.ipynb": ["https://github.com/holoviz/panel/issues/4393", "https://github.com/holoviz/panel/issues/4416"],
+    "gallery/param/reactive_tables.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/altair_brushing.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/clifford_interact.ipynb": ["https://github.com/holoviz/datashader/issues/1200"],
+    "gallery/simple/color_speech_recognition.ipynb": ["https://github.com/holoviz/panel/issues/4404"],
+    "gallery/simple/deckgl_game_of_life.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/defer_data_load.ipynb": ["https://github.com/holoviz/panel/issues/4393", "https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/file_download_examples.ipynb": ["https://github.com/apache/arrow/issues/34996"],
+    "gallery/simple/hvplot_explorer.ipynb": ["https://github.com/holoviz/panel/issues/4393", "https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/iris_kmeans.ipynb": ["https://github.com/holoviz/panel/issues/4393", "https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/loading_spinner.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/simple/temperature_distribution.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/simple/xgboost_classifier.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/streaming/hardware_automation.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/streaming/hardware_automation.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
+    "gallery/streaming/streaming_indicator.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/streaming/streaming_perspective.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/styles/PlotlyStyle.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
+    "gallery/styles/SeabornStyle.ipynb": ["https://github.com/holoviz/panel/issues/4615"],
+    "gallery/viz/GraphViz.ipynb": ["https://github.com/xflr6/graphviz/issues/197"],
+    "gallery/viz/NetworkX.ipynb": ["https://github.com/pygraphviz/pygraphviz/issues/453"],
     "Getting_Started.ipynb": ["https://github.com/holoviz/panel/issues/4416"],
     "reference/panes/DataFrame.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
     "reference/panes/HoloViews.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
-    "reference/panes/IPyWidget.ipynb": ["https://github.com/holoviz/panel/issues/4394", "https://github.com/widgetti/ipyvolume/issues/427"],
+    "reference/panes/IPyWidget.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
     "reference/panes/Matplotlib.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
     "reference/panes/Param.ipynb": ["https://github.com/holoviz/panel/issues/4393"],
     "reference/panes/Reacton.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
@@ -42,7 +81,8 @@ NOTEBOOK_ISSUES = {
     "reference/widgets/RangeSlider.ipynb": ["https://github.com/holoviz/panel/issues/4402"],
     "reference/widgets/SpeechToText.ipynb": ["https://github.com/holoviz/panel/issues/4404"],
     "reference/widgets/Terminal.ipynb": ["https://github.com/holoviz/panel/issues/4407"],
-    "gallery/components/VuePdbInput.ipynb": ["https://github.com/holoviz/panel/issues/4417"],
+    "user_guide/Async_and_Concurrency.ipynb": ["https://github.com/pyodide/pyodide/issues/237"],
+    "user_guide/Performance_and_Debugging.ipynb": ["https://github.com/aio-libs/aiohttp/issues/7253"],
 }
 
 class DependencyNotFound(Exception):
@@ -54,7 +94,7 @@ def _get_dependencies(nbpath: pathlib.Path):
         dependencies = DEPENDENCIES[key]
     except KeyError as ex:
         raise DependencyNotFound(f"Could not find the dependencies for '{key}'. Please add them") from ex
-    dependencies = [repr(d) for d in dependencies if not d in DEPENDENCY_NOT_IMPORTABLE]
+    dependencies = [repr(d) for d in dependencies if not d in DEPENDENCY_NOT_INSTALLABLE]
     return dependencies
 
 
