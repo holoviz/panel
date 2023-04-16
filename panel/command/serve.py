@@ -209,6 +209,10 @@ class Serve(_BkServe):
             help    = "The endpoint for the liveness API.",
             default = "liveness"
         )),
+        ('--reuse-sessions', dict(
+            action  = 'store_true',
+            help    = "Whether to reuse sessions when serving the initial request.",
+        )),
     )
 
     # Supported file extensions
@@ -277,6 +281,7 @@ class Serve(_BkServe):
             raise ValueError("rest-provider %r not recognized." % args.rest_provider)
 
         config.autoreload = args.autoreload
+        config.reuse_sessions = args.reuse_sessions
 
         if config.autoreload:
             for f in files:

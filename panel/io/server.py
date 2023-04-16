@@ -54,6 +54,9 @@ from bokeh.server.views.autoload_js_handler import (
 )
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.static_handler import StaticHandler
+from bokeh.util.token import (
+    generate_jwt_token, generate_session_id, get_token_payload,
+)
 # Tornado imports
 from tornado.ioloop import IOLoop
 from tornado.web import (
@@ -194,9 +197,12 @@ state.on_session_created(_initialize_session_info)
 #---------------------------------------------------------------------
 
 def server_html_page_for_session(
-    session: 'ServerSession', resources: 'Resources', title: str,
+    session: 'ServerSession',
+    resources: 'Resources',
+    title: str,
+    token: str | None = None,
     template: str | Template = BASE_TEMPLATE,
-    template_variables: Optional[Dict[str, Any]] = None
+    template_variables: Optional[Dict[str, Any]] = None,
 ) -> str:
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
@@ -214,7 +220,7 @@ def server_html_page_for_session(
         patch_model_css(root, dist_url=dist_url)
 
     render_item = RenderItem(
-        token = session.token,
+        token = token or session.token,
         roots = session.document.roots,
         use_for_title = False,
     )
@@ -317,7 +323,6 @@ class Application(BkApplication):
 
 bokeh.command.util.Application = Application # type: ignore
 
-
 class SessionPrefixHandler:
 
     @contextmanager
@@ -347,10 +352,55 @@ class SessionPrefixHandler:
 # Patch Bokeh DocHandler URL
 class DocHandler(BkDocHandler, SessionPrefixHandler):
 
+    _session_key_funcs = {}
+
+    @authenticated
+    async def get_session(self):
+        from ..config import config
+        path = self.request.path
+        session = None
+        if config.reuse_sessions and path in self._session_key_funcs:
+            key = self._session_key_funcs[path](self.request)
+            session = state._sessions.get(key)
+        if session is None:
+            session = await super().get_session()
+            with set_curdoc(session.document):
+                if config.reuse_sessions:
+                    key_func = config.session_key_func or (lambda r: path)
+                    if key_func:
+                        self._session_key_funcs[path] = key_func
+                        key = key_func(self.request)
+                    else:
+                        key = path
+                    state._sessions[key] = session
+                    session.block_expiration()
+        return session
+
     @authenticated
     async def get(self, *args, **kwargs):
+        app = self.application
         with self._session_prefix():
+            key_func = self._session_key_funcs.get(self.request.path)
+            if key_func:
+                old_request = key_func(self.request) in state._sessions
+            else:
+                old_request = False
             session = await self.get_session()
+            if old_request and state._sessions.get(key_func(self.request)) is session:
+                session_id = generate_session_id(
+                    secret_key=self.application.secret_key,
+                    signed=self.application.sign_sessions
+                )
+                payload = get_token_payload(session.token)
+                token = generate_jwt_token(
+                    session_id,
+                    secret_key=app.secret_key,
+                    signed=app.sign_sessions,
+                    expiration=app.session_token_expiration,
+                    extra_payload=payload
+                )
+            else:
+                token = session.token
             logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
                 if config.authorize_callback and not config.authorize_callback(state.user_info):
@@ -370,8 +420,8 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                     resources = Resources.from_bokeh(self.application.resources())
                     page = server_html_page_for_session(
                         session, resources=resources, title=session.document.title,
-                        template=session.document.template,
-                        template_variables=session.document.template_variables
+                        token=token, template=session.document.template,
+                        template_variables=session.document.template_variables,
                     )
         self.set_header("Content-Type", 'text/html')
         self.write(page)
