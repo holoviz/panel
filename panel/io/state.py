@@ -209,6 +209,7 @@ class _state(param.Parameterized):
 
     # Sessions
     _sessions = {}
+    _session_key_funcs = {}
 
     def __repr__(self) -> str:
         server_info = []

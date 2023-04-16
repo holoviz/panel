@@ -352,26 +352,21 @@ class SessionPrefixHandler:
 # Patch Bokeh DocHandler URL
 class DocHandler(BkDocHandler, SessionPrefixHandler):
 
-    _session_key_funcs = {}
-
     @authenticated
     async def get_session(self):
         from ..config import config
         path = self.request.path
         session = None
-        if config.reuse_sessions and path in self._session_key_funcs:
-            key = self._session_key_funcs[path](self.request)
+        if config.reuse_sessions and path in state._session_key_funcs:
+            key = state._session_key_funcs[path](self.request)
             session = state._sessions.get(key)
         if session is None:
             session = await super().get_session()
             with set_curdoc(session.document):
                 if config.reuse_sessions:
-                    key_func = config.session_key_func or (lambda r: path)
-                    if key_func:
-                        self._session_key_funcs[path] = key_func
-                        key = key_func(self.request)
-                    else:
-                        key = path
+                    key_func = config.session_key_func or (lambda r: r.path)
+                    self._session_key_funcs[path] = key_func
+                    key = key_func(self.request)
                     state._sessions[key] = session
                     session.block_expiration()
         return session
@@ -380,11 +375,8 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
     async def get(self, *args, **kwargs):
         app = self.application
         with self._session_prefix():
-            key_func = self._session_key_funcs.get(self.request.path)
-            if key_func:
-                old_request = key_func(self.request) in state._sessions
-            else:
-                old_request = False
+            key_func = state._session_key_funcs.get(self.request.path, lambda r: r.path)
+            old_request = key_func(self.request) in state._sessions
             session = await self.get_session()
             if old_request and state._sessions.get(key_func(self.request)) is session:
                 session_id = generate_session_id(
@@ -392,6 +384,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                     signed=self.application.sign_sessions
                 )
                 payload = get_token_payload(session.token)
+                del payload['session_expiry']
                 token = generate_jwt_token(
                     session_id,
                     secret_key=app.secret_key,
