@@ -3,7 +3,6 @@ Before running this script make sure you have
 
 ```bash
 git pull
-pip install pytest-retry
 pip install -e . -U
 python setup.py develop
 ```
@@ -37,22 +36,31 @@ Run the tests
 pytest scripts/test_panelite.py --headed
 ```
 """
+import pathlib
+
 import pytest
 
 from playwright.sync_api import Page, expect
 from utils import Retrier
 
 URL = "https://panelite.holoviz.org"
+URL = "http://localhost:8000"
 
-NO_EXCEPTION_PATHS = [
-    "Getting_Started.ipynb",
-]
+PANEL_BASE = pathlib.Path(__file__).parent.parent
+FILES = PANEL_BASE / 'lite' / 'files'
 
-EXCEPTION_PATHS = [
+def get_panelite_nb_paths():
+    nbs = list(FILES.glob('*/*/*.ipynb')) + list(FILES.glob('*/*.*'))
+    for nb in nbs:
+        path = str(nb).replace("\\", "/").split("files/")[-1]
+        if path.endswith(".ipynb") and not ".ipynb_checkpoints" in path:
+            yield path
+
+PATHS = list(get_panelite_nb_paths())[0:3]
+
+PATHS_WITH_KNOWN_ISSUES = [
     "gallery/apis/stocks_altair.ipynb"
 ]
-
-PATHS = NO_EXCEPTION_PATHS+EXCEPTION_PATHS
 
 def _wait_for_notebook_tab(page, notebook):
     tabs = page.get_by_role("tablist")
@@ -94,5 +102,7 @@ def test_homepage_has_Playwright_in_title_and_get_started_link_linking_to_the_in
 
     traceback = page.locator('div[data-mime-type="application/vnd.jupyter.stderr"]')
     if traceback.count()>0:
-        if path in NO_EXCEPTION_PATHS:
+        if path in PATHS_WITH_KNOWN_ISSUES:
             raise RunCells(traceback.first.inner_text())
+    elif path in PATHS_WITH_KNOWN_ISSUES:
+        raise Exception(f"Expected issue for notebook {notebook}, but no issue was found")
