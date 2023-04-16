@@ -13,6 +13,7 @@ channels:
   - conda-forge
 
 variables:
+  PANEL_AE5_CDN: 1
   MPLBACKEND: Agg
   DISPLAY: ":99"
   MESA_GL_VERSION_OVERRIDE: 3.2
