@@ -56,7 +56,7 @@ def get_panelite_nb_paths():
         if path.endswith(".ipynb") and not ".ipynb_checkpoints" in path:
             yield path
 
-PATHS = list(get_panelite_nb_paths())[0:3]
+PATHS = list(get_panelite_nb_paths())
 
 PATHS_WITH_KNOWN_ISSUES = [
     "gallery/apis/stocks_altair.ipynb"
