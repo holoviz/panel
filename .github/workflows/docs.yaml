@@ -71,7 +71,7 @@ jobs:
       - name: convert gallery
         run: |
           conda activate test-environment
-          panel convert examples/gallery/**/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index
+          panel convert examples/gallery/*.ipynb doc/how_to/**/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index
       - name: git status and git diff
         run: |
           git status
