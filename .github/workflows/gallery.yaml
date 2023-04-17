@@ -59,7 +59,7 @@ jobs:
           ae5 login --hostname pyviz.demo.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
           ae5 deployment stop panel-gallery-dev --yes || :
           ae5 project delete panel-gallery-dev --yes || :
-          ae5 project upload examples/gallery --name panel-gallery-dev --tag ${{ steps.vars.outputs.tag || 0.0.1dev }}
+          ae5 project upload examples/gallery --name panel-gallery-dev --tag ${{ steps.vars.outputs.tag || '0.0.1dev' }}
           ae5 deployment start panel-gallery-dev --endpoint panel-gallery-dev --command default --public --command default --resource-profile large --wait
       - name: Upload and deploy prod gallery
         if: |
