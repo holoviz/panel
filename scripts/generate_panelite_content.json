@@ -20,7 +20,7 @@
     "gallery/dynamic/dynamic_timeseries_image_analysis.ipynb": ["panel", "holoviews", "hvplot"],
     "gallery/dynamic/dynamic_ui.ipynb": ["panel"],
     "gallery/dynamic/dynamic_widget_values.ipynb": ["panel"],
-    "gallery/external/DataTable.ipynb": ["panel"],
+    "gallery/external/DataTable.ipynb": ["panel", "pandas"],
     "gallery/external/deck.gl.ipynb": ["panel"],
     "gallery/external/Folium.ipynb": ["panel", "pandas", "folium"],
     "gallery/featured/gapminders.ipynb": ["panel", "altair", "plotly", "hvplot"],

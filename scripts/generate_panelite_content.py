@@ -57,10 +57,7 @@ def _to_issue_str(issue:str):
         return f"{library}#{id}"
     if issue.startswith("https://gitlab.kitware.com/") and "/issues/" in issue:
         issue = issue.replace("https://gitlab.kitware.com/", "")
-        try:
-            _, library, _, _, id = issue.split("/")
-        except:
-            breakpoint()
+        _, library, _, _, id = issue.split("/")
         if library == "panel":
             return f"#{id}"
         return f"{library}#{id}"
@@ -71,17 +68,14 @@ def _get_info_markdown_cell(nbpath):
     issues = _get_issues(key)
     if issues:
         issues_str = ", ".join([f'<a href="{issue}">{_to_issue_str(issue)}</a>' for issue in issues])
-        print(issues_str)
         source = f"""<div class="alert alert-block alert-danger">
 This notebook is not expected to run successfully in <em>Panelite</em>. It has the following known issues: {issues_str}.
 
-Panelite is powered by young technologies like <a href="https://pyodide.org/en/stable/">Pyodide</a> and <a href="https://jupyterlite.readthedocs.io/en/latest/">Jupyterlite</a>. Panelite does not work well in Edge. If you experience other issues, please <a href="https://github.com/holoviz/panel/issues">report them</a>.
+Panelite is powered by young technologies like <a href="https://pyodide.org/en/stable/">Pyodide</a> and <a href="https://jupyterlite.readthedocs.io/en/latest/">Jupyterlite</a>. Panelite <a href="https://github.com/holoviz/panel/issues/4416">does not work well in Edge</a>. If you experience other issues, please <a href="https://github.com/holoviz/panel/issues">report them</a>.
 </div>"""
     else:
         source = """<div class="alert alert-block alert-success">
-This notebook is expected to run successfully in <em>Panelite</em>.
-
-Panelite is powered by young technologies like <a href="https://pyodide.org/en/stable/">Pyodide</a> and <a href="https://jupyterlite.readthedocs.io/en/latest/">Jupyterlite</a>. Panelite does not work well in Edge. If you do experience issues, please <a href="https://github.com/holoviz/panel/issues">report them</a>.
+<em>Panelite</em> is powered by young technologies like <a href="https://pyodide.org/en/stable/">Pyodide</a> and <a href="https://jupyterlite.readthedocs.io/en/latest/">Jupyterlite</a>. Panelite <a href="https://github.com/holoviz/panel/issues/4416">does not work well in Edge</a>. If you experience issues, please <a href="https://github.com/holoviz/panel/issues">report them</a>.
 </div>"""
     info = nbformat.v4.new_markdown_cell(source=source)
     del info['id']
@@ -151,5 +145,5 @@ def download_sample_data():
 
 if __name__=="__main__":
     copy_examples()
-    # copy_assets()
-    # download_sample_data()
+    copy_assets()
+    download_sample_data()
