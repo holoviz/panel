@@ -365,7 +365,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
             with set_curdoc(session.document):
                 if config.reuse_sessions:
                     key_func = config.session_key_func or (lambda r: r.path)
-                    self._session_key_funcs[path] = key_func
+                    state._session_key_funcs[path] = key_func
                     key = key_func(self.request)
                     state._sessions[key] = session
                     session.block_expiration()
