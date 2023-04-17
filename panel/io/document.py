@@ -60,7 +60,7 @@ def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
     for event in events:
         doc.callbacks.trigger_on_change(event)
 
-def _cleanup_doc(doc):
+def _cleanup_doc(doc, destroy=True):
     for callback in doc.session_destroyed_callbacks:
         try:
             callback(None)
@@ -89,13 +89,18 @@ def _cleanup_doc(doc):
             views[ref] = (pane, root, doc, comm)
     state._views = views
 
+    # When reusing sessions we must clean up the Panel state but we
+    # must **not** destroy the template or the document
+    if not destroy:
+        return
+
     # Clean up templates
     if doc in state._templates:
         tmpl = state._templates[doc]
         tmpl._documents = {}
         del state._templates[doc]
 
-    # Destroy doc
+    # Destroy document
     doc.destroy(None)
 
 #---------------------------------------------------------------------

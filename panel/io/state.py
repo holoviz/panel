@@ -209,6 +209,7 @@ class _state(param.Parameterized):
 
     # Sessions
     _sessions = {}
+    _session_key_funcs = {}
 
     def __repr__(self) -> str:
         server_info = []
@@ -735,6 +736,7 @@ class _state(param.Parameterized):
             self._thread_pool.shutdown(wait=False)
             self._thread_pool = None
         self._sessions.clear()
+        self._session_key_funcs.clear()
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
