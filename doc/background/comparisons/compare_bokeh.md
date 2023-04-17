@@ -1,4 +1,4 @@
-## Comparing Panel and Bokeh
+# Comparing Panel and Bokeh
 
 Panel and Bokeh can both be used to create dashboards in Python, but are intended for different uses and different audiences:
 

@@ -1,4 +1,4 @@
-## Comparing Panel and JavaScript
+# Comparing Panel and JavaScript
 
 Whenever you evaluate any Python framework for building JavaScript/HTML/CSS web apps, it's important to consider the baseline alternative of just writing JavaScript, HTML, and CSS directly. Writing JS/HTML/CSS will give you full control over all aspects of the resulting applications, allowing you to tailor the complete look and feel and behavior to match even the most precise requirements. Moreover, JS/HTML/CSS apps can be deployed on any web server without needing any special consideration to running a Python process, which makes deployment and scaling much more straightforward.
 

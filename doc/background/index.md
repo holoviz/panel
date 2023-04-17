@@ -4,40 +4,33 @@ The Background section aims to clarify, deepen, and broaden the understanding of
 
 Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md), which new users must complete before working with Panel, this Background section is intended to help practitioners form and strengthen a conceptual web that facilitates new and advanced usage directions.
 
-## On APIs
+## APIs
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1` API context
-:link: apis/apis_context
+:link: api/api_context
 :link-type: doc
 
 Learn why there are multiple Panel APIs.
 :::
 
-:::{grid-item-card} {octicon}`ellipsis;2.5em;sd-mr-1` Widget Abbreviations for `Interact`
-:link: interact/interact_abbreviations
-:link-type: doc
-
-Learn about the abbreviations used to create widgets with Panel `interact`.
-:::
-
 ::::
 
-## On components
+## Components
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Components
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Components overview
 :link: components/components_overview
 :link-type: doc
 
 Deepen your understanding about Panel's visible objects and layouts types.
 :::
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Custom Components
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Custom components
 :link: components/components_custom
 :link-type: doc
 
@@ -46,7 +39,7 @@ Learn about building custom Panel components.
 
 ::::
 
-## On linking
+## Linking
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -60,7 +53,7 @@ Learn how Panel communicates between Python and Javascript in different contexts
 
 ::::
 
-## On styling
+## Styling
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -73,17 +66,7 @@ Learn about context for using Templates in Panel.
 :::
 
 ::::
-
-## On sharing apps
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::
-
-::::
-
-## On dependencies
+## Dependencies
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -103,16 +86,82 @@ Learn why Panel utilizes the Bokeh library.
 :::
 
 ::::
-## On web app landscape
+
+## Technology comparisons
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`git-compare;2.5em;sd-mr-1` Library comparisons
-:link: comparisons
+:::{grid-item-card} Panel and Bokeh
+:link: comparisons/compare_bokeh
 :link-type: doc
 
-Compare Panel with similar technologies.
+```{image} https://static.bokeh.org/branding/icons/bokeh-icon@5x.png
+:width: 250px
+:align: center
+:name: Bokeh
+```
+
+:::
+
+:::{grid-item-card} Panel and Dash
+:link: comparisons/compare_dash
+:link-type: doc
+
+```{image} https://plotly.github.io/images/dash.png
+:width: 250px
+:align: center
+:name: Dash
+```
+
+:::
+
+:::{grid-item-card} Panel and ipywidgets
+:link: comparisons/compare_ipywidgets
+:link-type: doc
+
+```{image} https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Jupyter_logo.svg/414px-Jupyter_logo.svg.png
+:height: 250px
+:align: center
+:name: ipywidgets
+```
+
+:::
+
+:::{grid-item-card} Panel and Voila
+:link: comparisons/compare_js
+:link-type: doc
+
+```{image} https://voila.readthedocs.io/en/stable/_images/voila-logo.svg
+:width: 250px
+:align: center
+:name: Voila
+```
+
+:::
+
+:::{grid-item-card} Panel and Streamlit
+:link: comparisons/compare_streamlit
+:link-type: doc
+
+```{image} https://streamlit.io/images/brand/streamlit-mark-color.png
+:width: 250px
+:align: center
+:name: Streamlit
+```
+
+:::
+
+:::{grid-item-card} Panel and JavaScript
+:link: comparisons/compare_voila
+:link-type: doc
+
+```{image} https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/JavaScript-logo.png/480px-JavaScript-logo.png
+:width: 250px
+:align: center
+:name: JavaScript
+```
+
 :::
 
 ::::
@@ -126,7 +175,6 @@ apis
 components
 linking
 styling
-sharing
 dependencies
-landscape
+comparisons
 ```

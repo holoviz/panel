@@ -1,4 +1,4 @@
-## Comparing Panel and Voila
+# Comparing Panel and Voila
 
 Voila is a technology for deploying Jupyter notebooks (with or without Panel code) as standalone web pages backed by Python. Voila is thus one way you can deploy your Panel apps, your ipywidgets-based apps, or any other content visible in a Jupyter notebook (including multiple languages, like R or C++). Voila is an alternative to the Bokeh Server component that is available through ``panel serve``; Panel works with either one, and you can deploy with *either* Bokeh Server (panel serve) or Voila. To serve a Panel app with Voila, just install [jupyter_bokeh](https://github.com/bokeh/jupyter_bokeh) and do ``pn.ipywidget(panel_obj)``, which makes an ipywidget out of your Panel object that Voila (or Jupyter itself) can then display and let you interact with.
 

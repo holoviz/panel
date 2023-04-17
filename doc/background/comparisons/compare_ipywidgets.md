@@ -1,4 +1,4 @@
-## Comparing Panel and ipywidgets
+# Comparing Panel and ipywidgets
 
 Both Panel and ipywidgets (aka Jupyter Widgets) allow Python users to work with custom widgets and create apps and dashboards from Python, both in Jupyter notebooks and in standalone servers (when paired with Voila, below). But Panel and ipywidgets are based on different, independently developed technologies for doing so, with some implications:
 

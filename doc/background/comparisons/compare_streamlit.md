@@ -1,4 +1,4 @@
-## Comparing Panel and Streamlit
+# Comparing Panel and Streamlit
 
 streamlit is an alternative to all of the above packages. Like Jupyter, streamlit provides an interactive, incremental way to build apps. streamlit works with Python text files written in a separate editor, while Jupyter uses a web-based notebook cell editor. Although a web-based editor makes it simple to work locally on remote files, using a local Python text file allows users to maximize their productivity by choosing their own favorite editor. Dash, Panel, and Bokeh all also support bare Python files developed in a local editor, and like streamlit they can all also watch that file and automatically re-run the file when you change it in the editor (e.g. for Panel, launch ``panel serve --show --autoreload file.py`` to watch the Python file and re-launch the served app on any changes).
 

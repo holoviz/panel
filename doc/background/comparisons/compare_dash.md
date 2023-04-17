@@ -1,4 +1,4 @@
-## Comparing Panel and Dash
+# Comparing Panel and Dash
 
 Panel and Dash can both be used to create dashboards in Python, but take very different approaches:
 
