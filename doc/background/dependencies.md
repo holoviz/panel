@@ -1,9 +1,9 @@
 .. raw:: html
     <head>
-        <meta http-equiv='refresh' content='0; URL=./index.html#on-dependencies'>
+        <meta http-equiv='refresh' content='0; URL=./index.html#dependencies'>
     </head>
 
-# On dependencies
+# Dependencies
 
 ```{toctree}
 :titlesonly:

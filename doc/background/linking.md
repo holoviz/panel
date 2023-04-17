@@ -1,9 +1,9 @@
 .. raw:: html
     <head>
-        <meta http-equiv='refresh' content='0; URL=./index.html#on-linking'>
+        <meta http-equiv='refresh' content='0; URL=./index.html#linking'>
     </head>
 
-# On linking
+# Linking
 
 ```{toctree}
 :titlesonly:

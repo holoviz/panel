@@ -1,9 +1,9 @@
 .. raw:: html
     <head>
-        <meta http-equiv='refresh' content='0; URL=./index.html#on-styling'>
+        <meta http-equiv='refresh' content='0; URL=./index.html#styling'>
     </head>
 
-# On styling
+# Styling
 
 ```{toctree}
 :titlesonly:

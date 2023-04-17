@@ -9,7 +9,7 @@ Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1` API context
+:::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1 sd-animate-grow50` API context
 :link: api/api_context
 :link-type: doc
 
@@ -23,18 +23,18 @@ Learn why there are multiple Panel APIs.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Components overview
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Components overview
 :link: components/components_overview
 :link-type: doc
 
 Deepen your understanding about Panel's visible objects and layouts types.
 :::
 
-:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1` Custom components
+:::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1 sd-animate-grow50` Custom components
 :link: components/components_custom
 :link-type: doc
 
-Learn about building custom Panel components.
+Deepen your understanding about building custom Panel components.
 :::
 
 ::::
@@ -44,11 +44,11 @@ Learn about building custom Panel components.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1` Panel Communications
+:::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1 sd-animate-grow50` Panel Communications
 :link: comms/comms
 :link-type: doc
 
-Learn how Panel communicates between Python and Javascript in different contexts.
+Deepen your understanding about how Panel communicates between Python and Javascript in different contexts.
 :::
 
 ::::
@@ -58,11 +58,11 @@ Learn how Panel communicates between Python and Javascript in different contexts
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1` Templates
+:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1 sd-animate-grow50` Templates
 :link: templates/templates_overview
 :link-type: doc
 
-Learn about context for using Templates in Panel.
+Deepen your understanding about Template styling in Panel.
 :::
 
 ::::
@@ -71,30 +71,25 @@ Learn about context for using Templates in Panel.
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`multi-select;2.5em;sd-mr-1` Panel and Param
+:::{grid-item-card} Panel and Param
 :link: dependencies/param
 :link-type: doc
 
-Learn why Panel utilizes the Param library.
+Learn about why Panel utilizes the Param library.
+
+```{image} https://param.holoviz.org/_static/logo_stacked.png
+:width: 250px
+:align: center
+:name: Param
+```
+
 :::
 
-:::{grid-item-card} {octicon}`multi-select;2.5em;sd-mr-1` Panel and Bokeh
+:::{grid-item-card} Panel and Bokeh
 :link: dependencies/bokeh
 :link-type: doc
 
-Learn why Panel utilizes the Bokeh library.
-:::
-
-::::
-
-## Technology comparisons
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} Panel and Bokeh
-:link: comparisons/compare_bokeh
-:link-type: doc
+Learn about why Panel utilizes the Bokeh library.
 
 ```{image} https://static.bokeh.org/branding/icons/bokeh-icon@5x.png
 :width: 250px
@@ -104,7 +99,14 @@ Learn why Panel utilizes the Bokeh library.
 
 :::
 
-:::{grid-item-card} Panel and Dash
+::::
+
+## Technology comparisons
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} Panel vs. Dash
 :link: comparisons/compare_dash
 :link-type: doc
 
@@ -116,7 +118,7 @@ Learn why Panel utilizes the Bokeh library.
 
 :::
 
-:::{grid-item-card} Panel and ipywidgets
+:::{grid-item-card} Panel vs. ipywidgets
 :link: comparisons/compare_ipywidgets
 :link-type: doc
 
@@ -128,7 +130,7 @@ Learn why Panel utilizes the Bokeh library.
 
 :::
 
-:::{grid-item-card} Panel and Voila
+:::{grid-item-card} Panel vs. Voila
 :link: comparisons/compare_js
 :link-type: doc
 
@@ -140,7 +142,7 @@ Learn why Panel utilizes the Bokeh library.
 
 :::
 
-:::{grid-item-card} Panel and Streamlit
+:::{grid-item-card} Panel vs. Streamlit
 :link: comparisons/compare_streamlit
 :link-type: doc
 
@@ -152,7 +154,7 @@ Learn why Panel utilizes the Bokeh library.
 
 :::
 
-:::{grid-item-card} Panel and JavaScript
+:::{grid-item-card} Panel vs. JavaScript
 :link: comparisons/compare_voila
 :link-type: doc
 
@@ -160,6 +162,18 @@ Learn why Panel utilizes the Bokeh library.
 :width: 250px
 :align: center
 :name: JavaScript
+```
+
+:::
+
+:::{grid-item-card} Panel vs. Bokeh
+:link: comparisons/compare_bokeh
+:link-type: doc
+
+```{image} https://static.bokeh.org/branding/icons/bokeh-icon@5x.png
+:width: 250px
+:align: center
+:name: Bokeh
 ```
 
 :::

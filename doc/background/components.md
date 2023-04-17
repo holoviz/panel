@@ -1,15 +1,15 @@
 .. raw:: html
     <head>
-        <meta http-equiv='refresh' content='0; URL=./index.html#on-components'>
+        <meta http-equiv='refresh' content='0; URL=./index.html#components'>
     </head>
 
-# On components
+# Components
 
 ```{toctree}
 :titlesonly:
 :hidden:
 :maxdepth: 1
 
-Components <components/components_overview>
+Components overview <components/components_overview>
 Custom components <components/components_custom.md>
 ```
