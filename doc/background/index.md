@@ -4,6 +4,29 @@ The Background section aims to clarify, deepen, and broaden the understanding of
 
 Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md), which new users must complete before working with Panel, this Background section is intended to help practitioners form and strengthen a conceptual web that facilitates new and advanced usage directions.
 
+## On APIs
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1` API context
+:link: apis/apis_context
+:link-type: doc
+
+Learn why there are multiple Panel APIs.
+:::
+
+:::{grid-item-card} {octicon}`ellipsis;2.5em;sd-mr-1` Widget Abbreviations for `Interact`
+:link: interact/interact_abbreviations
+:link-type: doc
+
+Learn about the abbreviations used to create widgets with Panel `interact`.
+:::
+
+::::
+
+## On components
+
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
@@ -21,26 +44,12 @@ Deepen your understanding about Panel's visible objects and layouts types.
 Learn about building custom Panel components.
 :::
 
-:::{grid-item-card} {octicon}`multi-select;2.5em;sd-mr-1` Panel and Param
-:link: param/param
-:link-type: doc
+::::
 
-Discover why and how Panel utilizes the Param library.
-:::
+## On linking
 
-:::{grid-item-card} {octicon}`ellipsis;2.5em;sd-mr-1` Widget Abbreviations for `Interact`
-:link: interact/interact_abbreviations
-:link-type: doc
-
-Learn about the abbreviations used to create widgets with Panel `interact`.
-:::
-
-:::{grid-item-card} {octicon}`git-compare;2.5em;sd-mr-1` Library Comparisons
-:link: comparisons
-:link-type: doc
-
-Compare Panel with similar libraries.
-:::
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
 
 :::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1` Panel Communications
 :link: comms/comms
@@ -49,6 +58,13 @@ Compare Panel with similar libraries.
 Learn how Panel communicates between Python and Javascript in different contexts.
 :::
 
+::::
+
+## On styling
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
 :::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1` Templates
 :link: templates/templates_overview
 :link-type: doc
@@ -56,18 +72,61 @@ Learn how Panel communicates between Python and Javascript in different contexts
 Learn about context for using Templates in Panel.
 :::
 
+::::
+
+## On sharing apps
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::
 
 ::::
 
+## On dependencies
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`multi-select;2.5em;sd-mr-1` Panel and Param
+:link: dependencies/param
+:link-type: doc
+
+Learn why Panel utilizes the Param library.
+:::
+
+:::{grid-item-card} {octicon}`multi-select;2.5em;sd-mr-1` Panel and Bokeh
+:link: dependencies/bokeh
+:link-type: doc
+
+Learn why Panel utilizes the Bokeh library.
+:::
+
+::::
+## On web app landscape
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`git-compare;2.5em;sd-mr-1` Library comparisons
+:link: comparisons
+:link-type: doc
+
+Compare Panel with similar technologies.
+:::
+
+::::
 
 ```{toctree}
 :titlesonly:
 :hidden:
 :maxdepth: 2
 
-apis/index
-components/components_overview
-param/param
-comparisons
-comms
+apis
+components
+linking
+styling
+sharing
+dependencies
+landscape
 ```

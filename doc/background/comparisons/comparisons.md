@@ -63,7 +63,7 @@ The other major difference between Bokeh Server and Voila is the way they proces
 Panel takes a different approach, in that output from a notebook cell needs to be explicitly wrapped in a Panel object and marked as being "servable"; cell outputs and Markdown cells by default are shown only in the notebook, and not with ``panel serve``. Panel in fact entirely ignores the fact that your notebook is organized into cells; it simply processes all the cells as Python code, and serves all the items that ended up being marked "servable". Although this approach means editing the original notebook before you can see a dashboard, it makes it fully practical for the same notebook to serve both an exploratory or storytelling purpose (in Jupyter) and act as a dashboard deployment (of a designated subset of the functionality). The Panel developers very often use this functionality to provide detailed documentation for any given panel, with the cell-by-cell output showing the dataset, intermediate steps, interesting features, caveats, and how-tos, while the final deployed dashboard focuses on the final result, with the content in each case organized to best suit its purpose.
 
 
-## Comparing Panel and streamlit
+## Comparing Panel and Streamlit
 
 streamlit is an alternative to all of the above packages. Like Jupyter, streamlit provides an interactive, incremental way to build apps. streamlit works with Python text files written in a separate editor, while Jupyter uses a web-based notebook cell editor. Although a web-based editor makes it simple to work locally on remote files, using a local Python text file allows users to maximize their productivity by choosing their own favorite editor. Dash, Panel, and Bokeh all also support bare Python files developed in a local editor, and like streamlit they can all also watch that file and automatically re-run the file when you change it in the editor (e.g. for Panel, launch ``panel serve --show --autoreload file.py`` to watch the Python file and re-launch the served app on any changes).
 
@@ -74,8 +74,7 @@ Another major difference is that Panel, in contrast to streamlit, fully supports
 Overall, Panel can be used in a much wider range of applications than streamlit, including exploratory data analysis and capturing a reproducible workflow in a Jupyter notebook, developing a simple streamlit-like app, or developing complex, multi-page responsive apps, all without having to switch frameworks or learn a new set of tools. Panel thus supports the entire life cycle of data science, engineering, or scientific artifacts, not just a narrow task of developing a specific type of simple app.
 
 
-Comparing Panel and JavaScript
-------------------------------
+## Comparing Panel and JavaScript
 
 Whenever you evaluate any Python framework for building JavaScript/HTML/CSS web apps, it's important to consider the baseline alternative of just writing JavaScript, HTML, and CSS directly. Writing JS/HTML/CSS will give you full control over all aspects of the resulting applications, allowing you to tailor the complete look and feel and behavior to match even the most precise requirements. Moreover, JS/HTML/CSS apps can be deployed on any web server without needing any special consideration to running a Python process, which makes deployment and scaling much more straightforward.
 
