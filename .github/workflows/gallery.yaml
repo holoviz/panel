@@ -36,8 +36,8 @@ jobs:
       - name: Set and echo git ref
         id: vars
         run: |
-          echo 'Deploying from ref ${{ github.event.workflow_run.head_branch#refs/*/ }}'
-          echo 'tag=${{ github.event.workflow_run.head_branch#refs/*/ }}' >> $GITHUB_OUTPUT
+          echo 'Deploying from ref ${{ github.event.workflow_run.head_branch }}'
+          echo 'tag=${{ github.event.workflow_run.head_branch }}' >> $GITHUB_OUTPUT
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
