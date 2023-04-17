@@ -27,6 +27,9 @@ def transform_cmds(argv):
         '--anaconda-project-port': '--port',
         '--anaconda-project-address': '--address'
     }
+    if 'PANEL_AE5_CDN' in os.environ:
+        # Override AE5 default
+        os.environ['BOKEH_RESOURCES'] = 'cdn'
     transformed = []
     skip = False
     for arg in argv:
@@ -35,9 +38,6 @@ def transform_cmds(argv):
             continue
         if arg in replacements.keys():
             transformed.append(replacements[arg])
-        if 'PANEL_AE5_CDN' in os.environ:
-            # Override AE5 default
-            os.environ['BOKEH_RESOURCES'] = 'cdn'
         elif arg == '--anaconda-project-iframe-hosts':
             skip = True
             continue
