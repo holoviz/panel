@@ -73,7 +73,7 @@ class Accordion(NamedListPanel):
     _synced_properties = [
         'active_header_background', 'header_background', 'width',
         'sizing_mode', 'width_policy', 'height_policy', 'header_color',
-        'min_width',
+        'min_width', 'max_width'
     ]
 
     def __init__(self, *objects, **params):
