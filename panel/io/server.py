@@ -47,6 +47,7 @@ from bokeh.embed.elements import (
 )
 from bokeh.embed.util import RenderItem
 from bokeh.io import curdoc
+from bokeh.models import CustomJS
 from bokeh.server.server import Server as BokehServer
 from bokeh.server.urls import per_app_patterns
 from bokeh.server.views.autoload_js_handler import (
@@ -120,6 +121,14 @@ def _eval_panel(
 ):
     from ..pane import panel as as_panel
     from ..template import BaseTemplate
+
+    if config.global_loading_spinner:
+        doc.js_on_event(
+            'document_ready', CustomJS(code=f"""
+            const body = document.getElementsByTagName('body')[0]
+            body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
+            """)
+        )
 
     # Set up instrumentation for logging sessions
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
@@ -215,28 +224,31 @@ def server_html_page_for_session(
     if template is FILE:
         template = BASE_TEMPLATE
 
-    session.document._template_variables['theme_name'] = config.theme
-    session.document._template_variables['dist_url'] = dist_url
-    for root in session.document.roots:
+    doc = session.document
+    doc._template_variables['theme_name'] = config.theme
+    doc._template_variables['dist_url'] = dist_url
+    for root in doc.roots:
         patch_model_css(root, dist_url=dist_url)
 
     render_item = RenderItem(
         token = token or session.token,
-        roots = session.document.roots,
+        roots = doc.roots,
         use_for_title = False,
     )
 
     if template_variables is None:
         template_variables = {}
 
-    bundle = bundle_resources(session.document.roots, resources)
-    html = html_page_for_render_items(bundle, {}, [render_item], title,
-        template=template, template_variables=template_variables)
-
-    if config.global_loading_spinner:
-        html = html.replace(
-            '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} {config.loading_spinner}">'
+    with set_curdoc(doc):
+        bundle = bundle_resources(doc.roots, resources)
+        html = html_page_for_render_items(
+            bundle, {}, [render_item], title, template=template,
+            template_variables=template_variables
         )
+        if config.global_loading_spinner:
+            html = html.replace(
+                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} {config.loading_spinner}">'
+            )
     return html
 
 

@@ -383,7 +383,7 @@ class _config(_base_config):
             curdoc and attr not in session_config[curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
-        if attr in global_params or attr in ('global_loading_spinner', 'theme'):
+        if attr in global_params or attr == 'theme':
             return super().__getattribute__(attr)
         elif curdoc and curdoc in session_config and attr in session_config[curdoc]:
             return session_config[curdoc][attr]
