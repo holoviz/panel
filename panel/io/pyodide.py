@@ -33,6 +33,7 @@ from ..config import config
 from ..util import edit_readonly, is_holoviews, isurl
 from . import resources
 from .document import MockSessionContext
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
@@ -413,7 +414,7 @@ def hide_loader() -> None:
     from js import document
 
     body = document.getElementsByTagName('body')[0]
-    body.classList.remove("pn-loading", config.loading_spinner)
+    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, config.loading_spinner)
 
 def sync_location():
     """

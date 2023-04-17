@@ -69,6 +69,7 @@ from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
 from .document import init_doc, unlocked, with_lock  # noqa
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
 )
@@ -229,8 +230,15 @@ def server_html_page_for_session(
         template_variables = {}
 
     bundle = bundle_resources(session.document.roots, resources)
-    return html_page_for_render_items(bundle, {}, [render_item], title,
+    html = html_page_for_render_items(bundle, {}, [render_item], title,
         template=template, template_variables=template_variables)
+
+    if config.global_loading_spinner:
+        html = html.replace(
+            '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} {config.loading_spinner}">'
+        )
+    return html
+
 
 def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url, absolute=False):
     resources = Resources.from_bokeh(resources, absolute=absolute)
