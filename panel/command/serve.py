@@ -213,6 +213,10 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to reuse sessions when serving the initial request.",
         )),
+        ('--global-loading-spinner', dict(
+            action  = 'store_true',
+            help    = "Whether to add a global loading spinner to the application(s).",
+        )),
     )
 
     # Supported file extensions
@@ -295,6 +299,7 @@ class Serve(_BkServe):
             raise ValueError("rest-provider %r not recognized." % args.rest_provider)
 
         config.autoreload = args.autoreload
+        config.global_loading_spinner = args.global_loading_spinner
         config.reuse_sessions = args.reuse_sessions
 
         if config.autoreload:

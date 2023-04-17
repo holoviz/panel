@@ -17,7 +17,10 @@ from typing import (
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
 from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
+from bokeh.models import CustomJS
 
+from ..config import config
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .model import monkeypatch_events
 from .state import curdoc_locked, state
 
@@ -120,6 +123,13 @@ def init_doc(doc: Optional[Document]) -> Document:
     if thread:
         state._thread_id_[curdoc] = thread.ident
 
+    if config.global_loading_spinner:
+        doc.js_on_event(
+            'document_ready', CustomJS(code=f"""
+            const body = document.getElementsByTagName('body')[0]
+            body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
+            """)
+        )
     session_id = curdoc.session_context.id
     sessions = state.session_info['sessions']
     if session_id not in sessions:

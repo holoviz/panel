@@ -128,6 +128,9 @@ class _config(_base_config):
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
 
+    global_loading_spinner = param.Boolean(default=False, doc="""
+        Whether to add a global loading spinner for the whole application.""")
+
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
 
