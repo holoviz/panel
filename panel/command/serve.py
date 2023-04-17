@@ -319,7 +319,7 @@ class Serve(_BkServe):
             if args.autoreload:
                 with record_modules():
                     self.warm_applications(
-                        applications, args.reuse_sessions and not args.session_key_func
+                        applications, args.reuse_sessions
                     )
             else:
                 self.warm_applications(applications, args.reuse_sessions)
