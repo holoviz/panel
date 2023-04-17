@@ -10,6 +10,8 @@ import shutil
 import bokeh.sampledata
 import nbformat
 
+from test_panelite.notebooks_with_panelite_issues import NOTEBOOK_ISSUES
+
 PANEL_BASE = pathlib.Path(__file__).parent.parent
 EXAMPLES_DIR = PANEL_BASE / 'examples'
 DEFAULT_DEPENDENCIES = ["panel"]
@@ -21,8 +23,11 @@ with open(PANEL_BASE/"scripts"/"generate_panelite_content.json", "r", encoding="
 class DependencyNotFound(Exception):
     """Raised if a dependency cannot be found"""
 
+def _notebook_key(nbpath: pathlib.Path):
+    return str(nbpath).replace("\\", "/").split("examples/")[-1]
+
 def _get_dependencies(nbpath: pathlib.Path):
-    key = str(nbpath).replace("\\", "/").split("examples/")[-1]
+    key = _notebook_key(nbpath)
     try:
         dependencies = DEPENDENCIES[key]
     except KeyError as ex:
@@ -30,16 +35,57 @@ def _get_dependencies(nbpath: pathlib.Path):
         dependencies = DEFAULT_DEPENDENCIES
     return dependencies
 
-def _to_source(dependencies):
+def _to_piplite_install_code(dependencies):
     dependencies = [f"'{dependency}'" for dependency in dependencies]
     return f"import piplite\nawait piplite.install([{', '.join(dependencies)}])"
 
-
 def _get_install_code_cell(dependencies):
-    source = _to_source(dependencies)
+    source = _to_piplite_install_code(dependencies)
     install = nbformat.v4.new_code_cell(source=source)
     del install['id']
     return install
+
+def _get_issues(key):
+    return NOTEBOOK_ISSUES.get(key, [])
+
+def _to_issue_str(issue:str):
+    if issue.startswith("https://github.com/") and "/issues/" in issue:
+        issue = issue.replace("https://github.com/", "")
+        _, library, _, id = issue.split("/")
+        if library == "panel":
+            return f"#{id}"
+        return f"{library}#{id}"
+    if issue.startswith("https://gitlab.kitware.com/") and "/issues/" in issue:
+        issue = issue.replace("https://gitlab.kitware.com/", "")
+        try:
+            _, library, _, _, id = issue.split("/")
+        except:
+            breakpoint()
+        if library == "panel":
+            return f"#{id}"
+        return f"{library}#{id}"
+    return issue
+
+def _get_info_markdown_cell(nbpath):
+    key = _notebook_key(nbpath)
+    issues = _get_issues(key)
+    if issues:
+        issues_str = ", ".join([f'<a href="{issue}">{_to_issue_str(issue)}</a>' for issue in issues])
+        print(issues_str)
+        source = f"""<div class="alert alert-block alert-danger">
+This notebook is not expected to run successfully in <em>Panelite</em>. It has the following known issues: {issues_str}.
+
+Panelite is powered by young technologies like <a href="https://pyodide.org/en/stable/">Pyodide</a> and <a href="https://jupyterlite.readthedocs.io/en/latest/">Jupyterlite</a>. Panelite does not work well in Edge. If you experience other issues, please <a href="https://github.com/holoviz/panel/issues">report them</a>.
+</div>"""
+    else:
+        source = """<div class="alert alert-block alert-success">
+This notebook is expected to run successfully in <em>Panelite</em>.
+
+Panelite is powered by young technologies like <a href="https://pyodide.org/en/stable/">Pyodide</a> and <a href="https://jupyterlite.readthedocs.io/en/latest/">Jupyterlite</a>. Panelite does not work well in Edge. If you do experience issues, please <a href="https://github.com/holoviz/panel/issues">report them</a>.
+</div>"""
+    info = nbformat.v4.new_markdown_cell(source=source)
+    del info['id']
+    return info
 
 def copy_examples():
     nbs = list(EXAMPLES_DIR.glob('*/*/*.ipynb')) + list(EXAMPLES_DIR.glob('*/*.*'))
@@ -58,6 +104,9 @@ def copy_examples():
                 if dependencies:
                     install = _get_install_code_cell(dependencies=dependencies)
                     nb['cells'].insert(0, install)
+
+                info = _get_info_markdown_cell(nbpath)
+                nb['cells'].insert(0, info)
             with open(out, 'w', encoding='utf-8') as fout:
                 nbformat.write(nb, fout)
         elif not nb.is_dir():
@@ -102,5 +151,5 @@ def download_sample_data():
 
 if __name__=="__main__":
     copy_examples()
-    copy_assets()
-    download_sample_data()
+    # copy_assets()
+    # download_sample_data()
