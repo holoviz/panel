@@ -38,6 +38,3 @@ pn.Row(pn.Column('First Column', layout[0][0], layout[0][1], width=200),
 ```
 
 ## Related Resources
-
-- Read [Background > Widget Abbreviations for Panel Interact](../../background/interact/interact_abbreviations.md) for explanation.
-- See [How-to > Autogenerate Widgets for Functions](../interact/index.md) for solutions.

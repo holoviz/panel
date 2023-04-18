@@ -1,4 +1,4 @@
-# Generate Widgets for Function Arguments
+# Generate widgets for function arguments
 
 This guide addresses how to generate widgets for function arguments with Panel `interact`.
 
@@ -76,6 +76,3 @@ pn.interact(create_block, c=color_widget)
 ```
 
 ## Related Resources
-
-- Read [Background > Widget Abbreviations for Panel Interact](../../background/interact/interact_abbreviations.md) for explanation.
-- See [How-to > Autogenerate Widgets for Functions](../interact/index.md) for solutions.

@@ -1,6 +1,12 @@
-# Widget Abbreviations for Panel Interact
+# Use abbreviations to generate widgets
 
-This page provides explanation for the abbreviations used to create widgets with Panel `interact`.
+This guide addresses how to use abbreviations to create widgets with Panel `interact`.
+
+```{admonition} Prerequisites
+1. The [How to > Generate Widgets for Function Arguments](./interact_basics.md) guide provides an overview of how to generate widgets for function arguments with Panel interact.
+```
+
+___
 
 At the most basic level, `interact` autogenerates UI controls for function arguments, and then calls the function with those arguments when you manipulate the controls interactively.
 
@@ -121,7 +127,4 @@ When working with numeric data ``interact`` will automatically add a discrete sl
 interact(f, x=dict([('one', 10), ('two', 20)]))
 ```
 
-## Further Resources
-
-- See [How-to > Autogenerate Widgets for Functions](../interact/index.md) for solutions.
-- Consult [Reference > panel.interact] for technical details.
+## Related Resources
