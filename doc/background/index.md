@@ -77,7 +77,7 @@ Deepen your understanding about Template styling in Panel.
 
 Learn about why Panel utilizes the Param library.
 
-```{image} https://param.holoviz.org/_static/logo_stacked.png
+```{image} https://assets.holoviz.org/panel/background/dependencies/param_logo_stacked.png
 :width: 250px
 :align: center
 :name: Param
@@ -91,7 +91,7 @@ Learn about why Panel utilizes the Param library.
 
 Learn about why Panel utilizes the Bokeh library.
 
-```{image} https://static.bokeh.org/branding/icons/bokeh-icon@5x.png
+```{image} https://assets.holoviz.org/panel/background/dependencies/bokeh-icon%405x.png
 :width: 250px
 :align: center
 :name: Bokeh
@@ -110,7 +110,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link: comparisons/compare_dash
 :link-type: doc
 
-```{image} https://plotly.github.io/images/dash.png
+```{image} https://assets.holoviz.org/panel/background/comparisons/dash_logo.png
 :width: 250px
 :align: center
 :name: Dash
@@ -122,7 +122,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link: comparisons/compare_ipywidgets
 :link-type: doc
 
-```{image} https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Jupyter_logo.svg/414px-Jupyter_logo.svg.png
+```{image} https://assets.holoviz.org/panel/background/comparisons/jupyter_logo.png
 :height: 250px
 :align: center
 :name: ipywidgets
@@ -134,7 +134,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link: comparisons/compare_js
 :link-type: doc
 
-```{image} https://voila.readthedocs.io/en/stable/_images/voila-logo.svg
+```{image} https://assets.holoviz.org/panel/background/comparisons/voila_logo.webp
 :width: 250px
 :align: center
 :name: Voila
@@ -146,7 +146,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link: comparisons/compare_streamlit
 :link-type: doc
 
-```{image} https://streamlit.io/images/brand/streamlit-mark-color.png
+```{image} https://assets.holoviz.org/panel/background/comparisons/streamlit_logo.png
 :width: 250px
 :align: center
 :name: Streamlit
@@ -158,7 +158,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link: comparisons/compare_voila
 :link-type: doc
 
-```{image} https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/JavaScript-logo.png/480px-JavaScript-logo.png
+```{image} https://assets.holoviz.org/panel/background/comparisons/JavaScript_logo.png
 :width: 250px
 :align: center
 :name: JavaScript
@@ -170,7 +170,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link: comparisons/compare_bokeh
 :link-type: doc
 
-```{image} https://static.bokeh.org/branding/icons/bokeh-icon@5x.png
+```{image} https://assets.holoviz.org/panel/background/dependencies/bokeh-icon%405x.png
 :width: 250px
 :align: center
 :name: Bokeh
