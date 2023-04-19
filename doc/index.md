@@ -8,38 +8,11 @@ width: 125
 ---
 ```
 
-# Overview
-
 <h2 style="margin-top: 0.3em;">A high-level app and dashboarding solution for Python</h2>
 
-Panel is an [open-source and free](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you create interactive tools, dashboards and data apps by connecting user-defined widgets to plots, images, tables, text and more.
+# Overview
 
-```{eval-rst}
-.. notebook:: panel ../examples/homepage.ipynb
-    :disable_interactivity_warning: True
-```
-
-Compared to other approaches, Panel is novel in the number of visualization libraries, development environments and deployment options that it supports.
-
-Panel makes it simple to:
-
-- Use the PyData tools and visualization libraries that you know and love
-- Develop in your favorite editor or notebook environment
-- Iterate quickly to prototype apps and dashboards
-- Support deep bi-directional interactivity between the frontend and the backend
-- Stream data large and small to the frontend
-- Test and maintain your applications
-- Develop server-, pyodide- and pyscript-backed applications
-- Wrap your applications in polished templates for your final deployment
-- Add authentication to your applications using the inbuilt OAuth providers
-
-## Useful Links
-
-Project: [Source Repository](https://github.com/holoviz/panel) | [Issues & Ideas](https://github.com/holoviz/panel/issues) | [Q&A Support](https://discourse.holoviz.org/) | [Chat](https://discord.gg/rb6gPXbdAr)
-
-Live Environments: [Panelite](https://panelite.holoviz.org/) | [Panelite Repl](https://panelite.holoviz.org/repl/) | [Binder](https://mybinder.org/v2/gh/holoviz/panel/v0.14.4?urlpath=lab/tree/examples)
-
-## Demo Apps
+## Featured Apps
 
 ::::{grid} 2 2 5 5
 :gutter: 1
@@ -86,6 +59,27 @@ Live Environments: [Panelite](https://panelite.holoviz.org/) | [Panelite Repl](h
 
 ::::
 
+## Description
+
+Panel is a Python library that makes it easy to create interactive dashboards and data apps using **the tools you already know and love**. With Panel, you can quickly prototype and iterate on apps and dashboards using your favorite editor or notebook environment. Unlike other tools, Panel supports a wide range of visualization libraries and development environments, which means you can choose the tools that work best for your workflow.
+
+One of the most powerful features of Panel is its ability to handle large amounts of data and stream it directly to the frontend of your app. This allows you to build highly interactive and responsive apps that can handle real-time data updates with ease. Panel also provides deep bi-directional interactivity between the frontend and backend, which means you can build complex and interactive apps that respond to user input in real-time.
+
+In addition to these core features, Panel provides a number of advanced features that make it a unique and powerful tool for building data apps and dashboards. For example, you can develop server-, pyodide-, and pyscript-backed applications, wrap your applications in polished templates for final deployment, and add authentication to your applications using the built-in OAuth providers.
+
+Whether you're a domain expert, data scientist, software developer, or anyone in between, Panel provides a flexible and powerful platform for building interactive data apps and dashboards. With its broad range of features and support for multiple visualization libraries and development environments, Panel is a unique and powerful tool that can help you bring your data to life.
+
+## Demo App
+
+Simply drag the *slider* to see how the app responds to user input in real-time. To see how the app was built, check out the *Code* tab.
+
+```{eval-rst}
+.. notebook:: panel ../examples/homepage.ipynb
+    :disable_interactivity_warning: True
+```
+
+The demo app is just a small example of what you can do with Panel. Whether you're building a simple dashboard or a complex data app, Panel makes it easy to create powerful and interactive user interfaces using the tools you already know and love. So why not give it a try and see what you can build with Panel today?
+
 ## Usage
 
 ::::{grid} 1 2 2 4
@@ -123,6 +117,12 @@ How-to guides provide step by step recipes for solving essential problems and ta
 
 For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/). If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
 
+## Useful Links
+
+Project: [Source Repository](https://github.com/holoviz/panel) | [Issues & Ideas](https://github.com/holoviz/panel/issues) | [Q&A Support](https://discourse.holoviz.org/) | [Chat](https://discord.gg/rb6gPXbdAr)
+
+Live Panel Environments: [Panelite](https://panelite.holoviz.org/) | [Panelite Repl](https://panelite.holoviz.org/repl/) | [Binder](https://mybinder.org/v2/gh/holoviz/panel/v0.14.4?urlpath=lab/tree/examples)
+
 ## HoloViz
 
 Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot plotting api), [HoloViews](https://holoviews.org/) (powerful plotting api), and [Datashader](https://datashader.org/) (big data viz).
@@ -151,7 +151,6 @@ alt: Anaconda Logo
 ---
 ```
 :::
-
 
 :::{grid-item-card}
 :class-body: sponsor-logo
@@ -196,7 +195,6 @@ alt: Quansight Logo
 :::
 
 ::::
-
 
 ```{toctree}
 :titlesonly:
