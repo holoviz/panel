@@ -83,6 +83,6 @@ pn.Row(
             canvas,
             png_view
         ),
-	).servable()
+    ).servable()
 )
 ```

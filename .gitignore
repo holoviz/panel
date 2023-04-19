@@ -138,3 +138,4 @@ doc/reference/*
 /panel/dist/*
 !/panel/dist/css
 !/panel/dist/css/*.css
+.venv2/

@@ -17,6 +17,8 @@ import panel as pn
 import param
 import numpy as np
 
+pn.extension()
+
 class Sine(param.Parameterized):
 
     phase = param.Number(default=0, bounds=(0, np.pi))

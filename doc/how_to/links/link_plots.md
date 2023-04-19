@@ -20,6 +20,8 @@ import panel as pn
 
 from bokeh.plotting import figure
 
+pn.extension()
+
 p = figure(width=300, height=300)
 xs = np.linspace(0, 10)
 r = p.line(xs, np.sin(xs))

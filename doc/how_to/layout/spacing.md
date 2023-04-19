@@ -28,8 +28,8 @@ margin=(25, 50, 75, 100)
 For example, let's create three buttons and customize their margin. To make it easier to see the margin area, we'll embed each into a `Column` and then shade the `Column` background.
 
 ```{pyodide}
-
 import panel as pn
+
 pn.extension() # for notebook
 
 pn.Row(

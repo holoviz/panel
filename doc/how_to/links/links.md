@@ -9,6 +9,8 @@ To start, let's see how a ``TextInput`` widget and a ``Markdown`` pane normally 
 ```{pyodide}
 import panel as pn
 
+pn.extension()
+
 pn.Row(
     pn.widgets.TextInput(value="Editable text"),
     pn.pane.Markdown('Some markdown')

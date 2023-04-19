@@ -13,6 +13,8 @@ Let us start by linking the ``value`` of the ``TextInput`` widget to the ``objec
 ```{pyodide}
 import panel as pn
 
+pn.extension()
+
 markdown = pn.pane.Markdown('Markdown display')
 text_input = pn.widgets.TextInput(value=markdown.object)
 
