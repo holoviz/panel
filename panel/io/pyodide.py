@@ -6,6 +6,7 @@ import hashlib
 import io
 import json
 import os
+import pathlib
 import sys
 
 from typing import (
@@ -29,7 +30,7 @@ from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
 from bokeh.util.sampledata import (
-    _download_file, external_data_dir, metadata, real_name,
+    __file__ as _bk_util_dir, _download_file, external_data_dir, real_name,
 )
 from js import JSON, Object, XMLHttpRequest
 
@@ -322,9 +323,10 @@ def _download_sampledata(progress: bool = False) -> None:
     """
     data_dir = external_data_dir(create=True)
     s3 = 'https://sampledata.bokeh.org'
-    for file_name, md5 in metadata().items():
+    with open(pathlib.Path(_bk_util_dir).parent / "sampledata.json") as f:
+        files = json.load(f)
+    for file_name, md5 in files.items():
         real_path = data_dir / real_name(file_name)
-
         if real_path.exists():
             with open(real_path, "rb") as file:
                 data = file.read()
