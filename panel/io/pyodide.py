@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import hashlib
 import io
 import json
 import os
@@ -27,6 +28,9 @@ from bokeh.events import DocumentReady
 from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
+from bokeh.util.sampledata import (
+    _download_file, external_data_dir, metadata, real_name,
+)
 from js import JSON, Object, XMLHttpRequest
 
 from ..config import config
@@ -311,6 +315,27 @@ def _get_pyscript_target():
         return sys.stdout._out # type: ignore
     elif not _IN_WORKER:
         raise ValueError("Could not determine target node to write to.")
+
+def _download_sampledata(progress: bool = False) -> None:
+    """
+    Download bokeh sampledata
+    """
+    data_dir = external_data_dir(create=True)
+    s3 = 'https://sampledata.bokeh.org'
+    for file_name, md5 in metadata().items():
+        real_path = data_dir / real_name(file_name)
+
+        if real_path.exists():
+            with open(real_path, "rb") as file:
+                data = file.read()
+            local_md5 = hashlib.md5(data).hexdigest()
+            if local_md5 == md5:
+                continue
+
+        _download_file(s3, file_name, data_dir, progress=progress)
+
+bokeh.sampledata.download = _download_sampledata
+bokeh.util.sampledata.download = _download_sampledata
 
 #---------------------------------------------------------------------
 # Public API
