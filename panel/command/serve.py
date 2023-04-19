@@ -209,6 +209,14 @@ class Serve(_BkServe):
             help    = "The endpoint for the liveness API.",
             default = "liveness"
         )),
+        ('--reuse-sessions', dict(
+            action  = 'store_true',
+            help    = "Whether to reuse sessions when serving the initial request.",
+        )),
+        ('--global-loading-spinner', dict(
+            action  = 'store_true',
+            help    = "Whether to add a global loading spinner to the application(s).",
+        )),
     )
 
     # Supported file extensions
@@ -223,6 +231,20 @@ class Serve(_BkServe):
             if f'/{index}' in applications:
                 applications['/'] = applications[f'/{index}']
         return super().customize_applications(args, applications)
+
+    def warm_applications(self, applications, reuse_sessions):
+        from ..io.session import generate_session
+        for path, app in applications.items():
+            session = generate_session(app)
+            with set_curdoc(session.document):
+                if config.session_key_func:
+                    reuse_sessions = False
+                else:
+                    state._session_key_funcs[path] = lambda r: r.path
+                    state._sessions[path] = session
+                    session.block_expiration()
+                state._on_load(None)
+            _cleanup_doc(session.document, destroy=not reuse_sessions)
 
     def customize_kwargs(self, args, server_kwargs):
         '''Allows subclasses to customize ``server_kwargs``.
@@ -277,6 +299,8 @@ class Serve(_BkServe):
             raise ValueError("rest-provider %r not recognized." % args.rest_provider)
 
         config.autoreload = args.autoreload
+        config.global_loading_spinner = args.global_loading_spinner
+        config.reuse_sessions = args.reuse_sessions
 
         if config.autoreload:
             for f in files:
@@ -299,17 +323,11 @@ class Serve(_BkServe):
             applications = build_single_handler_applications(files, argvs)
             if args.autoreload:
                 with record_modules():
-                    for app in applications.values():
-                        doc = app.create_document()
-                        with set_curdoc(doc):
-                            state._on_load(None)
-                        _cleanup_doc(doc)
+                    self.warm_applications(
+                        applications, args.reuse_sessions
+                    )
             else:
-                for app in applications.values():
-                    doc = app.create_document()
-                    with set_curdoc(doc):
-                        state._on_load(None)
-                    _cleanup_doc(doc)
+                self.warm_applications(applications, args.reuse_sessions)
 
         if args.liveness:
             argvs = {f: args.args for f in files}

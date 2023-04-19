@@ -17,43 +17,43 @@ width: 125
 ::::{grid} 2 2 5 5
 :gutter: 1
 
-:::{grid-item-card} Attractors
-:link: https://attractors.pyviz.demo.anaconda.com/attractors_panel
+:::{grid-item-card} Videostream
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/attractors.png
+```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
 ```
 :::
 
-:::{grid-item-card} Gapminders
-:link: https://gapminders.pyviz.demo.anaconda.com
+:::{grid-item-card} MRI Cross-sections
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtkslicer
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/gapminders.png
+```{image} https://assets.holoviz.org/panel/gallery/vtkslicer.png
 ```
 :::
 
-:::{grid-item-card} Penguins
-:link: https://penguin-crossfilter.pyviz.demo.anaconda.com
+:::{grid-item-card} Crossfiltering
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/penguins.png
+```{image} https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
 ```
 :::
 
-:::{grid-item-card} Glaciers
-:link: https://glaciers.pyviz.demo.anaconda.com
+:::{grid-item-card} OGGM Glaciers
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/glaciers
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/glaciers.png
+```{image} https://assets.holoviz.org/panel/gallery/glaciers.png
 ```
 :::
 
 :::{grid-item-card} Portfolio Optimizer
-:link: https://portfolio-optimizer.pyviz.demo.anaconda.com
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/portfolio_optimizer.png
+```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
 ```
 :::
 
@@ -115,22 +115,25 @@ How-to guides provide step by step recipes for solving essential problems and ta
 
 ::::
 
-For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/). If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
+## Useful links
 
-## Useful Links
+If you need help with using Panel or have technical questions, head over to our [Discourse](https://discourse.holoviz.org/) forum. Our friendly community is always happy to help and provide support.
 
-Project: [Source Repository](https://github.com/holoviz/panel) | [Issues & Ideas](https://github.com/holoviz/panel/issues) | [Q&A Support](https://discourse.holoviz.org/) | [Chat](https://discord.gg/rb6gPXbdAr)
+If you run into any [issues](https://github.com/holoviz/panel/issues) or want to [contribute to the development of Panel](https://help.github.com/articles/about-pull-requests), you can [visit our GitHub site](https://github.com/holoviz/panel). Here you can report bugs, suggest new features, or contribute to help improve Panel for everyone.
 
-Live Panel Environments: [Panelite](https://panelite.holoviz.org/) | [Panelite Repl](https://panelite.holoviz.org/repl/) | [Binder](https://mybinder.org/v2/gh/holoviz/panel/v0.14.4?urlpath=lab/tree/examples)
+To connect with other members of the community, you can also [join our Discord chat](https://discord.gg/rb6gPXbdAr). Here you can share ideas, ask for advice, or just chat with other Panel users.
+
+If you're looking for a hosted Python environment that works with Panel, we recommend trying out [Panelite](https://panelite.holoviz.org/) or the [Panelite Repl](https://panelite.holoviz.org/repl/). These are pre-configured environments that make it easy to get started with Panel right away. Alternatively, you can use [Binder](https://mybinder.org/v2/gh/holoviz/panel/v0.14.4?urlpath=lab/tree/examples) to launch a Jupyter notebook environment with Panel pre-installed, no setup required.
+
+We hope these links are helpful and that you'll join us in the Panel community soon!
 
 ## HoloViz
 
-Panel is a member of the ambitious [HoloViz](https://holoviz.org/) dataviz ecosystem and has first class support for the other members like [hvPlot](https://hvplot.holoviz.org) (simple .hvplot plotting api), [HoloViews](https://holoviews.org/) (powerful plotting api), and [Datashader](https://datashader.org/) (big data viz).
+Panel is a proud member of the thriving [HoloViz](https://holoviz.org/) data visualization ecosystem, which includes other powerful libraries like [hvPlot](https://hvplot.holoviz.org) (for easy plotting), [HoloViews](https://holoviews.org/) (for advanced plotting), and [Datashader](https://datashader.org/) (for big data visualization).
 
-Panel is built on top of [Param](https://param.holoviz.org). Param enables you to annotate your code with parameter ranges, documentation, and dependencies between parameters and code. With this approach,
+Built on top of [Param](https://param.holoviz.org), Panel enables you to add parameter ranges, documentation, and dependencies to your code. With this approach, you can develop large, maintainable code bases that can be used in notebooks, data apps, batch processing, or reports, without committing to a specific use case up front.
 
-- you don't ever have to commit to whether your code will be used in a notebook, a data app, in batch processing, or reports.
-- you will write less code and be able to develop large, maintainable code bases!
+By leveraging the power of the [HoloViz](https://holoviz.org/) ecosystem, Panel provides a rich and flexible set of tools for building interactive data applications and dashboards, with seamless integration between different libraries and tools.
 
 ## Sponsors
 

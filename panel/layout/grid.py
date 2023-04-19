@@ -253,7 +253,7 @@ class GridSpec(Panel):
 
     _preprocess_params: ClassVar[List[str]] = ['objects']
 
-    _stylesheets: ClassVar[List[str]] = ['css/gridspec.css']
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/gridspec.css']
 
     def __init__(self, **params):
         if 'objects' not in params:

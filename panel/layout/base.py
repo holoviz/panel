@@ -140,8 +140,9 @@ class Panel(Reactive):
                 obj._cleanup(root)
 
         current_objects = list(self.objects)
+        ref = root.ref['id']
         for i, pane in enumerate(self.objects):
-            if pane in old_objects:
+            if pane in old_objects and ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
             else:
                 try:

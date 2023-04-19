@@ -26,6 +26,19 @@ How to access information about the HTTP request associated with a session.
 How to access the busy state.
 :::
 
+## Examples
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} Sync Widgets and URL
+:img-top: https://assets.holoviz.org/panel/how_to/state/sync_url.png
+:link: examples/sync_url
+:link-type: doc
+
+Sync the widget state with the URL to allow deep linking your application state using `pn.state.location`.
+:::
+
 ::::
 
 ```{toctree}

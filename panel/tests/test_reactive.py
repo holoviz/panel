@@ -200,8 +200,8 @@ def test_pass_parameterized_method_by_reference():
 
     class Test(param.Parameterized):
 
-        a = param.Parameter(1)
-        b = param.Parameter(2)
+        a = param.Parameter(default=1)
+        b = param.Parameter(default=2)
 
         @param.depends('a')
         def dep_a(self):

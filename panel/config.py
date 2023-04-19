@@ -94,7 +94,7 @@ class _config(_base_config):
     >>> pn.config.loading_spinner = 'bar'
     """
 
-    admin_plugins = param.List([], item_type=tuple, doc="""
+    admin_plugins = param.List(default=[], item_type=tuple, doc="""
         A list of tuples containing a title and a function that returns
         an additional panel to be rendered into the admin page.""")
 
@@ -128,6 +128,9 @@ class _config(_base_config):
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
 
+    global_loading_spinner = param.Boolean(default=False, doc="""
+        Whether to add a global loading spinner for the whole application.""")
+
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
 
@@ -150,6 +153,19 @@ class _config(_base_config):
     profiler = param.Selector(default=None, allow_None=True, objects=[
         'pyinstrument', 'snakeviz', 'memray'], doc="""
         The profiler engine to enable.""")
+
+    reuse_sessions = param.Boolean(default=False, doc="""
+        Whether to reuse a session for the initial request to speed up
+        the initial page render. Note that if the initial page differs
+        between sessions, e.g. because it uses query parameters to modify
+        the rendered content, then this option will result in the wrong
+        content being rendered. Define a session_key_func to ensure that
+        reused sessions are only reused when appropriate.""")
+
+    session_key_func = param.Callable(default=None, doc="""
+        Used in conjunction with the reuse_sessions option, the
+        session_key_func is given a tornado.httputil.HTTPServerRequest
+        and should return a key that uniquely captures a session.""")
 
     safe_embed = param.Boolean(default=False, doc="""
         Ensure all bokeh property changes trigger events which are

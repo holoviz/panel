@@ -193,7 +193,7 @@ class _state(param.Parameterized):
 
     # Profilers
     _launching = []
-    _profiles = param.Dict(defaultdict(list))
+    _profiles = param.Dict(default=defaultdict(list))
 
     # Endpoints
     _rest_endpoints = {}
@@ -206,6 +206,10 @@ class _state(param.Parameterized):
 
     # Locks
     _cache_locks: ClassVar[Dict[str, threading.Lock]] = {'main': threading.Lock()}
+
+    # Sessions
+    _sessions = {}
+    _session_key_funcs = {}
 
     def __repr__(self) -> str:
         server_info = []
@@ -731,6 +735,8 @@ class _state(param.Parameterized):
         if self._thread_pool is not None:
             self._thread_pool.shutdown(wait=False)
             self._thread_pool = None
+        self._sessions.clear()
+        self._session_key_funcs.clear()
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,

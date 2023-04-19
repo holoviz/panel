@@ -280,7 +280,6 @@ class Plotly(ModelPane):
             params['sizing_mode'] = 'stretch_both'
             if 'styles' not in params:
                 params['styles'] = {}
-            params['styles']['display'] = 'contents'
         return params
 
     def _get_model(

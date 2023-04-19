@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 class PlayerBase(Widget):
 
-    direction = param.Integer(0, doc="""
+    direction = param.Integer(default=0, doc="""
         Current play direction of the Player (-1: playing in reverse,
         0: paused, 1: playing)""")
 

@@ -379,7 +379,7 @@ def test_list_selector_param(document, comm):
 
 def test_action_param(document, comm):
     class Test(param.Parameterized):
-        a = param.Action(lambda x: setattr(x, 'b', 2))
+        a = param.Action(default=lambda x: setattr(x, 'b', 2))
         b = param.Number(default=1)
 
     test = Test()
@@ -962,7 +962,7 @@ def test_expand_param_subobject_tabs(document, comm):
 
 def test_param_js_callbacks(document, comm):
     class JsButton(param.Parameterized):
-        param_btn = param.Action(lambda self: print('Action Python Response'), label='Action')
+        param_btn = param.Action(default=lambda self: print('Action Python Response'), label='Action')
 
     param_button = Param(JsButton())
     code = "console.log('Action button clicked')"
