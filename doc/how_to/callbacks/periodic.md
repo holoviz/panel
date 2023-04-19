@@ -13,6 +13,8 @@ import panel as pn
 from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
 
+pn.extension()
+
 source = ColumnDataSource({"x": np.arange(10), "y": np.arange(10)})
 p = figure()
 p.line(x="x", y="y", source=source)

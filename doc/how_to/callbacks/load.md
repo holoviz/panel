@@ -12,6 +12,8 @@ Let us for example define a minimal example inside a function which we could pas
 import time
 import panel as pn
 
+pn.extension()
+
 def app():
     widget = pn.widgets.Select()
 

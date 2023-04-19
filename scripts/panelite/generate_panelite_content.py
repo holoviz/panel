@@ -7,18 +7,20 @@ import os
 import pathlib
 import shutil
 
+from test.notebooks_with_panelite_issues import NOTEBOOK_ISSUES
+
 import bokeh.sampledata
 import nbformat
 
-from test_panelite.notebooks_with_panelite_issues import NOTEBOOK_ISSUES
-
-PANEL_BASE = pathlib.Path(__file__).parent.parent
+HERE = pathlib.Path(__file__).parent
+PANEL_BASE = HERE.parent.parent
 EXAMPLES_DIR = PANEL_BASE / 'examples'
+LITE_FILES = PANEL_BASE / 'lite' / 'files'
 DOC_DIR = PANEL_BASE / 'doc'
 BASE_DEPENDENCIES = ["panel", "pyodide-http"]
 
 # Add piplite command to notebooks
-with open(PANEL_BASE/"scripts"/"generate_panelite_content.json", "r", encoding="utf8") as file:
+with open(HERE / "generate_panelite_content.json", "r", encoding="utf8") as file:
     DEPENDENCIES = json.load(file)
 
 class DependencyNotFound(Exception):
@@ -26,14 +28,18 @@ class DependencyNotFound(Exception):
 
 def _notebook_key(nbpath: pathlib.Path):
     nbpath = str(nbpath).replace(os.path.sep, "/")
-
-    return nbpath.split("examples/")[-1]
+    return nbpath.replace(str(EXAMPLES_DIR), '').replace(str(DOC_DIR), '')[1:]
 
 def _get_dependencies(nbpath: pathlib.Path):
     key = _notebook_key(nbpath)
     dependencies = DEPENDENCIES.get(key, [])
     if dependencies is None:
         return []
+    # Temporary patches
+    if "hvplot" in dependencies:
+        dependencies.append("holoviews")
+    if "holoviews" in dependencies:
+        dependencies[dependencies.index("holoviews")] = "holoviews==1.16.0a3"
     return BASE_DEPENDENCIES + dependencies
 
 def _to_piplite_install_code(dependencies):
@@ -103,6 +109,7 @@ def convert_md_to_nb(
         if inblock:
             if lsline.startswith(block_opener):
                 inblock = False
+                code[-1] = code[-1].rstrip()
                 code_cell = nbformat.v4.new_code_cell(source=''.join(code))
                 code.clear()
                 cells.append(code_cell)
@@ -122,14 +129,17 @@ def convert_md_to_nb(
                 markdown.append(line)
         else:
             markdown.append(line)
+    if markdown:
+        md_cell = nbformat.v4.new_markdown_cell(source=''.join(markdown))
+        nb['cells'].append(md_cell)
     return nb
 
 def convert_howto():
     mds = list(DOC_DIR.glob('how_to/**/*.md'))
     for md in mds:
-        out = (PANEL_BASE / 'lite/files') / md.relative_to(DOC_DIR).with_suffix('.ipynb')
+        out = LITE_FILES / md.relative_to(DOC_DIR).with_suffix('.ipynb')
         out.parent.mkdir(parents=True, exist_ok=True)
-        if md.suffix != '.md':
+        if md.suffix != '.md' or md.name == 'index.md':
             continue
         with open(md, encoding="utf-8") as mdf:
             nb = convert_md_to_nb(mdf)
@@ -148,7 +158,7 @@ def copy_examples():
         if ".ipynb_checkpoints" in str(nb):
             continue
         nbpath = pathlib.Path(nb)
-        out = (PANEL_BASE / 'lite/files') / nbpath.relative_to(EXAMPLES_DIR)
+        out = LITE_FILES / nbpath.relative_to(EXAMPLES_DIR)
         out.parent.mkdir(parents=True, exist_ok=True)
 
         if nb.suffix == '.ipynb':
@@ -170,7 +180,12 @@ def copy_examples():
 def copy_assets():
     shutil.copytree(
         EXAMPLES_DIR / 'assets',
-        PANEL_BASE / 'lite' / 'files' / 'assets',
+        LITE_FILES / 'assets',
+        dirs_exist_ok=True
+    )
+    shutil.copytree(
+        DOC_DIR / '_static',
+        LITE_FILES / '_static',
         dirs_exist_ok=True
     )
 
@@ -180,7 +195,7 @@ def download_sample_data():
     """
     from bokeh.util.sampledata import _download_file
 
-    data_dir = PANEL_BASE / 'lite' / 'files' / 'assets' / 'sampledata'
+    data_dir = LITE_FILES / 'assets' / 'sampledata'
     data_dir.mkdir(parents=True, exist_ok=True)
 
     s3 = 'http://sampledata.bokeh.org'

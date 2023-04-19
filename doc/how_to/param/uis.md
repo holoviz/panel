@@ -20,6 +20,8 @@ import panel as pn
 import pandas as pd
 import datetime as dt
 
+pn.extension()
+
 class BaseClass(param.Parameterized):
     x                       = param.Parameter(default=3.14, doc="X position")
     y                       = param.Parameter(default="Not editable", constant=True)

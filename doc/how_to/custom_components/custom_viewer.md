@@ -69,10 +69,11 @@ class EditableRange(Viewer):
 Finally, we'll implement the required ``__panel__`` method, which returns the Panel layout to be rendered. Panel will call this method when displaying the component.
 
 ```{pyodide}
-
 import param
 import panel as pn
+
 from panel.viewable import Viewer
+
 pn.extension() # for notebook
 
 class EditableRange(Viewer):
