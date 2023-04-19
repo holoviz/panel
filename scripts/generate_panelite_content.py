@@ -14,7 +14,8 @@ from test_panelite.notebooks_with_panelite_issues import NOTEBOOK_ISSUES
 
 PANEL_BASE = pathlib.Path(__file__).parent.parent
 EXAMPLES_DIR = PANEL_BASE / 'examples'
-DEFAULT_DEPENDENCIES = ["panel"]
+DOC_DIR = PANEL_BASE / 'doc'
+BASE_DEPENDENCIES = ["panel", "pyodide-http"]
 
 # Add piplite command to notebooks
 with open(PANEL_BASE/"scripts"/"generate_panelite_content.json", "r", encoding="utf8") as file:
@@ -24,19 +25,19 @@ class DependencyNotFound(Exception):
     """Raised if a dependency cannot be found"""
 
 def _notebook_key(nbpath: pathlib.Path):
-    return str(nbpath).replace("\\", "/").split("examples/")[-1]
+    nbpath = str(nbpath).replace(os.path.sep, "/")
+
+    return nbpath.split("examples/")[-1]
 
 def _get_dependencies(nbpath: pathlib.Path):
     key = _notebook_key(nbpath)
-    try:
-        dependencies = DEPENDENCIES[key]
-    except KeyError as ex:
-        print(f"WARNING: Could not find the dependencies for '{key}'. Please add them")
-        dependencies = DEFAULT_DEPENDENCIES
-    return dependencies
+    dependencies = DEPENDENCIES.get(key, [])
+    if dependencies is None:
+        return []
+    return BASE_DEPENDENCIES + dependencies
 
 def _to_piplite_install_code(dependencies):
-    dependencies = [f"'{dependency}'" for dependency in dependencies]
+    dependencies = [repr(dep) for dep in dependencies]
     return f"import piplite\nawait piplite.install([{', '.join(dependencies)}])"
 
 def _get_install_code_cell(dependencies):
@@ -80,6 +81,66 @@ Panelite is powered by young technologies like <a href="https://pyodide.org/en/s
     info = nbformat.v4.new_markdown_cell(source=source)
     del info['id']
     return info
+
+def convert_md_to_nb(
+    filehandle, supported_syntax=('{pyodide}',)
+) -> str:
+    """
+    Extracts Panel application code from a Markdown file.
+    """
+    nb = nbformat.v4.new_notebook()
+    cells = nb['cells']
+    inblock = False
+    block_opener = None
+    markdown, code = [], []
+    while True:
+        line = filehandle.readline()
+        if not line:
+            # EOF
+            break
+
+        lsline = line.lstrip()
+        if inblock:
+            if lsline.startswith(block_opener):
+                inblock = False
+                code_cell = nbformat.v4.new_code_cell(source=''.join(code))
+                code.clear()
+                cells.append(code_cell)
+            else:
+                code.append(line)
+        elif lsline.startswith("```"):
+            num_leading_backticks = len(lsline) - len(lsline.lstrip("`"))
+            block_opener = '`'*num_leading_backticks
+            syntax = line.strip()[num_leading_backticks:]
+            if syntax in supported_syntax:
+                if markdown:
+                    md_cell = nbformat.v4.new_markdown_cell(source=''.join(markdown))
+                    markdown.clear()
+                    nb['cells'].append(md_cell)
+                inblock = True
+            else:
+                markdown.append(line)
+        else:
+            markdown.append(line)
+    return nb
+
+def convert_howto():
+    mds = list(DOC_DIR.glob('how_to/**/*.md'))
+    for md in mds:
+        out = (PANEL_BASE / 'lite/files') / md.relative_to(DOC_DIR).with_suffix('.ipynb')
+        out.parent.mkdir(parents=True, exist_ok=True)
+        if md.suffix != '.md':
+            continue
+        with open(md, encoding="utf-8") as mdf:
+            nb = convert_md_to_nb(mdf)
+        dependencies = _get_dependencies(md)
+        if dependencies:
+            install = _get_install_code_cell(dependencies=dependencies)
+            nb['cells'].insert(0, install)
+            info = _get_info_markdown_cell(md)
+            nb['cells'].insert(0, info)
+        with open(out, 'w', encoding='utf-8') as fout:
+            nbformat.write(nb, fout)
 
 def copy_examples():
     nbs = list(EXAMPLES_DIR.glob('*/*/*.ipynb')) + list(EXAMPLES_DIR.glob('*/*.*'))
@@ -144,6 +205,7 @@ def download_sample_data():
         _download_file(s3, filename, data_dir, progress=False)
 
 if __name__=="__main__":
+    convert_howto()
     copy_examples()
     copy_assets()
     download_sample_data()
