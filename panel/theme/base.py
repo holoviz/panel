@@ -113,6 +113,9 @@ class Design(param.Parameterized):
         for o in viewable.select():
             if o.design and isolated:
                 continue
+            elif not o.design and not isolated:
+                o._design = self
+
             self._apply_modifiers(o, ref, self.theme, isolated, cache)
 
     def _apply_hooks(self, viewable: Viewable, root: Model) -> None:
