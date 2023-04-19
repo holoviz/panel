@@ -30,7 +30,7 @@ from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
 from bokeh.util.sampledata import (
-    __file__ as _bk_util_dir, _download_file, external_data_dir, real_name,
+    __file__ as _bk_util_dir, _download_file, external_data_dir, splitext,
 )
 from js import JSON, Object, XMLHttpRequest
 
@@ -325,16 +325,21 @@ def _download_sampledata(progress: bool = False) -> None:
     s3 = 'https://sampledata.bokeh.org'
     with open(pathlib.Path(_bk_util_dir).parent / "sampledata.json") as f:
         files = json.load(f)
-    for file_name, md5 in files.items():
-        real_path = data_dir / real_name(file_name)
+    for filename, md5 in files:
+        real_name, ext = splitext(filename)
+        if ext == '.zip':
+            if not splitext(real_name)[1]:
+                real_name += ".csv"
+        else:
+            real_name += ext
+        real_path = data_dir / real_name
         if real_path.exists():
             with open(real_path, "rb") as file:
                 data = file.read()
             local_md5 = hashlib.md5(data).hexdigest()
             if local_md5 == md5:
                 continue
-
-        _download_file(s3, file_name, data_dir, progress=progress)
+        _download_file(s3, filename, data_dir, progress=progress)
 
 bokeh.sampledata.download = _download_sampledata
 bokeh.util.sampledata.download = _download_sampledata
