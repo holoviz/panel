@@ -160,7 +160,8 @@ _hash_funcs = {
     "numpy.ufunc"                : lambda obj: obj.__name__.encode(),
     # Functions
     inspect.isbuiltin          : lambda obj: obj.__name__.encode(),
-    inspect.ismodule           : lambda obj: obj.__name__
+    inspect.ismodule           : lambda obj: obj.__name__,
+    lambda x: hasattr(x, "tobytes") and x.shape == (): lambda x: x.tobytes(),  # Single numpy dtype like: np.int32
 }
 
 for name in _FFI_TYPE_NAMES:
