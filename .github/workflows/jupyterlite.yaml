@@ -44,7 +44,7 @@ jobs:
           python -m pip install -r ./lite/requirements.txt
       - name: Build pyodide wheels for JupyterLite
         run: |
-          python ./scripts/panelite/build_pyodide_wheels.py lite/pypi
+          python ./scripts/build_pyodide_wheels.py lite/pypi
       - name: Convert content
         run: |
           python ./scripts/panelite/generate_panelite_content.py
