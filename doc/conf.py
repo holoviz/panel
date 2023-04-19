@@ -114,7 +114,12 @@ else:
     bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
 nbsite_pyodide_conf = {
-    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.16.0a2']
+    'PYODIDE_URL': 'https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js',
+    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.16.0a3'],
+    'requires': {
+        'gallery/penguin_crossfilter': ['scipy'],
+        'gallery/windturbines': ['fastparquet']
+    }
 }
 
 templates_path = [

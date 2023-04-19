@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import weakref
 
 from dataclasses import dataclass
@@ -69,7 +70,7 @@ class PanelExecutor(WSHandler):
         self._context = None
 
         self.resources = Resources(
-            mode="server", root_url=self.root_url,
+            mode=os.environ.get('BOKEH_RESOURCES', 'server'), root_url=self.root_url,
             path_versioner=StaticHandler.append_version
         )
         self._set_state()
