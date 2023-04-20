@@ -8,27 +8,25 @@ width: 125
 ---
 ```
 
-<h2 style="margin-top: 0.3em;">A high-level app and dashboarding solution for Python</h2>
-
-# Overview
-
-Panel is a an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that **makes it easy to create interactive dashboards and data apps using the tools you already know and love**.
+# Panel: A high-level app and dashboarding solution for Python
 
 ## Description
+
+Panel is a an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that **makes it easy to create interactive dashboards and data apps using the tools you already know and love**.
 
 With Panel, you can quickly prototype and iterate on apps and dashboards using your favorite editor or notebook environment. Unlike other tools, Panel supports a wide range of visualization libraries and development environments, which means **you can choose the tools that work best for your workflow**.
 
 One of the most powerful features of Panel is its ability to handle large amounts of data and stream it directly to the frontend of your app. This allows you to build highly interactive and responsive apps that can handle real-time data updates with ease. Panel also provides deep bi-directional interactivity between the frontend and backend, which means **you can build complex and interactive apps that respond to user input in real-time**.
 
-In addition to these core features, Panel provides a number of advanced features that make it a unique and powerful tool for building data apps and dashboards. For example, **you can develop server-, pyodide-, and pyscript-backed applications, wrap your applications in polished templates for final deployment, and add authentication to your applications using the built-in OAuth providers**.
+In addition to these core features, Panel provides a number of **advanced features** that make it a unique and powerful tool for building data apps and dashboards. For example, **you can develop server-, pyodide-, and pyscript-backed applications, wrap your applications in polished templates for final deployment, and add authentication to your applications using the built-in OAuth providers**.
 
 Whether you're a domain expert, data scientist, software developer, or anyone in between, Panel provides a flexible and powerful platform for building interactive data apps and dashboards. With its broad range of features and support for multiple visualization libraries and development environments, **Panel is a unique and powerful tool that can help you bring your data to life**.
 
 ## Demo App
 
-The demo app applies **[k-means clustering](https://en.wikipedia.org/wiki/K-means_clustering) on the [Palmer Penguins dataset](https://github.com/mcnakhaee/palmerpenguins)** using [scikit-learn](https://scikit-learn.org), parameterizing the number of clusters and the variables to plot. Each cluster is denoted by one color while the penguin species is indicated using markers. By comparing the two we can assess the performance of the clustering algorithm.
+The demo app below applies **[k-means clustering](https://en.wikipedia.org/wiki/K-means_clustering) on the [Palmer Penguins dataset](https://github.com/mcnakhaee/palmerpenguins)** using [scikit-learn](https://scikit-learn.org), parameterizing the number of clusters and the variables to plot. Each cluster is denoted by one color while the penguin species is indicated using markers. By comparing the two we can assess the performance of the clustering algorithm.
 
-Simply drag the *slider* to see how the app responds to user input in real-time. To see how the app was built, check out the *Code tab*.
+Simply **drag the slider** to see how the app responds to user input in real-time. To see how the app was built, check out the *Code tab*.
 
 ```{eval-rst}
 .. notebook:: panel ../examples/homepage.ipynb
@@ -122,6 +120,68 @@ By leveraging the power of the [HoloViz](https://holoviz.org/) ecosystem, Panel 
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
+```
+:::
+
+::::
+
+## Featured Videos
+
+::::{grid} 2
+
+:::{grid-item-card}
+:class-body: sponsor-logo
+:link: https://youtu.be/wlzkiGPIV3I
+:link-type: url
+:text-align: center
+:columns: 3
+
+```{image} https://i.ytimg.com/vi/wlzkiGPIV3I/hqdefault.jpg
+---
+alt: Visualization and Interactive Dashboard in Python: My favorite Python Viz tools — HoloViz
+---
+```
+:::
+
+:::{grid-item-card}
+:class-body: sponsor-logo
+:link: https://youtu.be/BeBVdjENBZo
+:link-type: url
+:text-align: center
+:columns: 3
+
+```{image} https://i.ytimg.com/vi/BeBVdjENBZo/hqdefault.jpg
+---
+alt: Introduction to data apps with Panel, Pydata Copenhagen, March 2022
+---
+```
+:::
+
+:::{grid-item-card}
+:class-body: sponsor-logo
+:link: https://youtu.be/uhxiXOTKzfs
+:link-type: url
+:text-align: center
+:columns: 3
+
+```{image} https://i.ytimg.com/vi/uhxiXOTKzfs/hqdefault.jpg
+---
+alt: How to Create a Beautiful Python Visualization Dashboard With Panel/Hvplot by Thu Vu data analytics
+---
+```
+:::
+
+:::{grid-item-card}
+:class-body: sponsor-logo
+:link: https://youtu.be/IvEh7A308FU
+:link-type: url
+:text-align: center
+:columns: 3
+
+```{image} https://i.ytimg.com/vi/IvEh7A308FU/hqdefault.jpg
+---
+alt: 5 Steps to Build a Question Answering PDF Chatbot: LangChain + OpenAI + Panel + HuggingFace.
+---
 ```
 :::
 
