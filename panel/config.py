@@ -738,7 +738,7 @@ class panel_extension(_pyviz_extension):
             load_notebook(config.inline)
         panel_extension._loaded = True
 
-        if config.browser_info:
+        if config.browser_info and state.browser_info:
             doc = Document()
             comm = state._comm_manager.get_server_comm()
             model = state.browser_info._render_model(doc, comm)
