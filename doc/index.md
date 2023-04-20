@@ -1,13 +1,3 @@
----
-sd_hide_title: true
----
-
-```{image} _static/logo_stacked.png
----
-width: 125
----
-```
-
 # Panel: A high-level app and dashboarding solution for Python
 
 ## Description
