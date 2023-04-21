@@ -2,14 +2,12 @@
 
 Trusted by leading organizations worldwide, Panel empowers you to create sophisticated data apps that seamlessly blend your favorite Python tools with modern web technologies. Bring your data to life like never before with Panel's advanced features and intuitive interface.
 
-::::{grid} 2
+::::{grid} 1 2 2 4
+:gutter: 1 1 1 2
 
 :::{grid-item-card}
-:class-body: sponsor-logo
-:link: https://www.anaconda.com/
+:link: ./
 :link-type: url
-:text-align: center
-:columns: 3
 
 ```{image} _static/logo_stacked.png
 ---
@@ -19,37 +17,28 @@ alt: Panel Logo
 :::
 
 :::{grid-item-card}
-:class-body: sponsor-logo
-:text-align: center
-:columns: 3
 
-```{image} https://user-images.githubusercontent.com/42288570/233545228-5c3867b7-f24c-4d74-b9ad-48417a22ce9e.gif
+```{image} https://user-images.githubusercontent.com/42288570/233706763-dba3bdf8-ba05-427a-877a-912db9b93420.gif
 ---
-alt: Developing Panel data apps in a notebook. Can use editor too.
+alt: Developing Panel data apps in a notebook with hot reload preview
 ---
 ```
 :::
 
 :::{grid-item-card}
-:class-body: sponsor-logo
-:text-align: center
-:columns: 3
 
-```{image} https://user-images.githubusercontent.com/42288570/233545249-dacfd49f-175f-48b1-8e94-756420a702b9.gif
+```{image} https://user-images.githubusercontent.com/42288570/233706888-85211d1b-c157-47ed-981b-e5e8816d2a46.png
 ---
-alt: Panel works with Pythons data viz
+alt: Portfolio Analyzer Data App with interactive Plots and Tables
 ---
 ```
 :::
 
 :::{grid-item-card}
-:class-body: sponsor-logo
-:text-align: center
-:columns: 3
 
-```{image} https://user-images.githubusercontent.com/42288570/233545237-a8ba69f5-400d-4b8a-89f1-0584585854b9.gif
+```{image} https://user-images.githubusercontent.com/42288570/233707843-bf318f6d-b375-4ddb-8485-90ee720ebefb.png
 ---
-alt: Nyc Big Data Panel Dashboard using Datashader
+alt: Cuxfilter - Big Data Visualization on GPUs built on top of Panel
 ---
 ```
 :::
@@ -194,7 +183,7 @@ By leveraging the power of the [HoloViz](https://holoviz.org/) ecosystem, Panel 
 ```
 :::
 
-:::{grid-item-card} How to create Dashboard
+:::{grid-item-card} Interactive Dashboard
 :link: https://youtu.be/__QUQg96SFs
 :link-type: url
 
@@ -202,7 +191,7 @@ By leveraging the power of the [HoloViz](https://holoviz.org/) ecosystem, Panel 
 ```
 :::
 
-:::{grid-item-card} Question Answering PDF Chatbot
+:::{grid-item-card} PDF Chatbot
 :link: https://youtu.be/IvEh7A308FU
 :link-type: url
 
@@ -210,13 +199,38 @@ By leveraging the power of the [HoloViz](https://holoviz.org/) ecosystem, Panel 
 ```
 :::
 
-:::{grid-item-card} HoloViz Overview from
+:::{grid-item-card} HoloViz Introduction
 :link: https://youtu.be/8du4NNoOtII
 :link-type: url
 
 ```{image} https://user-images.githubusercontent.com/42288570/233540795-61aa8ab4-3555-4c4c-8231-88af10cb897c.jpg
 ```
 :::
+
+::::
+
+## Tweets
+
+::::{grid} 2 2 5 5
+:gutter: 1
+
+:::{grid-item-card} Anita Graser
+:link: https://twitter.com/underdarkGIS/status/1530981610920755201?s=20
+:link-type: url
+
+```{image} https://user-images.githubusercontent.com/42288570/233698041-2012cbb3-e969-4cf0-b754-5cde59712aa5.png
+```
+:::
+
+:::{grid-item-card} Ivan D.
+:link: https://twitter.com/ivanziogeo/status/1593956714717380609?s=20
+:link-type: url
+
+```{image} https://user-images.githubusercontent.com/42288570/233700473-127bca40-e9ec-4de5-a89b-7542d0195c5e.png
+```
+:::
+
+https://user-images.githubusercontent.com/42288570/233700473-127bca40-e9ec-4de5-a89b-7542d0195c5e.png
 
 ::::
 
