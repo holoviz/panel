@@ -170,28 +170,22 @@ alt: Param Logo
 
 ## Featured Resources
 
-Below we include a selection of *featured resources*. For more resources check out
-[awesome-panel.org](https://awesome-panel.org), they main the *awesome list* of Panel in the form
-of a *Community Gallery*.
+Below we include a selection of *featured resources*. For more community resources check out
+[awesome-panel.org](https://awesome-panel.org).
 
 ### Apps
 
 ::::{grid} 2 2 4 4
 :gutter: 1
 
-:::{grid-item-card} Videostream
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
+:::{grid-item-card} Portfolio Optimizer
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
 
-```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
-```
-:::
-
-:::{grid-item-card} MRI Cross-sections
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtkslicer
-:link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/vtkslicer.png
+```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
+---
+alt: Portfolio Optimizer App
+---
 ```
 :::
 
@@ -200,14 +194,31 @@ of a *Community Gallery*.
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/glaciers.png
+---
+alt: OGGM Glaciers App
+---
 ```
 :::
 
-:::{grid-item-card} Portfolio Optimizer
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_optimizer
+:::{grid-item-card} Videostream
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
 
-```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
+```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
+---
+alt: Streaming Video App
+---
+```
+:::
+
+:::{grid-item-card} MRI Cross-sections
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtkslicer
+:link-type: url
+
+```{image} https://assets.holoviz.org/panel/gallery/vtkslicer.png
+---
+alt: VTK 3D Slicer App
+---
 ```
 :::
 
@@ -223,6 +234,9 @@ of a *Community Gallery*.
 :link-type: url
 
 ```{image} https://user-images.githubusercontent.com/42288570/233267394-8085c328-f5d8-4be7-8c20-f0a8915215a4.jpg
+---
+alt: Beautiful Dashboards
+---
 ```
 :::
 
@@ -231,6 +245,9 @@ of a *Community Gallery*.
 :link-type: url
 
 ```{image} https://user-images.githubusercontent.com/42288570/233540794-94a38165-5e8b-4b17-a61d-1a02d7487e64.jpg
+---
+alt: Interactive Dashboards
+---
 ```
 :::
 
@@ -239,6 +256,9 @@ of a *Community Gallery*.
 :link-type: url
 
 ```{image} https://user-images.githubusercontent.com/42288570/233267372-e4937904-80c6-4dfa-adfc-2a0c0fd522b5.jpg
+---
+alt: Question answering PDF Chatbot
+---
 ```
 :::
 
@@ -247,6 +267,9 @@ of a *Community Gallery*.
 :link-type: url
 
 ```{image} https://user-images.githubusercontent.com/42288570/233540795-61aa8ab4-3555-4c4c-8231-88af10cb897c.jpg
+---
+alt: HoloViz Introduction
+---
 ```
 :::
 
@@ -313,6 +336,9 @@ alt: HoloViz Blogs
 :link-type: url
 
 ```{image} https://user-images.githubusercontent.com/42288570/233767803-255d236e-8ea0-40f7-b510-12a616383b1e.png
+---
+alt: Moving Pandas - Jupyter Panel Preview testimonial
+---
 ```
 :::
 
@@ -321,6 +347,9 @@ alt: HoloViz Blogs
 :link-type: url
 
 ```{image} https://user-images.githubusercontent.com/42288570/233767806-10e31dc7-f790-4d6a-ae75-db8caa6d9554.png
+---
+alt: Impressive App by Ivan D with link to live app and code
+---
 ```
 :::
 
@@ -329,6 +358,9 @@ alt: HoloViz Blogs
 :link-type: url
 
 ```{image} https://user-images.githubusercontent.com/42288570/233767812-34df20be-6965-4c3c-82cf-d49b518f2b8a.png
+---
+alt: Testimonial about how powerful and fun XArray + Panel and HoloViz is.
+---
 ```
 :::
 
@@ -337,6 +369,9 @@ alt: HoloViz Blogs
 :link-type: url
 
 ```{image} https://user-images.githubusercontent.com/42288570/233767821-929e8cb4-86fa-4ae3-a60c-35c71c874e80.png
+---
+alt: Dr Rob Parker tweets about Weather Station data app built by his student Louis.
+---
 ```
 :::
 
@@ -357,6 +392,12 @@ If you're looking for a hosted Python environment that works with Panel, we reco
 The Panel community is fantastic. We want it to stay that way. You can find our *Code of Conduct* [here](https://github.com/holoviz/panel/blob/main/CODE_OF_CONDUCT.md).
 
 We hope these links are helpful and that you'll join us in the Panel community soon!
+
+## Contributing
+
+Panel is developed and maintained via community contributions. The easiest way to contribute is to [give a &#11088; on Github](https://github.com/holoviz/panel) or [show some &#10084;&#65039; on social media](https://twitter.com/intent/tweet).
+
+Check out our [Contributing Guide](https://github.com/holoviz/panel/blob/main/CONTRIBUTING.MD) to get started. Thanks.
 
 ## Sponsors
 
