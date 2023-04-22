@@ -81,7 +81,7 @@ nbsite_gallery_conf = {
     'github_project': 'panel',
     'galleries': {
         'reference': {
-            'title': 'Reference Gallery',
+            'title': 'Component Gallery',
             'sections': [
                 'panes',
                 'layouts',

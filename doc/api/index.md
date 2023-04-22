@@ -2,7 +2,7 @@
 
 The Panel API Reference Manual provides a comprehensive reference for
 all methods and parameters on Panel components. For more information
-on how to use the components see the [Reference Gallery](../reference/index).
+on how to use the components see the [Component Gallery](../reference/index).
 
 ## Overview
 

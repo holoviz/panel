@@ -339,6 +339,6 @@ pn.Column(
 
 While `Getting Started`, you have built a simple Panel app and reviewed the core concepts - the basic foundations for you to start using Panel for your own work.
 
-While working, you can find solutions to specific problems in the [How-to](../how_to/index.md) section and you can consult the [API Reference](../api/index.md) or [Reference Gallery](../reference/index.rst) sections for technical descriptions or examples.
+While working, you can find solutions to specific problems in the [How-to](../how_to/index.md) section and you can consult the [API Reference](../api/index.md) or [Component Gallery](../reference/index.rst) sections for technical descriptions or examples.
 
 If you want to gain clarity or deepen your understanding on particular topics, refer to the [Background](../background/index.md). For example, the [Background > APIs](../background/api/api.md) subsection covers the benefits and drawbacks of each Panel API.

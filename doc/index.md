@@ -28,23 +28,23 @@ alt: Image asking you to click it to take the tour
 :::
 
 :::{grid-item-card}
-:link: https://sharing.awesome-panel.org/MarcSkovMadsen/portfolio-analysis2/app.html
-:link-type: url
-
-```{image} https://user-images.githubusercontent.com/42288570/233766742-8ba1208e-bb16-428c-ad51-6807e793aa3e.png
----
-alt: Portfolio Analysis App
----
-```
-:::
-
-:::{grid-item-card}
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
 
 ```{image} https://user-images.githubusercontent.com/42288570/233767039-86f59454-60d5-46be-ac0f-c96d07b5ec8a.png
 ---
 alt: Palmer Penguins App
+---
+```
+:::
+
+:::{grid-item-card}
+:link: https://sharing.awesome-panel.org/MarcSkovMadsen/portfolio-analysis2/app.html
+:link-type: url
+
+```{image} https://user-images.githubusercontent.com/42288570/233766742-8ba1208e-bb16-428c-ad51-6807e793aa3e.png
+---
+alt: Portfolio Analysis App
 ---
 ```
 :::
@@ -88,18 +88,18 @@ The demo app above is just a small example of what you can do with Panel. Whethe
 The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
 :::
 
-:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Explanation
-:link: getting_started/core_concept
-:link-type: doc
-
-Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
-:::
-
 :::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` How-to
 :link: how_to/index
 :link-type: doc
 
 How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work.
+:::
+
+:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Background
+:link: background/index
+:link-type: doc
+
+Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
 :::
 
 :::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` Reference
@@ -461,9 +461,9 @@ alt: Quansight Logo
 
 getting_started/index
 how_to/index
-gallery/index
 background/index
 reference/index
+gallery/index
 api/index
 FAQ
 about/index

@@ -194,4 +194,4 @@ gridspec
 
 ## Related Resources
 - Learn more about Panes in [Background > Components](../../background/components/components_overview.html#panes).
-- For more detail about `GridSpec` Panels, see the [Reference Gallery > GridSpec](../reference/layouts/GridSpec.ipynb).
+- For more detail about `GridSpec` Panels, see the [Component Gallery > GridSpec](../reference/layouts/GridSpec.ipynb).
