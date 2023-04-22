@@ -72,7 +72,7 @@ The demo app demonstrates how we can *bind* widgets to plots. Simply **drag the 
     :disable_interactivity_warning: True
 ``` -->
 
-The demo app also demonstrates one of Panels novel features: many types of end products. This app is not running on a backend server. Instead we have exported the app to *static html* and *embedded* it in this web page.
+The demo app also demonstrates one of Panels novel features: many types of end products. This app is not running on a backend server. Instead we have exported the app to *static html* and *embedded* it in this web page. [Rapids](https://rapids.ai/) uses this technology to power their interactive [Visualization Guide](https://docs.rapids.ai/visualization). In fact Rapids has built their big data, gpu powered visualization framework [cuxfilter](https://github.com/rapidsai/cuxfilter) on top of Panel and the HoloViz ecosystem.
 
 ## Learning Resources
 
