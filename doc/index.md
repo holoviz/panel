@@ -17,28 +17,34 @@ alt: Panel Logo
 :::
 
 :::{grid-item-card}
+:link: https://youtu.be/BeBVdjENBZo
+:link-type: url
 
-```{image} https://user-images.githubusercontent.com/42288570/233706763-dba3bdf8-ba05-427a-877a-912db9b93420.gif
+```{image} https://user-images.githubusercontent.com/42288570/233761035-d74e72d3-b0f6-44bd-beb1-9edd118ac432.png
 ---
-alt: Developing Panel data apps in a notebook with hot reload preview
+alt: Image asking you to click it to take the tour
 ---
 ```
 :::
 
 :::{grid-item-card}
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_analysis
+:link-type: url
 
 ```{image} https://user-images.githubusercontent.com/42288570/233706888-85211d1b-c157-47ed-981b-e5e8816d2a46.png
 ---
-alt: Portfolio Analyzer Data App with interactive Plots and Tables
+alt: Portfolio Analysis App
 ---
 ```
 :::
 
 :::{grid-item-card}
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/penguin_crossfilter
+:link-type: url
 
-```{image} https://user-images.githubusercontent.com/42288570/233707843-bf318f6d-b375-4ddb-8485-90ee720ebefb.png
+```{image} https://user-images.githubusercontent.com/42288570/233760082-c08771cb-b6bc-48de-93cb-b348fc8b2861.png
 ---
-alt: Cuxfilter - Big Data Visualization on GPUs built on top of Panel
+alt: Palmer Penguins App
 ---
 ```
 :::
@@ -61,12 +67,12 @@ Whether you're a domain expert, data scientist, software developer, or anyone in
 
 The demo app below applies **[k-means clustering](https://en.wikipedia.org/wiki/K-means_clustering) on the [Palmer Penguins dataset](https://github.com/mcnakhaee/palmerpenguins)** using [scikit-learn](https://scikit-learn.org), parameterizing the number of clusters and the variables to plot. Each cluster is denoted by one color while the penguin species is indicated using markers. By comparing the two we can assess the performance of the clustering algorithm.
 
-Simply **drag the slider** to see how the app responds to user input in real-time. To see how the app was built, check out the *Code tab*.
-
 ```{eval-rst}
 .. notebook:: panel ../examples/homepage.ipynb
     :disable_interactivity_warning: True
 ```
+
+Simply **drag the slider** to see how the app responds to user input in real-time. To see how the app was built, check out the *Code tab*.
 
 ## Usage
 
@@ -117,7 +123,7 @@ By leveraging the power of the [HoloViz](https://holoviz.org/) ecosystem, Panel 
 
 ### Apps
 
-::::{grid} 2 2 5 5
+::::{grid} 2 2 4 4
 :gutter: 1
 
 :::{grid-item-card} Videostream
@@ -133,14 +139,6 @@ By leveraging the power of the [HoloViz](https://holoviz.org/) ecosystem, Panel 
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/vtkslicer.png
-```
-:::
-
-:::{grid-item-card} Crossfiltering
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/penguin_crossfilter
-:link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
 ```
 :::
 
@@ -164,16 +162,8 @@ By leveraging the power of the [HoloViz](https://holoviz.org/) ecosystem, Panel 
 
 ### Videos
 
-::::{grid} 2 2 5 5
+::::{grid} 2 2 4 4
 :gutter: 1
-
-:::{grid-item-card} Panel Intro from PyData CPH
-:link: https://youtu.be/BeBVdjENBZo
-:link-type: url
-
-```{image} https://user-images.githubusercontent.com/42288570/233267558-67843b23-9b65-4d1c-8734-d5879626ce16.jpg
-```
-:::
 
 :::{grid-item-card} Beautiful Dashboard
 :link: https://youtu.be/uhxiXOTKzfs
@@ -211,26 +201,40 @@ By leveraging the power of the [HoloViz](https://holoviz.org/) ecosystem, Panel 
 
 ## Tweets
 
-::::{grid} 2 2 5 5
+::::{grid} 2 2 4 4
 :gutter: 1
 
-:::{grid-item-card} Anita Graser
+:::{grid-item-card}
 :link: https://twitter.com/underdarkGIS/status/1530981610920755201?s=20
 :link-type: url
 
-```{image} https://user-images.githubusercontent.com/42288570/233698041-2012cbb3-e969-4cf0-b754-5cde59712aa5.png
+```{image} https://user-images.githubusercontent.com/42288570/233758610-14f6d096-3e66-4a1d-973b-fed02e95b9bb.png
 ```
 :::
 
-:::{grid-item-card} Ivan D.
+:::{grid-item-card}
 :link: https://twitter.com/ivanziogeo/status/1593956714717380609?s=20
 :link-type: url
 
-```{image} https://user-images.githubusercontent.com/42288570/233700473-127bca40-e9ec-4de5-a89b-7542d0195c5e.png
+```{image} https://user-images.githubusercontent.com/42288570/233758478-bc95b0ed-768a-4efc-9c77-49b01eecfe5c.png
 ```
 :::
 
-https://user-images.githubusercontent.com/42288570/233700473-127bca40-e9ec-4de5-a89b-7542d0195c5e.png
+:::{grid-item-card}
+:link: https://twitter.com/mgroverwx/status/1575644730750164992?s=20
+:link-type: url
+
+```{image} https://user-images.githubusercontent.com/42288570/233758817-640ca94b-9838-4721-bd0f-47ff43c75813.png
+```
+:::
+
+:::{grid-item-card}
+:link: https://twitter.com/DrRParker/status/1573372839708745728?s=20
+:link-type: url
+
+```{image} https://user-images.githubusercontent.com/42288570/233758821-b3570fe7-9d4a-481c-8786-64e0862e4bab.png
+```
+:::
 
 ::::
 
