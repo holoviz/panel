@@ -83,12 +83,12 @@ nbsite_gallery_conf = {
         'reference': {
             'title': 'Reference Gallery',
             'sections': [
-                'panes',
-                'layouts',
+                # 'panes',
+                # 'layouts',
                 'templates',
-                'global',
-                'indicators',
-                'widgets',
+                # 'global',
+                # 'indicators',
+                # 'widgets',
             ],
             'titles': {
                 'Vega': 'Altair & Vega',
@@ -96,7 +96,7 @@ nbsite_gallery_conf = {
                 'ECharts': 'PyEcharts & ECharts',
                 'IPyWidget': 'ipywidgets'
             },
-            'as_pyodide': True,
+            'as_pyodide': False,
             'normalize_titles': False
         }
     },

@@ -1,3 +1,0 @@
-# Panel and Bokeh
-
-WIP

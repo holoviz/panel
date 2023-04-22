@@ -191,7 +191,7 @@ extras_require = {
         'pydeck',
         'graphviz',
         'lxml',
-        'python-graphviz',
+        # 'python-graphviz',
         'xgboost',
         'ipyvuetify',
         'reacton',
