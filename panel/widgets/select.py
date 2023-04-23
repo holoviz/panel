@@ -175,6 +175,9 @@ class Select(SingleSelectBase):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
     _rename: ClassVar[Mapping[str, str | None]] = {
         'groups': None,
     }
@@ -317,6 +320,9 @@ class _MultiSelectBase(SingleSelectBase):
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
+
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
 
     _supports_embed: ClassVar[bool] = False
 
@@ -468,6 +474,9 @@ class AutocompleteInput(Widget):
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
+
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 

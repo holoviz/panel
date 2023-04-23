@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import hashlib
 import io
 import json
 import os
+import pathlib
 import sys
 
 from typing import (
@@ -27,12 +29,16 @@ from bokeh.events import DocumentReady
 from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
+from bokeh.util.sampledata import (
+    __file__ as _bk_util_dir, _download_file, external_data_dir, splitext,
+)
 from js import JSON, Object, XMLHttpRequest
 
 from ..config import config
 from ..util import edit_readonly, is_holoviews, isurl
 from . import resources
 from .document import MockSessionContext
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
@@ -311,6 +317,33 @@ def _get_pyscript_target():
     elif not _IN_WORKER:
         raise ValueError("Could not determine target node to write to.")
 
+def _download_sampledata(progress: bool = False) -> None:
+    """
+    Download bokeh sampledata
+    """
+    data_dir = external_data_dir(create=True)
+    s3 = 'https://sampledata.bokeh.org'
+    with open(pathlib.Path(_bk_util_dir).parent / "sampledata.json") as f:
+        files = json.load(f)
+    for filename, md5 in files:
+        real_name, ext = splitext(filename)
+        if ext == '.zip':
+            if not splitext(real_name)[1]:
+                real_name += ".csv"
+        else:
+            real_name += ext
+        real_path = data_dir / real_name
+        if real_path.exists():
+            with open(real_path, "rb") as file:
+                data = file.read()
+            local_md5 = hashlib.md5(data).hexdigest()
+            if local_md5 == md5:
+                continue
+        _download_file(s3, filename, data_dir, progress=progress)
+
+bokeh.sampledata.download = _download_sampledata
+bokeh.util.sampledata.download = _download_sampledata
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -413,7 +446,7 @@ def hide_loader() -> None:
     from js import document
 
     body = document.getElementsByTagName('body')[0]
-    body.classList.remove("pn-loading", config.loading_spinner)
+    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, config.loading_spinner)
 
 def sync_location():
     """

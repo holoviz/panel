@@ -2,6 +2,7 @@
 Commandline interface to Panel
 """
 import argparse
+import os
 import sys
 
 from bokeh.__main__ import main as bokeh_entry_point
@@ -26,6 +27,9 @@ def transform_cmds(argv):
         '--anaconda-project-port': '--port',
         '--anaconda-project-address': '--address'
     }
+    if 'PANEL_AE5_CDN' in os.environ:
+        # Override AE5 default
+        os.environ['BOKEH_RESOURCES'] = 'cdn'
     transformed = []
     skip = False
     for arg in argv:

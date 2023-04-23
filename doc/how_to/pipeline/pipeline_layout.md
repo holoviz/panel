@@ -38,7 +38,7 @@ class Multiply(Input):
 
     value1 = param.Integer()
     value2 = param.Integer()
-    operator = param.String('*')
+    operator = param.String(default='*')
 
     def panel(self):
         return pn.pane.Markdown(f'# {self.value1} * {self.value2}')
@@ -51,7 +51,7 @@ class Add(Input):
 
     value1 = param.Integer()
     value2 = param.Integer()
-    operator = param.String('+')
+    operator = param.String(default='+')
 
     def panel(self):
         return pn.pane.Markdown(f'# {self.value1} + {self.value2}')
@@ -64,7 +64,7 @@ class Result(Input):
 
     value1 = param.Integer()
     value2 = param.Integer()
-    operator = param.String('')
+    operator = param.String(default='')
     result = param.Integer(default=0)
 
     def panel(self):

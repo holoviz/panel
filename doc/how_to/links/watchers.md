@@ -21,6 +21,8 @@ To demonstrate `.watch`, let us set up three different models:
 ```{pyodide}
 import panel as pn
 
+pn.extension()
+
 selections = pn.pane.Markdown(object='')
 selected = pn.pane.Markdown(object='')
 toggle = pn.widgets.ToggleGroup(options=['A', 'B'])

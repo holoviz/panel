@@ -30,7 +30,7 @@ def _get_dependencies(nbpath: pathlib.Path):
     key = _notebook_key(nbpath)
     try:
         dependencies = DEPENDENCIES[key]
-    except KeyError as ex:
+    except KeyError:
         print(f"WARNING: Could not find the dependencies for '{key}'. Please add them")
         dependencies = DEFAULT_DEPENDENCIES
     return dependencies

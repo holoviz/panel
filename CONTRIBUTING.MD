@@ -17,4 +17,4 @@ You can contribute in many ways, for example, by
 
 Before you start contributing to our code base or documentation, please make sure your contribution is well described and discussed in a [Github Issue](https://github.com/holoviz/panel/issues). To get started check out the [Developer Guide](https://panel.holoviz.org/developer_guide/index.html).
 
-If you need help to get started, please reach out via [Gitter](https://gitter.im/pyviz/pyviz).
+If you need help to get started, please reach out via [Discord](https://discord.gg/rb6gPXbdAr).

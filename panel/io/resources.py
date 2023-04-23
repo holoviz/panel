@@ -482,6 +482,9 @@ class Resources(BkResources):
                 css_txt = f.read()
                 if css_txt not in raw:
                     raw.append(css_txt)
+        if config.global_loading_spinner:
+            loading_base = (DIST_DIR / "css" / "loading.css").read_text()
+            raw.extend([loading_base, loading_css()])
         return raw + process_raw_css(config.raw_css)
 
     @property

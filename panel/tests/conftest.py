@@ -360,6 +360,17 @@ def threads():
         config.nthreads = None
 
 @pytest.fixture
+def reuse_sessions():
+    config.reuse_sessions = True
+    try:
+        yield
+    finally:
+        config.reuse_sessions = False
+        config.session_key_func = None
+        state._sessions.clear()
+        state._session_key_funcs.clear()
+
+@pytest.fixture
 def nothreads():
     yield
 

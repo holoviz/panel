@@ -91,6 +91,9 @@ def _container_hash(obj):
         h.update(_generate_hash(item))
     return h.digest()
 
+def _slice_hash(x):
+    return _container_hash([x.start, x.step, x.stop])
+
 def _partial_hash(obj):
     h = hashlib.new("md5")
     h.update(_generate_hash(obj.args))
@@ -100,6 +103,9 @@ def _partial_hash(obj):
 
 def _pandas_hash(obj):
     import pandas as pd
+
+    if not isinstance(obj, (pd.Series, pd.DataFrame)):
+        obj = pd.Series(obj)
 
     if len(obj) >= _PANDAS_ROWS_LARGE:
         obj = obj.sample(n=_PANDAS_SAMPLE_SIZE, random_state=0)
@@ -133,6 +139,7 @@ _hash_funcs = {
     float        : lambda obj: _int_to_bytes(hash(obj)),
     bool         : lambda obj: b'1' if obj is True else b'0',
     type(None)   : lambda obj: b'0',
+    slice: _slice_hash,
     (bytes, bytearray) : lambda obj: obj,
     (list, tuple, dict): _container_hash,
     pathlib.Path       : lambda obj: str(obj).encode(),
@@ -144,13 +151,17 @@ _hash_funcs = {
     'numpy.ndarray'              : _numpy_hash,
     'pandas.core.series.Series'  : _pandas_hash,
     'pandas.core.frame.DataFrame': _pandas_hash,
+    'pandas.core.indexes.base.Index': _pandas_hash,
+    'pandas.core.indexes.numeric.Int64Index': _pandas_hash,
+    'pandas.core.indexes.range.RangeIndex': _slice_hash,
     'builtins.mappingproxy'      : lambda obj: _container_hash(dict(obj)),
     'builtins.dict_items'        : lambda obj: _container_hash(dict(obj)),
     'builtins.getset_descriptor' : lambda obj: obj.__qualname__.encode(),
     "numpy.ufunc"                : lambda obj: obj.__name__.encode(),
     # Functions
     inspect.isbuiltin          : lambda obj: obj.__name__.encode(),
-    inspect.ismodule           : lambda obj: obj.__name__
+    inspect.ismodule           : lambda obj: obj.__name__,
+    lambda x: hasattr(x, "tobytes") and x.shape == (): lambda x: x.tobytes(),  # Single numpy dtype like: np.int32
 }
 
 for name in _FFI_TYPE_NAMES:

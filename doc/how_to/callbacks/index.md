@@ -49,6 +49,45 @@ How to safely modify Bokeh models to avoid running into issues with the Bokeh `D
 
 ::::
 
+## Examples
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} Streaming Bokeh
+:img-top: https://assets.holoviz.org/panel/how_to/callbacks/streaming_bokeh.png
+:link: examples/streaming_bokeh
+:link-type: doc
+
+Use `add_periodic_callback` to stream data to a Bokeh plot.
+:::
+
+:::{grid-item-card} Streaming Indicators
+:img-top: https://assets.holoviz.org/panel/how_to/callbacks/streaming_indicator.png
+:link: examples/streaming_indicator
+:link-type: doc
+
+Use `add_periodic_callback` to stream data to `Trend` indicators.
+:::
+
+:::{grid-item-card} Streaming Perspective
+:img-top: https://assets.holoviz.org/panel/how_to/callbacks/streaming_perspective.png
+:link: examples/streaming_perspective
+:link-type: doc
+
+Use `add_periodic_callback` to stream data to a `Perspective` pane.
+:::
+
+:::{grid-item-card} Streaming Tabulator
+:img-top: https://assets.holoviz.org/panel/how_to/callbacks/streaming_tabulator.png
+:link: examples/streaming_tabulator
+:link-type: doc
+
+Use `add_periodic_callback` to stream data to a `Tabulator` widget.
+:::
+
+::::
+
 ```{toctree}
 :titlesonly:
 :hidden:

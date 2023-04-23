@@ -2,14 +2,12 @@
 
 This guide addresses how to apply custom CSS styling to components.
 
-:::{deprecated} 1.0.0
-Before 1.0.0 CSS styling was generally applied globally by adding `raw_css` and `css_files` to the global `config` or `extension`. This approach is no longer recommended.
-:::
-
 ---
 
 ```{pyodide}
 import panel as pn
+
+pn.extension()
 ```
 
 Panel components are rendered into the [shadow DOM](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM), if you are not familiar with the concept just know that it means that each component is isolated from all others meaning that we can easily apply CSS rules for specific components.
@@ -143,6 +141,12 @@ pn.Column(
       for cls in ('red', 'green', 'blue'))
 )
 ```
+
+## Global styles
+
+:::{deprecated} 1.0.0
+Before 1.0.0 CSS styling was generally applied globally by adding `raw_css` and `css_files` to the global `config` or `extension`. This approach is no longer recommended.
+:::
 
 ---
 

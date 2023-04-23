@@ -37,6 +37,6 @@ def random_plot(event):
 
 pn.Column(
     button,
-	pn.param.ParamFunction(pn.bind(random_plot, button), loading_indicator=True)
+    pn.param.ParamFunction(pn.bind(random_plot, button), loading_indicator=True)
 ).servable()
 ```

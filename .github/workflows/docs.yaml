@@ -65,12 +65,13 @@ jobs:
       - name: build docs
         run: |
           conda activate test-environment
+          python scripts/gallery/convert_gallery.py
           nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
           cp -r ./panel/dist ./builtdocs/panel_dist
       - name: convert gallery
         run: |
           conda activate test-environment
-          panel convert examples/gallery/**/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index
+          panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index
       - name: git status and git diff
         run: |
           git status
@@ -100,80 +101,3 @@ jobs:
           publish_dir: ./builtdocs
           cname: panel.holoviz.org
           force_orphan: true
-  deploy_jupyterlite:
-    name: JupyterLite
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Set and echo git ref
-        id: vars
-        run: |
-          echo 'Deploying from ref ${GITHUB_REF#refs/*/}'
-          echo 'tag=${GITHUB_REF#refs/*/}' >> $GITHUB_OUTPUT
-      - name: Install the dependencies
-        run: |
-          python -m pip install -r ./lite/requirements.txt
-      - name: Build pyodide wheels for JupyterLite
-        run: |
-          python ./scripts/build_pyodide_wheels.py lite/pypi
-      - name: Convert content
-        run: |
-          python ./scripts/generate_panelite_content.py
-      - name: Build the JupyterLite site
-        run: |
-          jupyter lite build --lite-dir lite --output-dir lite/dist
-      - name: upload
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
-          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          personal_token: ${{ secrets.ACCESS_TOKEN }}
-          external_repository: pyviz-dev/panelite
-          publish_dir: ./lite/dist
-          cname: panelite.holoviz.org
-          force_orphan: true
-  deploy_gallery:
-    name: Gallery
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Set and echo git ref
-        id: vars
-        run: |
-          echo 'Deploying from ref ${GITHUB_REF#refs/*/}'
-          echo 'tag=${GITHUB_REF#refs/*/}' >> $GITHUB_OUTPUT
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          auto-update-conda: true
-      - name: Install dependencies
-        run: |
-          conda activate test
-          conda install -c ae5-admin anaconda-project ae5-tools
-      - name: Upload and deploy gallery
-        run: |
-          conda activate test
-          python scripts/collect_thumbnails.py
-          ae5 login --hostname pyviz.demo.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
-          ae5 deployment stop panel-gallery-dev --yes || :
-          ae5 project delete panel-gallery-dev --yes || :
-          ae5 project upload examples/gallery --name panel-gallery-dev --tag ${{ steps.vars.outputs.tag }}
-          ae5 deployment start panel-gallery-dev --endpoint panel-gallery-dev --command default --public --command default --resource-profile medium --wait

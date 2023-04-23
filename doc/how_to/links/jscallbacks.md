@@ -15,6 +15,8 @@ To implement this we define a `jscallback`, which is triggered when the `Button.
 ```{pyodide}
 import panel as pn
 
+pn.extension()
+
 value1 =   pn.widgets.Spinner(value=0, width=75)
 operator = pn.widgets.Select(value='*', options=['*', '+'], width=50, align='center')
 value2 =   pn.widgets.Spinner(value=0, width=75)

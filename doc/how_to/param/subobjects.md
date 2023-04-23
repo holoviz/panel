@@ -19,6 +19,8 @@ import param
 
 from bokeh.plotting import figure
 
+pn.extension()
+
 class Shape(param.Parameterized):
 
     radius = param.Number(default=1, bounds=(0, 1))

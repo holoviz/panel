@@ -422,7 +422,7 @@ class BasicTemplate(BaseTemplate):
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
 
-    sidebar_width = param.Integer(330, doc="""
+    sidebar_width = param.Integer(default=330, doc="""
         The width of the sidebar in pixels. Default is 330.""")
 
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
@@ -535,8 +535,11 @@ class BasicTemplate(BaseTemplate):
             params['modal'] = ListLike()
         else:
             params['modal'] = self._get_params(params['modal'], self.param.modal.class_)
-        if 'theme' in params and isinstance(params['theme'], str):
-            params['theme'] = THEMES[params['theme']]
+        if 'theme' in params:
+            if isinstance(params['theme'], str):
+                params['theme'] = THEMES[params['theme']]
+        else:
+            params['theme'] = THEMES[config.theme]
         if 'favicon' in params and isinstance(params['favicon'], PurePath):
             params['favicon'] = str(params['favicon'])
         if 'notifications' not in params and config.notifications:

@@ -30,7 +30,7 @@ class MaterialTemplate(BasicTemplate):
     MaterialTemplate is built on top of Material web components.
     """
 
-    sidebar_width = param.Integer(370, doc="""
+    sidebar_width = param.Integer(default=370, doc="""
         The width of the sidebar in pixels. Default is 370.""")
 
     design = param.ClassSelector(class_=Design, default=Material, constant=True,

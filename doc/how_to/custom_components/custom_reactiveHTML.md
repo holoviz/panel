@@ -15,9 +15,12 @@ The `ReactiveHTML` class provides bi-directional syncing of arbitrary HTML attri
 Let's declare a `Slideshow` component which subscribes to `click` events on an `<img>` element and advances the image `index` on each click:
 
 ```{pyodide}
-
+import panel as pn
 import param
+
 from panel.reactive import ReactiveHTML
+
+pn.extension()
 
 class Slideshow(ReactiveHTML):
 
