@@ -1,4 +1,4 @@
-# Panel: The powerful data app solution for Python
+# Panel: The powerful data app and dashboard solution for Python
 
 Trusted by leading organizations worldwide, Panel empowers you to create sophisticated data apps and dashboards that seamlessly blend your favorite Python tools with modern web technologies. Bring your data to life like never before with Panel's advanced features and intuitive interface.
 
