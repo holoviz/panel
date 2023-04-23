@@ -7,8 +7,6 @@ import re
 import urllib.parse as urlparse
 import uuid
 
-import pkg_resources
-
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
