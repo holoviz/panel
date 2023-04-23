@@ -7,8 +7,6 @@ import re
 import urllib.parse as urlparse
 import uuid
 
-from typing import List, Tuple, Type
-
 import pkg_resources
 import tornado
 
@@ -20,7 +18,7 @@ from tornado.web import RequestHandler
 
 from .config import config
 from .io import state
-from .io.resources import ERROR_TEMPLATE, _env
+from .io.resources import DUMMY_LOGIN_TEMPLATE, ERROR_TEMPLATE, _env
 from .util import base64url_decode, base64url_encode
 
 log = logging.getLogger(__name__)
@@ -805,20 +803,6 @@ class OAuthProvider(AuthProvider):
         return get_user
 
     @property
-    def endpoints(self) -> List[Tuple[str, Type[RequestHandler]]]:
-        ''' URL patterns for login/logout endpoints.
-
-        '''
-        endpoints: List[Tuple[str, Type[RequestHandler]]] = []
-        if self.login_handler:
-            assert self.login_url is not None
-            endpoints.append(('/login', self.login_handler))
-        if self.logout_handler:
-            assert self.logout_url is not None
-            endpoints.append(('/logout', self.logout_handler))
-        return endpoints
-
-    @property
     def login_url(self):
         if config.oauth_redirect_uri is None:
             return '/login'
@@ -839,6 +823,56 @@ class OAuthProvider(AuthProvider):
     @property
     def logout_handler(self):
         return LogoutHandler
+
+
+class DummyLoginHandler(RequestHandler):
+    def get(self):
+        try:
+            errormessage = self.get_argument("error")
+        except Exception:
+            errormessage = ""
+        self.write(self._dummy_login_template.render(errormessage=errormessage))
+
+    def _validate(self, password):
+        if password == config.dummy_auth:
+            return True
+        return False
+
+    def post(self):
+        username = self.get_argument("username", "")
+        password = self.get_argument("password", "")
+        auth = self._validate(password)
+        if auth:
+            self.set_current_user(username)
+            self.redirect("/")
+        else:
+            error_msg = "?error=" + tornado.escape.url_escape("Login incorrect")
+            self.redirect('/login' + error_msg)
+
+    def set_current_user(self, user):
+        if user:
+            self.set_secure_cookie("user", tornado.escape.json_encode(user))
+        else:
+            self.clear_cookie("user")
+
+
+class DummyProvider(OAuthProvider):
+    def __init__(self, dummy_login_template=None):
+        if dummy_login_template is None:
+            self._dummy_login_template = DUMMY_LOGIN_TEMPLATE
+        else:
+            with open(dummy_login_template) as f:
+                self._dummy_login_template = _env.from_string(f.read())
+        super().__init__()
+
+    @property
+    def login_url(self):
+        return '/login'
+
+    @property
+    def login_handler(self):
+        DummyLoginHandler._dummy_login_template = self._dummy_login_template
+        return DummyLoginHandler
 
 
 AUTH_PROVIDERS = {

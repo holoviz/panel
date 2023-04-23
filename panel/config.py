@@ -112,6 +112,10 @@ class _config(_base_config):
         A jinja2 template rendered when the authorize_callback determines
         that a user in not authorized to access the application.""")
 
+    dummy_auth_template = param.Path(default=None, doc="""
+        A jinja2 template to override the default Dummy Authentication
+        login page.""")
+
     autoreload = param.Boolean(default=False, doc="""
         Whether to autoreload server when script changes.""")
 
@@ -218,6 +222,10 @@ class _config(_base_config):
         When set to a non-None value a thread pool will be started.
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
+
+    _dummy_auth = param.ObjectSelector(
+        default=None, allow_None=True, objects=[], doc="""
+        Use Dummy authentification.""")
 
     _oauth_provider = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
@@ -438,6 +446,11 @@ class _config(_base_config):
     def nthreads(self):
         nthreads = os.environ.get('PANEL_NUM_THREADS', self._nthreads)
         return None if nthreads is None else int(nthreads)
+
+    @property
+    def dummy_auth(self):
+        provider = os.environ.get('PANEL_DUMMY_AUTH', self._oauth_provider)
+        return provider.lower() if provider else None
 
     @property
     def oauth_provider(self):

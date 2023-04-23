@@ -25,7 +25,7 @@ from bokeh.server.contexts import ApplicationContext
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
-from ..auth import OAuthProvider
+from ..auth import DummyProvider, OAuthProvider
 from ..config import config
 from ..io.document import _cleanup_doc
 from ..io.liveness import LivenessHandler
@@ -92,6 +92,11 @@ class Serve(_BkServe):
             help=("Static directories to serve specified as key=value "
                   "pairs mapping from URL route to static file directory.")
         )),
+        ('--dummy-auth', dict(
+            action = 'store',
+            type   = str,
+            help   = "Password to use with Dummy Authentication."
+        )),
         ('--oauth-provider', dict(
             action = 'store',
             type   = str,
@@ -142,6 +147,11 @@ class Serve(_BkServe):
             action  = 'store',
             type    = str,
             help    = "Template to serve when user is unauthenticated."
+        )),
+        ('--dummy-login-template', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Template to serve for Dummy Authentication login page."
         )),
         ('--rest-provider', dict(
             action = 'store',
@@ -377,12 +387,34 @@ class Serve(_BkServe):
 
         if args.auth_template:
             authpath = pathlib.Path(args.auth_template)
-            if not authpath.isfile():
+            if not authpath.is_file():
                 raise ValueError(
-                    "The supplied auth-template {args.auth_template} does not "
+                    f"The supplied auth-template {args.auth_template} does not "
                     "exist, ensure you supply and existing Jinja2 template."
                 )
             config.auth_template = str(authpath.absolute())
+
+        if args.dummy_auth and config.dummy_auth:
+            raise ValueError(
+                "Turn on dummy authentication using environment variable "
+                "or via explicit argument, not both"
+                )
+        if args.dummy_auth:
+            config.dummy_auth = args.dummy_auth
+        if config.dummy_auth:
+            if args.dummy_login_template:
+                dummy_login_template = args.dummy_login_template
+                authpath = pathlib.Path(dummy_login_template)
+                if not authpath.is_file():
+                    raise ValueError(
+                        f"The supplied auth-template {dummy_login_template} does not "
+                        "exist, ensure you supply and existing Jinja2 template."
+                    )
+            else:
+                dummy_login_template = None
+            kwargs['auth_provider'] = DummyProvider(dummy_login_template=dummy_login_template)
+
+        # Check only one auth is used.
         if args.oauth_provider and config.oauth_provider:
                 raise ValueError(
                     "Supply OAuth provider either using environment variable "
