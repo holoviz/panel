@@ -1,22 +1,11 @@
 # Panel: The powerful data app solution for Python
 
-Trusted by leading organizations worldwide, Panel empowers you to create sophisticated data apps that seamlessly blend your favorite Python tools with modern web technologies. Bring your data to life like never before with Panel's advanced features and intuitive interface.
+Trusted by leading organizations worldwide, Panel empowers you to create sophisticated data apps and dashboards that seamlessly blend your favorite Python tools with modern web technologies. Bring your data to life like never before with Panel's advanced features and intuitive interface.
 
 ::::{grid} 1 2 2 4
 :gutter: 1 1 1 2
 
-:::{grid-item-card}
-:link: ./
-:link-type: url
-
-```{image} _static/logo_stacked.png
----
-alt: Panel Logo
----
-```
-:::
-
-:::{grid-item-card}
+:::{grid-item-card} Panel Introduction
 :link: https://youtu.be/BeBVdjENBZo
 :link-type: url
 
@@ -27,18 +16,7 @@ alt: Image asking you to click it to take the tour
 ```
 :::
 
-:::{grid-item-card}
-:link: https://sharing.awesome-panel.org/MarcSkovMadsen/portfolio-analysis2/app.html
-:link-type: url
-
-```{image} https://user-images.githubusercontent.com/42288570/233766742-8ba1208e-bb16-428c-ad51-6807e793aa3e.png
----
-alt: Portfolio Analysis App
----
-```
-:::
-
-:::{grid-item-card}
+:::{grid-item-card} Crossfiltering App
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
 
@@ -49,19 +27,39 @@ alt: Palmer Penguins App
 ```
 :::
 
+:::{grid-item-card} Plots and Table App
+:link: https://sharing.awesome-panel.org/MarcSkovMadsen/portfolio-analysis2/app.html
+:link-type: url
+
+```{image} https://user-images.githubusercontent.com/42288570/233766742-8ba1208e-bb16-428c-ad51-6807e793aa3e.png
+---
+alt: Portfolio Analysis App
+---
+```
+:::
+
+:::{grid-item-card} VideoStream App
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
+:link-type: url
+
+```{image} https://user-images.githubusercontent.com/42288570/233858562-1c31021d-57d3-4422-973b-16b0ae242162.jpg
+---
+alt: Streaming Video App
+---
+```
+:::
+
 ::::
 
 ## Description
 
-Panel is a an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that **makes it easy to create interactive dashboards and data apps using the tools you already know and love**.
+Panel is a an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that **makes it easy to create interactive applications and dashboards using the tools you already know and love**.
 
-With Panel, you can quickly prototype and iterate on apps and dashboards using your favorite editor or notebook environment. Unlike other tools, Panel supports a wide range of visualization libraries and development environments, which means **you can choose the tools that work best for your workflow**.
+Unlike other tools, Panel supports a wide range of visualization libraries and development environments, which means **you can choose the tools that work best for your workflow**.
 
-One of the most powerful features of Panel is its ability to handle large amounts of data and stream it directly to the frontend of your app. This allows you to build highly interactive and responsive apps that can handle real-time data updates with ease. Panel also provides deep bi-directional interactivity between the frontend and backend, which means **you can build interactive data apps that respond to user input in real-time**.
+But what sets Panel apart from its competitors is its ability to build more complex applications. While other tools may have limited capabilities for building complex applications, Panel provides a number of advanced features and components that make it a unique and powerful tool for building data apps. For example, you can develop server-, pyodide-, pyscript- and pure javascript-backed applications, you can develop high performing streaming applications, and you can visualize big data interactively with advanced crossfiltering between plots. This means that with Panel, **you can build complex applications and dashboards for a very wide range of domains and use cases**.
 
-But what sets Panel apart from its competitors is its ability to build more complex applications. While other tools may have limited capabilities for building complex applications, Panel provides a number of advanced features that make it a unique and powerful tool for building data apps and dashboards. For example, you can develop server-, pyodide-, pyscript- and pure javascript-backed applications, wrap your applications in polished templates for final deployment, and add authentication to your applications using the built-in OAuth providers. This means that with Panel, **you can build applications that are not only interactive and responsive, but also more complex and powerful**.
-
-Whether you're a domain expert, data scientist, software developer, or anyone in between, Panel provides a flexible and powerful platform for building interactive data apps and dashboards. With its broad range of features and support for multiple visualization libraries and development environments, **Panel is a unique and powerful solution that can help you bring your data to life**.
+Whether you're a domain expert, data scientist, software developer, or anyone in between, **Panel provides a flexible and powerful solution that can help you bring your data to life**.
 
 ## Demo App
 
@@ -72,7 +70,7 @@ The demo app demonstrates how we can *bind* widgets to plots. Simply **drag the 
     :disable_interactivity_warning: True
 ``` -->
 
-The demo app also demonstrates one of Panels novel features: many types of end products. This app is not running on a backend server. Instead we have exported the app to *static html* and *embedded* it in this web page. [Rapids](https://rapids.ai/) uses this technology to power their interactive [Visualization Guide](https://docs.rapids.ai/visualization). In fact Rapids has built their big data, gpu powered visualization framework [cuxfilter](https://github.com/rapidsai/cuxfilter) on top of Panel and the HoloViz ecosystem.
+The demo app also demonstrates one of Panels novel features: support for a very wide range of use cases. This app is not running on a backend server. Instead we have exported the app to *static html* and *embedded* it in this web page. [Rapids](https://rapids.ai/) uses this technology to power their interactive [Visualization Guide](https://docs.rapids.ai/visualization). In fact Rapids has built their big data, gpu powered visualization framework [cuxfilter](https://github.com/rapidsai/cuxfilter) on top of Panel and the HoloViz ecosystem.
 
 ## Learning Resources
 
@@ -88,18 +86,18 @@ The demo app above is just a small example of what you can do with Panel. Whethe
 The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
 :::
 
-:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Explanation
-:link: getting_started/core_concept
-:link-type: doc
-
-Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
-:::
-
 :::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` How-to
 :link: how_to/index
 :link-type: doc
 
 How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work.
+:::
+
+:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Background
+:link: background/index
+:link-type: doc
+
+Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
 :::
 
 :::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` Reference
@@ -200,13 +198,13 @@ alt: OGGM Glaciers App
 ```
 :::
 
-:::{grid-item-card} Videostream
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
+:::{grid-item-card} Altair Brushing
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/altair_brushing
 :link-type: url
 
-```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
+```{image} https://user-images.githubusercontent.com/42288570/233859319-1a503141-c35c-4b45-9bdb-7c3a0e3e0985.png
 ---
-alt: Streaming Video App
+alt: Altair Linked Brushing
 ---
 ```
 :::
@@ -461,9 +459,9 @@ alt: Quansight Logo
 
 getting_started/index
 how_to/index
-gallery/index
 background/index
 reference/index
+gallery/index
 api/index
 FAQ
 about/index
