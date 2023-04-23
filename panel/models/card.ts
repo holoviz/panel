@@ -10,10 +10,10 @@ export class CardView extends ColumnView {
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.collapsed.change, () => this._collapse())
-    const {active_header_background, header_background, header_color, hide_header} = this.model.properties
+    const {active_header_background, collapsed, header_background, header_color, hide_header} = this.model.properties
     this.on_change([header_color, hide_header], () => this.render())
 
-    this.on_change([active_header_background, header_background], () => {
+    this.on_change([active_header_background, collapsed, header_background], () => {
       const header_background = this.header_background
       if (header_background == null)
 	return
@@ -31,12 +31,9 @@ export class CardView extends ColumnView {
 
   render(): void {
     this.empty()
-    this._apply_stylesheets(this.styles())
-    this._apply_stylesheets(this.stylesheets)
-    this._apply_stylesheets(this.computed_stylesheets)
+    this._update_stylesheets()
+    this._update_css_classes()
     this._apply_styles()
-    this._apply_classes(this.classes)
-    this._apply_classes(this.model.classes)
     this._apply_visible()
 
     this.class_list.add(...this.css_classes())

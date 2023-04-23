@@ -1,5 +1,9 @@
 # Construct Panes
 
+This guide addresses how to construct Pane objects for displaying visible components.
+
+---
+
 There are two main ways to construct a pane - explicitly or automatically.
 
 To explicitly construct a pane, use one of the pane types listed in the [reference gallery](../../reference/index.html#panes). For example, you can create a Markdown pane as follows:
@@ -23,8 +27,7 @@ png = pn.panel('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transpar
 png
 ```
 
-:::{admonition} See Also
-:class: seealso
+---
 
-* Learn more about Panes in the <a href="../../background/components/components_overview.html#panes">Background for Components</a>
-:::
+## Related Resources
+- Learn more about Panes in [Background > Components](../../background/components/components_overview.html#panes).

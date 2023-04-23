@@ -14,8 +14,9 @@ class GoldenTemplate(BasicTemplate):
     """
     GoldenTemplate is built on top of golden-layout library.
     """
-    sidebar_width = param.Integer(20, doc="""
-        The width of the sidebar in percent. Default is 20.""")
+
+    sidebar_width = param.Integer(default=20, constant=True, doc="""
+        The width of the sidebar in percent.""")
 
     _css = pathlib.Path(__file__).parent / 'golden.css'
 
@@ -23,7 +24,8 @@ class GoldenTemplate(BasicTemplate):
 
     _resources = {
         'css': {
-            'goldenlayout': f"{config.npm_cdn}/golden-layout@1.5.9/src/css/goldenlayout-base.css",
+            'goldenlayout': f"{config.npm_cdn}/golden-layout@1.5.9/dist/css/goldenlayout-base.css",
+            'golden-layout': f"{config.npm_cdn}/golden-layout@1.5.9/dist/css/theme/goldenlayout-dark-theme.css"
         },
         'js': {
             'jquery': JS_URLS['jQuery'],

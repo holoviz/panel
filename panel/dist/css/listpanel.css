@@ -1,0 +1,3 @@
+:host(.scrollable) {
+  overflow: scroll;
+}

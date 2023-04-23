@@ -2,6 +2,12 @@
 
 This guide addresses how to customize the theme of a template.
 
+```{admonition} Prerequisites
+1. The [How to > Set a Template](./template_set.md) guide demonstrates how to set a template for a deployable app.
+```
+
+---
+
 To implement a custom template theme you should declare a generic class and a specific class implementation for all the templates that should be supported, e.g. here is an example of what the definition of a `DarkTheme` might look like for the `MaterialTemplate`.
 
 ```python

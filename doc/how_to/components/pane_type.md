@@ -1,5 +1,9 @@
 # Access Pane Type
 
+This guide addresses how to access the Pane Type.
+
+---
+
 To access the type for a given component, use the `print` function. This can come in handy when a component was created in such a way where the type was not explicitly specified, such as with ``pn.panel`` as described on the [How to construct panes page](construct_panes.md).
 
 ```{pyodide}
@@ -11,7 +15,5 @@ example_pane = pn.panel('https://upload.wikimedia.org/wikipedia/commons/b/b1/Loa
 print(example_pane)
 ```
 
-:::{admonition} See Also
-:class: seealso
-* Learn more about Panes in the <a href="../../background/components/components_overview.html#panes">Background for Components</a>
-:::
+## Related Resources
+- Learn more about Panes in [Background > Components](../../background/components/components_overview.html#panes).

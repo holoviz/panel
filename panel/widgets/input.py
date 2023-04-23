@@ -50,7 +50,7 @@ class TextInput(Widget):
     >>> TextInput(name='Name', placeholder='Enter your name here ...')
     """
 
-    description = param.String(doc="""
+    description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
     max_length = param.Integer(default=5000, doc="""
@@ -149,7 +149,7 @@ class FileInput(Widget):
 
     accept = param.String(default=None)
 
-    description = param.String(doc="""
+    description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
     filename = param.ClassSelector(default=None, class_=(str, list),
@@ -241,9 +241,6 @@ class StaticText(Widget):
     >>> StaticText(name='Model', value='animagen2')
     """
 
-    styles = param.Dict(default=None, doc="""
-        Dictionary of CSS property:value pairs to apply to this Div.""")
-
     value = param.Parameter(default=None, doc="""
         The current value""")
 
@@ -305,6 +302,9 @@ class DatePicker(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
     _source_transforms: ClassVar[Mapping[str, str | None]] = {}
 
     _rename: ClassVar[Mapping[str, str | None]] = {
@@ -350,6 +350,9 @@ class _DatetimePickerBase(Widget):
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
+
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'value': None, 'start': None, 'end': None, 'mode': None
@@ -487,7 +490,7 @@ class ColorPicker(Widget):
     >>> ColorPicker(name='Color', value='#99ef78')
     """
 
-    description = param.String(default="""
+    description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
     value = param.Color(default=None, doc="""
@@ -500,7 +503,7 @@ class ColorPicker(Widget):
 
 class _NumericInputBase(Widget):
 
-    description = param.String(doc="""
+    description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
     value = param.Number(default=0, allow_None=True, doc="""
@@ -709,7 +712,7 @@ class LiteralInput(Widget):
     >>> LiteralInput(name='Dictionary', value={'key': [1, 2, 3]}, type=dict)
     """
 
-    description = param.String(doc="""
+    description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
     placeholder = param.String(default='', doc="""
@@ -1005,7 +1008,7 @@ class DatetimeRangeInput(CompositeWidget):
     _composite_type: ClassVar[Type[Panel]] = Column
 
     def __init__(self, **params):
-        self._text = StaticText(margin=(5, 0, 0, 0), style={'white-space': 'nowrap'})
+        self._text = StaticText(margin=(5, 0, 0, 0), styles={'white-space': 'nowrap'})
         self._start = DatetimeInput(sizing_mode='stretch_width', margin=(5, 0, 0, 0))
         self._end = DatetimeInput(sizing_mode='stretch_width', margin=(5, 0, 0, 0))
         if 'value' not in params:

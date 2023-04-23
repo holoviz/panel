@@ -250,7 +250,7 @@ def test_tabulator_hidden_columns(page, port, df_mixed):
 
     serve(widget, port=port, threaded=True, show=False)
 
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     page.goto(f"http://localhost:{port}")
 
@@ -380,10 +380,6 @@ def test_tabulator_formatters_bokeh_date(page, port, df_mixed):
     assert page.locator('text="Tue, 01 Jan 2019"').count() == 1
 
 
-@pytest.mark.xfail(
-    reason='NaNs not well handled by the DateFormatter with datetime.date objects.'
-           ' See https://github.com/bokeh/bokeh/issues/12187'
-)
 def test_tabulator_formatters_bokeh_date_with_nan(page, port, df_mixed):
     df_mixed.loc['idx1', 'date'] = np.nan
     df_mixed.loc['idx1', 'datetime'] = np.nan
@@ -402,7 +398,7 @@ def test_tabulator_formatters_bokeh_date_with_nan(page, port, df_mixed):
     page.goto(f"http://localhost:{port}")
 
     expect(page.locator('text="10:00"')).to_have_count(1)
-    assert page.locator('text="Tue, 01 Jan 2019"').count() == 1  # This should fail
+    assert page.locator('text="Tue, 01 Jan 2019"').count() == 1
     assert page.locator('text="nan-date"').count() == 1
     assert page.locator('text="nan-datetime"').count() == 1
 
@@ -1045,10 +1041,10 @@ def test_tabulator_frozen_rows(page, port):
     expected_text = """
     index
     col
-    8
-    Y
     1
     X
+    8
+    Y
     0
     a
     2
@@ -1074,9 +1070,6 @@ def test_tabulator_frozen_rows(page, port):
 
     X_bb = page.locator('text="X"').bounding_box()
     Y_bb = page.locator('text="Y"').bounding_box()
-
-    # Check that the Y row is rendered before the X column
-    assert Y_bb['y'] < X_bb['y']
 
     # Scroll to the bottom, and give it a little extra time
     page.locator('text="T"').scroll_into_view_if_needed()
@@ -1179,7 +1172,7 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, port, df_mixed, pa
 
     serve(widget, port=port, threaded=True, show=False)
 
-    time.sleep(0.2)
+    time.sleep(0.3)
 
     page.goto(f"http://localhost:{port}")
 
@@ -1683,12 +1676,12 @@ def test_tabulator_row_content_expand_from_python_after(page, port, df_mixed):
 
     openables = page.locator('text="►"')
     closables = page.locator('text="▼"')
-    # Error here
     assert closables.count() == len(widget.expanded)
     assert openables.count() == len(df_mixed) - len(widget.expanded)
-    # End of error
 
     widget.expanded = []
+
+    time.sleep(0.2)
 
     openables = page.locator('text="►"')
     closables = page.locator('text="▼"')
@@ -1854,7 +1847,7 @@ def test_tabulator_cell_click_event(page, port, df_mixed):
 
     serve(widget, port=port, threaded=True, show=False)
 
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     page.goto(f"http://localhost:{port}")
 
@@ -2261,7 +2254,7 @@ def test_tabulator_download(page, port, df_mixed, df_mixed_as_string):
     saved_df = pd.read_csv(path, index_col='index')
     # Some transformations required to reform the dataframe as the original one.
     saved_df['date'] = pd.to_datetime(saved_df['date'], unit='ms')
-    saved_df['date'] = saved_df['date'].astype(object)
+    saved_df['date'] = [d.to_pydatetime().date() for d in saved_df['date']]
     saved_df['datetime'] = pd.to_datetime(saved_df['datetime'], unit='ms')
     saved_df.index.name = None
 
@@ -2718,7 +2711,6 @@ def test_tabulator_click_event_and_header_filters(page, port):
     assert values[0] == ('col2', 4, 'Z')
 
 
-@pytest.mark.skip(reason="Bokeh bug: https://github.com/bokeh/bokeh/issues/12788")
 def test_tabulator_click_event_and_header_filters_and_streamed_data(page, port):
     df = pd.DataFrame({
         'col1': list('ABCDD'),
@@ -3616,6 +3608,8 @@ def test_tabulator_update_hidden_columns(page, port):
 
     page.goto(f"http://localhost:{port}")
 
+    time.sleep(0.2)
+
     col_a_cells = page.locator('text="3"')
 
     assert not col_a_cells.nth(0).is_visible()
@@ -3623,7 +3617,7 @@ def test_tabulator_update_hidden_columns(page, port):
 
     widget.hidden_columns = ['b']
 
-    time.sleep(0.5)
+    time.sleep(0.2)
 
     col_a_cells = page.locator('text="3"')
     title_bbox = page.locator('text="a"').bounding_box()

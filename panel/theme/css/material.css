@@ -47,8 +47,8 @@ button.mdc-button.mdc-card-button {
 
 :host(.card-title) h1, :host(.card-title) h2, :host(.card-title) h3,
 :host(.card-title) h4, :host(.card-title) h5, :host(.card-title) h6 {
-    margin-block-end: 0;
-    margin-block-start: 0;
+    margin-block-end: 0.2em;
+    margin-block-start: 0.2em;
 }
 
 /* Tabs styling */
@@ -178,13 +178,15 @@ button.mdc-button.mdc-card-button {
 
 .bk-input {
     background-color: unset;
-    border-radius: 4px;
     border: 1px solid var(--panel-secondary-color);
     color: var(--mdc-theme-on-surface);
+}
+
+.bk-input:not([type="file"]) {
+    border-radius: 4px;
     height: 1.4375em;
     line-height: 1.4375em;
     padding: 4px 10px;
-    margin: 0.5rem 0;
 }
 
 textarea.bk-input {
@@ -221,7 +223,7 @@ textarea.bk-input {
     transform-origin: top left;
     z-index: 1;
     padding: 0 10px;
-    margin: 5px 0;
+    margin: -2px 0;
 }
 
 /* Number input */
@@ -309,25 +311,9 @@ select.bk-input:focus {
     border: unset;
 }
 
-.bk-btn-group > button.bk-btn-default:hover {
-    background: var(--mdc-theme-primary) radial-gradient(circle, transparent 1%, var(--mdc-theme-primary) 1%) center/15000%;
-}
-
-.bk-btn-group > button.bk-btn-default:active {
-  background-color: white;
-  background-size: 100%;
-  transition: background 0s;
-}
-
 .bk-menu {
     color: var(--mdc-theme-primary);
     border: 1px solid var(--mdc-theme-primary);
-}
-
-.bk-active.bk-btn-default {
-    background-color: var(--mdc-theme-primary);
-    border: 1px solid var(--mdc-theme-primary);
-    color: var(--mdc-theme-on-primary);
 }
 
 /* Checkbox */
@@ -380,7 +366,7 @@ input[type="radio"] + span {
 }
 
 .bk-input-group > label {
-    padding: 5px 0;
+    padding: -2px 0;
 }
 
 
@@ -426,10 +412,65 @@ progress:not([value])::before {
 
 /* Tabulator */
 
-.tabulator {
-    background-color: var(--mdc-theme-surface);
+.pnx-tabulator.tabulator {
+    background-color: var(--mdc-theme-background);
+    color: var(--mdc-theme-on-background);
 }
 
-.tabulator .tabulator-headers, .tabulator .tabulator-header .tabulator-col {
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table {
+    background-color: var(--mdc-theme-background);
+    color: var(--mdc-theme-on-background);
+}
+
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row {
+    background-color: var(--mdc-theme-background);
+}
+
+div .tabulator .tabulator-headers, div .tabulator .tabulator-header .tabulator-col {
+    background-color: var(--mdc-theme-background);
+    color: var(--mdc-theme-on-background);
+}
+
+.tabulator .tabulator-header .tabulator-header-contents {
+    background-color: var(--mdc-theme-background);
+}
+
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.tabulator-row-even {
     background-color: var(--mdc-theme-surface);
+    color: var(--mdc-theme-on-surface);
+}
+
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.tabulator-selectable:hover {
+    background-color: rgba(var(--panel-primary-rgb), 0.25);
+    color: var(--mdc-theme-on-primary);
+}
+
+.pnx-tabulator.tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
+    background-color: var(--mdc-theme-surface);
+    color: var(--mdc-theme-on-surface);
+}
+
+.pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.tabulator-selected.tabulator-selectable:hover {
+    background-color: var(--mdc-theme-primary);
+    color: var(--mdc-theme-on-primary);
+}
+
+.pnx-tabulator.tabulator .tabulator-table .tabulator-row.tabulator-selected,
+.pnx-tabulator.tabulator .tabulator-table .tabulator-row.tabulator-selected.tabulator-row-even {
+    background-color: var(--mdc-theme-primary);
+    color: var(--mdc-theme-on-primary);
+}
+
+.tabulator-row .tabulator-cell.tabulator-editing {
+    border: 1px solid var(--mdc-theme-on-background);
+}
+
+.tabulator-row .tabulator-cell.tabulator-editing input {
+    color: var(--mdc-theme-on-background);
+}
+
+/* Quill editor */
+
+.ql-editor, .ql-editor.ql-blank::before {
+    color: var(--mdc-theme-on-background);
 }

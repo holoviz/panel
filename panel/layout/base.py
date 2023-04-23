@@ -15,6 +15,7 @@ import param
 from bokeh.models import Column as BkColumn, Row as BkRow
 
 from ..io.model import hold
+from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..reactive import Reactive
 from ..util import param_name, param_reprs
@@ -40,6 +41,9 @@ class Panel(Reactive):
 
     # Bokeh model used to render this Panel
     _bokeh_model: ClassVar[Type[Model]]
+
+    # Direction the layout flows in
+    _direction: ClassVar[str | None] = None
 
     # Parameters which require the preprocessors to be re-run
     _preprocess_params: ClassVar[List[str]] = []
@@ -72,12 +76,6 @@ class Panel(Reactive):
     # Callback API
     #----------------------------------------------------------------
 
-    def _init_params(self) -> Dict[str, Any]:
-        return {
-            p: v for p, v in self.param.values().items()
-            if v is not None and p != 'objects'
-        }
-
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
@@ -86,10 +84,24 @@ class Panel(Reactive):
         inverse = {v: k for k, v in self._property_mapping.items() if v is not None}
         preprocess = any(inverse.get(k, k) in self._preprocess_params for k in msg)
 
+        # ALERT: Find a better way to handle this
+        if 'styles' in msg and root is model and 'overflow-x' in msg['styles']:
+            del msg['styles']['overflow-x']
+
         obj_key = self._property_mapping['objects']
         if obj_key in msg:
             old = events['objects'].old
-            msg[obj_key] = self._get_objects(model, old, doc, root, comm)
+            msg[obj_key] = children = self._get_objects(model, old, doc, root, comm)
+            msg.update(self._compute_sizing_mode(
+                children,
+                dict(
+                    sizing_mode=msg.get('sizing_mode', model.sizing_mode),
+                    styles=msg.get('styles', model.styles),
+                    width=msg.get('width', model.width),
+                    min_width=msg.get('min_width', model.min_width),
+                    margin=msg.get('margin', model.margin)
+                )
+            ))
 
         with hold(doc):
             update = Panel._batch_update
@@ -128,8 +140,9 @@ class Panel(Reactive):
                 obj._cleanup(root)
 
         current_objects = list(self.objects)
+        ref = root.ref['id']
         for i, pane in enumerate(self.objects):
-            if pane in old_objects:
+            if pane in old_objects and ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
             else:
                 try:
@@ -146,19 +159,83 @@ class Panel(Reactive):
         if self._bokeh_model is None:
             raise ValueError(f'{type(self).__name__} did not define a _bokeh_model.')
         model = self._bokeh_model()
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
-        properties = self._get_properties(doc)
-        properties[self._property_mapping['objects']] = objects
-        model.update(**properties)
+        props = self._get_properties(doc)
+        props[self._property_mapping['objects']] = objects
+        props.update(self._compute_sizing_mode(objects, props))
+        model.update(**props)
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
+
+    def _compute_sizing_mode(self, children, props):
+        """
+        Handles inference of correct layout sizing mode by inspecting
+        the children and adapting to their layout properties. This
+        aims to provide a layer of backward compatibility for the
+        layout behavior before v1.0 and provide general usability
+        improvements.
+        """
+        margin = props.get('margin', self.margin)
+        sizing_mode = props.get('sizing_mode', self.sizing_mode)
+        if sizing_mode == 'fixed':
+            return {}
+
+        # Iterate over children and determine responsiveness along
+        # each axis, scaling and the widths of each component.
+        widths = []
+        all_expand, expand_width, expand_height, scale = True, False, False, False
+        for child in children:
+            if child.sizing_mode and 'scale' in child.sizing_mode:
+                scale = True
+            if child.sizing_mode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
+                expand_width = True
+            else:
+                width = child.width or child.min_width
+                if width:
+                    if isinstance(margin, tuple):
+                        if len(margin) == 2:
+                            width += margin[1]*2
+                        else:
+                            width += margin[1] + margin[3]
+                    else:
+                        width += margin*2
+                    widths.append(width)
+                all_expand = False
+            if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
+                expand_height = True
+
+        # Infer new sizing mode based on children
+        mode = 'scale' if scale else 'stretch'
+        if expand_width and expand_height and not self.width and not self.height:
+            sizing_mode = f'{mode}_both'
+        elif expand_width and not self.width:
+            sizing_mode = f'{mode}_width'
+        elif expand_height and not self.height:
+            sizing_mode = f'{mode}_height'
+
+        properties = {'sizing_mode': sizing_mode}
+        if sizing_mode is not None and (sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and not all_expand:
+            if len(widths) == len(children) and self._direction == 'vertical':
+                properties['min_width'] = max(widths)
+            elif len(widths) == len(children) and self._direction == 'horizontal':
+                properties['min_width'] = sum(widths)
+        return properties
 
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
+
+    def get_root(
+        self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
+        preprocess: bool = True
+    ) -> Model:
+        root = super().get_root(doc, comm, preprocess)
+        # ALERT: Find a better way to handle this
+        if hasattr(root, 'styles') and 'overflow-x' in root.styles:
+            del root.styles['overflow-x']
+        return root
 
     def select(self, selector=None):
         """
@@ -613,11 +690,6 @@ class ListPanel(ListLike, Panel):
     An abstract baseclass for Panel objects with list-like children.
     """
 
-    margin = param.Parameter(default=0, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     scroll = param.Boolean(default=False, doc="""
         Whether to add scrollbars if the content overflows the size
         of the container.""")
@@ -669,11 +741,6 @@ class NamedListPanel(NamedListLike, Panel):
     active = param.Integer(default=0, bounds=(0, None), doc="""
         Index of the currently displayed objects.""")
 
-    margin = param.Parameter(default=0, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     scroll = param.Boolean(default=False, doc="""
         Whether to add scrollbars if the content overflows the size
         of the container.""")
@@ -719,6 +786,10 @@ class Row(ListPanel):
 
     _bokeh_model: ClassVar[Type[Model]] = BkRow
 
+    _direction = 'horizontal'
+
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
+
 
 class Column(ListPanel):
     """
@@ -737,6 +808,10 @@ class Column(ListPanel):
     """
 
     _bokeh_model: ClassVar[Type[Model]] = BkColumn
+
+    _direction = 'vertical'
+
+    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
 
 
 class WidgetBox(ListPanel):
@@ -768,11 +843,6 @@ class WidgetBox(ListPanel):
         Whether to lay out the widgets in a Row layout as opposed
         to a Column layout.""")
 
-    margin = param.Parameter(default=5, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'disabled': None, 'horizontal': None
     }
@@ -781,11 +851,17 @@ class WidgetBox(ListPanel):
         'disabled': None, 'objects': 'children', 'horizontal': None
     }
 
-    _stylesheets = ['css/widgetbox.css']
+    _stylesheets: ClassVar[list[str]] = [
+        f'{CDN_DIST}css/widgetbox.css', f'{CDN_DIST}css/listpanel.css'
+    ]
 
     @property
     def _bokeh_model(self) -> Type[Model]: # type: ignore
         return BkRow if self.horizontal else BkColumn
+
+    @property
+    def _direction(self):
+        return 'vertical' if self.horizontal else 'vertical'
 
     @param.depends('disabled', 'objects', watch=True)
     def _disable_widgets(self) -> None:

@@ -1323,7 +1323,7 @@ def test_tabulator_constant_scalar_filter_client_side(document, comm):
         'C': np.array(['foo3']),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
                       dtype='datetime64[ns]')
-    }, index=np.array([2]))
+    }, index=[2])
     pd.testing.assert_frame_equal(table._processed, expected)
 
 def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm):
@@ -1338,7 +1338,7 @@ def test_tabulator_constant_scalar_filter_on_index_client_side(document, comm):
         'C': np.array(['foo3']),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
                       dtype='datetime64[ns]')
-    }, index=np.array([2]))
+    }, index=[2])
     pd.testing.assert_frame_equal(table._processed, expected)
 
 def test_tabulator_constant_scalar_filter_on_multi_index_client_side(document, comm):
@@ -1372,7 +1372,7 @@ def test_tabulator_constant_list_filter_client_side(document, comm):
         'D': np.array(['2009-01-05T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
                       dtype='datetime64[ns]')
-    }, index=np.array([2, 4]))
+    }, index=[2, 4])
     pd.testing.assert_frame_equal(table._processed, expected)
 
 def test_tabulator_keywords_filter_client_side(document, comm):
@@ -1388,7 +1388,7 @@ def test_tabulator_keywords_filter_client_side(document, comm):
         'D': np.array(['2009-01-05T00:00:00.000000000',
                        '2009-01-07T00:00:00.000000000'],
                       dtype='datetime64[ns]')
-    }, index=np.array([2, 4]))
+    }, index=[2, 4])
     pd.testing.assert_frame_equal(table._processed, expected)
 
 def test_tabulator_keywords_match_all_filter_client_side(document, comm):

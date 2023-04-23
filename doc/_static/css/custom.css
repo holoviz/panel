@@ -1,6 +1,42 @@
-:root[data-theme="light"] {
-    --pst-color-primary: rgb(47, 47, 47);
-    --pst-color-link: rgb(0, 170, 65);
+:root[data-theme="light"], :root[data-theme="dark"] {
+    --pst-color-primary: #0072B5;
+    --pst-color-link: #0072B5;
+    --pst-color-inline-code: #0072B5;
+    --sd-color-card-border-hover: #0072B5;
+}
+
+html[data-theme=dark] .bd-content div.cell_output .text_html {
+    background-color: var(--pst-color-background);
+    color: var(--pst-color-text-base);
+}
+
+/* Override styling for header */
+.bd-header, .bd-header .navbar-nav .dropdown .dropdown-menu {
+  background-color: #343a40!important;
+}
+
+.bd-header .navbar-nav .dropdown .dropdown-menu {
+    box-shadow: unset;
+}
+
+.bd-header .navbar-nav li a.nav-link {
+  color: white;
+}
+
+/* Align navbar item in center */
+.navbar-header-items__center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Ensure content fills full space */
+.bd-main .bd-content .bd-article-container {
+    max-width: unset;
+}
+
+/* Hide primary sidenav bottom section to avoid extra scroll */
+.sidebar-primary-items__end.sidebar-primary__section {
+    display: none;
 }
 
 .nav-link {
@@ -16,21 +52,33 @@
     vertical-align: top;
 }
 
-.pl-md-5, .px-md-5 {
-    padding-left: 1rem !important;
-}
-
-.pt-md-5, .py-md-5 {
-    padding-top: 1rem !important;
-}
-
 .cell_output {
     padding-left: 0;
 }
 
-@media (min-width: 1200px) {
-    .container, .container-lg, .container-md, .container-sm, .container-xl {
-	max-width: 1600px;
+html[data-theme=dark] .bd-content div.cell_output .text_html,
+html[data-theme=light] .bd-content div.cell_output .text_html {
+    padding: 0;
+}
+
+@media (min-width: 1400px) {
+    .bd-sidebar {
+	max-width: 300px;
+    }
+
+    .bd-main .bd-content .bd-article-container .bd-article {
+	padding-left: 0.5rem;
+	padding-top: 0.5rem;
+    }
+
+    .bd-page-width {
+	max-width: 100%;
+    }
+}
+
+@media (min-width: 1600px) {
+    .bd-page-width {
+	max-width: 80%;
     }
 }
 
@@ -48,12 +96,22 @@
     }
 }
 
-#navbar-icon-links i.fa-github-square:before {
+#navbar-icon-links i.fa-solid:before,
+#navbar-icon-links i.fa-brands:before {
     color: white;
 }
 
-.fa-discourse:before {
-    color: white;
+.theme-switch-button {
+    font-size: unset;
+}
+
+.sd-card-body.sponsor-logo {
+    flex-grow: unset;
+    margin: auto;
+}
+
+.sponsor-logo img {
+    min-height: 80px;
 }
 
 button.toggle-button {

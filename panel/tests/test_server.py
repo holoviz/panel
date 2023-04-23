@@ -24,7 +24,7 @@ from panel.models.tabulator import TableEditEvent
 from panel.pane import Markdown
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
-from panel.tests.util import bokeh3_failing, wait_until
+from panel.tests.util import wait_until
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
 )
@@ -154,7 +154,6 @@ def test_server_extensions_on_root(port):
     assert r.ok
 
 
-@bokeh3_failing
 def test_autoload_js(port):
     html = Markdown('# Title')
     app_name = 'test'
@@ -167,7 +166,7 @@ def test_autoload_js(port):
     r = requests.get(f"http://localhost:{port}/{app_name}/autoload.js?{args}")
 
     assert r.status_code == 200
-    assert f"http://localhost:{port}/static/extensions/panel/css/alerts.css" in r.content.decode('utf-8')
+    assert f"http://localhost:{port}/static/extensions/panel/panel.min.js" in r.content.decode('utf-8')
 
 
 def test_server_async_callbacks(port):
@@ -456,6 +455,61 @@ def test_server_schedule_at_callable(port):
     assert len(state._scheduled) == 0
 
     server.stop()
+
+@pytest.mark.xdist_group(name="server")
+def test_server_reuse_sessions(port, reuse_sessions):
+    def app(counts=[0]):
+        content = f'# Count {counts[0]}'
+        counts[0] += 1
+        return content
+
+    serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r1 = requests.get(f"http://localhost:{port}/")
+    r2 = requests.get(f"http://localhost:{port}/")
+
+    assert len(state._sessions) == 1
+    assert '/' in state._sessions
+
+    session = state._sessions['/']
+
+    assert session.token in r1.content.decode('utf-8')
+    assert session.token not in r2.content.decode('utf-8')
+
+
+@pytest.mark.xdist_group(name="server")
+def test_server_reuse_sessions_with_session_key_func(port, reuse_sessions):
+    config.session_key_func = lambda r: (r.path, r.arguments.get('arg', [''])[0])
+    def app(counts=[0]):
+        if 'arg' in state.session_args:
+            title = state.session_args['arg'][0].decode('utf-8')
+        else:
+            title = 'Empty'
+        content = f"# Count {counts[0]}"
+        tmpl = BootstrapTemplate(title=title)
+        tmpl.main.append(content)
+        counts[0] += 1
+        return tmpl
+
+    serve(app, port=port, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r1 = requests.get(f"http://localhost:{port}/?arg=foo")
+    r2 = requests.get(f"http://localhost:{port}/?arg=bar")
+
+    assert len(state._sessions) == 2
+    assert ('/', b'foo') in state._sessions
+    assert ('/', b'bar') in state._sessions
+
+    session1, session2 = state._sessions.values()
+    assert session1.token in r1.content.decode('utf-8')
+    assert session2.token in r2.content.decode('utf-8')
+
 
 @pytest.mark.xdist_group(name="server")
 def test_show_server_info(html_server_session, markdown_server_session):

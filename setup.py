@@ -103,9 +103,10 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.1.0.dev2',
+    'bokeh >=3.1.0,<3.2.0',
     'param >=1.12.0',
     'pyviz_comms >=0.7.4',
+    'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
     'requests',
     'tqdm >=4.48.0',
@@ -118,7 +119,7 @@ install_requires = [
 
 _recommended = [
     'jupyterlab',
-    'holoviews >1.14.1',
+    'holoviews >=1.16.0a2',
     'matplotlib',
     'pillow',
     'plotly'
@@ -142,7 +143,7 @@ _tests = [
     'twine',
     'pandas >=1.3',
     'ipython >=7.0',
-    'holoviews',
+    'holoviews >=1.16.0a2',
     'diskcache',
     'markdown-it-py',
     'ipyvuetify',
@@ -150,7 +151,7 @@ _tests = [
     # Added lxml temporarily as installing pyecharts or idom on Python 3.11
     # via pip tries to build it and fails. To be removed.
     'lxml',
-    'numpy <1.24', # Avoid VTK test fail
+    'numpy <1.24',
 ]
 
 _ui = [
@@ -160,18 +161,19 @@ _ui = [
 
 extras_require = {
     'examples': [
+        'holoviews >=1.16.0a2',
         'hvplot',
         'plotly >=4.0',
         'altair',
         'streamz',
         'vega_datasets',
-        'vtk ==9.0.1',
+        'vtk',
         'scikit-learn',
         'datashader',
-        'jupyter_bokeh >=3.0.2',
+        'jupyter_bokeh >=3.0.7',
         'django <4',
         'channels',
-        'pyvista<0.33',
+        'pyvista <0.33',
         'ipywidgets',
         'ipywidgets_bokeh',
         'ipyvolume',
@@ -194,12 +196,13 @@ extras_require = {
         'ipyvuetify',
         'reacton',
         'scikit-image',
+        'fastparquet'
     ],
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
         'nbsite >=0.8.0rc7',
-        'pydata-sphinx-theme ==0.9.0',
+        'pydata-sphinx-theme ==0.13.3',
         'sphinx-copybutton',
         'sphinx-design',
     ],
@@ -219,10 +222,11 @@ extras_require['build'] = [
     'setuptools >=42',
     'requests',
     'packaging',
-    'bokeh >=3.1.0.dev3',
+    'bokeh >=3.1.0,<3.2.0',
     'pyviz_comms >=0.7.4',
     'bleach',
     'tqdm >=4.48.0',
+    'cryptography <39' # Avoid pyOpenSSL issue
 ]
 
 setup_args = dict(

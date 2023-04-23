@@ -1,5 +1,11 @@
 # Releases
 
+## Version 1.0.0
+
+### Backward Compatibility
+
+- `Tabulator.frozen_rows` now respects the order of row in the data instead of the order in which the `frozen_rows` were defined (#4482)
+
 ## Version 0.14.3
 
 Date: 2023-01-28

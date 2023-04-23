@@ -1,6 +1,11 @@
 # Profile your Application
 
-If you have [enabled the admin dashboard](admin) you will be able to start profiling your application. Profiling provides ways of analyzing where the bottlenecks of your application are both in terms of execution time and memory usage.
+This guide addresses how to enable profilers like snakeviz or memray to track down bottlenecks in your application in terms of execution time and memory usage.
+
+```{admonition} Prerequisites
+1. Read the [How to > Enable the admin panel](./admin) guide to be able to start profiling your application
+```
+---
 
 ## Launch profiling
 
@@ -50,3 +55,5 @@ Then we can request the named profile 'formatting' using the `pn.state.get_profi
 ```python
 pn.state.get_profile('formatting')
 ```
+
+## Related Resources

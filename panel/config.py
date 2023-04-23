@@ -16,6 +16,7 @@ from weakref import WeakKeyDictionary
 
 import param
 
+from bokeh.document import Document
 from bokeh.settings import settings as bk_settings
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
@@ -93,7 +94,7 @@ class _config(_base_config):
     >>> pn.config.loading_spinner = 'bar'
     """
 
-    admin_plugins = param.List([], item_type=tuple, doc="""
+    admin_plugins = param.List(default=[], item_type=tuple, doc="""
         A list of tuples containing a title and a function that returns
         an additional panel to be rendered into the admin page.""")
 
@@ -119,6 +120,9 @@ class _config(_base_config):
     autoreload = param.Boolean(default=False, doc="""
         Whether to autoreload server when script changes.""")
 
+    browser_info = param.Boolean(default=True, doc="""
+        Whether to request browser info from the frontend.""")
+
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
@@ -127,6 +131,9 @@ class _config(_base_config):
 
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
+
+    global_loading_spinner = param.Boolean(default=False, doc="""
+        Whether to add a global loading spinner for the whole application.""")
 
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
@@ -150,6 +157,19 @@ class _config(_base_config):
     profiler = param.Selector(default=None, allow_None=True, objects=[
         'pyinstrument', 'snakeviz', 'memray'], doc="""
         The profiler engine to enable.""")
+
+    reuse_sessions = param.Boolean(default=False, doc="""
+        Whether to reuse a session for the initial request to speed up
+        the initial page render. Note that if the initial page differs
+        between sessions, e.g. because it uses query parameters to modify
+        the rendered content, then this option will result in the wrong
+        content being rendered. Define a session_key_func to ensure that
+        reused sessions are only reused when appropriate.""")
+
+    session_key_func = param.Callable(default=None, doc="""
+        Used in conjunction with the reuse_sessions option, the
+        session_key_func is given a tornado.httputil.HTTPServerRequest
+        and should return a key that uniquely captures a session.""")
 
     safe_embed = param.Boolean(default=False, doc="""
         Ensure all bokeh property changes trigger events which are
@@ -282,7 +302,6 @@ class _config(_base_config):
 
     @param.depends('_nthreads', watch=True, on_init=True)
     def _set_thread_pool(self):
-        from .io.state import state
         if self.nthreads is None:
             if state._thread_pool is not None:
                 state._thread_pool.shutdown(wait=False)
@@ -296,7 +315,6 @@ class _config(_base_config):
     @param.depends('notifications', watch=True)
     def _enable_notifications(self):
         from .io.notifications import NotificationArea
-        from .io.state import state
         from .reactive import ReactiveHTMLMetaclass
         if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
             ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
@@ -498,7 +516,6 @@ class _config(_base_config):
 
     @property
     def theme(self):
-        from .io.state import state
         curdoc = state.curdoc
         if curdoc and 'theme' in self._session_config.get(curdoc, {}):
             return self._session_config[curdoc]['theme']
@@ -550,20 +567,22 @@ class panel_extension(_pyviz_extension):
     _loaded = False
 
     _imports = {
-        'katex': 'panel.models.katex',
-        'mathjax': 'panel.models.mathjax',
-        'plotly': 'panel.models.plotly',
-        'deckgl': 'panel.models.deckgl',
-        'vega': 'panel.models.vega',
-        'vtk': 'panel.models.vtk',
         'ace': 'panel.models.ace',
+        'codeeditor': 'panel.models.ace',
+        'deckgl': 'panel.models.deckgl',
         'echarts': 'panel.models.echarts',
         'ipywidgets': 'panel.io.ipywidget',
+        'jsoneditor': 'panel.models.jsoneditor',
+        'katex': 'panel.models.katex',
+        'mathjax': 'panel.models.mathjax',
         'perspective': 'panel.models.perspective',
-        'terminal': 'panel.models.terminal',
+        'plotly': 'panel.models.plotly',
         'tabulator': 'panel.models.tabulator',
+        'terminal': 'panel.models.terminal',
         'texteditor': 'panel.models.quill',
-        'jsoneditor': 'panel.models.jsoneditor'
+        'vizzu': 'panel.models.vizzu',
+        'vega': 'panel.models.vega',
+        'vtk': 'panel.models.vtk'
     }
 
     # Check whether these are loaded before rendering (if any item
@@ -572,14 +591,15 @@ class panel_extension(_pyviz_extension):
     _globals = {
         'deckgl': ['deck'],
         'echarts': ['echarts'],
+        'gridstack': ['GridStack'],
         'katex': ['katex'],
         'mathjax': ['MathJax'],
         'plotly': ['Plotly'],
-        'vega': ['vega'],
-        'vtk': ['vtk'],
-        'terminal': ['Terminal', 'xtermjs'],
         'tabulator': ['Tabulator'],
-        'gridstack': ['GridStack']
+        'terminal': ['Terminal', 'xtermjs'],
+        'vega': ['vega'],
+        'vizzu': ['Vizzu'],
+        'vtk': ['vtk']
     }
 
     _loaded_extensions = []
@@ -591,6 +611,8 @@ class panel_extension(_pyviz_extension):
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
         }
+        if state.curdoc and state.curdoc not in state._extensions_:
+            state._extensions_[state.curdoc] = []
         for arg in args:
             if arg in self._imports:
                 try:
@@ -601,7 +623,13 @@ class panel_extension(_pyviz_extension):
                     pass
                 __import__(self._imports[arg])
                 self._loaded_extensions.append(arg)
+
+                if state.curdoc:
+                    state._extensions_[state.curdoc].append(arg)
+
             elif arg in reactive_exts:
+                if state.curdoc:
+                    state._extensions.append(arg)
                 ReactiveHTMLMetaclass._loaded_extensions.add(arg)
             else:
                 self.param.warning('%s extension not recognized and '
@@ -723,8 +751,14 @@ class panel_extension(_pyviz_extension):
             load_notebook(config.inline)
         panel_extension._loaded = True
 
+        if config.browser_info and state.browser_info:
+            doc = Document()
+            comm = state._comm_manager.get_server_comm()
+            model = state.browser_info._render_model(doc, comm)
+            bundle, meta = state.browser_info._render_mimebundle(model, doc, comm)
+            display(bundle, metadata=meta, raw=True)  # noqa
         if config.notifications:
-            display(state.notifications) # noqa
+            display(state.notifications)  # noqa
 
         if config.load_entry_points:
             self._load_entry_points()
@@ -792,12 +826,13 @@ class panel_extension(_pyviz_extension):
             )
 
     def _load_entry_points(self):
-        ''' Load entry points from external packages
-        Import is performed here so any importlib/pkg_resources
+        """
+        Load entry points from external packages.
+        Import is performed here, so any importlib
         can be easily bypassed by switching off the configuration flag.
-        also, no reason to waste time on importing this module
-        if it wont be used.
-        '''
+        Also, there is no reason to waste time importing this module
+        if it won't be used.
+        """
         from .entry_points import load_entry_points
         load_entry_points('panel.extension')
 

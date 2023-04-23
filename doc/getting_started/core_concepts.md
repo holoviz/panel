@@ -26,7 +26,7 @@ Now you are ready to go, all Panel components will render themselves. In other w
 :::{admonition} Tip
 :class: success
 
-When working in JupyterLab you will see a little Panel icon (<img src="/_static/favicon.ico" alt="Panel Icon" width="20px"/>) in your toolbar. This will let you preview the application you are building quickly and easily.
+When working in JupyterLab you will see a little Panel icon (<img src="https://panel.holoviz.org/_static/icons/favicon.ico" alt="Panel Icon" width="20px"/>) in your toolbar. This will let you preview the application you are building quickly and easily.
 :::
 
 ### Editor/IDE
@@ -42,6 +42,8 @@ Let's start simple and answer the question "what is param?"
 - Param is a framework that lets Python classes have attributes with defaults, type/value validation and callbacks when a value changes.
 - Param is similar to other frameworks like [Python dataclasses](https://docs.python.org/3/library/dataclasses.html), [pydantic](https://pydantic-docs.helpmanual.io/) and [traitlets](https://traitlets.readthedocs.io/en/stable/)
 
+One of the most important concepts to understand in both Param and Panel is the ability to use parameters as references to drive interactivity. This is often called reactivity and the most well known instance of this approach are spreadsheet applications like Excel. When you reference a particular cell in the formula of another cell, changing the original cell will automatically trigger an update in all cells that reference. The same concept applies to parameter objects.
+
 One of the main things to understand about param in the context of its use in Panel is the distinction between the parameter **value** and the parameter **object**. The **value** represents the current value of a parameter at a particular point in time, while the **object** holds metadata about the parameter but also acts as a **reference** to the parameters value across time. In many cases you can pass a parameter **object** and Panel will automatically resolve the current value **and** reactively update when that parameter changes. Let's take a widget as an example:
 
 ```python
@@ -51,6 +53,7 @@ text.value # 👈 this reflects the current value
 text.param.value # 👈 can be used as a reference to the live value
 ```
 
+We will dive into this more deeply later, for now just remember that parameters allow you to pass around a reference to a value that automatically updates if the original value changes.
 
 ## Display and rendering
 
@@ -198,7 +201,7 @@ pn.pane.Str(df)
 :::{admonition} Learn More
 :class: info
 
-Learn more about Panes in the (Background for Components)[../background/components/components_overview.md#Panes]
+Learn more about Panes in the [Background for Components](../background/components/components_overview.md#Panes)
 :::
 
 So far we have only learned how to display data, to actually add it to your application you need to mark it as `servable`. To mark an object as servable adds it to the current template, something we will get into later. You can either mark multiple objects as servable which will add it to the page sequentially or you can use layouts to arrange objects explicitly.
@@ -219,6 +222,7 @@ To build an interactive application you will want to add widget components (such
 
 ```{pyodide}
 import panel as pn
+
 x = pn.widgets.IntSlider(name='x', start=0, end=100)
 
 def square(x):
@@ -227,8 +231,7 @@ def square(x):
 pn.Row(pn.bind(square, x))
 ```
 
-The `pn.bind` function let's us bind widgets (and parameter **objects**) to a function that returns an object to be displayed. Once bound the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily.
-
+The `pn.bind` function lets us bind widgets (and parameter **objects**) to a function that returns an object to be displayed. Once bound the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily.
 
 :::{admonition} Reminder
 :class: info
@@ -236,23 +239,53 @@ The `pn.bind` function let's us bind widgets (and parameter **objects**) to a fu
 Remember how we talked about the difference between a parameter **value** and a parameter **object**. In the previous example the widget itself is effectively an alias for the parameter object, i.e. the binding operation is exactly equivalent to `pn.bind(square, x.param.value)`. This is true for all widgets, the widget itself is an alias for the widgets `value` parameter.
 :::
 
-
-In certain cases reactivity isn't what is needed, e.g. if you want very fine grained control over specific parameters. To achieve this we have to dig a bit further into Param functionality, specifically we need to learn about watching parameters. To `watch` a parameter means to declare a callback that fires when the parameter value changes. As an example let's rewrite the example above using a watcher:
+The approach above is quite heavy handed because whenever the slider value changes Panel will re-create a new Pane and re-render the output. If we want more fine-grained control we can instead explicitly instantiate a `Markdown` pane and pass it bound functions and parameters by reference:
 
 ```{pyodide}
 import panel as pn
+
 x = pn.widgets.IntSlider(name='x', start=0, end=100)
-square = pn.panel(f'{x.value} squared is {x.value**2}')
+background = pn.widgets.ColorPicker(name='Background', value='lightgray')
 
-def update_square(event):
-    square.object = f'{x.value} squared is {x.value**2}'
+def square(x):
+    return f'{x} squared is {x**2}'
 
-x.param.watch(update_square, 'value')
+def styles(background):
+    return {'background-color': background, 'padding': '0 10px'}
 
-pn.Row(x, square)
+pn.Column(
+    x,
+    background,
+    pn.pane.Markdown(pn.bind(square, x), styles=pn.bind(styles, background))
+)
 ```
 
-The first thing you will not is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding. At the same time this is also more explicit however, and also provides more control over very specific, fine-grained updates.
+To achieve the same thing using more classic callbacks we have to dig a bit further into Param functionality, specifically we need to learn about watching parameters. To `watch` a parameter means to declare a callback that fires when the parameter value changes. As an example let's rewrite the example above using a watcher:
+
+```{pyodide}
+import panel as pn
+
+x = pn.widgets.IntSlider(name='x', start=0, end=100)
+background = pn.widgets.ColorPicker(name='Background', value='lightgray')
+
+square = pn.pane.Markdown(
+    f'{x.value} squared is {x.value**2}',
+    styles={'background-color': background.value, 'padding': '0 10px'}
+)
+
+def update_square(event):
+    square.object = f'{event.new} squared is {event.new**2}'
+
+def update_styles(event):
+    square.styles = {'background-color': event.new, 'padding': '0 10px'}
+
+x.param.watch(update_square, 'value')
+background.param.watch(update_styles, 'value')
+
+pn.Row(x, background, square)
+```
+
+The first thing you will note is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding.
 
 ## Templates
 
@@ -261,7 +294,6 @@ Once you have started to build an application you will probably want to make it 
 ```python
 pn.config.template = 'fast'
 ```
-
 
 :::{admonition} Note
 :class: info
@@ -280,11 +312,11 @@ pn.extension(template='fast')
 
 freq = pn.widgets.FloatSlider(
     name='Frequency', start=0, end=10, value=5
-).servable(area='sidebar')
+).servable(target='sidebar')
 
 ampl = pn.widgets.FloatSlider(
     name='Amplitude', start=0, end=1, value=0.5
-).servable(area='sidebar')
+).servable(target='sidebar')
 
 def plot(freq, ampl):
     fig = plt.figure()
@@ -294,23 +326,19 @@ def plot(freq, ampl):
     ax.plot(xs, ys)
     return fig
 
+mpl = pn.pane.Matplotlib(
+    pn.bind(plot, freq, ampl)
+)
+
 pn.Column(
-    '# Sine curve',
-    pn.bind(plot, freq, ampl),
-).servable(area='main')
+    '# Sine curve', mpl
+).servable(target='main')
 ```
 
 ## Exploring further
 
-For a quick reference of different Panel functionality refer to the [overview](../user_guide/Overview.md). If you want a more detailed description of different ways of using Panel, each appropriate for different applications see the following materials:
+While `Getting Started`, you have built a simple Panel app and reviewed the core concepts - the basic foundations for you to start using Panel for your own work.
 
-- [APIs](../user_guide/APIs.rst): An overview of the different APIs offered by Panel.
-- [Parameters](../user_guide/Param.rst): Capturing parameters and their links to actions declaratively
+While working, you can find solutions to specific problems in the [How-to](../how_to/index.md) section and you can consult the [API Reference](../api/index.md) or [Reference Gallery](../reference/index.rst) sections for technical descriptions or examples.
 
-Just pick the style that seems most appropriate for the task you want to do, then study that section of the user guide. Regardless of which approach you take, you'll want to learn more about Panel's panes and layouts:
-
-- [Components](../user_guide/Components.rst): An overview of the core components of Panel including Panes, Widgets and Layouts
-- [Customization](../user_guide/Customization.rst): How to set styles and sizes of Panel components
-- [Display & Export](../user_guide/Display_and_Export.rst): An overview on how to display and export Panel components and apps.
-- [Server Configuration](../user_guide/Server_Configuration.md): An overview on how to configure applications and dashboards for deployment.
-- [Templates](../user_guide/Templates.rst): Composing one or more Panel objects into a template with full control over layout and styling.
+If you want to gain clarity or deepen your understanding on particular topics, refer to the [Background](../background/index.md). For example, the [Background > APIs](../background/api/api.md) subsection covers the benefits and drawbacks of each Panel API.

@@ -2,8 +2,8 @@
 requires = [
     "param >=1.9.2",
     "pyct >=0.4.4",
-    "setuptools >=42,<66",  # upper pin can be removed after Holoviews support Bokeh 3.0
-    "bokeh >=3.1.0.dev3,<3.2.0",
+    "setuptools >=42",
+    "bokeh >=3.1.0,<3.2.0",
     "pyviz_comms >=0.7.4",
     "requests",
     "bleach",
@@ -33,7 +33,8 @@ ignore = [
     "E712",
     "E731",
     "E741",
-    "W605"
+    "W605",
+    "E701", # Multiple statements on one line
 ]
 line-length = 165
 select = [

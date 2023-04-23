@@ -109,51 +109,9 @@ export function set_size(el: HTMLElement, model: HTMLBox): void {
 export abstract class HTMLBoxView extends LayoutDOMView {
   override model: HTMLBox
 
-  _prev_css_classes: string[]
-
-  connect_signals(): void {
-    super.connect_signals()
-
-    // Note due to on_change hack properties must be defined in this order.
-    const {css_classes, stylesheets} = this.model.properties
-    this._prev_css_classes = this.model.css_classes
-    this.on_change([stylesheets], () => this.invalidate_render())
-    this.on_change([css_classes], () => {
-      // Note: This ensures that changes in the loading parameter in Panel
-      // do NOT trigger a full re-render
-      const css = []
-      let skip = false
-      for (const cls of this.model.css_classes) {
-        if (cls === 'pn-loading')
-          skip = true
-        else if (skip)
-          skip = false
-        else
-          css.push(cls)
-      }
-      const prev = this._prev_css_classes
-      if (JSON.stringify(css) === JSON.stringify(prev))
-	this.class_list.clear().add(...this.css_classes())
-      else
-        this.invalidate_render()
-      this._prev_css_classes = css
-    })
-  }
-
   render(): void {
     super.render()
     set_size(this.el, this.model)
-  }
-
-  on_change(properties: any, fn: () => void): void {
-    // HACKALERT: LayoutDOMView triggers re-renders whenever css_classes change
-    // which is very expensive so we do not connect this signal and handle it
-    // ourself
-    const p = this.model.properties
-    if (properties.length === 2 && properties[0] === p.css_classes && properties[1] === p.stylesheets) {
-      return
-    }
-    super.on_change(properties, fn)
   }
 
   get child_models(): LayoutDOM[] {

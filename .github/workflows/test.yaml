@@ -11,6 +11,10 @@ on:
   schedule:
     - cron: '0 19 * * SUN'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pre_commit:
     name: Run pre-commit hooks
@@ -57,7 +61,7 @@ jobs:
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           # Remove when Python 3.11 is well supported on latest conda/conda-forge.
           conda-update: ${{ matrix.python-version == '3.11' && 'false' || 'true' }}
           nodejs: true
@@ -76,12 +80,6 @@ jobs:
         run: |
           conda activate test-environment
           bokeh sampledata
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall holoviews jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/holoviz/holoviews.git"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: doit env_capture
         run: |
           conda activate test-environment
@@ -129,7 +127,7 @@ jobs:
         with:
           name: ui_test_suite
           python-version: 3.9
-          channels: pyviz/label/dev,bokeh/label/dev,conda-forge,nodefaults
+          channels: pyviz/label/dev,bokeh,conda-forge,nodefaults
           envs: "-o recommended -o tests -o build"
           cache: true
           nodejs: true
@@ -141,12 +139,6 @@ jobs:
       #   run: |
       #     conda activate test-environment
       #     pip install ipywidgets_bokeh
-      - name: Install bokeh 3.0 compatibility packages
-        run: |
-          conda activate test-environment
-          conda uninstall holoviews jupyter_bokeh --force -y --offline || echo "packages already removed"
-          pip install "git+https://github.com/holoviz/holoviews.git"
-          pip install "git+https://github.com/bokeh/jupyter_bokeh.git"
       - name: build pyodide wheels
         run: |
           conda activate test-environment
@@ -161,7 +153,7 @@ jobs:
           conda activate test-environment
           pip install jupyterlite
           python ./scripts/build_pyodide_wheels.py lite/pypi
-          python ./scripts/generate_panelite_content.py
+          python ./scripts/panelite/generate_panelite_content.py
           jupyter lite build --lite-dir lite --output-dir lite/dist
       - name: Wait for JupyterLab
         uses: ifaxity/wait-on-action@v1

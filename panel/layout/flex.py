@@ -49,11 +49,6 @@ class FlexBox(ListLike, ReactiveHTML):
         'nowrap', 'wrap', 'wrap-reverse'], doc="""
         Whether and how to wrap items in the flex container.""")
 
-    margin = param.Parameter(default=0, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     justify_content = param.Selector(default='flex-start', objects=[
         'flex-start', 'flex-end', 'center', 'space-between', 'space-around',
         'space-evenly', 'start', 'end', 'left', 'right'], doc="""

@@ -81,11 +81,6 @@ class FileSelector(CompositeWidget):
     only_files = param.Boolean(default=False, doc="""
         Whether to only allow selecting files.""")
 
-    margin = param.Parameter(default=(5, 10, 20, 10), doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
     show_hidden = param.Boolean(default=False, doc="""
         Whether to show hidden files and directories (starting with
         a period).""")
@@ -126,19 +121,21 @@ class FileSelector(CompositeWidget):
         self._selector = CrossSelector(
             filter_fn=lambda p, f: fnmatch(f, p), size=self.size, **sel_layout
         )
-        self._back = Button(name='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True)
-        self._forward = Button(name='▶', width=40, height=40, margin=(5, 10), disabled=True)
-        self._up = Button(name='⬆', width=40, height=40, margin=(5, 10), disabled=True)
-        self._directory = TextInput(value=self.directory, margin=(5, 10), width_policy='max')
-        self._go = Button(name='⬇', disabled=True, width=40, height=40, margin=(5, 10, 0, 0))
-        self._reload = Button(name='↻', width=40, height=40, margin=(5, 15, 0, 10))
+
+        self._back = Button(name='◀', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
+        self._forward = Button(name='▶', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
+        self._up = Button(name='⬆', width=40, height=40, margin=(5, 10, 0, 0), disabled=True, align='center')
+        self._directory = TextInput(value=self.directory, margin=(5, 10, 0, 0), width_policy='max')
+        self._go = Button(name='⬇', disabled=True, width=40, height=40, margin=(5, 5, 0, 0), align='center')
+        self._reload = Button(name='↻', width=40, height=40, margin=(5, 0, 0, 10), align='center')
         self._nav_bar = Row(
             self._back, self._forward, self._up, self._directory, self._go, self._reload,
             **dict(layout, width=None, margin=0, width_policy='max')
         )
         self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
-        self._selector._selected.insert(0, Markdown('##### Selected files', margin=0))
-        self._selector._unselected.insert(0, Markdown('##### File Browser', margin=0))
+        style = 'h4 { margin-block-start: 0; margin-block-end: 0;}'
+        self._selector._selected.insert(0, Markdown('#### Selected files', margin=0, stylesheets=[style]))
+        self._selector._unselected.insert(0, Markdown('#### File Browser', margin=0, stylesheets=[style]))
         self.link(self._selector, size='size')
 
         # Set up state

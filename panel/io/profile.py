@@ -65,6 +65,7 @@ def render_memray(name, sessions, show_memory_leaks=True, merge_threads=True, re
     session = sessions[-1]
     with tempfile.NamedTemporaryFile() as nf:
         nf.write(session)
+        nf.flush()
         reader = FileReader(nf.name)
         if show_memory_leaks:
             snapshot = reader.get_leaked_allocation_records(

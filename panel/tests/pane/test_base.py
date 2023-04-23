@@ -3,7 +3,9 @@ import pytest
 
 import panel as pn
 
+from panel.config import config
 from panel.interact import interactive
+from panel.io.loading import LOADING_INDICATOR_CSS_CLASS
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.pane import (
@@ -39,7 +41,7 @@ def test_pane_layout_properties(pane, document, comm):
     check_layoutable_properties(p, model)
 
 
-@pytest.mark.parametrize('pane', all_panes+[Bokeh])
+@pytest.mark.parametrize('pane', all_panes+[Bokeh, HoloViews])
 def test_pane_linkable_params(pane, document, comm):
     try:
         p = pane()
@@ -56,6 +58,37 @@ def test_pane_linkable_params(pane, document, comm):
     finally:
         CallbackGenerator.error = False
 
+@pytest.mark.parametrize('pane', all_panes+[Bokeh])
+def test_pane_loading_param(pane, document, comm):
+    try:
+        p = pane()
+    except ImportError:
+        pytest.skip("Dependent library could not be imported.")
+
+    root = p.get_root(document, comm)
+    model = p._models[root.ref['id']][0]
+
+    p.loading = True
+
+    css_classes = [LOADING_INDICATOR_CSS_CLASS, config.loading_spinner]
+    assert all(cls in model.css_classes for cls in css_classes)
+
+    p.loading = False
+
+    assert not any(cls in model.css_classes for cls in css_classes)
+
+@pytest.mark.parametrize('pane', all_panes+[Bokeh])
+def test_pane_untracked_watchers(pane, document, comm):
+    # Ensures internal code correctly detects
+    try:
+        p = pane()
+    except ImportError:
+        pytest.skip("Dependent library could not be imported.")
+    watchers = [
+        w for pwatchers in p._param_watchers.values()
+        for awatchers in pwatchers.values() for w in awatchers
+    ]
+    assert len([wfn for wfn in watchers if wfn not in p._callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0
 
 @pytest.mark.parametrize('pane', all_panes)
 def test_pane_clone(pane):

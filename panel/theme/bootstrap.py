@@ -4,8 +4,8 @@ import pathlib
 
 import param
 
-from ..io.resources import CSS_URLS, JS_URLS
-from ..layout import Card
+from ..io.resources import CDN_DIST, CSS_URLS, JS_URLS
+from ..layout import Accordion, Card
 from ..viewable import Viewable
 from ..widgets import Number, Tabulator
 from .base import (
@@ -32,16 +32,19 @@ class BootstrapDarkTheme(DarkTheme):
 
     _bs_theme = 'dark'
 
-    _modifiers = {
+    modifiers = {
         Number: {
-            'default_color': 'var(--mdc-theme-on-background)'
+            'default_color': 'white'
         }
     }
 
 
 class Bootstrap(Design):
 
-    _modifiers = {
+    modifiers = {
+        Accordion: {
+            'active_header_background': 'var(--bs-surface-bg)'
+        },
         Card: {
             'children': {'margin': (10, 10)},
             'button_css_classes': ['card-button'],
@@ -51,13 +54,13 @@ class Bootstrap(Design):
             'theme': 'bootstrap4'
         },
         Viewable: {
-            'stylesheets': [Inherit, 'css/bootstrap.css']
+            'stylesheets': [Inherit, f'{CDN_DIST}bundled/theme/bootstrap.css']
         }
     }
 
     _themes = {
+        'dark': BootstrapDarkTheme,
         'default': BootstrapDefaultTheme,
-        'dark': BootstrapDarkTheme
     }
 
     _resources = {

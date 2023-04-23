@@ -13,6 +13,7 @@ from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
 from bokeh.models import Div
 
+from panel.depends import bind, depends
 from panel.layout import Tabs, WidgetBox
 from panel.reactive import Reactive, ReactiveHTML
 from panel.viewable import Viewable
@@ -160,6 +161,79 @@ def test_text_input_controls():
 
     assert not len(params1 - params2)
     assert not len(params2 - params1)
+
+
+def test_pass_widget_by_reference():
+    int_input = IntInput(start=0, end=400, value=42)
+    text_input = TextInput(width=int_input)
+
+    assert text_input.width == 42
+
+    int_input.value = 101
+
+    assert text_input.width == 101
+
+
+def test_pass_param_by_reference():
+    int_input = IntInput(start=0, end=400, value=42)
+    text_input = TextInput(width=int_input.param.value)
+
+    assert text_input.width == 42
+
+    int_input.value = 101
+
+    assert text_input.width == 101
+
+
+def test_pass_bind_function_by_reference():
+    int_input = IntInput(start=0, end=400, value=42)
+    fn = bind(lambda v: v + 10, int_input)
+    text_input = TextInput(width=fn)
+
+    assert text_input.width == 52
+
+    int_input.value = 101
+
+    assert text_input.width == 111
+
+def test_pass_parameterized_method_by_reference():
+
+    class Test(param.Parameterized):
+
+        a = param.Parameter(default=1)
+        b = param.Parameter(default=2)
+
+        @param.depends('a')
+        def dep_a(self):
+            return self.a
+
+        @param.depends('dep_a', 'b')
+        def dep_ab(self):
+            return self.dep_a() + self.b
+
+    test = Test()
+    int_input = IntInput(start=0, end=400, value=test.dep_ab)
+
+    assert int_input.value == 3
+
+    test.a = 3
+
+    assert int_input.value == 5
+
+    test.b = 5
+
+    assert int_input.value == 8
+
+def test_pass_depends_function_by_reference():
+    int_input = IntInput(start=0, end=400, value=42)
+    fn = depends(int_input)(lambda v: v + 10)
+    text_input = TextInput(width=fn)
+
+    assert text_input.width == 52
+
+    int_input.value = 101
+
+    assert text_input.width == 111
 
 
 def test_text_input_controls_explicit():

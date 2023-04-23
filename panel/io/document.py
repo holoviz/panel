@@ -17,7 +17,10 @@ from typing import (
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
 from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
+from bokeh.models import CustomJS
 
+from ..config import config
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .model import monkeypatch_events
 from .state import curdoc_locked, state
 
@@ -60,7 +63,7 @@ def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
     for event in events:
         doc.callbacks.trigger_on_change(event)
 
-def _cleanup_doc(doc):
+def _cleanup_doc(doc, destroy=True):
     for callback in doc.session_destroyed_callbacks:
         try:
             callback(None)
@@ -89,13 +92,18 @@ def _cleanup_doc(doc):
             views[ref] = (pane, root, doc, comm)
     state._views = views
 
+    # When reusing sessions we must clean up the Panel state but we
+    # must **not** destroy the template or the document
+    if not destroy:
+        return
+
     # Clean up templates
     if doc in state._templates:
         tmpl = state._templates[doc]
         tmpl._documents = {}
         del state._templates[doc]
 
-    # Destroy doc
+    # Destroy document
     doc.destroy(None)
 
 #---------------------------------------------------------------------
@@ -115,6 +123,13 @@ def init_doc(doc: Optional[Document]) -> Document:
     if thread:
         state._thread_id_[curdoc] = thread.ident
 
+    if config.global_loading_spinner:
+        doc.js_on_event(
+            'document_ready', CustomJS(code=f"""
+            const body = document.getElementsByTagName('body')[0]
+            body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
+            """)
+        )
     session_id = curdoc.session_context.id
     sessions = state.session_info['sessions']
     if session_id not in sessions:

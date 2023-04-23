@@ -211,7 +211,10 @@ class DeckGL(ModelPane):
             data = dict(self.object.__dict__)
             mapbox_api_key = data.pop('mapbox_key', self.mapbox_api_key)
             deck_widget = data.pop('deck_widget', None)
-            tooltip = self.tooltips if isinstance(self.tooltips, dict) else deck_widget.tooltip
+            if isinstance(self.tooltips, dict) or deck_widget is None:
+                tooltip = self.tooltips
+            else:
+                tooltip = deck_widget.tooltip
             data = {k: v for k, v in recurse_data(data).items() if v is not None}
 
         # Delete undefined width and height

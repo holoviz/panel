@@ -25,19 +25,20 @@ from bokeh.embed import server_document
 from bokeh.embed.elements import div_for_render_item, script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.models import LayoutDOM, Model
+from bokeh.models import Model
 from bokeh.resources import CDN, INLINE
 from bokeh.settings import _Unset, settings
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
-    PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js,
+    PYVIZ_PROXY, Comm, JupyterCommJS,
+    JupyterCommManager as _JupyterCommManager, nb_mime_js,
 )
 
 from ..util import escape
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    PANEL_DIR, Bundle, Resources, _env, bundle_resources, patch_model_css,
+    PANEL_DIR, Resources, _env, bundle_resources, patch_model_css,
 )
 from .state import state
 
@@ -151,7 +152,7 @@ def render_template(
     return ({'text/html': html, EXEC_MIME: ''}, {EXEC_MIME: {'id': ref}})
 
 def render_model(
-    model: 'Model', comm: Optional['Comm'] = None
+    model: 'Model', comm: Optional['Comm'] = None, resources: str = 'cdn'
 ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
     if not isinstance(model, Model):
         raise ValueError("notebook_content expects a single Model instance")
@@ -159,10 +160,11 @@ def render_model(
 
     target = model.ref['id']
 
-    # ALERT: Replace with better approach before Bokeh 3.x compatible release
-    dist_url = '/panel-preview/static/extensions/panel/'
-    patch_model_css(model, dist_url=dist_url)
-    model.document._template_variables['dist_url'] = dist_url
+    if not state._is_pyodide and resources == 'server':
+        # ALERT: Replace with better approach before Bokeh 3.x compatible release
+        dist_url = '/panel-preview/static/extensions/panel/'
+        patch_model_css(model, dist_url=dist_url)
+        model.document._template_variables['dist_url'] = dist_url
 
     (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], suppress_callback_warning=True)
     div = div_for_render_item(render_item)
@@ -186,14 +188,16 @@ def render_model(
 
 
 def render_mimebundle(
-    model: 'Model', doc: 'Document', comm: 'Comm', manager: Optional['CommManager'] = None,
-    location: Optional['Location'] = None
+    model: 'Model', doc: 'Document', comm: 'Comm',
+    manager: Optional['CommManager'] = None,
+    location: Optional['Location'] = None,
+    resources: str = 'cdn'
 ) -> Tuple[Dict[str, str], Dict[str, Dict[str, str]]]:
     """
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
     """
-    if not isinstance(model, LayoutDOM):
+    if not isinstance(model, Model):
         raise ValueError('Can only render bokeh LayoutDOM models')
     add_to_doc(model, doc, True)
     if manager is not None:
@@ -201,7 +205,7 @@ def render_mimebundle(
     if location is not None:
         loc = location._get_model(doc, model, model, comm)
         doc.add_root(loc)
-    return render_model(model, comm)
+    return render_model(model, comm, resources)
 
 
 def mimebundle_to_html(bundle: Dict[str, Any]) -> str:
@@ -275,6 +279,22 @@ def require_components():
 
     return configs, requirements, exports, skip_import
 
+
+class JupyterCommJSBinary(JupyterCommJS):
+    """
+    Extends pyviz_comms.JupyterCommJS with support for repacking
+    binary buffers.
+    """
+
+    @classmethod
+    def decode(cls, msg):
+        buffers = {i: v for i, v in enumerate(msg['buffers'])}
+        return dict(msg['content']['data'], _buffers=buffers)
+
+class JupyterCommManagerBinary(_JupyterCommManager):
+
+    client_comm = JupyterCommJSBinary
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -307,14 +327,13 @@ def block_comm() -> Iterator:
 def load_notebook(inline: bool = True, load_timeout: int = 5000) -> None:
     from IPython.display import publish_display_data
 
-    resources = INLINE if inline else CDN
+    resources = INLINE if inline and not state._is_pyodide else CDN
     prev_resources = settings.resources(default="server")
     user_resources = settings.resources._user_value is not _Unset
     nb_endpoint = not state._is_pyodide
     resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
     try:
-        bundle = bundle_resources(None, resources)
-        bundle = Bundle.from_bokeh(bundle, notebook=nb_endpoint)
+        bundle = bundle_resources(None, resources, notebook=nb_endpoint)
         configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
         bokeh_js = _autoload_js(bundle, configs, requirements, exports,
@@ -451,6 +470,7 @@ def ipywidget(obj: Any, doc=None, **kwargs: Any):
     from jupyter_bokeh.widgets import BokehModel
 
     from ..pane import panel
+    doc = doc if doc else Document()
     model = panel(obj, **kwargs).get_root(doc=doc)
     widget = BokehModel(model, combine_events=True)
     if hasattr(widget, '_view_count'):
@@ -470,7 +490,7 @@ def ipywidget(obj: Any, doc=None, **kwargs: Any):
                         obj._cleanup(current[0])
                     except Exception:
                         pass
-                new_model = obj.get_root()
+                new_model = obj.get_root(doc=widget._document)
                 widget.update_from_model(new_model)
                 current[:] = [new_model]
         widget.observe(view_count_changed, '_view_count')

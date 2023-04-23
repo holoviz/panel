@@ -47,22 +47,23 @@ html_theme_options = {
         {
             "name": "Twitter",
             "url": "https://twitter.com/Panel_Org",
-            "icon": "fab fa-twitter-square",
+            "icon": "fa-brands fa-twitter-square",
         },
         {
             "name": "Discourse",
             "url": "https://discourse.holoviz.org/c/panel/5",
-            "icon": "fab fa-discourse",
+            "icon": "fa-brands fa-discourse",
+        },
+        {
+            "name": "Discord",
+            "url": "https://discord.gg/muhupDZM",
+            "icon": "fa-brands fa-discord",
         },
     ],
-    "footer_items": [
-        "copyright",
-        "last-updated",
-    ],
-    "navbar_end": ["navbar-icon-links"],
     "google_analytics_id": "UA-154795830-2",
     "pygment_light_style": "material",
-    "pygment_dark_style": "material"
+    "pygment_dark_style": "material",
+    "header_links_before_dropdown": 5
 }
 
 extensions += [
@@ -79,47 +80,6 @@ nbsite_gallery_conf = {
     'github_org': 'holoviz',
     'github_project': 'panel',
     'galleries': {
-        'gallery': {
-            'title': 'Gallery',
-            'sections': [
-                {'path': 'demos',
-                 'title': 'Demos',
-                 'description': 'A set of sophisticated apps built to demonstrate the features of Panel.'},
-                {'path': 'simple',
-                 'title': 'Simple Apps',
-                 'description': 'Simple example apps meant to provide a quick introduction to Panel.'},
-                {'path': 'apis',
-                 'title': 'APIs',
-                 'description': ('Examples meant to demonstrate the usage of different Panel APIs '
-                                 'such as interact and reactive functions.')},
-                {'path': 'layout',
-                 'title': 'Layouts',
-                 'description': 'How to leverage Panel layout components to achieve complex layouts.'},
-                {'path': 'dynamic',
-                 'title': 'Dynamic UIs',
-                 'description': ('Examples demonstrating how to build dynamic UIs with components that '
-                                 'are added or removed interactively.')},
-                {'path': 'param',
-                 'title': 'Param based apps',
-                 'description': 'Using the Param library to express UIs independently of Panel.'},
-                {'path': 'streaming',
-                 'title': 'Streaming',
-                 'description': ('Streaming data to a visual component.')},
-                {'path': 'components',
-                 'title': 'Custom components',
-                 'description': "Components created using Panel's ReactiveHTML class."},
-                {'path': 'links',
-                 'title': 'Linking',
-                 'description': ('Using Javascript based links to define interactivity without '
-                                 'without requiring a live kernel.')},
-                {'path': 'styles',
-                 'title': 'Styling & Theming',
-                 'description': "Examples demonstrating how to style and theme different components."},
-                {'path': 'external',
-                 'title': 'External libraries',
-                 'description': 'Wrapping external libraries with Panel.'}
-            ]
-        },
         'reference': {
             'title': 'Reference Gallery',
             'sections': [
@@ -136,11 +96,13 @@ nbsite_gallery_conf = {
                 'ECharts': 'PyEcharts & ECharts',
                 'IPyWidget': 'ipywidgets'
             },
+            'as_pyodide': True,
             'normalize_titles': False
         }
     },
-    'thumbnail_url': 'https://assets.holoviews.org/panel/thumbnails',
-    'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
+    'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
+    'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/',
+    'jupyterlite_url': 'https://panelite.holoviz.org/lab/index.html'
 }
 
 if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
@@ -152,7 +114,12 @@ else:
     bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
 nbsite_pyodide_conf = {
-    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.15.1']
+    'PYODIDE_URL': 'https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js',
+    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.16.0a3'],
+    'requires': {
+        'gallery/penguin_crossfilter': ['scipy'],
+        'gallery/windturbines': ['fastparquet']
+    }
 }
 
 templates_path = [
@@ -170,3 +137,5 @@ nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 
 # Override the Sphinx default title that appends `documentation`
 html_title = f'{project} v{version}'
+
+suppress_warnings = ["myst.header", "ref.myst", "mystnb.unknown_mime_type"]

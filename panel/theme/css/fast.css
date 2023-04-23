@@ -156,8 +156,8 @@ canvas, img {
 
 :host(.card-title) h1, :host(.card-title) h2, :host(.card-title) h3,
 :host(.card-title) h4, :host(.card-title) h5, :host(.card-title) h6 {
-    margin-block-end: 0;
-    margin-block-start: 0;
+    margin-block-end: 0.2em;
+    margin-block-start: 0.2em;
 }
 
 /* Tabs */
@@ -394,7 +394,7 @@ textarea.bk-input {
 input[type=file] {
     background: transparent;
     width: 100%;
-    height: 100px;
+    height: 50px;
     border: 3px dashed var(--neutral-stroke-rest);
     border-radius: calc(var(--corner-radius) * 1px);
     text-align: center;
@@ -417,12 +417,9 @@ input[type=file]:active {
 /* Buttons */
 
 .bk-btn {
-    border: unset;
     border-radius: calc(var(--control-corner-radius) * 1px);
     line-height: var(--type-ramp-base-line-height);
-    height: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px);
     min-width: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px);
-    padding: 0 calc((10 + (var(--design-unit) * 2 * var(--density))) * 1px);
 }
 
 .bk-btn.bk-btn-default {
@@ -435,8 +432,6 @@ input[type=file]:active {
 }
 
 .bk-btn.bk-btn-default.bk-active {
-    background-color: var(--neutral-fill-active);
-    border: 1px solid var(--accent-fill-active);
     box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
     filter: brightness(0.9);
 }
@@ -464,6 +459,7 @@ input[type=file]:active {
 .bk-menu > :not(.bk-divider):hover,
 .bk-menu > :not(.bk-divider).bk-active {
     background-color: var(--accent-fill-hover);
+    color: var(--foreground-on-accent-hover);
 }
 
 /* Checkbox/Radio */
@@ -906,4 +902,14 @@ table.panel-df {
     border-right-style: solid;
     background: #f5f5f5;
     color: gray;
+}
+
+/* Quill editor */
+
+.ql-editor {
+    color: var(--neutral-foreground-rest);
+}
+
+.ql-editor.ql-blank::before {
+    color: var(--neutral-foreground-rest);
 }

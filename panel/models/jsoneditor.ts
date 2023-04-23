@@ -4,15 +4,18 @@ import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {HTMLBox, HTMLBoxView} from "./layout"
 import {Attrs} from "@bokehjs/core/types"
 
-export class JSONEditEvent extends ModelEvent {
-  event_name: string = "json_edit"
 
+export class JSONEditEvent extends ModelEvent {
   constructor(readonly data: any) {
     super()
   }
 
   protected get event_values(): Attrs {
     return {model: this.origin, data: this.data}
+  }
+
+  static {
+    this.prototype.event_name = "json_edit"
   }
 }
 
@@ -44,8 +47,8 @@ export class JSONEditorView extends HTMLBoxView {
     })
   }
 
-  override styles(): StyleSheetLike[] {
-    const styles = super.styles()
+  override stylesheets(): StyleSheetLike[] {
+    const styles = super.stylesheets()
     for (const css of this.model.css)
       styles.push(new ImportedStyleSheet(css))
     return styles

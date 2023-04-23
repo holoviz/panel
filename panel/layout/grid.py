@@ -17,6 +17,7 @@ import param
 from bokeh.models import FlexBox as BkFlexBox, GridBox as BkGridBox
 
 from ..io.model import hold
+from ..io.resources import CDN_DIST
 from .base import (
     ListPanel, Panel, _col, _row,
 )
@@ -57,12 +58,16 @@ class GridBox(ListPanel):
     _linked_properties: ClassVar[Tuple[str]] = ()
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'objects': 'children', 'nrows': None, 'ncols': None
+        'objects': 'children'
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'scroll': None, 'objects': None
     }
+
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/gridbox.css'
+    ]
 
     @classmethod
     def _flatten_grid(cls, layout, nrows=None, ncols=None):
@@ -91,7 +96,7 @@ class GridBox(ListPanel):
 
                 nrows = lcm(*[child.nrows for child in children])
                 if not ncols: # This differs from bokeh.layout.grid
-                    ncols = sum([ child.ncols for child in children ])
+                    ncols = sum([child.ncols for child in children])
 
                 items = []
                 offset = 0
@@ -156,14 +161,33 @@ class GridBox(ListPanel):
             layout = traverse(children)
         return cls._flatten_grid(layout, nrows, ncols)
 
+    def _compute_css_classes(self, children):
+        equal_widths, equal_heights = True, True
+        for (child, _, _, _, _) in children:
+            if child.sizing_mode and (child.sizing_mode.endswith('_both') or child.sizing_mode.endswith('_width')):
+                equal_widths &= True
+            else:
+                equal_widths = False
+            if child.sizing_mode and (child.sizing_mode.endswith('_both') or child.sizing_mode.endswith('_height')):
+                equal_heights &= True
+            else:
+                equal_heights = False
+        css_classes = []
+        if equal_widths:
+            css_classes.append('equal-width')
+        if equal_heights:
+            css_classes.append('equal-height')
+        return css_classes
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model()
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         objects = self._get_objects(model, [], doc, root, comm)
         children = self._get_children(objects, self.nrows, self.ncols)
-        properties = self._get_properties(doc)
+        css_classes = self._compute_css_classes(children)
+        properties = {k: v for k, v in self._get_properties(doc).items() if k not in ('ncols', 'nrows')}
+        properties['css_classes'] = css_classes + properties.get('css_classes', [])
         properties['children'] = children
         model.update(**properties)
         self._link_props(model, self._linked_properties, doc, root, comm)
@@ -215,10 +239,6 @@ class GridSpec(Panel):
     nrows = param.Integer(default=None, bounds=(0, None), doc="""
         Limits the number of rows that can be assigned.""")
 
-    width = param.Integer(default=600)
-
-    height = param.Integer(default=600)
-
     _bokeh_model: ClassVar[Model] = BkGridBox
 
     _linked_properties: ClassVar[Tuple[str]] = ()
@@ -232,6 +252,8 @@ class GridSpec(Panel):
     }
 
     _preprocess_params: ClassVar[List[str]] = ['objects']
+
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/gridspec.css']
 
     def __init__(self, **params):
         if 'objects' not in params:
@@ -275,13 +297,13 @@ class GridSpec(Panel):
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         from ..pane.base import RerenderError
 
-        if self.ncols:
-            width = int(float(self.width)/self.ncols)
+        if self.ncols and self.width:
+            width = self.width/self.ncols
         else:
             width = 0
 
-        if self.nrows:
-            height = int(float(self.height)/self.nrows)
+        if self.nrows and self.height:
+            height = self.height/self.nrows
         else:
             height = 0
 
@@ -301,14 +323,19 @@ class GridSpec(Panel):
             y1 = (self.nrows) if y1 is None else y1
             r, c, h, w = (y0, x0, y1-y0, x1-x0)
 
+            properties = {}
             if self.sizing_mode in ['fixed', None]:
-                properties = {'width': w*width, 'height': h*height}
+                if width:
+                    properties['width'] = int(w*width)
+                if height:
+                    properties['height'] = int(h*height)
             else:
-                properties = {'sizing_mode': self.sizing_mode}
-                if 'width' in self.sizing_mode:
-                    properties['height'] = h*height
-                elif 'height' in self.sizing_mode:
-                    properties['width'] = w*width
+                properties['sizing_mode'] = self.sizing_mode
+                if 'width' in self.sizing_mode and height:
+                    properties['height'] = int(h*height)
+                elif 'height' in self.sizing_mode and width:
+                    properties['width'] = int(w*width)
+
             obj.param.set_param(**{k: v for k, v in properties.items()
                                    if not obj.param[k].readonly})
 
@@ -326,6 +353,10 @@ class GridSpec(Panel):
                 child.update(**properties)
             children.append((child, r, c, h, w))
         return children
+
+    def _compute_sizing_mode(self, children, props):
+        children = [child for (child, _, _, _, _) in children]
+        return super()._compute_sizing_mode(children, props)
 
     @property
     def _xoffset(self):
@@ -412,9 +443,8 @@ class GridSpec(Panel):
 
         subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
-            params = self.param.values()
-            params['objects'] = OrderedDict([list(o)[0] for o in subgrid.flatten()])
-            gspec = type(self)(**params)
+            objects = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            gspec = self.clone(objects=objects)
             xoff, yoff = gspec._xoffset, gspec._yoffset
             adjusted = []
             for (y0, x0, y1, x1), obj in gspec.objects.items():

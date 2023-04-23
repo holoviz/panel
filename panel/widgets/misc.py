@@ -110,6 +110,9 @@ class FileDownload(Widget):
     label = param.String(default="Download file", doc="""
         The label of the download button""")
 
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
     _clicks = param.Integer(default=0)
 
     _transfers = param.Integer(default=0)

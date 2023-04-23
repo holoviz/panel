@@ -38,10 +38,7 @@ def launch_jupyterlite():
         process.wait()
 
 
-# ImportError: 'process_document_events' from 'bokeh.protocol.messages.patch_doc'"""
-@pytest.mark.xfail(reason="Jupyterlite: does not work with Bokeh 3.")
 @pytest.mark.flaky(max_runs=3)
-@pytest.mark.skip(reason="Requires a dev release to be available")
 def test_jupyterlite_execution(launch_jupyterlite, page):
     page.goto("http://localhost:8123/index.html")
 
@@ -54,4 +51,4 @@ def test_jupyterlite_execution(launch_jupyterlite, page):
 
     page.keyboard.press('ArrowRight')
 
-    expect(page.locator('.markdown').locator('div').first).to_have_text('0.1')
+    expect(page.locator('.bk-panel-models-markup-HTML').locator('div').locator('pre')).to_have_text('0.1')

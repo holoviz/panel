@@ -8,6 +8,7 @@ import urllib.parse as urlparse
 import uuid
 
 import pkg_resources
+
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
@@ -17,6 +18,7 @@ from tornado.httputil import url_concat
 from tornado.web import RequestHandler
 
 from .config import config
+from .entry_points import entry_points_for
 from .io import state
 from .io.resources import DUMMY_LOGIN_TEMPLATE, ERROR_TEMPLATE, _env
 from .util import base64url_decode, base64url_encode
@@ -888,7 +890,7 @@ AUTH_PROVIDERS = {
 }
 
 # Populate AUTH Providers from external extensions
-for entry_point in pkg_resources.iter_entry_points('panel.auth'):
-    AUTH_PROVIDERS[entry_point.name] = entry_point.resolve()
+for entry_point in entry_points_for('panel.auth'):
+    AUTH_PROVIDERS[entry_point.name] = entry_point.load()
 
 config.param.objects(False)['_oauth_provider'].objects = list(AUTH_PROVIDERS.keys())

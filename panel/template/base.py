@@ -17,6 +17,7 @@ from typing import (
 import param
 
 from bokeh.document.document import Document
+from bokeh.models import LayoutDOM
 from bokeh.settings import settings as _settings
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
@@ -26,7 +27,7 @@ from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
     BUNDLE_DIR, CDN_DIST, DOC_DIST, LOCAL_DIST, _env, component_resource_path,
-    resolve_custom_path,
+    loading_css, resolve_custom_path,
 )
 from ..io.save import save
 from ..io.state import curdoc_locked, state
@@ -37,11 +38,13 @@ from ..pane import (
 )
 from ..pane.image import ImageBase
 from ..reactive import ReactiveHTML
-from ..theme import (
-    THEMES, DefaultTheme, Design, Theme,
+from ..theme.base import (
+    THEME_CSS, THEMES, DefaultTheme, Design, Theme,
 )
-from ..util import isurl, url_path
-from ..viewable import Renderable, ServableMixin, Viewable
+from ..util import isurl, relative_to, url_path
+from ..viewable import (
+    MimeRenderMixin, Renderable, ServableMixin, Viewable,
+)
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
 
@@ -70,7 +73,7 @@ _server_info: str = (
 FAVICON_URL: str = "/static/extensions/panel/images/favicon.ico"
 
 
-class BaseTemplate(param.Parameterized, ServableMixin):
+class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
 
     location = param.Boolean(default=False, doc="""
         Whether to add a Location component to this Template.
@@ -86,7 +89,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         A Design applies a specific design system to a template.""")
 
     # Dictionary of property overrides by Viewable type
-    _modifiers: ClassVar[Dict[Type[Viewable], Dict[str, Any]]] = {}
+    modifiers: ClassVar[Dict[Type[Viewable], Dict[str, Any]]] = {}
 
     __abstract = True
 
@@ -176,6 +179,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
         # Add all render items to the document
         objs, models = [], []
+        sizing_modes = {}
         for name, (obj, tags) in self._render_items.items():
 
             # Render root without pre-processing
@@ -183,27 +187,29 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             model.name = name
             model.tags = tags
             mref = model.ref['id']
+            if isinstance(model, LayoutDOM):
+                sizing_modes[mref] = model.sizing_mode
+                if self._design._apply_hooks not in obj._hooks:
+                    obj._hooks.append(self._design._apply_hooks)
 
-            if self._design._apply_hooks not in obj._hooks:
-                obj._hooks.append(self._design._apply_hooks)
+                # Alias model ref with the fake root ref to ensure that
+                # pre-processor correctly operates on fake root
+                for sub in obj.select(Viewable):
+                    submodel = sub._models.get(mref)
+                    if submodel is None:
+                        continue
+                    sub._models[ref] = submodel
+                    if isinstance(sub, HoloViews) and mref in sub._plots:
+                        sub._plots[ref] = sub._plots.get(mref)
 
-            # Alias model ref with the fake root ref to ensure that
-            # pre-processor correctly operates on fake root
-            for sub in obj.select(Viewable):
-                submodel = sub._models.get(mref)
-                if submodel is None:
-                    continue
-                sub._models[ref] = submodel
-                if isinstance(sub, HoloViews) and mref in sub._plots:
-                    sub._plots[ref] = sub._plots.get(mref)
+                # Apply any template specific hooks to root
+                self._apply_root(name, model, tags)
 
-            # Apply any template specific hooks to root
-            self._apply_root(name, model, tags)
+                # Add document
+                obj._documents[document] = model
+                objs.append(obj)
+                models.append(model)
 
-            # Add document
-            obj._documents[document] = model
-            objs.append(obj)
-            models.append(model)
             add_to_doc(model, document, hold=bool(comm))
             document.on_session_destroyed(obj._server_destroy) # type: ignore
 
@@ -225,6 +231,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         else:
             document.template = self.template
 
+        document._template_variables['sizing_modes'] = sizing_modes
         document._template_variables.update(self._render_variables)
         return document
 
@@ -375,8 +382,6 @@ class TemplateActions(ReactiveHTML):
 
     close_modal = param.Integer(default=0)
 
-    margin = param.Integer(default=0)
-
     _template: ClassVar[str] = ""
 
     _scripts: ClassVar[Dict[str, List[str] | str]] = {
@@ -417,7 +422,7 @@ class BasicTemplate(BaseTemplate):
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
 
-    sidebar_width = param.Integer(330, doc="""
+    sidebar_width = param.Integer(default=330, doc="""
         The width of the sidebar in pixels. Default is 330.""")
 
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
@@ -530,8 +535,11 @@ class BasicTemplate(BaseTemplate):
             params['modal'] = ListLike()
         else:
             params['modal'] = self._get_params(params['modal'], self.param.modal.class_)
-        if 'theme' in params and isinstance(params['theme'], str):
-            params['theme'] = THEMES[params['theme']]
+        if 'theme' in params:
+            if isinstance(params['theme'], str):
+                params['theme'] = THEMES[params['theme']]
+        else:
+            params['theme'] = THEMES[config.theme]
         if 'favicon' in params and isinstance(params['favicon'], PurePath):
             params['favicon'] = str(params['favicon'])
         if 'notifications' not in params and config.notifications:
@@ -545,6 +553,9 @@ class BasicTemplate(BaseTemplate):
         if 'embed(roots.notifications)' in template and self.notifications:
             self._render_items['notifications'] = (self.notifications, [])
             self._render_variables['notifications'] = True
+        if config.browser_info and 'embed(roots.browser_info)' in template and state.browser_info:
+            self._render_items['browser_info'] = (state.browser_info, [])
+            self._render_variables['browser_info'] = True
         self._update_busy()
         self.main.param.watch(self._update_render_items, ['objects'])
         self.modal.param.watch(self._update_render_items, ['objects'])
@@ -590,29 +601,21 @@ class BasicTemplate(BaseTemplate):
             'js': js_files,
             'js_modules': js_modules,
             'extra_css': [],
-            'raw_css': list(self.config.raw_css)
+            'raw_css': list(self.config.raw_css) + [loading_css()]
         }
 
         theme = self._design.theme
-        if theme and theme.base_css:
-            basename = os.path.basename(theme.base_css)
-            owner = type(theme).param.base_css.owner
-            owner_name = owner.__name__.lower()
-            if (BUNDLE_DIR / owner_name / basename).is_file():
-                css_files['theme_base'] = dist_path + f'bundled/{owner_name}/{basename}'
-            elif isurl(theme.base_css):
-                css_files['theme_base'] = theme.base_css
-            elif resolve_custom_path(theme, theme.base_css):
-                css_files['theme_base'] = component_resource_path(owner, 'base_css', theme.base_css)
-
-        if theme and theme.css:
-            basename = os.path.basename(theme.css)
-            if (BUNDLE_DIR / name / basename).is_file():
-                css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
-            elif isurl(theme.css):
-                css_files['theme'] = theme.css
-            elif resolve_custom_path(theme, theme.css):
-                css_files['theme'] = component_resource_path(theme, 'css', theme.css)
+        for attr in ('base_css', 'css'):
+            css = getattr(theme, attr, None)
+            if css is None:
+                continue
+            basename = os.path.basename(css)
+            key = 'theme_base' if 'base' in attr else 'theme'
+            if relative_to(css, THEME_CSS):
+                css_files[key] = dist_path + f'bundled/theme/{basename}'
+            elif resolve_custom_path(theme, css):
+                owner = type(theme).param[attr].owner
+                css_files[key] = component_resource_path(owner, attr, css)
 
         resolved_resources: List[Literal['css', 'js', 'js_modules']] = ['css', 'js', 'js_modules']
 
@@ -621,6 +624,8 @@ class BasicTemplate(BaseTemplate):
         for rt, res in self._design._resources.items():
             if not isinstance(res, dict):
                 continue
+            if rt == 'font':
+                rt = 'css'
             res = {
                 name: url if isurl(url) else f'{type(self._design).__name__.lower()}/{url}'
                 for name, url in res.items()
@@ -738,14 +743,14 @@ class BasicTemplate(BaseTemplate):
             img = _panel(self.logo)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of logo: {self.logo}.")
-            logo = img._b64()
+            logo = img._b64(img._data(img.object))
         else:
             logo = self.logo
         if os.path.isfile(self.favicon):
             img = _panel(self.favicon)
             if not isinstance(img, ImageBase):
                 raise ValueError(f"Could not determine file type of favicon: {self.favicon}.")
-            favicon = img._b64()
+            favicon = img._b64(img._data(img.object))
         else:
             if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
                 favicon = DOC_DIST + "icons/favicon.ico"

@@ -50,9 +50,9 @@ def test_accordion_constructor(document, comm):
     assert all(isinstance(c, Card) for c in model.children)
     card1, card2 = model.children
 
-    assert card1.children[0].children[0].text == 'Div1'
+    assert card1.children[0].children[0].text == '&lt;h3&gt;Div1&lt;/h3&gt;'
     assert card1.children[1] is div1
-    assert card2.children[0].children[0].text == 'Div2'
+    assert card2.children[0].children[0].text == '&lt;h3&gt;Div2&lt;/h3&gt;'
     assert card2.children[1] is div2
 
 
@@ -69,9 +69,11 @@ def test_accordion_implicit_constructor(document, comm):
     assert all(isinstance(c, Card) for c in model.children)
     card1, card2 = model.children
 
-    assert card1.children[0].children[0].text == p1.name == 'Div1'
+    assert p1.name == 'Div1'
+    assert card1.children[0].children[0].text == '&lt;h3&gt;Div1&lt;/h3&gt;'
     assert card1.children[1] is div1
-    assert card2.children[0].children[0].text == p2.name == 'Div2'
+    assert p2.name == 'Div2'
+    assert card2.children[0].children[0].text == '&lt;h3&gt;Div2&lt;/h3&gt;'
     assert card2.children[1] is div2
 
 
@@ -88,9 +90,9 @@ def test_accordion_constructor_with_named_objects(document, comm):
     assert all(isinstance(c, Card) for c in model.children)
     card1, card2 = model.children
 
-    assert card1.children[0].children[0].text == 'Tab1'
+    assert card1.children[0].children[0].text == '&lt;h3&gt;Tab1&lt;/h3&gt;'
     assert card1.children[1] is div1
-    assert card2.children[0].children[0].text == 'Tab2'
+    assert card2.children[0].children[0].text == '&lt;h3&gt;Tab2&lt;/h3&gt;'
     assert card2.children[1] is div2
 
 

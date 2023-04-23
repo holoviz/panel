@@ -13,49 +13,29 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
   model: VTKSynchronizedPlot
   protected _synchronizer_context: any
   protected _arrays: any
-  protected _decoded_arrays: any
-  protected _pending_arrays: any
-  protected _promises: Promise<any>[]
   public registerArray: CallableFunction
 
   initialize(): void {
     super.initialize()
-    this._promises = []
     this._renderable = false
-    this._arrays = {}
-    this._decoded_arrays = {}
-    this._pending_arrays = {}
-
-
-    this.registerArray = (hash: string, array: any) => {
-      this._arrays[hash] = array
-      if (this._pending_arrays[hash]) {
-        this._pending_arrays[hash].resolve(array)
-      }
-      return true
-    }
 
     // Context initialisation
     this._synchronizer_context = vtkns.SynchronizableRenderWindow.getSynchronizerContext(
-      CONTEXT_NAME
+      `${CONTEXT_NAME}-{this.model.id}`
     )
   }
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.arrays.change, () =>
-      this._decode_arrays()
-    )
+    this.connect(this.model.properties.arrays.change, () => {})
     this.connect(this.model.properties.scene.change, () => {
       if (this.model.rebuild) {
         this._vtk_renwin = null
         this.invalidate_render()
       } else {
         const state = clone(this.model.scene)
-        Promise.all(this._promises).then(() => {
-          this._sync_plot(state, () => {
-            this._on_scene_ready()
-          })
+        this._sync_plot(state, () => {
+          this._on_scene_ready()
         })
       }
     })
@@ -74,45 +54,14 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
 
   plot(): void {
     this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
-    this._decode_arrays()
     const state = clone(this.model.scene)
-    Promise.all(this._promises).then(() => {
-      this._sync_plot(state, () => this._on_scene_ready()).then(() => {
-        this._set_camera_state()
-        this._get_camera_state()
-      })
-    })
-  }
-
-  _decode_arrays(): void {
-    const jszip = new vtkns.ThirdParty.JSZip()
-    const arrays: any = this.model.arrays
-    const registerArray: any = this.registerArray
-    const arrays_processed = this.model.arrays_processed
-    const model = this.model
-
-    function load(key: string) {
-      return jszip
-        .loadAsync(atob(arrays[key]))
-        .then((zip: any) => zip.file("data/" + key))
-        .then((zipEntry: any) => zipEntry.async("arraybuffer"))
-        .then((arraybuffer: any) => registerArray(key, arraybuffer))
-        .then(() => {
-          arrays_processed.push(key)
-          model.properties.arrays_processed.change.emit()
-        })
-    }
-
-    Object.keys(arrays).forEach((key: string) => {
-      if (!this._decoded_arrays[key]) {
-        this._decoded_arrays[key] = true
-        this._promises.push(load(key))
-      }
+    this._sync_plot(state, () => this._on_scene_ready()).then(() => {
+      this._set_camera_state()
+      this._get_camera_state()
     })
   }
 
   _on_scene_ready(): void {
-    if (this._promises.length > 0) return
     this._renderable = true
     this._camera_callbacks.push(
       this._vtk_renwin
@@ -129,10 +78,9 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
   _sync_plot(state: any, onSceneReady: CallableFunction): any {
     // Need to ensure all promises are resolved before calling this function
     this._renderable = false
-    this._promises = []
     this._unsubscribe_camera_cb()
     this._synchronizer_context.setFetchArrayFunction((hash: string) => {
-      return Promise.resolve(this._arrays[hash])
+      return Promise.resolve(this.model.arrays[hash])
     })
     const renderer = this._synchronizer_context.getInstance(
       this.model.scene.dependencies[0].id
@@ -190,11 +138,11 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
   static {
     this.prototype.default_view = VTKSynchronizedPlotView
 
-    this.define<VTKSynchronizedPlot.Props>(({Any, Array, Boolean, String}) => ({
-      arrays:               [ Any,                {} ],
+    this.define<VTKSynchronizedPlot.Props>(({Any, Array, Boolean, Bytes, Dict, String}) => ({
+      arrays:               [ Dict(Bytes),        {} ],
       arrays_processed:     [ Array(String),      [] ],
       enable_keybindings:   [ Boolean,         false ],
-      one_time_reset:       [ Boolean                ],
+      one_time_reset:       [ Boolean,         false ],
       rebuild:              [ Boolean,         false ],
       scene:                [ Any,                {} ],
     }))

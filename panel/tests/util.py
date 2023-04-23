@@ -14,14 +14,9 @@ from panel.io.server import serve
 # Ignore tests which are not yet working with Bokeh 3.
 # Will begin to fail again when the first rc is released.
 pnv = Version(pn.__version__)
-bokeh3_failing = pytest.mark.xfail(
-    not (pnv.major == 1 and pnv.is_prerelease),
-    reason="Bokeh 3: Not working yet",
-    strict=False,
-)
 
 ipywidgets_bokeh3 = pytest.mark.skipif(
-    not (pnv.major == 1 and pnv.is_prerelease),
+    not (pnv.major == 1 and pnv.pre is not None and pnv.pre[0] == "rc"),
     reason="Bokeh3: Ipywidgets not working with Bokeh 3 yet"
 )
 
@@ -197,7 +192,7 @@ def get_ctrl_modifier():
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
 
 
-def serve_panel_widget(page, port, pn_widget, sleep=0.2):
+def serve_panel_widget(page, port, pn_widget, sleep=0.5):
     serve(pn_widget, port=port, threaded=True, show=False)
     time.sleep(sleep)
     page.goto(f"http://localhost:{port}")

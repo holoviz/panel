@@ -14,10 +14,11 @@ import param
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
+from ..io.resources import CDN_DIST
 from ..reactive import ReactiveData
 from ..util import lazy_load
 from ..viewable import Viewable
-from .base import PaneBase
+from .base import ModelPane
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -250,7 +251,7 @@ def deconstruct_pandas(data, kwargs=None):
     return data, kwargs
 
 
-class Perspective(PaneBase, ReactiveData):
+class Perspective(ModelPane, ReactiveData):
     """
     The `Perspective` pane provides an interactive visualization component for
     large, real-time datasets built on the Perspective project.
@@ -262,7 +263,7 @@ class Perspective(PaneBase, ReactiveData):
     >>> Perspective(df, plugin='hypergrid', theme='material-dark')
     """
 
-    aggregates = param.Dict(None, doc="""
+    aggregates = param.Dict(default=None, doc="""
       How to aggregate. For example {"x": "distinct count"}""")
 
     columns = param.List(default=None, doc="""
@@ -272,7 +273,7 @@ class Perspective(PaneBase, ReactiveData):
       A list of expressions computing new columns from existing columns.
       For example [""x"+"index""]""")
 
-    split_by = param.List(None, doc="""
+    split_by = param.List(default=None, doc="""
       A list of source columns to pivot by. For example ["x", "y"]""")
 
     filters = param.List(default=None, doc="""
@@ -311,15 +312,15 @@ class Perspective(PaneBase, ReactiveData):
 
     _data_params: ClassVar[List[str]] = ['object']
 
-    _rerender_params: ClassVar[List[str]] = ['object']
-
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'selection': None,
+        'selection': None
     }
 
     _updates: ClassVar[bool] = True
 
-    _stylesheets = ['css/perspective-datatable.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/perspective-datatable.css'
+    ]
 
     @classmethod
     def applies(cls, object):
@@ -356,11 +357,20 @@ class Perspective(PaneBase, ReactiveData):
         ignored = list(Viewable.param)
         return [p for p in properties if p not in ignored]
 
-    def _init_params(self):
-        props = super()._init_params()
-        props['source'] = ColumnDataSource(data=self._data)
+    def _get_properties(self, doc, source=None):
+        props = super()._get_properties(doc)
+        del props['object']
+        if props.get('toggle_config'):
+            props['height'] = self.height or 300
+        else:
+            props['height'] = self.height or 150
+        if source is None:
+            source = ColumnDataSource(data=self._data)
+        else:
+            source.data = self._data
+        props['source'] = source
         props['schema'] = schema = {}
-        for col, array in self._data.items():
+        for col, array in source.data.items():
             if not isinstance(array, np.ndarray):
                 array = np.asarray(array)
             kind = array.dtype.kind.lower()
@@ -444,19 +454,10 @@ class Perspective(PaneBase, ReactiveData):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        self._bokeh_model = Perspective = lazy_load('panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root)
-        properties = self._get_properties(doc)
-        if properties.get('toggle_config'):
-            properties['height'] = self.height or 300
-        else:
-            properties['height'] = self.height or 150
-        model = Perspective(**properties)
-        if root is None:
-            root = model
-        synced = list(set([p for p in self.param if (self.param[p].precedence or 0) > -1]) ^ (set(PaneBase.param) | set(ReactiveData.param)))
-        self._link_props(model, synced, doc, root, comm)
-        self._models[root.ref['id']] = (model, parent)
-        return model
+        self._bokeh_model = lazy_load(
+            'panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root
+        )
+        return super()._get_model(doc, root, parent, comm)
 
     def _update(self, ref: str, model: Model) -> None:
-        pass
+        model.update(**self._get_properties(model.document, source=model.source))

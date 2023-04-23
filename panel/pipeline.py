@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import sys
 import traceback as tb
 
 from collections import OrderedDict, defaultdict
+from typing import ClassVar, Tuple
 
 import param
 
@@ -161,6 +164,8 @@ class Pipeline(Viewer):
     next = param.Action(default=lambda x: x.param.trigger('next'))
 
     previous = param.Action(default=lambda x: x.param.trigger('previous'))
+
+    _ignored_refs: ClassVar[Tuple[str]] = ('next_parameter', 'ready_parameter')
 
     def __init__(self, stages=[], graph={}, **params):
         try:

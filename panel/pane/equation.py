@@ -8,13 +8,14 @@ import re
 import sys
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
 )
 
 import param  # type: ignore
 
 from pyviz_comms import Comm, JupyterComm  # type: ignore
 
+from ..io.resources import CDN_DIST
 from ..util import lazy_load
 from .base import ModelPane
 
@@ -47,7 +48,7 @@ class LaTeX(ModelPane):
     >>> pn.extension('katex')
     >>> LaTeX(
     ...     'The LaTeX pane supports two delimiters: $LaTeX$ and \(LaTeX\)',
-    ...     style={'font-size': '18pt'}, width=800
+    ...     styles={'font-size': '18pt'}, width=800
     ... )
     """
 
@@ -64,7 +65,9 @@ class LaTeX(ModelPane):
 
     _updates: ClassVar[bool] = True
 
-    _stylesheets = ['css/katex.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/katex.css'
+    ]
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
@@ -98,8 +101,7 @@ class LaTeX(ModelPane):
     ) -> Model:
         self._bokeh_model = self._get_model_type(root, comm)
         model = self._bokeh_model(**self._get_properties(doc))
-        if root is None:
-            root = model
+        root = root or model
         self._models[root.ref['id']] = (model, parent)
         return model
 

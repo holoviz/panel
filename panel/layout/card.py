@@ -6,6 +6,7 @@ from typing import (
 
 import param
 
+from ..io.resources import CDN_DIST
 from ..models import Card as BkCard
 from .base import Column, ListPanel, Row
 
@@ -33,7 +34,7 @@ class Card(Column):
     active_header_background = param.String(doc="""
         A valid CSS color for the header background when not collapsed.""")
 
-    button_css_classes = param.List(['card-button'], doc="""
+    button_css_classes = param.List(default=['card-button'], doc="""
         CSS classes to apply to the button element.""")
 
     collapsible = param.Boolean(default=True, doc="""
@@ -42,7 +43,7 @@ class Card(Column):
     collapsed = param.Boolean(default=False, doc="""
         Whether the contents of the Card are collapsed.""")
 
-    css_classes = param.List(['card'], doc="""
+    css_classes = param.List(default=['card'], doc="""
         CSS classes to apply to the overall Card.""")
 
     header = param.Parameter(doc="""
@@ -55,16 +56,14 @@ class Card(Column):
     header_color = param.String(doc="""
         A valid CSS color to apply to the header text.""")
 
-    header_css_classes = param.List(['card-header'], doc="""
+    header_css_classes = param.List(default=['card-header'], doc="""
         CSS classes to apply to the header element.""")
 
     hide_header = param.Boolean(default=False, doc="""
         Whether to skip rendering the header.""")
 
-    title_css_classes = param.List(['card-title'], doc="""
+    title_css_classes = param.List(default=['card-title'], doc="""
         CSS classes to apply to the header title.""")
-
-    margin = param.Parameter(default=5)
 
     title = param.String(doc="""
         A title to be displayed in the Card header, will be overridden
@@ -76,11 +75,12 @@ class Card(Column):
         'title': None, 'header': None, 'title_css_classes': None
     }
 
-    _stylesheets: ClassVar[List[str]] = ['css/card.css']
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/card.css'
+    ]
 
     def __init__(self, *objects, **params):
-        self._header_layout = Row(css_classes=['card-header-row'],
-                                  sizing_mode='stretch_width')
+        self._header_layout = Row(css_classes=['card-header-row'], sizing_mode='stretch_width')
         super().__init__(*objects, **params)
         self._header = None
         self.param.watch(self._update_header, ['title', 'header', 'title_css_classes'])
@@ -108,7 +108,7 @@ class Card(Column):
         from ..pane import HTML, panel
         if self.header is None:
             params = {
-                'object': '%s' % (self.title or "&#8203;"),
+                'object': f'<h3>{self.title}</h3>' if self.title else "&#8203;",
                 'css_classes': self.title_css_classes,
                 'margin': (5, 0)
             }
@@ -116,9 +116,7 @@ class Card(Column):
                 self._header.param.set_param(**params)
                 return
             else:
-                self._header = item = HTML(
-                    sizing_mode='stretch_width', **params
-                )
+                self._header = item = HTML(**params)
         else:
             item = panel(self.header)
             self._header = None
@@ -132,3 +130,6 @@ class Card(Column):
             header = self._header_layout._get_model(doc, root, model, comm)
         objects = super()._get_objects(model, old_objects, doc, root, comm)
         return [header]+objects
+
+    def _compute_sizing_mode(self, children, props):
+        return super()._compute_sizing_mode(children[1:], props)

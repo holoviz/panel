@@ -25,6 +25,7 @@ from bokeh.util.serialization import convert_datetime_array
 from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget
+from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
@@ -592,9 +593,12 @@ class BaseTable(ReactiveData, Widget):
         return df, {k if isinstance(k, str) else str(k): self._process_column(v) for k, v in data.items()}
 
     def _update_column(self, column, array):
+        import pandas as pd
+
         self.value[column] = array
         if self._processed is not None and self.value is not self._processed:
-            self._processed[column] = array
+            with pd.option_context('mode.chained_assignment', None):
+                self._processed[column] = array
 
     #----------------------------------------------------------------
     # Public API
@@ -1104,6 +1108,8 @@ class Tabulator(BaseTable):
     # pagination is enabled
     _MAX_ROW_LIMITS: ClassVar[Tuple[int, int]] = (200, 10000)
 
+    _stylesheets = [CSS_URLS['font-awesome']]
+
     def __init__(self, value=None, **params):
         import pandas.io.formats.style
         if isinstance(value, pandas.io.formats.style.Styler):
@@ -1213,10 +1219,10 @@ class Tabulator(BaseTable):
                 state.execute(partial(cb, event), schedule=False)
 
     def _get_theme(self, theme, resources=None):
-        from ..models.tabulator import _TABULATOR_THEMES_MAPPING, THEME_URL
-        theme_ = _TABULATOR_THEMES_MAPPING.get(self.theme, self.theme)
+        from ..models.tabulator import _TABULATOR_THEMES_MAPPING, THEME_PATH
+        theme_ = _TABULATOR_THEMES_MAPPING.get(theme, theme)
         fname = 'tabulator' if theme_ == 'default' else f'tabulator_{theme_}'
-        theme_url = f'{THEME_URL}{fname}.min.css'
+        theme_url = f'{CDN_DIST}bundled/datatabulator/{THEME_PATH}{fname}.min.css'
         if self._widget_type is not None:
             self._widget_type.__css_raw__ = [theme_url]
         return theme_url
@@ -1488,17 +1494,22 @@ class Tabulator(BaseTable):
         super()._update_selected(*events, **kwargs)
 
     def _update_column(self, column: str, array: np.ndarray):
+        import pandas as pd
+
         if self.pagination != 'remote':
             index = self._processed.index.values
             self.value.loc[index, column] = array
-            self._processed[column] = array
+            with pd.option_context('mode.chained_assignment', None):
+                self._processed[column] = array
             return
         nrows = self.page_size
         start = (self.page-1)*nrows
         end = start+nrows
         index = self._processed.iloc[start:end].index.values
-        self.value[column].loc[index] = array
-        self._processed[column].loc[index] = array
+        self.value.loc[index, column] = array
+
+        with pd.option_context('mode.chained_assignment', None):
+            self._processed.loc[index, column] = array
 
     def _update_selection(self, indices: List[int]):
         if self.pagination != 'remote':

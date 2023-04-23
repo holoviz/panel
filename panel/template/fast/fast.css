@@ -44,8 +44,14 @@ body {
 }
 
 #container {
-    padding:0px;
+    padding: 0px;
     width: 100vw;
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+#header-design-provider {
+    z-index: 10;
 }
 
 #header{
@@ -56,8 +62,9 @@ body {
 }
 
 #header-items {
+    align-items: center;
+    display: flex;
     color: var(--neutral-foreground-rest);
-    overflow: hidden;
     padding-left: 10px;
     width: 100%;
 }
@@ -138,18 +145,17 @@ img.app-logo {
     transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
     transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
     height: calc(100vh - 76px);
-    overflow-y: scroll;
-    padding-left: 5px;
-    padding-right: 10px;
+    overflow-y: auto;
+    padding: 15px 10px 5px 0;
     margin-right: 12px;
 }
 
 #main {
-    transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
-    width: 100%;
     height: 100%;
-    padding-right: 20px;
-    overflow-y: scroll;
+    overflow-y: auto;
+    padding: 0 15px;
+    transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+    flex-grow: 1;
 }
 
 #sidebarCollapse {
@@ -157,10 +163,11 @@ img.app-logo {
     border: none;
 }
 
-.sidenav {
-    padding-top: 15px;
-    position: absolute;
-    overflow-y: scroll;
+#sidebar.hidden {
+    min-width: 0px;
+    width: 0px;
+    overflow: hidden;
+    margin: 0px;
 }
 
 .sidenav fast-menu {
@@ -224,12 +231,6 @@ img.app-logo {
     margin-left: auto;
 }
 
-#made-with-panel {
-    padding: .50rem;
-    text-align: center;
-    font-size: .75rem;
-}
-
 .fullscreen-button {
     position: absolute;
     top: 0px;
@@ -252,11 +253,6 @@ img.app-logo {
     opacity: 1;
 }
 
-div.pn-wrapper {
-    position: relative;
-    background: var(--background-color)
-}
-
 #header.shadow {
     box-shadow: 2px 2px 10px silver;
 }
@@ -264,6 +260,7 @@ div.pn-wrapper {
 #sidebar.shadow {
     box-shadow: 2px 2px 10px silver;
 }
+
 #menu * {
     width: 100%;
 }
@@ -311,16 +308,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .main-margin {
+    margin-top: 1em;
     margin-left: auto;
     margin-right: auto;
 }
 
-.main .card-margin {
-    margin-top: 1em;
+.main .card-margin.stretch_both, .main .card-margin.stretch_height {
+    height: calc(100% - 2em);
 }
 
-.main .card-margin:last-child {
-    margin-bottom: 1em;
+.main .card-margin {
+    margin: 1em 0;
 }
 
 .main a, .sidenav a {
@@ -334,12 +332,13 @@ h1, h2, h3, h4, h5, h6 {
 
 fast-card {
     margin: 0px;
-    padding: 1em;
     overflow: auto;
+    padding: 1em;
 }
 
 #pn-Modal {
     --dialog-width: 80%;
     --dialog-height: auto;
     --background-color: var(--neutral-layer-floating);
+    z-index: 10;
 }
