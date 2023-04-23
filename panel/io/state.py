@@ -913,7 +913,8 @@ class _state(param.Parameterized):
         """
         try:
             doc = curdoc_locked()
-            if doc and doc.session_context or self._is_pyodide:
+            pyodide_session = self._is_pyodide and 'pyodide_kernel' not in sys.modules
+            if doc and (doc.session_context or pyodide_session):
                 return doc
         finally:
             curdoc = self._curdoc.get()
