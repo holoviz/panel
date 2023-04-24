@@ -138,16 +138,16 @@ img.app-logo {
 
 #sidebar-button {
     margin-left: 10px;
-    margin-right:  10px;
+    margin-right: 10px;
 }
 
 #sidebar {
+    border-right: 2px solid var(--neutral-fill-rest);
     transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
     transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
     height: calc(100vh - 76px);
     overflow-y: auto;
     padding: 15px 10px 5px 0;
-    margin-right: 12px;
 }
 
 #main {
@@ -164,10 +164,12 @@ img.app-logo {
 }
 
 #sidebar.hidden {
-    min-width: 0px;
-    width: 0px;
-    overflow: hidden;
+    border: 0px;
     margin: 0px;
+    min-width: 0px;
+    overflow: hidden;
+    padding: 0px;
+    width: 0px;
 }
 
 .sidenav fast-menu {
@@ -311,14 +313,6 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 1em;
     margin-left: auto;
     margin-right: auto;
-}
-
-.main .card-margin.stretch_both, .main .card-margin.stretch_height {
-    height: calc(100% - 2em);
-}
-
-.main .card-margin {
-    margin: 1em 0;
 }
 
 .main a, .sidenav a {

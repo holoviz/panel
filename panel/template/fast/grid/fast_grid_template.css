@@ -103,45 +103,18 @@ img.app-logo {
     margin: 4px 0;
 }
 
-#content {
-    height: calc(100vh - 76px);
-    margin: 0px;
-    width: 100vw;
-    display: flex;
-}
-
 #sidebar-button {
     margin-left: 10px;
     margin-right:  10px;
 }
 
-#sidebar {
-    transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
-    transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
-    height: calc(100vh - 56px);
-    overflow-y: scroll;
-    padding: 10px;
-    margin-right: 12px;
-}
-
 #main {
-    transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
-    width: 100%;
-    height: calc(100vh - 56px);
-    padding: 0px;
-    padding-right: 25px;
-    overflow-y: scroll;
+    padding: 0 5px;
 }
 
 #sidebarCollapse {
     background: none;
     border: none;
-}
-
-.sidenav {
-    padding-top: 15px;
-    position: absolute;
-    overflow-y: scroll;
 }
 
 .sidenav fast-menu {
@@ -243,8 +216,6 @@ img.app-logo {
 
 #responsive-grid {
     height: 100%;
-    width: calc(100% - 12px);
-    padding: 10px;
 }
 
 .drag-handle {
