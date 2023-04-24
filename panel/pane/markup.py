@@ -387,7 +387,8 @@ class Markdown(HTMLBasePane):
                     MdParserConfig, create_md_parser,
                 )
                 config = MdParserConfig(heading_anchors=1, enable_extensions=[
-                    'linkify', 'smartquotes', 'tasklist'
+                    'colon_fence', 'linkify', 'smartquotes', 'tasklist',
+                    'attrs_block'
                 ], enable_checkboxes=True)
                 parser = create_md_parser(config, RendererHTML)
             parser = (
