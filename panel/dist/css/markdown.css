@@ -87,3 +87,9 @@
     margin-bottom: 1rem;
     border-radius: 0.25rem;
 }
+
+table, th, td {
+    border: 1px solid;
+    border-collapse: collapse;
+    padding: 5px;
+}
