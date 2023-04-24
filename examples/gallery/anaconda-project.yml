@@ -41,6 +41,7 @@ packages:
   - pyvista
   - mesalib
   - numpy<1.24
+  - numba::llvmlite
   - pip:
     - ipyvolume
     - folium
