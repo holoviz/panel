@@ -1,6 +1,5 @@
-
 .codehilite .hll { background-color: #ffffcc }
-.codehilite  { background: #f8f8f8; }
+.codehilite  { background: var(--code-bg-color); }
 .codehilite .c { color: #408080; font-style: italic } /* Comment */
 .codehilite .err { border: 1px solid #FF0000 } /* Error */
 .codehilite .k { color: #008000; font-weight: bold } /* Keyword */
@@ -69,19 +68,22 @@
 .codehilite .vm { color: #19177C } /* Name.Variable.Magic */
 .codehilite .il { color: #666666 } /* Literal.Number.Integer.Long */
 
-.markdown h1 { margin-block-start: 0.34em }
-.markdown h2 { margin-block-start: 0.42em }
-.markdown h3 { margin-block-start: 0.5em }
-.markdown h4 { margin-block-start: 0.67em }
-.markdown h5 { margin-block-start: 0.84em }
-.markdown h6 { margin-block-start: 1.17em }
-.markdown ul { padding-inline-start: 2em }
-.markdown ol { padding-inline-start: 2em }
-.markdown strong { font-weight: 600 }
-.markdown a { color: -webkit-link }
-.markdown a { color: -moz-hyperlinkText }
+h1 { margin-block-start: 0.34em }
+h2 { margin-block-start: 0.42em }
+h3 { margin-block-start: 0.5em }
+h4 { margin-block-start: 0.67em }
+h5 { margin-block-start: 0.84em }
+h6 { margin-block-start: 1.17em }
+ul { padding-inline-start: 2em }
+ol { padding-inline-start: 2em }
+strong { font-weight: 600 }
+a { color: var(--panel-primary-color); }
+code {
+    background-color: var(--code-bg-color);
+    color: var(--code-text-color);
+}
 
-:host(.markdown) .codehilite {
+.codehilite {
     padding: 1rem 1.25rem;
     margin-top: 1rem;
     margin-bottom: 1rem;

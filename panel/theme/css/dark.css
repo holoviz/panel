@@ -15,6 +15,8 @@
     --panel-surface-rgb: 59,59,59;
     --panel-on-surface-color: #ffffff;
     --panel-on-surface-rgb: 255,255,255;
+    --code-bg-color: #263238;
+    --code-text-color: #82AAFF;
     --primary-bg-color: #0d6efd;
     --secondary-bg-color: #6c757d;
     --success-bg-color: #198754;
