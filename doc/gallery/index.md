@@ -33,6 +33,16 @@ Visually explore a dataset of US Windturbines.
 [See source](windturbines)
 :::
 
+:::{grid-item-card} Portfolio Analyzer
+:img-top: https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_analyzer
+:link-type: url
+
+Analyze a stock portfolio using Plotly and Tabulator components.
++++
+[See source](portfolio_analyzer)
+:::
+
 :::{grid-item-card} OGGM Glaciers
 :img-top: https://assets.holoviz.org/panel/gallery/glaciers.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/glaciers
