@@ -123,7 +123,15 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	  {% endif %}
 	  {% endfor %}
 	  {% endfor %}
-	</div>
+        </div>
+        {% if saveLayout %}
+        <fast-button id="layout-reset" appearance="neutral" style="height:24px">
+          <svg style="height: 10px;width: 10px" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M212.333 224.333H12c-6.627 0-12-5.373-12-12V12C0 5.373 5.373 0 12 0h48c6.627 0 12 5.373 12 12v78.112C117.773 39.279 184.26 7.47 258.175 8.007c136.906.994 246.448 111.623 246.157 248.532C504.041 393.258 393.12 504 256.333 504c-64.089 0-122.496-24.313-166.51-64.215-5.099-4.622-5.334-12.554-.467-17.42l33.967-33.967c4.474-4.474 11.662-4.717 16.401-.525C170.76 415.336 211.58 432 256.333 432c97.268 0 176-78.716 176-176 0-97.267-78.716-176-176-176-58.496 0-110.28 28.476-142.274 72.333h98.274c6.627 0 12 5.373 12 12v48c0 6.627-5.373 12-12 12z"/></svg>
+        </fast-button>
+        <fast-tooltip anchor="layout-reset" position="bottom">
+          Reset the layout
+        </fast-tooltip>
+        {% endif %}
 	{% if theme_toggle %}
 	<div class="pn-toggle-theme">
 	  <fast-switch id="theme-switch" style="float: right;" onChange="toggleLightDarkTheme('{{ theme }}')" {% if theme=='default' %}checked{% endif %}>
@@ -169,7 +177,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	</ul>
       </div>
       {% endif %}
-
       <div class="main" id="main">
 	{% if main_max_width %}
 	<div class="main-margin" style="max-width: {{ main_max_width }};">
@@ -178,25 +185,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	{% if main_max_width %}
 	</div>
 	{% endif %}
-
-	<fast-dialog id="pn-Modal" hidden>
-          <fast-button class="pn-modalclose" id="pn-closeModal">&times;</fast-button>
-	  <div>
-            {% for doc in docs %}
-            {% for root in doc.roots %}
-            {% if "modal" in root.tags %}
-            {{ embed(root) | indent(10) }}
-            {% endif %}
-            {% endfor %}
-            {% endfor %}
-	  </div>
-	</fast-dialog>
       </div>
+      <fast-dialog id="pn-Modal" hidden>
+        <fast-button class="pn-modalclose" id="pn-closeModal">&times;</fast-button>
+	<div>
+          {% for doc in docs %}
+          {% for root in doc.roots %}
+          {% if "modal" in root.tags %}
+          {{ embed(root) | indent(10) }}
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+        </div>
+      </fast-dialog>
     </div>
   </div>
 </fast-design-system-provider>
 
-<script>
+<script type="text/javascript">
   {{ js }}
 </script>
 

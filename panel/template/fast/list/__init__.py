@@ -40,4 +40,8 @@ class FastListTemplate(FastBaseTemplate):
     Please note the `FastListTemplate` cannot display in a notebook output cell.
     """
 
+    _css = FastBaseTemplate._css + [
+        pathlib.Path(__file__).parent / "fast_list_template.css"
+    ]
+
     _template = pathlib.Path(__file__).parent / "fast_list_template.html"
