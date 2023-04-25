@@ -249,7 +249,7 @@ class Layoutable(param.Parameterized):
                 "setting, otherwise change it to min_height."
             )
             if config.layout_compatibility:
-                error += ' To error on incorrect specification disable the layout_compatibility config option.'
+                error += ' To error on the incorrect specification disable the config.layout_compatibility option.'
                 self.param.warning(error)
             else:
                 raise ValueError(error)
@@ -263,7 +263,7 @@ class Layoutable(param.Parameterized):
                 "setting, otherwise change it to min_height."
             )
             if config.layout_compatibility:
-                error += ' To error on incorrect specification disable the layout_compatibility config option.'
+                error += ' To error on the incorrect specification disable the config.layout_compatibility option.'
                 self.param.warning(error)
             else:
                 raise ValueError(error)
