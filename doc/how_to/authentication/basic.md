@@ -7,7 +7,7 @@ For simple uses cases it may be totally sufficient to enable a basic Auth provid
 Basic authentication can be set up simply by providing the `--basic-auth` commandline argument (or the `PANEL_BASIC_AUTH` environment variable):
 
 ```bash
-panel serve app.py --basic-auth my_password
+panel serve app.py --basic-auth my_password --cookie-secret my_super_safe_cookie_secret
 ```
 
 When loading the application you should now see a very simple login form:
@@ -30,7 +30,7 @@ If you want a slightly more complex setup with a number of different users with 
 We can now configure the basic authentication with:
 
 ```bash
-panel serve app.py --basic-auth credentials.json
+panel serve app.py --basic-auth credentials.json --cookie-secret my_super_safe_cookie_secret
 ```
 
 The basic auth provider will now check the provided credentials against the credentials declared in this file.
