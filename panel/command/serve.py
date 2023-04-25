@@ -25,7 +25,7 @@ from bokeh.server.contexts import ApplicationContext
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
-from ..auth import OAuthProvider
+from ..auth import BasicProvider, OAuthProvider
 from ..config import config
 from ..io.document import _cleanup_doc
 from ..io.liveness import LivenessHandler
@@ -92,6 +92,11 @@ class Serve(_BkServe):
             help=("Static directories to serve specified as key=value "
                   "pairs mapping from URL route to static file directory.")
         )),
+        ('--basic-auth', dict(
+            action = 'store',
+            type   = str,
+            help   = "Password or filepath to use with Basic Authentication."
+        )),
         ('--oauth-provider', dict(
             action = 'store',
             type   = str,
@@ -142,6 +147,11 @@ class Serve(_BkServe):
             action  = 'store',
             type    = str,
             help    = "Template to serve when user is unauthenticated."
+        )),
+        ('--basic-login-template', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Template to serve for Basic Authentication login page."
         )),
         ('--rest-provider', dict(
             action = 'store',
@@ -395,12 +405,42 @@ class Serve(_BkServe):
 
         if args.auth_template:
             authpath = pathlib.Path(args.auth_template)
-            if not authpath.isfile():
+            if not authpath.is_file():
                 raise ValueError(
-                    "The supplied auth-template {args.auth_template} does not "
+                    f"The supplied auth-template {args.auth_template} does not "
                     "exist, ensure you supply and existing Jinja2 template."
                 )
             config.auth_template = str(authpath.absolute())
+
+        if args.basic_auth and config.basic_auth:
+            raise ValueError(
+                "Turn on Basic authentication using environment variable "
+                "or via explicit argument, not both"
+            )
+        if args.basic_auth:
+            config.basic_auth = args.basic_auth
+        if config.basic_auth:
+            if args.basic_login_template:
+                basic_login_template = args.basic_login_template
+                authpath = pathlib.Path(basic_login_template)
+                if not authpath.is_file():
+                    raise ValueError(
+                        f"The supplied auth-template {basic_login_template} does not "
+                        "exist, ensure you supply and existing Jinja2 template."
+                    )
+            else:
+                basic_login_template = None
+            kwargs['auth_provider'] = BasicProvider(basic_login_template=basic_login_template)
+
+        if args.cookie_secret and config.cookie_secret:
+            raise ValueError(
+                "Supply cookie secret either using environment "
+                "variable or via explicit argument, not both."
+            )
+        elif args.cookie_secret:
+            config.cookie_secret = args.cookie_secret
+
+        # Check only one auth is used.
         if args.oauth_provider and config.oauth_provider:
                 raise ValueError(
                     "Supply OAuth provider either using environment variable "
@@ -422,6 +462,14 @@ class Serve(_BkServe):
                     "When enabling an OAuth provider you must supply "
                     "a valid oauth_key either using the --oauth-key "
                     "CLI argument or PANEL_OAUTH_KEY environment "
+                    "variable."
+                )
+
+            if not config.cookie_secret:
+                raise ValueError(
+                    "When enabling an OAuth provider you must supply "
+                    "a valid cookie_secret either using the --cookie-secret "
+                    "CLI argument or the PANEL_COOKIE_SECRET environment "
                     "variable."
                 )
 
@@ -485,20 +533,6 @@ class Serve(_BkServe):
                     )
                 state.encryption = Fernet(config.oauth_encryption_key)
 
-            if args.cookie_secret and config.cookie_secret:
-                raise ValueError(
-                    "Supply cookie secret either using environment "
-                    "variable or via explicit argument, not both."
-                )
-            elif args.cookie_secret:
-                config.cookie_secret = args.cookie_secret
-            elif not config.cookie_secret:
-                raise ValueError(
-                    "When enabling an OAuth provider you must supply "
-                    "a valid cookie_secret either using the --cookie-secret "
-                    "CLI argument or the PANEL_COOKIE_SECRET environment "
-                    "variable."
-                )
             if args.oauth_error_template:
                 error_template = str(pathlib.Path(args.oauth_error_template).absolute())
             elif config.auth_template:

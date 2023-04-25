@@ -116,6 +116,10 @@ class _config(_base_config):
     autoreload = param.Boolean(default=False, doc="""
         Whether to autoreload server when script changes.""")
 
+    basic_auth_template = param.Path(default=None, doc="""
+        A jinja2 template to override the default Basic Authentication
+        login page.""")
+
     browser_info = param.Boolean(default=True, doc="""
         Whether to request browser info from the frontend.""")
 
@@ -238,6 +242,10 @@ class _config(_base_config):
         When set to a non-None value a thread pool will be started.
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
+
+    _basic_auth = param.ObjectSelector(
+        default=None, allow_None=True, objects=[], doc="""
+        Use Basic authentification.""")
 
     _oauth_provider = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
@@ -456,6 +464,11 @@ class _config(_base_config):
     def nthreads(self):
         nthreads = os.environ.get('PANEL_NUM_THREADS', self._nthreads)
         return None if nthreads is None else int(nthreads)
+
+    @property
+    def basic_auth(self):
+        provider = os.environ.get('PANEL_BASIC_AUTH', self._oauth_provider)
+        return provider.lower() if provider else None
 
     @property
     def oauth_provider(self):

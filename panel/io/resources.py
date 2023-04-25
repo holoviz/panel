@@ -71,6 +71,7 @@ ASSETS_DIR = PANEL_DIR / 'assets'
 INDEX_TEMPLATE = _env.get_template('convert_index.html')
 BASE_TEMPLATE = _env.get_template('base.html')
 ERROR_TEMPLATE = _env.get_template('error.html')
+BASIC_LOGIN_TEMPLATE = _env.get_template('basic_login.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
 CDN_URL = f"https://cdn.holoviz.org/panel/{JS_VERSION}/"

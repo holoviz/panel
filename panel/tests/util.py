@@ -1,6 +1,14 @@
+import contextlib
+import os
+import platform
+import re
+import subprocess
 import sys
 import time
 import warnings
+
+from queue import Empty, Queue
+from threading import Thread
 
 import numpy as np
 import pytest
@@ -19,7 +27,6 @@ ipywidgets_bokeh3 = pytest.mark.skipif(
     not (pnv.major == 1 and pnv.pre is not None and pnv.pre[0] == "rc"),
     reason="Bokeh3: Ipywidgets not working with Bokeh 3 yet"
 )
-
 
 try:
     import holoviews as hv
@@ -47,6 +54,11 @@ try:
 except Exception:
     jupyter_bokeh = None
 jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
+
+APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
+ON_POSIX = 'posix' in sys.builtin_module_names
+
+unix_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
 
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
@@ -196,3 +208,80 @@ def serve_panel_widget(page, port, pn_widget, sleep=0.5):
     serve(pn_widget, port=port, threaded=True, show=False)
     time.sleep(sleep)
     page.goto(f"http://localhost:{port}")
+
+
+@contextlib.contextmanager
+def run_panel_serve(args, cwd=None):
+    cmd = [sys.executable, "-m", "panel", "serve"] + args
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd, close_fds=ON_POSIX)
+    try:
+        yield p
+    except Exception as e:
+        p.terminate()
+        p.wait()
+        print("An error occurred: %s", e)
+        try:
+            out = p.stdout.read().decode()
+            print("\n---- subprocess stdout follows ----\n")
+            print(out)
+        except Exception:
+            pass
+        raise
+    else:
+        p.terminate()
+        p.wait()
+
+
+class NBSR:
+    def __init__(self, stream) -> None:
+        '''
+        NonBlockingStreamReader
+
+        stream: the stream to read from.
+                Usually a process' stdout or stderr.
+        '''
+
+        self._s = stream
+        self._q = Queue()
+
+        def _populateQueue(stream, queue):
+            '''
+            Collect lines from 'stream' and put them in 'queue'.
+            '''
+            for line in iter(stream.readline, b''):
+                queue.put(line)
+            stream.close()
+
+        self._t = Thread(target = _populateQueue,
+                args = (self._s, self._q))
+        self._t.daemon = True
+        self._t.start() #start collecting lines from the stream
+
+    def readline(self, timeout=None):
+        try:
+            return self._q.get(
+                block=timeout is not None,
+                timeout=timeout
+            )
+        except Empty:
+            return None
+
+def wait_for_port(stdout):
+    nbsr = NBSR(stdout)
+    m = None
+    for i in range(20):
+        o = nbsr.readline(0.5)
+        if not o:
+            continue
+        m = APP_PATTERN.search(o.decode('utf-8'))
+        if m is not None:
+            break
+    if m is None:
+        pytest.fail("no matching log line in process output")
+    return int(m.group(1))
+
+def write_file(content, file_obj):
+    file_obj.write(content)
+    file_obj.flush()
+    os.fsync(file_obj)
+    file_obj.seek(0)
