@@ -315,6 +315,3 @@ if __name__ == "__main__":
                              f"panel version ({version}). Cannot build release.")
 
     setup(**setup_args)
-
-    if os.path.isdir(example_path):
-        shutil.rmtree(example_path)
