@@ -369,6 +369,7 @@ class Markdown(HTMLBasePane):
         else:
             from markdown_it import MarkdownIt
             from markdown_it.renderer import RendererHTML
+            from mdit_py_plugins.anchors import anchors_plugin
             from mdit_py_plugins.deflist import deflist_plugin
             from mdit_py_plugins.footnote import footnote_plugin
             from mdit_py_plugins.tasklists import tasklists_plugin
@@ -392,8 +393,9 @@ class Markdown(HTMLBasePane):
                 ], enable_checkboxes=True)
                 parser = create_md_parser(config, RendererHTML)
             parser = (
-                parser.enable('strikethrough').enable('table')
-                .use(deflist_plugin).use(footnote_plugin).use(tasklists_plugin)
+                parser
+                .enable('strikethrough').enable('table')
+                .use(anchors_plugin, permalink=True).use(deflist_plugin).use(footnote_plugin).use(tasklists_plugin)
             )
             try:
                 from mdit_py_emoji import emoji_plugin
