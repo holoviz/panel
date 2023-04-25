@@ -319,7 +319,11 @@ class Markdown(HTMLBasePane):
 
     extensions = param.List(default=[
         "extra", "smarty", "codehilite"], doc="""
-        Markdown extension to apply when transforming markup.""")
+        Markdown extension to apply when transforming markup.
+        Does not apply if renderer is set to 'markdown-it' or 'myst'.""")
+
+    plugins = param.List(default=[], doc="""
+        Additional markdown-it-py plugins to use.""")
 
     renderer = param.Selector(default='markdown-it', objects=[
         'markdown-it', 'myst', 'markdown'], doc="""
@@ -330,7 +334,7 @@ class Markdown(HTMLBasePane):
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'dedent': None, 'disable_math': None, 'extensions': None,
-        'renderer': None
+        'plugins': None, 'renderer': None
     }
 
     _rerender_params: ClassVar[List[str]] = [
@@ -397,6 +401,8 @@ class Markdown(HTMLBasePane):
                 .enable('strikethrough').enable('table')
                 .use(anchors_plugin, permalink=True).use(deflist_plugin).use(footnote_plugin).use(tasklists_plugin)
             )
+            for plugin in self.plugins:
+                parser = parser.use(plugin)
             try:
                 from mdit_py_emoji import emoji_plugin
                 parser = parser.use(emoji_plugin)
