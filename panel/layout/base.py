@@ -226,18 +226,18 @@ class Panel(Reactive):
             sizing_mode = f'{mode}_width'
         elif expand_height and not self.height:
             sizing_mode = f'{mode}_height'
-        properties = {'sizing_mode': sizing_mode}
+        if sizing_mode is None:
+            return {}
 
-        if sizing_mode is not None and (sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and not all_expand_width and widths:
-            if widths and self._direction == 'vertical':
-                properties['min_width'] = max(widths)
-            elif len(widths) == len(children) and self._direction == 'horizontal':
-                properties['min_width'] = sum(widths)
-        if sizing_mode is not None and (sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and not all_expand_height and heights:
-            if heights and self._direction == 'horizontal':
-                properties['min_height'] = max(heights)
-            elif heights and self._direction == 'vertical':
-                properties['min_height'] = sum(heights)
+        properties = {'sizing_mode': sizing_mode}
+        if ((sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and
+            not all_expand_width and widths and 'min_width' not in properties):
+            width_op = max if self._direction == 'vertical' else sum
+            properties['min_width'] = width_op(widths)
+        if ((sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and
+            not all_expand_height and heights and 'min_height' not in properties):
+            height_op = max if self._direction == 'horizontal' else sum
+            properties['min_height'] = height_op(heights)
         return properties
 
     #----------------------------------------------------------------
