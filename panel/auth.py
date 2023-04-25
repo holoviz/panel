@@ -860,7 +860,7 @@ class BasicLoginHandler(RequestHandler):
         if not user:
             self.clear_cookie("user")
             return
-        self.set_secure_cookie("user", tornado.escape.json_encode(user), expires_days=config.oauth_expiry)
+        self.set_secure_cookie("user", user, expires_days=config.oauth_expiry)
         id_token = base64url_encode(json.dumps({'user': user}))
         if state.encryption:
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))

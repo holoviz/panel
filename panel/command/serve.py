@@ -432,6 +432,21 @@ class Serve(_BkServe):
                 basic_login_template = None
             kwargs['auth_provider'] = BasicProvider(basic_login_template=basic_login_template)
 
+        if args.cookie_secret and config.cookie_secret:
+            raise ValueError(
+                "Supply cookie secret either using environment "
+                "variable or via explicit argument, not both."
+            )
+        elif args.cookie_secret:
+            config.cookie_secret = args.cookie_secret
+        elif not config.cookie_secret:
+            raise ValueError(
+                "When enabling an OAuth provider you must supply "
+                "a valid cookie_secret either using the --cookie-secret "
+                "CLI argument or the PANEL_COOKIE_SECRET environment "
+                "variable."
+            )
+
         # Check only one auth is used.
         if args.oauth_provider and config.oauth_provider:
                 raise ValueError(
@@ -517,20 +532,6 @@ class Serve(_BkServe):
                     )
                 state.encryption = Fernet(config.oauth_encryption_key)
 
-            if args.cookie_secret and config.cookie_secret:
-                raise ValueError(
-                    "Supply cookie secret either using environment "
-                    "variable or via explicit argument, not both."
-                )
-            elif args.cookie_secret:
-                config.cookie_secret = args.cookie_secret
-            elif not config.cookie_secret:
-                raise ValueError(
-                    "When enabling an OAuth provider you must supply "
-                    "a valid cookie_secret either using the --cookie-secret "
-                    "CLI argument or the PANEL_COOKIE_SECRET environment "
-                    "variable."
-                )
             if args.oauth_error_template:
                 error_template = str(pathlib.Path(args.oauth_error_template).absolute())
             elif config.auth_template:
