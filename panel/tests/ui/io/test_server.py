@@ -21,11 +21,11 @@ def test_server_reuse_sessions(page, port, reuse_sessions):
 
     page.goto(f"http://localhost:{port}")
 
-    assert page.text_content(".markdown h3") == 'Count 0\n'
+    assert page.text_content(".markdown h3") == 'Count 0'
 
     page.goto(f"http://localhost:{port}")
 
-    assert page.text_content(".markdown h3") == 'Count 1\n'
+    assert page.text_content(".markdown h3") == 'Count 1'
 
 
 def test_server_reuse_sessions_with_session_key_func(page, port, reuse_sessions):
@@ -45,9 +45,9 @@ def test_server_reuse_sessions_with_session_key_func(page, port, reuse_sessions)
     page.goto(f"http://localhost:{port}/?arg=foo")
 
     assert page.text_content("title") == 'foo'
-    assert page.text_content(".markdown h3") == 'Count 0\n'
+    assert page.text_content(".markdown h3") == 'Count 0'
 
     page.goto(f"http://localhost:{port}/?arg=bar")
 
     assert page.text_content("title") == 'bar'
-    assert page.text_content(".markdown h3") == 'Count 1\n'
+    assert page.text_content(".markdown h3") == 'Count 1'
