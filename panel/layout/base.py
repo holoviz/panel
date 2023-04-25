@@ -176,6 +176,25 @@ class Panel(Reactive):
         aims to provide a layer of backward compatibility for the
         layout behavior before v1.0 and provide general usability
         improvements.
+
+        The code iterates over the children and extracts their sizing_mode,
+        width and height. Based on these values we infer a few overrides
+        for the container sizing_mode, width and height:
+
+        - If a child is responsive in width then the container should
+          also be responsive in width (unless it has a fixed size).
+        - If a container is vertical (e.g. a Column) and a child is
+          responsive in height then the container should also be
+          responsive.
+        - If a container is horizontal (e.g. a Row) and all children
+          are responsive in height then the container should also be
+          responsive. This behavior is assymetrical with height
+          because there isn't always vertical space to expand into
+          and it is better for the component to match the height of
+          the other children.
+        - Always compute the fixed sizes of the children (if available)
+          and provide this as min_width and min_height settings to
+          ensure sufficient space is available.
         """
         margin = props.get('margin', self.margin)
         sizing_mode = props.get('sizing_mode', self.sizing_mode)
@@ -220,11 +239,18 @@ class Panel(Reactive):
 
         # Infer new sizing mode based on children
         mode = 'scale' if scale else 'stretch'
+        if self._direction == 'horizontal':
+            allow_height_scale = all_expand_height
+        else:
+            allow_height_scale = True
         if expand_width and expand_height and not self.width and not self.height:
-            sizing_mode = f'{mode}_both'
+            if allow_height_scale or 'both' in (sizing_mode or ''):
+                sizing_mode = f'{mode}_both'
+            else:
+                sizing_mode = f'{mode}_width'
         elif expand_width and not self.width:
             sizing_mode = f'{mode}_width'
-        elif expand_height and not self.height:
+        elif expand_height and not self.height and allow_height_scale:
             sizing_mode = f'{mode}_height'
         if sizing_mode is None:
             return {}
@@ -233,11 +259,13 @@ class Panel(Reactive):
         if ((sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and
             not all_expand_width and widths and 'min_width' not in properties):
             width_op = max if self._direction == 'vertical' else sum
-            properties['min_width'] = width_op(widths)
+            min_width = width_op(widths)
+            properties['min_width'] = min(min_width, properties.get('max_width') or 0)
         if ((sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and
             not all_expand_height and heights and 'min_height' not in properties):
             height_op = max if self._direction == 'horizontal' else sum
-            properties['min_height'] = height_op(heights)
+            min_height = height_op(heights)
+            properties['min_height'] = min(min_height, properties.get('max_height') or 0)
         return properties
 
     #----------------------------------------------------------------
