@@ -16,10 +16,10 @@ def test_update_markdown_pane(page, port):
     time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
 
-    assert page.locator(".markdown").locator("div").text_content() == 'Initial'
+    assert page.locator(".markdown").locator("div").text_content() == 'Initial\n'
     md.object = 'Updated'
     time.sleep(0.1)
-    assert page.locator(".markdown").locator("div").text_content() == 'Updated'
+    assert page.locator(".markdown").locator("div").text_content() == 'Updated\n'
 
 
 def test_update_markdown_pane_resizes(page, port):
