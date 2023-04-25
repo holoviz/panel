@@ -18,7 +18,7 @@ from tornado.web import RequestHandler
 from .config import config
 from .entry_points import entry_points_for
 from .io import state
-from .io.resources import DUMMY_LOGIN_TEMPLATE, ERROR_TEMPLATE, _env
+from .io.resources import BASIC_LOGIN_TEMPLATE, ERROR_TEMPLATE, _env
 from .util import base64url_decode, base64url_encode
 
 log = logging.getLogger(__name__)
@@ -825,23 +825,30 @@ class OAuthProvider(AuthProvider):
         return LogoutHandler
 
 
-class DummyLoginHandler(RequestHandler):
+class BasicLoginHandler(RequestHandler):
+
     def get(self):
         try:
             errormessage = self.get_argument("error")
         except Exception:
             errormessage = ""
-        self.write(self._dummy_login_template.render(errormessage=errormessage))
+        self.write(self._basic_login_template.render(errormessage=errormessage))
 
-    def _validate(self, password):
-        if password == config.dummy_auth:
+    def _validate(self, username, password):
+        if os.path.isfile(config.basic_auth):
+            with open(config.basic_auth, encoding='utf-8') as auth_file:
+                auth_info = json.loads(auth_file.read())
+            if username not in auth_info:
+                return False
+            return password == auth_info[username]
+        elif password == config.basic_auth:
             return True
         return False
 
     def post(self):
         username = self.get_argument("username", "")
         password = self.get_argument("password", "")
-        auth = self._validate(password)
+        auth = self._validate(username, password)
         if auth:
             self.set_current_user(username)
             self.redirect("/")
@@ -850,19 +857,24 @@ class DummyLoginHandler(RequestHandler):
             self.redirect('/login' + error_msg)
 
     def set_current_user(self, user):
-        if user:
-            self.set_secure_cookie("user", tornado.escape.json_encode(user))
-        else:
+        if not user:
             self.clear_cookie("user")
+            return
+        self.set_secure_cookie("user", tornado.escape.json_encode(user), expires_days=config.oauth_expiry)
+        id_token = base64url_encode(json.dumps({'user': user}))
+        if state.encryption:
+            id_token = state.encryption.encrypt(id_token.encode('utf-8'))
+        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
 
 
-class DummyProvider(OAuthProvider):
-    def __init__(self, dummy_login_template=None):
-        if dummy_login_template is None:
-            self._dummy_login_template = DUMMY_LOGIN_TEMPLATE
+
+class BasicProvider(OAuthProvider):
+    def __init__(self, basic_login_template=None):
+        if basic_login_template is None:
+            self._basic_login_template = BASIC_LOGIN_TEMPLATE
         else:
-            with open(dummy_login_template) as f:
-                self._dummy_login_template = _env.from_string(f.read())
+            with open(basic_login_template) as f:
+                self._basic_login_template = _env.from_string(f.read())
         super().__init__()
 
     @property
@@ -871,8 +883,8 @@ class DummyProvider(OAuthProvider):
 
     @property
     def login_handler(self):
-        DummyLoginHandler._dummy_login_template = self._dummy_login_template
-        return DummyLoginHandler
+        BasicLoginHandler._basic_login_template = self._basic_login_template
+        return BasicLoginHandler
 
 
 AUTH_PROVIDERS = {

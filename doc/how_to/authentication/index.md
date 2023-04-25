@@ -15,6 +15,13 @@ In other words OAuth outsources authentication to a third party provider, e.g. G
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
+:::{grid-item-card} {octicon}`unlock;2.5em;sd-mr-1 sd-animate-grow50` Configuring Basic Authentication
+:link: basic
+:link-type: doc
+
+Discover how to add basic password based authentication to your application.
+:::
+
 :::{grid-item-card} {octicon}`gear;2.5em;sd-mr-1 sd-animate-grow50` Configuring OAuth
 :link: configuration
 :link-type: doc
@@ -45,6 +52,7 @@ Note that since Panel is built on Bokeh server and Tornado it is also possible t
 :hidden:
 :maxdepth: 2
 
+basic
 configuration
 providers
 user_info
