@@ -108,6 +108,9 @@ install_requires = [
     'pyviz_comms >=0.7.4',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
+    'markdown-it-py',
+    'linkify-it-py',
+    'mdit-py-plugins',
     'requests',
     'tqdm >=4.48.0',
     'pyct >=0.4.4',
@@ -145,7 +148,6 @@ _tests = [
     'ipython >=7.0',
     'holoviews >=1.16.0a2',
     'diskcache',
-    'markdown-it-py',
     'ipyvuetify',
     'reacton',
     # Added lxml temporarily as installing pyecharts or idom on Python 3.11

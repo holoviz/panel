@@ -25,4 +25,4 @@ def test_param_defer_load(page, port):
 
     time.sleep(0.5)
 
-    assert page.locator(".markdown").locator("div").text_content() == 'I render after load!'
+    assert page.locator(".markdown").locator("div").text_content() == 'I render after load!\n'
