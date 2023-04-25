@@ -132,7 +132,7 @@ def init_doc(doc: Optional[Document]) -> Document:
         )
 
     # ALERT: Temporary override to ensure layouts are initialized
-    doc.js_on_event('document_ready', CustomJS(code="""
+    curdoc.js_on_event('document_ready', CustomJS(code="""
     for (const root of Object.values(Bokeh.index)) {
       if (root.invalidate_layout) {
         root.invalidate_layout()
