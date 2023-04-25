@@ -439,13 +439,6 @@ class Serve(_BkServe):
             )
         elif args.cookie_secret:
             config.cookie_secret = args.cookie_secret
-        elif not config.cookie_secret:
-            raise ValueError(
-                "When enabling an OAuth provider you must supply "
-                "a valid cookie_secret either using the --cookie-secret "
-                "CLI argument or the PANEL_COOKIE_SECRET environment "
-                "variable."
-            )
 
         # Check only one auth is used.
         if args.oauth_provider and config.oauth_provider:
@@ -469,6 +462,14 @@ class Serve(_BkServe):
                     "When enabling an OAuth provider you must supply "
                     "a valid oauth_key either using the --oauth-key "
                     "CLI argument or PANEL_OAUTH_KEY environment "
+                    "variable."
+                )
+
+            if not config.cookie_secret:
+                raise ValueError(
+                    "When enabling an OAuth provider you must supply "
+                    "a valid cookie_secret either using the --cookie-secret "
+                    "CLI argument or the PANEL_COOKIE_SECRET environment "
                     "variable."
                 )
 
