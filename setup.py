@@ -109,7 +109,7 @@ install_requires = [
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
     'markdown-it-py',
-    'linkify-it-py'
+    'linkify-it-py',
     'mdit-py-plugins',
     'requests',
     'tqdm >=4.48.0',
