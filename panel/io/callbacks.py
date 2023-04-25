@@ -167,7 +167,7 @@ class PeriodicCallback(param.Parameterized):
             self._cb = asyncio.create_task(
                 self._async_repeat(self._periodic_callback)
             )
-        elif state.curdoc:
+        elif state.curdoc and state.curdoc.session_context:
             self._doc = state.curdoc
             if state._unblocked(state.curdoc):
                 self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
