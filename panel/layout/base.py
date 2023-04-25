@@ -219,26 +219,14 @@ class Panel(Reactive):
                 all_expand_height = False
 
         # Infer new sizing mode based on children
-        properties = {}
         mode = 'scale' if scale else 'stretch'
         if expand_width and expand_height and not self.width and not self.height:
-            if all_expand_width and all_expand_height:
-                properties['sizing_mode'] = f'{mode}_both'
-            else:
-                properties['width_policy'] = 'fit'
-                properties['height_policy'] = 'fit'
+            sizing_mode = f'{mode}_both'
         elif expand_width and not self.width:
-            if all_expand_width:
-                properties['sizing_mode'] = f'{mode}_width'
-            else:
-                properties['width_policy'] = 'fit'
+            sizing_mode = f'{mode}_width'
         elif expand_height and not self.height:
-            if all_expand_height:
-                properties['sizing_mode'] = f'{mode}_height'
-            else:
-                properties['height_policy'] = 'fit'
-        else:
-            properties['sizing_mode'] = sizing_mode
+            sizing_mode = f'{mode}_height'
+        properties = {'sizing_mode': sizing_mode}
 
         if sizing_mode is not None and (sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and not all_expand_width and widths:
             if widths and self._direction == 'vertical':
