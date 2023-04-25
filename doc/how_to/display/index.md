@@ -28,6 +28,13 @@ How to rapidly develop a Panel application in your favorite IDE or editor.
 How to use the Preview functionality in JupyterLab to rapidly develop applications.
 :::
 
+:::{grid-item-card} {octicon}`rows;2.5em;sd-mr-1 sd-animate-grow50` Develop in other notebook environments
+:link: other_nb
+:link-type: doc
+
+How to develop apps in Google Colab, VSCode notebook, nteract, and other notebook environments.
+:::
+
 :::{grid-item-card} {octicon}`markdown;2.5em;sd-mr-1 sd-animate-grow50` Write apps in Markdown
 :link: markdown
 :link-type: doc
@@ -45,5 +52,6 @@ How to write Panel applications inside Markdown files.
 notebook
 editor
 jupyterlab
+other_nb
 markdown
 ```

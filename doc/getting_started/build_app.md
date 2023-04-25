@@ -1,4 +1,4 @@
-# Build an app
+# {octicon}`tools;2em;sd-mr-1` Build an app
 
 At this point you should have [set up your environment and installed Panel](installation.md) so you should be ready to get going.
 
