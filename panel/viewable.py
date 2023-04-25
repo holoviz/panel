@@ -239,6 +239,35 @@ class Layoutable(param.Parameterized):
     __abstract = True
 
     def __init__(self, **params):
+        sizing_mode = params.get('sizing_mode')
+        if (sizing_mode in ('stretch_width', 'scale_width', 'stretch_both', 'scale_both') and
+            params.get('width') is not None):
+            error = (
+                f"Providing a width-responsive sizing_mode ({params['sizing_mode']!r}) "
+                "and a fixed width is not supported. Converting fixed width to min_width. "
+                "If you intended the component to be fully width-responsive remove the height"
+                "setting, otherwise change it to min_height."
+            )
+            if config.layout_compatibility:
+                error += ' To error on the incorrect specification disable the config.layout_compatibility option.'
+                self.param.warning(error)
+            else:
+                raise ValueError(error)
+            params['min_width'] = params.pop('width')
+        if (sizing_mode in ('stretch_height', 'scale_height', 'stretch_both', 'scale_both') and
+            params.get('height') is not None):
+            error = (
+                f"Providing a height-responsive sizing_mode ({params['sizing_mode']!r}) "
+                "and a fixed height is not supported. Converting fixed height to min_height. "
+                "If you intended the component to be fully height-responsive remove the height "
+                "setting, otherwise change it to min_height."
+            )
+            if config.layout_compatibility:
+                error += ' To error on the incorrect specification disable the config.layout_compatibility option.'
+                self.param.warning(error)
+            else:
+                raise ValueError(error)
+            params['min_height'] = params.pop('height')
         if (params.get('width') is not None and
             params.get('height') is not None and
             params.get('width_policy') is None and

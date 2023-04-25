@@ -135,6 +135,12 @@ class _config(_base_config):
     global_loading_spinner = param.Boolean(default=False, doc="""
         Whether to add a global loading spinner for the whole application.""")
 
+    layout_compatibility = param.Boolean(default=True, doc="""
+        Provide compatibility for older layout specifications. Incompatible
+        specifications will warn in compatibility mode but will error
+        when compatibility is disabled. Compatibility to be disabled in
+        Panel 1.1.""")
+
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
 
@@ -284,7 +290,8 @@ class _config(_base_config):
         'admin_plugins', 'autoreload', 'comms', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
-        'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn'
+        'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
+        'layout_compatibility'
     ]
 
     _truthy = ['True', 'true', '1', True, 1]

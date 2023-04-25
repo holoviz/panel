@@ -176,6 +176,25 @@ class Panel(Reactive):
         aims to provide a layer of backward compatibility for the
         layout behavior before v1.0 and provide general usability
         improvements.
+
+        The code iterates over the children and extracts their sizing_mode,
+        width and height. Based on these values we infer a few overrides
+        for the container sizing_mode, width and height:
+
+        - If a child is responsive in width then the container should
+          also be responsive in width (unless it has a fixed size).
+        - If a container is vertical (e.g. a Column) and a child is
+          responsive in height then the container should also be
+          responsive.
+        - If a container is horizontal (e.g. a Row) and all children
+          are responsive in height then the container should also be
+          responsive. This behavior is assymetrical with height
+          because there isn't always vertical space to expand into
+          and it is better for the component to match the height of
+          the other children.
+        - Always compute the fixed sizes of the children (if available)
+          and provide this as min_width and min_height settings to
+          ensure sufficient space is available.
         """
         margin = props.get('margin', self.margin)
         sizing_mode = props.get('sizing_mode', self.sizing_mode)
@@ -184,8 +203,8 @@ class Panel(Reactive):
 
         # Iterate over children and determine responsiveness along
         # each axis, scaling and the widths of each component.
-        widths = []
-        all_expand, expand_width, expand_height, scale = True, False, False, False
+        heights, widths = [], []
+        all_expand_width, all_expand_height, expand_width, expand_height, scale = True, True, False, False, False
         for child in children:
             if child.sizing_mode and 'scale' in child.sizing_mode:
                 scale = True
@@ -202,25 +221,51 @@ class Panel(Reactive):
                     else:
                         width += margin*2
                     widths.append(width)
-                all_expand = False
+                all_expand_width = False
             if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
                 expand_height = True
+            else:
+                height = child.height or child.min_height
+                if height:
+                    if isinstance(margin, tuple):
+                        if len(margin) == 2:
+                            height += margin[0]*2
+                        else:
+                            height += margin[0] + margin[2]
+                    else:
+                        height += margin*2
+                    heights.append(height)
+                all_expand_height = False
 
         # Infer new sizing mode based on children
         mode = 'scale' if scale else 'stretch'
+        if self._direction == 'horizontal':
+            allow_height_scale = all_expand_height
+        else:
+            allow_height_scale = True
         if expand_width and expand_height and not self.width and not self.height:
-            sizing_mode = f'{mode}_both'
+            if allow_height_scale or 'both' in (sizing_mode or ''):
+                sizing_mode = f'{mode}_both'
+            else:
+                sizing_mode = f'{mode}_width'
         elif expand_width and not self.width:
             sizing_mode = f'{mode}_width'
-        elif expand_height and not self.height:
+        elif expand_height and not self.height and allow_height_scale:
             sizing_mode = f'{mode}_height'
+        if sizing_mode is None:
+            return {}
 
         properties = {'sizing_mode': sizing_mode}
-        if sizing_mode is not None and (sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and not all_expand:
-            if len(widths) == len(children) and self._direction == 'vertical':
-                properties['min_width'] = max(widths)
-            elif len(widths) == len(children) and self._direction == 'horizontal':
-                properties['min_width'] = sum(widths)
+        if ((sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and
+            not all_expand_width and widths and 'min_width' not in properties):
+            width_op = max if self._direction == 'vertical' else sum
+            min_width = width_op(widths)
+            properties['min_width'] = min(min_width, properties.get('max_width') or 0)
+        if ((sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and
+            not all_expand_height and heights and 'min_height' not in properties):
+            height_op = max if self._direction == 'horizontal' else sum
+            min_height = height_op(heights)
+            properties['min_height'] = min(min_height, properties.get('max_height') or 0)
         return properties
 
     #----------------------------------------------------------------
