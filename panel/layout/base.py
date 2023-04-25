@@ -184,8 +184,8 @@ class Panel(Reactive):
 
         # Iterate over children and determine responsiveness along
         # each axis, scaling and the widths of each component.
-        widths = []
-        all_expand, expand_width, expand_height, scale = True, False, False, False
+        heights, widths = [], []
+        all_expand_width, all_expand_height, expand_width, expand_height, scale = True, True, False, False, False
         for child in children:
             if child.sizing_mode and 'scale' in child.sizing_mode:
                 scale = True
@@ -202,25 +202,54 @@ class Panel(Reactive):
                     else:
                         width += margin*2
                     widths.append(width)
-                all_expand = False
+                all_expand_width = False
             if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
                 expand_height = True
+            else:
+                height = child.height or child.min_height
+                if height:
+                    if isinstance(margin, tuple):
+                        if len(margin) == 2:
+                            height += margin[0]*2
+                        else:
+                            height += margin[0] + margin[2]
+                    else:
+                        height += margin*2
+                    heights.append(height)
+                all_expand_height = False
 
         # Infer new sizing mode based on children
+        properties = {}
         mode = 'scale' if scale else 'stretch'
         if expand_width and expand_height and not self.width and not self.height:
-            sizing_mode = f'{mode}_both'
+            if all_expand_width and all_expand_height:
+                properties['sizing_mode'] = f'{mode}_both'
+            else:
+                properties['width_policy'] = 'fit'
+                properties['height_policy'] = 'fit'
         elif expand_width and not self.width:
-            sizing_mode = f'{mode}_width'
+            if all_expand_width:
+                properties['sizing_mode'] = f'{mode}_width'
+            else:
+                properties['width_policy'] = 'fit'
         elif expand_height and not self.height:
-            sizing_mode = f'{mode}_height'
+            if all_expand_height:
+                properties['sizing_mode'] = f'{mode}_height'
+            else:
+                properties['height_policy'] = 'fit'
+        else:
+            properties['sizing_mode'] = sizing_mode
 
-        properties = {'sizing_mode': sizing_mode}
-        if sizing_mode is not None and (sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and not all_expand:
-            if len(widths) == len(children) and self._direction == 'vertical':
+        if sizing_mode is not None and (sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and not all_expand_width and widths:
+            if widths and self._direction == 'vertical':
                 properties['min_width'] = max(widths)
             elif len(widths) == len(children) and self._direction == 'horizontal':
                 properties['min_width'] = sum(widths)
+        if sizing_mode is not None and (sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and not all_expand_height and heights:
+            if heights and self._direction == 'horizontal':
+                properties['min_height'] = max(heights)
+            elif heights and self._direction == 'vertical':
+                properties['min_height'] = sum(heights)
         return properties
 
     #----------------------------------------------------------------
