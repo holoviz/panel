@@ -1,4 +1,4 @@
-# Core Concepts
+# {octicon}`mortar-board;2em;sd-mr-1` Core Concepts
 
 Getting started with Panel is pretty straightforward, open your editor, IDE or notebook environment, declare a few Panel components as `servable` (we will discover what that means soon), then launch the script or notebook file with:
 
