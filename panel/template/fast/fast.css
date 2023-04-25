@@ -315,6 +315,10 @@ h1, h2, h3, h4, h5, h6 {
     margin-right: auto;
 }
 
+.main .card-margin.stretch_both, .main .card-margin.stretch_height {
+    height: calc(100% - 2em);
+}
+
 .main a, .sidenav a {
     color: var(--accent-foreground-rest);
     text-decoration: underline;
