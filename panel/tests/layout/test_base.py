@@ -481,7 +481,7 @@ def test_layout_with_param_setitem(document, comm):
     test.select = 1
     assert model.children[1].text == '&lt;pre&gt;1&lt;/pre&gt;'
 
-@pytest.mark.parametrize('panel', [Card, Column, Row, Tabs, Accordion])
+@pytest.mark.parametrize('panel', [Card, Column, Tabs, Accordion])
 @pytest.mark.parametrize('sizing_mode', ['stretch_width', 'stretch_height', 'stretch_both'])
 def test_expand_sizing_mode_to_match_child(panel, sizing_mode, document, comm):
     div1 = Div()
@@ -492,7 +492,16 @@ def test_expand_sizing_mode_to_match_child(panel, sizing_mode, document, comm):
 
     assert model.sizing_mode == sizing_mode
 
-@pytest.mark.parametrize('panel', [Card, Column, Row, Tabs, Accordion])
+def test_expand_row_sizing_mode_stretch_both(document, comm):
+    div1 = Div(sizing_mode='stretch_both')
+    div2 = Div(sizing_mode='stretch_both')
+    layout = Row(div1, div2)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_both'
+
+@pytest.mark.parametrize('panel', [Card, Column, Tabs, Accordion])
 def test_expand_both_axes(panel, document, comm):
     div1 = Div(sizing_mode='stretch_width')
     div2 = Div(sizing_mode='stretch_height')
@@ -502,11 +511,47 @@ def test_expand_both_axes(panel, document, comm):
 
     assert model.sizing_mode == 'stretch_both'
 
-@pytest.mark.parametrize('panel', [Card, Column, Row, Tabs, Accordion])
+def test_not_expand_row_both_axes(document, comm):
+    div1 = Div(sizing_mode='stretch_width')
+    div2 = Div(sizing_mode='stretch_height')
+    layout = Row(div1, div2)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_width'
+
+def test_expand_row_both_axes(document, comm):
+    div1 = Div(sizing_mode='stretch_both')
+    div2 = Div(sizing_mode='stretch_both')
+    layout = Row(div1, div2)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_both'
+
+@pytest.mark.parametrize('panel', [Card, Column, Tabs, Accordion])
 def test_expand_only_non_fixed_axis_width(panel, document, comm):
     div1 = Div(sizing_mode='stretch_width')
     div2 = Div(sizing_mode='stretch_height')
     layout = panel(div1, div2, width=500)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode == 'stretch_height'
+
+def test_not_expand_row_only_non_fixed_axis_width(document, comm):
+    div1 = Div(sizing_mode='stretch_width')
+    div2 = Div(sizing_mode='stretch_height')
+    layout = Row(div1, div2, width=500)
+
+    model = layout.get_root(document, comm)
+
+    assert model.sizing_mode is None
+
+def test_expand_row_all_only_non_fixed_axis_width(document, comm):
+    div1 = Div(sizing_mode='stretch_height')
+    div2 = Div(sizing_mode='stretch_height')
+    layout = Row(div1, div2, width=500)
 
     model = layout.get_root(document, comm)
 
