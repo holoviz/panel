@@ -4,8 +4,6 @@ import json
 import numpy as np
 import pandas as pd
 
-import panel as pn
-
 from panel.pane import (
     HTML, JSON, DataFrame, Markdown, PaneBase, Str,
 )
@@ -47,42 +45,60 @@ def test_get_streamz_seriess_pane_type():
     sdf = Random(interval='200ms', freq='50ms').groupby('y').sum()
     assert PaneBase.get_pane_type(sdf.x) is DataFrame
 
-
 def test_markdown_pane(document, comm):
-    pane = pn.panel("**Markdown**")
+    pane = Markdown("**Markdown**")
 
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.endswith("&lt;p&gt;&lt;strong&gt;Markdown&lt;/strong&gt;&lt;/p&gt;")
+    assert model.text.endswith("&lt;p&gt;&lt;strong&gt;Markdown&lt;/strong&gt;&lt;/p&gt;\n")
 
     # Replace Pane.object
     pane.object = "*Markdown*"
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.endswith("&lt;p&gt;&lt;em&gt;Markdown&lt;/em&gt;&lt;/p&gt;")
+    assert model.text.endswith("&lt;p&gt;&lt;em&gt;Markdown&lt;/em&gt;&lt;/p&gt;\n")
 
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
 
 def test_markdown_pane_dedent(document, comm):
-    pane = pn.panel("    ABC")
+    pane = Markdown("    ABC")
 
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.endswith("&lt;p&gt;ABC&lt;/p&gt;")
+    assert model.text.endswith("&lt;p&gt;ABC&lt;/p&gt;\n")
 
     pane.dedent = False
-    assert model.text.startswith('&lt;div class=&quot;codehilite')
+    assert model.text.startswith('&lt;pre&gt;&lt;code&gt;ABC')
 
+def test_markdown_pane_markdown_it_renderer(document, comm):
+    pane = Markdown("""
+    - [x] Task1
+    - [ ] Task2
+    """, renderer='markdown-it')
+
+    # Create pane
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    assert model.text == (
+        '&lt;ul class=&quot;contains-task-list&quot;&gt;\n'
+        '&lt;li class=&quot;task-list-item&quot;&gt;'
+        '&lt;input class=&quot;task-list-item-checkbox&quot; '
+        'checked=&quot;checked&quot; disabled=&quot;disabled&quot; '
+        'type=&quot;checkbox&quot;&gt; Task1&lt;/li&gt;\n'
+        '&lt;li class=&quot;task-list-item&quot;&gt;&lt;input '
+        'class=&quot;task-list-item-checkbox&quot; disabled=&quot;disabled&quot; '
+        'type=&quot;checkbox&quot;&gt; Task2&lt;/li&gt;\n&lt;/ul&gt;\n'
+    )
 
 def test_markdown_pane_extensions(document, comm):
-    pane = pn.panel("""
+    pane = Markdown("""
     ```python
     None
     ```
-    """)
+    """, renderer='markdown')
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -91,7 +107,6 @@ def test_markdown_pane_extensions(document, comm):
 
     pane.extensions = ["extra", "smarty"]
     assert model.text.startswith('&lt;pre&gt;&lt;code class=&quot;language-python')
-
 
 def test_html_pane(document, comm):
     pane = HTML("<h1>Test</h1>")
@@ -109,7 +124,6 @@ def test_html_pane(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
-
 
 def test_dataframe_pane_pandas(document, comm):
     pane = DataFrame(pd._testing.makeDataFrame())
@@ -148,7 +162,6 @@ def test_dataframe_pane_supports_escape(document, comm):
     pane._cleanup(model)
     assert pane._models == {}
 
-
 @streamz_available
 def test_dataframe_pane_streamz(document, comm):
     from streamz.dataframe import Random
@@ -173,7 +186,6 @@ def test_dataframe_pane_streamz(document, comm):
     assert pane._stream is None
     assert pane._models == {}
 
-
 def test_string_pane(document, comm):
     pane = Str("<h1>Test</h1>")
 
@@ -191,7 +203,6 @@ def test_string_pane(document, comm):
     pane._cleanup(model)
     assert pane._models == {}
 
-
 class NumpyEncoder(json.JSONEncoder):
 
     def default(self, obj):
@@ -208,7 +219,6 @@ def test_json_applies():
     assert JSON.applies('{"a": 1}') == 0
     assert not JSON.applies({'array': np.array([1, 2, 3])})
     assert JSON.applies({'array': np.array([1, 2, 3])}, encoder=NumpyEncoder)
-
 
 def test_json_pane(document, comm):
     pane = JSON({'a': 2})
@@ -241,7 +251,6 @@ def test_json_pane(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
-
 
 def test_json_pane_rerenders_on_depth_change(document, comm):
     pane = JSON({'a': 2}, depth=2)
