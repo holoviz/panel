@@ -4,8 +4,6 @@ import os
 import shutil
 import sys
 
-import pyct.build
-
 from setuptools import find_packages, setup
 from setuptools.command.develop import develop
 from setuptools.command.install import install
@@ -113,7 +111,6 @@ install_requires = [
     'mdit-py-plugins',
     'requests',
     'tqdm >=4.48.0',
-    'pyct >=0.4.4',
     'bleach',
     'setuptools >=42',
     'typing_extensions',
@@ -220,7 +217,6 @@ extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 # because it doesn't work well with pip.
 extras_require['build'] = [
     'param >=1.9.2',
-    'pyct >=0.4.4',
     'setuptools >=42',
     'requests',
     'packaging',
@@ -304,12 +300,6 @@ def clean_js_version(version):
     return version
 
 if __name__ == "__main__":
-    example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                'panel', 'examples')
-
-    if 'develop' not in sys.argv and 'egg_info' not in sys.argv:
-        pyct.build.examples(example_path, __file__, force=True)
-
     version = setup_args['version']
     if 'post' not in version:
         with open('./panel/package.json') as f:
@@ -325,6 +315,3 @@ if __name__ == "__main__":
                              f"panel version ({version}). Cannot build release.")
 
     setup(**setup_args)
-
-    if os.path.isdir(example_path):
-        shutil.rmtree(example_path)

@@ -49,15 +49,9 @@ def transform_cmds(argv):
 
 
 def main(args=None):
-    """Merges commands offered by pyct and bokeh and provides help for both"""
+    """Mirrors bokeh CLI and adds additional Panel specific commands """
     from bokeh.command.subcommands import all as bokeh_commands
     bokeh_commands = bokeh_commands + [OAuthSecret, Convert, Bundle]
-
-    try:
-        import pyct.cmd
-        pyct_commands = ['copy-examples', 'examples']
-    except Exception:
-        pass
 
     parser = argparse.ArgumentParser(
         prog="panel", epilog="See '<command> --help' to read about a specific subcommand."
@@ -66,11 +60,6 @@ def main(args=None):
     parser.add_argument('-v', '--version', action='version', version=__version__)
 
     subs = parser.add_subparsers(help="Sub-commands")
-
-    for cmd in pyct_commands:
-        cmd = cmd.replace('-', '_')
-        fn = getattr(pyct.cmd, cmd)
-        subs.add_parser(cmd, help=fn.__doc__)
 
     for cls in bokeh_commands:
         if cls is BkServe:
@@ -89,7 +78,7 @@ def main(args=None):
             subs.add_parser(cls.name, help=cls.help)
 
     if len(sys.argv) == 1:
-        all_commands = sorted([c.name for c in bokeh_commands] + pyct_commands)
+        all_commands = sorted([c.name for c in bokeh_commands])
         die("ERROR: Must specify subcommand, one of: %s" % nice_join(all_commands))
 
     if sys.argv[1] in ('--help', '-h'):
@@ -115,14 +104,6 @@ def main(args=None):
             ret = Bundle(parser).invoke(args)
         else:
             ret = bokeh_entry_point()
-    elif sys.argv[1] in pyct_commands:
-        try:
-            import pyct.cmd
-        except ImportError:
-            print("install pyct to enable this command (e.g. `conda install -c pyviz pyct` or `pip install pyct[cmd]`)")
-            sys.exit(1)
-        pyct.cmd.substitute_main('panel', cmds=pyct_commands, args=args)
-        sys.exit()
     else:
         parser.parse_args(sys.argv[1:])
         sys.exit(1)
