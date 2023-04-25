@@ -124,12 +124,21 @@ def init_doc(doc: Optional[Document]) -> Document:
         state._thread_id_[curdoc] = thread.ident
 
     if config.global_loading_spinner:
-        doc.js_on_event(
+        curdoc.js_on_event(
             'document_ready', CustomJS(code=f"""
             const body = document.getElementsByTagName('body')[0]
             body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
             """)
         )
+
+    # ALERT: Temporary override to ensure layouts are initialized
+    curdoc.js_on_event('document_ready', CustomJS(code="""
+    for (const root of Object.values(Bokeh.index)) {
+      if (root.invalidate_layout) {
+        root.invalidate_layout()
+      }
+    }
+    """))
     session_id = curdoc.session_context.id
     sessions = state.session_info['sessions']
     if session_id not in sessions:

@@ -39,7 +39,7 @@ def _get_dependencies(nbpath: pathlib.Path):
     if "hvplot" in dependencies:
         dependencies.append("holoviews")
     if "holoviews" in dependencies:
-        dependencies[dependencies.index("holoviews")] = "holoviews==1.16.0a3"
+        dependencies[dependencies.index("holoviews")] = "holoviews==1.16.0a5"
     return BASE_DEPENDENCIES + dependencies
 
 def _to_piplite_install_code(dependencies):

@@ -657,7 +657,6 @@ iframe {
 }
 
 .codehilite {
-    background: var(--neutral-fill-active);
     padding-top: 1px;
     padding-bottom: 1px;
     padding-left: 1em;

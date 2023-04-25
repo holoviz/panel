@@ -78,23 +78,18 @@
 .codehilite .vm { color: #82AAFF } /* Name.Variable.Magic */
 .codehilite .il { color: #F78C6C } /* Literal.Number.Integer.Long */
 
-h1 { margin-block-start: 0.34em }
-h2 { margin-block-start: 0.42em }
-h3 { margin-block-start: 0.5em }
-h4 { margin-block-start: 0.67em }
-h5 { margin-block-start: 0.84em }
-h6 { margin-block-start: 1.17em }
+h1 { margin-block-start: 0.34em; margin-block-end: 0.34em; }
+h2 { margin-block-start: 0.42em; margin-block-end: 0.42em; }
+h3 { margin-block-start: 0.5em; margin-block-end: 0.5em; }
+h4 { margin-block-start: 0.67em; margin-block-end: 0.67em; }
+h5 { margin-block-start: 0.84em; margin-block-end: 0.84em; }
+h6 { margin-block-start: 1.17em; margin-block-end: 1.17em; }
 ul { padding-inline-start: 2em }
 ol { padding-inline-start: 2em }
 strong { font-weight: 600 }
 a { color: var(--panel-primary-color); }
-code {
-    color: var(--code-text-color);
-}
-
-a.header-anchor {
-    visibility: hidden;
-}
+code { color: var(--code-text-color); }
+a.header-anchor { visibility: hidden; }
 
 h1:hover a.header-anchor::before,
 h2:hover a.header-anchor::before {
