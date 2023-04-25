@@ -110,7 +110,7 @@ install_requires = [
     'markdown',
     'markdown-it-py',
     'linkify-it-py'
-    'mdit_py_plugins',
+    'mdit-py-plugins',
     'requests',
     'tqdm >=4.48.0',
     'pyct >=0.4.4',
