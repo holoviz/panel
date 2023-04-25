@@ -389,6 +389,10 @@ class HoloViews(PaneBase):
 
         kwargs = {p: v for p, v in self.param.values().items()
                   if p in Layoutable.param and p != 'name'}
+        if self.sizing_mode and (self.sizing_mode.endswith('width') or self.sizing_mode.endswith('both')):
+            del kwargs['width']
+        if self.sizing_mode and (self.sizing_mode.endswith('height') or self.sizing_mode.endswith('both')):
+            del kwargs['height']
         child_pane = self._get_pane(backend, state, **kwargs)
         self._update_plot(plot, child_pane)
         model = child_pane._get_model(doc, root, parent, comm)
