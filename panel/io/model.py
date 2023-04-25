@@ -80,12 +80,12 @@ def diff(
     patch_events = [event for event in events if isinstance(event, DocumentPatchedEvent)]
     if not patch_events:
         return
-    monkeypatch_events(events)
+    monkeypatch_events(patch_events)
     serializer = Serializer(references=doc.models.synced_references, deferred=binary)
-    patch_json = PatchJson(events=serializer.encode(events))
+    patch_json = PatchJson(events=serializer.encode(patch_events))
     header = patch_doc.create_header()
     msg = patch_doc(header, {'use_buffers': binary}, patch_json)
-    doc.callbacks._held_events = [e for e in doc.callbacks._held_events if e not in events]
+    doc.callbacks._held_events = [e for e in doc.callbacks._held_events if e not in patch_events]
     doc.models.flush_synced(lambda model: not serializer.has_ref(model))
     return msg
 
