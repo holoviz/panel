@@ -44,7 +44,7 @@ In the past Panel would happily accept ambiguous layout configurations, e.g. pro
 pn.pane.Image(..., sizing_mode='stretch_both', width=500)
 ```
 
-This specification is ambiguous, did you want it to stretch the width or did you want to set a fixed width? In the past this would be resolved in favor of making the fixed value, i.e. it would ignore the fixed width. In Panel 1.0 we will warn that this is not a supported configuration and turn the `width` into a `min_width`. In future this conflicting specification will simply error. To toggle these errors on instead of warning set `layout_compatibility` to `'error'`:
+This specification is ambiguous. Did you want it to stretch the width or did you want to set a fixed width? In the past this would be resolved in favor of the fixed width, i.e. fixed sizing would take precedence over responsiveness, but in certain cases the behavior was completely undefined. This meant it was quite unpredictable what behavior you would actually get. In Panel 1.0 we will warn that this is not a supported configuration and turn the `width` into a `min_width`. In future this conflicting specification will simply error. To toggle these errors on instead of warning set `layout_compatibility` to `'error'`:
 
 ```python
 pn.extension(layout_compatibility='error')
@@ -54,29 +54,29 @@ pn.config.layout_compatibility = 'error'
 
 ### CSS styling
 
-The other major change in Panel 1.0 was in the way CSS is handled and injected into components. Starting in Bokeh 3.0 each component is now rendered into the [Shadow DOM](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM), you don't have to understand the intricacies but know that each component is now encapsulated. This has big benefits because each component can be styled fully independently without the CSS leaking to other components but it also has significant backward compatibility implications.
+The other major change in Panel 1.0 is in the CSS handling on components. Starting in Bokeh 3.0 each component is now rendered into the [Shadow DOM](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM). While you don't have to understand the intricacies of how the shadow DOM works, know that each component is now encapsulated and therefore isolated from the rest of the page. This has big benefits because each component can be styled fully independently without the CSS leaking to other components but it also has significant backward compatibility implications.
 
 #### Global vs. local stylesheets
 
-While we never encouraged this, in the past it was possible to declare global stylesheets that could override the styles of all components on the page. As a backward compatibility measure any stylesheets defined using the `raw_css` and `css_files` config parameters, e.g. by setting:
+While we never encouraged this, in the past it was possible to declare global stylesheets that could override the styles of all components on the page. As a backward compatibility measure any stylesheets defined using the `raw_css` and `css_files` config parameters will be injected on every single component. Therefore a setting like:
 
 ```python
 pn.extension(raw_css=['div.widget-box { color: red; }'], css_files=['https://panel.holoviz.org/custom.css'])
 ```
 
-is now strongly discouraged. Because global stylesheets no longer affect the encapsulated components we will inject these stylesheets directly on each component, which is highly inefficient.
+is now strongly discouraged. This is because injecting stylesheets on every single component is highly inefficient.
 
 :::{attention}
 Usage of `pn.config.raw_css` and `pn.config.css_files` is now **strongly** discouraged.
 :::
 
-Depending on whether your custom CSS was controlling styling of individual components or the template you should now either use the stylesheets property on each component OR use the `raw_css` and `css_files` parameters on the template.
+Depending on whether your custom CSS was controlling styling of individual components or the template you should now either use the `stylesheets` parameter on each component OR use the `raw_css` and `css_files` parameters on the template.
 
 #### Component Stylesheets
 
 Now that each component is isolated from the rest of the page it is possible to style each component separately by injecting `stylesheets`. This is what makes it possible for each component to be styled using the `design` frameworks ([see the how-to guide on applying designs](how_to/styling/design.md)). Instead of injecting global stylesheets you should now apply the stylesheets on the component.
 
-Let us walk through a simple example, let's say you had a global stylesheet that would change the style of a Slider handle. Previously you would have injected this globally like this:
+Let us walk through a simple example. Let's say you had a global stylesheet that would change the style of a `FloatSlider` handle. Previously you would have injected this globally like this:
 
 ```python
 import panel as pn
@@ -108,7 +108,13 @@ slider_css = """
 pn.widgets.FloatSlider(name='Number', stylesheets=[slider_css])
 ```
 
-For more details on applying CSS to components [see the corresponding how-to guide](how_to/styling/apply_css.md).
+Alternatively you can also modify the class default like this:
+
+```python
+pn.widgets.FloatSlider.stylesheets = [slider_css]
+```
+
+ensuring that all `FloatSlider` instances will use this stylesheet. For more details on applying CSS to components [see the corresponding how-to guide](how_to/styling/apply_css.md).
 
 #### Template Stylesheets
 
