@@ -130,7 +130,7 @@ Use the hvPlot explorer to interactive visualize your dataset.
 
 Interactively apply KMeans clustering on the Iris dataset.
 +++
-[See source](irs_kmeans)
+[See source](iris_kmeans)
 :::
 
 :::{grid-item-card} XGBoost Classifier
