@@ -135,11 +135,10 @@ class _config(_base_config):
     global_loading_spinner = param.Boolean(default=False, doc="""
         Whether to add a global loading spinner for the whole application.""")
 
-    layout_compatibility = param.Boolean(default=True, doc="""
+    layout_compatibility = param.Selector(default='warn', objects=['warn', 'error'], doc="""
         Provide compatibility for older layout specifications. Incompatible
-        specifications will warn in compatibility mode but will error
-        when compatibility is disabled. Compatibility to be disabled in
-        Panel 1.1.""")
+        specifications will triger warnings by default but can be set to error.
+        Compatibility to be set to error by default in Panel 1.1.""")
 
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")

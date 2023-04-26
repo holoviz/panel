@@ -248,7 +248,7 @@ class Layoutable(param.Parameterized):
                 "If you intended the component to be fully width-responsive remove the height"
                 "setting, otherwise change it to min_height."
             )
-            if config.layout_compatibility:
+            if config.layout_compatibility == 'warn':
                 error += ' To error on the incorrect specification disable the config.layout_compatibility option.'
                 self.param.warning(error)
             else:
@@ -262,7 +262,7 @@ class Layoutable(param.Parameterized):
                 "If you intended the component to be fully height-responsive remove the height "
                 "setting, otherwise change it to min_height."
             )
-            if config.layout_compatibility:
+            if config.layout_compatibility == 'warn':
                 error += ' To error on the incorrect specification disable the config.layout_compatibility option.'
                 self.param.warning(error)
             else:
