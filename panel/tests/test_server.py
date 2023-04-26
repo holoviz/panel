@@ -472,9 +472,9 @@ def test_server_reuse_sessions(port, reuse_sessions):
     r2 = requests.get(f"http://localhost:{port}/")
 
     assert len(state._sessions) == 1
-    assert '/' in state._sessions
+    assert ('/', 'default') in state._sessions
 
-    session = state._sessions['/']
+    session = state._sessions[('/', 'default')]
 
     assert session.token in r1.content.decode('utf-8')
     assert session.token not in r2.content.decode('utf-8')
