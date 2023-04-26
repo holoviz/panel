@@ -384,7 +384,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
             session = await super().get_session()
             with set_curdoc(session.document):
                 if config.reuse_sessions:
-                    key_func = config.session_key_func or (lambda r: r.path)
+                    key_func = config.session_key_func or (lambda r: (r.path, r.arguments.get('theme', [b'default'])[0].decode('utf-8')))
                     state._session_key_funcs[path] = key_func
                     key = key_func(self.request)
                     state._sessions[key] = session
