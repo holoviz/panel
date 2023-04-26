@@ -81,15 +81,15 @@ Let us walk through a simple example, let's say you had a global stylesheet that
 ```python
 import panel as pn
 
-raw_css = ["""
+slider_css = """
 .noUi-handle {
   border-radius: 100%;
   box-shadow: unset;
   background-color: #0081f3;
 }
-"""]
+"""
 
-pn.extension(raw_css=raw_css)
+pn.extension(raw_css=[slider_css])
 ```
 
 Now you can inject it directly on the specific component you want to override like this:
@@ -97,9 +97,15 @@ Now you can inject it directly on the specific component you want to override li
 ```{pyodide}
 import panel as pn
 
-pn.extension()
+slider_css = """
+.noUi-handle {
+  border-radius: 100%;
+  box-shadow: unset;
+  background-color: #0081f3;
+}
+"""
 
-pn.widgets.FloatSlider(name='Number', stylesheets=raw_css)
+pn.widgets.FloatSlider(name='Number', stylesheets=[slider_css])
 ```
 
 For more details on applying CSS to components [see the corresponding how-to guide](how_to/styling/apply_css.md).
