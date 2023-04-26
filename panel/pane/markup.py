@@ -360,7 +360,7 @@ class Markdown(HTMLBasePane):
             return False
 
     @classmethod
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def _get_parser(cls, renderer, plugins):
         if renderer == 'markdown':
             return None
