@@ -9,7 +9,7 @@ import re
 
 from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
 )
 
 import param
@@ -22,6 +22,7 @@ from bokeh.models.widgets import (
     RadioGroup as _BkRadioBoxGroup,
 )
 
+from ..io.resources import CDN_DIST
 from ..layout import Column
 from ..models import CustomSelect, SingleSelect as _BkSingleSelect
 from ..util import PARAM_NAME_PATTERN, indexOf, isIn
@@ -185,6 +186,8 @@ class Select(SingleSelectBase):
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'size': None, 'groups': None
     }
+
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/select.css']
 
     @property
     def _widget_type(self):
@@ -373,6 +376,8 @@ class MultiSelect(_MultiSelectBase):
     size = param.Integer(default=4, doc="""
         The number of items displayed at once (i.e. determines the
         widget height).""")
+
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/select.css']
 
     _widget_type: ClassVar[Type[Model]] = _BkMultiSelect
 
