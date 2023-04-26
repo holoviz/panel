@@ -103,7 +103,8 @@ class GridStack(ReactiveHTML, GridSpec):
         } else {
           state.gridstack.cellHeight('auto')
         }
-        """
+        """,
+        "remove": "state.gridstack.destroy()"
     }
 
     __css_raw__ = [
