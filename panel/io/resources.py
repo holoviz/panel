@@ -330,9 +330,14 @@ def bundle_resources(roots, resources, notebook=False):
     use_mathjax = (_use_mathjax(roots) or 'mathjax' in ext._loaded_extensions) if roots else True
 
     if js_resources:
-        js_resources = copy.deepcopy(js_resources)
-        if not use_mathjax and "bokeh-mathjax" in js_resources.js_components:
-            js_resources.js_components.remove("bokeh-mathjax")
+        if hasattr(resources, 'clone'):
+            js_resources = js_resources.clone()
+            if not use_mathjax and "bokeh-mathjax" in js_resources.components:
+                js_resources.components.remove("bokeh-mathjax")
+        else:
+            js_resources = copy.deepcopy(js_resources)
+            if not use_mathjax and "bokeh-mathjax" in js_resources.js_components:
+                js_resources.js_components.remove("bokeh-mathjax")
 
         js_files.extend(js_resources.js_files)
         js_raw.extend(js_resources.js_raw)
@@ -382,11 +387,12 @@ class Resources(BkResources):
         if bkr.mode.startswith("server"):
             kwargs['root_url'] = bkr.root_url
 
+        components = bkr.components if hasattr(bkr, 'components') else bkr._components
         return cls(
             mode=bkr.mode, version=bkr.version, minified=bkr.minified,
             log_level=bkr.log_level, notebook=notebook,
             path_versioner=bkr.path_versioner,
-            components=bkr._components, base_dir=bkr.base_dir,
+            components=components, base_dir=bkr.base_dir,
             root_dir=bkr.root_dir, absolute=absolute, **kwargs
         )
 
