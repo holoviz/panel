@@ -230,4 +230,4 @@ In addition to assignment, we can also slice and index the ``GridSpec`` to acces
 gspec[-1, 1:]
 ```
 
-For more details on using `GridSpec` Panels, see the [reference gallery](../../reference/layouts/GridSpec.ipynb).
+For more details on using `GridSpec` Panels, see the [component gallery](../../reference/layouts/GridSpec.ipynb).
