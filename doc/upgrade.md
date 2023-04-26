@@ -22,15 +22,22 @@ However, it's important to note that the complete replacement of the layout impl
 
 The `sizing_mode` has been the primary way to configure the responsiveness of components in Panel, and that has not changed. However, previously the layout engine was quite forgiving in the way it interpreted combinations of the `sizing_mode` and explicit `width`/`height` settings that really did not make sense. Before we dive into some of these differences, let's briefly go through the different `sizing_mode` options and what they actually mean:
 
-![Container sizing_mode](sizing_modes.svg)
+![Container sizing_mode](_static/images/sizing_modes.svg)
 
 - `stretch_width`: Stretches content/container in width, while the size of contents determines the height.
 - `stretch_height`: Stretches content/container in height, while the size of contents determines the width.
 - `stretch_both`: Stretches content/container in both width and height.
 
-Now let us explore what changed in this release. In the past, any responsive content would force a container also to become responsive. In this release, this is no longer guaranteed, i.e., you should generally set the `sizing_mode` on each container if you want your application to be responsive.
+Now let us explore what changed in this release. In the past, the behavior of a responsive component inside a non-responsive container was poorly defined. Generally it would force the container to be responsive as well, but often it would only be width responsive. In this release there are a number of well defined behaviors which determine how a container behaves when it wraps one or more responsively sized component:
 
-![Container sizing_mode](container_sizing_mode.svg)
+- If a child is responsive in width then the layout should also be responsive in width (unless a fixed `width` has been).
+- If a container is vertical (e.g. a `Column`) or supports responsive reflowing (e.g. a `FlexBox`) and a child is responsive in height then the container should also be height-responsive (unless a fixed `height` is set).
+- If a container is horizontal (e.g. a `Row`) and all children are responsive in height then the container should also be height-responsive. This behavior is assymetrical with width because there isn't always vertical space to expand into and it is better for the component to match the height of the other children.
+- If any children declare a fixed `width` or `height` then the container will inherit these as `min_width` and `min_height` settings to ensure that sufficient space is allocated.
+
+These very explicit rules ensure consistent behavior in most cases, however it is always best to be explicit.
+
+![Container sizing_mode](_static/images/container_sizing_mode.svg)
 
 :::{note}
 To maintain backward compatibility Panel will still try to infer the appropriate sizing mode by inspecting the children of a container. It is, however, always best to be explicit.
@@ -44,7 +51,7 @@ In the past, Panel would happily accept ambiguous layout configurations, e.g., p
 pn.pane.Image(..., sizing_mode='stretch_both', width=500)
 ```
 
-This specification is ambiguous. Did you want it to stretch the width, or did you want to set a fixed width? In the past, this would be resolved in favor of making the fixed value, i.e., it would ignore the fixed width. In Panel 1.0, we will warn that this is not a supported configuration and turn the `width` into a `min_width`. In the future, this conflicting specification will error. To toggle these errors on instead of a warning, set `layout_compatibility` to `'error'`:
+This specification is ambiguous. Did you want it to stretch the width, or did you want to set a fixed width? In the past, this would be resolved in favor of making the component responsive, i.e. ignoring the `width` value. In Panel 1.0, we will warn that this is not a supported configuration and turn the `width` into a `min_width`. In the future, this conflicting specification will error. To toggle these errors on instead of a warning, set `layout_compatibility` to `'error'`:
 
 ```python
 pn.extension(layout_compatibility='error')
