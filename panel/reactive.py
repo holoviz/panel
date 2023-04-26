@@ -1667,7 +1667,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     @property
     def _linkable_params(self) -> List[str]:
-        return [p for p in super()._linkable_params if p not in self._parser.children.values()]
+        return [
+            p for p in super()._linkable_params if p not in self._parser.children.values() and
+            p not in ('loading')]
 
     @property
     def _child_names(self):

@@ -201,7 +201,11 @@ export class ReactiveHTMLView extends HTMLBoxView {
     super.disconnect_signals()
     this._remove_event_listeners()
     this._remove_mutation_observers()
+  }
+
+  override remove(): void {
     this.run_script('remove', true)
+    super.remove()
   }
 
   get child_models(): LayoutDOM[] {

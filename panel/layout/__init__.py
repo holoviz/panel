@@ -34,6 +34,7 @@ from .base import (  # noqa
 )
 from .card import Card  # noqa
 from .flex import FlexBox  # noqa
+from .float import FloatPanel  # noqa
 from .grid import GridBox, GridSpec  # noqa
 from .gridstack import GridStack  # noqa
 from .spacer import (  # noqa
@@ -47,6 +48,7 @@ __all__ = (
     "Card",
     "Column",
     "Divider",
+    "FloatPanel",
     "FlexBox",
     "GridBox",
     "GridSpec",
