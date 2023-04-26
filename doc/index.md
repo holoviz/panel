@@ -73,7 +73,7 @@ Panel makes it simple to:
 - Add **advanced bi-directional communication** to your data apps
 - Create interactive **big data** applications with **crossfiltering**
 - Create **high performing**, **streaming** data applications
-- Create data apps that **can run in the browser only**.
+- Create data apps that **can run in the browser only**
 - Create **polished, performant, secure and production-ready web applications**
 
 ## Usage
@@ -95,14 +95,14 @@ The getting started guide will get you set up with Panel and provide a basic ove
 How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work.
 :::
 
-:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Background
+:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Explanation
 :link: background/index
 :link-type: doc
 
 Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
 :::
 
-:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` Reference
+:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` API Reference
 :link: api/index
 :link-type: doc
 
