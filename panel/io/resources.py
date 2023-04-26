@@ -387,7 +387,7 @@ class Resources(BkResources):
         if bkr.mode.startswith("server"):
             kwargs['root_url'] = bkr.root_url
 
-        components = bkr.components if hasattr(bkr, 'components') else bkr._components
+        components = bkr.components if hasattr(bkr, 'components_for') else bkr._components
         return cls(
             mode=bkr.mode, version=bkr.version, minified=bkr.minified,
             log_level=bkr.log_level, notebook=notebook,
