@@ -168,6 +168,16 @@ Try interactive brushing on an Altair plot linked with a table.
 A great selection of applications showcasing various features of Panel built and maintained by Marc Skov Madsen.
 :::
 
+:::
+
+:::{grid-item-card} cuxfilter
+:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
+:link: https://github.com/rapidsai/cuxfilter
+:link-type: url
+
+cuxfilter ( ku-cross-filter ) is a RAPIDS framework to connect web visualizations to GPU accelerated crossfiltering which is built on top of Panel.
+:::
+
 :::{grid-item-card} awesome-panel.org Community Gallery
 :img-top: https://assets.holoviz.org/panel/gallery/community/awesome_community.png
 :link: https://awesome-panel.org/awesome_list
