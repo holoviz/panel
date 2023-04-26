@@ -23,6 +23,14 @@ html[data-theme=dark] .bd-content div.cell_output .text_html {
   color: white;
 }
 
+.search-button i {
+  color: white;
+}
+
+.bd-header .navbar-nav .dropdown button {
+  color: white;
+}
+
 /* Align navbar item in center */
 .navbar-header-items__center {
     margin-left: auto;
@@ -112,6 +120,7 @@ html[data-theme=light] .bd-content div.cell_output .text_html {
 
 .sponsor-logo img {
     min-height: 80px;
+    object-fit: contain;
 }
 
 button.toggle-button {

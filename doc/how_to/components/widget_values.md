@@ -32,4 +32,4 @@ widget.value = '3'
 ---
 
 ## Related Resources
-- Learn more about Panes in [Background > Components](../../background/components/components_overview.html#panes).
+- Learn more about Panes in [Explanation > Components](../../explanation/components/components_overview.html#panes).

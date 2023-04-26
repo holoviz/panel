@@ -66,4 +66,4 @@ panel serve app.py --show --autoreload
 ## Related Resources
 
 - See [How-to > Apply Templates > Set a Template](./template_set.md) for alternate approaches to set a template.
-- Read [Background > Templates](../../background/templates/templates_overview.md) for explanation.
+- Read [Explanation > Templates](../../explanation/templates/templates_overview.md) for explanation.

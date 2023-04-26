@@ -1,4 +1,4 @@
-# Gallery
+# App Gallery
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -54,13 +54,13 @@ Visually explore the worlds glaciers in this application built in collaboration 
 :::
 
 :::{grid-item-card} VTK Slicer
-:img-top: https://assets.holoviz.org/panel/gallery/vtkslicer.png
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtkslicer
+:img-top: https://assets.holoviz.org/panel/gallery/vtk_slicer.png
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtk_slicer
 :link-type: url
 
 Visualizing MRI brain scans and their cross-sections using a VTK volume and linked 2D slices.
 +++
-[See source](vtkslicer)
+[See source](vtk_slicer)
 :::
 
 :::{grid-item-card} Deck.GL: NYC Taxi
@@ -74,7 +74,7 @@ NYC Taxi trips visualized and animated using Deck.GL.
 :::
 
 :::{grid-item-card} Gapminders
-:img-top: https://assets.holoviz.org/panel/gallery/nyc_deckgl.png
+:img-top: https://assets.holoviz.org/panel/gallery/gapminders.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/nyc_deckgl
 :link-type: url
 
@@ -84,13 +84,13 @@ Visualizing the Gapminders data using the most common Python plotting libraries.
 :::
 
 :::{grid-item-card} VTK: St. Helens
-:img-top: https://assets.holoviz.org/panel/gallery/vtkinteractive.png
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtkinteractive
+:img-top: https://assets.holoviz.org/panel/gallery/vtk_interactive.png
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtk_interactive
 :link-type: url
 
 Visualizing the surface of Mount St. Helens using VTK and linked widgets to control the rendering.
 +++
-[See source](vtkinteractive)
+[See source](vtk_interactive)
 :::
 
 :::{grid-item-card} Penguin Crossfiltering
@@ -130,7 +130,7 @@ Use the hvPlot explorer to interactive visualize your dataset.
 
 Interactively apply KMeans clustering on the Iris dataset.
 +++
-[See source](altair_brushing)
+[See source](iris_kmeans)
 :::
 
 :::{grid-item-card} XGBoost Classifier
@@ -155,6 +155,63 @@ Try interactive brushing on an Altair plot linked with a table.
 
 ::::
 
+## Community Gallery
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} awesome-panel.org Gallery
+:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
+:link: https://awesome-panel.org/gallery
+:link-type: url
+
+A great selection of applications showcasing various features of Panel built and maintained by Marc Skov Madsen.
+:::
+
+:::
+
+:::{grid-item-card} cuxfilter
+:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
+:link: https://github.com/rapidsai/cuxfilter
+:link-type: url
+
+cuxfilter ( ku-cross-filter ) is a RAPIDS framework to connect web visualizations to GPU accelerated crossfiltering which is built on top of Panel.
+:::
+
+:::{grid-item-card} awesome-panel.org Community Gallery
+:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_community.png
+:link: https://awesome-panel.org/awesome_list
+:link-type: url
+
+A list of applications, videos and blog posts about Panel built by the community, curated by Marc Skov Madsen.
+:::
+
+:::{grid-item-card} AstronomicalAL
+:img-top: https://assets.holoviz.org/panel/gallery/community/AstronomicAL.png
+:link: https://github.com/grant-m-s/AstronomicAL
+:link-type: url
+
+An interactive dashboard for visualisation, integration and classification of data using Active Learning.
+:::
+
+:::{grid-item-card} PyHDX
+:img-top: https://assets.holoviz.org/panel/gallery/community/pyhdx.png
+:link: https://github.com/Jhsmit/PyHDX
+:link-type: url
+
+PyHDX is software to extract H/D exchange kinetics from HDX-MS data sets in terms of Gibbs free energy of exchange (ΔG) at the residue level.
+:::
+
+:::{grid-item-card} gluoNNet Aviation Tracking
+:img-top: https://assets.holoviz.org/panel/gallery/gluoNNet.png
+:link: http://gluonnet.com/portfolio/aviation-graphs/
+:link-type: url
+
+The gluoNNet aviation tracking application visualizes airplane positioning (ADS-B) data to track, analyse, and manage flight tracks, aircraft behaviour, and flight efficiency.
+:::
+
+::::
+
 
 ```{toctree}
 :titlesonly:
@@ -164,17 +221,18 @@ Try interactive brushing on an Altair plot linked with a table.
 portfolio_optimizer
 streaming_videostream
 windturbines
+portfolio_analyzer
 glaciers
-VTKSlicer
+vtk_slicer
 nyc_deckgl
 gapminders
-VTKInteractive
+vtk_interactive
 penguin_crossfilter
 deckgl_game_of_life
 hvplot_explorer
 xgboost_classifier
 altair_brushing
-VTKWarp
+vtk_warp
 iris_kmeans
 penguin_kmeans
 ```

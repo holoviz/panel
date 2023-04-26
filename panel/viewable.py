@@ -248,7 +248,7 @@ class Layoutable(param.Parameterized):
                 "If you intended the component to be fully width-responsive remove the height"
                 "setting, otherwise change it to min_height."
             )
-            if config.layout_compatibility:
+            if config.layout_compatibility == 'warn':
                 error += ' To error on the incorrect specification disable the config.layout_compatibility option.'
                 self.param.warning(error)
             else:
@@ -262,7 +262,7 @@ class Layoutable(param.Parameterized):
                 "If you intended the component to be fully height-responsive remove the height "
                 "setting, otherwise change it to min_height."
             )
-            if config.layout_compatibility:
+            if config.layout_compatibility == 'warn':
                 error += ' To error on the incorrect specification disable the config.layout_compatibility option.'
                 self.param.warning(error)
             else:
@@ -384,8 +384,10 @@ class ServableMixin:
                     template.header.append(self)
             else:
                 self.server_doc(title=title, location=location) # type: ignore
-        elif state._is_pyodide:
-            from .io.pyodide import _get_pyscript_target, write
+        elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
+            from .io.pyodide import _IN_WORKER, _get_pyscript_target, write
+            if _IN_WORKER:
+                return self
             target = target or _get_pyscript_target()
             if target is not None:
                 asyncio.create_task(write(target, self))

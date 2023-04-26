@@ -86,4 +86,4 @@ Whenever the continent changes Param will now eagerly execute the ``_update_coun
 ---
 
 ## Related Resources
-- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs
+- See the [Explanation > APIs](../../explanation/apis/index.md) for context on this and other Panel APIs

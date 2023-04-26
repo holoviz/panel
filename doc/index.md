@@ -10,24 +10,32 @@ width: 125
 
 # Overview
 
-<h2 style="margin-top: 0.3em;">A high-level app and dashboarding solution for Python</h2>
+<h2 style="margin-top: 0.3em;">The powerful data exploration and application framework for Python</h2>
 
 ::::{grid} 2 2 5 5
 :gutter: 1
+
+:::{grid-item-card} Portfolio Optimizer
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_optimizer
+:link-type: url
+
+```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
+```
+:::
+
+:::{grid-item-card} MRI Cross-sections
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtk_slicer
+:link-type: url
+
+```{image} https://assets.holoviz.org/panel/gallery/vtk_slicer.png
+```
+:::
 
 :::{grid-item-card} Videostream
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
-```
-:::
-
-:::{grid-item-card} MRI Cross-sections
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtkslicer
-:link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/vtkslicer.png
 ```
 :::
 
@@ -39,25 +47,17 @@ width: 125
 ```
 :::
 
-:::{grid-item-card} OGGM Glaciers
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/glaciers
+:::{grid-item-card} Portfolio Analyzer
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_analyzer
 :link-type: url
 
-```{image} https://assets.holoviz.org/panel/gallery/glaciers.png
-```
-:::
-
-:::{grid-item-card} Portfolio Optimizer
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_optimizer
-:link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
+```{image} https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
 ```
 :::
 
 ::::
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you create powerful dashboards and data apps **using the tools you know and love**. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem.
+Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you **build powerful, richly interactive, dashboards and complex applications entirely in Python**. It has a batteries-included philosophy, putting the PyData ecosystem, powerful data tables and much more at your fingertips. High-level reactive APIs and lower-level callback based APIs ensure you can quickly build exploratory applications but you aren't limited if you build complex, multi-page apps with rich interactivity. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem, your gateway into a connected ecosystem of data exploration tools.
 
 ```{eval-rst}
 .. notebook:: panel ../examples/homepage.ipynb
@@ -73,7 +73,7 @@ Panel makes it simple to:
 - Add **advanced bi-directional communication** to your data apps
 - Create interactive **big data** applications with **crossfiltering**
 - Create **high performing**, **streaming** data applications
-- Create data apps that **can run in the browser only**.
+- Create data apps that **can run entirely in the browser**
 - Create **polished, performant, secure and production-ready web applications**
 
 ## Usage
@@ -81,37 +81,37 @@ Panel makes it simple to:
 ::::{grid} 1 2 2 4
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Core Concepts
-:link: getting_started/core_concepts
+:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Getting Started
+:link: getting_started/index
 :link-type: doc
 
-Introduces you to some of the core concepts behind Panel, how to develop Panel applications effectively both in your IDE and in the notebook and some of the core features that make Panel such a powerful library.
+The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
 :::
 
-:::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Installation
-:link: getting_started/installation
-:link-type: doc
-
-Walks you through setting up your Python environment, installing Panel into it and how to configure your editor, IDE or notebook environment appropriately.
-:::
-
-:::{grid-item-card} {octicon}`tools;2.5em;sd-mr-1` Build an app
-:link: getting_started/build_app
-:link-type: doc
-
-A more hands on tour taking you through the process of loading some data, displaying it and then building an application around it with some of the rich features that Panel supports.
-:::
-
-:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` How-to
+:::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` How-to
 :link: how_to/index
 :link-type: doc
 
 How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work.
 :::
 
+:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Explanation
+:link: background/index
+:link-type: doc
+
+Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
+:::
+
+:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` API Reference
+:link: api/index
+:link-type: doc
+
+The Panel API Reference Manual provides a comprehensive reference for all methods and parameters on Panel components.
+:::
+
 ::::
 
-For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/). If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
+For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/) or our [Discord server](https://discord.gg/muhupDZM). If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
 
 ## Sponsors
 
@@ -187,10 +187,11 @@ alt: Quansight Logo
 
 getting_started/index
 how_to/index
-gallery/index
-background/index
+explanation/index
 reference/index
+gallery/index
 api/index
+upgrade
 FAQ
 about/index
 ```
