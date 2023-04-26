@@ -696,8 +696,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             return
 
         # Warning
-        prev = f'{type(self).name}(background={self.background!r})'
-        new = f'{type(self).name}(styles={{"background": {self.background!r}}}'
+        prev = f'{type(self).name}(..., background={self.background!r})'
+        new = f"{type(self).name}(..., styles={{'background': {self.background!r}}})"
         deprecated("1.1", prev, new)
 
         self.styles = dict(self.styles, background=self.background)
