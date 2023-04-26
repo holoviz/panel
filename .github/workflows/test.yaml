@@ -71,6 +71,10 @@ jobs:
           opengl: true
           conda-mamba: mamba
         id: install
+      - if: inputs.opengl == 'true' && runner.os == 'Linux' && (inputs.cache != 'true' || steps.cache.outputs.cache-hit != 'true')
+        run: |
+          conda activate test-environment
+          conda install "vtk=9.2.6=osmesa_*"
       - name: doit develop_install
         if: steps.install.outputs.cache-hit != 'true'
         run: |
