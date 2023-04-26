@@ -4,6 +4,7 @@ Markdown, and also regular strings.
 """
 from __future__ import annotations
 
+import functools
 import json
 import textwrap
 
@@ -338,7 +339,7 @@ class Markdown(HTMLBasePane):
     }
 
     _rerender_params: ClassVar[List[str]] = [
-        'object', 'dedent', 'extensions', 'css_classes'
+        'object', 'dedent', 'extensions', 'css_classes', 'plugins'
     ]
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -358,6 +359,51 @@ class Markdown(HTMLBasePane):
         else:
             return False
 
+    @classmethod
+    @functools.cache
+    def _get_parser(cls, renderer, plugins):
+        if renderer == 'markdown':
+            return None
+        from markdown_it import MarkdownIt
+        from markdown_it.renderer import RendererHTML
+        from mdit_py_plugins.anchors import anchors_plugin
+        from mdit_py_plugins.deflist import deflist_plugin
+        from mdit_py_plugins.footnote import footnote_plugin
+        from mdit_py_plugins.tasklists import tasklists_plugin
+
+        def hilite(token, langname, attrs):
+            try:
+                from markdown.extensions.codehilite import CodeHilite
+                return CodeHilite(src=token, lang=langname).hilite()
+            except Exception:
+                return token
+
+        if renderer == 'markdown-it':
+            parser = MarkdownIt('gfm-like', renderer_cls=RendererHTML)
+        elif renderer == 'myst':
+            from myst_parser.parsers.mdit import (
+                MdParserConfig, create_md_parser,
+            )
+            config = MdParserConfig(heading_anchors=1, enable_extensions=[
+                'colon_fence', 'linkify', 'smartquotes', 'tasklist',
+                'attrs_block'
+            ], enable_checkboxes=True)
+            parser = create_md_parser(config, RendererHTML)
+        parser = (
+            parser
+            .enable('strikethrough').enable('table')
+            .use(anchors_plugin, permalink=True).use(deflist_plugin).use(footnote_plugin).use(tasklists_plugin)
+        )
+        for plugin in plugins:
+            parser = parser.use(plugin)
+        try:
+            from mdit_py_emoji import emoji_plugin
+            parser = parser.use(emoji_plugin)
+        except Exception:
+            pass
+        parser.options['highlight'] = hilite
+        return parser
+
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
         import markdown
         if obj is None:
@@ -371,45 +417,7 @@ class Markdown(HTMLBasePane):
                 obj, extensions=self.extensions, output_format='html5'
             )
         else:
-            from markdown_it import MarkdownIt
-            from markdown_it.renderer import RendererHTML
-            from mdit_py_plugins.anchors import anchors_plugin
-            from mdit_py_plugins.deflist import deflist_plugin
-            from mdit_py_plugins.footnote import footnote_plugin
-            from mdit_py_plugins.tasklists import tasklists_plugin
-
-            def hilite(token, langname, attrs):
-                try:
-                    from markdown.extensions.codehilite import CodeHilite
-                    return CodeHilite(src=token, lang=langname).hilite()
-                except Exception:
-                    return token
-
-            if self.renderer == 'markdown-it':
-                parser = MarkdownIt('gfm-like', renderer_cls=RendererHTML)
-            elif self.renderer == 'myst':
-                from myst_parser.parsers.mdit import (
-                    MdParserConfig, create_md_parser,
-                )
-                config = MdParserConfig(heading_anchors=1, enable_extensions=[
-                    'colon_fence', 'linkify', 'smartquotes', 'tasklist',
-                    'attrs_block'
-                ], enable_checkboxes=True)
-                parser = create_md_parser(config, RendererHTML)
-            parser = (
-                parser
-                .enable('strikethrough').enable('table')
-                .use(anchors_plugin, permalink=True).use(deflist_plugin).use(footnote_plugin).use(tasklists_plugin)
-            )
-            for plugin in self.plugins:
-                parser = parser.use(plugin)
-            try:
-                from mdit_py_emoji import emoji_plugin
-                parser = parser.use(emoji_plugin)
-            except Exception:
-                pass
-            parser.options['highlight'] = hilite
-            html = parser.render(obj)
+            html = self._get_parser(self.renderer, tuple(self.plugins)).render(obj)
         return dict(object=escape(html))
 
     def _process_param_change(self, params):
