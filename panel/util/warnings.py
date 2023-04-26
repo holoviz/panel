@@ -62,7 +62,7 @@ def deprecated(
 
     import panel as pn
 
-    current_version = Version(pn.__version__)
+    current_version = Version(Version(pn.__version__).base_version)
 
     if isinstance(remove_version, str):
         remove_version = Version(remove_version)
