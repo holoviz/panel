@@ -105,7 +105,7 @@ Panel bundles external resources required for custom models and templates into t
 
 ## Next Steps
 
-You will likely want to check out the :ref:`devguide_testing` guide. Meanwhile, if you have any problems with the steps here, please visit our [Discourse](https://discourse.holoviz.org/c/panel/5).
+You will likely want to check out the [testing](testing.md) guide. Meanwhile, if you have any problems with the steps here, please visit our [Discourse](https://discourse.holoviz.org/c/panel/5).
 
 ## Useful Links
 
