@@ -24,10 +24,10 @@ width: 125
 :::
 
 :::{grid-item-card} MRI Cross-sections
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtkslicer
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtk_slicer
 :link-type: url
 
-```{image} https://assets.holoviz.org/panel/gallery/vtkslicer.png
+```{image} https://assets.holoviz.org/panel/gallery/vtk_slicer.png
 ```
 :::
 
@@ -191,6 +191,7 @@ gallery/index
 background/index
 reference/index
 api/index
+upgrade
 FAQ
 about/index
 ```

@@ -1,4 +1,4 @@
-# Gallery
+# App Gallery
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -54,13 +54,13 @@ Visually explore the worlds glaciers in this application built in collaboration 
 :::
 
 :::{grid-item-card} VTK Slicer
-:img-top: https://assets.holoviz.org/panel/gallery/vtkslicer.png
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtkslicer
+:img-top: https://assets.holoviz.org/panel/gallery/vtk_slicer.png
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtk_slicer
 :link-type: url
 
 Visualizing MRI brain scans and their cross-sections using a VTK volume and linked 2D slices.
 +++
-[See source](vtkslicer)
+[See source](vtk_slicer)
 :::
 
 :::{grid-item-card} Deck.GL: NYC Taxi
@@ -74,7 +74,7 @@ NYC Taxi trips visualized and animated using Deck.GL.
 :::
 
 :::{grid-item-card} Gapminders
-:img-top: https://assets.holoviz.org/panel/gallery/nyc_deckgl.png
+:img-top: https://assets.holoviz.org/panel/gallery/gapminders.png
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/nyc_deckgl
 :link-type: url
 
@@ -84,13 +84,13 @@ Visualizing the Gapminders data using the most common Python plotting libraries.
 :::
 
 :::{grid-item-card} VTK: St. Helens
-:img-top: https://assets.holoviz.org/panel/gallery/vtkinteractive.png
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtkinteractive
+:img-top: https://assets.holoviz.org/panel/gallery/vtk_interactive.png
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtk_interactive
 :link-type: url
 
 Visualizing the surface of Mount St. Helens using VTK and linked widgets to control the rendering.
 +++
-[See source](vtkinteractive)
+[See source](vtk_interactive)
 :::
 
 :::{grid-item-card} Penguin Crossfiltering
@@ -130,7 +130,7 @@ Use the hvPlot explorer to interactive visualize your dataset.
 
 Interactively apply KMeans clustering on the Iris dataset.
 +++
-[See source](altair_brushing)
+[See source](irs_kmeans)
 :::
 
 :::{grid-item-card} XGBoost Classifier
@@ -164,17 +164,18 @@ Try interactive brushing on an Altair plot linked with a table.
 portfolio_optimizer
 streaming_videostream
 windturbines
+portfolio_analyzer
 glaciers
-VTKSlicer
+vtk_slicer
 nyc_deckgl
 gapminders
-VTKInteractive
+vtk_interactive
 penguin_crossfilter
 deckgl_game_of_life
 hvplot_explorer
 xgboost_classifier
 altair_brushing
-VTKWarp
+vtk_warp
 iris_kmeans
 penguin_kmeans
 ```

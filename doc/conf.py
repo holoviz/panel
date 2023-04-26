@@ -81,7 +81,7 @@ nbsite_gallery_conf = {
     'github_project': 'panel',
     'galleries': {
         'reference': {
-            'title': 'Reference Gallery',
+            'title': 'Component Gallery',
             'sections': [
                 'panes',
                 'layouts',
@@ -115,8 +115,9 @@ else:
 
 nbsite_pyodide_conf = {
     'PYODIDE_URL': 'https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js',
-    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.16.0a3'],
+    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.16.0a5'],
     'requires': {
+        'gallery/hvplot_explorer': ['scipy'],
         'gallery/penguin_crossfilter': ['scipy'],
         'gallery/windturbines': ['fastparquet']
     }
