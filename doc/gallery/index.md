@@ -155,6 +155,53 @@ Try interactive brushing on an Altair plot linked with a table.
 
 ::::
 
+## Community Gallery
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} awesome-panel.org Gallery
+:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
+:link: https://awesome-panel.org/gallery
+:link-type: url
+
+A great selection of applications showcasing various features of Panel built and maintained by Marc Skov Madsen.
+:::
+
+:::{grid-item-card} awesome-panel.org Community Gallery
+:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_community.png
+:link: https://awesome-panel.org/awesome_list
+:link-type: url
+
+A list of applications, videos and blog posts about Panel built by the community, curated by Marc Skov Madsen.
+:::
+
+:::{grid-item-card} AstronomicalAL
+:img-top: https://assets.holoviz.org/panel/gallery/community/AstronomicAL.png
+:link: https://github.com/grant-m-s/AstronomicAL
+:link-type: url
+
+An interactive dashboard for visualisation, integration and classification of data using Active Learning.
+:::
+
+:::{grid-item-card} PyHDX
+:img-top: https://assets.holoviz.org/panel/gallery/community/pyhdx.png
+:link: https://github.com/Jhsmit/PyHDX
+:link-type: url
+
+PyHDX is software to extract H/D exchange kinetics from HDX-MS data sets in terms of Gibbs free energy of exchange (ΔG) at the residue level.
+:::
+
+:::{grid-item-card} gluoNNet Aviation Tracking
+:img-top: https://assets.holoviz.org/panel/gallery/gluoNNet.png
+:link: http://gluonnet.com/portfolio/aviation-graphs/
+:link-type: url
+
+The gluoNNet aviation tracking application visualizes airplane positioning (ADS-B) data to track, analyse, and manage flight tracks, aircraft behaviour, and flight efficiency.
+:::
+
+::::
+
 
 ```{toctree}
 :titlesonly:
