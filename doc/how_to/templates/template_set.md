@@ -105,4 +105,4 @@ panel serve app_global.py --show
 
 ## Related Resources
 
-- Read [Background > Templates](../../background/templates/templates_overview.md) for explanation.
+- Read [Explanation > Templates](../../explanation/templates/templates_overview.md) for explanation.

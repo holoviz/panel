@@ -66,4 +66,4 @@ pn.Row(points, pn.Column(size_widget, color_widget))
 Of course, if you need to transform between the displayed widget value and the value to be used on the underlying Bokeh property, you can add custom JS code as shown in [the previous section](#Linking-using-custom-JS-code). Together these linking options should allow you to express whatever interactions you wish between your Panel objects.
 
 ## Related Resources
-- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs
+- See the [Explanation > APIs](../../explanation/apis/index.md) for context on this and other Panel APIs

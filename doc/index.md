@@ -187,9 +187,9 @@ alt: Quansight Logo
 
 getting_started/index
 how_to/index
-gallery/index
-background/index
+explanation/index
 reference/index
+gallery/index
 api/index
 upgrade
 FAQ

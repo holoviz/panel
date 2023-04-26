@@ -117,4 +117,4 @@ pn.Row(
 ---
 
 ## Related Resources
-- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs
+- See the [Explanation > APIs](../../explanation/apis/index.md) for context on this and other Panel APIs
