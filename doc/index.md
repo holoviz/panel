@@ -10,7 +10,7 @@ width: 125
 
 # Overview
 
-<h2 style="margin-top: 0.3em;">A high-level app and dashboarding solution for Python</h2>
+<h2 style="margin-top: 0.3em;">The powerful data exploration and application framework for Python</h2>
 
 ::::{grid} 2 2 5 5
 :gutter: 1
@@ -57,7 +57,7 @@ width: 125
 
 ::::
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you create powerful dashboards and data apps **using the tools you know and love**. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem.
+Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you **build powerful, richly interactive, dashboards and complex applications entirely in Python**. It has a batteries-included philosophy, putting the PyData ecosystem, powerful data tables and much more at your fingertips. High-level reactive APIs and lower-level callback based APIs ensure you can quickly build exploratory applications but you aren't limited if you build complex, multi-page apps with rich interactivity. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem, your gateway into a connected ecosystem of data exploration tools.
 
 ```{eval-rst}
 .. notebook:: panel ../examples/homepage.ipynb
@@ -73,7 +73,7 @@ Panel makes it simple to:
 - Add **advanced bi-directional communication** to your data apps
 - Create interactive **big data** applications with **crossfiltering**
 - Create **high performing**, **streaming** data applications
-- Create data apps that **can run in the browser only**
+- Create data apps that **can run entirely in the browser**
 - Create **polished, performant, secure and production-ready web applications**
 
 ## Usage
