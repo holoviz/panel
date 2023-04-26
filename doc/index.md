@@ -15,11 +15,11 @@ width: 125
 ::::{grid} 2 2 5 5
 :gutter: 1
 
-:::{grid-item-card} Videostream
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
+:::{grid-item-card} Portfolio Optimizer
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
 
-```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
+```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
 ```
 :::
 
@@ -31,6 +31,14 @@ width: 125
 ```
 :::
 
+:::{grid-item-card} Videostream
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
+:link-type: url
+
+```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
+```
+:::
+
 :::{grid-item-card} Crossfiltering
 :link: https://panel-gallery-dev.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
@@ -39,19 +47,11 @@ width: 125
 ```
 :::
 
-:::{grid-item-card} OGGM Glaciers
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/glaciers
+:::{grid-item-card} Portfolio Analyzer
+:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_analyzer
 :link-type: url
 
-```{image} https://assets.holoviz.org/panel/gallery/glaciers.png
-```
-:::
-
-:::{grid-item-card} Portfolio Optimizer
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_optimizer
-:link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
+```{image} https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
 ```
 :::
 
@@ -81,37 +81,37 @@ Panel makes it simple to:
 ::::{grid} 1 2 2 4
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Core Concepts
-:link: getting_started/core_concepts
+:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Getting Started
+:link: getting_started/index
 :link-type: doc
 
-Introduces you to some of the core concepts behind Panel, how to develop Panel applications effectively both in your IDE and in the notebook and some of the core features that make Panel such a powerful library.
+The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
 :::
 
-:::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Installation
-:link: getting_started/installation
-:link-type: doc
-
-Walks you through setting up your Python environment, installing Panel into it and how to configure your editor, IDE or notebook environment appropriately.
-:::
-
-:::{grid-item-card} {octicon}`tools;2.5em;sd-mr-1` Build an app
-:link: getting_started/build_app
-:link-type: doc
-
-A more hands on tour taking you through the process of loading some data, displaying it and then building an application around it with some of the rich features that Panel supports.
-:::
-
-:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` How-to
+:::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` How-to
 :link: how_to/index
 :link-type: doc
 
 How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work.
 :::
 
+:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Background
+:link: background/index
+:link-type: doc
+
+Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
+:::
+
+:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` Reference
+:link: api/index
+:link-type: doc
+
+The Panel API Reference Manual provides a comprehensive reference for all methods and parameters on Panel components.
+:::
+
 ::::
 
-For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/). If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
+For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/) or our [Discord server](https://discord.gg/muhupDZM). If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
 
 ## Sponsors
 
