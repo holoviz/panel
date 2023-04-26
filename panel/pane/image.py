@@ -246,9 +246,13 @@ class Image(ImageBase):
         return False
 
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
+        params = {
+            k: v for k, v in self.param.values().items()
+            if k not in ('name', 'object')
+        }
         for img_cls in param.concrete_descendents(ImageBase).values():
             if img_cls is not Image and img_cls.applies(obj):
-                return img_cls(obj)._transform_object(obj)
+                return img_cls(obj, **params)._transform_object(obj)
         return {'object': '<img></img>'}
 
 
