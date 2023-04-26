@@ -384,7 +384,7 @@ class ServableMixin:
                     template.header.append(self)
             else:
                 self.server_doc(title=title, location=location) # type: ignore
-        elif state._is_pyodide:
+        elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
             from .io.pyodide import _get_pyscript_target, write
             target = target or _get_pyscript_target()
             if target is not None:
