@@ -1,7 +1,9 @@
 import param
 
 from ..config import config as pn_config
+from ..io.resources import bundled_files
 from ..reactive import ReactiveHTML
+from ..util import classproperty
 from .base import ListLike
 
 POSITIONS = [
@@ -124,9 +126,9 @@ class FloatPanel(ListLike, ReactiveHTML):
         "position": "state.panel.reposition(view.run_script('get_position'))",
     }
 
-    __css__ = [f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/jspanel.css"]
+    __css_raw__ = [f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/jspanel.css"]
 
-    __javascript__ = [
+    __javascript_raw__ = [
         f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/jspanel.js",
         f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/modal/jspanel.modal.js",
         f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/tooltip/jspanel.tooltip.js",
@@ -135,6 +137,20 @@ class FloatPanel(ListLike, ReactiveHTML):
         f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/contextmenu/jspanel.contextmenu.js",
         f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/dock/jspanel.dock.js",
     ]
+
+    @classproperty
+    def __js_skip__(cls):
+        return {
+            'jsPanel': cls.__javascript__,
+        }
+
+    @classproperty
+    def __javascript__(cls):
+        return bundled_files(cls)
+
+    @classproperty
+    def __css__(cls):
+        return bundled_files(cls, 'css')
 
     def __init__(self, *objects, name='', **params):
         super().__init__(objects=list(objects), name=name, **params)
