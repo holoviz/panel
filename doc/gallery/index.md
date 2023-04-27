@@ -201,7 +201,7 @@ PyHDX is software to extract H/D exchange kinetics from HDX-MS data sets in term
 :::
 
 :::{grid-item-card} gluoNNet Aviation Tracking
-:img-top: https://assets.holoviz.org/panel/gallery/gluoNNet.png
+:img-top: https://assets.holoviz.org/panel/gallery/community/gluoNNet.png
 :link: http://gluonnet.com/portfolio/aviation-graphs/
 :link-type: url
 
