@@ -118,12 +118,19 @@ class FloatPanel(ListLike, ReactiveHTML):
             offsetY: data.offsety,
         }
         """,
+        "reposition": """
+        if (data.contained) {
+          view.run_script('contained')
+          return
+        }
+        state.panel.reposition(view.run_script('get_position'));
+        """,
         "contained": "delete state.panel; view.invalidate_render();",
         "theme": "state.panel.setTheme(data.theme)",
         "remove": "view.run_script('close'); state.panel = undefined;",
-        "offsetx": "state.panel.reposition(view.run_script('get_position'))",
-        "offsety": "state.panel.reposition(view.run_script('get_position'))",
-        "position": "state.panel.reposition(view.run_script('get_position'))",
+        "offsetx": "view.run_script('reposition')",
+        "offsety": "view.run_script('reposition')",
+        "position": "if (!data.contained) { view.run_script('reposition') }",
     }
 
     __css_raw__ = [f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/jspanel.css"]
