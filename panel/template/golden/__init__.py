@@ -24,8 +24,9 @@ class GoldenTemplate(BasicTemplate):
 
     _resources = {
         'css': {
-            'goldenlayout': f"{config.npm_cdn}/golden-layout@1.5.9/dist/css/goldenlayout-base.css",
-            'golden-layout': f"{config.npm_cdn}/golden-layout@1.5.9/dist/css/theme/goldenlayout-dark-theme.css"
+            'goldenlayout': f"{config.npm_cdn}/golden-layout@1.5.9/src/css/goldenlayout-base.css",
+            'golden-theme-dark': f"{config.npm_cdn}/golden-layout@1.5.9/src/css/goldenlayout-dark-theme.css",
+            'golden-theme-light': f"{config.npm_cdn}/golden-layout@1.5.9/src/css/goldenlayout-light-theme.css"
         },
         'js': {
             'jquery': JS_URLS['jQuery'],
@@ -36,3 +37,9 @@ class GoldenTemplate(BasicTemplate):
     def _apply_root(self, name, model, tags):
         if 'main' in tags:
             model.margin = (10, 15, 10, 10)
+
+    def _template_resources(self):
+        resources = super()._template_resources()
+        del_theme = 'dark' if self._design.theme._name =='default' else 'light'
+        del resources['css'][f'golden-theme-{del_theme}']
+        return resources

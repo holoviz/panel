@@ -89,12 +89,8 @@ p.bk.golden-card-button {
   display: none;
 }
 
-.bk-canvas {
-  padding-right: 2px !important;
-}
-
 .lm_content {
-  overflow-y: scroll !important;
+  overflow-y: auto !important;
 }
 
 .lm_item_container {
