@@ -22,7 +22,7 @@ However, it's important to note that the complete replacement of the layout impl
 
 The `sizing_mode` has been the primary way to configure the responsiveness of components in Panel, and that has not changed. However, previously the layout engine was quite forgiving in the way it interpreted combinations of the `sizing_mode` and explicit `width`/`height` settings that really did not make sense. Before we dive into some of these differences, let's briefly go through the different `sizing_mode` options and what they actually mean:
 
-![Container sizing_mode](_static/images/sizing_modes.svg)
+![Container sizing_mode](_static/images/sizing_modes.png)
 
 - `stretch_width`: Stretches content/container in width, while the size of contents determines the height.
 - `stretch_height`: Stretches content/container in height, while the size of contents determines the width.
@@ -35,9 +35,11 @@ Now let us explore what changed in this release. In the past, the behavior of a 
 - If a container is horizontal (e.g. a `Row`) and all children are responsive in height then the container should also be height-responsive. This behavior is assymetrical with width because there isn't always vertical space to expand into and it is better for the component to match the height of the other children.
 - If any children declare a fixed `width` or `height` then the container will inherit these as `min_width` and `min_height` settings to ensure that sufficient space is allocated.
 
-These very explicit rules ensure consistent behavior in most cases, however it is always best to be explicit.
+These very explicit rules ensure consistent behavior in most cases, however it is always best to be explicit and declare the sizes.
 
-![Container sizing_mode](_static/images/container_sizing_mode.svg)
+Let us walk through an example. Below we declare a responsive `Image` and a fixed-size `Markdown` pane inside a `Row`. According to the rules above the `Row` layout will inherit responsive sizing in `width` but not `height`. Additionally it will inherit a `min_width` from the `Markdown` pane.
+
+![Container sizing_mode](_static/images/container_scale_width.png)
 
 :::{note}
 To maintain backward compatibility Panel will still try to infer the appropriate sizing mode by inspecting the children of a container. It is, however, always best to be explicit.
@@ -156,7 +158,7 @@ pn.extension('tabulator', 'vega', ...)
 at the top of your application. The flipside of this is that if you call `pn.extension` but fail to declare the actual requirements then those resources will not be loaded and your application will not render correctly.
 
 :::{tip}
-We recommend always declaring all required extensions at the top of your application,
+We recommend always declaring all required extensions at the top of your application.
 :::
 
 ### Deprecations
@@ -178,7 +180,8 @@ pn.pane.Markdown("# Hello", styles={'background': 'red'})
 
 `pn.widgets.Ace()` has been renamed to `pn.widgets.CodeEditor()` to reflect better what the component does and not the implementation used.
 
-## Miscellaneous
+#### Miscellaneous
 
 Small behavior changes:
-`Tabulator.frozen_rows` now respects the order of rows in the data instead of the order in which the frozen_rows were defined.
+
+`Tabulator.frozen_rows` now respects the order of rows in the data instead of the order in which the `frozen_rows` were defined.
