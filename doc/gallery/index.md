@@ -168,8 +168,6 @@ Try interactive brushing on an Altair plot linked with a table.
 A great selection of applications showcasing various features of Panel built and maintained by Marc Skov Madsen.
 :::
 
-:::
-
 :::{grid-item-card} cuxfilter
 :img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
 :link: https://github.com/rapidsai/cuxfilter
