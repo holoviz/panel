@@ -11,11 +11,41 @@ from bokeh.util.serialization import make_id
 from ipykernel.comm import Comm, CommManager
 from ipywidgets import Widget
 from ipywidgets._version import __protocol_version__
+
+# Stop ipywidgets_bokeh from patching the kernel
+ipykernel.kernelbase.Kernel._instance = ''
+
 from ipywidgets_bokeh.kernel import (
     BokehKernel, SessionWebsocket, WebsocketStream,
 )
 from ipywidgets_bokeh.widget import IPyWidget
 from tornado.ioloop import IOLoop
+
+try:
+    import comm
+
+    from comm import create_comm  # noqa
+    from comm.base_comm import BaseComm
+
+    class BkComm(BaseComm):
+        def publish_msg(self, *args, **kwargs): pass
+
+        @classmethod
+        def create_comm(cls, *args, **kwargs): # noqa
+            comm = BkComm(comm_id=kwargs['comm_id'])
+            return comm
+
+        @classmethod
+        def get_comm_manager(cls):
+            if state.curdoc:
+                kernel = state._ipykernels[state.curdoc]
+                return kernel.comm_manager
+            return
+
+    comm.create_comm = BkComm.create_comm
+    comm.get_comm_manager = BkComm.get_comm_manager
+except Exception:
+    pass
 
 from ..util import classproperty
 from .state import set_curdoc, state
@@ -54,12 +84,6 @@ def _on_widget_constructed(widget, doc=None):
         args['comm_id'] = widget._model_id
     widget.comm = Comm(**args)
     kernel.register_widget(widget)
-
-# Patch kernel and widget objects
-_ORIG_KERNEL = ipykernel.kernelbase.Kernel._instance
-if isinstance(ipykernel.kernelbase.Kernel._instance, BokehKernel):
-    ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)
-Widget.on_widget_constructed(_on_widget_constructed)
 
 # Patch font-awesome CSS onto ipywidgets_bokeh IPyWidget
 IPyWidget.__css__ = [
@@ -107,7 +131,10 @@ class PanelSessionWebsocket(SessionWebsocket):
 
     def send(self, stream, msg_type, content=None, parent=None, ident=None, buffers=None, track=False, header=None, metadata=None):
         msg = self.msg(msg_type, content=content, parent=parent, header=header, metadata=metadata)
-        msg['channel'] = stream.channel
+        try:
+            msg['channel'] = stream.channel
+        except Exception:
+            return
 
         packed = self.pack(msg)
 
@@ -155,6 +182,7 @@ class PanelKernel(BokehKernel):
         self.session.stream = self.iopub_socket
         self.comm_manager = CommManager(parent=self, kernel=self)
         self.shell = None
+        self.session.auth = None
         self.log = logging.getLogger('fake')
 
         comm_msg_types = ['comm_open', 'comm_msg', 'comm_close']
@@ -174,3 +202,9 @@ class PanelKernel(BokehKernel):
             with set_curdoc(doc):
                 state.execute(partial(handler, *args, **kwargs), schedule=True)
         return wrapper
+
+# Patch kernel and widget objects
+_ORIG_KERNEL = ipykernel.kernelbase.Kernel._instance
+if isinstance(ipykernel.kernelbase.Kernel._instance, (BokehKernel, str)):
+    ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)
+Widget.on_widget_constructed(_on_widget_constructed)
