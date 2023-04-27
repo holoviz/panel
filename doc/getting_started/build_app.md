@@ -54,7 +54,7 @@ We can call the function with parameters and get a plot:
 find_outliers(variable='Temperature', window=20, sigma=10)
 ```
 
-It works! But exploring all these parameters by typing Python is slow and tedious. Plus we want our boss, or the boss's boss, to be able to try it out.
+It works! But exploring all these parameters by typing and executing cells is slow and tedious. Plus we want our boss, or our boss's boss, to be able to try it out.
 
 If we wanted to try out lots of combinations of these values to understand how the window and sigma affect the plot, we could reevaluate the above cell lots of times, but that would be a slow and painful process, and is only really appropriate for users who are comfortable with editing Python code. In the next few examples we will demonstrate how to use Panel to quickly add some interactive controls to some object and make a simple app.
 
@@ -93,14 +93,14 @@ The above panels all work in the notebook cell (if you have a live Jupyter kerne
 #first_app.show()
 ```
 
-Or, you can simply mark whatever you want to be in the separate web page with `.servable()`, and then run the shell command `panel serve --show Create_App.ipynb` to launch a server containing that object. (Here, we've also added a semicolon to avoid getting another copy of the occupancy app here in the notebook.)
+Or, you can simply mark whatever you want to be in the separate web page with `.servable()`, and then run the shell command `panel serve Create_App.ipynb --autoreload --show` to launch a server containing that object. (Here, we've also added a semicolon to avoid getting another copy of the occupancy app here in the notebook.)
 
 
 ```{pyodide}
 first_app.servable();
 ```
 
-During development, particularly when working with a raw script using `panel serve --show --autoreload` can be very useful as the application will automatically update whenever the script or notebook or any of its imports change.
+During development, particularly when working with a raw script using `panel serve ... --autoreload --show` can be very useful as the application will automatically update whenever the script or notebook or any of its imports change.
 
 ## Declarative Panels
 

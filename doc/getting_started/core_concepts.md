@@ -29,9 +29,13 @@ Now you are ready to go, all Panel components will render themselves. In other w
 When working in JupyterLab you will see a little Panel icon (<img src="https://panel.holoviz.org/_static/icons/favicon.ico" alt="Panel Icon" width="20px"/>) in your toolbar. This will let you preview the application you are building quickly and easily.
 :::
 
+<img src="https://user-images.githubusercontent.com/42288570/233545228-5c3867b7-f24c-4d74-b9ad-48417a22ce9e.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
+
 ### Editor/IDE
 
 The experience when working in an editor or IDE is slightly different. Whenever you save your application script the server will reload your application. This has benefits too, since it let's you quickly see how your whole application fits together.
+
+<img src="https://miro.medium.com/v2/resize:fit:720/1*5uAzI_AOkE69x-ui9eS-3A.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 ## Control flow
 
@@ -301,7 +305,7 @@ pn.config.template = 'fast'
 The `pn.config` object provides a range of options that will allow you to configure your application, however as a shortcut you may also provide options for the `config` object as keywords to the `pn.extension`. In other words `pn.extension(template='fast')` is equivalent to `pn.config.template = 'fast'`. This provides a clean way to set multiple config options at once.
 :::
 
-Once you have configured a template you can control where to render your components using the `area` argument of the `.servable()` method. Most templates have multiple areas including 'main', 'sidebar', 'header' and 'modal'. As an example you might want to render your widgets into the sidebar and your plots into the main area:
+Once you have configured a template you can control where to render your components using the `target` argument of the `.servable()` method. Most templates have multiple target areas including 'main', 'sidebar', 'header' and 'modal'. As an example you might want to render your widgets into the sidebar and your plots into the main area:
 
 ```python
 import numpy as np

@@ -6,7 +6,7 @@
 [![License badge](https://img.shields.io/pypi/l/panel.svg)](https://github.com/holoviz/panel/blob/main/LICENSE.txt)
 ## Setup
 
-Panel works with Python 3.7 - 3.10 on Linux, Windows, and Mac.
+Panel works with Python 3.7 - 3.11 on Linux, Windows, and Mac.
 
 The recommended way to install Panel is using the [conda](https://docs.conda.io/projects/conda/en/latest/index.html) command that is included in the installation of [Anaconda or Miniconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html). Completing the installation for either Anaconda or Miniconda will also install Python.
 
@@ -20,7 +20,7 @@ If you choose not to install Anaconda or Miniconda, you can download Python dire
 
 ## Installing Panel
 
-Open up a terminal (Powershell if you are on Windows), and run the following command, which will install Panel with all its dependencies.
+Open up a terminal, and run the following command, which will install Panel with all its dependencies.
 
 ::::{tab-set}
 
