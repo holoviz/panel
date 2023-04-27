@@ -53,7 +53,7 @@ jobs:
         if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
-          pip install --use-deprecated=legacy-resolver pyecharts
+          pip install --use-deprecated=legacy-resolver pyecharts ipywidgets_bokeh==1.4.0.dev1
       - name: bokeh sampledata
         run: |
           conda activate test-environment
