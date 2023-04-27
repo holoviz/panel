@@ -24,26 +24,8 @@ from tornado.ioloop import IOLoop
 try:
     import comm
 
-    from comm import create_comm  # noqa
-    from comm.base_comm import BaseComm
-
-    class BkComm(BaseComm):
-        def publish_msg(self, *args, **kwargs): pass
-
-        @classmethod
-        def create_comm(cls, *args, **kwargs): # noqa
-            comm = BkComm(comm_id=kwargs['comm_id'])
-            return comm
-
-        @classmethod
-        def get_comm_manager(cls):
-            if state.curdoc:
-                kernel = state._ipykernels[state.curdoc]
-                return kernel.comm_manager
-            return
-
-    comm.create_comm = BkComm.create_comm
-    comm.get_comm_manager = BkComm.get_comm_manager
+    from comm import get_comm_manager  # noqa
+    comm.get_comm_manager = lambda: state._ipykernels[state.curdoc].comm_manager if state.curdoc else None
 except Exception:
     pass
 
@@ -188,7 +170,7 @@ class PanelKernel(BokehKernel):
         comm_msg_types = ['comm_open', 'comm_msg', 'comm_close']
         for msg_type in comm_msg_types:
             handler = getattr(self.comm_manager, msg_type)
-            self.shell_handlers[msg_type] = self._wrap_handler(handler)
+            self.shell_handlers[msg_type] = self._wrap_handler(msg_type, handler)
 
     def register_widget(self, widget):
         comm = widget.comm
@@ -196,9 +178,11 @@ class PanelKernel(BokehKernel):
         comm.open()
         self.comm_manager.register_comm(comm)
 
-    def _wrap_handler(self, handler):
+    def _wrap_handler(self, msg_type, handler):
         doc = self.session._document
         def wrapper(*args, **kwargs):
+            if msg_type == 'comm_open':
+                return
             with set_curdoc(doc):
                 state.execute(partial(handler, *args, **kwargs), schedule=True)
         return wrapper
