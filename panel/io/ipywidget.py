@@ -21,14 +21,6 @@ from ipywidgets_bokeh.kernel import (
 from ipywidgets_bokeh.widget import IPyWidget
 from tornado.ioloop import IOLoop
 
-try:
-    import comm
-
-    from comm import get_comm_manager  # noqa
-    comm.get_comm_manager = lambda: state._ipykernels[state.curdoc].comm_manager if state.curdoc else None
-except Exception:
-    pass
-
 from ..util import classproperty
 from .state import set_curdoc, state
 
