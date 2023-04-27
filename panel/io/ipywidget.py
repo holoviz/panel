@@ -11,6 +11,10 @@ from bokeh.util.serialization import make_id
 from ipykernel.comm import Comm, CommManager
 from ipywidgets import Widget
 from ipywidgets._version import __protocol_version__
+
+# Stop ipywidgets_bokeh from patching the kernel
+ipykernel.kernelbase.Kernel._instance = ''
+
 from ipywidgets_bokeh.kernel import (
     BokehKernel, SessionWebsocket, WebsocketStream,
 )
@@ -54,12 +58,6 @@ def _on_widget_constructed(widget, doc=None):
         args['comm_id'] = widget._model_id
     widget.comm = Comm(**args)
     kernel.register_widget(widget)
-
-# Patch kernel and widget objects
-_ORIG_KERNEL = ipykernel.kernelbase.Kernel._instance
-if isinstance(ipykernel.kernelbase.Kernel._instance, BokehKernel):
-    ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)
-Widget.on_widget_constructed(_on_widget_constructed)
 
 # Patch font-awesome CSS onto ipywidgets_bokeh IPyWidget
 IPyWidget.__css__ = [
@@ -107,7 +105,10 @@ class PanelSessionWebsocket(SessionWebsocket):
 
     def send(self, stream, msg_type, content=None, parent=None, ident=None, buffers=None, track=False, header=None, metadata=None):
         msg = self.msg(msg_type, content=content, parent=parent, header=header, metadata=metadata)
-        msg['channel'] = stream.channel
+        try:
+            msg['channel'] = stream.channel
+        except Exception:
+            return
 
         packed = self.pack(msg)
 
@@ -155,12 +156,13 @@ class PanelKernel(BokehKernel):
         self.session.stream = self.iopub_socket
         self.comm_manager = CommManager(parent=self, kernel=self)
         self.shell = None
+        self.session.auth = None
         self.log = logging.getLogger('fake')
 
         comm_msg_types = ['comm_open', 'comm_msg', 'comm_close']
         for msg_type in comm_msg_types:
             handler = getattr(self.comm_manager, msg_type)
-            self.shell_handlers[msg_type] = self._wrap_handler(handler)
+            self.shell_handlers[msg_type] = self._wrap_handler(msg_type, handler)
 
     def register_widget(self, widget):
         comm = widget.comm
@@ -168,9 +170,17 @@ class PanelKernel(BokehKernel):
         comm.open()
         self.comm_manager.register_comm(comm)
 
-    def _wrap_handler(self, handler):
+    def _wrap_handler(self, msg_type, handler):
         doc = self.session._document
         def wrapper(*args, **kwargs):
+            if msg_type == 'comm_open':
+                return
             with set_curdoc(doc):
                 state.execute(partial(handler, *args, **kwargs), schedule=True)
         return wrapper
+
+# Patch kernel and widget objects
+_ORIG_KERNEL = ipykernel.kernelbase.Kernel._instance
+if isinstance(ipykernel.kernelbase.Kernel._instance, (BokehKernel, str)):
+    ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)
+Widget.on_widget_constructed(_on_widget_constructed)
