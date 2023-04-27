@@ -169,7 +169,7 @@ A great selection of applications showcasing various features of Panel built and
 :::
 
 :::{grid-item-card} cuxfilter
-:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
+:img-top: https://assets.holoviz.org/panel/gallery/community/cuxfilter.png
 :link: https://github.com/rapidsai/cuxfilter
 :link-type: url
 
