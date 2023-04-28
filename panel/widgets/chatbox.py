@@ -12,7 +12,7 @@ from typing import (
 
 import param
 
-from panel.pane.markup import Markdown
+from panel.pane.markup import HTML
 from panel.pane.image import Image
 from panel.layout import Column, Row, HSpacer, ListPanel
 from panel.viewable import Layoutable
@@ -38,9 +38,12 @@ class MessageRow(CompositeWidget):
 
     icon = param.String(default=None, doc="""The icon to display""")
 
-    style = param.Dict(
+    styles = param.Dict(
         default={},
-        doc="""Dictionary of CSS properties and values""",
+        doc="""
+            Dictionary of CSS properties and values to apply
+            message to the bubble.
+            """,
     )
 
     show_name = param.Boolean(
@@ -56,23 +59,23 @@ class MessageRow(CompositeWidget):
         text_color: AnyStr,
         background: AnyStr,
         icon: AnyStr = None,
-        style: Dict[str, str] = None,
+        styles: Dict[str, str] = None,
         **params,
     ):
-        style = {
+        bubble_styles = {
             "color": text_color,
             "background-color": background,
             "border-radius": "12px",
             "padding": "8px",
         }
-        style.update(params.pop("style", {}))
+        bubble_styles.update(params.pop("styles", {}))
         super().__init__(**params)
 
         # determine alignment
         message_layout = {
             p: getattr(self, p)
             for p in Layoutable.param
-            if p not in ("name", "height", "margin") and getattr(self, p) is not None
+            if p not in ("name", "height", "margin", "styles") and getattr(self, p) is not None
         }
         # create the message icon
         icon_params = {
@@ -89,9 +92,9 @@ class MessageRow(CompositeWidget):
                 "background-color": background,
                 "border-radius": "18px",
             }
-            self._icon = Markdown(
-                f"## <center>{self.name[0]}</center>",
-                style=icon_style,
+            self._icon = HTML(
+                f"<center><h3>{self.name[0]}</h3></center>",
+                styles=icon_style,
                 **icon_params,
             )
         else:
@@ -103,7 +106,7 @@ class MessageRow(CompositeWidget):
         wrapped_text = "\n".join(wrap(value, width=text_width))
         self._bubble = StaticText(
             value=wrapped_text,
-            style=style,
+            styles=bubble_styles,
             margin=13,
             **message_layout,
         )
@@ -122,13 +125,14 @@ class MessageRow(CompositeWidget):
         container_params = {
             "align": horizontal_align,
             "sizing_mode": "stretch_width",
+            "width_policy": "max",
         }
         row = Row(*objects, **container_params)
         if self.show_name:
             name = StaticText(
                 value=self.name,
                 margin=margin,
-                style={"color": "grey"},
+                styles={"color": "grey"},
                 align=horizontal_align,
             )
             row = Column(name, row, **container_params)
@@ -198,8 +202,7 @@ class ChatBox(CompositeWidget):
             width_policy="max",
         )
 
-        # this doesn't work:
-        # self.param.watch(self._display_all_messages, "user_messages")
+        self.param.watch(self._display_all_messages, "user_messages")
         self._user_input.param.watch(self._send_message, "value")
         self._composite[:] = [self._chat_log, self._user_input]
 
@@ -264,8 +267,5 @@ class ChatBox(CompositeWidget):
 
         user_message = {"You": event.new}
         self.user_messages.append(user_message)
-
-        # this should be removed once display_all_messages callback works.
-        message_row = self._create_message_row(user_message)
-        self._chat_log.append(message_row)
+        self.param.trigger("user_messages")
         self._user_input.value = ""
