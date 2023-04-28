@@ -10,7 +10,7 @@ width: 125
 
 # Overview
 
-<h1 style="margin-top: 0.3em;">The powerful data exploration and application framework for Python</h1>
+<h2 style="margin-top: 0.3em;">The powerful data exploration and application framework for Python</h2>
 
 ::::{grid} 2 2 5 5
 :gutter: 1
