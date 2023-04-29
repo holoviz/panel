@@ -136,9 +136,9 @@ class MessageRow(CompositeWidget):
 
 
 class ChatBox(CompositeWidget):
-    user_messages = param.List(
+    user_messages = param.ClassSelector(
         doc="""List of messages, mapping user to message""",
-        item_type=Dict,
+        class_=list,
         default=[],
     )
 
@@ -243,7 +243,7 @@ class ChatBox(CompositeWidget):
             )
             message_rows.append(message_row)
             previous_user = user
-        self._chat_log[:] = message_rows
+        self._chat_log = message_rows
 
     def _send_message(self, event: Optional[param.parameterized.Event] = None):
         if event.new == "":
