@@ -119,7 +119,10 @@ nbsite_pyodide_conf = {
     'requires': {
         'gallery/hvplot_explorer': ['scipy'],
         'gallery/penguin_crossfilter': ['scipy'],
-        'gallery/windturbines': ['fastparquet']
+        'gallery/windturbines': ['fastparquet'],
+        'reference/layouts/Swipe': ['scipy'],
+        'reference/panes/Audio': ['scipy'],
+        'reference/panes/HoloViews': ['scipy'],
     }
 }
 

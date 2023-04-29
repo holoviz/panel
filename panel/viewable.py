@@ -904,6 +904,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         states: dict (default={})
           A dictionary specifying the widget values to embed for each widget
         """
+        if state._is_pyodide:
+            return self
         show_embed(
             self, max_states, max_opts, json, json_prefix, save_path,
             load_path, progress, states
