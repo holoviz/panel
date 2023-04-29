@@ -122,9 +122,7 @@ JS_URLS = {
 
 extension_dirs['panel'] = str(DIST_DIR)
 
-mimetypes.init()
-if mimetypes.types_map.get('.js') != "application/javascript":
-    mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("application/javascript", ".js")
 
 @contextmanager
 def set_resource_mode(mode):
