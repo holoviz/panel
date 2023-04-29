@@ -98,7 +98,7 @@ class GridStack(ReactiveHTML, GridSpec):
         'nrows': """
         state.gridstack.opts.row = data.nrows
         if (data.nrows) {
-          const height = model.height || grid.offsetHeight;
+          const height = model.height || grid.offsetHeight || model.min_height;
           state.gridstack.cellHeight(Math.floor(height/data.nrows))
         } else {
           state.gridstack.cellHeight('auto')

@@ -166,6 +166,10 @@ class CompositeWidget(Widget):
                   if getattr(self, p) is not None}
         if layout.get('width', self.width) is None and 'sizing_mode' not in layout:
             layout['sizing_mode'] = 'stretch_width'
+        if layout.get('sizing_mode') not in (None, 'fixed') and layout.get('width'):
+            min_width = layout.pop('width')
+            if not layout.get('min_width'):
+                layout['min_width'] = min_width
         self._composite = self._composite_type(**layout)
         self._models = self._composite._models
         self._callbacks.append(
