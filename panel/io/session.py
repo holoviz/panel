@@ -34,6 +34,9 @@ def generate_session(application):
     )
     doc._session_context = lambda: session_context
     application.initialize_document(doc)
+
+    # We have to unset any session callbacks so bokeh does not attempt
+    # to schedule them on the event loop
     callbacks = doc.callbacks._session_callbacks
     doc.callbacks._session_callbacks = set()
     session = ServerSession(session_id, doc, io_loop=None, token=token)
