@@ -68,37 +68,34 @@ class MessageRow(CompositeWidget):
             "border-radius": "12px",
             "padding": "8px",
         }
-        bubble_styles.update(params.pop("styles", {}))
+        bubble_styles.update(styles or {})
         super().__init__(**params)
 
         # determine alignment
         message_layout = {
             p: getattr(self, p)
             for p in Layoutable.param
-            if p not in ("name", "height", "margin", "styles") and getattr(self, p) is not None
+            if p not in ("name", "height", "margin", "styles")
+            and getattr(self, p) is not None
         }
         # create the message icon
-        icon_params = {
-            "width": 36,
-            "height": 36,
-            "margin": (12, 2, 12, 2),
-            "sizing_mode": "fixed",
-        }
+        icon_params = dict(
+            width=36,
+            height=36,
+            margin=(12, 2, 12, 2),
+            sizing_mode="fixed",
+        )
         if icon is None:
             # if no icon is provided,
             # use the first letter of the name
             # and a random colored background
-            icon_style = {
-                "background-color": background,
-                "border-radius": "18px",
-            }
-            self._icon = HTML(
-                f"<center><h3>{self.name[0]}</h3></center>",
-                styles=icon_style,
+            self._icon = StaticText(
+                value=f"<strong>&nbsp{self.name[0]}.</strong>",
+                styles=bubble_styles,
                 **icon_params,
             )
         else:
-            self._icon = Image(icon)
+            self._icon = Image(icon, **icon_params)
 
         # create the message bubble
         box_width = message_layout.get("width", 100)
@@ -122,11 +119,9 @@ class MessageRow(CompositeWidget):
             margin = (0, 60, -5, 0)
             objects = (self._bubble, self._icon)
 
-        container_params = {
-            "align": horizontal_align,
-            "sizing_mode": "stretch_width",
-            "width_policy": "max",
-        }
+        container_params = dict(
+            align=horizontal_align,
+        )
         row = Row(*objects, **container_params)
         if self.show_name:
             name = StaticText(
@@ -137,10 +132,6 @@ class MessageRow(CompositeWidget):
             )
             row = Column(name, row, **container_params)
 
-        if horizontal_align == "start":
-            row.append(HSpacer())
-        else:
-            row.insert(0, HSpacer())
         self._composite[:] = [row]
 
 
@@ -189,8 +180,6 @@ class ChatBox(CompositeWidget):
         chat_layout = dict(
             layout,
             sizing_mode="stretch_both",
-            width_policy="max",
-            height_policy="max",
             height=None,
             margin=0,
         )
@@ -200,9 +189,12 @@ class ChatBox(CompositeWidget):
             placeholder="Press Enter to send",
             sizing_mode="stretch_width",
             width_policy="max",
+            align="end",
         )
 
+        # add interactivity
         self.param.watch(self._display_all_messages, "user_messages")
+        self.param.trigger("user_messages")
         self._user_input.param.watch(self._send_message, "value")
         self._composite[:] = [self._chat_log, self._user_input]
 
@@ -219,46 +211,38 @@ class ChatBox(CompositeWidget):
         r, g, b = random.randint(0, 127), random.randint(0, 127), random.randint(0, 127)
         return "#{:02x}{:02x}{:02x}".format(r, g, b)
 
-    def _create_message_row(self, user_message: Dict[str, str]):
-        user = self._get_name(user_message)
-
-        # try to get input color; if not generate one and save
-        if user in self.user_colors:
-            background = self.user_colors[user]
-        else:
-            background = self._generate_dark_color()
-            self.user_colors[user] = background
-
-        # try to get input icon
-        user_icon = self.user_icons.get(user, None)
-
-        # show name if the previous message wasn't from user
-        if self._chat_log:
-            last_user = self._chat_log[-1].name
-            show_name = last_user != user
-        else:
-            show_name = True
-
-        align = "start" if user != self.primary_user else "end"
-
-        return MessageRow(
-            name=user,
-            value=user_message[user],
-            text_color="white",
-            background=background,
-            icon=user_icon,
-            show_name=show_name,
-            align=align,
-        )
-
     def _display_all_messages(self, event: Optional[param.parameterized.Event] = None):
         if self.primary_user is None and self.user_messages:
             self.primary_user = self._get_name(self.user_messages[0])
 
-        message_rows = [
-            self._create_message_row(user_message)
-            for user_message in self.user_messages
-        ]
+        message_rows = []
+        previous_user = None
+        for user_message in self.user_messages:
+            user = self._get_name(user_message)
+            show_name = user != previous_user
+            # try to get input color; if not generate one and save
+            if user in self.user_colors:
+                background = self.user_colors[user]
+            else:
+                background = self._generate_dark_color()
+                self.user_colors[user] = background
+
+            # try to get input icon
+            user_icon = self.user_icons.get(user, None)
+
+            align = "start" if user != self.primary_user else "end"
+
+            message_row = MessageRow(
+                name=user,
+                value=user_message[user],
+                text_color="white",
+                background=background,
+                icon=user_icon,
+                show_name=show_name,
+                align=align,
+            )
+            message_rows.append(message_row)
+            previous_user = user
         self._chat_log[:] = message_rows
 
     def _send_message(self, event: Optional[param.parameterized.Event] = None):
