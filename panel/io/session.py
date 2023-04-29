@@ -34,4 +34,8 @@ def generate_session(application):
     )
     doc._session_context = lambda: session_context
     application.initialize_document(doc)
-    return ServerSession(session_id, doc, io_loop=None, token=token)
+    callbacks = doc.callbacks._session_callbacks
+    doc.callbacks._session_callbacks = set()
+    session = ServerSession(session_id, doc, io_loop=None, token=token)
+    doc.callbacks._session_callbacks = callbacks
+    return session
