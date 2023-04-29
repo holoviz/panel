@@ -116,8 +116,8 @@ class FileSelector(CompositeWidget):
 
         # Set up layout
         layout = {p: getattr(self, p) for p in Layoutable.param
-                  if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
-        sel_layout = dict(layout, sizing_mode='stretch_width', height=300, margin=0)
+                  if p not in ('name', 'height', 'margin', 'width') and getattr(self, p) is not None}
+        sel_layout = dict(layout, sizing_mode='stretch_width', height=300, width=None, margin=0)
         self._selector = CrossSelector(
             filter_fn=lambda p, f: fnmatch(f, p), size=self.size, **sel_layout
         )

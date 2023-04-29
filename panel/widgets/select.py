@@ -848,6 +848,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
 
     @param.depends('width', watch=True)
     def _update_width(self):
+        if self.width is None:
+            return
         width = int(self.width // 2. - 50)
         self._search[False].width = width
         self._search[True].width = width
