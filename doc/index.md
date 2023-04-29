@@ -57,7 +57,7 @@ width: 125
 
 ::::
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you **build powerful, richly interactive, dashboards and complex applications entirely in Python**. It has a batteries-included philosophy, putting the PyData ecosystem, powerful data tables and much more at your fingertips. High-level reactive APIs and lower-level callback based APIs ensure you can quickly build exploratory applications but you aren't limited if you build complex, multi-page apps with rich interactivity. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem, your gateway into a connected ecosystem of data exploration tools.
+Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you **easily build powerful tools, dashboards and complex applications entirely in Python**. It has a batteries-included philosophy, putting the PyData ecosystem, powerful data tables and much more at your fingertips. High-level reactive APIs and lower-level callback based APIs ensure you can quickly build exploratory applications, but you aren't limited if you build complex, multi-page apps with rich interactivity. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem, your gateway into a connected ecosystem of data exploration tools.
 
 ```{eval-rst}
 .. notebook:: panel ../examples/homepage.ipynb
@@ -68,7 +68,7 @@ Panel makes it simple to:
 
 - Develop in your favorite **editor or notebook** environment
 - Combine the **PyData tools and plotting libraries** that you know and love
-- **Iterate quickly** to develop data tools, apps and dashboards
+- **Iterate quickly** to develop data tools, dashboards and complex apps
 - **Collaborate** across skill levels and tool preferences
 - Add **advanced bi-directional communication** to your data apps
 - Create interactive **big data** applications with **crossfiltering**
@@ -111,7 +111,7 @@ The Panel API Reference Manual provides a comprehensive reference for all method
 
 ::::
 
-For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/) or our [Discord server](https://discord.gg/muhupDZM). If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
+For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/) or our [Discord server](https://discord.gg/muhupDZM). If you have any [issues](https://github.com/holoviz/panel/issues), [feature requests](https://github.com/holoviz/panel/issues) or wish to [contribute](https://github.com/holoviz/panel/blob/main/CONTRIBUTING.MD), you can visit our [GitHub site](https://github.com/holoviz/panel).
 
 ## Sponsors
 
