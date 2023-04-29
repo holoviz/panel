@@ -122,6 +122,7 @@ JS_URLS = {
 
 extension_dirs['panel'] = str(DIST_DIR)
 
+mimetypes.init()
 if mimetypes.types_map.get('.js') == 'text/plain':
     logger.warn(
         "Mimetype declaration for .js files was set to 'text/plain'. "
