@@ -2,19 +2,13 @@ import random
 
 from textwrap import wrap
 from typing import (
-    AnyStr,
-    ClassVar,
-    Dict,
-    List,
-    Optional,
-    Type,
+    AnyStr, ClassVar, Dict, List, Optional, Type,
 )
 
 import param
 
-from panel.pane.markup import HTML
+from panel.layout import Column, ListPanel, Row
 from panel.pane.image import Image
-from panel.layout import Column, Row, HSpacer, ListPanel
 from panel.viewable import Layoutable
 from panel.widgets.base import CompositeWidget
 from panel.widgets.input import StaticText, TextInput
@@ -136,9 +130,9 @@ class MessageRow(CompositeWidget):
 
 
 class ChatBox(CompositeWidget):
-    user_messages = param.ClassSelector(
+    user_messages = param.List(
         doc="""List of messages, mapping user to message""",
-        class_=list,
+        item_type=Dict,
         default=[],
     )
 
@@ -159,6 +153,11 @@ class ChatBox(CompositeWidget):
             will be used if unspecified
         """,
         default=None,
+    )
+
+    allow_input = param.Boolean(
+        doc="""Whether to allow users to interactively enter messages.""",
+        default=True,
     )
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
@@ -184,7 +183,7 @@ class ChatBox(CompositeWidget):
             margin=0,
         )
         self._chat_log = Column(**chat_layout)
-        self._user_input = TextInput(
+        self._input_message = TextInput(
             name="Type your message",
             placeholder="Press Enter to send",
             sizing_mode="stretch_width",
@@ -193,25 +192,32 @@ class ChatBox(CompositeWidget):
         )
 
         # add interactivity
-        self.param.watch(self._display_all_messages, "user_messages")
+        self.param.watch(self._display_messages, "user_messages")
         self.param.trigger("user_messages")
-        self._user_input.param.watch(self._send_message, "value")
-        self._composite[:] = [self._chat_log, self._user_input]
+        self._input_message.param.watch(self._enter_message, "value")
+        if self.allow_input:
+            composite_objects = [self._chat_log, self._input_message]
+        else:
+            composite_objects = [self._chat_log]
+        self._composite[:] = composite_objects
 
-    def _get_name(self, dict_):
+    def _get_name(self, dict_: Dict[str, str]) -> str:
         """
         Get the name of the user who sent the message.
         """
         return list(dict_.keys())[0]
 
-    def _generate_dark_color(self):
+    def _generate_dark_color(self) -> str:
         """
         Generate a random dark color in hexadecimal format.
         """
         r, g, b = random.randint(0, 127), random.randint(0, 127), random.randint(0, 127)
         return "#{:02x}{:02x}{:02x}".format(r, g, b)
 
-    def _display_all_messages(self, event: Optional[param.parameterized.Event] = None):
+    def _display_messages(self, event: Optional[param.parameterized.Event] = None) -> None:
+        """
+        Display the messages in the chat log.
+        """
         if self.primary_user is None and self.user_messages:
             self.primary_user = self._get_name(self.user_messages[0])
 
@@ -243,13 +249,42 @@ class ChatBox(CompositeWidget):
             )
             message_rows.append(message_row)
             previous_user = user
-        self._chat_log = message_rows
+        self._chat_log.objects = message_rows
 
-    def _send_message(self, event: Optional[param.parameterized.Event] = None):
+    def _enter_message(self, event: Optional[param.parameterized.Event] = None) -> None:
+        """
+        Send a message when the user presses Enter.
+        """
         if event.new == "":
             return
 
-        user_message = {"You": event.new}
+        self.append("You", event.new)
+        self._input_message.value = ""
+
+    def append(self, user: str, message: str) -> None:
+        """
+        Appends a message to the chat log.
+
+        Arguments
+        ---------
+        user (str): Name of the user who sent the message.
+        """
+        user_message = {user: message}
         self.user_messages.append(user_message)
         self.param.trigger("user_messages")
-        self._user_input.value = ""
+
+    def extend(self, user_messages: List[Dict[str, str]]) -> None:
+        """
+        Extends the chat log with new users' messages.
+
+        Arguments
+        ---------
+        user_messages (list): List of user messages to add.
+        """
+        self.user_messages = self.user_messages + user_messages
+
+    def clear(self) -> None:
+        """
+        Clears the chat log.
+        """
+        self.user_messages = []
