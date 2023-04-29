@@ -122,14 +122,7 @@ JS_URLS = {
 
 extension_dirs['panel'] = str(DIST_DIR)
 
-if mimetypes.types_map.get('.js') == 'text/plain':
-    logger.warn(
-        "Mimetype declaration for .js files was set to 'text/plain'. "
-        "This will interefere with serving JS modules. Ensure your system "
-        "does not override the mimetype declaration and/or contact your "
-        "system administrator. "
-    )
-    mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("application/javascript", ".js")
 
 @contextmanager
 def set_resource_mode(mode):
