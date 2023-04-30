@@ -51,22 +51,20 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 **A:** The Matplotlib pyplot interface behaves in a way that is not easily compatible with Panel in a notebook. Normal Python objects like Python literals and containers display when they are returned as a cell's value, but Matplotlib figures created using pyplot have a textual representation by default but then (depending on the Matplotlib backend and IPython configuration) also display like print statements do, i.e. with a plot as a side effect rather than as a representation of the return value. To force predictable Panel-compatible behavior we therefore recommend using the object-oriented API:
 
 1. Create a figure object explicitly using ``from matplotlib.figure import Figure``
-2. In versions of matplotlib < 3.1 use ``from matplotlib.backends.backend_agg import FigureCanvas`` to initialize a canvas
-3. Return the figure in your callback.
+2. Return the figure in your callback.
 
 As an example creating a simple plot might look like this::
 
     fig = Figure(figsize=(10, 6))
-    FigureCanvas(fig) # not needed if Matplotlib >= 3.1
     ax = fig.subplots()
     ax.plot([1, 2, 3])
     pn.pane.Matplotlib(fig)
 
 When using the pandas plotting API we create the figure and axes in the same way as before but then pass the axis to the plotting call::
 
-    df.plot([1, 2, 3], ax=ax)
+    df = pd.DataFrame({"x": [1, 2, 3])
+    df.plot(ax=ax)
     pn.pane.Matplotlib(fig)
-
 
 **Q: How do I debug error messages in a notebook?**
 

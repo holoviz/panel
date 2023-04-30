@@ -96,7 +96,7 @@ How-to guides provide step by step recipes for solving essential problems and ta
 :::
 
 :::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Explanation
-:link: background/index
+:link: explanation/index
 :link-type: doc
 
 Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
