@@ -75,17 +75,18 @@ class MessageRow(CompositeWidget):
         }
         # create the message icon
         icon_params = dict(
-            width=36,
-            height=36,
+            width=37,  # finetuned so it doesn't start a new line
+            height=36,  # designed to not match width
             margin=(12, 2, 12, 2),
             sizing_mode="fixed",
         )
         if icon is None:
             # if no icon is provided,
-            # use the first letter of the name
+            # use the first and last letter of the name
             # and a random colored background
+            icon_label = f"<strong>{self.name[0]}-{self.name[-1]}</strong>".upper()
             self._icon = StaticText(
-                value=f"<strong>&nbsp{self.name[0]}.</strong>",
+                value=icon_label,
                 styles=bubble_styles,
                 **icon_params,
             )
@@ -196,7 +197,7 @@ class ChatBox(CompositeWidget):
         )
 
         # add interactivity
-        self.param.watch(self._display_messages, "user_messages")
+        self.param.watch(self._refresh_log, "user_messages")
         self.param.trigger("user_messages")
         self._input_message.param.watch(self._enter_message, "value")
         if self.allow_input:
@@ -218,39 +219,54 @@ class ChatBox(CompositeWidget):
         r, g, b = random.randint(0, 127), random.randint(0, 127), random.randint(0, 127)
         return "#{:02x}{:02x}{:02x}".format(r, g, b)
 
-    def _display_messages(self, event: Optional[param.parameterized.Event] = None) -> None:
+    def _instantiate_message_row(
+        self, user: str, message: str, show_name: bool
+    ) -> MessageRow:
         """
-        Display the messages in the chat log.
+        Instantiate a MessageRow object.
         """
-        if self.primary_user is None and self.user_messages:
-            self.primary_user = self._get_name(self.user_messages[0])
+        if self.primary_user is None:
+            if self.user_messages:
+                self.primary_user = self._get_name(self.user_messages[0])
+            else:
+                self.primary_user = "You"
+
+        # try to get input color; if not generate one and save
+        if user in self.user_colors:
+            background = self.user_colors[user]
+        else:
+            background = self._generate_dark_color()
+            self.user_colors[user] = background
+
+        # try to get input icon
+        user_icon = self.user_icons.get(user, None)
+
+        align = "start" if user != self.primary_user else "end"
+
+        message_row = MessageRow(
+            name=user,
+            value=message,
+            text_color="white",
+            background=background,
+            icon=user_icon,
+            show_name=show_name,
+            align=align,
+        )
+        return message_row
+
+    def _refresh_log(self, event: Optional[param.parameterized.Event] = None) -> None:
+        """
+        Refresh the chat log for complete replacement of all messages.
+        """
+        user_messages = event.new
 
         message_rows = []
         previous_user = None
-        for user_message in self.user_messages:
+        for user_message in user_messages:
             user = self._get_name(user_message)
+            message = user_message[user]
             show_name = user != previous_user
-            # try to get input color; if not generate one and save
-            if user in self.user_colors:
-                background = self.user_colors[user]
-            else:
-                background = self._generate_dark_color()
-                self.user_colors[user] = background
-
-            # try to get input icon
-            user_icon = self.user_icons.get(user, None)
-
-            align = "start" if user != self.primary_user else "end"
-
-            message_row = MessageRow(
-                name=user,
-                value=user_message[user],
-                text_color="white",
-                background=background,
-                icon=user_icon,
-                show_name=show_name,
-                align=align,
-            )
+            message_row = self._instantiate_message_row(user, message, show_name)
             message_rows.append(message_row)
             previous_user = user
         self._chat_log.objects = message_rows
@@ -262,21 +278,33 @@ class ChatBox(CompositeWidget):
         if event.new == "":
             return
 
-        self.append("You", event.new)
+        user = self.primary_user or "You"
+        message = event.new
+        self.append({user: message})
         self._input_message.value = ""
 
-    def append(self, user: str, message: str) -> None:
+    def append(self, user_message: Dict[str, str]) -> None:
         """
         Appends a message to the chat log.
 
         Arguments
         ---------
-        user (str): Name of the user who sent the message.
-        message (str): Message to append.
+        user_message (dict): Dictionary mapping user to message.
         """
-        user_message = {user: message}
+        # this doesn't trigger anything because it's the same object
+        # just append so it stays in sync
         self.user_messages.append(user_message)
-        self.param.trigger("user_messages")
+
+        if self._chat_log.objects:
+            previous_user = self._chat_log.objects[-1].name
+        else:
+            previous_user = None
+
+        user = self._get_name(user_message)
+        message = user_message[user]
+        show_name = user != previous_user
+        message_row = self._instantiate_message_row(user, message, show_name)
+        self._chat_log.objects = [*self._chat_log.objects, message_row]
 
     def extend(self, user_messages: List[Dict[str, str]]) -> None:
         """
@@ -286,7 +314,8 @@ class ChatBox(CompositeWidget):
         ---------
         user_messages (list): List of user messages to add.
         """
-        self.user_messages = self.user_messages + user_messages
+        for user_message in user_messages:
+            self.append(user_message)
 
     def clear(self) -> None:
         """
