@@ -2,7 +2,7 @@ import random
 
 from textwrap import wrap
 from typing import (
-    AnyStr, ClassVar, Dict, List, Optional, Type,
+    AnyStr, ClassVar, Dict, List, Optional, Tuple, Type,
 )
 
 import param
@@ -62,6 +62,7 @@ class MessageRow(CompositeWidget):
             "background-color": background,
             "border-radius": "12px",
             "padding": "8px",
+            "text-align": "center",
         }
         bubble_styles.update(styles or {})
         super().__init__(**params)
@@ -75,7 +76,7 @@ class MessageRow(CompositeWidget):
         }
         # create the message icon
         icon_params = dict(
-            width=37,  # finetuned so it doesn't start a new line
+            width=38,  # finetuned so it doesn't start a new line
             height=36,  # designed to not match width
             margin=(12, 2, 12, 2),
             sizing_mode="fixed",
@@ -84,7 +85,7 @@ class MessageRow(CompositeWidget):
             # if no icon is provided,
             # use the first and last letter of the name
             # and a random colored background
-            icon_label = f"<strong>{self.name[0]}-{self.name[-1]}</strong>".upper()
+            icon_label = f"{self.name[0]}-{self.name[-1]}".upper()
             self._icon = StaticText(
                 value=icon_label,
                 styles=bubble_styles,
@@ -179,13 +180,14 @@ class ChatBox(CompositeWidget):
         layout = {
             p: getattr(self, p)
             for p in Layoutable.param
-            if p not in ("name", "height", "margin") and getattr(self, p) is not None
+            if p not in ("name", "height", "margin")
+            and getattr(self, p) is not None
         }
         chat_layout = dict(
-            layout,
             sizing_mode="stretch_both",
             height=None,
             margin=0,
+            **layout,
         )
         self._chat_log = Column(**chat_layout)
         self._input_message = TextInput(
@@ -193,7 +195,6 @@ class ChatBox(CompositeWidget):
             placeholder="Press Enter to send",
             sizing_mode="stretch_width",
             width_policy="max",
-            align="end",
         )
 
         # add interactivity
@@ -206,18 +207,37 @@ class ChatBox(CompositeWidget):
             composite_objects = [self._chat_log]
         self._composite[:] = composite_objects
 
-    def _get_name(self, dict_: Dict[str, str]) -> str:
-        """
-        Get the name of the user who sent the message.
-        """
-        return list(dict_.keys())[0]
-
     def _generate_dark_color(self) -> str:
         """
         Generate a random dark color in hexadecimal format.
         """
         r, g, b = random.randint(0, 127), random.randint(0, 127), random.randint(0, 127)
-        return "#{:02x}{:02x}{:02x}".format(r, g, b)
+        color = "#{:02x}{:02x}{:02x}".format(r, g, b)
+        # do not re-use a color that is already in use
+        if color in self.user_colors.values():
+            return self._generate_dark_color()
+        return color
+
+    @staticmethod
+    def _get_name(dict_: Dict[str, str]) -> str:
+        """
+        Get the name of the user who sent the message.
+        """
+        return list(dict_.keys())[0]
+
+    def _separate_user_message(self, user_message: Dict[str, str]) -> Tuple[str, str]:
+        """
+        Separate the user and message from a dictionary.
+        """
+        if len(user_message) != 1:
+            raise ValueError(
+                f"Expected a dictionary with one key-value pair, e.g. "
+                f"{{'User': 'Message'}} , but got {user_message}"
+            )
+
+        user = self._get_name(user_message)
+        message = user_message[user]
+        return user, message
 
     def _instantiate_message_row(
         self, user: str, message: str, show_name: bool
@@ -263,12 +283,14 @@ class ChatBox(CompositeWidget):
         message_rows = []
         previous_user = None
         for user_message in user_messages:
-            user = self._get_name(user_message)
-            message = user_message[user]
+            user, message = self._separate_user_message(user_message)
+
             show_name = user != previous_user
+            previous_user = user
+
             message_row = self._instantiate_message_row(user, message, show_name)
             message_rows.append(message_row)
-            previous_user = user
+
         self._chat_log.objects = message_rows
 
     def _enter_message(self, event: Optional[param.parameterized.Event] = None) -> None:
@@ -291,20 +313,21 @@ class ChatBox(CompositeWidget):
         ---------
         user_message (dict): Dictionary mapping user to message.
         """
+        if not isinstance(user_message, dict):
+            raise ValueError(f"Expected a dictionary, but got {user_message}")
+
         # this doesn't trigger anything because it's the same object
         # just append so it stays in sync
         self.user_messages.append(user_message)
+        user, message = self._separate_user_message(user_message)
 
+        previous_user = None
         if self._chat_log.objects:
             previous_user = self._chat_log.objects[-1].name
-        else:
-            previous_user = None
-
-        user = self._get_name(user_message)
-        message = user_message[user]
         show_name = user != previous_user
+
         message_row = self._instantiate_message_row(user, message, show_name)
-        self._chat_log.objects = [*self._chat_log.objects, message_row]
+        self._chat_log.append(message_row)
 
     def extend(self, user_messages: List[Dict[str, str]]) -> None:
         """
