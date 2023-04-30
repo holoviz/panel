@@ -259,7 +259,7 @@ def script_to_html(
     if any('holoviews' in req for req in reqs):
         reqs = ['holoviews>=1.16.0b5' if 'holoviews' else req in req for req in reqs]
     elif any('hvplot' in req for req in reqs):
-        reqs.append('holoviews>=1.16.0b5')
+        reqs.insert(2, 'holoviews>=1.16.0b5')
 
     # Execution
     post_code = POST_PYSCRIPT if runtime == 'pyscript' else POST
