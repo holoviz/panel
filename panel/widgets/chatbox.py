@@ -54,6 +54,7 @@ class MessageRow(CompositeWidget):
         background: AnyStr,
         icon: AnyStr = None,
         styles: Dict[str, str] = None,
+        show_name: bool = True,
         **params,
     ):
         bubble_styles = {
@@ -117,7 +118,7 @@ class MessageRow(CompositeWidget):
             align=horizontal_align,
         )
         row = Row(*objects, **container_params)
-        if self.show_name:
+        if show_name:
             name = StaticText(
                 value=self.name,
                 margin=margin,
@@ -131,18 +132,21 @@ class MessageRow(CompositeWidget):
 
 class ChatBox(CompositeWidget):
     user_messages = param.List(
-        doc="""List of messages, mapping user to message""",
+        doc="""List of messages, mapping user to message,
+        e.g. `[{'You': 'Welcome!'}]`""",
         item_type=Dict,
         default=[],
     )
 
     user_icons = param.Dict(
-        doc="""Dictionary mapping name of users to their icons""",
+        doc="""Dictionary mapping name of users to their icons,
+        e.g. `[{'You': 'path/to/icon.png'}]`""",
         default={},
     )
 
     user_colors = param.Dict(
-        doc="""Dictionary mapping name of users to their colors""",
+        doc="""Dictionary mapping name of users to their colors,
+        e.g. `[{'You': 'red'}]`""",
         default={},
     )
 
@@ -253,7 +257,7 @@ class ChatBox(CompositeWidget):
 
     def _enter_message(self, event: Optional[param.parameterized.Event] = None) -> None:
         """
-        Send a message when the user presses Enter.
+        Append the message from the text input when the user presses Enter.
         """
         if event.new == "":
             return
@@ -268,6 +272,7 @@ class ChatBox(CompositeWidget):
         Arguments
         ---------
         user (str): Name of the user who sent the message.
+        message (str): Message to append.
         """
         user_message = {user: message}
         self.user_messages.append(user_message)
