@@ -38,9 +38,7 @@ class ChatRow(CompositeWidget):
         default=None, doc="""The icon to display adjacent to the value"""
     )
 
-    liked = param.Boolean(
-        default=False, doc="""Whether a user liked the message"""
-    )
+    liked = param.Boolean(default=False, doc="""Whether a user liked the message""")
 
     show_name = param.Boolean(
         default=True,
@@ -106,10 +104,7 @@ class ChatRow(CompositeWidget):
             self._icon = Image(icon, **icon_params)
 
         # create the chat bubble
-        bubble_objects = []
-        for obj in value:
-            panel_obj = self._serialize_obj(obj, default_panel)
-            bubble_objects.append(panel_obj)
+        bubble_objects = [self._serialize_obj(obj, default_panel) for obj in value]
         self._bubble = Column(
             *bubble_objects,
             margin=12,
@@ -192,6 +187,7 @@ class ChatRow(CompositeWidget):
             event.obj.name = "❤️"
         else:
             event.obj.name = "♡"
+
 
 class ChatBox(CompositeWidget):
     value = param.List(
