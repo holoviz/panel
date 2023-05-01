@@ -332,8 +332,6 @@ def block_comm() -> Iterator:
 def load_notebook(
     inline: bool = True,
     reloading: bool = False,
-    extensions: list[str] = [],
-    resources: dict[str, dict[str, str] | list[str]] = {},
     load_timeout: int = 5000
 ) -> None:
     from IPython.display import publish_display_data
