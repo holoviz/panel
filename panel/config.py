@@ -618,6 +618,7 @@ class panel_extension(_pyviz_extension):
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
         }
+        newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if state.curdoc and state.curdoc not in state._extensions_:
             state._extensions_[state.curdoc] = []
         for arg in args:
@@ -662,7 +663,8 @@ class panel_extension(_pyviz_extension):
                     raise ValueError('%s should be supplied as a list, '
                                      'not as a %s type.' %
                                      (k, type(v).__name__))
-                getattr(config, k).extend(v)
+                existing = getattr(config, k)
+                existing.extend([new for new in v if new not in existing])
             elif k == 'js_files':
                 getattr(config, k).update(v)
             else:
@@ -704,31 +706,7 @@ class panel_extension(_pyviz_extension):
 
         self._detect_comms(params)
 
-        newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
-        custom_resources = [
-            resource for resource in ('css_files', 'js_files', 'js_modules', 'raw_css')
-            if getattr(config, resource)
-        ]
-        if loaded and newly_loaded:
-            self.param.warning(
-                "A HoloViz extension was loaded previously. This means "
-                "the extension is already initialized and the following "
-                f"Panel extensions could not be properly loaded: {newly_loaded}."
-                "If you are loading custom extensions with pn.extension(...) "
-                "ensure that this is called before any other HoloViz "
-                "extension such as hvPlot or HoloViews."
-            )
-        elif loaded and custom_resources:
-            resources_string = ', '.join(custom_resources)
-            self.param.warning(
-                "A HoloViz extension was loaded previously. This means the "
-                f"extension is already initialized and custom {resources_string} "
-                "resources could not be loaded. If you are loading custom "
-                "extensions with pn.extension(...) ensure that this is called"
-                "before any other HoloViz extension such as hvPlot or HoloViews."
-            )
-        else:
-            panel_extension._loaded_extensions += newly_loaded
+        panel_extension._loaded_extensions += newly_loaded
 
         if hasattr(ip, 'kernel') and not self._loaded and not config._doc_build:
             # TODO: JLab extension and pyviz_comms should be changed
@@ -754,8 +732,10 @@ class panel_extension(_pyviz_extension):
         # Disable simple ids, old state and multiple tabs in notebooks can cause IDs to clash
         bk_settings.simple_ids.set_value(False)
 
-        if not nb_loaded and hasattr(ip, 'kernel'):
-            load_notebook(config.inline)
+        if hasattr(ip, 'kernel'):
+            load_notebook(
+                config.inline, reloading=nb_loaded
+            )
         panel_extension._loaded = True
 
         if config.browser_info and state.browser_info:
