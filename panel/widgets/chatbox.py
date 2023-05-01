@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 
 from typing import (
-    Any, ClassVar, Dict, List, Optional, Tuple, Type,
+    Any, Callable, ClassVar, Dict, List, Optional, Tuple, Type,
 )
 
 import param
@@ -108,16 +108,7 @@ class ChatRow(CompositeWidget):
         # create the chat bubble
         bubble_objects = []
         for obj in value:
-            if isinstance(obj, Viewable):
-                panel_obj = obj
-            else:
-                try:
-                    if default_panel is None or issubclass(default_panel, PaneBase):
-                        panel_obj = (default_panel or _panel)(obj)
-                    else:
-                        panel_obj = default_panel(value=obj)
-                except ValueError:
-                    panel_obj = _panel(obj)
+            panel_obj = self._serialize_obj(obj, default_panel)
             bubble_objects.append(panel_obj)
         self._bubble = Column(
             *bubble_objects,
@@ -176,7 +167,26 @@ class ChatRow(CompositeWidget):
 
         self._composite[:] = [row]
 
+    def _serialize_obj(self, obj: Any, default_panel: Callable) -> Viewable:
+        """
+        Convert an object to a Panel object.
+        """
+        if isinstance(obj, Viewable):
+            return obj
+
+        try:
+            if default_panel is None or issubclass(default_panel, PaneBase):
+                panel_obj = (default_panel or _panel)(obj)
+            else:
+                panel_obj = default_panel(value=obj)
+        except ValueError:
+            panel_obj = _panel(obj)
+        return panel_obj
+
     def _update_like(self, event: param.parameterized.Event):
+        """
+        Update the like button when the user clicks it.
+        """
         self.liked = event.new
         if self.liked:
             event.obj.name = "❤️"
