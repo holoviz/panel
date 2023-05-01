@@ -11,7 +11,7 @@ import param
 from panel.layout import Column, ListPanel, Row
 from panel.layout.spacer import VSpacer
 from panel.pane import Markdown
-from panel.pane.base import panel as _panel
+from panel.pane.base import PaneBase, panel as _panel
 from panel.pane.image import Image
 from panel.viewable import Layoutable, Viewable
 from panel.widgets.base import CompositeWidget
@@ -24,13 +24,13 @@ class ChatRow(CompositeWidget):
         doc="""The objects to display""",
     )
 
-    panel_type = param.ClassSelector(
+    default_panel = param.Callable(
         default=None,
-        class_=(Viewable,),
         doc="""
         The type of Panel object to use if an item in value is not
         already rendered as a Panel object; if None, uses the
-        panel function to render a displayable Panel object
+        pn.panel function to render a displayable Panel object.
+        If the item is not serializable, will fall back to pn.panel.
         """,
     )
 
@@ -65,19 +65,18 @@ class ChatRow(CompositeWidget):
     def __init__(
         self,
         value: List[Any],
-        panel_type: Viewable = None,
+        default_panel: Viewable = None,
         icon: str = None,
         show_name: bool = True,
         show_like: bool = True,
         styles: Dict[str, str] = None,
         **params,
     ):
-        if panel_type is None:
-            panel_type = _panel
-
         bubble_styles = {
-            "border-radius": "16px",
-            "padding": "8px",
+            # round borders
+            "border-radius": "18px",
+            "padding": "6px 11px",
+            "border": "1px solid #ccc",
         }
         bubble_styles.update(styles or {})
         if "background" not in bubble_styles:
@@ -86,7 +85,7 @@ class ChatRow(CompositeWidget):
 
         # create the chat icon
         icon_params = dict(
-            width=60,
+            width=50,
             height=60,
             margin=(12, 2, 12, 2),
             sizing_mode="fixed",
@@ -106,9 +105,19 @@ class ChatRow(CompositeWidget):
             self._icon = Image(icon, **icon_params)
 
         # create the chat bubble
-        bubble_objects = [
-            panel_type(obj) if not isinstance(obj, Viewable) else obj for obj in value
-        ]
+        bubble_objects = []
+        for obj in value:
+            if isinstance(obj, Viewable):
+                panel_obj = obj
+            else:
+                try:
+                    if default_panel is None or issubclass(default_panel, PaneBase):
+                        panel_obj = (default_panel or _panel)(obj)
+                    else:
+                        panel_obj = default_panel(value=obj)
+                except ValueError:
+                    panel_obj = _panel(obj)
+            bubble_objects.append(panel_obj)
         self._bubble = Column(
             *bubble_objects,
             margin=12,
@@ -119,10 +128,11 @@ class ChatRow(CompositeWidget):
         if show_like:
             self._like = Toggle(
                 name="♡",
-                width=40,
+                width=30,
                 height=30,
-                margin=(12, 0),
+                margin=(12, 6, 12, -2),
                 align="end",
+                button_type="light",
             )
             self._like.param.watch(self._update_like, "value")
         else:
@@ -171,8 +181,11 @@ class ChatRow(CompositeWidget):
 
 class ChatBox(CompositeWidget):
     value = param.List(
-        doc="""List of messages, mapping user to message,
-        e.g. `[{'You': 'Welcome!'}]`""",
+        doc="""
+            List of messages, mapping user to message,
+            e.g. `[{'You': 'Welcome!'}]` The message can be
+            any Python object that can be rendered by Panel,
+        """,
         item_type=Dict,
         default=[],
     )
@@ -204,6 +217,16 @@ class ChatBox(CompositeWidget):
         doc="""Dictionary mapping name of users to their colors,
         e.g. `[{'You': 'red'}]`""",
         default={},
+    )
+
+    default_panel = param.Callable(
+        default=None,
+        doc="""
+        The type of Panel object to use for items in value if they are
+        not already rendered as a Panel object; if None, uses the
+        pn.panel function to render a displayable Panel object.
+        If the item is not serializable, will fall back to pn.panel.
+        """,
     )
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
@@ -289,7 +312,7 @@ class ChatBox(CompositeWidget):
         return user, message
 
     def _instantiate_message_row(
-        self, user: str, message: str, show_name: bool
+        self, user: str, message: List[Any], show_name: bool
     ) -> ChatRow:
         """
         Instantiate a ChatRow object.
@@ -311,13 +334,15 @@ class ChatBox(CompositeWidget):
         user_icon = self.user_icons.get(user, None)
 
         align = "start" if user != self.primary_user else "end"
-
+        if not isinstance(message, List):
+            message = [message]
         message_row = ChatRow(
             name=user,
-            value=[message],
+            value=message,
             icon=user_icon,
             show_name=show_name,
             align=align,
+            default_panel=self.default_panel,
             styles={
                 "background": background,
             },
