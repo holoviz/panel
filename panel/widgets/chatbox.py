@@ -7,9 +7,7 @@ from typing import (
 
 import param
 
-from panel.layout import (
-    Column, ListPanel, Row, WidgetBox,
-)
+from panel.layout import Column, ListPanel, Row
 from panel.layout.spacer import VSpacer
 from panel.pane.image import Image
 from panel.viewable import Layoutable
@@ -53,8 +51,8 @@ class MessageRow(CompositeWidget):
     def __init__(
         self,
         value: AnyStr,
-        text_color: AnyStr,
-        background: AnyStr,
+        text_color: AnyStr = "white",
+        background: AnyStr = "black",
         icon: AnyStr = None,
         styles: Dict[str, str] = None,
         show_name: bool = True,
@@ -196,27 +194,27 @@ class ChatBox(CompositeWidget):
         self._chat_title = StaticText(
             value=f"{self.name}",
             styles={"font-size": "1.5em"},
-            margin=(12, 0, 0, 18),
             align="center",
         )
-        self._chat_log = Column(**chat_layout)
-        self._input_message = TextInput(
-            name="Type your message",
-            placeholder="Press Enter to send",
-            sizing_mode="stretch_width",
-        )
+        self._chat_log = Column(scroll=True, **chat_layout)
+
+        box_objects = [self._chat_title] if self.name else []
+        box_objects.append(self._chat_log)
+        if self.allow_input:
+            self._input_message = TextInput(
+                name="Type your message",
+                placeholder="Press Enter to send",
+                sizing_mode="stretch_width",
+                margin=0,
+            )
+            self._input_message.param.watch(self._enter_message, "value")
+            box_objects.extend([VSpacer(height_policy="min"), self._input_message])
+        self._composite[:] = box_objects
 
         # add interactivity
         self.param.watch(self._refresh_log, "value")
         self.param.trigger("value")
-        self._input_message.param.watch(self._enter_message, "value")
-        box_objects = [self._chat_title] if self.name else []
-        if self.allow_input:
-            box_objects.extend([self._chat_log, VSpacer(), self._input_message])
-        else:
-            box_objects.append(self._chat_log)
-        widget_box = WidgetBox(Column(*box_objects, margin=12))
-        self._composite[:] = [widget_box]
+
 
     def _generate_dark_color(self) -> str:
         """
@@ -356,3 +354,6 @@ class ChatBox(CompositeWidget):
         Clears the chat log.
         """
         self.value = []
+
+    def __len__(self) -> int:
+        return len(self.value)
