@@ -107,7 +107,7 @@ class Callback(param.Parameterized):
         named parameters to the callback.""")
 
     code = param.Dict(default=None, doc="""
-        A dictionary mapping from a source specication to a JS code
+        A dictionary mapping from a source specification to a JS code
         snippet to be executed if the source property changes.""")
 
     # Mapping from a source id to a Link instance

@@ -225,7 +225,7 @@ def _process_document_events(doc: Document, events: List[Any]):
 
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
-    Links Python and JS documents in Pyodide ensuring taht messages
+    Links Python and JS documents in Pyodide ensuring that messages
     are passed between them.
 
     Arguments

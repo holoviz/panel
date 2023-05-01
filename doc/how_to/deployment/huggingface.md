@@ -30,7 +30,7 @@ Fill out the form. Make sure to select the *Gradio Space SDK*.
 
 <img src="../../_static/hugging-face-create-spaces-form.png" style="width:67%"></img>
 
-A Gradio space will serve your app via the commmand `python app.py`. I.e. you cannot run `panel serve app.py ...`.
+A Gradio space will serve your app via the command `python app.py`. I.e. you cannot run `panel serve app.py ...`.
 
 To work around this your `app.py` will need to either
 

@@ -68,7 +68,7 @@ class BaseTable(ReactiveData, Widget):
         (overrides the default chosen based on the type).""")
 
     hierarchical = param.Boolean(default=False, constant=True, doc="""
-        Whether to generate a hierachical index.""")
+        Whether to generate a hierarchical index.""")
 
     row_height = param.Integer(default=40, doc="""
         The height of each table row.""")
@@ -1066,7 +1066,7 @@ class Tabulator(BaseTable):
           - 'checkbox'
               Adds a column of checkboxes to toggle selections
           - 'checkbox-single'
-              Same as 'checkbox' but header does not alllow select/deselect all
+              Same as 'checkbox' but header does not allow select/deselect all
           - 'toggle'
               Selection toggles when clicked
           - int

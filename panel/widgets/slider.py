@@ -611,7 +611,7 @@ class IntRangeSlider(RangeSlider):
         The lower bound.""")
 
     end = param.Integer(default=1, doc="""
-        The uppper bound.""")
+        The upper bound.""")
 
     step = param.Integer(default=1, doc="""
         The step size""")

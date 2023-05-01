@@ -1,6 +1,6 @@
 # Reactive functions
 
-The `pn.bind` reactive programming API is very similar to the [`interact` function](interact) but is more explicit about widget selection and layout. `pn.bind` requires the programmer to select and configure widgets explicity and to lay out components explicitly, without relying on inference of widget types and ranges and without any default layouts. Specifying those aspects explicitly provides more power and control, but does typically take a bit more code and more knowledge of widget and layout components than using `interact` does. Once widgets have been bound to a reactive function, you can lay out the bound function and the widgets in any order or combination you like, including across Jupyter notebook cells if desired.
+The `pn.bind` reactive programming API is very similar to the [`interact` function](interact) but is more explicit about widget selection and layout. `pn.bind` requires the programmer to select and configure widgets explicitly and to lay out components explicitly, without relying on inference of widget types and ranges and without any default layouts. Specifying those aspects explicitly provides more power and control, but does typically take a bit more code and more knowledge of widget and layout components than using `interact` does. Once widgets have been bound to a reactive function, you can lay out the bound function and the widgets in any order or combination you like, including across Jupyter notebook cells if desired.
 
 ## Pros:
 

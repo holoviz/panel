@@ -181,7 +181,7 @@ class Debugger(Card):
         Number of logged warnings since last acknowledged.""")
 
     _number_of_infos = param.Integer(bounds=(0, None), precedence=-1, doc="""
-        Number of logged informations since last acknowledged.""")
+        Number of logged information since last acknowledged.""")
 
     only_last = param.Boolean(default=True, doc="""
         Whether only the last stack is printed or the full.""")
