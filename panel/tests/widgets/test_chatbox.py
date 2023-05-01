@@ -1,5 +1,6 @@
+from panel.pane import JPG
 from panel.widgets import TextInput
-from panel.widgets.chatbox import ChatBox, MessageRow
+from panel.widgets.chatbox import ChatBox, ChatRow
 
 JPG_FILE = "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
 
@@ -137,45 +138,77 @@ def test_chat_box_show_name(document, comm):
         {"user2": "Hi"},
     ]
     chat_box = ChatBox(value=value.copy())
-    # Log -> MessageRow -> Column -> StaticText == name
+    # Log -> ChatRow -> Column -> StaticText == name
     assert chat_box._chat_log[0]._composite[0][0].value == "user1"
     assert chat_box._chat_log[1]._composite[0][0].value == "user2"
     # no name shown
     assert not isinstance(chat_box._chat_log[1]._composite[0][0], TextInput)
 
 
-def test_message_row(document, comm):
-    message_row = MessageRow(
-        value="Hello", name="user1", background="black", show_name=True
+def test_chat_row(document, comm):
+    chat_row = ChatRow(
+        value=["Hello"], name="user1", styles={"background": "black"}, show_name=True
     )
 
-    name = message_row._composite[0][0]
+    name = chat_row._name
     assert name.value == "user1"
     assert name.align == "start"
 
-    icon = message_row._composite[0][1][0]
-    assert icon.value == "U-1"
-    assert icon.styles["background-color"] == "black"
+    icon = chat_row._icon
+    assert icon.object == "*U-1*"
+    assert icon.align == "center"
+    assert icon.styles["background"] == "black"
 
-    message = message_row._composite[0][1][1]
-    assert message.value == "Hello"
-    assert icon.styles["background-color"] == "black"
+    bubble = chat_row._bubble
+    assert bubble[0].object == "Hello"
+    assert icon.styles["background"] == "black"
 
 
-def test_message_row_align(document, comm):
-    message_row = MessageRow(
-        value="Hello", name="user1", align="end"
+def test_chat_row_image_message(document, comm):
+    chat_row = ChatRow(value=[JPG_FILE])
+    assert isinstance(chat_row._bubble[0], JPG)
+
+
+def test_chat_row_update_like(document, comm):
+    chat_row = ChatRow(
+        value=["Hello"], name="user1"
     )
 
-    name = message_row._composite[0][0]
-    assert name.value == "user1"
-    assert name.align == "end"
+    assert not chat_row.liked
+    assert not chat_row._like.value
+    assert chat_row._like.name == "♡"
+    chat_row._like.value = True
+    assert chat_row.liked
+    assert chat_row._like.value
+    assert chat_row._like.name == "❤️"
+
+
+def test_chat_row_default_panel(document, comm):
+    chat_row = ChatRow(
+        value=["Hello", TextInput(value="Input")],
+        default_panel=TextInput
+    )
+
+    for obj in chat_row._bubble:
+        assert isinstance(obj, TextInput)
+
+
+def test_message_align_end(document, comm):
+    chat_row = ChatRow(
+        value=["Hello"], name="user1", align="end"
+    )
+    assert chat_row._name.align == "end"
+
 
 def test_message_not_show_name(document, comm):
-    message_row = MessageRow(
-        value="Hello", name="user1", show_name=False
+    chat_row = ChatRow(
+        value=["Hello"], name="user1", show_name=False
     )
+    assert chat_row._name is None
 
-    # no name; just icon and message
-    assert message_row._composite[0][0].value == "U-1"
-    assert message_row._composite[0][1].value == "Hello"
+
+def test_message_not_show_like(document, comm):
+    chat_row = ChatRow(
+        value=["Hello"], name="user1", show_like=False
+    )
+    assert chat_row._like is None

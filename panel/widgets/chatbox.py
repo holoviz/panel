@@ -10,9 +10,9 @@ import param
 
 from panel.layout import Column, ListPanel, Row
 from panel.layout.spacer import VSpacer
-from panel.pane import Markdown
 from panel.pane.base import PaneBase, panel as _panel
 from panel.pane.image import Image
+from panel.pane.markup import Markdown
 from panel.viewable import Layoutable, Viewable
 from panel.widgets.base import CompositeWidget
 from panel.widgets.button import Toggle
@@ -95,7 +95,8 @@ class ChatRow(CompositeWidget):
             # if no icon is provided,
             # use the first and last letter of the name
             # and a random colored background
-            icon_label = f"*{self.name[0:3]}*"
+            name = self.name or "Anonymous"
+            icon_label = f"*{name[0]}-{name[-1]}*".upper()
             self._icon = Markdown(
                 object=icon_label,
                 styles=bubble_styles,
@@ -125,6 +126,7 @@ class ChatRow(CompositeWidget):
             width_policy="max",
         )
 
+        # create heart icon next to chat
         if show_like:
             self._like = Toggle(
                 name="♡",
@@ -162,13 +164,15 @@ class ChatRow(CompositeWidget):
         )
         row = Row(*row_objects, **container_params)
         if show_name:
-            name = StaticText(
+            self._name = StaticText(
                 value=self.name,
                 margin=margin,
                 styles={"color": "grey"},
                 align=horizontal_align,
             )
-            row = Column(name, row, **container_params)
+            row = Column(self._name, row, **container_params)
+        else:
+            self._name = None
 
         self._composite[:] = [row]
 
@@ -184,7 +188,7 @@ class ChatBox(CompositeWidget):
         doc="""
             List of messages, mapping user to message,
             e.g. `[{'You': 'Welcome!'}]` The message can be
-            any Python object that can be rendered by Panel,
+            any Python object that can be rendered by Panel
         """,
         item_type=Dict,
         default=[],
