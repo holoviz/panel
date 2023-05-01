@@ -125,7 +125,7 @@ def get_requirements():
         if 'hvplot' in deps:
             deps.append('holoviews')
         if 'holoviews' in deps:
-            deps[deps.index('holoviews')] = 'holoviews==1.16.0a5'
+            deps[deps.index('holoviews')] = 'holoviews>=1.16.0a7'
         requirements[name] = deps
     return requirements
 

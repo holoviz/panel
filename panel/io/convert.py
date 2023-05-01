@@ -257,9 +257,9 @@ def script_to_html(
     ]
     # Temporary patch for HoloViews
     if any('holoviews' in req for req in reqs):
-        reqs = ['holoviews>=1.16.0b5' if 'holoviews' else req in req for req in reqs]
+        reqs = ['holoviews>=1.16.0a7' if 'holoviews' else req in req for req in reqs]
     elif any('hvplot' in req for req in reqs):
-        reqs.insert(2, 'holoviews>=1.16.0b5')
+        reqs.insert(2, 'holoviews>=1.16.0a7')
 
     # Execution
     post_code = POST_PYSCRIPT if runtime == 'pyscript' else POST
