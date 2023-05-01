@@ -65,7 +65,7 @@ class _base_config(param.Parameterized):
         name to the URL of the JS file.""")
 
     js_modules = param.Dict(default={}, doc="""
-        External JS fils to load as modules. Dictionary should map from
+        External JS files to load as modules. Dictionary should map from
         exported name to the URL of the JS file.""")
 
     raw_css = param.List(default=[], doc="""
@@ -137,7 +137,7 @@ class _config(_base_config):
 
     layout_compatibility = param.Selector(default='warn', objects=['warn', 'error'], doc="""
         Provide compatibility for older layout specifications. Incompatible
-        specifications will triger warnings by default but can be set to error.
+        specifications will trigger warnings by default but can be set to error.
         Compatibility to be set to error by default in Panel 1.1.""")
 
     load_entry_points = param.Boolean(default=True, doc="""
@@ -250,11 +250,11 @@ class _config(_base_config):
 
     _basic_auth = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
-        Use Basic authentification.""")
+        Use Basic authentication.""")
 
     _oauth_provider = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
-        Select between a list of authentification providers.""")
+        Select between a list of authentication providers.""")
 
     _oauth_expiry = param.Number(default=1, bounds=(0, None), doc="""
         Expiry of the OAuth cookie in number of days.""")

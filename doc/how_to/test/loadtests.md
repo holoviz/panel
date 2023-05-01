@@ -178,7 +178,7 @@ Open [http://localhost:8089](http://localhost:8089). Keep the default settings a
 
 ![panel-locust.gif](https://assets.holoviz.org/panel/gifs/locust.gif)
 
-The median response time is ~530ms when one user requests the page every second. If you try to increase to 10 simultanous users you will see a median response time of ~5300ms. If this is a likely scenario, you will have to look into how to improve the performance of your app.
+The median response time is ~530ms when one user requests the page every second. If you try to increase to 10 simultaneous users you will see a median response time of ~5300ms. If this is a likely scenario, you will have to look into how to improve the performance of your app.
 
 ## Test advanced interactions with Loadwright
 

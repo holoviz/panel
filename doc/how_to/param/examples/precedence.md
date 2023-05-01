@@ -61,7 +61,7 @@ class Precedence(param.Parameterized):
 
 precedence_model = Precedence()
 
-# Bulding the control app as a Param pane too.
+# Building the control app as a Param pane too.
 control_app = pn.Param(
     precedence_model.param,
     parameters=["x_precedence", "y_precedence", "z_precedence", "dummy_app_display_threshold"],

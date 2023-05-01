@@ -61,7 +61,7 @@ Automatically enable a loading indicator for components rendered dynamically.
 :link: examples/subobjects
 :link-type: doc
 
-Using Param to express a nested UI using a hierachy of classes.
+Using Param to express a nested UI using a hierarchy of classes.
 :::
 
 :::{grid-item-card} Precedence

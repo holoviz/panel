@@ -91,7 +91,7 @@ def run_notebook(path, page):
     notebook = path.split("/")[-1]
 
     retrier = Retrier(retries=3, delay=1)
-    while not retrier.acomplished:
+    while not retrier.accomplished:
         with retrier:
             page.goto(url)
             _wait_for_notebook_tab(page, notebook)

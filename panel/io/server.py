@@ -932,7 +932,7 @@ def get_server(
                     title_ = title[slug]
                 except KeyError:
                     raise KeyError(
-                        "Keys of the title dictionnary and of the apps "
+                        "Keys of the title dictionary and of the apps "
                         f"dictionary must match. No {slug} key found in the "
                         "title dictionary.")
             else:

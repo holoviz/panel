@@ -1586,7 +1586,7 @@ def test_tabulator_widget_scalar_filter(document, comm):
 def test_tabulator_constant_list_filter(document, comm, col):
     df = makeMixedDataFrame()
     # The mixed dataframe has duplicate number values in the B columns,
-    # simplify the test by setting the targetted valued before filtering.
+    # simplify the test by setting the targeted valued before filtering.
     df.at[2, 'B'] = 10.0
     df.at[4, 'B'] = 20.0
     table = Tabulator(df)
