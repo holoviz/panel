@@ -1,14 +1,16 @@
+from __future__ import annotations
+
 import random
 
-from textwrap import wrap
 from typing import (
-    AnyStr, ClassVar, Dict, List, Optional, Tuple, Type,
+    ClassVar, Dict, List, Optional, Tuple, Type,
 )
 
 import param
 
 from panel.layout import Column, ListPanel, Row
 from panel.layout.spacer import VSpacer
+from panel.pane import Markdown
 from panel.pane.image import Image
 from panel.viewable import Layoutable
 from panel.widgets.base import CompositeWidget
@@ -50,10 +52,10 @@ class MessageRow(CompositeWidget):
 
     def __init__(
         self,
-        value: AnyStr,
-        text_color: AnyStr = "white",
-        background: AnyStr = "black",
-        icon: AnyStr = None,
+        value: str,
+        text_color: str = "white",
+        background: str = "black",
+        icon: str = None,
         styles: Dict[str, str] = None,
         show_name: bool = True,
         **params,
@@ -63,7 +65,6 @@ class MessageRow(CompositeWidget):
             "background-color": background,
             "border-radius": "12px",
             "padding": "8px",
-            "text-align": "center",
         }
         bubble_styles.update(styles or {})
         super().__init__(**params)
@@ -77,10 +78,11 @@ class MessageRow(CompositeWidget):
         }
         # create the message icon
         icon_params = dict(
-            width=38,  # finetuned so it doesn't start a new line
-            height=36,  # designed to not match width
+            width=40,  # finetuned so it doesn't start a new line
+            height=40,  # designed to not match width
             margin=(12, 2, 12, 2),
             sizing_mode="fixed",
+            align="center",
         )
         if icon is None:
             # if no icon is provided,
@@ -96,13 +98,11 @@ class MessageRow(CompositeWidget):
             self._icon = Image(icon, **icon_params)
 
         # create the message bubble
-        box_width = message_layout.get("width", 100)
-        text_width = int(box_width / 2)  # make text start a new line
-        wrapped_text = "\n".join(wrap(value, width=text_width))
-        self._bubble = StaticText(
-            value=wrapped_text,
+        self._bubble = Markdown(
+            object=value,
+            renderer="markdown",
             styles=bubble_styles,
-            margin=13,
+            margin=10,
             **message_layout,
         )
 
@@ -216,15 +216,15 @@ class ChatBox(CompositeWidget):
         self.param.trigger("value")
 
 
-    def _generate_dark_color(self) -> str:
+    def _generate_dark_color(self, string: str) -> str:
         """
         Generate a random dark color in hexadecimal format.
         """
+        seed = sum([ord(c) for c in string])
+        random.seed(seed)
+
         r, g, b = random.randint(0, 127), random.randint(0, 127), random.randint(0, 127)
         color = "#{:02x}{:02x}{:02x}".format(r, g, b)
-        # do not re-use a color that is already in use
-        if color in self.user_colors.values():
-            return self._generate_dark_color()
         return color
 
     @staticmethod
@@ -232,7 +232,7 @@ class ChatBox(CompositeWidget):
         """
         Get the name of the user who sent the message.
         """
-        return list(dict_.keys())[0]
+        return next(iter(dict_))
 
     def _separate_user_message(self, user_message: Dict[str, str]) -> Tuple[str, str]:
         """
@@ -264,7 +264,7 @@ class ChatBox(CompositeWidget):
         if user in self.user_colors:
             background = self.user_colors[user]
         else:
-            background = self._generate_dark_color()
+            background = self._generate_dark_color(string=user)
             self.user_colors[user] = background
 
         # try to get input icon
