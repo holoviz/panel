@@ -15,6 +15,7 @@ from panel.pane.base import panel as _panel
 from panel.pane.image import Image
 from panel.viewable import Layoutable, Viewable
 from panel.widgets.base import CompositeWidget
+from panel.widgets.button import Toggle
 from panel.widgets.input import StaticText, TextInput
 
 
@@ -46,6 +47,11 @@ class ChatRow(CompositeWidget):
         doc="""Whether to show the name of the user""",
     )
 
+    show_like = param.Boolean(
+        default=True,
+        doc="""Whether to show the like button""",
+    )
+
     styles = param.Dict(
         default={},
         doc="""
@@ -62,6 +68,7 @@ class ChatRow(CompositeWidget):
         panel_type: Viewable = None,
         icon: str = None,
         show_name: bool = True,
+        show_like: bool = True,
         styles: Dict[str, str] = None,
         **params,
     ):
@@ -109,6 +116,18 @@ class ChatRow(CompositeWidget):
             width_policy="max",
         )
 
+        if show_like:
+            self._like = Toggle(
+                name="♡",
+                width=40,
+                height=30,
+                margin=(12, 0),
+                align="end",
+            )
+            self._like.param.watch(self._update_like, "value")
+        else:
+            self._like = None
+
         # layout objects
         message_layout = {
             p: getattr(self, p)
@@ -119,16 +138,18 @@ class ChatRow(CompositeWidget):
         horizontal_align = message_layout.get("align", "start")
         if isinstance(horizontal_align, tuple):
             horizontal_align = horizontal_align[0]
+
+        row_objects = (self._icon, self._bubble, self._like, VSpacer(min_width=400))
+        if horizontal_align == "start":
+            # top, right, bottom, left
+            margin = (0, 0, -6, 84)
+        else:
+            margin = (0, 84, -6, 0)
+            row_objects = row_objects[::-1]
+
         container_params = dict(
             align=(horizontal_align, "center"),
         )
-        if horizontal_align == "start":
-            margin = (0, 0, -6, 84)
-            row_objects = (self._icon, self._bubble, VSpacer(min_width=400))
-        else:
-            margin = (0, 84, -6, 0)
-            row_objects = (VSpacer(min_width=400), self._bubble, self._icon)
-
         row = Row(*row_objects, **container_params)
         if show_name:
             name = StaticText(
@@ -141,6 +162,12 @@ class ChatRow(CompositeWidget):
 
         self._composite[:] = [row]
 
+    def _update_like(self, event: param.parameterized.Event):
+        self.liked = event.new
+        if self.liked:
+            event.obj.name = "❤️"
+        else:
+            event.obj.name = "♡"
 
 class ChatBox(CompositeWidget):
     value = param.List(
