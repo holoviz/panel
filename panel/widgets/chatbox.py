@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 
 from typing import (
-    ClassVar, Dict, List, Optional, Tuple, Type,
+    Any, ClassVar, Dict, List, Optional, Tuple, Type,
 )
 
 import param
@@ -11,36 +11,34 @@ import param
 from panel.layout import Column, ListPanel, Row
 from panel.layout.spacer import VSpacer
 from panel.pane import Markdown
+from panel.pane.base import panel as _panel
 from panel.pane.image import Image
-from panel.viewable import Layoutable
+from panel.viewable import Layoutable, Viewable
 from panel.widgets.base import CompositeWidget
 from panel.widgets.input import StaticText, TextInput
 
 
-class MessageRow(CompositeWidget):
-    value = param.String(
-        default="",
-        doc="""The message to display""",
+class ChatRow(CompositeWidget):
+    value = param.List(
+        doc="""The objects to display""",
     )
 
-    text_color = param.String(
-        default="white",
-        doc="""Font color of the chat text""",
-    )
-
-    background_color = param.String(
-        default="black",
-        doc="""Background color of the chat bubble""",
-    )
-
-    icon = param.String(default=None, doc="""The icon to display""")
-
-    styles = param.Dict(
-        default={},
+    panel_type = param.ClassSelector(
+        default=None,
+        class_=(Viewable,),
         doc="""
-            Dictionary of CSS properties and values to apply
-            message to the bubble.
-            """,
+        The type of Panel object to use if an item in value is not
+        already rendered as a Panel object; if None, uses the
+        panel function to render a displayable Panel object
+        """,
+    )
+
+    icon = param.String(
+        default=None, doc="""The icon to display adjacent to the value"""
+    )
+
+    liked = param.Boolean(
+        default=False, doc="""Whether a user liked the message"""
     )
 
     show_name = param.Boolean(
@@ -48,38 +46,41 @@ class MessageRow(CompositeWidget):
         doc="""Whether to show the name of the user""",
     )
 
+    styles = param.Dict(
+        default={},
+        doc="""
+            Dictionary of CSS properties and values to apply
+            message to the bubble
+            """,
+    )
+
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
     def __init__(
         self,
-        value: str,
-        text_color: str = "white",
-        background: str = "black",
+        value: List[Any],
+        panel_type: Viewable = None,
         icon: str = None,
-        styles: Dict[str, str] = None,
         show_name: bool = True,
+        styles: Dict[str, str] = None,
         **params,
     ):
+        if panel_type is None:
+            panel_type = _panel
+
         bubble_styles = {
-            "color": text_color,
-            "background-color": background,
-            "border-radius": "12px",
+            "border-radius": "16px",
             "padding": "8px",
         }
         bubble_styles.update(styles or {})
+        if "background" not in bubble_styles:
+            bubble_styles["background"] = "black"
         super().__init__(**params)
 
-        # determine alignment
-        message_layout = {
-            p: getattr(self, p)
-            for p in Layoutable.param
-            if p not in ("name", "height", "margin", "styles")
-            and getattr(self, p) is not None
-        }
-        # create the message icon
+        # create the chat icon
         icon_params = dict(
-            width=40,  # finetuned so it doesn't start a new line
-            height=40,  # designed to not match width
+            width=60,
+            height=60,
             margin=(12, 2, 12, 2),
             sizing_mode="fixed",
             align="center",
@@ -88,39 +89,47 @@ class MessageRow(CompositeWidget):
             # if no icon is provided,
             # use the first and last letter of the name
             # and a random colored background
-            icon_label = f"{self.name[0]}-{self.name[-1]}".upper()
-            self._icon = StaticText(
-                value=icon_label,
+            icon_label = f"*{self.name[0:3]}*"
+            self._icon = Markdown(
+                object=icon_label,
                 styles=bubble_styles,
                 **icon_params,
             )
         else:
             self._icon = Image(icon, **icon_params)
 
-        # create the message bubble
-        self._bubble = Markdown(
-            object=value,
-            renderer="markdown",
+        # create the chat bubble
+        bubble_objects = [
+            panel_type(obj) if not isinstance(obj, Viewable) else obj for obj in value
+        ]
+        self._bubble = Column(
+            *bubble_objects,
+            margin=12,
             styles=bubble_styles,
-            margin=10,
-            **message_layout,
+            width_policy="max",
         )
 
         # layout objects
+        message_layout = {
+            p: getattr(self, p)
+            for p in Layoutable.param
+            if p not in ("name", "height", "margin", "styles")
+            and getattr(self, p) is not None
+        }
         horizontal_align = message_layout.get("align", "start")
         if isinstance(horizontal_align, tuple):
             horizontal_align = horizontal_align[0]
-        if horizontal_align == "start":
-            margin = (0, 0, -5, 60)
-            objects = (self._icon, self._bubble)
-        else:
-            margin = (0, 60, -5, 0)
-            objects = (self._bubble, self._icon)
-
         container_params = dict(
-            align=horizontal_align,
+            align=(horizontal_align, "center"),
         )
-        row = Row(*objects, **container_params)
+        if horizontal_align == "start":
+            margin = (0, 0, -6, 84)
+            row_objects = (self._icon, self._bubble, VSpacer(min_width=400))
+        else:
+            margin = (0, 84, -6, 0)
+            row_objects = (VSpacer(min_width=400), self._bubble, self._icon)
+
+        row = Row(*row_objects, **container_params)
         if show_name:
             name = StaticText(
                 value=self.name,
@@ -215,15 +224,19 @@ class ChatBox(CompositeWidget):
         self.param.watch(self._refresh_log, "value")
         self.param.trigger("value")
 
-
-    def _generate_dark_color(self, string: str) -> str:
+    def _generate_bright_color(self, string: str) -> str:
         """
-        Generate a random dark color in hexadecimal format.
+        Generate a random bright color in hexadecimal format.
         """
         seed = sum([ord(c) for c in string])
         random.seed(seed)
 
-        r, g, b = random.randint(0, 127), random.randint(0, 127), random.randint(0, 127)
+        rgb_range = (180, 230)
+        r, g, b = (
+            random.randint(*rgb_range),
+            random.randint(*rgb_range),
+            random.randint(*rgb_range),
+        )
         color = "#{:02x}{:02x}{:02x}".format(r, g, b)
         return color
 
@@ -250,9 +263,9 @@ class ChatBox(CompositeWidget):
 
     def _instantiate_message_row(
         self, user: str, message: str, show_name: bool
-    ) -> MessageRow:
+    ) -> ChatRow:
         """
-        Instantiate a MessageRow object.
+        Instantiate a ChatRow object.
         """
         if self.primary_user is None:
             if self.value:
@@ -264,7 +277,7 @@ class ChatBox(CompositeWidget):
         if user in self.user_colors:
             background = self.user_colors[user]
         else:
-            background = self._generate_dark_color(string=user)
+            background = self._generate_bright_color(string=user)
             self.user_colors[user] = background
 
         # try to get input icon
@@ -272,14 +285,15 @@ class ChatBox(CompositeWidget):
 
         align = "start" if user != self.primary_user else "end"
 
-        message_row = MessageRow(
+        message_row = ChatRow(
             name=user,
-            value=message,
-            text_color="white",
-            background=background,
+            value=[message],
             icon=user_icon,
             show_name=show_name,
             align=align,
+            styles={
+                "background": background,
+            },
         )
         return message_row
 
