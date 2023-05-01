@@ -48,5 +48,5 @@ select = [
 
 [tool.codespell]
 ignore-words-list = "nd,doubleclick"
-skip = "doc/generate_modules.py"
+skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb"
 write-changes = true
