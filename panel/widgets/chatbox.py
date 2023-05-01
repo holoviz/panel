@@ -7,7 +7,10 @@ from typing import (
 
 import param
 
-from panel.layout import Column, ListPanel, Row
+from panel.layout import (
+    Column, ListPanel, Row, WidgetBox,
+)
+from panel.layout.spacer import VSpacer
 from panel.pane.image import Image
 from panel.viewable import Layoutable
 from panel.widgets.base import CompositeWidget
@@ -133,11 +136,28 @@ class MessageRow(CompositeWidget):
 
 
 class ChatBox(CompositeWidget):
-    user_messages = param.List(
+    value = param.List(
         doc="""List of messages, mapping user to message,
         e.g. `[{'You': 'Welcome!'}]`""",
         item_type=Dict,
         default=[],
+    )
+
+    primary_user = param.String(
+        doc="""
+            Name of the primary input user;
+            the first key found in value
+            will be used if unspecified
+        """,
+        default=None,
+    )
+
+    allow_input = param.Boolean(
+        doc="""
+            Whether to allow the primary user to interactively
+            enter messages.
+        """,
+        default=True,
     )
 
     user_icons = param.Dict(
@@ -152,25 +172,10 @@ class ChatBox(CompositeWidget):
         default={},
     )
 
-    primary_user = param.String(
-        doc="""
-            Name of the primary user;
-            the first key found in user_messages
-            will be used if unspecified
-        """,
-        default=None,
-    )
-
-    allow_input = param.Boolean(
-        doc="""Whether to allow users to interactively enter messages.""",
-        default=True,
-    )
-
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
-    def __init__(self, user_messages: List[AnyStr] = None, **params):
-        if user_messages:
-            params["user_messages"] = user_messages
+    def __init__(self, **params):
+        # set up parameters
         if params.get("width") and params.get("height") and "sizing_mode" not in params:
             params["sizing_mode"] = None
 
@@ -180,8 +185,7 @@ class ChatBox(CompositeWidget):
         layout = {
             p: getattr(self, p)
             for p in Layoutable.param
-            if p not in ("name", "height", "margin")
-            and getattr(self, p) is not None
+            if p not in ("name", "height", "margin") and getattr(self, p) is not None
         }
         chat_layout = dict(
             sizing_mode="stretch_both",
@@ -189,23 +193,30 @@ class ChatBox(CompositeWidget):
             margin=0,
             **layout,
         )
+        self._chat_title = StaticText(
+            value=f"{self.name}",
+            styles={"font-size": "1.5em"},
+            margin=(12, 0, 0, 18),
+            align="center",
+        )
         self._chat_log = Column(**chat_layout)
         self._input_message = TextInput(
             name="Type your message",
             placeholder="Press Enter to send",
             sizing_mode="stretch_width",
-            width_policy="max",
         )
 
         # add interactivity
-        self.param.watch(self._refresh_log, "user_messages")
-        self.param.trigger("user_messages")
+        self.param.watch(self._refresh_log, "value")
+        self.param.trigger("value")
         self._input_message.param.watch(self._enter_message, "value")
+        box_objects = [self._chat_title] if self.name else []
         if self.allow_input:
-            composite_objects = [self._chat_log, self._input_message]
+            box_objects.extend([self._chat_log, VSpacer(), self._input_message])
         else:
-            composite_objects = [self._chat_log]
-        self._composite[:] = composite_objects
+            box_objects.append(self._chat_log)
+        widget_box = WidgetBox(Column(*box_objects, margin=12))
+        self._composite[:] = [widget_box]
 
     def _generate_dark_color(self) -> str:
         """
@@ -246,8 +257,8 @@ class ChatBox(CompositeWidget):
         Instantiate a MessageRow object.
         """
         if self.primary_user is None:
-            if self.user_messages:
-                self.primary_user = self._get_name(self.user_messages[0])
+            if self.value:
+                self.primary_user = self._get_name(self.value[0])
             else:
                 self.primary_user = "You"
 
@@ -318,7 +329,7 @@ class ChatBox(CompositeWidget):
 
         # this doesn't trigger anything because it's the same object
         # just append so it stays in sync
-        self.user_messages.append(user_message)
+        self.value.append(user_message)
         user, message = self._separate_user_message(user_message)
 
         previous_user = None
@@ -344,4 +355,4 @@ class ChatBox(CompositeWidget):
         """
         Clears the chat log.
         """
-        self.user_messages = []
+        self.value = []
