@@ -350,6 +350,48 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
         """
         return self._init_doc(doc, title=title, location=location)
 
+    def servable(
+        self, title: Optional[str] = None, location: bool | 'Location' = True,
+        area: str = 'main', target: Optional[str] = None
+    ) -> 'BaseTemplate':
+        """
+        Serves the template and returns self to allow it to display
+        itself in a notebook context.
+
+        Arguments
+        ---------
+        title : str
+          A string title to give the Document (if served as an app)
+        location : boolean or panel.io.location.Location
+          Whether to create a Location component to observe and
+          set the URL location.
+        area: str (deprecated)
+          The area of a template to add the component too. Only has an
+          effect if pn.config.template has been set.
+        target: str
+          Target area to write to. If a template has been configured
+          on pn.config.template this refers to the target area in the
+          template while in pyodide this refers to the ID of the DOM
+          node to write to.
+
+        Returns
+        -------
+        The template
+        """
+        if curdoc_locked().session_context and config.template:
+            raise RuntimeError(
+                'Cannot mark template as servable if a global template '
+                'is defined. Either explicitly construct a template and '
+                'serve it OR set `pn.config.template`, whether directly '
+                'or via `pn.extension(template=...)`, not both.'
+            )
+        elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
+            raise RuntimeError(
+                'Cannot write template to target in pyodide. Only standard '
+                'Panel components can be displayed using .servable().'
+            )
+        return super().servable(title, location, area, target)
+
     def select(self, selector=None):
         """
         Iterates over the Template and any potential children in the
