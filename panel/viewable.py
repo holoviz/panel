@@ -626,7 +626,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         Returns the bokeh model corresponding to this panel object
         """
         doc = init_doc(doc)
-        if self._design and comm:
+        if self._design and (comm or (state._is_pyodide and not doc.session_context)):
             wrapper = self._design._wrapper(self)
             if wrapper is self:
                 root = self._get_model(doc, comm=comm)
