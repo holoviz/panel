@@ -193,6 +193,7 @@ class Vega(ModelPane):
             for e, stype in self._selections.items()
         }
         if self.selection and (set(self.selection.param) - {'name'}) == set(params):
+            self.selection.param.update({p: None for p in params})
             return
         self.selection = type('Selection', (param.Parameterized,), params)()
 
