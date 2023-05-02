@@ -24,10 +24,10 @@
     if (root.Bokeh === undefined) {
       return null
     } else if (root.Bokeh.version !== py_version && !is_dev) {
-      if (root.Bokeh.versions === undefined || !Object.keys(root.Bokeh.versions).includes(py_version)) {
+      if (root.Bokeh.versions === undefined || !root.Bokeh.versions.has(py_version)) {
 	return null
       }
-      return root.Bokeh.versions[py_version];
+      return root.Bokeh.versions.get(py_version);
     } else if (root.Bokeh.version === py_version) {
       return root.Bokeh
     }

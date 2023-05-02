@@ -28,7 +28,7 @@ calls it with the rendered model.
   var is_dev = py_version.indexOf("+") !== -1 || py_version.indexOf("-") !== -1;
   var reloading = {{ reloading|default(False)|json }};
   var Bokeh = root.Bokeh;
-  var bokeh_loaded = Bokeh != null && (Bokeh.version === py_version || (Bokeh.versions !== undefined && Object.keys(Bokeh.versions).includes(py_version)));
+  var bokeh_loaded = Bokeh != null && (Bokeh.version === py_version || (Bokeh.versions !== undefined && Bokeh.versions.has(py_version)));
 
   if (typeof (root._bokeh_timeout) === "undefined" || force) {
     root._bokeh_timeout = Date.now() + {{ timeout|default(0)|json }};
@@ -230,10 +230,10 @@ calls it with the rendered model.
       if (Bokeh != undefined && !reloading) {
 	var NewBokeh = root.Bokeh;
 	if (Bokeh.versions === undefined) {
-	  Bokeh.versions = {}
+	  Bokeh.versions = new Map();
 	}
 	if (NewBokeh.version !== Bokeh.version) {
-	  Bokeh.versions[NewBokeh.version] = NewBokeh
+	  Bokeh.versions.set(NewBokeh.version, NewBokeh)
 	}
 	root.Bokeh = Bokeh;
       }
@@ -267,7 +267,7 @@ calls it with the rendered model.
       setTimeout(load_or_wait, 100);
     } else {
       Bokeh = root.Bokeh;
-      bokeh_loaded = Bokeh != null && (Bokeh.version === py_version || (Bokeh.versions !== undefined && Object.keys(Bokeh.versions).includes(py_version)));
+      bokeh_loaded = Bokeh != null && (Bokeh.version === py_version || (Bokeh.versions !== undefined && Bokeh.versions.has(py_version)));
       root._bokeh_is_initializing = true
       root._bokeh_onload_callbacks = []
       if (!reloading && (!bokeh_loaded || is_dev)) {
