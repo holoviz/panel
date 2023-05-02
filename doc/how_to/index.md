@@ -73,7 +73,7 @@ How to build a Panel Pipeline that connects multiple panels into a sequential us
 How to extend Panel by building custom components.
 :::
 
-:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1 sd-animate-grow50` Generate UIs from declared parameters (`Param API`)
+:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1 sd-animate-grow50` Generate UIs from declared parameters (`Declarative API`)
 :link: param/index
 :link-type: doc
 

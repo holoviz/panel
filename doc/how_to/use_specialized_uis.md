@@ -13,5 +13,5 @@
 Build a sequential UI<pipeline/index>
 Build custom components<custom_components/index>
 Explicitly link parameters (Callbacks API)<links/index>
-Generate UIs from declared parameters (Param API)<param/index>
+Generate UIs from declared parameters (Declarative API)<param/index>
 ```
