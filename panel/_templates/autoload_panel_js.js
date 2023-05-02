@@ -25,14 +25,17 @@ calls it with the rendered model.
 
   var force = {{ force|default(False)|json }};
   var py_version = '{{ version }}';
+  var is_dev = py_version.indexOf("+") !== -1 || py_version.indexOf("-") !== -1;
   var reloading = {{ reloading|default(False)|json }};
+  var Bokeh = root.Bokeh;
+  var bokeh_loaded = Bokeh != null && (Bokeh.version === py_version || (Bokeh.versions !== undefined && Object.keys(Bokeh.versions).includes(py_version)));
 
-  if (typeof root._bokeh_onload_callbacks === "undefined" || force === true) {
+  if ((typeof root._bokeh_onload_callbacks === "undefined") && reloading === false) {
     root._bokeh_onload_callbacks = [];
     root._bokeh_is_loading = undefined;
   }
 
-  if (typeof (root._bokeh_timeout) === "undefined" || force === true) {
+  if (typeof (root._bokeh_timeout) === "undefined" || force) {
     root._bokeh_timeout = Date.now() + {{ timeout|default(0)|json }};
     root._bokeh_failed_load = false;
   }
@@ -44,7 +47,7 @@ calls it with the rendered model.
           callback();
       });
     } finally {
-      delete root._bokeh_onload_callbacks
+      delete root._bokeh_onload_callbacks;
     }
     console.debug("Bokeh: all callbacks have finished");
   }
@@ -56,6 +59,7 @@ calls it with the rendered model.
     if (js_exports == null) js_exports = {};
 
     root._bokeh_onload_callbacks.push(callback);
+
     if (root._bokeh_is_loading > 0) {
       console.debug("Bokeh: BokehJS is being loaded, scheduling callback at", now());
       return null;
@@ -64,7 +68,9 @@ calls it with the rendered model.
       run_callbacks();
       return null;
     }
-    console.debug("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
+    if (!reloading) {
+      console.debug("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
+    }
 
     function on_load() {
       root._bokeh_is_loading--;
@@ -77,18 +83,6 @@ calls it with the rendered model.
 
     function on_error() {
       console.error("failed to load " + url);
-    }
-
-    for (var i = 0; i < css_urls.length; i++) {
-      var url = css_urls[i];
-      const element = document.createElement("link");
-      element.onload = on_load;
-      element.onerror = on_error;
-      element.rel = "stylesheet";
-      element.type = "text/css";
-      element.href = url;
-      console.debug("Bokeh: injecting link tag for BokehJS stylesheet: ", url);
-      document.body.appendChild(element);
     }
 
     var skip = [];
@@ -106,6 +100,31 @@ calls it with the rendered model.
     } else {
       root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length + Object.keys(js_exports).length;
     }
+
+    var existing_stylesheets = []
+    var links = document.getElementsByTagName('link')
+    for (var i = 0; i < links.length; i++) {
+      var link = links[i]
+      if (link.href != null) {
+	existing_stylesheets.push(link.href)
+      }
+    }
+    for (var i = 0; i < css_urls.length; i++) {
+      var url = css_urls[i];
+      if (existing_stylesheets.indexOf(url) !== -1) {
+	on_load()
+	continue;
+      }
+      const element = document.createElement("link");
+      element.onload = on_load;
+      element.onerror = on_error;
+      element.rel = "stylesheet";
+      element.type = "text/css";
+      element.href = url;
+      console.debug("Bokeh: injecting link tag for BokehJS stylesheet: ", url);
+      document.body.appendChild(element);
+    }
+
     {%- for lib, urls in skip_imports.items() %}
     if (((window['{{ lib }}'] !== undefined) && (!(window['{{ lib }}'] instanceof HTMLElement))) || window.requirejs) {
       var urls = {{ urls }};
@@ -118,8 +137,8 @@ calls it with the rendered model.
     var scripts = document.getElementsByTagName('script')
     for (var i = 0; i < scripts.length; i++) {
       var script = scripts[i]
-      if (script.url != null) {
-	existing_scripts.push(script.url)
+      if (script.src != null) {
+	existing_scripts.push(script.src)
       }
     }
     for (var i = 0; i < js_urls.length; i++) {
@@ -157,7 +176,7 @@ calls it with the rendered model.
     }
     for (const name in js_exports) {
       var url = js_exports[name];
-      if (skip.indexOf(url) >= 0) {
+      if (skip.indexOf(url) >= 0 || root[name] != null) {
 	if (!window.requirejs) {
 	  on_load();
 	}
@@ -196,20 +215,18 @@ calls it with the rendered model.
       inject_raw_css({{ css|json }});
     },
     {%- endfor %}
-    {%- for js in bundle.js_raw %}
-    function(Bokeh) {
-      {{ js|indent(6) }}
-    },
-    {% endfor -%}
     function(Bokeh) {} // ensure no trailing comma for IE
   ];
+  // If bokeh is loaded we do not need to load raw JS (assumes only Bokeh/Panel are inlined)
+  if (!bokeh_loaded || is_dev) {
+    {% for js in bundle.js_raw %}
+    inline_js.push(function(Bokeh) {
+      {{ js|indent(6) }}
+    })
+    {% endfor %}
+  }
 
   function run_inline_js() {
-    var Bokeh = root.Bokeh;
-    if (((Bokeh.version !== py_version) || is_dev) && !reloading) {
-      root.Bokeh = undefined;
-    }
-
     if ((root.Bokeh !== undefined) || (force === true)) {
       for (var i = 0; i < inline_js.length; i++) {
         inline_js[i].call(root, root.Bokeh);
@@ -220,7 +237,9 @@ calls it with the rendered model.
 	if (Bokeh.versions === undefined) {
 	  Bokeh.versions = {}
 	}
-	Bokeh.versions[py_version] = NewBokeh
+	if (NewBokeh.version !== Bokeh.version) {
+	  Bokeh.versions[NewBokeh.version] = NewBokeh
+	}
 	root.Bokeh = Bokeh;
       }
       {%- if elementid -%}
@@ -234,20 +253,31 @@ calls it with the rendered model.
       console.log("Bokeh: BokehJS failed to load within specified timeout.");
       root._bokeh_failed_load = true;
     }
+    root._bokeh_is_initializing = false
   }
 
   function load_or_wait() {
-    if (reloading && root._bokeh_is_loading !== 0) {
+    if (Date.now() > root._bokeh_timeout) {
+      root._bokeh_is_initializing = false;
+      console.log("Bokeh: BokehJS was loaded multiple times but one version failed to initialize.");
+      load_or_wait();
+    } else if (root._bokeh_is_initializing || (typeof root._bokeh_is_initializing === "undefined" && root._bokeh_onload_callbacks !== undefined)) {
       setTimeout(load_or_wait, 100);
-    } if (root._bokeh_is_loading === 0) {
-      console.debug("Bokeh: BokehJS loaded, going straight to plotting");
-      run_inline_js();
     } else {
+      Bokeh = root.Bokeh;
+      bokeh_loaded = Bokeh != null && (Bokeh.version === py_version || (Bokeh.versions !== undefined && Object.keys(Bokeh.versions).includes(py_version)));
+      root._bokeh_is_initializing = true
+      root._bokeh_onload_callbacks = []
+      if (!reloading && (!bokeh_loaded || is_dev)) {
+	root.Bokeh = undefined;
+      }
       load_libs(css_urls, js_urls, js_modules, js_exports, function() {
 	console.debug("Bokeh: BokehJS plotting callback run at", now());
 	run_inline_js();
       });
     }
   }
-  load_or_wait()
+  // Give older versions of the autoload script a head-start to ensure
+  // they initialize before we start loading newer version.
+  setTimeout(load_or_wait, 100)
 }(window));

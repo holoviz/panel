@@ -27,11 +27,11 @@
       if (root.Bokeh.versions === undefined || !Object.keys(root.Bokeh.versions).includes(py_version)) {
 	return null
       }
-      var Bokeh = root.Bokeh.versions[py_version];
-    } else {
-      var Bokeh = root.Bokeh;
+      return root.Bokeh.versions[py_version];
+    } else if (root.Bokeh.version === py_version) {
+      return root.Bokeh
     }
-    return Bokeh
+    return null
   }
   function is_loaded(root) {
     var Bokeh = get_bokeh(root)
