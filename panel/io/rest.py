@@ -147,7 +147,7 @@ def param_rest_provider(files, endpoint):
             try:
                 run_path(filename)
             except Exception:
-                param.main.warning("Could not run app script on REST server startup.")
+                param.main.param.warning("Could not run app script on REST server startup.")
         elif extension == 'ipynb':
             try:
                 import nbconvert  # noqa
@@ -163,7 +163,7 @@ def param_rest_provider(files, endpoint):
                 try:
                     run_path(tmp.name, init_globals={'get_ipython': MagicMock()})
                 except Exception:
-                    param.main.warning("Could not run app notebook on REST server startup.")
+                    param.main.param.warning("Could not run app notebook on REST server startup.")
         else:
             raise ValueError('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
 

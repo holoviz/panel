@@ -329,7 +329,7 @@ def test_holoviews_widgets_update_plot(document, comm):
 def test_holoviews_with_widgets_not_shown(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
-    hv_pane = HoloViews(hmap, show_widgets=False)
+    hv_pane = HoloViews(hmap)
     layout_obj = Column(hv_pane, hv_pane.widget_box)
     layout = layout_obj.get_root(document, comm)
     model = layout.children[0]

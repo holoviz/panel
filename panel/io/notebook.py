@@ -89,7 +89,10 @@ DOC_NB_JS: Template = _env.get_template("doc_nb_js.js")
 AUTOLOAD_NB_JS: Template = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE: Template = _env.get_template('nb_template.html')
 
-def _autoload_js(bundle, configs, requirements, exports, skip_imports, ipywidget, load_timeout=5000):
+def _autoload_js(
+    *, bundle, configs, requirements, exports, skip_imports, ipywidget,
+    reloading=False, load_timeout=5000
+):
     config = {'packages': {}, 'paths': {}, 'shim': {}}
     for conf in configs:
         for key, c in conf.items():
@@ -97,12 +100,14 @@ def _autoload_js(bundle, configs, requirements, exports, skip_imports, ipywidget
     return AUTOLOAD_NB_JS.render(
         bundle    = bundle,
         force     = True,
+        reloading = reloading,
         timeout   = load_timeout,
         config    = config,
         requirements = requirements,
         exports   = exports,
         skip_imports = skip_imports,
-        ipywidget = ipywidget
+        ipywidget = ipywidget,
+        version = bokeh.__version__
     )
 
 def html_for_render_items(docs_json, render_items, template=None, template_variables={}):
@@ -324,7 +329,11 @@ def block_comm() -> Iterator:
     finally:
         state._hold = False
 
-def load_notebook(inline: bool = True, load_timeout: int = 5000) -> None:
+def load_notebook(
+    inline: bool = True,
+    reloading: bool = False,
+    load_timeout: int = 5000
+) -> None:
     from IPython.display import publish_display_data
 
     resources = INLINE if inline and not state._is_pyodide else CDN
@@ -333,11 +342,21 @@ def load_notebook(inline: bool = True, load_timeout: int = 5000) -> None:
     nb_endpoint = not state._is_pyodide
     resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
     try:
-        bundle = bundle_resources(None, resources, notebook=nb_endpoint)
+        bundle = bundle_resources(
+            None, resources, notebook=nb_endpoint, reloading=reloading
+        )
         configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
-        bokeh_js = _autoload_js(bundle, configs, requirements, exports,
-                                skip_imports, ipywidget, load_timeout)
+        bokeh_js = _autoload_js(
+            bundle=bundle,
+            configs=configs,
+            requirements=requirements,
+            exports=exports,
+            skip_imports=skip_imports,
+            ipywidget=ipywidget,
+            reloading=reloading,
+            load_timeout=load_timeout
+        )
     finally:
         if user_resources:
             settings.resources = prev_resources

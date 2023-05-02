@@ -985,7 +985,7 @@ class JSONInit(param.Parameterized):
         Optional path to a JSON file containing the parameter settings.""")
 
     def __call__(self, parameterized):
-        warnobj = param.main if isinstance(parameterized, type) else parameterized
+        warnobj = param.main.param if isinstance(parameterized, type) else parameterized.param
         param_class = (parameterized if isinstance(parameterized, type)
                        else parameterized.__class__)
 
