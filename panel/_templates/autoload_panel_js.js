@@ -252,6 +252,13 @@ calls it with the rendered model.
   }
 
   function load_or_wait() {
+    // Implement a backoff loop that tries to ensure we do not load multiple
+    // versions of Bokeh and its dependencies at the same time.
+    // In recent versions we use the root._bokeh_is_initializing flag
+    // to determine whether there is an ongoing attempt to initialize
+    // bokeh, however for backward compatibility we also try to ensure
+    // that we do not start loading a newer (Panel>=1.0 and Bokeh>3) version
+    // before older versions are fully initialized.
     if (root._bokeh_is_initializing && Date.now() > root._bokeh_timeout) {
       root._bokeh_is_initializing = false;
       console.log("Bokeh: BokehJS was loaded multiple times but one version failed to initialize.");
