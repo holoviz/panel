@@ -30,11 +30,6 @@ calls it with the rendered model.
   var Bokeh = root.Bokeh;
   var bokeh_loaded = Bokeh != null && (Bokeh.version === py_version || (Bokeh.versions !== undefined && Object.keys(Bokeh.versions).includes(py_version)));
 
-  if ((typeof root._bokeh_onload_callbacks === "undefined") && reloading === false) {
-    root._bokeh_onload_callbacks = [];
-    root._bokeh_is_loading = undefined;
-  }
-
   if (typeof (root._bokeh_timeout) === "undefined" || force) {
     root._bokeh_timeout = Date.now() + {{ timeout|default(0)|json }};
     root._bokeh_failed_load = false;
@@ -257,7 +252,7 @@ calls it with the rendered model.
   }
 
   function load_or_wait() {
-    if (Date.now() > root._bokeh_timeout) {
+    if (root._bokeh_is_initializing && Date.now() > root._bokeh_timeout) {
       root._bokeh_is_initializing = false;
       console.log("Bokeh: BokehJS was loaded multiple times but one version failed to initialize.");
       load_or_wait();
