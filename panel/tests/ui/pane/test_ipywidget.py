@@ -2,6 +2,7 @@ import time
 
 import pytest
 
+from bokeh.core.has_props import _default_resolver
 from bokeh.model import Model
 
 pytestmark = pytest.mark.ui
@@ -9,17 +10,14 @@ pytestmark = pytest.mark.ui
 from panel.io.server import serve
 from panel.layout import Row
 from panel.pane.ipywidget import Reacton
-from panel.tests.util import ipywidgets_bokeh3
 
 
 @pytest.fixture(scope="module", autouse=True)
 def cleanup_ipywidgets():
     old_models = dict(Model.model_class_reverse_map)
     yield
-    Model.model_class_reverse_map = old_models
+    _default_resolver._known_models = old_models
 
-
-@ipywidgets_bokeh3
 def test_reacton(page, port):
     import reacton
     import reacton.ipywidgets

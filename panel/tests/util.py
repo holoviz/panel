@@ -23,11 +23,6 @@ from panel.io.server import serve
 # Will begin to fail again when the first rc is released.
 pnv = Version(pn.__version__)
 
-ipywidgets_bokeh3 = pytest.mark.skipif(
-    not (pnv.major == 1 and pnv.pre is not None and pnv.pre[0] == "rc"),
-    reason="Bokeh3: Ipywidgets not working with Bokeh 3 yet"
-)
-
 try:
     import holoviews as hv
     hv_version = Version(hv.__version__)
