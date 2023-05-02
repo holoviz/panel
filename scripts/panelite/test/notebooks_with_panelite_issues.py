@@ -21,7 +21,6 @@ NOTEBOOK_ISSUES = {
     "reference/panes/IPyWidget.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
     "reference/panes/Matplotlib.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
     "reference/panes/Reacton.ipynb": ["https://github.com/holoviz/panel/issues/4394"],
-    "reference/panes/Str.ipynb": ["https://github.com/holoviz/panel/issues/4396"],
     "reference/panes/Streamz.ipynb": ["https://github.com/python-streamz/streamz/issues/467"],
     "reference/panes/VTK.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
     "reference/panes/VTKVolume.ipynb": ["https://gitlab.kitware.com/vtk/vtk/-/issues/18806"],
