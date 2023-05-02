@@ -90,7 +90,7 @@ AUTOLOAD_NB_JS: Template = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE: Template = _env.get_template('nb_template.html')
 
 def _autoload_js(
-    bundle, configs, requirements, exports, skip_imports, ipywidget,
+    *, bundle, configs, requirements, exports, skip_imports, ipywidget,
     reloading=False, load_timeout=5000
 ):
     config = {'packages': {}, 'paths': {}, 'shim': {}}
@@ -348,8 +348,14 @@ def load_notebook(
         configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
         bokeh_js = _autoload_js(
-            bundle, configs, requirements, exports, skip_imports, ipywidget,
-            reloading, load_timeout
+            bundle=bundle,
+            configs=configs,
+            requirements=requirements,
+            exports=exports,
+            skip_imports=skip_imports,
+            ipywidget=ipywidget,
+            reloading=reloading,
+            load_timeout=load_timeout
         )
     finally:
         if user_resources:
