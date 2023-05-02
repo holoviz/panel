@@ -106,6 +106,8 @@ class Reacton(IPyWidget):
     def _get_ipywidget(
         self, obj, doc: Document, root: Model, comm: Optional[Comm], **kwargs
     ):
+        if not isinstance(comm, JupyterComm) or "PANEL_IPYWIDGET" in os.environ:
+            from ..io.ipywidget import Widget  # noqa
         import reacton
         widget, rc = reacton.render(obj)
         self._rcs[root.ref['id']] = rc
