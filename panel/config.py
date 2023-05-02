@@ -696,6 +696,9 @@ class panel_extension(_pyviz_extension):
             else:
                 hv.Store.current_backend = backend
 
+        if config.load_entry_points:
+            self._load_entry_points()
+
         # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
@@ -738,17 +741,14 @@ class panel_extension(_pyviz_extension):
             )
         panel_extension._loaded = True
 
-        if config.browser_info and state.browser_info:
+        if not nb_loaded and config.browser_info and state.browser_info:
             doc = Document()
             comm = state._comm_manager.get_server_comm()
             model = state.browser_info._render_model(doc, comm)
             bundle, meta = state.browser_info._render_mimebundle(model, doc, comm)
             display(bundle, metadata=meta, raw=True)  # noqa
-        if config.notifications:
+        if not nb_loaded and config.notifications:
             display(state.notifications)  # noqa
-
-        if config.load_entry_points:
-            self._load_entry_points()
 
     def _detect_comms(self, params):
         called_before = self._comms_detected_before
