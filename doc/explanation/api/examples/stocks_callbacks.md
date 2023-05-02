@@ -1,4 +1,4 @@
-# Stock Explorer - Reactive API
+# Stock Explorer - Callback API
 
 Before launching into the application code we will first declare some components of the app that will be shared, including the title of the app, a set of stock tickers, a function to return a dataframe given the stock ``ticker`` and the rolling mean ``window_size``, and another function to return a plot given those same inputs:
 
@@ -52,19 +52,27 @@ plot_fns = {
 
 This example demonstrates how APIs in Panel differ, to see the same app implemented using a different API visit:
 
-- [Callback API](stocks_callbacks)
 - [Declarative API](stocks_declarative)
-- [Interact API](stocks_interact)
+- [Reactive API](stocks_reactive)
 
-The reactive programming model is similar to the ``interact`` function but relies on the user (a) explicitly instantiating widgets, (b) declaring how those widgets relate to the function arguments (using the ``bind`` function), and (c) laying out the widgets and other components explicitly. In principle we could reuse the ``get_plot`` function from above here but for clarity we will repeat it:
+Other APIs in Panel are all reactive in some way, triggering actions whenever manipulating a widget causes a parameter to change, without users writing code to trigger callbacks explicitly. The callback based API on the other allows complete low-level control of precisely how the different components of the app are updated, but they can quickly become unmaintainable because the complexity increases dramatically as more callbacks are added. The approach works by defining callbacks using the ``.param.watch`` API that either update or replace the already rendered components when a watched parameter changes:
 
 ```{pyodide}
 backend = pn.widgets.Select(name='Backend', options=plot_fns)
-ticker = pn.widgets.Select(name='Ticker', options=tickers)
-window = pn.widgets.IntSlider(name='Window Size', value=6, start=1, end=51, step=5)
+ticker = pn.widgets.Select(name='Ticker', options=['AAPL', 'FB', 'GOOG', 'IBM', 'MSFT'])
+window = pn.widgets.IntSlider(name='Window', value=6, start=1, end=21)
 
-pn.Row(
+def update(event):
+    row[1] = pn.panel(backend.value(ticker.value, window.value), sizing_mode='stretch_width')
+
+backend.param.watch(update, 'value')
+ticker.param.watch(update, 'value')
+window.param.watch(update, 'value')
+
+row = pn.Row(
     pn.Column(backend, ticker, window),
-    pn.panel(pn.bind(backend, ticker, window), sizing_mode='stretch_width')
-).servable()
+    pn.panel(backend.value(ticker.options[0], window.value))
+)
+
+row.servable()
 ```

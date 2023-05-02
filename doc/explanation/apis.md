@@ -10,5 +10,5 @@
 :hidden:
 :maxdepth: 1
 
-API context <api/api_context>
+API context <api/index>
 ```
