@@ -313,7 +313,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     if len(cross_product) > max_states:
         if config._doc_build:
             return
-        param.main.warning('The cross product of different application '
+        param.main.param.warning('The cross product of different application '
                            'states is very large to explore (N=%d), consider '
                            'reducing the number of options on the widgets or '
                            'increase the max_states specified in the function '

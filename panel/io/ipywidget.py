@@ -138,7 +138,7 @@ class PanelSessionWebsocket(SessionWebsocket):
             for event in self._queue:
                 self._document.callbacks.trigger_on_change(event)
         except Exception as e:
-            param.main.warning(f'ipywidgets event dispatch failed with: {e}')
+            param.main.param.warning(f'ipywidgets event dispatch failed with: {e}')
         finally:
             self._queue = []
 
