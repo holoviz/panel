@@ -251,10 +251,15 @@ def script_to_html(
         bokeh_req = f'bokeh=={BOKEH_VERSION}'
     base_reqs = [bokeh_req, panel_req]
     if http_patch:
-        base_reqs.append('pyodide-http==0.1.0')
+        base_reqs.append('pyodide-http==0.2.1')
     reqs = base_reqs + [
         req for req in requirements if req not in ('panel', 'bokeh')
     ]
+    # Temporary patch for HoloViews
+    if any('holoviews' in req for req in reqs):
+        reqs = ['holoviews>=1.16.0a7' if 'holoviews' else req in req for req in reqs]
+    elif any('hvplot' in req for req in reqs):
+        reqs.insert(2, 'holoviews>=1.16.0a7')
 
     # Execution
     post_code = POST_PYSCRIPT if runtime == 'pyscript' else POST
@@ -402,6 +407,7 @@ def _convert_process_pool(
     apps: List[str],
     dest_path: str | None = None,
     max_workers: int = 4,
+    requirements: List[str] | Literal['auto'] | os.PathLike = 'auto',
     **kwargs
 ):
     import multiprocessing as mp
@@ -416,7 +422,13 @@ def _convert_process_pool(
         ) as executor:
             futures = []
             for app in group:
-                f = executor.submit(convert_app, app, dest_path, **kwargs)
+                if isinstance(requirements, dict):
+                    app_requires = requirements.get(app, 'auto')
+                else:
+                    app_requires = requirements
+                f = executor.submit(
+                    convert_app, app, dest_path, requirements=app_requires, **kwargs
+                )
                 futures.append(f)
             for future in concurrent.futures.as_completed(futures):
                 result = future.result()
@@ -453,7 +465,7 @@ def convert_apps(
         name for the application cache to ensure.
     runtime: 'pyodide' | 'pyscript' | 'pyodide-worker'
         The runtime to use for running Python in the browser.
-    requirements: 'auto' | List[str] | os.PathLike
+    requirements: 'auto' | List[str] | os.PathLike | Dict[str, 'auto' | List[str] | os.PathLike]
         The list of requirements to include (in addition to Panel).
         By default automatically infers dependencies from imports
         in the application. May also provide path to a requirements.txt
@@ -491,12 +503,24 @@ def convert_apps(
 
     manifest = 'site.webmanifest' if build_pwa else None
 
+    if isinstance(requirements, dict):
+        app_requirements = {}
+        for app in apps:
+            matches = [
+                deps for name, deps in requirements.items()
+                if app.endswith(name.replace(os.path.sep, '/'))
+            ]
+            app_requirements[app] = matches[0] if matches else 'auto'
+    else:
+        app_requirements = requirements
+
     kwargs = {
-        'requirements': requirements, 'runtime': runtime,
+        'requirements': app_requirements, 'runtime': runtime,
         'prerender': prerender, 'manifest': manifest,
         'panel_version': panel_version, 'http_patch': http_patch,
         'inline': inline, 'verbose': verbose
     }
+
     if state._is_pyodide:
         files = dict((convert_app(app, dest_path, **kwargs) for app in apps))
     else:

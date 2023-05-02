@@ -17,10 +17,10 @@ PANEL_BASE = HERE.parent.parent
 EXAMPLES_DIR = PANEL_BASE / 'examples'
 LITE_FILES = PANEL_BASE / 'lite' / 'files'
 DOC_DIR = PANEL_BASE / 'doc'
-BASE_DEPENDENCIES = ["panel", "pyodide-http"]
+BASE_DEPENDENCIES = ['panel', 'pyodide-http']
 
 # Add piplite command to notebooks
-with open(HERE / "generate_panelite_content.json", "r", encoding="utf8") as file:
+with open(DOC_DIR / 'pyodide_dependencies.json', encoding='utf8') as file:
     DEPENDENCIES = json.load(file)
 
 class DependencyNotFound(Exception):
@@ -39,7 +39,7 @@ def _get_dependencies(nbpath: pathlib.Path):
     if "hvplot" in dependencies:
         dependencies.append("holoviews")
     if "holoviews" in dependencies:
-        dependencies[dependencies.index("holoviews")] = "holoviews==1.16.0a5"
+        dependencies[dependencies.index("holoviews")] = "holoviews>=1.16.0a7"
     return BASE_DEPENDENCIES + dependencies
 
 def _to_piplite_install_code(dependencies):

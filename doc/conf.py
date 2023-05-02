@@ -113,17 +113,26 @@ else:
     panel_req = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
     bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
+def get_requirements():
+    with open('pyodide_dependencies.json') as deps:
+        dependencies = json.load(deps)
+    requirements = {}
+    for name, deps in dependencies.items():
+        if deps is None:
+            continue
+        name = name.replace('.ipynb', '').replace('.md', '')
+        # Temporary patches
+        if 'hvplot' in deps:
+            deps.append('holoviews')
+        if 'holoviews' in deps:
+            deps[deps.index('holoviews')] = 'holoviews>=1.16.0a7'
+        requirements[name] = deps
+    return requirements
+
 nbsite_pyodide_conf = {
     'PYODIDE_URL': 'https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js',
-    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.16.0a5'],
-    'requires': {
-        'gallery/hvplot_explorer': ['scipy'],
-        'gallery/penguin_crossfilter': ['scipy'],
-        'gallery/windturbines': ['fastparquet'],
-        'reference/layouts/Swipe': ['scipy'],
-        'reference/panes/Audio': ['scipy'],
-        'reference/panes/HoloViews': ['scipy'],
-    }
+    'requirements': [bokeh_req, panel_req, 'pyodide-http'],
+    'requires': get_requirements()
 }
 
 templates_path = [
