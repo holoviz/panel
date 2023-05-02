@@ -23,7 +23,7 @@ class CommManager(Model):
 
     def assemble(self, msg):
         header = msg['header']
-        buffers = msg.pop('_buffers')
+        buffers = msg.pop('_buffers') or {}
         header['num_buffers'] = len(buffers)
         cls = self._protocol._messages[header['msgtype']]
         msg_obj = cls(header, msg['metadata'], msg['content'])
