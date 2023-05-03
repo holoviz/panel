@@ -2,6 +2,7 @@
 
 After completing this, you can make your functions interactive by binding them to widgets. This is done with the use of `pn.bind`, which binds a function or method to the value of a widget.
 
+---
 
 ## Bind your functions to widgets
 Making a function interactive is easy to do in Panel. All you need is the function you want to make interactive, create the widgets, and bind the widgets to the function.
