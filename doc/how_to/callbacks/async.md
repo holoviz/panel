@@ -5,9 +5,6 @@ This guide addresses how to leverage asynchronous callbacks to run I/O bound tas
 ```{admonition} Prerequisites
 1. Python has natively supported asynchronous functions since version 3.5, for a quick overview of some of the concepts involved see [the Python documentation](https://docs.python.org/3/library/asyncio-task.html).
 ```
-```{warning}
- For full asyncio support in Panel you will have to use `python>=3.8`.
-```
 ---
 
 ## `.param.watch`
