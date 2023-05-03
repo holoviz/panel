@@ -27,7 +27,7 @@ import panel as pn
 pn.extension()
 
 species_widget = pn.widgets.Select(name="species", options=["Adelie", "Gentoo", "Chinstrap"])
-year_widget = pn.widgets.IntSlider(name="year", start=2006, end=2008)```
+year_widget = pn.widgets.IntSlider(name="year", start=2006, end=2008)
 ```
 
 Let's then use these to filter the data. We can do this by using `hvplot.interactive` and passing the `species_widget` as the `species` parameter and the `year_widget` as the `year` parameter. In our case, we want the year always to be greater than the widget's value.
