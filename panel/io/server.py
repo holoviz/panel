@@ -40,7 +40,7 @@ from bokeh.application.handlers.code import (
 )
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.core.json_encoder import serialize_json
-from bokeh.core.templates import AUTOLOAD_JS, MACROS
+from bokeh.core.templates import AUTOLOAD_JS, FILE, MACROS
 from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.embed.bundle import Script
@@ -303,6 +303,9 @@ def server_html_page_for_session(
 
     if template_variables is None:
         template_variables = {}
+
+    if template is FILE:
+        template = BASE_TEMPLATE
 
     with set_curdoc(doc):
         bundle = bundle_resources(doc.roots, resources)
