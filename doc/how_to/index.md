@@ -22,13 +22,6 @@ How to effectively develop apps in a notebook environment.
 How to effectively develop apps in a Python or Markdown file.
 :::
 
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1 sd-animate-grow50` Choose an API
-:link: apis/index
-:link-type: doc
-
-How to choose from the different APIs offered by Panel.
-:::
-
 ::::
 
 
@@ -65,31 +58,10 @@ How to apply designs, themes and custom styling to components to achieve a polis
 How to link selected widgets to arguments and make a reactive function.
 :::
 
-:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1 sd-animate-grow50` Autogenerate UIs (`Interact API`)
-:link: interact/index
-:link-type: doc
-
-How to autogenerate UIs for function arguments.
-:::
-
-:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1 sd-animate-grow50` Generate UIs from declared parameters (`Param API`)
-:link: param/index
-:link-type: doc
-
-How to use Parameterized classes with Panel to generate UIs without writing GUI code.
-:::
-
-:::{grid-item-card} {octicon}`link;2.5em;sd-mr-1 sd-animate-grow50` Explicitly link parameters (`Callbacks API`)
-:link: links/index
-:link-type: doc
-
-How to link the parameters of Panel components in Python and Javascript.
-:::
-
 ::::
 
 
-## Create specialized UIs
+## Use specialized UIs and APIs
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -106,6 +78,20 @@ How to build a Panel Pipeline that connects multiple panels into a sequential us
 :link-type: doc
 
 How to extend Panel by building custom components.
+:::
+
+:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1 sd-animate-grow50` Generate UIs from declared parameters (`Declarative API`)
+:link: param/index
+:link-type: doc
+
+How to use Parameterized classes with Panel to generate UIs without writing GUI code.
+:::
+
+:::{grid-item-card} {octicon}`link;2.5em;sd-mr-1 sd-animate-grow50` Explicitly link parameters (`Callbacks API`)
+:link: links/index
+:link-type: doc
+
+How to link the parameters of Panel components in Python and Javascript.
 :::
 
 ::::
@@ -246,7 +232,7 @@ How to run Panel applications entirely in the browser using WebAssembly (Wasm), 
 
 prepare_to_develop
 build_apps
-create_specialized_uis
+use_specialized_uis
 manage_session_tasks
 test_and_debug
 prepare_to_share
