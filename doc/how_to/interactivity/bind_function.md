@@ -41,3 +41,5 @@ The final step is to make a layout of the widget and the interactive function. H
 ```{pyodide}
 pn.Column(slider, interactive_star_creator)
 ```
+
+## Related Resources

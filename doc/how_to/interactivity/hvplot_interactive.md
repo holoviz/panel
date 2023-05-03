@@ -1,4 +1,4 @@
-# Make interative data workflows
+# Make interactive data workflows
 
 This guide addresses how to make your data workflows interactive using `hvplot.interactive`. This is done by combining Panels widgets with [hvplot](https://hvplot.holoviz.org/).
 
@@ -43,3 +43,5 @@ Because we are already using `hvplot`, we can use the other powerful API of plot
 ```{pyodide}
 idf.hvplot(kind="scatter", x="bill_length_mm", y="bill_depth_mm", by="sex")
 ```
+
+## Related Resources

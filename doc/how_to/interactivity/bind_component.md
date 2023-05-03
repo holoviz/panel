@@ -49,3 +49,5 @@ We can now bind this function to the slider and the select widget to create an i
 ```{pyodide}
 pn.pane.Markdown(pn.bind(object_creator, slider, select))
 ```
+
+## Related Resources
