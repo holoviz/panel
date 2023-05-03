@@ -65,7 +65,11 @@ html_theme_options = {
     "google_analytics_id": "UA-154795830-2",
     "pygment_light_style": "material",
     "pygment_dark_style": "material",
-    "header_links_before_dropdown": 5
+    "header_links_before_dropdown": 5,
+    'secondary_sidebar_items': [
+        "panelitelink",
+        "page-toc",
+    ],
 }
 
 extensions += [
@@ -81,7 +85,7 @@ myst_enable_extensions = ["colon_fence", "deflist"]
 gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
 
 if not is_dev:
-    jlite_url = 'https://panelite.holoviz.org/lab/index.html'
+    jlite_url = 'https://panelite.holoviz.org'
 else:
     jlite_url = 'https://pyviz-dev.github.io/panelite-dev'
 
@@ -153,7 +157,8 @@ html_context.update({
     "last_release": f"v{release}",
     "github_user": "holoviz",
     "github_repo": "panel",
-    "default_mode": "light"
+    "default_mode": "light",
+    "panelite_endpoint": jlite_url,
 })
 
 nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
