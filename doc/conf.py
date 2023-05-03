@@ -152,3 +152,29 @@ nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 html_title = f'{project} v{version}'
 
 suppress_warnings = ["myst.header", "ref.myst", "mystnb.unknown_mime_type"]
+
+
+# Patching GridItemCardDirective to be able to substitute the domain name
+# in the link option.
+from sphinx_design.grids import GridItemCardDirective  # noqa
+
+orig_run = GridItemCardDirective.run
+
+def patched_run(self):
+    app = self.state.document.settings.env.app
+    existing_link = self.options.get('link')
+    domain = getattr(app.config, 'grid_item_link_domain', None)
+    if existing_link and domain:
+        new_link = existing_link.replace('|domain|', domain)
+        self.options['link'] = new_link
+    return list(orig_run(self))
+
+GridItemCardDirective.run = patched_run
+
+def setup(app) -> None:
+    app.add_config_value('grid_item_link_domain', '', 'html')
+
+if not any(ext in version for ext in ('.a', '.b', '.rc')):
+    grid_item_link_domain = 'panel-gallery'
+else:
+    grid_item_link_domain = 'panel-gallery-dev'
