@@ -39,7 +39,6 @@ button.special_btn {
     display: inline-block;
 }
 
-
 button.special_btn .tooltiptext {
   visibility: hidden;
   width: 100px;
