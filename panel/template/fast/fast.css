@@ -313,6 +313,7 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 1em;
     margin-left: auto;
     margin-right: auto;
+    height: 100%;
 }
 
 .main .card-margin.stretch_both, .main .card-margin.stretch_height {
