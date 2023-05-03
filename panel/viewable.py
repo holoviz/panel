@@ -823,8 +823,11 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
-        inherited = {p: v for p, v in self.param.values().items()
-                     if not self.param[p].readonly}
+        inherited = {
+            p: v for p, v in self.param.values().items()
+            if not self.param[p].readonly and v is not self.param[p].default
+            and not (v is None and not self.param[p].allow_None)
+        }
         return type(self)(**dict(inherited, **params))
 
     def pprint(self) -> None:

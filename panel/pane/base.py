@@ -349,7 +349,12 @@ class PaneBase(Reactive):
         -------
         Cloned Pane object
         """
-        params = dict(self.param.values(), **params)
+        inherited = {
+            p: v for p, v in self.param.values().items()
+            if not self.param[p].readonly and v is not self.param[p].default
+            and not (v is None and not self.param[p].allow_None)
+        }
+        params = dict(inherited, **params)
         old_object = params.pop('object')
         if object is None:
             object = old_object
