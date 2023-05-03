@@ -31,7 +31,7 @@ class ReactTemplate(BasicTemplate):
     row_height = param.Integer(default=150)
 
     dimensions = param.Dict(default={'minW': 0, 'maxW': float('inf'), 'minH': 0, 'maxH': float('inf')},
-                            doc="""A dictonary of minimum/maximum width/height in grid units.""")
+                            doc="""A dictionary of minimum/maximum width/height in grid units.""")
 
     prevent_collision = param.Boolean(default=False, doc="Prevent collisions between items.")
 

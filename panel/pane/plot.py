@@ -42,7 +42,7 @@ def _wrap_callback(cb, wrapped, doc, comm, callbacks):
     Wraps a bokeh callback ensuring that any events triggered by it
     appropriately dispatch events in the notebook. Also temporarily
     replaces the wrapped callback with the real one while the callback
-    is exectuted to ensure the callback can be removed as usual.
+    is executed to ensure the callback can be removed as usual.
     """
     hold = doc.callbacks.hold_value
     doc.hold('combine')

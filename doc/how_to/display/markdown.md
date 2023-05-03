@@ -46,12 +46,13 @@ widget = pn.widgets.TextInput(value='world')
 def hello_world(text):
     return f'Hello {text}!'
 
-pn.Row(widget, hello_world).servable()
+pn.Row(widget, pn.bind(hello_world, widget)).servable()
 ```
 ````
 
 To put it all together, here is what our app looks like:
 
+:::{card} app.md
 ````markdown
 # My App
 
@@ -78,8 +79,14 @@ widget = pn.widgets.TextInput(value='world')
 def hello_world(text):
     return f'Hello {text}!'
 
-pn.Row(widget, hello_world).servable()
+pn.Row(widget, pn.bind(hello_world, widget)).servable()
 ```
 ````
+
+Then, from the command line, launch a server with:
+
+```bash
+panel serve app.md --show --autoreload
+```
 
 ![The rendered Panel application written as a Markdown file.](../../_static/markdown_sample.png)

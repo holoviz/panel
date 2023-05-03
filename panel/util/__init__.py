@@ -223,7 +223,7 @@ def value_as_date(value):
 
 def datetime_as_utctimestamp(value):
     """
-    Converts a datetime to a UTC timestamp used by Bokeh interally.
+    Converts a datetime to a UTC timestamp used by Bokeh internally.
     """
     return value.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
 

@@ -1,4 +1,4 @@
-# Declare UIs with `Param` API
+# Declare UIs with Declarative API
 
 Panel is built on [Param](https://param.holoviz.org) - a library for handling all the user-modifiable parameters, arguments, and attributes that control your code. This section contains how-to guides for using `Param` objects and declared dependencies to generate user interfaces with Panel.
 
@@ -61,7 +61,7 @@ Automatically enable a loading indicator for components rendered dynamically.
 :link: examples/subobjects
 :link-type: doc
 
-Using Param to express a nested UI using a hierachy of classes.
+Using Param to express a nested UI using a hierarchy of classes.
 :::
 
 :::{grid-item-card} Precedence

@@ -116,7 +116,7 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
   constructor(attrs?: Partial<VTKSynchronizedPlot.Attrs>) {
     super(attrs)
     initialize_fullscreen_render()
-    this.outline = vtkns.OutlineFilter.newInstance() //use to display bouding box of a selected actor
+    this.outline = vtkns.OutlineFilter.newInstance() //use to display bounding box of a selected actor
     const mapper = vtkns.Mapper.newInstance()
     mapper.setInputConnection(this.outline.getOutputPort())
     this.outline_actor = vtkns.Actor.newInstance()

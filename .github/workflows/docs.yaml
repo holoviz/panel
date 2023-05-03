@@ -53,7 +53,7 @@ jobs:
         if: steps.install.outputs.cache-hit != 'true'
         run: |
           conda activate test-environment
-          pip install --use-deprecated=legacy-resolver pyecharts ipywidgets_bokeh==1.4.0.dev1
+          pip install --use-deprecated=legacy-resolver pyecharts ipywidgets_bokeh==1.4.0.dev3
       - name: bokeh sampledata
         run: |
           conda activate test-environment
@@ -71,7 +71,7 @@ jobs:
       - name: convert gallery
         run: |
           conda activate test-environment
-          panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index
+          panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json
       - name: git status and git diff
         run: |
           git status

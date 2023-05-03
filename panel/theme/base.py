@@ -46,8 +46,8 @@ class Theme(param.Parameterized):
         based components are styled appropriately.""")
 
     css = param.Filename(doc="""
-       A stylesheet thats overrides variables specifically for the
-       Theme subclass. In most cases this is not necessary.""")
+       A stylesheet that overrides variables specifically for the
+       Theme subclass. In most cases, this is not necessary.""")
 
     modifiers: ClassVar[Dict[Viewable, Dict[str, Any]]] = {}
 

@@ -174,7 +174,7 @@ const timestampSorter = function(a: any, b: any, _aRow: any, _bRow: any, _column
 const dateEditor = function(cell: any, onRendered: any, success: any, cancel: any) {
   //cell - the cell component for the editable cell
   //onRendered - function to call when the editor has been rendered
-  //success - function to call to pass the successfuly updated value to Tabulator
+  //success - function to call to pass the successfully updated value to Tabulator
   //cancel - function to call to abort the edit and return to a normal cell
 
   //create and style input
@@ -228,7 +228,7 @@ const dateEditor = function(cell: any, onRendered: any, success: any, cancel: an
 const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel: any) {
   //cell - the cell component for the editable cell
   //onRendered - function to call when the editor has been rendered
-  //success - function to call to pass the successfuly updated value to Tabulator
+  //success - function to call to pass the successfully updated value to Tabulator
   //cancel - function to call to abort the edit and return to a normal cell
 
   //create and style input

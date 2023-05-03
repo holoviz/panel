@@ -22,7 +22,7 @@ from .base import ModelPane
 class _MediaBase(ModelPane):
 
     loop = param.Boolean(default=False, doc="""
-        Whether the meida should loop""")
+        Whether the media should loop""")
 
     time = param.Number(default=0, doc="""
         The current timestamp""")
