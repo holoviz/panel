@@ -164,7 +164,7 @@ def patched_run(self):
     existing_link = self.options.get('link')
     domain = getattr(app.config, 'grid_item_link_domain', None)
     if existing_link and domain:
-        new_link = existing_link.replace('|domain|', domain)
+        new_link = existing_link.replace('|gallery-endpoint|', domain)
         self.options['link'] = new_link
     return list(orig_run(self))
 
