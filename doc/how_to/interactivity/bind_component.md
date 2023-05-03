@@ -4,7 +4,7 @@ This guide addresses how to bind parameters and bound functions on components.
 
 ---
 
-## Binding the parameters on components
+## Binding parameters on components
 
 The power to binding parameters to components can be used with all of Panel's widgets and panes, which makes it easy to create powerful components. An example is by binding a parameter to the `page_size` of the [Tabulator](../../reference/widgets/Tabulator) widget. This will allow you to change the page size of the table with the slider.
 
@@ -30,7 +30,7 @@ pn.Row(slider, tabulator)
 Binding a parameter to a component is a powerful way to make your component interactive. However, binding a parameter to a component is not always possible. For example, if there is no ideal parameter for the component or the component depends on multiple parameters. In these cases, you can bind a function to a component instead with the use of `pn.bind`.
 
 Let's say we have a function that outputs a string, which depends both on a slider but also a select widget.
-This select widget has the options of using either ⭐ or 🐘.
+This select widget has the option of using either ⭐ or 🐘.
 
 ```{pyodide}
 

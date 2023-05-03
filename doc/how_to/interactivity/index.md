@@ -17,10 +17,10 @@ How to bind functions to widgets to make them interactive
 :link: bind_component
 :link-type: doc
 
-How to bind parameters and bound function on components
+How to bind parameters and bound functions on components
 :::
 
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1 sd-animate-grow50` `Make your plots interactive`
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1 sd-animate-grow50` Make your plots interactive
 :link: hvplot_interactive
 :link-type: doc
 
