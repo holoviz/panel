@@ -75,7 +75,7 @@ NYC Taxi trips visualized and animated using Deck.GL.
 
 :::{grid-item-card} Gapminders
 :img-top: https://assets.holoviz.org/panel/gallery/gapminders.png
-:link: https://|domain|.pyviz.demo.anaconda.com/nyc_deckgl
+:link: https://|domain|.pyviz.demo.anaconda.com/gapminders
 :link-type: url
 
 Visualizing the Gapminders data using the most common Python plotting libraries.

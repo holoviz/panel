@@ -151,7 +151,6 @@ nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 # Override the Sphinx default title that appends `documentation`
 html_title = f'{project} v{version}'
 
-suppress_warnings = ["myst.header", "ref.myst", "mystnb.unknown_mime_type"]
 
 
 # Patching GridItemCardDirective to be able to substitute the domain name
