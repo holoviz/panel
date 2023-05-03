@@ -25,6 +25,8 @@ PANEL_ROOT = pathlib.Path(panel.__file__).parent
 version = release = base_version(panel.__version__)
 js_version = json.loads((PANEL_ROOT / 'package.json').read_text())['version']
 
+is_dev = any(ext in version for ext in ('.a', '.b', '.rc'))
+
 # For the interactivity warning box created by nbsite to point to the right
 # git tag instead of the default i.e. main.
 os.environ['BRANCH'] = f"v{release}"
@@ -76,6 +78,14 @@ napoleon_numpy_docstring = True
 
 myst_enable_extensions = ["colon_fence", "deflist"]
 
+gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
+
+if not is_dev:
+    jlite_url = 'https://panelite.holoviz.org/lab/index.html'
+else:
+    jlite_url = 'https://pyviz-dev.github.io/panelite-dev'
+
+
 nbsite_gallery_conf = {
     'github_org': 'holoviz',
     'github_project': 'panel',
@@ -101,8 +111,8 @@ nbsite_gallery_conf = {
         }
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
-    'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/',
-    'jupyterlite_url': 'https://panelite.holoviz.org/lab/index.html'
+    'deployment_url': f'https://{gallery_endpoint}.demo.anaconda.com/',
+    'jupyterlite_url': jlite_url,
 }
 
 if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
@@ -173,7 +183,4 @@ GridItemCardDirective.run = patched_run
 def setup(app) -> None:
     app.add_config_value('grid_item_link_domain', '', 'html')
 
-if not any(ext in version for ext in ('.a', '.b', '.rc')):
-    grid_item_link_domain = 'panel-gallery'
-else:
-    grid_item_link_domain = 'panel-gallery-dev'
+grid_item_link_domain = gallery_endpoint
