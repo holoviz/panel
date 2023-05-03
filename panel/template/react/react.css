@@ -1,44 +1,46 @@
 body {
-  margin: 0px;
-  font-family: "Lato", sans-serif;
-  overflow: hidden;
+    margin: 0px;
+    font-family: "Lato", sans-serif;
+    overflow: hidden;
 }
 
 #container {
-  padding:0px;
-  width: 100vw;
+    padding: 0px;
+    width: 100vw;
 }
 
 #header{
-  display: flex;
-  align-items: center;
-  padding: 10px;
+    background-color: var(--panel-primary-color);
+    color: var(-panel-on-primary-color);
+    display: flex;
+    align-items: center;
+    padding: 10px;
 }
 
 #header-items {
-  overflow: hidden;
-  width: 100%;
-  padding-left: 10px;
+    overflow: hidden;
+    width: 100%;
+    padding-left: 10px;
 }
 
 a.navbar-brand {
-  padding-left: 10px;
-  padding-right: 10px;
-  display: flex;
-  align-items: center;
-  font-size: 1.5em;
+    padding-left: 10px;
+    padding-right: 10px;
+    display: flex;
+    align-items: center;
+    font-size: 1.5em;
 }
 
 .title {
-  color: #fff;
-  text-decoration: none;
-  text-decoration-line: none;
-  text-decoration-style: initial;
-  text-decoration-color: initial;
-  font-weight: 400;
-  font-size: 2.0em;
-  line-height: 2em;
-  white-space: nowrap;
+    color: var(--panel-on-primary-color);
+    text-decoration: none;
+    text-decoration-line: none;
+    text-decoration-style: initial;
+    text-decoration-color: initial;
+    font-weight: 400;
+    font-size: 2.0em;
+    line-height: 2em;
+    white-space: nowrap;
 }
 
 .app-header {
@@ -48,7 +50,7 @@ a.navbar-brand {
 
 .app-header a.title:hover {
   text-decoration: none;
-  color: white;
+  color: var(--panel-on-primary-color);
 }
 
 img.app-logo {
@@ -60,7 +62,7 @@ img.app-logo {
 .pn-bar {
   width: 20px;
   height: 2px;
-  background-color: white;
+  background-color: var(--panel-on-primary-color);
   margin: 4px 0;
 }
 

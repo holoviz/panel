@@ -843,7 +843,7 @@ class VTKJS(AbstractVTK):
         props = self._get_properties(doc)
         vtkjs = self._get_vtkjs()
         if vtkjs is not None:
-            props['data'] = vtkjs
+            props['data'] = base64encode(vtkjs)
         model = VTKJSPlot(**props)
         root = root or model
         self._link_props(model, ['camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
@@ -866,7 +866,8 @@ class VTKJS(AbstractVTK):
 
     def _update(self, ref: str, model: Model) -> None:
         self._vtkjs = None
-        model.data = self._get_vtkjs()
+        vtkjs = self._get_vtkjs()
+        model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
 
     def export_vtkjs(self, filename: str | IO ='vtk_panel.vtkjs'):
         """

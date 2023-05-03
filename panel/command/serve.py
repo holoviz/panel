@@ -230,7 +230,7 @@ class Serve(_BkServe):
     )
 
     # Supported file extensions
-    _extensions = ['.py']
+    _extensions = ['.py', '.ipynb', '.md']
 
     def customize_applications(self, args, applications):
         if args.index and not args.index.endswith('.html'):

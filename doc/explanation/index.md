@@ -131,7 +131,7 @@ Learn about why Panel utilizes the Bokeh library.
 :::
 
 :::{grid-item-card} Panel vs. Voila
-:link: comparisons/compare_js
+:link: comparisons/compare_voila
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/voila_logo.webp
@@ -155,7 +155,7 @@ Learn about why Panel utilizes the Bokeh library.
 :::
 
 :::{grid-item-card} Panel vs. JavaScript
-:link: comparisons/compare_voila
+:link: comparisons/compare_js
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/JavaScript_logo.png

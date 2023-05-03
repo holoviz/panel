@@ -45,8 +45,8 @@ def _stdlibs():
 _STDLIBS = _stdlibs()
 _PACKAGE_MAP = {
     'sklearn': 'scikit-learn',
-    'hvplot': ['holoviews>=1.15.4', 'hvplot'],
-    'holoviews': ['holoviews>=1.15.4']
+    'hvplot': ['holoviews>=>=1.16.0a7', 'hvplot'],
+    'holoviews': ['holoviews>=1.16.0a7']
 }
 _IGNORED_PKGS = ['js', 'pyodide']
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']

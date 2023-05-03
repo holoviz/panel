@@ -1040,6 +1040,10 @@ class Trend(SyncableData, Indicator):
     neg_color = param.String(RED, doc="""
       The color used to indicate a negative change.""")
 
+    sizing_mode = param.ObjectSelector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])
+
     title = param.String(doc="""The title or a short description of the card""")
 
     value = param.Parameter(default='auto', doc="""

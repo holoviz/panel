@@ -690,7 +690,10 @@
     margin-left: 0;
     margin-right: -3px; }
   .tabulator.tabulator-rtl .tabulator-footer .tabulator-calcs-holder {
-    text-align: initial; }
+      text-align: initial; }
+
+.tabulator-cell a {color: var(--neutral-foreground-rest);}
+.tabulator-cell a:hover {color: var(--neutral-foreground-hint); }
 
 .tabulator-print-fullscreen {
   position: absolute;
