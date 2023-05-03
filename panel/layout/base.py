@@ -12,7 +12,9 @@ from typing import (
 
 import param
 
-from bokeh.models import Column as BkColumn, Row as BkRow
+from bokeh.models import (
+    Column as BkColumn, Dialog as BkDialog, LayoutDOM, Row as BkRow,
+)
 
 from ..io.model import hold
 from ..io.resources import CDN_DIST
@@ -76,6 +78,15 @@ class Panel(Reactive):
     # Callback API
     #----------------------------------------------------------------
 
+    def _get_sizing_mode_kwargs(self, model, msg):
+        return dict(
+            sizing_mode=msg.get('sizing_mode', model.sizing_mode),
+            styles=msg.get('styles', model.styles),
+            width=msg.get('width', model.width),
+            min_width=msg.get('min_width', model.min_width),
+            margin=msg.get('margin', model.margin)
+        )
+
     def _update_model(
         self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
         root: Model, model: Model, doc: Document, comm: Optional[Comm]
@@ -92,16 +103,7 @@ class Panel(Reactive):
         if obj_key in msg:
             old = events['objects'].old
             msg[obj_key] = children = self._get_objects(model, old, doc, root, comm)
-            msg.update(self._compute_sizing_mode(
-                children,
-                dict(
-                    sizing_mode=msg.get('sizing_mode', model.sizing_mode),
-                    styles=msg.get('styles', model.styles),
-                    width=msg.get('width', model.width),
-                    min_width=msg.get('min_width', model.min_width),
-                    margin=msg.get('margin', model.margin)
-                )
-            ))
+            msg.update(self._compute_sizing_mode(children, self._get_sizing_mode_kwargs(model, msg)))
 
         with hold(doc):
             update = Panel._batch_update
@@ -206,6 +208,8 @@ class Panel(Reactive):
         heights, widths = [], []
         all_expand_width, all_expand_height, expand_width, expand_height, scale = True, True, False, False, False
         for child in children:
+            if not isinstance(child, LayoutDOM):
+                continue
             if child.sizing_mode and 'scale' in child.sizing_mode:
                 scale = True
             if child.sizing_mode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
@@ -918,3 +922,73 @@ class WidgetBox(ListPanel):
         super().__init__(*objects, **params)
         if self.disabled:
             self._disable_widgets()
+
+
+class Dialog(ListPanel):
+    """
+    The `Dialog` layout allows arranging multiple panel objects in a
+    vertical container which floats above the page. Functionally it
+    behaves identically to the `Column` layout.
+
+    It's visibility can be controlled using the `visible` parameter.
+
+    It has a list-like API with methods to `append`, `extend`, `clear`,
+    `insert`, `pop`, `remove` and `__setitem__`, which make it possible to
+    interactively update and modify the layout.
+
+    Reference: https://panel.holoviz.org/reference/layouts/Dialog.html
+
+    :Example:
+
+    >>> pn.WidgetBox(some_widget, another_widget)
+    """
+
+    closable = param.Boolean(default=True, doc="""
+        Whether the dialog should render a button to close it. If
+        enabled the Dialog can be re-opened by setting visible=True.""")
+
+    _bokeh_model: ClassVar[Type[Model]] = BkDialog
+
+    _direction = 'vertical'
+
+    _rename = {'name': 'title'}
+
+    _stylesheets: ClassVar[list[str]] = [
+        f'{CDN_DIST}css/listpanel.css'
+    ]
+
+    def _get_model(
+        self, doc: Document, root: Optional[Model] = None,
+        parent: Optional[Model] = None, comm: Optional[Comm] = None
+    ) -> Model:
+        model = self._bokeh_model(content=BkColumn())
+        root = root or model
+        self._models[root.ref['id']] = (model, parent)
+        objects = self._get_objects(model, [], doc, root, comm)
+        props = self._get_properties(doc)
+        props['children'] = objects
+        props['sizing_mode'] = 'stretch_both'
+        self._set_on_model(model, props)
+        self._link_props(model, self._linked_properties, doc, root, comm)
+        return model
+
+    def _init_params(self) -> Dict[str, Any]:
+        params = super()._init_params()
+        params['sizing_mode'] = 'stretch_both'
+        styles = params.get('styles', {})
+        if 'width' in params and 'width' not in styles:
+            styles['width'] = f"{params['width']}px"
+        if 'height' in params and 'height' not in styles:
+            styles['height'] = f"{params['height']}px"
+        params['styles'] = styles
+        return params
+
+    def _get_sizing_mode_kwargs(self, model, msg):
+        return super()._get_sizing_mode_kwargs(model.content, msg)
+
+    def _set_on_model(self, model, msg):
+        model.update(**{k: v for k, v in msg.items() if k in model.properties()})
+        model.content.update(**{k: v for k, v in msg.items() if k in model.content.properties() and k != 'styles'})
+
+    def _validate_update(self, ref, model, msg):
+        return list(msg)

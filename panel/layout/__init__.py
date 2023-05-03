@@ -30,7 +30,7 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from .accordion import Accordion  # noqa
 from .base import (  # noqa
-    Column, ListLike, ListPanel, Panel, Row, WidgetBox,
+    Column, Dialog, ListLike, ListPanel, Panel, Row, WidgetBox,
 )
 from .card import Card  # noqa
 from .flex import FlexBox  # noqa
@@ -47,6 +47,7 @@ __all__ = (
     "Accordion",
     "Card",
     "Column",
+    "Dialog",
     "Divider",
     "FloatPanel",
     "FlexBox",

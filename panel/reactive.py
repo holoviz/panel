@@ -301,11 +301,7 @@ class Syncable(Renderable):
             cb = partial(self._update_model, events, msg, root, model, doc, comm)
             doc.add_next_tick_callback(cb)
 
-    def _update_model(
-        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
-        root: Model, model: Model, doc: Document, comm: Optional[Comm]
-    ) -> None:
-        ref = root.ref['id']
+    def _validate_update(self, ref, model, msg):
         self._changing[ref] = attrs = []
         for attr, value in msg.items():
             # Bokeh raises UnsetValueError if the value is Undefined.
@@ -320,9 +316,16 @@ class Syncable(Renderable):
             # Do not apply model change that is in flight
             if attr in self._events:
                 del self._events[attr]
+        return attrs
 
+    def _update_model(
+        self, events: Dict[str, param.parameterized.Event], msg: Dict[str, Any],
+        root: Model, model: Model, doc: Document, comm: Optional[Comm]
+    ) -> None:
+        ref = root.ref['id']
+        attrs = self._validate_update(ref, model, msg)
         try:
-            model.update(**msg)
+            self._set_on_model(model, msg)
         finally:
             changing = [
                 attr for attr in self._changing.get(ref, [])
@@ -332,6 +335,9 @@ class Syncable(Renderable):
                 self._changing[ref] = changing
             elif ref in self._changing:
                 del self._changing[ref]
+
+    def _set_on_model(self, model, msg):
+        model.update(**msg)
 
     def _cleanup(self, root: Model | None) -> None:
         super()._cleanup(root)
