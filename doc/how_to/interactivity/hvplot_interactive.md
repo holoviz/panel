@@ -1,14 +1,12 @@
-# Make your plots interactive
+# Make interative data workflows
 
-This guide addresses how to make your plot interactive using `hvplot.interactive`. This is done by combining Panels widgets with [hvplot](https://hvplot.holoviz.org/).
+This guide addresses how to make your data workflows interactive using `hvplot.interactive`. This is done by combining Panels widgets with [hvplot](https://hvplot.holoviz.org/).
 
 ---
 
-## What is `hvplot.interactive`?
 
 `hvplot.interactive` is a tool to get better control over your data pipelines. This is done by replacing the constant parameters in your pipeline with widgets (e.g., a number slider) that will automatically get displayed next to your pipeline output and trigger an output update on changes. With this approach, all your pipeline parameters are available in one place, and you get complete interactive control over the pipeline. For more information, check out the [hvPlot documentation](https://hvplot.holoviz.org/user_guide/Interactive.html).
 
-## How to use `hvplot.interactive`
 
 Let's start by getting some data:
 
