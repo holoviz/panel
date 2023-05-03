@@ -25,7 +25,7 @@ PANEL_ROOT = pathlib.Path(panel.__file__).parent
 version = release = base_version(panel.__version__)
 js_version = json.loads((PANEL_ROOT / 'package.json').read_text())['version']
 
-is_dev = any(ext in version for ext in ('.a', '.b', '.rc'))
+is_dev = any(ext in version for ext in ('a', 'b', 'rc'))
 
 # For the interactivity warning box created by nbsite to point to the right
 # git tag instead of the default i.e. main.
@@ -111,7 +111,7 @@ nbsite_gallery_conf = {
         }
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
-    'deployment_url': f'https://{gallery_endpoint}.demo.anaconda.com/',
+    'deployment_url': f'https://{gallery_endpoint}.pyviz.demo.anaconda.com/',
     'jupyterlite_url': jlite_url,
 }
 
