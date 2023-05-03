@@ -24,9 +24,9 @@
 /* Separator */
 
 hr {
-    color: var(--neutral-divider-rest);
-    border-color: var(--neutral-divider-rest);
-    background: var(--neutral-divider-rest);
+    color: var(--neutral-stroke-divider-rest);
+    border-color: var(--neutral-stroke-divider-rest);
+    background: var(--neutral-stroke-divider-rest);
     border-style: solid;
     border-radius: calc(var(--corner-radius) * 1px);
 }
@@ -74,6 +74,11 @@ canvas, img {
 
 .bk-toolbar.bk-left .bk-toolbar-button.bk-active {
     border-right-color: var(--accent-foreground-active);
+}
+
+div.bk-OnOffButton.bk-right.bk-active .bk-tool-icon-pan {
+    border-left-color: aqua;
+    --active-tool-highlight: salmon;
 }
 
 /* Tooltips */
@@ -279,7 +284,7 @@ table.panel-df {
 /* Input widgets */
 
 .bk-input {
-    background-color: var(--background-color);
+    background-color: var(--neutral-fill-input-rest);
     border: 1px solid var(--accent-fill-rest);
     border-radius: calc(var(--control-corner-radius) * 1px);
     color: var(--neutral-foreground-rest);
