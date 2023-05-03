@@ -355,7 +355,7 @@ class PaneBase(Reactive):
             and not (v is None and not self.param[p].allow_None)
         }
         params = dict(inherited, **params)
-        old_object = params.pop('object')
+        old_object = params.pop('object', None)
         if object is None:
             object = old_object
         return type(self)(object, **params)
