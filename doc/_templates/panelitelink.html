@@ -1,0 +1,8 @@
+{# Custom template to include a link to Panelite #}
+{% if title and pagename != root_doc %}
+  <div class="tocsection">
+    <a href="{{ panelite_endpoint + '/lab?path=' + pagename + '.ipynb' }}" target=”_blank”>
+      <img src="{{ pathto('_static/jupyterlite.svg', 1) }}" alt="launch jupyterlite"></img>
+    </a>
+  </div>
+{% endif %}
