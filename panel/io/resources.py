@@ -415,6 +415,33 @@ class ResourceComponent:
         'raw_css': [],
     }
 
+    @classmethod
+    def _resolve_resource(cls, resource_type: str, resource: str, cdn: bool = False):
+        dist_path = get_dist_path(cdn=cdn)
+        if resource.startswith(CDN_DIST):
+            resource_path = resource.replace(f'{CDN_DIST}bundled/', '')
+        elif resource.startswith(config.npm_cdn):
+            resource_path = resource.replace(config.npm_cdn, '')[1:]
+        elif resource.startswith('http:'):
+            resource_path = url_path(resource)
+        else:
+            resource_path = resource
+
+        if resource_type == 'js_modules' and not (state.rel_path or cdn):
+            prefixed_dist = f'./{dist_path}'
+        else:
+            prefixed_dist = dist_path
+
+        bundlepath = BUNDLE_DIR / resource_path.replace('/', os.path.sep)
+        if bundlepath.is_file():
+            return f'{prefixed_dist}bundled/{resource_path}'
+        elif isurl(resource):
+            return resource
+        elif resolve_custom_path(cls, resource):
+            return component_resource_path(
+                cls, f'_resources/{resource_type}', resource
+            )
+
     def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourcesType:
         """
         Resolves the resources required for this component.
@@ -447,7 +474,6 @@ class ResourceComponent:
                 resources[rt] = res
 
         cdn = use_cdn() if cdn == 'auto' else cdn
-        dist_path = get_dist_path(cdn=cdn)
         resource_types: ResourcesType = {
             'js': {},
             'js_modules': {},
@@ -460,29 +486,11 @@ class ResourceComponent:
                 continue
             resource_files = resource_types[resource_type]
             for rname, resource in resources[resource_type].items():
-                if resource.startswith(CDN_DIST):
-                    resource_path = resource.replace(f'{CDN_DIST}bundled/', '')
-                elif resource.startswith(config.npm_cdn):
-                    resource_path = resource.replace(config.npm_cdn, '')[1:]
-                elif resource.startswith('http:'):
-                    resource_path = url_path(resource)
-                else:
-                    resource_path = resource
-
-                if resource_type == 'js_modules' and not (state.rel_path or cdn):
-                    prefixed_dist = f'./{dist_path}'
-                else:
-                    prefixed_dist = dist_path
-
-                bundlepath = BUNDLE_DIR / resource_path.replace('/', os.path.sep)
-                if bundlepath.is_file():
-                    resource_files[rname] = f'{prefixed_dist}bundled/{resource_path}'
-                elif isurl(resource):
-                    resource_files[rname] = resource
-                elif resolve_custom_path(cls, resource):
-                    resource_files[rname] = component_resource_path(
-                        cls, f'_resources/{resource_type}', resource
-                    )
+                resolved_resource = self._resolve_resource(
+                    resource_type, resource, cdn=cdn
+                )
+                if resolved_resource:
+                    resource_files[rname] = resolved_resource
         return resource_types
 
 

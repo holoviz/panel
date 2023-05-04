@@ -667,7 +667,7 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
             base_css = [base_css] if base_css else []
         for css in base_css:
             tmpl_name = name
-            for scls in cls.__mro__[1:-5]:
+            for scls in cls.__mro__[1:]:
                 if not issubclass(scls, BasicTemplate):
                     continue
                 elif scls._css is None:
