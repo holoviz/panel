@@ -12,6 +12,7 @@
 
 Construct individual components<components/index>
 Styling components<styling/index>
+Interactivity<interactivity/index>
 Arranging components<layout/index>
 Bind Component Parameters (Reactive API)<reactive/index>
 ```
