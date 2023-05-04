@@ -20,6 +20,13 @@ from panel.widgets.input import StaticText, TextInput
 
 
 class ChatRow(CompositeWidget):
+    """
+    The ChatRow widget allows displaying a message adjacent to an icon and name.
+
+    :Example:
+
+    >>> ChatRow(name="You", value="Welcome!", show_name=True, align="start")
+    """
     value = param.List(
         doc="""The objects to display""",
     )
@@ -190,6 +197,17 @@ class ChatRow(CompositeWidget):
 
 
 class ChatBox(CompositeWidget):
+    f"""
+    The ChatBox widget displays a conversation between multiple users
+    composed of users' icons, names, messages, and likes.
+
+    Reference: https://panel.holoviz.org/reference/widgets/ChatBox.html
+
+    :Example:
+
+    >>> ChatBox(value=[{"You": "Hello!"}, {"Bot": "How may I help?"}])
+    """
+
     value = param.List(
         doc="""
             List of messages, mapping user to message,
@@ -200,9 +218,9 @@ class ChatBox(CompositeWidget):
         default=[],
     )
 
-    primary_user = param.String(
+    primary_name = param.String(
         doc="""
-            Name of the primary input user;
+            Name of the primary input message;
             the first key found in value
             will be used if unspecified
         """,
@@ -211,20 +229,20 @@ class ChatBox(CompositeWidget):
 
     allow_input = param.Boolean(
         doc="""
-            Whether to allow the primary user to interactively
+            Whether to allow the primary message to interactively
             enter messages.
         """,
         default=True,
     )
 
-    user_icons = param.Dict(
-        doc="""Dictionary mapping name of users to their icons,
+    message_icons = param.Dict(
+        doc="""Dictionary mapping name of messages to their icons,
         e.g. `[{'You': 'path/to/icon.png'}]`""",
         default={},
     )
 
-    user_colors = param.Dict(
-        doc="""Dictionary mapping name of users to their colors,
+    message_colors = param.Dict(
+        doc="""Dictionary mapping name of messages to their colors,
         e.g. `[{'You': 'red'}]`""",
         default={},
     )
@@ -265,7 +283,7 @@ class ChatBox(CompositeWidget):
             styles={"font-size": "1.5em"},
             align="center",
         )
-        self._chat_log = Column(scroll=True, **chat_layout)
+        self._chat_log = Column(**chat_layout)
 
         box_objects = [self._chat_title] if self.name else []
         box_objects.append(self._chat_log)
@@ -327,29 +345,29 @@ class ChatBox(CompositeWidget):
         """
         Instantiate a ChatRow object.
         """
-        if self.primary_user is None:
+        if self.primary_name is None:
             if self.value:
-                self.primary_user = self._get_name(self.value[0])
+                self.primary_name = self._get_name(self.value[0])
             else:
-                self.primary_user = "You"
+                self.primary_name = "You"
 
         # try to get input color; if not generate one and save
-        if user in self.user_colors:
-            background = self.user_colors[user]
+        if user in self.message_colors:
+            background = self.message_colors[user]
         else:
             background = self._generate_bright_color(string=user)
-            self.user_colors[user] = background
+            self.message_colors[user] = background
 
         # try to get input icon
-        user_icon = self.user_icons.get(user, None)
+        message_icon = self.message_icons.get(user, None)
 
-        align = "start" if user != self.primary_user else "end"
+        align = "start" if user != self.primary_name else "end"
         if not isinstance(message, List):
             message = [message]
         message_row = ChatRow(
             name=user,
             value=message,
-            icon=user_icon,
+            icon=message_icon,
             show_name=show_name,
             align=align,
             default_panel=self.default_panel,
@@ -385,7 +403,7 @@ class ChatBox(CompositeWidget):
         if event.new == "":
             return
 
-        user = self.primary_user or "You"
+        user = self.primary_name or "You"
         message = event.new
         self.append({user: message})
         self._input_message.value = ""
