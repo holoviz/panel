@@ -185,7 +185,7 @@ class PanelJupyterHandler(JupyterHandler):
             elif msg_type == 'comm_open' and msg['content']['target_name'] == self.session_id:
                 comm_id = msg['content']['comm_id']
             elif msg_type == 'stream' and msg['content']['name'] == 'stderr':
-                logger.info(msg['content']['text'])
+                logger.error(msg['content']['text'])
         return result, comm_id, extension_dirs
 
     @tornado.web.authenticated
@@ -383,10 +383,12 @@ class PanelWSProxy(WSHandler, JupyterHandler):
                 if not await ensure_async(self.kernel.is_alive()):
                     raise RuntimeError("Kernel died before expected shutdown of Panel app.")
                 continue
-            if not (
-                msg['header']['msg_type'] == 'comm_msg' and
-                msg['content']['comm_id'] == self.comm_id
-            ):
+
+            msg_type = msg['header']['msg_type']
+            if msg_type == 'stream' and msg['content']['name'] == 'stderr':
+                logger.error(msg['content']['text'])
+                continue
+            elif not (msg_type == 'comm_msg' and msg['content']['comm_id'] == self.comm_id):
                 continue
             content, metadata = msg['content'], msg['metadata']
             status = metadata.get('status')
