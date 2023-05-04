@@ -20,10 +20,10 @@ pn.extension("tabulator")
 
 df = pd.read_csv("https://datasets.holoviz.org/penguins/v1/penguins.csv")
 
-slider = pn.widgets.IntSlider(value=5, start=1, end=10)
+slider = pn.widgets.IntSlider(value=5, start=1, end=10, name='page_size')
 tabulator = pn.widgets.Tabulator(df, page_size=slider, pagination="remote")
 
-pn.Row(slider, tabulator)
+pn.Column(slider, tabulator)
 ```
 
 ## Binding bound function on components
@@ -49,7 +49,9 @@ Now we can bind `IntSlider` and the `Select` widgets to the `object_creator` to 
 slider = pn.widgets.IntSlider(value=5, start=1, end=10)
 select = pn.widgets.Select(value="⭐", options=["⭐", "🐘"])
 
-pn.pane.Markdown(pn.bind(object_creator, select, slider))
+iobject = pn.bind(object_creator, select, slider)
+
+pn.Row(slider, select, pn.pane.Markdown(iobject))
 ```
 
 This approach is preferred over rendering reactive functions directly because it is more efficient and updates only the specific parameters that are being changed.
