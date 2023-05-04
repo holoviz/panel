@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import functools
+import os
 import pathlib
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, Literal, Tuple, Type,
 )
 
 import param
@@ -12,12 +13,18 @@ import param
 from bokeh.models import ImportedStyleSheet
 from bokeh.themes import Theme as _BkTheme, _dark_minimal, built_in_themes
 
+from ..config import config
+from ..io.resources import (
+    ResourceComponent, component_resource_path, get_dist_path,
+    resolve_custom_path,
+)
 from ..util import relative_to
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
 
+    from ..io.resources import ResourceTypes
     from ..viewable import Viewable
 
 
@@ -84,7 +91,7 @@ class DarkTheme(Theme):
     _name: ClassVar[str] = 'dark'
 
 
-class Design(param.Parameterized):
+class Design(param.Parameterized, ResourceComponent):
 
     theme = param.ClassSelector(class_=Theme, constant=True)
 
@@ -310,6 +317,44 @@ class Design(param.Parameterized):
         for sm in model.references():
             theme.apply_to_model(sm)
 
+    def resolve_resources(
+        self, cdn: bool | Literal['auto'] = 'auto', include_theme: bool = True
+    ) -> ResourceTypes:
+        """
+        Resolves the resources required for this design component.
+
+        Arguments
+        ---------
+        cdn: bool | Literal['auto']
+            Whether to load resources from CDN or local server. If set
+            to 'auto' value will be automatically determine based on
+            global settings.
+        include_theme: bool
+            Whether to include theme resources.
+
+        Returns
+        -------
+        Dictionary containing JS and CSS resources.
+        """
+        resource_types = super().resolve_resources(cdn)
+        if not include_theme:
+            return resource_types
+        dist_path = get_dist_path(cdn=cdn)
+        css_files = resource_types['css']
+        theme = self.theme
+        for attr in ('base_css', 'css'):
+            css = getattr(theme, attr, None)
+            if css is None:
+                continue
+            basename = os.path.basename(css)
+            key = 'theme_base' if 'base' in attr else 'theme'
+            if relative_to(css, THEME_CSS):
+                css_files[key] = dist_path + f'bundled/theme/{basename}'
+            elif resolve_custom_path(theme, css):
+                owner = type(theme).param[attr].owner
+                css_files[key] = component_resource_path(owner, attr, css)
+        return resource_types
+
     def params(
         self, viewable: Viewable, doc: Document | None = None
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -344,6 +389,7 @@ class Design(param.Parameterized):
         return modifiers, child_modifiers
 
 
+config.param.design.class_ = Design
 THEMES = {
     'default': DefaultTheme,
     'dark': DarkTheme

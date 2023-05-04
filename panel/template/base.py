@@ -11,7 +11,8 @@ import uuid
 from functools import partial
 from pathlib import Path, PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple, Type,
+    IO, TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Optional, Tuple,
+    Type,
 )
 
 import param
@@ -26,8 +27,8 @@ from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
-    BUNDLE_DIR, CDN_DIST, DOC_DIST, LOCAL_DIST, _env, component_resource_path,
-    loading_css, resolve_custom_path,
+    BUNDLE_DIR, DOC_DIST, ResourceComponent, _env, component_resource_path,
+    get_dist_path, loading_css, resolve_custom_path,
 )
 from ..io.save import save
 from ..io.state import curdoc_locked, state
@@ -39,9 +40,9 @@ from ..pane import (
 from ..pane.image import ImageBase
 from ..reactive import ReactiveHTML
 from ..theme.base import (
-    THEME_CSS, THEMES, DefaultTheme, Design, Theme,
+    THEMES, DefaultTheme, Design, Theme,
 )
-from ..util import isurl, relative_to, url_path
+from ..util import isurl
 from ..viewable import (
     MimeRenderMixin, Renderable, ServableMixin, Viewable,
 )
@@ -53,16 +54,9 @@ if TYPE_CHECKING:
     from bokeh.server.contexts import BokehSessionContext
     from jinja2 import Template as _Template
     from pyviz_comms import Comm
-    from typing_extensions import Literal, TypedDict
 
     from ..io.location import Location
-
-    class ResourcesType(TypedDict):
-        css: Dict[str, str]
-        js:  Dict[str, str]
-        js_modules: Dict[str, str]
-        extra_css: List[str]
-        raw_css: List[str]
+    from ..io.resources import ResourcesType
 
 
 _server_info: str = (
@@ -432,7 +426,7 @@ class TemplateActions(ReactiveHTML):
     }
 
 
-class BasicTemplate(BaseTemplate):
+class BasicTemplate(BaseTemplate, ResourceComponent):
     """
     BasicTemplate provides a baseclass for templates with a basic
     organization including a header, sidebar and main area. Unlike the
@@ -539,10 +533,6 @@ class BasicTemplate(BaseTemplate):
     # Resources #
     #############
 
-    # Resource locations for bundled resources
-    _CDN: ClassVar[str] = CDN_DIST
-    _LOCAL: ClassVar[str] = LOCAL_DIST
-
     # pathlib.Path pointing to local CSS file(s)
     _css: ClassVar[Path | str | List[Path | str] | None] = None
 
@@ -623,103 +613,53 @@ class BasicTemplate(BaseTemplate):
             document.theme = self._design.theme.bokeh_theme
         return document
 
-    def _template_resources(self) -> ResourcesType:
-        clsname = type(self).__name__
+    def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourcesType:
+        """
+        Resolves the resources required for this template component.
+
+        Arguments
+        ---------
+        cdn: bool | Literal['auto']
+            Whether to load resources from CDN or local server. If set
+            to 'auto' value will be automatically determine based on
+            global settings.
+
+        Returns
+        -------
+        Dictionary containing JS and CSS resources.
+        """
+        cls = type(self)
+        resource_types = super().resolve_resources(cdn=cdn)
+        js_files = resource_types['js']
+        js_modules = resource_types['js_modules']
+        css_files = resource_types['css']
+        raw_css = resource_types['raw_css']
+
+        clsname = cls.__name__
         name = clsname.lower()
-        use_cdn = _settings.resources(default="server") != 'server'
-        if use_cdn:
-            dist_path = self._CDN
-        elif state.rel_path:
-            dist_path = f'{state.rel_path}/{self._LOCAL}'
-        else:
-            dist_path = f'{self._LOCAL}'
+        dist_path = get_dist_path(cdn=cdn)
 
-        # External resources
-        css_files: Dict[str, str] = {}
-        js_files: Dict[str, str] = {}
-        js_modules: Dict[str, str] = {}
-        resource_types: ResourcesType = {
-            'css': css_files,
-            'js': js_files,
-            'js_modules': js_modules,
-            'extra_css': [],
-            'raw_css': list(self.config.raw_css) + [loading_css()]
-        }
-
-        theme = self._design.theme
-        for attr in ('base_css', 'css'):
-            css = getattr(theme, attr, None)
-            if css is None:
-                continue
-            basename = os.path.basename(css)
-            key = 'theme_base' if 'base' in attr else 'theme'
-            if relative_to(css, THEME_CSS):
-                css_files[key] = dist_path + f'bundled/theme/{basename}'
-            elif resolve_custom_path(theme, css):
-                owner = type(theme).param[attr].owner
-                css_files[key] = component_resource_path(owner, attr, css)
-
-        resolved_resources: List[Literal['css', 'js', 'js_modules']] = ['css', 'js', 'js_modules']
-
-        # Resolve Design resources
-        resources = dict(self._resources)
-        for rt, res in self._design._resources.items():
-            if not isinstance(res, dict):
-                continue
-            if rt == 'font':
-                rt = 'css'
-            res = {
-                name: url if isurl(url) else f'{type(self._design).__name__.lower()}/{url}'
-                for name, url in res.items()
-            }
-            if rt in resources:
-                resources[rt] = dict(resources[rt], **res)
+        raw_css.extend(list(self.config.raw_css) + [loading_css()])
+        for rname, res in self._design.resolve_resources(cdn).items():
+            if isinstance(res, dict):
+                resource_types[rname].update(res)
             else:
-                resources[rt] = res
+                resource_types[rname] += [
+                    r for r in res if res not in resource_types[rname]
+                ]
 
-        for resource_type in resolved_resources:
-            if resource_type not in resources:
-                continue
-            resource_files = resource_types[resource_type]
-            for rname, resource in resources[resource_type].items():
-                if resource.startswith(CDN_DIST):
-                    resource_path = resource.replace(f'{CDN_DIST}bundled/', '')
-                elif resource.startswith(config.npm_cdn):
-                    resource_path = resource.replace(config.npm_cdn, '')[1:]
-                elif resource.startswith('http:'):
-                    resource_path = url_path(resource)
-                else:
-                    resource_path = resource
-
-                if resource_type == 'js_modules' and not (state.rel_path or use_cdn):
-                    prefixed_dist = f'./{dist_path}'
-                else:
-                    prefixed_dist = dist_path
-
-                bundlepath = BUNDLE_DIR / resource_path.replace('/', os.path.sep)
-                if bundlepath.is_file():
-                    resource_files[rname] = f'{prefixed_dist}bundled/{resource_path}'
-                elif isurl(resource):
-                    resource_files[rname] = resource
-                elif resolve_custom_path(self, resource):
-                    resource_files[rname] = component_resource_path(
-                        self, f'_resources/{resource_type}', resource
-                    )
-
-        for name, js in self.config.js_files.items():
+        for rname, js in self.config.js_files.items():
             if '//' not in js and state.rel_path:
                 js = f'{state.rel_path}/{js}'
-            js_files[name] = js
-        for name, js in self.config.js_modules.items():
+            js_files[rname] = js
+        for rname, js in self.config.js_modules.items():
             if '//' not in js and state.rel_path:
                 js = f'{state.rel_path}/{js}'
-            js_modules[name] = js
-
-        extra_css = resource_types['extra_css']
-        for css in list(self.config.css_files):
+            js_modules[rname] = js
+        for i, css in enumerate(list(self.config.css_files)):
             if '//' not in css and state.rel_path:
                 css = f'{state.rel_path}/{css}'
-            extra_css.append(css)
+            css_files[f'config_{i}'] = css
 
         # CSS files
         base_css = self._css
@@ -727,14 +667,14 @@ class BasicTemplate(BaseTemplate):
             base_css = [base_css] if base_css else []
         for css in base_css:
             tmpl_name = name
-            for cls in type(self).__mro__[1:-5]:
-                if not issubclass(cls, BasicTemplate):
+            for scls in cls.__mro__[1:]:
+                if not issubclass(scls, BasicTemplate):
                     continue
-                elif cls._css is None:
+                elif scls._css is None:
                     break
-                tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
+                tmpl_css = scls._css if isinstance(scls._css, list) else [scls._css]
                 if css in tmpl_css:
-                    tmpl_name = cls.__name__.lower()
+                    tmpl_name = scls.__name__.lower()
 
             css_file = os.path.basename(css)
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
@@ -798,7 +738,7 @@ class BasicTemplate(BaseTemplate):
                 favicon = DOC_DIST + "icons/favicon.ico"
             else:
                 favicon = self.favicon
-        self._render_variables['template_resources'] = self._template_resources()
+        self._render_variables['template_resources'] = self.resolve_resources()
         self._render_variables['app_logo'] = logo
         self._render_variables['app_favicon'] = favicon
         self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
