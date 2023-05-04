@@ -220,17 +220,24 @@ class ChatBox(CompositeWidget):
 
     primary_name = param.String(
         doc="""
-            Name of the primary input message;
-            the first key found in value
-            will be used if unspecified
+            Name of the primary user (the one who inputs messages);
+            the first key found in value will be used if unspecified
         """,
         default=None,
     )
 
     allow_input = param.Boolean(
         doc="""
-            Whether to allow the primary message to interactively
+            Whether to allow the primary user to interactively
             enter messages.
+        """,
+        default=True,
+    )
+
+    allow_likes = param.Boolean(
+        doc="""
+            Whether to allow the primary user to interactively
+            like messages.
         """,
         default=True,
     )
@@ -369,6 +376,7 @@ class ChatBox(CompositeWidget):
             value=message,
             icon=message_icon,
             show_name=show_name,
+            show_like=self.allow_likes,
             align=align,
             default_panel=self.default_panel,
             styles={
