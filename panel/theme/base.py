@@ -317,7 +317,9 @@ class Design(param.Parameterized, ResourceComponent):
         for sm in model.references():
             theme.apply_to_model(sm)
 
-    def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourceTypes:
+    def resolve_resources(
+        self, cdn: bool | Literal['auto'] = 'auto', include_theme: bool = True
+    ) -> ResourceTypes:
         """
         Resolves the resources required for this design component.
 
@@ -327,12 +329,16 @@ class Design(param.Parameterized, ResourceComponent):
             Whether to load resources from CDN or local server. If set
             to 'auto' value will be automatically determine based on
             global settings.
+        include_theme: bool
+            Whether to include theme resources.
 
         Returns
         -------
         Dictionary containing JS and CSS resources.
         """
         resource_types = super().resolve_resources(cdn)
+        if not include_theme:
+            return resource_types
         dist_path = get_dist_path(cdn=cdn)
         css_files = resource_types['css']
         theme = self.theme

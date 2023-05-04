@@ -615,7 +615,9 @@ class Resources(BkResources):
 
         files += list(config.js_files.values())
         if config.design:
-            design_resources = config.design.resolve_resources()
+            design_resources = config.design().resolve_resources(
+                cdn=self.notebook or 'auto', include_theme=False
+            )
             files += [
                 res for res in design_resources['js'].values() if res not in files
             ]
@@ -643,7 +645,9 @@ class Resources(BkResources):
         modules = list(config.js_modules.values())
         self.extra_resources(modules, '__javascript_modules__')
         if config.design:
-            design_resources = config.design.resolve_resources()
+            design_resources = config.design().resolve_resources(
+                cdn=self.notebook or 'auto', include_theme=False
+            )
             modules += [
                 res for res in design_resources['js_modules'].values()
                 if res not in modules
