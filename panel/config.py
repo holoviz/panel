@@ -24,7 +24,6 @@ from pyviz_comms import (
 
 from .io.logging import panel_log_handler
 from .io.state import state
-from .theme import Design
 
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
@@ -126,7 +125,7 @@ class _config(_base_config):
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
-    design = param.ClassSelector(class_=Design, is_instance=False, doc="""
+    design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
 
     exception_handler = param.Callable(default=None, doc="""
@@ -645,6 +644,7 @@ class panel_extension(_pyviz_extension):
 
         for k, v in params.items():
             if k == 'design' and isinstance(v, str):
+                from .theme import Design
                 try:
                     importlib.import_module(f'panel.theme.{self._design}')
                 except Exception:

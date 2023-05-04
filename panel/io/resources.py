@@ -18,7 +18,9 @@ from base64 import b64encode
 from collections import OrderedDict
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Literal
+from typing import (
+    TYPE_CHECKING, Dict, List, Literal, TypedDict,
+)
 
 import param
 
@@ -37,6 +39,13 @@ from markupsafe import Markup
 from ..config import config, panel_extension as extension
 from ..util import isurl, url_path
 from .state import state
+
+if TYPE_CHECKING:
+    class ResourcesType(TypedDict):
+        css: Dict[str, str]
+        js:  Dict[str, str]
+        js_modules: Dict[str, str]
+        raw_css: List[str]
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +144,19 @@ def set_resource_mode(mode):
     finally:
         RESOURCE_MODE = old_mode
         _settings.resources.set_value(old_resources)
+
+def use_cdn() -> bool:
+    return _settings.resources(default="server") != 'server'
+
+def get_dist_path(cdn: bool | Literal['auto'] = 'auto') -> str:
+    cdn = use_cdn() if cdn == 'auto' else cdn
+    if cdn:
+        dist_path = CDN_DIST
+    elif state.rel_path:
+        dist_path = f'{state.rel_path}/{LOCAL_DIST}'
+    else:
+        dist_path = f'{LOCAL_DIST}'
+    return dist_path
 
 def process_raw_css(raw_css):
     """
@@ -377,6 +399,91 @@ def bundle_resources(roots, resources, notebook=False, reloading=False):
         js_modules=resources.js_modules,
         notebook=notebook,
     )
+
+
+class ResourceComponent:
+    """
+    Mix-in class for components that define a set of resources
+    that have to be resolved.
+    """
+
+    _resources = {
+        'css': {},
+        'font': {},
+        'js': {},
+        'js_modules': {},
+        'raw_css': [],
+    }
+
+    def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourcesType:
+        """
+        Resolves the resources required for this component.
+
+        Arguments
+        ---------
+        cdn: bool | Literal['auto']
+            Whether to load resources from CDN or local server. If set
+            to 'auto' value will be automatically determine based on
+            global settings.
+
+        Returns
+        -------
+        Dictionary containing JS and CSS resources.
+        """
+        cls = type(self)
+        resources = {}
+        for rt, res in self._resources.items():
+            if not isinstance(res, dict):
+                continue
+            if rt == 'font':
+                rt = 'css'
+            res = {
+                name: url if isurl(url) else f'{cls.__name__.lower()}/{url}'
+                for name, url in res.items()
+            }
+            if rt in resources:
+                resources[rt] = dict(resources[rt], **res)
+            else:
+                resources[rt] = res
+
+        cdn = use_cdn() if cdn == 'auto' else cdn
+        dist_path = get_dist_path(cdn=cdn)
+        resource_types: ResourcesType = {
+            'js': {},
+            'js_modules': {},
+            'css': {},
+            'raw_css': []
+        }
+
+        for resource_type in resource_types:
+            if resource_type not in resources or resource_type == 'raw_css':
+                continue
+            resource_files = resource_types[resource_type]
+            for rname, resource in resources[resource_type].items():
+                if resource.startswith(CDN_DIST):
+                    resource_path = resource.replace(f'{CDN_DIST}bundled/', '')
+                elif resource.startswith(config.npm_cdn):
+                    resource_path = resource.replace(config.npm_cdn, '')[1:]
+                elif resource.startswith('http:'):
+                    resource_path = url_path(resource)
+                else:
+                    resource_path = resource
+
+                if resource_type == 'js_modules' and not (state.rel_path or cdn):
+                    prefixed_dist = f'./{dist_path}'
+                else:
+                    prefixed_dist = dist_path
+
+                bundlepath = BUNDLE_DIR / resource_path.replace('/', os.path.sep)
+                if bundlepath.is_file():
+                    resource_files[rname] = f'{prefixed_dist}bundled/{resource_path}'
+                elif isurl(resource):
+                    resource_files[rname] = resource
+                elif resolve_custom_path(cls, resource):
+                    resource_files[rname] = component_resource_path(
+                        cls, f'_resources/{resource_type}', resource
+                    )
+        return resource_types
 
 
 class Resources(BkResources):
