@@ -174,7 +174,7 @@ class Location(Syncable):
         parameters (list or dict):
           A list or dictionary specifying parameters to sync.
           If a dictionary is supplied it should define a mapping from
-          the Parameterized's parameteres to the names of the query
+          the Parameterized's parameters to the names of the query
           parameters.
         on_error: (callable):
           Callback when syncing Parameterized with URL parameters

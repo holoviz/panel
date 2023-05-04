@@ -1,4 +1,5 @@
 import argparse
+import json
 import pathlib
 import time
 
@@ -42,7 +43,7 @@ class Convert(Subcommand):
         )),
         ('--skip-embed', dict(
             action  = 'store_true',
-            help    = "Whether to skip embedding pre-rendered contennt in the converted file to display content while app is loading.",
+            help    = "Whether to skip embedding pre-rendered content in the converted file to display content while app is loading.",
         )),
         ('--index', dict(
             action  = 'store_true',
@@ -54,7 +55,10 @@ class Convert(Subcommand):
         )),
         ('--requirements', dict(
             nargs   = '+',
-            help    = "Explicit requirements to add to the converted file or a single requirements.txt file. By default requirements are inferred from the code."
+            help    = (
+                "Explicit requirements to add to the converted file, a single requirements.txt file or a "
+                "JSON file containing requirements per app. By default requirements are inferred from the code."
+            )
         )),
         ('--disable-http-patch', dict(
             default = False,
@@ -83,10 +87,14 @@ class Convert(Subcommand):
         if (
             isinstance(requirements, list) and
             len(requirements) == 1 and
-            pathlib.Path(requirements[0]).is_file() and
-            requirements[0].endswith('.txt')
+            pathlib.Path(requirements[0]).is_file()
         ):
-            requirements = requirements[0]
+            req = requirements[0]
+            if req.endswith('.txt'):
+                requirements = requirements[0]
+            elif req.endswith('.json'):
+                with open(req, encoding='utf-8') as req_file:
+                    requirements = json.load(req_file)
         prev_hashes = {}
         built = False
         while True:

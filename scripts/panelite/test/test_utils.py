@@ -5,7 +5,7 @@ from scripts.test_panelite.utils import MaxRetriesExceeded, Retrier
 
 def test_retrier_no_exception():
     retrier = Retrier(retries=3)
-    while not retrier.acomplished:
+    while not retrier.accomplished:
         with retrier:
             pass
 
@@ -14,7 +14,7 @@ def test_retrier_no_exception():
 def test_retrier_exception():
     retrier = Retrier(retries=2, delay=0)
     with pytest.raises(MaxRetriesExceeded):
-        while not retrier.acomplished:
+        while not retrier.accomplished:
             with retrier:
                 raise ValueError
 

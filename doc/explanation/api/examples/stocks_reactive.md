@@ -1,4 +1,4 @@
-# Stock Explorer - Declarative API
+# Stock Explorer - Reactive API
 
 Before launching into the application code we will first declare some components of the app that will be shared, including the title of the app, a set of stock tickers, a function to return a dataframe given the stock ``ticker`` and the rolling mean ``window_size``, and another function to return a plot given those same inputs:
 
@@ -53,30 +53,17 @@ plot_fns = {
 This example demonstrates how APIs in Panel differ, to see the same app implemented using a different API visit:
 
 - [Callback API](stocks_callbacks)
-- [Interact API](stocks_interact)
-- [Reactive API](stocks_reactive)
+- [Declarative API](stocks_declarative)
 
-The declarative API expresses the app entirely as a single ``Parameterized`` class with parameters to declare the inputs, rather than explicit widgets. The parameters are independent of any GUI code, which can be important for maintaining large codebases, with parameters and functionality defined separately from any GUI or panel code. Once again the ``depends`` decorator is used to express the dependencies, but in this case the dependencies are expressed as strings referencing class parameters, not parameters of widgets. The parameters and the ``plot`` method can then be laid out independently, with Panel used only for this very last step.
+The reactive programming model relies on the user (a) explicitly instantiating widgets, (b) declaring how those widgets relate to the function arguments (using the ``bind`` function), and (c) laying out the widgets and other components explicitly. In principle we could reuse the ``get_plot`` function from above here but for clarity we will repeat it:
 
 ```{pyodide}
-import param
-
-class StockExplorer(param.Parameterized):
-
-    backend = param.Selector(objects=plot_fns)
-
-    ticker = param.Selector(objects=tickers)
-
-    window_size = param.Integer(default=6, bounds=(1, 21))
-
-    @param.depends('backend', 'ticker', 'window_size')
-    def plot(self):
-        return self.backend(self.ticker, self.window_size)
-
-explorer = StockExplorer()
+backend = pn.widgets.Select(name='Backend', options=plot_fns)
+ticker = pn.widgets.Select(name='Ticker', options=tickers)
+window = pn.widgets.IntSlider(name='Window Size', value=6, start=1, end=51, step=5)
 
 pn.Row(
-    pn.Column(explorer.param),
-    pn.panel(explorer.plot, sizing_mode='stretch_width'),
+    pn.Column(backend, ticker, window),
+    pn.panel(pn.bind(backend, ticker, window), sizing_mode='stretch_width')
 ).servable()
 ```

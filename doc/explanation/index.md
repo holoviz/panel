@@ -9,11 +9,11 @@ Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1 sd-animate-grow50` API context
-:link: api/api_context
+:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1 sd-animate-grow50` API context
+:link: api/index
 :link-type: doc
 
-Learn why there are multiple Panel APIs.
+Learn the pros and cons of Panel's different APIs.
 :::
 
 ::::
@@ -131,7 +131,7 @@ Learn about why Panel utilizes the Bokeh library.
 :::
 
 :::{grid-item-card} Panel vs. Voila
-:link: comparisons/compare_js
+:link: comparisons/compare_voila
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/voila_logo.webp
@@ -155,7 +155,7 @@ Learn about why Panel utilizes the Bokeh library.
 :::
 
 :::{grid-item-card} Panel vs. JavaScript
-:link: comparisons/compare_voila
+:link: comparisons/compare_js
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/JavaScript_logo.png

@@ -21,6 +21,7 @@ import weakref
 from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
+from html import escape
 from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union,
@@ -38,14 +39,14 @@ from bokeh.application.handlers.code import (
     CodeHandler, _monkeypatch_io, patch_curdoc,
 )
 from bokeh.application.handlers.function import FunctionHandler
-from bokeh.core.templates import AUTOLOAD_JS, FILE
+from bokeh.core.json_encoder import serialize_json
+from bokeh.core.templates import AUTOLOAD_JS, FILE, MACROS
 from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.embed.bundle import Script
-from bokeh.embed.elements import (
-    html_page_for_render_items, script_for_render_items,
-)
+from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem
+from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.io import curdoc
 from bokeh.models import CustomJS
 from bokeh.server.server import Server as BokehServer
@@ -55,6 +56,7 @@ from bokeh.server.views.autoload_js_handler import (
 )
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.static_handler import StaticHandler
+from bokeh.util.serialization import make_id
 from bokeh.util.token import (
     generate_jwt_token, generate_session_id, get_token_payload,
 )
@@ -86,7 +88,9 @@ from .state import set_curdoc, state
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from bokeh.document import Document
+    from bokeh.bundle import Bundle
+    from bokeh.core.types import ID
+    from bokeh.document.document import DocJson, Document
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.session import ServerSession
     from jinja2 import Template
@@ -103,6 +107,7 @@ if TYPE_CHECKING:
 #---------------------------------------------------------------------
 
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
+DEFAULT_TITLE = "Panel Application"
 
 def _origin_url(url: str) -> str:
     if url.startswith("http"):
@@ -206,6 +211,69 @@ state.on_session_created(_initialize_session_info)
 # Bokeh patches
 #---------------------------------------------------------------------
 
+
+def html_page_for_render_items(
+    bundle: Bundle | tuple[str, str], docs_json: dict[ID, DocJson],
+    render_items: list[RenderItem], title: str, template: Template | str | None = None,
+    template_variables: dict[str, Any] = {}
+) -> str:
+    """
+    Render an HTML page from a template and Bokeh render items.
+
+    Arguments
+    ---------
+    bundle (tuple):
+        A tuple containing (bokehjs, bokehcss)
+    docs_json (JSON-like):
+        Serialized Bokeh Document
+    render_items (RenderItems)
+        Specific items to render from the document and where
+    title (str or None)
+        A title for the HTML page. If None, DEFAULT_TITLE is used
+    template (str or Template or None, optional) :
+        A Template to be used for the HTML page. If None, FILE is used.
+    template_variables (dict, optional):
+        Any Additional variables to pass to the template
+
+    Returns
+    -------
+    str
+    """
+    if title is None:
+        title = DEFAULT_TITLE
+
+    bokeh_js, bokeh_css = bundle
+
+    json_id = make_id()
+    json = escape(serialize_json(docs_json), quote=False)
+    json = wrap_in_script_tag(json, "application/json", json_id)
+
+    script = wrap_in_script_tag(script_for_render_items(json_id, render_items))
+
+    context = template_variables.copy()
+
+    context.update(dict(
+        title = title,
+        bokeh_js = bokeh_js,
+        bokeh_css = bokeh_css,
+        plot_script = json + script,
+        docs = render_items,
+        base = BASE_TEMPLATE,
+        macros = MACROS,
+    ))
+
+    if len(render_items) == 1:
+        context["doc"] = context["docs"][0]
+        context["roots"] = context["doc"].roots
+
+    if template is None:
+        template = BASE_TEMPLATE
+    elif isinstance(template, str):
+        template = _env.from_string("{% extends base %}\n" + template)
+
+    html = template.render(context)
+    return html
+
 def server_html_page_for_session(
     session: 'ServerSession',
     resources: 'Resources',
@@ -221,9 +289,6 @@ def server_html_page_for_session(
     else:
         dist_url = CDN_DIST
 
-    if template is FILE:
-        template = BASE_TEMPLATE
-
     doc = session.document
     doc._template_variables['theme_name'] = config.theme
     doc._template_variables['dist_url'] = dist_url
@@ -238,6 +303,9 @@ def server_html_page_for_session(
 
     if template_variables is None:
         template_variables = {}
+
+    if template is FILE:
+        template = BASE_TEMPLATE
 
     with set_curdoc(doc):
         bundle = bundle_resources(doc.roots, resources)
@@ -932,7 +1000,7 @@ def get_server(
                     title_ = title[slug]
                 except KeyError:
                     raise KeyError(
-                        "Keys of the title dictionnary and of the apps "
+                        "Keys of the title dictionary and of the apps "
                         f"dictionary must match. No {slug} key found in the "
                         "title dictionary.")
             else:

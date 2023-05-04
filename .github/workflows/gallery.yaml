@@ -72,4 +72,4 @@ jobs:
           ae5 deployment stop panel-gallery --yes || :
           ae5 project delete panel-gallery --yes || :
           ae5 project upload examples/gallery --name panel-gallery --tag ${{ steps.vars.outputs.tag }}
-          ae5 deployment start panel-gallery-dev --endpoint panel-gallery --command default --public --command default --resource-profile extra-large --wait
+          ae5 deployment start panel-gallery --endpoint panel-gallery --command default --public --command default --resource-profile extra-large --wait

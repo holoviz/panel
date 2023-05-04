@@ -22,7 +22,7 @@ from typing import (
 
 import param
 
-from param.parameterized import classlist, discard_events
+from param.parameterized import classlist, discard_events, iscoroutinefunction
 
 from .config import config
 from .io import state
@@ -917,7 +917,7 @@ class ParamFunction(ParamMethod):
     def _link_object_params(self):
         deps = getattr(self.object, '_dinfo', {})
         dep_params = list(deps.get('dependencies', [])) + list(deps.get('kw', {}).values())
-        if not dep_params and not self.lazy and not self.defer_load:
+        if not dep_params and not self.lazy and not self.defer_load and not iscoroutinefunction(self.object):
             fn = getattr(self.object, '__bound_function__', self.object)
             fn_name = getattr(fn, '__name__', repr(self.object))
             self.param.warning(
@@ -952,7 +952,11 @@ class ParamFunction(ParamMethod):
         if isinstance(obj, types.FunctionType):
             if hasattr(obj, '_dinfo'):
                 return True
-            if kwargs.get('defer_load') or (cls.param.defer_load.default is None and config.defer_load):
+            if (
+                kwargs.get('defer_load') or
+                (cls.param.defer_load.default is None and config.defer_load) or
+                iscoroutinefunction(obj)
+            ):
                 return True
             return None
         return False
@@ -985,7 +989,7 @@ class JSONInit(param.Parameterized):
         Optional path to a JSON file containing the parameter settings.""")
 
     def __call__(self, parameterized):
-        warnobj = param.main if isinstance(parameterized, type) else parameterized
+        warnobj = param.main.param if isinstance(parameterized, type) else parameterized.param
         param_class = (parameterized if isinstance(parameterized, type)
                        else parameterized.__class__)
 

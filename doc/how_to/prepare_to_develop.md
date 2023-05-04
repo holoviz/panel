@@ -10,6 +10,7 @@
 :hidden:
 :maxdepth: 1
 
-Develop in a notebook or editor<display/index>
+Develop in a notebook<notebook/index>
+Develop in an editor<editor/index>
 Choose an API<apis/index>
 ```

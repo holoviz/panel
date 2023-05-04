@@ -41,6 +41,7 @@
     margin-bottom: auto;
     margin-top: auto;
     position: relative !important;
+    max-width: calc(100% - 2em);
 }
 
 .card-title {

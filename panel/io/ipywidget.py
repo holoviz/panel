@@ -24,6 +24,18 @@ from tornado.ioloop import IOLoop
 from ..util import classproperty
 from .state import set_curdoc, state
 
+try:
+    # Support for ipywidgets>=8.0.5
+    import comm
+
+    from comm.base_comm import BaseComm
+
+    class DummyComm(BaseComm):
+        def publish_msg(self, *args, **kwargs): pass
+
+    comm.create_comm = lambda *args, **kwargs: DummyComm(target_name='panel-temp-comm', primary=False)
+except Exception:
+    pass
 
 def _get_kernel(cls=None, doc=None):
     doc = doc or state.curdoc
@@ -48,9 +60,10 @@ def _on_widget_constructed(widget, doc=None):
         return
     widget._document = doc
     kernel = _get_kernel(doc=doc)
-    if widget.comm and isinstance(widget.comm.kernel, PanelKernel):
+    if widget.comm and widget.comm.target_name != 'panel-temp-comm' and isinstance(widget.comm.kernel, PanelKernel):
         return
     args = dict(
+        kernel=kernel,
         target_name='jupyter.widget', data={}, buffers=[],
         metadata={'version': __protocol_version__}
     )
@@ -138,7 +151,7 @@ class PanelSessionWebsocket(SessionWebsocket):
             for event in self._queue:
                 self._document.callbacks.trigger_on_change(event)
         except Exception as e:
-            param.main.warning(f'ipywidgets event dispatch failed with: {e}')
+            param.main.param.warning(f'ipywidgets event dispatch failed with: {e}')
         finally:
             self._queue = []
 

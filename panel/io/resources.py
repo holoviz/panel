@@ -307,7 +307,7 @@ def bundled_files(model, file_type='javascript'):
             files.append(url)
     return files
 
-def bundle_resources(roots, resources, notebook=False):
+def bundle_resources(roots, resources, notebook=False, reloading=False):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
     if not isinstance(resources, Resources):
@@ -327,8 +327,12 @@ def bundle_resources(roots, resources, notebook=False):
             js_resources = js_resources.clone()
             if not use_mathjax and "bokeh-mathjax" in js_resources.components:
                 js_resources.components.remove("bokeh-mathjax")
+            if reloading:
+                js_resources.components.clear()
         else:
             js_resources = copy.deepcopy(js_resources)
+            if reloading:
+                js_resources.js_components.clear()
             if not use_mathjax and "bokeh-mathjax" in js_resources.js_components:
                 js_resources.js_components.remove("bokeh-mathjax")
 
@@ -339,6 +343,10 @@ def bundle_resources(roots, resources, notebook=False):
     css_raw.extend(css_resources.css_raw)
 
     extensions = _bundle_extensions(None, js_resources)
+    if reloading:
+        extensions = [
+            ext for ext in extensions if not ext.cdn_url.startswith('https://unpkg.com/@holoviz/panel@')
+        ]
     extra_js = []
     if mode == "inline":
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
@@ -360,10 +368,14 @@ def bundle_resources(roots, resources, notebook=False):
 
     hashes = js_resources.hashes if js_resources else {}
     return Bundle(
-        css_files=css_files, css_raw=css_raw, hashes=hashes,
-        js_files=js_files, js_raw=js_raw,
+        css_files=css_files,
+        css_raw=css_raw,
+        hashes=hashes,
+        js_files=js_files,
+        js_raw=js_raw,
         js_module_exports=resources.js_module_exports,
-        js_modules=resources.js_modules, notebook=notebook,
+        js_modules=resources.js_modules,
+        notebook=notebook,
     )
 
 

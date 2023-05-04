@@ -1223,7 +1223,7 @@ def test_tabulator_header_filter_always_visible(page, port, df_mixed):
 
 @pytest.mark.parametrize('theme', Tabulator.param['theme'].objects)
 def test_tabulator_theming(page, port, df_mixed, df_mixed_as_string, theme):
-    # Subscribe the reponse events to check that the CSS is loaded
+    # Subscribe the response events to check that the CSS is loaded
     responses = []
     page.on("response", lambda response: responses.append(response))
     widget = Tabulator(df_mixed, theme=theme)
@@ -1330,7 +1330,7 @@ def test_tabulator_selection_selectable_ctrl(page, port, df_mixed):
     c0 = page.locator('text="idx0"')
     c0.wait_for()
     c0.click()
-    # Click on the thrid row with CTRL pressed should add that row to the selection
+    # Click on the third row with CTRL pressed should add that row to the selection
     modifier = get_ctrl_modifier()
     page.locator("text=idx2").click(modifiers=[modifier])
     expected_selection = [0, 2]
@@ -1369,7 +1369,7 @@ def test_tabulator_selection_selectable_shift(page, port, df_mixed):
     c0 = page.locator('text="idx0"')
     c0.wait_for()
     c0.click()
-    # Click on the thrid row with SHIFT pressed should select the 2nd row too
+    # Click on the third row with SHIFT pressed should select the 2nd row too
     page.locator("text=idx2").click(modifiers=['Shift'])
     expected_selection = [0, 1, 2]
     wait_until(lambda: widget.selection == expected_selection, page)
@@ -2177,7 +2177,7 @@ def test_tabulator_header_filters_init_explicitly(page, port, df_mixed):
 
     page.goto(f"http://localhost:{port}")
 
-    # Check that only the columns explicitely given a header filter spec have a header filter
+    # Check that only the columns explicitly given a header filter spec have a header filter
     expect(page.locator('.tabulator-header-filter')).to_have_count(len(header_filters))
 
     number_header = page.locator('input[type="number"]')

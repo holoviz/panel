@@ -93,7 +93,7 @@ export class CardView extends ColumnView {
         this.shadow_el.appendChild(child_view.el)
     }
     this.button_el.children[0].innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
-
+    this.invalidate_layout()
   }
 
   protected _createElement(): HTMLElement {

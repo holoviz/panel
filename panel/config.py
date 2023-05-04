@@ -65,7 +65,7 @@ class _base_config(param.Parameterized):
         name to the URL of the JS file.""")
 
     js_modules = param.Dict(default={}, doc="""
-        External JS fils to load as modules. Dictionary should map from
+        External JS files to load as modules. Dictionary should map from
         exported name to the URL of the JS file.""")
 
     raw_css = param.List(default=[], doc="""
@@ -137,7 +137,7 @@ class _config(_base_config):
 
     layout_compatibility = param.Selector(default='warn', objects=['warn', 'error'], doc="""
         Provide compatibility for older layout specifications. Incompatible
-        specifications will triger warnings by default but can be set to error.
+        specifications will trigger warnings by default but can be set to error.
         Compatibility to be set to error by default in Panel 1.1.""")
 
     load_entry_points = param.Boolean(default=True, doc="""
@@ -250,11 +250,11 @@ class _config(_base_config):
 
     _basic_auth = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
-        Use Basic authentification.""")
+        Use Basic authentication.""")
 
     _oauth_provider = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
-        Select between a list of authentification providers.""")
+        Select between a list of authentication providers.""")
 
     _oauth_expiry = param.Number(default=1, bounds=(0, None), doc="""
         Expiry of the OAuth cookie in number of days.""")
@@ -618,6 +618,7 @@ class panel_extension(_pyviz_extension):
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
         }
+        newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if state.curdoc and state.curdoc not in state._extensions_:
             state._extensions_[state.curdoc] = []
         for arg in args:
@@ -662,7 +663,8 @@ class panel_extension(_pyviz_extension):
                     raise ValueError('%s should be supplied as a list, '
                                      'not as a %s type.' %
                                      (k, type(v).__name__))
-                getattr(config, k).extend(v)
+                existing = getattr(config, k)
+                existing.extend([new for new in v if new not in existing])
             elif k == 'js_files':
                 getattr(config, k).update(v)
             else:
@@ -694,6 +696,9 @@ class panel_extension(_pyviz_extension):
             else:
                 hv.Store.current_backend = backend
 
+        if config.load_entry_points:
+            self._load_entry_points()
+
         # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
@@ -704,31 +709,7 @@ class panel_extension(_pyviz_extension):
 
         self._detect_comms(params)
 
-        newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
-        custom_resources = [
-            resource for resource in ('css_files', 'js_files', 'js_modules', 'raw_css')
-            if getattr(config, resource)
-        ]
-        if loaded and newly_loaded:
-            self.param.warning(
-                "A HoloViz extension was loaded previously. This means "
-                "the extension is already initialized and the following "
-                f"Panel extensions could not be properly loaded: {newly_loaded}."
-                "If you are loading custom extensions with pn.extension(...) "
-                "ensure that this is called before any other HoloViz "
-                "extension such as hvPlot or HoloViews."
-            )
-        elif loaded and custom_resources:
-            resources_string = ', '.join(custom_resources)
-            self.param.warning(
-                "A HoloViz extension was loaded previously. This means the "
-                f"extension is already initialized and custom {resources_string} "
-                "resources could not be loaded. If you are loading custom "
-                "extensions with pn.extension(...) ensure that this is called"
-                "before any other HoloViz extension such as hvPlot or HoloViews."
-            )
-        else:
-            panel_extension._loaded_extensions += newly_loaded
+        panel_extension._loaded_extensions += newly_loaded
 
         if hasattr(ip, 'kernel') and not self._loaded and not config._doc_build:
             # TODO: JLab extension and pyviz_comms should be changed
@@ -754,21 +735,20 @@ class panel_extension(_pyviz_extension):
         # Disable simple ids, old state and multiple tabs in notebooks can cause IDs to clash
         bk_settings.simple_ids.set_value(False)
 
-        if not nb_loaded and hasattr(ip, 'kernel'):
-            load_notebook(config.inline)
+        if hasattr(ip, 'kernel'):
+            load_notebook(
+                config.inline, reloading=nb_loaded
+            )
         panel_extension._loaded = True
 
-        if config.browser_info and state.browser_info:
+        if not nb_loaded and config.browser_info and state.browser_info:
             doc = Document()
             comm = state._comm_manager.get_server_comm()
             model = state.browser_info._render_model(doc, comm)
             bundle, meta = state.browser_info._render_mimebundle(model, doc, comm)
             display(bundle, metadata=meta, raw=True)  # noqa
-        if config.notifications:
+        if not nb_loaded and config.notifications:
             display(state.notifications)  # noqa
-
-        if config.load_entry_points:
-            self._load_entry_points()
 
     def _detect_comms(self, params):
         called_before = self._comms_detected_before

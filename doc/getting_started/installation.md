@@ -6,7 +6,7 @@
 [![License badge](https://img.shields.io/pypi/l/panel.svg)](https://github.com/holoviz/panel/blob/main/LICENSE.txt)
 ## Setup
 
-Panel works with Python 3.7 - 3.10 on Linux, Windows, and Mac.
+Panel works with Python 3.8 or later on Linux, Windows, and Mac.
 
 The recommended way to install Panel is using the [conda](https://docs.conda.io/projects/conda/en/latest/index.html) command that is included in the installation of [Anaconda or Miniconda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html). Completing the installation for either Anaconda or Miniconda will also install Python.
 

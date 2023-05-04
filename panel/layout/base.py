@@ -188,7 +188,7 @@ class Panel(Reactive):
           responsive.
         - If a container is horizontal (e.g. a Row) and all children
           are responsive in height then the container should also be
-          responsive. This behavior is assymetrical with height
+          responsive. This behavior is asymmetrical with height
           because there isn't always vertical space to expand into
           and it is better for the component to match the height of
           the other children.

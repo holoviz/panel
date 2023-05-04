@@ -32,6 +32,12 @@ repos:
     hooks:
       - id: clean-notebook
         args: [-i, tags]
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.2.4
+  hooks:
+  - id: codespell
+    additional_dependencies:
+      - tomli
 ci:
   autofix_prs: false
   autoupdate_schedule: quarterly

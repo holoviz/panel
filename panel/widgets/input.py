@@ -480,7 +480,7 @@ class DatetimeRangePicker(_DatetimePickerBase):
 
 class ColorPicker(Widget):
     """
-    The `ColorPicker` widget allows selecting a hexidecimal RGB color value
+    The `ColorPicker` widget allows selecting a hexadecimal RGB color value
     using the browser’s color-picking widget.
 
     Reference: https://panel.holoviz.org/reference/widgets/ColorPicker.html

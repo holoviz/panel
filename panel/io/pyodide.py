@@ -225,7 +225,7 @@ def _process_document_events(doc: Document, events: List[Any]):
 
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
-    Links Python and JS documents in Pyodide ensuring taht messages
+    Links Python and JS documents in Pyodide ensuring that messages
     are passed between them.
 
     Arguments
@@ -435,7 +435,7 @@ async def write(target: str, obj: Any) -> None:
     obj = as_panel(obj)
     pydoc, model_json = _model_json(obj, target)
     views = await Bokeh.embed.embed_item(JSON.parse(model_json))
-    jsdoc = views[0].model.document
+    jsdoc = list(views.roots)[0].model.document
     _link_docs(pydoc, jsdoc)
     pydoc.unhold()
 
@@ -501,7 +501,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
     # If we have DOM access render and sync the document
     if root_els is not None:
         views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
-        jsdoc = list(views[0].roots.values())[0].model.document
+        jsdoc = list(views[0].roots)[0].model.document
         _link_docs(pydoc, jsdoc)
         sync_location()
         hide_loader()

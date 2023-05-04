@@ -25,6 +25,8 @@ PANEL_ROOT = pathlib.Path(panel.__file__).parent
 version = release = base_version(panel.__version__)
 js_version = json.loads((PANEL_ROOT / 'package.json').read_text())['version']
 
+is_dev = any(ext in version for ext in ('a', 'b', 'rc'))
+
 # For the interactivity warning box created by nbsite to point to the right
 # git tag instead of the default i.e. main.
 os.environ['BRANCH'] = f"v{release}"
@@ -76,6 +78,14 @@ napoleon_numpy_docstring = True
 
 myst_enable_extensions = ["colon_fence", "deflist"]
 
+gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
+
+if not is_dev:
+    jlite_url = 'https://panelite.holoviz.org/lab/index.html'
+else:
+    jlite_url = 'https://pyviz-dev.github.io/panelite-dev'
+
+
 nbsite_gallery_conf = {
     'github_org': 'holoviz',
     'github_project': 'panel',
@@ -101,8 +111,8 @@ nbsite_gallery_conf = {
         }
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
-    'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/',
-    'jupyterlite_url': 'https://panelite.holoviz.org/lab/index.html'
+    'deployment_url': f'https://{gallery_endpoint}.pyviz.demo.anaconda.com/',
+    'jupyterlite_url': jlite_url,
 }
 
 if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
@@ -113,17 +123,26 @@ else:
     panel_req = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
     bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
+def get_requirements():
+    with open('pyodide_dependencies.json') as deps:
+        dependencies = json.load(deps)
+    requirements = {}
+    for name, deps in dependencies.items():
+        if deps is None:
+            continue
+        name = name.replace('.ipynb', '').replace('.md', '')
+        # Temporary patches
+        if 'hvplot' in deps:
+            deps.append('holoviews')
+        if 'holoviews' in deps:
+            deps[deps.index('holoviews')] = 'holoviews>=1.16.0a7'
+        requirements[name] = deps
+    return requirements
+
 nbsite_pyodide_conf = {
     'PYODIDE_URL': 'https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js',
-    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.16.0a5'],
-    'requires': {
-        'gallery/hvplot_explorer': ['scipy'],
-        'gallery/penguin_crossfilter': ['scipy'],
-        'gallery/windturbines': ['fastparquet'],
-        'reference/layouts/Swipe': ['scipy'],
-        'reference/panes/Audio': ['scipy'],
-        'reference/panes/HoloViews': ['scipy'],
-    }
+    'requirements': [bokeh_req, panel_req, 'pyodide-http'],
+    'requires': get_requirements()
 }
 
 templates_path = [
@@ -142,4 +161,26 @@ nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 # Override the Sphinx default title that appends `documentation`
 html_title = f'{project} v{version}'
 
-suppress_warnings = ["myst.header", "ref.myst", "mystnb.unknown_mime_type"]
+
+
+# Patching GridItemCardDirective to be able to substitute the domain name
+# in the link option.
+from sphinx_design.grids import GridItemCardDirective  # noqa
+
+orig_run = GridItemCardDirective.run
+
+def patched_run(self):
+    app = self.state.document.settings.env.app
+    existing_link = self.options.get('link')
+    domain = getattr(app.config, 'grid_item_link_domain', None)
+    if existing_link and domain:
+        new_link = existing_link.replace('|gallery-endpoint|', domain)
+        self.options['link'] = new_link
+    return list(orig_run(self))
+
+GridItemCardDirective.run = patched_run
+
+def setup(app) -> None:
+    app.add_config_value('grid_item_link_domain', '', 'html')
+
+grid_item_link_domain = gallery_endpoint

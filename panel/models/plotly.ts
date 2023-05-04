@@ -38,7 +38,7 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
         /*
          * remove `data`, `layout`, `xaxis`, etc
          * objects from the event data since they're so big
-         * and cause JSON stringify ciricular structure errors.
+         * and cause JSON stringify circular structure errors.
          *
          * also, pull down the `customdata` point from the data array
          * into the event object

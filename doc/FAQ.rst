@@ -43,7 +43,7 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 
 **Q: Why is my object being shown using the wrong type of pane?**
 
-**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. For instance, if ``obj`` is "# Some text", it be displayed as a ``pn.Str``, ``pn.HTML``, or ``pn.Markdown``, all of which can render a Python string like that.  By default, something like ``pn.Row(obj)`` will select a Markdown pane for the obj, because Markdown has a higher precendence than the other options.  If you want to override the default pane type selected, you can specify the precise Pane type you wish, as in ``pn.Row(pane.Str("# Some text"))``, which also allows you to pass in options like ``pn.Row(pane.Str("# Some text", height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can invoke the ``pn.panel`` function to create a defauot pane with the supplied arguments, as in  ``pn.Row(pn.panel(obj, height=300))``.
+**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. For instance, if ``obj`` is "# Some text", it be displayed as a ``pn.Str``, ``pn.HTML``, or ``pn.Markdown``, all of which can render a Python string like that.  By default, something like ``pn.Row(obj)`` will select a Markdown pane for the obj, because Markdown has a higher precedence than the other options.  If you want to override the default pane type selected, you can specify the precise Pane type you wish, as in ``pn.Row(pane.Str("# Some text"))``, which also allows you to pass in options like ``pn.Row(pane.Str("# Some text", height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can invoke the ``pn.panel`` function to create a defauot pane with the supplied arguments, as in  ``pn.Row(pn.panel(obj, height=300))``.
 
 
 **Q: For Matplotlib plots in a notebook, why do I get no plot, two plots, or plots that fail to update?**
@@ -51,22 +51,20 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 **A:** The Matplotlib pyplot interface behaves in a way that is not easily compatible with Panel in a notebook. Normal Python objects like Python literals and containers display when they are returned as a cell's value, but Matplotlib figures created using pyplot have a textual representation by default but then (depending on the Matplotlib backend and IPython configuration) also display like print statements do, i.e. with a plot as a side effect rather than as a representation of the return value. To force predictable Panel-compatible behavior we therefore recommend using the object-oriented API:
 
 1. Create a figure object explicitly using ``from matplotlib.figure import Figure``
-2. In versions of matplotlib < 3.1 use ``from matplotlib.backends.backend_agg import FigureCanvas`` to initialize a canvas
-3. Return the figure in your callback.
+2. Return the figure in your callback.
 
 As an example creating a simple plot might look like this::
 
     fig = Figure(figsize=(10, 6))
-    FigureCanvas(fig) # not needed if Matplotlib >= 3.1
     ax = fig.subplots()
     ax.plot([1, 2, 3])
     pn.pane.Matplotlib(fig)
 
 When using the pandas plotting API we create the figure and axes in the same way as before but then pass the axis to the plotting call::
 
-    df.plot([1, 2, 3], ax=ax)
+    df = pd.DataFrame({"x": [1, 2, 3])
+    df.plot(ax=ax)
     pn.pane.Matplotlib(fig)
-
 
 **Q: How do I debug error messages in a notebook?**
 
