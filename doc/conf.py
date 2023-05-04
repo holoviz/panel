@@ -135,16 +135,16 @@ def get_requirements():
         if deps is None:
             continue
         name = name.replace('.ipynb', '').replace('.md', '')
-        # Temporary patches
-        if 'hvplot' in deps:
-            deps.append('holoviews')
-        if 'holoviews' in deps:
-            deps[deps.index('holoviews')] = 'holoviews>=1.16.0a7'
+        # Temporary patch for HoloViews
+        if any('holoviews' in req for req in deps):
+            reqs = ['holoviews>=1.16.0a7' if 'holoviews' in req else req for req in deps]
+        elif any('hvplot' in req for req in deps):
+            deps.insert(2, 'holoviews>=1.16.0a7')
         requirements[name] = deps
     return requirements
 
 nbsite_pyodide_conf = {
-    'PYODIDE_URL': 'https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js',
+    'PYODIDE_URL': 'https://cdn.jsdelivr.net/pyodide/v0.23.1/full/pyodide.js',
     'requirements': [bokeh_req, panel_req, 'pyodide-http'],
     'requires': get_requirements()
 }
