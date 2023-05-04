@@ -644,7 +644,7 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
             if isinstance(res, dict):
                 resource_types[rname].update(res)
             else:
-                resource_types[rname] = [
+                resource_types[rname] += [
                     r for r in res if res not in resource_types[rname]
                 ]
 
