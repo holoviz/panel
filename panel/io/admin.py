@@ -14,7 +14,7 @@ import param
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
-from ..config import config
+from ..config import config, panel_extension as extension
 from ..depends import bind
 from ..layout import (
     Accordion, Column, FlexBox, Row, Tabs,
@@ -452,6 +452,7 @@ def log_component():
     )
 
 def admin_template(doc):
+    extension('tabulator', 'terminal')
     log_sessions.append(id(doc))
     def _remove_log_session(session_context):
         log_sessions.remove(id(doc))

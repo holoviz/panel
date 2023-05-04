@@ -8,11 +8,18 @@ The Panel How-to guides provide step by step recipes for solving essential probl
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1 sd-animate-grow50` Develop in a notebook or editor
-:link: display/index
+:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1 sd-animate-grow50` Develop in a notebook
+:link: notebook/index
 :link-type: doc
 
-How to effectively develop apps in your favorite notebook or code editor environment.
+How to effectively develop apps in a notebook environment.
+:::
+
+:::{grid-item-card} {octicon}`file-code;2.5em;sd-mr-1 sd-animate-grow50` Develop in an editor
+:link: editor/index
+:link-type: doc
+
+How to effectively develop apps in a Python or Markdown file.
 :::
 
 ::::

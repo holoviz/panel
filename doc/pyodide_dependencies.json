@@ -23,6 +23,7 @@
   "how_to/authentication/providers.md": null,
   "how_to/authentication/user_info.md": null,
   "how_to/caching/manual.md": null,
+  "how_to/callbacks/async.md": ["aiohttp"],
   "how_to/callbacks/schedule.md": null,
   "how_to/callbacks/server.md": null,
   "how_to/callbacks/session.md": null,

@@ -16,7 +16,7 @@ width: 125
 :gutter: 1
 
 :::{grid-item-card} Portfolio Optimizer
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_optimizer
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
@@ -24,7 +24,7 @@ width: 125
 :::
 
 :::{grid-item-card} MRI Cross-sections
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtk_slicer
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/vtk_slicer
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/vtk_slicer.png
@@ -32,7 +32,7 @@ width: 125
 :::
 
 :::{grid-item-card} Videostream
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
@@ -40,7 +40,7 @@ width: 125
 :::
 
 :::{grid-item-card} Crossfiltering
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/penguin_crossfilter
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
@@ -48,7 +48,7 @@ width: 125
 :::
 
 :::{grid-item-card} Portfolio Analyzer
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_analyzer
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_analyzer
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png

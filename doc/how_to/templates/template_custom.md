@@ -64,7 +64,7 @@ In this case we will extend the postamble block of the header to load some addit
 template = """
 {% extends base %}
 
-<!-- goes in body -->
+<!-- goes in head -->
 {% block postamble %}
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 {% endblock %}

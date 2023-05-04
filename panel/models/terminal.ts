@@ -3,7 +3,7 @@ import { div } from "@bokehjs/core/dom"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {Attrs} from "@bokehjs/core/types"
 
-import {HTMLBox, HTMLBoxView} from "./layout"
+import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
 
 export class KeystrokeEvent extends ModelEvent {
@@ -36,7 +36,7 @@ export class TerminalView extends HTMLBoxView {
   render(): void {
     super.render()
     this.container = div({class: "terminal-container"})
-    //set_size(this.container, this.model)
+    set_size(this.container, this.model)
 
     this.term = this.getNewTerminal()
     this.term.onData((value: any) => {
