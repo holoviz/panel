@@ -20,6 +20,8 @@ We now want to create select widgets for the column `species` and a slider for `
 ```{pyodide}
 import panel as pn
 
+pn.extension('tabulator')
+
 species_widget = pn.widgets.Select(name="species", options=["Adelie", "Gentoo", "Chinstrap"])
 year_widget = pn.widgets.IntSlider(name="year", start=2007, end=2009)
 ```
@@ -44,8 +46,6 @@ idf.hvplot(kind="scatter", x="bill_length_mm", y="bill_depth_mm", by="sex")
 However we can also use bind the interactive pipeline we have built to a Panel component, e.g. a `Tabulator` widget:
 
 ```{pyodide}
-pn.extension('tabulator')
-
 pn.Row(
     idf.widgets(),
     pn.widgets.Tabulator(idf, page_size=10, pagination='remote'),
