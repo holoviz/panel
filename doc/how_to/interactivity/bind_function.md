@@ -1,13 +1,12 @@
-# Make your functions interactive
+# Add interactivity to a function
 
-This guide addresses how to make your functions interactive by binding them to widgets. This is done with the use of `pn.bind`, which binds a function or method to the value of a widget.
+This guide addresses how to make your functions interactive by binding widgets to them. This is done with the use of `pn.bind`, which binds a function or method to the value of a widget.
 
 ---
 
-## Bind a widget to a function
-Making a function interactive is easy to do in Panel. First, you need a function, then create widgets, and finally,  bind the widgets to the function.
+The recommended approach to adding interactivity to your applications is by writing reactive functions or method. To discover how to write one of these first, we need a function.
 
-First, let's create a function; this function takes an argument `number` and will return a string of stars equal to the number:
+Let's start by creating a function. The function takes an argument `number` and will return a string of stars equal to the number:
 
 ```{pyodide}
 def star_creator(number):
@@ -16,8 +15,7 @@ def star_creator(number):
 star_creator(5)
 ```
 
-The second step is to create the widget. Here, we have chosen the `pn.widgets.IntSlider` with a value of 5 and can have values between 1 and 10.
-
+Calling a function repeatedly with different arguments is not very interactive, so as a second step we will create a widget. Here we have chosen the `pn.widgets.IntSlider` with a value of 5 and a range between 1 and 10:
 
 ```{pyodide}
 import panel as pn
@@ -28,18 +26,21 @@ slider = pn.widgets.IntSlider(value=5, start=1, end=10)
 slider
 ```
 
-You can then bind the widget to the function and create an interactive function using `pn.bind`.
 
+To make our `star_creator` function interactive we can now bind the widget to the function and add it to a layout together with the `slider`:
 
 ```{pyodide}
 interactive_star_creator = pn.bind(star_creator, slider)
-```
 
-The final step is to make a layout of the widget and the interactive function. Here `pn.Column` is chosen, but another layout could also have been used.
-
-
-```{pyodide}
 pn.Column(slider, interactive_star_creator)
 ```
 
+:::{note}
+`pn.bind` works very similarly to Python's [`functools.partial`](https://docs.python.org/3/library/functools.html#functools.partial), except that it automatically resolves the current value of any widgets, parameters and other bound functions that are passed as arguments.
+:::
+
+Internally the layout will create a so called `ParamFunction` component to wrap the interactive function. This wrapper component will re-evaluate and update the output whenever the inputs to the function change.
+
 ## Related Resources
+
+- Learn [how to use interactive functions to update components](./bind_component)
