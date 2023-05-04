@@ -1,10 +1,10 @@
-# Binding on components
+# Bind a parameter to a component
 
 This guide addresses how to bind parameters and bound functions on components.
 
 ---
 
-## Binding parameters on components
+## Bind parameters to components
 
 The power to binding parameters to components can be used with all of Panel's widgets and panes, which makes it easy to create powerful components. An example is by binding a parameter to the `page_size` of the [Tabulator](../../reference/widgets/Tabulator) widget. This will allow you to change the page size of the table with the slider.
 

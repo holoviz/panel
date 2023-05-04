@@ -4,7 +4,7 @@ This guide addresses how to make your functions interactive by binding them to w
 
 ---
 
-## Bind your functions to widgets
+## Bind a widget to a function
 Making a function interactive is easy to do in Panel. First, you need a function, then create widgets, and finally,  bind the widgets to the function.
 
 First, let's create a function; this function takes an argument `number` and will return a string of stars equal to the number:

@@ -13,7 +13,7 @@ This section will help you add interactivity to your applications and workflow.
 How to bind functions to widgets to make them interactive
 :::
 
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1 sd-animate-grow50` Binding on components
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1 sd-animate-grow50` Bind a parameter to a component
 :link: bind_component
 :link-type: doc
 
