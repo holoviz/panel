@@ -20,7 +20,7 @@ How to bind functions to widgets to make them interactive
 How to bind parameters and bound functions on components
 :::
 
-:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1 sd-animate-grow50` Make interative data workflows
+:::{grid-item-card} {octicon}`zap;2.5em;sd-mr-1 sd-animate-grow50` Make interactive data workflows
 :link: hvplot_interactive
 :link-type: doc
 
