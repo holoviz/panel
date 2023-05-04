@@ -615,7 +615,10 @@ class Resources(BkResources):
 
         files += list(config.js_files.values())
         if config.design:
-            files += list(config.design._resources.get('js', {}).values())
+            design_resources = config.design.resolve_resources()
+            files += [
+                res for res in design_resources['js'].values() if res not in files
+            ]
 
         js_files = self.adjust_paths(files)
 
@@ -639,14 +642,12 @@ class Resources(BkResources):
 
         modules = list(config.js_modules.values())
         self.extra_resources(modules, '__javascript_modules__')
-
         if config.design:
-            design_name = config.design.__name__.lower()
-            for resource in config.design._resources.get('js_modules', {}).values():
-                if not isurl(resource):
-                    resource = f'{CDN_DIST}bundled/{design_name}/{resource}'
-                if resource not in modules:
-                    modules.append(resource)
+            design_resources = config.design.resolve_resources()
+            modules += [
+                res for res in design_resources['js_modules'].values()
+                if res not in modules
+            ]
 
         for model in param.concrete_descendents(ReactiveHTML).values():
             if not (getattr(model, '__javascript_modules__', None) and model._loaded()):
