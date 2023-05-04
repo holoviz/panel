@@ -4,7 +4,7 @@ This guide addresses how to reuse sessions to speed up the initial rendering.
 
 ---
 
-In order to render a page for a visiting user the Panel server creates a so called session. This session has to execute the code associated with your application and then render the page template to HTML. This template could a custom `Template` that you instantiate explicitly (such as the `BootstrapTemplate` or `FastListTemplate`) or the much more basic default template. Once the frontend has rendered the initial template it will establish a Websocket connection and render the actual Panel components into the template.
+In order to render a page for a visiting user the Panel server creates a so called session. This session has to execute the code associated with your application and then render the page template to HTML. This template could a custom `Template` that you instantiate explicitly (such as the `BootstrapTemplate` or `FastListTemplate`) or the basic default template. Once the frontend has rendered the initial template it will establish a Websocket connection and render the actual Panel components into the template.
 
 Since the template being rendered initially is identical each time we can make use of that to speed up the time to initial render. You can enable this behavior very simply by passing the `--reuse-sessions` argument to `panel serve`. This can also be combined with `--global-loading-spinner` to display a loading spinner on top of your entire application, e.g.:
 
