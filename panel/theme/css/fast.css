@@ -76,11 +76,6 @@ canvas, img {
     border-right-color: var(--accent-foreground-active);
 }
 
-div.bk-OnOffButton.bk-right.bk-active .bk-tool-icon-pan {
-    border-left-color: aqua;
-    --active-tool-highlight: salmon;
-}
-
 /* Tooltips */
 
 .bk-tooltip {
