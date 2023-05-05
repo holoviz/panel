@@ -131,14 +131,6 @@ def init_doc(doc: Optional[Document]) -> Document:
             """)
         )
 
-    # ALERT: Temporary override to ensure layouts are initialized
-    curdoc.js_on_event('document_ready', CustomJS(code="""
-    for (const root of Object.values(Bokeh.index)) {
-      if (root.invalidate_layout) {
-        root.invalidate_layout()
-      }
-    }
-    """))
     session_id = curdoc.session_context.id
     sessions = state.session_info['sessions']
     if session_id not in sessions:
