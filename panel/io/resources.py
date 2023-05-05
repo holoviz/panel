@@ -315,7 +315,7 @@ def bundled_files(model, file_type='javascript'):
         if url in shared:
             prefixed = filepath
             test_path = BUNDLE_DIR / test_filepath
-        elif not test_filepath.startswith(name):
+        elif not test_filepath.replace('/', '').startswith(f'{name}/'):
             prefixed = f'{name}/{test_filepath}'
             test_path = bdir / test_filepath
         else:
