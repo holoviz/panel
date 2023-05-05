@@ -30,12 +30,12 @@ try:
 
     from comm.base_comm import BaseComm
 
-    class DummyComm(BaseComm):
+    class TempComm(BaseComm):
         def publish_msg(self, *args, **kwargs): pass
 
-    comm.create_comm = lambda *args, **kwargs: DummyComm(target_name='panel-temp-comm', primary=False)
+    comm.create_comm = lambda *args, **kwargs: TempComm(target_name='panel-temp-comm', primary=False)
 except Exception:
-    pass
+    comm = None
 
 def _get_kernel(cls=None, doc=None):
     doc = doc or state.curdoc
@@ -60,7 +60,15 @@ def _on_widget_constructed(widget, doc=None):
         return
     widget._document = doc
     kernel = _get_kernel(doc=doc)
-    if widget.comm and widget.comm.target_name != 'panel-temp-comm' and isinstance(widget.comm.kernel, PanelKernel):
+    if comm and isinstance(widget.comm, comm.DummyComm):
+        raise RuntimeError(
+            "When rendering ipywidgets inside a Panel application the "
+            "'ipywidgets' extension must be loaded (using "
+            "`pn.extension('ipywidgets', ...)`) before any IPyWidget "
+            "IPyWidget is instantiated."
+        )
+    elif (widget.comm and widget.comm.target_name != 'panel-temp-comm' and
+          isinstance(widget.comm.kernel, PanelKernel)):
         return
     args = dict(
         kernel=kernel,
