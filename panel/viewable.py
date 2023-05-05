@@ -38,8 +38,8 @@ from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
-    JupyterCommManagerBinary as JupyterCommManager, ipywidget,
-    render_mimebundle, render_model, show_embed, show_server,
+    JupyterCommManagerBinary as JupyterCommManager, ipywidget, render_embed,
+    render_mimebundle, render_model, show_server,
 )
 from .io.save import save
 from .io.state import curdoc_locked, state
@@ -905,9 +905,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         states: dict (default={})
           A dictionary specifying the widget values to embed for each widget
         """
-        if state._is_pyodide:
-            return self
-        show_embed(
+        return render_embed(
             self, max_states, max_opts, json, json_prefix, save_path,
             load_path, progress, states
         )
