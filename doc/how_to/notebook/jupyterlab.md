@@ -1,31 +1,26 @@
 # Preview Apps in JupyterLab
 
-This guide addresses how to use the Preview functionality in JupyterLab to rapidly develop applications.
+This guide addresses how to use the *Preview* functionality in JupyterLab to rapidly develop applications.
 
 ---
 
-In the Jupyter environment, first make sure to load the ``pn.extension()``. Panel objects will then render themselves if they are the last item in a notebook cell.
+With this functionality you can preview the app you are building in a JupyterLab tab right next to your code. This is a traditional setup for web developers, who like to  quickly visualize the effects of their code changes.
 
-```{pyodide}
-import panel as pn
-pn.extension()
-```
 
-```{pyodide}
-button = pn.widgets.Button(name='Click me', button_type='primary')
-button
-```
+To have your app appear in the *Preview*, you need to mark the objects you want to display with `.servable()`. This is identical to how you would mark objects that you want to serve with `panel serve ...`.
 
-::::{admonition} Note
-For versions of ``jupyterlab>=3.0`` the necessary extension is automatically bundled in the ``pyviz_comms`` package, which must be >=2.0.
+You can enable the *Preview* by clicking on Panel's logo in the menu bar of your notebook. Once clicked, you should see a new tab being opened next to your notebook tab, and after some moment your app will be rendered in this tab.
 
-:::{dropdown} Using jupyterlab < 3.0 ?
-For versions of ``jupyterlab<3.0`` you must also manually install the JupyterLab extension with:
+![JupyterLab Preview](../../_static/images/jlabpreview.png)
 
-```
-jupyter labextension install @pyviz/jupyterlab_pyviz
-```
+
+The *Preview* offers two update modes that are configurable in the preview tab:
+
+- manual: click on the *Reload* button ({fas}`rotate-right`) to re-run and re-render your app.
+- automatic: toggle the *Render on save* checkbox ({far}`square-check`) for the app to be automatically re-rendered when you save your notebook.
+
+:::{tip}
+Panel [built-in templates](../reference/templates/index.html) don't render necessarily well in a notebook as their styling can badly interacts with the notebook built-in styling. Using the *Preview* is a good way to circumvent this issue, while still being able to work within JupyterLab .
 :::
-::::
 
 ## Related Resources
