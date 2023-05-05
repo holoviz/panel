@@ -18,6 +18,15 @@ def test_chat_box(document, comm):
         assert {row.name: row.value[0]} == value.pop(0)
 
 
+def test_chat_box_chat_log_overflow(document, comm):
+    value = [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+    ]
+    chat_box = ChatBox(value=value.copy())
+    assert chat_box._chat_log.styles == {"overflow-y": "auto", "overflow-x": "auto"}
+
+
 def test_chat_box_input_widgets(document, comm):
     chat_box = ChatBox(
         message_input_widgets=[FileInput(name="Communicate with files!")]
