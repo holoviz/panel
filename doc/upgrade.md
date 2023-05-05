@@ -161,6 +161,12 @@ at the top of your application. The flipside of this is that if you call `pn.ext
 We recommend always declaring all required extensions at the top of your application.
 :::
 
+### Smaller changes
+
+- `Tabulator.frozen_rows` now respects the order of rows in the data instead of the order in which the `frozen_rows` were defined.
+- `Viewable.embed` now returns a `Mimebundle` object that can be rendered in a notebook but also in other contexts.
+- The `policy` argument toon `pn.cache` used to accept `'LIFO'` but instead implemented a `'FIFO'` policy. This has been fixed and the function now only accepts `'LRU'`, `'LIFO'`, and `'LFU'` policies.
+
 ### Deprecations
 
 The following changes have been deprecated; we will warn you and guide you on how to update them.
@@ -179,9 +185,3 @@ pn.pane.Markdown("# Hello", styles={'background': 'red'})
 #### `Ace` renamed to `CodeEditor`
 
 `pn.widgets.Ace()` has been renamed to `pn.widgets.CodeEditor()` to reflect better what the component does and not the implementation used.
-
-#### Miscellaneous
-
-Small behavior changes:
-
-`Tabulator.frozen_rows` now respects the order of rows in the data instead of the order in which the `frozen_rows` were defined.
