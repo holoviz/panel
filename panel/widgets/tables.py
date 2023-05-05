@@ -233,7 +233,11 @@ class BaseTable(ReactiveData, Widget):
             columns.append(column)
         return columns
 
-    def _setup_on_change(self, event: param.parameterized.Event):
+    def _setup_on_change(self, *events: param.parameterized.Event):
+        for event in events:
+            self._process_on_change(event)
+
+    def _process_on_change(self, event: param.parameterized.Event):
         old, new = event.old, event.new
         for model in (old if isinstance(old, dict) else {}).values():
             if not isinstance(model, (CellEditor, CellFormatter)):
