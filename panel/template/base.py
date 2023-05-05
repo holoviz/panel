@@ -27,7 +27,7 @@ from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
-    BUNDLE_DIR, DOC_DIST, ResourceComponent, _env, component_resource_path,
+    BUNDLE_DIR, CDN_DIST, ResourceComponent, _env, component_resource_path,
     get_dist_path, loading_css, resolve_custom_path,
 )
 from ..io.save import save
@@ -735,7 +735,7 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
             favicon = img._b64(img._data(img.object))
         else:
             if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
-                favicon = DOC_DIST + "icons/favicon.ico"
+                favicon = CDN_DIST + "images/favicon.ico"
             else:
                 favicon = self.favicon
         self._render_variables['template_resources'] = self.resolve_resources()
