@@ -86,6 +86,8 @@ class ChatRow(CompositeWidget):
         bubble_styles.update(styles or {})
         if "background" not in bubble_styles:
             bubble_styles["background"] = "black"
+        params["value"] = value
+        params["icon"] = icon
         super().__init__(**params)
 
         # create the chat icon
@@ -197,7 +199,7 @@ class ChatRow(CompositeWidget):
 
 
 class ChatBox(CompositeWidget):
-    f"""
+    """
     The ChatBox widget displays a conversation between multiple users
     composed of users' icons, names, messages, and likes.
 
@@ -343,11 +345,11 @@ class ChatBox(CompositeWidget):
             )
 
         user = self._get_name(user_message)
-        message = user_message[user]
-        return user, message
+        message_contents = user_message[user]
+        return user, message_contents
 
     def _instantiate_message_row(
-        self, user: str, message: List[Any], show_name: bool
+        self, user: str, message_contents: List[Any], show_name: bool
     ) -> ChatRow:
         """
         Instantiate a ChatRow object.
@@ -369,11 +371,11 @@ class ChatBox(CompositeWidget):
         message_icon = self.message_icons.get(user, None)
 
         align = "start" if user != self.primary_name else "end"
-        if not isinstance(message, List):
-            message = [message]
+        if not isinstance(message_contents, List):
+            message_contents = [message_contents]
         message_row = ChatRow(
             name=user,
-            value=message,
+            value=message_contents,
             icon=message_icon,
             show_name=show_name,
             show_like=self.allow_likes,
@@ -394,12 +396,12 @@ class ChatBox(CompositeWidget):
         message_rows = []
         previous_user = None
         for user_message in user_messages:
-            user, message = self._separate_user_message(user_message)
+            user, message_contents = self._separate_user_message(user_message)
 
             show_name = user != previous_user
             previous_user = user
 
-            message_row = self._instantiate_message_row(user, message, show_name)
+            message_row = self._instantiate_message_row(user, message_contents, show_name)
             message_rows.append(message_row)
 
         self._chat_log.objects = message_rows
@@ -415,6 +417,13 @@ class ChatBox(CompositeWidget):
         message = event.new
         self.append({user: message})
         self._input_message.value = ""
+
+    @property
+    def rows(self) -> List[ChatRow]:
+        """
+        Returns a list of ChatRow objects.
+        """
+        return self._chat_log.objects
 
     def append(self, user_message: Dict[str, str]) -> None:
         """
