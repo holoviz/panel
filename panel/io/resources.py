@@ -570,13 +570,9 @@ class Resources(BkResources):
             resource = resource.replace('https://unpkg.com', config.npm_cdn)
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
-            if self.mode == 'server' and self.notebook:
-                resource = resource.replace(self.root_url, '').replace(CDN_DIST, '')
-                if resource.startswith('static/'):
-                    resource = f'/panel-preview/{resource}'
-                else:
-                    resource = f'/panel-preview/static/extensions/panel/{resource}'
-            elif (resource.startswith(state.base_url) or resource.startswith('static/')):
+            if self.mode == 'server':
+                resource = resource.replace(CDN_DIST, LOCAL_DIST)
+            if (resource.startswith(state.base_url) or resource.startswith('static/')):
                 if resource.startswith(state.base_url):
                     resource = resource[len(state.base_url):]
                 if state.rel_path:

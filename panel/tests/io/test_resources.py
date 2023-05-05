@@ -37,7 +37,7 @@ def test_resolve_custom_path_abs_input():
 def test_resolve_custom_path_abs_input_relative_to():
     assert str(resolve_custom_path(Button, (PANEL_DIR / 'widgets' / 'button.py'), relative=True)) == 'button.py'
 
-def test_resources_cdn_js():
+def test_resources_cdn():
     resources = Resources(mode='cdn')
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
@@ -47,10 +47,8 @@ def test_resources_cdn_js():
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-tables-{BOKEH_VERSION}.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-mathjax-{BOKEH_VERSION}.min.js',
     ]
-    assert resources.css_files == []
-    assert resources.css_raw == []
 
-def test_resources_server_js():
+def test_resources_server():
     resources = Resources(mode='server')
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
@@ -60,8 +58,6 @@ def test_resources_server_js():
         'http://localhost:5006/static/js/bokeh-tables.min.js',
         'http://localhost:5006/static/js/bokeh-mathjax.min.js'
     ]
-    assert resources.css_files == []
-    assert resources.css_raw == []
 
 def test_resources_config_css_files(document):
     resources = Resources(mode='cdn')

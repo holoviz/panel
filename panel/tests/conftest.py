@@ -8,7 +8,6 @@ import re
 import shutil
 import signal
 import socket
-import sys
 import tempfile
 import time
 import unittest
@@ -29,6 +28,8 @@ from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
 CUSTOM_MARKS = ('ui', 'jupyter')
+
+config.apply_signatures = False
 
 JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
@@ -308,7 +309,6 @@ def set_env_var(env_var, value):
     else:
         os.environ[env_var] = old_value
 
-
 @pytest.fixture(autouse=True)
 def module_cleanup():
     """
@@ -317,14 +317,10 @@ def module_cleanup():
     from bokeh.core.has_props import _default_resolver
     to_reset = list(panel_extension._imports.values())
 
-    known_models = dict(_default_resolver._known_models)
-    for name, model in _default_resolver._known_models.items():
-        if any(model.__module__.startswith(tr) for tr in to_reset):
-            del known_models[name]
-            if model.__module__ in sys.modules:
-                del sys.modules[model.__module__]
-    _default_resolver._known_models = known_models
-
+    _default_resolver._known_models = {
+        name: model for name, model in _default_resolver._known_models.items()
+        if not any(model.__module__.startswith(tr) for tr in to_reset)
+    }
 
 @pytest.fixture(autouse=True)
 def server_cleanup():
