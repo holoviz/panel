@@ -97,11 +97,11 @@ def test_resources_model_inline(document):
         with set_curdoc(document):
             extension('tabulator')
             assert resources.js_raw[-2:] == [
-                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.4.4/dist/js/tabulator.js').read_text(),
-                (DIST_DIR / 'bundled/datatabulator/luxon/build/global/luxon.min.js').read_text()
+                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.4.4/dist/js/tabulator.js').read_text(encoding='utf-8'),
+                (DIST_DIR / 'bundled/datatabulator/luxon/build/global/luxon.min.js').read_text(encoding='utf-8')
             ]
             assert resources.css_raw == [
-                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.4.4/dist/css/tabulator_simple.min.css').read_text()
+                (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.4.4/dist/css/tabulator_simple.min.css').read_text(encoding='utf-8')
             ]
 
 def test_resources_reactive_html_server(document):
@@ -136,11 +136,11 @@ def test_resources_reactive_html_inline(document):
         with set_curdoc(document):
             extension('gridstack')
             assert resources.js_raw[-1:] == [
-                (DIST_DIR / 'bundled/gridstack/gridstack@7.2.3/dist/gridstack-all.js').read_text()
+                (DIST_DIR / 'bundled/gridstack/gridstack@7.2.3/dist/gridstack-all.js').read_text(encoding='utf-8')
             ]
             assert resources.css_raw == [
-                (DIST_DIR / 'bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css').read_text(),
-                (DIST_DIR / 'bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css').read_text()
+                (DIST_DIR / 'bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css').read_text(encoding='utf-8'),
+                (DIST_DIR / 'bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css').read_text(encoding='utf-8')
             ]
 
 def test_resources_design_server(document):
@@ -167,5 +167,5 @@ def test_resources_design_inline(document):
         with set_curdoc(document):
             extension(design='bootstrap')
             assert resources.js_raw[-1:] == [
-                (DIST_DIR / 'bundled/bootstrap5/js/bootstrap.bundle.min.js').read_text()
+                (DIST_DIR / 'bundled/bootstrap5/js/bootstrap.bundle.min.js').read_text(encoding='utf-8')
             ]
