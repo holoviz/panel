@@ -8,6 +8,7 @@ import re
 import shutil
 import signal
 import socket
+import sys
 import tempfile
 import time
 import unittest
@@ -316,10 +317,13 @@ def module_cleanup():
     from bokeh.core.has_props import _default_resolver
     to_reset = list(panel_extension._imports.values())
 
-    _default_resolver._known_models = {
-        name: model for name, model in _default_resolver._known_models.items()
-        if not any(model.__module__.startswith(tr) for tr in to_reset)
-    }
+    known_models = dict(_default_resolver._known_models)
+    for name, model in _default_resolver._known_models.items():
+        if any(model.__module__.startswith(tr) for tr in to_reset):
+            del known_models[name]
+            del sys.modules[model.__module__]
+    _default_resolver._known_models = known_models
+
 
 @pytest.fixture(autouse=True)
 def server_cleanup():

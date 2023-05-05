@@ -741,7 +741,7 @@ class Resources(BkResources):
         self.extra_resources(js_files, '__javascript__')
         raw_js += [
             (DIST_DIR / js.replace(CDN_DIST, '')).read_text() for js in js_files
-            if isurl(js) and js.startswith(CDN_DIST)
+            if is_cdn_url(js)
         ]
 
         # Inline config.js_files
@@ -755,7 +755,7 @@ class Resources(BkResources):
             )['js'].values()
             raw_js += [
                 (DIST_DIR / js.replace(CDN_DIST, '')).read_text() for js in design_js
-                if js.startswith(CDN_DIST)
+                if is_cdn_url(js)
             ]
         return raw_js
 
