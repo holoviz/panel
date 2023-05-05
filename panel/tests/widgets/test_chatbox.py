@@ -1,5 +1,5 @@
 from panel.pane import JPG
-from panel.widgets import TextInput
+from panel.widgets import FileInput, TextAreaInput, TextInput
 from panel.widgets.chatbox import ChatBox, ChatRow
 
 JPG_FILE = "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
@@ -13,6 +13,20 @@ def test_chat_box(document, comm):
     chat_box = ChatBox(value=value.copy())
     assert chat_box.value == value
     assert len(chat_box) == 2
+    for row in chat_box.rows:
+        assert isinstance(row, ChatRow)
+        assert {row.name: row.value[0]} == value.pop(0)
+
+
+def test_chat_box_input_widgets(document, comm):
+    chat_box = ChatBox(
+        message_input_widgets=[FileInput(name="Communicate with files!")]
+    )
+    assert chat_box._send_button
+    message_input = chat_box._message_inputs["Communicate with files!"]
+    assert isinstance(message_input, FileInput)
+    assert message_input.name == "Communicate with files!"
+    assert message_input.sizing_mode == "stretch_width"
 
 
 def test_chat_box_empty(document, comm):
@@ -70,7 +84,9 @@ def test_chat_box_extend(document, comm):
 def test_chat_box_allow_input(document, comm):
     chat_box = ChatBox(allow_input=True)
     assert chat_box.allow_input == True
-    assert isinstance(chat_box._composite[-1], TextInput)
+    assert isinstance(chat_box._message_inputs["TextInput"], TextInput)
+    assert isinstance(chat_box._message_inputs["TextAreaInput"], TextAreaInput)
+    assert isinstance(chat_box._message_inputs["FileInput"], FileInput)
     # column, vspacer, text input
     assert len(chat_box._composite) == 3
 
@@ -78,46 +94,47 @@ def test_chat_box_allow_input(document, comm):
 def test_chat_box_not_allow_input(document, comm):
     chat_box = ChatBox(allow_input=False)
     assert chat_box.allow_input == False
-    assert not isinstance(chat_box._composite[-1], TextInput)
+    assert chat_box._message_inputs == {}
+    assert chat_box._send_button is None
     # column, vspacer, text input
     assert len(chat_box._composite) == 1
 
 
-def test_chat_box_primary_user(document, comm):
+def test_chat_box_primary_name(document, comm):
     value = [
         {"user1": "Hello"},
         {"user2": "Hi"},
     ]
-    chat_box = ChatBox(value=value.copy(), primary_user="Panel User")
-    assert chat_box.primary_user == "Panel User"
+    chat_box = ChatBox(value=value.copy(), primary_name="Panel User")
+    assert chat_box.primary_name == "Panel User"
     assert chat_box.value == value
 
-    chat_box._input_message.value = "Hello!"
+    chat_box._message_inputs["TextInput"].value = "Hello!"
     assert chat_box.value == value + [{"Panel User": "Hello!"}]
 
 
-def test_chat_box_inferred_primary_user(document, comm):
+def test_chat_box_inferred_primary_name(document, comm):
     value = [
         {"user1": "Hello"},
         {"user2": "Hi"},
     ]
     chat_box = ChatBox(value=value.copy())
-    assert chat_box.primary_user == "user1"
+    assert chat_box.primary_name == "user1"
     assert chat_box.value == value
 
-    chat_box._input_message.value = "Hello!"
+    chat_box._message_inputs["TextInput"].value = "Hello!"
     assert chat_box.value == value + [{"user1": "Hello!"}]
 
 
-def test_chat_box_user_colors(document, comm):
+def test_chat_box_message_colors(document, comm):
     value = [
         {"user1": "Hello"},
         {"user2": "Hi"},
     ]
-    chat_box = ChatBox(value=value.copy(), user_colors={"user1": "red"})
-    assert chat_box.user_colors["user1"] == "red"
+    chat_box = ChatBox(value=value.copy(), message_colors={"user1": "red"})
+    assert chat_box.message_colors["user1"] == "red"
     # random generated colors are hexcodes
-    assert chat_box.user_colors["user2"].startswith("#")
+    assert chat_box.message_colors["user2"].startswith("#")
 
 
 def test_chat_box_user_icons(document, comm):
@@ -138,11 +155,19 @@ def test_chat_box_show_name(document, comm):
         {"user2": "Hi"},
     ]
     chat_box = ChatBox(value=value.copy())
-    # Log -> ChatRow -> Column -> StaticText == name
-    assert chat_box._chat_log[0]._composite[0][0].value == "user1"
-    assert chat_box._chat_log[1]._composite[0][0].value == "user2"
-    # no name shown
-    assert not isinstance(chat_box._chat_log[1]._composite[0][0], TextInput)
+    assert chat_box.rows[0]._name.value == "user1"
+    assert chat_box.rows[1]._name.value == "user2"
+    # no name shown for consecutive messages from the same user
+    assert chat_box.rows[2]._name is None
+
+
+def test_chat_box_allow_likes(document, comm):
+    value = [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+    ]
+    chat_box = ChatBox(value=value.copy(), allow_likes=False)
+    assert chat_box.rows[0]._like is None
 
 
 def test_chat_row(document, comm):
@@ -170,9 +195,7 @@ def test_chat_row_image_message(document, comm):
 
 
 def test_chat_row_update_like(document, comm):
-    chat_row = ChatRow(
-        value=["Hello"], name="user1"
-    )
+    chat_row = ChatRow(value=["Hello"], name="user1")
 
     assert not chat_row.liked
     assert not chat_row._like.value
@@ -183,32 +206,30 @@ def test_chat_row_update_like(document, comm):
     assert chat_row._like.name == "❤️"
 
 
+def test_chat_row_hide_like(document, comm):
+    chat_row = ChatRow(value=["Hello"], name="user1", show_like=False)
+    assert chat_row._like is None
+
+
 def test_chat_row_default_message_callable(document, comm):
     chat_row = ChatRow(
-        value=["Hello", TextInput(value="Input")],
-        default_message_callable=TextInput
+        value=["Hello", TextInput(value="Input")], default_message_callable=TextInput
     )
 
     for obj in chat_row._bubble:
         assert isinstance(obj, TextInput)
 
 
-def test_message_align_end(document, comm):
-    chat_row = ChatRow(
-        value=["Hello"], name="user1", align="end"
-    )
+def test_chat_row_align_end(document, comm):
+    chat_row = ChatRow(value=["Hello"], name="user1", align="end")
     assert chat_row._name.align == "end"
 
 
-def test_message_not_show_name(document, comm):
-    chat_row = ChatRow(
-        value=["Hello"], name="user1", show_name=False
-    )
+def test_chat_row_not_show_name(document, comm):
+    chat_row = ChatRow(value=["Hello"], name="user1", show_name=False)
     assert chat_row._name is None
 
 
-def test_message_not_show_like(document, comm):
-    chat_row = ChatRow(
-        value=["Hello"], name="user1", show_like=False
-    )
+def test_chat_row_not_show_like(document, comm):
+    chat_row = ChatRow(value=["Hello"], name="user1", show_like=False)
     assert chat_row._like is None

@@ -321,40 +321,52 @@ class ChatBox(CompositeWidget):
         box_objects = [self._chat_title] if self.name else []
         box_objects.append(self._chat_log)
         if self.allow_input:
-            self._message_inputs = {
-                message_input_widget.name
-                or message_input_widget.__class__.__name__: message_input_widget
-                for message_input_widget in self.message_input_widgets
-            }
-            self._input_button = Button(
-                name="Send",
-                sizing_mode="fixed",
-                button_type="default",
-                width=100,
-                align="end",
-            )
-            for message_input in self._message_inputs.values():
-                message_input.param.watch(self._enter_message, "value")
-                message_input.sizing_mode = "stretch_width"
-            self._input_button.on_click(self._enter_message)
-
-            if len(self._message_inputs) > 1:
-                input_items = Tabs(
-                    *zip(self._message_inputs.keys(), self._message_inputs.values())
-                )
-            else:
-                input_items = list(self._message_inputs.values())[0]
-            input_row = Row(input_items, self._input_button)
-            box_objects.extend([VSpacer(height_policy="min"), input_row])
+            self._append_input(box_objects)
+        else:
+            self._message_inputs = {}
+            self._send_button = None
         self._composite[:] = box_objects
 
         # add interactivity
         self.param.watch(self._refresh_log, "value")
         self.param.trigger("value")
 
-    def _generate_bright_color(self, string: str) -> str:
+    def _append_input(self, box_objects: List) -> None:
         """
-        Generate a random bright color in hexadecimal format.
+        Append the input widgets to the chat box.
+        """
+        self._message_inputs = {
+            message_input_widget.name
+            or message_input_widget.__class__.__name__: message_input_widget
+            for message_input_widget in self.message_input_widgets
+        }
+        self._send_button = Button(
+            name="Send",
+            sizing_mode="fixed",
+            button_type="default",
+            width=100,
+            align="end",
+        )
+        for message_input in self._message_inputs.values():
+            if isinstance(message_input, TextInput):
+                # for longer form messages, like TextArea / Ace, don't
+                # submit when clicking away; only if they manually click
+                # the send button
+                message_input.param.watch(self._enter_message, "value")
+            message_input.sizing_mode = "stretch_width"
+        self._send_button.on_click(self._enter_message)
+
+        input_items = Tabs(
+            *zip(self._message_inputs.keys(), self._message_inputs.values())
+        )
+        if len(self._message_inputs) == 1:
+            input_items = input_items[0]  # if only a single input, don't use tabs
+        input_row = Row(input_items, self._send_button)
+        box_objects.extend([VSpacer(height_policy="min"), input_row])
+
+    def _generate_pastel_color(self, string: str) -> str:
+        """
+        Generate a random pastel color in hexadecimal format.
         """
         seed = sum([ord(c) for c in string])
         random.seed(seed)
@@ -405,7 +417,7 @@ class ChatBox(CompositeWidget):
         if user in self.message_colors:
             background = self.message_colors[user]
         else:
-            background = self._generate_bright_color(string=user)
+            background = self._generate_pastel_color(string=user)
             self.message_colors[user] = background
 
         # try to get input icon
@@ -462,7 +474,6 @@ class ChatBox(CompositeWidget):
 
         user = self.primary_name or "You"
         self.append({user: message})
-        print(message)
 
         # clear all messages
         for message_input in self._message_inputs.values():
