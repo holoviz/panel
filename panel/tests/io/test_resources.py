@@ -107,3 +107,69 @@ def test_resources_model_inline(document):
             assert resources.css_raw == [
                 (DIST_DIR / 'bundled/datatabulator/tabulator-tables@5.4.4/dist/css/tabulator_simple.min.css').read_text()
             ]
+
+def test_resources_reactive_html_server(document):
+    resources = Resources(mode='server')
+    with set_resource_mode('server'):
+        with set_curdoc(document):
+            extension('gridstack')
+            assert resources.js_files[-1:] == [
+                'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack-all.js'
+            ]
+            assert resources.css_files == [
+                'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css',
+                'static/extensions/panel/bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css'
+            ]
+
+def test_resources_reactive_html_cdn(document):
+    resources = Resources(mode='cdn')
+    with set_resource_mode('cdn'):
+        with set_curdoc(document):
+            extension('gridstack')
+            assert resources.js_files[-1:] == [
+                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack-all.js'
+            ]
+            assert resources.css_files == [
+                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css',
+                f'{CDN_DIST}bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css'
+            ]
+
+def test_resources_reactive_html_inline(document):
+    resources = Resources(mode='inline')
+    with set_resource_mode('inline'):
+        with set_curdoc(document):
+            extension('gridstack')
+            assert resources.js_raw[-1:] == [
+                (DIST_DIR / 'bundled/gridstack/gridstack@7.2.3/dist/gridstack-all.js').read_text()
+            ]
+            assert resources.css_raw == [
+                (DIST_DIR / 'bundled/gridstack/gridstack@7.2.3/dist/gridstack.min.css').read_text(),
+                (DIST_DIR / 'bundled/gridstack/gridstack@7.2.3/dist/gridstack-extra.min.css').read_text()
+            ]
+
+def test_resources_design_server(document):
+    resources = Resources(mode='server')
+    with set_resource_mode('server'):
+        with set_curdoc(document):
+            extension(design='bootstrap')
+            assert resources.js_files[-1:] == [
+                'static/extensions/panel/bundled/bootstrap5/js/bootstrap.bundle.min.js'
+            ]
+
+def test_resources_design_cdn(document):
+    resources = Resources(mode='cdn')
+    with set_resource_mode('cdn'):
+        with set_curdoc(document):
+            extension(design='bootstrap')
+            assert resources.js_files[-1:] == [
+                f'{CDN_DIST}bundled/bootstrap5/js/bootstrap.bundle.min.js'
+            ]
+
+def test_resources_design_inline(document):
+    resources = Resources(mode='inline')
+    with set_resource_mode('inline'):
+        with set_curdoc(document):
+            extension(design='bootstrap')
+            assert resources.js_raw[-1:] == [
+                (DIST_DIR / 'bundled/bootstrap5/js/bootstrap.bundle.min.js').read_text()
+            ]
