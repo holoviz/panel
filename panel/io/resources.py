@@ -742,7 +742,7 @@ class Resources(BkResources):
 
         # Inline config.js_files
         from ..config import config
-        raw_js += [Path(js).read_text() for js in config.js_files.values() if os.path.isfile(f)]
+        raw_js += [Path(js).read_text() for js in config.js_files.values() if os.path.isfile(js)]
 
         # Inline config.design JS resources
         if config.design:
