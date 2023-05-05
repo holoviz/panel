@@ -27,11 +27,12 @@ class ChatRow(CompositeWidget):
 
     >>> ChatRow(name="You", value="Welcome!", show_name=True, align="start")
     """
+
     value = param.List(
         doc="""The objects to display""",
     )
 
-    default_panel = param.Callable(
+    default_message_callable = param.Callable(
         default=None,
         doc="""
         The type of Panel object to use if an item in value is not
@@ -70,7 +71,7 @@ class ChatRow(CompositeWidget):
     def __init__(
         self,
         value: List[Any],
-        default_panel: Viewable = None,
+        default_message_callable: Viewable = None,
         icon: str = None,
         show_name: bool = True,
         show_like: bool = True,
@@ -113,7 +114,9 @@ class ChatRow(CompositeWidget):
             self._icon = Image(icon, **icon_params)
 
         # create the chat bubble
-        bubble_objects = [self._serialize_obj(obj, default_panel) for obj in value]
+        bubble_objects = [
+            self._serialize_obj(obj, default_message_callable) for obj in value
+        ]
         self._bubble = Column(
             *bubble_objects,
             margin=12,
@@ -146,7 +149,7 @@ class ChatRow(CompositeWidget):
         if isinstance(horizontal_align, tuple):
             horizontal_align = horizontal_align[0]
 
-        row_objects = (self._icon, self._bubble, self._like, VSpacer(min_width=400))
+        row_objects = (self._icon, self._bubble, self._like)
         if horizontal_align == "start":
             # top, right, bottom, left
             margin = (0, 0, -6, 84)
@@ -171,7 +174,7 @@ class ChatRow(CompositeWidget):
 
         self._composite[:] = [row]
 
-    def _serialize_obj(self, obj: Any, default_panel: Callable) -> Viewable:
+    def _serialize_obj(self, obj: Any, default_message_callable: Callable) -> Viewable:
         """
         Convert an object to a Panel object.
         """
@@ -179,12 +182,17 @@ class ChatRow(CompositeWidget):
             return obj
 
         try:
-            if default_panel is None or issubclass(default_panel, PaneBase):
-                panel_obj = (default_panel or _panel)(obj)
+            if default_message_callable is None or issubclass(
+                default_message_callable, PaneBase
+            ):
+                panel_obj = (default_message_callable or _panel)(obj)
             else:
-                panel_obj = default_panel(value=obj)
+                panel_obj = default_message_callable(value=obj)
         except ValueError:
             panel_obj = _panel(obj)
+
+        if "overflow-wrap" not in panel_obj.styles:
+            panel_obj.styles.update({"overflow-wrap": "break-word"})
         return panel_obj
 
     def _update_like(self, event: param.parameterized.Event):
@@ -256,7 +264,7 @@ class ChatBox(CompositeWidget):
         default={},
     )
 
-    default_panel = param.Callable(
+    default_message_callable = param.Callable(
         default=None,
         doc="""
         The type of Panel object to use for items in value if they are
@@ -279,12 +287,12 @@ class ChatBox(CompositeWidget):
         layout = {
             p: getattr(self, p)
             for p in Layoutable.param
-            if p not in ("name", "height", "margin") and getattr(self, p) is not None
+            if p not in ("name", "height", "styles", "margin")
+            and getattr(self, p) is not None
         }
         chat_layout = dict(
             sizing_mode="stretch_both",
-            height=None,
-            margin=0,
+            styles={"overflow-y": "auto", "overflow-x": "auto"},
             **layout,
         )
         self._chat_title = StaticText(
@@ -380,7 +388,7 @@ class ChatBox(CompositeWidget):
             show_name=show_name,
             show_like=self.allow_likes,
             align=align,
-            default_panel=self.default_panel,
+            default_message_callable=self.default_message_callable,
             styles={
                 "background": background,
             },
@@ -401,7 +409,9 @@ class ChatBox(CompositeWidget):
             show_name = user != previous_user
             previous_user = user
 
-            message_row = self._instantiate_message_row(user, message_contents, show_name)
+            message_row = self._instantiate_message_row(
+                user, message_contents, show_name
+            )
             message_rows.append(message_row)
 
         self._chat_log.objects = message_rows

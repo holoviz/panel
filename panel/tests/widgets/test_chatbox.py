@@ -183,10 +183,10 @@ def test_chat_row_update_like(document, comm):
     assert chat_row._like.name == "❤️"
 
 
-def test_chat_row_default_panel(document, comm):
+def test_chat_row_default_message_callable(document, comm):
     chat_row = ChatRow(
         value=["Hello", TextInput(value="Input")],
-        default_panel=TextInput
+        default_message_callable=TextInput
     )
 
     for obj in chat_row._bubble:
