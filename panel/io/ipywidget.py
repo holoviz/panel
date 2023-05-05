@@ -60,15 +60,9 @@ def _on_widget_constructed(widget, doc=None):
         return
     widget._document = doc
     kernel = _get_kernel(doc=doc)
-    if comm and isinstance(widget.comm, comm.DummyComm):
-        raise RuntimeError(
-            "When rendering ipywidgets inside a Panel application the "
-            "'ipywidgets' extension must be loaded (using "
-            "`pn.extension('ipywidgets', ...)`) before any IPyWidget "
-            "IPyWidget is instantiated."
-        )
-    elif (widget.comm and widget.comm.target_name != 'panel-temp-comm' and
-          isinstance(widget.comm.kernel, PanelKernel)):
+    if (widget.comm and widget.comm.target_name != 'panel-temp-comm' and
+        (not (comm and isinstance(widget.comm, comm.DummyComm)) and
+         isinstance(widget.comm.kernel, PanelKernel))):
         return
     args = dict(
         kernel=kernel,
