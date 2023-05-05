@@ -268,7 +268,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
         if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
             stylesheet = component_resource_path(cls, attribute, stylesheet)
         else:
-            stylesheet = custom_path.read_text('utf-8')
+            stylesheet = custom_path.read_text(encoding='utf-8')
     return stylesheet
 
 def patch_model_css(root, dist_url):
@@ -642,21 +642,21 @@ class Resources(BkResources):
         css_files = self._collect_external_resources("__css__")
         self.extra_resources(css_files, '__css__')
         raw += [
-            (DIST_DIR / css.replace(CDN_DIST, '')).read_text() for css in css_files
-            if is_cdn_url(css)
+            (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+            for css in css_files if is_cdn_url(css)
         ]
 
         # Add local CSS files
         for cssf in config.css_files:
             if not os.path.isfile(cssf):
                 continue
-            css_txt = process_raw_css([Path(cssf).read_text()])[0]
+            css_txt = process_raw_css([Path(cssf).read_text(encoding='utf-8')])[0]
             if css_txt not in raw:
                 raw.append(css_txt)
 
         # Add loading spinner
         if config.global_loading_spinner:
-            loading_base = (DIST_DIR / "css" / "loading.css").read_text()
+            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
             raw.extend([loading_base, loading_css()])
         return raw + process_raw_css(config.raw_css)
 
@@ -736,13 +736,16 @@ class Resources(BkResources):
         js_files = self._collect_external_resources("__javascript__")
         self.extra_resources(js_files, '__javascript__')
         raw_js += [
-            (DIST_DIR / js.replace(CDN_DIST, '')).read_text() for js in js_files
-            if is_cdn_url(js)
+            (DIST_DIR / js.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+            for js in js_files if is_cdn_url(js)
         ]
 
         # Inline config.js_files
         from ..config import config
-        raw_js += [Path(js).read_text() for js in config.js_files.values() if os.path.isfile(js)]
+        raw_js += [
+            Path(js).read_text(encoding='utf-8') for js in config.js_files.values()
+            if os.path.isfile(js)
+        ]
 
         # Inline config.design JS resources
         if config.design:
@@ -750,8 +753,8 @@ class Resources(BkResources):
                 cdn=True, include_theme=False
             )['js'].values()
             raw_js += [
-                (DIST_DIR / js.replace(CDN_DIST, '')).read_text() for js in design_js
-                if is_cdn_url(js)
+                (DIST_DIR / js.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+                for js in design_js if is_cdn_url(js)
             ]
         return raw_js
 

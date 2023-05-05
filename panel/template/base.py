@@ -550,7 +550,7 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
     __abstract = True
 
     def __init__(self, **params):
-        template = self._template.read_text()
+        template = self._template.read_text(encoding='utf-8')
         if 'header' not in params:
             params['header'] = ListLike()
         else:
