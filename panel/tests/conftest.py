@@ -29,6 +29,8 @@ from panel.pane import HTML, Markdown
 
 CUSTOM_MARKS = ('ui', 'jupyter')
 
+config.apply_signatures = False
+
 JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
@@ -306,7 +308,6 @@ def set_env_var(env_var, value):
         del os.environ[env_var]
     else:
         os.environ[env_var] = old_value
-
 
 @pytest.fixture(autouse=True)
 def module_cleanup():

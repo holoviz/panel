@@ -24,7 +24,7 @@ calls it with the rendered model.
   }
 
   var force = {{ force|default(False)|json }};
-  var py_version = '{{ version }}';
+  var py_version = '{{ version }}'.replace('rc', '-rc.');
   var is_dev = py_version.indexOf("+") !== -1 || py_version.indexOf("-") !== -1;
   var reloading = {{ reloading|default(False)|json }};
   var Bokeh = root.Bokeh;
@@ -210,16 +210,13 @@ calls it with the rendered model.
       inject_raw_css({{ css|json }});
     },
     {%- endfor %}
+    {%- for js in (bundle.js_raw if bundle else js_raw) %}
+    function(Bokeh) {
+      {{ js|indent(6) }}
+    },
+    {% endfor -%}
     function(Bokeh) {} // ensure no trailing comma for IE
   ];
-  // If bokeh is loaded we do not need to load raw JS (assumes only Bokeh/Panel are inlined)
-  if (!bokeh_loaded || is_dev) {
-    {% for js in bundle.js_raw %}
-    inline_js.push(function(Bokeh) {
-      {{ js|indent(6) }}
-    })
-    {% endfor %}
-  }
 
   function run_inline_js() {
     if ((root.Bokeh !== undefined) || (force === true)) {
@@ -261,6 +258,7 @@ calls it with the rendered model.
     // before older versions are fully initialized.
     if (root._bokeh_is_initializing && Date.now() > root._bokeh_timeout) {
       root._bokeh_is_initializing = false;
+      root._bokeh_onload_callbacks = undefined;
       console.log("Bokeh: BokehJS was loaded multiple times but one version failed to initialize.");
       load_or_wait();
     } else if (root._bokeh_is_initializing || (typeof root._bokeh_is_initializing === "undefined" && root._bokeh_onload_callbacks !== undefined)) {

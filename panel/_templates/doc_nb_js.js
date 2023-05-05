@@ -5,7 +5,7 @@
   if (!docs) {
     return
   }
-  const py_version = docs[0].version
+  const py_version = docs[0].version.replace('rc', '-rc.')
   const is_dev = py_version.indexOf("+") !== -1 || py_version.indexOf("-") !== -1
   function embed_document(root) {
     var Bokeh = get_bokeh(root)

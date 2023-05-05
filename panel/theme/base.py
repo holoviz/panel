@@ -194,7 +194,7 @@ class Design(param.Parameterized, ResourceComponent):
                     elif resolve_custom_path(theme, css):
                         pre.append(component_resource_path(theme, p, css))
                     else:
-                        pre.append(css.read_text('utf-8'))
+                        pre.append(css.read_text(encoding='utf-8'))
             else:
                 pre = []
             modifiers['stylesheets'] = pre + modifiers['stylesheets']
