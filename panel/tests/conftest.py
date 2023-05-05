@@ -321,7 +321,8 @@ def module_cleanup():
     for name, model in _default_resolver._known_models.items():
         if any(model.__module__.startswith(tr) for tr in to_reset):
             del known_models[name]
-            del sys.modules[model.__module__]
+            if model.__module__ in sys.modules:
+                del sys.modules[model.__module__]
     _default_resolver._known_models = known_models
 
 
