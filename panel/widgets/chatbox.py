@@ -8,15 +8,19 @@ from typing import (
 
 import param
 
-from panel.layout import Column, ListPanel, Row
+from panel.layout import (
+    Column, ListPanel, Row, Tabs,
+)
 from panel.layout.spacer import VSpacer
 from panel.pane.base import PaneBase, panel as _panel
 from panel.pane.image import Image
 from panel.pane.markup import Markdown
 from panel.viewable import Layoutable, Viewable
 from panel.widgets.base import CompositeWidget
-from panel.widgets.button import Toggle
-from panel.widgets.input import StaticText, TextInput
+from panel.widgets.button import Button, Toggle
+from panel.widgets.input import (
+    FileInput, StaticText, TextAreaInput, TextInput,
+)
 
 
 class ChatRow(CompositeWidget):
@@ -35,7 +39,7 @@ class ChatRow(CompositeWidget):
     default_message_callable = param.Callable(
         default=None,
         doc="""
-        The type of Panel object to use if an item in value is not
+        The type of Panel object or callable to use if an item in value is not
         already rendered as a Panel object; if None, uses the
         pn.panel function to render a displayable Panel object.
         If the item is not serializable, will fall back to pn.panel.
@@ -264,6 +268,18 @@ class ChatBox(CompositeWidget):
         default={},
     )
 
+    message_input_widgets = param.List(
+        default=[
+            TextInput(placeholder="Enter or click send when complete."),
+            TextAreaInput(placeholder="Click send when complete."),
+            FileInput()
+        ],
+        doc="""
+        List of widgets to use for message input. Multiple widgets will
+        be nested under tabs.
+        """,
+    )
+
     default_message_callable = param.Callable(
         default=None,
         doc="""
@@ -305,14 +321,31 @@ class ChatBox(CompositeWidget):
         box_objects = [self._chat_title] if self.name else []
         box_objects.append(self._chat_log)
         if self.allow_input:
-            self._input_message = TextInput(
-                name="Type your message",
-                placeholder="Press Enter to send",
-                sizing_mode="stretch_width",
-                margin=0,
+            self._message_inputs = {
+                message_input_widget.name
+                or message_input_widget.__class__.__name__: message_input_widget
+                for message_input_widget in self.message_input_widgets
+            }
+            self._input_button = Button(
+                name="Send",
+                sizing_mode="fixed",
+                button_type="default",
+                width=100,
+                align="end",
             )
-            self._input_message.param.watch(self._enter_message, "value")
-            box_objects.extend([VSpacer(height_policy="min"), self._input_message])
+            for message_input in self._message_inputs.values():
+                message_input.param.watch(self._enter_message, "value")
+                message_input.sizing_mode = "stretch_width"
+            self._input_button.on_click(self._enter_message)
+
+            if len(self._message_inputs) > 1:
+                input_items = Tabs(
+                    *zip(self._message_inputs.keys(), self._message_inputs.values())
+                )
+            else:
+                input_items = list(self._message_inputs.values())[0]
+            input_row = Row(input_items, self._input_button)
+            box_objects.extend([VSpacer(height_policy="min"), input_row])
         self._composite[:] = box_objects
 
         # add interactivity
@@ -420,13 +453,20 @@ class ChatBox(CompositeWidget):
         """
         Append the message from the text input when the user presses Enter.
         """
-        if event.new == "":
-            return
+        for message_input in self._message_inputs.values():
+            message = message_input.value
+            if message:
+                break
+        else:
+            return  # no message entered across all inputs
 
         user = self.primary_name or "You"
-        message = event.new
         self.append({user: message})
-        self._input_message.value = ""
+        print(message)
+
+        # clear all messages
+        for message_input in self._message_inputs.values():
+            message_input.value = ""
 
     @property
     def rows(self) -> List[ChatRow]:
