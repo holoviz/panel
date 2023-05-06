@@ -1,3 +1,4 @@
+import {InlineStyleSheet, StyleSheetLike} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 
 import {HTMLBox, HTMLBoxView} from "./layout"
@@ -36,6 +37,26 @@ export class IPyWidgetView extends HTMLBoxView {
     }
   }
 
+  protected _ipy_stylesheets(): StyleSheetLike[] {
+    const stylesheets: StyleSheetLike[] = []
+
+    for (const child of document.head.children) {
+      if (child instanceof HTMLStyleElement) {
+        const raw_css = child.textContent
+        if (raw_css != null) {
+          const css = raw_css.replace(/:root/g, ":host")
+          stylesheets.push(new InlineStyleSheet(css))
+        }
+      }
+    }
+
+    return stylesheets
+  }
+
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), ...this._ipy_stylesheets()]
+  }
+
   render(): void {
     super.render()
     if (this.ipyview != null) {
@@ -43,6 +64,7 @@ export class IPyWidgetView extends HTMLBoxView {
       this.ipyview.trigger('displayed', this.ipyview)
       for (const child of this.ipychildren)
         child.trigger('displayed', child)
+      this.invalidate_layout()
     }
   }
 }
