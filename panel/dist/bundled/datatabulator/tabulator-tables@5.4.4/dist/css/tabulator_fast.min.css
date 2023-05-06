@@ -20,7 +20,7 @@
     position: relative;
     box-sizing: border-box;
     width: 100%;
-    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+    border-bottom: 2px solid var(--accent-fill-rest);
     background-color: var(--fill-color);
     color: var(--neutral-foreground-rest);
     font-weight: bold;
@@ -339,9 +339,11 @@
     background-color: var(--neutral-fill-rest); }
   .tabulator-row.tabulator-selectable:hover {
     background-color: var(--accent-fill-hover);
+    color: var(--foreground-on-accent-hover);
     cursor: pointer; }
   .tabulator-row.tabulator-selected {
-    background-color: var(--accent-fill-active); }
+    background-color: var(--accent-fill-active);
+    color: var(--foreground-on-accent-rest); }
   .tabulator-row.tabulator-selected:hover {
     background-color: var(--accent-fill-hover);
     cursor: pointer; }

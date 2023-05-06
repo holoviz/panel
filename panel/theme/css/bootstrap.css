@@ -255,6 +255,10 @@ input.bk-input, textarea.bk-input {
 
 /* Button widgets */
 
+.bk-btn-group .bk-btn:hover {
+    border-color: var(--bs-btn-border-color);
+}
+
 .bk-btn {
     --bs-btn-padding-x: 0.75rem;
     --bs-btn-padding-y: 0.375rem;
@@ -315,7 +319,7 @@ input.bk-input, textarea.bk-input {
 .bk-btn.bk-active {
     color: var(--bs-btn-active-color);
     background-color: var(--bs-btn-active-bg);
-    border-color: var(--bs-btn-active-border-color);
+    border-color: var(--bs-btn-border-color);
     box-shadow: var(--bs-btn-active-shadow);
 }
 
@@ -504,6 +508,7 @@ select.bk-input {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
+    margin: 0px;
 }
 
 .form-control:focus, .choices__inner:focus {
