@@ -134,8 +134,12 @@ def convert_md_to_nb(
         nb['cells'].append(md_cell)
     return nb
 
-def convert_howto():
-    mds = list(DOC_DIR.glob('how_to/**/*.md'))
+def convert_docs():
+    mds = (
+        list(DOC_DIR.glob('getting_started/*.md')) +
+        list(DOC_DIR.glob('explanation/**/*.md')) +
+        list(DOC_DIR.glob('how_to/**/*.md'))
+    )
     for md in mds:
         out = LITE_FILES / md.relative_to(DOC_DIR).with_suffix('.ipynb')
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -220,7 +224,7 @@ def download_sample_data():
         _download_file(s3, filename, data_dir, progress=False)
 
 if __name__=="__main__":
-    convert_howto()
+    convert_docs()
     copy_examples()
     copy_assets()
     download_sample_data()
