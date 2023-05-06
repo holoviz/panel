@@ -40,10 +40,13 @@ html_css_files = [
 ]
 
 html_theme = "pydata_sphinx_theme"
-html_logo = "_static/logo_horizontal.png"
 html_favicon = "_static/icons/favicon.ico"
 
 html_theme_options = {
+    "logo": {
+        "image_light": "_static/logo_horizontal_light_theme.png",
+        "image_dark": "_static/logo_horizontal_dark_theme.png",
+    },
     "github_url": "https://github.com/holoviz/panel",
     "icon_links": [
         {

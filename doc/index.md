@@ -2,20 +2,23 @@
 sd_hide_title: true
 ---
 
-```{image} _static/logo_stacked.png
----
-width: 125
----
+```{image} _static/logo_horizontal_dark_theme.png
+:class: only-dark
+:width: 250px
+```
+
+```{image} _static/logo_horizontal_light_theme.png
+:class: only-light
+:width: 250px
 ```
 
 # Overview
 
-<h2 style="margin-top: 0.3em;">The powerful data exploration and application framework for Python</h2>
+<h2 style="margin-top: 0.3em;">The seamless data exploration and web app framework for Python</h2>
 
-::::{grid} 2 2 5 5
-:gutter: 1
+::::{card-carousel} 4
 
-:::{grid-item-card} Portfolio Optimizer
+:::{card} Portfolio Optimizer
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
 
@@ -23,7 +26,7 @@ width: 125
 ```
 :::
 
-:::{grid-item-card} MRI Cross-sections
+:::{card} MRI Cross-sections
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/vtk_slicer
 :link-type: url
 
@@ -31,7 +34,7 @@ width: 125
 ```
 :::
 
-:::{grid-item-card} Videostream
+:::{card} Videostream
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
 
@@ -39,7 +42,7 @@ width: 125
 ```
 :::
 
-:::{grid-item-card} Crossfiltering
+:::{card} Crossfiltering
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
 
@@ -47,7 +50,7 @@ width: 125
 ```
 :::
 
-:::{grid-item-card} Portfolio Analyzer
+:::{card} Portfolio Analyzer
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_analyzer
 :link-type: url
 
