@@ -10,6 +10,12 @@ import {
 
 const hexRGBRegex = /^#((?:[0-9a-f]{6}|[0-9a-f]{3}))$/i;
 
+function standardize_color(str){
+    var ctx = document.createElement('canvas').getContext('2d');
+    ctx.fillStyle = str;
+    return ctx.fillStyle;
+}
+
 export function normalize(i, min, max) {
     if (isNaN(i) || i <= min) {
         return 0.0;
@@ -20,7 +26,8 @@ export function normalize(i, min, max) {
 }
 
 function parseColorHexRGB(raw) {
-    const result = hexRGBRegex.exec(raw);
+    const hex_color = standardize_color(raw);
+    const result = hexRGBRegex.exec(hex_color);
 
     if (result === null) {
         return null;
