@@ -83,12 +83,12 @@ napoleon_numpy_docstring = True
 myst_enable_extensions = ["colon_fence", "deflist"]
 
 gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
+gallery_url = f'https://{gallery_endpoint}.pyviz.demo.anaconda.com/'
 
 if not is_dev:
     jlite_url = 'https://panelite.holoviz.org'
 else:
     jlite_url = 'https://pyviz-dev.github.io/panelite-dev'
-
 
 nbsite_gallery_conf = {
     'github_org': 'holoviz',
@@ -115,7 +115,7 @@ nbsite_gallery_conf = {
         }
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
-    'deployment_url': f'https://{gallery_endpoint}.pyviz.demo.anaconda.com/',
+    'deployment_url': gallery_url,
     'jupyterlite_url': jlite_url,
 }
 
@@ -159,6 +159,7 @@ html_context.update({
     "github_repo": "panel",
     "default_mode": "light",
     "panelite_endpoint": jlite_url,
+    "gallery_url": gallery_url
 })
 
 nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
