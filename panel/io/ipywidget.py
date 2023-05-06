@@ -1,4 +1,5 @@
 import logging
+import os
 
 from functools import partial
 
@@ -71,7 +72,11 @@ def _on_widget_constructed(widget, doc=None):
     )
     if widget._model_id is not None:
         args['comm_id'] = widget._model_id
-    widget.comm = Comm(**args)
+    try:
+        widget.comm = Comm(**args)
+    except Exception as e:
+        if 'PANEL_IPYWIDGET' not in os.environ:
+            raise e
     kernel.register_widget(widget)
 
 # Patch font-awesome CSS onto ipywidgets_bokeh IPyWidget
