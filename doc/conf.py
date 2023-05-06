@@ -17,7 +17,7 @@ description = 'High-level dashboarding for python visualization libraries'
 
 import panel
 
-from panel.io.convert import BOKEH_VERSION, PY_VERSION
+from panel.io.convert import BOKEH_VERSION, MINIMUM_VERSIONS, PY_VERSION
 from panel.io.resources import CDN_DIST
 
 PANEL_ROOT = pathlib.Path(panel.__file__).parent
@@ -83,7 +83,7 @@ napoleon_numpy_docstring = True
 myst_enable_extensions = ["colon_fence", "deflist"]
 
 gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
-gallery_url = f'https://{gallery_endpoint}.pyviz.demo.anaconda.com/'
+gallery_url = f'https://{gallery_endpoint}.pyviz.demo.anaconda.com'
 jlite_url = 'https://pyviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
 pyodide_url = 'https://pyviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
 
@@ -132,10 +132,10 @@ def get_requirements():
         if deps is None:
             continue
         name = name.replace('.ipynb', '').replace('.md', '')
-        # Temporary patch for HoloViews
-        if any('holoviews' in req for req in deps):
-            reqs = ['holoviews>=1.16.0a7' if 'holoviews' in req else req for req in deps]
-        elif any('hvplot' in req for req in deps):
+        for name, min_version in MINIMUM_VERSIONS.items():
+            if any(name in req for req in deps):
+                deps = [f'{name}>={min_version}' if name in req else req for req in deps]
+        if any('hvplot' in req for req in deps):
             deps.insert(0, 'holoviews>=1.16.0a7')
         requirements[name] = deps
     return requirements
