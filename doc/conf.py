@@ -139,7 +139,7 @@ def get_requirements():
         if any('holoviews' in req for req in deps):
             reqs = ['holoviews>=1.16.0a7' if 'holoviews' in req else req for req in deps]
         elif any('hvplot' in req for req in deps):
-            deps.insert(2, 'holoviews>=1.16.0a7')
+            deps.insert(0, 'holoviews>=1.16.0a7')
         requirements[name] = deps
     return requirements
 
