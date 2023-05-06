@@ -13,10 +13,10 @@ _ROOT = pathlib.Path(__file__).parent
 
 class FastBaseTemplate(BasicTemplate):
 
-    accent_base_color = param.String(default="#0072B5", doc="""
+    accent_base_color = param.Color(allow_named=False, doc="""
         Optional body accent color override.""")
 
-    background_color = param.String(doc="""
+    background_color = param.Color(allow_named=False, doc="""
         Optional body background color override.""")
 
     corner_radius = param.Integer(default=3, bounds=(0,25), doc="""
@@ -28,13 +28,13 @@ class FastBaseTemplate(BasicTemplate):
     font_url = param.String(doc="""
         A font url to import.""")
 
-    header_neutral_color = param.String(doc="""
+    header_neutral_color = param.Color(allow_named=False, doc="""
         Optional header neutral color override.""")
 
-    header_accent_base_color = param.String(doc="""
+    header_accent_base_color = param.Color(allow_named=False, doc="""
         Optional header accent color override.""")
 
-    neutral_color = param.String(doc="""
+    neutral_color = param.Color(allow_named=False, doc="""
         Optional body neutral color override.""")
 
     theme_toggle = param.Boolean(default=True, doc="""
