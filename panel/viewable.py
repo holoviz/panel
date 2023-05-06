@@ -386,7 +386,10 @@ class ServableMixin:
             from .io.pyodide import _IN_WORKER, _get_pyscript_target, write
             if _IN_WORKER:
                 return self
-            target = target or _get_pyscript_target()
+            try:
+                target = target or _get_pyscript_target()
+            except Exception:
+                target = None
             if target is not None:
                 asyncio.create_task(write(target, self))
         return self
