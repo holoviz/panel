@@ -19,43 +19,39 @@ sd_hide_title: true
 ::::{card-carousel} 4
 
 :::{card} Portfolio Optimizer
+:img-top: https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
-```
 :::
 
 :::{card} MRI Cross-sections
+:img-top: https://assets.holoviz.org/panel/gallery/vtk_slicer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/vtk_slicer
 :link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/vtk_slicer.png
-```
 :::
 
 :::{card} Videostream
+:img-top: https://assets.holoviz.org/panel/gallery/streaming_videostream.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
-```
 :::
 
 :::{card} Crossfiltering
+:img-top: https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
-```
 :::
 
 :::{card} Portfolio Analyzer
+:img-top: https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_analyzer
 :link-type: url
+:::
 
-```{image} https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
-```
+:::{card} awesome-panel.org
+:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
+:link: https://awesome-panel.org/gallery
+:link-type: url
 :::
 
 ::::
