@@ -116,7 +116,7 @@ For usage questions or technical assistance, please head over to [Discourse](htt
 
 The Panel project is grateful for the sponsorship by the organizations and companies below:
 
-::::{grid} 2
+::::{grid} 2 2 2 4
 
 :::{grid-item-card}
 :class-body: sponsor-logo

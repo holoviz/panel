@@ -1,17 +1,17 @@
 {# Custom template to include a link to Panelite #}
 <div class="tocsection">
-{% if title and pagename != root_doc and not pagename.endswith("index") and (pagename.startswith("gallery") or pagename.startswith("getting_started") or pagename.startswith("explanation") or pagename.startswith("reference")) %}
-  <a href="{{ panelite_endpoint + '/lab?path=' + pagename + '.ipynb' }}" target=”_blank”>
+{% if title and pagename != root_doc and and (pagename.startswith("gallery") or pagename.startswith("getting_started") or pagename.startswith("explanation") or pagename.startswith("reference")) %}
+  <a href="{{ panelite_endpoint + '/lab' + ('' if pagename.endswith('index') else '?path=' + pagename + '.ipynb') }}" target=”_blank”>
     <img src="{{ pathto('_static/jupyterlite.svg', 1) }}" alt="launch jupyterlite"></img>
   </a>
 {% endif %}
-{% if title and pagename.startswith("gallery") and not pagename.endswith("index") %}
-  <a href="{{ gallery_url + pagename.split('/')[-1] }}" target=”_blank”>
+{% if title and pagename.startswith("gallery") %}
+  <a href="{{ gallery_url + ('' if pagename.endswith('index') else pagename.split('/')[-1]) }}" target=”_blank”>
     <img src="{{ pathto('_static/launch_app.svg', 1) }}" alt="launch app"></img>
   </a>
 {% endif %}
-{% if title and (pagename.startswith("gallery") or (pagename.startswith("how_to") and "/examples/" in pagename)) and not pagename.endswith("index") %}
-  <a href="{{ pyodide_url + '/' + pagename.split('/')[-1] }}" target=”_blank”>
+{% if title and (pagename.startswith("gallery") or (pagename.startswith("how_to") and "/examples/" in pagename)) %}
+  <a href="{{ pyodide_url + ('' if pagename.endswith('index') else '/' + pagename.split('/')[-1]) }}" target=”_blank”>
     <img src="{{ pathto('_static/launch_pyodide.svg', 1) }}" alt="launch pyodide"></img>
   </a>
 {% endif %}
