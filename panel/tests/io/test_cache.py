@@ -201,12 +201,12 @@ def test_disk_cache():
 
 @pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
-def test_cache_lifo(to_disk):
+def test_cache_fifo(to_disk):
     if to_disk and diskcache is None:
         pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=2, policy='lifo', to_disk=to_disk)
+    fn = cache(function_with_args, max_items=2, policy='fifo', to_disk=to_disk)
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
     assert fn(0, 0) == 0

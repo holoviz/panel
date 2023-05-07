@@ -812,6 +812,8 @@ def test_server_template_custom_resources_with_subpath_and_prefix_relative_url(p
 
 class CustomComponent(ReactiveHTML):
 
+    _extension_name = 'custom'
+
     __css__ = ['./assets/custom.css']
 
 

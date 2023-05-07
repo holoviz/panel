@@ -38,8 +38,8 @@ from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
-    JupyterCommManagerBinary as JupyterCommManager, ipywidget,
-    render_mimebundle, render_model, show_embed, show_server,
+    JupyterCommManagerBinary as JupyterCommManager, ipywidget, render_embed,
+    render_mimebundle, render_model, show_server,
 )
 from .io.save import save
 from .io.state import curdoc_locked, state
@@ -386,7 +386,10 @@ class ServableMixin:
             from .io.pyodide import _IN_WORKER, _get_pyscript_target, write
             if _IN_WORKER:
                 return self
-            target = target or _get_pyscript_target()
+            try:
+                target = target or _get_pyscript_target()
+            except Exception:
+                target = None
             if target is not None:
                 asyncio.create_task(write(target, self))
         return self
@@ -787,8 +790,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         else:
             location = None
 
-        from IPython.display import display
-
         doc = Document()
         comm = state._comm_manager.get_server_comm()
         model = self._render_model(doc, comm)
@@ -797,7 +798,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 
-        if config.console_output != 'disable':
+        if config.console_output != 'disable' and not state._is_pyodide:
+            from IPython.display import display
+
             ref = model.ref['id']
             handle = display(display_id=uuid.uuid4().hex)
             state._handles[ref] = (handle, [])
@@ -905,9 +908,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         states: dict (default={})
           A dictionary specifying the widget values to embed for each widget
         """
-        if state._is_pyodide:
-            return self
-        show_embed(
+        return render_embed(
             self, max_states, max_opts, json, json_prefix, save_path,
             load_path, progress, states
         )

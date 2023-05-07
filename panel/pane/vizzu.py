@@ -8,7 +8,6 @@ from typing import (
 )
 
 import numpy as np
-import pandas as pd
 import param
 
 from bokeh.models import ColumnDataSource
@@ -93,6 +92,8 @@ class Vizzu(ModelPane, SyncableData):
         return data, {str(k): v for k, v in cols.items()}
 
     def _get_columns(self):
+        import pandas as pd
+
         columns = []
         for col, array in self._data.items():
             if col in self.column_types:

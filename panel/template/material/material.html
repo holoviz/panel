@@ -40,9 +40,6 @@
     {% for css in template_resources['css'].values() %}
     <link rel="stylesheet" href="{{ css }}">
     {% endfor %}
-    {% for src in template_resources['extra_css'] %}
-    <link rel="stylesheet"  href="{{ src }}">
-    {% endfor %}
     {% for raw_css in template_resources['raw_css'] %}
     <style type="text/css">
     {{ raw_css }}
@@ -50,11 +47,20 @@
     {% endfor %}
 
     <style>
+      :root {
+	  --header-background: {{ header_background or "var(--panel-primary-color)" }};
+	  --header-color: {{ header_color or "var(--panel-on-primary-color)" }};
+	  --sidebar-width: {{ sidebar_width }}px;
+      }
+      #header {
+	  background-color: var(--header-background);
+	  color: var(--header-color);
+      }
       .mdc-drawer {
-	  width: {{ sidebar_width }}px !important;
+	  width: var(--sidebar-width) !important;
       }
       .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing)+.mdc-drawer-app-content {
-	  margin-left: {{ sidebar_width }}px !important;
+	  margin-left: var(--sidebar-width) !important;
       }
     </style>
 
@@ -70,7 +76,7 @@
 <!-- goes in body -->
 {% block contents %}
 <div class="mdc-typography" id="container">
-  <header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }} !important;{% endif %}" id="header">
+  <header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" id="header">
     <div class="mdc-top-app-bar__row">
       <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
 	{% if nav %}

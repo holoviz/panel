@@ -1,4 +1,5 @@
 import logging
+import os
 
 from functools import partial
 
@@ -30,12 +31,12 @@ try:
 
     from comm.base_comm import BaseComm
 
-    class DummyComm(BaseComm):
+    class TempComm(BaseComm):
         def publish_msg(self, *args, **kwargs): pass
 
-    comm.create_comm = lambda *args, **kwargs: DummyComm(target_name='panel-temp-comm', primary=False)
+    comm.create_comm = lambda *args, **kwargs: TempComm(target_name='panel-temp-comm', primary=False)
 except Exception:
-    pass
+    comm = None
 
 def _get_kernel(cls=None, doc=None):
     doc = doc or state.curdoc
@@ -60,7 +61,9 @@ def _on_widget_constructed(widget, doc=None):
         return
     widget._document = doc
     kernel = _get_kernel(doc=doc)
-    if widget.comm and widget.comm.target_name != 'panel-temp-comm' and isinstance(widget.comm.kernel, PanelKernel):
+    if (widget.comm and widget.comm.target_name != 'panel-temp-comm' and
+        (not (comm and isinstance(widget.comm, comm.DummyComm)) and
+         isinstance(widget.comm.kernel, PanelKernel))):
         return
     args = dict(
         kernel=kernel,
@@ -69,7 +72,11 @@ def _on_widget_constructed(widget, doc=None):
     )
     if widget._model_id is not None:
         args['comm_id'] = widget._model_id
-    widget.comm = Comm(**args)
+    try:
+        widget.comm = Comm(**args)
+    except Exception as e:
+        if 'PANEL_IPYWIDGET' not in os.environ:
+            raise e
     kernel.register_widget(widget)
 
 # Patch font-awesome CSS onto ipywidgets_bokeh IPyWidget

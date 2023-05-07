@@ -1,15 +1,28 @@
 /* Variables */
 :host {
-    --handle-width: 20px;
-    --handle-height: 20px;
-    --switch-size: 20px;
+    --handle-width: 16px;
+    --handle-height: 16px;
+    --switch-size: 16px;
     --slider-size: 4px;
     --padding-vertical: 10px;
     --mdc-on-surface: inherit;
 }
 
 :host-context(.mdc-top-app-bar) .bk-menu {
-    color: black;
+    color: var(--mdc-theme-on-surface);
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: var(--mdc-theme-background);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb, ::-webkit-scrollbar-corner {
+    background-color: var(--mdc-theme-surface);
 }
 
 /* Card layout */
@@ -189,7 +202,7 @@ button.mdc-button.mdc-card-button {
     padding: 4px 10px;
 }
 
-textarea.bk-input {
+textarea.bk-input:not([type="file"]) {
     padding: 12px 10px;
 }
 
@@ -226,10 +239,22 @@ textarea.bk-input {
     margin: -2px 0;
 }
 
+.bk-input-group > label:has(+ select) {
+    margin: 6px 0;
+}
+
 /* Number input */
 
 .bk-input-group > .bk-spin-wrapper > .bk-spin-btn {
     color: var(--mdc-theme-on-background);
+}
+
+.bk-input-group > .bk-spin-wrapper > .bk-spin-btn.bk-spin-btn-down:before {
+    border-top: 5px solid var(--mdc-theme-on-background);
+}
+
+.bk-input-group > .bk-spin-wrapper > .bk-spin-btn.bk-spin-btn-up:before {
+    border-bottom: 5px solid var(--mdc-theme-on-background);
 }
 
 /* Select widgets */
@@ -248,6 +273,11 @@ select.bk-input:focus {
     box-shadow: unset;
 }
 
+select[multiple].bk-input option:checked {
+    background-color: var(--mdc-theme-primary);
+    color: var(--mdc-theme-on-primary);
+}
+
 /* MultiChoice */
 
 .choices__inner {
@@ -264,6 +294,15 @@ select.bk-input:focus {
 
 .choices.is-disabled .choices__input {
     background-color: unset;
+}
+
+.choices__list--dropdown, .choices__list[aria-expanded] {
+    background-color: var(--mdc-theme-surface);
+}
+
+.choices__list--dropdown .choices__item--selectable.is-highlighted, .choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
+    background-color: var(--mdc-theme-primary);
+    color: var(--mdc-theme-on-primary);
 }
 
 .bk-input-group > label:has(+ div.choices) {
@@ -312,9 +351,16 @@ select.bk-input:focus {
 }
 
 .bk-menu {
-    color: var(--mdc-theme-primary);
-    border: 1px solid var(--mdc-theme-primary);
+    background-color: var(--mdc-theme-surface);
+    color: var(--mdc-theme-on-surface);
+    border: 1px solid var(--mdc-theme-on-primary);
 }
+
+.bk-menu > :not(.bk-divider):hover, .bk-menu > :not(.bk-divider).bk-active {
+    background-color: var(--panel-primary-color);
+    color: var(--panel-on-primary-color);
+}
+
 
 /* Checkbox */
 

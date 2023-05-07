@@ -17,16 +17,38 @@
 
 /* Track */
 
+::-webkit-scrollbar-button {
+    background-color: var(--neutral-fill-rest);
+}
+
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background-color: var(--neutral-fill-rest);
+}
+
+::-webkit-scrollbar-track-piece {
+    background-color: var(--background-color);
+}
+
+::-webkit-scrollbar-thumb {
+    height: 50px;
+    background-color: var(--neutral-fill-rest);
+    border-radius: var(--corner-radius);
+}
+
+::-webkit-scrollbar-corner {
+    background-color: var(--neutral-fill-rest);
+}
+
+::-webkit-resizer {
+    background-color: var(--neutral-fill-rest);
 }
 
 /* Separator */
 
 hr {
-    color: var(--neutral-divider-rest);
-    border-color: var(--neutral-divider-rest);
-    background: var(--neutral-divider-rest);
+    color: var(--neutral-stroke-divider-rest);
+    border-color: var(--neutral-stroke-divider-rest);
+    background: var(--neutral-stroke-divider-rest);
     border-style: solid;
     border-radius: calc(var(--corner-radius) * 1px);
 }
@@ -279,7 +301,7 @@ table.panel-df {
 /* Input widgets */
 
 .bk-input {
-    background-color: var(--background-color);
+    background-color: var(--neutral-fill-input-rest);
     border: 1px solid var(--accent-fill-rest);
     border-radius: calc(var(--control-corner-radius) * 1px);
     color: var(--neutral-foreground-rest);
@@ -417,14 +439,16 @@ input[type=file]:active {
 /* Buttons */
 
 .bk-btn {
+    background-color: transparent;
     border-radius: calc(var(--control-corner-radius) * 1px);
     line-height: var(--type-ramp-base-line-height);
     min-width: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px);
 }
 
 .bk-btn.bk-btn-default {
-    background-color:  var(--neutral-fill-rest);
-    color: var(--neutral-foreground-rest);
+    background-color: transparent;
+    border: 1px solid var(--accent-fill-rest);
+    color: var(--accent-fill-rest);
 }
 
 .bk-btn.bk-btn-default:hover {
@@ -432,9 +456,60 @@ input[type=file]:active {
 }
 
 .bk-btn.bk-btn-default.bk-active {
+    background-color: var(--accent-fill-active);
+    color: var(--foreground-on-accent-rest);
     box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
-    filter: brightness(0.9);
 }
+
+.bk-btn-primary {
+    color: #3276b1;
+}
+
+.bk-btn-primary.bk-active,.bk-btn-primary:hover {
+    color: var(--secondary-text-color);
+}
+
+.bk-btn-secondary {
+    color: var(--secondary-bg-color);
+}
+
+.bk-btn-secondary.bk-active, .bk-btn-secondary:hover {
+    color: var(--secondary-text-color);
+}
+
+.bk-btn-success {
+    color: var(--success-bg-color);
+}
+
+.bk-btn-success.bk-active, .bk-btn-success:hover {
+    color: var(--success-text-color);
+}
+
+.bk-btn-warning {
+    color: var(--warning-bg-color);
+}
+
+.bk-btn-warning.bk-active, .bk-btn-warning:hover {
+    color: var(--warning-text-color);
+}
+
+.bk-btn-danger {
+    color: var(--danger-bg-color);
+}
+
+.bk-btn-danger.bk-active, .bk-btn-danger:hover {
+    color: var(--danger-text-color);
+}
+
+.bk-btn-light {
+    border-color: var(--light-bg-color);
+    color: var(--neutral-foreground-rest);
+}
+
+.bk-btn-light.bk-active, .bk-btn-light:hover {
+    color: var(--light-text-color);
+}
+
 
 .bk-btn[disabled],
 .bk-btn[disabled]:hover,
@@ -460,6 +535,12 @@ input[type=file]:active {
 .bk-menu > :not(.bk-divider).bk-active {
     background-color: var(--accent-fill-hover);
     color: var(--foreground-on-accent-hover);
+}
+
+/* Select */
+
+select:not([type="file"]).bk-input {
+    margin: 0;
 }
 
 /* Checkbox/Radio */
@@ -542,6 +623,14 @@ input[type=file]:active {
     cursor: not-allowed;
     pointer-events: none !important;
     opacity: var(--disabled-opacity);
+}
+
+.bk-input-group > .bk-spin-wrapper > .bk-spin-btn.bk-spin-btn-down:before {
+    border-top: 5px solid var(--accent-fill-rest);
+}
+
+.bk-input-group > .bk-spin-wrapper > .bk-spin-btn.bk-spin-btn-up:before {
+    border-bottom: 5px solid var(--accent-fill-rest);
 }
 
 /* Switch */

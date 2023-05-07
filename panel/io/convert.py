@@ -50,6 +50,11 @@ PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/releases/2022.
 PYSCRIPT_JS = '<script defer src="https://pyscript.net/releases/2022.12.1/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
 
+MINIMUM_VERSIONS = {
+    'holoviews': '1.16.0a7',
+    'ipywidgets_bokeh': '1.4.0.dev3'
+}
+
 ICON_DIR = DIST_DIR / 'images'
 PWA_IMAGES = [
     ICON_DIR / 'favicon.ico',
@@ -227,7 +232,7 @@ def script_to_html(
     if requirements == 'auto':
         requirements = find_imports(source)
     elif isinstance(requirements, str) and pathlib.Path(requirements).is_file():
-        requirements = pathlib.Path(requirements).read_text().split('/n')
+        requirements = pathlib.Path(requirements).read_text(encoding='utf-8').split('/n')
         try:
             from packaging.requirements import Requirement
             requirements = [
@@ -256,9 +261,10 @@ def script_to_html(
         req for req in requirements if req not in ('panel', 'bokeh')
     ]
     # Temporary patch for HoloViews
-    if any('holoviews' in req for req in reqs):
-        reqs = ['holoviews>=1.16.0a7' if 'holoviews' else req in req for req in reqs]
-    elif any('hvplot' in req for req in reqs):
+    for name, min_version in MINIMUM_VERSIONS.items():
+        if any(name in req for req in reqs):
+            reqs = [f'{name}>={min_version}' if name in req else req for req in reqs]
+    if any('hvplot' in req for req in reqs):
         reqs.insert(2, 'holoviews>=1.16.0a7')
 
     # Execution
@@ -319,7 +325,7 @@ def script_to_html(
 
     # Collect resources
     resources = Resources(mode='inline' if inline else 'cdn')
-    loading_base = (DIST_DIR / "css" / "loading.css").read_text()
+    loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
     spinner_css = loading_css()
     css_resources.append(
         f'<style type="text/css">\n{loading_base}\n{spinner_css}\n</style>'

@@ -906,6 +906,7 @@ export class DataTabulatorView extends HTMLBoxView {
       this._updating_page = true
       this.model.page = pageno
       this._updating_page = false
+      this.setStyles()
     }
   }
 
@@ -969,10 +970,18 @@ export class DataTabulatorView extends HTMLBoxView {
 
   setPage(): void {
     this.tabulator.setPage(Math.min(this.model.max_page, this.model.page))
+    if (this.model.pagination === "local") {
+      this.renderChildren()
+      this.setStyles()
+    }
   }
 
   setPageSize(): void {
     this.tabulator.setPageSize(this.model.page_size)
+    if (this.model.pagination === "local") {
+      this.renderChildren()
+      this.setStyles()
+    }
   }
 
   setSelection(): void {

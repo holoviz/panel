@@ -17,9 +17,6 @@
 {% for css in template_resources['css'].values() %}
 <link rel="stylesheet" href="{{ css }}">
 {% endfor %}
-{% for src in template_resources['extra_css'] %}
-<link rel="stylesheet"  href="{{ src }}">
-{% endfor %}
 {% for raw_css in template_resources['raw_css'] %}
 <style type="text/css">
 {{ raw_css }}
@@ -28,12 +25,12 @@
 
 <style>
   :root {
-      --header-color: {{ header_color if header_color else "var(--panel-on-primary-color)" }};
-      --header-bg: {{ header_background if header_background else "var(--panel-primary-color)" }};
+      --header-background: {{ header_background or "var(--panel-primary-color)" }};
+      --header-color: {{ header_color or "var(--panel-on-primary-color)" }};
       --sidebar-width: {{ sidebar_width }}px;
   }
   #header {
-      background-color: var(--header-bg);
+      background-color: var(--header-background);
       color: var(--header-color);
       {% if theme._name == 'default' %}
       box-shadow: 5px 5px 20px silver;

@@ -51,11 +51,11 @@ How to arrange and size components on the page.
 How to apply designs, themes and custom styling to components to achieve a polished look and feel.
 :::
 
-:::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` Bind widgets to functions (`Reactive API`)
-:link: reactive/index
+:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1 sd-animate-grow50` Add interactivity
+:link: interactivity/index
 :link-type: doc
 
-How to link selected widgets to arguments and make a reactive function.
+How to link add interactivity to your applications using reactive APIs.
 :::
 
 ::::

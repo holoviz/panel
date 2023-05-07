@@ -300,6 +300,17 @@ class JupyterCommManagerBinary(_JupyterCommManager):
 
     client_comm = JupyterCommJSBinary
 
+
+class Mimebundle:
+    """
+    Wraps a generated mimebundle.
+    """
+    def __init__(self, mimebundle):
+        self._mimebundle = mimebundle
+
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        return self._mimebundle
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -370,7 +381,7 @@ def load_notebook(
     bokeh.io.notebook.curstate().output_notebook()
 
     # Publish comm manager
-    CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text()
+    CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text(encoding='utf-8')
     JS = '\n'.join([PYVIZ_PROXY, _JupyterCommManager.js_manager, nb_mime_js])
     publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
     publish_display_data(data={'text/html': f'<style>{CSS}</style>'})
@@ -424,7 +435,7 @@ def show_server(panel: Any, notebook_url: str, port: int = 0) -> 'Server':
     })
     return server
 
-def show_embed(
+def render_embed(
     panel, max_states: int = 1000, max_opts: int = 3, json: bool = False,
     json_prefix: str = '', save_path: str = './', load_path: Optional[str] = None,
     progress: bool = True, states: Dict[Widget, List[Any]] = {}
@@ -454,8 +465,6 @@ def show_embed(
     states: dict (default={})
       A dictionary specifying the widget values to embed for each widget
     """
-    from IPython.display import publish_display_data
-
     from ..config import config
 
     doc = Document()
@@ -465,7 +474,11 @@ def show_embed(
         embed_state(panel, model, doc, max_states, max_opts,
                     json, json_prefix, save_path, load_path, progress,
                     states)
-    publish_display_data(*render_model(model))
+    return Mimebundle(render_model(model))
+
+def show_embed(panel, *args, **kwargs):
+    from IPython.display import publish_display_data
+    return publish_display_data(render_embed(panel, *args, **kwargs))
 
 def ipywidget(obj: Any, doc=None, **kwargs: Any):
     """

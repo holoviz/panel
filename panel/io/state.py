@@ -232,7 +232,7 @@ class _state(param.Parameterized):
     @property
     def _extensions(self):
         doc = self.curdoc
-        if not (doc and doc.session_context and doc in self._extensions_):
+        if not (doc and doc in self._extensions_):
             return
         return self._extensions_[doc]
 

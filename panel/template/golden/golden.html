@@ -18,9 +18,6 @@
 {% for css in template_resources['css'].values() %}
 <link rel="stylesheet" href="{{ css }}">
 {% endfor %}
-{% for src in template_resources['extra_css'] %}
-<link rel="stylesheet"  href="{{ src }}">
-{% endfor %}
 {% for raw_css in template_resources['raw_css'] %}
 <style type="text/css">
 {{ raw_css }}
@@ -34,6 +31,19 @@
 {% for src in template_resources['js_modules'].values() %}
 <script src="{{ src }}" type="module"></script>
 {% endfor %}
+
+<style>
+  :root {
+      --header-background: {{ header_background or "var(--panel-primary-color)" }};
+      --header-color: {{ header_color or "var(--panel-on-primary-color)" }};
+      --sidebar-width: {{ sidebar_width }}px;
+  }
+  #header {
+      background-color: var(--header-background);
+      color: var(--header-color);
+  }
+</style>
+
 {% endblock %}
 
 <!-- goes in body -->

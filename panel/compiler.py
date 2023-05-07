@@ -188,7 +188,9 @@ def bundle_templates(verbose=False, external=True):
             template_css = [template_css] if template_css else []
         for css in template_css:
             tmpl_name = name.lower()
-            for cls in template.__mro__[1:-5]:
+            for cls in template.__mro__[1:]:
+                if not issubclass(cls, BasicTemplate):
+                    continue
                 tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
                 if css in tmpl_css:
                     tmpl_name = cls.__name__.lower()
@@ -202,7 +204,9 @@ def bundle_templates(verbose=False, external=True):
             template_js = [template_js] if template_js else []
         for js in template_js:
             tmpl_name = name.lower()
-            for cls in template.__mro__[1:-5]:
+            for cls in template.__mro__[1:]:
+                if not issubclass(cls, BasicTemplate):
+                    continue
                 tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
                 if js in tmpl_js:
                     tmpl_name = cls.__name__.lower()

@@ -16,7 +16,9 @@ from weakref import WeakKeyDictionary
 
 import param
 
+from bokeh.core.has_props import _default_resolver
 from bokeh.document import Document
+from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
@@ -24,7 +26,6 @@ from pyviz_comms import (
 
 from .io.logging import panel_log_handler
 from .io.state import state
-from .theme import Design
 
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
@@ -126,7 +127,7 @@ class _config(_base_config):
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
-    design = param.ClassSelector(class_=Design, is_instance=False, doc="""
+    design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
 
     exception_handler = param.Callable(default=None, doc="""
@@ -629,7 +630,17 @@ class panel_extension(_pyviz_extension):
                         continue
                 except Exception:
                     pass
-                __import__(self._imports[arg])
+
+                # Ensure all models are registered
+                module = self._imports[arg]
+                if module in sys.modules:
+                    for model in sys.modules[module].__dict__.values():
+                        if isinstance(model, type) and issubclass(model, Model):
+                            qual = getattr(model, '__qualified_model__', None)
+                            if qual and qual not in _default_resolver.known_models:
+                                _default_resolver.add(model)
+                else:
+                    __import__(module)
                 self._loaded_extensions.append(arg)
 
                 if state.curdoc:
@@ -645,6 +656,7 @@ class panel_extension(_pyviz_extension):
 
         for k, v in params.items():
             if k == 'design' and isinstance(v, str):
+                from .theme import Design
                 try:
                     importlib.import_module(f'panel.theme.{self._design}')
                 except Exception:

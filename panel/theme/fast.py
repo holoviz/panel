@@ -170,10 +170,10 @@ class FastWrapper(ReactiveHTML):
 DEFAULT_STYLE = FastStyle()
 
 DARK_STYLE = FastStyle(
-    background_color="#181818",
+    background_color="#181818", #242424
     color="#ffffff",
     header_color="#ffffff",
-    luminance=0.23,
+    luminance=0.1,
     neutral_fill_card_rest="#212121",
     neutral_focus="#717171",
     neutral_foreground_rest="#e5e5e5",
