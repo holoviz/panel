@@ -10,9 +10,7 @@
 {% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
 {% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
 {% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
-{% endblock %}
 
-{% block postamble %}
 <!-- Template CSS -->
 {% for css in template_resources['css'].values() %}
 <link rel="stylesheet" href="{{ css }}">
@@ -109,25 +107,30 @@
     {% endif %}
 
     <div class="main" id="main" style="margin-left: {{ 'calc(var(--sidebar-width) + 30px)' if nav or sidebar_footer else 0 }};">
+      {% if main_max_width %}
+      <div style="margin-left: auto; margin-right: auto; max-width: {{main_max_width}}">
+      {% endif %}
       <div class="reveal">
 	<div class="slides">
-	  {% if main_max_width %}
-	  <div style="margin-left: auto; margin-right: auto;max-width: {{main_max_width}}">
-	  {% endif %}
-          {% for doc in docs %}
+	  {% for doc in docs %}
 	  {% for root in doc.roots %}
 	  {% if "main" in root.tags %}
-	  <section>
+	  <{{ 'p class="fragment fade-right"' if "fragment" in root.tags else "section" }}>
 	    {{ embed(root) | indent(4) }}
-	  </section>
+	  {% if "fragment" in root.tags %}
+	  </p>
+          {% endif %}
+          {% if (loop.index >= doc.roots|length or "fragment" not in doc.roots[loop.index].tags) %}
+          </section>
+	  {% endif %}
 	  {% endif %}
 	  {% endfor %}
 	  {% endfor %}
-	  {% if main_max_width %}
-	  </div>
-	  {% endif %}
 	</div>
       </div>
+      {% if main_max_width %}
+      </div>
+      {% endif %}
 
       <div id="pn-Modal" class="pn-modal header-adjust">
 	<div class="pn-modal-content">
