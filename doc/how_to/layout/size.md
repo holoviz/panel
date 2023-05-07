@@ -24,7 +24,7 @@ import panel as pn
 pn.extension() # for notebook
 
 pn.Row(
-    pn.pane.Markdown('ABCDE', background='#f0f0f0', width=75, height=100),
+    pn.pane.Markdown('ABCDE', styles={'background': '#f0f0f0'}, width=75, height=100),
     pn.widgets.FloatSlider(width=200, styles={'background': '#f0f0f0'}),
     pn.pane.PNG('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png', width=300, styles={'background': '#f0f0f0'}),
 )

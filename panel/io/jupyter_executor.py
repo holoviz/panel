@@ -77,7 +77,8 @@ class PanelExecutor(WSHandler):
         try:
             self.session = self._create_server_session()
             self.connection = ServerConnection(self.protocol, self, None, self.session)
-        except Exception:
+        except Exception as e:
+            self.exception = e
             self.session = None
 
     def _get_payload(self, token: str) -> Dict[str, Any]:
@@ -172,7 +173,7 @@ class PanelExecutor(WSHandler):
         be served by the `PanelJupyterHandler`.
         """
         if self.session is None:
-            return Mimebundle({'text/error': 'Session did not start correctly'})
+            return Mimebundle({'text/error': f'Session did not start correctly: {self.exception}'})
         with set_curdoc(self.session.document):
             html = server_html_page_for_session(
                 self.session,
@@ -181,4 +182,9 @@ class PanelExecutor(WSHandler):
                 template=self.session.document.template,
                 template_variables=self.session.document.template_variables
             )
-        return Mimebundle({'text/html': html, 'application/bokeh-extensions': extension_dirs})
+        return Mimebundle({
+            'text/html': html,
+            'application/bokeh-extensions': {
+                name: str(ext) for name, ext in extension_dirs.items()
+            }
+        })

@@ -239,7 +239,7 @@ def _cleanup_cache(cache, policy, max_items, time):
     their TTL (time-to-live) has expired.
     """
     while len(cache) >= max_items:
-        if policy.lower() == 'lifo':
+        if policy.lower() == 'fifo':
             key = list(cache.keys())[0]
         elif policy.lower() == 'lru':
             key = sorted(((k, time-t) for k, (_, _, _, t) in cache.items()),
@@ -329,6 +329,10 @@ def cache(
     cache_dir: str
         Directory to cache to on disk.
     """
+    if policy.lower() not in ('fifo', 'lru', 'lfu'):
+        raise ValueError(
+            f"Cache policy must be one of 'FIFO', 'LRU' or 'LFU', not {policy}."
+        )
 
     hash_funcs = hash_funcs or {}
     if func is None:

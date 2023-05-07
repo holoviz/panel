@@ -27,7 +27,7 @@ from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
-    BUNDLE_DIR, DOC_DIST, ResourceComponent, _env, component_resource_path,
+    BUNDLE_DIR, CDN_DIST, ResourceComponent, _env, component_resource_path,
     get_dist_path, loading_css, resolve_custom_path,
 )
 from ..io.save import save
@@ -379,11 +379,6 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
                 'serve it OR set `pn.config.template`, whether directly '
                 'or via `pn.extension(template=...)`, not both.'
             )
-        elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
-            raise RuntimeError(
-                'Cannot write template to target in pyodide. Only standard '
-                'Panel components can be displayed using .servable().'
-            )
         return super().servable(title, location, area, target)
 
     def select(self, selector=None):
@@ -550,7 +545,7 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
     __abstract = True
 
     def __init__(self, **params):
-        template = self._template.read_text()
+        template = self._template.read_text(encoding='utf-8')
         if 'header' not in params:
             params['header'] = ListLike()
         else:
@@ -735,7 +730,7 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
             favicon = img._b64(img._data(img.object))
         else:
             if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
-                favicon = DOC_DIST + "icons/favicon.ico"
+                favicon = CDN_DIST + "images/favicon.ico"
             else:
                 favicon = self.favicon
         self._render_variables['template_resources'] = self.resolve_resources()
