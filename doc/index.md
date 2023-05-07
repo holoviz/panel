@@ -2,57 +2,56 @@
 sd_hide_title: true
 ---
 
-```{image} _static/logo_stacked.png
----
-width: 125
----
+```{image} _static/logo_horizontal_dark_theme.png
+:class: only-dark
+:width: 250px
+```
+
+```{image} _static/logo_horizontal_light_theme.png
+:class: only-light
+:width: 250px
 ```
 
 # Overview
 
-<h2 style="margin-top: 0.3em;">The powerful data exploration and application framework for Python</h2>
+<h2 style="margin-top: 0.3em;">The powerful data exploration & web app framework for Python</h2>
 
-::::{grid} 2 2 5 5
-:gutter: 1
+::::{card-carousel} 4
 
-:::{grid-item-card} Portfolio Optimizer
+:::{card} Portfolio Optimizer
+:img-top: https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
-```
 :::
 
-:::{grid-item-card} MRI Cross-sections
+:::{card} MRI Cross-sections
+:img-top: https://assets.holoviz.org/panel/gallery/vtk_slicer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/vtk_slicer
 :link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/vtk_slicer.png
-```
 :::
 
-:::{grid-item-card} Videostream
+:::{card} Videostream
+:img-top: https://assets.holoviz.org/panel/gallery/streaming_videostream.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
-```
 :::
 
-:::{grid-item-card} Crossfiltering
+:::{card} Crossfiltering
+:img-top: https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
-```
 :::
 
-:::{grid-item-card} Portfolio Analyzer
+:::{card} Portfolio Analyzer
+:img-top: https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_analyzer
 :link-type: url
+:::
 
-```{image} https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
-```
+:::{card} awesome-panel.org
+:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
+:link: https://awesome-panel.org/gallery
+:link-type: url
 :::
 
 ::::
@@ -117,7 +116,7 @@ For usage questions or technical assistance, please head over to [Discourse](htt
 
 The Panel project is grateful for the sponsorship by the organizations and companies below:
 
-::::{grid} 2
+::::{grid} 2 2 2 4
 
 :::{grid-item-card}
 :class-body: sponsor-logo

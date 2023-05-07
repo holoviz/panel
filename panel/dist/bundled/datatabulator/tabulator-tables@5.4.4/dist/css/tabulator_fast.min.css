@@ -694,8 +694,8 @@
   .tabulator.tabulator-rtl .tabulator-footer .tabulator-calcs-holder {
       text-align: initial; }
 
-.tabulator-cell a {color: var(--neutral-foreground-rest);}
-.tabulator-cell a:hover {color: var(--neutral-foreground-hint); }
+.tabulator-cell a {color: var(--accent-fill-rest);}
+.tabulator-cell a:hover {color: var(--neutral-foreground-rest); }
 
 .tabulator-print-fullscreen {
   position: absolute;

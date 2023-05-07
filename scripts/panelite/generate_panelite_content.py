@@ -12,6 +12,8 @@ from test.notebooks_with_panelite_issues import NOTEBOOK_ISSUES
 import bokeh.sampledata
 import nbformat
 
+from panel.io.convert import MINIMUM_VERSIONS
+
 HERE = pathlib.Path(__file__).parent
 PANEL_BASE = HERE.parent.parent
 EXAMPLES_DIR = PANEL_BASE / 'examples'
@@ -35,10 +37,10 @@ def _get_dependencies(nbpath: pathlib.Path):
     dependencies = DEPENDENCIES.get(key, [])
     if dependencies is None:
         return []
-    # Temporary patch for HoloViews
-    if any('holoviews' in req for req in dependencies):
-        reqs = ['holoviews>=1.16.0a7' if 'holoviews' in req else req for req in dependencies]
-    elif any('hvplot' in req for req in dependencies):
+    for name, min_version in MINIMUM_VERSIONS.items():
+        if any(name in req for req in dependencies):
+            deps = [f'{name}>={min_version}' if name in req else req for req in dependencies]
+    if any('hvplot' in req for req in dependencies):
         dependencies.insert(0, 'holoviews>=1.16.0a7')
     return BASE_DEPENDENCIES + dependencies
 
@@ -134,8 +136,12 @@ def convert_md_to_nb(
         nb['cells'].append(md_cell)
     return nb
 
-def convert_howto():
-    mds = list(DOC_DIR.glob('how_to/**/*.md'))
+def convert_docs():
+    mds = (
+        list(DOC_DIR.glob('getting_started/*.md')) +
+        list(DOC_DIR.glob('explanation/**/*.md')) +
+        list(DOC_DIR.glob('how_to/**/*.md'))
+    )
     for md in mds:
         out = LITE_FILES / md.relative_to(DOC_DIR).with_suffix('.ipynb')
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -220,7 +226,7 @@ def download_sample_data():
         _download_file(s3, filename, data_dir, progress=False)
 
 if __name__=="__main__":
-    convert_howto()
+    convert_docs()
     copy_examples()
     copy_assets()
     download_sample_data()

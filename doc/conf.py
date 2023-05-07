@@ -17,7 +17,7 @@ description = 'High-level dashboarding for python visualization libraries'
 
 import panel
 
-from panel.io.convert import BOKEH_VERSION, PY_VERSION
+from panel.io.convert import BOKEH_VERSION, MINIMUM_VERSIONS, PY_VERSION
 from panel.io.resources import CDN_DIST
 
 PANEL_ROOT = pathlib.Path(panel.__file__).parent
@@ -40,10 +40,13 @@ html_css_files = [
 ]
 
 html_theme = "pydata_sphinx_theme"
-html_logo = "_static/logo_horizontal.png"
 html_favicon = "_static/icons/favicon.ico"
 
 html_theme_options = {
+    "logo": {
+        "image_light": "_static/logo_horizontal_light_theme.png",
+        "image_dark": "_static/logo_horizontal_dark_theme.png",
+    },
     "github_url": "https://github.com/holoviz/panel",
     "icon_links": [
         {
@@ -62,7 +65,7 @@ html_theme_options = {
             "icon": "fa-brands fa-discord",
         },
     ],
-    "google_analytics_id": "UA-154795830-2",
+    "analytics": {"google_analytics_id": "G-L0C8PGT2LM"},
     "pygment_light_style": "material",
     "pygment_dark_style": "material",
     "header_links_before_dropdown": 5,
@@ -83,12 +86,9 @@ napoleon_numpy_docstring = True
 myst_enable_extensions = ["colon_fence", "deflist"]
 
 gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
-
-if not is_dev:
-    jlite_url = 'https://panelite.holoviz.org'
-else:
-    jlite_url = 'https://pyviz-dev.github.io/panelite-dev'
-
+gallery_url = f'https://{gallery_endpoint}.pyviz.demo.anaconda.com'
+jlite_url = 'https://pyviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
+pyodide_url = 'https://pyviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
 
 nbsite_gallery_conf = {
     'github_org': 'holoviz',
@@ -115,7 +115,7 @@ nbsite_gallery_conf = {
         }
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
-    'deployment_url': f'https://{gallery_endpoint}.pyviz.demo.anaconda.com/',
+    'deployment_url': gallery_url,
     'jupyterlite_url': jlite_url,
 }
 
@@ -135,10 +135,10 @@ def get_requirements():
         if deps is None:
             continue
         name = name.replace('.ipynb', '').replace('.md', '')
-        # Temporary patch for HoloViews
-        if any('holoviews' in req for req in deps):
-            reqs = ['holoviews>=1.16.0a7' if 'holoviews' in req else req for req in deps]
-        elif any('hvplot' in req for req in deps):
+        for name, min_version in MINIMUM_VERSIONS.items():
+            if any(name in req for req in deps):
+                deps = [f'{name}>={min_version}' if name in req else req for req in deps]
+        if any('hvplot' in req for req in deps):
             deps.insert(0, 'holoviews>=1.16.0a7')
         requirements[name] = deps
     return requirements
@@ -159,6 +159,8 @@ html_context.update({
     "github_repo": "panel",
     "default_mode": "light",
     "panelite_endpoint": jlite_url,
+    "gallery_url": gallery_url,
+    "pyodide_url": pyodide_url
 })
 
 nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
@@ -176,11 +178,9 @@ orig_run = GridItemCardDirective.run
 
 def patched_run(self):
     app = self.state.document.settings.env.app
-    existing_link = self.options.get('link')
     domain = getattr(app.config, 'grid_item_link_domain', None)
-    if existing_link and domain:
-        new_link = existing_link.replace('|gallery-endpoint|', domain)
-        self.options['link'] = new_link
+    if self.has_content:
+        self.content.replace('|gallery-endpoint|', domain)
     return list(orig_run(self))
 
 GridItemCardDirective.run = patched_run

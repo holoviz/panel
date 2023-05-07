@@ -379,11 +379,6 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
                 'serve it OR set `pn.config.template`, whether directly '
                 'or via `pn.extension(template=...)`, not both.'
             )
-        elif state._is_pyodide and 'pyodide_kernel' not in sys.modules:
-            raise RuntimeError(
-                'Cannot write template to target in pyodide. Only standard '
-                'Panel components can be displayed using .servable().'
-            )
         return super().servable(title, location, area, target)
 
     def select(self, selector=None):

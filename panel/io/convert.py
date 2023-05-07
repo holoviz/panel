@@ -50,6 +50,11 @@ PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/releases/2022.
 PYSCRIPT_JS = '<script defer src="https://pyscript.net/releases/2022.12.1/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
 
+MINIMUM_VERSIONS = {
+    'holoviews': '1.16.0a7',
+    'ipywidgets_bokeh': '1.4.0.dev3'
+}
+
 ICON_DIR = DIST_DIR / 'images'
 PWA_IMAGES = [
     ICON_DIR / 'favicon.ico',
@@ -256,9 +261,10 @@ def script_to_html(
         req for req in requirements if req not in ('panel', 'bokeh')
     ]
     # Temporary patch for HoloViews
-    if any('holoviews' in req for req in reqs):
-        reqs = ['holoviews>=1.16.0a7' if 'holoviews' in req else req for req in reqs]
-    elif any('hvplot' in req for req in reqs):
+    for name, min_version in MINIMUM_VERSIONS.items():
+        if any(name in req for req in reqs):
+            reqs = [f'{name}>={min_version}' if name in req else req for req in reqs]
+    if any('hvplot' in req for req in reqs):
         reqs.insert(2, 'holoviews>=1.16.0a7')
 
     # Execution

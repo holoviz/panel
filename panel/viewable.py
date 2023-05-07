@@ -386,7 +386,10 @@ class ServableMixin:
             from .io.pyodide import _IN_WORKER, _get_pyscript_target, write
             if _IN_WORKER:
                 return self
-            target = target or _get_pyscript_target()
+            try:
+                target = target or _get_pyscript_target()
+            except Exception:
+                target = None
             if target is not None:
                 asyncio.create_task(write(target, self))
         return self
@@ -787,8 +790,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         else:
             location = None
 
-        from IPython.display import display
-
         doc = Document()
         comm = state._comm_manager.get_server_comm()
         model = self._render_model(doc, comm)
@@ -797,7 +798,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 
-        if config.console_output != 'disable':
+        if config.console_output != 'disable' and not state._is_pyodide:
+            from IPython.display import display
+
             ref = model.ref['id']
             handle = display(display_id=uuid.uuid4().hex)
             state._handles[ref] = (handle, [])
