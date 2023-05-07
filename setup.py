@@ -230,7 +230,7 @@ extras_require['build'] = [
 setup_args = dict(
     name='panel',
     version=get_setup_version("panel"),
-    description='A high level app and dashboarding solution for Python.',
+    description='The powerful data exploration & web app framework for Python.',
     long_description=open('README.md', encoding="utf8").read() if os.path.isfile('README.md') else 'Consult README.md',
     long_description_content_type="text/markdown",
     author="HoloViz",
