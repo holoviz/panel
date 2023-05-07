@@ -1,5 +1,5 @@
 from panel.pane import JPG
-from panel.widgets import FileInput, TextAreaInput, TextInput
+from panel.widgets import FileInput, TextInput
 from panel.widgets.chatbox import ChatBox, ChatRow
 
 JPG_FILE = "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
@@ -24,7 +24,11 @@ def test_chat_box_chat_log_overflow(document, comm):
         {"user2": "Hi"},
     ]
     chat_box = ChatBox(value=value.copy())
-    assert chat_box._chat_log.styles == {"overflow-y": "auto", "overflow-x": "auto"}
+    assert chat_box._chat_log.styles == {
+        "flex-direction": "column-reverse",
+        "overflow-x": "auto",
+        "overflow-y": "auto",
+    }
 
 
 def test_chat_box_input_widgets(document, comm):
@@ -94,10 +98,8 @@ def test_chat_box_allow_input(document, comm):
     chat_box = ChatBox(allow_input=True)
     assert chat_box.allow_input == True
     assert isinstance(chat_box._message_inputs["TextInput"], TextInput)
-    assert isinstance(chat_box._message_inputs["TextAreaInput"], TextAreaInput)
-    assert isinstance(chat_box._message_inputs["FileInput"], FileInput)
-    # column, vspacer, text input
-    assert len(chat_box._composite) == 3
+    # column, text input
+    assert len(chat_box._composite) == 2
 
 
 def test_chat_box_not_allow_input(document, comm):
@@ -186,7 +188,7 @@ def test_chat_row(document, comm):
 
     name = chat_row._name
     assert name.value == "user1"
-    assert name.align == "start"
+    assert name.align == ("start", "start")
 
     icon = chat_row._icon
     assert icon.object == "*U-1*"
@@ -231,7 +233,7 @@ def test_chat_row_default_message_callable(document, comm):
 
 def test_chat_row_align_end(document, comm):
     chat_row = ChatRow(value=["Hello"], name="user1", align="end")
-    assert chat_row._name.align == "end"
+    assert chat_row._name.align == ("end", "start")
 
 
 def test_chat_row_not_show_name(document, comm):
