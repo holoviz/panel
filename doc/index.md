@@ -14,7 +14,7 @@ sd_hide_title: true
 
 # Overview
 
-<h2 style="margin-top: 0.3em;">The seamless data exploration and web app framework for Python</h2>
+<h2 style="margin-top: 0.3em;">The powerful data exploration & web app framework for Python</h2>
 
 ::::{card-carousel} 4
 
