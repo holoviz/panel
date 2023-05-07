@@ -44,15 +44,17 @@ class _ButtonBase(Widget):
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'button_style': None}
 
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {'button_style': None}
+
     _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/button.css']
 
     __abstract = True
 
     def _process_param_change(self, params):
         if 'button_style' in params or 'css_classes' in params:
-            params['css_classes'] = params.get('css_classes', self.css_classes) + [
+            params['css_classes'] = [
                 params.pop('button_style', self.button_style)
-            ]
+            ] + params.get('css_classes', self.css_classes)
         return super()._process_param_change(params)
 
 
@@ -65,7 +67,9 @@ class IconMixin(Widget):
     icon_size = param.String(default='1em', doc="""
         Size of the icon as a string, e.g. 12px or 1em.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'icon_size': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'icon': None, 'icon_size': None
+    }
 
     __abstract = True
 
@@ -86,6 +90,10 @@ class _ClickButton(_ButtonBase, IconMixin):
     __abstract = True
 
     _event: ClassVar[str] = 'button_click'
+
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'button_style': None, 'icon_size': None, 'icon': None
+    }
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -168,7 +176,9 @@ class Button(_ClickButton):
     value = param.Event(doc="""
         Toggles from False to True while the event is being processed.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'clicks': None, 'name': 'label', 'value': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'clicks': None, 'name': 'label', 'value': None
+    }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
         'event:button_click': None, 'value': None
@@ -258,7 +268,9 @@ class Toggle(_ButtonBase, IconMixin):
     value = param.Boolean(default=False, doc="""
         Whether the button is currently toggled.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'value': 'active', 'name': 'label'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'value': 'active', 'name': 'label', 'icon': None, 'icon_size': None
+    }
 
     _supports_embed: ClassVar[bool] = True
 
