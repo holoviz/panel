@@ -309,8 +309,8 @@ class ChatBox(CompositeWidget):
         chat_layout = dict(
             sizing_mode="stretch_both",
             styles={"overflow-y": "auto", "overflow-x": "auto"},
-            **layout,
         )
+        chat_layout.update(layout)
         self._chat_title = StaticText(
             value=f"{self.name}",
             styles={"font-size": "1.5em"},
