@@ -11,16 +11,13 @@ import param
 from panel.layout import (
     Column, ListPanel, Row, Tabs,
 )
-from panel.layout.spacer import VSpacer
 from panel.pane.base import PaneBase, panel as _panel
 from panel.pane.image import Image
 from panel.pane.markup import Markdown
 from panel.viewable import Layoutable, Viewable
 from panel.widgets.base import CompositeWidget
 from panel.widgets.button import Button, Toggle
-from panel.widgets.input import (
-    FileInput, StaticText, TextAreaInput, TextInput,
-)
+from panel.widgets.input import StaticText, TextInput
 
 
 class ChatRow(CompositeWidget):
@@ -87,6 +84,9 @@ class ChatRow(CompositeWidget):
             "border-radius": "18px",
             "padding": "6px 11px",
             "border": "1px solid #ccc",
+            "overflow-x": "auto",
+            "overflow-y": "auto",
+            "max-width": "80%",
         }
         bubble_styles.update(styles or {})
         if "background" not in bubble_styles:
@@ -97,12 +97,15 @@ class ChatRow(CompositeWidget):
 
         # create the chat icon
         icon_params = dict(
-            width=50,
+            width=48,
             height=60,
             margin=(12, 2, 12, 2),
             sizing_mode="fixed",
             align="center",
         )
+        icon_styles = bubble_styles.copy()
+        icon_styles.pop("overflow-x")
+        icon_styles.pop("overflow-y")
         if icon is None:
             # if no icon is provided,
             # use the first and last letter of the name
@@ -111,7 +114,7 @@ class ChatRow(CompositeWidget):
             icon_label = f"*{name[0]}-{name[-1]}*".upper()
             self._icon = Markdown(
                 object=icon_label,
-                styles=bubble_styles,
+                styles=icon_styles,
                 **icon_params,
             )
         else:
@@ -125,7 +128,6 @@ class ChatRow(CompositeWidget):
             *bubble_objects,
             margin=12,
             styles=bubble_styles,
-            width_policy="max",
         )
 
         # create heart icon next to chat
@@ -156,9 +158,9 @@ class ChatRow(CompositeWidget):
         row_objects = (self._icon, self._bubble, self._like)
         if horizontal_align == "start":
             # top, right, bottom, left
-            margin = (0, 0, -6, 84)
+            margin = (-8, 0, 0, 68)
         else:
-            margin = (0, 84, -6, 0)
+            margin = (-8, 68, 0, 0)
             row_objects = row_objects[::-1]
 
         container_params = dict(
@@ -169,10 +171,10 @@ class ChatRow(CompositeWidget):
             self._name = StaticText(
                 value=self.name,
                 margin=margin,
-                styles={"color": "grey"},
-                align=horizontal_align,
+                align=(horizontal_align, "start"),
+                styles={"font-size": "0.88em", "color": "grey"},
             )
-            row = Column(self._name, row, **container_params)
+            row = Column(row, self._name, **container_params)
         else:
             self._name = None
 
@@ -253,7 +255,7 @@ class ChatBox(CompositeWidget):
             Whether to allow the primary user to interactively
             like messages.
         """,
-        default=True,
+        default=False,
     )
 
     message_icons = param.Dict(
@@ -271,8 +273,6 @@ class ChatBox(CompositeWidget):
     message_input_widgets = param.List(
         default=[
             TextInput(placeholder="Enter or click send when complete."),
-            TextAreaInput(placeholder="Click send when complete."),
-            FileInput()
         ],
         doc="""
         List of widgets to use for message input. Multiple widgets will
@@ -308,7 +308,7 @@ class ChatBox(CompositeWidget):
         }
         chat_layout = dict(
             sizing_mode="stretch_both",
-            styles={"overflow-y": "auto", "overflow-x": "auto"},
+            styles={"overflow-y": "auto", "overflow-x": "auto", "flex-direction": "column-reverse"},
         )
         chat_layout.update(layout)
         self._chat_title = StaticText(
@@ -335,17 +335,18 @@ class ChatBox(CompositeWidget):
         """
         Append the input widgets to the chat box.
         """
-        self._message_inputs = {
-            message_input_widget.name
-            or message_input_widget.__class__.__name__: message_input_widget
-            for message_input_widget in self.message_input_widgets
-        }
+        self._message_inputs = {}
+        for message_input_widget in self.message_input_widgets:
+            key = message_input_widget.name or message_input_widget.__class__.__name__
+            if isinstance(message_input_widget, type):  # check if instantiated
+                message_input_widget = message_input_widget()
+            self._message_inputs[key] = message_input_widget
+
         self._send_button = Button(
             name="Send",
-            sizing_mode="fixed",
             button_type="default",
-            width=100,
-            align="end",
+            max_width=100,
+            sizing_mode="stretch_both",
         )
         for message_input in self._message_inputs.values():
             if isinstance(message_input, TextInput):
@@ -355,14 +356,16 @@ class ChatBox(CompositeWidget):
                 message_input.param.watch(self._enter_message, "value")
             message_input.sizing_mode = "stretch_width"
         self._send_button.on_click(self._enter_message)
+        # console log jscallback
+        input_items = Tabs()
+        for message_input_name, message_input in self._message_inputs.items():
+            input_items.append(
+                (message_input_name, Row(message_input, self._send_button.clone()))
+            )
 
-        input_items = Tabs(
-            *zip(self._message_inputs.keys(), self._message_inputs.values())
-        )
         if len(self._message_inputs) == 1:
             input_items = input_items[0]  # if only a single input, don't use tabs
-        input_row = Row(input_items, self._send_button)
-        box_objects.extend([VSpacer(height_policy="min"), input_row])
+        box_objects.insert(0, input_items)
 
     def _generate_pastel_color(self, string: str) -> str:
         """
@@ -371,7 +374,7 @@ class ChatBox(CompositeWidget):
         seed = sum([ord(c) for c in string])
         random.seed(seed)
 
-        rgb_range = (180, 230)
+        rgb_range = (150, 185)
         r, g, b = (
             random.randint(*rgb_range),
             random.randint(*rgb_range),
@@ -461,7 +464,7 @@ class ChatBox(CompositeWidget):
 
         self._chat_log.objects = message_rows
 
-    def _enter_message(self, event: Optional[param.parameterized.Event] = None) -> None:
+    def _enter_message(self, _: Optional[param.parameterized.Event] = None) -> None:
         """
         Append the message from the text input when the user presses Enter.
         """
