@@ -686,6 +686,7 @@ class panel_extension(_pyviz_extension):
             self._apply_signatures()
 
         loaded = self._loaded
+        panel_extension._loaded = True
 
         # Short circuit pyvista extension load if VTK is already initialized
         if loaded and args == ('vtk',) and 'vtk' in self._loaded_extensions:
@@ -723,7 +724,7 @@ class panel_extension(_pyviz_extension):
 
         panel_extension._loaded_extensions += newly_loaded
 
-        if hasattr(ip, 'kernel') and not self._loaded and not config._doc_build:
+        if hasattr(ip, 'kernel') and not loaded and not config._doc_build:
             # TODO: JLab extension and pyviz_comms should be changed
             #       to allow multiple cleanup comms to be registered
             _JupyterCommManager.get_client_comm(self._process_comm_msg,
@@ -751,7 +752,6 @@ class panel_extension(_pyviz_extension):
             load_notebook(
                 config.inline, reloading=nb_loaded
             )
-        panel_extension._loaded = True
 
         if not nb_loaded and config.browser_info and state.browser_info:
             doc = Document()
