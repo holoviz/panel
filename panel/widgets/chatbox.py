@@ -303,25 +303,42 @@ class ChatBox(CompositeWidget):
         layout = {
             p: getattr(self, p)
             for p in Layoutable.param
-            if p not in ("name", "height", "styles", "margin")
-            and getattr(self, p) is not None
+            if p not in ("name", "styles", "margin") and getattr(self, p) is not None
         }
-        chat_layout = dict(
-            sizing_mode="stretch_both",
-            styles={"overflow-y": "auto", "overflow-x": "auto", "flex-direction": "column-reverse"},
+        chat_layout = layout.copy()
+        chat_layout.update(
+            styles={
+                "overflow-y": "auto",
+                "overflow-x": "auto",
+                "flex-direction": "column-reverse",
+            },
         )
-        chat_layout.update(layout)
         self._chat_title = StaticText(
             value=f"{self.name}",
             styles={"font-size": "1.5em"},
             align="center",
         )
         self._chat_log = Column(**chat_layout)
+        self._scroll_button = Button(
+            name="Scroll to top (latest)",
+            button_type="light",
+            align="center",
+            width=100,
+            margin=(0, 0, 0, 0),
+        )
+        self._scroll_button.js_on_click(
+            code="""
+            const outerContainer = document.querySelectorAll(".bk-Column")[0].shadowRoot
+            const column = outerContainer.querySelector(".bk-Column")
+            column.scrollTop = -column.scrollHeight
+            """,
+            args={"chat_log": self._chat_log},
+        )
 
         box_objects = [self._chat_title] if self.name else []
-        box_objects.append(self._chat_log)
+        box_objects.extend([self._chat_log, self._scroll_button])
         if self.allow_input:
-            self._append_input(box_objects)
+            self._prepend_input(box_objects, layout)
         else:
             self._message_inputs = {}
             self._send_button = None
@@ -331,7 +348,7 @@ class ChatBox(CompositeWidget):
         self.param.watch(self._refresh_log, "value")
         self.param.trigger("value")
 
-    def _append_input(self, box_objects: List) -> None:
+    def _prepend_input(self, box_objects: List, layout: Dict[str, str]) -> None:
         """
         Append the input widgets to the chat box.
         """
@@ -345,8 +362,8 @@ class ChatBox(CompositeWidget):
         self._send_button = Button(
             name="Send",
             button_type="default",
-            max_width=100,
             sizing_mode="stretch_both",
+            max_width=100,
         )
         for message_input in self._message_inputs.values():
             if isinstance(message_input, TextInput):
@@ -356,11 +373,19 @@ class ChatBox(CompositeWidget):
                 message_input.param.watch(self._enter_message, "value")
             message_input.sizing_mode = "stretch_width"
         self._send_button.on_click(self._enter_message)
-        # console log jscallback
+
+        row_layout = layout.copy()
+        row_layout.pop("width", None)
+        row_layout.pop("height", None)
+        row_layout["sizing_mode"] = "stretch_width"
+
         input_items = Tabs()
         for message_input_name, message_input in self._message_inputs.items():
             input_items.append(
-                (message_input_name, Row(message_input, self._send_button.clone()))
+                (
+                    message_input_name,
+                    Row(message_input, self._send_button.clone(), **row_layout),
+                )
             )
 
         if len(self._message_inputs) == 1:
@@ -512,6 +537,7 @@ class ChatBox(CompositeWidget):
 
         message_row = self._instantiate_message_row(user, message, show_name)
         self._chat_log.append(message_row)
+        self._scroll_button.param.trigger("clicks")
 
     def extend(self, user_messages: List[Dict[str, str]]) -> None:
         """
