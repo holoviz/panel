@@ -24,7 +24,8 @@ class SlidesTemplate(VanillaTemplate):
     reveal_config = param.Dict(default={'hash': True}, doc="""
         Configuration parameters for reveal.js""")
 
-    reveal_theme = param.Selector(default=None, objects=REVEAL_THEMES)
+    reveal_theme = param.Selector(default=None, objects=REVEAL_THEMES, doc="""
+        The reveal.js theme to load.""")
 
     _css = [VanillaTemplate._css, pathlib.Path(__file__).parent / 'slides.css']
 

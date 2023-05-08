@@ -90,6 +90,7 @@ p.bk.golden-card-button {
 }
 
 .lm_content {
+  background-color: var(--panel-background-color);
   overflow-y: auto !important;
 }
 
