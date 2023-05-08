@@ -35,7 +35,6 @@ from bokeh.util.sampledata import (
 from js import JSON, Object, XMLHttpRequest
 
 from ..config import config
-from ..pane import HoloViews, Interactive
 from ..util import edit_readonly, isurl
 from . import resources
 from .document import MockSessionContext
@@ -533,7 +532,7 @@ def pyrender(
     -------
     Returns an JS Map containing the content, mime_type, stdout and stderr.
     """
-    from ..pane import panel as as_panel
+    from ..pane import HoloViews, Interactive, panel as as_panel
     from ..viewable import Viewable, Viewer
     kwargs = {}
     if stdout_callback:
