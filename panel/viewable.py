@@ -112,6 +112,11 @@ class Layoutable(param.Parameterized):
         List of stylesheets defined as URLs pointing to .css files
         or raw CSS defined as a string.""")
 
+    tags = param.List(default=[], doc="""
+        List of arbitrary tags to add to the component.
+        Can be useful for templating or for storing metadata on
+        the model.""")
+
     width = param.Integer(default=None, bounds=(0, None), doc="""
         The width of the component (in pixels). This can be either
         fixed or preferred width, depending on width sizing policy.""")

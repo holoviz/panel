@@ -183,7 +183,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
             # Render root without pre-processing
             model = obj.get_root(document, comm, preprocess=False)
             model.name = name
-            model.tags = tags
+            model.tags = model.tags + [tag for tag in tags if tag not in model.tags]
             mref = model.ref['id']
             if isinstance(model, LayoutDOM):
                 sizing_modes[mref] = model.sizing_mode
