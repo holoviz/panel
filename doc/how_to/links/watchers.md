@@ -74,14 +74,14 @@ To initialize the `selections` and `selected` we can explicitly ``trigger`` opti
 toggle.param.trigger('options', 'value')
 ```
 
-We can also override the initial parameters using the ``set_param`` method:
+We can also override the initial parameters using the ``update`` method:
 
 ```{pyodide}
 options = ['A','B','C','D']
-toggle.param.set_param(options=dict(zip(options,options)), value=['D'])
+toggle.param.update(options=dict(zip(options,options)), value=['D'])
 ```
 
-Using `set_param` allows us to batch two separate changes (the options and the value) together, which you can see from the ``print`` output resulted into a single invocation of the callback.  You could instead have set them separately using the usual parameter-setting syntax `toggle.value=['D']; toggle.options=dict(zip(options,options))`, but batching them can be much more efficient for a non-trivial callback like a database query or a complex plot that needs updating.
+Using `update` allows us to batch two separate changes (the options and the value) together, which you can see from the ``print`` output resulted into a single invocation of the callback.  You could instead have set them separately using the usual parameter-setting syntax `toggle.value=['D']; toggle.options=dict(zip(options,options))`, but batching them can be much more efficient for a non-trivial callback like a database query or a complex plot that needs updating.
 
 Now that the widgets are visible, you can toggle the option values and see the selected pane update in response via the callback (if Python is running).
 
