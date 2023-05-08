@@ -212,7 +212,7 @@ class Syncable(Renderable):
             p for p in self._synced_params if self._rename.get(p, False) is not None
             and self._source_transforms.get(p, False) is not None and
             p not in ('design', 'stylesheets')
-        ] + ['loading']
+        ]
 
     @property
     def _synced_params(self) -> List[str]:
