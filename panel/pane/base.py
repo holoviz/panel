@@ -108,7 +108,7 @@ class PaneBase(Reactive):
         Defines the layout the model(s) returned by the pane will
         be placed in.""")
 
-    margin = Margin(default=5, doc="""
+    margin = Margin(default=(5, 10), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
