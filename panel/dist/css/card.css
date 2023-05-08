@@ -10,7 +10,7 @@
 .card-header {
     align-items: center;
     background-color: rgba(0, 0, 0, 0.03);
-    border: 1px solid;
+    border: unset;
     border-radius: 0.25rem;
     display: inline-flex;
     justify-content: start;

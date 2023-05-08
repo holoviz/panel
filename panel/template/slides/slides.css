@@ -1,0 +1,11 @@
+#main {
+    padding: 0;
+}
+
+.reveal .slides section {
+    align-items: center;
+    display: flex !important;
+    height: 100%;
+    justify-content: center;
+    flex-direction: column;
+}

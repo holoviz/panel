@@ -51,7 +51,7 @@ class FastBaseTemplate(BasicTemplate):
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
         Could be extended to Accordion, Tab etc. in the future.""")
 
-    design = param.ClassSelector(class_=Design, default=Fast, constant=True,
+    design = param.ClassSelector(class_=Design, default=Fast,
                                  is_instance=False, instantiate=False, doc="""
         A Design applies a specific design system to a template.""")
 
