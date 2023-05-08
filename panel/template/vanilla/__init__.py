@@ -15,7 +15,7 @@ class VanillaTemplate(BasicTemplate):
     VanillaTemplate is built on top of Vanilla web components.
     """
 
-    design = param.ClassSelector(class_=Design, default=Native, constant=True,
+    design = param.ClassSelector(class_=Design, default=Native,
                                  is_instance=False, instantiate=False, doc="""
         A Design applies a specific design system to a template.""")
 

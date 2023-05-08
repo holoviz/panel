@@ -6,8 +6,6 @@ import pathlib
 import param
 
 from ...config import config as pn_config
-from ...theme import Design
-from ...theme.native import Native
 from ..vanilla import VanillaTemplate
 
 REVEAL_THEMES = ['black', 'white', 'league', 'beige', 'night', 'solarized', 'simple']
@@ -22,10 +20,6 @@ class SlidesTemplate(VanillaTemplate):
     """
     SlidesTemplate is built on top of Vanilla web components.
     """
-
-    design = param.ClassSelector(class_=Design, default=Native, constant=True,
-                                 is_instance=False, instantiate=False, doc="""
-        A Design applies a specific design system to a template.""")
 
     reveal_config = param.Dict(default={'embedded': True}, doc="""
         Configuration parameters for reveal.js""")
