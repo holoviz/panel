@@ -172,7 +172,8 @@ html_title = f'{project} v{version}'
 
 # Patching GridItemCardDirective to be able to substitute the domain name
 # in the link option.
-from sphinx_design.grids import GridItemCardDirective  # noqa
+from sphinx_design.cards import CardDirective
+from sphinx_design.grids import GridItemCardDirective
 
 orig_run = GridItemCardDirective.run
 
@@ -184,6 +185,19 @@ def patched_run(self):
     return list(orig_run(self))
 
 GridItemCardDirective.run = patched_run
+
+origin_run = CardDirective.run
+
+def patch_run(self):
+    app = self.state.document.settings.env.app
+    existing_link = self.options.get('link')
+    domain = getattr(app.config, 'grid_item_link_domain', None)
+    if existing_link and domain:
+        new_link = existing_link.replace('|gallery-endpoint|', domain)
+        self.options['link'] = new_link
+    return list(orig_run(self))
+
+CardDirective.run = patched_run
 
 def setup(app) -> None:
     app.add_config_value('grid_item_link_domain', '', 'html')

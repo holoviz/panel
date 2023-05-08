@@ -12,7 +12,7 @@ table.dataframe {
 .dataframe tr, .dataframe th, .dataframe td {
     text-align: right;
     vertical-align: middle;
-    padding: 0.5em 0.5em !important;
+    padding: 0.5em 0.5em;
     line-height: normal;
     white-space: normal;
     max-width: none;
@@ -26,16 +26,18 @@ table.dataframe {
 }
 
 .dataframe tbody tr:nth-child(odd) {
-    background: #f5f5f5;
+    background-color: var(--pst-color-surface, #f5f5f5);
+    color: var(--pst-color-text-base);
 }
 
 .dataframe thead {
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid var(--pst-color-border);
     vertical-align: bottom;
 }
 
-.dataframe tr:hover {
-    background: #e1f5fe !important;
+.dataframe tbody tr:hover {
+    background-color: #e1f5fe;
+    color: #000000;
     cursor: pointer;
 }
 
