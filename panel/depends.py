@@ -39,12 +39,13 @@ def depends(*args, **kwargs):
     Python decorator annotating a function or `Parameterized` method to
     express its dependencies on a set of Parameters.
 
+    Despite still being available usage of `pn.depends` is no longer
+    recommended, in favor of the less intrusive `pn.bind`.
+
     Returns a "reactive" function that binds (some of) its arguments to
     Parameter values. This means that the "reactive" function can
     (or will if `watch=True`) be automatically invoked whenever the underlying
     parameter values change.
-
-    See also `pn.bind`.
 
     Reference: https://panel.holoviz.org/user_guide/APIs.html#reactive-functions
 

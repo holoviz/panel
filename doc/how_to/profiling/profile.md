@@ -41,13 +41,12 @@ import time
 
 slider = pn.widgets.FloatSlider(name='Test')
 
-@pn.depends(slider)
 @pn.io.profile('formatting')
 def format_value(value):
     time.sleep(1)
     return f'Value: {value+1}'
 
-pn.Row(slider, format_value)
+pn.Row(slider, pn.bind(format_value, slider))
 ```
 
 Then we can request the named profile 'formatting' using the `pn.state.get_profile` function:
