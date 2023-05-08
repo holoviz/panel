@@ -98,8 +98,8 @@ def test_chat_box_allow_input(document, comm):
     chat_box = ChatBox(allow_input=True)
     assert chat_box.allow_input == True
     assert isinstance(chat_box._message_inputs["TextInput"], TextInput)
-    # column, text input
-    assert len(chat_box._composite) == 2
+    # column, text input, button
+    assert len(chat_box._composite) == 3
 
 
 def test_chat_box_not_allow_input(document, comm):
@@ -107,8 +107,8 @@ def test_chat_box_not_allow_input(document, comm):
     assert chat_box.allow_input == False
     assert chat_box._message_inputs == {}
     assert chat_box._send_button is None
-    # column, vspacer, text input
-    assert len(chat_box._composite) == 1
+    # column, button
+    assert len(chat_box._composite) == 2
 
 
 def test_chat_box_primary_name(document, comm):
