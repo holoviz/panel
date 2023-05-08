@@ -16,39 +16,39 @@ sd_hide_title: true
 
 <h2 style="margin-top: 0.3em;">The powerful data exploration & web app framework for Python</h2>
 
-::::{card-carousel} 3
+::::{card-carousel} 4
 
-:::{card} Portfolio Optimizer
+:::{card}
 :img-top: https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
 :::
 
-:::{card} MRI Cross-sections
+:::{card}
 :img-top: https://assets.holoviz.org/panel/gallery/vtk_slicer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/vtk_slicer
 :link-type: url
 :::
 
-:::{card} Videostream
+:::{card}
 :img-top: https://assets.holoviz.org/panel/gallery/streaming_videostream.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
 :::
 
-:::{card} Crossfiltering
-:img-top: https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
-:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/penguin_crossfilter
-:link-type: url
-:::
-
-:::{card} Portfolio Analyzer
+:::{card}
 :img-top: https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_analyzer
 :link-type: url
 :::
 
-:::{card} awesome-panel.org
+:::{card}
+:img-top: https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/penguin_crossfilter
+:link-type: url
+:::
+
+:::{card}
 :img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
 :link: https://awesome-panel.org/gallery
 :link-type: url
@@ -123,7 +123,6 @@ The Panel project is grateful for the sponsorship by the organizations and compa
 :link: https://www.anaconda.com/
 :link-type: url
 :text-align: center
-:columns: 3
 
 ```{image} https://static.bokeh.org/sponsor/anaconda.png
 ---
@@ -138,7 +137,6 @@ alt: Anaconda Logo
 :link: https://www.blackstone.com/the-firm/
 :link-type: url
 :text-align: center
-:columns: 3
 
 ```{image} https://static.bokeh.org/sponsor/blackstone.png
 ---
@@ -152,7 +150,6 @@ alt: Blackstone Logo
 :link: https://numfocus.org/
 :link-type: url
 :text-align: center
-:columns: 3
 
 ```{image} https://numfocus.org/wp-content/uploads/2017/03/numfocusweblogo_orig-1.png
 ---
@@ -166,7 +163,6 @@ alt: NumFOCUS Logo
 :link: https://quansight.com/
 :link-type: url
 :text-align: center
-:columns: 3
 
 ```{image} https://assets.holoviz.org/logos/Quansight-logo.svg
 ---
