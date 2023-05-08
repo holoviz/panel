@@ -110,12 +110,16 @@ def _cleanup_doc(doc, destroy=True):
 # Public API
 #---------------------------------------------------------------------
 
-def init_doc(doc: Optional[Document]) -> Document:
+def create_doc_if_none_exists(doc: Optional[Document]) -> Document:
     curdoc = doc or curdoc_locked()
     if curdoc is None:
         curdoc = Document()
     elif not isinstance(curdoc, Document):
         curdoc = curdoc._doc
+    return curdoc
+
+def init_doc(doc: Optional[Document]) -> Document:
+    curdoc = create_doc_if_none_exists(doc)
     if not curdoc.session_context:
         return curdoc
 

@@ -68,7 +68,7 @@ class IconMixin(Widget):
         Size of the icon as a string, e.g. 12px or 1em.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'icon': None, 'icon_size': None
+        'icon_size': None
     }
 
     __abstract = True

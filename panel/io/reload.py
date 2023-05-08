@@ -70,7 +70,7 @@ def autoreload_watcher():
     Installs a periodic callback which checks for changes in watched
     files and sys.modules.
     """
-    if not state.curdoc.session_context.server_context:
+    if not state.curdoc or not state.curdoc.session_context.server_context:
         return
     cb = partial(_reload_on_update, {})
     _callbacks[state.curdoc] = pcb = PeriodicCallback(callback=cb, background=True)
