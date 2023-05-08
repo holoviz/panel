@@ -474,7 +474,7 @@ class HoloViews(PaneBase):
             return False
         from holoviews.core.dimension import Dimensioned
         from holoviews.plotting.plot import Plot
-        return isinstance(obj, Dimensioned) or isinstance(obj, Plot)
+        return isinstance(obj, (Dimensioned, Plot))
 
     def jslink(self, target, code=None, args=None, bidirectional=False, **links):
         if links and code:

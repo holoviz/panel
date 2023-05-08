@@ -35,7 +35,8 @@ from bokeh.util.sampledata import (
 from js import JSON, Object, XMLHttpRequest
 
 from ..config import config
-from ..util import edit_readonly, is_holoviews, isurl
+from ..pane import HoloViews, Interactive
+from ..util import edit_readonly, isurl
 from . import resources
 from .document import MockSessionContext
 from .loading import LOADING_INDICATOR_CSS_CLASS
@@ -541,7 +542,7 @@ def pyrender(
         kwargs['stderr'] = WriteCallbackStream(stderr_callback)
     out = exec_with_return(code, **kwargs)
     ret = {}
-    if isinstance(out, (Model, Viewable, Viewer)) or is_holoviews(out):
+    if isinstance(out, (Model, Viewable, Viewer)) or HoloViews.applies(out) or Interactive.applies(out):
         doc, model_json = _model_json(as_panel(out), target)
         state.cache[target] = doc
         ret['content'], ret['mime_type'] = model_json, 'application/bokeh'
