@@ -210,10 +210,11 @@ def script_to_html(
     # Run script
     if hasattr(filename, 'read'):
         handler = CodeHandler(source=filename.read(), filename='convert.py')
+        app_name = f'app-{str(uuid.uuid4())}'
         app = Application(handler)
     else:
         path = pathlib.Path(filename)
-        name = '.'.join(path.name.split('.')[:-1])
+        app_name = '.'.join(path.name.split('.')[:-1])
         app = build_single_handler_application(str(path.absolute()))
     document = Document()
     document._session_context = lambda: MockSessionContext(document=document)
@@ -290,7 +291,7 @@ def script_to_html(
             if js_resources == 'auto':
                 js_resources = []
             worker_handler = WORKER_HANDLER_TEMPLATE.render({
-                'name': name,
+                'name': app_name,
                 'loading_spinner': config.loading_spinner
             })
             web_worker = WEB_WORKER_TEMPLATE.render({
