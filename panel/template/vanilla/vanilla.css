@@ -33,14 +33,14 @@ body {
     height: 100vh;
     margin: 0px;
     font-family: "Lato", sans-serif;
-    overflow-x: hidden;
-    overflow-y: hidden;
 }
 
 #container {
-    max-width: 100vw;
     padding: 0px;
     width: 100vw;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
 #header{
@@ -94,9 +94,10 @@ img.app-logo {
 
 #content {
     color: var(--text-color);
-    height: 100%;
+    flex-grow: 1;
     margin: 0px;
     width: 100vw;
+    height: 100%;
     display: inline-flex;
 }
 
@@ -108,14 +109,14 @@ img.app-logo {
 }
 
 #sidebar {
-    height: calc(100vh - 64px);
+    height: 100%;
     padding: 10px 10px 20px 5px;
     transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
     transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
 }
 
 #main {
-    height: calc(100vh - 64px);
+    height: 100%;
     overflow-y: auto;
     padding-right: 20px;
     padding-bottom: 20px;
