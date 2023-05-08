@@ -100,7 +100,10 @@ class Reacton(IPyWidget):
     def _cleanup(self, root: Model | None = None) -> None:
         if root and root.ref['id'] in self._rcs:
             rc = self._rcs.pop(root.ref['id'])
-            rc.close()
+            try:
+                rc.close()
+            except Exception:
+                pass
         super()._cleanup(root)
 
     def _get_ipywidget(
