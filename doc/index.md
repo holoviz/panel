@@ -3,12 +3,12 @@ sd_hide_title: true
 ---
 
 ```{image} _static/logo_horizontal_dark_theme.png
-:class: only-dark
+:class: only-dark homepage-logo
 :width: 250px
 ```
 
 ```{image} _static/logo_horizontal_light_theme.png
-:class: only-light
+:class: only-light homepage-logo
 :width: 250px
 ```
 
@@ -16,7 +16,7 @@ sd_hide_title: true
 
 <h2 style="margin-top: 0.3em;">The powerful data exploration & web app framework for Python</h2>
 
-::::{card-carousel} 4
+::::{card-carousel} 3
 
 :::{card} Portfolio Optimizer
 :img-top: https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
