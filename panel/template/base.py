@@ -23,6 +23,7 @@ from bokeh.settings import settings as _settings
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
 from ..config import _base_config, config, panel_extension
+from ..io.document import init_doc
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
@@ -151,6 +152,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
     ):
         # Initialize document
         document: Document = doc or curdoc_locked()
+        document = init_doc(document)
         self._documents.append(document)
         if document not in state._templates:
             state._templates[document] = self

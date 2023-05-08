@@ -18,9 +18,9 @@ from bokeh.models.layouts import (
 )
 
 from .._param import Margin
-from ..io import (
-    init_doc, push, state, unlocked,
-)
+from ..io.document import create_doc_if_none_exists, unlocked
+from ..io.notebook import push
+from ..io.state import state
 from ..layout.base import NamedListPanel, Panel, Row
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
@@ -380,7 +380,7 @@ class PaneBase(Reactive):
         -------
         Returns the bokeh model corresponding to this panel object
         """
-        doc = init_doc(doc)
+        doc = create_doc_if_none_exists(doc)
         if self._design and comm:
             wrapper = self._design._wrapper(self)
             if wrapper is self:
