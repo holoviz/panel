@@ -4,13 +4,12 @@
     --bs-primary-bg: var(--jp-brand-color0, var(--panel-primary-color));
     --bs-secondary-color: var(--panel-on-secondary-color);
     --bs-secondary-bg: var(--panel-secondary-color);
-    --bs-form-control-bg: var(--panel-background-color, var(--pst-color-background));
-    --bs-body-bg: var(--jp-layout-color0, var(--pst-color-background, var(--panel-background-color)));
-    --bs-body-color: var(--jp-widgets-label-color, var(--pst-color-text-base, var(--panel-on-background-color)));
-    --bs-surface-bg: var(--jp-layout-color2, var(--pst-color-surface, var(--panel-surface-color)));
-    --bs-surface-color: var(--jp-ui-font-color1, var(--pst-color-text-base, var(--panel-on-surface-color)));
-    --bs-form-control-bg: var(--jp-layout-color1, var(--pst-color-surface, var(--panel-surface-color)));
-    --bs-form-control-color: var(--jp-ui-color2, var(--pst-color-text-base, var(--panel-on-surface-color)));
+    --bs-body-bg: var(--vscode-notebook-editorBackground, var(--jp-layout-color0, var(--pst-color-background, var(--panel-background-color))));
+    --bs-body-color: var(--vscode-editor-foreground, var(--jp-widgets-label-color, var(--pst-color-text-base, var(--panel-on-background-color))));
+    --bs-surface-bg: var(--vscode-notebook-cellEditorBackground, var(--jp-layout-color2, var(--pst-color-surface, var(--panel-surface-color))));
+    --bs-surface-color: var(--vscode-editor-foreground, var(--jp-ui-font-color1, var(--pst-color-text-base, var(--panel-on-surface-color))));
+    --bs-form-control-bg: var(--vscode-input-background, var(--jp-layout-color1, var(--pst-color-surface, var(--panel-surface-color))));
+    --bs-form-control-color: var(--vscode-input-foreground, var(--jp-ui-color2, var(--pst-color-text-base, var(--panel-on-surface-color))));
     --bokeh-base-font: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
 }
 
