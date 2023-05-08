@@ -112,13 +112,15 @@
       {% endif %}
       <div class="reveal">
 	<div class="slides">
+	  {% set main_count = namespace(value=0) %}
 	  {% for doc in docs %}
 	  {% for root in doc.roots %}
 	  {% if "main" in root.tags %}
-	  <{{ 'p class="fragment fade-right"' if "fragment" in root.tags else "section" }}>
+	  <{{ 'div class="fragment"' if "fragment" in root.tags else "section" }} id="slide-{{ main_count.value }}">
 	    {{ embed(root) | indent(4) }}
+	  {% set main_count.value = main_count.value + 1 %}
 	  {% if "fragment" in root.tags %}
-	  </p>
+          </div>
           {% endif %}
           {% if (loop.index >= doc.roots|length or "fragment" not in doc.roots[loop.index].tags) %}
           </section>
