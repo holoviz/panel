@@ -600,7 +600,7 @@ class ReplacementPane(PaneBase):
                 equal = False
             if not equal:
                 new_params[k] = v
-        old.set_param(**new_params)
+        old.param.update(**new_params)
 
     @classmethod
     def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, inplace: bool=False, **kwargs):
