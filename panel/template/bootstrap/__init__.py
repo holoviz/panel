@@ -29,13 +29,12 @@ class BootstrapTemplate(BasicTemplate):
     """
     BootstrapTemplate
     """
+    design = param.ClassSelector(class_=Design, default=Bootstrap,
+                                 is_instance=False, instantiate=False, doc="""
+        A Design applies a specific design system to a template.""")
 
     sidebar_width = param.Integer(default=350, doc="""
         The width of the sidebar in pixels. Default is 350.""")
-
-    design = param.ClassSelector(class_=Design, default=Bootstrap, constant=True,
-                                 is_instance=False, instantiate=False, doc="""
-        A Design applies a specific design system to a template.""")
 
     _actions = param.ClassSelector(default=BootstrapTemplateActions(), class_=TemplateActions)
 

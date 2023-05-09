@@ -113,7 +113,7 @@ class Card(Column):
                 'margin': (5, 0)
             }
             if self._header is not None:
-                self._header.param.set_param(**params)
+                self._header.param.update(**params)
                 return
             else:
                 self._header = item = HTML(**params)

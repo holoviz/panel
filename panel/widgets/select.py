@@ -499,7 +499,9 @@ class _RadioGroupBase(SingleSelectBase):
 
     _supports_embed = False
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': None, 'options': 'labels', 'value': 'active'
+    }
 
     _source_transforms = {'value': "source.labels[value]"}
 
@@ -570,6 +572,10 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
     orientation = param.Selector(default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+
+    _source_transforms = {
+        'value': "source.labels[value]", 'button_style': None
+    }
 
     _supports_embed: ClassVar[bool] = True
 
@@ -665,6 +671,10 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
     orientation = param.Selector(default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+
+    _source_transforms = {
+        'value': "value.map((index) => source.labels[index])", 'button_style': None
+    }
 
     _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup
 

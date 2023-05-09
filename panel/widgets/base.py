@@ -16,6 +16,7 @@ import param  # type: ignore
 
 from bokeh.models import ImportedStyleSheet
 
+from .._param import Margin
 from ..layout.base import Row
 from ..reactive import Reactive
 from ..viewable import Layoutable, Viewable
@@ -45,7 +46,7 @@ class Widget(Reactive):
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    margin = param.Parameter(default=(5, 10), doc="""
+    margin = Margin(default=(5, 10), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")

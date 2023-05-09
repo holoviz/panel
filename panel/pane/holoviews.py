@@ -9,7 +9,7 @@ import sys
 from collections import OrderedDict, defaultdict
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Type,
+    TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Tuple, Type,
 )
 
 import param
@@ -474,7 +474,7 @@ class HoloViews(PaneBase):
             return False
         from holoviews.core.dimension import Dimensioned
         from holoviews.plotting.plot import Plot
-        return isinstance(obj, Dimensioned) or isinstance(obj, Plot)
+        return isinstance(obj, (Dimensioned, Plot))
 
     def jslink(self, target, code=None, args=None, bidirectional=False, **links):
         if links and code:
@@ -623,6 +623,8 @@ class HoloViews(PaneBase):
 class Interactive(PaneBase):
 
     priority: ClassVar[float | bool | None] = None
+
+    _ignored_refs: ClassVar[Tuple[str]] = ['object']
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)

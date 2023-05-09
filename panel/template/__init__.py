@@ -6,6 +6,7 @@ from .fast import FastGridTemplate, FastListTemplate  # noqa
 from .golden import GoldenTemplate  # noqa
 from .material import MaterialTemplate  # noqa
 from .react import ReactTemplate  # noqa
+from .slides import SlidesTemplate  # noqa
 from .vanilla import VanillaTemplate  # noqa
 
 templates = {
@@ -14,6 +15,7 @@ templates = {
     'fast-list' : FastListTemplate,
     'material'  : MaterialTemplate,
     'golden'    : GoldenTemplate,
+    'slides'    : SlidesTemplate,
     'vanilla'   : VanillaTemplate
 }
 
@@ -30,6 +32,7 @@ __all__ = [
     "GoldenTemplate",
     "MaterialTemplate",
     "ReactTemplate",
+    "SlidesTemplate",
     "Template",
     "VanillaTemplate",
 ]

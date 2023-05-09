@@ -57,6 +57,7 @@ unix_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only suppor
 
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
+from panel.widgets.button import _ButtonBase
 
 
 def mpl_figure():
@@ -84,6 +85,8 @@ def check_layoutable_properties(layoutable, model):
         assert model.css_classes == ['markdown', 'custom_class', 'alert', 'alert-primary']
     elif isinstance(layoutable, Markdown):
         assert model.css_classes == ['markdown', 'custom_class']
+    elif isinstance(layoutable, _ButtonBase):
+        assert model.css_classes == ['solid', 'custom_class']
     else:
         assert model.css_classes == ['custom_class']
 

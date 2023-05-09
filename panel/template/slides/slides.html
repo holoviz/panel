@@ -10,9 +10,7 @@
 {% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
 {% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
 {% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
-{% endblock %}
 
-{% block postamble %}
 <!-- Template CSS -->
 {% for css in template_resources['css'].values() %}
 <link rel="stylesheet" href="{{ css }}">
@@ -108,17 +106,30 @@
     </div>
     {% endif %}
 
-    <div class="main" id="main">
+    <div class="main" id="main" style="margin-left: {{ 'calc(var(--sidebar-width) + 30px)' if nav or sidebar_footer else 0 }};">
       {% if main_max_width %}
       <div style="margin-left: auto; margin-right: auto; max-width: {{main_max_width}}">
       {% endif %}
-      {% for doc in docs %}
-      {% for root in doc.roots %}
-      {% if "main" in root.tags %}
-      {{ embed(root) | indent(4) }}
-      {% endif %}
-      {% endfor %}
-      {% endfor %}
+      <div class="reveal">
+	<div class="slides">
+	  {% set main_count = namespace(value=0) %}
+	  {% for doc in docs %}
+	  {% for root in doc.roots %}
+	  {% if "main" in root.tags %}
+	  <{{ 'div class="fragment"' if "fragment" in root.tags else "section" }} id="slide-{{ main_count.value }}">
+	    {{ embed(root) | indent(4) }}
+	  {% set main_count.value = main_count.value + 1 %}
+	  {% if "fragment" in root.tags %}
+          </div>
+          {% endif %}
+          {% if (loop.index >= doc.roots|length or "fragment" not in doc.roots[loop.index].tags) %}
+          </section>
+	  {% endif %}
+	  {% endif %}
+	  {% endfor %}
+	  {% endfor %}
+	</div>
+      </div>
       {% if main_max_width %}
       </div>
       {% endif %}
@@ -140,13 +151,20 @@
 </div>
 
 <script>
+  var config = {{ reveal_config | json }}
+  config.embedded = true;
+  config.disableLayout = true;
+  Reveal.initialize(config);
+
   function openNav() {
-    document.getElementById("sidebar").classList.remove("hidden");
+    document.getElementById("sidebar").style.left = 0;
+    document.getElementById("main").style.marginLeft = "calc(var(--sidebar-width) + 30px)";
     document.getElementById("sidebar-button").onclick = closeNav;
   }
 
   function closeNav() {
-    document.getElementById("sidebar").classList.add("hidden");
+    document.getElementById("sidebar").style.left = "calc(-1 * var(--sidebar-width) - 20px)";
+    document.getElementById("main").style.marginLeft = "0";
     document.getElementById("sidebar-button").onclick = openNav;
   }
 

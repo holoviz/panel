@@ -1,8 +1,8 @@
 :host, :root {
-    --background-color: var(--jp-layout-color0, var(--pst-color-background, var(--panel-background-color)));
-    --background-text-color: var(--jp-widgets-label-color, var(--pst-color-text-base, var(--panel-on-background-color)));
-    --surface-color: var(--jp-layout-color1, var(--pst-color-surface, var(--panel-surface-color)));
-    --surface-text-color: var(--jp-ui-font-color1, var(--pst-color-text-base, var(--panel-on-surface-color)));
+    --background-color: var(--vscode-notebook-editorBackground, var(--jp-layout-color0, var(--pst-color-background, var(--panel-background-color))));
+    --background-text-color: var(--vscode-editor-foreground, var(--jp-widgets-label-color, var(--pst-color-text-base, var(--panel-on-background-color))));
+    --surface-color: var(--vscode-notebook-cellEditorBackground, var(--jp-layout-color1, var(--pst-color-surface, var(--panel-surface-color))));
+    --surface-text-color: var(--vscode-editor-foreground, var(--jp-ui-font-color1, var(--pst-color-text-base, var(--panel-on-surface-color))));
     color: var(--background-text-color);
 }
 
