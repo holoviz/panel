@@ -37,7 +37,7 @@ Generate a UI by manually declaring callbacks that update panels or panes.
 
 ## Examples
 
-Below are additional recipes using each API to create slightly more advanced apps.
+Below are additional recipes using each API to create additional apps.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -64,6 +64,13 @@ Build a stock explorer app using the Param based declarative API.
 :link-type: doc
 
 Build a stock explorer app using the reactive API.
+:::
+
+:::{grid-item-card} Outlier Explorer - Declarative API
+:link: examples/outliers_declarative
+:link-type: doc
+
+Build a simple outlier explorer app using the reactive API.
 :::
 
 ::::
