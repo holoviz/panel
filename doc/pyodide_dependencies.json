@@ -103,5 +103,4 @@
   "reference/templates/Material.ipynb": ["holoviews"],
   "reference/templates/React.ipynb": ["holoviews"],
   "reference/templates/Vanilla.ipynb": ["holoviews"],
-  "reference/widgets/FileDownload.ipynb": null
 }
