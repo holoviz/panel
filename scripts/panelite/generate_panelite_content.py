@@ -139,6 +139,7 @@ def convert_docs():
         list(DOC_DIR.glob('explanation/**/*.md')) +
         list(DOC_DIR.glob('how_to/**/*.md'))
     )
+    print(mds)
     for md in mds:
         out = LITE_FILES / md.relative_to(DOC_DIR).with_suffix('.ipynb')
         out.parent.mkdir(parents=True, exist_ok=True)

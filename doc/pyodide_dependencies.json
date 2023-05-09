@@ -102,5 +102,5 @@
   "reference/templates/GoldenLayout.ipynb": ["holoviews"],
   "reference/templates/Material.ipynb": ["holoviews"],
   "reference/templates/React.ipynb": ["holoviews"],
-  "reference/templates/Vanilla.ipynb": ["holoviews"],
+  "reference/templates/Vanilla.ipynb": ["holoviews"]
 }
