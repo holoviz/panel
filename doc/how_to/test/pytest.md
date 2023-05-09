@@ -6,19 +6,7 @@ This guide addresses how to use unit and performance testing on a Panel app with
 
 Testing is key to developing robust and performant applications. You can test Panel data apps using familiar Python testing tools.
 
-[Pytest](https://docs.pytest.org/en/latest/) is the most common Python testing framework. We will use it below to write unit and performance tests.
-
-::::{grid} 4
-:::{grid-item-card}
-:link: https://docs.pytest.org/en/latest/
-:link-type: url
-
-```{image} https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Pytest_logo.svg/600px-Pytest_logo.svg.png
-```
-:::
-::::
-
-Before we get started, you should
+[Pytest](https://docs.pytest.org/en/latest/) is the most common Python testing framework. We will use it below to write unit and performance tests. Before we get started, you should
 
 ```bash
 pip install panel pytest pytest-benchmark
