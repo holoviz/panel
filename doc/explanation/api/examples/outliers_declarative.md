@@ -9,11 +9,12 @@ For such usages, Panel supports objects declared with the separate [Param](http:
 
 ```{pyodide}
 import panel as pn
-pn.extension()
 import hvplot.pandas
+import numpy as np
 import param
 import pandas as pd
-import numpy as np
+
+pn.extension()
 
 
 csv_file = 'https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv'
