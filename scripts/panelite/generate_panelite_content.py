@@ -38,7 +38,7 @@ def _get_dependencies(nbpath: pathlib.Path):
         return []
     for name, min_version in MINIMUM_VERSIONS.items():
         if any(name in req for req in dependencies):
-            deps = [f'{name}>={min_version}' if name in req else req for req in dependencies]
+            dependencies = [f'{name}>={min_version}' if name in req else req for req in dependencies]
     return BASE_DEPENDENCIES + dependencies
 
 def _to_piplite_install_code(dependencies):
