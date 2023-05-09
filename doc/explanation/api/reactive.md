@@ -14,7 +14,7 @@ The `pn.bind` reactive programming API requires the programmer to select and con
 
 ## Explanation
 
-In this model, we can use an existing plotting function, declare each widget explicitly, and then bind a widget to each of the arguments that we want to be interactive. The `pn.bind` function works much like [`functools.partial`](https://docs.python.org/3/library/functools.html#functools.partial) in that it binds regular arguments and keyword arguments to a function. `partial` can only bind specific, static arguments like `5`, but `pn.bind` can also bind parameters, widgets, and other dynamic functions with dependencies to the arguments, ensuring when the function is called the current values of the parameters are passed to the function. A bound function is then reactive, updating whenever the widget values change.
+In this model, we can use an existing plotting function, declare each widget explicitly, and then bind a widget to each of the arguments that we want to be interactive. The `pn.bind` function works much like [`functools.partial`](https://docs.python.org/3/library/functools.html#functools.partial) in that it binds regular arguments and keyword arguments to a function. `partial` can only bind specific, static arguments like `5`, but `pn.bind` can also bind *Parameters*, widgets, and other dynamic functions with dependencies to the arguments, ensuring when the function is called the current values of the *Parameters* are passed to the function. A bound function is then reactive, updating whenever the widget values change.
 
 To make the concept of binding clear, let's look at a trivial example first:
 
@@ -77,4 +77,4 @@ pn.Row(
 )
 ```
 
-This alternative way of specifying the same app lets you declare the dependency between a function argument and a widget (or parameter) from the start, which can be clearer if you know the function will always and only be used in a GUI. Otherwise, the `pn.bind` version is preferred, because it allows you to keep the Panel-specific code separate (even in a different Python module or file) from the underlying analysis and plotting code.
+This alternative way of specifying the same app lets you declare the dependency between a function argument and a widget (or *Parameter*) from the start, which can be clearer if you know the function will always and only be used in a GUI. Otherwise, the `pn.bind` version is **preferred**, because it allows you to keep the Panel-specific code separate (even in a different Python module or file) from the underlying analysis and plotting code.

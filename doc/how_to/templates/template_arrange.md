@@ -16,30 +16,32 @@ Let's create a simple app and place components in the `header`, `sidebar`, and `
 ``` {code-block} python
 :emphasize-lines: 19-22
 
-import panel as pn
+import hvplot.pandas
 import numpy as np
-import holoviews as hv
-
-# Explicitly set template and add some text to the header area
-bootstrap = pn.template.BootstrapTemplate(title='Bootstrap Template')
+import pandas as pd
+import panel as pn
 
 # Data and Widgets
 xs = np.linspace(0, np.pi)
 freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
 phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi)
 
-# Plotting function bound to widgets
-@pn.depends(freq=freq, phase=phase)
+# Interactive data pipeline
 def sine(freq, phase):
-    return hv.Curve((xs, np.sin(xs*freq+phase))).opts(
-        height=200, width=400)
+    return pd.DataFrame(dict(y=np.sin(xs*freq+phase)), index=xs)
 
+dfi_sine = hvplot.bind(sine, freq, phase).interactive()
+
+# Explicitly set template and add some text to the header area
+template = pn.template.BootstrapTemplate(title='BootstrapTemplate')
 # Add components to the sidebar, main, and header
-bootstrap.sidebar.extend([freq, phase])
-bootstrap.main.append(pn.Card(hv.DynamicMap(sine), title='Sine'))
-bootstrap.header.append('## Header')
+template.sidebar.extend([freq, phase])
+template.main.append(
+    pn.Card(dfi_sine.hvplot(min_height=400).output(), title='Sine')
+)
+template.header.append('## Header')
 
-bootstrap.servable()
+template.servable();
 ```
 :::
 

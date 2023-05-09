@@ -73,13 +73,13 @@ class App(pn.viewable.Viewer):
         self.runs+=1
         self.status=f"Finished run {self.runs} in {duration}sec"
 
-    @pn.depends("run", watch=True)
+    @param.depends("run", watch=True)
     def _run_with_status_update(self):
         self._start_run()
         self._result_pane[:] = [self._run()]
         self._stop_run()
 
-    @pn.depends("status", watch=True)
+    @param.depends("status", watch=True)
     def _update_status_pane(self):
         self._status_pane.object = self.status
 

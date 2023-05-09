@@ -14,44 +14,47 @@ A modal can be opened and closed with `.open_modal()` and `.close_modal()` metho
 ``` {code-block} python
 :emphasize-lines: 24-36
 
-import panel as pn
+import hvplot.pandas
 import numpy as np
-import holoviews as hv
+import pandas as pd
+import panel as pn
 
 # Explicitly set template and add some text to the header area
-bootstrap = pn.template.BootstrapTemplate(title='Bootstrap Template')
+template = pn.template.BootstrapTemplate(title='Bootstrap Template')
 
 # Data and Widgets
 xs = np.linspace(0, np.pi)
 freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
 phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi)
 
-# Plotting function bound to widgets
-@pn.depends(freq=freq, phase=phase)
+# Interactive data pipeline
 def sine(freq, phase):
-    return hv.Curve((xs, np.sin(xs*freq+phase))).opts(
-        height=400, width=400)
+    return pd.DataFrame(dict(y=np.sin(xs*freq+phase)), index=xs)
+
+dfi_sine = hvplot.bind(sine, freq, phase).interactive()
 
 # Add components to the sidebar, main, and header
-bootstrap.sidebar.extend([freq, phase])
-bootstrap.main.append(pn.Card(hv.DynamicMap(sine), title='Sine'))
-bootstrap.header.append('## Header')
+template.sidebar.extend([freq, phase])
+template.main.append(
+    pn.Card(dfi_sine.hvplot(heiht=200, min_height=400).output(), title='Sine')
+)
+template.header.append('## Header')
 
 # Add some content to the modal area
-bootstrap.modal.append("## This is a modal")
+template.modal.append("## This is a modal")
 
 # Create a button
 modal_btn = pn.widgets.Button(name="Click for modal")
 
 # Callback that will open the modal when the button is clicked
 def about_callback(event):
-    bootstrap.open_modal()
+    template.open_modal()
 
 # Link the button to the callback and append it to the sidebar
 modal_btn.on_click(about_callback)
-bootstrap.sidebar.append(modal_btn)
+template.sidebar.append(modal_btn)
 
-bootstrap.servable()
+template.servable();
 ```
 :::
 

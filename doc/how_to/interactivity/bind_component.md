@@ -1,16 +1,16 @@
 # Add reactivity to components
 
-This guide addresses how to bind parameters and bound functions on components.
+This guide addresses how to bind *Parameters* and bound functions on components.
 
 :::{versionadded} 1.0.0
-Bind parameters, widgets and bound functions to component parameters.
+Bind *Parameters*, widgets and bound functions to component *Parameters*.
 :::
 
 ---
 
-The power to binding parameters, widgets and interactive functions to component parameters can be used with all of Panel's widgets and panes. This provides a powerful way to add interactivity to an application and update specific parameters without writing callbacks.
+The power to binding *Parameters*, widgets and interactive functions to component *Parameters* can be used with all of Panel's widgets and panes. This provides a powerful way to add interactivity to an application and update specific *Parameters* without writing callbacks.
 
-Let's start with an using existing components to give you an idea of the power behind this. In this example we bind the value of a slider widget to the `page_size` parameter of the [Tabulator](../../reference/widgets/Tabulator) widget. This will allow you to change the page size of the table with the slider:
+Let's start with an using existing components to give you an idea of the power behind this. In this example we bind the value of a slider widget to the `page_size` *Parameter* of the [Tabulator](../../reference/widgets/Tabulator) widget. This will allow you to change the page size of the table with the slider:
 
 ```{pyodide}
 import pandas as pd
@@ -32,7 +32,7 @@ pn.Column(slider, tabulator)
 Read the [How to > Make your functions interactive](./bind_function) guide to learn how to bind functions.
 ```
 
-Often times the value of a widget or parameter will not map directly onto the parameter you want to set. In these cases, you can write a reactive function (using `pn.bind`), which transforms the values of the inputs.
+Often times the value of a widget or *Parameter* will not map directly onto the *Parameter* you want to set. In these cases, you can write a reactive function (using `pn.bind`), which transforms the values of the inputs.
 
 Let's say we have a function that takes a string and a number as input:
 
@@ -54,6 +54,8 @@ iobject = pn.bind(object_creator, select, slider)
 pn.Row(slider, select, pn.pane.Markdown(iobject))
 ```
 
-This approach is preferred over rendering reactive functions directly because it is more efficient and updates only the specific parameters that are being changed.
+This approach is preferred over rendering reactive functions directly because it is more efficient and updates only the specific *Parameters* that are being changed.
 
 ## Related Resources
+
+- Understand [Param](../../explanation/dependencies/param.md)

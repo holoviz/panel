@@ -9,11 +9,10 @@ Panel generally relies on either the Jupyter kernel or a Bokeh Server to be runn
 ```
 slider = pn.widgets.IntSlider(start=0, end=10)
 
-@pn.depends(slider.param.value)
 def callback(value):
     return '%d * 5 = %d' % (value, value*5)
 
-row = pn.Row(slider, callback)
+row = pn.Row(slider, pn.bind(callback, slider))
 ```
 
 If we displayed this the normal way it would call back into Python every time the value changed. However, the `.embed()` method will record the state of the app for the different widget configurations.

@@ -23,7 +23,7 @@ Linking functions or methods to widgets using ``pn.bind`` or the equivalent ``pn
 :link: parameterized
 :link-type: doc
 
-Declare parameters and their ranges in `Parameterized` classes, then get GUIs (and value checking!) for free.
+Declare *Parameters* and their ranges in `Parameterized` classes, then get GUIs (and value checking!) for free.
 :::
 
 :::{grid-item-card} {octicon}`link;2.5em;sd-mr-1 sd-animate-grow50` 3. Callbacks API
