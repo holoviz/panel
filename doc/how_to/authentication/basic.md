@@ -37,6 +37,10 @@ The basic auth provider will now check the provided credentials against the cred
 
 ## Custom templates
 
+```{admonition} Prerequisites
+For a more in-depth understanding of custom template take a look at the [how to > Build a Custom Template](../templates/template_custom.md) guide.
+```
+
 If you want to customize the authentication template you can provide a custom template with the `--basic-login-template` CLI argument. The template needs to submit `username` and `password` to the `/login` endpoint of the Panel server, e.g. the form of the default template looks like this:
 
 ```html
