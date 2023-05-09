@@ -35,16 +35,16 @@ The experience when working in an editor or IDE is slightly different. Whenever 
 
 ## Control flow
 
-Now let's get into how Panel actually works. Panel is built on a library called [Param](https://param.holoviz.org/), this controls how information flows through your application. When a parameter changes, e.g. the value of a slider updates or when you update the value manually in code, events are triggered that you can respond to. Panel provides a number of high-level and lower-level approaches for setting up interactivity in response to updates in parameters. Understanding some of the basic concepts behind param is essential to getting a hang of Panel.
+Now let's get into how Panel actually works. Panel is built on a library called [Param](https://param.holoviz.org/), this controls how information flows through your application. When a *Parameter* changes, e.g. the value of a slider updates or when you update the value manually in code, events are triggered that you can respond to. Panel provides a number of high-level and lower-level approaches for setting up interactivity in response to updates in *Parameters*. Understanding some of the basic concepts behind param is essential to getting a hang of Panel.
 
 Let's start simple and answer the question "what is param?"
 
 - Param is a framework that lets Python classes have attributes with defaults, type/value validation and callbacks when a value changes.
 - Param is similar to other frameworks like [Python dataclasses](https://docs.python.org/3/library/dataclasses.html), [pydantic](https://pydantic-docs.helpmanual.io/) and [traitlets](https://traitlets.readthedocs.io/en/stable/)
 
-One of the most important concepts to understand in both Param and Panel is the ability to use parameters as references to drive interactivity. This is often called reactivity and the most well known instance of this approach are spreadsheet applications like Excel. When you reference a particular cell in the formula of another cell, changing the original cell will automatically trigger an update in all cells that reference. The same concept applies to parameter objects.
+One of the most important concepts to understand in both Param and Panel is the ability to use *Parameters* as references to drive interactivity. This is often called reactivity and the most well known instance of this approach are spreadsheet applications like Excel. When you reference a particular cell in the formula of another cell, changing the original cell will automatically trigger an update in all cells that reference. The same concept applies to *Parameter* objects.
 
-One of the main things to understand about param in the context of its use in Panel is the distinction between the parameter **value** and the parameter **object**. The **value** represents the current value of a parameter at a particular point in time, while the **object** holds metadata about the parameter but also acts as a **reference** to the parameters value across time. In many cases you can pass a parameter **object** and Panel will automatically resolve the current value **and** reactively update when that parameter changes. Let's take a widget as an example:
+One of the main things to understand about Param in the context of its use in Panel is the distinction between the *Parameter* **value** and the *Parameter* **object**. The **value** represents the current value of a *Parameter* at a particular point in time, while the **object** holds metadata about the *Parameter* but also acts as a **reference** to the *Parameters* value across time. In many cases you can pass a *Parameter* **object** and Panel will automatically resolve the current value **and** reactively update when that *Parameter* changes. Let's take a widget as an example:
 
 ```python
 text = pn.widgets.TextInput()
@@ -231,15 +231,15 @@ def square(x):
 pn.Row(pn.bind(square, x))
 ```
 
-The `pn.bind` function lets us bind widgets (and parameter **objects**) to a function that returns an object to be displayed. Once bound the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily.
+The `pn.bind` function lets us bind widgets (and *Parameter* **objects**) to a function that returns an object to be displayed. Once bound the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily.
 
 :::{admonition} Reminder
 :class: info
 
-Remember how we talked about the difference between a parameter **value** and a parameter **object**. In the previous example the widget itself is effectively an alias for the parameter object, i.e. the binding operation is exactly equivalent to `pn.bind(square, x.param.value)`. This is true for all widgets, the widget itself is an alias for the widgets `value` parameter.
+Remember how we talked about the difference between a *Parameter* **value** and a *Parameter* **object**. In the previous example the widget itself is effectively an alias for the *Parameter* object, i.e. the binding operation is exactly equivalent to `pn.bind(square, x.param.value)`. This is true for all widgets, the widget itself is an alias for the widgets `value` *Parameter*.
 :::
 
-The approach above is quite heavy handed because whenever the slider value changes Panel will re-create a new Pane and re-render the output. If we want more fine-grained control we can instead explicitly instantiate a `Markdown` pane and pass it bound functions and parameters by reference:
+The approach above is quite heavy handed because whenever the slider value changes Panel will re-create a new Pane and re-render the output. If we want more fine-grained control we can instead explicitly instantiate a `Markdown` pane and pass it bound functions and *Parameters* by reference:
 
 ```{pyodide}
 import panel as pn
@@ -285,7 +285,7 @@ background.param.watch(update_styles, 'value')
 pn.Row(x, background, square)
 ```
 
-The first thing you will note is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding.
+The first thing you will note is how much more verbose this is, which should make you appreciate the power of expressing reactivity using *Parameter* binding.
 
 ## Templates
 
