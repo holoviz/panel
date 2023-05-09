@@ -16,39 +16,39 @@ sd_hide_title: true
 
 <h2 style="margin-top: 0.3em;">The powerful data exploration & web app framework for Python</h2>
 
-::::{card-carousel} 4
+::::{card-carousel} 3
 
-:::{card}
+:::{card} Portfolio Optimizer
 :img-top: https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
 :::
 
-:::{card}
+:::{card} MRI Slicer
 :img-top: https://assets.holoviz.org/panel/gallery/vtk_slicer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/vtk_slicer
 :link-type: url
 :::
 
-:::{card}
+:::{card} Videostream
 :img-top: https://assets.holoviz.org/panel/gallery/streaming_videostream.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
 :::
 
-:::{card}
+:::{card} Portfolio Analyzer
 :img-top: https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_analyzer
 :link-type: url
 :::
 
-:::{card}
+:::{card} Crossfilter
 :img-top: https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/penguin_crossfilter
 :link-type: url
 :::
 
-:::{card}
+:::{card} awesome-panel.org
 :img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
 :link: https://awesome-panel.org/gallery
 :link-type: url

@@ -13,30 +13,34 @@ Applying different design systems in Panel can be achieved globally or per compo
 ```{pyodide}
 import panel as pn
 
-pn.extension(design='fast')
+pn.extension(design='material')
 ```
 
 Alternatively you can also explicitly import and set a `design` on the config:
 
 ```python
-from panel.theme.fast import Fast
+from panel.theme import Material
 
-pn.config.design = Fast
+pn.config.design = Material
 ```
 
 Any component that is rendered will now inherit this design. However, alternatively we can also set a `design` explicitly on a particular component, e.g.:
 
 ```{pyodide}
-from panel.theme.bootstrap import Bootstrap
-from panel.theme.fast import Fast
-from panel.theme.material import Material
-from panel.theme.native import Native
+from panel.theme import Bootstrap, Material, Native
+
+def create_components(design):
+    with pn.config.set(design=design):
+        return pn.Column(
+            pn.widgets.Button(name='Click me!', icon='hand-click', button_type='success'),
+            pn.widgets.FloatSlider(design=Bootstrap),
+            pn.widgets.Select(name='Select', options=['Biology', 'Chemistry', 'Physics'])
+        )
 
 pn.Tabs(
-    ('Bootstrap', pn.widgets.FloatSlider(design=Bootstrap)),
-    ('Fast', pn.widgets.FloatSlider(design=Fast)),
-    ('Material', pn.widgets.FloatSlider(design=Material)),
-    ('Native', pn.widgets.FloatSlider(design=Native)),
+    ('Bootstrap', create_components(Bootstrap)),
+    ('Material', create_components(Material)),
+    ('Native', create_components(Native)),
 )
 ```
 
