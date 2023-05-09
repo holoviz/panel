@@ -23,7 +23,7 @@ If you want a slightly more complex setup with a number of different users with 
 ```json
 {
     "user1": "my_password",
-	"admin": "my_super_safe_password"
+    "admin": "my_super_safe_password"
 }
 ```
 
