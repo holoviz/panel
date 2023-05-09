@@ -23,7 +23,7 @@ If you choose not to install Anaconda or Miniconda, you can download Python dire
 
 ## Installing Panel
 
-Open up a terminal (Powershell if you are on Windows), and run the following command, which will install Panel with all its dependencies.
+Open up a terminal and run the following command, which will install Panel with all its dependencies.
 
 ::::{tab-set}
 
