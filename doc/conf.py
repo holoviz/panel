@@ -131,16 +131,14 @@ def get_requirements():
     with open('pyodide_dependencies.json') as deps:
         dependencies = json.load(deps)
     requirements = {}
-    for name, deps in dependencies.items():
+    for src, deps in dependencies.items():
         if deps is None:
             continue
-        name = name.replace('.ipynb', '').replace('.md', '')
+        src = src.replace('.ipynb', '').replace('.md', '')
         for name, min_version in MINIMUM_VERSIONS.items():
             if any(name in req for req in deps):
                 deps = [f'{name}>={min_version}' if name in req else req for req in deps]
-        if any('hvplot' in req for req in deps):
-            deps.insert(0, 'holoviews>=1.16.0a7')
-        requirements[name] = deps
+        requirements[src] = deps
     return requirements
 
 nbsite_pyodide_conf = {
