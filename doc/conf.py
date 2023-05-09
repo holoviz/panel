@@ -184,7 +184,7 @@ def patched_run(self):
 
 GridItemCardDirective.run = patched_run
 
-origin_run = CardDirective.run
+orig_run = CardDirective.run
 
 def patch_run(self):
     app = self.state.document.settings.env.app
@@ -193,7 +193,7 @@ def patch_run(self):
     if existing_link and domain:
         new_link = existing_link.replace('|gallery-endpoint|', domain)
         self.options['link'] = new_link
-    return list(orig_run(self))
+    return orig_run(self)
 
 CardDirective.run = patched_run
 
