@@ -346,7 +346,7 @@ class ChatBox(CompositeWidget):
         )
         self._chat_log = Column(**chat_layout)
         self._scroll_button = Button(
-            name="Scroll to top (latest)",
+            name="Scroll to latest",
             button_type="light",
             align="center",
             width=100,
