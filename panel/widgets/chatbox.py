@@ -49,6 +49,12 @@ class ChatRow(CompositeWidget):
 
     liked = param.Boolean(default=False, doc="""Whether a user liked the message""")
 
+    align_name = param.Selector(
+        default="start",
+        objects=["start", "end"],
+        doc="""Whether to show the name at the start or end of the row""",
+    )
+
     show_name = param.Boolean(
         default=True,
         doc="""Whether to show the name of the user""",
@@ -173,7 +179,10 @@ class ChatRow(CompositeWidget):
                 align=(horizontal_align, "start"),
                 styles={"font-size": "0.88em", "color": "grey"},
             )
-            row = Column(row, self._name, **container_params)
+            if self.align_name == "start":
+                row = Column(self._name, row, **container_params)
+            else:
+                row = Column(row, self._name, **container_params)
         else:
             self._name = None
 
@@ -257,6 +266,16 @@ class ChatBox(CompositeWidget):
         default=False,
     )
 
+    ascending = param.Boolean(
+        doc="""
+            Whether to display messages in ascending time order.
+            If true, the latest messages and message_input_widgets
+            will be at the bottom of the chat box.
+            Otherwise, they will be at the top.
+        """,
+        default=False,
+    )
+
     message_rgb_range = param.Range(
         doc="""
             Range of RGB values to use for the message background
@@ -317,7 +336,7 @@ class ChatBox(CompositeWidget):
             styles={
                 "overflow-y": "auto",
                 "overflow-x": "auto",
-                "flex-direction": "column-reverse",
+                "flex-direction": "column" if self.ascending else "column-reverse",
             },
         )
         self._chat_title = StaticText(
@@ -333,19 +352,12 @@ class ChatBox(CompositeWidget):
             width=100,
             margin=0,
         )
-        self._scroll_button.js_on_click(
-            code="""
-            const outerContainer = document.querySelectorAll(".bk-Column")[0].shadowRoot
-            const column = outerContainer.querySelector(".bk-Column")
-            column.scrollTop = -column.scrollHeight
-            """,
-            args={"chat_log": self._chat_log},
-        )
+        self._add_scroll_callback(self._scroll_button, "clicks")
 
         box_objects = [self._chat_title] if self.name else []
         box_objects.extend([self._chat_log, self._scroll_button])
         if self.allow_input:
-            self._prepend_input(box_objects, layout)
+            self._attach_input(box_objects, layout)
         else:
             self._message_inputs = {}
             self._send_button = None
@@ -355,9 +367,24 @@ class ChatBox(CompositeWidget):
         self.param.watch(self._refresh_log, "value")
         self.param.trigger("value")
 
-    def _prepend_input(self, box_objects: List, layout: Dict[str, str]) -> None:
+    def _add_scroll_callback(self, obj: Viewable, what: str):
+        code = """
+            const outerContainer = document.querySelectorAll(".bk-Column")[0].shadowRoot
+            const column = outerContainer.querySelector(".bk-Column")
         """
-        Append the input widgets to the chat box.
+        if self.ascending:
+            code += "\ncolumn.scrollTop = column.scrollHeight"
+        else:
+            code += "\ncolumn.scrollTop = -column.scrollHeight"
+
+        obj.jscallback(
+            args={"chat_log": self._chat_log},
+            **{what: code},
+        )
+
+    def _attach_input(self, box_objects: List, layout: Dict[str, str]) -> None:
+        """
+        Attach the input widgets to the chat box.
         """
         self._message_inputs = {}
         for message_input_widget in self.message_input_widgets:
@@ -378,8 +405,10 @@ class ChatBox(CompositeWidget):
                 # submit when clicking away; only if they manually click
                 # the send button
                 message_input.param.watch(self._enter_message, "value")
+                self._add_scroll_callback(message_input, "value")
             message_input.sizing_mode = "stretch_width"
         self._send_button.on_click(self._enter_message)
+        self._add_scroll_callback(self._send_button, "clicks")
 
         row_layout = layout.copy()
         row_layout.pop("width", None)
@@ -397,7 +426,11 @@ class ChatBox(CompositeWidget):
 
         if len(self._message_inputs) == 1:
             input_items = input_items[0]  # if only a single input, don't use tabs
-        box_objects.insert(0, input_items)
+
+        if self.ascending:
+            box_objects.append(input_items)
+        else:
+            box_objects.insert(0, input_items)
 
     def _generate_color(self, string: str, rgb_range: Tuple[int]) -> str:
         """
@@ -471,6 +504,7 @@ class ChatBox(CompositeWidget):
             show_name=show_name,
             show_like=self.allow_likes,
             align=align,
+            align_name="start" if self.ascending else "end",
             default_message_callable=self.default_message_callable,
             styles={
                 "background": background,
