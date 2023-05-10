@@ -173,29 +173,29 @@ html_title = f'{project} v{version}'
 from sphinx_design.cards import CardDirective
 from sphinx_design.grids import GridItemCardDirective
 
-orig_run = GridItemCardDirective.run
+orig_grid_run = GridItemCardDirective.run
 
-def patched_run(self):
+def patched_grid_run(self):
     app = self.state.document.settings.env.app
     domain = getattr(app.config, 'grid_item_link_domain', None)
     if self.has_content:
         self.content.replace('|gallery-endpoint|', domain)
-    return list(orig_run(self))
+    return list(orig_grid_run(self))
 
-GridItemCardDirective.run = patched_run
+GridItemCardDirective.run = patched_grid_run
 
-orig_run = CardDirective.run
+orig_card_run = CardDirective.run
 
-def patch_run(self):
+def patched_card_run(self):
     app = self.state.document.settings.env.app
     existing_link = self.options.get('link')
     domain = getattr(app.config, 'grid_item_link_domain', None)
     if existing_link and domain:
         new_link = existing_link.replace('|gallery-endpoint|', domain)
         self.options['link'] = new_link
-    return orig_run(self)
+    return orig_card_run(self)
 
-CardDirective.run = patched_run
+CardDirective.run = patched_card_run
 
 def setup(app) -> None:
     app.add_config_value('grid_item_link_domain', '', 'html')
