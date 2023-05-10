@@ -8,14 +8,31 @@ JPG_FILE = "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
 def test_chat_box(document, comm):
     value = [
         {"user1": "Hello"},
-        {"user2": "Hi"},
     ]
     chat_box = ChatBox(value=value.copy())
     assert chat_box.value == value
-    assert len(chat_box) == 2
-    for row in chat_box.rows:
-        assert isinstance(row, ChatRow)
-        assert {row.name: row.value[0]} == value.pop(0)
+    assert len(chat_box) == 1
+    rows = chat_box.rows
+    assert all(isinstance(row, ChatRow) for row in rows)
+    assert len(rows) == 1
+    assert rows[0].value == ["Hello"]
+    assert rows[0]._bubble[0].object == "Hello"
+
+
+def test_chat_box_list(document, comm):
+    value = [
+        {"user2": ["Hi", "Greetings", "Salutations"]},
+    ]
+    chat_box = ChatBox(value=value.copy())
+    assert chat_box.value == value
+    assert len(chat_box) == 1
+    rows = chat_box.rows
+    assert all(isinstance(row, ChatRow) for row in rows)
+    assert len(rows) == 1
+    assert rows[0].value == ["Hi", "Greetings", "Salutations"]
+    assert rows[0]._bubble[0].object == "Hi"
+    assert rows[0]._bubble[1].object == "Greetings"
+    assert rows[0]._bubble[2].object == "Salutations"
 
 
 def test_chat_box_chat_log_overflow(document, comm):
@@ -148,6 +165,18 @@ def test_chat_box_message_colors(document, comm):
     assert chat_box.message_colors["user2"].startswith("#")
 
 
+def test_chat_box_generate_color(document, comm):
+    value = [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+    ]
+    chat_box = ChatBox(
+        value=value.copy(), message_colors={"user1": "red"}, rgb_range=(188, 188)
+    )
+    assert chat_box.message_colors["user1"] == "red"
+    assert chat_box.message_colors["user2"] == "#a6a0ab"
+
+
 def test_chat_box_user_icons(document, comm):
     value = [
         {"user1": "Hello"},
@@ -211,10 +240,18 @@ def test_chat_row_update_like(document, comm):
     assert not chat_row.liked
     assert not chat_row._like.value
     assert chat_row._like.name == "♡"
+
+    # now like it!
     chat_row._like.value = True
     assert chat_row.liked
     assert chat_row._like.value
     assert chat_row._like.name == "❤️"
+
+    # now unlike it :( using the public property
+    chat_row.liked = False
+    assert not chat_row.liked
+    assert not chat_row._like.value
+    assert chat_row._like.name == "♡"
 
 
 def test_chat_row_hide_like(document, comm):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 
 from typing import (
-    Any, Callable, ClassVar, Dict, List, Optional, Tuple, Type,
+    Any, Callable, ClassVar, Dict, List, Optional, Tuple, Type, Union,
 )
 
 import param
@@ -138,6 +138,7 @@ class ChatRow(CompositeWidget):
                 align="end",
                 button_type="light",
             )
+            self._like.link(self, value="liked", bidirectional=True)
             self._like.param.watch(self._update_like, "value")
         else:
             self._like = None
@@ -219,13 +220,13 @@ class ChatBox(CompositeWidget):
 
     :Example:
 
-    >>> ChatBox(value=[{"You": "Hello!"}, {"Bot": "How may I help?"}])
+    >>> ChatBox(value=[{"You": "Hello!"}, {"Bot": ["How may I help?", "I'm a bot."]}])
     """
 
     value = param.List(
         doc="""
-            List of messages, mapping user to message,
-            e.g. `[{'You': 'Welcome!'}]` The message can be
+            List of messages as dicts, mapping user to message(s),
+            e.g. `[{'You': ['Welcome!', 'Good bye!']}]` The message(s) can be
             any Python object that can be rendered by Panel
         """,
         item_type=Dict,
@@ -254,6 +255,14 @@ class ChatBox(CompositeWidget):
             like messages.
         """,
         default=False,
+    )
+
+    message_rgb_range = param.Range(
+        doc="""
+            Range of RGB values to use for the message background
+            colors if message_colors is not specified for a user.
+        """,
+        default=(150, 185),
     )
 
     message_icons = param.Dict(
@@ -390,14 +399,13 @@ class ChatBox(CompositeWidget):
             input_items = input_items[0]  # if only a single input, don't use tabs
         box_objects.insert(0, input_items)
 
-    def _generate_pastel_color(self, string: str) -> str:
+    def _generate_color(self, string: str, rgb_range: Tuple[int]) -> str:
         """
-        Generate a random pastel color in hexadecimal format.
+        Generate a random color in hexadecimal format based on RGB range.
         """
         seed = sum([ord(c) for c in string])
         random.seed(seed)
 
-        rgb_range = (150, 185)
         r, g, b = (
             random.randint(*rgb_range),
             random.randint(*rgb_range),
@@ -413,7 +421,9 @@ class ChatBox(CompositeWidget):
         """
         return next(iter(dict_))
 
-    def _separate_user_message(self, user_message: Dict[str, str]) -> Tuple[str, str]:
+    def _separate_user_message(
+        self, user_message: Dict[str, Union[List[Any], Any]]
+    ) -> Tuple[str, str]:
         """
         Separate the user and message from a dictionary.
         """
@@ -428,7 +438,7 @@ class ChatBox(CompositeWidget):
         return user, message_contents
 
     def _instantiate_message_row(
-        self, user: str, message_contents: List[Any], show_name: bool
+        self, user: str, message_contents: Union[Any, List[Any]], show_name: bool
     ) -> ChatRow:
         """
         Instantiate a ChatRow object.
@@ -443,14 +453,16 @@ class ChatBox(CompositeWidget):
         if user in self.message_colors:
             background = self.message_colors[user]
         else:
-            background = self._generate_pastel_color(string=user)
+            background = self._generate_color(
+                string=user, rgb_range=self.message_rgb_range
+            )
             self.message_colors[user] = background
 
         # try to get input icon
         message_icon = self.message_icons.get(user, None)
 
         align = "start" if user != self.primary_name else "end"
-        if not isinstance(message_contents, List):
+        if not isinstance(message_contents, list):
             message_contents = [message_contents]
         message_row = ChatRow(
             name=user,
@@ -512,7 +524,7 @@ class ChatBox(CompositeWidget):
         """
         return self._chat_log.objects
 
-    def append(self, user_message: Dict[str, str]) -> None:
+    def append(self, user_message: Dict[str, Union[List[Any], Any]]) -> None:
         """
         Appends a message to the chat log.
 
@@ -537,7 +549,7 @@ class ChatBox(CompositeWidget):
         self._chat_log.append(message_row)
         self._scroll_button.param.trigger("clicks")
 
-    def extend(self, user_messages: List[Dict[str, str]]) -> None:
+    def extend(self, user_messages: List[Dict[str, Union[List[Any], Any]]]) -> None:
         """
         Extends the chat log with new users' messages.
 
