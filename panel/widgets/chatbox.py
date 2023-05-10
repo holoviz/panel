@@ -91,9 +91,7 @@ class ChatRow(CompositeWidget):
         bubble_styles.update(styles or {})
         if "background" not in bubble_styles:
             bubble_styles["background"] = "black"
-        params["value"] = value
-        params["icon"] = icon
-        super().__init__(**params)
+        super().__init__(value=value, icon=icon, **params)
 
         # create the chat icon
         icon_params = dict(
@@ -324,7 +322,7 @@ class ChatBox(CompositeWidget):
             button_type="light",
             align="center",
             width=100,
-            margin=(0, 0, 0, 0),
+            margin=0,
         )
         self._scroll_button.js_on_click(
             code="""
