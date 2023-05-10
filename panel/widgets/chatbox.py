@@ -350,12 +350,18 @@ class ChatBox(CompositeWidget):
             button_type="light",
             align="center",
             width=100,
+            height=25,
             margin=0,
         )
         self._add_scroll_callback(self._scroll_button, "clicks")
 
         box_objects = [self._chat_title] if self.name else []
-        box_objects.extend([self._chat_log, self._scroll_button])
+        box_objects.append(self._chat_log)
+        if self.ascending:
+            box_objects.append(self._scroll_button)
+        else:
+            box_objects.insert(0, self._scroll_button)
+
         if self.allow_input:
             self._attach_input(box_objects, layout)
         else:
