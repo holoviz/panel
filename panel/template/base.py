@@ -23,6 +23,7 @@ from bokeh.settings import settings as _settings
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
 from ..config import _base_config, config, panel_extension
+from ..io.document import init_doc
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
@@ -69,6 +70,10 @@ FAVICON_URL: str = "/static/extensions/panel/images/favicon.ico"
 
 class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
 
+    design = param.ClassSelector(class_=Design, default=Design,
+                                 is_instance=False, instantiate=False, doc="""
+        A Design applies themes to a template.""")
+
     location = param.Boolean(default=False, doc="""
         Whether to add a Location component to this Template.
         Note if this is set to true, the Jinja2 template must
@@ -77,10 +82,6 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
 
     theme = param.ClassSelector(class_=Theme, default=DefaultTheme,
                                 constant=True, is_instance=False, instantiate=False)
-
-    design = param.ClassSelector(class_=Design, default=Design, constant=True,
-                                 is_instance=False, instantiate=False, doc="""
-        A Design applies a specific design system to a template.""")
 
     # Dictionary of property overrides by Viewable type
     modifiers: ClassVar[Dict[Type[Viewable], Dict[str, Any]]] = {}
@@ -107,6 +108,10 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
         self._documents: List[Document] = []
         self._server = None
         self._layout = self._build_layout()
+        self._setup_design()
+
+    @param.depends('design', watch=True)
+    def _setup_design(self):
         self._design = self.design(theme=self.theme)
 
     def _build_layout(self) -> Column:
@@ -151,6 +156,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
     ):
         # Initialize document
         document: Document = doc or curdoc_locked()
+        document = init_doc(document)
         self._documents.append(document)
         if document not in state._templates:
             state._templates[document] = self
@@ -179,7 +185,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
             # Render root without pre-processing
             model = obj.get_root(document, comm, preprocess=False)
             model.name = name
-            model.tags = tags
+            model.tags = model.tags + [tag for tag in tags if tag not in model.tags]
             mref = model.ref['id']
             if isinstance(model, LayoutDOM):
                 sizing_modes[mref] = model.sizing_mode

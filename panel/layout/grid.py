@@ -336,7 +336,7 @@ class GridSpec(Panel):
                 elif 'height' in self.sizing_mode and width:
                     properties['width'] = int(w*width)
 
-            obj.param.set_param(**{k: v for k, v in properties.items()
+            obj.param.update(**{k: v for k, v in properties.items()
                                    if not obj.param[k].readonly})
 
             if obj in old_objects:

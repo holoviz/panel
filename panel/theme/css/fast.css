@@ -439,77 +439,81 @@ input[type=file]:active {
 /* Buttons */
 
 .bk-btn {
-    background-color: transparent;
     border-radius: calc(var(--control-corner-radius) * 1px);
     line-height: var(--type-ramp-base-line-height);
     min-width: calc((var(--base-height-multiplier) + var(--density)) * var(--design-unit) * 1px);
 }
 
-.bk-btn.bk-btn-default {
-    background-color: transparent;
-    border: 1px solid var(--accent-fill-rest);
-    color: var(--accent-fill-rest);
+:host(.solid) .bk-btn.bk-btn-default {
+    background-color: var(--neutral-fill-rest);
+    color: var(--neutral-foreground-rest);
 }
 
-.bk-btn.bk-btn-default:hover {
+:host(.solid) .bk-btn.bk-btn-default:hover {
     background-color: var(--neutral-fill-hover);
 }
 
-.bk-btn.bk-btn-default.bk-active {
-    background-color: var(--accent-fill-active);
+:host(.outline) .bk-btn.bk-btn-default {
+    background-color: transparent;
+    border: 1px solid var(--neutral-fill-strong-rest);
+    color: var(--neutral-fill-strong-rest);
+}
+
+:host(.outline) .bk-btn.bk-btn-default:hover {
+    background-color: var(--neutral-fill-hover);
+    color: var(--neutral-foreground-rest);
+}
+
+:host(.outline) .bk-btn.bk-btn-default.bk-active {
     color: var(--foreground-on-accent-rest);
     box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
 }
 
-.bk-btn-primary {
-    color: #3276b1;
+:host(.outline) .bk-btn-group .bk-btn-default.bk-active {
+    background-color: var(--neutral-fill-active);
+    color: var(--foreground-on-accent-active);
 }
 
-.bk-btn-primary.bk-active,.bk-btn-primary:hover {
-    color: var(--secondary-text-color);
+:host(.solid) .bk-btn.bk-btn-primary {
+    background-color: var(--accent-fill-rest);
 }
 
-.bk-btn-secondary {
-    color: var(--secondary-bg-color);
+:host(.solid) .bk-btn.bk-btn-primary.bk-active {
+    background-color: var(--accent-fill-active);
+    box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
 }
 
-.bk-btn-secondary.bk-active, .bk-btn-secondary:hover {
-    color: var(--secondary-text-color);
-}
-
-.bk-btn-success {
-    color: var(--success-bg-color);
-}
-
-.bk-btn-success.bk-active, .bk-btn-success:hover {
-    color: var(--success-text-color);
-}
-
-.bk-btn-warning {
-    color: var(--warning-bg-color);
-}
-
-.bk-btn-warning.bk-active, .bk-btn-warning:hover {
-    color: var(--warning-text-color);
-}
-
-.bk-btn-danger {
-    color: var(--danger-bg-color);
-}
-
-.bk-btn-danger.bk-active, .bk-btn-danger:hover {
-    color: var(--danger-text-color);
-}
-
-.bk-btn-light {
-    border-color: var(--light-bg-color);
+:host(.outline) .bk-btn-primary {
+    background-color: transparent;
     color: var(--neutral-foreground-rest);
 }
 
-.bk-btn-light.bk-active, .bk-btn-light:hover {
-    color: var(--light-text-color);
+:host(.outline) .bk-btn-primary.bk-active,:host(.outline) .bk-btn-primary:hover {
+    color: var(--neutral-foreground-rest);
 }
 
+:host(.outline) .bk-btn-group .bk-btn-primary.bk-active {
+    background-color: var(--accent-fill-rest);
+    color: var(--foreground-on-accent-active);
+}
+
+:host(.outline) .bk-btn-success.bk-active, :host(.outline) .bk-btn-success:hover {
+    color: var(--neutral-foreground-rest);
+}
+
+
+:host(.outline) .bk-btn-warning.bk-active, :host(.outline) .bk-btn-warning:hover {
+    color: var(--neutral-foreground-rest);
+}
+
+:host(.outline) .bk-btn-danger.bk-active, :host(.outline) .bk-btn-danger:hover {
+    color: var(--neutral-foreground-rest);
+}
+
+:host(.outline) .bk-btn-light {
+    border-color: var(--light-bg-color);
+    color: var(--neutral-foreground-rest);
+}
 
 .bk-btn[disabled],
 .bk-btn[disabled]:hover,

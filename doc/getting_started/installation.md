@@ -12,15 +12,18 @@ The recommended way to install Panel is using the [conda](https://docs.conda.io/
 
 :::{admonition} Note
 
-To help you choose between Anaconda and Miniconda, review [this page](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html#anaconda-or-miniconda)
+To help you choose between Anaconda and Miniconda, review [this page](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html#anaconda-or-miniconda).
+:::
 
+:::{admonition} Note
+When you begin using conda, you already have a default environment named `base`. You don't want to install programs into your base environment, though. [Create separate environments](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) to keep your programs isolated from each other.
 :::
 
 If you choose not to install Anaconda or Miniconda, you can download Python directly from [Python.org](https://www.python.org/downloads/). In this case, you can install Panel using [pip](https://pip.pypa.io/en/stable/), which comes with Python.
 
 ## Installing Panel
 
-Open up a terminal (Powershell if you are on Windows), and run the following command, which will install Panel with all its dependencies.
+Open up a terminal and run the following command, which will install Panel with all its dependencies.
 
 ::::{tab-set}
 
@@ -41,3 +44,7 @@ pip install panel
 :::
 
 ::::
+
+## Next Steps
+
+Now that you have installed Panel, let's [build a simple application](build_app.md).

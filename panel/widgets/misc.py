@@ -261,7 +261,7 @@ class JSONEditor(Widget):
         of mode.""")
 
     mode = param.Selector(default='tree', objects=[
-        "tree", "view", "form", "code", "text", "preview"], doc="""
+        "tree", "view", "form", "text", "preview"], doc="""
         Sets the editor mode. In 'view' mode, the data and
         datastructure is read-only. In 'form' mode, only the value can
         be changed, the data structure is read-only. Mode 'code'

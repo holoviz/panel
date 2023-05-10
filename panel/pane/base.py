@@ -18,9 +18,9 @@ from bokeh.models.layouts import (
 )
 
 from .._param import Margin
-from ..io import (
-    init_doc, push, state, unlocked,
-)
+from ..io.document import create_doc_if_none_exists, unlocked
+from ..io.notebook import push
+from ..io.state import state
 from ..layout.base import NamedListPanel, Panel, Row
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
@@ -108,7 +108,7 @@ class PaneBase(Reactive):
         Defines the layout the model(s) returned by the pane will
         be placed in.""")
 
-    margin = Margin(default=5, doc="""
+    margin = Margin(default=(5, 10), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
@@ -380,7 +380,7 @@ class PaneBase(Reactive):
         -------
         Returns the bokeh model corresponding to this panel object
         """
-        doc = init_doc(doc)
+        doc = create_doc_if_none_exists(doc)
         if self._design and comm:
             wrapper = self._design._wrapper(self)
             if wrapper is self:
@@ -600,7 +600,7 @@ class ReplacementPane(PaneBase):
                 equal = False
             if not equal:
                 new_params[k] = v
-        old.set_param(**new_params)
+        old.param.update(**new_params)
 
     @classmethod
     def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, inplace: bool=False, **kwargs):

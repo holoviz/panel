@@ -11,7 +11,7 @@ This guide addresses how to build a custom template.
 
 ## Build a Template in a Single File
 
-Completely custom templates extend the default jinja2 template in various ways. Before we dive into modifying such a template, let us take a look at the default template used by Panel:
+Completely custom templates extend the default [Jinja2](https://palletsprojects.com/p/jinja/) template in various ways. Before we dive into modifying such a template, let us take a look at the default template used by Panel:
 
 ```html
 {% from macros import embed %}

@@ -36,30 +36,31 @@ Once these classes are created, the themes can be imported and applied to a temp
 :::{card} app.py
 
 ```python
+import hvplot.pandas
+import numpy as np
+import pandas as pd
 import panel as pn
 from panel.template import DarkTheme
-import numpy as np
-import holoviews as hv
 
 # Data and Widgets
 xs = np.linspace(0, np.pi)
 freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
 phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi)
 
-# Plotting function bound to widgets
-@pn.depends(freq=freq, phase=phase)
+# Interactive data pipeline
 def sine(freq, phase):
-    return hv.Curve((xs, np.sin(xs*freq+phase))).opts(
-        height=400, width=400)
+    return pd.DataFrame(dict(y=np.sin(xs*freq+phase)), index=xs)
 
-dark = pn.template.MaterialTemplate(title='Material Dark', theme=DarkTheme)
+dfi_sine = hvplot.bind(sine, freq, phase).interactive()
 
-dark.sidebar.append(freq)
-dark.sidebar.append(phase)
+template = pn.template.MaterialTemplate(title='Material Dark', theme=DarkTheme)
 
-dark.main.append(pn.Card(hv.DynamicMap(sine), title='Sine'))
-
-dark.servable()
+template.sidebar.append(freq)
+template.sidebar.append(phase)
+template.main.append(
+    pn.Card(dfi_sine.hvplot(min_height=400).output(), title='Sine')
+)
+template.servable();
 ```
 ::::
 

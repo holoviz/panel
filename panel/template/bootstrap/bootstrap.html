@@ -74,7 +74,7 @@
 <!-- goes in body -->
 {% block contents %}
 <div class="container-fluid d-flex flex-column vh-100 overflow-hidden" id="container">
-  <nav class="navbar navbar-expand-md sticky-top shadow" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+  <nav class="navbar navbar-expand-md sticky-top shadow" id="header">
     {% if nav %}
     <button type="button" id="sidebar-toggle" class="navbar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebar" aria-expanded="true" aria-label="Toggle sidebar" aria-controls="sidebar">
       <span class="navbar-toggler-icon"></span>

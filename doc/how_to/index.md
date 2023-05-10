@@ -58,6 +58,13 @@ How to apply designs, themes and custom styling to components to achieve a polis
 How to link add interactivity to your applications using reactive APIs.
 :::
 
+:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1 sd-animate-grow50` Apply templates
+:link: templates/index
+:link-type: doc
+
+How to use a Template to customize the look and feel of a deployed Panel app.
+:::
+
 ::::
 
 
@@ -145,13 +152,6 @@ How to set up unit tests, UI tests and load testing to ensure your applications 
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1 sd-animate-grow50` Apply templates
-:link: templates/index
-:link-type: doc
-
-How to use a Template to customize the look and feel of a deployed Panel app.
-:::
 
 :::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1 sd-animate-grow50` Improve performance
 :link: performance/index

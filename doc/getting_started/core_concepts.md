@@ -1,50 +1,55 @@
 # {octicon}`mortar-board;2em;sd-mr-1` Core Concepts
 
-Getting started with Panel is pretty straightforward, open your editor, IDE or notebook environment, declare a few Panel components as `servable` (we will discover what that means soon), then launch the script or notebook file with:
+In the last section we learned how to [build a simple app](build_app.md). A Panel app like this makes it very easy to explore any function that produces a visual result of a [supported type](https://github.com/pyviz/panel/issues/2), such as Matplotlib, Bokeh, Plotly, Altair, or various text and image types.
+
+## Development flow
+
+As you prepare to develop your Panel application, there are a couple initial development decisions to make about **API** and **environment**:
+
+1. Will you be programming with a Python class-based approach? If not, or if you are unsure, we recommend starting with the reactive API (`pn.bind`) that you already tasted while [building a simple app](build_app.md).
+
+:::{dropdown} Interested in a class-based approach instead?
+:margin: 4
+:color: muted
+Checkout the same ['outlier' app built using a class-based declarative API](../explanation/api/examples/outliers_declarative.md). And to dive deeper, read the [Explanation > APIs](../explanation/apis.md) section for a discussion on each of the API options.
+:::
+
+2. Will you be developing in a notebook or editor environment? If you are unsure, we recommend starting in a notebook as you get familiar with Panel. Let's talk a bit more about these development environment options:
+
+### Notebook
+
+In a notebook you can quickly iterate on individual components of your application because Panel components render inline. To get started in a notebook simply `import panel` and initialize the extension with `pn.extension()`.
+
+```python
+import panel as pn
+pn.extension()
+```
+
+Now, when you put a Panel component at the end of a notebook cell it will render as part of the output of that cell. By changing the code in your cell and re-running it you can quickly iterate and build the individual units that will make up your final application. This way of working has many benefits because you can work on each component in your application individually without having to re-run your entire application each time.
+
+### Editor
+
+If you are working in an editor, declare the Panel components that you want to display as `servable` (we will discover what that means soon), then launch the script or notebook file. For example, if you were to save the app you built in the previous page into `app.py` and declared `first_app.servable()` within the file, then on the command line you can just run:
 
 ```bash
-panel serve your_script.py --autoreload --show
+panel serve app.py --autoreload --show
 ```
 
 Once you run that command Panel will launch a server that will serve your app, open a tab in your default browser (`--show`) and update the application whenever you update the code (`--autoreload`).
 
-## Development flow
-
-Depending on whether you are using a classical editor/IDE or a notebook environment we recommend two slightly different approaches to working. Both are suited to quick iteration but provide quite different modes of working.
-
-### Notebook
-
-In a notebook you can quickly iterate on individual components of your application because Panel components render inline. To get started in a notebook simply `import panel` and initialize the extension (this loads Panel and any optional extensions you might want to use in your application).
-
-```python
-import panel as pn
-pn.extension('altair', 'tabulator')
-```
-
-Now you are ready to go, all Panel components will render themselves. In other words, when you put a Panel component at the end of a cell it will render as part of the output of that cell. By changing the code in your cell and re-running it you can quickly iterate and build the individual units that will make up your final application. This way of working has many benefits because you can work on each component in your application individually without having to re-run your entire application each time.
-
-:::{admonition} Tip
-:class: success
-
-When working in JupyterLab you will see a little Panel icon (<img src="https://panel.holoviz.org/_static/icons/favicon.ico" alt="Panel Icon" width="20px"/>) in your toolbar. This will let you preview the application you are building quickly and easily.
-:::
-
-### Editor/IDE
-
-The experience when working in an editor or IDE is slightly different. Whenever you save your application script the server will reload your application. This has benefits too, since it let's you quickly see how your whole application fits together.
-
+> Checkout [How-to > Prepare to develop](../how_to/prepare_to_develop.md) for more guidance on each of the development environment options.
 ## Control flow
 
-Now let's get into how Panel actually works. Panel is built on a library called [Param](https://param.holoviz.org/), this controls how information flows through your application. When a parameter changes, e.g. the value of a slider updates or when you update the value manually in code, events are triggered that you can respond to. Panel provides a number of high-level and lower-level approaches for setting up interactivity in response to updates in parameters. Understanding some of the basic concepts behind param is essential to getting a hang of Panel.
+Now let's get into how Panel actually works. Panel is built on a library called [Param](https://param.holoviz.org/), this controls how information flows through your application. When a *Parameter* changes, e.g. the value of a slider updates or when you update the value manually in code, events are triggered that you can respond to. Panel provides a number of high-level and lower-level approaches for setting up interactivity in response to updates in *Parameters*. Understanding some of the basic concepts behind param is essential to getting a hang of Panel.
 
 Let's start simple and answer the question "what is param?"
 
 - Param is a framework that lets Python classes have attributes with defaults, type/value validation and callbacks when a value changes.
 - Param is similar to other frameworks like [Python dataclasses](https://docs.python.org/3/library/dataclasses.html), [pydantic](https://pydantic-docs.helpmanual.io/) and [traitlets](https://traitlets.readthedocs.io/en/stable/)
 
-One of the most important concepts to understand in both Param and Panel is the ability to use parameters as references to drive interactivity. This is often called reactivity and the most well known instance of this approach are spreadsheet applications like Excel. When you reference a particular cell in the formula of another cell, changing the original cell will automatically trigger an update in all cells that reference. The same concept applies to parameter objects.
+One of the most important concepts to understand in both Param and Panel is the ability to use *Parameters* as references to drive interactivity. This is often called reactivity and the most well known instance of this approach are spreadsheet applications like Excel. When you reference a particular cell in the formula of another cell, changing the original cell will automatically trigger an update in all cells that reference. The same concept applies to *Parameter* objects.
 
-One of the main things to understand about param in the context of its use in Panel is the distinction between the parameter **value** and the parameter **object**. The **value** represents the current value of a parameter at a particular point in time, while the **object** holds metadata about the parameter but also acts as a **reference** to the parameters value across time. In many cases you can pass a parameter **object** and Panel will automatically resolve the current value **and** reactively update when that parameter changes. Let's take a widget as an example:
+One of the main things to understand about Param in the context of its use in Panel is the distinction between the *Parameter* **value** and the *Parameter* **object**. The **value** represents the current value of a *Parameter* at a particular point in time, while the **object** holds metadata about the *Parameter* but also acts as a **reference** to the *Parameters* value across time. In many cases you can pass a *Parameter* **object** and Panel will automatically resolve the current value **and** reactively update when that *Parameter* changes. Let's take a widget as an example:
 
 ```python
 text = pn.widgets.TextInput()
@@ -231,15 +236,15 @@ def square(x):
 pn.Row(pn.bind(square, x))
 ```
 
-The `pn.bind` function lets us bind widgets (and parameter **objects**) to a function that returns an object to be displayed. Once bound the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily.
+The `pn.bind` function lets us bind widgets (and *Parameter* **objects**) to a function that returns an object to be displayed. Once bound the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily.
 
 :::{admonition} Reminder
 :class: info
 
-Remember how we talked about the difference between a parameter **value** and a parameter **object**. In the previous example the widget itself is effectively an alias for the parameter object, i.e. the binding operation is exactly equivalent to `pn.bind(square, x.param.value)`. This is true for all widgets, the widget itself is an alias for the widgets `value` parameter.
+Remember how we talked about the difference between a *Parameter* **value** and a *Parameter* **object**. In the previous example the widget itself is effectively an alias for the *Parameter* object, i.e. the binding operation is exactly equivalent to `pn.bind(square, x.param.value)`. This is true for all widgets, the widget itself is an alias for the widgets `value` *Parameter*.
 :::
 
-The approach above is quite heavy handed because whenever the slider value changes Panel will re-create a new Pane and re-render the output. If we want more fine-grained control we can instead explicitly instantiate a `Markdown` pane and pass it bound functions and parameters by reference:
+The approach above is quite heavy handed because whenever the slider value changes Panel will re-create a new Pane and re-render the output. If we want more fine-grained control we can instead explicitly instantiate a `Markdown` pane and pass it bound functions and *Parameters* by reference:
 
 ```{pyodide}
 import panel as pn
@@ -285,7 +290,7 @@ background.param.watch(update_styles, 'value')
 pn.Row(x, background, square)
 ```
 
-The first thing you will note is how much more verbose this is, which should make you appreciate the power of expressing reactivity using parameter binding.
+The first thing you will note is how much more verbose this is, which should make you appreciate the power of expressing reactivity using *Parameter* binding.
 
 ## Templates
 
@@ -335,10 +340,14 @@ pn.Column(
 ).servable(target='main')
 ```
 
-## Exploring further
+## Next Steps
 
-While `Getting Started`, you have built a simple Panel app and reviewed the core concepts - the basic foundations for you to start using Panel for your own work.
+While `Getting Started`, you have installed Panel, built a simple app, and reviewed core concepts - the basic foundations for you to start using Panel for your own work.
 
-While working, you can find solutions to specific problems in the [How-to](../how_to/index.md) section and you can consult the [API Reference](../api/index.md) or [Component Gallery](../reference/index.rst) sections for technical descriptions or examples.
+While working, you can find solutions to specific problems in the [How-to](../how_to/index.md) section and you can consult the [API Reference](../api/index.md) or [Component Gallery](../reference/index.rst) sections for technical specifications, descriptions, or examples.
 
-If you want to gain clarity or deepen your understanding on particular topics, refer to the [Explanation](../explanation/index.md). For example, the [Explanation > APIs](../explanation/api/api.md) subsection covers the benefits and drawbacks of each Panel API.
+If you want to gain clarity or deepen your understanding on particular topics, refer to the [Explanation](../explanation/index.md). For example, the [Explanation > APIs](../explanation/apis.md) subsection covers the benefits and drawbacks of each Panel API.
+
+## Getting Help
+
+Check out the [HoloViz Community](https://holoviz.org/community.html) page for all of the options to connect with developers and other users.

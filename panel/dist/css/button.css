@@ -1,0 +1,106 @@
+.bk-btn:active {
+    transform: scale(0.98);
+}
+
+:host(.outline) .bk-btn {
+    background-color: transparent;
+}
+
+:host(.solid) .bk-btn {
+    border: unset;
+}
+
+:host(.solid) .bk-btn.bk-btn-default {
+    background-color: var(--panel-surface-color);
+    color: var(--panel-on-surface-color);
+}
+
+:host(.outline) .bk-btn.bk-btn-default {
+    color: var(--panel-on-background-color);
+}
+
+:host(.outline) .bk-btn.bk-btn-default.bk-active {
+    color: var(--panel-on-background-color);
+    box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
+}
+
+:host(.outline) .bk-btn-group .bk-btn-default.bk-active {
+    background-color: var(--panel-surface-color);
+    color: var(--panel-on-surface-color);
+}
+
+:host(.solid) .bk-btn.bk-btn-primary {
+    background-color: var(--panel-primary-color);
+}
+
+:host(.solid) .bk-btn.bk-btn-primary.bk-active {
+    background-color: var(--panel-primary-color);
+    box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
+}
+
+:host(.outline) .bk-btn-primary {
+    background-color: transparent;
+    color: var(--panel-on-background-color);
+}
+
+:host(.outline) .bk-btn-primary.bk-active,:host(.outline) .bk-btn-primary:hover {
+    color: var(--neutral-foreground-rest);
+}
+
+:host(.outline) .bk-btn-group .bk-btn-primary.bk-active {
+    background-color: var(--panel-primary-color);
+    color: var(--panel-on-primary-color);
+}
+
+:host(.outline) .bk-btn-success {
+    color: var(--success-bg-color);
+}
+
+:host(.outline) .bk-btn-success.bk-active, :host(.outline) .bk-btn-success:hover {
+    color: var(--panel-on-background-color);
+}
+
+:host(.outline) .bk-btn-group .bk-btn-success.bk-active {
+    background-color: var(--success-bg-color);
+    color: var(--success-text-color);
+}
+
+:host(.outline) .bk-btn-warning {
+    color: var(--warning-bg-color);
+}
+
+:host(.outline) .bk-btn-warning.bk-active, :host(.outline) .bk-btn-warning:hover {
+    color: var(--panel-on-background-color);
+}
+
+:host(.outline) .bk-btn-group .bk-btn-warning.bk-active {
+    background-color: var(--warning-bg-color);
+    color: var(--warning-text-color);
+}
+
+:host(.outline) .bk-btn-danger {
+    color: var(--danger-bg-color);
+}
+
+:host(.outline) .bk-btn-danger.bk-active, :host(.outline) .bk-btn-danger:hover {
+    color: var(--panel-on-background-color);
+}
+
+:host(.outline) .bk-btn-group .bk-btn-danger.bk-active {
+    background-color: var(--danger-bg-color);
+    color: var(--danger-text-color);
+}
+
+:host(.outline) .bk-btn-light {
+    border-color: var(--light-bg-color);
+    color: var(--panel-on-background-color);
+}
+
+:host(.outline) .bk-btn-light.bk-active, :host(.outline) .bk-btn-light:hover {
+    color: var(--panel-on-background-color);
+}
+
+:host(.outline) .bk-btn-group .bk-btn-light.bk-active {
+    background-color: var(--light-bg-color);
+    color: var(--light-text-color);
+}

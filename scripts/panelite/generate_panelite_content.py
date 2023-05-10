@@ -12,14 +12,13 @@ from test.notebooks_with_panelite_issues import NOTEBOOK_ISSUES
 import bokeh.sampledata
 import nbformat
 
-from panel.io.convert import MINIMUM_VERSIONS
-
 HERE = pathlib.Path(__file__).parent
 PANEL_BASE = HERE.parent.parent
 EXAMPLES_DIR = PANEL_BASE / 'examples'
 LITE_FILES = PANEL_BASE / 'lite' / 'files'
 DOC_DIR = PANEL_BASE / 'doc'
 BASE_DEPENDENCIES = ['panel', 'pyodide-http']
+MINIMUM_VERSIONS = {}
 
 # Add piplite command to notebooks
 with open(DOC_DIR / 'pyodide_dependencies.json', encoding='utf8') as file:
@@ -39,9 +38,7 @@ def _get_dependencies(nbpath: pathlib.Path):
         return []
     for name, min_version in MINIMUM_VERSIONS.items():
         if any(name in req for req in dependencies):
-            deps = [f'{name}>={min_version}' if name in req else req for req in dependencies]
-    if any('hvplot' in req for req in dependencies):
-        dependencies.insert(0, 'holoviews>=1.16.0a7')
+            dependencies = [f'{name}>={min_version}' if name in req else req for req in dependencies]
     return BASE_DEPENDENCIES + dependencies
 
 def _to_piplite_install_code(dependencies):
@@ -142,6 +139,7 @@ def convert_docs():
         list(DOC_DIR.glob('explanation/**/*.md')) +
         list(DOC_DIR.glob('how_to/**/*.md'))
     )
+    print(mds)
     for md in mds:
         out = LITE_FILES / md.relative_to(DOC_DIR).with_suffix('.ipynb')
         out.parent.mkdir(parents=True, exist_ok=True)

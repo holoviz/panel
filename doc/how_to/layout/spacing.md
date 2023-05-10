@@ -10,20 +10,9 @@ The spacing between components is controlled by setting the margin parameter on 
 
 The ``margin`` parameter can be used to create space around an element defined as the number of pixels at the (top, right, bottom, and left). The ``margin`` can be defined in one of three ways:
 
-``` python
-margin=25
-    # top, bottom, left, and right margins are 25px
-
-margin=(25, 50)
-    # top and bottom margins are 25px
-    # right and left margins are 50px
-
-margin=(25, 50, 75, 100)
-    # top margin is 25px
-    # right margin is 50px
-    # bottom margin is 75px
-    # left margin is 100px
-```
+1. By setting ``margin=25``, which will set the margin on all sides to 25 px.
+2. By setting ``margin=(25, 50)``, which will set the top and bottom margins to 25 px and the left and right margins to 50 px.
+3. By setting ``margin=(25, 50, 75, 100)``, which will set the top, right, bottom, and left margins to 25, 50, 75, and 100 px, respectively.
 
 For example, let's create three buttons and customize their margin. To make it easier to see the margin area, we'll embed each into a `Column` and then shade the `Column` background.
 

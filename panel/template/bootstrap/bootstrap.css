@@ -41,7 +41,7 @@ html {
 body {
     color: var(--bs-body-color);
     background-color: var(--bs-body-bg);
-    height: 100vh
+    height: 100vh;
 }
 
 #container {
@@ -123,7 +123,7 @@ img.app-logo {
 /* Main Area */
 
 #content {
-    height: 100vh;
+    height: 100%;
     margin: 0px;
 }
 

@@ -131,16 +131,14 @@ def get_requirements():
     with open('pyodide_dependencies.json') as deps:
         dependencies = json.load(deps)
     requirements = {}
-    for name, deps in dependencies.items():
+    for src, deps in dependencies.items():
         if deps is None:
             continue
-        name = name.replace('.ipynb', '').replace('.md', '')
+        src = src.replace('.ipynb', '').replace('.md', '')
         for name, min_version in MINIMUM_VERSIONS.items():
             if any(name in req for req in deps):
                 deps = [f'{name}>={min_version}' if name in req else req for req in deps]
-        if any('hvplot' in req for req in deps):
-            deps.insert(0, 'holoviews>=1.16.0a7')
-        requirements[name] = deps
+        requirements[src] = deps
     return requirements
 
 nbsite_pyodide_conf = {
@@ -172,18 +170,32 @@ html_title = f'{project} v{version}'
 
 # Patching GridItemCardDirective to be able to substitute the domain name
 # in the link option.
-from sphinx_design.grids import GridItemCardDirective  # noqa
+from sphinx_design.cards import CardDirective
+from sphinx_design.grids import GridItemCardDirective
 
-orig_run = GridItemCardDirective.run
+orig_grid_run = GridItemCardDirective.run
 
-def patched_run(self):
+def patched_grid_run(self):
     app = self.state.document.settings.env.app
     domain = getattr(app.config, 'grid_item_link_domain', None)
     if self.has_content:
         self.content.replace('|gallery-endpoint|', domain)
-    return list(orig_run(self))
+    return list(orig_grid_run(self))
 
-GridItemCardDirective.run = patched_run
+GridItemCardDirective.run = patched_grid_run
+
+orig_card_run = CardDirective.run
+
+def patched_card_run(self):
+    app = self.state.document.settings.env.app
+    existing_link = self.options.get('link')
+    domain = getattr(app.config, 'grid_item_link_domain', None)
+    if existing_link and domain:
+        new_link = existing_link.replace('|gallery-endpoint|', domain)
+        self.options['link'] = new_link
+    return orig_card_run(self)
+
+CardDirective.run = patched_card_run
 
 def setup(app) -> None:
     app.add_config_value('grid_item_link_domain', '', 'html')

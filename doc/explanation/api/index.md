@@ -23,7 +23,7 @@ Linking functions or methods to widgets using ``pn.bind`` or the equivalent ``pn
 :link: parameterized
 :link-type: doc
 
-Declare parameters and their ranges in `Parameterized` classes, then get GUIs (and value checking!) for free.
+Declare *Parameters* and their ranges in `Parameterized` classes, then get GUIs (and value checking!) for free.
 :::
 
 :::{grid-item-card} {octicon}`link;2.5em;sd-mr-1 sd-animate-grow50` 3. Callbacks API
@@ -37,7 +37,7 @@ Generate a UI by manually declaring callbacks that update panels or panes.
 
 ## Examples
 
-Below are additional recipes using each API to create slightly more advanced apps.
+Below are additional recipes using each API to create additional apps.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -64,6 +64,13 @@ Build a stock explorer app using the Param based declarative API.
 :link-type: doc
 
 Build a stock explorer app using the reactive API.
+:::
+
+:::{grid-item-card} Outlier Explorer - Declarative API
+:link: examples/outliers_declarative
+:link-type: doc
+
+Build a simple outlier explorer app using the reactive API.
 :::
 
 ::::

@@ -13,7 +13,7 @@ How to display output in Jupyter and non-Jupyter based notebook environments.
 :::
 
 :::{grid-item-card} {octicon}`moon;2.5em;sd-mr-1 sd-animate-grow50` Preview apps in JupyterLab
-:link: jupyterlab
+:link: jupyterlabpreview
 :link-type: doc
 
 How to use the Preview functionality in JupyterLab to rapidly develop applications.

@@ -50,10 +50,7 @@ PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/releases/2022.
 PYSCRIPT_JS = '<script defer src="https://pyscript.net/releases/2022.12.1/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
 
-MINIMUM_VERSIONS = {
-    'holoviews': '1.16.0a7',
-    'ipywidgets_bokeh': '1.4.0.dev3'
-}
+MINIMUM_VERSIONS = {}
 
 ICON_DIR = DIST_DIR / 'images'
 PWA_IMAGES = [
@@ -210,10 +207,11 @@ def script_to_html(
     # Run script
     if hasattr(filename, 'read'):
         handler = CodeHandler(source=filename.read(), filename='convert.py')
+        app_name = f'app-{str(uuid.uuid4())}'
         app = Application(handler)
     else:
         path = pathlib.Path(filename)
-        name = '.'.join(path.name.split('.')[:-1])
+        app_name = '.'.join(path.name.split('.')[:-1])
         app = build_single_handler_application(str(path.absolute()))
     document = Document()
     document._session_context = lambda: MockSessionContext(document=document)
@@ -260,12 +258,9 @@ def script_to_html(
     reqs = base_reqs + [
         req for req in requirements if req not in ('panel', 'bokeh')
     ]
-    # Temporary patch for HoloViews
     for name, min_version in MINIMUM_VERSIONS.items():
         if any(name in req for req in reqs):
             reqs = [f'{name}>={min_version}' if name in req else req for req in reqs]
-    if any('hvplot' in req for req in reqs):
-        reqs.insert(2, 'holoviews>=1.16.0a7')
 
     # Execution
     post_code = POST_PYSCRIPT if runtime == 'pyscript' else POST
@@ -290,7 +285,7 @@ def script_to_html(
             if js_resources == 'auto':
                 js_resources = []
             worker_handler = WORKER_HANDLER_TEMPLATE.render({
-                'name': name,
+                'name': app_name,
                 'loading_spinner': config.loading_spinner
             })
             web_worker = WEB_WORKER_TEMPLATE.render({

@@ -36,7 +36,7 @@ pn.Column(slider, interactive_star_creator)
 ```
 
 :::{note}
-`pn.bind` works very similarly to Python's [`functools.partial`](https://docs.python.org/3/library/functools.html#functools.partial), except that it automatically resolves the current value of any widgets, parameters and other bound functions that are passed as arguments.
+`pn.bind` works very similarly to Python's [`functools.partial`](https://docs.python.org/3/library/functools.html#functools.partial), except that it automatically resolves the current value of any widgets, *Parameters* and other bound functions that are passed as arguments.
 :::
 
 Internally the layout will create a so called `ParamFunction` component to wrap the interactive function. This wrapper component will re-evaluate and update the output whenever the inputs to the function change.
@@ -44,3 +44,4 @@ Internally the layout will create a so called `ParamFunction` component to wrap 
 ## Related Resources
 
 - Learn [how to use interactive functions to update components](./bind_component)
+- Understand [Param](../../explanation/dependencies/param.md)

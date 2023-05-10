@@ -39,7 +39,9 @@ These very explicit rules ensure consistent behavior in most cases, however it i
 
 Let us walk through an example. Below we declare a responsive `Image` and a fixed-size `Markdown` pane inside a `Row`. According to the rules above the `Row` layout will inherit responsive sizing in `width` but not `height`. Additionally it will inherit a `min_width` from the `Markdown` pane.
 
-![Container sizing_mode](_static/images/container_scale_width.png)
+<div style="text-align:center">
+<img src="_static/images/container_scale_width.png" alt="Container sizing_mode" width="500"/>
+</div>
 
 :::{note}
 To maintain backward compatibility Panel will still try to infer the appropriate sizing mode by inspecting the children of a container. It is, however, always best to be explicit.
