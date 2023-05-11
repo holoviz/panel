@@ -27,7 +27,7 @@ pn.extension()
 
 Now, when you put a Panel component at the end of a notebook cell it will render as part of the output of that cell. By changing the code in your cell and re-running it you can quickly iterate and build the individual units that will make up your final application. This way of working has many benefits because you can work on each component in your application individually without having to re-run your entire application each time.
 
-<img src="../assets/template_areas.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
+<img src="https://user-images.githubusercontent.com/42288570/237583440-90b64d29-3702-40e8-96ce-8810156b5406.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 ### Editor
 
@@ -39,7 +39,7 @@ panel serve app.py --autoreload --show
 
 Once you run that command Panel will launch a server that will serve your app, open a tab in your default browser (`--show`) and update the application whenever you update the code (`--autoreload`).
 
-<img src="../assets/template_areas.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
+<img src="https://user-images.githubusercontent.com/42288570/237583450-c3b89d3e-01d5-4562-8237-82d94ff418f8.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 > Checkout [How-to > Prepare to develop](../how_to/prepare_to_develop.md) for more guidance on each of the development environment options.
 ## Control flow
@@ -344,7 +344,7 @@ pn.Column(
 ).servable(target='main')
 ```
 
-<img src="../assets/template_areas.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
+<img src="https://user-images.githubusercontent.com/42288570/237583183-d76a03b2-a8e2-432b-96c6-ace8e9913106.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 ## Next Steps
 
