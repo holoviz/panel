@@ -30,7 +30,7 @@ from bokeh.embed.bundle import (
 )
 from bokeh.model import Model
 from bokeh.models import ImportedStyleSheet
-from bokeh.resources import Resources as BkResources
+from bokeh.resources import Resources as BkResources, _get_server_urls
 from bokeh.settings import settings as _settings
 from jinja2.environment import Environment
 from jinja2.loaders import FileSystemLoader
@@ -41,6 +41,8 @@ from ..util import isurl, url_path
 from .state import state
 
 if TYPE_CHECKING:
+    from bokeh.resources import Urls
+
     class ResourcesType(TypedDict):
         css: Dict[str, str]
         js:  Dict[str, str]
@@ -500,9 +502,9 @@ class ResourceComponent:
 class Resources(BkResources):
 
     def __init__(self, *args, absolute=False, notebook=False, **kwargs):
-        super().__init__(*args, **kwargs)
         self.absolute = absolute
         self.notebook = notebook
+        super().__init__(*args, **kwargs)
 
     @classmethod
     def from_bokeh(cls, bkr, absolute=False, notebook=False):
@@ -545,6 +547,13 @@ class Resources(BkResources):
                         external_resources.append(e)
 
         return external_resources
+
+    def _server_urls(self) -> Urls:
+        return _get_server_urls(
+            self.root_url if self.absolute else '',
+            False if self.dev else self.minified,
+            self.path_versioner
+        )
 
     def extra_resources(self, resources, resource_type):
         """

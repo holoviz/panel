@@ -48,8 +48,8 @@ def test_resources_cdn():
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-mathjax-{BOKEH_VERSION}.min.js',
     ]
 
-def test_resources_server():
-    resources = Resources(mode='server')
+def test_resources_server_absolute():
+    resources = Resources(mode='server', absolute=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
         'http://localhost:5006/static/js/bokeh.min.js',
@@ -57,6 +57,17 @@ def test_resources_server():
         'http://localhost:5006/static/js/bokeh-widgets.min.js',
         'http://localhost:5006/static/js/bokeh-tables.min.js',
         'http://localhost:5006/static/js/bokeh-mathjax.min.js'
+    ]
+
+def test_resources_server():
+    resources = Resources(mode='server')
+    assert resources.js_raw == ['Bokeh.set_log_level("info");']
+    assert resources.js_files == [
+        'static/js/bokeh.min.js',
+        'static/js/bokeh-gl.min.js',
+        'static/js/bokeh-widgets.min.js',
+        'static/js/bokeh-tables.min.js',
+        'static/js/bokeh-mathjax.min.js'
     ]
 
 def test_resources_config_css_files(document):
