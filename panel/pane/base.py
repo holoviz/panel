@@ -140,6 +140,8 @@ class PaneBase(Reactive):
     # List of parameters that trigger a rerender of the Bokeh model
     _rerender_params: ClassVar[List[str]] = ['object']
 
+    _skip_layoutable = ('background', 'css_classes', 'margin', 'name')
+
     __abstract = True
 
     def __init__(self, object=None, **params):
@@ -165,16 +167,15 @@ class PaneBase(Reactive):
 
     def _sync_layoutable(self, *events: param.parameterized.Event):
         included = list(Layoutable.param)
-        skipped = ('background', 'css_classes', 'margin', 'name')
         if events:
             kwargs = {
                 event.name: event.new for event in events
-                if event.name in included and event.name not in skipped
+                if event.name in included and event.name not in self._skip_layoutable
             }
         else:
             kwargs = {
                 k: v for k, v in self.param.values().items()
-                if k in included and k not in skipped
+                if k in included and k not in self._skip_layoutable
             }
         if self.margin:
             margin = self.margin

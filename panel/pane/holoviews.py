@@ -20,7 +20,7 @@ from packaging.version import Version
 
 from ..io import state, unlocked
 from ..layout import (
-    Column, HSpacer, Row, VSpacer, WidgetBox,
+    Column, HSpacer, Row, WidgetBox,
 )
 from ..viewable import Layoutable, Viewable
 from ..widgets import Player
@@ -102,6 +102,8 @@ class HoloViews(PaneBase):
         'widget_type': None
     }
 
+    _skip_layoutable = ('background', 'css_classes', 'margin', 'name', 'sizing_mode', 'width', 'height', 'max_width', 'max_height')
+
     _rerender_params = ['object', 'backend']
 
     def __init__(self, object=None, **params):
@@ -130,47 +132,42 @@ class HoloViews(PaneBase):
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
         loc = self.widget_location
-        if not len(self.widget_box):
-            widgets = []
-        elif loc in ('left', 'right'):
-            widgets = Column(VSpacer(), self.widget_box, VSpacer())
-        elif loc in ('top', 'bottom'):
-            widgets = Row(HSpacer(), self.widget_box, HSpacer())
-        elif loc in ('top_left', 'bottom_left'):
-            widgets = Row(self.widget_box, HSpacer())
-        elif loc in ('top_right', 'bottom_right'):
-            widgets = Row(HSpacer(), self.widget_box)
-        elif loc in ('left_top', 'right_top'):
-            widgets = Column(self.widget_box, VSpacer())
-        elif loc in ('left_bottom', 'right_bottom'):
-            widgets = Column(VSpacer(), self.widget_box)
-
         center = self.center and not self._responsive_content
+        alignments = {
+            'left': (Row, ('start', 'center'), True),
+            'right': (Row, ('end', 'center'), False),
+            'top': (Column, ('center', 'start'), True),
+            'bottom': (Column, ('center', 'end'), False),
+            'top_left': (Column, 'start', True),
+            'top_right': (Column, ('end', 'start'), True),
+            'bottom_left': (Column, ('start', 'end'), False),
+            'bottom_right': (Column, 'end', False),
+            'left_top': (Row, 'start', True),
+            'left_bottom': (Row, ('start', 'end'), True),
+            'right_top': (Row, ('end', 'start'), False),
+            'right_bottom': (Row, 'end', False)
+        }
 
-        self._widget_container = widgets
-        if not widgets:
+        layout, align, widget_first = alignments[loc]
+        self.widget_box.align = align
+        self._widget_container = self.widget_box
+        if not len(self.widget_box):
             if center:
                 components = [HSpacer(), self, HSpacer()]
             else:
                 components = [self]
-        elif center:
-            if loc.startswith('left'):
-                components = [widgets, HSpacer(), self, HSpacer()]
-            elif loc.startswith('right'):
-                components = [HSpacer(), self, HSpacer(), widgets]
-            elif loc.startswith('top'):
-                components = [HSpacer(), Column(widgets, Row(HSpacer(), self, HSpacer())), HSpacer()]
-            elif loc.startswith('bottom'):
-                components = [HSpacer(), Column(Row(HSpacer(), self, HSpacer()), widgets), HSpacer()]
+            self.layout[:] = components
+            return
+
+        items = (self.widget_box, self) if widget_first else (self, self.widget_box)
+        if not center:
+            components = [layout(*items)]
+        elif layout is Column:
+            components = [HSpacer(), layout(*items), HSpacer()]
+        elif loc.startswith('left'):
+            components = [self.widget_box, HSpacer(), self, HSpacer()]
         else:
-            if loc.startswith('left'):
-                components = [widgets, self]
-            elif loc.startswith('right'):
-                components = [self, widgets]
-            elif loc.startswith('top'):
-                components = [Column(widgets, self)]
-            elif loc.startswith('bottom'):
-                components = [Column(self, widgets)]
+            components = [HSpacer(), self, HSpacer(), self.widget_box]
         self.layout[:] = components
 
     #----------------------------------------------------------------
