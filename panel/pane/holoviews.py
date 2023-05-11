@@ -102,9 +102,12 @@ class HoloViews(PaneBase):
         'widget_type': None
     }
 
-    _skip_layoutable = ('background', 'css_classes', 'margin', 'name', 'sizing_mode', 'width', 'height', 'max_width', 'max_height')
-
     _rerender_params = ['object', 'backend']
+
+    _skip_layoutable = (
+        'background', 'css_classes', 'margin', 'name', 'sizing_mode',
+        'width', 'height', 'max_width', 'max_height'
+    )
 
     def __init__(self, object=None, **params):
         self._initialized = False

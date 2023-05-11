@@ -253,7 +253,7 @@ class Panel(Reactive):
         elif expand_height and not self.height and allow_height_scale:
             sizing_mode = f'{mode}_height'
         if sizing_mode is None:
-            return {}
+            return {'sizing_mode': props.get('sizing_mode')}
 
         properties = {'sizing_mode': sizing_mode}
         if ((sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and
