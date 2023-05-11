@@ -263,6 +263,10 @@ img.app-logo {
     box-shadow: 2px 2px 10px silver;
 }
 
+#menu {
+    overflow: hidden;
+}
+
 #menu * {
     width: 100%;
 }
@@ -280,15 +284,21 @@ img.app-logo {
 
 #menu a {
     border-radius: calc(var(--corner-radius) * 1px);
-    padding-left: 16px;
+    color: var(--neutral-foreground-rest);
+    display: block;
+    font-size: var(--type-ramp-base-font-size);
+    line-height: var(--type-ramp-base-line-height);
+    padding: 8px 8px 8px 32px;
+    text-decoration: none;
+    transition: 0.3s;
     width: 100%;
 }
 
 #menu a:hover {
     background: var(--accent-fill-hover);
+    color: var(--accent-foreground-cut-rest);
     border-radius: calc(var(--corner-radius) * 1px);
 }
-
 #menu a:active {
     background: var(--accent-fill-checked);
     border-radius: calc(var(--corner-radius) * 1px);
