@@ -263,6 +263,10 @@ img.app-logo {
     box-shadow: 2px 2px 10px silver;
 }
 
+#menu {
+    overflow: hidden;
+}
+
 #menu * {
     width: 100%;
 }
