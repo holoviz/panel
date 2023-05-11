@@ -140,6 +140,8 @@ class PaneBase(Reactive):
     # List of parameters that trigger a rerender of the Bokeh model
     _rerender_params: ClassVar[List[str]] = ['object']
 
+    _skip_layoutable = ('background', 'css_classes', 'margin', 'name')
+
     __abstract = True
 
     def __init__(self, object=None, **params):
@@ -148,7 +150,10 @@ class PaneBase(Reactive):
         if (isinstance(applies, bool) and not applies) and self.object is not None:
             self._type_error(self.object)
 
-        kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
+        kwargs = {
+            k: v for k, v in params.items() if k in Layoutable.param and
+            k not in self._skip_layoutable
+        }
         self.layout = self.default_layout(self, **kwargs)
         self._callbacks.extend([
             self.param.watch(self._sync_layoutable, list(Layoutable.param)),
@@ -165,16 +170,15 @@ class PaneBase(Reactive):
 
     def _sync_layoutable(self, *events: param.parameterized.Event):
         included = list(Layoutable.param)
-        skipped = ('background', 'css_classes', 'margin', 'name')
         if events:
             kwargs = {
                 event.name: event.new for event in events
-                if event.name in included and event.name not in skipped
+                if event.name in included and event.name not in self._skip_layoutable
             }
         else:
             kwargs = {
                 k: v for k, v in self.param.values().items()
-                if k in included and k not in skipped
+                if k in included and k not in self._skip_layoutable
             }
         if self.margin:
             margin = self.margin
@@ -275,6 +279,18 @@ class PaneBase(Reactive):
                 parent.tabs[index] = _BkTabPanel(**props)
             else:
                 parent.children[index] = new_model
+            layout_parent = self.layout._models.get(ref, [None])[0]
+            if parent is layout_parent:
+                parent.update(**self.layout._compute_sizing_mode(
+                    parent.children,
+                    dict(
+                        sizing_mode=self.layout.sizing_mode,
+                        styles=self.layout.styles,
+                        width=self.layout.width,
+                        min_width=self.layout.min_width,
+                        margin=self.layout.margin
+                    )
+                ))
 
         from ..io import state
         ref = root.ref['id']

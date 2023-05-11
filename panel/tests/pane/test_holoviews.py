@@ -156,7 +156,7 @@ def test_holoviews_pane_reflect_responsive(document, comm):
 
     pane.object = hv.Curve([1, 2, 3])
 
-    assert row.sizing_mode == 'fixed'
+    assert row.sizing_mode is None
     assert pane.sizing_mode == 'fixed'
 
 @pytest.mark.usefixtures("hv_bokeh")
@@ -168,7 +168,7 @@ def test_holoviews_pane_reflect_responsive_override(document, comm):
     # Create pane
     row = pane.get_root(document, comm=comm)
 
-    assert row.sizing_mode == 'fixed'
+    assert row.sizing_mode is None
     assert pane.sizing_mode == 'fixed'
 
     # Unset override
@@ -281,7 +281,7 @@ def test_holoviews_with_widgets(document, comm):
 
     hv_pane = HoloViews(hmap)
     layout = hv_pane.get_root(document, comm)
-    model = layout.children[0]
+    model = layout.children[0].children[0]
     assert len(hv_pane.widget_box.objects) == 2
     assert hv_pane.widget_box.objects[0].name == 'X'
     assert hv_pane.widget_box.objects[1].name == 'Y'
@@ -304,12 +304,12 @@ def test_holoviews_updates_widgets(document, comm):
 
     hv_pane.widgets = {'X': Select}
     assert isinstance(hv_pane.widget_box[0], Select)
-    assert isinstance(layout.children[1].children[0].children[0], BkSelect)
+    assert isinstance(layout.children[0].children[1].children[0], BkSelect)
 
     hv_pane.widgets = {'X': DiscreteSlider}
     assert isinstance(hv_pane.widget_box[0], DiscreteSlider)
-    assert isinstance(layout.children[1].children[0].children[0], BkColumn)
-    assert isinstance(layout.children[1].children[0].children[0].children[1], BkSlider)
+    assert isinstance(layout.children[0].children[1].children[0], BkColumn)
+    assert isinstance(layout.children[0].children[1].children[0].children[1], BkSlider)
 
 @hv_available
 def test_holoviews_widgets_update_plot(document, comm):
@@ -318,7 +318,7 @@ def test_holoviews_widgets_update_plot(document, comm):
     hv_pane = HoloViews(hmap, backend='bokeh')
     layout = hv_pane.get_root(document, comm)
 
-    cds = layout.children[0].select_one(ColumnDataSource)
+    cds = layout.children[0].select_one({'type': ColumnDataSource})
     assert cds.data['y'] == np.array([0])
     hv_pane.widget_box[0].value = 1
     hv_pane.widget_box[1].value = chr(65+1)
@@ -371,25 +371,23 @@ def test_holoviews_layouts(document, comm):
                     col = layout[1]
                     cmodel = model.children[1]
                     assert isinstance(col, Column)
-                    widgets, hv_col = col
-                    hv_obj = hv_col[1]
-                    wmodel, hv_model = cmodel.children[0],  cmodel.children[1].children[1]
+                    widgets, hv_obj = col
+                    wmodel, hv_model = cmodel.children[0],  cmodel.children[1]
                 elif loc.startswith('bottom'):
                     col = layout[1]
                     cmodel = model.children[1]
                     assert isinstance(col, Column)
-                    hv_col, widgets = col
-                    hv_obj = hv_col[1]
-                    wmodel, hv_model = cmodel.children[1],  cmodel.children[0].children[1]
+                    hv_obj, widgets = col
+                    wmodel, hv_model = cmodel.children[1],  cmodel.children[0]
             else:
                 if loc.startswith('left'):
-                    assert len(layout) == 2
-                    widgets, hv_obj = layout
-                    wmodel, hv_model = model.children
+                    assert len(layout) == 1
+                    widgets, hv_obj = layout[0]
+                    wmodel, hv_model = model.children[0].children
                 elif loc.startswith('right'):
-                    assert len(layout) == 2
-                    hv_obj, widgets = layout
-                    hv_model, wmodel = model.children
+                    assert len(layout) == 1
+                    hv_obj, widgets = layout[0]
+                    hv_model, wmodel = model.children[0].children
                 elif loc.startswith('top'):
                     assert len(layout) == 1
                     col = layout[0]
@@ -407,14 +405,8 @@ def test_holoviews_layouts(document, comm):
             assert hv_pane is hv_obj
             assert isinstance(hv_model, figure)
 
-            if loc in ('left', 'right', 'top', 'bottom',
-                       'top_right', 'right_bottom', 'bottom_right',
-                       'left_bottom'):
-                box = widgets[1]
-                boxmodel = wmodel.children[1]
-            else:
-                box = widgets[0]
-                boxmodel = wmodel.children[0]
+            box = widgets
+            boxmodel = wmodel
             assert hv_pane.widget_box is box
             assert isinstance(boxmodel, BkColumn)
             assert isinstance(boxmodel.children[0], BkColumn)
@@ -684,7 +676,7 @@ def test_holoviews_property_override_old_method(document, comm):
     model = pane.get_root(document, comm=comm)
 
     assert model.styles["background"] == 'red'
-    assert model.css_classes == ['test_class']
+    assert model.children[0].css_classes == ['test_class']
 
 @hv_available
 def test_holoviews_property_override(document, comm):
@@ -696,4 +688,4 @@ def test_holoviews_property_override(document, comm):
     model = pane.get_root(document, comm=comm)
 
     assert model.styles["background"] == 'red'
-    assert model.css_classes == ['test_class']
+    assert model.children[0].css_classes == ['test_class']
