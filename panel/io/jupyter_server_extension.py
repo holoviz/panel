@@ -111,7 +111,7 @@ import os
 import pathlib
 import sys
 
-app = '{{ path }}'
+app = r'{{ path }}'
 os.chdir(str(pathlib.Path(app).parent))
 sys.path = [os.getcwd()] + sys.path[1:]
 
@@ -186,6 +186,8 @@ class PanelJupyterHandler(JupyterHandler):
                 comm_id = msg['content']['comm_id']
             elif msg_type == 'stream' and msg['content']['name'] == 'stderr':
                 logger.error(msg['content']['text'])
+            elif msg_type == "error":
+                logger.error(msg['content']['traceback'])
         return result, comm_id, extension_dirs
 
     @tornado.web.authenticated
