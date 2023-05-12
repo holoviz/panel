@@ -51,6 +51,7 @@
 <!-- goes in body -->
 {% block contents %}
 <div id="container">
+  {% if show_header %}
   <nav id="header">
     {% if nav %}
     <span onclick="closeNav()" id="sidebar-button">
@@ -61,7 +62,7 @@
     {% endif %}
     <div class="app-header">
       {% if app_logo %}
-      <a href="{{ site_url }}">
+      <a href="{{ site_url }}" class="logo-wrapper">
 	<img src="{{ app_logo }}" class="app-logo"></img>
       </a>
       {% endif %}
@@ -90,10 +91,15 @@
     </div>
     {% endif %}
   </nav>
+  {% else %}
+  <div class="pn-busy-standalone">
+    {{ embed(roots.busy_indicator) | indent(6) }}
+  </div>
+  {% endif %}
 
   <div id="content">
     {% if nav %}
-    <div class="sidenav" id="sidebar">
+    <div class="sidenav hidden" id="sidebar">
       <ul class="nav flex-column">
         {% for doc in docs %}
         {% for root in doc.roots %}
@@ -106,7 +112,15 @@
     </div>
     {% endif %}
 
-    <div class="main" id="main" style="margin-left: {{ 'calc(var(--sidebar-width) + 30px)' if nav or sidebar_footer else 0 }};">
+    <div class="main" id="main">
+      {% if not show_header and nav %}
+      <span onclick="openNav()" id="sidebar-button" class="sidebar-button-standalone">
+	<div class="pn-bar"></div>
+	<div class="pn-bar"></div>
+	<div class="pn-bar"></div>
+      </span>
+      {% endif %}
+
       {% if main_max_width %}
       <div style="margin-left: auto; margin-right: auto; max-width: {{main_max_width}}">
       {% endif %}
@@ -146,6 +160,27 @@
 	  {% endfor %}
 	</div>
       </div>
+
+      {% if not show_header %}
+      <div class='footer'>
+	<div class="title-wrapper">
+	  {% if site_title %}
+	  <a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>
+	  {% endif %}
+	  {% if site_title and app_title%}
+	  <span class="title">-</span>
+	  {% endif %}
+	  {% if app_title %}
+	  <a class="title" href="" >&nbsp;{{ app_title }}</a>
+	  {% endif %}
+	</div>
+	{% if app_logo %}
+	<a href="{{ site_url }}" class="logo-wrapper">
+	  <img src="{{ app_logo }}" class="app-logo"></img>
+	</a>
+	{% endif %}
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>
@@ -157,15 +192,14 @@
   Reveal.initialize(config);
 
   function openNav() {
-    document.getElementById("sidebar").style.left = 0;
-    document.getElementById("main").style.marginLeft = "calc(var(--sidebar-width) + 30px)";
+    document.getElementById("sidebar").classList.remove("hidden");
     document.getElementById("sidebar-button").onclick = closeNav;
   }
 
   function closeNav() {
-    document.getElementById("sidebar").style.left = "calc(-1 * var(--sidebar-width) - 20px)";
-    document.getElementById("main").style.marginLeft = "0";
+    document.getElementById("sidebar").classList.add("hidden");
     document.getElementById("sidebar-button").onclick = openNav;
+    console.log(document.getElementById("sidebar-button").onclick)
   }
 
   var modal = document.getElementById("pn-Modal");
@@ -181,7 +215,6 @@
     }
   }
 </script>
-
 
 {{ embed(roots.js_area) }}
 {{ embed(roots.actions) }}
