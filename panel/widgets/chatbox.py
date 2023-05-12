@@ -297,9 +297,7 @@ class ChatBox(CompositeWidget):
     )
 
     message_input_widgets = param.List(
-        default=[
-            TextInput(placeholder="Enter or click send when complete."),
-        ],
+        default=[TextInput],
         doc="""
         List of widgets to use for message input. Multiple widgets will
         be nested under tabs.
