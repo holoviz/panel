@@ -14,7 +14,7 @@ from ...io.resources import JS_URLS
 from ..base import BasicTemplate
 
 if TYPE_CHECKING:
-    from ..io.resources import ResourcesType
+    from ...io.resources import ResourcesType
 
 
 class GoldenTemplate(BasicTemplate):
