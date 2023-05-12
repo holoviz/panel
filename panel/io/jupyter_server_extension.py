@@ -187,7 +187,7 @@ class PanelJupyterHandler(JupyterHandler):
             elif msg_type == 'stream' and msg['content']['name'] == 'stderr':
                 logger.error(msg['content']['text'])
             elif msg_type == "error":
-                logger.error(msg['content'])
+                logger.error(msg['content']['traceback'])
         return result, comm_id, extension_dirs
 
     @tornado.web.authenticated
