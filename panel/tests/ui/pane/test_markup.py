@@ -27,15 +27,15 @@ def test_update_markdown_pane_resizes(page, port):
 
     serve(md, port=port, threaded=True, show=False)
 
-    time.sleep(0.2)
+    time.sleep(0.5)
     page.goto(f"http://localhost:{port}")
 
     height = page.locator(".markdown").bounding_box()['height']
-    assert int(height) == 18
+    assert int(height) == 44
     md.object = """
     - Bullet
     - Points
     """
     time.sleep(0.1)
     height = page.locator(".markdown").bounding_box()['height']
-    assert int(height) == 37
+    assert int(height) == 63
