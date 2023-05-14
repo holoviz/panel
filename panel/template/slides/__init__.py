@@ -28,6 +28,9 @@ class SlidesTemplate(VanillaTemplate):
     reveal_theme = param.Selector(default=None, objects=REVEAL_THEMES, doc="""
         The reveal.js theme to load.""")
 
+    show_header = param.Boolean(default=False, doc="""
+        Whether to show the header component.""")
+
     _css = [VanillaTemplate._css, pathlib.Path(__file__).parent / 'slides.css']
 
     _template = pathlib.Path(__file__).parent / 'slides.html'
@@ -54,11 +57,12 @@ class SlidesTemplate(VanillaTemplate):
             self.reveal_theme = 'black' if self._design.theme._name == 'dark' else 'white'
         self._update_render_vars()
 
-    @param.depends('reveal_config', 'reveal_theme', watch=True)
+    @param.depends('reveal_config', 'reveal_theme', 'show_header', watch=True)
     def _update_render_vars(self):
         self._resources['css'] = {
             'font': FONT_CSS,
             'reveal': REVEAL_CSS,
             'reveal-theme': REVEAL_THEME_CSS[f'reveal-{self.reveal_theme}']
         }
+        self._render_variables['show_header'] = self.show_header
         self._render_variables['reveal_config'] = self.reveal_config
