@@ -378,7 +378,11 @@ def bundle_resources(roots, resources, notebook=False, reloading=False):
     if mode == "inline":
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
     elif mode == "server":
-        js_files.extend([ bundle.server_url for bundle in extensions ])
+        for bundle in extensions:
+            server_url = bundle.server_url
+            if resources.root_url and not resources.absolute:
+                server_url = server_url.replace(resources.root_url, '')
+            js_files.append(server_url)
     elif mode == "cdn":
         for bundle in extensions:
             if bundle.cdn_url is not None:
