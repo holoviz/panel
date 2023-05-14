@@ -2,10 +2,6 @@
     padding: 0.75rem 1.25rem;
     border: 1px solid transparent;
     border-radius: 0.25rem;
-    /* Don't set margin because that will not render correctly! */
-    /* margin-bottom: 1rem; */
-    margin-top: 15px;
-    margin-bottom: 15px;
 }
 
 :host(.alert) a {
@@ -26,8 +22,8 @@
 
 :host(.alert-primary) {
     color: var(--primary-text-color);
-    background-color: var(--primary-bg-color);
-    border-color: #b8daff;
+    background-color: var(--primary-bg-subtle);
+    border-color: var(--primary-border-subtle);
 }
 :host(.alert-primary) hr {
     border-top-color: #9fcdff;
@@ -35,8 +31,8 @@
 
 :host(.alert-secondary) {
     color: var(--secondary-text-color);
-    background-color: var(--secondary-bg-color);
-    border-color: #d6d8db;
+    background-color: var(--secondary-bg-subtle);
+    border-color: var(--secondary-border-subtle);
 }
 :host(.alert-secondary) hr {
     border-top-color: #c8cbcf;
@@ -44,8 +40,8 @@
 
 :host(.alert-success) {
     color: var(--success-text-color);
-    background-color: var(--success-bg-color);
-    border-color: #c3e6cb;
+    background-color: var(--success-bg-subtle);
+    border-color: var(--success-border-subtle);
 }
 :host(.alert-success) hr {
     border-top-color: #b1dfbb;
@@ -53,8 +49,8 @@
 
 :host(.alert-info) {
     color: var(--info-text-color);
-    background-color: var(--info-bg-color);
-    border-color: #bee5eb;
+    background-color: var(--info-bg-subtle);
+    border-color: var(--info-border-subtle);
 }
 :host(.alert-info) hr {
     border-top-color: #abdde5;
@@ -62,8 +58,8 @@
 
 :host(.alert-warning) {
     color: var(--warning-text-color);
-    background-color: var(--warning-bg-color);
-    border-color: #ffeeba;
+    background-color: var(--warning-bg-subtle);
+    border-color: var(--warning-border-subtle);
 }
 :host(.alert-warning) hr {
     border-top-color: #ffe8a1;
@@ -71,8 +67,8 @@
 
 :host(.alert-danger) {
     color: var(--danger-text-color);
-    background-color: var(--danger-bg-color);
-    border-color: #f5c6cb;
+    background-color: var(--danger-bg-subtle);
+    border-color: var(--danger-border-subtle);
 }
 :host(.alert-danger) hr {
     border-top-color: #f1b0b7;
@@ -80,8 +76,8 @@
 
 :host(.alert-light) {
     color: var(--light-text-color);
-    background-color: var(--light-bg-color);
-    border-color: #fdfdfe;
+    background-color: var(--light-bg-subtle);
+    border-color: var(--light-border-subtle);
 }
 :host(.alert-light) hr {
     border-top-color: #ececf6;
@@ -89,8 +85,8 @@
 
 :host(.alert-dark) {
     color: var(--dark-text-color);
-    background-color: var(--dark-bg-color);
-    border-color: #c6c8ca;
+    background-color: var(--dark-bg-subtle);
+    border-color: var(--dark-border-subtle);
 }
 :host(.alert-dark) hr {
     border-top-color: #b9bbbe;
