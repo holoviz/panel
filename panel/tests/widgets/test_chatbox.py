@@ -162,7 +162,7 @@ def test_chat_box_message_colors(document, comm):
     chat_box = ChatBox(value=value.copy(), message_colors={"user1": "red"})
     assert chat_box.message_colors["user1"] == "red"
     # random generated colors are hexcodes
-    assert chat_box.message_colors["user2"].startswith("#")
+    assert chat_box.message_colors["user2"].startswith("hsl")
 
 
 def test_chat_box_generate_color(document, comm):
@@ -171,10 +171,10 @@ def test_chat_box_generate_color(document, comm):
         {"user2": "Hi"},
     ]
     chat_box = ChatBox(
-        value=value.copy(), message_colors={"user1": "red"}, rgb_range=(188, 188)
+        value=value.copy(), message_colors={"user1": "red"}, message_hue_range=(188, 188)
     )
     assert chat_box.message_colors["user1"] == "red"
-    assert chat_box.message_colors["user2"] == "#a6a0ab"
+    assert chat_box.message_colors["user2"] == "hsl(188, 28%, 60%)"
 
 
 def test_chat_box_user_icons(document, comm):

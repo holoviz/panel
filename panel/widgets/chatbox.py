@@ -87,12 +87,11 @@ class ChatRow(CompositeWidget):
     ):
         bubble_styles = {
             # round borders
-            "border-radius": "18px",
-            "padding": "6px 11px",
-            "border": "1px solid #ccc",
+            "border-radius": "1em",
+            "padding": "6px 1em",
             "overflow-x": "auto",
             "overflow-y": "auto",
-            "max-width": "80%",
+            "max-width": "88%",
         }
         bubble_styles.update(styles or {})
         if "background" not in bubble_styles:
@@ -103,7 +102,6 @@ class ChatRow(CompositeWidget):
         icon_params = dict(
             width=48,
             height=60,
-            margin=(12, 2, 12, 2),
             sizing_mode="fixed",
             align="center",
         )
@@ -276,12 +274,31 @@ class ChatBox(CompositeWidget):
         default=False,
     )
 
-    message_rgb_range = param.Range(
+    message_hue_range = param.Range(
         doc="""
-            Range of RGB values to use for the message background
+            Range of hue values to use for the message background
             colors if message_colors is not specified for a user.
         """,
-        default=(150, 185),
+        default=(80, 220),
+        bounds=(0, 255),
+    )
+
+    message_saturation = param.Integer(
+        doc="""
+            Saturation of the message background colors if
+            message_colors is not specified for a user.
+        """,
+        default=28,
+        bounds=(0, 100),
+    )
+
+    message_lightness = param.Integer(
+        doc="""
+            Lightness of the message background colors if
+            message_colors is not specified for a user.
+        """,
+        default=60,
+        bounds=(0, 100),
     )
 
     message_icons = param.Dict(
@@ -347,8 +364,7 @@ class ChatBox(CompositeWidget):
             name="Scroll to latest",
             button_type="light",
             align="center",
-            width=100,
-            height=25,
+            height=35,
             margin=0,
         )
         self._add_scroll_callback(self._scroll_button, "clicks")
@@ -356,9 +372,9 @@ class ChatBox(CompositeWidget):
         box_objects = [self._chat_title] if self.name else []
         box_objects.append(self._chat_log)
         if self.ascending:
-            box_objects.append(self._scroll_button)
-        else:
             box_objects.insert(0, self._scroll_button)
+        else:
+            box_objects.append(self._scroll_button)
 
         if self.allow_input:
             self._attach_input(box_objects, layout)
@@ -412,7 +428,6 @@ class ChatBox(CompositeWidget):
                 self._add_scroll_callback(message_input, "value")
             message_input.sizing_mode = "stretch_width"
         self._send_button.on_click(self._enter_message)
-        self._add_scroll_callback(self._send_button, "clicks")
 
         row_layout = layout.copy()
         row_layout.pop("width", None)
@@ -436,19 +451,15 @@ class ChatBox(CompositeWidget):
         else:
             box_objects.insert(0, input_items)
 
-    def _generate_color(self, string: str, rgb_range: Tuple[int]) -> str:
+    def _generate_color(self, string: str, message_hue_range: Tuple[int]) -> str:
         """
-        Generate a random color in hexadecimal format based on RGB range.
+        Generate a random color in HSL format.
         """
         seed = sum([ord(c) for c in string])
         random.seed(seed)
 
-        r, g, b = (
-            random.randint(*rgb_range),
-            random.randint(*rgb_range),
-            random.randint(*rgb_range),
-        )
-        color = "#{:02x}{:02x}{:02x}".format(r, g, b)
+        hue = random.randint(*message_hue_range)
+        color = f"hsl({hue}, {self.message_saturation}%, {self.message_lightness}%)"
         return color
 
     @staticmethod
@@ -491,7 +502,7 @@ class ChatBox(CompositeWidget):
             background = self.message_colors[user]
         else:
             background = self._generate_color(
-                string=user, rgb_range=self.message_rgb_range
+                string=user, message_hue_range=self.message_hue_range
             )
             self.message_colors[user] = background
 
