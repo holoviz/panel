@@ -1,14 +1,29 @@
 :root,
 :host {
-  --bs-primary-color: var(--panel-on-primary-color);
-  --bs-primary-bg: var(--panel-primary-color);
-  --bs-secondary-color: var(--panel-on-secondary-color);
-  --bs-secondary-bg: var(--panel-secondary-color);
-  --bs-form-control-bg: var(--panel-background-color);
-  --bs-body-bg: var(--panel-background-color);
-  --bs-body-color: var(--panel-on-background-color);
-  --bs-surface-bg: var(--panel-surface-color);
-  --bs-surface-color: var(--panel-on-surface-color);
+  --bs-primary-color: var(
+    --design-primary-text-color,
+    var(--panel-on-primary-color)
+  );
+  --bs-primary-bg: var(--design-primary-color, var(--panel-primary-color));
+  --bs-secondary-color: var(
+    --design-secondary-text-color,
+    var(--panel-on-secondary-color)
+  );
+  --bs-secondary-bg: var(--design-primary-color, var(--panel-secondary-color));
+  --bs-form-control-bg: var(
+    --design-background-color,
+    var(--panel-background-color)
+  );
+  --bs-body-bg: var(--design-background-color, var(--panel-background-color));
+  --bs-body-color: var(
+    --design-background-text-color,
+    var(--panel-on-background-color)
+  );
+  --bs-surface-bg: var(--design-surface-color, var(--panel-surface-color));
+  --bs-surface-color: var(
+    --design-surface-text-color,
+    var(--panel-on-surface-color)
+  );
   --bokeh-base-font: system-ui, -apple-system, 'Segoe UI', Roboto,
     'Helvetica Neue', 'Noto Sans', 'Liberation Sans', Arial, sans-serif,
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';

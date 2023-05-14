@@ -10,8 +10,8 @@ body {
 }
 
 #header {
-  background-color: var(--panel-primary-color);
-  color: var(-panel-on-primary-color);
+  background-color: var(--design-primary-color, var(--panel-primary-color));
+  color: var(--design-primary-text-color, var(-panel-on-primary-color));
   display: flex;
   align-items: center;
   padding: 10px;
@@ -32,7 +32,7 @@ a.navbar-brand {
 }
 
 .title {
-  color: var(--panel-on-primary-color);
+  color: var(--design-primary-text-color, var(--panel-on-primary-color));
   text-decoration: none;
   text-decoration-line: none;
   text-decoration-style: initial;
@@ -50,7 +50,7 @@ a.navbar-brand {
 
 .app-header a.title:hover {
   text-decoration: none;
-  color: var(--panel-on-primary-color);
+  color: var(--design-primary-text-color, var(--panel-on-primary-color));
 }
 
 img.app-logo {
@@ -62,7 +62,10 @@ img.app-logo {
 .pn-bar {
   width: 20px;
   height: 2px;
-  background-color: var(--panel-on-primary-color);
+  background-color: var(
+    --design-primary-text-color,
+    var(--panel-on-primary-color)
+  );
   margin: 4px 0;
 }
 

@@ -1,9 +1,18 @@
 :host,
 :root {
-  --background-color: var(--panel-background-color);
-  --text-color: var(--panel-on-background-color);
-  --surface-color: var(--panel-surface-color);
-  --surface-text-color: var(--panel-on-surface-color);
+  --background-color: var(
+    --design-background-color,
+    var(--panel-background-color)
+  );
+  --text-color: var(
+    --design-background-text-color,
+    var(--panel-on-background-color)
+  );
+  --surface-color: var(--design-surface-color, var(--panel-surface-color));
+  --surface-text-color: var(
+    --design-surface-text-color,
+    var(--panel-on-surface-color)
+  );
 }
 
 html {

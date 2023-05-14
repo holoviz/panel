@@ -48,8 +48,8 @@
 
     <style>
       :root {
-	  --header-background: {{ header_background or "var(--panel-primary-color)" }};
-	  --header-color: {{ header_color or "var(--panel-on-primary-color)" }};
+	  --header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
+	  --header-color: {{ header_color or "var(--design-primary-text-color, --panel-on-primary-color))" }};
 	  --sidebar-width: {{ sidebar_width }}px;
       }
       #header {

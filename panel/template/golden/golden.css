@@ -93,7 +93,10 @@ p.bk.golden-card-button {
 }
 
 .lm_content {
-  background-color: var(--panel-background-color);
+  background-color: var(
+    --design-background-color,
+    var(--panel-background-color)
+  );
   overflow-y: auto !important;
 }
 
@@ -116,7 +119,7 @@ p.bk.golden-card-button {
 }
 
 .pn-modal-content {
-  background-color: #fefefe;
+  background-color: var(--design-surface-color, var(--panel-surface-color));
   margin: auto;
   margin-top: 25px;
   margin-bottom: 25px;

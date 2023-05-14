@@ -1,23 +1,41 @@
 :root {
   --bokeh-base-font: inherit;
-  --mdc-theme-surface: var(--panel-surface-color);
-  --mdc-theme-primary: var(--panel-primary-color);
+  --mdc-theme-surface: var(--design-surface-color, var(--panel-surface-color));
+  --mdc-theme-primary: var(--design-primary-color, var(--panel-primary-color));
   --mdc-theme-primary-lightened: color-mix(
     in srgb,
     var(--mdc-theme-primary) 30%,
     var(--mdc-theme-surface)
   );
-  --mdc-theme-on-primary: var(--panel-on-primary-color);
-  --mdc-theme-secondary: var(--panel-secondary-color);
+  --mdc-theme-on-primary: var(
+    --design-primary-text-color,
+    var(--panel-on-primary-color)
+  );
+  --mdc-theme-secondary: var(
+    --design-secondary-color,
+    var(--panel-secondary-color)
+  );
   --mdc-theme-secondary-lightened: color-mix(
     in srgb,
     var(--mdc-theme-secondary) 80%,
     var(--mdc-theme-surface)
   );
-  --mdc-theme-on-secondary: var(--panel-on-secondary-color);
-  --mdc-theme-background: var(--panel-background-color);
-  --mdc-theme-on-background: var(--panel-on-background-color);
-  --mdc-theme-on-surface: var(--panel-on-surface-color);
+  --mdc-theme-on-secondary: var(
+    --design-secondary-text-color,
+    var(--panel-on-secondary-color)
+  );
+  --mdc-theme-background: var(
+    --design-background-color,
+    var(--panel-background-color)
+  );
+  --mdc-theme-on-background: var(
+    --design-background-text-color,
+    var(--panel-on-background-color)
+  );
+  --mdc-theme-on-surface: var(
+    --design-surface-text-color,
+    var(--panel-on-surface-color)
+  );
   --mdc-theme-text-primary-on-background: color-mix(
     in srgb,
     var(--mdc-theme-on-background) 87%,
