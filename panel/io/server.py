@@ -692,7 +692,7 @@ def modify_document(self, doc: 'Document'):
         def handle_exception(handler, e):
             from bokeh.application.handlers.handler import handle_exception
 
-            from ..pane import HTML
+            from ..pane import Alert
 
             # Clean up
             del sys.modules[module.__name__]
@@ -706,9 +706,9 @@ def modify_document(self, doc: 'Document'):
 
             # Serve error
             e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-            HTML(
-                f'<b>{type(e).__name__}</b>: {e_msg}</br><pre style="overflow-y: scroll">{tb}</pre>',
-                css_classes=['alert', 'alert-danger'], sizing_mode='stretch_width'
+            Alert(
+                f'<b>{type(e).__name__}</b>: {e_msg}</br><pre style="overflow-y: auto">{tb}</pre>',
+                alert_type='danger', margin=5, sizing_mode='stretch_width'
             ).servable()
 
         if config.autoreload:
