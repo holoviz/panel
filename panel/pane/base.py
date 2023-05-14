@@ -570,7 +570,7 @@ class ReplacementPane(PaneBase):
 
     @param.depends('_pane', '_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
     def _sync_layout(self):
-        if not hasattr(self, '_inner_layout') or (self._pane is not None and self._pane._object_changing):
+        if not hasattr(self, '_inner_layout') or (self._pane is not None and getattr(self._pane, '_object_changing', False)):
             return
         self._inner_layout.param.update({
             k: v for k, v in self._pane.param.values().items()
