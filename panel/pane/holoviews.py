@@ -129,6 +129,8 @@ class HoloViews(PaneBase):
         self._update_widgets()
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
+        if self._object_changing:
+            return
         self._track_overrides(*(e for e in events if e.name in Layoutable.param))
         super()._param_change(*(e for e in events if e.name in self._overrides+['css_classes']))
 
