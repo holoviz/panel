@@ -71,7 +71,7 @@ class PanelExecutor(WSHandler):
 
         self.resources = Resources(
             mode=os.environ.get('BOKEH_RESOURCES', 'server'), root_url=self.root_url,
-            path_versioner=StaticHandler.append_version
+            path_versioner=StaticHandler.append_version, absolute=True
         )
         self._set_state()
         try:
