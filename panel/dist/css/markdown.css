@@ -296,7 +296,7 @@ strong {
   font-weight: 600;
 }
 a {
-  color: var(--panel-primary-color);
+  color: var(--design-primary-color, var(--panel-primary-color));
 }
 code {
   color: var(--code-text-color);

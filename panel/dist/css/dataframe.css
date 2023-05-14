@@ -28,12 +28,13 @@ table.panel-df {
 }
 
 .panel-df tbody tr:nth-child(odd) {
-  background: var(--panel-surface-color);
-  color: var(--panel-on-surface-color);
+  background: var(--design-surface-color, var(--panel-surface-color));
+  color: var(--design-surface-text-color, var(--panel-on-surface-color));
 }
 
 .panel-df thead {
-  border-bottom: 1px solid var(--panel-on-background-color);
+  border-bottom: 1px solid
+    var(--design-background-text-color, var(--panel-on-background-color));
   vertical-align: bottom;
 }
 
