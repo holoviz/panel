@@ -532,10 +532,12 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
         with self._session_prefix():
             session = await self.get_session()
             with set_curdoc(session.document):
-                resources = Resources.from_bokeh(self.application.resources(server_url))
+                resources = Resources.from_bokeh(
+                    self.application.resources(server_url), absolute=True
+                )
                 js = autoload_js_script(
                     session.document, resources, session.token, element_id,
-                    app_path, absolute_url
+                    app_path, absolute_url, absolute=True
                 )
 
         self.set_header("Content-Type", 'application/javascript')
