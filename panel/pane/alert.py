@@ -48,8 +48,6 @@ class Alert(Markdown):
         return 0 if priority else False
 
     def __init__(self, object=None, **params):
-        if "margin" not in params:
-            params["margin"] = (0, 0, 25, 0)
         if "sizing_mode" not in params and "width" not in params:
             params["sizing_mode"] = "stretch_width"
         super().__init__(object, **params)

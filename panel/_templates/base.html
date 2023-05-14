@@ -30,8 +30,10 @@ that accepts these same parameters.
   {%  block resources %}
     <style>
       html, body {
+	display: flex;
+	flex-direction: column;
         box-sizing: border-box;
-        height: 100%;
+        min-height: 100vh;
         margin: 0;
         padding: 0;
       }
