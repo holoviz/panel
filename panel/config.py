@@ -625,7 +625,11 @@ class panel_extension(_pyviz_extension):
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if state.curdoc and state.curdoc not in state._extensions_:
             state._extensions_[state.curdoc] = []
+        if params.get('notifications') and 'notifications' not in args:
+            args += ('notifications',)
         for arg in args:
+            if arg == 'notifications' and 'notifications' not in params:
+                params['notifications'] = True
             if arg in self._imports:
                 try:
                     if (arg == 'ipywidgets' and get_ipython() and # noqa (get_ipython)
