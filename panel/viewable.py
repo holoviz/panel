@@ -329,6 +329,7 @@ class ServableMixin:
         else:
             loc_model = loc._get_model(doc, root)
         loc_model.name = 'location'
+        doc.on_session_destroyed(loc._server_destroy) # type: ignore
         doc.add_root(loc_model)
         return loc
 

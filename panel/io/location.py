@@ -21,6 +21,7 @@ from .state import state
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
+    from bokeh.server.contexts import BokehSessionContext
     from pyviz_comms import Comm
 
 
@@ -86,6 +87,14 @@ class Location(Syncable):
         state._views[ref] = (self, root, doc, comm)
         self._documents[doc] = root
         return root
+
+    def _server_destroy(self, session_context: BokehSessionContext) -> None:
+        for p, ps, _, _ in self._synced:
+            try:
+                self.unsync(p, ps)
+            except Exception:
+                pass
+        super()._server_destroy(session_context)
 
     def _cleanup(self, root: Model | None = None) -> None:
         if root:
