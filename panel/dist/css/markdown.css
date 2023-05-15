@@ -115,3 +115,7 @@ table, th, td {
     border-collapse: collapse;
     padding: 5px;
 }
+
+p {
+    overflow-wrap: break-word;
+}
