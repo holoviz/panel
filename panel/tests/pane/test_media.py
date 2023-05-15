@@ -12,6 +12,7 @@ except Exception:
     wavfile = None
 
 from panel.pane import Audio, Video
+from panel.pane.media import TorchLike
 
 ASSETS = pathlib.Path(__file__).parent / 'assets'
 
@@ -133,6 +134,19 @@ def test_audio_float32(document, comm):
     audio = Audio(object=get_audio_np_float32())
     model = audio.get_root(document, comm=comm)
     assert model.value == 'data:audio/wav;base64,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'  # noqa
+
+class TorchMock:
+    def __init__(self):
+        self._data = np.linspace(0, 2.0, 16000, endpoint=False)
+
+    def numpy(self):
+        return self._data
+
+def test_torch_like():
+    mock = TorchMock()
+
+    assert not isinstance(None, TorchLike)
+    assert isinstance(mock, TorchLike)
 
 if __name__.startswith("bokeh"):
     import panel as pn
