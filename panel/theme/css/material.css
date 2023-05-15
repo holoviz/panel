@@ -206,8 +206,8 @@ button.mdc-button.mdc-card-button {
 
 .bk-input {
   background-color: unset;
-  border: 1px solid var(--panel-secondary-color);
-  color: var(--mdc-theme-on-surface);
+  border: 1px solid var(--design-secondary-color, var(--panel-secondary-color));
+  color: var(--design-secondary-text-color, var(--panel-on-secondary-color));
 }
 
 .bk-input:not([type='file']) {
@@ -224,8 +224,8 @@ textarea.bk-input:not([type='file']) {
 .bk-input[disabled] {
   background-color: unset;
   border: unset;
-  border: 1px dotted var(--panel-secondary-color);
-  color: var(--panel-secondary-color);
+  border: 1px dotted var(--design-secondary-color, var(--panel-secondary-color));
+  color: var(--design-secondary-color, var(--panel-secondary-color));
 }
 
 .bk-input:not([disabled]):hover {
@@ -376,8 +376,8 @@ select[multiple].bk-input option:checked {
 
 .bk-menu > :not(.bk-divider):hover,
 .bk-menu > :not(.bk-divider).bk-active {
-  background-color: var(--panel-primary-color);
-  color: var(--panel-on-primary-color);
+  background-color: var(--mdc-theme-primary);
+  color: var(--mdc-theme-on-primary);
 }
 
 /* Checkbox */
