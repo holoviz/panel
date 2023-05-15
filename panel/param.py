@@ -312,10 +312,10 @@ class Param(PaneBase):
             self.parameters = parameters
             return
 
-        for cb in list(self._callbacks):
+        for cb in list(self._internal_callbacks):
             if cb.inst in self._widget_box.objects:
                 cb.inst.param.unwatch(cb)
-                self._callbacks.remove(cb)
+                self._internal_callbacks.remove(cb)
 
         # Construct widgets
         if self.object is None:
@@ -387,7 +387,7 @@ class Param(PaneBase):
             watchers = [selector.param.watch(update_pane, 'value')]
             if toggle:
                 watchers.append(toggle.param.watch(toggle_pane, 'value'))
-            self._callbacks += watchers
+            self._internal_callbacks += watchers
 
             if self.expand:
                 if self.expand_button:
@@ -482,7 +482,7 @@ class Param(PaneBase):
         widget._param_pane = self
         widget._param_name = p_name
 
-        watchers = self._callbacks
+        watchers = self._internal_callbacks
 
         def link_widget(change):
             if p_name in self._updating:
@@ -562,8 +562,8 @@ class Param(PaneBase):
                 def action(event):
                     change.new(self.object)
                 watchers[0] = widget.param.watch(action, 'clicks')
-                idx = self._callbacks.index(prev_watcher)
-                self._callbacks[idx] = watchers[0]
+                idx = self._internal_callbacks.index(prev_watcher)
+                self._internal_callbacks[idx] = watchers[0]
                 return
             elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
@@ -658,7 +658,7 @@ class Param(PaneBase):
 
     def _rerender_widget(self, p_name):
         watchers = []
-        for w in self._callbacks:
+        for w in self._internal_callbacks:
             if w.inst is self._widgets[p_name]:
                 w.inst.param.unwatch(w)
             else:
@@ -822,13 +822,13 @@ class ParamMethod(ReplacementPane):
 
     def _update_pane(self, *events):
         callbacks = []
-        for watcher in self._callbacks:
+        for watcher in self._internal_callbacks:
             obj = watcher.inst if watcher.inst is None else watcher.cls
             if obj is self:
                 callbacks.append(watcher)
                 continue
             obj.param.unwatch(watcher)
-        self._callbacks = callbacks
+        self._internal_callbacks = callbacks
         self._link_object_params()
         self._replace_pane()
 
@@ -843,7 +843,7 @@ class ParamMethod(ReplacementPane):
                 new_deps = parameterized.param.method_dependencies(self.object.__name__)
                 for p in list(deps):
                     if p in new_deps: continue
-                    watchers = self._callbacks
+                    watchers = self._internal_callbacks
                     for w in list(watchers):
                         if (w.inst is p.inst and w.cls is p.cls and
                             p.name in w.parameter_names):
@@ -858,7 +858,7 @@ class ParamMethod(ReplacementPane):
                     pobj = p.cls if p.inst is None else p.inst
                     ps = [_p.name for _p in params]
                     watcher = pobj.param.watch(update_pane, ps, p.what)
-                    self._callbacks.append(watcher)
+                    self._internal_callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
             self._replace_pane()
@@ -872,7 +872,7 @@ class ParamMethod(ReplacementPane):
                 if props:
                     pobj.jslink(self._inner_layout, **props)
             watcher = pobj.param.watch(update_pane, ps, p.what)
-            self._callbacks.append(watcher)
+            self._internal_callbacks.append(watcher)
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -941,7 +941,7 @@ class ParamFunction(ParamMethod):
                          if dep.name in pobj._linkable_params}
                 if props:
                     pobj.jslink(self._inner_layout, **props)
-            self._callbacks.append(watcher)
+            self._internal_callbacks.append(watcher)
 
     #----------------------------------------------------------------
     # Public API
@@ -1035,7 +1035,7 @@ def link_param_method(root_view, root_model):
 
     for widget in widgets:
         for method in methods:
-            for cb in method._callbacks:
+            for cb in method._internal_callbacks:
                 pobj = cb.cls if cb.inst is None else cb.inst
                 if widget._param_pane.object is pobj and widget._param_name in cb.parameter_names:
                     if isinstance(widget, DiscreteSlider):

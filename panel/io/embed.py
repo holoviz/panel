@@ -95,13 +95,17 @@ def param_to_jslink(model, widget):
     param_pane = widget._param_pane
     pobj = param_pane.object
     pname = [k for k, v in param_pane._widgets.items() if v is widget]
-    watchers = [w for w in get_watchers(widget) if w not in widget._callbacks
-                and w not in param_pane._callbacks]
+    watchers = [
+        w for w in get_watchers(widget) if w not in widget._internal_callbacks
+        and w not in param_pane._internal_callbacks
+    ]
 
     if isinstance(pobj, Reactive):
         tgt_links = [Watcher(*l[:-4]) for l in pobj._links]
-        tgt_watchers = [w for w in get_watchers(pobj) if w not in pobj._callbacks
-                        and w not in tgt_links and w not in param_pane._callbacks]
+        tgt_watchers = [
+            w for w in get_watchers(pobj) if w not in pobj._internal_callbacks
+            and w not in tgt_links and w not in param_pane._internal_callbacks
+        ]
     else:
         tgt_watchers = []
 
@@ -141,13 +145,13 @@ def links_to_jslinks(model, widget):
     from ..widgets import Widget
 
     src_links = [Watcher(*l[:-4]) for l in widget._links]
-    if any(w not in widget._callbacks and w not in src_links for w in get_watchers(widget)):
+    if any(w not in widget._internal_callbacks and w not in src_links for w in get_watchers(widget)):
         return
 
     links = []
     for link in widget._links:
         target = link.target
-        tgt_watchers = [w for w in get_watchers(target) if w not in target._callbacks]
+        tgt_watchers = [w for w in get_watchers(target) if w not in target._internal_callbacks]
         if link.transformed or (tgt_watchers and not isinstance(target, Widget)):
             return
 
@@ -248,7 +252,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             if link is not None:
                 pobj = widget._param_pane.object
                 if isinstance(pobj, Widget):
-                    if not any(w not in pobj._callbacks and w not in widget._param_pane._callbacks
+                    if not any(w not in pobj._internal_callbacks and w not in widget._param_pane._internal_callbacks
                                for w in get_watchers(pobj)):
                         ignore.append(pobj)
                 continue # Skip if we were able to attach JS link
@@ -259,7 +263,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                 continue
 
         # If the widget does not support embedding or has no external callback skip it
-        if not widget._supports_embed or all(w in widget._callbacks for w in get_watchers(widget)):
+        if not widget._supports_embed or all(w in widget._internal_callbacks for w in get_watchers(widget)):
             continue
 
         # Get data which will let us record the changes on widget events

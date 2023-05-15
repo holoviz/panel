@@ -1231,7 +1231,7 @@ def test_param_method_pane_subobject(document, comm):
     assert model.text == '42'
 
     # Ensure that subobject is being watched
-    watchers = pane._callbacks
+    watchers = pane._internal_callbacks
     assert any(w.inst is subobject for w in watchers)
     assert pane._models[row.ref['id']][0] is row
 
@@ -1239,7 +1239,7 @@ def test_param_method_pane_subobject(document, comm):
     new_subobject = View(name='Nested', a=42)
     test.b = new_subobject
     assert pane._models[row.ref['id']][0] is row
-    watchers = pane._callbacks
+    watchers = pane._internal_callbacks
     assert not any(w.inst is subobject for w in watchers)
     assert any(w.inst is new_subobject for w in watchers)
 

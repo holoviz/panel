@@ -197,7 +197,7 @@ class Select(SingleSelectBase):
         super().__init__(**params)
         if self.size == 1:
             self.param.size.constant = True
-        self._callbacks.extend([
+        self._internal_callbacks.extend([
             self.param.watch(
                 self._validate_options_groups,
                 ['options', 'groups']

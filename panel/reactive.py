@@ -130,7 +130,7 @@ class Syncable(Renderable):
 
         # Sets up watchers to process manual updates to models
         if self._manual_params:
-            self._callbacks.append(
+            self._internal_callbacks.append(
                 self.param.watch(self._update_manual, self._manual_params)
             )
 
@@ -233,7 +233,7 @@ class Syncable(Renderable):
         params = self._synced_params
         if params:
             watcher = self.param.watch(self._param_change, params)
-            self._callbacks.append(watcher)
+            self._internal_callbacks.append(watcher)
 
     def _link_props(
         self, model: Model, properties: List[str] | List[Tuple[str, str]],
@@ -617,7 +617,9 @@ class Reactive(Syncable, Viewable):
                 for sp in extract_dependencies(p):
                     groups[sp.owner].append(sp.name)
         for owner, pnames in groups.items():
-            owner.param.watch(self._sync_refs, list(set(pnames)))
+            self._internal_callbacks.append(
+                owner.param.watch(self._sync_refs, list(set(pnames)))
+            )
 
     #----------------------------------------------------------------
     # Private API
@@ -919,7 +921,7 @@ class SyncableData(Reactive):
                 self.param.watch(self._update_cds, self._data_params)
             )
         callbacks.append(self.param.watch(self._update_selected, 'selection'))
-        self._callbacks += callbacks
+        self._internal_callbacks += callbacks
         self._validate()
         self._update_cds()
 

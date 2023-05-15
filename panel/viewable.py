@@ -515,7 +515,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
     __abstract = True
 
     def __init__(self, **params):
-        self._callbacks = []
+        self._internal_callbacks = []
         self._documents = {}
         self._models = {}
         self._comms = {}
@@ -678,7 +678,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         self._update_loading()
         self._update_background()
         self._update_design()
-        self._callbacks.extend([
+        self._internal_callbacks.extend([
             self.param.watch(self._update_background, 'background'),
             self.param.watch(self._update_design, 'design'),
             self.param.watch(self._update_loading, 'loading')
