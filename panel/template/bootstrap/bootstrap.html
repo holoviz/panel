@@ -48,13 +48,13 @@
 
     <style>
       :root {
-	  --header-background: {{ header_background or "var(--panel-primary-color)" }};
-	  --header-color: {{ header_color or "var(--panel-on-primary-color)" }};
-	  --sidebar-width: {{ sidebar_width }}px;
+	--header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
+	--header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
+	--sidebar-width: {{ sidebar_width }}px;
       }
       #header {
-	  background-color: var(--header-background);
-	  color: var(--header-color);
+	background-color: var(--header-background);
+	color: var(--header-color);
       }
       #sidebar {
         max-width: var(--sidebar-width) !important;

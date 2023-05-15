@@ -1,11 +1,14 @@
 body {
   display: flex;
   height: 100vh;
-  font-family: "Lato", sans-serif;
+  font-family: 'Lato', sans-serif;
   margin: 0px;
 }
 
-body, .main-area, .main-content, .lm_goldenlayout {
+body,
+.main-area,
+.main-content,
+.lm_goldenlayout {
   overflow: hidden;
 }
 
@@ -59,8 +62,8 @@ img.app-logo {
   padding-right: 10px;
   font-size: 28px;
   height: 30px;
-  padding-top:9px;
-  padding-bottom:9px;
+  padding-top: 9px;
+  padding-bottom: 9px;
   max-width: inherit;
 }
 
@@ -90,7 +93,10 @@ p.bk.golden-card-button {
 }
 
 .lm_content {
-  background-color: var(--panel-background-color);
+  background-color: var(
+    --design-background-color,
+    var(--panel-background-color)
+  );
   overflow-y: auto !important;
 }
 
@@ -113,7 +119,7 @@ p.bk.golden-card-button {
 }
 
 .pn-modal-content {
-  background-color: #fefefe;
+  background-color: var(--design-surface-color, var(--panel-surface-color));
   margin: auto;
   margin-top: 25px;
   margin-bottom: 25px;

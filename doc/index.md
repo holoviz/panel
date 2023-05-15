@@ -16,7 +16,7 @@ sd_hide_title: true
 
 <h2 style="margin-top: 0.3em;">The powerful data exploration & web app framework for Python</h2>
 
-::::{card-carousel} 3
+::::{card-carousel} 4
 
 :::{card} Portfolio Optimizer
 :img-top: https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
@@ -58,9 +58,8 @@ sd_hide_title: true
 
 Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you **easily build powerful tools, dashboards and complex applications entirely in Python**. It has a batteries-included philosophy, putting the PyData ecosystem, powerful data tables and much more at your fingertips. High-level reactive APIs and lower-level callback based APIs ensure you can quickly build exploratory applications, but you aren't limited if you build complex, multi-page apps with rich interactivity. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem, your gateway into a connected ecosystem of data exploration tools.
 
-```{eval-rst}
-.. notebook:: panel ../examples/homepage.ipynb
-    :disable_interactivity_warning: True
+```{eval-rst} panel ../examples/homepage.ipynb
+:disable_interactivity_warning: True
 ```
 
 Panel makes it simple to:

@@ -28,31 +28,31 @@
 
 <style>
   :root {
-      --background-color: {{ style.background_color }};
-      --body-font: {{ style.font }};
-      --corner-radius: {{ style.corner_radius }};
-      --header-background: {{ style.header_background }};
-      --header-color: {{ style.header_color }};
-      --sidebar-width: {{ sidebar_width }}px;
+    --background-color: {{ style.background_color }};
+    --body-font: {{ style.font }};
+    --corner-radius: {{ style.corner_radius }};
+    --header-background: {{ style.header_background }};
+    --header-color: {{ style.header_color }};
+    --sidebar-width: {{ sidebar_width }}px;
   }
   body {
-      color: {{ style.color }};
-      background-color: var(--background-color);
-      font-family: var(--body-font);
+    color: {{ style.color }};
+    background-color: var(--background-color);
+    font-family: var(--body-font);
   }
   #header a {
-      color: currentColor;
+    color: currentColor;
   }
   #header-design-provider {
-      --neutral-fill-hover: var(--header-background);
-      --neutral-fill-rest: var(--header-background);
-      --neutral-foreground-rest: var(--header-color);
-      background: var(--header-background);
-      color: var(--header-color);
+    --neutral-fill-hover: var(--header-background);
+    --neutral-fill-rest: var(--header-background);
+    --neutral-foreground-rest: var(--header-color);
+    background: var(--header-background);
+    color: var(--header-color);
   }
   #sidebar {
-      min-width: var(--sidebar-width);
-      max-width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
   }
 </style>
 

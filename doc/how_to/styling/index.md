@@ -12,7 +12,7 @@ Panel provides a comprehensive system for applying designs, themes and custom st
 How to switch between different design systems.
 :::
 
-:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1 sd-animate-grow50` Toggle themes
+:::{grid-item-card} {octicon}`sun;2.5em;sd-mr-1 sd-animate-grow50` Toggle themes
 :link: themes
 :link-type: doc
 
@@ -24,6 +24,13 @@ How to toggle between themes (e.g. 'light' and 'dark').
 :link-type: doc
 
 How to apply custom CSS styling.
+:::
+
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1 sd-animate-grow50` Customize a Design
+:link: design_variables
+:link-type: doc
+
+How to customize designs and themes with CSS variables.
 :::
 
 :::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1 sd-animate-grow50` Customize Loading Icon

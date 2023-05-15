@@ -133,6 +133,9 @@ class _config(_base_config):
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
 
+    global_css = param.List(default=[], doc="""
+        List of raw CSS to be added to the header.""")
+
     global_loading_spinner = param.Boolean(default=False, doc="""
         Whether to add a global loading spinner for the whole application.""")
 
@@ -394,7 +397,7 @@ class _config(_base_config):
         curdoc = state.curdoc
         if curdoc and curdoc not in session_config:
             session_config[curdoc] = {}
-        if (attr in ('raw_css', 'css_files', 'js_files', 'js_modules') and
+        if (attr in ('raw_css', 'global_css', 'css_files', 'js_files', 'js_modules') and
             curdoc and attr not in session_config[curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
@@ -670,7 +673,7 @@ class panel_extension(_pyviz_extension):
                         f'systems include: {list(designs)}.'
                     )
                 setattr(config, k, designs[v])
-            elif k in ('css_files', 'raw_css'):
+            elif k in ('css_files', 'raw_css', 'global_css'):
                 if not isinstance(v, list):
                     raise ValueError('%s should be supplied as a list, '
                                      'not as a %s type.' %

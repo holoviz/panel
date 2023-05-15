@@ -671,7 +671,7 @@ class Resources(BkResources):
         if config.global_loading_spinner:
             loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
             raw.extend([loading_base, loading_css()])
-        return raw + process_raw_css(config.raw_css)
+        return raw + process_raw_css(config.raw_css) + process_raw_css(config.global_css)
 
     @property
     def js_files(self):
