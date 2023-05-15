@@ -778,7 +778,7 @@ div .tabulator .tabulator-header .tabulator-col {
   background-color: color-mix(
     in srgb,
     var(--bs-primary-bg) 25%,
-    var(--mdc-theme-surface)
+    var(--bs-surface-bg)
   );
   color: var(--bs-primary-color);
 }
