@@ -19,6 +19,18 @@ from ..util import isfile, isurl
 from .base import ModelPane
 
 
+class TorchLikeMeta(type):
+    """See https://blog.finxter.com/python-__instancecheck__-magic-method/"""
+    def __instancecheck__(self, instance):
+        attr = getattr(instance, "numpy", "")
+        return bool(attr) and callable(attr)
+
+
+class TorchLike(metaclass=TorchLikeMeta):
+    """A class similar to Torch. We don't want to make PyTorch a dependency of this project"""
+    pass
+
+
 class _MediaBase(ModelPane):
 
     loop = param.Boolean(default=False, doc="""
@@ -73,7 +85,17 @@ class _MediaBase(ModelPane):
             return True
         return False
 
+    def _to_np_int16(self, data: np.ndarray):
+        dtype = data.dtype
+
+        if dtype in (np.float32, np.float64):
+            data = (data * 32768.0).astype(np.int16)
+
+        return data
+
     def _from_numpy(self, data):
+        data = self._to_np_int16(data)
+
         from scipy.io import wavfile
         buffer = BytesIO()
         wavfile.write(buffer, self.sample_rate, data)
@@ -117,7 +139,7 @@ class Audio(_MediaBase):
     toggling of playing/paused and loop state, the current time, and the
     volume.
 
-    The audio player supports ogg, mp3, and wav files as well as numpy arrays.
+    The audio player supports ogg, mp3, and wav files as well as 1-dim numpy and Torch arrays.
 
     Reference: https://panel.holoviz.org/reference/panes/Audio.html
 
@@ -143,8 +165,11 @@ class Audio(_MediaBase):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
+        if isinstance(obj, TorchLike):
+            obj = obj.numpy()
+
         return (super().applies(obj) or
-                (isinstance(obj, np.ndarray) and obj.ndim==1 and obj.dtype in [np.int16, np.uint16]))
+                (isinstance(obj, np.ndarray) and obj.ndim==1 and obj.dtype in [np.int16, np.uint16, np.float32, np.float64]))
 
 
 class Video(_MediaBase):
