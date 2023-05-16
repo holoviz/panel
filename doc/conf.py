@@ -198,6 +198,14 @@ def patched_card_run(self):
 CardDirective.run = patched_card_run
 
 def setup(app) -> None:
+    try:
+        from nbsite.paramdoc import param_formatter, param_skip
+        app.connect('autodoc-process-docstring', param_formatter)
+        app.connect('autodoc-skip-member', param_skip)
+    except ImportError:
+        print('no param_formatter (no param?)')
+
+    nbbuild.setup(app)
     app.add_config_value('grid_item_link_domain', '', 'html')
 
 grid_item_link_domain = gallery_endpoint

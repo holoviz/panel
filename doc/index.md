@@ -16,41 +16,29 @@ sd_hide_title: true
 
 <h2 style="margin-top: 0.3em;">The powerful data exploration & web app framework for Python</h2>
 
-::::{card-carousel} 4
+::::{grid} 2 4 4 4
 
-:::{card} Portfolio Optimizer
-:img-top: https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
-:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_optimizer
-:link-type: url
-:::
-
-:::{card} MRI Slicer
-:img-top: https://assets.holoviz.org/panel/gallery/vtk_slicer.png
-:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/vtk_slicer
-:link-type: url
-:::
-
-:::{card} Videostream
-:img-top: https://assets.holoviz.org/panel/gallery/streaming_videostream.png
-:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/streaming_videostream
-:link-type: url
-:::
-
-:::{card} Portfolio Analyzer
+:::{grid-item-card} Portfolio Analyzer
 :img-top: https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
 :link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_analyzer
 :link-type: url
 :::
 
-:::{card} Crossfilter
-:img-top: https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
-:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/penguin_crossfilter
+:::{grid-item-card} Portfolio Optimizer
+:img-top: https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
 :::
 
-:::{card} awesome-panel.org
-:img-top: https://assets.holoviz.org/panel/gallery/community/awesome_gallery.png
-:link: https://awesome-panel.org/gallery
+:::{grid-item-card} MRI Slicer
+:img-top: https://assets.holoviz.org/panel/gallery/vtk_slicer.png
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/vtk_slicer
+:link-type: url
+:::
+
+:::{grid-item-card} Videostream
+:img-top: https://assets.holoviz.org/panel/gallery/streaming_videostream.png
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
 :::
 
@@ -58,9 +46,9 @@ sd_hide_title: true
 
 Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you **easily build powerful tools, dashboards and complex applications entirely in Python**. It has a batteries-included philosophy, putting the PyData ecosystem, powerful data tables and much more at your fingertips. High-level reactive APIs and lower-level callback based APIs ensure you can quickly build exploratory applications, but you aren't limited if you build complex, multi-page apps with rich interactivity. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem, your gateway into a connected ecosystem of data exploration tools.
 
-```{eval-rst} panel ../examples/homepage.ipynb
+```{notebook} panel ../examples/homepage.ipynb
 :disable_interactivity_warning: True
-```
+````
 
 Panel makes it simple to:
 
