@@ -75,3 +75,10 @@
   margin-block-end: 0.2em;
   margin-block-start: 0.2em;
 }
+
+/* Float panel */
+
+.jsPanel .jsPanel-content {
+  background-color: var(--background-color);
+  color: var(--background-text-color);
+}

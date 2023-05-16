@@ -816,3 +816,10 @@ div .tabulator .tabulator-header .tabulator-col {
 .ql-editor.ql-blank::before {
   color: var(--bs-body-color);
 }
+
+/* Float panel */
+
+.jsPanel .jsPanel-content {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
