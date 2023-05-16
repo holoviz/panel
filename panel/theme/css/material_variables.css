@@ -18,7 +18,7 @@
   --mdc-theme-primary-lightened: color-mix(
     in srgb,
     var(--mdc-theme-primary) 30%,
-    var(--mdc-theme-surface)
+    transparent
   );
   --mdc-theme-on-primary: var(
     --design-primary-text-color,
@@ -31,7 +31,7 @@
   --mdc-theme-secondary-lightened: color-mix(
     in srgb,
     var(--mdc-theme-secondary) 80%,
-    var(--mdc-theme-surface)
+    transparent
   );
   --mdc-theme-on-secondary: var(
     --design-secondary-text-color,
@@ -70,7 +70,7 @@
   --mdc-theme-text-primary-on-background: color-mix(
     in srgb,
     var(--mdc-theme-on-primary) 87%,
-    var(--mdc-theme-surface)
+    transparent
   );
   --mdc-typography--font-family: var(--bokeh-base-font);
   --mdc-shape-small: 4px;

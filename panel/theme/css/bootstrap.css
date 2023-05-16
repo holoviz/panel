@@ -775,11 +775,7 @@ div .tabulator .tabulator-header .tabulator-col {
   .tabulator-tableholder
   .tabulator-table
   .tabulator-row.tabulator-selectable:hover {
-  background-color: color-mix(
-    in srgb,
-    var(--bs-primary-bg) 25%,
-    var(--bs-surface-bg)
-  );
+  background-color: color-mix(in srgb, var(--bs-primary-bg) 25%, transparent);
   color: var(--bs-primary-color);
 }
 

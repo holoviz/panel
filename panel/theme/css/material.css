@@ -519,7 +519,7 @@ div .tabulator .tabulator-header .tabulator-col {
   background-color: color-mix(
     in srgb,
     var(--mdc-theme-primary) 25%,
-    var(--mdc-theme-surface)
+    transparent
   );
   color: var(--mdc-theme-on-primary);
 }
