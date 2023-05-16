@@ -16,7 +16,7 @@ The three main features we want to highlight as part of this release are:
 - Add unified Design and Theme system ([#4413](https://github.com/holoviz/panel/pull/4413), [#4475](https://github.com/holoviz/panel/pull/4475), [#4466](https://github.com/holoviz/panel/pull/4466), [#4540](https://github.com/holoviz/panel/pull/4540), [#4548](https://github.com/holoviz/panel/pull/4548), [#4770](https://github.com/holoviz/panel/pull/4770), [#4792](https://github.com/holoviz/panel/pull/4792), [#4793](https://github.com/holoviz/panel/pull/4793), [#4801](https://github.com/holoviz/panel/pull/4801))
 - Implement support for passing parameters, widgets and bound functions by reference ([#4495](https://github.com/holoviz/panel/pull/4495), [#4505](https://github.com/holoviz/panel/pull/4505), [#4603](https://github.com/holoviz/panel/pull/4603), [#4606](https://github.com/holoviz/panel/pull/4606))
 
-Some of the changes related to the new layout engine and design system will require some updates to your existing applications. To make this transition as smooth as possible we also added an [upgrade/migration guide](https://panel.holoviz.org/panel/upgrade.html).
+Some of the changes related to the new layout engine and design system will require small updates to your existing applications. To make this transition as smooth as possible we have provided an [upgrade/migration guide](https://panel.holoviz.org/panel/upgrade.html).
 
 ### New Components
 
@@ -34,12 +34,12 @@ This release also adds a number of exciting new components you can leverage in y
 
 There are also a number of major enghancements in this release that we are very excited about:
 
-- Improved markdown rendering ([#4688](https://github.com/holoviz/panel/pull/4688))
+- Improved Markdown rendering ([#4688](https://github.com/holoviz/panel/pull/4688))
 - Add support for tooltips on widgets ([[#4130](https://github.com/holoviz/panel/pull/4130)](https://github.com/holoviz/panel/pull/4130), [#4621](https://github.com/holoviz/panel/pull/4621), [#4643](https://github.com/holoviz/panel/pull/4643))
 - Ensure `.ipynb` and `.md` based apps can be used as `--index` ([#4432](https://github.com/holoviz/panel/pull/4432))
-- Implement Matplotlib format support and responsive Image sizing ([#4514](https://github.com/holoviz/panel/pull/4514))
+- Add support for selecting `format` and `encoding` for Matplotlib image output and implemented  responsive Image sizing ([#4514](https://github.com/holoviz/panel/pull/4514))
 - Add support for icons on `Button` ([#4797](https://github.com/holoviz/panel/pull/4797))
-- Add generic `Image` pane ([#4551](https://github.com/holoviz/panel/pull/4551))
+- Add generic `Image` pane that auto-detects the image filetype ([#4551](https://github.com/holoviz/panel/pull/4551))
 - Add support for writing applications in Markdown ([#4602](https://github.com/holoviz/panel/pull/4602))
 - Improve support for inline resources for Jupyter ([#3013](https://github.com/holoviz/panel/pull/3013), [#4787](https://github.com/holoviz/panel/pull/4787))
 - Add ability to reuse sessions to speed up rendering ([#3679](https://github.com/holoviz/panel/pull/3679), [#4658](https://github.com/holoviz/panel/pull/4658))
@@ -48,7 +48,7 @@ There are also a number of major enghancements in this release that we are very 
 
 ### Documentation
 
-The last major change we want to point out is a complete overhaul of the documentation, moving from long and difficult to navigate user guides to distinct how-to guides and longer explanation sections. We also put in significant effort to ensure that most of our documentation can be run interactively in Pyodide or JupyterLite.
+The last major change we want to highlight is a complete overhaul of the documentation, moving from long and difficult-to-navigate user guides to distinct easily applied how-to guides along with separate, longer explanation sections. We also put in significant effort to ensure that most of our documentation can be run interactively in Pyodide or JupyterLite.
 
 - Modernize documentation by using latest pydata-sphinx-theme ([#4609](https://github.com/holoviz/panel/pull/4609), [#4701](https://github.com/holoviz/panel/pull/4701))
 - Add upgrade/migration guide ([#4693](https://github.com/holoviz/panel/pull/4693))
@@ -79,8 +79,8 @@ The last major change we want to point out is a complete overhaul of the documen
 
 #### API changes & Backward Compatibility
 
-- Pandas becomes a (lazy) runtime dependency ([#4411](https://github.com/holoviz/panel/pull/4411))
-- `Tabulator.frozen_rows` now respects the order of row in the data instead of the order in which the `frozen_rows` were defined ([[#4482](https://github.com/holoviz/panel/pull/4482)](https://github.com/holoviz/panel/pull/4482))
+- Pandas is now only a (lazy) runtime dependency ([#4411](https://github.com/holoviz/panel/pull/4411))
+- `Tabulator.frozen_rows` now respects the order of rows in the data instead of the order in which the `frozen_rows` were defined ([[#4482](https://github.com/holoviz/panel/pull/4482)](https://github.com/holoviz/panel/pull/4482))
 - Make `margin` defaults consistent across widgets and panes ([#4528](https://github.com/holoviz/panel/pull/4528))
 - Extension calls must specify all required extensions ([#4562](https://github.com/holoviz/panel/pull/4562))
 - The `.embed` method now returns a Mimebundle object for rendering ([#4791](https://github.com/holoviz/panel/pull/4791))
@@ -92,7 +92,7 @@ The last major change we want to point out is a complete overhaul of the documen
 #### Configuration
 
 - Allow to set the log level of the Admin logger ([#3495](https://github.com/holoviz/panel/pull/3495))
-- Add `pn.state.served` to determine to simplify whether script is executed as application ([#4252](https://github.com/holoviz/panel/pull/4252))
+- Add `pn.state.served` to simplify determining whether script is executed as an application or in an interactive session ([#4252](https://github.com/holoviz/panel/pull/4252))
 - Add `pn.config.loading_indicator` to determine whether to show loading indicator by default ([#4259](https://github.com/holoviz/panel/pull/4259))
 
 #### Jupyter
@@ -116,15 +116,15 @@ The last major change we want to point out is a complete overhaul of the documen
 - Do not re-create `Vega.selections` object unless selections changed ([#4497](https://github.com/holoviz/panel/pull/4497))
 - Standardize parameter mapping APIs ([#4386](https://github.com/holoviz/panel/pull/4386))
 - Add `Plotly.link_figure` parameter ([#4333](https://github.com/holoviz/panel/pull/4333))
-- Add jpeg support for `JPG` pane ([#4532](https://github.com/holoviz/panel/pull/4532))
+- Add support for .JPEG file extension in the `JPG` pane ([#4532](https://github.com/holoviz/panel/pull/4532))
 - Make periodic callback `counter` a parameter ([#4134](https://github.com/holoviz/panel/pull/4134))
-- Adding Echarts events ([#2174](https://github.com/holoviz/panel/pull/2174))
+- Add Echarts events ([#2174](https://github.com/holoviz/panel/pull/2174))
 - Additional cache support ([#4663](https://github.com/holoviz/panel/pull/4663), [#4667](https://github.com/holoviz/panel/pull/4667))
 
 ### Bug fixes
 
 - Fix caching on undecorated Parameterized method ([#4332](https://github.com/holoviz/panel/pull/4332))
-- Ensures global notification object can be used inside notebook callbacks ([#4331](https://github.com/holoviz/panel/pull/4331))
+- Ensure that global notification object can be used inside notebook callbacks ([#4331](https://github.com/holoviz/panel/pull/4331))
 - Ensure `hash_funcs` are applied recursively in cache ([#4334](https://github.com/holoviz/panel/pull/4334))
 - Fix cache `FIFO` policy bug ([#4789](https://github.com/holoviz/panel/pull/4789))
 - Fix specifying custom index with relative path ([#4288](https://github.com/holoviz/panel/pull/4288))
