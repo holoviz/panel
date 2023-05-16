@@ -241,7 +241,7 @@ textarea.bk-input:not([type='file']) {
 .bk-input-group > label:has(+ .bk-input-container),
 .bk-input-group > label:has(+ .bk-spin-wrapper),
 .bk-input-group > label:has(+ textarea) {
-  background-color: var(--mdc-theme-background);
+  backdrop-filter: blur(1000px);
   position: absolute;
   left: 0;
   top: 0;
@@ -324,7 +324,7 @@ select[multiple].bk-input option:checked {
 }
 
 .bk-input-group > label:has(+ div.choices) {
-  background-color: var(--mdc-theme-background);
+  backdrop-filter: blur(1000px);
   position: absolute;
   left: 0;
   top: 0;
