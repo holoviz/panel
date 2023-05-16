@@ -173,7 +173,7 @@ class CompositeWidget(Widget):
                 layout['min_width'] = min_width
         self._composite = self._composite_type(**layout)
         self._models = self._composite._models
-        self._callbacks.append(
+        self._internal_callbacks.append(
             self.param.watch(self._update_layout_params, layout_params)
         )
 

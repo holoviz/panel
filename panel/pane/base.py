@@ -156,7 +156,7 @@ class PaneBase(Reactive):
             k not in self._skip_layoutable
         }
         self.layout = self.default_layout(self, **kwargs)
-        self._callbacks.extend([
+        self._internal_callbacks.extend([
             self.param.watch(self._sync_layoutable, list(Layoutable.param)),
             self.param.watch(self._update_pane, self._rerender_params)
         ])
@@ -550,7 +550,7 @@ class ReplacementPane(PaneBase):
         self._pane = panel(None)
         self._internal = True
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
-        self._callbacks.append(
+        self._internal_callbacks.append(
             self.param.watch(self._update_inner_layout, list(Layoutable.param))
         )
         self._sync_layout()
@@ -637,7 +637,7 @@ class ReplacementPane(PaneBase):
                 for awatchers in pwatchers.values() for w in awatchers
             ]
             custom_watchers = [
-                wfn for wfn in watchers if wfn not in object._callbacks and
+                wfn for wfn in watchers if wfn not in object._internal_callbacks and
                 not hasattr(wfn.fn, '_watcher_name')
             ]
 

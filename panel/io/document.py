@@ -84,10 +84,10 @@ def _cleanup_doc(doc, destroy=True):
                     p._hooks = []
                     p._param_watchers = {}
                     p._documents = {}
-                    p._callbacks = {}
+                    p._internal_callbacks = {}
             pane._param_watchers = {}
             pane._documents = {}
-            pane._callbacks = {}
+            pane._internal_callbacks = {}
         else:
             views[ref] = (pane, root, doc, comm)
     state._views = views

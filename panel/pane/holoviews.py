@@ -123,7 +123,7 @@ class HoloViews(PaneBase):
             if p in Layoutable.param and v != self.param[p].default
         ]
         watcher = self.param.watch(self._update_widgets, self._rerender_params)
-        self._callbacks.append(watcher)
+        self._internal_callbacks.append(watcher)
         self._initialized = True
         self._update_responsive()
         self._update_widgets()
@@ -241,15 +241,15 @@ class HoloViews(PaneBase):
         self._values = values
 
         # Clean up anything models listening to the previous widgets
-        for cb in list(self._callbacks):
+        for cb in list(self._internal_callbacks):
             if cb.inst in self.widget_box.objects:
                 cb.inst.param.unwatch(cb)
-                self._callbacks.remove(cb)
+                self._internal_callbacks.remove(cb)
 
         # Add new widget callbacks
         for widget in widgets:
             watcher = widget.param.watch(self._widget_callback, 'value')
-            self._callbacks.append(watcher)
+            self._internal_callbacks.append(watcher)
 
         self.widget_box[:] = widgets
         if ((widgets and self.widget_box not in self._widget_container) or

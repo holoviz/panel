@@ -755,7 +755,7 @@ class LiteralInput(Widget):
         super().__init__(**params)
         self._state = ''
         self._validate(None)
-        self._callbacks.append(self.param.watch(self._validate, 'value'))
+        self._internal_callbacks.append(self.param.watch(self._validate, 'value'))
 
     def _validate(self, event):
         if self.type is None: return
