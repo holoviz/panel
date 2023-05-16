@@ -561,3 +561,10 @@ div .tabulator .tabulator-header .tabulator-col {
 .ql-editor.ql-blank::before {
   color: var(--mdc-theme-on-background);
 }
+
+/* Float panel */
+
+.jsPanel .jsPanel-content {
+  background-color: var(--mdc-theme-background);
+  color: var(--mdc-theme-on-background);
+}

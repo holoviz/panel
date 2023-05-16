@@ -118,7 +118,7 @@ class Design(param.Parameterized, ResourceComponent):
     def _reapply(self, viewable: Viewable, root: Model, isolated: bool=True, cache=None) -> None:
         ref = root.ref['id']
         for o in viewable.select():
-            if o.design and isolated:
+            if o.design and not isolated:
                 continue
             elif not o.design and not isolated:
                 o._design = self

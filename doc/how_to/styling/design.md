@@ -30,12 +30,16 @@ Any component that is rendered will now inherit this design. However, alternativ
 from panel.theme import Bootstrap, Material, Native
 
 def create_components(design):
-    with pn.config.set(design=design):
-        return pn.Column(
-            pn.widgets.Button(name='Click me!', icon='hand-click', button_type='success'),
-            pn.widgets.FloatSlider(design=Bootstrap),
-            pn.widgets.Select(name='Select', options=['Biology', 'Chemistry', 'Physics'])
+    return pn.Column(
+        pn.widgets.FloatSlider(name='Slider', design=design),
+        pn.widgets.TextInput(name='TextInput', design=design),
+        pn.widgets.Select(
+		    name='Select', options=['Biology', 'Chemistry', 'Physics'], design=design
+        ),
+        pn.widgets.Button(
+            name='Click me!', icon='hand-click', button_type='primary', design=design
         )
+    )
 
 pn.Tabs(
     ('Bootstrap', create_components(Bootstrap)),

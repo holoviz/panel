@@ -1053,3 +1053,10 @@ table.panel-df {
 .ql-editor.ql-blank::before {
   color: var(--neutral-foreground-rest);
 }
+
+/* Float panel */
+
+.jsPanel .jsPanel-content {
+  background-color: var(--background-color);
+  color: var(--neutral-foreground-rest);
+}

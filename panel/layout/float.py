@@ -1,7 +1,11 @@
+from __future__ import annotations
+
+from typing import ClassVar, List
+
 import param
 
 from ..config import config as pn_config
-from ..io.resources import bundled_files
+from ..io.resources import CDN_DIST, bundled_files
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .base import ListLike
@@ -143,6 +147,10 @@ class FloatPanel(ListLike, ReactiveHTML):
         f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/layout/jspanel.layout.js",
         f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/contextmenu/jspanel.contextmenu.js",
         f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/dock/jspanel.dock.js",
+    ]
+
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/floatpanel.css'
     ]
 
     @classproperty
