@@ -6,7 +6,7 @@ The Panel 1.0 release is finally here and it brings a huge number of improvement
 
 This release marks a huge step forward in the usability of Panel but is also just a first step in leveraging many of the new capabilities that the updated layout engine and design system affords. In the coming months we will continue to improve and polish the UI and UX and make it easier for you to extend Panel as needed.
 
-For now we want to thank the many people that contributed to this release either by contributing directly or by testing and providing feedback. Many thanks to the core contributors @MarcSkovMadsen, @Hoxbro, @droumis and @philippjfr and the outside contributors @ahuang11, @cdeil, @MridulS, @AndrewMaged814, @midnighter and @wendrul.
+For now we want to thank the many people that contributed to this release either by contributing directly or by testing and providing feedback. Many thanks to the core contributors @MarcSkovMadsen, @Hoxbro, @maximlt, @jbednar, @droumis and @philippjfr and the outside contributors @ahuang11, @cdeil, @MridulS, @AndrewMaged814, @midnighter and @wendrul.
 
 ### Major Features
 
