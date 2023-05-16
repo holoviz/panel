@@ -19,18 +19,6 @@ from ..util import isfile, isurl
 from .base import ModelPane
 
 
-class TorchLikeMeta(type):
-    """See https://blog.finxter.com/python-__instancecheck__-magic-method/"""
-    def __instancecheck__(self, instance):
-        attr = getattr(instance, "numpy", "")
-        return bool(attr) and callable(attr)
-
-
-class TorchLike(metaclass=TorchLikeMeta):
-    """A class similar to Torch. We don't want to make PyTorch a dependency of this project"""
-    pass
-
-
 class _MediaBase(ModelPane):
 
     loop = param.Boolean(default=False, doc="""
@@ -129,6 +117,47 @@ class _MediaBase(ModelPane):
         b64 = f"data:{self._media_type}/{fmt};base64,{data.decode('utf-8')}"
         return dict(object=b64)
 
+class TorchLikeMeta(type):
+    """See https://blog.finxter.com/python-__instancecheck__-magic-method/"""
+    def __instancecheck__(self, instance):
+        numpy_attr = getattr(instance, "numpy", "")
+        dim_attr = getattr(instance, "dim", "")
+        return (
+            bool(numpy_attr) and
+            callable(numpy_attr) and
+            callable(dim_attr) and
+            hasattr(instance, "dtype")
+        )
+
+# When support for Python 3.7 is dropped, Torchlike should be implemented as a typing.Protocol
+# That would provide type checking and intellisense in editors
+class TorchLike(metaclass=TorchLikeMeta):
+    """A class similar to Torch. We don't want to make PyTorch a dependency of this project"""
+    pass
+
+# See https://pytorch.org/docs/stable/tensor_attributes.html
+_VALID_TORCH_DTYPES_FOR_AUDIO = [
+
+    "torch.half", "torch.float16",
+    "torch.float", "torch.float32",
+    "torch.double", "torch.float64",
+]
+
+_VALID_NUMPY_DTYPES_FOR_AUDIO = [np.int16, np.uint16, np.float32, np.float64]
+
+def _is_1dim_int_or_float_tensor(obj: Any)->bool:
+    return (
+        isinstance(obj, TorchLike) and
+        obj.dim()==1 and
+        str(obj.dtype) in _VALID_TORCH_DTYPES_FOR_AUDIO
+    )
+
+def _is_1dim_int_or_float_ndarray(obj: Any)->bool:
+    return (
+        isinstance(obj, np.ndarray) and
+        obj.ndim==1 and
+        obj.dtype in _VALID_NUMPY_DTYPES_FOR_AUDIO
+    )
 
 class Audio(_MediaBase):
     """
@@ -165,11 +194,10 @@ class Audio(_MediaBase):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        if isinstance(obj, TorchLike):
-            obj = obj.numpy()
-
-        return (super().applies(obj) or
-                (isinstance(obj, np.ndarray) and obj.ndim==1 and obj.dtype in [np.int16, np.uint16, np.float32, np.float64]))
+        return (super().applies(obj)
+            or _is_1dim_int_or_float_ndarray(obj)
+            or _is_1dim_int_or_float_tensor(obj)
+        )
 
 
 class Video(_MediaBase):
