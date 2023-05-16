@@ -19,6 +19,25 @@ from ..util import isfile, isurl
 from .base import ModelPane
 
 
+class TensorLikeMeta(type):
+    """See https://blog.finxter.com/python-__instancecheck__-magic-method/"""
+    def __instancecheck__(self, instance):
+        numpy_attr = getattr(instance, "numpy", "")
+        dim_attr = getattr(instance, "dim", "")
+        return (
+            bool(numpy_attr) and
+            callable(numpy_attr) and
+            callable(dim_attr) and
+            hasattr(instance, "dtype")
+        )
+
+# When support for Python 3.7 is dropped, Torchlike should be implemented as a typing.Protocol
+# That would provide type checking and intellisense in editors
+class TensorLike(metaclass=TensorLikeMeta):
+    """A class similar to torch.Tensor. We don't want to make PyTorch a dependency of this project
+    """
+    pass
+
 class _MediaBase(ModelPane):
 
     loop = param.Boolean(default=False, doc="""
@@ -81,7 +100,9 @@ class _MediaBase(ModelPane):
 
         return data
 
-    def _from_numpy(self, data):
+    def _to_buffer(self, data: np.ndarray|TensorLike):
+        if isinstance(data, TensorLike):
+            data = data.numpy()
         data = self._to_np_int16(data)
 
         from scipy.io import wavfile
@@ -99,9 +120,9 @@ class _MediaBase(ModelPane):
         fmt = self._default_mime
         if obj is None:
             data = b''
-        elif isinstance(obj, np.ndarray):
+        elif isinstance(obj, (np.ndarray, TensorLike)):
             fmt = 'wav'
-            buffer = self._from_numpy(obj)
+            buffer = self._to_buffer(obj)
             data = b64encode(buffer.getvalue())
         elif os.path.isfile(obj):
             fmt = obj.split('.')[-1]
@@ -117,27 +138,8 @@ class _MediaBase(ModelPane):
         b64 = f"data:{self._media_type}/{fmt};base64,{data.decode('utf-8')}"
         return dict(object=b64)
 
-class TorchLikeMeta(type):
-    """See https://blog.finxter.com/python-__instancecheck__-magic-method/"""
-    def __instancecheck__(self, instance):
-        numpy_attr = getattr(instance, "numpy", "")
-        dim_attr = getattr(instance, "dim", "")
-        return (
-            bool(numpy_attr) and
-            callable(numpy_attr) and
-            callable(dim_attr) and
-            hasattr(instance, "dtype")
-        )
-
-# When support for Python 3.7 is dropped, Torchlike should be implemented as a typing.Protocol
-# That would provide type checking and intellisense in editors
-class TorchLike(metaclass=TorchLikeMeta):
-    """A class similar to Torch. We don't want to make PyTorch a dependency of this project"""
-    pass
-
-# See https://pytorch.org/docs/stable/tensor_attributes.html
 _VALID_TORCH_DTYPES_FOR_AUDIO = [
-
+    "torch.short", "torch.int16",
     "torch.half", "torch.float16",
     "torch.float", "torch.float32",
     "torch.double", "torch.float64",
@@ -147,7 +149,7 @@ _VALID_NUMPY_DTYPES_FOR_AUDIO = [np.int16, np.uint16, np.float32, np.float64]
 
 def _is_1dim_int_or_float_tensor(obj: Any)->bool:
     return (
-        isinstance(obj, TorchLike) and
+        isinstance(obj, TensorLike) and
         obj.dim()==1 and
         str(obj.dtype) in _VALID_TORCH_DTYPES_FOR_AUDIO
     )
@@ -177,7 +179,7 @@ class Audio(_MediaBase):
     >>> Audio('http://ccrma.stanford.edu/~jos/mp3/pno-cs.mp3', name='Audio')
     """
 
-    object = param.ClassSelector(default='', class_=(str, np.ndarray,),
+    object = param.ClassSelector(default='', class_=(str, np.ndarray, TensorLike),
                                  allow_None=True, doc="""
         The audio file either local or remote.""")
 

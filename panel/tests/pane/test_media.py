@@ -12,7 +12,7 @@ except Exception:
     wavfile = None
 
 from panel.pane import Audio, Video
-from panel.pane.media import TorchLike
+from panel.pane.media import TensorLike, _is_1dim_int_or_float_tensor
 
 ASSETS = pathlib.Path(__file__).parent / 'assets'
 
@@ -137,8 +137,8 @@ def test_audio_float32(document, comm):
 
 
 class TorchMock:
-    def __init__(self):
-        self._data = np.linspace(0, 2.0, 16000, endpoint=False)
+    def __init__(self, duration=2.0):
+        self._data = get_audio_np_float32(duration=duration)
 
     def numpy(self):
         return self._data
@@ -148,13 +148,23 @@ class TorchMock:
 
     @property
     def dtype(self):
-        return
+        return "torch.float32"
 
 def test_torch_like():
     mock = TorchMock()
 
-    assert not isinstance(None, TorchLike)
-    assert isinstance(mock, TorchLike)
+    assert not isinstance(None, TensorLike)
+    assert isinstance(mock, TensorLike)
+
+def get_audio_tensor_float32(duration=2.0):
+    return TorchMock(duration=duration)
+
+def test_audio_tensor_float32(document, comm):
+    obj = get_audio_tensor_float32(duration=0.01)
+    assert _is_1dim_int_or_float_tensor(obj)
+    audio = Audio(object=obj)
+    model = audio.get_root(document, comm=comm)
+    assert model.value == 'data:audio/wav;base64,UklGRpYDAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YXIDAAAAAAIEAAj3C+EPuxOCFzEbxB45Iosltyi7K5IuOzGyM/U1AjjWOXE7zzzxPdQ+dz/cP/8/4z+GP+k+DT7zPJs7CDo6ODM29jOFMeIuECwRKeklmyIqH5ob7hcqFFIQaQx0CHYEdABz/HT4fPSQ8LTs6+g55aLhKt7U2qPXm9S+0RDPk8xKyjfIXMa7xFbDLcJDwZjALcABwBfAbMACwdbB6sI6xMfFj8ePycbLMc7P0JzTlta52QPdcOD946bnZ+s97yTzGPcV+xf/GQMZBxEL/g7dEqgWXRr3HXMhzSQCKA8r8S2kMCczdjWPN3E5GTuFPLQ9pj5YP8o//T/vP6E/Ez9FPjk97ztpOqg4rjZ9NBgygC+4LMMppCZfI/UfbBzGGAcVMxFODVsJXwVeAVz9XPli9XPxk+3F6Q7mceLx3pPbWdhI1WHSqM8gzcvKq8jDxhXFosNrwnPBucA/wAbADMBTwNrAoMGmwunDaMUixxbJQMugzTPQ9dLl1f/YQNym3yzjzuaL6lzuQPIx9i36Lv4wAjAGKwobDv0RzRWHGSgdqyANJEsnYSpNLQswmTL0NBo3CDm9Ojc8dT10PjU/tj/3P/g/uD85P3k+ez0/PMc6EzkmNwE1qDIbMF4tcypdJyAkvyA8HZ0Z4xUUEjIOQgpIBkcCRf5E+kj2V/Jz7qHq5OZA47rfVNwR2fbVBtNC0K/NTssiyS3HccXxw6zCpsHewFXADcAFwD3AtsBuwWXCmsMMxbnGn8i+yhHNmc9Q0jbVR9iA293eXOL55a/pfe1c8Uv1RPlE/UYBSAVECTcNHRHxFLEYVxzhH0sjkiaxKacscC8JMnA0ojadOF865zsyPUA+Dz+eP+4//T/MP1s/qj66PYw8ITt7OZs3gzU1M7MwAS4gKxQo4CSGIQsechq+FvMSFQ8oCzAHMAMu/yz7L/c781Tvfeu75xLkhOAW3czZqNat09/QQM7Ty5vJmsfRxUPE8cLcwQbBb8AYwAHAK8CVwD7BJ8JOw7LEUsYsyD7KhcwBz67RitSR18HaFt6O4STl1eie7HrwZfRc+Fv8XQBfBF0IUgw7EBQU2ReFGxYfhyLWJf8o/yvSLnYx6TMnNi84/jmTO+w8CD7lPoM/4T//P90/ej/YPvY91jx5O+A5DTgBNsAzSjGiLswrySg='  # noqa
 
 if __name__.startswith("bokeh"):
     import panel as pn
@@ -162,6 +172,8 @@ if __name__.startswith("bokeh"):
     pn.Column(
         "## np.float64",
         pn.pane.Audio(get_audio_np_float64(duration=2.0)),
-        # "## np.float32",
-        # pn.pane.Audio(get_audio_np_float32(duration=2.0)),
+        "## np.float32",
+        pn.pane.Audio(get_audio_np_float32(duration=2.0)),
+        "## torch.float32",
+        pn.pane.Audio(get_audio_tensor_float32(duration=2.0)),
     ).servable()
