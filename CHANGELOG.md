@@ -32,7 +32,7 @@ This release also adds a number of exciting new components you can leverage in y
 
 ### Major enhancements
 
-There are also a number of major enghancements in this release that we are very excited about:
+There are also a number of major enhancements in this release that we are very excited about:
 
 - Improved Markdown rendering ([#4688](https://github.com/holoviz/panel/pull/4688))
 - Add support for tooltips on widgets ([[#4130](https://github.com/holoviz/panel/pull/4130)](https://github.com/holoviz/panel/pull/4130), [#4621](https://github.com/holoviz/panel/pull/4621), [#4643](https://github.com/holoviz/panel/pull/4643))
