@@ -78,7 +78,7 @@ Deepen your understanding about Template styling in Panel.
 Learn about why Panel utilizes the Param library.
 
 ```{image} https://assets.holoviz.org/panel/background/dependencies/param_logo_stacked.png
-:width: 250px
+:width: 125px
 :align: center
 :name: Param
 ```
@@ -92,7 +92,7 @@ Learn about why Panel utilizes the Param library.
 Learn about why Panel utilizes the Bokeh library.
 
 ```{image} https://assets.holoviz.org/panel/background/dependencies/bokeh-icon%405x.png
-:width: 250px
+:width: 125px
 :align: center
 :name: Bokeh
 ```
@@ -111,7 +111,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/dash_logo.png
-:width: 250px
+:width: 125px
 :align: center
 :name: Dash
 ```
@@ -123,7 +123,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/jupyter_logo.png
-:height: 250px
+:height: 125px
 :align: center
 :name: ipywidgets
 ```
@@ -135,7 +135,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/voila_logo.webp
-:width: 250px
+:width: 125px
 :align: center
 :name: Voila
 ```
@@ -147,7 +147,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/streamlit_logo.png
-:width: 250px
+:width: 125px
 :align: center
 :name: Streamlit
 ```
@@ -159,7 +159,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/JavaScript_logo.png
-:width: 250px
+:width: 125px
 :align: center
 :name: JavaScript
 ```
@@ -171,7 +171,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/dependencies/bokeh-icon%405x.png
-:width: 250px
+:width: 125px
 :align: center
 :name: Bokeh
 ```
