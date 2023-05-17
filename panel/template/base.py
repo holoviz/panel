@@ -526,6 +526,10 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
     header_color = param.String(doc="""
         Optional header text color override.""")
 
+    header_max_width = param.String(default="", doc="""
+        The maximum width of the header area. For example '800px' or '80%'.
+        If the string is '' (default) no max width is set.""")
+
     location = param.Boolean(default=True, readonly=True)
 
     _actions = param.ClassSelector(default=TemplateActions(), class_=TemplateActions)
@@ -746,6 +750,7 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width
+        self._render_variables['header_max_width'] = self.header_max_width
         self._render_variables['sidebar_width'] = self.sidebar_width
         self._render_variables['theme'] = self._design.theme
 
