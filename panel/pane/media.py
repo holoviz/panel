@@ -164,13 +164,22 @@ def _is_1dim_int_or_float_ndarray(obj: Any)->bool:
 class Audio(_MediaBase):
     """
     The `Audio` pane displays an audio player given a local or remote audio
-    file or numpy array.
+    file, a NumPy Array or Torch Tensor.
 
     The pane also allows access and control over the player state including
     toggling of playing/paused and loop state, the current time, and the
     volume.
 
-    The audio player supports ogg, mp3, and wav files as well as 1-dim numpy and Torch arrays.
+    The audio player supports ogg, mp3, and wav files
+
+    If SciPy is installed, 1-dim Numpy Arrays and 1-dim
+    Torch Tensors are also supported. The dtype must be one of the following
+
+    - numpy: np.int16, np.uint16, np.float32, np.float64
+    - torch: torch.short, torch.int16, torch.half, torch.float16, torch.float, torch.float32,
+    torch.double, torch.float64
+
+    The array or Tensor input will be downsampled to 16bit and converted to a wav file by SciPy.
 
     Reference: https://panel.holoviz.org/reference/panes/Audio.html
 
@@ -181,10 +190,10 @@ class Audio(_MediaBase):
 
     object = param.ClassSelector(default='', class_=(str, np.ndarray, TensorLike),
                                  allow_None=True, doc="""
-        The audio file either local or remote.""")
+        The audio file either local or remote, a 1-dim NumPy ndarray or a 1-dim Torch Tensor.""")
 
     sample_rate = param.Integer(default=44100, doc="""
-        The sample_rate of the audio when given a NumPy array.""")
+        The sample_rate of the audio when given a NumPy array or Torch tensor.""")
 
     _bokeh_model = _BkAudio
 
