@@ -660,12 +660,15 @@ class ReplacementPane(PaneBase):
                         equal = False
                     if not equal:
                         new_params[k] = v
-                changing = any(p in old_object._rerender_params for p in new_params)
-                old_object._object_changing = changing
-                try:
+                if isinstance(object, PaneBase):
+                    changing = any(p in old_object._rerender_params for p in new_params)
+                    old_object._object_changing = changing
+                    try:
+                        old_object.param.update(**new_params)
+                    finally:
+                        old_object._object_changing = False
+                else:
                     old_object.param.update(**new_params)
-                finally:
-                    old_object._object_changing = False
             else:
                 old_object.object = object
         else:
