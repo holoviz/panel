@@ -429,10 +429,11 @@ class SVG(ImageBase):
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
         width, height = self.width, self.height
         w, h = self._img_dims(width, height)
-        if self.embed or (isfile(obj) or not isinstance(obj, (str, PurePath))):
+        if self.embed or (isfile(obj) or obj.lstrip().startswith('<svg') or not isinstance(obj, (str, PurePath))):
             data = self._data(obj)
         else:
             return dict(object=self._format_html(obj, w, h))
+
         if data is None:
             return dict(object='<img></img>')
         if self.encode:
