@@ -19,6 +19,25 @@ from ..util import isfile, isurl
 from .base import ModelPane
 
 
+class TensorLikeMeta(type):
+    """See https://blog.finxter.com/python-__instancecheck__-magic-method/"""
+    def __instancecheck__(self, instance):
+        numpy_attr = getattr(instance, "numpy", "")
+        dim_attr = getattr(instance, "dim", "")
+        return (
+            bool(numpy_attr) and
+            callable(numpy_attr) and
+            callable(dim_attr) and
+            hasattr(instance, "dtype")
+        )
+
+# When support for Python 3.7 is dropped, Torchlike should be implemented as a typing.Protocol
+# That would provide type checking and intellisense in editors
+class TensorLike(metaclass=TensorLikeMeta):
+    """A class similar to torch.Tensor. We don't want to make PyTorch a dependency of this project
+    """
+    pass
+
 class _MediaBase(ModelPane):
 
     loop = param.Boolean(default=False, doc="""
@@ -73,7 +92,19 @@ class _MediaBase(ModelPane):
             return True
         return False
 
-    def _from_numpy(self, data):
+    def _to_np_int16(self, data: np.ndarray):
+        dtype = data.dtype
+
+        if dtype in (np.float32, np.float64):
+            data = (data * 32768.0).astype(np.int16)
+
+        return data
+
+    def _to_buffer(self, data: np.ndarray|TensorLike):
+        if isinstance(data, TensorLike):
+            data = data.numpy()
+        data = self._to_np_int16(data)
+
         from scipy.io import wavfile
         buffer = BytesIO()
         wavfile.write(buffer, self.sample_rate, data)
@@ -89,9 +120,9 @@ class _MediaBase(ModelPane):
         fmt = self._default_mime
         if obj is None:
             data = b''
-        elif isinstance(obj, np.ndarray):
+        elif isinstance(obj, (np.ndarray, TensorLike)):
             fmt = 'wav'
-            buffer = self._from_numpy(obj)
+            buffer = self._to_buffer(obj)
             data = b64encode(buffer.getvalue())
         elif os.path.isfile(obj):
             fmt = obj.split('.')[-1]
@@ -107,17 +138,48 @@ class _MediaBase(ModelPane):
         b64 = f"data:{self._media_type}/{fmt};base64,{data.decode('utf-8')}"
         return dict(object=b64)
 
+_VALID_TORCH_DTYPES_FOR_AUDIO = [
+    "torch.short", "torch.int16",
+    "torch.half", "torch.float16",
+    "torch.float", "torch.float32",
+    "torch.double", "torch.float64",
+]
+
+_VALID_NUMPY_DTYPES_FOR_AUDIO = [np.int16, np.uint16, np.float32, np.float64]
+
+def _is_1dim_int_or_float_tensor(obj: Any)->bool:
+    return (
+        isinstance(obj, TensorLike) and
+        obj.dim()==1 and
+        str(obj.dtype) in _VALID_TORCH_DTYPES_FOR_AUDIO
+    )
+
+def _is_1dim_int_or_float_ndarray(obj: Any)->bool:
+    return (
+        isinstance(obj, np.ndarray) and
+        obj.ndim==1 and
+        obj.dtype in _VALID_NUMPY_DTYPES_FOR_AUDIO
+    )
 
 class Audio(_MediaBase):
     """
     The `Audio` pane displays an audio player given a local or remote audio
-    file or numpy array.
+    file, a NumPy Array or Torch Tensor.
 
     The pane also allows access and control over the player state including
     toggling of playing/paused and loop state, the current time, and the
     volume.
 
-    The audio player supports ogg, mp3, and wav files as well as numpy arrays.
+    The audio player supports ogg, mp3, and wav files
+
+    If SciPy is installed, 1-dim Numpy Arrays and 1-dim
+    Torch Tensors are also supported. The dtype must be one of the following
+
+    - numpy: np.int16, np.uint16, np.float32, np.float64
+    - torch: torch.short, torch.int16, torch.half, torch.float16, torch.float, torch.float32,
+    torch.double, torch.float64
+
+    The array or Tensor input will be downsampled to 16bit and converted to a wav file by SciPy.
 
     Reference: https://panel.holoviz.org/reference/panes/Audio.html
 
@@ -126,12 +188,12 @@ class Audio(_MediaBase):
     >>> Audio('http://ccrma.stanford.edu/~jos/mp3/pno-cs.mp3', name='Audio')
     """
 
-    object = param.ClassSelector(default='', class_=(str, np.ndarray,),
+    object = param.ClassSelector(default='', class_=(str, np.ndarray, TensorLike),
                                  allow_None=True, doc="""
-        The audio file either local or remote.""")
+        The audio file either local or remote, a 1-dim NumPy ndarray or a 1-dim Torch Tensor.""")
 
     sample_rate = param.Integer(default=44100, doc="""
-        The sample_rate of the audio when given a NumPy array.""")
+        The sample_rate of the audio when given a NumPy array or Torch tensor.""")
 
     _bokeh_model = _BkAudio
 
@@ -143,8 +205,10 @@ class Audio(_MediaBase):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        return (super().applies(obj) or
-                (isinstance(obj, np.ndarray) and obj.ndim==1 and obj.dtype in [np.int16, np.uint16]))
+        return (super().applies(obj)
+            or _is_1dim_int_or_float_ndarray(obj)
+            or _is_1dim_int_or_float_tensor(obj)
+        )
 
 
 class Video(_MediaBase):
