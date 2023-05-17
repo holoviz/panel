@@ -170,12 +170,18 @@ export class PlotlyPlotView extends HTMLBoxView {
     set_size(this.container, this.model)
     this._rendered = false
     this.shadow_el.appendChild(this.container)
+    this.watch_stylesheets()
     this.plot().then(() => {
       this._rendered = true
       if (this.model.relayout != null)
 	(window as any).Plotly.relayout(this.container, this.model.relayout);
       (window as any).Plotly.Plots.resize(this.container);
     })
+  }
+
+  style_redraw(): void {
+    if (this._rendered)
+      (window as any).Plotly.Plots.resize(this.container);
   }
 
   after_layout(): void {

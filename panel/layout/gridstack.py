@@ -91,15 +91,10 @@ class GridStack(ReactiveHTML, GridSpec):
         })
         sync_state()
         state.gridstack = gridstack
-        state.rendered = false
         """,
         'after_layout': """
         self.nrows()
         state.gridstack.engine._notify()
-        if (!state.rendered) {
-          state.rendered = true
-          view.invalidate_layout()
-        }
         """,
         'allow_drag':   "state.gridstack.enableMove(data.allow_drag)",
         'allow_resize': "state.gridstack.enableResize(data.allow_resize)",
