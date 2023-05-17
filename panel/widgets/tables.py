@@ -111,6 +111,7 @@ class BaseTable(ReactiveData, Widget):
         self._renamed_cols = {}
         self._filters = []
         self._index_mapping = {}
+        self._edited_indexes = []
         super().__init__(value=value, **params)
         self.param.watch(self._setup_on_change, ['editors', 'formatters'])
         self.param.trigger('editors')
@@ -1125,7 +1126,6 @@ class Tabulator(BaseTable):
         self.style = None
         self._computed_styler = None
         self._child_panels = {}
-        self._edited_indexes = []
         self._explicit_pagination = 'pagination' in params
         self._on_edit_callbacks = []
         self._on_click_callbacks = {}
