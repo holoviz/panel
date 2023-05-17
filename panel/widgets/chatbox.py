@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import random
-
 from typing import (
     Any, Callable, ClassVar, Dict, List, Optional, Tuple, Type, Union,
 )
@@ -86,12 +84,10 @@ class ChatRow(CompositeWidget):
         **params,
     ):
         bubble_styles = {
-            # round borders
-            "border-radius": "1em",
-            "padding": "6px 1em",
             "overflow-x": "auto",
             "overflow-y": "auto",
             "max-width": "88%",
+            "box-shadow": "5px 5px 5px 0px rgba(0,0,0,0.1)",
         }
         bubble_styles.update(styles or {})
         if "background" not in bubble_styles:
@@ -101,11 +97,13 @@ class ChatRow(CompositeWidget):
         # create the chat icon
         icon_params = dict(
             width=48,
-            height=60,
+            height=48,
             sizing_mode="fixed",
             align="center",
         )
         icon_styles = bubble_styles.copy()
+        icon_styles.pop("background")
+        icon_styles.pop("box-shadow")
         icon_styles.pop("overflow-x")
         icon_styles.pop("overflow-y")
         if icon is None:
@@ -113,13 +111,14 @@ class ChatRow(CompositeWidget):
             # use the first and last letter of the name
             # and a random colored background
             name = self.name or "Anonymous"
-            icon_label = f"*{name[0]}-{name[-1]}*".upper()
+            icon_label = f"{name[0]}-{name[-1]}".upper()
             self._icon = Markdown(
                 object=icon_label,
                 styles=icon_styles,
                 **icon_params,
             )
         else:
+            icon_styles.pop("padding")
             self._icon = Image(icon, **icon_params)
 
         # create the chat bubble
@@ -128,7 +127,7 @@ class ChatRow(CompositeWidget):
         ]
         self._bubble = Column(
             *bubble_objects,
-            margin=12,
+            margin=8,
             styles=bubble_styles,
         )
 
@@ -138,9 +137,7 @@ class ChatRow(CompositeWidget):
                 name="♡",
                 width=30,
                 height=30,
-                margin=(12, 6, 12, -2),
                 align="end",
-                button_type="light",
             )
             self._like.link(self, value="liked", bidirectional=True)
             self._like.param.watch(self._update_like, "value")
@@ -159,11 +156,7 @@ class ChatRow(CompositeWidget):
             horizontal_align = horizontal_align[0]
 
         row_objects = (self._icon, self._bubble, self._like)
-        if horizontal_align == "start":
-            # top, right, bottom, left
-            margin = (-8, 0, 0, 68)
-        else:
-            margin = (-8, 68, 0, 0)
+        if horizontal_align == "end":
             row_objects = row_objects[::-1]
 
         container_params = dict(
@@ -171,11 +164,18 @@ class ChatRow(CompositeWidget):
         )
         row = Row(*row_objects, **container_params)
         if show_name:
-            self._name = StaticText(
-                value=self.name,
-                margin=margin,
+            if horizontal_align == "start":
+                margin = "-1.75em 0em 0em 7em"
+            else:
+                margin = "-1.75em 7em 0em 0em"
+            self._name = Markdown(
+                object=self.name,
                 align=(horizontal_align, "start"),
-                styles={"font-size": "0.88em", "color": "grey"},
+                styles={
+                    "font-size": "0.88em",
+                    "color": "grey",
+                    "margin": margin,
+                },
             )
             if self.align_name == "start":
                 row = Column(self._name, row, **container_params)
@@ -274,33 +274,6 @@ class ChatBox(CompositeWidget):
         default=False,
     )
 
-    message_hue_range = param.Range(
-        doc="""
-            Range of hue values to use for the message background
-            colors if message_colors is not specified for a user.
-        """,
-        default=(80, 220),
-        bounds=(0, 255),
-    )
-
-    message_saturation = param.Integer(
-        doc="""
-            Saturation of the message background colors if
-            message_colors is not specified for a user.
-        """,
-        default=28,
-        bounds=(0, 100),
-    )
-
-    message_lightness = param.Integer(
-        doc="""
-            Lightness of the message background colors if
-            message_colors is not specified for a user.
-        """,
-        default=60,
-        bounds=(0, 100),
-    )
-
     message_icons = param.Dict(
         doc="""Dictionary mapping name of messages to their icons,
         e.g. `[{'You': 'path/to/icon.png'}]`""",
@@ -311,6 +284,15 @@ class ChatBox(CompositeWidget):
         doc="""Dictionary mapping name of messages to their colors,
         e.g. `[{'You': 'red'}]`""",
         default={},
+    )
+
+    message_hue = param.Integer(
+        doc="""
+            Base hue of the message bubbles if message_colors is
+            not specified for a user.
+        """,
+        default=202,
+        bounds=(0, 360),
     )
 
     message_input_widgets = param.List(
@@ -362,12 +344,13 @@ class ChatBox(CompositeWidget):
         self._chat_log = Column(**chat_layout)
         self._scroll_button = Button(
             name="Scroll to latest",
-            button_type="light",
             align="center",
             height=35,
             margin=0,
         )
         self._add_scroll_callback(self._scroll_button, "clicks")
+        self._current_hue = self.message_hue
+        self._default_colors = self._generate_default_hsl(self._current_hue)
 
         box_objects = [self._chat_title] if self.name else []
         box_objects.append(self._chat_log)
@@ -387,10 +370,22 @@ class ChatBox(CompositeWidget):
         self.param.watch(self._refresh_log, "value")
         self.param.trigger("value")
 
+    def _generate_default_hsl(self, hue: int, increment: int = 0) -> List[str]:
+        hue += increment
+        if hue > 360:
+            hue -= 360
+        self._current_hue = hue
+
+        return [
+            f"hsl({hue}, 45%, 50%)",
+            f"hsl({hue}, 30%, 55%)",
+            f"hsl({hue}, 15%, 60%)",
+        ]
+
     def _add_scroll_callback(self, obj: Viewable, what: str):
         code = """
-            const outerContainer = document.querySelectorAll(".bk-Column")[0].shadowRoot
-            const column = outerContainer.querySelector(".bk-Column")
+            const outerColumn = document.querySelector(".bk-Column")
+            const column = outerColumn.shadowRoot.querySelector(".bk-Column")
         """
         if self.ascending:
             code += "\ncolumn.scrollTop = column.scrollHeight"
@@ -451,17 +446,6 @@ class ChatBox(CompositeWidget):
         else:
             box_objects.insert(0, input_items)
 
-    def _generate_color(self, string: str, message_hue_range: Tuple[int]) -> str:
-        """
-        Generate a random color in HSL format.
-        """
-        seed = sum([ord(c) for c in string])
-        random.seed(seed)
-
-        hue = random.randint(*message_hue_range)
-        color = f"hsl({hue}, {self.message_saturation}%, {self.message_lightness}%)"
-        return color
-
     @staticmethod
     def _get_name(dict_: Dict[str, str]) -> str:
         """
@@ -501,15 +485,18 @@ class ChatBox(CompositeWidget):
         if user in self.message_colors:
             background = self.message_colors[user]
         else:
-            background = self._generate_color(
-                string=user, message_hue_range=self.message_hue_range
-            )
+            if len(self._default_colors) == 0:
+                self._default_colors = self._generate_default_hsl(
+                    self._current_hue, increment=88
+                )
+            background = self._default_colors.pop()
             self.message_colors[user] = background
 
         # try to get input icon
         message_icon = self.message_icons.get(user, None)
 
-        align = "start" if user != self.primary_name else "end"
+        is_other_user = user != self.primary_name
+        align = "start" if is_other_user else "end"
         if not isinstance(message_contents, list):
             message_contents = [message_contents]
         message_row = ChatRow(
@@ -523,6 +510,7 @@ class ChatBox(CompositeWidget):
             default_message_callable=self.default_message_callable,
             styles={
                 "background": background,
+                "border-radius": "1em" if is_other_user else "5em",
             },
         )
         return message_row
@@ -583,20 +571,7 @@ class ChatBox(CompositeWidget):
         """
         if not isinstance(user_message, dict):
             raise ValueError(f"Expected a dictionary, but got {user_message}")
-
-        # this doesn't trigger anything because it's the same object
-        # just append so it stays in sync
-        self.value.append(user_message)
-        user, message = self._separate_user_message(user_message)
-
-        previous_user = None
-        if self._chat_log.objects:
-            previous_user = self._chat_log.objects[-1].name
-        show_name = user != previous_user
-
-        message_row = self._instantiate_message_row(user, message, show_name)
-        self._chat_log.append(message_row)
-        self._scroll_button.param.trigger("clicks")
+        self.value = [*self.value, user_message]
 
     def extend(self, user_messages: List[Dict[str, Union[List[Any], Any]]]) -> None:
         """

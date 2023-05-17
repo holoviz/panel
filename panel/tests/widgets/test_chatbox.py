@@ -169,13 +169,18 @@ def test_chat_box_generate_color(document, comm):
     value = [
         {"user1": "Hello"},
         {"user2": "Hi"},
+        {"user3": "Hi"},
+        {"user4": "Hi"},
+        {"user5": "Hi"},
     ]
     chat_box = ChatBox(
-        value=value.copy(), message_colors={"user1": "red"}, message_hue_range=(188, 188)
+        value=value.copy(), message_colors={"user1": "red"}, message_hue=290
     )
     assert chat_box.message_colors["user1"] == "red"
-    assert chat_box.message_colors["user2"] == "hsl(188, 28%, 60%)"
-
+    assert chat_box.message_colors["user2"] == "hsl(290, 15%, 60%)"
+    assert chat_box.message_colors["user3"] == "hsl(290, 30%, 55%)"
+    assert chat_box.message_colors["user4"] == "hsl(290, 45%, 50%)"
+    assert chat_box.message_colors["user5"] == "hsl(18, 15%, 60%)"
 
 def test_chat_box_user_icons(document, comm):
     value = [
@@ -195,8 +200,8 @@ def test_chat_box_show_name(document, comm):
         {"user2": "Hi"},
     ]
     chat_box = ChatBox(value=value.copy())
-    assert chat_box.rows[0]._name.value == "user1"
-    assert chat_box.rows[1]._name.value == "user2"
+    assert chat_box.rows[0]._name.object == "user1"
+    assert chat_box.rows[1]._name.object == "user2"
     # no name shown for consecutive messages from the same user
     assert chat_box.rows[2]._name is None
 
@@ -216,17 +221,15 @@ def test_chat_row(document, comm):
     )
 
     name = chat_row._name
-    assert name.value == "user1"
+    assert name.object == "user1"
     assert name.align == ("start", "start")
 
     icon = chat_row._icon
-    assert icon.object == "*U-1*"
+    assert icon.object == "U-1"
     assert icon.align == "center"
-    assert icon.styles["background"] == "black"
 
     bubble = chat_row._bubble
     assert bubble[0].object == "Hello"
-    assert icon.styles["background"] == "black"
 
 
 def test_chat_row_image_message(document, comm):
