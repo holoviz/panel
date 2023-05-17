@@ -177,9 +177,13 @@ orig_grid_run = GridItemCardDirective.run
 
 def patched_grid_run(self):
     app = self.state.document.settings.env.app
+    existing_link = self.options.get('link')
     domain = getattr(app.config, 'grid_item_link_domain', None)
     if self.has_content:
         self.content.replace('|gallery-endpoint|', domain)
+    if existing_link and domain:
+        new_link = existing_link.replace('|gallery-endpoint|', domain)
+        self.options['link'] = new_link
     return list(orig_grid_run(self))
 
 GridItemCardDirective.run = patched_grid_run

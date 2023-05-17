@@ -6,7 +6,7 @@
   </a>
 {% endif %}
 {% if title and pagename.startswith("gallery") %}
-  <a href="{{ gallery_url + ('' if pagename.endswith('index') else pagename.split('/')[-1]) }}" target=”_blank”>
+  <a href="{{ gallery_url + '/' + ('' if pagename.endswith('index') else pagename.split('/')[-1]) }}" target=”_blank”>
     <img src="{{ pathto('_static/launch_app.svg', 1) }}" alt="launch app"></img>
   </a>
 {% endif %}
