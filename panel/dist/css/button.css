@@ -1,6 +1,6 @@
 :host {
   --primary-color: var(--design-primary-color, var(--panel-primary-color));
-  --primary-text-color: var(
+  --button-primary-text-color: var(
     --design-primary-text-color,
     var(--panel-on-primary-color)
   );
@@ -9,7 +9,10 @@
     var(--panel-on-background-color)
   );
   --surface-color: var(--design-surface-color, var(--panel-surface-color));
-  --surface-text-color: var(--design-surface-color, var(--panel-surface-color));
+  --surface-text-color: var(
+    --design-surface-text-color,
+    var(--panel-on-surface-color)
+  );
 }
 
 .bk-btn:active {
@@ -26,16 +29,21 @@
 
 :host(.solid) .bk-btn.bk-btn-default {
   background-color: var(--surface-color);
-  color: var(--on-surface-color);
+  color: var(--surface-text-color);
 }
 
 :host(.outline) .bk-btn.bk-btn-default {
+  border: 1px solid var(--surface-color);
   color: var(--background-text-color);
 }
 
+:host(.solid) .bk-btn-group .bk-btn.bk-btn-default.bk-active {
+  box-shadow: inset 0px 3px 5px rgb(0 0 0 / 50%);
+}
+
 :host(.outline) .bk-btn.bk-btn-default.bk-active {
+  box-shadow: inset 0px 3px 5px rgb(0 0 0 / 50%);
   color: var(--background-text-color);
-  box-shadow: inset 0px 3px 5px rgb(0 0 0 / 25%);
 }
 
 :host(.outline) .bk-btn-group .bk-btn-default.bk-active {
@@ -64,7 +72,7 @@
 
 :host(.outline) .bk-btn-group .bk-btn-primary.bk-active {
   background-color: var(--primary-color);
-  color: var(--primary-text-color);
+  color: var(--button-primary-text-color);
 }
 
 :host(.outline) .bk-btn-success {
@@ -78,7 +86,7 @@
 
 :host(.outline) .bk-btn-group .bk-btn-success.bk-active {
   background-color: var(--success-bg-color);
-  color: var(--success-text-color);
+  color: var(--background-text-color);
 }
 
 :host(.outline) .bk-btn-warning {
@@ -92,7 +100,7 @@
 
 :host(.outline) .bk-btn-group .bk-btn-warning.bk-active {
   background-color: var(--warning-bg-color);
-  color: var(--warning-text-color);
+  color: var(--background-text-color);
 }
 
 :host(.outline) .bk-btn-danger {
@@ -106,7 +114,7 @@
 
 :host(.outline) .bk-btn-group .bk-btn-danger.bk-active {
   background-color: var(--danger-bg-color);
-  color: var(--danger-text-color);
+  color: var(--background-text-color);
 }
 
 :host(.outline) .bk-btn-light {
@@ -116,10 +124,11 @@
 
 :host(.outline) .bk-btn-light.bk-active,
 :host(.outline) .bk-btn-light:hover {
-  color: var(--background-text-color);
+  background-color: var(--light-bg-color);
+  color: black;
 }
 
 :host(.outline) .bk-btn-group .bk-btn-light.bk-active {
   background-color: var(--light-bg-color);
-  color: var(--light-text-color);
+  color: black;
 }
