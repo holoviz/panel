@@ -112,6 +112,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _setViewport: Function
   _settingViewport: boolean = false
   _plotInitialized: boolean = false
+  _rendered: boolean = false
   _reacting: boolean = false
   _relayouting: boolean = false
   container: PlotlyHTMLElement
@@ -167,17 +168,26 @@ export class PlotlyPlotView extends HTMLBoxView {
     super.render()
     this.container = <PlotlyHTMLElement>div()
     set_size(this.container, this.model)
+    this._rendered = false
     this.shadow_el.appendChild(this.container)
+    this.watch_stylesheets()
     this.plot().then(() => {
+      this._rendered = true
       if (this.model.relayout != null)
 	(window as any).Plotly.relayout(this.container, this.model.relayout);
       (window as any).Plotly.Plots.resize(this.container);
     })
   }
 
+  style_redraw(): void {
+    if (this._rendered)
+      (window as any).Plotly.Plots.resize(this.container);
+  }
+
   after_layout(): void {
     super.after_layout();
-    (window as any).Plotly.Plots.resize(this.container)
+    if (this._rendered)
+      (window as any).Plotly.Plots.resize(this.container)
   }
 
   _trace_data(): any {

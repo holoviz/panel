@@ -110,10 +110,31 @@ export function set_size(el: HTMLElement, model: HTMLBox, adjustMargin: boolean 
 
 export abstract class HTMLBoxView extends LayoutDOMView {
   override model: HTMLBox
+  _initialized_stylesheets: any
 
   render(): void {
     super.render()
     set_size(this.el, this.model)
+  }
+
+  watch_stylesheets(): void {
+    this._initialized_stylesheets = {}
+    for (const sts of this._applied_stylesheets) {
+      const style_el = (sts as any).el
+      if (style_el instanceof HTMLLinkElement) {
+	this._initialized_stylesheets[style_el.href] = false
+	style_el.addEventListener("load", () => {
+	  this._initialized_stylesheets[style_el.href] = true
+	  if (
+	    Object.values(this._initialized_stylesheets).every(Boolean)
+	  )
+	    this.style_redraw()
+	})
+      }
+    }
+  }
+
+  style_redraw(): void {
   }
 
   get child_models(): LayoutDOM[] {

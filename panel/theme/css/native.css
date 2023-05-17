@@ -43,6 +43,15 @@
   color: var(--background-text-color);
 }
 
+/* Help Icon */
+
+.bk-description > .bk-icon {
+  background-color: var(--background-text-color);
+  opacity: 0.7;
+}
+
+/* Input widgets */
+
 .bk-input {
   background-color: var(--background-color);
   color: var(--text-color);

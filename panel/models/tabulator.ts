@@ -289,8 +289,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0;
   _applied_styles: boolean = false
-  _initialized_stylesheets: any
-  _building: boolean=false
+  _building: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
@@ -416,25 +415,15 @@ export class DataTabulatorView extends HTMLBoxView {
     container.appendChild(el)
     this.shadow_el.appendChild(container)
 
-    this._initialized_stylesheets = {}
-    for (const sts of this._applied_stylesheets) {
-      const style_el = (sts as any).el
-      if (style_el instanceof HTMLLinkElement) {
-	this._initialized_stylesheets[style_el.href] = false
-	style_el.addEventListener("load", () => {
-	  this._initialized_stylesheets[style_el.href] = true
-	  if (
-	    Object.values(this._initialized_stylesheets).every(Boolean) &&
-	    !this._initializing && !this._building
-	  )
-	    this.redraw()
-	})
-      }
-    }
-
     let configuration = this.getConfiguration()
     this.tabulator = new Tabulator(el, configuration)
+    this.watch_stylesheets()
     this.init_callbacks()
+  }
+
+  style_redraw(): void {
+    if (!this._initializing && !this._building)
+      this.redraw()
   }
 
   tableInit(): void {
