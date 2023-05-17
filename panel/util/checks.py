@@ -30,7 +30,7 @@ def isfile(path: str) -> bool:
     """Safe version of os.path.isfile robust to path length issues on Windows"""
     try:
         return os.path.isfile(path)
-    except ValueError: # path too long for Windows
+    except (TypeError, ValueError): # path too long for Windows
         return False
 
 

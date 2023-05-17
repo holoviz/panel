@@ -47,8 +47,8 @@ class FileBase(HTMLBasePane):
     def _type_error(self, object):
         if isinstance(object, str):
             raise ValueError(
-                "%s pane cannot parse string that is not a filename "
-                "or URL." % type(self).__name__
+                f"{type(self).__name__} pane cannot parse string that "
+                f"is not a filename or URL ({object!r})."
             )
         super()._type_error(object)
 
@@ -61,12 +61,12 @@ class FileBase(HTMLBasePane):
         if isinstance(obj, PurePath):
             obj = str(obj.absolute())
         if isinstance(obj, str):
-            if isfile(obj) and any(obj.lower().endswith(f'.{ext}') for ext in exts):
-                return True
             if isurl(obj, exts):
                 return True
+            elif any(obj.lower().endswith(f'.{ext}') for ext in exts):
+                return True
             elif isurl(obj, None):
-                return 0
+                return 0.0
         elif isinstance(obj, bytes):
             try:
                 cls._imgshape(obj)
@@ -192,7 +192,7 @@ class ImageBase(FileBase):
         return w, h
 
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
-        if self.embed or not isurl(obj):
+        if self.embed or (isfile(obj) or not isinstance(obj, (str, PurePath))):
             data = self._data(obj)
         else:
             w, h = self._img_dims(self.width, self.height)
@@ -237,12 +237,17 @@ class Image(ImageBase):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
+        precedences = []
         for img_cls in param.concrete_descendents(ImageBase).values():
             if img_cls is Image:
                 continue
             applies = img_cls.applies(obj)
-            if applies:
+            if isinstance(applies, bool) and applies:
                 return applies
+            elif isinstance(applies, (float, int)):
+                precedences.append(applies)
+        if precedences:
+            return sorted(precedences)[-1]
         return False
 
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
@@ -424,10 +429,12 @@ class SVG(ImageBase):
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
         width, height = self.width, self.height
         w, h = self._img_dims(width, height)
-        if self.embed or not isurl(obj):
+        if self.embed or (isfile(obj) or (isinstance(obj, str) and obj.lstrip().startswith('<svg'))
+                          or not isinstance(obj, (str, PurePath))):
             data = self._data(obj)
         else:
             return dict(object=self._format_html(obj, w, h))
+
         if data is None:
             return dict(object='<img></img>')
         if self.encode:
