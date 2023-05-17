@@ -84,6 +84,7 @@ class GridStack(ReactiveHTML, GridSpec):
         }
         gridstack.on('resizestop', (event, el) => {
           sync_state()
+          view.invalidate_layout()
         })
         gridstack.on('dragstop', (event, el) => {
           sync_state()
