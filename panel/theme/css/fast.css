@@ -370,6 +370,10 @@ textarea.bk-input {
         0%, var(--accent-fill-hover) 100%);
 }
 
+select:-internal-list-box option:checked {
+  color: var(--neutral-foreground-rest);
+}
+
 /* Choices widget */
 
 .choices.is-disabled .choices__inner,
@@ -804,8 +808,6 @@ iframe {
 }
 
 .codehilite {
-  padding-top: 1px;
-  padding-bottom: 1px;
   padding-left: 1em;
   padding-right: 1em;
   border-radius: calc(var(--corner-radius) * 1px);
