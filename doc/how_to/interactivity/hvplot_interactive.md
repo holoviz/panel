@@ -4,7 +4,7 @@ This guide addresses how to bind interactive data pipelines to a component using
 
 ---
 
-`hvplot.interactive` is a tool to get better control over your data pipelines. This is done by replacing the constant parameters in your pipeline with widgets (e.g., a number slider) that will automatically get displayed next to your pipeline output and trigger an output update on changes. With this approach, all your pipeline parameters are available in one place, and you get complete interactive control over the pipeline. For more information, check out the [hvPlot documentation](https://hvplot.holoviz.org/user_guide/Interactive.html).
+`hvplot.interactive` is a tool to get better control over your data pipelines. This is done by replacing the constant parameters in your pipeline with widgets (e.g., a number slider) that will automatically get displayed next to your pipeline output and trigger an output update on changes. With this approach, all your pipeline parameters are available in one place, and you get complete interactive control over the pipeline. For more information, check out the [hvPlot documentation](https://panel.holoviz.org/how_to/interactivity/hvplot_interactive.html).
 
 Let's start by fetching some data:
 
