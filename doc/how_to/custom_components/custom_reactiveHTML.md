@@ -64,7 +64,7 @@ class Select(ReactiveHTML):
     _template = """
     <select id="select" value="${value}" style="width: ${model.width}px">
       {% for option in options %}
-      <option id="option">${option}</option>
+      <option id="option">{{option}}</option>
       {% endfor %}
     </select>
     """
@@ -75,7 +75,7 @@ select = Select(options=['A', 'B', 'C'])
 select
 ```
 
-The loop body can declare any number of HTML tags to add for each child object, e.g. to add labels or icons, however the child object (like the `{{option}}` or `${option}`) must always be wrapped by an HTML element (e.g. `<option>`) which must declare an `id`. Depending on your use case you can wrap each child in any HTML element you require, allowing complex nested components to be declared. Note that the example above inserted the `options` as child objects but since they are strings we could use literals instead:
+The loop body can declare any number of HTML tags to add for each child object, e.g. to add labels or icons, however the child object (like the `{{option}}`) must always be wrapped by an HTML element (e.g. `<option>`) which must declare an `id`. Depending on your use case you can wrap each child in any HTML element you require, allowing complex nested components to be declared. Note that the example above inserted the `options` as child objects but since they are strings we could use literals instead:
 
 ```html
 <select id="select" value="${value}" style="width: ${model.width}px">
