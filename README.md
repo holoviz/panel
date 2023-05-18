@@ -73,7 +73,7 @@ You can develop in [Jupyter Notebooks](http://jupyter.org) as well as editors li
 Panel provides a unique combination of deployment options. You can share your data and models as
 
 - a web application running on the [Tornado](https://www.tornadoweb.org/en/stable/) (default), [Flask](https://flask.palletsprojects.com/), [Django](https://www.djangoproject.com/) or [Fast API](https://fastapi.tiangolo.com/) web server.
-- a stand alone client side application powered by [Pyodide](https://pyodide.org/en/stable/) or [PyScript](https://pyscript.net/) via [`panel convert`](https://panel.holoviz.org/user_guide/Running_in_Webassembly.html).
+- a stand alone client side application powered by [Pyodide](https://pyodide.org/en/stable/) or [PyScript](https://pyscript.net/) via [`panel convert`](https://panel.holoviz.org/how_to/wasm/convert.html).
 - an interactive Jupyter notebook component.
 - a static `.html` web page, a `.gif` video, a `.png` image and more.
 
