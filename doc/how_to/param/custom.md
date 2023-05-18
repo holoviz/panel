@@ -85,4 +85,5 @@ pn.Param(CustomExample.param, sort=sort_func, name="Sort by Label Length Example
 ---
 
 ## Related Resources
-- See the [Explanation > APIs](../../explanation/apis/index.md) for context on this and other Panel APIs
+
+- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs

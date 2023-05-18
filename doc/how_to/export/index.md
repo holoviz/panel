@@ -1,6 +1,6 @@
 # Export Apps
 
-One of the main design goals for Panel was that it should make it possible to seamlessly transition back and forth between interactively prototyping a dashboard in the notebook or on the command line to deploying it as a standalone server app. This section shows how to display panels interactively, embed static output, save a snapshot, and deploy as a separate web-server app. For more information about deploying Panel apps to various cloud providers see the [Server Deployment](Server_Deployment.ipynb) documentation.
+While Panel is primarily a library for building applications [backed by server](../server/index.md) or a [Python process in the browser](../wasm/index.md) it is sometimes useful to export static output, with or without embedded state to add interactivity. This section focuses on exporting Panel as static snapshots, embedding state and accessing the underlying Bokeh models.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2

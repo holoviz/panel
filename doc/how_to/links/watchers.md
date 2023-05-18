@@ -96,4 +96,5 @@ toggle.param.unwatch(watcher)
 ---
 
 ## Related Resources
-- See the [Explanation > APIs](../../explanation/apis/index.md) for context on this and other Panel APIs
+
+- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs

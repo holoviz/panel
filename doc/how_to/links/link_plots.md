@@ -8,7 +8,7 @@ This guide addresses how to link Bokeh and HoloViews plot parameters in Javascri
 
 ---
 
-The [How to > Link Two Objects in Javascript](./links) guide demonstrated how to link simple static panes, but links are probably most useful when combined with dynamic objects like plots.
+The [How to > Link Two Objects in Javascript](./jslinks) guide demonstrated how to link simple static panes, but links are probably most useful when combined with dynamic objects like plots.
 
 ## Link Bokeh plots
 
@@ -63,7 +63,8 @@ color_widget.jslink(points, value='glyph.fill_color')
 pn.Row(points, pn.Column(size_widget, color_widget))
 ```
 
-Of course, if you need to transform between the displayed widget value and the value to be used on the underlying Bokeh property, you can add custom JS code as shown in [the previous section](#Linking-using-custom-JS-code). Together these linking options should allow you to express whatever interactions you wish between your Panel objects.
+Of course, if you need to transform between the displayed widget value and the value to be used on the underlying Bokeh property, you can add custom JS code as shown in [the guide on JS-callbacks](./jscallbacks.md). Together these linking options should allow you to express whatever interactions you wish between your Panel objects.
 
 ## Related Resources
-- See the [Explanation > APIs](../../explanation/apis/index.md) for context on this and other Panel APIs
+
+- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs

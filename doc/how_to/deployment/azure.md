@@ -1,6 +1,6 @@
 # Microsoft Azure
 
-Azure is popular choice for enterprises often in combination with an automated CI/CD pipeline via Azure DevOps. To get started you can use the [Azure Portal](portal.azure.com) to deploy your app as a Linux Web App via the web based user interface.
+Azure is popular choice for enterprises often in combination with an automated CI/CD pipeline via Azure DevOps. To get started you can use the [Azure Portal](https://portal.azure.com) to deploy your app as a Linux Web App via the web based user interface.
 
 There are a few things you need to be aware of in order to be able to start your app.
 

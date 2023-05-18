@@ -206,7 +206,7 @@ pn.pane.Str(df)
 :::{admonition} Learn More
 :class: info
 
-Learn more about Panes in the [Explanation for Components](../explanation/components/components_overview.md#Panes)
+Learn more about Panes in the [Explanation for Components](../explanation/components/components_overview.md#panes)
 :::
 
 So far we have only learned how to display data, to actually add it to your application you need to mark it as `servable`. To mark an object as servable adds it to the current template, something we will get into later. You can either mark multiple objects as servable which will add it to the page sequentially or you can use layouts to arrange objects explicitly.
