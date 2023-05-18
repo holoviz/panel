@@ -3,10 +3,13 @@ Custom bokeh Widget models.
 """
 from bokeh.core.enums import ButtonType
 from bokeh.core.properties import (
-    Any, Bool, Either, Enum, Float, Int, List, Nullable, Override, String,
-    Tuple,
+    Any, Bool, Either, Enum, Float, Instance, Int, List, Nullable, Override,
+    String, Tuple,
 )
-from bokeh.models.widgets import InputWidget, Select, Widget
+from bokeh.models.ui import Tooltip
+from bokeh.models.widgets import (
+    Button as bkButton, InputWidget, Select, Widget,
+)
 
 from .layout import HTMLBox
 
@@ -179,3 +182,11 @@ class CustomSelect(Select):
     """)
 
     size = Int(default=1)
+
+
+class Button(bkButton):
+
+    tooltip = Nullable(Instance(Tooltip), help="""
+    A tooltip with plain text or rich HTML contents, providing general help or
+    description of a widget's or component's function.
+    """)
