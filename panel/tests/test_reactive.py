@@ -679,3 +679,16 @@ def test_reactive_html_templated_variable_not_in_declared_node():
             """
     assert 'could not be expanded because the <select> node' in str(excinfo)
     assert '{%- for option in children %}' in str(excinfo)
+
+def test_reactive_design_stylesheets_update(document, comm):
+    widget = TextInput(stylesheets=[':host { --design-background-color: red }'])
+
+    model = widget.get_root(document, comm)
+
+    assert len(model.stylesheets) == 5
+    assert model.stylesheets[-1] == widget.stylesheets[0]
+
+    widget.stylesheets = [':host { --design-background-color: blue }']
+
+    assert len(model.stylesheets) == 5
+    assert model.stylesheets[-1] == widget.stylesheets[0]
