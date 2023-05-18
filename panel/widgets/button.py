@@ -12,13 +12,12 @@ from typing import (
 import param
 
 from bokeh.events import ButtonClick, MenuItemClick
-from bokeh.models import (
-    Button as _BkButton, Dropdown as _BkDropdown, Toggle as _BkToggle,
-)
+from bokeh.models import Dropdown as _BkDropdown, Toggle as _BkToggle, Tooltip
 from bokeh.models.ui import SVGIcon, TablerIcon
 
 from ..io.resources import CDN_DIST
 from ..links import Callback
+from ..models.widgets import Button as _BkButton
 from .base import Widget
 
 if TYPE_CHECKING:
@@ -176,8 +175,11 @@ class Button(_ClickButton):
     value = param.Event(doc="""
         Toggles from False to True while the event is being processed.""")
 
+    description = param.ClassSelector(default=None, class_=(str, Tooltip), doc="""
+        The description in the tooltip.""")
+
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'clicks': None, 'name': 'label', 'value': None
+        'clicks': None, 'name': 'label', 'value': None, 'description': 'tooltip',
     }
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -252,6 +254,10 @@ class Button(_ClickButton):
         """
         return self.param.watch(callback, 'clicks', onlychanged=False)
 
+    def _process_param_change(self, params):
+        if isinstance(desc := params.get('description'), str):
+            params['description'] = Tooltip(content=desc, position='right')
+        return super()._process_param_change(params)
 
 class Toggle(_ButtonBase, IconMixin):
     """The `Toggle` widget allows toggling a single condition between `True`/`False` states.
