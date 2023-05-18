@@ -55,6 +55,8 @@
       #header {
         background-color: var(--header-background);
         color: var(--header-color);
+      }
+      #header-row {
         {% if header_max_width %}
         margin-left: auto;
         margin-right: auto;
@@ -82,6 +84,7 @@
 {% block contents %}
 <div class="container-fluid d-flex flex-column vh-100 overflow-hidden" id="container">
   <nav class="navbar navbar-expand-md sticky-top shadow" id="header">
+    <div class="container-fluid" id="header-row">
     {% if nav %}
     <button type="button" id="sidebar-toggle" class="navbar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebar" aria-expanded="true" aria-label="Toggle sidebar" aria-controls="sidebar">
       <span class="navbar-toggler-icon"></span>
@@ -109,6 +112,7 @@
       {{ embed(roots.busy_indicator) | indent(6) }}
     </div>
     {% endif %}
+    </div>
   </nav>
 
   <div class="row overflow-hidden" id="content">
