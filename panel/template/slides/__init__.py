@@ -22,7 +22,7 @@ class SlidesTemplate(VanillaTemplate):
     SlidesTemplate is built on top of Vanilla web components.
     """
 
-    reveal_config = param.Dict(default={'hash': True}, doc="""
+    reveal_config = param.Dict(default={}, doc="""
         Configuration parameters for reveal.js""")
 
     reveal_theme = param.Selector(default=None, objects=REVEAL_THEMES, doc="""

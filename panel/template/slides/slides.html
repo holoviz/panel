@@ -191,6 +191,10 @@
   config.disableLayout = true;
   Reveal.initialize(config);
 
+  Reveal.on('slidechanged', event => {
+    window.location.hash = `#/${event.currentSlide.id}`
+  })
+
   function openNav() {
     document.getElementById("sidebar").classList.remove("hidden");
     document.getElementById("sidebar-button").onclick = closeNav;
