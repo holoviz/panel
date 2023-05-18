@@ -50,6 +50,13 @@
     background-color: var(--background-color);
     font-family: var(--body-font);
   }
+  {% if header_max_width %}
+  #header {
+	margin-left: auto;
+	margin-right: auto;
+	max-width: {{ header_max_width }}
+  }
+  {% endif %}
   #header a {
     color: currentColor;
   }

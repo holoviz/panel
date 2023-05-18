@@ -53,8 +53,15 @@
 	--sidebar-width: {{ sidebar_width }}px;
       }
       #header {
-	background-color: var(--header-background);
-	color: var(--header-color);
+        background-color: var(--header-background);
+        color: var(--header-color);
+        {% if header_max_width %}
+        margin-left: auto;
+        margin-right: auto;
+        max-width: {{ header_max_width }}
+        {% else %}
+        max-width: 100%
+        {% endif %}
       }
       #sidebar {
         max-width: var(--sidebar-width) !important;
