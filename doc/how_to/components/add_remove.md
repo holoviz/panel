@@ -193,5 +193,6 @@ gridspec
 ---
 
 ## Related Resources
-- Learn more about Panes in [Explanation > Components](../../explanation/components/components_overview.html#panes).
-- For more detail about `GridSpec` Panels, see the [Component Gallery > GridSpec](../reference/layouts/GridSpec.ipynb).
+
+- Learn more about Panes in [Explanation > Components](../../explanation/components/components_overview.md#panes).
+- For more detail about `GridSpec` Panels, see the [Component Gallery > GridSpec](../reference/layouts/GridSpec.md).

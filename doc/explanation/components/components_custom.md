@@ -2,7 +2,7 @@
 
  When building custom applications and dashboards it is frequently useful to extend Panel with custom components, which are specific to a particular application. Panel provides multiple mechanisms to extend and compose different components or even add entirely new components.
 
-This Background page will focus on the building of entirely new components. Alternatively, to learn how to compose existing Panel components into an easily reusable unit that behaves like a native Panel component, see the [How-to > Combine Existing Components](../../how_to/components/custom_viewer.md) page.
+This Background page will focus on the building of entirely new components. Alternatively, to learn how to compose existing Panel components into an easily reusable unit that behaves like a native Panel component, see the [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md) page.
 
 ## ReactiveHTML components
 
@@ -100,7 +100,7 @@ All scripts have a number of objects available in their namespace that allow acc
 * `state`:  An empty state dictionary which scripts can use to store state for the lifetime of the view.
 * `view`: Bokeh View class responsible for rendering the component. This provides access to method like `view.resize_layout()` to signal to Bokeh that  it should recompute the layout of the element.
 * `<node>`: All named DOM nodes in the HTML template, e.g. the `input` node in the example above.
-* `event`: If the script is invoked via an [inline callback](#Inline-callbacks) the corresponding event will be in the namespace
+* `event`: If the script is invoked via an [inline callback](#inline-callbacks) the corresponding event will be in the namespace
 
 #### Parameter callbacks
 

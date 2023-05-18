@@ -6,7 +6,7 @@ This guide addresses how to construct Pane objects for displaying visible compon
 
 There are two main ways to construct a pane - explicitly or automatically.
 
-To explicitly construct a pane, use one of the pane types listed in the [component gallery](../../reference/index.html#panes). For example, you can create a Markdown pane as follows:
+To explicitly construct a pane, use one of the pane types listed in the [component gallery](../../reference/index.md#panes). For example, you can create a Markdown pane as follows:
 
 ```{pyodide}
 import panel as pn
@@ -31,4 +31,4 @@ png
 
 ## Related Resources
 
-- Learn more about Panes in [Explanation > Components](../../explanation/components/components_overview#panes).
+- Learn more about Panes in [Explanation > Components](../../explanation/components/components_overview.md#panes).

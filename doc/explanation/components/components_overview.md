@@ -6,7 +6,7 @@ Panel provides a wide range of components for easily composing panels, apps, and
 * ``Widget`` objects provide controls that can trigger Python or JavaScript events.
 * ``Panel`` layout objects allow combining plots into a ``Row``, ``Column``, ``Tabs`` or a ``Grid``.
 
-All objects share an API that makes it easy to [customize behavior and appearance](../../how_to/components/index.md), [link parameters](../../how_to/links/index.md), and [display or export](../../how_to/display/index.md) them. To display any panel objects in a notebook environment ensure you load the extension first:
+All objects share an API that makes it easy to [customize behavior and appearance](../../how_to/styling/index.md), [link parameters](../../how_to/links/index.md), and to [display them in notebooks](../../how_to/notebook/index.md), [serve them as applications](../../how_to/server/index.md) or [export them](../../how_to/export/index.md). To display any panel objects in a notebook environment ensure you load the extension first:
 
 
 ```{pyodide}
