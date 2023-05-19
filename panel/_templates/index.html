@@ -20,13 +20,13 @@
 
   <!-- Favicon
   -------------------------------------------------- -->
-  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/latest/dist/images/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.holoviz.org/panel/latest/dist/images/favicon.ico">
-  <link rel="manifest" href="https://cdn.holoviz.org/panel/latest/dist/images/site.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ PANEL_CDN }}images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ PANEL_CDN }}images/favicon.ico">
+  <link rel="manifest" href="{{ PANEL_CDN }}images/site.webmanifest">
   <meta name="msapplication-TileColor" content="#da532c">
   <meta name="theme-color" content="#ffffff">
-  <script type="module" src="https://cdn.holoviz.org/panel/latest/dist/bundled/js/@microsoft/fast-colors@5.3.1/dist/index.js"></script>
-  <script type="module" src="https://cdn.holoviz.org/panel/latest/dist/bundled/js/@microsoft/fast-components@1.21.8/dist/fast-components.js"></script>
+  <script type="module" src="{{ PANEL_CDN }}bundled/@microsoft/fast-components@2.30.6/dist/fast-components.js"></script>
+  <script type="module" src="{{ PANEL_CDN }}bundled/fast/js/fast_design.js"></script>
   <script type="text/javascript">
     function setParamsFromSearch(text){
         const params = new URLSearchParams(location.search);
@@ -48,19 +48,21 @@
 
       setParamsFromSearch(text)
     }
-    function toggleLightDarkTheme(){
-        el=document.getElementById("body-design-provider")
+    function toggleLightDarkTheme(update) {
         const switchEl = document.getElementById("theme-switch")
         const params = new URLSearchParams(location.search);
-
-        if (switchEl.checked){
-            el.setAttribute("background-color", "#ffffff")
+	if (switchEl.checked) {
+	    window.bodyDesign.setLuminance(1)
+	    window.bodyDesign.setBackgroundColor("#ffffff")
             params.set('theme', "default");
         } else {
-            el.setAttribute("background-color", "#000000")
+	    window.bodyDesign.setLuminance(0.1)
+	    window.bodyDesign.setBackgroundColor("#000000")
             params.set('theme', "dark");
         }
-        window.history.replaceState({}, '', `${location.pathname}?${params}`);
+	if (update) {
+            window.history.replaceState({}, '', `${location.pathname}?${params}`);
+	}
     }
     function setSwitchFromParams(){
         const params = new URLSearchParams(window.location.search)
@@ -68,12 +70,14 @@
             const theme = params.get('theme')
             const switchEl = document.getElementById("theme-switch")
             if (theme==='dark'){
-                switchEl.checked=false
+                switchEl.checked = false
             } else {
-                switchEl.checked=true
+                switchEl.checked = true
             }
-            toggleLightDarkTheme()
-        }
+            toggleLightDarkTheme(true)
+        } else {
+            toggleLightDarkTheme(false)
+	}
     }
     function setSearchFromParams(){
         const params = new URLSearchParams(window.location.search)
@@ -87,6 +91,10 @@
   </script>
 
   <style>
+    :root {
+      --background-color: #ffffff;
+      --header-background: #000000;
+    }
     html {
 	height:100%;
     }
@@ -106,7 +114,7 @@
 	font-size: 16px;
 	line-height: normal;
 	font-family: aktiv-grotesk, "Segoe UI", Arial, Helvetica, sans-serif;
-	overflow-y: scroll;
+	overflow-y: auto;
     }
     .gallery-item:hover {
 	box-shadow: 0 1px 5px var(--neutral-focus);
@@ -116,7 +124,7 @@
 	text-align: center;
     }
     .header {
-	background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('https://cdn.holoviz.org/panel/latest/dist/images/index_background.png');
+	background-image: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0) ),url('{{ PANEL_CDN }}images/index_background.png');
 	background-size: cover;
 	background-repeat: no-repeat;
 	background-position: center;
@@ -148,7 +156,11 @@
 	width: 25px;
 	margin-top: 5px;
     }
-
+    #header-design-provider {
+      --neutral-fill-hover: var(--header-background);
+      --neutral-fill-rest: var(--header-background);
+      background-color: var(--header-background);
+    }
     /* The grid layout is inspired by
        https://css-tricks.com/look-ma-no-media-queries-responsive-layouts-using-css-grid/
        https://codepen.io/andybelldesign/pen/vMMYKJ */
@@ -159,7 +171,6 @@
    */
     .cards-grid {
 	--cards-grid-min-size: 16rem;
-
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(var(--cards-grid-min-size), 1fr));
 	grid-gap: 2rem;
@@ -224,7 +235,7 @@
   </style>
 </head>
 <body>
-  <fast-design-system-provider id="body-design-provider" use-defaults background-color="#ffffff">
+  <fast-design-system-provider id="body-design-provider" use-defaults>
     <fast-design-system-provider id="header-design-provider" use-defaults background-color="#000000">
       <section class="header">
         <fast-switch id="theme-switch" style="float: right; padding-top: 1em; padding-right: 2em;" onChange="toggleLightDarkTheme()" checked>
@@ -275,8 +286,11 @@
     </section>
   </fast-design-system-provider>
   <script type="text/javascript">
-    setSwitchFromParams()
-    setSearchFromParams()
+    document.addEventListener('DOMContentLoaded', (event) => {
+      const body_design = window.bodyDesign = new window.fastDesignProvider("#body-design-provider");
+      setSwitchFromParams()
+      setSearchFromParams()
+    })
   </script>
 </body>
 </html>
