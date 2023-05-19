@@ -10,7 +10,7 @@ Panel's reactive programming API `pn.bind` allows a programmer to indicate that 
 
 ## Cons:
 
-+ Compared to the Declarative API approach, the resulting GUI code is tightly tied to the underlying domain-specific code, because it must declare valid types and ranges for widgets that must match what the underlying code accepts.
++ Compared to the Declarative API approach, the resulting GUI code encodes details about the underlying computation and thus must be updated whenever the underlying non-GUI code arguments or options change.
 
 ## Explanation
 
@@ -77,4 +77,4 @@ pn.Row(
 )
 ```
 
-This alternative way of specifying the same app lets you declare the dependency between a function argument and a widget (or *Parameter*) from the start, which can be clearer if you know the function will always and only be used in a GUI. Otherwise, the `pn.bind` version is greatly **preferred**, because it allows you to keep the Panel-specific code separate (even in a different Python module or file) from the underlying analysis and plotting code so that you can invoke the underlying code whether or not you have installed Panel.
+This alternative way of specifying the same app lets you declare the dependency between a function argument and a widget (or *Parameter*) from the start, which can be clearer if you know the function will always and only be used in a GUI. Otherwise, the `pn.bind` version is greatly preferred, because it allows you to keep the Panel-specific code separate (even in a different Python module or file) from the underlying analysis and plotting code so that you can invoke the underlying code whether or not you have installed Panel.
