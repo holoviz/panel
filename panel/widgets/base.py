@@ -117,7 +117,7 @@ class Widget(Reactive):
             html = parser.render(params['description'])
             params['description'] = Tooltip(
                 content=HTML(html), position='right',
-                stylesheets=[':host { white-space: initial; max-width: 250px; }'],
+                stylesheets=[':host { white-space: initial; max-width: 300px; }'],
                 syncable=False
             )
         return params
