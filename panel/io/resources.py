@@ -348,8 +348,10 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
 
     if isinstance(enable_mathjax, bool):
         use_mathjax = enable_mathjax
+    elif roots:
+        use_mathjax = _use_mathjax(roots) or 'mathjax' in ext._loaded_extensions
     else:
-        use_mathjax = (_use_mathjax(roots) or 'mathjax' in ext._loaded_extensions) if roots else False
+        use_mathjax = False     
 
     if js_resources:
         js_resources = js_resources.clone()
