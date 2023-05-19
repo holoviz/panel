@@ -149,6 +149,26 @@ class FloatPanel(ListLike, ReactiveHTML):
         f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/dock/jspanel.dock.js",
     ]
 
+    __js_require__ = {
+        'paths': {
+            'jspanel': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/jspanel",
+            'jspanel-modal': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/modal/jspanel.modal",
+            'jspanel-tooltip': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/tooltip/jspanel.tooltip",
+            'jspanel-hint': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/hint/jspanel.hint",
+            'jspanel-layout': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/layout/jspanel.layout",
+            'jspanel-contextmenu': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/contextmenu/jspanel.contextmenu",
+            'jspanel-dock': f"{pn_config.npm_cdn}/jspanel4@4.12.0/dist/extensions/dock/jspanel.dock",
+        },
+        'exports': {
+            'jspanel': 'jsPanel'
+        },
+        'shim': {
+            'jspanel': {
+                'exports': 'jsPanel'
+            }
+        }
+    }
+
     _stylesheets: ClassVar[List[str]] = [
         f'{CDN_DIST}css/floatpanel.css'
     ]
