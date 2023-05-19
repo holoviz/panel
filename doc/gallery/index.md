@@ -1,5 +1,7 @@
 # App Gallery
 
+These Panel applications demonstrate what you can build with Panel and how to do it. Click on each thumbnail to see the app running live, and click on "See source" to look at how each of the components are configured and put together. The source is fully runnable in your browser thanks to [WASM & Pyodide](../how_to/wasm/index.md); just press the <span style="color:green">▶</span> button on the first code cell to run all the cells.
+
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
