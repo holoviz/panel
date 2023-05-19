@@ -205,37 +205,43 @@ JSSlideshow(width=800, height=300)
 
 #### Child templates
 
-If we want to provide a template for the children of an HTML node we have to use Jinja2 syntax to loop over the parameter. The component will insert the loop variable `option` into each of the tags:
+If we want to provide a template for the children of an HTML node we have to use Jinja2 syntax to loop over the parameter. The component will insert the loop variable `item` into each of the tags:
 
 ```{pyodide}
-class Select(ReactiveHTML):
+class Cards(ReactiveHTML):
 
-    options = param.List(doc="Options to choose from.")
-
-    value = param.String(doc="Current selected option")
+    items = param.List(doc="Items to render into cards.")
 
     _template = """
-    <select id="select" value="${value}" style="width: ${model.width}px">
-      {% for option in options %}
-      <option id="option">${option}</option>
-      {% endfor %}
-    </select>
+    <div id="cards" class="cards">
+      {% for item in items -%}
+        <div id="card" class="card">${item}</div>
+      {%- endfor %}
+    </div>
     """
 
-    _dom_events = {'select': ['change']}
+    _stylesheets = ["""
+        .cards { display: flex; }
+        .card {
+          box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+          border-radius: 5px;
+          margin: 5px
+        }
+    """]
 
-select = Select(options=['A', 'B', 'C'])
-select
+cards = Cards(items=['Foo', 'Bar', 'Baz'])
+
+cards
 ```
 
-The loop body can declare any number of HTML tags to add for each child object, e.g. to add labels or icons, however the child object (like the `{{option}}` or `${option}`) must always be wrapped by an HTML element (e.g. `<option>`) which must declare an `id`. Depending on your use case you can wrap each child in any HTML element you require, allowing complex nested components to be declared. Note that the example above inserted the `options` as child objects but since they are strings we could use literals instead:
+The loop body can declare any number of HTML tags to add for each child object, e.g. to add labels or icons, however the child object (like the `{{item}}` or `${item}`) must always be wrapped by an HTML element (e.g. `<option>`) which must declare an `id`. Depending on your use case you can wrap each child in any HTML element you require, allowing complex nested components to be declared. Note that the example above inserted the `items` as child objects (i.e. as full Panel objects) but since they are strings we could use literals instead:
 
 ```html
-<select id="select" value="${value}" style="width: ${model.width}px">
-  {% for option in options %}
-  <option id="option-{{ loop.index0 }}">{{ option }}</option>
-  {% endfor %}
-</select>
+<div id="cards" class="cards">
+{% for item in items -%}
+    <div id="card" class="card">{{item}}</div>
+{%- endfor %}
+</div>
 ```
 
 When using child literals we have to ensure that each `<option>` DOM node has a unique ID manually by inserting the `loop.index0` value (which would otherwise be added automatically).
