@@ -4,7 +4,7 @@
 
 Date: 2023-05-19
 
-A micro-release in the 1.0.2 series with a number of bug fixes and documentation tweaks. Many thanks to @jbednar and @philippjfr for contributing to this release.
+A micro-release in the 1.0.x series with a number of bug fixes and documentation tweaks. Many thanks to @jbednar and @philippjfr for contributing to this release.
 
 ### Bug fixes
 
@@ -17,7 +17,7 @@ A micro-release in the 1.0.2 series with a number of bug fixes and documentation
 
 ### Documentation
 
-- Various documentation tweaks ([#4884](https://github.com/holoviz/panel/pull/4884), [#4888](https://github.com/holoviz/panel/pull/4888), [#4889](https://github.com/holoviz/panel/pull/4889))
+- Various documentation tweaks ([#4884](https://github.com/holoviz/panel/pull/4884), [#4888](https://github.com/holoviz/panel/pull/4888), [#4889](https://github.com/holoviz/panel/pull/4889), [#4901](https://github.com/holoviz/panel/pull/4901))
 - Update Vega/Altair reference notebook to use altair 5 APIs ([#4894](https://github.com/holoviz/panel/pull/4894))
 
 ## Version 1.0.1
