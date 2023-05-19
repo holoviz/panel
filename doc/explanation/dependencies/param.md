@@ -70,7 +70,7 @@ The *Parameter* object has methods and attributes that can be useful to interact
 a.param.x.default
 ```
 
-*Parameterized* classes often don't need a constructor, because the default constructor already allows them to be configued using *Parameters* as constructor arguments. Still, sometimes you do need to customize the constructor of a *Parameterized* class. This happens regularly enough that Param's users have come up with the following convention that you are likely to encounter.
+*Parameterized* classes often don't need a constructor, because the default constructor already allows them to be configured using *Parameters* as constructor arguments. Still, sometimes you do need to customize the constructor of a *Parameterized* class. This happens regularly enough that Param's users have come up with the following convention that you are likely to encounter.
 
 ```{pyodide}
 class A(param.Parameterized):
