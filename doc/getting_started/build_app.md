@@ -81,4 +81,4 @@ As long as you have a live Python process running, dragging these widgets will t
 
 ## Next Steps
 
-Now that we have given you a taste of how easy it is to build a little application in Panel its time to introduce you to some of the [core concepts](core_concepts.md) behind Panel.
+Now that we have given you a taste of how easy it is to build a little application in Panel, it's time to introduce you to some of the [core concepts](core_concepts.md) behind Panel.

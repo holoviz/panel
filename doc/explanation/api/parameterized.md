@@ -8,6 +8,7 @@ The parameterized approach is a powerful way to encapsulate computation in self-
 
 + Declarative way of expressing parameters and dependencies between parameters and computation
 + The resulting code is not tied to any particular GUI framework and can be used in other contexts as well
++ The GUI code encodes less of the underlying domain-specific code, making it easier to update either the GUI or the underlying computation without introducing bugs. With the reactive API, the GUI code explicitly lists allowed parameter types ranges that must match what the underlying code does, while with the Declarative API the underlying code both declares and uses the Parameters, providing a single place to control and update that information, without having it duplicated at the GUI level.
 
 ## Cons:
 
@@ -22,7 +23,6 @@ In this model we declare a subclass of ``param.Parameterized``, declare the para
 
 ```{pyodide}
 import hvplot.pandas
-import panel as pn
 import param
 
 from bokeh.sampledata.autompg import autompg
@@ -41,5 +41,8 @@ class MPGExplorer(param.Parameterized):
 
 explorer = MPGExplorer()
 
+import panel as pn
 pn.Row(explorer.param, explorer.plot)
 ```
+
+Note how only the very last two lines involve Panel at all, and that they do not include any information about the underlying Parameters or their types. That way the GUI code can be maintained fully independently from the rest of the code, without complex linkages like encoding the list of columns at both the code level and the GUI level. In a small app like this the benefit is minimal, but in a large, complex codebase, being able to build a GUI that is not tightly tied to the underlying code makes it much easier to focus on what the code _does_ separately from how the GUI looks.

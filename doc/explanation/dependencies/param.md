@@ -9,12 +9,12 @@ pn.extension()
 
 [Param](https://param.holoviz.org/) is a Python package that is foundational in the implementation and usage of Panel, and more generally of the [HoloViz](https://holoviz.org/) tools. Param provides super-charged object attributes, called **Parameters**, that behave like normal Python object attributes but benefit from two major features that are both heavily used in Panel:
 
-- *Parameters*' attribute value are runtime validated.
-- *Parameters* are objects that can be watched, i.e. you can register callbacks (i.e. functions, methods) that will be executed when their value changes.
+- *Parameter* attribute values are runtime validated.
+- *Parameters* are objects that can be watched, i.e. you can register callbacks (Python functions or methods) that will be executed when the parameter value changes.
 
 ## *Parameterized* and *Parameter* intro
 
-A `Parameterized` class, i.e. a class on which *Parameters* can be set, is created by inheriting from `param.Parameterized`. Most of Panel objects (widgets, panels, layouts, templates, etc.) actually inherit from `param.Parameterized`!
+A *Parameterized* class, i.e. a class on which *Parameters* can be set, is created by inheriting from `param.Parameterized`. Most Panel objects (widgets, panels, layouts, templates, etc.) actually inherit from `param.Parameterized`!
 
 ```{pyodide}
 print(
@@ -45,7 +45,7 @@ a = A()
 a.x
 ```
 
-Obviously, we can set a new value to `x` on `a`.
+Obviously, we can set a new value for `x` on `a`.
 
 ```{pyodide}
 a.x = 2
@@ -70,7 +70,7 @@ The *Parameter* object has methods and attributes that can be useful to interact
 a.param.x.default
 ```
 
-Sometimes you need to customize the constructor of a *Parameterized* class. This happens regularly enough that Param's users have come up with the following convention that you are likely to encounter.
+*Parameterized* classes often don't need a constructor, because the default constructor already allows them to be configured using *Parameters* as constructor arguments. Still, sometimes you do need to customize the constructor of a *Parameterized* class. This happens regularly enough that Param's users have come up with the following convention that you are likely to encounter.
 
 ```{pyodide}
 class A(param.Parameterized):
@@ -105,7 +105,7 @@ The class `B` below is created with 4 *Parameters*:
 
 
 :::{note}
-Param offers [many *Parameters*](https://param.holoviz.org/user_guide/Parameter_Types.html), that all share a common set of arguments like `default` or `doc`, and have additional arguments such as `bounds` for the numerical *Parameters*.
+Param offers [many *Parameter* types](https://param.holoviz.org/user_guide/Parameter_Types.html). All of them share a common set of arguments like `default` or `doc`, and some add other arguments such as `bounds` for the numerical *Parameters*.
 :::
 
 ```{pyodide}
@@ -153,16 +153,19 @@ except Exception as e:
     print(e)
 ```
 
+As you can see, code inside of *Parameterized* objects and code that uses *Parameterized* objects can often be written without any special error checking, since it knows that only allowed values will ever be present.
+
+
 ## Dependencies and watchers
 
-*Parameters* are objects that can be watched, i.e. you can register callbacks that will be triggered when their value changes.
+*Parameters* are objects that can be watched, i.e., you can register callbacks that will be triggered when their value changes.
 
 The class `C` has 3 *Parameters*. Using the `param.depends` decorator, we can declare the callbacks of these classes, i.e. its methods, and the *Parameters* that they depend on:
 
 - `updating_on_t` depends on both `t1` and `t2`.
 - `updating_on_s` deponds on `s` only.
 
-By setting `watch=True` (default: `False`), we let Param know that we want it to trigger automatically the callback whenever the *Parameters* it depends on are updated. Without setting `watch`, we're only declaring the dependency between a callback and its *Parameters*, this information can be appropriately reused by a library like Panel as we will see later.
+By setting `watch=True` (default: `False`), we let Param know that we want it to trigger the callback automatically whenever the *Parameters* it depends on are updated. Without setting `watch`, we're only _declaring_ the dependency between a callback and its *Parameters*, which is information that is stored by Param but not used by it otherwise. Libraries like Panel that read this information can then use the declarations to determine their own flow of program execution, as we will see later.
 
 ```{pyodide}
 class C(param.Parameterized):
@@ -195,7 +198,7 @@ c.t2 = 1
 c.s = 'another string'
 ```
 
-Param offers a more low-level API to set up watchers with the `watch` function available on the `.param` namespace. `watch` accepts a callback and a list of *Parameter* names, and a few other arguments. The callback will receive an `Event` object, the new *Parameter* value can be found on its `new` attribute.
+Param offers a more low-level API to set up watchers, with the `watch` function available on the `.param` namespace. `watch` accepts a callback and a list of *Parameter* names, and a few other arguments. The callback will receive an `Event` object, and the new *Parameter* value can be found on its `new` attribute.
 
 ```{pyodide}
 def callback(event):
@@ -214,7 +217,7 @@ c.s = 'new string'
 
 ## Panel and Param
 
-Panel knows how to map *Parameters* to widgets, as such it easily turn a *Parameterized* class into a set of widgets.
+Panel knows how to map *Parameters* to widgets, and so it can easily generate a set of widgets from *Parameterized* class that control its *Parameters* and trigger any dependent callbacks:
 
 ```{pyodide}
 class D(param.Parameterized):
@@ -238,7 +241,7 @@ Panel, when given a method decorated with `@param.depends`, will re-run the meth
 pn.Row(d.param.t, d.param.i, d.compute)
 ```
 
-Because most of the objects provided by Panel are *Parameterized* objects with their own set of *Parameters*, they can all be watched. We can for instance hide a widget (setting `widget.visible` to `False`) watching the value of another widget.
+Because the displayable objects provided by Panel are all *Parameterized* objects with their own set of *Parameters*, they can all be watched. We can for instance hide a widget (setting `widget.visible` to `False`) by watching the value of another widget:
 
 ```{pyodide}
 checkbox = pn.widgets.Checkbox(value=True)
@@ -252,7 +255,7 @@ checkbox.param.watch(hide, 'value')
 pn.Row(checkbox, slider)
 ```
 
-Using `.param.watch` as done just above is a valid albeit pretty verbose way to set up some interactivity between Panel components. Panel provides a better reactive API, allowing you to bind the value of two *Parameters*, or bind the value of a *Parameter* to a callback that depends on some *Parameters*. In the example below `tinput.visible` and `output.visible` will be updated whenever `checkbox.value` changes (clicking on the checkbox), and the value of `output.object` will be updated whenever `tinput.value` changes, that value being transformed by the `boldit` callback.
+Using `.param.watch` as done just above is a valid (albeit pretty verbose!) way to set up some interactivity between Panel components. Panel also provides a much more natural "reactive" API, allowing you to bind the value of two *Parameters* together, or to bind the value of a *Parameter* to a callback that depends on some additional *Parameters*. In the example below, `tinput.visible` and `output.visible` will be updated whenever `checkbox.value` changes (clicking on the checkbox), and the value of `output.object` will be updated whenever `tinput.value` changes, that value being transformed by the `boldit` callback.
 
 ```{pyodide}
 checkbox = pn.widgets.Checkbox(value=True)
@@ -267,6 +270,8 @@ output = pn.pane.Markdown(object=pn.bind(boldit, tinput.param.value), visible=ch
 ```{pyodide}
 pn.Row(checkbox, tinput, output)
 ```
+
+As you can see, *Parameters* offer a very generic mechanism for your Python code to declare options that control it, and Panel's Param support allows you to work naturally with any combination of objects and their *Parameters*.
 
 ## Related Resources
 
