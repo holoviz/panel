@@ -35,12 +35,14 @@
     {% if theme._name == 'default' %}
     box-shadow: 5px 5px 20px silver;
     {% endif %}
-    {% if header_max_width %}
+  }
+  {% if header_max_width %}
+  #header-row
     margin-left: auto;
     margin-right: auto;
     max-width: {{ header_max_width }}
-    {% endif %}
   }
+  {% endif %}
   #sidebar {
     width: var(--sidebar-width);
   }
@@ -59,6 +61,7 @@
 {% block contents %}
 <div id="container">
   <nav id="header">
+    <div class="container-fluid" id="header-row">
     {% if nav %}
     <span onclick="closeNav()" id="sidebar-button">
       <div class="pn-bar"></div>
@@ -96,6 +99,7 @@
       {{ embed(roots.busy_indicator) | indent(6) }}
     </div>
     {% endif %}
+    </div>
   </nav>
 
   <div id="content">

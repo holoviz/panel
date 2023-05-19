@@ -51,10 +51,10 @@
     font-family: var(--body-font);
   }
   {% if header_max_width %}
-  #header {
-	margin-left: auto;
-	margin-right: auto;
-	max-width: {{ header_max_width }}
+  #header-row {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: {{ header_max_width }}
   }
   {% endif %}
   #header a {
@@ -92,7 +92,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
 <fast-design-system-provider id="body-design-provider" use-defaults>
   <div id="container">
     <fast-design-system-provider id="header-design-provider">
-      <nav id="header" {{ 'class="shadow"' if style.shadow else '' }} >
+      <nav id="header">
+        <div class="container-fluid" id="header-row">
 	{% if nav or sidebar_footer %}
 	<span onclick="closeNav()" id="sidebar-button">
 	  <div class="pn-bar"></div>
@@ -159,6 +160,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	  Busy Indicator
 	</fast-tooltip>
 	{% endif %}
+        </div>
       </nav>
     </fast-design-system-provider>
 
