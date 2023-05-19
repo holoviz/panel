@@ -18,7 +18,9 @@ from tornado.web import RequestHandler
 from .config import config
 from .entry_points import entry_points_for
 from .io import state
-from .io.resources import BASIC_LOGIN_TEMPLATE, ERROR_TEMPLATE, _env
+from .io.resources import (
+    BASIC_LOGIN_TEMPLATE, CDN_DIST, ERROR_TEMPLATE, _env,
+)
 from .util import base64url_decode, base64url_encode
 
 log = logging.getLogger(__name__)
@@ -832,7 +834,7 @@ class BasicLoginHandler(RequestHandler):
             errormessage = self.get_argument("error")
         except Exception:
             errormessage = ""
-        self.write(self._basic_login_template.render(errormessage=errormessage))
+        self.write(self._basic_login_template.render(errormessage=errormessage, PANEL_CDN=CDN_DIST))
 
     def _validate(self, username, password):
         if os.path.isfile(config.basic_auth):
