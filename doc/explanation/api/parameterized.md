@@ -7,12 +7,13 @@ The parameterized approach is a powerful way to encapsulate computation in self-
 ## Pros:
 
 + Declarative way of expressing parameters and dependencies between parameters and computation
-+ The resulting code is not tied to any particular GUI framework and can be used in other contexts as well
-+ The GUI code encodes less of the underlying domain-specific code, making it easier to update either the GUI or the underlying computation without introducing bugs. With the reactive API, the GUI code explicitly lists allowed parameter types ranges that must match what the underlying code does, while with the Declarative API the underlying code both declares and uses the Parameters, providing a single place to control and update that information, without having it duplicated at the GUI level.
++ Information about parameter types and allowed ranges is stored directly with the code that uses it, making it easier for programmers to reason about the core code and to detect issues with user-provided values.
++ Like the reactive API, the resulting core code is not tied to any particular GUI framework and can be used in other contexts as well
++ Compared to the reactive API, the core code itself can _also_ be updated and improved without necessarily needing any changes to the GUI code, because the GUI code rarely needs to encode detailed information about the core code.
 
 ## Cons:
 
-- Requires writing classes
+- Requires writing Python classes, which are not otherwise commonly used in data science
 - Less explicit about widgets to use for each parameter; can be harder to customize behavior than if widgets are instantiated explicitly
 
 ## Explanation
