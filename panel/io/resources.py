@@ -346,10 +346,8 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
     css_files = []
     css_raw = []
 
-    if enable_mathjax == True:
-        use_mathjax = True
-    elif not enable_mathjax:
-        use_mathjax = False
+    if isinstance(enable_mathjax, bool):
+        use_mathjax = enable_mathjax
     else:
         use_mathjax = (_use_mathjax(roots) or 'mathjax' in ext._loaded_extensions) if roots else False
 
