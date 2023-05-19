@@ -11,7 +11,7 @@ import uuid
 from collections import OrderedDict
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple,
+    TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Tuple,
 )
 
 import bokeh
@@ -343,6 +343,7 @@ def block_comm() -> Iterator:
 def load_notebook(
     inline: bool = True,
     reloading: bool = False,
+    enable_mathjax: bool | Literal['auto'] = 'auto',
     load_timeout: int = 5000
 ) -> None:
     from IPython.display import publish_display_data
@@ -354,7 +355,8 @@ def load_notebook(
     resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
     try:
         bundle = bundle_resources(
-            None, resources, notebook=nb_endpoint, reloading=reloading
+            None, resources, notebook=nb_endpoint, reloading=reloading,
+            enable_mathjax=enable_mathjax
         )
         configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
