@@ -16,6 +16,9 @@ A micro-release in the 1.0.2 series with a number of bug fixes and documentation
 - Ensure `FloatPanel` can be rendered in classic notebooks ([#4892](https://github.com/holoviz/panel/pull/4892))
 - Attempt rendering output in notebooks even if not all resources have been initialized ([#4893](https://github.com/holoviz/panel/pull/4893))
 - Do not load large bokeh-mathjax bundle in notebooks by default ([#4895](https://github.com/holoviz/panel/pull/4895))
+- Make Fast template sidebar opening transition smoother ([#4898](https://github.com/holoviz/panel/pull/4898))
+- Ensure new items added to `Card` layout are rendered ([#4899](https://github.com/holoviz/panel/pull/4899))
+- Fix logo rendering in BasicAuth template ([#4900](https://github.com/holoviz/panel/pull/4900))
 
 ### Documentation
 
