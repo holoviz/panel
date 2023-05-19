@@ -136,6 +136,11 @@
 	align-items: center;
 	grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
     }
+    #header-design-provider {
+      --neutral-fill-hover: var(--header-background);
+      --neutral-fill-rest: var(--header-background);
+      background-color: var(--header-background);
+    }
     #title {
 	background: transparent;
     }
@@ -155,11 +160,6 @@
 	height: 25px;
 	width: 25px;
 	margin-top: 5px;
-    }
-    #header-design-provider {
-      --neutral-fill-hover: var(--header-background);
-      --neutral-fill-rest: var(--header-background);
-      background-color: var(--header-background);
     }
     /* The grid layout is inspired by
        https://css-tricks.com/look-ma-no-media-queries-responsive-layouts-using-css-grid/
