@@ -14,7 +14,8 @@ from typing import (
 
 import param  # type: ignore
 
-from bokeh.models import ImportedStyleSheet
+from bokeh.models import ImportedStyleSheet, Tooltip
+from bokeh.models.dom import HTML
 
 from .._param import Margin
 from ..layout.base import Row
@@ -96,6 +97,13 @@ class Widget(Reactive):
         )
         return layout[0]
 
+    @property
+    def _linked_properties(self) -> Tuple[str]:
+        props = list(super()._linked_properties)
+        if 'description' in props:
+            props.remove('description')
+        return tuple(props)
+
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         params = super()._process_param_change(params)
         if self._widget_type is not None and 'stylesheets' in params:
@@ -103,6 +111,15 @@ class Widget(Reactive):
             params['stylesheets'] = [
                 ImportedStyleSheet(url=ss) for ss in css
             ] + params['stylesheets']
+        if 'description' in params:
+            from ..pane.markup import Markdown
+            parser = Markdown._get_parser('markdown-it', ())
+            html = parser.render(params['description'])
+            params['description'] = Tooltip(
+                content=HTML(html), position='right',
+                stylesheets=[':host { white-space: initial; max-width: 300px; }'],
+                syncable=False
+            )
         return params
 
     def _get_model(

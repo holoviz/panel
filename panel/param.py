@@ -465,7 +465,7 @@ class Param(PaneBase):
                 kw['fixed_end'] = p_obj.bounds[1]
 
         if p_obj.doc:
-            kw['description'] = textwrap.dedent(p_obj.doc.lstrip())
+            kw['description'] = textwrap.dedent(p_obj.doc).strip()
 
         # Update kwargs
         kw.update(kw_widget)
