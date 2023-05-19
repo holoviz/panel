@@ -46,10 +46,10 @@ def test_server_reuse_sessions_with_session_key_func(page, port, reuse_sessions)
 
     page.goto(f"http://localhost:{port}/?arg=foo")
 
-    expect(page.locator("title")).to_have_text('foo')
+    expect(page).to_have_title('foo')
     expect(page.locator(".markdown h3")).to_have_text('Count 0')
 
     page.goto(f"http://localhost:{port}/?arg=bar")
 
-    expect(page.locator("title")).to_have_text('bar')
+    expect(page).to_have_title('bar')
     expect(page.locator(".markdown h3")).to_have_text('Count 1')
