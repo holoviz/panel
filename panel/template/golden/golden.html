@@ -41,14 +41,17 @@
   #header {
     background-color: var(--header-background);
     color: var(--header-color);
+    display: block;
+    padding: inherit;
   }
-  {% if header_max_width %}
   #header-row {
+    {% if header_max_width %}
+    display: flex;
     margin-left: auto;
     margin-right: auto;
     max-width: {{ header_max_width }}
+    {% endif %}
   }
-  {% endif %}
 </style>
 
 {% endblock %}
@@ -56,29 +59,27 @@
 <!-- goes in body -->
 {% block contents %}
 <header class="app-bar" id="header">
-  <div class="container-fluid" id="header-row">
-    <div style="display: contents;">
-      <div class="app-header">
-        {% if app_logo %}<a href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
-        {% if site_title %}<a class="title" href="{{ site_url }}" >{{ site_title }}</a>{% endif %}
-        {% if site_title and app_title%}<span class="title">-</span>{% endif %}
-        {% if app_title %}<a class="title" href="">{{ app_title }}</a>{% endif %}
-      </div>
-      <section class="header-contents">
-        {% for doc in docs %}
-        {% for root in doc.roots %}
-        {% if "header" in root.tags %}
-        {{ embed(root) }}
-        {% endif %}
-        {% endfor %}
-        {% endfor %}
-      </section>
-      {% if busy %}
-      <div class="pn-busy-container">
-        {{ embed(roots.busy_indicator) | indent(6) }}
-      </div>
-      {% endif %}
+  <div id="header-row">
+    <div class="app-header">
+      {% if app_logo %}<a href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
+      {% if site_title %}<a class="title" href="{{ site_url }}" >{{ site_title }}</a>{% endif %}
+      {% if site_title and app_title%}<span class="title">-</span>{% endif %}
+      {% if app_title %}<a class="title" href="">{{ app_title }}</a>{% endif %}
     </div>
+    <section class="header-contents">
+      {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "header" in root.tags %}
+      {{ embed(root) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+    </section>
+    {% if busy %}
+    <div class="pn-busy-container">
+      {{ embed(roots.busy_indicator) | indent(6) }}
+    </div>
+    {% endif %}
   </div>
 </header>
 

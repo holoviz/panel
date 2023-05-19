@@ -32,17 +32,19 @@
   #header {
     background-color: var(--header-background);
     color: var(--header-color);
+    display: block;
     {% if theme._name == 'default' %}
     box-shadow: 5px 5px 20px silver;
     {% endif %}
   }
-  {% if header_max_width %}
-  #header-row
+  #header-row {
+    {% if header_max_width %}
     margin-left: auto;
     margin-right: auto;
+    display: flex;
     max-width: {{ header_max_width }}
+    {% endif %}
   }
-  {% endif %}
   #sidebar {
     width: var(--sidebar-width);
   }
@@ -61,8 +63,8 @@
 {% block contents %}
 <div id="container">
   <nav id="header">
-    <div class="container-fluid" id="header-row">
-    {% if nav %}
+    <div id="header-row">
+      {% if nav %}
     <span onclick="closeNav()" id="sidebar-button">
       <div class="pn-bar"></div>
       <div class="pn-bar"></div>
