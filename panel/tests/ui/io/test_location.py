@@ -6,6 +6,7 @@ import panel as pn
 
 from panel.io.server import serve
 from panel.tests.util import serve_panel_widget
+from panel.util import parse_query
 from panel.widgets import FloatSlider, RangeSlider, TextInput
 
 pytestmark = pytest.mark.ui
@@ -46,17 +47,20 @@ def test_set_url_params_update_document(page, port):
     page.wait_for_timeout(500)
 
     expected_location = {
-        'href': f'http://localhost:{port}/?slider_value=2&range_value=%5B1%2C+2%5D&text_value=Simple+Text',
         'protocol': 'http:',
         'hostname': 'localhost',
         'port': f'{port}',
         'pathname': '/',
-        'search': '?slider_value=2&range_value=%5B1%2C+2%5D&text_value=Simple+Text',
         'hash': '',
         'reload': None
     }
     actual_location = page.evaluate('() => document.location')
     verify_document_location(expected_location, actual_location)
+    assert parse_query(actual_location['search']) == {
+        'range_value': [1, 2],
+        'slider_value': 2,
+        'text_value': 'Simple Text'
+    }
 
 
 def test_set_hash_update_documment(page, port):
