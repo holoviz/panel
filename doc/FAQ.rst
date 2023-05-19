@@ -6,12 +6,12 @@ Here is a list of questions we have either been asked by users or potential pitf
 
 **Q: What objects can I use with Panel?**
 
-**A:** The Panel `Reference Guide <https://panel.pyviz.org/reference/>`__ shows examples of all the plotting libraries, data types, image formats, and other objects that can be used in a panel.  There is also a `Github issue <https://github.com/pyviz/panel/issues/2>`__ where possible types are discussed.
+**A:** The Panel `Component Gallery <https://panel.pyviz.org/reference/>`__ shows examples of all the plotting libraries, data types, image formats, and other objects that can be used in a panel.  There is also a older `Github issue <https://github.com/pyviz/panel/issues/2>`__ where possible types are discussed.
 
 
 **Q: Does it matter which plotting library I use with Panel?**
 
-**A:** Yes and no! Just about `any Python library <https://pyviz.org/tools.html>`__ will work with Panel. That said, only certain libraries will provide deeply interactive objects in a web browser, such as Bokeh and Plotly.  If you want to tie custom actions to individual subelements of such a plot, you should use a library with extensive JavaScript support. Otherwise, just use any supported library that you prefer!
+**A:** Yes and no! Just about `any Python library <https://pyviz.org/tools.html>`__ will work with Panel. That said, only certain libraries will provide deeply interactive objects in a web browser, such as Bokeh and Plotly.  If you want to tie custom actions to individual sub-elements of such a plot, you should use a library with extensive JavaScript support. Otherwise, just use any supported library that you prefer!
 
 
 **Q: How do I add support for a library or datatype not yet supported?**
@@ -23,7 +23,7 @@ If you want an even richer JavaScript-based representation where that's supporte
 
 **Q: How does Panel compare to other dashboarding libraries?**
 
-For a detailed comparison between Panel and other dashboarding libraries see the `Comparisons page <about/comparisons.html>`__.
+See the `technology comparisons section <https://panel.holoviz.org/explanation/index.html#technology-comparisons>`__ for a detailed comparison between Panel and other dashboarding/app libraries.
 
 
 **Q: How does Panel relate to Bokeh?**
@@ -37,9 +37,9 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 
 **A:** This error usually means that you forgot to run panel.extension() in a notebook context to set up the code for communicating between JavaScript and Python.  It's easy to get confused and think you don't need that line, because notebooks will often work fine as long as *some* notebook somewhere in your Jupyter session has run the command, but the only reliable way to make the communication channels available is to make sure *every* notebook includes this command.
 
-**Q: How do I enable the panel widget on Jupyter Lab?**
+**Q: How do I enable the panel widget on older versions of Jupyter Lab?**
 
-**A:** Run `jupyter serverextension enable panel.io.jupyter_server_extension`.
+**A:** Run `jupyter serverextension enable panel.io.jupyter_server_extension` (not needed in modern Jupyter Lab or Panel versions).
 
 **Q: Why is my object being shown using the wrong type of pane?**
 
@@ -72,7 +72,7 @@ When using the pandas plotting API we create the figure and axes in the same way
 
 **Q: Does Panel require a live Python process for deployment, or can I export to a static HTML document to email or put on a web server?**
 
-**A:** That depends. Panel supports dynamically executing Python code as a user interacts with a panel, for which Python must be running.  But panels can be exported to static HTML, with all functionality that relies only on JavaScript still available. For instance, any link set up using ``.jslink`` will still be connected, as will widget states collected using ``.embed()``.
+**A:** That depends. Panel supports dynamically executing Python code as a user interacts with a panel, for which Python must be running (either as a server process or in the client using WASM).  But panels can be exported to static HTML, with all functionality that relies only on JavaScript still available. For instance, any link set up using ``.jslink`` will still be connected, as will widget states collected using ``.embed()``.
 
 
 **Q: How can I deploy a Panel app for others to use?**
@@ -94,7 +94,7 @@ That said, Panel is in no way a clone of Shiny; Panel is a complete solution for
 
 **Q: Can Panel be used like Powerpoint?**
 
-**A:** Panel works very well with `RISE <https://github.com/damianavila/RISE>`__, which lets a Jupyter notebook (including any Panel layouts) be used for a fully interactive full-screen presentation.
+**A:** Panel works very well with `RISE <https://github.com/damianavila/RISE>`__, which lets a Jupyter notebook (including any Panel layouts) be used for a fully interactive full-screen presentation. Panel 1.0 also includes a native `SlidesTemplate <https://panel.holoviz.org/reference/templates/Slides.html>`__ similar to RISE.
 
 
 **Q: What performance limitations does Panel have?**
@@ -109,7 +109,7 @@ That said, Panel is in no way a clone of Shiny; Panel is a complete solution for
 
 **Q: How stable is Panel?**
 
-**A:** Panel is a relatively new project, pre-released in 2018 and first fully released in Spring 2019.  But Panel is built on infrastructure from the Bokeh project that has been continuously improved since 2012, and Panel has very rapidly established a stable API and a large and active userbase, making the project already fully stable for production applications. New features are appearing rapidly, but generally without any changes to existing API.
+**A:** Panel has been in continuous development and improvement since 2018, and is based on infrastructure from the Bokeh project that has been continuously improved since 2012.  Panel has very rapidly established a stable API and a large and active userbase, making the project already fully stable for production applications. New features are appearing rapidly, but generally without any changes to existing API.
 
 
 **Q: How does Panel fit into the Python ecosystem?**
@@ -159,7 +159,7 @@ Panel works seamlessly with Jupyter notebooks for interactive editing, and it us
 
 **A:** Python has a rich, dynamic, and ever-expanding ecosystem, so any comparison can quickly go out of date. Also, most tools compare to only a small part of what Panel provides, as Panel is designed to support the entire life cycle of working with data: from initial exploration, to adding custom interactivity to make one-off analyses easier, to building a complex dashboard from multiple components, to deploying your polished Python-backed dashboard in a public-facing or on-premises private server, and then iterating by bringing those same components back to the notebook for further exploration and improvement. Other tools support *some* of the same capabilities, but by focusing on only one part of this life cycle they typically require you to start over when you need to use your work in a different way.
 
-The `Comparisons page <about/comparisons.html>`__ describes some of these differences in detail, but at a high level:
+The `technology comparisons section <https://panel.holoviz.org/explanation/index.html#technology-comparisons>`__ describes some of these differences in detail, but at a high level:
 
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 |                                      | Panel           | ipywidgets           | Bokeh           | Streamlit          | Dash (Plotly)          | Shiny              |

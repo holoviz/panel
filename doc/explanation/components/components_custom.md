@@ -1,11 +1,10 @@
 # Building Custom Components
 
- When building custom applications and dashboards it is frequently useful to extend Panel with custom components, which are specific to a particular application. Panel provides multiple mechanisms to extend and compose different components or even add entirely new components.
+When building custom applications and dashboards it is frequently useful to extend Panel with custom components to fit a specialized need. Panel provides multiple mechanisms to extend and compose different components or even add entirely new components.
 
-This Background page will focus on the building of entirely new components. Alternatively, to learn how to compose existing Panel components into an easily reusable unit that behaves like a native Panel component, see the [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md) page.
+This Background page will focus on the building of entirely new components. Making full new components can be straightforward in the simplest cases, but it does requires knowledge of web technologies like HTML, CSS, and JavaScript. Alternatively, to learn how to compose existing Panel components into an easily reusable unit that behaves like a native Panel component, see the [How-to > Combine Existing Components](../../how_to/custom_components/custom_viewer.md) page.
 
 ## ReactiveHTML components
-
 
 The `ReactiveHTML` provides bi-directional syncing of arbitrary HTML attributes and DOM properties with parameters on the subclass. This kind of component must declare a HTML template written using Javascript template variables (`${}`) and optionally Jinja2 syntax:
 
