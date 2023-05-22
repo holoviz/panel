@@ -368,10 +368,6 @@ class ServableMixin:
         The Panel object itself
         """
         if curdoc_locked().session_context:
-            logger = logging.getLogger('bokeh')
-            for handler in logger.handlers:
-                if isinstance(handler, logging.StreamHandler):
-                    handler.setLevel(logging.WARN)
             if config.template:
                 area = target or area or 'main'
                 template = state.template

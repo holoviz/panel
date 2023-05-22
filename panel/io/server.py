@@ -705,6 +705,9 @@ def modify_document(self, doc: 'Document'):
             if newdoc is not doc:
                 raise RuntimeError("%s at '%s' replaced the output document" % (self._origin, self._runner.path))
 
+            # dask.distributed sets the logging level to error
+            logging.getLogger('bokeh').setLevel(logging.INFO)
+
         def handle_exception(handler, e):
             from bokeh.application.handlers.handler import handle_exception
 
