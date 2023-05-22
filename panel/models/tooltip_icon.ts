@@ -8,8 +8,8 @@ import * as p from '@bokehjs/core/properties'
 import inputs_css, * as inputs from '@bokehjs/styles/widgets/inputs.css'
 import icons_css from '@bokehjs/styles/icons.css'
 
-export class DescriptionView extends ControlView {
-  declare model: Description
+export class TooltipIconView extends ControlView {
+  declare model: TooltipIcon
 
   protected description: TooltipView
 
@@ -26,9 +26,7 @@ export class DescriptionView extends ControlView {
     await super.lazy_initialize()
 
     const { description } = this.model
-    if (description instanceof Tooltip) {
-      this.description = await build_view(description, { parent: this })
-    }
+    this.description = await build_view(description, { parent: this })
   }
 
   override remove(): void {
@@ -96,7 +94,7 @@ export class DescriptionView extends ControlView {
   change_input(): void {}
 }
 
-export namespace Description {
+export namespace TooltipIcon {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = Control.Props & {
@@ -104,21 +102,21 @@ export namespace Description {
   }
 }
 
-export interface Description extends Description.Attrs {}
+export interface TooltipIcon extends TooltipIcon.Attrs {}
 
-export class Description extends Control {
-  declare properties: Description.Props
-  declare __view_type__: DescriptionView
+export class TooltipIcon extends Control {
+  declare properties: TooltipIcon.Props
+  declare __view_type__: TooltipIconView
   static __module__ = 'panel.models.widgets'
 
-  constructor(attrs?: Partial<Description.Attrs>) {
+  constructor(attrs?: Partial<TooltipIcon.Attrs>) {
     super(attrs)
   }
 
   static {
-    this.prototype.default_view = DescriptionView
+    this.prototype.default_view = TooltipIconView
 
-    this.define<Description.Props>(({ Ref }) => ({
+    this.define<TooltipIcon.Props>(({ Ref }) => ({
       description: [Ref(Tooltip), new Tooltip()],
     }))
   }

@@ -182,11 +182,9 @@ class CustomSelect(Select):
     size = Int(default=1)
 
 
-class Description(Widget):
+class TooltipIcon(Widget):
     description = Instance(
         Tooltip,
-        default=Tooltip(content="Helptext", position="right"),
-        help="""The text label for the button to display."""
+        default=Tooltip(content="Help text", position="right"),
+        help="""The tooltip held by the icon"""
     )
-    # title = String(default='')
-    # Rename to text
