@@ -316,7 +316,7 @@ def server_html_page_for_session(
         )
         if config.global_loading_spinner:
             html = html.replace(
-                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} {config.loading_spinner}">'
+                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">'
             )
     return html
 

@@ -17,6 +17,7 @@ import param
 from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 
 from .io.datamodel import create_linked_datamodel
+from .io.loading import LOADING_INDICATOR_CSS_CLASS
 from .models import ReactiveHTML
 from .reactive import Reactive
 from .util.warnings import warn
@@ -624,7 +625,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
       value = true
     }}
     var css_classes = target.css_classes.slice()
-    var loading_css = ['pn-loading', '{loading_spinner}']
+    var loading_css = ['{loading_css_class}', 'pn-{loading_spinner}']
     if (value) {{
       for (var css of loading_css) {{
         if (!(css in css_classes)) {{
@@ -732,7 +733,8 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
             from .config import config
             return self._loading_link_template.format(
                 src_attr=src_spec, src_transform=src_transform,
-                loading_spinner=config.loading_spinner
+                loading_spinner=config.loading_spinner,
+                loading_css_class=LOADING_INDICATOR_CSS_CLASS
             )
         else:
             if src_spec and src_spec.startswith('event:'):
