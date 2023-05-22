@@ -6,12 +6,18 @@
   --sd-color-card-border-hover: #0072b5;
 }
 
-div.highlight button.copybtn.o-tooltip--left:after {
-  background-color: #263235;
-  border: 1px solid gray;
-  border-radius: 4px;
-  padding: 5px;
+/* Homepage Showcase */
+
+.showcase-table {
+  border-spacing: 15px;
 }
+
+.showcase-table td {
+  border: 0px;
+  vertical-align: top;
+}
+
+/* Homepage sponsors */
 
 .sd-card-body.sponsor-logo {
   flex-grow: unset;
@@ -23,35 +29,7 @@ div.highlight button.copybtn.o-tooltip--left:after {
   object-fit: contain;
 }
 
-button.toggle-button {
-  display: none;
-}
-
-.toggle-hidden:not(.admonition) {
-  height: 0;
-}
-
-.tag_hide-input {
-  margin-bottom: 0 !important;
-}
-
-details.hide.above-input {
-  display: none;
-}
-
-.toggle-hidden + .cell_output {
-  margin-top: 0 !important;
-}
-
-dl.field-list {
-  display: none;
-}
-
-/* Improve styling */
-
-div.cell div.cell_input {
-  border: none;
-}
+/* Tweaks for code cell rendering */
 
 .highlight {
   border-radius: 4px;
@@ -71,6 +49,13 @@ pre[id^='codecell'] {
   padding: 1.5em;
 }
 
+div.highlight button.copybtn.o-tooltip--left:after {
+  background-color: #263235;
+  border: 1px solid gray;
+  border-radius: 4px;
+  padding: 5px;
+}
+
 button.copybtn {
   background-color: #263238;
 }
@@ -86,8 +71,4 @@ button.copybtn:hover {
 
 .o-tooltip--left:after {
   background: none;
-}
-
-ul.current.nav.bd-sidenav {
-  padding: 0;
 }
