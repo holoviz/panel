@@ -3,9 +3,10 @@ Custom bokeh Widget models.
 """
 from bokeh.core.enums import ButtonType
 from bokeh.core.properties import (
-    Any, Bool, Either, Enum, Float, Int, List, Nullable, Override, String,
-    Tuple,
+    Any, Bool, Either, Enum, Float, Instance, Int, List, Nullable, Override,
+    String, Tuple,
 )
+from bokeh.models.ui import Tooltip
 from bokeh.models.widgets import InputWidget, Select, Widget
 
 from .layout import HTMLBox
@@ -179,3 +180,9 @@ class CustomSelect(Select):
     """)
 
     size = Int(default=1)
+
+
+class Description(Widget):
+    description = Either(String, Instance(Tooltip), default="", help="""The text label for the button to display.""")
+    # title = String(default='')
+    # Rename to text
