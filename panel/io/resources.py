@@ -36,8 +36,8 @@ from jinja2.loaders import FileSystemLoader
 from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
-from ..loading import LOADING_INDICATOR_CSS_CLASS
 from ..util import isurl, url_path
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .state import state
 
 if TYPE_CHECKING:
