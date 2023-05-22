@@ -25,6 +25,7 @@ from typing_extensions import Literal
 
 from .. import __version__, config
 from ..util import base_version, escape
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .markdown import build_single_handler_application
 from .mime_render import find_imports
 from .resources import (
@@ -356,7 +357,7 @@ def script_to_html(
         template = get_env().from_string("{% extends base %}\n" + template)
     html = template.render(context)
     html = (html
-        .replace('<body>', f'<body class="pn-loading {config.loading_spinner}">')
+        .replace('<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">')
     )
     return html, web_worker
 
