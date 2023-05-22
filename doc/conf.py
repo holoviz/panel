@@ -167,7 +167,6 @@ nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 html_title = f'{project} v{version}'
 
 
-
 # Patching GridItemCardDirective to be able to substitute the domain name
 # in the link option.
 from sphinx_design.cards import CardDirective
