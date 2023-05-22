@@ -39,7 +39,7 @@ from .debugger import Debugger  # noqa
 from .file_selector import FileSelector  # noqa
 from .indicators import (  # noqa
     BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number, Progress,
-    Tqdm, Trend,
+    TooltipIcon, Tqdm, Trend,
 )
 from .input import (  # noqa
     ArrayInput, Checkbox, ColorPicker, DatePicker, DatetimeInput,
@@ -125,6 +125,7 @@ __all__ = (
     "SpeechToText",
     "Spinner",
     "StaticText",
+    "Switch",
     "Tabulator",
     "Terminal",
     "TextAreaInput",
@@ -133,6 +134,7 @@ __all__ = (
     "TextToSpeech",
     "Toggle",
     "ToggleGroup",
+    "TooltipIcon",
     "Tqdm",
     "Trend",
     "Utterance",

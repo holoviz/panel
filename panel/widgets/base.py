@@ -111,7 +111,7 @@ class Widget(Reactive):
             params['stylesheets'] = [
                 ImportedStyleSheet(url=ss) for ss in css
             ] + params['stylesheets']
-        if 'description' in params:
+        if isinstance(params.get('description'), str):
             from ..pane.markup import Markdown
             parser = Markdown._get_parser('markdown-it', ())
             html = parser.render(params['description'])

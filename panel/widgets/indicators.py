@@ -29,14 +29,15 @@ from typing import (
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource, FixedTicker
+from bokeh.models import ColumnDataSource, FixedTicker, Tooltip
 from bokeh.plotting import figure
 from tqdm.asyncio import tqdm as _tqdm
 
 from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
 from ..models import (
-    HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator,
+    HTML, Progress as _BkProgress, TooltipIcon as _BkTooltipIcon,
+    TrendIndicator as _BkTrendIndicator,
 )
 from ..pane.markup import Str
 from ..reactive import SyncableData
@@ -1307,6 +1308,17 @@ class Tqdm(Indicator):
         self.value = self.param.value.default
         self.text = self.param.text.default
 
+
+class TooltipIcon(Widget):
+
+    value = param.ClassSelector(default="Description", class_=(str, Tooltip), doc="""
+        The description in the tooltip.""")
+
+    _widget_type = _BkTooltipIcon
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'description'}
+
+
 __all__ = [
     "BooleanIndicator",
     "BooleanStatus",
@@ -1317,6 +1329,7 @@ __all__ = [
     "Number",
     "Progress",
     "String",
+    "TooltipIcon",
     "Tqdm",
     "Trend",
     "ValueIndicator",
