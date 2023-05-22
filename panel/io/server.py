@@ -723,7 +723,7 @@ def modify_document(self, doc: 'Document'):
             # Serve error
             e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
             Alert(
-                f'<b>{type(e).__name__}</b>: {e_msg}</br><pre style="overflow-y: auto">{tb}</pre>',
+                f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
                 alert_type='danger', margin=5, sizing_mode='stretch_width'
             ).servable()
 
