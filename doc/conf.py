@@ -145,10 +145,6 @@ nbsite_pyodide_conf = {
     'requires': get_requirements()
 }
 
-templates_path = [
-    '_templates'
-]
-
 html_context.update({
     "last_release": f"v{release}",
     "github_user": "holoviz",
