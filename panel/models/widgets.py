@@ -183,6 +183,10 @@ class CustomSelect(Select):
 
 
 class Description(Widget):
-    description = Either(String, Instance(Tooltip), default="", help="""The text label for the button to display.""")
+    description = Instance(
+        Tooltip,
+        default=Tooltip(content="Helptext", position="right"),
+        help="""The text label for the button to display."""
+    )
     # title = String(default='')
     # Rename to text

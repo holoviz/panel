@@ -1,8 +1,6 @@
 import { Control, ControlView } from '@bokehjs/models/widgets/control'
 import { Tooltip, TooltipView } from '@bokehjs/models/ui/tooltip'
 
-import { assert } from '@bokehjs/core/util/assert'
-import { isString } from '@bokehjs/core/util/types'
 import { build_view, IterViews } from '@bokehjs/core/build_views'
 import { div, label, StyleSheetLike } from '@bokehjs/core/dom'
 import * as p from '@bokehjs/core/properties'
@@ -45,59 +43,51 @@ export class DescriptionView extends ControlView {
   override render(): void {
     super.render()
 
-    const { description } = this.model
-
     const icon_el = div({ class: inputs.icon })
     this.desc_el = div({ class: inputs.description }, icon_el)
 
-    if (isString(description)) this.desc_el.title = description
-    else {
-      const { description } = this
-      assert(description != null)
+    const { desc_el, description } = this
+    description.model.target = desc_el
 
-      const { desc_el } = this
-      description.model.target = desc_el
+    let persistent = false
 
-      let persistent = false
+    const toggle = (visible: boolean) => {
+      description.model.setv({
+        visible,
+        closable: persistent,
+      })
+      icon_el.classList.toggle(inputs.opaque, visible && persistent)
+    }
 
-      const toggle = (visible: boolean) => {
-        description.model.setv({
-          visible,
-          closable: persistent,
-        })
-        icon_el.classList.toggle(inputs.opaque, visible && persistent)
+    this.on_change(description.model.properties.visible, () => {
+      const { visible } = description.model
+      if (!visible) {
+        persistent = false
       }
-
-      this.on_change(description.model.properties.visible, () => {
-        const { visible } = description.model
-        if (!visible) {
-          persistent = false
-        }
-        toggle(visible)
-      })
-      desc_el.addEventListener('mouseenter', () => {
-        toggle(true)
-      })
-      desc_el.addEventListener('mouseleave', () => {
-        if (!persistent) toggle(false)
-      })
-      document.addEventListener('mousedown', (event) => {
-        const path = event.composedPath()
-        if (path.includes(description.el)) {
-          return
-        } else if (path.includes(desc_el)) {
-          persistent = !persistent
-          toggle(persistent)
-        } else {
-          persistent = false
-          toggle(false)
-        }
-      })
-      window.addEventListener('blur', () => {
+      toggle(visible)
+    })
+    desc_el.addEventListener('mouseenter', () => {
+      toggle(true)
+    })
+    desc_el.addEventListener('mouseleave', () => {
+      if (!persistent) toggle(false)
+    })
+    document.addEventListener('mousedown', (event) => {
+      const path = event.composedPath()
+      if (path.includes(description.el)) {
+        return
+      } else if (path.includes(desc_el)) {
+        persistent = !persistent
+        toggle(persistent)
+      } else {
         persistent = false
         toggle(false)
-      })
-    }
+      }
+    })
+    window.addEventListener('blur', () => {
+      persistent = false
+      toggle(false)
+    })
 
     // Label to get highlight when icon is hovered
     this.shadow_el.appendChild(label(this.desc_el))
@@ -110,7 +100,7 @@ export namespace Description {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = Control.Props & {
-    description: p.Property<string | Tooltip>
+    description: p.Property<Tooltip>
   }
 }
 
@@ -128,8 +118,8 @@ export class Description extends Control {
   static {
     this.prototype.default_view = DescriptionView
 
-    this.define<Description.Props>(({ String, Or, Ref }) => ({
-      description: [Or(String, Ref(Tooltip)), ''],
+    this.define<Description.Props>(({ Ref }) => ({
+      description: [Ref(Tooltip), new Tooltip()],
     }))
   }
 }
