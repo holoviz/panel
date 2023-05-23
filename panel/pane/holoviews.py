@@ -134,6 +134,13 @@ class HoloViews(PaneBase):
         self._track_overrides(*(e for e in events if e.name in Layoutable.param))
         super()._param_change(*(e for e in events if e.name in self._overrides+['css_classes']))
 
+    @param.depends('backend', watch=True, on_init=True)
+    def _load_backend(self):
+        from holoviews import Store, extension
+        if self.backend and self.backend not in Store.renderers:
+            ext = extension._backends[self.backend]
+            __import__(f'holoviews.plotting.{ext}')
+
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
         loc = self.widget_location

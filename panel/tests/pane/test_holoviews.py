@@ -27,7 +27,9 @@ from bokeh.plotting import figure
 import panel as pn
 
 from panel.depends import bind
-from panel.layout import Column, FlexBox, Row
+from panel.layout import (
+    Column, FlexBox, HSpacer, Row,
+)
 from panel.pane import HoloViews, PaneBase, panel
 from panel.tests.util import hv_available, mpl_available
 from panel.util.warnings import PanelDeprecationWarning
@@ -345,6 +347,18 @@ def test_holoviews_with_widgets_not_shown(document, comm):
     assert hv_pane.widget_box.objects[0].name == 'A'
     assert hv_pane.widget_box.objects[1].name == 'B'
 
+
+@hv_available
+def test_holoviews_center(document, comm):
+    hv_pane = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh', center=True)
+
+    layout = hv_pane.layout
+
+    assert len(layout) == 3
+    hspacer1, hv_out, hspacer2 = layout
+    assert isinstance(hspacer1, HSpacer)
+    assert hv_pane is hv_out
+    assert isinstance(hspacer2, HSpacer)
 
 @hv_available
 def test_holoviews_layouts(document, comm):
