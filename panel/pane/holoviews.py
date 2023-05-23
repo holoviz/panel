@@ -124,9 +124,9 @@ class HoloViews(PaneBase):
         ]
         watcher = self.param.watch(self._update_widgets, self._rerender_params)
         self._internal_callbacks.append(watcher)
-        self._initialized = True
         self._update_responsive()
         self._update_widgets()
+        self._initialized = True
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         if self._object_changing:
