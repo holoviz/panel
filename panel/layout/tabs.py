@@ -76,11 +76,12 @@ class Tabs(NamedListPanel):
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
         self._rendered = defaultdict(dict)
-        self.param.active.bounds = (0, len(self)-1)
+        self.param.active.bounds = (-1, len(self)-1)
         self.param.watch(self._update_active, ['dynamic', 'active'])
 
     def _update_names(self, event):
-        self.param.active.bounds = (0, len(event.new)-1)
+        # No active tabs will have a value of -1
+        self.param.active.bounds = (-1, len(event.new)-1)
         super()._update_names(event)
 
     def _cleanup(self, root: Model | None = None) -> None:
