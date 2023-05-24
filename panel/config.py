@@ -252,7 +252,7 @@ class _config(_base_config):
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
 
-    _basic_auth = param.ClassSelect(default=None, class_=(dict, str), allow_None=True, doc="""
+    _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
         Password, dictionary with a mapping from username to password
         or filepath containing JSON to use with the basic auth
         provider.""")
