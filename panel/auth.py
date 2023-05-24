@@ -847,6 +847,7 @@ class BasicLoginHandler(RequestHandler):
         if isinstance(auth_info, str) and os.path.isfile(auth_info):
             with open(auth_info, encoding='utf-8') as auth_file:
                 auth_info = json.loads(auth_file.read())
+        if isinstance(auth_info, dict):
             if username not in auth_info:
                 return False
             return password == auth_info[username]
