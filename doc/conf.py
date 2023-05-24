@@ -33,10 +33,8 @@ os.environ['BRANCH'] = f"v{release}"
 
 html_static_path += ['_static']
 
-html_css_files = [
-    'nbsite.css',
+html_css_files += [
     'css/custom.css',
-    'css/dataframe.css',
 ]
 
 html_theme = "pydata_sphinx_theme"
@@ -147,7 +145,7 @@ nbsite_pyodide_conf = {
     'requires': get_requirements()
 }
 
-templates_path = [
+templates_path += [
     '_templates'
 ]
 
@@ -165,7 +163,6 @@ nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 
 # Override the Sphinx default title that appends `documentation`
 html_title = f'{project} v{version}'
-
 
 
 # Patching GridItemCardDirective to be able to substitute the domain name

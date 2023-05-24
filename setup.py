@@ -112,14 +112,13 @@ install_requires = [
     'requests',
     'tqdm >=4.48.0',
     'bleach',
-    'setuptools >=42',
     'typing_extensions',
     'pandas >=1.2',
 ]
 
 _recommended = [
     'jupyterlab',
-    'holoviews >=1.16.0a2',
+    'holoviews >=1.16.0',
     'matplotlib',
     'pillow',
     'plotly'
@@ -143,7 +142,7 @@ _tests = [
     'twine',
     'pandas >=1.3',
     'ipython >=7.0',
-    'holoviews >=1.16.0a2',
+    'holoviews >=1.16.0',
     'diskcache',
     'ipyvuetify',
     'reacton',
@@ -160,7 +159,7 @@ _ui = [
 
 extras_require = {
     'examples': [
-        'holoviews >=1.16.0a2',
+        'holoviews >=1.16.0',
         'hvplot',
         'plotly >=4.0',
         'altair',
@@ -200,10 +199,7 @@ extras_require = {
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite >=0.8.0rc7',
-        'pydata-sphinx-theme ==0.13.3',
-        'sphinx-copybutton',
-        'sphinx-design',
+        'nbsite ==0.8.0'
     ],
     'ui': _ui
 }
