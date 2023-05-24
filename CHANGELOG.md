@@ -1,5 +1,22 @@
 # Releases
 
+## Version 1.0.3
+
+Date: 2023-05-25
+
+Another micro-release in the 1.0.x series with a number of smaller bug fixes. Most importantly this resolves issues with loading indicators and with apps converted to the `pyodide-worker` target. Many thanks to @n3011, @Hoxbro and @philippjfr for contributing to this release.
+
+- Resolve `_repr_jpeg_` methods correctly ([#4904](https://github.com/holoviz/panel/pull/4904))
+- Fix handling of queued events in pyodide worker ([#4913](https://github.com/holoviz/panel/pull/4913))
+- Various fixes for loading indicator ([#4915](https://github.com/holoviz/panel/pull/4915))
+- Allow `-1` in `Tabs.active` and allow recovering from closed tabs ([#4920](https://github.com/holoviz/panel/pull/4920))
+- Ensure `HoloViews` layout is correctly initialized when `center` is set ([#4921](https://github.com/holoviz/panel/pull/4921))
+- Ensure VSCode editor does not apply white background to Panel output ([#4923](https://github.com/holoviz/panel/pull/4923))
+- Do not error on deserialization errors in notebooks ([#4927](https://github.com/holoviz/panel/pull/4927))
+- Ensure basic auth provider works when dynamically starting server ([#4926](https://github.com/holoviz/panel/pull/4926))
+- Ensure `Param` pane `name` is updated when object changes ([#4928](https://github.com/holoviz/panel/pull/4928))
+- Align functionality and styling of `FileDownload` with `Button` ([#4929](https://github.com/holoviz/panel/pull/4929))
+
 ## Version 1.0.2
 
 Date: 2023-05-19
