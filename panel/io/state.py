@@ -169,6 +169,7 @@ class _state(param.Parameterized):
     # An index of all currently active servers
     _servers: ClassVar[Dict[str, Tuple[Server, Viewable | BaseTemplate, List[Document]]]] = {}
     _threads: ClassVar[Dict[str, StoppableThread]] = {}
+    _server_config: ClassVar[WeakKeyDictionary[Any, Dict[str, Any]]] = WeakKeyDictionary()
 
     # Jupyter display handles
     _handles: ClassVar[Dict[str, [DisplayHandle, List[str]]]] = {}

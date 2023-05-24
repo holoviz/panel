@@ -926,6 +926,7 @@ def get_server(
     location: bool | Location = True,
     admin: bool = False,
     static_dirs: Mapping[str, str] = {},
+    basic_auth: str = None,
     oauth_provider: Optional[str] = None,
     oauth_key: Optional[str] = None,
     oauth_secret: Optional[str] = None,
@@ -975,6 +976,8 @@ def get_server(
     static_dirs: dict (optional, default={})
       A dictionary of routes and local paths to serve as static file
       directories on those routes.
+    basic_auth: str (optional, default=None)
+      Password or filepath to use with basic auth provider.
     oauth_provider: str
       One of the available OAuth providers
     oauth_key: str (optional, default=None)
@@ -1093,7 +1096,12 @@ def get_server(
 
     # Configure OAuth
     from ..config import config
-    if oauth_provider:
+    server_config = {}
+    if basic_auth:
+        from ..auth import BasicProvider
+        server_config['basic_auth'] = basic_auth
+        opts['auth_provider'] = BasicProvider()
+    elif oauth_provider:
         from ..auth import OAuthProvider
         config.oauth_provider = oauth_provider # type: ignore
         opts['auth_provider'] = OAuthProvider()
@@ -1116,6 +1124,7 @@ def get_server(
         print(f"Launching server at {url}")
 
     state._servers[server_id] = (server, panel, [])
+    state._server_config[server._tornado] = server_config
 
     if show:
         def show_callback():

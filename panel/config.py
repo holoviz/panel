@@ -252,9 +252,8 @@ class _config(_base_config):
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
 
-    _basic_auth = param.ObjectSelector(
-        default=None, allow_None=True, objects=[], doc="""
-        Use Basic authentication.""")
+    _basic_auth = param.String(default=None, allow_None=True, doc="""
+        Password or filepath to use with basic auth provider.""")
 
     _oauth_provider = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
