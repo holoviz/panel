@@ -449,6 +449,20 @@ def test_explicit_params(document, comm):
     assert isinstance(model.children[1], Checkbox)
 
 
+def test_param_name_update(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5))
+
+    test = Test(name='A')
+    test_pane = Param(test)
+
+    model = test_pane.get_root(document, comm=comm)
+    assert model.children[0].text == '<b>A</b>'
+
+    test_pane.object = Test(name='B')
+    assert model.children[0].text == '<b>B</b>'
+
+
 def test_param_precedence(document, comm):
     class Test(param.Parameterized):
         a = param.Number(default=1.2, bounds=(0, 5))
