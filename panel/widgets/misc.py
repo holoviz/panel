@@ -21,6 +21,7 @@ from ..models import (
 )
 from ..util import lazy_load
 from .base import Widget
+from .button import IconMixin
 from .indicators import Progress  # noqa
 
 if TYPE_CHECKING:
@@ -68,7 +69,7 @@ class VideoStream(Widget):
                 push(doc, comm)
 
 
-class FileDownload(Widget):
+class FileDownload(IconMixin):
     """
     The `FileDownload` widget allows a user to download a file.
 
