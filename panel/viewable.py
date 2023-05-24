@@ -25,6 +25,7 @@ from typing import (
 
 import param  # type: ignore
 
+from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
 from bokeh.resources import Resources
 from jinja2 import Template
@@ -460,10 +461,16 @@ class MimeRenderMixin:
         held = doc.callbacks.hold_value
         patch = manager.assemble(msg)
         doc.hold()
-        patch.apply_to_document(doc, comm.id if comm else None)
-        doc.unhold()
-        if held:
-            doc.hold(held)
+        try:
+            patch.apply_to_document(doc, comm.id if comm else None)
+        except DeserializationError:
+            self.param.warning(
+                "Comm received message that could not be deserialized."
+            )
+        finally:
+            doc.unhold()
+            if held:
+                doc.hold(held)
 
     def _on_error(self, ref: str, error: Exception) -> None:
         if ref not in state._handles or config.console_output in [None, 'disable']:
