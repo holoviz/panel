@@ -293,11 +293,11 @@ class Param(PaneBase):
 
                 if self._explicit_parameters:
                     parameters = self.parameters
-                    self.name = param_name(event.new.name)
                 elif event.new is None:
                     parameters = []
                 else:
                     parameters = [p for p in event.new.param if p != 'name']
+                if event.new is not None:
                     self.name = param_name(event.new.name)
             if event.name == 'parameters':
                 if event.new is None:
