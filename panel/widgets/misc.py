@@ -7,7 +7,7 @@ import os
 
 from base64 import b64encode
 from typing import (
-    TYPE_CHECKING, ClassVar, Mapping, Type,
+    TYPE_CHECKING, ClassVar, List, Mapping, Type,
 )
 
 import param
@@ -15,12 +15,14 @@ import param
 from pyviz_comms import JupyterComm
 
 from ..io.notebook import push
+from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..models import (
     FileDownload as _BkFileDownload, VideoStream as _BkVideoStream,
 )
 from ..util import lazy_load
 from .base import Widget
+from .button import BUTTON_STYLES, BUTTON_TYPES, IconMixin
 from .indicators import Progress  # noqa
 
 if TYPE_CHECKING:
@@ -68,7 +70,7 @@ class VideoStream(Widget):
                 push(doc, comm)
 
 
-class FileDownload(Widget):
+class FileDownload(IconMixin):
     """
     The `FileDownload` widget allows a user to download a file.
 
@@ -86,8 +88,13 @@ class FileDownload(Widget):
         Whether to download on the initial click or allow for
         right-click save as.""")
 
-    button_type = param.ObjectSelector(default='default', objects=[
-        'default', 'primary', 'success', 'warning', 'danger', 'light'])
+    button_type = param.ObjectSelector(default='default', objects=BUTTON_TYPES, doc="""
+        A button theme; should be one of 'default' (white), 'primary'
+        (blue), 'success' (green), 'info' (yellow), 'light' (light),
+        or 'danger' (red).""")
+
+    button_style = param.ObjectSelector(default='solid', objects=BUTTON_STYLES, doc="""
+        A button style to switch between 'solid', 'outline'.""")
 
     callback = param.Callable(default=None, doc="""
         A callable that returns the file path or file-like object.""")
@@ -139,8 +146,10 @@ class FileDownload(Widget):
     }
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'callback': None, 'file': None, '_clicks': 'clicks'
+        'callback': None, 'button_style': None, 'file': None, '_clicks': 'clicks'
     }
+
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/button.css']
 
     _widget_type: ClassVar[Type[Model]] = _BkFileDownload
 
@@ -151,6 +160,13 @@ class FileDownload(Widget):
         if self.embed:
             self._transfer()
         self._update_label()
+
+    def _process_param_change(self, params):
+        if 'button_style' in params or 'css_classes' in params:
+            params['css_classes'] = [
+                params.pop('button_style', self.button_style)
+            ] + params.get('css_classes', self.css_classes)
+        return super()._process_param_change(params)
 
     @param.depends('label', watch=True)
     def _update_default(self):
