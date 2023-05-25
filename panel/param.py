@@ -467,6 +467,13 @@ class Param(PaneBase):
             kw['description'] = textwrap.dedent(p_obj.doc).strip()
 
         # Update kwargs
+        ignored_kws = [repr(k) for k in kw_widget if k not in widget_class.param]
+        if ignored_kws:
+            self.param.warning(
+                f'Param pane was given unknown keyword argument(s) for {p_name!r} '
+                f'parameter with a widget of type {widget_class!r}. The following '
+                f'keyword arguments could not be applied: {", ".join(ignored_kws)}.'
+            )
         kw.update(kw_widget)
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
