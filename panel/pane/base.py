@@ -18,6 +18,7 @@ from bokeh.models.layouts import (
 )
 
 from .._param import Margin
+from ..io.cache import _generate_hash
 from ..io.document import create_doc_if_none_exists, unlocked
 from ..io.notebook import push
 from ..io.state import state
@@ -612,15 +613,19 @@ class ReplacementPane(PaneBase):
                 ignored += ('objects',)
         pvals = dict(old.param.values())
         new_params = {}
-        for k, v in new.param.values().items():
-            if k in ignored or v is pvals[k]:
+        for k, new in new.param.values().items():
+            old = pvals[k]
+            if k in ignored or new is old:
                 continue
             try:
-                equal = v == pvals[k]
+                equal = _generate_hash(new) == _generate_hash(old)
             except Exception:
-                equal = False
+                try:
+                    equal = bool(new == old)
+                except Exception:
+                    equal = False
             if not equal:
-                new_params[k] = v
+                new_params[k] = new
         old.param.update(**new_params)
 
     @classmethod
