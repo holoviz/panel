@@ -77,7 +77,7 @@ class HTML(HTMLBasePane):
         module, name = getattr(obj, '__module__', ''), type(obj).__name__
         if ((any(m in module for m in ('pandas', 'dask')) and
             name in ('DataFrame', 'Series')) or hasattr(obj, '_repr_html_')):
-            return 0.2
+            return 0 if isinstance(obj, param.Parameterized) else 0.2
         elif isinstance(obj, str):
             return None
         else:
