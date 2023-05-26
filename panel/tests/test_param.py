@@ -4,26 +4,28 @@ import param
 import pytest
 
 from bokeh.models import (
-    AutocompleteInput as BkAutocompleteInput, Button, Checkbox,
+    AutocompleteInput as BkAutocompleteInput, Button, Checkbox as BkCheckbox,
     Column as BkColumn, Div, MultiSelect, RangeSlider as BkRangeSlider,
     Row as BkRow, Select, Slider, Tabs as BkTabs, TextInput,
     TextInput as BkTextInput, Toggle,
 )
 
 from panel import config
+from panel.depends import bind
 from panel.io.state import set_curdoc, state
 from panel.layout import Row, Tabs
 from panel.models import HTML as BkHTML
 from panel.pane import (
-    HTML, Bokeh, Matplotlib, PaneBase, Str, panel,
+    HTML, Bokeh, Markdown, Matplotlib, PaneBase, Str, panel,
 )
 from panel.param import (
     JSONInit, Param, ParamFunction, ParamMethod,
 )
 from panel.tests.util import mpl_available, mpl_figure
 from panel.widgets import (
-    AutocompleteInput, DatePicker, DatetimeInput, EditableFloatSlider,
-    EditableRangeSlider, LiteralInput, NumberInput, RangeSlider,
+    AutocompleteInput, Checkbox, DatePicker, DatetimeInput,
+    EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
+    RangeSlider,
 )
 
 
@@ -206,7 +208,7 @@ def test_boolean_param(document, comm):
     model = test_pane.get_root(document, comm=comm)
 
     checkbox = model.children[1]
-    assert isinstance(checkbox, Checkbox)
+    assert isinstance(checkbox, BkCheckbox)
     assert checkbox.label == 'A'
     assert checkbox.active == False
     assert checkbox.disabled == False
@@ -446,7 +448,7 @@ def test_explicit_params(document, comm):
     model = test_pane.get_root(document, comm=comm)
 
     assert len(model.children) == 2
-    assert isinstance(model.children[1], Checkbox)
+    assert isinstance(model.children[1], BkCheckbox)
 
 
 def test_param_name_update(document, comm):
@@ -1528,6 +1530,23 @@ def test_param_editablefloatslider_with_bounds():
         w.value = -1
 
     assert w.value == 1
+
+
+def test_param_function_recursive_update(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def layout(value):
+        return Row(Markdown(f"{value}"))
+
+    layout = ParamFunction(bind(layout, checkbox), inplace=True)
+
+    root = layout.get_root(document, comm)
+
+    assert root.children[0].children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert root.children[0].children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
 
 def test_param_editablerangeslider_with_bounds():
