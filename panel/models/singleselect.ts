@@ -64,7 +64,7 @@ export class SingleSelectView extends InputWidgetView {
     const is_focused = this.el.querySelector('select:focus') != null
 
     let value = null
-    for (const el of this.el.querySelectorAll('option')) {
+    for (const el of this.shadow_el.querySelectorAll('option')) {
       if (el.selected) {
         value = el.value
         break
@@ -108,11 +108,11 @@ export class SingleSelect extends InputWidget {
   static {
     this.prototype.default_view = SingleSelectView
 
-    this.define<SingleSelect.Props>(({Any, Array, Int, String}) => ({
+    this.define<SingleSelect.Props>(({Any, Array, Int, Nullable, String}) => ({
       disabled_options: [ Array(String), [] ],
       options:          [ Array(Any), []    ],
       size:             [ Int,         4    ], // 4 is the HTML default
-      value:            [ String,     ""    ],
+      value:            [ Nullable(String),     null ],
     }))
   }
 }

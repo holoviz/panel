@@ -59,13 +59,13 @@ class SingleSelect(InputWidget):
     value will be corresponding given label.
     """)
 
-    value = String(help="Initial or selected value.")
-
     size = Int(default=4, help="""
     The number of visible options in the dropdown list. (This uses the
     ``select`` HTML element's ``size`` attribute. Some browsers might not
     show less than 3 options.)
     """)
+
+    value = Nullable(String, help="Initial or selected value.")
 
 
 class Audio(HTMLBox):
