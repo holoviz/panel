@@ -35,7 +35,7 @@
   }
   function is_loaded(root) {
     var Bokeh = get_bokeh(root)
-    return (Bokeh != null && Bokeh.Panel !== undefined{% for reqs in requirements %} && ({% for req in reqs %}{% if loop.index0 > 0 %}||{% endif %} root['{{ req }}'] !== undefined{% endfor %}){% endfor %}{% if ipywidget %}&& Bokeh.Panel.IPyWidget !== undefined {% endif %})
+    return (Bokeh != null && Bokeh.Panel !== undefined{% for reqs in requirements %} && ({% for req in reqs %}{% if loop.index0 > 0 %}||{% endif %} root['{{ req }}'] !== undefined{% endfor %}){% endfor %}{% if ipywidget %}&& Bokeh.Models._known_models.has("ipywidgets_bokeh.widget.IPyWidget") !== undefined {% endif %})
   }
   if (is_loaded(root)) {
     embed_document(root);
