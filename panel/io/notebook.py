@@ -5,6 +5,7 @@ inside the Jupyter notebook.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import uuid
 
@@ -176,7 +177,10 @@ def render_model(
     render_json = render_item.to_json()
     requirements = [pnext._globals[ext] for ext in pnext._loaded_extensions
                     if ext in pnext._globals]
+
     ipywidget = 'ipywidgets_bokeh' in sys.modules
+    if not state._is_pyodide:
+        ipywidget &= "PANEL_IPYWIDGET" in os.environ
 
     script = DOC_NB_JS.render(
         docs_json=serialize_json(docs_json),
