@@ -650,7 +650,6 @@ class ReplacementPane(PaneBase):
         # If the object has no external referrers we can update
         # it inplace instead of replacing it
         if type(old_object) is pane_type and ((not links and not custom_watchers and was_internal) or inplace):
-            print(isinstance(object, Panel) and len(old_object) == len(object))
             if isinstance(object, Panel) and len(old_object) == len(object):
                 for i, (old, new) in enumerate(zip(old_object, object)):
                     cls._recursive_update(old_object, i, old, new)
