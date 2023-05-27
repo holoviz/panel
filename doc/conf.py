@@ -37,6 +37,10 @@ html_css_files += [
     'css/custom.css',
 ]
 
+html_sidebars = {
+    "**": ["github_stars.html", "sidebar-nav-bs"]
+}
+
 html_theme = "pydata_sphinx_theme"
 html_favicon = "_static/icons/favicon.ico"
 

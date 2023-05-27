@@ -72,3 +72,8 @@ button.copybtn:hover {
 .o-tooltip--left:after {
   background: none;
 }
+
+.github-star-badge {
+  text-align: center;
+  margin-bottom: 10px;
+}
