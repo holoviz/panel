@@ -617,16 +617,22 @@ class ReplacementPane(PaneBase):
             old_p = pvals[k]
             if k in ignored or new_p is old_p:
                 continue
-            try:
-                equal = _generate_hash(new_p) == _generate_hash(old_p)
-            except Exception:
-                try:
-                    equal = bool(new_p == old_p)
-                except Exception:
-                    equal = False
-            if not equal:
+            if not cls._is_equal(new_p, old_p):
                 new_params[k] = new_p
         old.param.update(**new_params)
+
+    @classmethod
+    def _is_equal(cls, new, old) -> bool:
+        try:
+            # Bool value to trigger:
+            # truth value of an array with more than one element is ambiguous
+            equal = bool(new == old)
+        except Exception:
+            try:
+                equal = _generate_hash(new) == _generate_hash(old)
+            except Exception:
+                equal = False
+        return equal
 
     @classmethod
     def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, inplace: bool=False, **kwargs):
@@ -659,11 +665,7 @@ class ReplacementPane(PaneBase):
                 for k, v in object.param.values().items():
                     if k == 'name' or v is pvals[k]:
                         continue
-                    try:
-                        equal = (v == pvals[k])
-                    except Exception:
-                        equal = False
-                    if not equal:
+                    if not cls._is_equal(v, pvals[k]):
                         new_params[k] = v
                 if isinstance(object, PaneBase):
                     changing = any(p in old_object._rerender_params for p in new_params)
