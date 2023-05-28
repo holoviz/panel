@@ -600,9 +600,12 @@ class ReplacementPane(PaneBase):
         if isinstance(new, Panel):
             if len(old) == len(new):
                 for i, (sub_old, sub_new) in enumerate(zip(old, new)):
+                    if type(sub_old) is not type(sub_new):
+                        old[i] = new
+                        continue
                     if isinstance(new, NamedListPanel):
                         old._names[i] = new._names[i]
-                    cls._recursive_update(new, i, sub_old, sub_new)
+                    cls._recursive_update(sub_old, sub_new)
                 ignored += ('objects',)
         pvals = dict(old.param.values())
         new_params = {}
