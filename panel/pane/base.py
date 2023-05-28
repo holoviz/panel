@@ -22,7 +22,9 @@ from ..io.cache import _generate_hash
 from ..io.document import create_doc_if_none_exists, unlocked
 from ..io.notebook import push
 from ..io.state import state
-from ..layout.base import NamedListPanel, Panel, Row
+from ..layout.base import (
+    ListPanel, NamedListPanel, Panel, Row,
+)
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
@@ -597,7 +599,7 @@ class ReplacementPane(PaneBase):
           or replaced with.
         """
         ignored = ('name',)
-        if isinstance(new, Panel):
+        if isinstance(new, ListPanel):
             if len(old) == len(new):
                 for i, (sub_old, sub_new) in enumerate(zip(old, new)):
                     if type(sub_old) is not type(sub_new):
