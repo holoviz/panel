@@ -582,7 +582,7 @@ class ReplacementPane(PaneBase):
         self._pane.param.update({event.name: event.new for event in events})
 
     @classmethod
-    def _recursive_update(cls, layout: Panel, index: int, old: Reactive, new: Reactive):
+    def _recursive_update(cls, old: Reactive, new: Reactive):
         """
         Recursively descends through Panel layouts and diffs their
         contents updating only changed parameters ensuring we don't
@@ -590,10 +590,6 @@ class ReplacementPane(PaneBase):
 
         Arguments
         ---------
-        layout: Panel
-          The layout the items are being updated or replaced on.
-        index: int
-          The index of the item being replaced.
         old: Reactive
           The Reactive component being updated or replaced.
         new: Reactive
@@ -601,9 +597,6 @@ class ReplacementPane(PaneBase):
           or replaced with.
         """
         ignored = ('name',)
-        if type(old) is not type(new):
-            layout[index] = new
-            return
         if isinstance(new, Panel):
             if len(old) == len(new):
                 for i, (sub_old, sub_new) in enumerate(zip(old, new)):
@@ -613,26 +606,28 @@ class ReplacementPane(PaneBase):
                 ignored += ('objects',)
         pvals = dict(old.param.values())
         new_params = {}
-        for k, new_p in new.param.values().items():
-            old_p = pvals[k]
-            if k in ignored or new_p is old_p:
+        for k, new in new.param.values().items():
+            old = pvals[k]
+            if k in ignored or new is old:
                 continue
-            if not cls._is_equal(new_p, old_p):
-                new_params[k] = new_p
-        old.param.update(**new_params)
-
-    @classmethod
-    def _is_equal(cls, new, old) -> bool:
-        try:
-            # Bool value to trigger:
-            # truth value of an array with more than one element is ambiguous
-            equal = bool(new == old)
-        except Exception:
             try:
                 equal = _generate_hash(new) == _generate_hash(old)
             except Exception:
-                equal = False
-        return equal
+                try:
+                    equal = bool(new == old)
+                except Exception:
+                    equal = False
+            if not equal:
+                new_params[k] = new
+        if isinstance(object, PaneBase):
+            changing = any(p in old._rerender_params for p in new_params)
+            old._object_changing = changing
+            try:
+                old.param.update(**new_params)
+            finally:
+                old._object_changing = False
+        else:
+            old.param.update(**new_params)
 
     @classmethod
     def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, inplace: bool=False, **kwargs):
@@ -658,24 +653,12 @@ class ReplacementPane(PaneBase):
         if type(old_object) is pane_type and ((not links and not custom_watchers and was_internal) or inplace):
             if isinstance(object, Panel) and len(old_object) == len(object):
                 for i, (old, new) in enumerate(zip(old_object, object)):
-                    cls._recursive_update(old_object, i, old, new)
-            elif isinstance(object, Reactive):
-                pvals = dict(old_object.param.values())
-                new_params = {}
-                for k, v in object.param.values().items():
-                    if k == 'name' or v is pvals[k]:
+                    if type(old) is not type(new):
+                        old_object[i] = new
                         continue
-                    if not cls._is_equal(v, pvals[k]):
-                        new_params[k] = v
-                if isinstance(object, PaneBase):
-                    changing = any(p in old_object._rerender_params for p in new_params)
-                    old_object._object_changing = changing
-                    try:
-                        old_object.param.update(**new_params)
-                    finally:
-                        old_object._object_changing = False
-                else:
-                    old_object.param.update(**new_params)
+                    cls._recursive_update(old, new)
+            elif isinstance(object, Reactive):
+                cls._recursive_update(old_object, object)
             else:
                 old_object.object = object
         else:
