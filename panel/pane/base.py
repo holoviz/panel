@@ -606,19 +606,19 @@ class ReplacementPane(PaneBase):
                 ignored += ('objects',)
         pvals = dict(old.param.values())
         new_params = {}
-        for k, new in new.param.values().items():
-            old = pvals[k]
-            if k in ignored or new is old:
+        for p, p_new in new.param.values().items():
+            p_old = pvals[p]
+            if p in ignored or p_new is p_old:
                 continue
             try:
-                equal = _generate_hash(new) == _generate_hash(old)
+                equal = _generate_hash(p_new) == _generate_hash(p_old)
             except Exception:
                 try:
-                    equal = bool(new == old)
+                    equal = bool(p_new == p_old)
                 except Exception:
                     equal = False
             if not equal:
-                new_params[k] = new
+                new_params[p] = p_new
         if isinstance(object, PaneBase):
             changing = any(p in old._rerender_params for p in new_params)
             old._object_changing = changing
