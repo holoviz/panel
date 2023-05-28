@@ -12,9 +12,9 @@ import panel as pn
 pn.extension(nthreads=2)
 
 def button_click(event):
-    print('Button clicked for the {event.new}th time.')
+    print(f'Button clicked for the {event.new}th time.')
     time.sleep(2) # Simulate long running operation
-    print('Finished processing {event.new}th click.')
+    print(f'Finished processing {event.new}th click.')
 
 button = pn.widgets.Button(name='Click me!')
 
