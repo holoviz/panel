@@ -37,10 +37,6 @@ html_css_files += [
     'css/custom.css',
 ]
 
-html_sidebars = {
-    "**": ["github_stars.html", "sidebar-nav-bs"]
-}
-
 html_theme = "pydata_sphinx_theme"
 html_favicon = "_static/icons/favicon.ico"
 
@@ -72,6 +68,7 @@ html_theme_options = {
     "pygment_dark_style": "material",
     "header_links_before_dropdown": 5,
     'secondary_sidebar_items': [
+        "github_stars",
         "panelitelink",
         "page-toc",
     ],
