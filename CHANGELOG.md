@@ -11,12 +11,13 @@ Another micro-release in the 1.0.x series addressing small issues reported by ou
 - Fix recursive and inplace updates on reactive panes ([#4946](https://github.com/holoviz/panel/issues/4946), [#4958](https://github.com/holoviz/panel/issues/4958))
 - Fix issues with single `Select` widget ([#4947](https://github.com/holoviz/panel/issues/4947))
 - Ensure CSS `config` parameters can be passed to `Template` constructor ([#4948](https://github.com/holoviz/panel/issues/4948))
-- Fixed vizzu data series type conversion for datetime. ([#4955](https://github.com/holoviz/panel/issues/4955))
-- Small documentation fixes ([#4943, [#4960](https://github.com/holoviz/panel/issues/4960))
-- Fix `icon` on `Toggle` widget ([#4961](https://github.com/holoviz/panel/issues/4961))
+- Fixed vizzu data series type conversion for datetime ([#4955](https://github.com/holoviz/panel/issues/4955))
+- Small documentation fixes ([#4943](https://github.com/holoviz/panel/issues/4960), [#4960](https://github.com/holoviz/panel/issues/4943))
+- Fix `icon` on `Toggle` and `Button` widget ([#4961](https://github.com/holoviz/panel/issues/4961))
 - Fix Volume definition on `Video` pane ([#4970](https://github.com/holoviz/panel/issues/4970))
 - Ensure `Card.header_color` is correctly applied ([#4971](https://github.com/holoviz/panel/issues/4971))
 - Update `param.List` signatures to suppress warnings ([#4973](https://github.com/holoviz/panel/pull/4973))
+- Fix font loading in Vanilla template ([#4975](https://github.com/holoviz/panel/pull/4975))
 
 ## Version 1.0.3
 
