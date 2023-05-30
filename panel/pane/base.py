@@ -10,6 +10,7 @@ from typing import (
     Tuple, Type, TypeVar,
 )
 
+import numpy as np
 import param
 
 from bokeh.models import ImportedStyleSheet
@@ -22,11 +23,14 @@ from ..io.cache import _generate_hash
 from ..io.document import create_doc_if_none_exists, unlocked
 from ..io.notebook import push
 from ..io.state import state
-from ..layout.base import NamedListPanel, Panel, Row
+from ..layout.base import (
+    ListPanel, NamedListPanel, Panel, Row,
+)
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
 from ..util import param_reprs
+from ..util.checks import is_dataframe, is_series
 from ..viewable import (
     Layoutable, ServableMixin, Viewable, Viewer,
 )
@@ -582,7 +586,7 @@ class ReplacementPane(PaneBase):
         self._pane.param.update({event.name: event.new for event in events})
 
     @classmethod
-    def _recursive_update(cls, layout: Panel, index: int, old: Reactive, new: Reactive):
+    def _recursive_update(cls, old: Reactive, new: Reactive):
         """
         Recursively descends through Panel layouts and diffs their
         contents updating only changed parameters ensuring we don't
@@ -590,10 +594,6 @@ class ReplacementPane(PaneBase):
 
         Arguments
         ---------
-        layout: Panel
-          The layout the items are being updated or replaced on.
-        index: int
-          The index of the item being replaced.
         old: Reactive
           The Reactive component being updated or replaced.
         new: Reactive
@@ -601,32 +601,43 @@ class ReplacementPane(PaneBase):
           or replaced with.
         """
         ignored = ('name',)
-        if type(old) is not type(new):
-            layout[index] = new
-            return
-        if isinstance(new, Panel):
+        if isinstance(new, ListPanel):
             if len(old) == len(new):
                 for i, (sub_old, sub_new) in enumerate(zip(old, new)):
+                    if type(sub_old) is not type(sub_new):
+                        old[i] = new
+                        continue
                     if isinstance(new, NamedListPanel):
                         old._names[i] = new._names[i]
-                    cls._recursive_update(new, i, sub_old, sub_new)
+                    cls._recursive_update(sub_old, sub_new)
                 ignored += ('objects',)
         pvals = dict(old.param.values())
         new_params = {}
-        for k, new_p in new.param.values().items():
-            old_p = pvals[k]
-            if k in ignored or new_p is old_p:
+        for p, p_new in new.param.values().items():
+            p_old = pvals[p]
+            if p in ignored or p_new is p_old:
                 continue
             try:
-                equal = _generate_hash(new_p) == _generate_hash(old_p)
+                equal = p_new == p_old
+                if is_dataframe(equal) or is_series(equal) or isinstance(equal, np.ndarray):
+                    equal = equal.all()
+                equal = bool(equal)
             except Exception:
                 try:
-                    equal = bool(new_p == old_p)
+                    equal = _generate_hash(p_new) == _generate_hash(p_old)
                 except Exception:
                     equal = False
             if not equal:
-                new_params[k] = new_p
-        old.param.update(**new_params)
+                new_params[p] = p_new
+        if isinstance(old, PaneBase):
+            changing = any(p in old._rerender_params for p in new_params)
+            old._object_changing = changing
+            try:
+                old.param.update(**new_params)
+            finally:
+                old._object_changing = False
+        else:
+            old.param.update(**new_params)
 
     @classmethod
     def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, inplace: bool=False, **kwargs):
@@ -652,28 +663,12 @@ class ReplacementPane(PaneBase):
         if type(old_object) is pane_type and ((not links and not custom_watchers and was_internal) or inplace):
             if isinstance(object, Panel) and len(old_object) == len(object):
                 for i, (old, new) in enumerate(zip(old_object, object)):
-                    cls._recursive_update(old_object, i, old, new)
-            elif isinstance(object, Reactive):
-                pvals = dict(old_object.param.values())
-                new_params = {}
-                for k, v in object.param.values().items():
-                    if k == 'name' or v is pvals[k]:
+                    if type(old) is not type(new):
+                        old_object[i] = new
                         continue
-                    try:
-                        equal = (v == pvals[k])
-                    except Exception:
-                        equal = False
-                    if not equal:
-                        new_params[k] = v
-                if isinstance(object, PaneBase):
-                    changing = any(p in old_object._rerender_params for p in new_params)
-                    old_object._object_changing = changing
-                    try:
-                        old_object.param.update(**new_params)
-                    finally:
-                        old_object._object_changing = False
-                else:
-                    old_object.param.update(**new_params)
+                    cls._recursive_update(old, new)
+            elif isinstance(object, Reactive):
+                cls._recursive_update(old_object, object)
             else:
                 old_object.object = object
         else:
