@@ -269,7 +269,7 @@ class Toggle(_ButtonBase, IconMixin):
         Whether the button is currently toggled.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'value': 'active', 'name': 'label', 'icon': None, 'icon_size': None
+        'value': 'active', 'name': 'label', 'icon_size': None
     }
 
     _supports_embed: ClassVar[bool] = True
