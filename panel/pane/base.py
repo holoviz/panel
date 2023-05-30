@@ -624,7 +624,7 @@ class ReplacementPane(PaneBase):
                     equal = False
             if not equal:
                 new_params[p] = p_new
-        if isinstance(object, PaneBase):
+        if isinstance(old, PaneBase):
             changing = any(p in old._rerender_params for p in new_params)
             old._object_changing = changing
             try:
