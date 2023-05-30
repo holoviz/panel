@@ -110,8 +110,10 @@ class Card(Column):
             params = {
                 'object': f'<h3>{self.title}</h3>' if self.title else "&#8203;",
                 'css_classes': self.title_css_classes,
-                'margin': (5, 0)
+                'margin': (5, 0),
             }
+            if self.header_color:
+                params['styles'] = {'color': self.header_color}
             if self._header is not None:
                 self._header.param.update(**params)
                 return
