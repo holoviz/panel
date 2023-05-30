@@ -150,6 +150,7 @@ _tests = [
     # via pip tries to build it and fails. To be removed.
     'lxml',
     'numpy <1.24',
+    'urllib <2.0',  # To be able to conda-upload
 ]
 
 _ui = [
