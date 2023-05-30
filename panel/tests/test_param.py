@@ -1,5 +1,6 @@
 import os
 
+import pandas as pd
 import param
 import pytest
 
@@ -1532,21 +1533,75 @@ def test_param_editablefloatslider_with_bounds():
     assert w.value == 1
 
 
+def test_param_function_inplace_dataframe_update(document, comm):
+    number = NumberInput(value=0)
+
+    def layout(value):
+        return pd.DataFrame({
+            'x': [0, 1, 2],
+            'y': [0, 1, value]
+        })
+
+    pane = ParamFunction(bind(layout, number), inplace=True)
+
+    root = pane.get_root(document, comm)
+
+    model = root.children[0]
+
+    html_table = model.text
+    assert html_table.startswith("&lt;table class=&quot;dataframe panel-df&quot;&gt;\n  &lt;thead&gt;\n")
+
+    number.value = 314
+
+    assert model is root.children[0]
+    assert model.text != html_table
+    assert '314' in model.text
+
+    html_table = model.text
+    number.param.trigger('value')
+    assert model.text is html_table
+
+
 def test_param_function_recursive_update(document, comm):
     checkbox = Checkbox(value=False)
 
     def layout(value):
         return Row(Markdown(f"{value}"))
 
+    pane = ParamFunction(bind(layout, checkbox), inplace=True)
+
+    root = pane.get_root(document, comm)
+
+    layout = root.children[0]
+
+    assert layout.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert layout is root.children[0]
+    assert layout.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+
+def test_param_function_recursive_update_multiple(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def layout(value):
+        return Row(Markdown(f"{value}"), Markdown(f"{not value}"))
+
     layout = ParamFunction(bind(layout, checkbox), inplace=True)
 
     root = layout.get_root(document, comm)
 
-    assert root.children[0].children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    layout = root.children[0]
+
+    assert layout.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    assert layout.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
     checkbox.value = True
 
-    assert root.children[0].children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    assert layout is root.children[0]
+    assert layout.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    assert layout.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
 def test_param_editablerangeslider_with_bounds():
