@@ -50,10 +50,10 @@ jobs:
         run: |
           conda config --set always_yes True
           conda install "pip<21.2.1"
-          conda install -c pyviz "pyctdev>=0.5"
           # FIXME: downgrade urllib3 until this issue is fixed:
           # https://github.com/Anaconda-Platform/anaconda-client/issues/654
           conda install -c conda-forge "urllib3<2.0.0" "conda-build<3.25"
+          conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
       - name: build pyodide wheels for CDN
         run: |
