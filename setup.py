@@ -150,7 +150,7 @@ _tests = [
     # via pip tries to build it and fails. To be removed.
     'lxml',
     'numpy <1.24',
-    'urllib <2.0',  # To be able to conda-upload
+    'urllib3 <2.0',  # To be able to conda-build
 ]
 
 _ui = [
@@ -222,6 +222,7 @@ extras_require['build'] = [
     'bleach',
     'tqdm >=4.48.0',
     'cryptography <39' # Avoid pyOpenSSL issue
+    'urllib3 <2.0',  # To be able to conda-build
 ]
 
 setup_args = dict(
