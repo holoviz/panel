@@ -901,7 +901,7 @@ class SyncableData(Reactive):
     with the frontend via a ColumnDataSource.
     """
 
-    selection = param.List(default=[], class_=int, doc="""
+    selection = param.List(default=[], item_type=int, doc="""
         The currently selected rows in the data.""")
 
     # Parameters which when changed require an update of the data
