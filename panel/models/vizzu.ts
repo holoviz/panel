@@ -117,7 +117,7 @@ export class VizzuChartView extends HTMLBoxView {
     for (const column of this.model.columns) {
       let array = [...this.model.source.get_array(column.name)]
       if (column.type === 'datetime' || column.type == 'date')
-	column.type = 'measure'
+	column.type = 'dimension'
       if (column.type === 'dimension')
 	array = array.map(String)
       series.push({...column, values: array})
