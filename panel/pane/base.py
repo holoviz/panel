@@ -10,6 +10,7 @@ from typing import (
     Tuple, Type, TypeVar,
 )
 
+import numpy as np
 import param
 
 from bokeh.models import ImportedStyleSheet
@@ -29,6 +30,7 @@ from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
 from ..util import param_reprs
+from ..util.checks import is_dataframe, is_series
 from ..viewable import (
     Layoutable, ServableMixin, Viewable, Viewer,
 )
@@ -616,10 +618,13 @@ class ReplacementPane(PaneBase):
             if p in ignored or p_new is p_old:
                 continue
             try:
-                equal = _generate_hash(p_new) == _generate_hash(p_old)
+                equal = p_new == p_old
+                if is_dataframe(equal) or is_series(equal) or isinstance(equal, np.ndarray):
+                    equal = equal.all()
+                equal = bool(equal)
             except Exception:
                 try:
-                    equal = bool(p_new == p_old)
+                    equal = _generate_hash(p_new) == _generate_hash(p_old)
                 except Exception:
                     equal = False
             if not equal:
