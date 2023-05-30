@@ -73,9 +73,9 @@ class IconMixin(Widget):
 
     __abstract = True
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **params) -> None:
         self._rename = dict(self._rename, **IconMixin._rename)
-        super().__init__(**kwargs)
+        super().__init__(**params)
 
     def _process_param_change(self, params):
         icon_size = params.pop('icon_size', self.icon_size)
