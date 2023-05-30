@@ -221,7 +221,7 @@ extras_require['build'] = [
     'bleach',
     'tqdm >=4.48.0',
     'cryptography <39', # Avoid pyOpenSSL issue
-    'urllib3 <2.0',  # To be able to conda-build
+    'urllib3 <2.0',  # See: https://github.com/holoviz/panel/pull/4979
 ]
 
 setup_args = dict(
