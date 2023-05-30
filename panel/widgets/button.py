@@ -68,10 +68,14 @@ class IconMixin(Widget):
         Size of the icon as a string, e.g. 12px or 1em.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'icon_size': None
+        'icon_size': None, '_icon': 'icon', 'icon': None
     }
 
     __abstract = True
+
+    def __init__(self, **kwargs) -> None:
+        self._rename = dict(self._rename, **IconMixin._rename)
+        super().__init__(**kwargs)
 
     def _process_param_change(self, params):
         icon_size = params.pop('icon_size', self.icon_size)
@@ -81,7 +85,7 @@ class IconMixin(Widget):
                 icon_model = SVGIcon(svg=icon, size=icon_size)
             else:
                 icon_model = TablerIcon(icon_name=icon, size=icon_size)
-            params['icon'] = icon_model
+            params['_icon'] = icon_model
         return super()._process_param_change(params)
 
 
@@ -92,7 +96,7 @@ class _ClickButton(_ButtonBase, IconMixin):
     _event: ClassVar[str] = 'button_click'
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
-        'button_style': None, 'icon_size': None, 'icon': None
+        'button_style': None,
     }
 
     def _get_model(
@@ -269,7 +273,7 @@ class Toggle(_ButtonBase, IconMixin):
         Whether the button is currently toggled.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'value': 'active', 'name': 'label', 'icon_size': None
+        'value': 'active', 'name': 'label',
     }
 
     _supports_embed: ClassVar[bool] = True
