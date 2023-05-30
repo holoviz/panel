@@ -54,7 +54,7 @@ jobs:
           doit ecosystem_setup
           # FIXME: downgrade urllib3 until this issue is fixed:
           # https://github.com/Anaconda-Platform/anaconda-client/issues/654
-          conda install -c conda-forge "urllib3<2.0.0"
+          conda install -c conda-forge "urllib3<2.0.0" "conda-build<3.25"
       - name: build pyodide wheels for CDN
         run: |
           python ./scripts/build_pyodide_wheels.py
