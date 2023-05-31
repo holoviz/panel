@@ -147,8 +147,6 @@ _tests = [
     'ipyvuetify',
     'reacton',
     'numpy <1.24',
-    'lxml',
-    'libxml2 ==2.10.4',
 ]
 
 _ui = [
@@ -187,8 +185,6 @@ extras_require = {
         'seaborn',
         'pydeck',
         'graphviz',
-        'lxml',
-        'libxml2 ==2.10.4',
         'python-graphviz',
         'xgboost',
         'ipyvuetify',
