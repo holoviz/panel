@@ -60,7 +60,7 @@ class _ButtonBase(Widget):
 
 class IconMixin(Widget):
 
-    icon = param.String(default='', doc="""
+    icon = param.String(default=None, doc="""
         An icon to render to the left of the button label. Either an SVG or an
         icon name which is loaded from https://tabler-icons.io/.""")
 
