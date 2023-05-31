@@ -2,7 +2,7 @@
 
 ## Version 1.0.4
 
-Date: 2023-05-30
+Date: 2023-05-31
 
 Another micro-release in the 1.0.x series addressing small issues reported by our engaged community. Many thanks to @ahuang11, @simzer, @alexmilowski and the core contributors @droumis, @Hoxbro and @philippjfr for contributing to this release.
 
@@ -14,10 +14,14 @@ Another micro-release in the 1.0.x series addressing small issues reported by ou
 - Fixed vizzu data series type conversion for datetime ([#4955](https://github.com/holoviz/panel/issues/4955))
 - Small documentation fixes ([#4943](https://github.com/holoviz/panel/issues/4960), [#4960](https://github.com/holoviz/panel/issues/4943))
 - Fix `icon` on `Toggle` and `Button` widget ([#4961](https://github.com/holoviz/panel/issues/4961))
-- Fix Volume definition on `Video` pane ([#4970](https://github.com/holoviz/panel/issues/4970))
+- Fix Volume definition on `Video` pane
+- Ensure icon renders on `Toggle` button ([#4969](https://github.com/holoviz/panel/pull/4969)) ([#4970](https://github.com/holoviz/panel/issues/4970))
 - Ensure `Card.header_color` is correctly applied ([#4971](https://github.com/holoviz/panel/issues/4971))
 - Update `param.List` signatures to suppress warnings ([#4973](https://github.com/holoviz/panel/pull/4973))
 - Fix font loading in Vanilla template ([#4975](https://github.com/holoviz/panel/pull/4975))
+- Guard is_file check on Windows ([#4985](https://github.com/holoviz/panel/pull/4985))
+- Fix serialization of `Plotly.selection_data` ([#4987](https://github.com/holoviz/panel/pull/4987))
+- Speed up dynamic layout updates ([#4989](https://github.com/holoviz/panel/pull/4989))
 
 ## Version 1.0.3
 

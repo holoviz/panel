@@ -4,7 +4,7 @@ See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual sum
 
 ## Version 1.0.4
 
-Date: 2023-05-30
+Date: 2023-05-31
 
 Another micro-release in the 1.0.x series addressing small issues reported by our engaged community. Many thanks to @ahuang11, @simzer, @alexmilowski and the core contributors @droumis, @Hoxbro and @philippjfr for contributing to this release.
 
@@ -20,6 +20,10 @@ Another micro-release in the 1.0.x series addressing small issues reported by ou
 - Ensure `Card.header_color` is correctly applied ([#4971](https://github.com/holoviz/panel/issues/4971))
 - Update `param.List` signatures to suppress warnings ([#4973](https://github.com/holoviz/panel/pull/4973))
 - Fix font loading in Vanilla template ([#4975](https://github.com/holoviz/panel/pull/4975))
+ ([#4975](https://github.com/holoviz/panel/pull/4975))
+- Guard is_file check on Windows ([#4985](https://github.com/holoviz/panel/pull/4985))
+- Fix serialization of `Plotly.selection_data` ([#4987](https://github.com/holoviz/panel/pull/4987))
+- Speed up dynamic layout updates ([#4989](https://github.com/holoviz/panel/pull/4989))
 
 ## Version 1.0.3
 
