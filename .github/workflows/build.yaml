@@ -52,6 +52,8 @@ jobs:
           conda install "pip<21.2.1"
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
+          # See: https://github.com/holoviz/panel/pull/4979
+          conda install -c conda-forge "urllib3<2.0.0" "conda-build==3.24"
       - name: build pyodide wheels for CDN
         run: |
           python ./scripts/build_pyodide_wheels.py

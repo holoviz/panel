@@ -220,7 +220,8 @@ extras_require['build'] = [
     'pyviz_comms >=0.7.4',
     'bleach',
     'tqdm >=4.48.0',
-    'cryptography <39' # Avoid pyOpenSSL issue
+    'cryptography <39', # Avoid pyOpenSSL issue
+    'urllib3 <2.0',  # See: https://github.com/holoviz/panel/pull/4979
 ]
 
 setup_args = dict(
