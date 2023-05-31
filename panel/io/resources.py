@@ -440,7 +440,12 @@ class ResourceComponent:
             prefixed_dist = dist_path
 
         bundlepath = BUNDLE_DIR / resource_path.replace('/', os.path.sep)
-        if bundlepath.is_file():
+        # Windows may trigger OSError: [WinError 123]
+        try:
+            is_file = bundlepath.is_file()
+        except Exception:
+            is_file = False
+        if is_file:
             return f'{prefixed_dist}bundled/{resource_path}'
         elif isurl(resource):
             return resource
