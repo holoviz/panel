@@ -159,6 +159,9 @@ class Callback(param.Parameterized):
         """
         Registers the Callback
         """
+        if Callback._process_callbacks not in Viewable._preprocessing_hooks:
+            Viewable._preprocessing_hooks.append(Callback._process_callbacks)
+
         source = self.source
         if source is None:
             return
@@ -750,8 +753,6 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
 
 Callback.register_callback(callback=JSCallbackGenerator)
 Link.register_callback(callback=JSLinkCallbackGenerator)
-
-Viewable._preprocessing_hooks.append(Callback._process_callbacks)
 
 __all__ = (
     "Callback",
