@@ -574,13 +574,23 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         if ref in state._handles:
             del state._handles[ref]
 
-    def _preprocess(self, root: 'Model') -> None:
+    def _preprocess(self, root: 'Model', changed=None, old_models=None) -> None:
         """
-        Applies preprocessing hooks to the model.
+        Applies preprocessing hooks to the root model.
+
+        Some preprocessors have to always iterate over the entire
+        model tree but others only have to update newly added models.
+        To support the optimized case we optionally provide the
+        Panel object that was changed and any old, unchanged models
+        so they can be skipped (see https://github.com/holoviz/panel/pull/4989)
         """
+        changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
         for hook in hooks:
-            hook(self, root)
+            try:
+                hook(self, root, changed, old_models)
+            except TypeError:
+                hook(self, root)
 
     def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
         if doc is None:

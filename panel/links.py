@@ -159,6 +159,9 @@ class Callback(param.Parameterized):
         """
         Registers the Callback
         """
+        if Callback._process_callbacks not in Viewable._preprocessing_hooks:
+            Viewable._preprocessing_hooks.append(Callback._process_callbacks)
+
         source = self.source
         if source is None:
             return
@@ -193,13 +196,27 @@ class Callback(param.Parameterized):
         return self._source() if self._source else None
 
     @classmethod
-    def _process_callbacks(cls, root_view: 'Viewable', root_model: BkModel):
+    def _process_callbacks(
+        cls, root_view: Viewable, root_model: BkModel, changed: Viewable | None = None, old_models=None
+    ):
         if not root_model:
             return
 
-        linkable = (
-            root_view.select(Viewable) + list(root_model.select({'type' : BkModel})) # type: ignore
-        )
+        ref = root_model.ref['id']
+        if changed is not None:
+            inspect = root_view.select(Viewable)
+            if ref in changed._models:
+                inspect += changed._models[ref][0].select({'type' : BkModel})
+            targets = [link.target for links in cls.registry.values() for link in links if isinstance(link, Link)]
+            if not any(m in cls.registry or m in targets for m in inspect):
+                return
+
+        if root_view is changed:
+            linkable = inspect
+        else:
+            linkable = (
+                root_view.select(Viewable) + list(root_model.select({'type' : BkModel})) # type: ignore
+            )
 
         if not linkable:
             return
@@ -237,7 +254,6 @@ class Callback(param.Parameterized):
                         for tgt in hv_objs:
                             arg_overrides[id(link)][k] = tgt
 
-        ref = root_model.ref['id']
         for (link, src, tgt) in found:
             cb = cls._callbacks[type(link)]
             if ((src is None or ref not in getattr(src, '_models', [ref])) or
@@ -750,8 +766,6 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
 
 Callback.register_callback(callback=JSCallbackGenerator)
 Link.register_callback(callback=JSLinkCallbackGenerator)
-
-Viewable._preprocessing_hooks.append(Callback._process_callbacks)
 
 __all__ = (
     "Callback",

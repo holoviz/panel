@@ -187,7 +187,9 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
             from .config import config
-            stylesheets = [loading_css(), f'{CDN_DIST}css/loading.css']
+            stylesheets = [loading_css(
+                config.loading_spinner, config.loading_color, config.loading_max_height
+            ), f'{CDN_DIST}css/loading.css']
             stylesheets += process_raw_css(config.raw_css)
             stylesheets += config.css_files
             stylesheets += [

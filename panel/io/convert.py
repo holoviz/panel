@@ -322,7 +322,9 @@ def script_to_html(
     # Collect resources
     resources = Resources(mode='inline' if inline else 'cdn')
     loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
-    spinner_css = loading_css()
+    spinner_css = loading_css(
+        config.loading_spinner, config.loading_color, config.loading_max_height
+    )
     css_resources.append(
         f'<style type="text/css">\n{loading_base}\n{spinner_css}\n</style>'
     )

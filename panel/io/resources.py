@@ -16,6 +16,7 @@ import textwrap
 from base64 import b64encode
 from collections import OrderedDict
 from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING, Dict, List, Literal, TypedDict,
@@ -169,15 +170,15 @@ def process_raw_css(raw_css):
     """
     return [BK_PREFIX_RE.sub('.', css) for css in raw_css]
 
-def loading_css():
-    from ..config import config
-    with open(ASSETS_DIR / f'{config.loading_spinner}_spinner.svg', encoding='utf-8') as f:
-        svg = f.read().replace('\n', '').format(color=config.loading_color)
+@lru_cache(maxsize=None)
+def loading_css(loading_spinner, color, max_height):
+    with open(ASSETS_DIR / f'{loading_spinner}_spinner.svg', encoding='utf-8') as f:
+        svg = f.read().replace('\n', '').format(color=color)
     b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return textwrap.dedent(f"""
-    :host(.{LOADING_INDICATOR_CSS_CLASS}.pn-{config.loading_spinner}):before, .pn-loading.pn-{config.loading_spinner}:before {{
+    :host(.{LOADING_INDICATOR_CSS_CLASS}.pn-{loading_spinner}):before, .pn-loading.pn-{loading_spinner}:before {{
       background-image: url("data:image/svg+xml;base64,{b64}");
-      background-size: auto calc(min(50%, {config.loading_max_height}px));
+      background-size: auto calc(min(50%, {max_height}px));
     }}""")
 
 def resolve_custom_path(
@@ -673,7 +674,9 @@ class Resources(BkResources):
         # Add loading spinner
         if config.global_loading_spinner:
             loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
-            raw.extend([loading_base, loading_css()])
+            raw.extend([loading_base, loading_css(
+                config.loading_spinner, config.loading_color, config.loading_max_height
+            )])
         return raw + process_raw_css(config.raw_css) + process_raw_css(config.global_css)
 
     @property
