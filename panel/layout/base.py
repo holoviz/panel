@@ -91,7 +91,9 @@ class Panel(Reactive):
         obj_key = self._property_mapping['objects']
         if obj_key in msg:
             old = events['objects'].old
-            msg[obj_key] = children = self._get_objects(model, old, doc, root, comm)
+            children, old_children = self._get_objects(model, old, doc, root, comm)
+            msg[obj_key] = children
+
             msg.update(self._compute_sizing_mode(
                 children,
                 dict(
@@ -102,18 +104,21 @@ class Panel(Reactive):
                     margin=msg.get('margin', model.margin)
                 )
             ))
+        else:
+            old_children = None
 
         with hold(doc):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                super()._update_model(events, msg, root, model, doc, comm)
-                if update:
-                    return
-                from ..io import state
-                ref = root.ref['id']
-                if ref in state._views and preprocess:
-                    state._views[ref][0]._preprocess(root)
+                with doc.models.freeze():
+                    super()._update_model(events, msg, root, model, doc, comm)
+                    if update:
+                        return
+                    from ..io import state
+                    ref = root.ref['id']
+                    if ref in state._views and preprocess:
+                        state._views[ref][0]._preprocess(root, self, old_children)
             finally:
                 Panel._batch_update = update
 
@@ -130,7 +135,7 @@ class Panel(Reactive):
         models and cleaning up any dropped objects.
         """
         from ..pane.base import RerenderError, panel
-        new_models = []
+        new_models, old_models = [], []
         for i, pane in enumerate(self.objects):
             pane = panel(pane)
             self.objects[i] = pane
@@ -144,13 +149,14 @@ class Panel(Reactive):
         for i, pane in enumerate(self.objects):
             if pane in old_objects and ref in pane._models:
                 child, _ = pane._models[root.ref['id']]
+                old_models.append(child)
             else:
                 try:
                     child = pane._get_model(doc, root, model, comm)
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
             new_models.append(child)
-        return new_models
+        return new_models, old_models
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -161,7 +167,7 @@ class Panel(Reactive):
         model = self._bokeh_model()
         root = root or model
         self._models[root.ref['id']] = (model, parent)
-        objects = self._get_objects(model, [], doc, root, comm)
+        objects, _ = self._get_objects(model, [], doc, root, comm)
         props = self._get_properties(doc)
         props[self._property_mapping['objects']] = objects
         props.update(self._compute_sizing_mode(objects, props))
