@@ -18,12 +18,14 @@ from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 
 from .io.datamodel import create_linked_datamodel
 from .io.loading import LOADING_INDICATOR_CSS_CLASS
+from .io.state import state
 from .models import ReactiveHTML
 from .reactive import Reactive
 from .util.warnings import warn
 from .viewable import Viewable
 
 if TYPE_CHECKING:
+    from bokeh.document import Document
     from bokeh.model import Model
 
     try:
@@ -113,6 +115,7 @@ class Callback(param.Parameterized):
 
     # Mapping from a source id to a Link instance
     registry: weakref.WeakKeyDictionary[Reactive | BkModel, List['Callback']] = weakref.WeakKeyDictionary()
+    _document_registry: weakref.WeakSet[Document] = weakref.WeakSet()
 
     # Mapping to define callbacks by backend and Link type.
     # e.g. Callback._callbacks[Link] = Callback
@@ -182,6 +185,8 @@ class Callback(param.Parameterized):
             self.registry[source].append(self)
         else:
             self.registry[source] = [self]
+        if state.curdoc:
+            self._document_registry.add(state.curdoc)
 
     @classmethod
     def register_callback(cls, callback: Type['CallbackGenerator']) -> None:
@@ -197,7 +202,7 @@ class Callback(param.Parameterized):
 
     @classmethod
     def _process_callbacks(cls, root_view: 'Viewable', root_model: BkModel):
-        if not root_model:
+        if not root_model or (state.curdoc and state.curdoc not in cls._document_registry):
             return
 
         linkable = (
