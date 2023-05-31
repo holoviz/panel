@@ -206,9 +206,10 @@ class Panel(Reactive):
         heights, widths = [], []
         all_expand_width, all_expand_height, expand_width, expand_height, scale = True, True, False, False, False
         for child in children:
-            if child.sizing_mode and 'scale' in child.sizing_mode:
+            smode = child.sizing_mode
+            if smode and 'scale' in smode:
                 scale = True
-            if child.sizing_mode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
+            if smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
                 expand_width = True
             else:
                 width = child.width or child.min_width
@@ -222,7 +223,7 @@ class Panel(Reactive):
                         width += margin*2
                     widths.append(width)
                 all_expand_width = False
-            if child.sizing_mode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
+            if smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
                 expand_height = True
             else:
                 height = child.height or child.min_height
