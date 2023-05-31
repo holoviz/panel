@@ -185,7 +185,8 @@ class Design(param.Parameterized, ResourceComponent):
         from ..io.resources import (
             CDN_DIST, component_resource_path, resolve_custom_path,
         )
-        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), type(theme))
+        theme_type  = type(theme) if isinstance(theme, Theme) else theme 
+        modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), them_type)
         modifiers = dict(modifiers)
         if 'stylesheets' in modifiers:
             if isolated:
