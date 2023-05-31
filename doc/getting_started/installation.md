@@ -45,6 +45,10 @@ pip install panel
 
 ::::
 
+:::{seealso}
+If you intend to work with Panel in a non-Jupyter notebook environment such as VSCode have a quick at the [relevant how-to section](../how_to/notebook/other_nb.md).
+:::
+
 ## Next Steps
 
 Now that you have installed Panel, let's [build a simple application](build_app.md).
