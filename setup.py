@@ -150,6 +150,8 @@ _tests = [
     # via pip tries to build it and fails. To be removed.
     'lxml',
     'numpy <1.24',
+    # nbclient >=0.8 appears to cause examples tests to fail on Windows
+    'nbclient <0.8'
 ]
 
 _ui = [
