@@ -18,14 +18,12 @@ from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 
 from .io.datamodel import create_linked_datamodel
 from .io.loading import LOADING_INDICATOR_CSS_CLASS
-from .io.state import state
 from .models import ReactiveHTML
 from .reactive import Reactive
 from .util.warnings import warn
 from .viewable import Viewable
 
 if TYPE_CHECKING:
-    from bokeh.document import Document
     from bokeh.model import Model
 
     try:
@@ -115,7 +113,6 @@ class Callback(param.Parameterized):
 
     # Mapping from a source id to a Link instance
     registry: weakref.WeakKeyDictionary[Reactive | BkModel, List['Callback']] = weakref.WeakKeyDictionary()
-    _document_registry: weakref.WeakSet[Document] = weakref.WeakSet()
 
     # Mapping to define callbacks by backend and Link type.
     # e.g. Callback._callbacks[Link] = Callback
@@ -185,8 +182,6 @@ class Callback(param.Parameterized):
             self.registry[source].append(self)
         else:
             self.registry[source] = [self]
-        if state.curdoc:
-            self._document_registry.add(state.curdoc)
 
     @classmethod
     def register_callback(cls, callback: Type['CallbackGenerator']) -> None:
@@ -201,13 +196,27 @@ class Callback(param.Parameterized):
         return self._source() if self._source else None
 
     @classmethod
-    def _process_callbacks(cls, root_view: 'Viewable', root_model: BkModel):
-        if not root_model or (state.curdoc and state.curdoc not in cls._document_registry):
+    def _process_callbacks(
+        cls, root_view: Viewable, root_model: BkModel, changed: Viewable | None = None, old_models=None
+    ):
+        if not root_model:
             return
 
-        linkable = (
-            root_view.select(Viewable) + list(root_model.select({'type' : BkModel})) # type: ignore
-        )
+        ref = root_model.ref['id']
+        if changed is not None:
+            inspect = root_view.select(Viewable)
+            if ref in changed._models:
+                inspect += changed._models[ref][0].select({'type' : BkModel})
+            targets = [link.target for links in cls.registry.values() for link in links if isinstance(link, Link)]
+            if not any(m in cls.registry or m in targets for m in inspect):
+                return
+
+        if root_view is changed:
+            linkable = inspect
+        else:
+            linkable = (
+                root_view.select(Viewable) + list(root_model.select({'type' : BkModel})) # type: ignore
+            )
 
         if not linkable:
             return
@@ -245,7 +254,6 @@ class Callback(param.Parameterized):
                         for tgt in hv_objs:
                             arg_overrides[id(link)][k] = tgt
 
-        ref = root_model.ref['id']
         for (link, src, tgt) in found:
             cb = cls._callbacks[type(link)]
             if ((src is None or ref not in getattr(src, '_models', [ref])) or
