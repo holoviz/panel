@@ -93,6 +93,11 @@ class RerenderError(RuntimeError):
     Error raised when a pane requests re-rendering during initial render.
     """
 
+    def __init__(self, *args, layout=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.layout = layout
+
+
 T = TypeVar('T', bound='PaneBase')
 
 class PaneBase(Reactive):

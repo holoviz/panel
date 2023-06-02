@@ -111,7 +111,8 @@ class HoloViews(PaneBase):
 
     def __init__(self, object=None, **params):
         self._initialized = False
-        self._responsive_content = False
+        self._height_responsive = None
+        self._width_responsive = None
         self._restore_plot = None
         super().__init__(object, **params)
         self.widget_box = self.widget_layout()
@@ -144,7 +145,7 @@ class HoloViews(PaneBase):
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
         loc = self.widget_location
-        center = self.center and not self._responsive_content
+        center = self.center and not self._width_responsive
         alignments = {
             'left': (Row, ('start', 'center'), True),
             'right': (Row, ('end', 'center'), False),
@@ -163,24 +164,38 @@ class HoloViews(PaneBase):
         layout, align, widget_first = alignments[loc]
         self.widget_box.align = align
         self._widget_container = self.widget_box
+        if self._width_responsive and self._height_responsive:
+            smode = 'stretch_both'
+        elif self._width_responsive:
+            smode = 'stretch_width'
+        elif self._height_responsive:
+            smode = 'stretch_height'
+        else:
+            smode = None
         if not len(self.widget_box):
             if center:
                 components = [HSpacer(), self, HSpacer()]
             else:
                 components = [self]
             self.layout[:] = components
+            self.layout.sizing_mode = smode
             return
 
         items = (self.widget_box, self) if widget_first else (self, self.widget_box)
+        kwargs = {'sizing_mode': smode}
         if not center:
-            components = [layout(*items)]
+            if False:#self.default_layout is layout:
+                components = list(items)
+            else:
+                components = [layout(*items, **kwargs)]
         elif layout is Column:
-            components = [HSpacer(), layout(*items), HSpacer()]
+            components = [HSpacer(), layout(*items, **kwargs), HSpacer()]
         elif loc.startswith('left'):
             components = [self.widget_box, HSpacer(), self, HSpacer()]
         else:
             components = [HSpacer(), self, HSpacer(), self.widget_box]
         self.layout[:] = components
+        self.layout.sizing_mode = smode
 
     #----------------------------------------------------------------
     # Callback API
@@ -201,16 +216,19 @@ class HoloViews(PaneBase):
         obj = self.object
         if isinstance(obj, Plot):
             if 'responsive' in obj.param:
-                responsive = obj.responsive
+                wresponsive = obj.responsive and not obj.width
+                hresponsive = obj.responsive and not obj.height
             elif 'sizing_mode' in obj.param:
                 mode = obj.sizing_mode
                 if mode:
-                    responsive = '_width' in mode or '_both' in mode
+                    wresponsive = '_width' in mode or '_both' in mode
+                    wresponsive = '_width' in mode or '_both' in mode
                 else:
-                    responsive = False
+                    wresponsive = hresponsive = False
             else:
-                responsive = False
-            self._responsive_content = responsive
+                wresponsive = hresponsive = False
+            self._width_responsive = wresponsive
+            self._height_responsive = hresponsive
             return
 
         obj = obj.last if isinstance(obj, HoloMap) else obj
@@ -221,22 +239,29 @@ class HoloViews(PaneBase):
         opts = obj.opts.get('plot', backend=backend).kwargs
         plot_cls = renderer.plotting_class(obj)
         if backend == 'matplotlib':
-            self._responsive_content = False
+            self._width_responsive = self._height_responsive = False
         elif backend == 'plotly':
             responsive = opts.get('responsive', None)
             width = opts.get('width', None)
-            self._responsive_content = responsive and not width
+            height = opts.get('height', None)
+            self._width_responsive = responsive and not width
+            self._height_responsive = responsive and not height
         elif 'sizing_mode' in plot_cls.param:
             mode = opts.get('sizing_mode')
             if mode:
-                self._responsive_content = '_width' in mode or '_both' in mode
+                self._width_responsive = '_width' in mode or '_both' in mode
+                self._width_responsive = '_height' in mode or '_both' in mode
             else:
-                self._responsive_content = False
+                self._width_responsive = False
+                self._height_responsive = False
         else:
             responsive = opts.get('responsive', None)
             width = opts.get('width', None)
             frame_width = opts.get('frame_width', None)
-            self._responsive_content = responsive and not width and not frame_width
+            height = opts.get('height', None)
+            frame_height = opts.get('frame_height', None)
+            self._width_responsive = responsive and not width and not frame_width
+            self._height_responsive = responsive and not height and not frame_height
 
     @param.depends('widget_type', 'widgets', watch=True)
     def _update_widgets(self, *events):
@@ -381,20 +406,19 @@ class HoloViews(PaneBase):
 
         plot.pane = self
         backend = plot.renderer.backend
-        if hasattr(plot.renderer, 'get_plot_state'):
-            state = plot.renderer.get_plot_state(plot)
-        else:
-            # Compatibility with holoviews<1.13.0
-            state = plot.state
+        state = plot.renderer.get_plot_state(plot)
 
         # Ensure rerender if content is responsive but layout is centered
         self._sync_sizing_mode(plot)
         responsive = self.sizing_mode not in ('fixed', None) and not self.width
-        if self.center and responsive and not self._responsive_content:
-            self._responsive_content = True
+        force_width = (self.center and responsive and not self._width_responsive)
+        if (force_width or self._height_responsive is None):
+            self._update_responsive()
+            if force_width:
+                self._width_responsive = True
             self._update_layout()
             self._restore_plot = plot
-            raise RerenderError()
+            raise RerenderError(layout=self.layout)
 
         kwargs = {p: v for p, v in self.param.values().items()
                   if p in Layoutable.param and p != 'name'}
