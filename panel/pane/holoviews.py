@@ -172,13 +172,14 @@ class HoloViews(PaneBase):
             smode = 'stretch_height'
         else:
             smode = None
+        layout_smode = 'stretch_width' if not smode and center else smode
         if not len(self.widget_box):
             if center:
                 components = [HSpacer(), self, HSpacer()]
             else:
                 components = [self]
             self.layout[:] = components
-            self.layout.sizing_mode = smode
+            self.layout.sizing_mode = layout_smode
             return
 
         items = (self.widget_box, self) if widget_first else (self, self.widget_box)
@@ -195,7 +196,7 @@ class HoloViews(PaneBase):
         else:
             components = [HSpacer(), self, HSpacer(), self.widget_box]
         self.layout[:] = components
-        self.layout.sizing_mode = smode
+        self.layout.sizing_mode = layout_smode
 
     #----------------------------------------------------------------
     # Callback API
