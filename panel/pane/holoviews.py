@@ -184,7 +184,7 @@ class HoloViews(PaneBase):
         items = (self.widget_box, self) if widget_first else (self, self.widget_box)
         kwargs = {'sizing_mode': smode}
         if not center:
-            if False:#self.default_layout is layout:
+            if self.default_layout is layout:
                 components = list(items)
             else:
                 components = [layout(*items, **kwargs)]
