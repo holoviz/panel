@@ -415,11 +415,12 @@ class HoloViews(PaneBase):
         force_width = (self.center and responsive and not self._width_responsive)
         if (force_width or self._height_responsive is None):
             self._update_responsive()
-            if force_width:
-                self._width_responsive = True
-            self._update_layout()
-            self._restore_plot = plot
-            raise RerenderError(layout=self.layout)
+            if force_width or self._height_responsive:
+                if force_width:
+                    self._width_responsive = True
+                self._update_layout()
+                self._restore_plot = plot
+                raise RerenderError(layout=self.layout)
 
         kwargs = {p: v for p, v in self.param.values().items()
                   if p in Layoutable.param and p != 'name'}
