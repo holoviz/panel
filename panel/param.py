@@ -17,7 +17,8 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Generator, List, Mapping, Optional, Tuple,
+    Type,
 )
 
 import param
@@ -804,8 +805,11 @@ class ParamMethod(ReplacementPane):
 
     async def _eval_async(self, awaitable):
         try:
-            new_object = await awaitable
-            self._update_inner(new_object)
+            if isinstance(awaitable, types.AsyncGeneratorType):
+                async for new_obj in awaitable:
+                    self._update_inner(new_obj)
+            else:
+                self._update_inner(await awaitable)
         finally:
             self._inner_layout.loading = False
 
@@ -821,10 +825,14 @@ class ParamMethod(ReplacementPane):
                 new_object = Spacer()
             else:
                 new_object = self.eval(self.object)
-            if inspect.isawaitable(new_object):
+            if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return
-            self._update_inner(new_object)
+            elif isinstance(new_object, Generator):
+                for new_obj in new_object:
+                    self._update_inner(new_obj)
+            else:
+                self._update_inner(new_object)
         finally:
             self._inner_layout.loading = False
 
