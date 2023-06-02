@@ -9,6 +9,7 @@ import importlib
 import inspect
 import os
 import sys
+import warnings
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -791,6 +792,7 @@ class panel_extension(_pyviz_extension):
 
         if "VSCODE_PID" in os.environ:
             config.comms = "vscode"
+            self._ignore_bokeh_warnings()
             return
 
     def _apply_signatures(self):
@@ -842,6 +844,11 @@ class panel_extension(_pyviz_extension):
         """
         from .entry_points import load_entry_points
         load_entry_points('panel.extension')
+
+    def _ignore_bokeh_warnings(self):
+        from bokeh.util.warnings import BokehUserWarning
+        warnings.filterwarnings("ignore", category=BokehUserWarning, message="reference already known")
+
 
 #---------------------------------------------------------------------
 # Private API
