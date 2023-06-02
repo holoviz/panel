@@ -163,6 +163,7 @@
 }
 
 .js-plotly-plot .plotly .modebar-btn {
+  fill: var(--plotly-icon-color);
   position: relative;
   font-size: 16px;
   padding: 3px 4px;
@@ -172,6 +173,11 @@
   line-height: normal;
   box-sizing: border-box;
 }
+
+.js-plotly-plot .plotly .modebar-btn.active {
+  fill: var(--plotly-active-icon-color);
+}
+
 .js-plotly-plot .plotly .modebar-btn svg {
   position: relative;
   top: 2px;
