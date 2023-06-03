@@ -538,9 +538,9 @@ class Reactive(Syncable, Viewable):
 
     __abstract = True
 
-    def __init__(self, **params):
+    def __init__(self, refs=None, **params):
         self._async_refs = {}
-        params, refs = self._extract_refs(params)
+        params, refs = self._extract_refs(params, refs)
         super().__init__(**params)
         self._refs = refs
         self._setup_refs(refs)
@@ -556,8 +556,13 @@ class Reactive(Syncable, Viewable):
             ref = value
             value = eval_function(value)
             if isinstance(value, Generator):
-                for v in value:
-                    pass
+                if pname == 'refs':
+                    v = {}
+                    for iv in value:
+                        v.update(iv)
+                else:
+                    for v in value:
+                        pass
                 value = v
         if inspect.isawaitable(value) or isinstance(value, types.AsyncGeneratorType):
             param.parameterized.async_executor(partial(self._async_ref, pname, value))
@@ -565,6 +570,10 @@ class Reactive(Syncable, Viewable):
         return ref, value
 
     def _validate_ref(self, pname, value):
+        if pname == 'refs':
+            raise ValueError(
+                'refs should never be captured.'
+            )
         pobj = self.param[pname]
         pobj._validate(value)
         if isinstance(pobj, param.Dynamic) and callable(value) and hasattr(value, '_dinfo'):
@@ -572,10 +581,11 @@ class Reactive(Syncable, Viewable):
                 'Dynamic parameters should not capture functions with dependencies.'
             )
 
-    def _extract_refs(self, params):
-        processed, refs = {}, {}
+    def _extract_refs(self, params, refs):
+        processed, out_refs = {}, {}
+        params['refs'] = refs
         for pname, value in params.items():
-            if pname not in self.param or pname in self._ignored_refs:
+            if pname != 'refs' and (pname not in self.param or pname in self._ignored_refs):
                 processed[pname] = value
                 continue
 
@@ -595,9 +605,12 @@ class Reactive(Syncable, Viewable):
             # objects with dependencies
             ref, value = self._resolve_ref(pname, value)
             if ref is not None:
-                refs[pname] = ref
-            processed[pname] = value
-        return processed, refs
+                out_refs[pname] = ref
+            if pname == 'refs' and value is not None:
+                processed.update(value)
+            elif value is not None:
+                processed[pname] = value
+        return processed, out_refs
 
     async def _async_ref(self, pname, awaitable):
         if pname in self._async_refs:
@@ -610,7 +623,12 @@ class Reactive(Syncable, Viewable):
         try:
             if isinstance(awaitable, types.AsyncGeneratorType):
                 async for new_obj in awaitable:
-                    self.param.update({pname: new_obj})
+                    if pname == 'refs':
+                        self.param.update(new_obj)
+                    else:
+                        self.param.update({pname: new_obj})
+            elif pname == 'refs':
+                self.param.update(await awaitable)
             else:
                 self.param.update({pname: await awaitable})
         except Exception as e:
@@ -630,6 +648,7 @@ class Reactive(Syncable, Viewable):
                 deps = (p,)
             else:
                 deps = extract_dependencies(p)
+
             # Skip updating value if dependency has not changed
             if not any((dep.owner is e.obj and dep.name == e.name) for dep in deps for e in events):
                 continue
@@ -637,20 +656,30 @@ class Reactive(Syncable, Viewable):
                 new_val = getattr(p.owner, p.name)
             else:
                 new_val = eval_function(p)
+
             if inspect.isawaitable(new_val) or isinstance(new_val, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._async_ref, pname, new_val))
-            elif isinstance(new_val, Generator):
+                continue
+
+            if isinstance(new_val, Generator):
                 generators[pname] = new_val
-                updates[pname] = next(new_val)
+                new_val = next(new_val)
+
+            if pname == 'refs':
+                updates.update(new_val)
             else:
                 updates[pname] = new_val
+
         if config.loading_indicator:
             updates['loading'] = False
         with param.edit_constant(self):
             self.param.update(updates)
         for pname, gen in generators.items():
             for v in gen:
-                updates[pname] = v
+                if pname == 'refs':
+                    updates.update(v)
+                else:
+                    updates[pname] = v
                 with param.edit_constant(self):
                     self.param.update(updates)
 
