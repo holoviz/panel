@@ -5,12 +5,15 @@ models rendered on the frontend.
 """
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import difflib
+import inspect
 import logging
 import re
 import sys
 import textwrap
+import types
 
 from collections import Counter, defaultdict, namedtuple
 from functools import lru_cache, partial
@@ -539,6 +542,7 @@ class Reactive(Syncable, Viewable):
         params, refs = self._extract_refs(params)
         super().__init__(**params)
         self._refs = refs
+        self._async_refs = {}
         self._setup_refs(refs)
 
     def _resolve_ref(self, pname, value):
@@ -551,6 +555,9 @@ class Reactive(Syncable, Viewable):
         elif hasattr(value, '_dinfo'):
             ref = value
             value = eval_function(value)
+        if inspect.isawaitable(value) or isinstance(value, types.AsyncGeneratorType):
+            param.parameterized.async_executor(partial(self._async_ref, pname, value))
+            value = None
         return ref, value
 
     def _validate_ref(self, pname, value):
@@ -588,6 +595,24 @@ class Reactive(Syncable, Viewable):
             processed[pname] = value
         return processed, refs
 
+    async def _async_ref(self, pname, awaitable):
+        if pname in self._async_refs:
+             stopped, abort = self._async_refs[pname]
+             abort.set()
+             await stopped.wait()
+        self._async_refs[pname] = stopped, abort = asyncio.Event(), asyncio.Event()
+        try:
+            if isinstance(awaitable, types.AsyncGeneratorType):
+                async for new_obj in awaitable:
+                    self.param.update({pname: new_obj})
+                    if abort.is_set():
+                        break
+            else:
+                self.param.update({pname: await awaitable})
+        finally:
+            stopped.set()
+            del self._async_refs[pname]
+
     def _sync_refs(self, *events):
         from .config import config
         if config.loading_indicator:
@@ -602,9 +627,13 @@ class Reactive(Syncable, Viewable):
             if not any((dep.owner is e.obj and dep.name == e.name) for dep in deps for e in events):
                 continue
             if isinstance(p, param.Parameter):
-                updates[pname] = getattr(p.owner, p.name)
+                new_val = getattr(p.owner, p.name)
             else:
-                updates[pname] = eval_function(p)
+                new_val = eval_function(p)
+            if inspect.isawaitable(new_val) or isinstance(new_val, types.AsyncGeneratorType):
+                param.parameterized.async_executor(partial(self._async_ref, pname, new_val))
+            else:
+                updates[pname] = new_val
         if config.loading_indicator:
             updates['loading'] = False
         with param.edit_constant(self):
