@@ -761,7 +761,8 @@ class ListPanel(ListLike, Panel):
                                  "not both." % type(self).__name__)
             params['objects'] = [panel(pane) for pane in objects]
         elif 'objects' in params:
-            params['objects'] = [panel(pane) for pane in params['objects']]
+            if not hasattr(params['objects'], '_dinfo'):
+                params['objects'] = [panel(pane) for pane in params['objects']]
         super(Panel, self).__init__(**params)
 
     @property
