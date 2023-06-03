@@ -811,6 +811,10 @@ class ParamMethod(ReplacementPane):
             abort.set()
             await stopped.wait()
         self._async_events = stopped, abort = asyncio.Event(), asyncio.Event()
+        curdoc = state.curdoc
+        has_context = bool(curdoc.session_context)
+        if curdoc and has_context:
+            curdoc.on_session_destroyed(lambda context: abort.set())
         try:
             if isinstance(awaitable, types.AsyncGeneratorType):
                 async for new_obj in awaitable:
@@ -819,6 +823,9 @@ class ParamMethod(ReplacementPane):
                         break
             else:
                 self._update_inner(await awaitable)
+        except Exception as e:
+            if not curdoc or (has_context and curdoc.session_context):
+                raise e
         finally:
             stopped.set()
             self._async_events = None
