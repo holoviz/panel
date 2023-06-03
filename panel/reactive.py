@@ -19,8 +19,8 @@ from collections import Counter, defaultdict, namedtuple
 from functools import lru_cache, partial
 from pprint import pformat
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Set,
-    Tuple, Type, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Generator, List, Mapping,
+    Optional, Set, Tuple, Type, Union,
 )
 
 import bleach
@@ -539,10 +539,10 @@ class Reactive(Syncable, Viewable):
     __abstract = True
 
     def __init__(self, **params):
+        self._async_refs = {}
         params, refs = self._extract_refs(params)
         super().__init__(**params)
         self._refs = refs
-        self._async_refs = {}
         self._setup_refs(refs)
 
     def _resolve_ref(self, pname, value):
@@ -555,6 +555,10 @@ class Reactive(Syncable, Viewable):
         elif hasattr(value, '_dinfo'):
             ref = value
             value = eval_function(value)
+            if isinstance(value, Generator):
+                for v in value:
+                    pass
+                value = v
         if inspect.isawaitable(value) or isinstance(value, types.AsyncGeneratorType):
             param.parameterized.async_executor(partial(self._async_ref, pname, value))
             value = None
@@ -597,27 +601,22 @@ class Reactive(Syncable, Viewable):
 
     async def _async_ref(self, pname, awaitable):
         if pname in self._async_refs:
-             stopped, abort = self._async_refs[pname]
-             abort.set()
-             await stopped.wait()
-        self._async_refs[pname] = stopped, abort = asyncio.Event(), asyncio.Event()
+            self._async_refs[pname].cancel()
+        self._async_refs[pname] = task = asyncio.current_task()
         curdoc = state.curdoc
-        has_context = bool(curdoc.session_context)
-        if curdoc and has_context:
-            curdoc.on_session_destroyed(lambda context: abort.set())
+        has_context = bool(curdoc.session_context) if curdoc else False
+        if has_context:
+            curdoc.on_session_destroyed(lambda context: task.cancel())
         try:
             if isinstance(awaitable, types.AsyncGeneratorType):
                 async for new_obj in awaitable:
                     self.param.update({pname: new_obj})
-                    if abort.is_set():
-                        break
             else:
                 self.param.update({pname: await awaitable})
         except Exception as e:
             if not curdoc or (has_context and curdoc.session_context):
                 raise e
         finally:
-            stopped.set()
             del self._async_refs[pname]
 
     def _sync_refs(self, *events):
@@ -625,6 +624,7 @@ class Reactive(Syncable, Viewable):
         if config.loading_indicator:
             self.loading = True
         updates = {}
+        generators = {}
         for pname, p in self._refs.items():
             if isinstance(p, param.Parameter):
                 deps = (p,)
@@ -639,12 +639,20 @@ class Reactive(Syncable, Viewable):
                 new_val = eval_function(p)
             if inspect.isawaitable(new_val) or isinstance(new_val, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._async_ref, pname, new_val))
+            elif isinstance(new_val, Generator):
+                generators[pname] = new_val
+                updates[pname] = next(new_val)
             else:
                 updates[pname] = new_val
         if config.loading_indicator:
             updates['loading'] = False
         with param.edit_constant(self):
             self.param.update(updates)
+        for pname, gen in generators.items():
+            for v in gen:
+                updates[pname] = v
+                with param.edit_constant(self):
+                    self.param.update(updates)
 
     def _setup_refs(self, refs):
         groups = defaultdict(list)

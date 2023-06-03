@@ -1,3 +1,4 @@
+import asyncio
 import os
 
 import pandas as pd
@@ -1492,6 +1493,20 @@ def test_sorted_func():
     assert input3.name=="bac"
 
 
+def test_param_editablerangeslider_with_bounds():
+    class Test(param.Parameterized):
+        i = param.Range(default=(1, 2), softbounds=(1, 5), bounds=(0, 10))
+
+    t = Test()
+    w = EditableRangeSlider.from_param(t.param.i)
+
+    msg = "Range parameter 'value''s lower bound must be in range \[0, 10\]"
+    with pytest.raises(ValueError, match=msg):
+        w.value = (-1, 2)
+
+    assert w.value == (1, 2)
+
+
 def test_paramfunction_bare_emits_warning(caplog):
 
     def foo():
@@ -1604,16 +1619,108 @@ def test_param_function_recursive_update_multiple(document, comm):
     assert layout.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
-def test_param_editablerangeslider_with_bounds():
-    class Test(param.Parameterized):
-        i = param.Range(default=(1, 2), softbounds=(1, 5), bounds=(0, 10))
+def test_param_generator(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def function(value):
+        yield Markdown(f"{value}")
+
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
 
-    t = Test()
-    w = EditableRangeSlider.from_param(t.param.i)
+@pytest.mark.asyncio
+async def test_param_async_generator(document, comm):
+    checkbox = Checkbox(value=False)
 
-    msg = "Range parameter 'value''s lower bound must be in range \[0, 10\]"
-    with pytest.raises(ValueError, match=msg):
-        w.value = (-1, 2)
+    async def function(value):
+        yield Markdown(f"{value}")
 
-    assert w.value == (1, 2)
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    await asyncio.sleep(0.01)
+
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    await asyncio.sleep(0.01)
+
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+
+def test_param_generator_multiple(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def function(value):
+        yield Markdown(f"{value}")
+        yield Markdown(f"{not value}")
+
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+@pytest.mark.asyncio
+async def test_param_async_generator_multiple(document, comm):
+    checkbox = Checkbox(value=False)
+
+    async def function(value):
+        yield Markdown(f"{value}")
+        await asyncio.sleep(0.1)
+        yield Markdown(f"{not value}")
+
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    assert root.children[0].text == '&lt;pre&gt; &lt;/pre&gt;'
+    await asyncio.sleep(0.01)
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    await asyncio.sleep(0.1)
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await asyncio.sleep(0.15)
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+
+@pytest.mark.asyncio
+async def test_param_async_generator_abort(document, comm):
+    number = NumberInput(value=0)
+
+    async def function(value):
+        yield Markdown(f"{value}")
+        await asyncio.sleep(0.1)
+        yield Markdown(f"{value + 1}")
+
+    pane = ParamFunction(bind(function, number))
+
+    root = pane.get_root(document, comm)
+
+    assert root.children[0].text == '&lt;pre&gt; &lt;/pre&gt;'
+    await asyncio.sleep(0.01)
+    assert root.children[0].text == '&lt;p&gt;0&lt;/p&gt;\n'
+
+    number.value = 5
+
+    await asyncio.sleep(0.01)
+    assert root.children[0].text == '&lt;p&gt;5&lt;/p&gt;\n'
+    await asyncio.sleep(0.1)
+    assert root.children[0].text == '&lt;p&gt;6&lt;/p&gt;\n'

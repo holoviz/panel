@@ -772,7 +772,7 @@ class ParamMethod(ReplacementPane):
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
-        self._async_events = None
+        self._async_task = None
         self._evaled = not (self.lazy or self.defer_load)
         self._link_object_params()
         if object is not None:
@@ -806,29 +806,24 @@ class ParamMethod(ReplacementPane):
         return eval_function(function)
 
     async def _eval_async(self, awaitable):
-        if self._async_events:
-            stopped, abort = self._async_events
-            abort.set()
-            await stopped.wait()
-        self._async_events = stopped, abort = asyncio.Event(), asyncio.Event()
+        if self._async_task:
+            self._async_task.cancel()
+        self._async_task = task = asyncio.current_task()
         curdoc = state.curdoc
-        has_context = bool(curdoc.session_context)
-        if curdoc and has_context:
-            curdoc.on_session_destroyed(lambda context: abort.set())
+        has_context = bool(curdoc.session_context) if curdoc else False
+        if has_context:
+            curdoc.on_session_destroyed(lambda context: task.cancel())
         try:
             if isinstance(awaitable, types.AsyncGeneratorType):
                 async for new_obj in awaitable:
                     self._update_inner(new_obj)
-                    if abort.is_set():
-                        break
             else:
                 self._update_inner(await awaitable)
         except Exception as e:
             if not curdoc or (has_context and curdoc.session_context):
                 raise e
         finally:
-            stopped.set()
-            self._async_events = None
+            self._async_task = None
             self._inner_layout.loading = False
 
     def _replace_pane(self, *args, force=False):

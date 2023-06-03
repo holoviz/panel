@@ -1,5 +1,6 @@
-import inspect
 import sys
+
+from inspect import isasyncgenfunction
 
 import param
 
@@ -223,7 +224,7 @@ def _param_bind(function, *args, watch=False, **kwargs):
                 fn = eval_function(p)
         return fn
 
-    if inspect.isasyncgenfunction(function):
+    if isasyncgenfunction(function):
         async def wrapped(*wargs, **wkwargs):
             combined_args, combined_kwargs = combine_arguments(
                 wargs, wkwargs, asynchronous=True
