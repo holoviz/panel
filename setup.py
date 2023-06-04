@@ -131,6 +131,7 @@ _tests = [
     'pytest',
     'nbval',
     'flaky',
+    'pytest-asyncio',
     'pytest-xdist',
     'pytest-cov',
     'pre-commit',

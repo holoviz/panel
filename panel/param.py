@@ -4,6 +4,7 @@ set of widgets.
 """
 from __future__ import annotations
 
+import asyncio
 import inspect
 import itertools
 import json
@@ -17,7 +18,8 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Generator, List, Mapping, Optional, Tuple,
+    Type,
 )
 
 import param
@@ -770,6 +772,7 @@ class ParamMethod(ReplacementPane):
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
+        self._async_task = None
         self._evaled = not (self.lazy or self.defer_load)
         self._link_object_params()
         if object is not None:
@@ -803,10 +806,24 @@ class ParamMethod(ReplacementPane):
         return eval_function(function)
 
     async def _eval_async(self, awaitable):
+        if self._async_task:
+            self._async_task.cancel()
+        self._async_task = task = asyncio.current_task()
+        curdoc = state.curdoc
+        has_context = bool(curdoc.session_context) if curdoc else False
+        if has_context:
+            curdoc.on_session_destroyed(lambda context: task.cancel())
         try:
-            new_object = await awaitable
-            self._update_inner(new_object)
+            if isinstance(awaitable, types.AsyncGeneratorType):
+                async for new_obj in awaitable:
+                    self._update_inner(new_obj)
+            else:
+                self._update_inner(await awaitable)
+        except Exception as e:
+            if not curdoc or (has_context and curdoc.session_context):
+                raise e
         finally:
+            self._async_task = None
             self._inner_layout.loading = False
 
     def _replace_pane(self, *args, force=False):
@@ -821,10 +838,14 @@ class ParamMethod(ReplacementPane):
                 new_object = Spacer()
             else:
                 new_object = self.eval(self.object)
-            if inspect.isawaitable(new_object):
+            if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return
-            self._update_inner(new_object)
+            elif isinstance(new_object, Generator):
+                for new_obj in new_object:
+                    self._update_inner(new_obj)
+            else:
+                self._update_inner(new_object)
         finally:
             self._inner_layout.loading = False
 
