@@ -542,6 +542,8 @@ class Reactive(Syncable, Viewable):
         self._async_refs = {}
         params, refs = self._extract_refs(params, refs)
         super().__init__(**params)
+        if 'object' in params:
+            print(self.object)
         self._refs = refs
         self._setup_refs(refs)
 
@@ -606,9 +608,10 @@ class Reactive(Syncable, Viewable):
             ref, value = self._resolve_ref(pname, value)
             if ref is not None:
                 out_refs[pname] = ref
-            if pname == 'refs' and value is not None:
-                processed.update(value)
-            elif value is not None:
+            if pname == 'refs':
+                if value is not None:
+                    processed.update(value)
+            else:
                 processed[pname] = value
         return processed, out_refs
 
