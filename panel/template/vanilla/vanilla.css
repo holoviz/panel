@@ -61,6 +61,8 @@ body {
 }
 
 #header-items {
+  display: flex;
+  flex-direction: row;
   padding-left: 15px;
   width: 100%;
 }

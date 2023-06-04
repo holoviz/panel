@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     <fast-design-system-provider id="header-design-provider">
       <nav id="header" {{ 'class="shadow"' if style.shadow else '' }} >
 	{% if nav or sidebar_footer %}
-	<span onclick="closeNav()" id="sidebar-button">
+	<span onclick="{{ 'openNav()' if collapsed_sidebar else 'closeNav()' }}" id="sidebar-button">
 	  <div class="pn-bar"></div>
 	  <div class="pn-bar"></div>
 	  <div class="pn-bar"></div>
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     <div class="row" id="content">
       {% if nav or sidebar_footer %}
-      <div class="sidenav" id="sidebar">
+      <div class="sidenav {{'hidden' if collapsed_sidebar else ''}}" id="sidebar">
 	<ul class="nav flex-column">
 	  {% if nav %}
 	  {% for doc in docs %}

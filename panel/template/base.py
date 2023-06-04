@@ -449,6 +449,9 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")
 
+    initial_sidebar_state = param.Selector(default='expanded', objects=['expanded', 'collapsed'], doc="""
+        Whether the sidebar (if present) is initially expanded or collapsed.""")
+
     main = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the main area.""")
 
@@ -757,6 +760,7 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
         self._render_variables['main_max_width'] = self.main_max_width
         self._render_variables['sidebar_width'] = self.sidebar_width
         self._render_variables['theme'] = self._design.theme
+        self._render_variables['collapsed_sidebar'] = self.initial_sidebar_state == 'collapsed'
 
     def _update_busy(self) -> None:
         if self.busy_indicator:

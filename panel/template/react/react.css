@@ -70,10 +70,12 @@ img.app-logo {
 }
 
 #content {
-  height: calc(100vh - 76px);
-  margin: 0px;
-  width: 100vw;
+  color: var(--text-color);
   display: flex;
+  height: 100%;
+  margin: 0px;
+  overflow: hidden;
+  width: 100vw;
 }
 
 #responsive-grid {
@@ -86,12 +88,23 @@ img.app-logo {
   margin-right: 10px;
 }
 
+#sidebar.hidden {
+  border: 0px;
+  margin: 0px;
+  min-width: 0px;
+  overflow: hidden;
+  padding: 0px;
+  width: 0px;
+}
+
 #sidebar {
+  border-right: 1px solid var(--panel-surface-color);
+  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden auto;
+  padding: 15px 10px 15px 5px;
   transition: all 0.2s cubic-bezier(0.945, 0.02, 0.27, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
-  height: calc(100vh - 76px);
-  overflow-y: scroll;
-  padding: 10px;
 }
 
 #main {
