@@ -12,6 +12,15 @@ This section will help you add interactivity to your applications and explorator
 Discover how to bind widgets to a function to add interactivity.
 :::
 
+
+:::{grid-item-card} {octicon}`gear;2.5em;sd-mr-1 sd-animate-grow50` Build self-updating components
+:link: bind_generators
+:link-type: doc
+
+How to use Python generators with `pn.bind` to build components that update themselves.
+:::
+
+
 :::{grid-item-card} {octicon}`package-dependencies;2.5em;sd-mr-1 sd-animate-grow50` Add reactivity to components
 :link: bind_component
 :link-type: doc
@@ -34,6 +43,7 @@ How to use `hvplot.interactive` with widgets to make your data workflows interac
 :maxdepth: 1
 
 bind_function
+bind_generators
 bind_component
 hvplot_interactive
 ```
