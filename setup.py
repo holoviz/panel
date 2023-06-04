@@ -150,6 +150,7 @@ _tests = [
 ]
 
 _ui = [
+    'jupyter-server',
     'playwright',
     'pytest-playwright'
 ]
