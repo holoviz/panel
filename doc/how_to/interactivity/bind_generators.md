@@ -48,7 +48,7 @@ async def slideshow():
             img, _ = await asyncio.gather(pyfetch(url), asyncio.sleep(1))
             yield pn.pane.JPG(await img.bytes())
 
-	    import aiohttp
+        import aiohttp
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 img, _ = await asyncio.gather(resp.read(), asyncio.sleep(1))
