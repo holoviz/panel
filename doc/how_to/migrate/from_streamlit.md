@@ -1,15 +1,16 @@
 # Migrate from Streamlit
 
-This guide addresses how to migrate from Streamlit to Panel via examples.
+This guide addresses how to migrate from Streamlit to Panel.
 
-This how-to guide can also be used as
+This guide can also be used as
 
-- an alternative *introduction to Panel* guide if you are already familiar with Streamlit.
-- a means of comparing Streamlit and Panel.
+- an alternative *Introduction to Panel* guide if you are already familiar with Streamlit.
+- a means of comparing Streamlit and Panel on a more detailed level. You won't see the unique
+features that Panel provides though.
 
 ---
 
-## Hello World
+## The Basics
 
 Lets start by converting a *Hello World* application.
 
@@ -41,22 +42,22 @@ pn.extension(sizing_mode="stretch_width", template="bootstrap")
 pn.panel("Hello World").servable()
 ```
 
-We use `pn.extension` to configure your application.
+You use `pn.extension` to configure the application.
 
-- We set the `sizing_mode` to `stretch_width` to get the *responsive* behaviour you expect from
+- You set the `sizing_mode` to `stretch_width` to get the *responsive* behaviour you expect from
 Streamlit apps.
-- We set the `template` to `bootstrap` to wrap your application in a nice template as you expect
-from Streamlit apps. If you don't set a template you will get a blank template to add your
+- You set the `template` to `bootstrap` to wrap your application in a nice looking template as you
+expect from Streamlit apps. If you don't set a template you will get a blank template to add your
 components to. You can see the available templates in the
 [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the
 [Component Gallery](https://panel.holoviz.org/reference/index.html).
 
-We use `pn.panel` similarly to `st.write` to *magically* display
+You use `pn.panel` similarly to `st.write` to *magically* display
 Python objects like (markdown) strings, dataframes, plots and more. Check out the
 [`pn.panel` API Reference](https://panel.holoviz.org/api/panel.pane.html#panel.pane.panel) for the
 details.
 
-We use `.servable` to specify the Panel objects we want to add the Panel *template* when
+You use `.servable` to specify the Panel objects you want to add the Panel *template* when
 served as a web app.
 
 You *serve* and *show* the app with *autoreload* via
@@ -68,17 +69,17 @@ panel serve app.py --autoreload --show
 See the [Command Line Guide](https://panel.holoviz.org/how_to/server/commandline.html) for more
 command line options.
 
-### Hello World Migration Steps
+### Basic Migration Steps
 
-You can replace
+You should replace
 
 - `import streamlit as st` with `import panel as pn` and
 - `st.write` with `pn.panel`.
 
 You will also have to
 
-- add `pn.extension(...)` to configure your Panel application.
-- add `.servable()` to the Panel objects you want to include in your apps *template* when served as
+- add `pn.extension` to configure your Panel application.
+- add `.servable` to the Panel objects you want to include in your apps *template* when served as
 a web app.
 
 For production you will also have to
@@ -95,12 +96,11 @@ We have never collected or had plans to collect telemetry data from our users ap
 
 ## Outputs
 
-In Panel the objects that can display your Python objects are called *panes*.
-
-With Panels *panes* you will be able to
+In Panel the objects that can display your Python objects are called *panes*. With Panels *panes*
+you will be able to
 
 - get notifications about interactions like click events on your plots and tables and react to them.
-- also access data visualization ecosystems like HoloViz, ipywidgets and VTK.
+- use unique data visualization ecosystems like HoloViz, ipywidgets and VTK.
 
 Check out the
 [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of
@@ -143,17 +143,17 @@ pn.pane.Matplotlib(fig).servable()
 ```
 
 We use Matplotlibs `Figure` interface instead of the `pyplot` interface to
-avoid memory leaks if you forget to close the figure. Check out the
-[Matplotlib Guide](https://panel.holoviz.org/reference/panes/Matplotlib.html) for the details.
+avoid memory leaks if you forget to close the figure. This is all described in the
+[Matplotlib Guide](https://panel.holoviz.org/reference/panes/Matplotlib.html).
 
 ### Output Migration Steps
 
 You should
 
-- replace your Streamlit `st.output_me` function with the corresponding Panel `pn.pane.OutputMe`
-class.
+- replace your Streamlit `st.some_object` function with the corresponding Panel
+`pn.pane.SomeObject` class.
 
-You can identify the corresponding Panel *panes* in the
+You can identify the corresponding Panel *pane* in the
 [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the
 [Component Gallery](https://panel.holoviz.org/reference/index.html).
 
@@ -161,7 +161,7 @@ You can identify the corresponding Panel *panes* in the
 
 In Panel the objects that can provide you with input values from users are called *widgets*.
 
-Panel provides widgets similar to the ones you know from Streamlit and some unique ones.
+Panel provides widgets similar to the ones you know from Streamlit and some unique ones in addition.
 
 Check out the
 [Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of
@@ -192,7 +192,7 @@ bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins").ser
 pn.pane.Str(bins).servable()
 ```
 
-If you debug and inspect the code your will notice a big difference. Streamlits `bins` value is an
+If you debug and inspect the code you will notice a big difference. Streamlits `bins` value is an
 `integer` while Panels `bins` value is an `IntSlider`. This is the first real indication that
 Streamlit and Panel works in very different ways.
 
@@ -203,8 +203,8 @@ For more info about the `IntSlider` check out the
 
 You should
 
-- replace your Streamlit `st.input_widget` function with the corresponding Panel
-`pn.widgets.InputWidget` class.
+- replace your Streamlit `st.some_widget` function with the corresponding Panel
+`pn.widgets.SomeWidget` class.
 
 You can identify the corresponding widget via the
 [Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the
@@ -287,10 +287,16 @@ application. But they work very differently:
 Panel supports reacting to many more interactions than Streamlit. For example interactions with
 tables and plots.
 
+Panels `pn.bind` provides the functionality to *bind* functions to widgets. We call the resulting
+functions *bound functions*.
+
 With Panels interactivity architecture you will be able to develop and maintain larger and more
 complex apps to support more cases.
 
 ### Basic Interactivity Example
+
+This example will show you how to migrate code that produces a single result
+and only updates the UI once the code execution has completed.
 
 #### Streamlit Basic Interactivity Example
 
@@ -338,9 +344,12 @@ pn.Column(bins, bplot).servable()
 Only the `plot` function is rerun when you change the `bins` slider. You specify that
 by *binding* the `plot` function to the `bins` widget using `pn.bind`.
 
-### Advanced Interactivity Example
+### Multiple Updates Example
 
-#### Streamlit Advanced Interactivity Example
+This example will show you how to migrate code that produces a single result
+and updates the UI multiple times during the code execution.
+
+#### Streamlit Multiple Updates Example
 
 ```python
 import time
@@ -385,12 +394,16 @@ elif option == "B":
         st.write("Calculation B did not run yet")
 ```
 
+#### Panel Multiple Updates Example
+
 ### Interactivity Migration Steps
 
 You should
 
 - Move your business logic to functions. Business logic can be code to load data,
 create plots, do inference using a machinelearning model etc.
+  - Use generator functions (`yield`) if you want to update the UI multiple times during the
+  function execution.
 - Use `pn.bind` to specify which functions are bound to which widgets.
 
 ## Caching
@@ -625,3 +638,14 @@ elif option == "B":
 ```
 
 TODO: MAKE LINKS RELATIVE
+
+## Support
+
+We hope you will have fun with the Panel framework. If you have usage questions you can post them
+on [Discourse](https://discourse.holoviz.org/). If you experience issues or have requests for
+features please post them on [Github](https://github.com/holoviz/panel).
+
+If you want to support Panel please
+
+- give a ⭐ on Github or
+- donate to [HoloViz](https://holoviz.org/) via [Numfocus](https://numfocus.org/support#donate)
