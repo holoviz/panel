@@ -56,7 +56,8 @@ def panel(obj: Any, **kwargs) -> Viewable:
     `defer_load=True`. Setting `loading_indicator=True` will display a
     loading indicator while the function is being evaluated.
 
-    Reference: https://panel.holoviz.org/background/components/components_overview.html#panes
+    Reference: https://panel.holoviz.org/explanation/components/components_overview.html
+    https://panel.holoviz.org/background/components/components_overview.html#panes
 
     >>> pn.panel(some_python_object, width=500)
 

@@ -36,41 +36,55 @@ pn.extension(sizing_mode="stretch_width", template="bootstrap")
 pn.panel("Hello World").servable()
 ```
 
+We use `pn.extension` to configure your application.
+
+- We set the `sizing_mode` to `stretch_width` to get the *responsive* behaviour you expect from
+Streamlit apps.
+- We set the `template` to `bootstrap` to wrap your application in a nice template as you expect
+from Streamlit apps. If you don't set a template you will get a blank template to add your
+components to. You can see the available templates in the
+[Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the
+[Component Gallery](https://panel.holoviz.org/reference/index.html).
+
+We use `pn.panel` similarly to `st.write` to *magically* display
+Python objects like (markdown) strings, dataframes, plots and more. Check out the
+[`pn.panel` API Reference](https://panel.holoviz.org/api/panel.pane.html#panel.pane.panel) for the
+details.
+
+We use `.servable` to specify the Panel objects we want to add the Panel *template* when
+served as a web app.
+
 You *serve* and *show* the app with *autoreload* via
 
 ```bash
 panel serve app.py --autoreload --show
 ```
 
-We set the `sizing_mode` to `stretch_width` to get the *responsive* behaviour you expect from
-Streamlit apps.
-
-We set the `template` to `bootstrap` to wrap your application in a nice template as you expect from Streamlit apps. If you don't set a template you will get a blank page to add your components to.
-You can see the available templates in the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Component Gallery](https://panel.holoviz.org/reference/index.html).
+See the [Command Line Guide](https://panel.holoviz.org/how_to/server/commandline.html) for more
+command line options.
 
 ### Hello World Migration Steps
 
 You can replace
 
 - `import streamlit as st` with `import panel as pn` and
-- `st.write` with `pn.panel`. Both functions can *magically* display
-all kinds of python objects like (markdown) strings, dataframes, plots and more. Check out the `pn.panel` introduction. TODO: ADD LINK.
+- `st.write` with `pn.panel`.
 
 You will also have to
 
-- add `pn.extension` to configure your Panel application. Learn more about `pn.extension` here TODO: Add link.
-- add `.servable()` to the Panel objects you want to include in your apps *template* when served as a web app.
-
-Both `pn.extension` and `.servable` helps enable new workflows and use cases that Streamlit does not support. For example interactive data exploration in Jupyter Notebooks.
+- add `pn.extension(...)` to configure your Panel application.
+- add `.servable()` to the Panel objects you want to include in your apps *template* when served as
+a web app.
 
 For production you will also have to
 
-- Migrate some of your app configuration to `panel serve` command line flags or environment variables. See TODO: Insert link
+- Migrate some of your app configuration to `panel serve` command line options or environment
+variables.
 
 You won't have to
 
 - Provide your email or
-- opt out of telemetry collection.
+- opt out of telemetry data collection.
 
 We have never collected or had plans to collect telemetry data from our users apps.
 
@@ -79,7 +93,7 @@ We have never collected or had plans to collect telemetry data from our users ap
 In Panel the objects that can display your Python objects are called *panes*.
 
 With Panels *panes* you will be able to use additional data visualization ecosystems like
-HoloViz, ipywidgets and VTK.
+HoloViz, ipywidgets and VTK. Some of the *panes* will also support bidirectional communication. For example you can get notifications about click events on your plots and tables and react to them.
 
 ### Streamlit Matplotlib Example
 
@@ -123,12 +137,13 @@ avoid memory leaks if you forget to close the figure.
 
 You should
 
-- Identify the relevant Panes to migrate to in the [Components Gallery](https://panel.holoviz.org/reference/index.html#panes).
+- Identify the relevant Panel *panes* to migrate to in the [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the [Component Gallery](https://panel.holoviz.org/reference/index.html).
 - Study the relevant guides for the details. For example the [Matplotlib Guide](https://panel.holoviz.org/reference/panes/Matplotlib.html).
+- Use the Panel *panes*.
 
 ## Inputs
 
-In Panel the objects that can provide you inputs are called *widgets*. Let see how the migration of an integer slider widget works.
+In Panel the objects that can provide you with input values from users are called *widgets*. Let see how the migration of an integer slider works.
 
 ### Streamlit Integer Slider Example
 
@@ -158,10 +173,15 @@ If you debug and inspect the code your will notice a big difference. Streamlits 
 
 ### Input Migration Steps
 
-- Identify the relevant widgets to migrate to in the [Components Gallery](). TODO: INSERT LINK.
+- Identify the relevant widgets to migrate to in the [Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the [Component Gallery](https://panel.holoviz.org/reference/index.html).
 - Study the relevant widget guides for the details. For example the [IntSlider]() guide. TODO: INSERT LINKS
+- Use the Panel widgets.
 
 ## Layouts
+
+*Layouts* helps you organize your *panes* and *widgets*.
+
+Panel provides layouts similar to the ones you know from Streamlit and some additional ones. Check out the [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the [Component Gallery](https://panel.holoviz.org/reference/index.html) for more info.
 
 ### Streamlit Layout Example
 
@@ -183,6 +203,8 @@ TODO: Find and replace with the square Panel logo
 
 ### Panel Layout Example
 
+You will find Panels *layouts* in the `pn` module.
+
 ```python
 import panel as pn
 
@@ -200,15 +222,18 @@ col2 = pn.Column(
 pn.Row(col1, col2).servable()
 ```
 
+TODO: Find and replace with the square Panel logo
+
 Panels `Column` and `Row` are *list like* objects. So you can use familiar methods like `.append`,
 `.pop` and `[]` indexing when you work with them.
 
 ### Layout Migration Steps
 
-- Identify the relevant layouts to migrate to in the [Components Gallery](). TODO: INSERT LINK.
-- Study the relevant layout guides for the details. For example the [Column]() or [Row]() guides. TODO: INSERT LINKS
+- Identify the relevant layouts to migrate to in the [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the [Component Gallery](https://panel.holoviz.org/reference/index.html).
+- Learn how to use the specific layouts by studying the specific guides. For example the [Column](https://panel.holoviz.org/reference/layouts/Column.html) and [Row](https://panel.holoviz.org/reference/layouts/Row.html) guides.
+- Use the Panel layouts
 
-### Reactivity
+### Interactivity
 
 Both Streamlit and Panel are *reactive* frameworks that *react* when you interact with your widgets.
 But they work very differently:
@@ -216,13 +241,13 @@ But they work very differently:
 - Streamlit executes the whole script *top to bottom* on user interactions.
 - Panel executes specific scripts on user interactions.
 
-Furthermore Panel supports reacting to many more events. For example from interactions with
+Panel supports reacting to many more interactions than Streamlit. For example interactions with
 tables and plots.
 
-With Panels reactivity architecture you will be able to develop larger and more complex
-apps. For example Streaming Applications.
+With Panels interactivity architecture you will be able to develop larger and more complex
+apps.
 
-### Streamlit Reactivity Example
+### Streamlit Interactivity Example
 
 ```python
 import matplotlib.pyplot as plt
@@ -240,7 +265,7 @@ st.pyplot(fig)
 
 For Streamlit the entire script is rerun *top to bottom* when you change the `bins` slider.
 
-### Panel Reactivity Example
+### Panel Interactivity Example
 
 ```python
 import panel as pn
@@ -267,8 +292,14 @@ pn.Column(bins, bplot).servable()
 For Panel only the `plot` function is rerun when you change the `bins` slider. You specify that
 by *binding* the `plot` function to the `bins` widget using `pn.bind`.
 
-### Reactivity Migration Steps
+### Interactivity Migration Steps
 
+You should
+
+- Carve out your business logic and wrap it in functions. Business logic can be code to load data, create plots, do inference via a machinelearning model etc.
+- Use `pn.bind` (or `pn.depends`) to specify which functions are bound to which widgets.
+
+## Caching
 
 ## Multiple Steps
 
@@ -314,3 +345,5 @@ elif option == "B":
     else:
         st.write("Calculation B did not run yet")
 ```
+
+TODO: MAKE LINKS RELATIVE
