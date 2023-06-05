@@ -96,7 +96,6 @@ class ChatRow(CompositeWidget):
         # create the chat icon
         icon_params = dict(width=48, height=48, align="center")
         if icon:
-            icon_styles.pop("padding")
             self._icon = Image(icon, **icon_params)
 
         # create the chat bubble
