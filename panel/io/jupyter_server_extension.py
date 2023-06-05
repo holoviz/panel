@@ -179,7 +179,7 @@ class PanelJupyterHandler(JupyterHandler):
             if msg_type == 'execute_result':
                 data = msg['content']['data']
                 if 'text/error' in data:
-                    raise RuntimeError("Panel application errored during startup.")
+                    raise RuntimeError(data['text/error'])
                 extension_dirs = data['application/bokeh-extensions']
                 result = data['text/html']
             elif msg_type == 'comm_open' and msg['content']['target_name'] == self.session_id:

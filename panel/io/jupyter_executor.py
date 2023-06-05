@@ -175,6 +175,14 @@ class PanelExecutor(WSHandler):
         if self.session is None:
             return Mimebundle({'text/error': f'Session did not start correctly: {self.exception}'})
         with set_curdoc(self.session.document):
+            if not self.session.document.roots:
+                return Mimebundle({
+                    'text/error': (
+                        "The Panel application being served did not serve any contents. "
+                        "Ensure you mark one or more Panel components in your notebook or "
+                        "script with .servable(), e.g. pn.Row('Hello World!').servable()."
+                    )
+                })
             html = server_html_page_for_session(
                 self.session,
                 resources=self.resources,
