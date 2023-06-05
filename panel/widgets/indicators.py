@@ -33,6 +33,7 @@ from bokeh.models import ColumnDataSource, FixedTicker, Tooltip
 from bokeh.plotting import figure
 from tqdm.asyncio import tqdm as _tqdm
 
+from .._param import Align
 from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
 from ..models import (
@@ -1313,6 +1314,11 @@ class TooltipIcon(Widget):
 
     value = param.ClassSelector(default="Description", class_=(str, Tooltip), doc="""
         The description in the tooltip.""")
+
+    align = Align(default='center', doc="""
+        Whether the object should be aligned with the start, end or
+        center of its container. If set as a tuple it will declare
+        (vertical, horizontal) alignment.""")
 
     _widget_type = _BkTooltipIcon
 
