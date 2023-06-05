@@ -91,6 +91,21 @@ class HoloViews(PaneBase):
 
     priority: ClassVar[float | bool | None] = 0.8
 
+    _alignments = {
+        'left': (Row, ('start', 'center'), True),
+        'right': (Row, ('end', 'center'), False),
+        'top': (Column, ('center', 'start'), True),
+        'bottom': (Column, ('center', 'end'), False),
+        'top_left': (Column, 'start', True),
+        'top_right': (Column, ('end', 'start'), True),
+        'bottom_left': (Column, ('start', 'end'), False),
+        'bottom_right': (Column, 'end', False),
+        'left_top': (Row, 'start', True),
+        'left_bottom': (Row, ('start', 'end'), True),
+        'right_top': (Row, ('end', 'start'), False),
+        'right_bottom': (Row, 'end', False)
+    }
+
     _panes: ClassVar[Mapping[str, Type[PaneBase]]] = {
         'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly
     }
@@ -142,28 +157,8 @@ class HoloViews(PaneBase):
             ext = extension._backends[self.backend]
             __import__(f'holoviews.plotting.{ext}')
 
-    @param.depends('center', 'widget_location', watch=True)
-    def _update_layout(self):
-        loc = self.widget_location
-        center = self.center and not self._width_responsive
-        alignments = {
-            'left': (Row, ('start', 'center'), True),
-            'right': (Row, ('end', 'center'), False),
-            'top': (Column, ('center', 'start'), True),
-            'bottom': (Column, ('center', 'end'), False),
-            'top_left': (Column, 'start', True),
-            'top_right': (Column, ('end', 'start'), True),
-            'bottom_left': (Column, ('start', 'end'), False),
-            'bottom_right': (Column, 'end', False),
-            'left_top': (Row, 'start', True),
-            'left_bottom': (Row, ('start', 'end'), True),
-            'right_top': (Row, ('end', 'start'), False),
-            'right_bottom': (Row, 'end', False)
-        }
-
-        layout, align, widget_first = alignments[loc]
-        self.widget_box.align = align
-        self._widget_container = self.widget_box
+    @property
+    def _layout_sizing_mode(self):
         if self._width_responsive and self._height_responsive:
             smode = 'stretch_both'
         elif self._width_responsive:
@@ -172,6 +167,16 @@ class HoloViews(PaneBase):
             smode = 'stretch_height'
         else:
             smode = None
+        return smode
+
+    @param.depends('center', 'widget_location', watch=True)
+    def _update_layout(self):
+        loc = self.widget_location
+        center = self.center and not self._width_responsive
+        layout, align, widget_first = self._alignments[loc]
+        self.widget_box.align = align
+        self._widget_container = self.widget_box
+        smode = self._layout_sizing_mode
         layout_smode = 'stretch_width' if not smode and center else smode
         if not len(self.widget_box):
             if center:
@@ -410,27 +415,31 @@ class HoloViews(PaneBase):
         state = plot.renderer.get_plot_state(plot)
 
         # Ensure rerender if content is responsive but layout is centered
+        # or update layout if plot is height responsive but layout wrapper
+        # is not
         self._sync_sizing_mode(plot)
         responsive = self.sizing_mode not in ('fixed', None) and not self.width
         force_width = (self.center and responsive and not self._width_responsive)
-        if (force_width or self._height_responsive is None):
+        if force_width:
             self._update_responsive()
-            if self._height_responsive and len(self.layout) == 1:
-                if self._width_responsive and self._height_responsive:
-                    smode = 'stretch_both'
-                elif self._width_responsive:
-                    smode = 'stretch_width'
-                elif self._height_responsive:
-                    smode = 'stretch_height'
-                else:
-                    smode = None
-                self.layout[0].sizing_mode = smode
-            elif force_width or self._height_responsive:
-                if force_width:
-                    self._width_responsive = True
-                self._update_layout()
-                self._restore_plot = plot
-                raise RerenderError(layout=self.layout)
+            self._width_responsive = True
+            self._update_layout()
+            self._restore_plot = plot
+            raise RerenderError(layout=self.layout)
+        elif self._height_responsive:
+            self._update_responsive()
+            loc = self.widget_location
+            center = self.center and not self._width_responsive
+            layout, _, _ = self._alignments[loc]
+            smode = self._layout_sizing_mode
+            layout_smode = 'stretch_width' if not smode and center else smode
+            self.layout.sizing_mode = layout_smode
+            if len(self.widget_box):
+                if not center:
+                    if self.default_layout is not layout:
+                        self.layout[0].sizing_mode = smode
+                elif layout is Column:
+                    self.layout[1].sizing_mode = smode
 
         kwargs = {p: v for p, v in self.param.values().items()
                   if p in Layoutable.param and p != 'name'}
