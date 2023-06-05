@@ -542,8 +542,6 @@ class Reactive(Syncable, Viewable):
         self._async_refs = {}
         params, refs = self._extract_refs(params, refs)
         super().__init__(**params)
-        if 'object' in params:
-            print(self.object)
         self._refs = refs
         self._setup_refs(refs)
 
