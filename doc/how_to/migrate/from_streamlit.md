@@ -16,8 +16,6 @@ Lets start by converting a *Hello World* application.
 
 ### Streamlit Hello World Example
 
-In Streamlit a *Hello World* application looks like
-
 ```python
 import streamlit as st
 
@@ -30,9 +28,11 @@ You *run* and *show* the app with *autoreload* via
 streamlit run app.py
 ```
 
-### Panel Hello World Example
+The application looks like
 
-In Panel this looks like
+![Streamlit Hello World Example](https://user-images.githubusercontent.com/42288570/243343663-63c4c22b-ca56-4d50-95f7-3de6be69a372.png)
+
+### Panel Hello World Example
 
 ```python
 import panel as pn
@@ -69,6 +69,10 @@ panel serve app.py --autoreload --show
 See the [Command Line Guide](https://panel.holoviz.org/how_to/server/commandline.html) for more
 command line options.
 
+The application looks like
+
+![Panel Hello World Example](https://user-images.githubusercontent.com/42288570/243343688-e6212faa-7b05-4686-b113-b67cd21e1063.png)
+
 ### Basic Migration Steps
 
 You should replace
@@ -78,7 +82,7 @@ You should replace
 
 You will also have to
 
-- add `pn.extension` to configure your Panel application.
+- add `pn.extension` to configure your Panel application via arguments like `sizing_mode` and `template`.
 - add `.servable` to the Panel objects you want to include in your apps *template* when served as
 a web app.
 
@@ -116,11 +120,15 @@ import streamlit as st
 import matplotlib.pyplot as plt
 
 data = np.random.normal(1, 1, size=100)
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(8,4))
 ax.hist(data, bins=20)
 
 st.pyplot(fig)
 ```
+
+The app looks like
+
+![Streamlit Matplotlib Example](https://user-images.githubusercontent.com/42288570/243343663-63c4c22b-ca56-4d50-95f7-3de6be69a372.png)
 
 ### Panel Matplotlib Example
 
@@ -139,12 +147,16 @@ fig = Figure(figsize=(8,4))
 ax = fig.subplots()
 ax.hist(data, bins=20)
 
-pn.pane.Matplotlib(fig).servable()
+pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both').servable()
 ```
 
 We use Matplotlibs `Figure` interface instead of the `pyplot` interface to
 avoid memory leaks if you forget to close the figure. This is all described in the
 [Matplotlib Guide](https://panel.holoviz.org/reference/panes/Matplotlib.html).
+
+The app looks like
+
+![Panel Matplotlib Example](https://user-images.githubusercontent.com/42288570/243348449-233d1dcc-fdd3-4907-9085-50bf0772065f.png)
 
 ### Output Migration Steps
 
@@ -178,6 +190,10 @@ bins = st.slider(value=20, min_value=10, max_value=30, step=1, label="Bins")
 st.write(bins)
 ```
 
+The app looks like
+
+![Streamlit Widgets Example](https://user-images.githubusercontent.com/42288570/243349378-a27fa7bd-b8dc-4b30-85f0-684a74ec40cf.png)
+
 ### Panel Integer Slider Example
 
 You will find Panels input *widgets* in `pn.widgets` module.
@@ -198,6 +214,10 @@ Streamlit and Panel works in very different ways.
 
 For more info about the `IntSlider` check out the
 [`IntSlider` Guide](https://panel.holoviz.org/reference/widgets/IntSlider.html).
+
+The app looks like
+
+![Panel Widgets Example](https://user-images.githubusercontent.com/42288570/243349394-084dfd83-a9fd-404e-9408-78831c2ca2e5.png)
 
 ### Input Migration Steps
 
@@ -228,14 +248,18 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.image("https://streamlit.io/images/brand/streamlit-logo-primary-colormark-darktext.png")
-    st.write("# The powerful data exploration & web app framework for Python")
+    st.write("# A faster way to build and share data apps")
 
 with col2:
     st.image("https://panel.holoviz.org/_images/logo_horizontal_light_theme.png")
-    st.write("# A faster way to build and share data apps")
+    st.write("# The powerful data exploration & web app framework for Python")
 ```
 
-TODO: Find and replace with the square Panel logo
+The app looks like
+
+![Streamlit Layout Example](https://user-images.githubusercontent.com/42288570/243353648-add1e7af-26ba-428b-ba47-2f602ff3ce93.png)
+
+I would love to align the images (and texts) but I could not find functionality like *rows*, *margin* or *spacing* to support this.
 
 ### Panel Layout Example
 
@@ -258,12 +282,14 @@ col2 = pn.Column(
 pn.Row(col1, col2).servable()
 ```
 
-TODO: Find and replace with the square Panel logo
-
 Panels `Column` and `Row` are *list like* objects. So you can use familiar methods like `.append`,
 `.pop` and `[]` indexing when you work with them. For the details check out the
 [`Column` Guide](https://panel.holoviz.org/reference/layouts/Column.html) and
 the [`Row` Guide](https://panel.holoviz.org/reference/layouts/Row.html).
+
+The app looks like
+
+![Panel Layout Example](https://user-images.githubusercontent.com/42288570/243353672-b14a62bb-f927-493d-80de-8b6814d723fa.png)
 
 ### Layout Migration Steps
 
@@ -276,7 +302,18 @@ You can identify the relevant layout to migrate to in the
 [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the
 [Component Gallery](https://panel.holoviz.org/reference/index.html).
 
-### Interactivity
+## Show Activity
+
+Panel supports two ways of indicating activity
+
+- Indicators. See the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators)
+of the [Component Gallery](https://panel.holoviz.org/reference/index.html).
+- `disabled`/ `loading` parameters on Panel components
+
+We will show you how to migrate your Streamlit activity indicators to Panel in the
+[Interactivity Section](#interactivity) just below.
+
+## Interactivity
 
 Both Streamlit and Panel are *reactive* frameworks that *react* when you interact with your
 application. But they work very differently:
@@ -316,6 +353,10 @@ ax.hist(data, bins=bins)
 st.pyplot(fig)
 ```
 
+The app looks like
+
+![Streamlit Basic Interactivity Example](https://user-images.githubusercontent.com/42288570/243358295-c26e90c2-0053-4441-9b98-2426d6d1a8e1.gif)
+
 The entire script is rerun *top to bottom* when you change the `bins` slider.
 
 #### Panel Basic Interactivity Example
@@ -343,6 +384,12 @@ pn.Column(bins, bplot).servable()
 
 Only the `plot` function is rerun when you change the `bins` slider. You specify that
 by *binding* the `plot` function to the `bins` widget using `pn.bind`.
+
+The app looks like
+
+![Panel Basic Interactivity Example](https://user-images.githubusercontent.com/42288570/243358311-04ed5189-1a79-4932-97ea-00898c27f283.gif)
+
+You might notice that the Panel app updates much quicker and more smoothly than the Streamlit app. This is a fundamental difference due to different architectures. With Panel you will be able to develop very smooth and performant apps.
 
 ### Multiple Updates Example
 
@@ -790,6 +837,21 @@ To migrate
 
 In the process consider separating your business logic and caching logic
 (when and how to apply caching) to get more maintainable and reusable code.
+
+## Multi Page Apps
+
+Migrating your Streamlit multi page app to Panel is simple. In Panel each page is simply a file
+that you *serve*
+
+```bash
+panel serve home.py page1.py page2.ipynb
+```
+
+You can specify the *home* page with the `--index` flag.
+
+```bash
+panel serve home.py page1.py page2.ipynb --index=home
+```
 
 ## Migration Support
 
