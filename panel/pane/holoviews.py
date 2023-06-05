@@ -415,7 +415,17 @@ class HoloViews(PaneBase):
         force_width = (self.center and responsive and not self._width_responsive)
         if (force_width or self._height_responsive is None):
             self._update_responsive()
-            if force_width or self._height_responsive:
+            if self._height_responsive and len(self.layout) == 1:
+                if self._width_responsive and self._height_responsive:
+                    smode = 'stretch_both'
+                elif self._width_responsive:
+                    smode = 'stretch_width'
+                elif self._height_responsive:
+                    smode = 'stretch_height'
+                else:
+                    smode = None
+                self.layout[0].sizing_mode = smode
+            elif force_width or self._height_responsive:
                 if force_width:
                     self._width_responsive = True
                 self._update_layout()
