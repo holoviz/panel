@@ -38,7 +38,7 @@ def test_resolve_custom_path_abs_input_relative_to():
     assert str(resolve_custom_path(Button, (PANEL_DIR / 'widgets' / 'button.py'), relative=True)) == 'button.py'
 
 def test_resources_cdn():
-    resources = Resources(mode='cdn')
+    resources = Resources(mode='cdn', minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-{BOKEH_VERSION}.min.js',
@@ -49,7 +49,7 @@ def test_resources_cdn():
     ]
 
 def test_resources_server_absolute():
-    resources = Resources(mode='server', absolute=True)
+    resources = Resources(mode='server', absolute=True, minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
         'http://localhost:5006/static/js/bokeh.min.js',
@@ -60,7 +60,7 @@ def test_resources_server_absolute():
     ]
 
 def test_resources_server():
-    resources = Resources(mode='server')
+    resources = Resources(mode='server', minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
     assert resources.js_files == [
         'static/js/bokeh.min.js',

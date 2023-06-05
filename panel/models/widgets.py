@@ -6,6 +6,7 @@ from bokeh.core.properties import (
     Any, Bool, Either, Enum, Float, Instance, Int, List, Nullable, Override,
     String, Tuple,
 )
+from bokeh.models.ui import Tooltip
 from bokeh.models.ui.icons import Icon
 from bokeh.models.widgets import InputWidget, Select, Widget
 
@@ -186,3 +187,11 @@ class CustomSelect(Select):
     """)
 
     size = Int(default=1)
+
+
+class TooltipIcon(Widget):
+    description = Instance(
+        Tooltip,
+        default=Tooltip(content="Help text", position="right"),
+        help="""The tooltip held by the icon"""
+    )

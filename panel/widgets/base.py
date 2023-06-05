@@ -111,15 +111,19 @@ class Widget(Reactive):
             params['stylesheets'] = [
                 ImportedStyleSheet(url=ss) for ss in css
             ] + params['stylesheets']
-        if 'description' in params:
-            from ..pane.markup import Markdown
-            parser = Markdown._get_parser('markdown-it', ())
-            html = parser.render(params['description'])
-            params['description'] = Tooltip(
-                content=HTML(html), position='right',
-                stylesheets=[':host { white-space: initial; max-width: 300px; }'],
-                syncable=False
-            )
+        if "description" in params:
+            description = params["description"]
+            if isinstance(description, str):
+                from ..pane.markup import Markdown
+                parser = Markdown._get_parser('markdown-it', ())
+                html = parser.render(description)
+                params['description'] = Tooltip(
+                    content=HTML(html), position='right',
+                    stylesheets=[':host { white-space: initial; max-width: 300px; }'],
+                    syncable=False
+                )
+            elif isinstance(description, Tooltip):
+                description.syncable = False
         return params
 
     def _get_model(
