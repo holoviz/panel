@@ -304,17 +304,65 @@ You can identify the relevant layout to migrate to in the
 
 ### Template Migration Steps
 
-When you migrating you first have to choose which template to use
+When migrating you first have to choose which template to use
 
 - None (default)
-- A built in like *vanilla*, *bootstrap*, *material* or *fast*. See the [Templates Section]()
-- A custom template. See the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Components Guide](https://panel.holoviz.org/reference/index.html).
+- A built in like *vanilla*, *bootstrap*, *material* or *fast*. See the
+[Templates Section](../../reference/index#templates) of the
+[Components Guide](../../reference/index).
+- A custom template
 
-Then you have to configure it. Here is an example with the `FastListTemplate`for illustration.
+Then you have to configure it.
+
+#### Panel Template Example
+
+Here is an example with the [`FastListTemplate`](https://panel.holoviz.org/reference/templates/FastListTemplate.html) for illustration.
 
 ```python
+import panel as pn
+from datetime import datetime
+from asyncio import sleep
+import panel as pn
+from asyncio import sleep
 
+pn.extension(sizing_mode="stretch_width", template="fast", theme="dark")
+
+pn.Column(
+    "# 📖 Info",
+    """This app is an example of a built in template with a
+*sidebar*, *header* and *main* area.
+
+We have
+
+- set the *header* background, site and title parameters
+- set the default *theme* to `dark`
+
+The app streams the current date and time using an *async generator function*.
+""",
+).servable(target="sidebar")
+
+
+async def stream():
+    for i in range(0, 100):
+        await sleep(0.25)
+        yield datetime.now()
+
+
+pn.Column("The current date and time:", *(stream for i in range(5))).servable(
+    target="main"
+)
+
+pn.state.template.param.update(
+    site="Panel",
+    title="Template Example",
+    header_background="#E91E63",
+    accent_base_color="#E91E63",
+)
 ```
+
+The app looks like
+
+![Panel Template Example](https://user-images.githubusercontent.com/42288570/243438919-edce17a0-48b6-451d-9be3-d86eff5cc166.gif)
 
 ## Show Activity
 
