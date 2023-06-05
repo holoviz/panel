@@ -9,6 +9,7 @@ This is the first minor release in the 1.x series with a number of new features 
 ### Features
 
 - Add the `ChatBox` widget ([#4702](https://github.com/holoviz/panel/issues/4702))
+- Add a standalone `TooltipIcon` indicator ([#4909](https://github.com/holoviz/panel/pull/4909))
 - Implement support for reactive generator functions ([#5019](https://github.com/holoviz/panel/issues/5019))
 - Allow setting `on_*` handlers in constructor ([#5026](https://github.com/holoviz/panel/issues/5026))
 - Allow controlling initial `Template` sidebar state ([#5033](https://github.com/holoviz/panel/issues/5033))
