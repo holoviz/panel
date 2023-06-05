@@ -582,7 +582,7 @@ class Reactive(Syncable, Viewable):
             )
 
     def _extract_refs(self, params, refs):
-        processed, _ = {}, {}
+        processed, out_refs = {}, {}
         params['refs'] = refs
         for pname, value in params.items():
             if pname != 'refs' and (pname not in self.param or pname in self._ignored_refs):
@@ -605,9 +605,13 @@ class Reactive(Syncable, Viewable):
             # objects with dependencies
             ref, value = self._resolve_ref(pname, value)
             if ref is not None:
-                refs[pname] = ref
-            processed[pname] = value
-        return processed, refs
+                out_refs[pname] = ref
+            if pname == 'refs':
+                if value is not None:
+                    processed.update(value)
+            else:
+                processed[pname] = value
+        return processed, out_refs
 
     async def _async_ref(self, pname, awaitable):
         if pname in self._async_refs:
