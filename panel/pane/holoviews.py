@@ -438,7 +438,7 @@ class HoloViews(PaneBase):
                 if not center:
                     if self.default_layout is not layout:
                         self.layout[0].sizing_mode = smode
-                elif layout is Column and len(self.layout == 3):
+                elif layout is Column and len(self.layout) == 3:
                     self.layout[1].sizing_mode = smode
 
         kwargs = {p: v for p, v in self.param.values().items()

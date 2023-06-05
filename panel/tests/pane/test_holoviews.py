@@ -158,7 +158,7 @@ def test_holoviews_pane_reflect_responsive(document, comm):
 
     pane.object = hv.Curve([1, 2, 3])
 
-    assert row.sizing_mode == 'stretch_both'
+    assert row.sizing_mode is None
     assert pane.sizing_mode == 'fixed'
 
 @pytest.mark.usefixtures("hv_bokeh")
@@ -222,7 +222,7 @@ def test_holoviews_pane_reflect_responsive_plotly(document, comm):
 
     pane.object = hv.Curve([1, 2, 3])
 
-    assert row.sizing_mode == 'stretch_both'
+    assert row.sizing_mode is None
     assert pane.sizing_mode is None
 
 @hv_available
