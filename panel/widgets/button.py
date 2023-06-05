@@ -190,6 +190,12 @@ class Button(_ClickButton):
 
     _widget_type: ClassVar[Type[Model]] = _BkButton
 
+    def __init__(self, **params):
+        click_handler = params.pop('on_click', None)
+        super().__init__(**params)
+        if click_handler:
+            self.on_click(click_handler)
+
     @property
     def _linkable_params(self) -> List[str]:
         return super()._linkable_params + ['value']
@@ -318,6 +324,12 @@ class MenuButton(_ClickButton):
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'label', 'items': 'menu', 'clicked': None}
 
     _widget_type: ClassVar[Type[Model]] = _BkDropdown
+
+    def __init__(self, **params):
+        click_handler = params.pop('on_click', None)
+        super().__init__(**params)
+        if click_handler:
+            self.on_click(click_handler)
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,

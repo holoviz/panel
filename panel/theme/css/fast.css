@@ -288,7 +288,7 @@ table.panel-df {
 
 .panel-df tr:hover {
   background: var(--accent-fill-hover) !important;
-  color: var(--accent-foreground-cut-rest);
+  color: var(--accent-foreground-rest);
   cursor: pointer;
 }
 
@@ -637,7 +637,7 @@ select:not([type='file']).bk-input {
 }
 
 .bk-input-group input[type='radio']:checked {
-  background: var(--accent-foreground-cut-rest);
+  background: var(--accent-foreground-rest);
   border: calc(var(--outline-width) * 4px) solid var(--accent-fill-rest);
 }
 
@@ -664,7 +664,7 @@ select:not([type='file']).bk-input {
 
 .bk-input-group input[type='radio']:disabled:checked,
 .bk-input-group input[type='radio']:disabled:checked:hover {
-  background: var(--accent-foreground-cut-rest);
+  background: var(--accent-foreground-rest);
   border: calc(var(--outline-width) * 4px) solid var(--accent-fill-rest);
 }
 
@@ -729,7 +729,7 @@ select:not([type='file']).bk-input {
 }
 
 :host(.active) .knob {
-  background-color: var(--accent-foreground-cut-rest);
+  background-color: var(--accent-foreground-rest);
   border-radius: calc(var(--control-corner-radius) * 1px);
   left: calc(100% - var(--switch-size) / 2 - 2px);
 }
@@ -836,7 +836,7 @@ table.panel-df {
 
 .panel-df tr:hover {
   background: var(--accent-fill-hover) !important;
-  color: var(--accent-foreground-cut-rest);
+  color: var(--accent-foreground-rest);
   cursor: pointer;
 }
 
@@ -953,7 +953,7 @@ table.panel-df {
 .slick-row:hover,
 .slick-row.odd:hover {
   background-color: var(--accent-fill-hover);
-  color: var(--accent-foreground-cut-rest);
+  color: var(--accent-foreground-rest);
 }
 
 .slick-group {
@@ -967,7 +967,7 @@ table.panel-df {
 
 .slick-cell.selected {
   background-color: var(--accent-fill-rest);
-  color: var(--accent-foreground-cut-rest);
+  color: var(--accent-foreground-rest);
 }
 
 .slick-cell.active {
