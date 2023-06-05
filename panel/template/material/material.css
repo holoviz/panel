@@ -217,3 +217,12 @@ img.app-logo {
   text-decoration: none;
   cursor: pointer;
 }
+
+.tabulator-popup-container {
+  background-color: var(--mdc-theme-surface);
+}
+
+.tabulator-edit-list .tabulator-edit-list-item:hover {
+  background-color: var(--mdc-theme-primary);
+  color: var(--mdc-theme-on-primary);
+}
