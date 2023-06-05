@@ -22,6 +22,7 @@ This is the first minor release in the 1.x series with a number of new features 
 - Fix Fast `Design` style variables ([#5015](https://github.com/holoviz/panel/issues/5015))
 - Allow reactive updates to override constant parameters ([#5032](https://github.com/holoviz/panel/issues/5032))
 - Fix `Tabulator` header filter styling ([#5038](https://github.com/holoviz/panel/issues/5038))
+- Ensure Jupyter extensions warns users if app has no contents ([#5041](https://github.com/holoviz/panel/issues/5041))
 
 ## Version 1.0.4
 
