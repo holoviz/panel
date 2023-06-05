@@ -19,7 +19,7 @@ higher performance and a fundamentally different architecture to support their u
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/QiiwEAz6BVY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
-We don't think Streamlit sucks as the ironic title of the video thumbnail suggests. There are many enthusiastic Streamlits users that have been enabled by Streamlit to solve their problems. It's created the *data app* genre, its inspired lots of data app innovation and stands out as one of the benchmark data app frameworks to measure up against.
+We don't think Streamlit sucks as the ironic title of the video thumbnail suggests. There are many enthusiastic Streamlits users that have been enabled by Streamlit to solve their problems. It's created the *data app* genre, its inspired lots of data app innovation and still stands out as one of the benchmark data app frameworks to measure up against.
 
 ## Code Examples
 
