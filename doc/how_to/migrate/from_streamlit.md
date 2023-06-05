@@ -128,7 +128,7 @@ st.pyplot(fig)
 
 The app looks like
 
-![Streamlit Matplotlib Example](https://user-images.githubusercontent.com/42288570/243343663-63c4c22b-ca56-4d50-95f7-3de6be69a372.png)
+![Streamlit Matplotlib Example](https://user-images.githubusercontent.com/42288570/243348167-4d2a3c36-59dc-4df5-b266-84dd1837f2b6.png)
 
 ### Panel Matplotlib Example
 
@@ -434,12 +434,12 @@ pn.extension(sizing_mode="stretch_width", template="bootstrap")
 def plot(data, bins):
     fig = Figure(figsize=(8,4))
     ax = fig.subplots()
-    ax.hist(data, bins=20)
+    ax.hist(data, bins=bins)
     return fig
 
 data = np.random.normal(1, 1, size=100)
 bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
-bplot = pn.bind(plot, bins, data)
+bplot = pn.bind(plot, data, bins)
 
 pn.Column(bins, bplot).servable()
 ```
@@ -852,7 +852,7 @@ import numpy as np
 import streamlit as st
 from matplotlib.figure import Figure
 
-@st.cache_resources
+@st.cache_resource
 def get_data():
     print("get_data func")
     sleep(1.0)
@@ -916,7 +916,7 @@ To migrate
 
 - replace `st.cache_data` with `pn.cache` to migrate your *session caching*
   - You only need to cache expensive, *bound functions*.
-- replace `st.cache_resources` with `pn.state.as_cached` to migrate your *global caching*
+- replace `st.cache_resource` with `pn.state.as_cached` to migrate your *global caching*
   - You only need to cache expensive, *bound functions* and objects you want to share across user
   sessions
 
