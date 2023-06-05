@@ -426,7 +426,7 @@ class HoloViews(PaneBase):
             self._update_layout()
             self._restore_plot = plot
             raise RerenderError(layout=self.layout)
-        elif self._height_responsive:
+        elif self._height_responsive is None:
             self._update_responsive()
             loc = self.widget_location
             center = self.center and not self._width_responsive
@@ -438,7 +438,7 @@ class HoloViews(PaneBase):
                 if not center:
                     if self.default_layout is not layout:
                         self.layout[0].sizing_mode = smode
-                elif layout is Column:
+                elif layout is Column and len(self.layout == 3):
                     self.layout[1].sizing_mode = smode
 
         kwargs = {p: v for p, v in self.param.values().items()
