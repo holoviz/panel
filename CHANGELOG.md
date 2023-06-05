@@ -1,5 +1,28 @@
 # Releases
 
+## Version 1.1.0
+
+Date: 2023-05-31
+
+This is the first minor release in the 1.x series with a number of new features and small bug fixes. The main features we are excited about are the new `ChatBox` widget added by @ahuang11 and support for reactive generators. Many thanks to @ahuang11, @philippjfr and @Hoxbro for contributing to this release and our amazing community for reporting issues.
+
+### Features
+
+- Add the `ChatBox` widget ([#4702](https://github.com/holoviz/panel/issues/4702))
+- Implement support for reactive generator functions ([#5019](https://github.com/holoviz/panel/issues/5019))
+- Allow setting `on_*` handlers in constructor ([#5026](https://github.com/holoviz/panel/issues/5026))
+- Allow controlling initial `Template` sidebar state ([#5033](https://github.com/holoviz/panel/issues/5033))
+
+### Bug fixes
+
+- Handle height responsiveness of `HoloViews` layout correctly ([#5009](https://github.com/holoviz/panel/issues/5009))
+- Apply `Plotly` toolbar colors depending on template ([#5012](https://github.com/holoviz/panel/issues/5012))
+- Fix Fast `Design` style variables ([#5015](https://github.com/holoviz/panel/issues/5015))
+- Allow reactive updates to override constant parameters ([#5032](https://github.com/holoviz/panel/issues/5032))
+- Fix `Tabulator` header filter styling ([#5038](https://github.com/holoviz/panel/issues/5038))
+- Ensure Jupyter extensions warns users if app has no contents ([#5041](https://github.com/holoviz/panel/issues/5041))
+
+
 ## Version 1.0.4
 
 Date: 2023-05-31
