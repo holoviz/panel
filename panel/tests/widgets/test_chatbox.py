@@ -162,8 +162,18 @@ def test_chat_box_message_colors(document, comm):
     chat_box = ChatBox(value=value.copy(), message_colors={"user1": "red"})
     assert chat_box.message_colors["user1"] == "red"
     # random generated colors are hexcodes
-    assert chat_box.message_colors["user2"].startswith("hsl")
+    assert chat_box.message_colors["user2"] == ("rgb(246, 246, 246)", 'black')
 
+
+def test_chat_box_message_colors_with_hue(document, comm):
+    value = [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+    ]
+    chat_box = ChatBox(value=value.copy(), message_colors={"user1": "red"}, message_hue=210)
+    assert chat_box.message_colors["user1"] == "red"
+    # random generated colors are hexcodes
+    assert chat_box.message_colors["user2"][0].startswith("hsl")
 
 def test_chat_box_generate_color(document, comm):
     value = [
@@ -177,19 +187,19 @@ def test_chat_box_generate_color(document, comm):
         value=value.copy(), message_colors={"user1": "red"}, message_hue=290
     )
     assert chat_box.message_colors["user1"] == "red"
-    assert chat_box.message_colors["user2"] == "hsl(290, 15%, 60%)"
-    assert chat_box.message_colors["user3"] == "hsl(290, 30%, 55%)"
-    assert chat_box.message_colors["user4"] == "hsl(290, 45%, 50%)"
-    assert chat_box.message_colors["user5"] == "hsl(18, 15%, 60%)"
+    assert chat_box.message_colors["user2"][0] == "hsl(290, 15%, 60%)"
+    assert chat_box.message_colors["user3"][0] == "hsl(290, 30%, 55%)"
+    assert chat_box.message_colors["user4"][0] == "hsl(290, 45%, 50%)"
+    assert chat_box.message_colors["user5"][0] == "hsl(18, 15%, 60%)"
 
 def test_chat_box_user_icons(document, comm):
     value = [
         {"user1": "Hello"},
         {"user2": "Hi"},
     ]
-    chat_box = ChatBox(value=value.copy(), user_icons={"user1": JPG_FILE})
-    assert chat_box.user_icons["user1"] == JPG_FILE
-    assert "user2" not in chat_box.user_icons
+    chat_box = ChatBox(value=value.copy(), message_icons={"user1": JPG_FILE})
+    assert chat_box.message_icons["user1"] == JPG_FILE
+    assert "user2" not in chat_box.message_icons
 
 
 def test_chat_box_show_name(document, comm):
@@ -212,7 +222,7 @@ def test_chat_box_allow_likes(document, comm):
         {"user2": "Hi"},
     ]
     chat_box = ChatBox(value=value.copy(), allow_likes=False)
-    assert chat_box.rows[0]._like is None
+    assert not chat_box.rows[0]._like.visible
 
 
 def test_chat_row(document, comm):
@@ -224,9 +234,7 @@ def test_chat_row(document, comm):
     assert name.object == "user1"
     assert name.align == ("start", "start")
 
-    icon = chat_row._icon
-    assert icon.object == "U-1"
-    assert icon.align == "center"
+    assert chat_row._icon is None
 
     bubble = chat_row._bubble
     assert bubble[0].object == "Hello"
@@ -259,7 +267,7 @@ def test_chat_row_update_like(document, comm):
 
 def test_chat_row_hide_like(document, comm):
     chat_row = ChatRow(value=["Hello"], name="user1", show_like=False)
-    assert chat_row._like is None
+    assert not chat_row._like.visible
 
 
 def test_chat_row_default_message_callable(document, comm):
@@ -279,8 +287,3 @@ def test_chat_row_align_end(document, comm):
 def test_chat_row_not_show_name(document, comm):
     chat_row = ChatRow(value=["Hello"], name="user1", show_name=False)
     assert chat_row._name is None
-
-
-def test_chat_row_not_show_like(document, comm):
-    chat_row = ChatRow(value=["Hello"], name="user1", show_like=False)
-    assert chat_row._like is None
