@@ -68,8 +68,11 @@ class Vizzu(ModelPane, SyncableData):
     _updates: ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
+        click_handler = params.pop('on_click', None)
         super().__init__(object, **params)
         self._event_handlers = []
+        if click_handler:
+            self.on_click(click_handler)
 
     @classmethod
     def applies(cls, object):

@@ -5,7 +5,7 @@ import os
 import pathlib
 
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Literal, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Tuple, Type,
 )
 
 import param
@@ -115,7 +115,10 @@ class Design(param.Parameterized, ResourceComponent):
         theme = self._themes[theme]()
         super().__init__(theme=theme, **params)
 
-    def _reapply(self, viewable: Viewable, root: Model, isolated: bool=True, cache=None) -> None:
+    def _reapply(
+        self, viewable: Viewable, root: Model, old_models: List[Model] = None,
+        isolated: bool=True, cache=None
+    ) -> None:
         ref = root.ref['id']
         for o in viewable.select():
             if o.design and not isolated:
@@ -123,16 +126,19 @@ class Design(param.Parameterized, ResourceComponent):
             elif not o.design and not isolated:
                 o._design = self
 
+            if old_models and ref in o._models:
+                if o._models[ref][0] in old_models:
+                    continue
             self._apply_modifiers(o, ref, self.theme, isolated, cache)
 
-    def _apply_hooks(self, viewable: Viewable, root: Model) -> None:
+    def _apply_hooks(self, viewable: Viewable, root: Model, changed: Viewable, old_models=None) -> None:
         from ..io.state import state
         if root.document in state._stylesheets:
             cache = state._stylesheets[root.document]
         else:
             state._stylesheets[root.document] = cache = {}
         with root.document.models.freeze():
-            self._reapply(viewable, root, isolated=False, cache=cache)
+            self._reapply(changed, root, old_models, isolated=False, cache=cache)
 
     def _wrapper(self, viewable):
         return viewable

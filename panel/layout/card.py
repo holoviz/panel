@@ -110,8 +110,10 @@ class Card(Column):
             params = {
                 'object': f'<h3>{self.title}</h3>' if self.title else "&#8203;",
                 'css_classes': self.title_css_classes,
-                'margin': (5, 0)
+                'margin': (5, 0),
             }
+            if self.header_color:
+                params['styles'] = {'color': self.header_color}
             if self._header is not None:
                 self._header.param.update(**params)
                 return
@@ -124,12 +126,13 @@ class Card(Column):
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         ref = root.ref['id']
+        models, old_models = super()._get_objects(model, old_objects, doc, root, comm)
         if ref in self._header_layout._models:
             header = self._header_layout._models[ref][0]
+            old_models.append(header)
         else:
             header = self._header_layout._get_model(doc, root, model, comm)
-        objects = super()._get_objects(model, old_objects, doc, root, comm)
-        return [header]+objects
+        return [header]+models, old_models
 
     def _compute_sizing_mode(self, children, props):
         return super()._compute_sizing_mode(children[1:], props)

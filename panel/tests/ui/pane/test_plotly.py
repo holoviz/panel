@@ -167,6 +167,7 @@ def test_plotly_hover_data(page, port, plotly_2d_plot):
 
 
 @plotly_available
+@pytest.mark.flaky(max_runs=3)
 def test_plotly_click_data(page, port, plotly_2d_plot):
     serve(plotly_2d_plot, port=port, threaded=True, show=False)
 
@@ -192,3 +193,42 @@ def test_plotly_click_data(page, port, plotly_2d_plot):
             'y': 2
         }]
     }
+
+
+
+@plotly_available
+@pytest.mark.flaky(max_runs=3)
+def test_plotly_select_data(page, port, plotly_2d_plot):
+    serve(plotly_2d_plot, port=port, threaded=True, show=False)
+
+    time.sleep(0.5)
+
+    page.goto(f"http://localhost:{port}")
+
+    plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
+    expect(plotly_plot).to_have_count(1)
+
+    page.locator('a.modebar-btn[data-val="select"]').click()
+
+    bbox = page.locator('.js-plotly-plot .plot-container.plotly').bounding_box()
+
+    page.mouse.move(bbox['x']+100, bbox['y']+100)
+    page.mouse.down()
+    page.mouse.move(bbox['x']+bbox['width'], bbox['y']+bbox['height'], steps=5)
+    page.mouse.up()
+
+    time.sleep(0.2)
+
+    selected = plotly_2d_plot.selected_data
+    assert selected is not None
+    assert 'points' in selected
+    assert selected['points'] == [{
+        'curveNumber': 0,
+        'pointIndex': 1,
+        'pointNumber': 1,
+        'x': 1,
+        'y': 3
+    }]
+    assert 'range' in selected
+    assert 'x' in selected['range']
+    assert 'y' in selected['range']

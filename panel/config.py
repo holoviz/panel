@@ -9,6 +9,7 @@ import importlib
 import inspect
 import os
 import sys
+import warnings
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -252,9 +253,10 @@ class _config(_base_config):
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
 
-    _basic_auth = param.ObjectSelector(
-        default=None, allow_None=True, objects=[], doc="""
-        Use Basic authentication.""")
+    _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
+        Password, dictionary with a mapping from username to password
+        or filepath containing JSON to use with the basic auth
+        provider.""")
 
     _oauth_provider = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
@@ -790,6 +792,7 @@ class panel_extension(_pyviz_extension):
 
         if "VSCODE_PID" in os.environ:
             config.comms = "vscode"
+            self._ignore_bokeh_warnings()
             return
 
     def _apply_signatures(self):
@@ -841,6 +844,11 @@ class panel_extension(_pyviz_extension):
         """
         from .entry_points import load_entry_points
         load_entry_points('panel.extension')
+
+    def _ignore_bokeh_warnings(self):
+        from bokeh.util.warnings import BokehUserWarning
+        warnings.filterwarnings("ignore", category=BokehUserWarning, message="reference already known")
+
 
 #---------------------------------------------------------------------
 # Private API

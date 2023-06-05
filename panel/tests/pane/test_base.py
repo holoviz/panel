@@ -70,7 +70,7 @@ def test_pane_loading_param(pane, document, comm):
 
     p.loading = True
 
-    css_classes = [LOADING_INDICATOR_CSS_CLASS, config.loading_spinner]
+    css_classes = [LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}']
     assert all(cls in model.css_classes for cls in css_classes)
 
     p.loading = False

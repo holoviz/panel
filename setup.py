@@ -112,14 +112,13 @@ install_requires = [
     'requests',
     'tqdm >=4.48.0',
     'bleach',
-    'setuptools >=42',
     'typing_extensions',
     'pandas >=1.2',
 ]
 
 _recommended = [
     'jupyterlab',
-    'holoviews >=1.16.0a2',
+    'holoviews >=1.16.0',
     'matplotlib',
     'pillow',
     'plotly'
@@ -132,6 +131,7 @@ _tests = [
     'pytest',
     'nbval',
     'flaky',
+    'pytest-asyncio',
     'pytest-xdist',
     'pytest-cov',
     'pre-commit',
@@ -143,24 +143,22 @@ _tests = [
     'twine',
     'pandas >=1.3',
     'ipython >=7.0',
-    'holoviews >=1.16.0a2',
+    'holoviews >=1.16.0',
     'diskcache',
     'ipyvuetify',
     'reacton',
-    # Added lxml temporarily as installing pyecharts or idom on Python 3.11
-    # via pip tries to build it and fails. To be removed.
-    'lxml',
     'numpy <1.24',
 ]
 
 _ui = [
+    'jupyter-server',
     'playwright',
     'pytest-playwright'
 ]
 
 extras_require = {
     'examples': [
-        'holoviews >=1.16.0a2',
+        'holoviews >=1.16.0',
         'hvplot',
         'plotly >=4.0',
         'altair',
@@ -189,7 +187,6 @@ extras_require = {
         'seaborn',
         'pydeck',
         'graphviz',
-        'lxml',
         'python-graphviz',
         'xgboost',
         'ipyvuetify',
@@ -200,10 +197,7 @@ extras_require = {
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite >=0.8.0rc7',
-        'pydata-sphinx-theme ==0.13.3',
-        'sphinx-copybutton',
-        'sphinx-design',
+        'nbsite ==0.8.0'
     ],
     'ui': _ui
 }
@@ -224,7 +218,8 @@ extras_require['build'] = [
     'pyviz_comms >=0.7.4',
     'bleach',
     'tqdm >=4.48.0',
-    'cryptography <39' # Avoid pyOpenSSL issue
+    'cryptography <39', # Avoid pyOpenSSL issue
+    'urllib3 <2.0',  # See: https://github.com/holoviz/panel/pull/4979
 ]
 
 setup_args = dict(

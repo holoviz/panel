@@ -62,7 +62,7 @@
     var(
       --vscode-input-background,
       var(
-        --jp-layout-color1,
+        --jp-cell-editor-background,
         var(--pst-color-surface, var(--panel-surface-color))
       )
     )

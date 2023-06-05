@@ -25,6 +25,7 @@ from typing import (
 
 import param  # type: ignore
 
+from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
 from bokeh.resources import Resources
 from jinja2 import Template
@@ -460,10 +461,16 @@ class MimeRenderMixin:
         held = doc.callbacks.hold_value
         patch = manager.assemble(msg)
         doc.hold()
-        patch.apply_to_document(doc, comm.id if comm else None)
-        doc.unhold()
-        if held:
-            doc.hold(held)
+        try:
+            patch.apply_to_document(doc, comm.id if comm else None)
+        except DeserializationError:
+            self.param.warning(
+                "Comm received message that could not be deserialized."
+            )
+        finally:
+            doc.unhold()
+            if held:
+                doc.hold(held)
 
     def _on_error(self, ref: str, error: Exception) -> None:
         if ref not in state._handles or config.console_output in [None, 'disable']:
@@ -567,13 +574,23 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         if ref in state._handles:
             del state._handles[ref]
 
-    def _preprocess(self, root: 'Model') -> None:
+    def _preprocess(self, root: 'Model', changed=None, old_models=None) -> None:
         """
-        Applies preprocessing hooks to the model.
+        Applies preprocessing hooks to the root model.
+
+        Some preprocessors have to always iterate over the entire
+        model tree but others only have to update newly added models.
+        To support the optimized case we optionally provide the
+        Panel object that was changed and any old, unchanged models
+        so they can be skipped (see https://github.com/holoviz/panel/pull/4989)
         """
+        changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
         for hook in hooks:
-            hook(self, root)
+            try:
+                hook(self, root, changed, old_models)
+            except TypeError:
+                hook(self, root)
 
     def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
         if doc is None:

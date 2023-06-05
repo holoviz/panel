@@ -1,29 +1,33 @@
+import asyncio
 import os
 
+import pandas as pd
 import param
 import pytest
 
 from bokeh.models import (
-    AutocompleteInput as BkAutocompleteInput, Button, Checkbox,
+    AutocompleteInput as BkAutocompleteInput, Button, Checkbox as BkCheckbox,
     Column as BkColumn, Div, MultiSelect, RangeSlider as BkRangeSlider,
     Row as BkRow, Select, Slider, Tabs as BkTabs, TextInput,
     TextInput as BkTextInput, Toggle,
 )
 
 from panel import config
+from panel.depends import bind
 from panel.io.state import set_curdoc, state
 from panel.layout import Row, Tabs
 from panel.models import HTML as BkHTML
 from panel.pane import (
-    HTML, Bokeh, Matplotlib, PaneBase, Str, panel,
+    HTML, Bokeh, Markdown, Matplotlib, PaneBase, Str, panel,
 )
 from panel.param import (
     JSONInit, Param, ParamFunction, ParamMethod,
 )
 from panel.tests.util import mpl_available, mpl_figure
 from panel.widgets import (
-    AutocompleteInput, DatePicker, DatetimeInput, EditableFloatSlider,
-    EditableRangeSlider, LiteralInput, NumberInput, RangeSlider,
+    AutocompleteInput, Checkbox, DatePicker, DatetimeInput,
+    EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
+    RangeSlider,
 )
 
 
@@ -206,7 +210,7 @@ def test_boolean_param(document, comm):
     model = test_pane.get_root(document, comm=comm)
 
     checkbox = model.children[1]
-    assert isinstance(checkbox, Checkbox)
+    assert isinstance(checkbox, BkCheckbox)
     assert checkbox.label == 'A'
     assert checkbox.active == False
     assert checkbox.disabled == False
@@ -446,7 +450,21 @@ def test_explicit_params(document, comm):
     model = test_pane.get_root(document, comm=comm)
 
     assert len(model.children) == 2
-    assert isinstance(model.children[1], Checkbox)
+    assert isinstance(model.children[1], BkCheckbox)
+
+
+def test_param_name_update(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5))
+
+    test = Test(name='A')
+    test_pane = Param(test)
+
+    model = test_pane.get_root(document, comm=comm)
+    assert model.children[0].text == '<b>A</b>'
+
+    test_pane.object = Test(name='B')
+    assert model.children[0].text == '<b>B</b>'
 
 
 def test_param_precedence(document, comm):
@@ -1475,6 +1493,20 @@ def test_sorted_func():
     assert input3.name=="bac"
 
 
+def test_param_editablerangeslider_with_bounds():
+    class Test(param.Parameterized):
+        i = param.Range(default=(1, 2), softbounds=(1, 5), bounds=(0, 10))
+
+    t = Test()
+    w = EditableRangeSlider.from_param(t.param.i)
+
+    msg = "Range parameter 'value''s lower bound must be in range \[0, 10\]"
+    with pytest.raises(ValueError, match=msg):
+        w.value = (-1, 2)
+
+    assert w.value == (1, 2)
+
+
 def test_paramfunction_bare_emits_warning(caplog):
 
     def foo():
@@ -1516,16 +1548,179 @@ def test_param_editablefloatslider_with_bounds():
     assert w.value == 1
 
 
-def test_param_editablerangeslider_with_bounds():
-    class Test(param.Parameterized):
-        i = param.Range(default=(1, 2), softbounds=(1, 5), bounds=(0, 10))
+def test_param_function_inplace_dataframe_update(document, comm):
+    number = NumberInput(value=0)
+
+    def layout(value):
+        return pd.DataFrame({
+            'x': [0, 1, 2],
+            'y': [0, 1, value]
+        })
+
+    pane = ParamFunction(bind(layout, number), inplace=True)
+
+    root = pane.get_root(document, comm)
+
+    model = root.children[0]
+
+    html_table = model.text
+    assert html_table.startswith("&lt;table class=&quot;dataframe panel-df&quot;&gt;\n  &lt;thead&gt;\n")
+
+    number.value = 314
+
+    assert model is root.children[0]
+    assert model.text != html_table
+    assert '314' in model.text
+
+    html_table = model.text
+    number.param.trigger('value')
+    assert model.text is html_table
 
 
-    t = Test()
-    w = EditableRangeSlider.from_param(t.param.i)
+def test_param_function_recursive_update(document, comm):
+    checkbox = Checkbox(value=False)
 
-    msg = "Range parameter 'value''s lower bound must be in range \[0, 10\]"
-    with pytest.raises(ValueError, match=msg):
-        w.value = (-1, 2)
+    def layout(value):
+        return Row(Markdown(f"{value}"))
 
-    assert w.value == (1, 2)
+    pane = ParamFunction(bind(layout, checkbox), inplace=True)
+
+    root = pane.get_root(document, comm)
+
+    layout = root.children[0]
+
+    assert layout.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert layout is root.children[0]
+    assert layout.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+
+def test_param_function_recursive_update_multiple(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def layout(value):
+        return Row(Markdown(f"{value}"), Markdown(f"{not value}"))
+
+    layout = ParamFunction(bind(layout, checkbox), inplace=True)
+
+    root = layout.get_root(document, comm)
+
+    layout = root.children[0]
+
+    assert layout.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    assert layout.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert layout is root.children[0]
+    assert layout.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    assert layout.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+
+def test_param_generator(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def function(value):
+        yield Markdown(f"{value}")
+
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+
+@pytest.mark.asyncio
+async def test_param_async_generator(document, comm):
+    checkbox = Checkbox(value=False)
+
+    async def function(value):
+        yield Markdown(f"{value}")
+
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    await asyncio.sleep(0.01)
+
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    await asyncio.sleep(0.01)
+
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+
+def test_param_generator_multiple(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def function(value):
+        yield Markdown(f"{value}")
+        yield Markdown(f"{not value}")
+
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+@pytest.mark.asyncio
+async def test_param_async_generator_multiple(document, comm):
+    checkbox = Checkbox(value=False)
+
+    async def function(value):
+        yield Markdown(f"{value}")
+        await asyncio.sleep(0.1)
+        yield Markdown(f"{not value}")
+
+    pane = ParamFunction(bind(function, checkbox))
+
+    root = pane.get_root(document, comm)
+
+    assert root.children[0].text == '&lt;pre&gt; &lt;/pre&gt;'
+    await asyncio.sleep(0.01)
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    await asyncio.sleep(0.1)
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await asyncio.sleep(0.15)
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+
+@pytest.mark.asyncio
+async def test_param_async_generator_abort(document, comm):
+    number = NumberInput(value=0)
+
+    async def function(value):
+        yield Markdown(f"{value}")
+        await asyncio.sleep(0.1)
+        yield Markdown(f"{value + 1}")
+
+    pane = ParamFunction(bind(function, number))
+
+    root = pane.get_root(document, comm)
+
+    assert root.children[0].text == '&lt;pre&gt; &lt;/pre&gt;'
+    await asyncio.sleep(0.01)
+    assert root.children[0].text == '&lt;p&gt;0&lt;/p&gt;\n'
+
+    number.value = 5
+
+    await asyncio.sleep(0.01)
+    assert root.children[0].text == '&lt;p&gt;5&lt;/p&gt;\n'
+    await asyncio.sleep(0.1)
+    assert root.children[0].text == '&lt;p&gt;6&lt;/p&gt;\n'

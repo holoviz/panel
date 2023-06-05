@@ -2,6 +2,48 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual summary of the major features added in each release.
 
+## Version 1.0.4
+
+Date: 2023-05-31
+
+Another micro-release in the 1.0.x series addressing small issues reported by our engaged community. Many thanks to @ahuang11, @simzer, @alexmilowski and the core contributors @droumis, @Hoxbro and @philippjfr for contributing to this release.
+
+- Fix global loading spinner ([#4936](https://github.com/holoviz/panel/issues/4936))
+- Fix issues resolving whether `IPyWidget` model ([#4939](https://github.com/holoviz/panel/issues/4939))
+- Fix recursive and inplace updates on reactive panes ([#4946](https://github.com/holoviz/panel/issues/4946), [#4958](https://github.com/holoviz/panel/issues/4958))
+- Fix issues with single `Select` widget ([#4947](https://github.com/holoviz/panel/issues/4947))
+- Ensure CSS `config` parameters can be passed to `Template` constructor ([#4948](https://github.com/holoviz/panel/issues/4948))
+- Fixed vizzu data series type conversion for datetime ([#4955](https://github.com/holoviz/panel/issues/4955))
+- Small documentation fixes ([#4943](https://github.com/holoviz/panel/issues/4960), [#4960](https://github.com/holoviz/panel/issues/4943))
+- Fix `icon` on `Toggle` and `Button` widget ([#4961](https://github.com/holoviz/panel/issues/4961))
+- Fix Volume definition on `Video` pane ([#4970](https://github.com/holoviz/panel/issues/4970))
+- Ensure `Card.header_color` is correctly applied ([#4971](https://github.com/holoviz/panel/issues/4971))
+- Update `param.List` signatures to suppress warnings ([#4973](https://github.com/holoviz/panel/pull/4973))
+- Fix font loading in Vanilla template ([#4975](https://github.com/holoviz/panel/pull/4975))
+ ([#4975](https://github.com/holoviz/panel/pull/4975))
+- Guard is_file check on Windows ([#4985](https://github.com/holoviz/panel/pull/4985))
+- Fix serialization of `Plotly.selection_data` ([#4987](https://github.com/holoviz/panel/pull/4987))
+- Speed up dynamic layout updates ([#4989](https://github.com/holoviz/panel/pull/4989))
+
+## Version 1.0.3
+
+Date: 2023-05-25
+
+Another micro-release in the 1.0.x series with a number of smaller bug fixes. Most importantly this resolves issues with loading indicators and with apps converted to the `pyodide-worker` target. Many thanks to @n3011, @Hoxbro and @philippjfr for contributing to this release.
+
+- Resolve `_repr_jpeg_` methods correctly ([#4904](https://github.com/holoviz/panel/pull/4904))
+- Fix handling of queued events in pyodide worker ([#4913](https://github.com/holoviz/panel/pull/4913))
+- Various fixes for loading indicator ([#4915](https://github.com/holoviz/panel/pull/4915))
+- Allow `-1` in `Tabs.active` and allow recovering from closed tabs ([#4920](https://github.com/holoviz/panel/pull/4920))
+- Ensure `HoloViews` layout is correctly initialized when `center` is set ([#4921](https://github.com/holoviz/panel/pull/4921))
+- Ensure VSCode editor does not apply white background to Panel output ([#4923](https://github.com/holoviz/panel/pull/4923))
+- Do not error on deserialization errors in notebooks ([#4927](https://github.com/holoviz/panel/pull/4927))
+- Ensure basic auth provider works when dynamically starting server ([#4926](https://github.com/holoviz/panel/pull/4926))
+- Ensure `Param` pane `name` is updated when object changes ([#4928](https://github.com/holoviz/panel/pull/4928))
+- Align functionality and styling of `FileDownload` with `Button` ([#4929](https://github.com/holoviz/panel/pull/4929))
+- Fix equality comparisons of parameter values when updating a `Pane` ([#4934](https://github.com/holoviz/panel/pull/4934))
+- Warn about ignored widget parameters on `Param` pane ([#4934](https://github.com/holoviz/panel/pull/4935))
+
 ## Version 1.0.2
 
 Date: 2023-05-19

@@ -577,7 +577,14 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
             params['favicon'] = str(params['favicon'])
         if 'notifications' not in params and config.notifications:
             params['notifications'] = state.notifications if state.curdoc else NotificationArea()
-        super().__init__(template=template, **params)
+
+        config_params = {
+            p: v for p, v in params.items() if p in _base_config.param
+        }
+        super().__init__(template=template, **{
+            p: v for p, v in params.items() if p not in _base_config.param or p == 'name'
+        })
+        self.config.param.update(config_params)
         self._js_area = HTML(margin=0, width=0, height=0)
         if 'embed(roots.js_area)' in template:
             self._render_items['js_area'] = (self._js_area, [])
@@ -640,7 +647,9 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
         name = clsname.lower()
         dist_path = get_dist_path(cdn=cdn)
 
-        raw_css.extend(list(self.config.raw_css) + [loading_css()])
+        raw_css.extend(list(self.config.raw_css) + [loading_css(
+            config.loading_spinner, config.loading_color, config.loading_max_height
+        )])
         for rname, res in self._design.resolve_resources(cdn).items():
             if isinstance(res, dict):
                 resource_types[rname].update(res)

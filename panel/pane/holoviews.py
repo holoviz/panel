@@ -124,15 +124,22 @@ class HoloViews(PaneBase):
         ]
         watcher = self.param.watch(self._update_widgets, self._rerender_params)
         self._internal_callbacks.append(watcher)
-        self._initialized = True
         self._update_responsive()
         self._update_widgets()
+        self._initialized = True
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
         if self._object_changing:
             return
         self._track_overrides(*(e for e in events if e.name in Layoutable.param))
         super()._param_change(*(e for e in events if e.name in self._overrides+['css_classes']))
+
+    @param.depends('backend', watch=True, on_init=True)
+    def _load_backend(self):
+        from holoviews import Store, extension
+        if self.backend and self.backend not in Store.renderers:
+            ext = extension._backends[self.backend]
+            __import__(f'holoviews.plotting.{ext}')
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
