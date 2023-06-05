@@ -139,4 +139,3 @@ doc/reference/*
 !/panel/dist/css
 !/panel/dist/css/*.css
 .venv2/
-app.py
