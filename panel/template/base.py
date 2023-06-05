@@ -436,21 +436,21 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
     feel without having to write any Jinja2 template themselves.
     """
 
-    config = param.ClassSelector(default=_base_config(), class_=_base_config,
-                                 constant=True, doc="""
-        Configuration object declaring custom CSS and JS files to load
-        specifically for this template.""")
-
     busy_indicator = param.ClassSelector(default=LoadingSpinner(width=20, height=20),
                                          class_=BooleanIndicator, constant=True,
                                          allow_None=True, doc="""
         Visual indicator of application busy state.""")
 
+    collapsed_sidebar = param.Selector(default=False, constant=True, doc="""
+        Whether the sidebar (if present) is initially collapsed.""")
+
+    config = param.ClassSelector(default=_base_config(), class_=_base_config,
+                                 constant=True, doc="""
+        Configuration object declaring custom CSS and JS files to load
+        specifically for this template.""")
+
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")
-
-    initial_sidebar_state = param.Selector(default='expanded', objects=['expanded', 'collapsed'], doc="""
-        Whether the sidebar (if present) is initially expanded or collapsed.""")
 
     main = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the main area.""")
@@ -760,7 +760,7 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
         self._render_variables['main_max_width'] = self.main_max_width
         self._render_variables['sidebar_width'] = self.sidebar_width
         self._render_variables['theme'] = self._design.theme
-        self._render_variables['collapsed_sidebar'] = self.initial_sidebar_state == 'collapsed'
+        self._render_variables['collapsed_sidebar'] = self.collapsed_sidebar
 
     def _update_busy(self) -> None:
         if self.busy_indicator:
