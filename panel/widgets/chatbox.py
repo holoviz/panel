@@ -97,6 +97,8 @@ class ChatRow(CompositeWidget):
         icon_params = dict(width=48, height=48, align="center")
         if icon:
             self._icon = Image(icon, **icon_params)
+        else:
+            self._icon = None
 
         # create the chat bubble
         bubble_objects = [
@@ -418,7 +420,8 @@ class ChatBox(CompositeWidget):
 
         # try to get input color; if not generate one and save
         if user in self.message_colors:
-            background, color = self.message_colors[user]
+            colors = self.message_colors[user]
+            background, color = colors if isinstance(colors, tuple) else (colors, 'black')
         elif self.message_hue:
             if len(self._default_colors) == 0:
                 self._default_colors = self._generate_default_hsl(
