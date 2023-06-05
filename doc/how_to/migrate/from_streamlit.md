@@ -24,7 +24,7 @@ import streamlit as st
 st.write("Hello World")
 ```
 
-You *serve* and *show* the app with *autoreload* via
+You *run* and *show* the app with *autoreload* via
 
 ```bash
 streamlit run app.py
@@ -352,6 +352,7 @@ and updates the UI multiple times during the code execution.
 #### Streamlit Multiple Updates Example
 
 ```python
+import random
 import time
 
 import streamlit as st
@@ -359,10 +360,12 @@ import streamlit as st
 
 def calculation_a():
     time.sleep(1.5)
+    return random.randint(0, 100)
 
 
 def calculation_b():
     time.sleep(1.5)
+    return random.randint(0, 100)
 
 
 st.write("# Calculation Runner")
@@ -372,39 +375,235 @@ option = st.radio("Which calculation would you like to perform?", ("A", "B"))
 st.write("You chose: ", option)
 if option == "A":
     if st.button("Press to run calculation"):
-        with st.spinner("running... Please wait!"):
+        with st.spinner("Running... Please wait!"):
             time_start = time.perf_counter()
-            calculation_a()
-            st.write("Done!")
+            result = calculation_a()
             time_end = time.perf_counter()
-            st.write(f"The function took {time_end - time_start:1.1f} seconds to complete")
+            st.write(f"""Done!
+
+Result: {result}
+
+The function took {time_end - time_start:1.1f} seconds to complete""")
 
     else:
         st.write("Calculation A did not run yet")
 
 elif option == "B":
     if st.button("Press to run calculation"):
-        with st.spinner("running... Please wait!"):
+        with st.spinner("Running... Please wait!"):
             time_start = time.perf_counter()
-            calculation_b()
-            st.write("Done!")
+            result = calculation_b()
             time_end = time.perf_counter()
-            st.write(f"The function took {time_end - time_start:1.1f} seconds to complete")
+            st.write(f"""Done!
+
+Result: {result}
+
+The function took {time_end - time_start:1.1f} seconds to complete""")
     else:
         st.write("Calculation B did not run yet")
 ```
 
 #### Panel Multiple Updates Example
 
+```python
+import panel as pn
+import time
+import random
+
+pn.extension(sizing_mode="stretch_width", template="bootstrap")
+
+pn.state.template.param.update(site="Panel", title="Calculation Runner")
+
+def calculation_message(calculation):
+    return f"You chose: {calculation}"
+
+def calculation_a():
+    time.sleep(1.5)
+    return random.randint(0, 100)
+
+
+def calculation_b():
+    time.sleep(1.5)
+    return random.randint(0, 100)
+
+def calculation_result(running, calculation):
+    if not running:
+        yield "Calculation did not run yet"
+        return # This will break the execution
+
+    yield pn.Row(pn.indicators.LoadingSpinner(value=True, width=50, height=50, align="center"), "Running... Please wait!", align="center")
+
+    if calculation=="A":
+        func = calculation_a
+    else:
+        func = calculation_b
+
+    time_start = time.perf_counter()
+    result = func()
+    time_end = time.perf_counter()
+    yield f"""Done!
+
+Result: {result}
+
+The function took {time_end - time_start:1.1f} seconds to complete"""
+
+
+calculation_input = pn.widgets.RadioBoxGroup(name="Calculation", options=["A", "B"])
+run_input = pn.widgets.Button(name="Press to run calculation", icon="caret-right", button_type="primary", sizing_mode="fixed", width=250)
+
+pn.Column(
+    "Which calculation would you like to perform?",
+    calculation_input,
+    pn.bind(calculation_message, calculation_input),
+    run_input,
+    pn.bind(calculation_result, run_input, calculation_input)
+).servable()
+```
+
+We use the `pn.indicators.LoadingSpinner` to indicate the activity. You find the full list of indicators in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](https://panel.holoviz.org/reference/index.html).
+
+#### Panel Multiple Updates Alternative Indicator Example
+
+An alternative to using an *indicator* would be to change the `.disabled` and `.loading` parameters of the `calculation_input` and `run_input`.
+
+```python
+import panel as pn
+import time
+import random
+
+pn.extension(sizing_mode="stretch_width", template="bootstrap")
+
+pn.state.template.param.update(site="Panel", title="Calculation Runner")
+
+def calculation_message(calculation):
+    return f"You chose: {calculation}"
+
+def calculation_a():
+    time.sleep(1.5)
+    return random.randint(0, 100)
+
+
+def calculation_b():
+    time.sleep(1.5)
+    return random.randint(0, 100)
+
+def calculation_result(running, calculation):
+    if not running:
+        yield "Calculation did not run yet"
+        return # This will break the execution
+
+    calculation_input.disabled=calculation_input.loading=run_input.disabled=run_input.loading=True
+
+    if calculation=="A":
+        func = calculation_a
+    else:
+        func = calculation_b
+
+    time_start = time.perf_counter()
+    result = func()
+    time_end = time.perf_counter()
+    calculation_input.disabled=calculation_input.loading=run_input.disabled=run_input.loading=False
+    yield f"""Done!
+
+Result: {result}
+
+The function took {time_end - time_start:1.1f} seconds to complete"""
+
+
+calculation_input = pn.widgets.RadioBoxGroup(name="Calculation", options=["A", "B"])
+run_input = pn.widgets.Button(name="Press to run calculation", icon="caret-right", button_type="primary", sizing_mode="fixed", width=250)
+
+pn.Column(
+    "Which calculation would you like to perform?",
+    calculation_input,
+    pn.bind(calculation_message, calculation_input),
+    run_input,
+    pn.bind(calculation_result, run_input, calculation_input)
+).servable()
+```
+
+### Multiple Results Example
+
+Sometimes you want multiple to output multiple results individually as soon as they are ready.
+
+This is for example the case for Large (AI) Language Models that generates one token after the
+other.
+
+#### Streamlit Multiple Results Example
+
+```python
+import random
+import time
+
+import streamlit as st
+
+run = st.button("Run model")
+
+def model():
+    time.sleep(1)
+    return random.randint(0, 100)
+
+if not run:
+    st.write("The model has not run yet")
+else:
+    with st.spinner("Running..."):
+        for i in range(0,10):
+            result = model()
+            st.write(f"Result {i}: {result}")
+```
+
+#### Panel Multiple Results Example
+
+```python
+import random
+import time
+
+import panel as pn
+
+pn.extension(sizing_mode="stretch_width", template="bootstrap")
+
+run_input = pn.widgets.Button(name="Run model")
+
+def model():
+    time.sleep(1)
+    return random.randint(0, 100)
+
+def results(running):
+    if not running:
+        yield "Calculation did not run yet"
+        return # This will break the execution
+
+    run_input.disabled=True
+    loading_indicator = pn.Row(pn.indicators.LoadingSpinner(value=True, width=50, height=50, align="center"), "Running... Please wait!", align="center")
+    layout = pn.Column(loading_indicator)
+    yield layout # This will display the layout
+
+    for i in range(0,10):
+        result = model()
+        message = f"Result {i}: {result}"
+        layout.append(message)
+        yield layout # This will force the layout to update
+
+    layout.pop(0)
+    run_input.disabled=False
+    yield layout # This will force the layout to update
+
+
+pn.Column(run_input, pn.bind(results, run_input)).servable()
+```
+
 ### Interactivity Migration Steps
 
 You should
 
 - Move your business logic to functions. Business logic can be code to load data,
-create plots, do inference using a machinelearning model etc.
-  - Use generator functions (`yield`) if you want to update the UI multiple times during the
-  function execution.
+create plots, calculate the mass of the milky way, train models, do inference etc.
 - Use `pn.bind` to specify which functions are bound to which widgets.
+- Use generator functions (`yield`) if you want to update the UI multiple times during the
+  code execution.
+- Indicate activity if needed. You can use one of
+[Panels Indicators](https://panel.holoviz.org/reference/index.html#indicators) and/ or
+the `.disabled`+`.loading` parameter on Panels components.
 
 ## Caching
 
@@ -592,54 +791,7 @@ To migrate
 In the process consider separating your business logic and caching logic
 (when and how to apply caching) to get more maintainable and reusable code.
 
-## Multiple Steps
-
-```python
-import time
-
-import streamlit as st
-
-
-def calculation_a():
-    time.sleep(1.5)
-
-
-def calculation_b():
-    time.sleep(1.5)
-
-
-st.write("# Calculation Runner")
-
-option = st.radio("Which Calculation would you like to perform?", ("A", "B"))
-
-st.write("You chose: ", option)
-if option == "A":
-    if st.button("Press to run calculation"):
-        with st.spinner("running... Please wait!"):
-            time_start = time.perf_counter()
-            calculation_a()
-            st.write("Done!")
-            time_end = time.perf_counter()
-            st.write(f"The function took {time_end - time_start:1.1f} seconds to complete")
-
-    else:
-        st.write("Calculation A did not run yet")
-
-elif option == "B":
-    if st.button("Press to run calculation"):
-        with st.spinner("running... Please wait!"):
-            time_start = time.perf_counter()
-            calculation_b()
-            st.write("Done!")
-            time_end = time.perf_counter()
-            st.write(f"The function took {time_end - time_start:1.1f} seconds to complete")
-    else:
-        st.write("Calculation B did not run yet")
-```
-
-TODO: MAKE LINKS RELATIVE
-
-## Support
+## Migration Support
 
 We hope you will have fun with the Panel framework. If you have usage questions you can post them
 on [Discourse](https://discourse.holoviz.org/). If you experience issues or have requests for
