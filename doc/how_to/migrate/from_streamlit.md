@@ -259,7 +259,7 @@ The app looks like
 
 ![Streamlit Layout Example](https://user-images.githubusercontent.com/42288570/243353648-add1e7af-26ba-428b-ba47-2f602ff3ce93.png)
 
-I would love to align the images (and texts) but I could not find functionality like *rows*, *margin* or *spacing* to support this.
+I would love to align the images (and texts) but I could not find functionality like *row*, *margin* or *spacing* to do this.
 
 ### Panel Layout Example
 
@@ -289,7 +289,7 @@ the [`Row` Guide](https://panel.holoviz.org/reference/layouts/Row.html).
 
 The app looks like
 
-![Panel Layout Example](https://user-images.githubusercontent.com/42288570/243353672-b14a62bb-f927-493d-80de-8b6814d723fa.png)
+![Panel Layout Example](https://user-images.githubusercontent.com/42288570/243362603-45ba78a4-d67b-43bc-b3c2-386105fe6ed8.png)
 
 ### Layout Migration Steps
 
@@ -301,6 +301,20 @@ You should
 You can identify the relevant layout to migrate to in the
 [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the
 [Component Gallery](https://panel.holoviz.org/reference/index.html).
+
+### Template Migration Steps
+
+When you migrating you first have to choose which template to use
+
+- None (default)
+- A built in like *vanilla*, *bootstrap*, *material* or *fast*. See the [Templates Section]()
+- A custom template. See the [Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the [Components Guide](https://panel.holoviz.org/reference/index.html).
+
+Then you have to configure it. Here is an example with the `FastListTemplate`for illustration.
+
+```python
+
+```
 
 ## Show Activity
 
@@ -389,7 +403,9 @@ The app looks like
 
 ![Panel Basic Interactivity Example](https://user-images.githubusercontent.com/42288570/243358311-04ed5189-1a79-4932-97ea-00898c27f283.gif)
 
-You might notice that the Panel app updates much quicker and more smoothly than the Streamlit app. This is a fundamental difference due to different architectures. With Panel you will be able to develop very smooth and performant apps.
+You might notice that the Panel app updates much quicker and more smoothly than the Streamlit app.
+This is due to fundamental differences in architectures. With Panel you will be able to
+develop very smooth and performant apps.
 
 ### Multiple Updates Example
 
@@ -450,7 +466,13 @@ The function took {time_end - time_start:1.1f} seconds to complete""")
         st.write("Calculation B did not run yet")
 ```
 
+The app looks like
+
+![Streamlit multiple updates example](https://user-images.githubusercontent.com/42288570/243399616-4f172e4b-ace9-4761-b19a-757a532bafbc.gif)
+
 #### Panel Multiple Updates Example
+
+With Panel you will use a *generator function* to update a component multiple times during code execution.
 
 ```python
 import panel as pn
@@ -508,6 +530,10 @@ pn.Column(
 ```
 
 We use the `pn.indicators.LoadingSpinner` to indicate the activity. You find the full list of indicators in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](https://panel.holoviz.org/reference/index.html).
+
+The app looks like
+
+![Panel Multiple Updates Examples](https://user-images.githubusercontent.com/42288570/243399714-04345c38-44a8-4bc0-b111-a8d26f03484b.gif)
 
 #### Panel Multiple Updates Alternative Indicator Example
 
@@ -569,12 +595,15 @@ pn.Column(
 ).servable()
 ```
 
+The app looks like
+
+![Panel Multiple Updates Alternative Example](https://user-images.githubusercontent.com/42288570/243402005-0e520ed0-a41f-4339-a854-14ff31cb04ce.gif)
+
 ### Multiple Results Example
 
-Sometimes you want multiple to output multiple results individually as soon as they are ready.
+Sometimes you want to output multiple results individually as soon as they are ready.
 
-This is for example the case for Large (AI) Language Models that generates one token after the
-other.
+This is for example the case for Large (AI) Language Models that generates one token after the other.
 
 #### Streamlit Multiple Results Example
 
@@ -599,7 +628,13 @@ else:
             st.write(f"Result {i}: {result}")
 ```
 
+The app looks like
+
+![Streamlit Multiple Results Example](https://user-images.githubusercontent.com/42288570/243421817-bcd0d8d4-89af-4ef4-8924-f20a8d7a8d33.gif)
+
 #### Panel Multiple Results Example
+
+With Panel you will use a *generator function* to display multiple results from code execution as soon as they are ready.
 
 ```python
 import random
@@ -629,15 +664,17 @@ def results(running):
         result = model()
         message = f"Result {i}: {result}"
         layout.append(message)
-        yield layout # This will force the layout to update
+        yield layout # This will force the UI to update
 
     layout.pop(0)
     run_input.disabled=False
-    yield layout # This will force the layout to update
+    yield layout # This will force the UI to update
 
 
 pn.Column(run_input, pn.bind(results, run_input)).servable()
 ```
+
+![Panel Multiple Results Example](https://user-images.githubusercontent.com/42288570/243421842-b6c29bb0-b814-4d96-9918-946deea807ff.gif)
 
 ### Interactivity Migration Steps
 
@@ -656,9 +693,9 @@ the `.disabled`+`.loading` parameter on Panels components.
 
 One of the key concepts in Streamlit is *caching*. In Streamlit your entire script is rerun
 *top to bottom* on user interactions. Without caching you would be
-reconnecting to your database, reloading your dataset and rerunning your expensive calculation every
-time a user clicks a `Button` or changes a `slider` value. This would make your application very
-slow.
+reconnecting to your database, reloading your dataset and rerunning your expensive calculation
+every time a user clicks a `Button` or changes a `slider` value. This would make your application
+very slow.
 
 In Panel only your *bound functions* are rerun on user interactions.
 
