@@ -390,7 +390,7 @@ Panels `pn.bind` provides the functionality to *bind* functions to widgets. We c
 functions *bound functions*.
 
 With Panels interactivity architecture you will be able to develop and maintain larger and more
-complex apps to support more cases.
+complex apps to support more use cases.
 
 ### Basic Interactivity Example
 
@@ -946,5 +946,5 @@ features please post them on [Github](https://github.com/holoviz/panel).
 
 If you want to support Panel please
 
-- give a ⭐ on Github or
+- give a ⭐ on [Github](https://github.com/holoviz/panel) or
 - donate to [HoloViz](https://holoviz.org/) via [Numfocus](https://numfocus.org/support#donate)
