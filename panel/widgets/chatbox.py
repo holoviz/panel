@@ -6,16 +6,17 @@ from typing import (
 
 import param
 
-from panel.layout import (
+from .._param import Margin
+from ..layout import (
     Column, ListPanel, Row, Tabs,
 )
-from panel.pane.base import PaneBase, panel as _panel
-from panel.pane.image import Image
-from panel.pane.markup import Markdown
-from panel.viewable import Layoutable, Viewable
-from panel.widgets.base import CompositeWidget
-from panel.widgets.button import Button, Toggle
-from panel.widgets.input import StaticText, TextInput
+from ..pane.base import PaneBase, panel as _panel
+from ..pane.image import Image
+from ..pane.markup import Markdown
+from ..viewable import Layoutable, Viewable
+from .base import CompositeWidget
+from .button import Button, Toggle
+from .input import StaticText, TextInput
 
 
 class ChatRow(CompositeWidget):
@@ -29,6 +30,9 @@ class ChatRow(CompositeWidget):
 
     value = param.List(doc="""The objects to display""")
 
+    align_name = param.Selector(default="start", objects=["start", "end"], doc="""
+        Whether to show the name at the start or end of the row""")
+
     default_message_callable = param.Callable(default=None, doc="""
         The type of Panel object or callable to use if an item in value is not
         already rendered as a Panel object; if None, uses the
@@ -40,8 +44,10 @@ class ChatRow(CompositeWidget):
 
     liked = param.Boolean(default=False, doc="""Whether a user liked the message""")
 
-    align_name = param.Selector(default="start", objects=["start", "end"], doc="""
-        Whether to show the name at the start or end of the row""")
+    margin = Margin(default=0, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
 
     show_name = param.Boolean(default=True, doc="""
         Whether to show the name of the user""")
@@ -68,63 +74,52 @@ class ChatRow(CompositeWidget):
         bubble_styles = {
             "overflow-x": "auto",
             "overflow-y": "auto",
-            "max-width": "88%",
-            "box-shadow": "5px 5px 5px 0px rgba(0,0,0,0.1)",
+            "box-shadow": "rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;",
+            "padding": "0.5em"
         }
-        bubble_styles.update(styles or {})
+        if styles:
+            bubble_styles.update(styles)
+        text_style = {'color': bubble_styles.get('color')}
+        icon_styles = dict((styles or {}))
+        icon_styles.pop('background', None)
+        icon_styles.pop('color', None)
+        icon_styles.update({
+            'border-radius': '50%',
+            'font-weight': 'bold',
+            'font-size': '1.2em',
+            'text-align': 'center'
+        })
         if "background" not in bubble_styles:
             bubble_styles["background"] = "black"
         super().__init__(value=value, icon=icon, **params)
 
         # create the chat icon
-        icon_params = dict(
-            width=48,
-            height=48,
-            sizing_mode="fixed",
-            align="center",
-        )
-        icon_styles = bubble_styles.copy()
-        icon_styles.pop("background")
-        icon_styles.pop("box-shadow")
-        icon_styles.pop("overflow-x")
-        icon_styles.pop("overflow-y")
-        if icon is None:
-            # if no icon is provided,
-            # use the first and last letter of the name
-            # and a random colored background
-            name = self.name or "Anonymous"
-            icon_label = f"{name[0]}-{name[-1]}".upper()
-            self._icon = Markdown(
-                object=icon_label,
-                styles=icon_styles,
-                **icon_params,
-            )
-        else:
+        icon_params = dict(width=48, height=48, align="center")
+        if icon:
             icon_styles.pop("padding")
             self._icon = Image(icon, **icon_params)
 
         # create the chat bubble
         bubble_objects = [
-            self._serialize_obj(obj, default_message_callable) for obj in value
+            self._serialize_obj(obj, default_message_callable, text_style) for obj in value
         ]
         self._bubble = Column(
             *bubble_objects,
+            align='center',
             margin=8,
             styles=bubble_styles,
         )
 
         # create heart icon next to chat
-        if show_like:
-            self._like = Toggle(
-                name="♡",
-                width=30,
-                height=30,
-                align="end",
-            )
-            self._like.link(self, value="liked", bidirectional=True)
-            self._like.param.watch(self._update_like, "value")
-        else:
-            self._like = None
+        self._like = Toggle(
+            name="♡",
+            width=30,
+            height=30,
+            align="end",
+            visible=show_like
+        )
+        self._like.link(self, value="liked", bidirectional=True)
+        self._like.param.watch(self._update_like, "value")
 
         # layout objects
         message_layout = {
@@ -137,7 +132,10 @@ class ChatRow(CompositeWidget):
         if isinstance(horizontal_align, tuple):
             horizontal_align = horizontal_align[0]
 
-        row_objects = (self._icon, self._bubble, self._like)
+        if icon:
+            row_objects = (self._icon, self._bubble, self._like)
+        else:
+            row_objects = (self._bubble, self._like)
         if horizontal_align == "end":
             row_objects = row_objects[::-1]
 
@@ -146,18 +144,11 @@ class ChatRow(CompositeWidget):
         )
         row = Row(*row_objects, **container_params)
         if show_name:
-            if horizontal_align == "start":
-                margin = "-1.75em 0em 0em 7em"
-            else:
-                margin = "-1.75em 7em 0em 0em"
             self._name = Markdown(
                 object=self.name,
                 align=(horizontal_align, "start"),
-                styles={
-                    "font-size": "0.88em",
-                    "color": "grey",
-                    "margin": margin,
-                },
+                margin=(-15, 15, 0, 0) if horizontal_align == 'end' else (-15, 0, 0, 15),
+                styles={"font-size": "0.88em", "color": "grey"},
             )
             if self.align_name == "start":
                 row = Column(self._name, row, **container_params)
@@ -168,22 +159,23 @@ class ChatRow(CompositeWidget):
 
         self._composite[:] = [row]
 
-    def _serialize_obj(self, obj: Any, default_message_callable: Callable) -> Viewable:
+    def _serialize_obj(self, obj: Any, default_message_callable: Callable, text_styles: Dict) -> Viewable:
         """
         Convert an object to a Panel object.
         """
         if isinstance(obj, Viewable):
             return obj
 
+        stylesheets=['p { margin-block-start: 0.2em; margin-block-end: 0.2em;}']
         try:
             if default_message_callable is None or issubclass(
                 default_message_callable, PaneBase
             ):
-                panel_obj = (default_message_callable or _panel)(obj)
+                panel_obj = (default_message_callable or _panel)(obj, stylesheets=stylesheets, styles=text_styles)
             else:
                 panel_obj = default_message_callable(value=obj)
         except ValueError:
-            panel_obj = _panel(obj)
+            panel_obj = _panel(obj, stylesheets=stylesheets, styles=text_styles)
 
         if "overflow-wrap" not in panel_obj.styles:
             panel_obj.styles.update({"overflow-wrap": "break-word"})
@@ -240,7 +232,7 @@ class ChatBox(CompositeWidget):
         Dictionary mapping name of messages to their colors, e.g.
         `[{'You': 'red'}]`""")
 
-    message_hue = param.Integer(default=202, bounds=(0, 360), doc="""
+    message_hue = param.Integer(default=None, bounds=(0, 360), doc="""
         Base hue of the message bubbles if message_colors is not specified for a user.""")
 
     message_input_widgets = param.List(default=[TextInput], doc="""
@@ -291,7 +283,10 @@ class ChatBox(CompositeWidget):
         )
         self._add_scroll_callback(self._scroll_button, "clicks")
         self._current_hue = self.message_hue
-        self._default_colors = self._generate_default_hsl(self._current_hue)
+        if self._current_hue:
+            self._default_colors = self._generate_default_hsl(self._current_hue)
+        else:
+            self._default_colors = []
 
         box_objects = [self._chat_title] if self.name else []
         box_objects.append(self._chat_log)
@@ -311,16 +306,16 @@ class ChatBox(CompositeWidget):
         self.param.watch(self._refresh_log, "value")
         self.param.trigger("value")
 
-    def _generate_default_hsl(self, hue: int, increment: int = 0) -> List[str]:
+    def _generate_default_hsl(self, hue: int | None, increment: int = 0) -> List[str]:
         hue += increment
         if hue > 360:
             hue -= 360
         self._current_hue = hue
 
         return [
-            f"hsl({hue}, 45%, 50%)",
-            f"hsl({hue}, 30%, 55%)",
-            f"hsl({hue}, 15%, 60%)",
+            (f"hsl({hue}, 45%, 50%)", 'white'),
+            (f"hsl({hue}, 30%, 55%)", 'white'),
+            (f"hsl({hue}, 15%, 60%)", 'white')
         ]
 
     def _add_scroll_callback(self, obj: Viewable, what: str):
@@ -424,14 +419,20 @@ class ChatBox(CompositeWidget):
 
         # try to get input color; if not generate one and save
         if user in self.message_colors:
-            background = self.message_colors[user]
-        else:
+            background, color = self.message_colors[user]
+        elif self.message_hue:
             if len(self._default_colors) == 0:
                 self._default_colors = self._generate_default_hsl(
                     self._current_hue, increment=88
                 )
-            background = self._default_colors.pop()
-            self.message_colors[user] = background
+            background, color = self._default_colors.pop()
+            self.message_colors[user] = (background, color)
+        else:
+            if user == self.primary_name:
+                background, color = ('rgb(99, 139, 226)', 'white')
+            else:
+                background, color = ('rgb(246, 246, 246)', 'black')
+            self.message_colors[user] = (background, color)
 
         # try to get input icon
         message_icon = self.message_icons.get(user, None)
@@ -451,7 +452,8 @@ class ChatBox(CompositeWidget):
             default_message_callable=self.default_message_callable,
             styles={
                 "background": background,
-                "border-radius": "1em" if is_other_user else "5em",
+                "color": color,
+                "border-radius": "1em",
             },
         )
         return message_row
