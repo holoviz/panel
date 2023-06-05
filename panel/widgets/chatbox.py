@@ -27,49 +27,31 @@ class ChatRow(CompositeWidget):
     >>> ChatRow(name="You", value="Welcome!", show_name=True, align="start")
     """
 
-    value = param.List(
-        doc="""The objects to display""",
-    )
+    value = param.List(doc="""The objects to display""")
 
-    default_message_callable = param.Callable(
-        default=None,
-        doc="""
+    default_message_callable = param.Callable(default=None, doc="""
         The type of Panel object or callable to use if an item in value is not
         already rendered as a Panel object; if None, uses the
         pn.panel function to render a displayable Panel object.
         If the item is not serializable, will fall back to pn.panel.
-        """,
-    )
+        """)
 
-    icon = param.String(
-        default=None, doc="""The icon to display adjacent to the value"""
-    )
+    icon = param.String(default=None, doc="""The icon to display adjacent to the value""")
 
     liked = param.Boolean(default=False, doc="""Whether a user liked the message""")
 
-    align_name = param.Selector(
-        default="start",
-        objects=["start", "end"],
-        doc="""Whether to show the name at the start or end of the row""",
-    )
+    align_name = param.Selector(default="start", objects=["start", "end"], doc="""
+        Whether to show the name at the start or end of the row""")
 
-    show_name = param.Boolean(
-        default=True,
-        doc="""Whether to show the name of the user""",
-    )
+    show_name = param.Boolean(default=True, doc="""
+        Whether to show the name of the user""")
 
-    show_like = param.Boolean(
-        default=True,
-        doc="""Whether to show the like button""",
-    )
+    show_like = param.Boolean(default=True, doc="""
+        Whether to show the like button""")
 
-    styles = param.Dict(
-        default={},
-        doc="""
-            Dictionary of CSS properties and values to apply
-            message to the bubble
-            """,
-    )
+    styles = param.Dict(default={}, doc="""
+        Dictionary of CSS properties and values to apply
+        message to the bubble.""")
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
@@ -230,88 +212,47 @@ class ChatBox(CompositeWidget):
     >>> ChatBox(value=[{"You": "Hello!"}, {"Bot": ["How may I help?", "I'm a bot."]}])
     """
 
-    value = param.List(
-        doc="""
-            List of messages as dicts, mapping user to message(s),
-            e.g. `[{'You': ['Welcome!', 'Good bye!']}]` The message(s) can be
-            any Python object that can be rendered by Panel
-        """,
-        item_type=Dict,
-        default=[],
-    )
+    value = param.List(default=[], item_type=Dict, doc="""
+        List of messages as dicts, mapping user to message(s),
+        e.g. `[{'You': ['Welcome!', 'Good bye!']}]` The message(s) can be
+        any Python object that can be rendered by Panel.""")
 
-    primary_name = param.String(
-        doc="""
-            Name of the primary user (the one who inputs messages);
-            the first key found in value will be used if unspecified
-        """,
-        default=None,
-    )
+    primary_name = param.String(default=None, doc="""
+        Name of the primary user (the one who inputs messages);
+        the first key found in value will be used if unspecified.""")
 
-    allow_input = param.Boolean(
-        doc="""
-            Whether to allow the primary user to interactively
-            enter messages.
-        """,
-        default=True,
-    )
+    allow_input = param.Boolean(default=True, doc="""
+        Whether to allow the primary user to interactively enter messages.""")
 
-    allow_likes = param.Boolean(
-        doc="""
-            Whether to allow the primary user to interactively
-            like messages.
-        """,
-        default=False,
-    )
+    allow_likes = param.Boolean(default=False, doc="""
+        Whether to allow the primary user to interactively like messages.""")
 
-    ascending = param.Boolean(
-        doc="""
-            Whether to display messages in ascending time order.
-            If true, the latest messages and message_input_widgets
-            will be at the bottom of the chat box.
-            Otherwise, they will be at the top.
-        """,
-        default=False,
-    )
+    ascending = param.Boolean(default=False, doc="""
+        Whether to display messages in ascending time order.  If true,
+        the latest messages and message_input_widgets will be at the
+        bottom of the chat box. Otherwise, they will be at the top.""")
 
-    message_icons = param.Dict(
-        doc="""Dictionary mapping name of messages to their icons,
-        e.g. `[{'You': 'path/to/icon.png'}]`""",
-        default={},
-    )
+    message_icons = param.Dict(default={}, doc="""
+        Dictionary mapping name of messages to their icons,
+        e.g. `[{'You': 'path/to/icon.png'}]`""")
 
-    message_colors = param.Dict(
-        doc="""Dictionary mapping name of messages to their colors,
-        e.g. `[{'You': 'red'}]`""",
-        default={},
-    )
+    message_colors = param.Dict(default={}, doc="""
+        Dictionary mapping name of messages to their colors, e.g.
+        `[{'You': 'red'}]`""")
 
-    message_hue = param.Integer(
-        doc="""
-            Base hue of the message bubbles if message_colors is
-            not specified for a user.
-        """,
-        default=202,
-        bounds=(0, 360),
-    )
+    message_hue = param.Integer(default=202, bounds=(0, 360), doc="""
+        Base hue of the message bubbles if message_colors is not specified for a user.""")
 
-    message_input_widgets = param.List(
-        default=[TextInput],
-        doc="""
+    message_input_widgets = param.List(default=[TextInput], doc="""
         List of widgets to use for message input. Multiple widgets will
-        be nested under tabs.
-        """,
-    )
+        be nested under tabs.""")
 
-    default_message_callable = param.Callable(
-        default=None,
-        doc="""
+    default_message_callable = param.Callable(default=None, doc="""
         The type of Panel object to use for items in value if they are
         not already rendered as a Panel object; if None, uses the
         pn.panel function to render a displayable Panel object.
         If the item is not serializable, will fall back to pn.panel.
-        """,
-    )
+        """)
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
