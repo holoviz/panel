@@ -216,6 +216,10 @@ class Progress(ValueIndicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
+    sizing_mode = param.ObjectSelector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])
+
     value = param.Integer(default=-1, bounds=(-1, None), doc="""
         The current value of the progress bar. If set to -1 the progress
         bar will be indeterminate and animate depending on the active
@@ -232,8 +236,6 @@ class Progress(ValueIndicator):
         self.param.value.bounds = (-1, self.max)
 
     def __init__(self,**params):
-        if "sizing_mode" not in params:
-            params["sizing_mode"] = None
         super().__init__(**params)
         self._update_value_bounds()
 
