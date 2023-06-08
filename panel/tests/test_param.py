@@ -605,6 +605,25 @@ def test_param_onkeyup(document, comm):
     assert mb.value == '4'
 
 
+def test_param_event_parameter(document, comm):
+
+    l = []
+    class Test(param.Parameterized):
+        e = param.Event()
+
+        @param.depends('e', watch=True)
+        def incr(self):
+            l.append(1)
+
+    test = Test()
+    test_pane = Param(test)
+
+    test_pane._widgets['e']._process_events({'clicks': 1})
+
+    # Check that a watcher was set on the button that depends on e
+    assert l == [1]
+
+
 def test_param_precedence_ordering(document, comm):
     class Test(param.Parameterized):
         a = param.Number(default=1.2, bounds=(0, 5), precedence=-1)
