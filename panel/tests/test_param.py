@@ -520,6 +520,25 @@ def test_param_label(document, comm):
     assert test_pane._widgets['b'].name == 'C'
 
 
+def test_param_widget_type(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), label='A')
+        b = param.Number(default=1.2, bounds=(0, 5), label='B')
+
+    test = Test()
+    test_pane = Param(test, widgets={'b': {'widget_type': EditableFloatSlider}})
+
+
+    # Check that b is displayed with an EditableFloatSlider
+    wa = test_pane._widgets['a']
+    wb = test_pane._widgets['b']
+    assert not isinstance(wa, EditableFloatSlider)
+    assert isinstance(wb, EditableFloatSlider)
+    assert wb.value == 1.2
+    assert (wb.fixed_start, wb.fixed_end) == (0, 5)
+    assert wb.name == 'B'
+
+
 def test_param_precedence_ordering(document, comm):
     class Test(param.Parameterized):
         a = param.Number(default=1.2, bounds=(0, 5), precedence=-1)
