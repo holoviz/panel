@@ -545,7 +545,11 @@ def test_param_throttled(document, comm):
         b = param.Number(default=1.2, bounds=(0, 5), label='B')
 
     test = Test()
-    test_pane = Param(test, widgets={'b': {'throttled': True}})
+    try:
+        param.parameterized.warnings_as_exceptions = True
+        test_pane = Param(test, widgets={'b': {'throttled': True}})
+    finally:
+        param.parameterized.warnings_as_exceptions = False
 
     model = test_pane.get_root(document, comm=comm)
 
@@ -583,7 +587,11 @@ def test_param_onkeyup(document, comm):
         b = param.String(default='1.2', label='B')
 
     test = Test()
-    test_pane = Param(test, widgets={'b': {'onkeyup': True}})
+    try:
+        param.parameterized.warnings_as_exceptions = True
+        test_pane = Param(test, widgets={'b': {'onkeyup': True}})
+    finally:
+        param.parameterized.warnings_as_exceptions = False
 
     model = test_pane.get_root(document, comm=comm)
 
