@@ -225,6 +225,43 @@ def test_chat_box_allow_likes(document, comm):
     assert not chat_box.rows[0]._like.visible
 
 
+def test_chat_box_keeps_likes(document, comm):
+    """
+    Like disappears after appending a new message
+    https://github.com/holoviz/panel/issues/5050
+    """
+    chat_box = ChatBox(
+        name="Chat",
+        value=[{"You": "Hello!"}, {"Bot": ["How may I help?", "I'm a bot."]}],
+        allow_likes=True
+    )
+
+    chat_box.rows[1].liked = True
+    chat_box.append({"You": "Do I still like your message?"})
+    assert chat_box.rows[1].liked
+
+
+def test_chat_box_replace_value(document, comm):
+    """
+    Ensure replacing it with new messages works
+    """
+    chat_box = ChatBox(
+        name="Chat",
+        value=[{"You": "Hello!"}, {"Bot": ["How may I help?", "I'm a bot."]}],
+        allow_likes=True
+    )
+    chat_box.rows[1].liked = True
+
+    chat_box.append({"You": "Do I still like your message?"})
+    assert chat_box.rows[1].liked
+
+    chat_box.value = [{"You": "Hey!"}, {"Bot": "Bye"}]
+    assert not chat_box.rows[1].liked
+    assert chat_box.rows[0].value == ["Hey!"]
+    assert chat_box.rows[1].value == ["Bye"]
+    assert chat_box.value == [{"You": "Hey!"}, {"Bot": "Bye"}]
+
+
 def test_chat_row(document, comm):
     chat_row = ChatRow(
         value=["Hello"], name="user1", styles={"background": "black"}, show_name=True

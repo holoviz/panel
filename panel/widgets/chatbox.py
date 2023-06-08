@@ -305,6 +305,8 @@ class ChatBox(CompositeWidget):
 
         # add interactivity
         self.param.watch(self._refresh_log, "value")
+
+        # populate with initial value
         self.param.trigger("value")
 
     def _generate_default_hsl(self, hue: int | None, increment: int = 0) -> List[str]:
@@ -351,14 +353,6 @@ class ChatBox(CompositeWidget):
             sizing_mode="stretch_both",
             max_width=100,
         )
-        for message_input in self._message_inputs.values():
-            if isinstance(message_input, TextInput):
-                # for longer form messages, like TextArea / Ace, don't
-                # submit when clicking away; only if they manually click
-                # the send button
-                message_input.param.watch(self._enter_message, "value")
-                self._add_scroll_callback(message_input, "value")
-            message_input.sizing_mode = "stretch_width"
         self._send_button.on_click(self._enter_message)
 
         row_layout = layout.copy()
@@ -368,12 +362,15 @@ class ChatBox(CompositeWidget):
 
         input_items = Tabs()
         for message_input_name, message_input in self._message_inputs.items():
-            input_items.append(
-                (
-                    message_input_name,
-                    Row(message_input, self._send_button.clone(), **row_layout),
-                )
-            )
+            message_input.sizing_mode = "stretch_width"
+            # for longer form messages, like TextArea / Ace, don't
+            # submit when clicking away; only if they manually click
+            # the send button
+            if isinstance(message_input, TextInput):
+                message_input.param.watch(self._enter_message, "value")
+                self._add_scroll_callback(message_input, "value")
+            message_row = Row(message_input, self._send_button.clone(), **row_layout)
+            input_items.append((message_input_name, message_row))
 
         if len(self._message_inputs) == 1:
             input_items = input_items[0]  # if only a single input, don't use tabs
@@ -486,6 +483,10 @@ class ChatBox(CompositeWidget):
         Append the message from the text input when the user presses Enter.
         """
         for message_input in self._message_inputs.values():
+            # first set value_input to "" or else it triggers twice in notebook
+            # strangely, it doesn't occur when served on the browser
+            if hasattr(message_input, "value_input"):
+                message_input.value_input = ""
             message = message_input.value
             if message:
                 break
@@ -494,10 +495,6 @@ class ChatBox(CompositeWidget):
 
         user = self.primary_name or "You"
         self.append({user: message})
-
-        # clear all messages
-        for message_input in self._message_inputs.values():
-            message_input.value = ""
 
     @property
     def rows(self) -> List[ChatRow]:
@@ -516,7 +513,19 @@ class ChatBox(CompositeWidget):
         """
         if not isinstance(user_message, dict):
             raise ValueError(f"Expected a dictionary, but got {user_message}")
-        self.value = [*self.value, user_message]
+        # need to keep it in sync, but do not want to trigger refresh_logs so append
+        self.value.append(user_message)
+
+        if len(self._chat_log) == 0:
+            previous_user = None
+        else:
+            previous_user = self._chat_log[-1].name
+
+        user, message_contents = self._separate_user_message(user_message)
+        message_row = self._instantiate_message_row(
+            user, message_contents, show_name=user != previous_user,
+        )
+        self._chat_log.objects = [*self._chat_log.objects, message_row]
 
     def extend(self, user_messages: List[Dict[str, Union[List[Any], Any]]]) -> None:
         """
