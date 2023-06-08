@@ -59,7 +59,7 @@ html_theme_options = {
         },
         {
             "name": "Discord",
-            "url": "https://discord.gg/AXRHnJU6sP",
+            "url": "https://discord.gg/UXdtYyGVQX",
             "icon": "fa-brands fa-discord",
         },
     ],
