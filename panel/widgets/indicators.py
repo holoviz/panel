@@ -1311,6 +1311,21 @@ class Tqdm(Indicator):
 
 
 class TooltipIcon(Widget):
+    """
+    The `TooltipIcon` displays a small `?` icon. When you hover over the `?` icon, the `value`
+    will display.
+
+    Use the `TooltipIcon` to provide
+
+    - helpful information to users without taking up a lot of screen space
+    - tooltips next to to Panel widgets that do not support tooltips yet.
+
+    Reference: https://panel.holoviz.org/reference/indicators/TooltipIcon.html
+
+    :Example:
+
+    >>> pn.widgets.TooltipIcon(value="This is a simple tooltip by using a string")
+    """
 
     value = param.ClassSelector(default="Description", class_=(str, Tooltip), doc="""
         The description in the tooltip.""")
