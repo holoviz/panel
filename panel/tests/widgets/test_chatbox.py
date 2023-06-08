@@ -259,6 +259,7 @@ def test_chat_box_replace_value(document, comm):
     assert not chat_box.rows[1].liked
     assert chat_box.rows[0].value == ["Hey!"]
     assert chat_box.rows[1].value == ["Bye"]
+    assert chat_box.value == [{"You": "Hey!"}, {"Bot": "Bye"}]
 
 
 def test_chat_row(document, comm):
