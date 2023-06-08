@@ -5,7 +5,9 @@ This guide addresses how to use generators to build interactive components. This
 ---
 
 ```{pyodide}
+import asyncio
 import time
+
 import panel as pn
 
 pn.extension()
