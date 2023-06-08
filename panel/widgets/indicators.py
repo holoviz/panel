@@ -1318,7 +1318,7 @@ class TooltipIcon(Widget):
     Use the `TooltipIcon` to provide
 
     - helpful information to users without taking up a lot of screen space
-    - tooltips next to to Panel widgets that do not support tooltips yet.
+    - tooltips next to Panel widgets that do not support tooltips yet.
 
     Reference: https://panel.holoviz.org/reference/indicators/TooltipIcon.html
 
