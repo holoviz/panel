@@ -539,6 +539,72 @@ def test_param_widget_type(document, comm):
     assert wb.name == 'B'
 
 
+def test_param_throttled(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), label='A')
+        b = param.Number(default=1.2, bounds=(0, 5), label='B')
+
+    test = Test()
+    test_pane = Param(test, widgets={'b': {'throttled': True}})
+
+    model = test_pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    _, ma, mb = model.children
+
+    ma.value = 1
+    assert ma.value == 1
+    assert ma.value_throttled == 1.2
+    assert test.a == 1
+
+    test.a = 2
+    assert ma.value == 2
+    assert ma.value_throttled == 1.2
+    assert test.a == 2
+
+    # `test.b` is linked to `mb.value_throttled` instead of `mb.value` when throttled
+    test_pane._widgets['b']._process_events({'value_throttled': 3})
+    assert mb.value != 3
+    assert test.b == 3
+
+    test_pane._widgets['b']._process_events({'value': 4})
+    assert test.b == 3
+    assert mb.value == 4
+
+
+def test_param_onkeyup(document, comm):
+    class Test(param.Parameterized):
+        a = param.String(default='1.2', label='A')
+        b = param.String(default='1.2', label='B')
+
+    test = Test()
+    test_pane = Param(test, widgets={'b': {'onkeyup': True}})
+
+    model = test_pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    _, ma, mb = model.children
+
+    ma.value = '1'
+    assert ma.value == '1'
+    assert ma.value_input == ''
+    assert test.a == '1'
+
+    test.a = '2'
+    assert ma.value == '2'
+    assert ma.value_input == ''
+    assert test.a == '2'
+
+    # `test.b` is linked to `mb.value_input` instead of `mb.value` when onkeyup
+    test_pane._widgets['b']._process_events({'value_input': '3'})
+    assert mb.value != '3'
+    assert test.b == '3'
+
+    test_pane._widgets['b']._process_events({'value': '4'})
+    assert test.b == '3'
+    assert mb.value == '4'
+
+
 def test_param_precedence_ordering(document, comm):
     class Test(param.Parameterized):
         a = param.Number(default=1.2, bounds=(0, 5), precedence=-1)
