@@ -571,6 +571,11 @@ def test_param_throttled(document, comm):
     assert test.b == 3
     assert mb.value == 4
 
+    test.b = 5
+    assert mb.value == 5
+    assert test_pane._widgets['b'].value == 5
+    assert test_pane._widgets['b'].value_throttled == 5
+
 
 def test_param_onkeyup(document, comm):
     class Test(param.Parameterized):
@@ -860,6 +865,11 @@ def test_set_widgets_throttled(document, comm):
     pane._widgets['a']._process_events({'value': 4})
     assert test.a == 3
     assert number.value == 4
+
+    test.a = 5
+    assert number.value == 5
+    assert pane._widgets['a'].value == 5
+    assert pane._widgets['a'].value_throttled == 5
 
 
 def test_set_show_name(document, comm):
