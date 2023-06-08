@@ -304,19 +304,10 @@ class ChatBox(CompositeWidget):
         self._composite[:] = box_objects
 
         # add interactivity
-        self.param.watch(self._add_to_log, "value")
+        self.param.watch(self._refresh_log, "value")
 
-        # now populate the logs
-        previous_user = None
-        message_rows = []
-        for user_message in self.value:
-            user, message_contents = self._separate_user_message(user_message)
-            message_row = self._instantiate_message_row(
-                user=user, message_contents=message_contents, show_name=user != previous_user
-            )
-            message_rows.append(message_row)
-            previous_user = user
-        self._chat_log.objects = message_rows
+        # populate with initial value
+        self.param.trigger("value")
 
     def _generate_default_hsl(self, hue: int | None, increment: int = 0) -> List[str]:
         hue += increment
@@ -466,21 +457,26 @@ class ChatBox(CompositeWidget):
         )
         return message_row
 
-    def _add_to_log(self, event: Optional[param.parameterized.Event] = None) -> None:
+    def _refresh_log(self, event: Optional[param.parameterized.Event] = None) -> None:
         """
-        Adds a message row to the chat log.
+        Refresh the chat log for complete replacement of all messages.
         """
-        if len(self._chat_log) == 0:
-            previous_user = None
-        else:
-            previous_user = self._chat_log[-1].name
-
         user_messages = event.new
-        user, message_contents = self._separate_user_message(user_messages[-1])
-        message_row = self._instantiate_message_row(
-            user, message_contents, show_name=user != previous_user,
-        )
-        self._chat_log.objects = [*self._chat_log.objects, message_row]
+
+        message_rows = []
+        previous_user = None
+        for user_message in user_messages:
+            user, message_contents = self._separate_user_message(user_message)
+
+            show_name = user != previous_user
+            previous_user = user
+
+            message_row = self._instantiate_message_row(
+                user, message_contents, show_name
+            )
+            message_rows.append(message_row)
+
+        self._chat_log.objects = message_rows
 
     def _enter_message(self, _: Optional[param.parameterized.Event] = None) -> None:
         """
@@ -517,7 +513,19 @@ class ChatBox(CompositeWidget):
         """
         if not isinstance(user_message, dict):
             raise ValueError(f"Expected a dictionary, but got {user_message}")
-        self.value = [*self.value, user_message]
+        # need to keep it in sync, but do not want to trigger refresh_logs so append
+        self.value.append(user_message)
+
+        if len(self._chat_log) == 0:
+            previous_user = None
+        else:
+            previous_user = self._chat_log[-1].name
+
+        user, message_contents = self._separate_user_message(user_message)
+        message_row = self._instantiate_message_row(
+            user, message_contents, show_name=user != previous_user,
+        )
+        self._chat_log.objects = [*self._chat_log.objects, message_row]
 
     def extend(self, user_messages: List[Dict[str, Union[List[Any], Any]]]) -> None:
         """
