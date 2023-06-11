@@ -198,7 +198,7 @@ terminal = pn.widgets.Terminal(
 
 # Model: trend
 _data = {"x": np.arange(50), "y": np.random.randn(50).cumsum()}
-trend = pn.indicators.Trend(title="Price", data=_data, width=200, height=200)
+trend = pn.indicators.Trend(name="Price", data=_data, width=200, height=200)
 
 # Model: vega
 try:

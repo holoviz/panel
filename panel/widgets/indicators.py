@@ -1018,7 +1018,7 @@ class Trend(SyncableData, Indicator):
     :Example:
 
     >>> data = {'x': np.arange(50), 'y': np.random.randn(50).cumsum()}
-    >>> Trend(title='Price', data=data, plot_type='area', width=200, height=200)
+    >>> Trend(name='Price', data=data, plot_type='area', width=200, height=200)
     """
 
     data = param.Parameter(doc="""
@@ -1048,7 +1048,7 @@ class Trend(SyncableData, Indicator):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    title = param.String(doc="""The title or a short description of the card""")
+    name = param.String(doc="""The name or a short description of the card""")
 
     value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
