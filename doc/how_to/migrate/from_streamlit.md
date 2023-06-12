@@ -171,7 +171,7 @@ You can identify the corresponding Panel *pane* in the
 
 ## Inputs
 
-In Panel the objects that can provide you with input values from users are called *widgets*.
+In Panel the objects that can accept user inputs are called *widgets*.
 
 Panel provides widgets similar to the ones you know from Streamlit and some unique ones in addition.
 
