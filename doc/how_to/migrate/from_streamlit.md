@@ -98,7 +98,7 @@ You won't have to
 
 We have never collected or had plans to collect telemetry data from our users apps.
 
-## Outputs
+## Displaying Content
 
 In Panel the objects that can display your Python objects are called *panes*. With Panels *panes*
 you will be able to
