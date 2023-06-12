@@ -35,7 +35,7 @@ def runner(run):
 pn.Row(run, pn.bind(runner, run))
 ```
 
-This provides a powerful mechanism for providing incrememental updates as we load some data, perform some data processing etc.
+This provides a powerful mechanism for providing incrememental updates as we load some data, perform some data processing, etc.
 
 This can also be combined with asynchronous processing, e.g. to dynamically stream in new data as it arrives:
 
