@@ -10,6 +10,9 @@ from panel.widgets import IntSlider, Trend
 def test_constructor():
     Trend(name="Test")
 
+def test_deprecated_parameter():
+    Trend(title="Test")
+
 
 def manualtest_constructor():
     return Trend(name="Test")
