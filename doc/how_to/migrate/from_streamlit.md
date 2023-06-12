@@ -438,8 +438,8 @@ def plot(data, bins):
     return fig
 
 data = np.random.normal(1, 1, size=100)
-bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
-bplot = pn.bind(plot, data, bins)
+bins_input = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
+bplot = pn.bind(plot, data=data, bins=bins_input)
 
 pn.Column(bins, bplot).servable()
 ```
