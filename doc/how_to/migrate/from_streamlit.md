@@ -208,9 +208,9 @@ bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
 pn.Column(bins, pn.pane.Str(bins)).servable()
 ```
 
-If you debug and inspect the code you will notice a big difference. Streamlits `bins` value is an
-`integer` while Panels `bins` value is an `IntSlider`. This is the first real indication that
-Streamlit and Panel works in very different ways.
+If you check the type of the variables, you will notice a key difference. Streamlit's `bins` returns the value of the slider as an `integer` while Panel's `bins` returns an `IntSlider`!
+
+To access the value of the slider in Panel, you would need to call `bins.value`.
 
 For more info about the `IntSlider` check out the
 [`IntSlider` Guide](https://panel.holoviz.org/reference/widgets/IntSlider.html).
