@@ -43,6 +43,7 @@ from ..models import (
 from ..pane.markup import Str
 from ..reactive import SyncableData
 from ..util import escape, updating
+from ..util.warnings import deprecated
 from ..viewable import Viewable
 from .base import Widget
 
@@ -1065,6 +1066,12 @@ class Trend(SyncableData, Indicator):
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkTrendIndicator
+
+    def __init__(self, **params):
+        if "title" in params:
+            params["name"] = params.pop("title")
+            deprecated("1.3", "title",  "name")
+        super().__init__(**params)
 
     def _get_data(self):
         if self.data is None:
