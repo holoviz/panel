@@ -58,7 +58,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
-          external_repository: pyviz-dev/panelite-dev
+          external_repository: holoviz-dev/panelite-dev
           publish_dir: ./lite/dist
           force_orphan: true
       - name: Upload prod
@@ -68,7 +68,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           personal_token: ${{ secrets.ACCESS_TOKEN }}
-          external_repository: pyviz-dev/panelite
+          external_repository: holoviz-dev/panelite
           publish_dir: ./lite/dist
           cname: panelite.holoviz.org
           force_orphan: true
