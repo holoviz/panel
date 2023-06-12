@@ -272,7 +272,7 @@ pn.extension(sizing_mode="stretch_width", template="bootstrap")
 
 col1 = pn.Column(
     pn.pane.Image("https://streamlit.io/images/brand/streamlit-logo-primary-colormark-darktext.png"),
-    pn.panel("# A faster way to build and share data apps")
+   "# A faster way to build and share data apps"
 )
 col2 = pn.Column(
     pn.pane.Image("https://panel.holoviz.org/_images/logo_horizontal_light_theme.png"),
