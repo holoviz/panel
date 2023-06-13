@@ -47,37 +47,37 @@ class ChatRow(CompositeWidget):
         """,
     )
 
-    icon = param.String(
-        default=None, doc="""The icon to display adjacent to the value"""
-    )
+    icon = param.String(default=None, doc="""The icon to display adjacent to the value""")
 
-    liked = param.Boolean(default=False, doc="""Whether a user liked the message""")
+    liked = param.Boolean(
+        default=False, doc="""
+        Whether a user liked the message""")
 
     margin = Margin(
         default=0,
         doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""",
+        or a four-tuple (top, right, bottom, left)."""
     )
 
     show_name = param.Boolean(
         default=True,
         doc="""
-        Whether to show the name of the user""",
+        Whether to show the name of the user"""
     )
 
     show_like = param.Boolean(
         default=True,
         doc="""
-        Whether to show the like button""",
+        Whether to show the like button"""
     )
 
     styles = param.Dict(
         default={},
         doc="""
         Dictionary of CSS properties and values to apply
-        message to the bubble.""",
+        message to the bubble."""
     )
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
