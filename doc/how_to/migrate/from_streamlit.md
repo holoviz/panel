@@ -601,16 +601,19 @@ The app looks like
 An alternative to using an *indicator* would be to change the `.disabled` and `.loading` parameters of the `calculation_input` and `run_input`.
 
 ```python
-import panel as pn
 import time
 import random
+from textwrap import dedent
+
+import panel as pn
 
 pn.extension(sizing_mode="stretch_width", template="bootstrap")
-
 pn.state.template.param.update(site="Panel", title="Calculation Runner")
 
-def calculation_message(calculation):
+
+def notify_choice(calculation):
     return f"You chose: {calculation}"
+
 
 def calculation_a():
     time.sleep(1.5)
@@ -621,38 +624,52 @@ def calculation_b():
     time.sleep(1.5)
     return random.randint(0, 100)
 
-def calculation_result(running, calculation):
+
+def run_calculation(running, calculation):
     if not running:
         yield "Calculation did not run yet"
-        return # This will break the execution
-
-    calculation_input.disabled=calculation_input.loading=run_input.disabled=run_input.loading=True
-
-    if calculation=="A":
-        func = calculation_a
-    else:
-        func = calculation_b
-
-    time_start = time.perf_counter()
-    result = func()
-    time_end = time.perf_counter()
-    calculation_input.disabled=calculation_input.loading=run_input.disabled=run_input.loading=False
-    yield f"""Done!
-
-Result: {result}
-
-The function took {time_end - time_start:1.1f} seconds to complete"""
+        return  # This will break the execution
+    try:
+        calculation_input.loading = True
+        run_input.loading = True
+        yield pn.Row(
+            pn.indicators.LoadingSpinner(value=True, width=50, height=50, align="center"),
+            "Running... Please wait!",
+            align="center",
+        )
+        if calculation == "A":
+            func = calculation_a
+        else:
+            func = calculation_b
+        time_start = time.perf_counter()
+        result = func()
+        time_end = time.perf_counter()
+        yield dedent(
+            f"""
+            Done!
+            Result: {result}
+            The function took {time_end - time_start:1.1f} seconds to complete
+            """
+        )
+    finally:
+        calculation_input.loading = False
+        run_input.loading = False
 
 
 calculation_input = pn.widgets.RadioBoxGroup(name="Calculation", options=["A", "B"])
-run_input = pn.widgets.Button(name="Press to run calculation", icon="caret-right", button_type="primary", sizing_mode="fixed", width=250)
-
+run_input = pn.widgets.Button(
+    name="Press to run calculation",
+    icon="caret-right",
+    button_type="primary",
+    sizing_mode="fixed",
+    width=250,
+)
 pn.Column(
     "Which calculation would you like to perform?",
     calculation_input,
-    pn.bind(calculation_message, calculation_input),
+    pn.bind(notify_choice, calculation_input),
     run_input,
-    pn.bind(calculation_result, run_input, calculation_input)
+    pn.bind(run_calculation, run_input, calculation_input),
 ).servable()
 ```
 
