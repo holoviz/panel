@@ -132,7 +132,7 @@ class PanelExecutor(WSHandler):
 
         # using private attr so users only have access to a read-only property
         session_context._request = _RequestProxy(
-            arguments={k: [v.encode('utf-8') for v in vs] for k, vs in self.payload.get('arguments', {})},
+            arguments={k: [v.encode('utf-8') for v in vs] for k, vs in self.payload.get('arguments', {}).items()},
             cookies=self.payload.get('cookies'),
             headers=self.payload.get('headers')
         )
@@ -173,7 +173,11 @@ class PanelExecutor(WSHandler):
         be served by the `PanelJupyterHandler`.
         """
         if self.session is None:
-            return Mimebundle({'text/error': f'Session did not start correctly: {self.exception}'})
+            import traceback
+
+            # `e` is an exception object that you get from somewhere
+            traceback_str = ''.join(traceback.format_tb(self.exception.__traceback__))
+            return Mimebundle({'text/error': f'Session did not start correctly: {self.exception} {traceback_str}'})
         with set_curdoc(self.session.document):
             if not self.session.document.roots:
                 return Mimebundle({
