@@ -60,7 +60,7 @@ details.
 You use `.servable` to specify the Panel objects you want to add the Panel *template* when
 served as a web app.
 
-You *serve* and *show* the app with *autoreload* via
+You *serve* and *show* the app in your browser with *autoreload* via
 
 ```bash
 panel serve app.py --autoreload --show
