@@ -1,3 +1,5 @@
+from panel.depends import bind
+from panel.layout import Column
 from panel.pane import JPG
 from panel.widgets import FileInput, TextInput
 from panel.widgets.chatbox import ChatBox, ChatRow
@@ -95,6 +97,34 @@ def test_chat_box_clear(document, comm):
     assert len(chat_box) == 0
 
 
+def test_chat_box_disabled(document, comm):
+    chat_box = ChatBox(disabled=True)
+    # message input
+    assert chat_box._composite[0][0].disabled
+    # send button
+    assert chat_box._composite[0][1].disabled
+
+    chat_box.disabled = False
+    # message input
+    assert not chat_box._composite[0][0].disabled
+    # send button
+    assert not chat_box._composite[0][1].disabled
+
+
+def test_chat_box_loading(document, comm):
+    chat_box = ChatBox(loading=True)
+    # message input
+    assert chat_box._composite[0][0].loading
+    # send button
+    assert chat_box._composite[0][1].loading
+
+    chat_box.loading = False
+    # message input
+    assert not chat_box._composite[0][0].loading
+    # send button
+    assert not chat_box._composite[0][1].loading
+
+
 def test_chat_box_append(document, comm):
     chat_box = ChatBox()
     chat_box.append({"user1": "Hello"})
@@ -102,6 +132,21 @@ def test_chat_box_append(document, comm):
     assert chat_box.value == [{"user1": "Hello"}, {"user2": "Hi"}]
     assert len(chat_box) == 2
     assert len(chat_box._chat_log.objects) == 2
+
+
+def test_chat_box_append_bind(document, comm):
+    def update(history):
+        return history
+
+    chat_box = ChatBox()
+    result = bind(update, history=chat_box)
+    col = Column(chat_box, result)
+    chat_box.append({"user1": "Hello"})
+    chat_box.append({"user2": "Hi"})
+    assert col[-1].object() == [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+    ]
 
 
 def test_chat_box_extend(document, comm):
@@ -162,7 +207,7 @@ def test_chat_box_message_colors(document, comm):
     chat_box = ChatBox(value=value.copy(), message_colors={"user1": "red"})
     assert chat_box.message_colors["user1"] == "red"
     # random generated colors are hexcodes
-    assert chat_box.message_colors["user2"] == ("rgb(246, 246, 246)", 'black')
+    assert chat_box.message_colors["user2"] == ("rgb(246, 246, 246)", "black")
 
 
 def test_chat_box_message_colors_with_hue(document, comm):
@@ -170,10 +215,13 @@ def test_chat_box_message_colors_with_hue(document, comm):
         {"user1": "Hello"},
         {"user2": "Hi"},
     ]
-    chat_box = ChatBox(value=value.copy(), message_colors={"user1": "red"}, message_hue=210)
+    chat_box = ChatBox(
+        value=value.copy(), message_colors={"user1": "red"}, message_hue=210
+    )
     assert chat_box.message_colors["user1"] == "red"
     # random generated colors are hexcodes
     assert chat_box.message_colors["user2"][0].startswith("hsl")
+
 
 def test_chat_box_generate_color(document, comm):
     value = [
@@ -191,6 +239,7 @@ def test_chat_box_generate_color(document, comm):
     assert chat_box.message_colors["user3"][0] == "hsl(290, 30%, 55%)"
     assert chat_box.message_colors["user4"][0] == "hsl(290, 45%, 50%)"
     assert chat_box.message_colors["user5"][0] == "hsl(18, 15%, 60%)"
+
 
 def test_chat_box_user_icons(document, comm):
     value = [
@@ -233,12 +282,23 @@ def test_chat_box_keeps_likes(document, comm):
     chat_box = ChatBox(
         name="Chat",
         value=[{"You": "Hello!"}, {"Bot": ["How may I help?", "I'm a bot."]}],
-        allow_likes=True
+        allow_likes=True,
     )
 
+    chat_box.rows[0].liked = True
     chat_box.rows[1].liked = True
     chat_box.append({"You": "Do I still like your message?"})
     assert chat_box.rows[1].liked
+
+    # it shouldn't keep the likes if the message is changed
+    chat_box.value = [
+        {"You": "Hello!"},
+        {"Bot": "No longer do I do..."},
+        {"You": "Do I still like your message?"},
+    ]
+    assert chat_box.rows[0].liked
+    assert not chat_box.rows[1].liked
+    assert not chat_box.rows[1].liked
 
 
 def test_chat_box_replace_value(document, comm):
@@ -248,7 +308,7 @@ def test_chat_box_replace_value(document, comm):
     chat_box = ChatBox(
         name="Chat",
         value=[{"You": "Hello!"}, {"Bot": ["How may I help?", "I'm a bot."]}],
-        allow_likes=True
+        allow_likes=True,
     )
     chat_box.rows[1].liked = True
 
