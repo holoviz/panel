@@ -28,7 +28,8 @@ class ChatRow(CompositeWidget):
     >>> ChatRow(name="You", value="Welcome!", show_name=True, align="start")
     """
 
-    value = param.List(doc="""The objects to display""")
+    value = param.List(doc="""
+        The objects to display""")
 
     align_name = param.Selector(
         default="start",
@@ -42,13 +43,15 @@ class ChatRow(CompositeWidget):
         The type of Panel object or callable to use if an item in value is not
         already rendered as a Panel object; if None, uses the
         pn.panel function to render a displayable Panel object.
-        If the item is not serializable, will fall back to pn.panel.
-        """)
+        If the item is not serializable, will fall back to pn.panel.""")
 
-    icon = param.String(default=None, doc="""The icon to display adjacent to the value""")
+    icon = param.String(
+        default=None, doc="""
+        The icon to display adjacent to the value""")
 
     liked = param.Boolean(
-        default=False, doc="""Whether a user liked the message""")
+        default=False, doc="""
+        Whether a user liked the message""")
 
     margin = Margin(
         default=0,
@@ -59,11 +62,13 @@ class ChatRow(CompositeWidget):
 
     show_name = param.Boolean(
         default=True,
-        doc="""Whether to show the name of the user""")
+        doc="""
+        Whether to show the name of the user""")
 
     show_like = param.Boolean(
         default=True,
-        doc="""Whether to show the like button""")
+        doc="""
+        Whether to show the like button""")
 
     styles = param.Dict(
         default={},
@@ -228,63 +233,54 @@ class ChatBox(CompositeWidget):
         doc="""
         List of messages as dicts, mapping user to message(s),
         e.g. `[{'You': ['Welcome!', 'Good bye!']}]` The message(s) can be
-        any Python object that can be rendered by Panel.""",
-    )
+        any Python object that can be rendered by Panel.""")
 
     primary_name = param.String(
         default=None,
         doc="""
         Name of the primary user (the one who inputs messages);
-        the first key found in value will be used if unspecified.""",
-    )
+        the first key found in value will be used if unspecified.""")
 
     allow_input = param.Boolean(
         default=True,
         doc="""
-        Whether to allow the primary user to interactively enter messages.""",
-    )
+        Whether to allow the primary user to interactively enter messages.""")
 
     allow_likes = param.Boolean(
         default=False,
         doc="""
-        Whether to allow the primary user to interactively like messages.""",
-    )
+        Whether to allow the primary user to interactively like messages.""")
 
     ascending = param.Boolean(
         default=False,
         doc="""
         Whether to display messages in ascending time order.  If true,
         the latest messages and message_input_widgets will be at the
-        bottom of the chat box. Otherwise, they will be at the top.""",
-    )
+        bottom of the chat box. Otherwise, they will be at the top.""")
 
     message_icons = param.Dict(
         default={},
         doc="""
         Dictionary mapping name of messages to their icons,
-        e.g. `[{'You': 'path/to/icon.png'}]`""",
-    )
+        e.g. `[{'You': 'path/to/icon.png'}]`""")
 
     message_colors = param.Dict(
         default={},
         doc="""
         Dictionary mapping name of messages to their colors, e.g.
-        `[{'You': 'red'}]`""",
-    )
+        `[{'You': 'red'}]`""")
 
     message_hue = param.Integer(
         default=None,
         bounds=(0, 360),
         doc="""
-        Base hue of the message bubbles if message_colors is not specified for a user.""",
-    )
+        Base hue of the message bubbles if message_colors is not specified for a user.""")
 
     message_input_widgets = param.List(
         default=[TextInput],
         doc="""
         List of widgets to use for message input. Multiple widgets will
-        be nested under tabs.""",
-    )
+        be nested under tabs.""")
 
     default_message_callable = param.Callable(
         default=None,
@@ -293,8 +289,7 @@ class ChatBox(CompositeWidget):
         not already rendered as a Panel object; if None, uses the
         pn.panel function to render a displayable Panel object.
         If the item is not serializable, will fall back to pn.panel.
-        """,
-    )
+        """)
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
