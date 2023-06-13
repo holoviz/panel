@@ -132,7 +132,7 @@ class PanelExecutor(WSHandler):
 
         # using private attr so users only have access to a read-only property
         session_context._request = _RequestProxy(
-            arguments={k: [v.encode('utf-8') for v in vs] for k, vs in self.payload.get('arguments', {})},
+            arguments={k: [v.encode('utf-8') for v in vs] for k, vs in self.payload.get('arguments', {}).items()},
             cookies=self.payload.get('cookies'),
             headers=self.payload.get('headers')
         )
