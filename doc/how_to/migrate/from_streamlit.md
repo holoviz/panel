@@ -813,7 +813,7 @@ def get_data():
 @st.cache_data(hash_funcs={Figure: lambda _: None})
 def plot(data, bins):
     print("plot func", bins)
-    sleep(0.25)
+    sleep(2)
     fig = Figure(figsize=(8,4))
     ax = fig.subplots()
     ax.hist(data, bins=bins)
@@ -824,11 +824,7 @@ bins = st.slider(value=20, min_value=10, max_value=30, step=1, label="Bins")
 st.pyplot(plot(data, bins))
 ```
 
-I've added
-
-- `sleep` statements to make the functions more *expensive*.
-- `print` statements to show you that the functions are only runs once for a specific set of
-arguments.
+I've added `sleep` statements to make the functions more *expensive*.
 
 #### Panel Session Cache Example
 
@@ -847,7 +843,7 @@ def get_data():
 
 def plot(data, bins):
     print("plot func", bins)
-    sleep(0.25)
+    sleep(2)
     fig = Figure(figsize=(8,4))
     ax = fig.subplots()
     ax.hist(data, bins=bins)
@@ -859,8 +855,15 @@ data = get_data()
 bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1)
 cplot = pn.cache(plot)
 bplot = pn.bind(cplot, data, bins)
-pn.Column(bins, bplot).servable()
+pn.Column(bins, pn.panel(bplot, loading_indicator=True)).servable()
 ```
+
+Please note that using `pn.cache` on `get_data` would not make a
+difference since `get_data` is only run once per user session.
+
+The app looks like
+
+![Panel Session Cache Example](https://user-images.githubusercontent.com/42288570/245366569-d1808e7b-812f-4044-8bad-73205027fd63.gif)
 
 You can also use `pn.cache` as an annotation similar to `st.cache_data`. I.e. as
 
@@ -870,7 +873,7 @@ def plot(data, bins):
     ...
 ```
 
-Be aware the the annotation approach has a tendency to mix up your business logic
+But be aware the the annotation approach has a tendency to mix up your business logic
 (`data` and `plot` function) and your caching logic (when and how to apply caching). This can make
 your code harder to maintain and reuse for other use cases.
 
@@ -896,7 +899,7 @@ def get_data():
 @st.cache_data(hash_funcs={Figure: lambda _: None})
 def plot(data, bins):
     print("plot func", bins)
-    sleep(0.25)
+    sleep(2.0)
     fig = Figure(figsize=(8,4))
     ax = fig.subplots()
     ax.hist(data, bins=bins)
@@ -927,7 +930,7 @@ def get_data():
 
 def plot(data, bins):
     print("plot func", bins)
-    sleep(0.25)
+    sleep(2.0)
     fig = Figure(figsize=(8,4))
     ax = fig.subplots()
     ax.hist(data, bins=bins)
@@ -942,7 +945,7 @@ bplot = pn.bind(cplot, data, bins)
 pn.Column(bins, bplot).servable()
 ```
 
-The global cache `pn.state.as_cached` is used on the `get_data` function to only load the data once
+Notice that now we use the global cache `pn.state.as_cached` is used on the `get_data` function to only load the data once
 across all users sessions.
 
 ### Cache Migration Steps
