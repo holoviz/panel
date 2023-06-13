@@ -173,11 +173,7 @@ class PanelExecutor(WSHandler):
         be served by the `PanelJupyterHandler`.
         """
         if self.session is None:
-            import traceback
-
-            # `e` is an exception object that you get from somewhere
-            traceback_str = ''.join(traceback.format_tb(self.exception.__traceback__))
-            return Mimebundle({'text/error': f'Session did not start correctly: {self.exception} {traceback_str}'})
+            return Mimebundle({'text/error': f'Session did not start correctly: {self.exception}'})
         with set_curdoc(self.session.document):
             if not self.session.document.roots:
                 return Mimebundle({
