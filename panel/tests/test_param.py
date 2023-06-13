@@ -520,6 +520,123 @@ def test_param_label(document, comm):
     assert test_pane._widgets['b'].name == 'C'
 
 
+def test_param_widget_type(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), label='A')
+        b = param.Number(default=1.2, bounds=(0, 5), label='B')
+
+    test = Test()
+    test_pane = Param(test, widgets={'b': {'widget_type': EditableFloatSlider}})
+
+
+    # Check that b is displayed with an EditableFloatSlider
+    wa = test_pane._widgets['a']
+    wb = test_pane._widgets['b']
+    assert not isinstance(wa, EditableFloatSlider)
+    assert isinstance(wb, EditableFloatSlider)
+    assert wb.value == 1.2
+    assert (wb.fixed_start, wb.fixed_end) == (0, 5)
+    assert wb.name == 'B'
+
+
+def test_param_throttled(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), label='A')
+        b = param.Number(default=1.2, bounds=(0, 5), label='B')
+
+    test = Test()
+    try:
+        param.parameterized.warnings_as_exceptions = True
+        test_pane = Param(test, widgets={'b': {'throttled': True}})
+    finally:
+        param.parameterized.warnings_as_exceptions = False
+
+    model = test_pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    _, ma, mb = model.children
+
+    ma.value = 1
+    assert ma.value == 1
+    assert ma.value_throttled == 1.2
+    assert test.a == 1
+
+    test.a = 2
+    assert ma.value == 2
+    assert ma.value_throttled == 1.2
+    assert test.a == 2
+
+    # `test.b` is linked to `mb.value_throttled` instead of `mb.value` when throttled
+    test_pane._widgets['b']._process_events({'value_throttled': 3})
+    assert mb.value != 3
+    assert test.b == 3
+
+    test_pane._widgets['b']._process_events({'value': 4})
+    assert test.b == 3
+    assert mb.value == 4
+
+    test.b = 5
+    assert mb.value == 5
+    assert test_pane._widgets['b'].value == 5
+    assert test_pane._widgets['b'].value_throttled == 5
+
+
+def test_param_onkeyup(document, comm):
+    class Test(param.Parameterized):
+        a = param.String(default='1.2', label='A')
+        b = param.String(default='1.2', label='B')
+
+    test = Test()
+    try:
+        param.parameterized.warnings_as_exceptions = True
+        test_pane = Param(test, widgets={'b': {'onkeyup': True}})
+    finally:
+        param.parameterized.warnings_as_exceptions = False
+
+    model = test_pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    _, ma, mb = model.children
+
+    ma.value = '1'
+    assert ma.value == '1'
+    assert ma.value_input == ''
+    assert test.a == '1'
+
+    test.a = '2'
+    assert ma.value == '2'
+    assert ma.value_input == ''
+    assert test.a == '2'
+
+    # `test.b` is linked to `mb.value_input` instead of `mb.value` when onkeyup
+    test_pane._widgets['b']._process_events({'value_input': '3'})
+    assert mb.value != '3'
+    assert test.b == '3'
+
+    test_pane._widgets['b']._process_events({'value': '4'})
+    assert test.b == '3'
+    assert mb.value == '4'
+
+
+def test_param_event_parameter(document, comm):
+
+    l = []
+    class Test(param.Parameterized):
+        e = param.Event()
+
+        @param.depends('e', watch=True)
+        def incr(self):
+            l.append(1)
+
+    test = Test()
+    test_pane = Param(test)
+
+    test_pane._widgets['e']._process_events({'clicks': 1})
+
+    # Check that a watcher was set on the button that depends on e
+    assert l == [1]
+
+
 def test_param_precedence_ordering(document, comm):
     class Test(param.Parameterized):
         a = param.Number(default=1.2, bounds=(0, 5), precedence=-1)
@@ -756,6 +873,11 @@ def test_set_widgets_throttled(document, comm):
     pane._widgets['a']._process_events({'value': 4})
     assert test.a == 3
     assert number.value == 4
+
+    test.a = 5
+    assert number.value == 5
+    assert pane._widgets['a'].value == 5
+    assert pane._widgets['a'].value_throttled == 5
 
 
 def test_set_show_name(document, comm):

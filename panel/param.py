@@ -469,6 +469,8 @@ class Param(PaneBase):
             kw['description'] = textwrap.dedent(p_obj.doc).strip()
 
         # Update kwargs
+        onkeyup = kw_widget.pop('onkeyup', False)
+        throttled = kw_widget.pop('throttled', False)
         ignored_kws = [repr(k) for k in kw_widget if k not in widget_class.param]
         if ignored_kws:
             self.param.warning(
@@ -509,9 +511,9 @@ class Param(PaneBase):
             def action(change):
                 value(self.object)
             watcher = widget.param.watch(action, 'clicks')
-        elif kw_widget.get('onkeyup', False) and hasattr(widget, 'value_input'):
+        elif onkeyup and hasattr(widget, 'value_input'):
             watcher = widget.param.watch(link_widget, 'value_input')
-        elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
+        elif throttled and hasattr(widget, 'value_throttled'):
             watcher = widget.param.watch(link_widget, 'value_throttled')
         else:
             watcher = widget.param.watch(link_widget, 'value')
@@ -573,7 +575,7 @@ class Param(PaneBase):
                 idx = self._internal_callbacks.index(prev_watcher)
                 self._internal_callbacks[idx] = watchers[0]
                 return
-            elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
+            elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
                 updates['value'] = change.new
             elif isinstance(widget, Row) and len(widget) == 2:
