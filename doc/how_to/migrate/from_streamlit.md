@@ -717,36 +717,41 @@ With Panel you will use a *generator function* to display multiple results from 
 ```python
 import random
 import time
-
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
-
+pn.extension(sizing_mode="stretch_width")
 run_input = pn.widgets.Button(name="Run model")
+
 
 def model():
     time.sleep(1)
     return random.randint(0, 100)
 
+
 def results(running):
     if not running:
         yield "Calculation did not run yet"
-        return # This will break the execution
-
-    run_input.disabled=True
-    loading_indicator = pn.Row(pn.indicators.LoadingSpinner(value=True, width=50, height=50, align="center"), "Running... Please wait!", align="center")
-    layout = pn.Column(loading_indicator)
-    yield layout # This will display the layout
-
-    for i in range(0,10):
-        result = model()
-        message = f"Result {i}: {result}"
-        layout.append(message)
-        yield layout # This will force the UI to update
-
-    layout.pop(0)
-    run_input.disabled=False
-    yield layout # This will force the UI to update
+        return  # This will break the execution
+    try:
+        run_input.disabled = True
+        loading_indicator = pn.Row(
+            pn.indicators.LoadingSpinner(
+                value=True, width=50, height=50, align="center"
+            ),
+            "Running... Please wait!",
+            align="center",
+        )
+        layout = pn.Column(loading_indicator)
+        yield layout  # This will display the layout
+        for i in range(0, 10):
+            result = model()
+            message = f"Result {i}: {result}"
+            layout.append(message)
+            yield layout
+        layout.pop(0)
+    finally:
+        run_input.disabled = False
+    yield layout  # This will force the UI to update
 
 
 pn.Column(run_input, pn.bind(results, run_input)).servable()
