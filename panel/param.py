@@ -760,7 +760,7 @@ class ParamMethod(ReplacementPane):
     return any object which itself can be rendered as a Pane.
     """
 
-    defer_load = param.Boolean(default=config.defer_load, doc="""
+    defer_load = param.Boolean(default=None, doc="""
         Whether to defer load until after the page is rendered.
         Can be set as parameter or by setting panel.config.defer_load.""")
 
@@ -773,6 +773,8 @@ class ParamMethod(ReplacementPane):
         Can be set as parameter or by setting panel.config.loading_indicator.""")
 
     def __init__(self, object=None, **params):
+        if 'defer_load' not in params:
+            params['defer_load'] = config.defer_load
         super().__init__(object, **params)
         self._async_task = None
         self._evaled = not (self.lazy or self.defer_load)
@@ -984,7 +986,7 @@ class ParamFunction(ParamMethod):
             if hasattr(obj, '_dinfo'):
                 return True
             if (
-                kwargs.get('defer_load') or
+                kwargs.get('defer_load') or cls.param.defer_load.default or
                 (cls.param.defer_load.default is None and config.defer_load) or
                 iscoroutinefunction(obj)
             ):

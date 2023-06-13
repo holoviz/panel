@@ -1202,6 +1202,14 @@ def test_param_function_pane(document, comm):
     assert inner_pane._models == {}
 
 
+def test_resolve_param_function_pane_when_defer_load(document, comm):
+    def view():
+        return Div(text='blah')
+
+    pane = panel(view, defer_load=True)
+    assert isinstance(pane, ParamFunction)
+
+
 def test_param_function_pane_defer_load(document, comm):
     test = View()
 
@@ -1249,24 +1257,24 @@ def test_param_function_pane_config_defer_load():
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.defer_load==config.defer_load
+    assert test.defer_load == config.defer_load
 
     # When
-    config.defer_load=not config.defer_load
+    config.defer_load = not config.defer_load
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.defer_load==config.defer_load
+    assert test.defer_load == config.defer_load
 
     # When
-    config.defer_load=not config.defer_load
+    config.defer_load = not config.defer_load
     app = ParameterizedMock()
     test = ParamMethod(app.click_view)
     # Then
-    assert test.defer_load==config.defer_load
+    assert test.defer_load == config.defer_load
 
     # Clean Up
-    config.defer_load=config.param.defer_load.default
+    config.defer_load = config.param.defer_load.default
 
 def test_param_function_pane_config_loading_indicator():
     # When
