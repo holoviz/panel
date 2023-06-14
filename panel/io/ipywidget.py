@@ -137,10 +137,6 @@ class PanelSessionWebsocket(SessionWebsocket):
         self._document.on_message("ipywidgets_bokeh", self.receive)
 
     def send(self, stream, msg_type, content=None, parent=None, ident=None, buffers=None, track=False, header=None, metadata=None):
-        print(msg_type, content)
-        import traceback as tb
-        if msg_type == 'comm_open':
-            tb.print_stack()
         msg = self.msg(msg_type, content=content, parent=parent, header=header, metadata=metadata)
         try:
             msg['channel'] = stream.channel
