@@ -1,20 +1,17 @@
-# Defer Long Running Tasks to Run After the Application Loads
+# Defer Long Running Tasks to Improve the User Experience
 
 This guide addresses how to defer long running tasks to after the application has loaded.
-You can use this to improve the user experience.
+Use this to improve the user experience.
 
 ---
 
-## Defer Long Running Tasks to Improve the User Experience
+## Motivation
 
 When you `panel serve` your app, the app is *loaded* as follows
 
 - the app file is read and executed
 - the apps template is populated and sent to the users client (browser)
-- a web socket connection is created between the server and the users client
-
-After the app is *loaded* all communication is done via the web socket connection. For example when
-you change a slider to update a plot.
+- a web socket connection is created between the server and the users client to handle additional communication as you interact with the app.
 
 The consequence of this is that any long running code executed before the app is loaded will
 increase the waiting time for the user. **If the waiting time is more than 2-5 seconds your users might get confused and even leave the application behind**.
@@ -36,9 +33,11 @@ def some_long_running_task():
 pn.panel(some_long_running_task).servable()
 ```
 
+![panel-longrunning-task-example](https://user-images.githubusercontent.com/42288570/245752515-1329b4c3-da45-41e7-b3b5-b1b4f09eecd4.gif)
+
 Now lets learn how to defer long running tasks to after the application has loaded.
 
-## Defer the Execution of all Tasks
+## Defer all Task
 
 Its easy defer the execution of all displayed tasks with `pn.config.defer_load=True` or
 `pn.extension(defer_load=True)`. Lets take an example.
@@ -56,7 +55,9 @@ def long_running_task():
 pn.Column("# I'm shown on load", long_running_task).servable()
 ```
 
-## Defer the Execution of Specific Tasks
+![panel-defer-all-example](https://user-images.githubusercontent.com/42288570/245752511-b2970c4c-7144-4b1a-af36-4c90b1873de6.gif)
+
+## Defer Specific Tasks
 
 Its also easy to defer the execution of selected, displayed tasks with `pn.panel(..., defer_load=True)`.
 
@@ -82,7 +83,9 @@ pn.Column(
 ).servable()
 ```
 
-## Defer the Execution of Tasks That Do Not Return Anything
+![panel-defer-specific-example](https://user-images.githubusercontent.com/42288570/245752506-9ac676e9-65b2-4d9d-a01a-ce01a12dfda4.gif)
+
+## Defer Tasks That are not Displayed
 
 So far the tasks have been producing and returning viewable objects to be displayed in a your app. Sometimes that is not what you want. Sometimes you want to load or pre-compute one or more parameter values, send a message somewhere or similar.
 
@@ -116,7 +119,9 @@ pn.Column(
 ).servable()
 ```
 
-## Defer the Execution of Dependent Tasks
+![panel-defer-onload-example](https://user-images.githubusercontent.com/42288570/245752503-a8042242-503e-4ba3-ad24-1f1a16aac058.gif)
+
+## Defer and Orchestrate Dependent Tasks
 
 Sometimes you have multiple tasks that depend on each other and and you need to *orchestrate* them. To handle those scenarios you can combine what you have learned so far with `pn.bind` and/ or `pn.depends`.
 
@@ -172,6 +177,8 @@ pn.Column(
     pn.bind(plot, data=state.param.data),
 ).servable()
 ```
+
+![panel-defer-dependent-tasks-example](https://user-images.githubusercontent.com/42288570/245752488-b2963489-bdff-4323-b801-03a763992af9.gif)
 
 ## Tips and Tricks
 
