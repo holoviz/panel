@@ -52,7 +52,7 @@ configuring
 
 You use `pn.panel` similarly to `st.write` to *magically* display
 Python objects like (markdown) strings, dataframes, plots and more. Check out the
-[`pn.panel` API Reference](https://panel.holoviz.org/api/panel.pane.html#panel.pane.panel) for the
+{py:function}`pn.panel <panel.panel.base.panel>` API Reference for the
 details.
 
 You use `.servable` to add one or more Panel objects to the *template* when served as a web app.
@@ -63,7 +63,7 @@ You *serve* and *show* (i.e. open) the app in your browser with *autoreload* via
 panel serve app.py --autoreload --show
 ```
 
-See the [Command Line Guide](https://panel.holoviz.org/how_to/server/commandline.html) for more
+See the [Command Line Guide](../../server/commandline.html) for more
 command line options.
 
 The application looks like
@@ -85,7 +85,7 @@ a web app.
 
 For production you will also have to
 
-- Migrate some of your app configuration to `panel serve` command line options or environment
+- Migrate some of your app configuration to `panel serve` [command line options](../server/commandline.md) or environment. 
 variables.
 
 You won't have to
@@ -104,8 +104,8 @@ you will be able to
 - use unique data visualization ecosystems like HoloViz, ipywidgets and VTK.
 
 Check out the
-[Panes Section](https://panel.holoviz.org/reference/index.html#panes) of
-the [Component Gallery](https://panel.holoviz.org/reference/index.html) for the full list of
+[Panes Section](../../reference/index.md#panes) of
+the [Component Gallery](../../reference/index.md) for the full list of
 *panes*.
 
 ### Streamlit Matplotlib Example
@@ -133,7 +133,7 @@ You will find Panels output *panes* in `pn.pane` module.
 
 We use Matplotlibs `Figure` interface instead of the `pyplot` interface to
 avoid memory leaks if you forget to close the figure. This is all described in the
-[Matplotlib Guide](https://panel.holoviz.org/reference/panes/Matplotlib.html).
+[Matplotlib Guide](../../reference/panes/Matplotlib.md).
 
 ```python
 import panel as pn
@@ -163,8 +163,7 @@ You should
 `pn.pane.SomeObject` class.
 
 You can identify the corresponding Panel *pane* in the
-[Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the
-[Component Gallery](https://panel.holoviz.org/reference/index.html).
+[Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
 
 ## Organizing Components with Layouts
 
@@ -172,8 +171,8 @@ You can identify the corresponding Panel *pane* in the
 
 Panel provides layouts similar to the ones you know from Streamlit and some unique ones.
 
-Check out the [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the
-[Component Gallery](https://panel.holoviz.org/reference/index.html) for the full list of *layouts*.
+Check out the [Layouts Section](../../reference/index.md#layouts) of the
+[Component Gallery](../../reference/index.html) for the full list of *layouts*.
 
 ### Streamlit Layout Example
 
@@ -220,8 +219,8 @@ pn.Row(col1, col2).servable()
 
 Panels `Column` and `Row` are *list like* objects. So you can use familiar methods like `.append`,
 `.pop` and `[]` indexing when you work with them. For the details check out the
-[`Column` Guide](https://panel.holoviz.org/reference/layouts/Column.html) and
-the [`Row` Guide](https://panel.holoviz.org/reference/layouts/Row.html).
+[`Column` Guide](../../reference/layouts/Column.md) and
+the [`Row` Guide](../../reference/layouts/Row.md)
 
 The app looks like
 
@@ -235,8 +234,7 @@ You should
 `pn.SomeLayout` class.
 
 You can identify the relevant layout to migrate to in the
-[Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the
-[Component Gallery](https://panel.holoviz.org/reference/index.html).
+[Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
 
 ## Adding Style with Templates
 
@@ -244,7 +242,7 @@ Streamlit always uses the same *template* with a *main* and *sidebar* area to st
 
 With Panel you have the flexibility to use the *default, blank template*, one of the *built in templates* or even create your own *custom template*.
 
-Here is an example with the [`FastListTemplate`](https://panel.holoviz.org/reference/templates/FastListTemplate.html) for illustration.
+Here is an example with the [`FastListTemplate`](../../reference/templates/FastListTemplate.md) for illustration.
 
 ```python
 import panel as pn
@@ -311,8 +309,8 @@ In Panel the objects that can accept user inputs are called *widgets*.
 Panel provides widgets similar to the ones you know from Streamlit and some unique ones in addition.
 
 Check out the
-[Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of
-the [Component Gallery](https://panel.holoviz.org/reference/index.html) for the full list of
+[Widgets Section](../../reference/index.md#widgets) of
+the [Component Gallery](../../reference/index.md) for the full list of
 *widgets*.
 
 ### Streamlit Integer Slider Example
@@ -348,7 +346,7 @@ If you check the type of the variables, you will notice a key difference. Stream
 To access the value of the slider in Panel, you would need to call `bins.value`.
 
 For more info about the `IntSlider` check out the
-[`IntSlider` Guide](https://panel.holoviz.org/reference/widgets/IntSlider.html).
+[`IntSlider` Guide](../../reference/widgets/IntSlider.md).
 
 The app looks like
 
@@ -362,15 +360,14 @@ You should
 `pn.widgets.SomeWidget` class.
 
 You can identify the corresponding widget via the
-[Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the
-[Component Gallery](https://panel.holoviz.org/reference/index.html).
+[Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
 
 ## Show Activity
 
 Panel supports two ways of indicating activity
 
-- Indicators. See the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators)
-of the [Component Gallery](https://panel.holoviz.org/reference/index.html).
+- Indicators. See the [Indicators Section](../../reference/index.md#indicators)
+of the [Component Gallery](../../reference/index.md).
 - `disabled`/ `loading` parameters on Panel components
 
 We will show you how to migrate your Streamlit activity indicators to Panel in the
@@ -576,7 +573,7 @@ pn.Column(
 ).servable()
 ```
 
-We use the `pn.indicators.LoadingSpinner` to indicate the activity. You find the full list of indicators in the [Indicators Section](https://panel.holoviz.org/reference/index.html#indicators) of the [Component Gallery](https://panel.holoviz.org/reference/index.html).
+We use the `pn.indicators.LoadingSpinner` to indicate the activity. You find the full list of indicators in the [Indicators Section](../../reference/index.md#indicators) of the [Component Gallery](../../reference/index.md).
 
 The app looks like
 
@@ -755,7 +752,7 @@ create plots, calculate the mass of the milky way, train models, do inference et
 - Use generator functions (`yield`) if you want to update the UI multiple times during the
   code execution.
 - Indicate activity if needed. You can use one of
-[Panels Indicators](https://panel.holoviz.org/reference/index.html#indicators) and/ or
+[Panels Indicators](../../reference/index.md#indicators) and/ or
 the `.disabled`+`.loading` parameter on Panels components.
 
 ## Caching
@@ -774,7 +771,7 @@ In Panel you would use the
 - *global cache* (`pn.state.as_cached`) to speed up expensive, bound functions or to share
 Python objects globally. I.e. across user sessions.
 
-Check out the [Cache How-To Guides](https://panel.holoviz.org/how_to/caching/index.html) for the
+Check out the [Cache How-To Guides](../caching/index.md) for the
 details.
 
 ### Session Cache Example
