@@ -37,7 +37,7 @@ pn.panel(some_long_running_task).servable()
 
 Now lets learn how to defer long running tasks to after the application has loaded.
 
-## Defer all Task
+## Defer all Tasks
 
 Its easy defer the execution of all displayed tasks with `pn.config.defer_load=True` or
 `pn.extension(defer_load=True)`. Lets take an example.
