@@ -1,7 +1,7 @@
 # Defer Long Running Tasks to Improve the User Experience
 
 This guide addresses how to defer long running tasks to after the application has loaded.
-Use this to improve the user experience.
+You can use this to improve the user experience of your app.
 
 ---
 
@@ -182,6 +182,8 @@ pn.Column(
 
 ## Tips and Tricks
 
-- Use caching to avoid rerunning expensive tasks
-- Use periodic callbacks or async generator functions to update the `data` and rerun the tasks on a periodic
-schedule.
+You can
+
+- use caching to avoid rerunning expensive tasks
+- use periodic callbacks or async generator functions to update the `data` and rerun the tasks on a periodic schedule.
+- schedule `async` tasks with `pn.panel`, `pn.state.onload`, `pn.bind` and `pn.depends` to improve the user experience further.
