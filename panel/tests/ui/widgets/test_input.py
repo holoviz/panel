@@ -435,6 +435,11 @@ def test_datetimepicker_enabled_dates(page, port, march_2021, enabled_dates):
     disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
     expect(disabled_days).to_have_count(num_days - len(enabled_list))
 
+    # enable all days
+    datetime_picker_widget.enabled_dates = None
+    disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
+    expect(disabled_days).to_have_count(0)
+
 
 def test_datetimepicker_enable_time(page, port):
     datetime_picker_widget = DatetimePicker(enable_time=False)
