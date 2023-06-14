@@ -5,6 +5,7 @@ import time
 
 import numpy as np
 import pandas as pd
+from panel.layout.base import Column
 import param
 import pytest
 
@@ -2449,6 +2450,31 @@ def test_tabulator_patching_and_styling(page, port, df_mixed):
     max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
     expect(max_cell).to_have_count(1)
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
+
+def test_tabulator_filters_and_styling(page, port, df_mixed):
+    df_styled = df_mixed.style.apply(highlight_max, subset=['int'])
+
+    select = Select(options = [None, 'A', 'B', 'C', 'D'], size = 5)
+    table = Tabulator(df_styled)
+    table.add_filter(select, 'str')
+    layout = Column(select, table)
+
+    serve(layout, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Filtering to one field and then clicking None again should display all data, with styling
+    print(page.locator('option'))
+    page.locator('option').nth(1).click()
+    page.locator('option').nth(0).click()
+
+    max_int = df_mixed['int'].max()
+    max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
+    expect(max_cell).to_have_count(1)
+    expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
+
 
 
 def test_tabulator_configuration(page, port, df_mixed):

@@ -872,6 +872,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
   postUpdate(): void {
     this.setSelection()
+    this.setStyles()
   }
 
   updateOrAddData(): void {
