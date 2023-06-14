@@ -42,25 +42,22 @@ pn.extension(sizing_mode="stretch_width", template="bootstrap")
 pn.panel("Hello World").servable()
 ```
 
-You use `pn.extension` to configure the application.
+You always include `pn.extension` to configure the application.
 
-- You set the `sizing_mode` to `stretch_width` to get the *responsive* behaviour you expect from
-Streamlit apps.
-- You set the `template` to `bootstrap` to wrap your application in a nice looking template as you
-expect from Streamlit apps. If you don't set a template you will get a blank template to add your
-components to. You can see the available templates in the
-[Templates Section](https://panel.holoviz.org/reference/index.html#templates) of the
-[Component Gallery](https://panel.holoviz.org/reference/index.html).
+You don't have to provide any arguments to `pn.extension`, but I thought you might be interested in
+configuring
+
+- the `sizing_mode` to `stretch_width` in order to achieve responsiveness.
+- a `template` to get a familiar layout with a *main* area and an (optional) *sidebar* area.
 
 You use `pn.panel` similarly to `st.write` to *magically* display
 Python objects like (markdown) strings, dataframes, plots and more. Check out the
 [`pn.panel` API Reference](https://panel.holoviz.org/api/panel.pane.html#panel.pane.panel) for the
 details.
 
-You use `.servable` to specify the Panel objects you want to add the Panel *template* when
-served as a web app.
+You use `.servable` to add one or more Panel objects to the *template* when served as a web app.
 
-You *serve* and *show* the app in your browser with *autoreload* via
+You *serve* and *show* (i.e. open) the app in your browser with *autoreload* via
 
 ```bash
 panel serve app.py --autoreload --show
@@ -98,7 +95,7 @@ You won't have to
 
 We have never collected or had plans to collect telemetry data from our users apps.
 
-## Displaying Content
+## Displaying Content with Panes
 
 In Panel the objects that can display your Python objects are called *panes*. With Panels *panes*
 you will be able to
@@ -134,6 +131,10 @@ The app looks like
 
 You will find Panels output *panes* in `pn.pane` module.
 
+We use Matplotlibs `Figure` interface instead of the `pyplot` interface to
+avoid memory leaks if you forget to close the figure. This is all described in the
+[Matplotlib Guide](https://panel.holoviz.org/reference/panes/Matplotlib.html).
+
 ```python
 import panel as pn
 import numpy as np
@@ -150,10 +151,6 @@ ax.hist(data, bins=20)
 pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both').servable()
 ```
 
-We use Matplotlibs `Figure` interface instead of the `pyplot` interface to
-avoid memory leaks if you forget to close the figure. This is all described in the
-[Matplotlib Guide](https://panel.holoviz.org/reference/panes/Matplotlib.html).
-
 The app looks like
 
 ![Panel Matplotlib Example](https://user-images.githubusercontent.com/42288570/243348449-233d1dcc-fdd3-4907-9085-50bf0772065f.png)
@@ -169,70 +166,9 @@ You can identify the corresponding Panel *pane* in the
 [Panes Section](https://panel.holoviz.org/reference/index.html#panes) of the
 [Component Gallery](https://panel.holoviz.org/reference/index.html).
 
-## Inputs
+## Organizing Components with Layouts
 
-In Panel the objects that can accept user inputs are called *widgets*.
-
-Panel provides widgets similar to the ones you know from Streamlit and some unique ones in addition.
-
-Check out the
-[Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of
-the [Component Gallery](https://panel.holoviz.org/reference/index.html) for the full list of
-*widgets*.
-
-### Streamlit Integer Slider Example
-
-```python
-import streamlit as st
-
-bins = st.slider(value=20, min_value=10, max_value=30, step=1, label="Bins")
-
-st.write(bins)
-```
-
-The app looks like
-
-![Streamlit Widgets Example](https://user-images.githubusercontent.com/42288570/243349378-a27fa7bd-b8dc-4b30-85f0-684a74ec40cf.png)
-
-### Panel Integer Slider Example
-
-You will find Panels input *widgets* in `pn.widgets` module.
-
-```python
-import panel as pn
-
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
-
-bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
-
-pn.Column(bins, pn.pane.Str(bins)).servable()
-```
-
-If you check the type of the variables, you will notice a key difference. Streamlit's `bins` returns the value of the slider as an `integer` while Panel's `bins` returns an `IntSlider`!
-
-To access the value of the slider in Panel, you would need to call `bins.value`.
-
-For more info about the `IntSlider` check out the
-[`IntSlider` Guide](https://panel.holoviz.org/reference/widgets/IntSlider.html).
-
-The app looks like
-
-![Panel Widgets Example](https://user-images.githubusercontent.com/42288570/243349394-084dfd83-a9fd-404e-9408-78831c2ca2e5.png)
-
-### Input Migration Steps
-
-You should
-
-- replace your Streamlit `st.some_widget` function with the corresponding Panel
-`pn.widgets.SomeWidget` class.
-
-You can identify the corresponding widget via the
-[Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the
-[Component Gallery](https://panel.holoviz.org/reference/index.html).
-
-## Layouts
-
-*Layouts* helps you organize your *panes* and *widgets*.
+*Layouts* helps you organize your Panel *components*, i.e. *panes*, *widgets* and *layouts*.
 
 Panel provides layouts similar to the ones you know from Streamlit and some unique ones.
 
@@ -302,19 +238,11 @@ You can identify the relevant layout to migrate to in the
 [Layouts Section](https://panel.holoviz.org/reference/index.html#layouts) of the
 [Component Gallery](https://panel.holoviz.org/reference/index.html).
 
-### Template Migration Steps
+## Adding Style with Templates
 
-When migrating you first have to choose which template to use
+Streamlit always uses the same *template* with a *main* and *sidebar* area to style and layout your app.
 
-- None (default)
-- A built in like *vanilla*, *bootstrap*, *material* or *fast*. See the
-[Templates Section](../../reference/index#templates) of the
-[Components Guide](../../reference/index).
-- A custom template
-
-Then you have to configure it.
-
-#### Panel Template Example
+With Panel you have the flexibility to use the *default, blank template*, one of the *built in templates* or even create your own *custom template*.
 
 Here is an example with the [`FastListTemplate`](https://panel.holoviz.org/reference/templates/FastListTemplate.html) for illustration.
 
@@ -363,6 +291,79 @@ pn.state.template.param.update(
 The app looks like
 
 ![Panel Template Example](https://user-images.githubusercontent.com/42288570/243438919-edce17a0-48b6-451d-9be3-d86eff5cc166.gif)
+
+### Template Migration Steps
+
+When migrating you first have to choose which template to use
+
+- None (default)
+- A built in like *vanilla*, *bootstrap*, *material* or *fast*. See the
+[Templates Section](../../reference/index#templates) of the
+[Components Guide](../../reference/index).
+- A custom template
+
+Then you have to configure it.
+
+## Accepting User Inputs with Widgets
+
+In Panel the objects that can accept user inputs are called *widgets*.
+
+Panel provides widgets similar to the ones you know from Streamlit and some unique ones in addition.
+
+Check out the
+[Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of
+the [Component Gallery](https://panel.holoviz.org/reference/index.html) for the full list of
+*widgets*.
+
+### Streamlit Integer Slider Example
+
+```python
+import streamlit as st
+
+bins = st.slider(value=20, min_value=10, max_value=30, step=1, label="Bins")
+
+st.write(bins)
+```
+
+The app looks like
+
+![Streamlit Widgets Example](https://user-images.githubusercontent.com/42288570/243349378-a27fa7bd-b8dc-4b30-85f0-684a74ec40cf.png)
+
+### Panel Integer Slider Example
+
+You will find Panels input *widgets* in `pn.widgets` module.
+
+```python
+import panel as pn
+
+pn.extension(sizing_mode="stretch_width", template="bootstrap")
+
+bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
+
+pn.Column(bins, pn.pane.Str(bins)).servable()
+```
+
+If you check the type of the variables, you will notice a key difference. Streamlit's `bins` returns the value of the slider as an `integer` while Panel's `bins` returns an `IntSlider`!
+
+To access the value of the slider in Panel, you would need to call `bins.value`.
+
+For more info about the `IntSlider` check out the
+[`IntSlider` Guide](https://panel.holoviz.org/reference/widgets/IntSlider.html).
+
+The app looks like
+
+![Panel Widgets Example](https://user-images.githubusercontent.com/42288570/243349394-084dfd83-a9fd-404e-9408-78831c2ca2e5.png)
+
+### Input Migration Steps
+
+You should
+
+- replace your Streamlit `st.some_widget` function with the corresponding Panel
+`pn.widgets.SomeWidget` class.
+
+You can identify the corresponding widget via the
+[Widgets Section](https://panel.holoviz.org/reference/index.html#widgets) of the
+[Component Gallery](https://panel.holoviz.org/reference/index.html).
 
 ## Show Activity
 
@@ -475,43 +476,28 @@ def calculation_a():
 
 
 def calculation_b():
-    time.sleep(1.5)
-    return random.randint(0, 100)
+    time.sleep(3.5)
+    return random.randint(-100, 0)
 
 
 st.write("# Calculation Runner")
-
 option = st.radio("Which calculation would you like to perform?", ("A", "B"))
-
 st.write("You chose: ", option)
-if option == "A":
-    if st.button("Press to run calculation"):
-        with st.spinner("Running... Please wait!"):
-            time_start = time.perf_counter()
-            result = calculation_a()
-            time_end = time.perf_counter()
-            st.write(f"""Done!
+if st.button("Press to run calculation"):
+    with st.spinner("Running... Please wait!"):
+        time_start = time.perf_counter()
+        result = calculation_a() if option == "A" else calculation_b()
+        time_end = time.perf_counter()
+    st.write(f"""
+Done!
 
 Result: {result}
 
-The function took {time_end - time_start:1.1f} seconds to complete""")
-
-    else:
-        st.write("Calculation A did not run yet")
-
-elif option == "B":
-    if st.button("Press to run calculation"):
-        with st.spinner("Running... Please wait!"):
-            time_start = time.perf_counter()
-            result = calculation_b()
-            time_end = time.perf_counter()
-            st.write(f"""Done!
-
-Result: {result}
-
-The function took {time_end - time_start:1.1f} seconds to complete""")
-    else:
-        st.write("Calculation B did not run yet")
+The function took {time_end - time_start:1.1f} seconds to complete
+"""
+    )
+else:
+    st.write(f"Calculation {option} did not run yet")
 ```
 
 The app looks like
