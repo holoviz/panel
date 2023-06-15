@@ -30,7 +30,7 @@ streamlit run app.py
 
 The application looks like
 
-![Streamlit Hello World Example](https://user-images.githubusercontent.com/42288570/243343663-63c4c22b-ca56-4d50-95f7-3de6be69a372.png)
+![Streamlit Hello World Example](../../_static/images/streamlit_hello_world.png)
 
 ### Panel Hello World Example
 
@@ -68,7 +68,7 @@ command line options.
 
 The application looks like
 
-![Panel Hello World Example](https://user-images.githubusercontent.com/42288570/243343688-e6212faa-7b05-4686-b113-b67cd21e1063.png)
+![Panel Hello World Example](../../_static/images/panel_hello_world.png)
 
 ### Basic Migration Steps
 
@@ -125,7 +125,7 @@ st.pyplot(fig)
 
 The app looks like
 
-![Streamlit Matplotlib Example](https://user-images.githubusercontent.com/42288570/243348167-4d2a3c36-59dc-4df5-b266-84dd1837f2b6.png)
+![Streamlit Matplotlib Example](../../_static/images/streamlit_mpl_example.png)
 
 ### Panel Matplotlib Example
 
@@ -153,7 +153,7 @@ pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both').servable()
 
 The app looks like
 
-![Panel Matplotlib Example](https://user-images.githubusercontent.com/42288570/243348449-233d1dcc-fdd3-4907-9085-50bf0772065f.png)
+![Panel Matplotlib Example](../../_static/images/panel_mpl_example.png)
 
 ### Output Migration Steps
 
@@ -192,7 +192,7 @@ with col2:
 
 The app looks like
 
-![Streamlit Layout Example](https://user-images.githubusercontent.com/42288570/243353648-add1e7af-26ba-428b-ba47-2f602ff3ce93.png)
+![Streamlit Layout Example](../../_static/images/streamlit_layout_example.png)
 
 I would love to align the images (and texts) but I could not find functionality like *row*, *margin* or *spacing* to do this.
 
@@ -224,7 +224,7 @@ the [`Row` Guide](../../reference/layouts/Row.md)
 
 The app looks like
 
-![Panel Layout Example](https://user-images.githubusercontent.com/42288570/243362603-45ba78a4-d67b-43bc-b3c2-386105fe6ed8.png)
+![Panel Layout Example](../../_static/images/panel_layout_example.png)
 
 ### Layout Migration Steps
 
@@ -288,7 +288,7 @@ pn.state.template.param.update(
 
 The app looks like
 
-![Panel Template Example](https://user-images.githubusercontent.com/42288570/243438919-edce17a0-48b6-451d-9be3-d86eff5cc166.gif)
+![Panel Template Example](https://assets.holoviz.org/panel/gifs/panel_app_example.gif)
 
 ### Template Migration Steps
 
@@ -325,7 +325,7 @@ st.write(bins)
 
 The app looks like
 
-![Streamlit Widgets Example](https://user-images.githubusercontent.com/42288570/243349378-a27fa7bd-b8dc-4b30-85f0-684a74ec40cf.png)
+![Streamlit Widgets Example](../../_static/images/streamlit_widgets_example.png)
 
 ### Panel Integer Slider Example
 
@@ -350,7 +350,7 @@ For more info about the `IntSlider` check out the
 
 The app looks like
 
-![Panel Widgets Example](https://user-images.githubusercontent.com/42288570/243349394-084dfd83-a9fd-404e-9408-78831c2ca2e5.png)
+![Panel Widgets Example](../../_static/images/panel_widgets_example.png)
 
 ### Input Migration Steps
 
@@ -415,7 +415,7 @@ st.pyplot(fig)
 
 The app looks like
 
-![Streamlit Basic Interactivity Example](https://user-images.githubusercontent.com/42288570/243358295-c26e90c2-0053-4441-9b98-2426d6d1a8e1.gif)
+![Streamlit Basic Interactivity Example](https://assets.holoviz.org/panel/gifs/streamlit_interactivity_example.gif)
 
 The entire script is rerun *top to bottom* when you change the `bins` slider.
 
@@ -447,7 +447,7 @@ by *binding* the `plot` function to the `bins` widget using `pn.bind`.
 
 The app looks like
 
-![Panel Basic Interactivity Example](https://user-images.githubusercontent.com/42288570/243358311-04ed5189-1a79-4932-97ea-00898c27f283.gif)
+![Panel Basic Interactivity Example](https://assets.holoviz.org/panel/gifs/panel_interactivity_example.gif)
 
 You might notice that the Panel app updates much quicker and more smoothly than the Streamlit app.
 This is due to fundamental differences in architectures. With Panel you will be able to
@@ -499,7 +499,7 @@ else:
 
 The app looks like
 
-![Streamlit multiple updates example](https://user-images.githubusercontent.com/42288570/243399616-4f172e4b-ace9-4761-b19a-757a532bafbc.gif)
+![Streamlit multiple updates example](https://assets.holoviz.org/panel/gifs/streamlit_runner_example.gif)
 
 #### Panel Multiple Updates Example
 
@@ -576,7 +576,7 @@ We use the `pn.indicators.LoadingSpinner` to indicate the activity. You find the
 
 The app looks like
 
-![Panel Multiple Updates Examples](https://user-images.githubusercontent.com/42288570/243399714-04345c38-44a8-4bc0-b111-a8d26f03484b.gif)
+![Panel Multiple Updates Examples](https://assets.holoviz.org/panel/gifs/panel_runner_example.gif)
 
 #### Panel Multiple Updates Alternative Indicator Example
 
@@ -657,7 +657,7 @@ pn.Column(
 
 The app looks like
 
-![Panel Multiple Updates Alternative Example](https://user-images.githubusercontent.com/42288570/243402005-0e520ed0-a41f-4339-a854-14ff31cb04ce.gif)
+![Panel Multiple Updates Alternative Example](assets.holoviz.org/panel/gifs/panel_generator_example.gif)
 
 ### Multiple Results Example
 
@@ -690,7 +690,7 @@ else:
 
 The app looks like
 
-![Streamlit Multiple Results Example](https://user-images.githubusercontent.com/42288570/243421817-bcd0d8d4-89af-4ef4-8924-f20a8d7a8d33.gif)
+![Streamlit Multiple Results Example](https://assets.holoviz.org/panel/gifs/streamlit_multi_example.gif)
 
 #### Panel Multiple Results Example
 
@@ -739,7 +739,7 @@ def results(running):
 pn.Column(run_input, pn.bind(results, run_input)).servable()
 ```
 
-![Panel Multiple Results Example](https://user-images.githubusercontent.com/42288570/243421842-b6c29bb0-b814-4d96-9918-946deea807ff.gif)
+![Panel Multiple Results Example](https://assets.holoviz.org/panel/gifs/panel_sync_multi_example.gif)
 
 ### Interactivity Migration Steps
 
@@ -845,7 +845,7 @@ difference since `get_data` is only run once per user session.
 
 The app looks like
 
-![Panel Session Cache Example](https://user-images.githubusercontent.com/42288570/245366569-d1808e7b-812f-4044-8bad-73205027fd63.gif)
+![Panel Session Cache Example](https://assets.holoviz.org/panel/gifs/panel_cache_example.gif)
 
 You can also use `pn.cache` as an annotation similar to `st.cache_data`. I.e. as
 
