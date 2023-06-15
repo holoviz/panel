@@ -2467,7 +2467,6 @@ def test_tabulator_filters_and_styling(page, port, df_mixed):
     page.goto(f"http://localhost:{port}")
 
     # Filtering to one field and then clicking None again should display all data, with styling
-    print(page.locator('option'))
     page.locator('option').nth(1).click()
     page.locator('option').nth(0).click()
 
