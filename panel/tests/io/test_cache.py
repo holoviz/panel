@@ -187,6 +187,8 @@ def test_cache_clear():
     assert fn(0, 0) == 1
 
 def test_per_session_cache(document):
+    global OFFSET
+    OFFSET.clear()
     fn = cache(function_with_args, per_session=True)
     with set_curdoc(document):
         assert fn(a=0, b=0) == 0
