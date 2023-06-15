@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    Any, Callable, ClassVar, Dict, List, Optional, Tuple, Type, Union,
+    Any, ClassVar, Dict, List, Optional, Tuple, Type, Union,
 )
 
 import param
@@ -65,7 +65,6 @@ class ChatRow(CompositeWidget):
     def __init__(
         self,
         value: List[Any],
-        default_message_callable: Viewable = None,
         icon: str = None,
         show_name: bool = True,
         show_like: bool = True,
@@ -80,7 +79,6 @@ class ChatRow(CompositeWidget):
         }
         if styles:
             bubble_styles.update(styles)
-        text_style = {"color": bubble_styles.get("color")}
         icon_styles = dict((styles or {}))
         icon_styles.pop("background", None)
         icon_styles.pop("color", None)
@@ -94,6 +92,7 @@ class ChatRow(CompositeWidget):
         )
         if "background" not in bubble_styles:
             bubble_styles["background"] = "black"
+        self._bubble_styles = bubble_styles
         super().__init__(value=value, icon=icon, **params)
 
         # create the chat icon
@@ -104,15 +103,11 @@ class ChatRow(CompositeWidget):
             self._icon = None
 
         # create the chat bubble
-        bubble_objects = [
-            self._serialize_obj(obj, default_message_callable, text_style)
-            for obj in value
-        ]
         self._bubble = Column(
-            *bubble_objects,
+            *[self._serialize_obj(obj) for obj in self.value],
             align="center",
             margin=8,
-            styles=bubble_styles,
+            styles=bubble_styles
         )
 
         # create heart icon next to chat
@@ -163,7 +158,7 @@ class ChatRow(CompositeWidget):
         self._composite[:] = [row]
 
     def _serialize_obj(
-        self, obj: Any, default_message_callable: Callable, text_styles: Dict
+        self, obj: Any
     ) -> Viewable:
         """
         Convert an object to a Panel object.
@@ -172,15 +167,16 @@ class ChatRow(CompositeWidget):
             return obj
 
         stylesheets = ["p { margin-block-start: 0.2em; margin-block-end: 0.2em;}"]
+        text_styles = {"color": self._bubble_styles.get("color")}
         try:
-            if default_message_callable is None or issubclass(
-                default_message_callable, PaneBase
+            if self.default_message_callable is None or issubclass(
+                self.default_message_callable, PaneBase
             ):
-                panel_obj = (default_message_callable or _panel)(
+                panel_obj = (self.default_message_callable or _panel)(
                     obj, stylesheets=stylesheets, styles=text_styles
                 )
             else:
-                panel_obj = default_message_callable(value=obj)
+                panel_obj = self.default_message_callable(value=obj)
         except ValueError:
             panel_obj = _panel(obj, stylesheets=stylesheets, styles=text_styles)
 
@@ -543,7 +539,8 @@ class ChatBox(CompositeWidget):
         """
         if not isinstance(user_message, dict):
             raise ValueError(f"Expected a dictionary, but got {user_message}")
-        self.value = self.value + [user_message]
+        self.value.append(user_message)
+        self.param.trigger("value")
 
     def extend(self, user_messages: List[Dict[str, Union[List[Any], Any]]]) -> None:
         """
@@ -553,8 +550,48 @@ class ChatBox(CompositeWidget):
         ---------
         user_messages (list): List of user messages to add.
         """
-        for user_message in user_messages:
-            self.append(user_message)
+        self.value.extend(user_messages)
+        self.param.trigger("value")
+
+    def insert(self, index: int, user_message: Dict[str, Union[List[Any], Any]]) -> None:
+        """
+        Inserts a message into the chat log at the given index.
+
+        Arguments
+        ---------
+        index (int): Index to insert the message at.
+        user_message (dict): Dictionary mapping user to message.
+        """
+        self.value.insert(index, user_message)
+        self.param.trigger("value")
+
+    def pop(self, index: int = -1) -> Dict[str, Union[List[Any], Any]]:
+        """
+        Pops the last message from the chat log.
+
+        Arguments
+        ---------
+        index (int): Index of the message to pop; defaults to the last message.
+
+        Returns
+        -------
+        user_message (dict): Dictionary mapping user to message.
+        """
+        value = self.value.pop(index)
+        self.param.trigger("value")
+        return value
+
+    def replace(self, index: int, user_message: Dict[str, Union[List[Any], Any]]):
+        """
+        Replaces a message in the chat log at the given index.
+
+        Arguments
+        ---------
+        index (int): Index to replace the message at.
+        user_message (dict): Dictionary mapping user to message.
+        """
+        self.value[index] = user_message
+        self.param.trigger("value")
 
     def clear(self) -> None:
         """

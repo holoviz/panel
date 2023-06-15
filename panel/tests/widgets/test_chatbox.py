@@ -156,6 +156,52 @@ def test_chat_box_extend(document, comm):
     assert len(chat_box) == 2
 
 
+def test_insert(document, comm):
+    chat_box = ChatBox()
+    message = {"user": "Hello"}
+    chat_box.insert(0, message)
+    assert chat_box.value == [message]
+    assert len(chat_box) == 1
+
+    # Inserting at an index greater than the current length
+    chat_box.insert(2, {"user": "Hi"})
+    assert chat_box.value == [message, {"user": "Hi"}]
+    assert len(chat_box) == 2
+
+
+def test_pop(document, comm):
+    chat_box = ChatBox()
+    message1 = {"user": "Hello"}
+    message2 = {"user": "Hi"}
+    message3 = {"user": "Hey"}
+    chat_box.extend([message1, message2, message3])
+
+    # Pop the last message
+    popped_message = chat_box.pop()
+    assert popped_message == message3
+    assert chat_box.value == [message1, message2]
+    assert len(chat_box) == 2
+
+    # Pop a specific index
+    popped_message = chat_box.pop(0)
+    assert popped_message == message1
+    assert chat_box.value == [message2]
+    assert len(chat_box) == 1
+
+
+def test_replace(document, comm):
+    chat_box = ChatBox()
+    message1 = {"user": "Hello"}
+    message2 = {"user": "Hi"}
+    chat_box.extend([message1, message2])
+
+    # Replace a message at a specific index
+    new_message = {"user": "Hey"}
+    chat_box.replace(1, new_message)
+    assert chat_box.value == [message1, new_message]
+    assert len(chat_box) == 2
+
+
 def test_chat_box_allow_input(document, comm):
     chat_box = ChatBox(allow_input=True)
     assert chat_box.allow_input == True
