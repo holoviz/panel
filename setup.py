@@ -147,6 +147,7 @@ _tests = [
     'diskcache',
     'ipyvuetify',
     'reacton',
+    'anywidget',
     'numpy <1.24',
 ]
 
