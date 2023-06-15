@@ -156,6 +156,52 @@ def test_chat_box_extend(document, comm):
     assert len(chat_box) == 2
 
 
+def test_insert(document, comm):
+    chat_box = ChatBox()
+    message = {"user": "Hello"}
+    chat_box.insert(0, message)
+    assert chat_box.value == [message]
+    assert len(chat_box) == 1
+
+    # Inserting at an index greater than the current length
+    chat_box.insert(2, {"user": "Hi"})
+    assert chat_box.value == [message, {"user": "Hi"}]
+    assert len(chat_box) == 2
+
+
+def test_pop(document, comm):
+    chat_box = ChatBox()
+    message1 = {"user": "Hello"}
+    message2 = {"user": "Hi"}
+    message3 = {"user": "Hey"}
+    chat_box.extend([message1, message2, message3])
+
+    # Pop the last message
+    popped_message = chat_box.pop()
+    assert popped_message == message3
+    assert chat_box.value == [message1, message2]
+    assert len(chat_box) == 2
+
+    # Pop a specific index
+    popped_message = chat_box.pop(0)
+    assert popped_message == message1
+    assert chat_box.value == [message2]
+    assert len(chat_box) == 1
+
+
+def test_replace(document, comm):
+    chat_box = ChatBox()
+    message1 = {"user": "Hello"}
+    message2 = {"user": "Hi"}
+    chat_box.extend([message1, message2])
+
+    # Replace a message at a specific index
+    new_message = {"user": "Hey"}
+    chat_box.replace(1, new_message)
+    assert chat_box.value == [message1, new_message]
+    assert len(chat_box) == 2
+
+
 def test_chat_box_allow_input(document, comm):
     chat_box = ChatBox(allow_input=True)
     assert chat_box.allow_input == True
@@ -384,3 +430,14 @@ def test_chat_row_align_end(document, comm):
 def test_chat_row_not_show_name(document, comm):
     chat_row = ChatRow(value=["Hello"], name="user1", show_name=False)
     assert chat_row._name is None
+
+
+def test_chat_row_update_bubble(document, comm):
+    chat_row = ChatRow(value=["Hello", "Yellow"], name="user1", show_name=False)
+    assert chat_row._bubble[0].object == "Hello"
+    assert chat_row._bubble[1].object == "Yellow"
+    assert len(chat_row._bubble) == 2
+
+    chat_row.value = ["Bye"]
+    assert chat_row._bubble[0].object == "Bye"
+    assert len(chat_row._bubble) == 1
