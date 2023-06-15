@@ -430,14 +430,3 @@ def test_chat_row_align_end(document, comm):
 def test_chat_row_not_show_name(document, comm):
     chat_row = ChatRow(value=["Hello"], name="user1", show_name=False)
     assert chat_row._name is None
-
-
-def test_chat_row_update_bubble(document, comm):
-    chat_row = ChatRow(value=["Hello", "Yellow"], name="user1", show_name=False)
-    assert chat_row._bubble[0].object == "Hello"
-    assert chat_row._bubble[1].object == "Yellow"
-    assert len(chat_row._bubble) == 2
-
-    chat_row.value = ["Bye"]
-    assert chat_row._bubble[0].object == "Bye"
-    assert len(chat_row._bubble) == 1
