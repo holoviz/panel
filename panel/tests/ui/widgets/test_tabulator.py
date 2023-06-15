@@ -5,7 +5,6 @@ import time
 
 import numpy as np
 import pandas as pd
-from panel.layout.base import Column
 import param
 import pytest
 
@@ -15,6 +14,8 @@ from bokeh.models.widgets.tables import (
     ScientificFormatter, SelectEditor, StringEditor, StringFormatter,
     TextEditor,
 )
+
+from panel.layout.base import Column
 
 try:
     from playwright.sync_api import expect
