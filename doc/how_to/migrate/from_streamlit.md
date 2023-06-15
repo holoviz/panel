@@ -570,7 +570,6 @@ pn.Column(
     run_input,
     pn.bind(run_calculation, run_input, calculation_input),
 ).servable()
-).servable()
 ```
 
 We use the `pn.indicators.LoadingSpinner` to indicate the activity. You find the full list of indicators in the [Indicators Section](../../reference/index.md#indicators) of the [Component Gallery](../../reference/index.md).
