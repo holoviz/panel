@@ -5,8 +5,7 @@ This guide addresses how to migrate from Streamlit to Panel.
 This guide can also be used as
 
 - an alternative *Introduction to Panel* guide if you are already familiar with Streamlit.
-- a means of comparing Streamlit and Panel on a more detailed level. You won't see the unique
-features that Panel provides though.
+- a means of comparing Streamlit and Panel on a more detailed level. You won't see the many additional unique and powerful features that Panel provides though.
 
 ---
 
@@ -79,7 +78,7 @@ You should replace
 
 You will also have to
 
-- add `pn.extension` to configure your Panel application via arguments like `sizing_mode` and `template`.
+- add `pn.extension` to configure your Panel application via optional arguments like `sizing_mode` and `template`.
 - add `.servable` to the Panel objects you want to include in your apps *template* when served as
 a web app.
 
@@ -129,7 +128,7 @@ The app looks like
 
 ### Panel Matplotlib Example
 
-You will find Panels output *panes* in `pn.pane` module.
+You will find Panels *panes* in the `pn.pane` module.
 
 We use Matplotlibs `Figure` interface instead of the `pyplot` interface to
 avoid memory leaks if you forget to close the figure. This is all described in the
@@ -155,7 +154,7 @@ The app looks like
 
 ![Panel Matplotlib Example](../../_static/images/panel_mpl_example.png)
 
-### Output Migration Steps
+### Display Content Migration Steps
 
 You should
 
@@ -169,7 +168,7 @@ You can identify the corresponding Panel *pane* in the
 
 *Layouts* helps you organize your Panel *components*, i.e. *panes*, *widgets* and *layouts*.
 
-Panel provides layouts similar to the ones you know from Streamlit and some unique ones.
+Panel provides layouts similar to the ones you know from Streamlit and many unique ones.
 
 Check out the [Layouts Section](../../reference/index.md#layouts) of the
 [Component Gallery](../../reference/index.html) for the full list of *layouts*.
@@ -205,26 +204,32 @@ import panel as pn
 
 pn.extension(sizing_mode="stretch_width", template="bootstrap")
 
-col1 = pn.Column(
-    pn.pane.Image("https://streamlit.io/images/brand/streamlit-logo-primary-colormark-darktext.png"),
-   "# A faster way to build and share data apps"
+row1 = pn.Row(
+    pn.pane.Image(
+        "https://streamlit.io/images/brand/streamlit-logo-primary-colormark-darktext.png",
+        align="center",
+    ),
+    pn.pane.Image(
+        "https://panel.holoviz.org/_images/logo_horizontal_light_theme.png",
+        align="center",
+    ),
 )
-col2 = pn.Column(
-    pn.pane.Image("https://panel.holoviz.org/_images/logo_horizontal_light_theme.png"),
-    pn.panel("# The powerful data exploration & web app framework for Python"),
+row2 = pn.Row(
+    "# A faster way to build and share data apps",
+    "# The powerful data exploration & web app framework for Python",
 )
 
-pn.Row(col1, col2).servable()
+pn.Column(row1, row2).servable()
 ```
+
+The app looks like
+
+![Panel Layout Example](../../_static/images/panel_layout_example.png)
 
 Panels `Column` and `Row` are *list like* objects. So you can use familiar methods like `.append`,
 `.pop` and `[]` indexing when you work with them. For the details check out the
 [`Column` Guide](../../reference/layouts/Column.md) and
 the [`Row` Guide](../../reference/layouts/Row.md)
-
-The app looks like
-
-![Panel Layout Example](../../_static/images/panel_layout_example.png)
 
 ### Layout Migration Steps
 
@@ -236,9 +241,9 @@ You should
 You can identify the relevant layout to migrate to in the
 [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
 
-## Adding Style with Templates
+## Adding Layout and Style with Templates
 
-Streamlit always uses the same *template* with a *main* and *sidebar* area to style and layout your app.
+Streamlit always uses the same *template* with a *main* and *sidebar* area to layout and style your app.
 
 With Panel you have the flexibility to use the *default, blank template*, one of the *built in templates* or even create your own *custom template*.
 
@@ -289,15 +294,13 @@ The app looks like
 
 ### Template Migration Steps
 
-When migrating you first have to choose which template to use
+When migrating you will have to decide which template to use
 
-- None (default)
+- Blank (default)
 - A built in like *vanilla*, *bootstrap*, *material* or *fast*. See the
 [Templates Section](../../reference/index#templates) of the
 [Components Guide](../../reference/index).
 - A custom template
-
-Then you have to configure it.
 
 ## Accepting User Inputs with Widgets
 
@@ -361,11 +364,73 @@ You can identify the corresponding widget via the
 
 ## Show Activity
 
-Panel supports two ways of indicating activity
+Panel supports many ways of indicating activity
 
 - Indicators. See the [Indicators Section](../../reference/index.md#indicators)
 of the [Component Gallery](../../reference/index.md).
 - `disabled`/ `loading` parameters on Panel components
+- `loading_indicator` parameter for `pn.panel` or `pn.config`. If `True` a
+loading indicator will be shown on your *bound functions* when they are re-run.
+
+```python
+import panel as pn
+
+pn.extension(sizing_mode="stretch_width", template="bootstrap")
+
+SPIN_CSS = """
+@keyframes icon-rotation {
+  from {transform: rotate(0deg);} to {transform: rotate(359deg);}
+}
+.bk-TablerIcon {animation: icon-rotation 2s infinite linear;}
+"""
+
+pn.Row(
+    pn.Column(
+        "## Loading Spinner",
+        pn.Column(
+            pn.indicators.LoadingSpinner(value=False, height=25, width=25),
+            pn.indicators.LoadingSpinner(
+                value=True, height=25, width=25, color="secondary"
+            ),
+        ),
+    ),
+    pn.Column(
+        "## Progress",
+        pn.Column(
+            pn.indicators.Progress(
+                name="Progress", value=20, width=150, bar_color="secondary"
+            ),
+            pn.indicators.Progress(
+                name="Progress", active=True, width=150, bar_color="secondary"
+            ),
+        ),
+    ),
+    pn.Column(
+        "## Disabled",
+        pn.Column(
+            pn.widgets.Button(name="Loading", icon="progress", disabled=True),
+            pn.widgets.Button(
+                name="Loading", icon="progress", disabled=True, stylesheets=[SPIN_CSS]
+            ),
+        ),
+    ),
+    pn.Column(
+        "## Loading",
+        pn.Column(
+            pn.widgets.Button(name="Loading", loading=True, button_type="primary"),
+            pn.WidgetBox(
+                pn.widgets.Checkbox(name="Checked", value=True),
+                pn.widgets.Button(name="Submit", button_type="primary"),
+                loading=True, margin=(10,10),
+            ),
+        ),
+    ),
+).servable()
+```
+
+The app looks like
+
+![Show Activity](https://user-images.githubusercontent.com/42288570/246325570-11484dd6-4523-401f-b709-6c0cc7996410.gif)
 
 We will show you how to migrate your Streamlit activity indicators to Panel in the
 [Interactivity Section](#interactivity) just below.
