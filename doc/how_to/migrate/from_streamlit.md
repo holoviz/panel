@@ -41,15 +41,14 @@ pn.extension(sizing_mode="stretch_width", template="bootstrap")
 pn.panel("Hello World").servable()
 ```
 
-You always include `pn.extension` to configure the application.
+You must always include `pn.extension` to configure the application.
 
-You don't have to provide any arguments to `pn.extension`, but I thought you might be interested in
-configuring
+You don't have to provide any arguments to `pn.extension`, but we recommend you at least configure
 
 - the `sizing_mode` to `stretch_width` in order to achieve responsiveness.
 - a `template` to get a familiar layout with a *main* area and an (optional) *sidebar* area.
 
-You use `pn.panel` similarly to `st.write` to *magically* display
+You use `pn.panel` in the same way as `st.write` to *magically* display
 Python objects like (markdown) strings, dataframes, plots and more. Check out the
 {py:function}`pn.panel <panel.panel.base.panel>` API Reference for the
 details.
@@ -154,12 +153,51 @@ The app looks like
 
 ![Panel Matplotlib Example](../../_static/images/panel_mpl_example.png)
 
+### Display Text Using the Markdown Pane
+
+You can replace `st.markdown` with [`pn.pane.Markdown`](../../reference/panes/Markdown.md).
+
+You can also use the `Markdown` pane to replace the text elements `st.title`, `st.header`, `st.sub_header`, `st.code` and `st.text`.
+
+You may use the `Markdown` pane to replace `st.divider` and `st.latex`, but you can also use the *finetuned* Panel components [`pn.layout.Divider`](../../reference/layouts/Divider.md) and [`pn.pane.LaTeX`](../../reference/panes/LaTeX.md).
+
+Here is how to do it
+
+````python
+import panel as pn
+
+pn.extension("mathjax", sizing_mode="stretch_width", template="bootstrap")
+
+pn.pane.Markdown(r"""
+# Title
+
+## Header
+
+### Sub Header
+
+```python
+import panel as pn
+
+pn.extension()
+```
+
+---
+
+$$ a + ar + a r^2 + a r^3 + \cdots + a r^{n-1} = \sum_{k=0}^{n-1} ar^k = a \left(\frac{1-r^{n}}{1-r}\right)$$
+""").servable()
+````
+
+The app looks like
+
+![Streamlit Layout Example](../../_static/images/panel_markdown_example.png)
+
 ### Display Content Migration Steps
 
 You should
 
 - replace your Streamlit `st.some_object` function with the corresponding Panel
 `pn.pane.SomeObject` class.
+- replace your streamlit text elements with `pn.pane.Markdown`.
 
 You can identify the corresponding Panel *pane* in the
 [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
@@ -433,9 +471,9 @@ The app looks like
 ![Show Activity](https://user-images.githubusercontent.com/42288570/246325570-11484dd6-4523-401f-b709-6c0cc7996410.gif)
 
 We will show you how to migrate your Streamlit activity indicators to Panel in the
-[Interactivity Section](#interactivity) just below.
+[Interactivity Section](#add-interactivity-with-pnbind) just below.
 
-## Interactivity
+## Add Interactivity with `pn.bind`
 
 Both Streamlit and Panel are *reactive* frameworks that *react* when you interact with your
 application. But they work very differently:
@@ -718,7 +756,7 @@ pn.Column(
 
 The app looks like
 
-![Panel Multiple Updates Alternative Example](assets.holoviz.org/panel/gifs/panel_generator_example.gif)
+![Panel Multiple Updates Alternative Example](https://assets.holoviz.org/panel/gifs/panel_generator_example.gif)
 
 ### Multiple Results Example
 
