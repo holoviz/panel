@@ -85,7 +85,7 @@ a web app.
 
 For production you will also have to
 
-- Migrate some of your app configuration to `panel serve` [command line options](../server/commandline.md) or environment. 
+- Migrate some of your app configuration to `panel serve` [command line options](../server/commandline.md) or environment.
 variables.
 
 You won't have to
@@ -703,7 +703,6 @@ import time
 import panel as pn
 
 pn.extension(sizing_mode="stretch_width")
-run_input = pn.widgets.Button(name="Run model")
 
 
 def model():
@@ -713,31 +712,22 @@ def model():
 
 def results(running):
     if not running:
-        yield "Calculation did not run yet"
-        return  # This will break the execution
-    try:
-        run_input.disabled = True
-        loading_indicator = pn.Row(
-            pn.indicators.LoadingSpinner(
-                value=True, width=50, height=50, align="center"
-            ),
-            "Running... Please wait!",
-            align="center",
-        )
-        layout = pn.Column(loading_indicator)
-        yield layout  # This will display the layout
-        for i in range(0, 10):
-            result = model()
-            message = f"Result {i}: {result}"
-            layout.append(message)
-            yield layout
-        layout.pop(0)
-    finally:
-        run_input.disabled = False
+        return "The model has not run yet"
+
+    layout = pn.Column()
+    for i in range(0, 10):
+        result = model()
+        message = f"Result {i}: {result}"
+        layout.append(message)
+        yield layout
     yield layout  # This will force the UI to update
 
 
-pn.Column(run_input, pn.bind(results, run_input)).servable()
+run_input = pn.widgets.Button(name="Run model")
+pn.Column(
+    run_input,
+    pn.panel(pn.bind(results, run_input), loading_indicator=True),
+).servable()
 ```
 
 ![Panel Multiple Results Example](https://user-images.githubusercontent.com/42288570/243421842-b6c29bb0-b814-4d96-9918-946deea807ff.gif)
