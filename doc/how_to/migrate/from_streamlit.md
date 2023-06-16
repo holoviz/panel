@@ -508,7 +508,6 @@ With Panel you will use a *generator function* to update a component multiple ti
 ```python
 import time
 import random
-from textwrap import dedent
 
 import panel as pn
 
@@ -546,13 +545,13 @@ def run_calculation(running, calculation):
     time_start = time.perf_counter()
     result = func()
     time_end = time.perf_counter()
-    yield dedent(
-        f"""
+    yield f"""
         Done!
+
         Result: {result}
+
         The function took {time_end - time_start:1.1f} seconds to complete
         """
-    )
 
 
 calculation_input = pn.widgets.RadioBoxGroup(name="Calculation", options=["A", "B"])
@@ -752,22 +751,26 @@ reconnecting to your database, reloading your dataset and rerunning your expensi
 every time a user clicks a `Button` or changes a `slider` value. This would make your application
 very slow.
 
-In Panel only your *bound functions* are rerun on user interactions.
+In Panel
 
-In Panel you would use the
+- the script served is rerun when a user visits the page.
+- only your *bound functions* are rerun on user interactions.
 
-- *session cache* (`pn.cache`) to speed up expensive, bound functions for a user session
-- *global cache* (`pn.state.as_cached`) to speed up expensive, bound functions or to share
-Python objects globally. I.e. across user sessions.
+In Panel you can use `pn.cache` and `pn.state.as_cached` to speed up
+
+- the initial load of your page and
+- expensive, bound functions
+
+across users sessions.
 
 Check out the [Cache How-To Guides](../caching/index.md) for the
 details.
 
-### Session Cache Example
+### Cache Example
 
 This session will show you how to cache for a user session.
 
-#### Streamlit Session Cache Example
+#### Streamlit Cache Example
 
 ```python
 from time import sleep
@@ -807,12 +810,13 @@ import numpy as np
 import panel as pn
 from matplotlib.figure import Figure
 
-
+@pn.cache
 def get_data():
     print("get_data func")
     sleep(1.0)
     return np.random.normal(1, 1, size=100)
 
+@pn.cache
 def plot(data, bins):
     print("plot func", bins)
     sleep(2)
@@ -825,113 +829,34 @@ pn.extension(sizing_mode="stretch_width", template="bootstrap")
 
 data = get_data()
 bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1)
-cplot = pn.cache(plot)
-bplot = pn.bind(cplot, data, bins)
+bplot = pn.bind(plot, data, bins)
 pn.Column(bins, pn.panel(bplot, loading_indicator=True)).servable()
 ```
-
-Please note that using `pn.cache` on `get_data` would not make a
-difference since `get_data` is only run once per user session.
 
 The app looks like
 
 ![Panel Session Cache Example](https://assets.holoviz.org/panel/gifs/panel_cache_example.gif)
 
-You can also use `pn.cache` as an annotation similar to `st.cache_data`. I.e. as
+You can also use `pn.cache` as an function. I.e. as
 
 ```python
-@pn.cache
-def plot(data, bins):
-    ...
+plot = pn.cache(plot)
 ```
 
-But be aware the the annotation approach has a tendency to mix up your business logic
-(`data` and `plot` function) and your caching logic (when and how to apply caching). This can make
-your code harder to maintain and reuse for other use cases.
-
-### Global Cache Example
-
-This session will show you how to cache globally, i.e. across user sessions
-
-#### Streamlit Global Cache Example
-
-```python
-from time import sleep
-
-import numpy as np
-import streamlit as st
-from matplotlib.figure import Figure
-
-@st.cache_resource
-def get_data():
-    print("get_data func")
-    sleep(1.0)
-    return np.random.normal(1, 1, size=100)
-
-@st.cache_data(hash_funcs={Figure: lambda _: None})
-def plot(data, bins):
-    print("plot func", bins)
-    sleep(2.0)
-    fig = Figure(figsize=(8,4))
-    ax = fig.subplots()
-    ax.hist(data, bins=bins)
-    return fig
-
-data = get_data()
-bins = st.slider(value=20, min_value=10, max_value=30, step=1, label="Bins")
-st.pyplot(plot(data, bins))
-```
-
-The global cache `st.cache_resource` is used on the `get_data` function to only load the data once
-across all users sessions.
-
-#### Panel Global Cache Example
-
-```python
-from time import sleep
-
-import numpy as np
-import panel as pn
-from matplotlib.figure import Figure
-
-
-def get_data():
-    print("data func")
-    sleep(1.0)
-    return np.random.normal(1, 1, size=100)
-
-def plot(data, bins):
-    print("plot func", bins)
-    sleep(2.0)
-    fig = Figure(figsize=(8,4))
-    ax = fig.subplots()
-    ax.hist(data, bins=bins)
-    return fig
-
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
-
-data = pn.state.as_cached(key="data", fn=get_data) # Global Cache
-bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1)
-cplot = pn.cache(plot) # Session Cache
-bplot = pn.bind(cplot, data, bins)
-pn.Column(bins, bplot).servable()
-```
-
-Notice that now we use the global cache `pn.state.as_cached` is used on the `get_data` function to only load the data once
-across all users sessions.
+Using `pn.cache` as a function can help you keep your business logic
+(`data` and `plot` function) and your caching logic (when and how to apply caching) separate. This
+can help you reusable and maintainable code.
 
 ### Cache Migration Steps
 
 To migrate
 
-- replace `st.cache_data` with `pn.cache` to migrate your *session caching*
-  - You only need to cache expensive, *bound functions*.
-- replace `st.cache_resource` with `pn.state.as_cached` to migrate your *global caching*
-  - You only need to cache expensive, *bound functions* and objects you want to share across user
-  sessions
+- replace `st.cache_data` and `st.cache_resource` with `pn.cache` or `pn.state.as_cached`.
 
-In the process consider separating your business logic and caching logic
-(when and how to apply caching) to get more maintainable and reusable code.
+You should consider caching expensive
+
+- functions that are run when your page loads
+- *bound functions*
 
 ## Multi Page Apps
 
