@@ -274,6 +274,8 @@ export class ReactiveHTMLView extends HTMLBoxView {
     if (this.model.looped.indexOf(node) > -1) {
       for (let i = 0; i < children.length; i++) {
         let el: any = this.shadow_el.getElementById(`${node}-${i}-${id}`)
+	if (el == null) {
+	  el = document.getElementById(`${node}-${i}-${id}`)
         if (el == null) {
           console.warn(`DOM node '${node}-${i}-${id}' could not be found. Cannot render children.`)
           continue
@@ -282,6 +284,8 @@ export class ReactiveHTMLView extends HTMLBoxView {
       }
     } else {
       let el: any = this.shadow_el.getElementById(`${node}-${id}`)
+      if (el == null) {
+	el = document.getElementById(`${node}-${id}`)
       if (el == null) {
         console.warn(`DOM node '${node}-${id}' could not be found. Cannot render children.`)
         return
@@ -370,7 +374,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
       if (literal.indexOf(elvar) === -1)
         continue
       const script = `
-      const ${elvar} = view.shadow_el.getElementById('${elname}-${id}')
+      let ${elvar} = view.shadow_el.getElementById('${elname}-${id}')
+      if (${elvar} == null) {
+	${elvar} = document.getElementById('${elname}-${id}')
       if (${elvar} == null) {
         console.warn("DOM node '${elname}' could not be found. Cannot execute callback.")
         return
@@ -398,7 +404,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _setup_mutation_observers(): void {
     const id = this.model.data.id
     for (const name in this.model.attrs) {
-      const el: any = this.shadow_el.getElementById(`${name}-${id}`)
+      let el: any = this.shadow_el.getElementById(`${name}-${id}`)
+      if (el == null)
+	el = document.getElementById(`${name}-${id}`)
       if (el == null) {
         console.warn(`DOM node '${name}-${id}' could not be found. Cannot set up MutationObserver.`)
         continue
@@ -414,7 +422,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _remove_event_listeners(): void {
     const id = this.model.data.id
     for (const node in this._event_listeners) {
-      const el: any = this.shadow_el.getElementById(`${node}-${id}`)
+      let el: any = this.shadow_el.getElementById(`${node}-${id}`)
+      if (el == null)
+        el = document.getElementById(`${node}-${id}`)
       if (el == null)
         continue
       for (const event_name in this._event_listeners[node]) {
@@ -428,7 +438,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _setup_event_listeners(): void {
     const id = this.model.data.id
     for (const node in this.model.events) {
-      const el: any = this.shadow_el.getElementById(`${node}-${id}`)
+      let el: any = this.shadow_el.getElementById(`${node}-${id}`)
+      if (el == null)
+        el = document.getElementById(`${node}-${id}`)
       if (el == null) {
         console.warn(`DOM node '${node}-${id}' could not be found. Cannot subscribe to DOM events.`)
         continue
@@ -451,6 +463,8 @@ export class ReactiveHTMLView extends HTMLBoxView {
   private _update(property: string | null = null): void {
     if (property == null || (this.html.indexOf(`\${${property}}`) > -1)) {
       const rendered = this._render_html(this.html)
+      if (rendered == null)
+	return
       try {
         this._changing = true
         render(rendered, this.container)
