@@ -1383,7 +1383,7 @@ def test_tabulator_constant_single_element_list_filter_client_side(document, com
 
     expected = pd.DataFrame({
         'A': np.array([2]),
-        'B': np.array([0]),
+        'B': np.array([0.]),
         'C': np.array(['foo3']),
         'D': np.array(['2009-01-05T00:00:00.000000000'],
                       dtype='datetime64[ns]')
