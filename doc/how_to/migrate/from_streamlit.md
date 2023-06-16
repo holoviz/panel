@@ -245,11 +245,10 @@ With Panel you have the flexibility to use the *default, blank template*, one of
 Here is an example with the [`FastListTemplate`](../../reference/templates/FastListTemplate.md) for illustration.
 
 ```python
-import panel as pn
+from asyncio import sleep
 from datetime import datetime
-from asyncio import sleep
+
 import panel as pn
-from asyncio import sleep
 
 pn.extension(sizing_mode="stretch_width", template="fast", theme="dark")
 
@@ -267,16 +266,14 @@ The app streams the current date and time using an *async generator function*.
 """,
 ).servable(target="sidebar")
 
-
 async def stream():
     for i in range(0, 100):
         await sleep(0.25)
         yield datetime.now()
 
-
-pn.Column("The current date and time:", *(stream for i in range(5))).servable(
-    target="main"
-)
+pn.Column(
+    "The current date and time:", *(stream for i in range(5))
+).servable(target="main")
 
 pn.state.template.param.update(
     site="Panel",
