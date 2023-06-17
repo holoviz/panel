@@ -481,14 +481,22 @@ application. But they work very differently:
 - Streamlit executes the whole script *top to bottom* on user interactions.
 - Panel executes specific *bound* functions on user interactions.
 
-Panel supports reacting to many more interactions than Streamlit. For example interactions with
-tables and plots.
-
 Panels `pn.bind` provides the functionality to *bind* functions to widgets. We call the resulting
-functions *bound functions*.
+functions *bound functions*. You use `pn.bind` as follows
 
-With Panels interactivity architecture you will be able to develop and maintain larger and more
-complex apps to support more use cases.
+```python
+# 1. Define your function(s)
+def my_func(value):
+    return ...
+# 2. Define your widgets
+slider = pn.widgets.IntSlider(...)
+# 3. Bind your function to the widget(s)
+my_bound_func = pn.bind(my_func, value=slider)
+# 4. Layout your bound functions and widgets
+pn.Column(slider, my_bound_func)
+```
+
+With Panels interactivity architecture you will be able develop and maintain large, advanced and fast apps.
 
 ### Basic Interactivity Example
 
@@ -671,7 +679,7 @@ pn.Column(
 ).servable()
 ```
 
-We use the `pn.indicators.LoadingSpinner` to indicate the activity. You find the full list of indicators in the [Indicators Section](../../reference/index.md#indicators) of the [Component Gallery](../../reference/index.md).
+You will notice that we use the `pn.indicators.LoadingSpinner` to indicate the activity.
 
 The app looks like
 
@@ -834,14 +842,11 @@ pn.Column(
 
 You should
 
-- Move your business logic to functions. Business logic can be code to load data,
+- Move your business logic to functions. Business logic can be code to load data, transform data, run calculations,
 create plots, calculate the mass of the milky way, train models, do inference etc.
-- Use `pn.bind` to specify which functions are bound to which widgets.
-- Use generator functions (`yield`) if you want to update the UI multiple times during the
-  code execution.
-- Indicate activity if needed. You can use one of
-[Panels Indicators](../../reference/index.md#indicators) and/ or
-the `.disabled`+`.loading` parameter on Panels components.
+- Add interactivity by using `pn.bind` to bind your functions to your widgets.
+  - Use generator functions (`yield`) if you want to update the UI multiple times during the functions execution.
+- Indicate activity as described in the [Show Activity Section](#show-activity).
 
 ## Caching
 
