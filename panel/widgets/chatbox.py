@@ -107,7 +107,8 @@ class ChatRow(CompositeWidget):
             *[self._serialize_obj(obj) for obj in self.value],
             align="center",
             margin=8,
-            styles=bubble_styles
+            styles=bubble_styles,
+            width_policy="min",
         )
 
         # create heart icon next to chat
@@ -136,17 +137,22 @@ class ChatRow(CompositeWidget):
             row_objects = row_objects[::-1]
 
         container_params = dict(
+            width_policy="min",
+            sizing_mode="fixed",
             align=(horizontal_align, "center"),
         )
         row = Row(*row_objects, **container_params)
         if show_name:
+            if horizontal_align == "end":
+                name_margin = (-15, 15, -15, 0)
+            else:
+                name_margin = (-15, 0, -15, 15)
             self._name = Markdown(
                 object=self.name,
+                margin=name_margin,
                 align=(horizontal_align, "start"),
-                margin=(-15, 15, 0, 0)
-                if horizontal_align == "end"
-                else (-15, 0, 0, 15),
                 styles={"font-size": "0.88em", "color": "grey"},
+                sizing_mode="fixed",
             )
             if self.align_name == "start":
                 row = Column(self._name, row, **container_params)
@@ -280,6 +286,8 @@ class ChatBox(CompositeWidget):
         self._scroll_button = Button(
             name="Scroll to latest",
             align="center",
+            sizing_mode="fixed",
+            width=115,
             height=35,
             margin=0,
         )
@@ -332,6 +340,7 @@ class ChatBox(CompositeWidget):
         else:
             code += "\ncolumn.scrollTop = -column.scrollHeight"
 
+        code = "window.scrollTo(0, document.body.scrollHeight);"
         obj.jscallback(
             args={"chat_log": self._chat_log},
             **{what: code},
@@ -449,7 +458,7 @@ class ChatBox(CompositeWidget):
             if user == self.primary_name:
                 background, color = ("rgb(99, 139, 226)", "white")
             else:
-                background, color = ("rgb(246, 246, 246)", "black")
+                background, color = ("rgb(235, 235, 235)", "black")
             self.message_colors[user] = (background, color)
 
         # try to get input icon
