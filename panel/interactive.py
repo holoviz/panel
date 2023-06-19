@@ -102,8 +102,6 @@ import holoviews as hv
 import pandas as pd
 import param
 
-from packaging.version import Version
-
 from .depends import bind, depends, param_value_if_widget
 from .layout import Column, HSpacer, Row
 from .pane import DataFrame, panel
@@ -163,11 +161,6 @@ def _find_widgets(op):
             op_arg.owner not in widgets):
             widgets.append(op_arg.owner)
         if isinstance(op_arg, slice):
-            if Version(hv.__version__) < Version("1.15.1"):
-                raise ValueError(
-                    "Using interactive with slices needs to have "
-                    "Holoviews 1.15.1 or greater installed."
-                )
             nested_op = {"args": [op_arg.start, op_arg.stop, op_arg.step], "kwargs": {}}
             for widget in _find_widgets(nested_op):
                 if widget not in widgets:
@@ -239,13 +232,18 @@ class interactive:
     def __new__(cls, obj, **kwargs):
         # __new__ implemented to support functions as input, e.g.
         # hvplot.find(foo, widget).interactive().max()
+        wrapper = None
         if 'fn' in kwargs:
-            wrapper = None
             fn = kwargs.pop('fn')
         elif isinstance(obj, (FunctionType, MethodType)):
-            wrapper = None
             fn = panel(obj, lazy=True)
             obj = fn.eval(obj)
+        elif isinstance(obj, param.Parameter):
+            fn = panel(bind(lambda obj: obj, obj), lazy=True)
+            obj = getattr(obj.owner, obj.name)
+        elif isinstance(obj, Widget):
+            fn = panel(bind(lambda obj: obj, obj), lazy=True)
+            obj = obj.value
         else:
             wrapper = Wrapper(object=obj)
             fn = panel(bind(lambda obj: obj, wrapper.param.object), lazy=True)
@@ -564,6 +562,9 @@ class interactive:
             new._method = None
         return clone
 
+    def __panel__(self):
+        return self.layout()
+
     #----------------------------------------------------------------
     # interactive pipeline APIs
     #----------------------------------------------------------------
@@ -589,9 +590,6 @@ class interactive:
         return new._clone(transform)
 
     # Builtin functions
-
-    def __panel__(self):
-        return self.layout()
 
     def __abs__(self):
         return self._apply_operator(abs)
@@ -754,7 +752,6 @@ class interactive:
             else:
                 obj = fn(obj, *resolved_args, **resolved_kwargs)
         return obj
-
 
     #----------------------------------------------------------------
     # Public API
