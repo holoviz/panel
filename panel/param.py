@@ -823,12 +823,11 @@ class ParamMethod(ReplacementPane):
         try:
             if isinstance(awaitable, types.AsyncGeneratorType):
                 append_mode = self.generator_mode == 'append'
-                async for i, new_obj in enumerate(awaitable):
+                if append_mode:
+                    self._inner_layout[:] = []
+                async for new_obj in awaitable:
                     if append_mode:
-                        if i == 0:
-                            self._inner_layout[:] = [new_obj]
-                        else:
-                            self._inner_layout.append(new_obj)
+                        self._inner_layout.append(new_obj)
                         self._pane = self._inner_layout[-1]
                     else:
                         self._update_inner(new_obj)
@@ -858,12 +857,11 @@ class ParamMethod(ReplacementPane):
                 return
             elif isinstance(new_object, Generator):
                 append_mode = self.generator_mode == 'append'
-                for i, new_obj in enumerate(new_object):
+                if append_mode:
+                    self._inner_layout[:] = []
+                for new_obj in new_object:
                     if append_mode:
-                        if i == 0:
-                            self._inner_layout[:] = [new_obj]
-                        else:
-                            self._inner_layout.append(new_obj)
+                        self._inner_layout.append(new_obj)
                         self._pane = self._inner_layout[-1]
                     else:
                         self._update_inner(new_obj)
