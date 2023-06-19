@@ -1182,7 +1182,7 @@ def test_param_function_pane(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1227,7 +1227,7 @@ def test_param_function_pane_defer_load(document, comm):
     # Create pane
     with set_curdoc(document):
         row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1343,7 +1343,7 @@ def test_param_method_pane(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1372,7 +1372,7 @@ def test_param_method_pane_subobject(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert isinstance(model, Div)
@@ -1406,7 +1406,7 @@ def test_param_method_pane_mpl(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is row
@@ -1435,7 +1435,7 @@ def test_param_method_pane_changing_type(document, comm):
 
     # Create pane
     row = pane.get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     model = row.children[0]
     text = model.text
@@ -1766,6 +1766,28 @@ def test_param_generator(document, comm):
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
 
 
+def test_param_generator_append(document, comm):
+    checkbox = Checkbox(value=False)
+
+    def function(value):
+        yield Markdown(f"{value}")
+        yield Markdown(f"{not value}")
+
+    pane = ParamFunction(bind(function, checkbox), generator_mode='append')
+
+    root = pane.get_root(document, comm)
+
+    assert len(root.children) == 2
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    assert len(root.children) == 2
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
+
+
 @pytest.mark.asyncio
 async def test_param_async_generator(document, comm):
     checkbox = Checkbox(value=False)
@@ -1786,6 +1808,38 @@ async def test_param_async_generator(document, comm):
     await asyncio.sleep(0.01)
 
     assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+
+@pytest.mark.asyncio
+async def test_param_async_generator_append(document, comm):
+    checkbox = Checkbox(value=False)
+
+    async def function(value):
+        yield Markdown(f"{value}")
+        await asyncio.sleep(0.01)
+        yield Markdown(f"{not value}")
+
+    pane = ParamFunction(bind(function, checkbox), generator_mode='append')
+
+    root = pane.get_root(document, comm)
+
+    await asyncio.sleep(0.01)
+    assert len(root.children) == 1
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    await asyncio.sleep(0.01)
+    assert len(root.children) == 2
+    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+
+    checkbox.value = True
+
+    await asyncio.sleep(0.01)
+    assert len(root.children) == 1
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await asyncio.sleep(0.01)
+    assert len(root.children) == 2
+    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
 def test_param_generator_multiple(document, comm):
