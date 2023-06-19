@@ -93,7 +93,6 @@ the object returned, e.g. the series `df.A` or the method `df.head`, and
 display its repr.
 """
 
-import abc
 import operator
 import sys
 
@@ -105,10 +104,10 @@ import param
 
 from packaging.version import Version
 
-import panel as pn
-
-from .depends import param_value_if_widget
+from .depends import bind, depends, param_value_if_widget
 from .layout import Column, HSpacer, Row
+from .pane import DataFrame, panel
+from .param import ParamFunction
 from .util import eval_function, full_groupby, get_method_owner
 from .widgets.base import Widget
 
@@ -160,7 +159,7 @@ def _find_widgets(op):
                 widgets.append(op_arg)
         # Find widgets introduced as `widget.param.value` in an expression
         if (isinstance(op_arg, param.Parameter) and
-            isinstance(op_arg.owner, pn.widgets.Widget) and
+            isinstance(op_arg.owner, Widget) and
             op_arg.owner not in widgets):
             widgets.append(op_arg.owner)
         if isinstance(op_arg, slice):
@@ -176,7 +175,12 @@ def _find_widgets(op):
     return widgets
 
 
-class Interactive:
+class Wrapper(param.Parameterized):
+
+    object = param.Parameter()
+
+
+class interactive:
     """
     The `.interactive` API enhances the API of data analysis libraries
     like Pandas, Dask, and Xarray, by allowing to replace in a pipeline
@@ -228,9 +232,6 @@ class Interactive:
     >>> dfi.head(widget)
     """
 
-    # TODO: Why?
-    __metaclass__ = abc.ABCMeta
-
     # Hackery to support calls to the classic `.plot` API, see `_get_ax_fn`
     # for more hacks!
     _fig = None
@@ -239,19 +240,23 @@ class Interactive:
         # __new__ implemented to support functions as input, e.g.
         # hvplot.find(foo, widget).interactive().max()
         if 'fn' in kwargs:
+            wrapper = None
             fn = kwargs.pop('fn')
         elif isinstance(obj, (FunctionType, MethodType)):
-            fn = pn.panel(obj, lazy=True)
+            wrapper = None
+            fn = panel(obj, lazy=True)
             obj = fn.eval(obj)
         else:
-            fn = None
+            wrapper = Wrapper(object=obj)
+            fn = panel(bind(lambda obj: obj, wrapper.param.object), lazy=True)
         clss = cls
         for subcls in cls.__subclasses__():
             if subcls.applies(obj):
                 clss = subcls
-        inst = super(Interactive, cls).__new__(clss)
+        inst = super(interactive, cls).__new__(clss)
         inst._shared_obj = kwargs.get('_shared_obj', [obj])
         inst._fn = fn
+        inst._wrapper = wrapper
         return inst
 
     @classmethod
@@ -310,7 +315,7 @@ class Interactive:
     def _fn_params(self):
         if self._fn is None:
             deps = []
-        elif isinstance(self._fn, pn.param.ParamFunction):
+        elif isinstance(self._fn, ParamFunction):
             dinfo = getattr(self._fn.object, '_dinfo', {})
             deps = list(dinfo.get('dependencies', [])) + list(dinfo.get('kw', {}).values())
         else:
@@ -329,10 +334,21 @@ class Interactive:
         if self._transform is None:
             return ps
         for arg in self._transform['args']:
+            if isinstance(arg, interactive):
+                for p in  arg._params:
+                    if p not in ps:
+                        ps.append(p)
+                continue
             parg = param_value_if_widget(arg)
+
             if parg and isinstance(parg, param.Parameter) and parg not in ps:
                 ps.append(parg)
         for k, arg in self._transform['kwargs'].items():
+            if isinstance(arg, interactive):
+                for p in  arg._params:
+                    if p not in ps:
+                        ps.append(p)
+                continue
             parg = param_value_if_widget(arg)
             if parg is None or k == 'ax' or not isinstance(parg, param.Parameter) or parg in ps:
                 continue
@@ -375,11 +391,11 @@ class Interactive:
         def evaluate_inner():
             obj = self.eval()
             if isinstance(obj, pd.DataFrame):
-                return pn.pane.DataFrame(obj, max_rows=self._max_rows, **self._kwargs)
+                return DataFrame(obj, max_rows=self._max_rows, **self._kwargs)
             return obj
         params = self._params
         if params:
-            @pn.depends(*params)
+            @depends(*params)
             def evaluate(*args, **kwargs):
                 return evaluate_inner()
         else:
@@ -443,10 +459,15 @@ class Interactive:
 
     def __getattribute__(self, name):
         self_dict = super().__getattribute__('__dict__')
-        if not self_dict.get('_init'):
+        if not self_dict.get('_init') or name in ('eval', '_dirty', '_prev', '_transform', '_obj', '_shared_obj', '_method', '_plot', '_eval_transform'):
             return super().__getattribute__(name)
 
         current = self_dict['_current_']
+        dirty = self_dict['_dirty']
+        if dirty:
+            self.eval()
+            current = self_dict['_current_']
+
         method = self_dict['_method']
         if method:
             current = getattr(current, method)
@@ -467,11 +488,11 @@ class Interactive:
 
     @staticmethod
     def _get_ax_fn():
-        @pn.depends()
+        @depends()
         def get_ax():
             from matplotlib.backends.backend_agg import FigureCanvas
             from matplotlib.pyplot import Figure
-            Interactive._fig = fig = Figure()
+            interactive._fig = fig = Figure()
             FigureCanvas(fig)
             return fig.subplots()
         return get_ax
@@ -485,7 +506,7 @@ class Interactive:
         as its normal output that will automatically be updated as soon as a
         widget value is changed.
 
-        Reference: https://hvplot.holoviz.org/user_guide/Interactive.html
+        Reference: https://hvplot.holoviz.org/user_guide/interactive.html
 
         Parameters
         ----------
@@ -504,8 +525,8 @@ class Interactive:
 
         Returns
         -------
-        Interactive
-            The next `Interactive` object of the pipeline.
+        interactive
+            The next `interactive` object of the pipeline.
 
         Examples
         --------
@@ -519,7 +540,7 @@ class Interactive:
                 # This code path is entered when initializing an interactive
                 # class from the accessor, e.g. with df.interactive(). As
                 # calling the accessor df.interactive already returns an
-                # Interactive instance.
+                # interactive instance.
                 return self._clone(*args, **kwargs)
             # TODO: When is this error raised?
             raise AttributeError
@@ -544,7 +565,7 @@ class Interactive:
         return clone
 
     #----------------------------------------------------------------
-    # Interactive pipeline APIs
+    # interactive pipeline APIs
     #----------------------------------------------------------------
 
     def __array_ufunc__(self, *args, **kwargs):
@@ -569,6 +590,9 @@ class Interactive:
 
     # Builtin functions
 
+    def __panel__(self):
+        return self.layout()
+
     def __abs__(self):
         return self._apply_operator(abs)
 
@@ -588,106 +612,106 @@ class Interactive:
 
     # Binary operators
     def __add__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.add, other)
     def __and__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.and_, other)
     def __eq__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.eq, other)
     def __floordiv__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.floordiv, other)
     def __ge__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.ge, other)
     def __gt__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.gt, other)
     def __le__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.le, other)
     def __lt__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.lt, other)
     def __lshift__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.lshift, other)
     def __mod__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.mod, other)
     def __mul__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.mul, other)
     def __ne__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.ne, other)
     def __or__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.or_, other)
     def __rshift__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.rshift, other)
     def __pow__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.pow, other)
     def __sub__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.sub, other)
     def __truediv__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.truediv, other)
 
     # Reverse binary operators
     def __radd__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.add, other, reverse=True)
     def __rand__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.and_, other, reverse=True)
     def __rdiv__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.div, other, reverse=True)
     def __rfloordiv__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.floordiv, other, reverse=True)
     def __rlshift__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.rlshift, other)
     def __rmod__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.mod, other, reverse=True)
     def __rmul__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.mul, other, reverse=True)
     def __ror__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.or_, other, reverse=True)
     def __rpow__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.pow, other, reverse=True)
     def __rrshift__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.rrshift, other)
     def __rsub__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.sub, other, reverse=True)
     def __rtruediv__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.truediv, other, reverse=True)
 
     def __getitem__(self, other):
-        other = other._transform if isinstance(other, Interactive) else other
+        other = other._transform if isinstance(other, interactive) else other
         return self._apply_operator(operator.getitem, other)
 
     def _plot(self, *args, **kwargs):
         # TODO: Seems totally unused to me, as self._plot is set to a boolean in __init__
-        @pn.depends()
+        @depends()
         def get_ax():
             from matplotlib.backends.backend_agg import FigureCanvas
             from matplotlib.pyplot import Figure
-            Interactive._fig = fig = Figure()
+            interactive._fig = fig = Figure()
             FigureCanvas(fig)
             return fig.subplots()
         kwargs['ax'] = get_ax
@@ -705,7 +729,9 @@ class Interactive:
         resolved_args = []
         for arg in args:
             arg = param_value_if_widget(arg)
-            if hasattr(arg, '_dinfo'):
+            if isinstance(arg, interactive):
+                arg = arg.eval()
+            elif hasattr(arg, '_dinfo'):
                 arg = eval_function(arg)
             elif isinstance(arg, param.Parameter):
                 arg = getattr(arg.owner, arg.name)
@@ -713,15 +739,20 @@ class Interactive:
         resolved_kwargs = {}
         for k, arg in kwargs.items():
             arg = param_value_if_widget(arg)
-            if hasattr(arg, '_dinfo'):
+            if isinstance(arg, interactive):
+                arg = arg.eval()
+            elif hasattr(arg, '_dinfo'):
                 arg = eval_function(arg)
             elif isinstance(arg, param.Parameter):
                 arg = getattr(arg.owner, arg.name)
             resolved_kwargs[k] = arg
-        if transform.get('reverse'):
-            obj = fn(resolved_args[0], obj, *resolved_args[1:], **resolved_kwargs)
+        if isinstance(fn, str):
+            obj = getattr(obj, fn)(*resolved_args, **resolved_kwargs)
         else:
-            obj = fn(obj, *resolved_args, **resolved_kwargs)
+            if transform.get('reverse'):
+                obj = fn(resolved_args[0], obj, *resolved_args[1:], **resolved_kwargs)
+            else:
+                obj = fn(obj, *resolved_args, **resolved_kwargs)
         return obj
 
 
@@ -747,13 +778,13 @@ class Interactive:
         transform = self._transform
         if transform:
             obj = self._eval_transform(obj, transform)
+        self._current_ = obj
+        self._dirty = False
         if self._method:
             # E.g. `pi = dfi.A` leads to `pi._method` equal to `'A'`.
             obj = getattr(obj, self._method, obj)
         if self._plot:
-            obj = Interactive._fig
-        self._current_ = obj
-        self._dirty = False
+            obj = interactive._fig
         return obj
 
     def layout(self, **kwargs):
@@ -827,7 +858,20 @@ class Interactive:
         """
         Wraps the output in a Panel component.
         """
-        return pn.panel(self._callback, **kwargs)
+        return panel(self._callback, **kwargs)
+
+    def set(self, new):
+        prev = self
+        while prev is not None:
+            prev._dirty = True
+            if prev._prev is None:
+                if prev._wrapper is None:
+                    raise ValueError(
+                        'Cannot set value on interactive with a function at its root.'
+                    )
+                else:
+                    prev._wrapper.object = new
+            prev = prev._prev
 
     def widgets(self):
         """
@@ -839,7 +883,7 @@ class Interactive:
         """
         widgets = []
         for p in self._fn_params:
-            if (isinstance(p.owner, pn.widgets.Widget) and
+            if (isinstance(p.owner, Widget) and
                 p.owner not in widgets):
                 widgets.append(p.owner)
         prev = self
@@ -849,4 +893,4 @@ class Interactive:
                     if w not in widgets:
                         widgets.append(w)
             prev = prev._prev
-        return pn.Column(*widgets)
+        return Column(*widgets)
