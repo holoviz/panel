@@ -340,7 +340,6 @@ class ChatBox(CompositeWidget):
         else:
             code += "\ncolumn.scrollTop = -column.scrollHeight"
 
-        code = "window.scrollTo(0, document.body.scrollHeight);"
         obj.jscallback(
             args={"chat_log": self._chat_log},
             **{what: code},
