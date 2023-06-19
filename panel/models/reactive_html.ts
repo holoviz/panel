@@ -80,11 +80,12 @@ function extractToken(template: string, str: string, tokens: string[]) {
   return result;
 }
 
-function element_lookup(root: HTMLElement, el_id: string): HTMLElement | null {
+function element_lookup(root: ShadowRoot, el_id: string): HTMLElement | null {
   let el = root.getElementById(el_id)
   if (el == null) {
-    return document.getElementById(el_id)
+    el = document.getElementById(el_id)
   }
+  return el
 }
 
 
