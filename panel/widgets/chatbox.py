@@ -104,11 +104,12 @@ class ChatRow(CompositeWidget):
 
         # create the chat bubble
         self._bubble = Column(
-            *[self._serialize_obj(obj) for obj in self.value],
             align="center",
             margin=8,
-            styles=bubble_styles
+            styles=self._bubble_styles
         )
+        self.param.watch(self._update_bubble, "value")
+        self.param.trigger("value")
 
         # create heart icon next to chat
         self._like = Toggle(
@@ -183,6 +184,13 @@ class ChatRow(CompositeWidget):
         if "overflow-wrap" not in panel_obj.styles:
             panel_obj.styles.update({"overflow-wrap": "break-word"})
         return panel_obj
+
+    def _update_bubble(self, event: param.parameterized.Event):
+        """
+        Update the bubble with the current value.
+        """
+        bubble_objects = [self._serialize_obj(obj) for obj in event.new]
+        self._bubble.objects = bubble_objects
 
     def _update_like(self, event: param.parameterized.Event):
         """
