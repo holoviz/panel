@@ -8,6 +8,8 @@ You can deploy Panel on Spaces with just a few clicks:
 
 <a href="https://huggingface.co/new-space?template=Panel-Org/panel-template"> <img src="https://huggingface.co/datasets/huggingface/badges/raw/main/deploy-to-spaces-lg.svg"/> </a>
 
+There are a few key parameters you need to define: the Owner (either your personal account or an organization), a Space name, and Visibility. In case you intend to execute computationally intensive deep learning models, consider upgrading to a GPU to boost performance. 
+
 <img src="../../_static/hugging_face_space.png" style="width:90%"></img>
 
 Once you have created the space, it will start out in “Building” status, which will change to “Running” once your space is ready to go. 
