@@ -67,7 +67,7 @@ def deprecated(
     if isinstance(remove_version, str):
         remove_version = Version(remove_version)
 
-    if remove_version < current_version:
+    if remove_version <= current_version:
         # This error is mainly for developers to remove the deprecated.
         raise ValueError(
             f"{old!r} should have been removed in {remove_version}, current version {current_version}."
