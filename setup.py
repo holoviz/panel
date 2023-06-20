@@ -137,6 +137,7 @@ _tests = [
     'pre-commit',
     'psutil',
     # Libraries tested in unit tests
+    'altair',
     'folium',
     'ipympl',
     'scipy',
