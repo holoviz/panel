@@ -475,6 +475,11 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.on("pageLoaded", (pageno: number) => {
       this.updatePage(pageno)
     })
+    this.tabulator.on("renderComplete", () => {
+      if (this._building)
+	return
+      this.postUpdate()
+    });
     this.tabulator.on("dataSorting", (sorters: any[]) => {
       const sorts = []
       for (const s of sorters) {
@@ -856,8 +861,6 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.rowManager.setData(data, true, false)
     else
       this.tabulator.setData(data)
-
-    this.postUpdate()
   }
 
   addData(): void {
@@ -865,7 +868,6 @@ export class DataTabulatorView extends HTMLBoxView {
     const last_row = rows[rows.length-1]
     const start = ((last_row?.data._index) || 0)
     this.setData()
-    this.postUpdate()
     if (this.model.follow && last_row)
       this.tabulator.scrollToRow(start, "top", false)
   }
@@ -882,7 +884,6 @@ export class DataTabulatorView extends HTMLBoxView {
 
     let data = transform_cds_to_records(this.model.source, true)
     this.tabulator.setData(data)
-    this.postUpdate()
   }
 
   setFrozen(): void {
