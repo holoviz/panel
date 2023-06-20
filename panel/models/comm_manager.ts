@@ -57,7 +57,11 @@ export class CommManager extends Model {
 	  if (view !== this)
 	    view.msg_handler(msg)
 	}
-	this.msg_handler(msg)
+	try {
+	  this.msg_handler(msg)
+	} catch(e) {
+	  console.error(e)
+	}
       })
       this._client_comm = this.ns.comm_manager.get_client_comm(this.plot_id, this.client_comm_id, (msg: any) => this.on_ack(msg));
       if (this.ns.shared_views == null)
@@ -171,10 +175,12 @@ export class CommManager extends Model {
       if (plot == null)
         return
 
-      if ((buffers != undefined) && (buffers.length > 0))
+      if (content.length)
+        this._receiver.consume(content)
+      else if ((buffers != undefined) && (buffers.length > 0))
         this._receiver.consume(buffers[0].buffer)
       else
-        this._receiver.consume(content)
+	return
 
       const comm_msg = this._receiver.message
       if ((comm_msg != null) && (Object.keys(comm_msg.content as Patch).length > 0) && this.document != null){
