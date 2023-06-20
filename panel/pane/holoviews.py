@@ -228,7 +228,7 @@ class HoloViews(PaneBase):
                 mode = obj.sizing_mode
                 if mode:
                     wresponsive = '_width' in mode or '_both' in mode
-                    wresponsive = '_width' in mode or '_both' in mode
+                    hresponsive = '_height' in mode or '_both' in mode
                 else:
                     wresponsive = hresponsive = False
             else:
