@@ -332,8 +332,9 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
         module: ext for ext, module in extension._imports.items()
     }
     ext = ext or module.split('.')[-1]
+    ext_name = external_modules[module]
     loaded_extensions = state._extensions
-    loaded = loaded_extensions is None or external_modules[module] in loaded_extensions
+    loaded = loaded_extensions is None or ext_name in loaded_extensions
     if module in sys.modules and loaded:
         model_cls = getattr(sys.modules[module], model)
         if f'{model_cls.__module__}.{model}' not in Model.model_class_reverse_map:
@@ -348,10 +349,13 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
             f'\n\npn.extension(\'{ext}\')\n'
         )
     elif not loaded and state._is_launching:
+        # If we are still launching the application it is not too late
+        # to automatically load the extension and therefore ensure it
+        # is included in the resources added to the served page
         if loaded_extensions is None:
-            state._extensions_[state.curdoc] = [external_modules[module]]
+            state._extensions_[state.curdoc] = [ext_name]
         else:
-            loaded_extensions.append(external_modules[module])
+            loaded_extensions.append(ext_name)
     elif not loaded:
         param.main.param.warning(
             f'pn.extension was initialized but {ext!r} extension was not '
