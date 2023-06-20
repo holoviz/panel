@@ -68,7 +68,7 @@ html_theme_options = {
     "pygment_dark_style": "material",
     "header_links_before_dropdown": 5,
     'secondary_sidebar_items': [
-        "github_stars",
+        "github-stars-button",
         "panelitelink",
         "page-toc",
     ],
@@ -86,8 +86,8 @@ myst_enable_extensions = ["colon_fence", "deflist"]
 
 gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
 gallery_url = f'https://{gallery_endpoint}.pyviz.demo.anaconda.com'
-jlite_url = 'https://holoviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
-pyodide_url = 'https://holoviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
+jlite_url = 'https://pyviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
+pyodide_url = 'https://pyviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
 
 nbsite_gallery_conf = {
     'github_org': 'holoviz',
