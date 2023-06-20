@@ -253,7 +253,7 @@ def test_chat_box_message_colors(document, comm):
     chat_box = ChatBox(value=value.copy(), message_colors={"user1": "red"})
     assert chat_box.message_colors["user1"] == "red"
     # random generated colors are hexcodes
-    assert chat_box.message_colors["user2"] == ("rgb(246, 246, 246)", "black")
+    assert chat_box.message_colors["user2"] == ("rgb(235, 235, 235)", "black")
 
 
 def test_chat_box_message_colors_with_hue(document, comm):
