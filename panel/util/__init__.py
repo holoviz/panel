@@ -352,6 +352,13 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
         # If we are still launching the application it is not too late
         # to automatically load the extension and therefore ensure it
         # is included in the resources added to the served page
+        param.main.param.warning(
+            f'pn.extension was initialized but {ext!r} extension was not '
+            'loaded. Since the application is still launching the extension '
+            'was loaded automatically but we strongly recommend you load '
+            'the extension explicitly with the following argument(s):'
+            f'\n\npn.extension({ext!r})\n'
+        )
         if loaded_extensions is None:
             state._extensions_[state.curdoc] = [ext_name]
         else:
