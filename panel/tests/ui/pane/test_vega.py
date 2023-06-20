@@ -7,7 +7,7 @@ try:
 except Exception:
     alt = None
 
-altair_available = pytest.mark.skipIf(alt is None, reason='Requires altair')
+altair_available = pytest.mark.skipif(alt is None, reason='Requires altair')
 
 from panel.io.server import serve
 from panel.pane import Vega
