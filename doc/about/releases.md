@@ -6,7 +6,7 @@ See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual sum
 
 Date: 2023-06-20
 
-The first micro-release in the 1.1.x series brings a large number of bug fixes and some minor enhancements. The most important fixes include compatibility with JupyterLab 4 and improved support for updating ipywidgets. This release saw a lot of contributors and we welcome @TBym, @Glatzli, @theyashi, and @enismaxim1 to the Panel developer community and thank our existing contributors and maintainers @Hoxbro, @sophiamyang, @maximlt, @MarcSkovMadsen, and @philippjfr for their continued contributions.
+The first micro-release in the 1.1.x series brings a large number of bug fixes and some minor enhancements. The most important fixes include compatibility with JupyterLab 4 and improved support for updating ipywidgets. This release saw a lot of contributors and we welcome @TBym, @Glatzli, @theyashi, and @enismaxim1 to the Panel developer community and thank our existing contributors and maintainers @ahuang11, @Hoxbro, @sophiamyang, @maximlt, @MarcSkovMadsen, and @philippjfr for their continued contributions.
 
 ### Enhancements
 
@@ -16,7 +16,7 @@ The first micro-release in the 1.1.x series brings a large number of bug fixes a
 ### Bug fixes
 
 - Fix `Progress` indicator `sizing_mode` ([#5051](https://github.com/holoviz/panel/pull/5051))
-- Fix various `ChatBox` issues ([#5065](https://github.com/holoviz/panel/pull/5065), [#5101](https://github.com/holoviz/panel/pull/5101))
+- Fix various `ChatBox` issues ([#5065](https://github.com/holoviz/panel/pull/5065), [#5101](https://github.com/holoviz/panel/pull/5101), [#5101](https://github.com/holoviz/panel/pull/5139))
 - Ensure kernel shutdown futures are not collected in Jupyter server extension ([#5069](https://github.com/holoviz/panel/pull/5069))
 - Add bokeh version check for notebook to better support bokeh dev versions ([#5071](https://github.com/holoviz/panel/pull/5071), [#5093](https://github.com/holoviz/panel/pull/5093))
 - Fix false warning emitted when constructing a Param pane with `throttled` or `onkeyup` ([#5078](https://github.com/holoviz/panel/pull/5078))
