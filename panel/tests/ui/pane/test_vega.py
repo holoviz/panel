@@ -82,6 +82,8 @@ def test_altair_select_point(page, port, dataframe):
     page.keyboard.down('Shift')
     page.mouse.click(bbox['x']+300, bbox['y']+100)
 
+    time.sleep(0.2)
+
     assert pane.selection.multi == [2, 3]
 
 @altair_available
@@ -152,5 +154,7 @@ def test_altair_select_agg(page, port, dataframe):
 
     page.keyboard.down('Shift')
     page.mouse.click(bbox['x']+50, bbox['y']+10)
+
+    time.sleep(0.2)
 
     assert pane.selection.multi_bar_ref == [{'str': 'C'}, {'str': 'A'}]
