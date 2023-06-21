@@ -311,6 +311,20 @@ def test_chat_box_show_name(document, comm):
     assert chat_box.rows[2]._name is None
 
 
+def test_chat_box_show_names(document, comm):
+    # name should only show on the first message
+    value = [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+        {"user2": "Hi"},
+    ]
+    chat_box = ChatBox(value=value.copy(), show_names=False)
+    assert chat_box.rows[0]._name is None
+    assert chat_box.rows[1]._name is None
+    # no name shown for consecutive messages from the same user
+    assert chat_box.rows[2]._name is None
+
+
 def test_chat_box_allow_likes(document, comm):
     value = [
         {"user1": "Hello"},
