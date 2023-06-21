@@ -138,18 +138,19 @@ _tests = [
     'psutil',
     # Libraries tested in unit tests
     'altair',
+    'anywidget',
     'folium',
+    'diskcache',
+    'holoviews >=1.16.0',
     'ipympl',
+    'ipython >=7.0',
+    'ipyvuetify',
+    'ipywidgets_bokeh',
+    'numpy <1.24',
+    'pandas >=1.3',
+    'reacton',
     'scipy',
     'twine',
-    'pandas >=1.3',
-    'ipython >=7.0',
-    'holoviews >=1.16.0',
-    'diskcache',
-    'ipyvuetify',
-    'reacton',
-    'anywidget',
-    'numpy <1.24',
 ]
 
 _ui = [
