@@ -221,6 +221,9 @@ class ChatBox(CompositeWidget):
     primary_name = param.String(default=None, doc="""Name of the primary user (the one who inputs messages);
         the first key found in value will be used if unspecified.""")
 
+    allow_names = param.Boolean(default=True, doc="""
+        Whether to allow names to be displayed.""")
+
     allow_input = param.Boolean(default=True, doc="""
         Whether to allow the primary user to interactively enter messages.""")
 
@@ -495,8 +498,8 @@ class ChatBox(CompositeWidget):
         for i, user_message in enumerate(user_messages):
             user, message_contents = self._separate_user_message(user_message)
 
-            # only show name if it's a new user
-            show_name = user != previous_user
+            # only show name if it's a new user and only if allow_names is True
+            show_name = user != previous_user if self.allow_names else False
             previous_user = user
 
             message_row = self._instantiate_message_row(
