@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
@@ -132,12 +131,10 @@
 	background-repeat: no-repeat;
 	background-position: center;
     }
-    .header-grid {
-	/* Grid styles */
-	padding: 4rem 2rem;
-	display: grid;
-	align-items: center;
-	grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    .header-content {
+	display: flex;
+	flex-direction: column;
+	padding: 2rem;
     }
     .header article {
 	margin-right: 1.0em;
@@ -160,6 +157,12 @@
 	background: transparent;
 	font-size: 1.5em;
 	color: white;
+    }
+    #subtitle {
+	color: white;
+	font-size: 2em;
+	font-weight: bold;
+	margin: 1em 0 0 1em;
     }
     #search-input {
 	margin-top: 1em;
@@ -244,67 +247,65 @@
   </style>
 </head>
 <body>
-      <fast-design-system-provider id="body-design-provider" use-defaults>
-        <fast-design-system-provider id="header-design-provider">
-        <section class="header">
+  <fast-design-system-provider id="body-design-provider" use-defaults>
+    <fast-design-system-provider id="header-design-provider">
+      <section class="header">
         <fast-switch id="theme-switch" style="float: right; padding-top: 1em; padding-right: 2em;" onChange="toggleLightDarkTheme()" checked>
-            <span slot="checked-message">
-                <svg class="theme-toggle-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
-              </span>
-              <span slot="unchecked-message">
-                <svg class="theme-toggle-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
-              </span>
-        </fast-switch>
+          <span slot="checked-message">
+            <svg class="theme-toggle-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+            </span>
+            <span slot="unchecked-message">
+              <svg class="theme-toggle-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
+            </span>
+          </fast-switch>
         <fast-tooltip anchor="theme-switch">Click to toggle the Theme</fast-tooltip>
-        <div class="header-grid">
-        <h1>
+        <div class="header-content">
+          <div>
             <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self"><img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/></fast-anchor>
             <fast-tooltip anchor="title">Click to visit the Panel web site</fast-tooltip>
-        </h1>
-        <article>
-            <h2>{{ title|default('Panel Applications', true)  }}</h2>
-        </article>
+          </div>
+          <span id="subtitle">{{ title|default('Panel Applications', true) }}</span>
         </div>
-        </section>
-        </fast-design-system-provider>
-        <section class="search">
-            <fast-text-field id="search-input" placeholder="search" onInput="hideCards(event.target.value)"></fast-text-field>
-        </section>
-        <section id="cards">
-        <ul class="cards-grid">
-        {% for item_label, item in items.items() %}
+      </section>
+    </fast-design-system-provider>
+    <section class="search">
+      <fast-text-field id="search-input" placeholder="search" onInput="hideCards(event.target.value)"></fast-text-field>
+    </section>
+    <section id="cards">
+      <ul class="cards-grid">
+      {% for item_label, item in items.items() %}
         <li class="card">
-            <a class="card-link" href="{{ item }}" id="{{ item }}">
+          <a class="card-link" href="{{ item }}" id="{{ item }}">
             <fast-card class="gallery-item">
-                <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
+              <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
                   <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
                   <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
-                </svg>
-                <div class="card-content">
-                    <h2 class="card-header">{{ item_label }}</h2>
-                </div>
+              </svg>
+              <div class="card-content">
+                <h2 class="card-header">{{ item_label }}</h2>
+              </div>
             </fast-card>
             <fast-tooltip anchor="{{ item }}">Click to start the application</fast-tooltip>
-            </a>
+          </a>
         </li>
         {% endfor %}
-        </ul>
-        </section>
-        <section>
+      </ul>
+      </section>
+      <section>
         <fast-divider></fast-divider>
-        <footer>
-            <p>Made with &#x1f40d;, &#10084;&#65039;, <fast-anchor href="https://fast.design" appearance="hypertext" target="_blank">Fast</fast-anchor> and <fast-anchor href="https://panel.holoviz.org" appearance="hypertext" target="_blank">Panel</fast-anchor>.</p>
-        </footer>
-        </section>
-    </fast-design-system-provider>
-    <script type="text/javascript">
-      document.addEventListener('DOMContentLoaded', (event) => {
-	const header_design = new window.fastDesignProvider("#header-design-provider");
-	header_design.setBackgroundColor('#ffffff')
-	window.bodyDesign = new window.fastDesignProvider("#body-design-provider");
-	setSwitchFromParams()
-	setSearchFromParams()
-      })
-    </script>
+      <footer>
+        <p>Made with &#x1f40d;, &#10084;&#65039;, <fast-anchor href="https://fast.design" appearance="hypertext" target="_blank">Fast</fast-anchor> and <fast-anchor href="https://panel.holoviz.org" appearance="hypertext" target="_blank">Panel</fast-anchor>.</p>
+      </footer>
+    </section>
+  </fast-design-system-provider>
+  <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', (event) => {
+      const header_design = new window.fastDesignProvider("#header-design-provider");
+      header_design.setBackgroundColor('#ffffff')
+      window.bodyDesign = new window.fastDesignProvider("#body-design-provider");
+      setSwitchFromParams()
+      setSearchFromParams()
+    })
+  </script>
 </body>
 </html>
