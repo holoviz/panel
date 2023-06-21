@@ -221,9 +221,6 @@ class ChatBox(CompositeWidget):
     primary_name = param.String(default=None, doc="""Name of the primary user (the one who inputs messages);
         the first key found in value will be used if unspecified.""")
 
-    allow_names = param.Boolean(default=True, doc="""
-        Whether to allow names to be displayed.""")
-
     allow_input = param.Boolean(default=True, doc="""
         Whether to allow the primary user to interactively enter messages.""")
 
@@ -234,6 +231,13 @@ class ChatBox(CompositeWidget):
         Whether to display messages in ascending time order.  If true,
         the latest messages and message_input_widgets will be at the
         bottom of the chat box. Otherwise, they will be at the top.""")
+
+    default_message_callable = param.Callable(default=None, doc="""
+        The type of Panel object to use for items in value if they are
+        not already rendered as a Panel object; if None, uses the
+        pn.panel function to render a displayable Panel object.
+        If the item is not serializable, will fall back to pn.panel.
+        """)
 
     message_icons = param.Dict(default={}, doc="""
         Dictionary mapping name of messages to their icons,
@@ -250,12 +254,8 @@ class ChatBox(CompositeWidget):
         List of widgets to use for message input. Multiple widgets will
         be nested under tabs.""")
 
-    default_message_callable = param.Callable(default=None, doc="""
-        The type of Panel object to use for items in value if they are
-        not already rendered as a Panel object; if None, uses the
-        pn.panel function to render a displayable Panel object.
-        If the item is not serializable, will fall back to pn.panel.
-        """)
+    show_names = param.Boolean(default=True, doc="""
+        Whether to show chat participant's names below the message.""")
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
@@ -498,8 +498,8 @@ class ChatBox(CompositeWidget):
         for i, user_message in enumerate(user_messages):
             user, message_contents = self._separate_user_message(user_message)
 
-            # only show name if it's a new user and only if allow_names is True
-            show_name = user != previous_user if self.allow_names else False
+            # only show name if it's a new user and only if show_names is True
+            show_name = user != previous_user if self.show_names else False
             previous_user = user
 
             message_row = self._instantiate_message_row(
