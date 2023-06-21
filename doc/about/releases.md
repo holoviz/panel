@@ -4,14 +4,14 @@ See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual sum
 
 ## Version 1.1.1
 
-Date: 2023-06-20
+Date: 2023-06-21
 
 The first micro-release in the 1.1.x series brings a large number of bug fixes and some minor enhancements. The most important fixes include compatibility with JupyterLab 4 and improved support for updating ipywidgets. This release saw a lot of contributors and we welcome @TBym, @Glatzli, @theyashi, and @enismaxim1 to the Panel developer community and thank our existing contributors and maintainers @ahuang11, @Hoxbro, @sophiamyang, @maximlt, @MarcSkovMadsen, and @philippjfr for their continued contributions.
 
 ### Enhancements
 
 - Implement `per_session` cache ([#5117](https://github.com/holoviz/panel/pull/5117))
-- Add `ChatBox` methods and replacing `ChatRow` values ([#5118](https://github.com/holoviz/panel/pull/5118))
+- Enhancements for `ChatBox` including methods to update rows and hide names ([#5118](https://github.com/holoviz/panel/pull/5118), [#5118](https://github.com/holoviz/panel/pull/5152))
 
 ### Bug fixes
 
@@ -33,6 +33,8 @@ The first micro-release in the 1.1.x series brings a large number of bug fixes a
 ### Documentation
 
 - Overhaul Perspective reference page ([#5087](https://github.com/holoviz/panel/pull/5087))
+- Add new HuggingFace deployment documentation ([#5158](https://github.com/holoviz/panel/pull/5150))
+- Enable and document mathjax extension in Markdown reference ([#5158](https://github.com/holoviz/panel/pull/5158))
 
 ### Compatibility
 
