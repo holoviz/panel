@@ -129,12 +129,10 @@
 	background-repeat: no-repeat;
 	background-position: center;
     }
-    .header-grid {
-	/* Grid styles */
-	padding: 4rem 2rem;
-	display: grid;
-	align-items: center;
-	grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    .header-content {
+	display: flex;
+	flex-direction: column;
+	padding: 2rem;
     }
     #header-design-provider {
       background-color: var(--header-background);
@@ -149,7 +147,7 @@
 	color: white;
 	font-size: 2em;
 	font-weight: bold;
-	margin-left: 2em;
+	margin: 1em 0 0 1em;
     }
     #search-input {
 	margin-top: 1em;
@@ -249,12 +247,14 @@
           </span>
         </fast-switch>
         <fast-tooltip anchor="theme-switch">Click to toggle the Theme</fast-tooltip>
-        <div class="header-grid">
-          <h1>
-            <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self"><img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/></fast-anchor>
+        <div class="header-content">
+          <div>
+            <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self">
+              <img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/>
+            </fast-anchor>
             <fast-tooltip anchor="title">Click to visit the Panel web site</fast-tooltip>
-          </h1>
-          <span id="subtitle">Applications running on the server</span>
+          </div>
+          <span id="subtitle">Running Applications</span>
         </div>
       </section>
     </fast-design-system-provider>
