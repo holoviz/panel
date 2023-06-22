@@ -146,7 +146,7 @@ _tests = [
     'ipython >=7.0',
     'ipyvuetify',
     'ipywidgets_bokeh',
-    'numpy <1.24',
+    'numpy',
     'pandas >=1.3',
     'reacton',
     'scipy',
