@@ -1,110 +1,95 @@
 """
 interactive API
 
-How Interactive works
----------------------
-
 `Interactive` is a wrapper around a Python object that lets users create
 interactive pipelines by calling existing APIs on an object with dynamic
 parameters or widgets.
 
-An `Interactive` instance watches what operations are applied to the object.
+An `Interactive` instance watches what operations are applied to the
+object and records these on each instance, which are then strung
+together into a chain.
 
-To do so, each operation returns a new `Interactive` instance - the creation
-of a new instance being taken care of by the `_clone` method - which allows
-the next operation to be recorded, and so on and so forth. E.g. `dfi.head()`
-first records that the `'head'` attribute is accessed, this is achieved
-by overriding `__getattribute__`. A new interactive object is returned,
-which will then record that it is being called, and that new object will be
-itself called as `Interactive` implements `__call__`. `__call__`  returns
-another `Interactive` instance.
+The original input to an interactive pipeline is stored in a mutable
+list and can be accessed via the `_obj` property. The shared mutable
+data structure ensures that all `Interactive` instances created from
+the same object can hold a shared reference that can be updated,
+e.g. via the `.set` method or because the input was itself a reference
+to some object that can potentially be updated.
 
-Note that under the hood even more `Interactive` instances may be created,
-but this is the gist of it.
+When an operation is applied to an `Interactive` instance, it will
+record the operation and create a new instance using `_clone` method,
+e.g. `dfi.head()` first records that the `'head'` attribute is
+accessed, this is achieved by overriding `__getattribute__`. A new
+interactive object is returned, which will then record that it is
+being called, and that new object will be itself called as
+`Interactive` implements `__call__`. `__call__` returns another
+`Interactive` instance. To be able to watch all the potential
+operations that may be applied to an object, `Interactive` implements:
 
-To be able to watch all the potential operations that may be applied to an
-object, `Interactive` implements on top of `__getattribute__` and
-`__call__`:
+- `__getattribute__`: Watching for attribute accesses
+- `__call__`: Intercepting both actual calls or method calls if an
+  attribute was previously accessed
+- `__getitem__`: Intercepting indexing operations
+- Operators: Implementing all valid operators `__gt__`, `__add__`, etc.
+- `__array_ufunc__`: Intercepting numpy universal function calls
 
-- operators such as `__gt__`, `__add__`, etc.
-- the builtin functions `__abs__` and `__round__`
-- `__getitem__`
-- `__array_ufunc__`
+The `interactive` object evaluates operations lazily but whenever the
+current value is needed the operations are automatically
+evaluated. Note that even attribute access or tab-completion
+operations can result in evaluation of the pipeline. This is very
+useful in Notebook sessions, as this allows to inspect the operationed
+object at any point of the pipeline, and as such provide correct
+auto-completion and docstrings. E.g. executing `dfi.A.max?` in an
+interactive REPL or notebook where it allows returning the docstring
+of the method being accessed.
+
+The actual operations are stored as a dictionary on the `_operation`
+attribute of each instance. They contain 4 keys:
+
+- `fn`: The function to apply (either an actual function or a string
+        indicating the operation is a method on the object)
+- `args`: Any arguments to supply to the `fn`.
+- `kwargs`: Any keyword arguments to supply to the `fn`.
+- `reverse`: If the function is not a method this indicates whether
+             the first arg and the input object should be supplied in
+             reverse order.
 
 The `_depth` attribute starts at 0 and is incremented by 1 every time
-a new `Interactive` instance is created part of a chain.
-The root instance in an expression has a `_depth` of 0. An expression can
-consist of multiple chains, such as `dfi[dfi.A > 1]`, as the `Interactive`
-instance is referenced twice in the expression. As a consequence `_depth`
-is not the total count of `Interactive` instance creations of a pipeline,
-it is the count of instances created in the outer chain. In the example, that
-would be `dfi[]`. `Interactive` instances don't have references about
-the instances that created them or that they create, they just know their
-current location in a chain thanks to `_depth`. However, as some parameters
-need to be passed down the whole pipeline, they do have to propagate. E.g.
-in `dfi.interactive(width=200)`, `width=200` will be propagated as `kwargs`.
+a new `Interactive` instance is created part of a chain.  The root
+instance in an expression has a `_depth` of 0. An expression can
+consist of multiple chains, such as `dfi[dfi.A > 1]`, as the
+`Interactive` instance is referenced twice in the expression. As a
+consequence `_depth` is not the total count of `Interactive` instance
+creations of a pipeline, it is the count of instances created in the
+outer chain. In the example, that would be `dfi[]`. Each `Interactive`
+instance keeps a reference to the previous instance in the chain and
+each instance tracks whether its current value is up-to-date via the
+`_dirty` attribute which is set to False if any dependency changes.
 
-Recording the operations applied to an object in a pipeline is done
-by gradually building a so-called "dim expression", or "dim transform",
-which is an expression language provided by HoloViews. dim transform
-objects are a way to express transforms on `Dataset`s, a `Dataset` being
-another HoloViews object that is a wrapper around common data structures
-such as Pandas/Dask/... Dataframes/Series, Xarray Dataset/DataArray, etc.
-For instance a Python expression such as `(series + 2).head()` can be
-expressed with a dim transform whose repr will be `(dim('*').pd+2).head(2)`,
-effectively showing that the dim transform has recorded the different
-operations that are meant to be applied to the data.
-The `_transform` attribute stores the dim transform.
-
-The `_obj` attribute holds the original data structure that feeds the
-pipeline. All the `Interactive` instances created while parsing the
-pipeline share the same `_obj` object. And they all wrap it in a `Dataset`
-instance, and all apply the current dim transform they are aware of to
-the original data structure to compute the intermediate state of the data,
-that is stored it in the `_current_` attribute. Doing so is particularly
-useful in Notebook sessions, as this allows to inspect the transformed
-object at any point of the pipeline, and as such provide correct
-auto-completion and docstrings. E.g. executing `dfi.A.max?` in a Notebook
-will correctly return the docstring of the Pandas Series `.max()` method,
-as the pipeline evaluates `dfi.A` to hold a current object `_current` that
-is a Pandas Series, and no longer and DataFrame.
-
-The `_obj` attribute is implemented as a property which gets/sets the value
-from a list that contains the shared attribute. This is required for the
-"function as input" to be able to update the object from a callback set up
-on the root Interactive instance.
-
-Internally interactive holds the current evaluated state on the `_current_`
-attribute, when some parameter in the interactive pipeline is changed
-the pipeline is marked as `_dirty`. This means that the next time `_current`
-is accessed the pipeline will be re-evaluated to get the up-to-date
-current value.
-
-The `_method` attribute is a string that temporarily stores the method/attr
-accessed on the object, e.g. `_method` is 'head' in `dfi.head()`, until the
-Interactive instance created in the pipeline is called at which point `_method`
-is reset to None. In cases such as `dfi.head` or `dfi.A`, `_method` is not
-(yet) reset to None. At this stage the Interactive instance returned has
-its `_current` attribute not updated, e.g. `dfi.A._current` is still the
-original dataframe, not the 'A' series. Keeping `_method` is thus useful for
-instance to display `dfi.A`, as the evaluation of the object will check
-whether `_method` is set or not, and if it's set it will use it to compute
-the object returned, e.g. the series `df.A` or the method `df.head`, and
+The `_method` attribute is a string that temporarily stores the
+method/attr accessed on the object, e.g. `_method` is 'head' in
+`dfi.head()`, until the Interactive instance created in the pipeline
+is called at which point `_method` is reset to None. In cases such as
+`dfi.head` or `dfi.A`, `_method` is not (yet) reset to None. At this
+stage the Interactive instance returned has its `_current` attribute
+not updated, e.g. `dfi.A._current` is still the original dataframe,
+not the 'A' series. Keeping `_method` is thus useful for instance to
+display `dfi.A`, as the evaluation of the object will check whether
+`_method` is set or not, and if it's set it will use it to compute the
+object returned, e.g. the series `df.A` or the method `df.head`, and
 display its repr.
 """
-
+import math
 import operator
 import sys
 
 from types import FunctionType, MethodType
 
-import holoviews as hv
-import pandas as pd
 import param
 
 from .depends import bind, depends, param_value_if_widget
 from .layout import Column, HSpacer, Row
-from .pane import DataFrame, panel
+from .pane import panel
 from .param import ParamFunction
 from .util import eval_function, full_groupby, get_method_owner
 from .widgets.base import Widget
@@ -144,12 +129,6 @@ def _find_widgets(op):
         # Find widgets introduced as `widget` in an expression
         if isinstance(op_arg, Widget) and op_arg not in widgets:
             widgets.append(op_arg)
-        # TODO: Find how to execute this path?
-        if isinstance(op_arg, hv.dim):
-            for nested_op in op_arg.ops:
-                for widget in _find_widgets(nested_op):
-                    if widget not in widgets:
-                        widgets.append(widget)
         # Find Ipywidgets
         if 'ipywidgets' in sys.modules:
             from ipywidgets import Widget as IPyWidget
@@ -173,61 +152,30 @@ class Wrapper(param.Parameterized):
     object = param.Parameter()
 
 
-class interactive:
+class interactive_base:
     """
-    The `.interactive` API enhances the API of data analysis libraries
-    like Pandas, Dask, and Xarray, by allowing to replace in a pipeline
-    static values by dynamic widgets. When displayed, an interactive
-    pipeline will incorporate the dynamic widgets that control it, as long
-    as its normal output that will automatically be updated as soon as a
-    widget value is changed.
-
-    `Interactive` can be instantiated with an object. However the recommended
-    approach is to instantiate it via the `.interactive` accessor that is
-    available on a data structure when it has been patched, e.g. after
-    executing `import hvplot.pandas`. The accessor can also be called which
-    allows to pass down kwargs.
-
-    A pipeline can then be created from this object, the pipeline will render
-    with its widgets and its interactive output.
-
-    Reference: https://hvplot.holoviz.org/user_guide/Interactive.html
+    The `interactive` allows wrapping objects and then operating on
+    them interactively while recording any operations applied to them.
+    By recording all arguments or operands in the operations the recorded
+    pipeline can be replayed if an operand represents a dynamic value.
 
     Parameters
     ----------
-    obj: DataFrame, Series, DataArray, DataSet
+    obj: any
         A supported data structure object
-    loc : str, optional
-        Widget(s) location, one of 'bottom_left', 'bottom_right', 'right'
-        'top-right', 'top-left' and 'left'. By default 'top_left'
-    center : bool, optional
-        Whether to center to pipeline output, by default False
-    max_rows : int, optional
-        Maximum number of rows displayed, only used when the output is a
-        dataframe, by default 100
-    kwargs: optional
-        Optional kwargs that are passed down to customize the displayed
-        object. E.g. if the output is a DataFrame `width=200` will set
-        the size of the DataFrame Pane that renders it.
 
     Examples
     --------
     Instantiate it from an object:
-    >>> dfi = Interactive(df)
 
-    Or with the `.interactive` accessor when the object is patched:
-    >>> import hvplot.pandas
-    >>> dfi = df.interactive
-    >>> dfi = df.interactive(width=200)
+    >>> ifloat = Interactive(3.14)
+    >>> ifloat * 2
+    6.28
 
-    Create interactive pipelines from the `Interactive` object:
-    >>> widget = panel.widgets.IntSlider(value=1, start=1, end=5)
-    >>> dfi.head(widget)
+    Then update the original value and see the new result:
+    >>> ifloat.set(1)
+    2
     """
-
-    # Hackery to support calls to the classic `.plot` API, see `_get_ax_fn`
-    # for more hacks!
-    _fig = None
 
     def __new__(cls, obj, **kwargs):
         # __new__ implemented to support functions as input, e.g.
@@ -251,7 +199,7 @@ class interactive:
         for subcls in cls.__subclasses__():
             if subcls.applies(obj):
                 clss = subcls
-        inst = super(interactive, cls).__new__(clss)
+        inst = super(interactive_base, cls).__new__(clss)
         inst._shared_obj = kwargs.get('_shared_obj', [obj])
         inst._fn = fn
         inst._wrapper = wrapper
@@ -265,31 +213,21 @@ class interactive:
         """
         return True
 
-    def __init__(self, obj, transform=None, fn=None, plot=False, depth=0,
-                 loc='top_left', center=False, dmap=False, inherit_kwargs={},
-                 max_rows=100, method=None, _shared_obj=None, _current=None,
-                 prev=None, **kwargs):
-
+    def __init__(
+        self, obj, operation=None, fn=None, depth=0, method=None, prev=None,
+        _shared_obj=None, _current=None, **kwargs
+    ):
         # _init is used to prevent to __getattribute__ to execute its
         # specialized code.
         self._init = False
         self._method = method
-        self._transform = transform
-        self._plot = plot
+        self._operation = operation
         self._depth = depth
-        self._loc = loc
-        self._center = center
-        self._dmap = dmap
         self._prev = prev
-        # TODO: What's the real use of inherit_kwargs? So far I've only seen
-        # it containing 'ax'
-        self._inherit_kwargs = inherit_kwargs
-        self._max_rows = max_rows
         self._kwargs = kwargs
         self._init = True
         self._dirty = True
         self._current_ = None
-        #self.hvplot = _hvplot(self)
         self._setup_invalidations(depth)
 
     @property
@@ -329,9 +267,9 @@ class interactive:
         while prev is not None:
             ps.extend(prev._params)
             prev = prev._prev
-        if self._transform is None:
+        if self._operation is None:
             return ps
-        for arg in self._transform['args']:
+        for arg in self._operation['args']:
             if isinstance(arg, interactive):
                 for p in  arg._params:
                     if p not in ps:
@@ -341,7 +279,7 @@ class interactive:
 
             if parg and isinstance(parg, param.Parameter) and parg not in ps:
                 ps.append(parg)
-        for k, arg in self._transform['kwargs'].items():
+        for k, arg in self._operation['kwargs'].items():
             if isinstance(arg, interactive):
                 for p in  arg._params:
                     if p not in ps:
@@ -387,10 +325,7 @@ class interactive:
     @property
     def _callback(self):
         def evaluate_inner():
-            obj = self.eval()
-            if isinstance(obj, pd.DataFrame):
-                return DataFrame(obj, max_rows=self._max_rows, **self._kwargs)
-            return obj
+            return self.eval()
         params = self._params
         if params:
             @depends(*params)
@@ -401,25 +336,19 @@ class interactive:
                 return evaluate_inner()
         return evaluate
 
-    def _clone(self, transform=None, plot=None, loc=None, center=None,
-               dmap=None, copy=False, max_rows=None, **kwargs):
-        plot = self._plot or plot
-        transform = transform or self._transform
-        loc = self._loc if loc is None else loc
-        center = self._center if center is None else center
-        dmap = self._dmap if dmap is None else dmap
-        max_rows = self._max_rows if max_rows is None else max_rows
+    def _clone(self, operation=None, copy=False, **kwargs):
+        operation = operation or self._operation
         depth = self._depth + 1
         if copy:
-            kwargs = dict(self._kwargs, _current=self._current, inherit_kwargs=self._inherit_kwargs, method=self._method, fn=self._fn, prev=self._prev, **kwargs)
+            kwargs = dict(
+                self._kwargs, _current=self._current, method=self._method, fn=self._fn,
+                prev=self._prev, **kwargs
+            )
         else:
-            kwargs = dict(self._inherit_kwargs, prev=self, **dict(self._kwargs, **kwargs))
-        return type(self)(self._obj, transform=transform, plot=plot, depth=depth,
-                         loc=loc, center=center, dmap=dmap, _shared_obj=self._shared_obj,
-                         max_rows=max_rows, **kwargs)
-
-    def _repr_mimebundle_(self, include=[], exclude=[]):
-        return self.layout()._repr_mimebundle_()
+            kwargs = dict(prev=self, **dict(self._kwargs, **kwargs))
+        return type(self)(
+            self._obj, operation=operation, depth=depth, _shared_obj=self._shared_obj, **kwargs
+        )
 
     def __dir__(self):
         current = self._current
@@ -437,18 +366,15 @@ class interactive:
             return self._clone(copy=True)
         # This is executed when one runs e.g. `dfi.A > 1`, in which case after
         # dfi.A the _method 'A' is set (in __getattribute__) which allows
-        # _resolve_accessor to keep building the transform dim expression.
-        transform = {
+        # _resolve_accessor to keep building the operation dim expression.
+        operation = {
             'fn': operator.getitem,
             'args': self._method,
             'kwargs': {},
             'reverse': False
         }
-        inherit_kwargs = {}
-        if self._method == 'plot':
-            inherit_kwargs['ax'] = self._get_ax_fn()
         try:
-            new = self._clone(transform, inherit_kwargs=inherit_kwargs)
+            new = self._clone(operation)
         finally:
             # Reset _method for whatever happens after the accessor has been
             # fully resolved, e.g. whatever happens `dfi.A > 1`.
@@ -457,7 +383,7 @@ class interactive:
 
     def __getattribute__(self, name):
         self_dict = super().__getattribute__('__dict__')
-        if not self_dict.get('_init') or name in ('eval', '_dirty', '_prev', '_transform', '_obj', '_shared_obj', '_method', '_plot', '_eval_transform'):
+        if not self_dict.get('_init') or name in ('eval', '_dirty', '_prev', '_operation', '_obj', '_shared_obj', '_method', '_eval_operation', '_display_opts'):
             return super().__getattribute__(name)
 
         current = self_dict['_current_']
@@ -532,7 +458,6 @@ class interactive:
         >>> dfi = df.interactive(width=200)
         >>> dfi.head(widget)
         """
-
         if self._method is None:
             if self._depth == 0:
                 # This code path is entered when initializing an interactive
@@ -542,20 +467,16 @@ class interactive:
                 return self._clone(*args, **kwargs)
             # TODO: When is this error raised?
             raise AttributeError
-        elif self._method == 'plot':
-            # This - {ax: get_ax} - is passed as kwargs to the plot method in
-            # the dim expression.
-            kwargs['ax'] = self._get_ax_fn()
         new = self._clone(copy=True)
         try:
-            kwargs = dict(new._inherit_kwargs, **kwargs)
-            transform = {
+            kwargs = dict(kwargs)
+            operation = {
                 'fn': new._method,
                 'args': args,
                 'kwargs': kwargs,
                 'reverse': False
             }
-            clone = new._clone(transform, plot=new._method == 'plot')
+            clone = new._clone(operation)
         finally:
             # If an error occurs reset _method anyway so that, e.g. the next
             # attempt in a Notebook, is set appropriately.
@@ -571,23 +492,23 @@ class interactive:
 
     def __array_ufunc__(self, *args, **kwargs):
         new = self._resolve_accessor()
-        transform = {
+        operation = {
             'fn': args[0],
             'args': args[3:],
             'kwargs': kwargs,
             'reverse': False
         }
-        return new._clone(transform)
+        return new._clone(operation)
 
     def _apply_operator(self, operator, *args, reverse=False, **kwargs):
         new = self._resolve_accessor()
-        transform = {
+        operation = {
             'fn': operator,
             'args': args,
             'kwargs': kwargs,
             'reverse': reverse
         }
-        return new._clone(transform)
+        return new._clone(operation)
 
     # Builtin functions
 
@@ -599,131 +520,136 @@ class interactive:
         return self._apply_operator(round, *args)
 
     # Unary operators
+    def __ceil__(self):
+        return self._apply_operator(math.ceil)
+    def __floor__(self):
+        return self._apply_operator(math.floor)
+    def __invert__(self):
+        return self._apply_operator(operator.inv)
     def __neg__(self):
         return self._apply_operator(operator.neg)
     def __not__(self):
         return self._apply_operator(operator.not_)
-    def __invert__(self):
-        return self._apply_operator(operator.inv)
     def __pos__(self):
         return self._apply_operator(operator.pos)
+    def __trunc__(self):
+        return self._apply_operator(math.trunc)
 
     # Binary operators
     def __add__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.add, other)
     def __and__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.and_, other)
+    def __contains_(self, other):
+        other = other._operation if isinstance(other, interactive) else other
+        return self._apply_operator(operator.contains, other)
+    def __divmod__(self, other):
+        other = other._operation if isinstance(other, interactive) else other
+        return self._apply_operator(divmod, other)
     def __eq__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.eq, other)
     def __floordiv__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.floordiv, other)
     def __ge__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.ge, other)
     def __gt__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.gt, other)
     def __le__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.le, other)
     def __lt__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.lt, other)
     def __lshift__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.lshift, other)
+    def __matmul__(self, other):
+        other = other._operation if isinstance(other, interactive) else other
+        return self._apply_operator(operator.matmul, other)
     def __mod__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.mod, other)
     def __mul__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.mul, other)
     def __ne__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.ne, other)
     def __or__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.or_, other)
     def __rshift__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.rshift, other)
     def __pow__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.pow, other)
     def __sub__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.sub, other)
     def __truediv__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.truediv, other)
+    def __xor__(self, other):
+        other = other._operation if isinstance(other, interactive) else other
+        return self._apply_operator(operator.xor, other)
 
     # Reverse binary operators
     def __radd__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.add, other, reverse=True)
     def __rand__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.and_, other, reverse=True)
     def __rdiv__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.div, other, reverse=True)
+    def __rdivmod__(self, other):
+        other = other._operation if isinstance(other, interactive) else other
+        return self._apply_operator(divmod, other, reverse=True)
     def __rfloordiv__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.floordiv, other, reverse=True)
     def __rlshift__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.rlshift, other)
     def __rmod__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.mod, other, reverse=True)
     def __rmul__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.mul, other, reverse=True)
     def __ror__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.or_, other, reverse=True)
     def __rpow__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.pow, other, reverse=True)
     def __rrshift__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.rrshift, other)
     def __rsub__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.sub, other, reverse=True)
     def __rtruediv__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.truediv, other, reverse=True)
+    def __rxor__(self, other):
+        other = other._operation if isinstance(other, interactive) else other
+        return self._apply_operator(operator.xor, other)
 
     def __getitem__(self, other):
-        other = other._transform if isinstance(other, interactive) else other
+        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.getitem, other)
 
-    def _plot(self, *args, **kwargs):
-        # TODO: Seems totally unused to me, as self._plot is set to a boolean in __init__
-        @depends()
-        def get_ax():
-            from matplotlib.backends.backend_agg import FigureCanvas
-            from matplotlib.pyplot import Figure
-            interactive._fig = fig = Figure()
-            FigureCanvas(fig)
-            return fig.subplots()
-        kwargs['ax'] = get_ax
-        new = self._resolve_accessor()
-        transform = {
-            'fn': 'plot',
-            'args': args,
-            'kwargs': kwargs,
-            'reverse': False
-        }
-        return new._clone(transform, plot=True)
-
-    def _eval_transform(self, obj, transform):
-        fn, args, kwargs = transform['fn'], transform['args'], transform['kwargs']
+    def _eval_operation(self, obj, operation):
+        fn, args, kwargs = operation['fn'], operation['args'], operation['kwargs']
         resolved_args = []
         for arg in args:
             arg = param_value_if_widget(arg)
@@ -747,7 +673,7 @@ class interactive:
         if isinstance(fn, str):
             obj = getattr(obj, fn)(*resolved_args, **resolved_kwargs)
         else:
-            if transform.get('reverse'):
+            if operation.get('reverse'):
                 obj = fn(resolved_args[0], obj, *resolved_args[1:], **resolved_kwargs)
             else:
                 obj = fn(obj, *resolved_args, **resolved_kwargs)
@@ -757,13 +683,6 @@ class interactive:
     # Public API
     #----------------------------------------------------------------
 
-    def dmap(self):
-        """
-        Wraps the output in a DynamicMap. Only valid if the output
-        is a HoloViews object.
-        """
-        return hv.DynamicMap(self._callback)
-
     def eval(self):
         """
         Returns the current state of the interactive expression. The
@@ -772,17 +691,56 @@ class interactive:
         if not self._dirty:
             return self._current_
         obj = self._obj if self._prev is None else self._prev.eval()
-        transform = self._transform
-        if transform:
-            obj = self._eval_transform(obj, transform)
+        operation = self._operation
+        if operation:
+            obj = self._eval_operation(obj, operation)
         self._current_ = obj
         self._dirty = False
         if self._method:
             # E.g. `pi = dfi.A` leads to `pi._method` equal to `'A'`.
             obj = getattr(obj, self._method, obj)
-        if self._plot:
-            obj = interactive._fig
         return obj
+
+    def set(self, new):
+        """
+        Allows overriding the original input to the pipeline.
+        """
+        prev = self
+        while prev is not None:
+            prev._dirty = True
+            if prev._prev is None:
+                if prev._wrapper is None:
+                    raise ValueError(
+                        'Cannot set value on interactive with a function at its root.'
+                    )
+                else:
+                    prev._wrapper.object = new
+            prev = prev._prev
+        return self
+
+
+class interactive(interactive_base):
+
+    _display_opts = ('loc', 'center')
+
+    def __init__(self, obj, **kwargs):
+        display_opts = {}
+        for dopt in self._display_opts:
+            if dopt in kwargs:
+                kwargs[dopt] = kwargs.pop(dopt)
+        super().__init__(obj, **kwargs)
+        self._display_opts = display_opts
+
+    def _clone(self, transform=None, copy=False, **kwargs):
+        kwargs.update(self._display_opts)
+        return super()._clone(transform=transform, copy=copy, **kwargs)
+
+    def _repr_mimebundle_(self, include=[], exclude=[]):
+        return self.layout()._repr_mimebundle_()
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
 
     def layout(self, **kwargs):
         """
@@ -792,8 +750,8 @@ class interactive:
         """
         widget_box = self.widgets()
         panel = self.output()
-        loc = self._loc
-        center = self._center
+        loc = self._display_opts.get('loc', 'left')
+        center = self._display_opts.get('center', False)
         alignments = {
             'left': (Row, ('start', 'center'), True),
             'right': (Row, ('end', 'center'), False),
@@ -832,14 +790,6 @@ class interactive:
             components = [HSpacer(), panel, HSpacer(), widget_box]
         return Row(*components, **kwargs)
 
-    def holoviews(self):
-        """
-        Returns a HoloViews object to render the output of this
-        pipeline. Only works if the output of this pipeline is a
-        HoloViews object, e.g. from an .hvplot call.
-        """
-        return hv.DynamicMap(self._callback)
-
     def output(self):
         """
         Returns the output of the interactive pipeline, which is
@@ -849,26 +799,13 @@ class interactive:
         -------
         DynamicMap or Panel object wrapping the interactive output.
         """
-        return self.holoviews() if self._dmap else self.panel(**self._kwargs)
+        return self.panel(**self._kwargs)
 
     def panel(self, **kwargs):
         """
         Wraps the output in a Panel component.
         """
         return panel(self._callback, **kwargs)
-
-    def set(self, new):
-        prev = self
-        while prev is not None:
-            prev._dirty = True
-            if prev._prev is None:
-                if prev._wrapper is None:
-                    raise ValueError(
-                        'Cannot set value on interactive with a function at its root.'
-                    )
-                else:
-                    prev._wrapper.object = new
-            prev = prev._prev
 
     def widgets(self):
         """
@@ -885,8 +822,8 @@ class interactive:
                 widgets.append(p.owner)
         prev = self
         while prev is not None:
-            if prev._transform:
-                for w in _find_widgets(prev._transform):
+            if prev._operation:
+                for w in _find_widgets(prev._operation):
                     if w not in widgets:
                         widgets.append(w)
             prev = prev._prev
