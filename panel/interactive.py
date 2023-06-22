@@ -468,9 +468,6 @@ class interactive_base:
             new._method = None
         return clone
 
-    def __panel__(self):
-        return self.layout()
-
     #----------------------------------------------------------------
     # interactive pipeline APIs
     #----------------------------------------------------------------
@@ -722,6 +719,9 @@ class interactive(interactive_base):
 
     def _repr_mimebundle_(self, include=[], exclude=[]):
         return self.layout()._repr_mimebundle_()
+
+    def __panel__(self):
+        return self.layout()
 
     #----------------------------------------------------------------
     # Public API
