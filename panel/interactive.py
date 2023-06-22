@@ -178,8 +178,6 @@ class interactive_base:
     """
 
     def __new__(cls, obj, **kwargs):
-        # __new__ implemented to support functions as input, e.g.
-        # hvplot.find(foo, widget).interactive().max()
         wrapper = None
         if 'fn' in kwargs:
             fn = kwargs.pop('fn')
@@ -410,17 +408,6 @@ class interactive_base:
             return new
         return super().__getattribute__(name)
 
-    @staticmethod
-    def _get_ax_fn():
-        @depends()
-        def get_ax():
-            from matplotlib.backends.backend_agg import FigureCanvas
-            from matplotlib.pyplot import Figure
-            interactive._fig = fig = Figure()
-            FigureCanvas(fig)
-            return fig.subplots()
-        return get_ax
-
     def __call__(self, *args, **kwargs):
         """
         The `.interactive` API enhances the API of data analysis libraries
@@ -429,8 +416,6 @@ class interactive_base:
         pipeline will incorporate the dynamic widgets that control it, as long
         as its normal output that will automatically be updated as soon as a
         widget value is changed.
-
-        Reference: https://hvplot.holoviz.org/user_guide/interactive.html
 
         Parameters
         ----------
@@ -454,7 +439,7 @@ class interactive_base:
 
         Examples
         --------
-        >>> widget = panel.wid7ugets.IntSlider(value=1, start=1, end=5)
+        >>> widget = panel.widgets.IntSlider(value=1, start=1, end=5)
         >>> dfi = df.interactive(width=200)
         >>> dfi.head(widget)
         """
