@@ -62,18 +62,6 @@ def _get_type(spec, version):
         else:
             return getattr(spec, 'type', 'interval')
 
-def _get_type(spec, version):
-    if version >= 5:
-        if isinstance(spec, dict):
-            return spec.get('select', {}).get('type', 'interval')
-        else:
-            return getattr(spec.select, 'type', 'interval')
-    else:
-        if isinstance(spec, dict):
-            return spec.get('type', 'interval')
-        else:
-            return getattr(spec, 'type', 'interval')
-
 def _get_dimensions(spec):
     dimensions = {}
     responsive_height = spec.get('height') == 'container'
