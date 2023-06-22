@@ -18,7 +18,7 @@ pn.extension('katex')
 pipeline = pn.pipeline.Pipeline()
 ```
 
-Now let's populate the pipeline with our first stage which takes two inputs (`a` and `b`) and produces two outputs (`c`, computed by mutiplying the inputs, and `d`, computed by raising `a` to the power `b`).
+Now let's populate the pipeline with our first stage which takes two inputs (`a` and `b`) and produces two outputs (`c`, computed by multiplying the inputs, and `d`, computed by raising `a` to the power `b`).
 
 To create this stage, let's:
 
