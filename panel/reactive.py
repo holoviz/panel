@@ -545,9 +545,9 @@ class Reactive(Syncable, Viewable):
         self._setup_refs(refs)
 
     def _resolve_ref(self, pname, value):
-        from .depends import param_value_if_widget
+        from .depends import transform_dependency
         ref = None
-        value = param_value_if_widget(value)
+        value = transform_dependency(value)
         if isinstance(value, param.Parameter):
             ref = value
             value = getattr(value.owner, value.name)

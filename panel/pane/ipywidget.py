@@ -11,6 +11,7 @@ import param
 from pyviz_comms import JupyterComm
 
 from ..config import config
+from ..depends import register_depends_transform
 from ..models import IPyWidget as _BkIPyWidget
 from .base import PaneBase
 
@@ -115,3 +116,25 @@ class Reacton(IPyWidget):
         widget, rc = reacton.render(obj)
         self._rcs[root.ref['id']] = rc
         return super()._get_ipywidget(widget, doc, root, comm, **kwargs)
+
+
+_ipywidget_classes = {}
+
+def _ipywidget_transform(obj):
+    """
+    Transforms an ipywidget into a Parameter that listens updates
+    when the ipywidget updates.
+    """
+    if not (IPyWidget.applies(obj) and hasattr(obj, 'value')):
+        return obj
+    name = type(obj).__name__
+    if name in _ipywidget_classes:
+        ipy_param = _ipywidget_classes[name]
+    else:
+        ipy_param = param.parameterized_class(name, {'value': param.Parameter()})
+    _ipywidget_classes[name] = ipy_param
+    ipy_inst = ipy_param(value=obj.value)
+    obj.observe(lambda event: ipy_inst.param.update(value=event['new']), 'value')
+    return ipy_inst.param.value
+
+register_depends_transform(_ipywidget_transform)

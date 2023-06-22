@@ -1,5 +1,3 @@
-import sys
-
 from inspect import isasyncgenfunction
 
 import param
@@ -7,34 +5,32 @@ import param
 from param.parameterized import iscoroutinefunction
 
 from .util import eval_function
-from .widgets import Widget
 
-ipywidget_classes = {}
+_dependency_transforms = []
 
+def register_depends_transform(transform):
+    """
+    Appends a transform to extract potential parameter dependencies
+    from an object.
 
-def param_value_if_widget(arg):
-    if isinstance(arg, Widget):
-        return arg.param.value
-    elif 'hvplot.interactive' in sys.modules:
-        from hvplot.interactive import Interactive
-        if isinstance(arg, Interactive):
-            def interactive_eval(*args, **kwargs):
-                return arg.eval()
-            return bind(interactive_eval, *arg._params)
+    Arguments
+    ---------
+    transform: Callable[Any, Any]
+    """
+    return _dependency_transforms.append(transform)
 
-    from .pane.ipywidget import IPyWidget
-    if IPyWidget.applies(arg) and hasattr(arg, 'value'):
-        name = type(arg).__name__
-        if name in ipywidget_classes:
-            ipy_param = ipywidget_classes[name]
-        else:
-            ipy_param = param.parameterized_class(name, {'value': param.Parameter()})
-        ipywidget_classes[name] = ipy_param
-        ipy_inst = ipy_param(value=arg.value)
-        arg.observe(lambda event: ipy_inst.param.update(value=event['new']), 'value')
-        return ipy_inst.param.value
+def transform_dependency(arg):
+    """
+    Transforms arguments for depends and bind functions applying any
+    DEPENDENCY_TRANSFORMS. This is useful for adding handling for
+    depending on object that are not simple Parameters or functions
+    with dependency definitions.
+    """
+    for transform in _dependency_transforms:
+        if isinstance(arg, param.Parameter) or hasattr(arg, '_dinfo'):
+            break
+        arg = transform(arg)
     return arg
-
 
 def depends(*args, **kwargs):
     """
@@ -76,8 +72,8 @@ def depends(*args, **kwargs):
     Parameters). See the docs for the corresponding param.depends
     decorator for further details.
     """
-    updated_args = [param_value_if_widget(a) for a in  args]
-    updated_kwargs = {k: param_value_if_widget(v) for k, v in kwargs.items()}
+    updated_args = [transform_dependency(a) for a in  args]
+    updated_kwargs = {k: transform_dependency(v) for k, v in kwargs.items()}
     return param.depends(*updated_args, **updated_kwargs)
 
 
@@ -130,8 +126,8 @@ def bind(function, *args, watch=False, **kwargs):
     Returns a new function with the args and kwargs bound to it and
     annotated with all dependencies.
     """
-    updated_args = [param_value_if_widget(a) for a in args]
-    updated_kwargs = {k: param_value_if_widget(v) for k, v in kwargs.items()}
+    updated_args = [transform_dependency(a) for a in args]
+    updated_kwargs = {k: transform_dependency(v) for k, v in kwargs.items()}
     return _param_bind(function, *updated_args, watch=watch, **updated_kwargs)
 
 
@@ -166,8 +162,9 @@ def _param_bind(function, *args, watch=False, **kwargs):
     annotated with all dependencies.
     """
     dependencies = {}
-    if isinstance(function, (param.Parameter, Widget)):
-        dependencies['__fn'] = param_value_if_widget(function)
+    fn_deps = transform_dependency(function)
+    if isinstance(fn_deps, param.Parameter) or hasattr(fn_deps, '_dinfo'):
+        dependencies['__fn'] = fn_deps
     for i, p in enumerate(args):
         if hasattr(p, '_dinfo'):
             for j, arg in enumerate(p._dinfo['dependencies']):
@@ -217,7 +214,7 @@ def _param_bind(function, *args, watch=False, **kwargs):
         if callable(function):
             fn = function
         else:
-            p = param_value_if_widget(function)
+            p = transform_dependency(function)
             if isinstance(p, param.Parameter):
                 fn = getattr(p.owner, p.name)
             else:

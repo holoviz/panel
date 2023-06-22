@@ -87,10 +87,11 @@ from types import FunctionType, MethodType
 
 import param
 
-from .depends import bind, depends, param_value_if_widget
+from .depends import (
+    bind, depends, register_depends_transform, transform_dependency,
+)
 from .layout import Column, HSpacer, Row
 from .pane import panel
-from .param import ParamFunction
 from .util import eval_function, full_groupby, get_method_owner
 from .widgets.base import Widget
 
@@ -114,7 +115,6 @@ def _flatten(line):
     -------
     flattened : generator
     """
-
     for element in line:
         if any(isinstance(element, tp) for tp in (list, tuple, dict)):
             yield from _flatten(element)
@@ -177,39 +177,36 @@ class interactive_base:
     2
     """
 
-    def __new__(cls, obj, **kwargs):
-        wrapper = None
-        if 'fn' in kwargs:
-            fn = kwargs.pop('fn')
-        elif isinstance(obj, (FunctionType, MethodType)):
-            fn = panel(obj, lazy=True)
-            obj = fn.eval(obj)
-        elif isinstance(obj, param.Parameter):
-            fn = panel(bind(lambda obj: obj, obj), lazy=True)
-            obj = getattr(obj.owner, obj.name)
-        elif isinstance(obj, Widget):
-            fn = panel(bind(lambda obj: obj, obj), lazy=True)
-            obj = obj.value
-        else:
-            wrapper = Wrapper(object=obj)
-            fn = panel(bind(lambda obj: obj, wrapper.param.object), lazy=True)
-        clss = cls
-        for subcls in cls.__subclasses__():
-            if subcls.applies(obj):
-                clss = subcls
-        inst = super(interactive_base, cls).__new__(clss)
-        inst._shared_obj = kwargs.get('_shared_obj', [obj])
-        inst._fn = fn
-        inst._wrapper = wrapper
-        return inst
-
     @classmethod
-    def applies(cls, obj):
+    def _applies(cls, obj):
         """
         Subclasses must implement applies and return a boolean to indicate
         whether the subclass should apply or not to the obj.
         """
         return True
+
+    def __new__(cls, obj, **kwargs):
+        if 'fn' in kwargs:
+            fn = kwargs.pop('fn')
+        elif isinstance(obj, (FunctionType, MethodType)):
+            fn = obj
+            obj = None
+        elif isinstance(obj, param.Parameter):
+            fn = bind(lambda obj: obj, obj)
+            obj = getattr(obj.owner, obj.name)
+        elif isinstance(obj, Widget):
+            fn = bind(lambda obj: obj, obj)
+            obj = obj.value
+        else:
+            fn = bind(lambda obj: obj, Wrapper(object=obj).param.object)
+        clss = cls
+        for subcls in cls.__subclasses__():
+            if subcls._applies(obj):
+                clss = subcls
+        inst = super(interactive_base, cls).__new__(clss)
+        inst._fn = fn
+        inst._shared_obj = kwargs.get('_shared_obj', None if obj is None else [obj])
+        return inst
 
     def __init__(
         self, obj, operation=None, fn=None, depth=0, method=None, prev=None,
@@ -246,44 +243,52 @@ class interactive_base:
         return self._current_
 
     @property
-    def _fn_params(self):
+    def _fn_params(self) -> list[param.Parameter]:
         if self._fn is None:
-            deps = []
-        elif isinstance(self._fn, ParamFunction):
-            dinfo = getattr(self._fn.object, '_dinfo', {})
-            deps = list(dinfo.get('dependencies', [])) + list(dinfo.get('kw', {}).values())
-        else:
-            # TODO: Find how to execute that path?
-            parameterized = get_method_owner(self._fn.object)
-            deps = parameterized.param.method_dependencies(self._fn.object.__name__)
-        return deps
+            return []
+
+        owner = get_method_owner(self._fn)
+        if owner is not None:
+            return owner.param.method_dependencies(self._fn.__name__)
+
+        dinfo = getattr(self._fn, '_dinfo', {})
+        args = list(dinfo.get('dependencies', []))
+        kwargs = list(dinfo.get('kw', {}).values())
+        return args + kwargs
 
     @property
     def _params(self):
         ps = self._fn_params
+
+        # Collect parameters on previous objects in chain
         prev = self._prev
         while prev is not None:
-            ps.extend(prev._params)
+            for p in prev._params:
+                if p not in ps:
+                    ps.append(p)
             prev = prev._prev
+
         if self._operation is None:
             return ps
+
+        # Accumulate dependencies in args and/or kwargs
         for arg in self._operation['args']:
             if isinstance(arg, interactive):
                 for p in  arg._params:
                     if p not in ps:
                         ps.append(p)
                 continue
-            parg = param_value_if_widget(arg)
-
+            parg = transform_dependency(arg)
             if parg and isinstance(parg, param.Parameter) and parg not in ps:
                 ps.append(parg)
+
         for k, arg in self._operation['kwargs'].items():
             if isinstance(arg, interactive):
                 for p in  arg._params:
                     if p not in ps:
                         ps.append(p)
                 continue
-            parg = param_value_if_widget(arg)
+            parg = transform_dependency(arg)
             if parg is None or k == 'ax' or not isinstance(parg, param.Parameter) or parg in ps:
                 continue
             ps.append(parg)
@@ -634,7 +639,7 @@ class interactive_base:
         fn, args, kwargs = operation['fn'], operation['args'], operation['kwargs']
         resolved_args = []
         for arg in args:
-            arg = param_value_if_widget(arg)
+            arg = transform_dependency(arg)
             if isinstance(arg, interactive):
                 arg = arg.eval()
             elif hasattr(arg, '_dinfo'):
@@ -644,7 +649,7 @@ class interactive_base:
             resolved_args.append(arg)
         resolved_kwargs = {}
         for k, arg in kwargs.items():
-            arg = param_value_if_widget(arg)
+            arg = transform_dependency(arg)
             if isinstance(arg, interactive):
                 arg = arg.eval()
             elif hasattr(arg, '_dinfo'):
@@ -813,3 +818,11 @@ class interactive(interactive_base):
                         widgets.append(w)
             prev = prev._prev
         return Column(*widgets)
+
+
+def _interactive_transform(obj):
+    if not isinstance(obj, interactive):
+        return obj
+    return bind(lambda *_: obj.eval(), *obj._params)
+
+register_depends_transform(_interactive_transform)

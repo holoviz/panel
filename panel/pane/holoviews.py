@@ -18,6 +18,7 @@ from bokeh.models import Range1d, Spacer as _BkSpacer
 from bokeh.themes.theme import Theme
 from packaging.version import Version
 
+from ..depends import bind, register_depends_transform
 from ..io import state, unlocked
 from ..layout import (
     Column, HSpacer, Row, WidgetBox,
@@ -905,3 +906,13 @@ def link_axes(root_view, root_model):
 
 Viewable._preprocessing_hooks.append(link_axes)
 Viewable._preprocessing_hooks.append(find_links)
+
+def _hvplot_interactive_transform(obj):
+    if 'hvplot.interactive' not in sys.modules:
+        return obj
+    from hvplot.interactive import Interactive
+    if not isinstance(obj, Interactive):
+        return obj
+    return bind(lambda *_: obj.eval(), *obj._params)
+
+register_depends_transform(_hvplot_interactive_transform)
