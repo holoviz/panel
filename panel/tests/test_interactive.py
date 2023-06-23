@@ -177,6 +177,17 @@ def test_interactive_pipeline_reflect_bound_function():
     P.integer = 2
     assert i.eval() == 6
 
+def test_interactive_dataframe_method_chain(dataframe):
+    dfi = interactive_base(dataframe).groupby('str')[['float']].mean().reset_index()
+    pd.testing.assert_frame_equal(dfi.eval(), dataframe.groupby('str')[['float']].mean().reset_index())
+
+def test_interactive_dataframe_param_value_method_chain(dataframe):
+    P = Parameters(string='str')
+    dfi = interactive_base(dataframe).groupby(P.param.string)[['float']].mean().reset_index()
+    pd.testing.assert_frame_equal(dfi.eval(), dataframe.groupby('str')[['float']].mean().reset_index())
+    P.string = 'int'
+    pd.testing.assert_frame_equal(dfi.eval(), dataframe.groupby('int')[['float']].mean().reset_index())
+
 def test_interactive_layout_default_with_widgets():
     w = IntSlider(value=2, start=1, end=5)
     i = interactive(1)
