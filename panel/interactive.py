@@ -492,12 +492,6 @@ class interactive_base:
 
     # Builtin functions
 
-    def len(self):
-        """
-        __len__ cannot be implemented so we alternative helper.
-        """
-        return self._apply_operator(len)
-
     def __abs__(self):
         return self._apply_operator(abs)
 
@@ -597,6 +591,27 @@ class interactive_base:
 
     def __getitem__(self, other):
         return self._apply_operator(operator.getitem, other)
+
+    def len(self):
+        """
+        __len__ cannot be implemented so we alternative helper.
+        """
+        return self._apply_operator(len)
+
+    def pipe(self, func, *args, **kwargs):
+        """
+        Apply chainable functions.
+
+        Arguments
+        ---------
+        func: function
+          Function to apply.
+        args: iterable, optional
+          Positional arguments to pass to `func`.
+        kwargs: mapping, optional
+          A dictionary of keywords to pass to `func`.
+        """
+        return self._apply_operator(func, *args, **kwargs)
 
     def _eval_operation(self, obj, operation):
         fn, args, kwargs = operation['fn'], operation['args'], operation['kwargs']
