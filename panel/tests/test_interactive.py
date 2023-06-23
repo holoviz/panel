@@ -181,6 +181,10 @@ def test_interactive_dataframe_method_chain(dataframe):
     dfi = interactive_base(dataframe).groupby('str')[['float']].mean().reset_index()
     pd.testing.assert_frame_equal(dfi.eval(), dataframe.groupby('str')[['float']].mean().reset_index())
 
+def test_interactive_dataframe_attribute_chain(dataframe):
+    array = interactive_base(dataframe).str.values.eval()
+    np.testing.assert_array_equal(array, dataframe.str.values)
+
 def test_interactive_dataframe_param_value_method_chain(dataframe):
     P = Parameters(string='str')
     dfi = interactive_base(dataframe).groupby(P.param.string)[['float']].mean().reset_index()

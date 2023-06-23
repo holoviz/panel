@@ -394,8 +394,8 @@ class interactive_base:
         # dfi.A the _method 'A' is set (in __getattribute__) which allows
         # _resolve_accessor to keep building the operation dim expression.
         operation = {
-            'fn': operator.getitem,
-            'args': self._method,
+            'fn': getattr,
+            'args': (self._method,),
             'kwargs': {},
             'reverse': False
         }
