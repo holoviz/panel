@@ -40,9 +40,9 @@ class Stage1(param.Parameterized):
     def view(self):
         c, d = self.output()
         c_out = pn.pane.LaTeX('${a} * {b} = {c}$'.format(
-            a=self.a, b=self.b, c=c), style={'font-size': '2em'})
+            a=self.a, b=self.b, c=c), styles={'font-size': '2em'})
         d_out = pn.pane.LaTeX('${a}^{{{b}}} = {d}$'.format(
-            a=self.a, b=self.b, d=d), style={'font-size': '2em'})
+            a=self.a, b=self.b, d=d), styles={'font-size': '2em'})
         return pn.Column(
 		    c_out, d_out,  margin=(40, 10), styles={'background': '#f0f0f0'}
 		)
