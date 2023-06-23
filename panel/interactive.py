@@ -127,6 +127,46 @@ def _flatten(line):
         else:
             yield element
 
+def _resolve_value(value):
+    if isinstance(value, (list, tuple)):
+        return type(value)(_resolve_value(v) for v in value)
+    elif isinstance(value, dict):
+        return type(value)((k, _resolve_value(v)) for k, v in value)
+    elif isinstance(value, slice):
+        return slice(
+            _resolve_value(value.start),
+            _resolve_value(value.stop),
+            _resolve_value(value.step)
+        )
+    elif isinstance(value, interactive):
+        return value.eval()
+    value = transform_dependency(value)
+    if hasattr(value, '_dinfo'):
+        value = eval_function(value)
+    elif isinstance(value, param.Parameter):
+        value = getattr(value.owner, value.name)
+    return value
+
+def _resolve_ref(ref):
+    if isinstance(ref, (list, tuple)):
+        return [r for v in ref for r in _resolve_ref(v)]
+    elif isinstance(ref, dict):
+        return [r for v in ref.values() for r in _resolve_ref(v)]
+    elif isinstance(ref, slice):
+        return [r for v in (ref.start, ref.stop, ref.step) for r in _resolve_ref(v)]
+    elif isinstance(ref, interactive):
+        return ref._params
+    ref = transform_dependency(ref)
+    if hasattr(ref, '_dinfo'):
+        dinfo = getattr(ref, '_dinfo', {})
+        args = list(dinfo.get('dependencies', []))
+        kwargs = list(dinfo.get('kw', {}).values())
+        return args + kwargs
+    elif isinstance(ref, param.Parameter):
+        return [ref]
+    return []
+
+
 def _find_widgets(op):
     widgets = []
     op_args = list(op['args']) + list(op['kwargs'].values())
@@ -199,7 +239,7 @@ class interactive_base:
             wrapper = kwargs.pop('wrapper', None)
         elif isinstance(obj, (FunctionType, MethodType)):
             fn = obj
-            obj = None
+            obj = eval_function(obj)
         elif isinstance(obj, param.Parameter):
             fn = bind(lambda obj: obj, obj)
             obj = getattr(obj.owner, obj.name)
@@ -291,26 +331,16 @@ class interactive_base:
             return ps
 
         # Accumulate dependencies in args and/or kwargs
-        for arg in self._operation['args']:
-            if isinstance(arg, interactive):
-                for p in  arg._params:
-                    if p not in ps:
-                        ps.append(p)
-                continue
-            parg = transform_dependency(arg)
-            if parg and isinstance(parg, param.Parameter) and parg not in ps:
-                ps.append(parg)
+        ps += [
+            ref for arg in self._operation['args']
+            for ref in _resolve_ref(arg)
+        ]
+        ps += [
+            ref for arg in self._operation['kwargs'].values()
+            for ref in _resolve_ref(arg)
+        ]
 
-        for k, arg in self._operation['kwargs'].items():
-            if isinstance(arg, interactive):
-                for p in  arg._params:
-                    if p not in ps:
-                        ps.append(p)
-                continue
-            parg = transform_dependency(arg)
-            if parg is None or k == 'ax' or not isinstance(parg, param.Parameter) or parg in ps:
-                continue
-            ps.append(parg)
+        print([p.name for p in ps], self._operation)
         return ps
 
     def _setup_invalidations(self, depth: int = 0):
@@ -617,35 +647,16 @@ class interactive_base:
         fn, args, kwargs = operation['fn'], operation['args'], operation['kwargs']
         resolved_args = []
         for arg in args:
-            if isinstance(arg, interactive):
-                arg = arg.eval()
-                resolved_args.append(arg)
-                continue
-
-            arg = transform_dependency(arg)
-            if hasattr(arg, '_dinfo'):
-                arg = eval_function(arg)
-            elif isinstance(arg, param.Parameter):
-                arg = getattr(arg.owner, arg.name)
-            resolved_args.append(arg)
+            resolved_args.append(_resolve_value(arg))
         resolved_kwargs = {}
         for k, arg in kwargs.items():
-            if isinstance(arg, interactive):
-                arg = arg.eval()
-                resolved_kwargs[k] = arg
-                continue
-
-            arg = transform_dependency(arg)
-            if hasattr(arg, '_dinfo'):
-                arg = eval_function(arg)
-            elif isinstance(arg, param.Parameter):
-                arg = getattr(arg.owner, arg.name)
-            resolved_kwargs[k] = arg
+            resolved_kwargs[k] = _resolve_value(arg)
         if isinstance(fn, str):
             obj = getattr(obj, fn)(*resolved_args, **resolved_kwargs)
         elif operation.get('reverse'):
             obj = fn(resolved_args[0], obj, *resolved_args[1:], **resolved_kwargs)
         else:
+            print(resolved_args, resolved_kwargs)
             obj = fn(obj, *resolved_args, **resolved_kwargs)
         return obj
 
