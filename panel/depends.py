@@ -32,6 +32,9 @@ def transform_dependency(arg):
         arg = transform(arg)
     return arg
 
+# Alias for backward compatibility
+param_value_if_widget = transform_dependency
+
 def depends(*args, **kwargs):
     """
     Python decorator annotating a function or `Parameterized` method to
