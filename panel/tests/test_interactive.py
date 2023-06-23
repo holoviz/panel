@@ -2,11 +2,15 @@ import math
 import operator
 
 import numpy as np
+import pandas as pd
 import param
 import pytest
 
 from panel.depends import bind
-from panel.interactive import interactive_base
+from panel.interactive import interactive, interactive_base
+from panel.layout import Column, Row
+from panel.pane.base import PaneBase
+from panel.widgets import IntSlider
 
 NUMERIC_BINARY_OPERATORS = (
     operator.add, divmod, operator.floordiv, operator.mod, operator.mul,
@@ -27,6 +31,14 @@ COMPARISON_OPERATORS = (
 LOGIC_UNARY_OPERATORS = (operator.inv,)
 
 NUMPY_UFUNCS = (np.min, np.max)
+
+@pytest.fixture(scope='module')
+def series():
+    return pd.Series(np.arange(5.0), name='A')
+
+@pytest.fixture(scope='module')
+def df():
+    return pd._testing.makeMixedDataFrame()
 
 class Parameters(param.Parameterized):
 
@@ -164,3 +176,29 @@ def test_interactive_pipeline_reflect_bound_function():
     assert i.eval() == 4
     P.integer = 2
     assert i.eval() == 6
+
+def test_interactive_layout_default_with_widgets():
+    w = IntSlider(value=2, start=1, end=5)
+    i = interactive(1)
+    layout = (i + w).layout()
+
+    assert isinstance(layout, Row)
+    assert len(layout) == 1
+    assert isinstance(layout[0], Column)
+    assert len(layout[0]) == 2
+    assert isinstance(layout[0][0], Column)
+    assert isinstance(layout[0][1], PaneBase)
+    assert len(layout[0][0]) == 1
+    assert isinstance(layout[0][0][0], IntSlider)
+
+def test_interactive_pandas_layout_loc_with_widgets():
+    i = interactive(1, loc='top_right', center=True)
+    expected = {'loc': 'top_right', 'center': True}
+    for k, v in expected.items():
+        assert k in i._display_opts
+        assert i._display_opts[k] == v
+
+def test_interactive_dataframe_handler_opts(dataframe):
+    i = interactive(dataframe, max_rows=7)
+    assert 'max_rows' in i._display_opts
+    assert i._display_opts['max_rows'] == 7

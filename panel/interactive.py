@@ -79,11 +79,14 @@ display `dfi.A`, as the evaluation of the object will check whether
 object returned, e.g. the series `df.A` or the method `df.head`, and
 display its repr.
 """
+from __future__ import annotations
+
 import math
 import operator
 import sys
 
 from types import FunctionType, MethodType
+from typing import Any
 
 import param
 
@@ -91,8 +94,11 @@ from .depends import (
     bind, depends, register_depends_transform, transform_dependency,
 )
 from .layout import Column, HSpacer, Row
-from .pane import panel
-from .util import eval_function, full_groupby, get_method_owner
+from .pane import DataFrame, panel
+from .util import (
+    eval_function, full_groupby, get_method_owner, is_dataframe,
+)
+from .viewable import Viewable
 from .widgets.base import Widget
 
 
@@ -154,9 +160,9 @@ class Wrapper(param.Parameterized):
 
 class interactive_base:
     """
-    The `interactive` allows wrapping objects and then operating on
-    them interactively while recording any operations applied to them.
-    By recording all arguments or operands in the operations the recorded
+    `interactive` allows wrapping objects and then operating on them
+    interactively while recording any operations applied to them.  By
+    recording all arguments or operands in the operations the recorded
     pipeline can be replayed if an operand represents a dynamic value.
 
     Parameters
@@ -270,7 +276,7 @@ class interactive_base:
         return args + kwargs
 
     @property
-    def _params(self):
+    def _params(self) -> list[param.Parameter]:
         ps = self._fn_params
 
         # Collect parameters on previous objects in chain
@@ -307,7 +313,7 @@ class interactive_base:
             ps.append(parg)
         return ps
 
-    def _setup_invalidations(self, depth=0):
+    def _setup_invalidations(self, depth: int = 0):
         """
         Since the parameters of the pipeline can change at any time
         we have to invalidate the internal state of the pipeline.
@@ -338,10 +344,14 @@ class interactive_base:
     def _update_obj(self, *args):
         self._obj = eval_function(self._fn)
 
+    def _transform_output(self, obj):
+        return obj
+
     @property
     def _callback(self):
         def evaluate_inner():
-            return self.eval()
+            obj = self.eval()
+            return self._transform_output(obj)
         params = self._params
         if params:
             @depends(*params)
@@ -362,8 +372,6 @@ class interactive_base:
             )
         else:
             kwargs = dict(prev=self, **dict(self._kwargs, **kwargs))
-        if kwargs['prev']:
-            print(operation, kwargs['prev']._wrapper)
         return type(self)(
             self._obj, operation=operation, depth=depth, _shared_obj=self._shared_obj, **kwargs
         )
@@ -483,6 +491,12 @@ class interactive_base:
         return new._clone(operation)
 
     # Builtin functions
+
+    def len(self):
+        """
+        __len__ cannot be implemented so we alternative helper.
+        """
+        return self._apply_operator(len)
 
     def __abs__(self):
         return self._apply_operator(abs)
@@ -617,7 +631,6 @@ class interactive_base:
         elif operation.get('reverse'):
             obj = fn(resolved_args[0], obj, *resolved_args[1:], **resolved_kwargs)
         else:
-            print(fn, obj, resolved_args, resolved_kwargs)
             obj = fn(obj, *resolved_args, **resolved_kwargs)
         return obj
 
@@ -667,20 +680,71 @@ class interactive_base:
 
 
 class interactive(interactive_base):
+    """
+    `interactive` allows wrapping objects and then operating on them
+    interactively while recording any operations applied to them.  By
+    recording all arguments or operands in the operations the recorded
+    pipeline can be replayed if an operand represents a dynamic value.
 
-    _display_opts = ('loc', 'center')
+    The resulting object will render as a Panel component that
+    automatically updates whenever the pipeline is re-evaluated, e.g.
+    because a dependency changed.
+    """
+
+    _display_options: tuple[str] = ('loc', 'center')
+
+    _display_handlers: dict[type, tuple[Viewable, dict[str, Any]]] = {}
+
+    @classmethod
+    def register_display_handler(cls, obj_type, handler, **kwargs):
+        """
+        Registers a display handler for a specific type of object,
+        making it possible to define custom display options for
+        specific objects.
+
+        Arguments
+        ---------
+        obj_type: type | callable
+          The type to register a custom display handler on.
+        handler: Viewable | callable
+          A Viewable or callable that is given the object to be displayed
+          and the custom keyword arguments.
+        kwargs: dict[str, Any]
+          Additional display options to register for this type.
+        """
+        cls._display_handlers[obj_type] = (handler, kwargs)
 
     def __init__(self, obj, **kwargs):
         display_opts = {}
-        for dopt in self._display_opts:
-            if dopt in kwargs:
-                kwargs[dopt] = kwargs.pop(dopt)
+        for _, opts in self._display_handlers.values():
+            for k, o in opts.items():
+                display_opts[k] = o
+        display_opts.update({
+            dopt: kwargs.pop(dopt) for dopt in self._display_options + tuple(display_opts)
+            if dopt in kwargs
+        })
         super().__init__(obj, **kwargs)
         self._display_opts = display_opts
 
     def _clone(self, operation=None, copy=False, **kwargs):
         kwargs.update(self._display_opts)
         return super()._clone(operation=operation, copy=copy, **kwargs)
+
+    def _transform_output(self, obj):
+        """
+        Applies custom display handlers before their output.
+        """
+        applies = False
+        for predicate, (handler, opts) in self._display_handlers.items():
+            applies = predicate(obj)
+            if applies:
+                break
+        if applies and handler is not None:
+            display_opts = {
+                k: v for k, v in self._display_opts.items() if k in opts
+            }
+            obj = handler(obj, **display_opts)
+        return obj
 
     def _repr_mimebundle_(self, include=[], exclude=[]):
         return self.layout()._repr_mimebundle_()
@@ -700,7 +764,7 @@ class interactive(interactive_base):
         """
         widget_box = self.widgets()
         panel = self.output()
-        loc = self._display_opts.get('loc', 'left')
+        loc = self._display_opts.get('loc', 'top_left')
         center = self._display_opts.get('center', False)
         alignments = {
             'left': (Row, ('start', 'center'), True),
@@ -742,8 +806,8 @@ class interactive(interactive_base):
 
     def output(self):
         """
-        Returns the output of the interactive pipeline, which is
-        either a HoloViews DynamicMap or a Panel object.
+        Returns the output of the interactive pipeline as a Panel
+        component.
 
         Returns
         -------
@@ -755,7 +819,14 @@ class interactive(interactive_base):
         """
         Wraps the output in a Panel component.
         """
-        return panel(self._callback, **kwargs)
+        return panel(self._callback, inplace=True, lazy=True, **kwargs)
+
+    def set_display(self, **kwargs):
+        """
+        Overrides the display options for this interactive object.
+        """
+        self._display_opts = dict(self._display_opts, **kwargs)
+        return self
 
     def widgets(self):
         """
@@ -786,3 +857,7 @@ def _interactive_transform(obj):
     return bind(lambda *_: obj.eval(), *obj._params)
 
 register_depends_transform(_interactive_transform)
+
+interactive.register_display_handler(
+    is_dataframe, handler=DataFrame, max_rows=100
+)
