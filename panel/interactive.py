@@ -186,8 +186,11 @@ class interactive_base:
         return True
 
     def __new__(cls, obj, **kwargs):
-        if 'fn' in kwargs:
+        wrapper = None
+        obj = transform_dependency(obj)
+        if kwargs.get('fn'):
             fn = kwargs.pop('fn')
+            wrapper = kwargs.pop('wrapper', None)
         elif isinstance(obj, (FunctionType, MethodType)):
             fn = obj
             obj = None
@@ -198,7 +201,8 @@ class interactive_base:
             fn = bind(lambda obj: obj, obj)
             obj = obj.value
         else:
-            fn = bind(lambda obj: obj, Wrapper(object=obj).param.object)
+            wrapper = Wrapper(object=obj)
+            fn = bind(lambda obj: obj, wrapper.param.object)
         clss = cls
         for subcls in cls.__subclasses__():
             if subcls._applies(obj):
@@ -206,6 +210,7 @@ class interactive_base:
         inst = super(interactive_base, cls).__new__(clss)
         inst._fn = fn
         inst._shared_obj = kwargs.get('_shared_obj', None if obj is None else [obj])
+        inst._wrapper = wrapper
         return inst
 
     def __init__(
@@ -218,7 +223,10 @@ class interactive_base:
         self._method = method
         self._operation = operation
         self._depth = depth
-        self._prev = prev
+        if isinstance(obj, interactive_base) and not prev:
+            self._prev = obj
+        else:
+            self._prev = prev
         self._kwargs = kwargs
         self._init = True
         self._dirty = True
@@ -227,6 +235,8 @@ class interactive_base:
 
     @property
     def _obj(self):
+        if self._shared_obj is None:
+            self._obj = eval_function(self._fn)
         return self._shared_obj[0]
 
     @_obj.setter
@@ -249,7 +259,10 @@ class interactive_base:
 
         owner = get_method_owner(self._fn)
         if owner is not None:
-            return owner.param.method_dependencies(self._fn.__name__)
+            deps = [
+                dep.pobj for dep in owner.param.method_dependencies(self._fn.__name__)
+            ]
+            return deps
 
         dinfo = getattr(self._fn, '_dinfo', {})
         args = list(dinfo.get('dependencies', []))
@@ -323,7 +336,7 @@ class interactive_base:
         self._dirty = True
 
     def _update_obj(self, *args):
-        self._obj = self._fn.eval(self._fn.object)
+        self._obj = eval_function(self._fn)
 
     @property
     def _callback(self):
@@ -345,10 +358,12 @@ class interactive_base:
         if copy:
             kwargs = dict(
                 self._kwargs, _current=self._current, method=self._method, fn=self._fn,
-                prev=self._prev, **kwargs
+                prev=self._prev, wrapper=self._wrapper, **kwargs
             )
         else:
             kwargs = dict(prev=self, **dict(self._kwargs, **kwargs))
+        if kwargs['prev']:
+            print(operation, kwargs['prev']._wrapper)
         return type(self)(
             self._obj, operation=operation, depth=depth, _shared_obj=self._shared_obj, **kwargs
         )
@@ -386,7 +401,11 @@ class interactive_base:
 
     def __getattribute__(self, name):
         self_dict = super().__getattribute__('__dict__')
-        if not self_dict.get('_init') or name in ('eval', '_dirty', '_prev', '_operation', '_obj', '_shared_obj', '_method', '_eval_operation', '_display_opts'):
+        no_lookup = (
+            'eval', '_dirty', '_prev', '_operation', '_obj', '_shared_obj',
+            '_method', '_eval_operation', '_display_opts', '_fn'
+        )
+        if not self_dict.get('_init') or name in no_lookup:
             return super().__getattribute__(name)
 
         current = self_dict['_current_']
@@ -414,40 +433,6 @@ class interactive_base:
         return super().__getattribute__(name)
 
     def __call__(self, *args, **kwargs):
-        """
-        The `.interactive` API enhances the API of data analysis libraries
-        like Pandas, Dask, and Xarray, by allowing to replace in a pipeline
-        static values by dynamic widgets. When displayed, an interactive
-        pipeline will incorporate the dynamic widgets that control it, as long
-        as its normal output that will automatically be updated as soon as a
-        widget value is changed.
-
-        Parameters
-        ----------
-        loc : str, optional
-            Widget(s) location, one of 'bottom_left', 'bottom_right', 'right'
-            'top-right', 'top-left' and 'left'. By default 'top_left'
-        center : bool, optional
-            Whether to center to pipeline output, by default False
-        max_rows : int, optional
-            Maximum number of rows displayed, only used when the output is a
-            dataframe, by default 100
-        kwargs: optional
-            Optional kwargs that are passed down to customize the displayed
-            object. E.g. if the output is a DataFrame `width=200` will set
-            the size of the DataFrame Pane that renders it.
-
-        Returns
-        -------
-        interactive
-            The next `interactive` object of the pipeline.
-
-        Examples
-        --------
-        >>> widget = panel.widgets.IntSlider(value=1, start=1, end=5)
-        >>> dfi = df.interactive(width=200)
-        >>> dfi.head(widget)
-        """
         if self._method is None:
             if self._depth == 0:
                 # This code path is entered when initializing an interactive
@@ -477,11 +462,11 @@ class interactive_base:
     # interactive pipeline APIs
     #----------------------------------------------------------------
 
-    def __array_ufunc__(self, *args, **kwargs):
+    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
         new = self._resolve_accessor()
         operation = {
-            'fn': args[0],
-            'args': args[3:],
+            'fn': getattr(ufunc, method),
+            'args': args[1:],
             'kwargs': kwargs,
             'reverse': False
         }
@@ -524,146 +509,116 @@ class interactive_base:
 
     # Binary operators
     def __add__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.add, other)
     def __and__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.and_, other)
     def __contains_(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.contains, other)
     def __divmod__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(divmod, other)
     def __eq__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.eq, other)
     def __floordiv__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.floordiv, other)
     def __ge__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.ge, other)
     def __gt__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.gt, other)
     def __le__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.le, other)
     def __lt__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.lt, other)
     def __lshift__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.lshift, other)
     def __matmul__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.matmul, other)
     def __mod__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.mod, other)
     def __mul__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.mul, other)
     def __ne__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.ne, other)
     def __or__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.or_, other)
     def __rshift__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.rshift, other)
     def __pow__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.pow, other)
     def __sub__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.sub, other)
     def __truediv__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.truediv, other)
     def __xor__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.xor, other)
 
     # Reverse binary operators
     def __radd__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.add, other, reverse=True)
     def __rand__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.and_, other, reverse=True)
     def __rdiv__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.div, other, reverse=True)
     def __rdivmod__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(divmod, other, reverse=True)
     def __rfloordiv__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.floordiv, other, reverse=True)
     def __rlshift__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.rlshift, other)
     def __rmod__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.mod, other, reverse=True)
     def __rmul__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.mul, other, reverse=True)
     def __ror__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.or_, other, reverse=True)
     def __rpow__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.pow, other, reverse=True)
     def __rrshift__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.rrshift, other)
     def __rsub__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.sub, other, reverse=True)
     def __rtruediv__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.truediv, other, reverse=True)
     def __rxor__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
-        return self._apply_operator(operator.xor, other)
+        return self._apply_operator(operator.xor, other, reverse=True)
 
     def __getitem__(self, other):
-        other = other._operation if isinstance(other, interactive) else other
         return self._apply_operator(operator.getitem, other)
 
     def _eval_operation(self, obj, operation):
         fn, args, kwargs = operation['fn'], operation['args'], operation['kwargs']
         resolved_args = []
         for arg in args:
-            arg = transform_dependency(arg)
             if isinstance(arg, interactive):
                 arg = arg.eval()
-            elif hasattr(arg, '_dinfo'):
+                resolved_args.append(arg)
+                continue
+
+            arg = transform_dependency(arg)
+            if hasattr(arg, '_dinfo'):
                 arg = eval_function(arg)
             elif isinstance(arg, param.Parameter):
                 arg = getattr(arg.owner, arg.name)
             resolved_args.append(arg)
         resolved_kwargs = {}
         for k, arg in kwargs.items():
-            arg = transform_dependency(arg)
             if isinstance(arg, interactive):
                 arg = arg.eval()
-            elif hasattr(arg, '_dinfo'):
+                resolved_kwargs[k] = arg
+                continue
+
+            arg = transform_dependency(arg)
+            if hasattr(arg, '_dinfo'):
                 arg = eval_function(arg)
             elif isinstance(arg, param.Parameter):
                 arg = getattr(arg.owner, arg.name)
             resolved_kwargs[k] = arg
         if isinstance(fn, str):
             obj = getattr(obj, fn)(*resolved_args, **resolved_kwargs)
+        elif operation.get('reverse'):
+            obj = fn(resolved_args[0], obj, *resolved_args[1:], **resolved_kwargs)
         else:
-            if operation.get('reverse'):
-                obj = fn(resolved_args[0], obj, *resolved_args[1:], **resolved_kwargs)
-            else:
-                obj = fn(obj, *resolved_args, **resolved_kwargs)
+            print(fn, obj, resolved_args, resolved_kwargs)
+            obj = fn(obj, *resolved_args, **resolved_kwargs)
         return obj
 
     #----------------------------------------------------------------
@@ -686,6 +641,8 @@ class interactive_base:
         if self._method:
             # E.g. `pi = dfi.A` leads to `pi._method` equal to `'A'`.
             obj = getattr(obj, self._method, obj)
+        if hasattr(obj, '__call__'):
+            self.__call__.__func__.__doc__ = obj.__call__.__doc__
         return obj
 
     def set(self, new):
@@ -698,7 +655,10 @@ class interactive_base:
             if prev._prev is None:
                 if prev._wrapper is None:
                     raise ValueError(
-                        'Cannot set value on interactive with a function at its root.'
+                        'interactive.set is only supported if the root object '
+                        'is a constant value. If the root is a Parameter or '
+                        'another dynamic value it must reflect the source and '
+                        'can not be set.'
                     )
                 else:
                     prev._wrapper.object = new
@@ -718,9 +678,9 @@ class interactive(interactive_base):
         super().__init__(obj, **kwargs)
         self._display_opts = display_opts
 
-    def _clone(self, transform=None, copy=False, **kwargs):
+    def _clone(self, operation=None, copy=False, **kwargs):
         kwargs.update(self._display_opts)
-        return super()._clone(transform=transform, copy=copy, **kwargs)
+        return super()._clone(operation=operation, copy=copy, **kwargs)
 
     def _repr_mimebundle_(self, include=[], exclude=[]):
         return self.layout()._repr_mimebundle_()
