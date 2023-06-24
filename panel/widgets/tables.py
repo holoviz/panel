@@ -483,6 +483,7 @@ class BaseTable(ReactiveData, Widget):
             elif op == '<=':
                 filters.append(col <= val)
             elif op == 'in':
+                if not isinstance(val, (list, np.ndarray)): val = [val]
                 filters.append(col.isin(val))
             elif op == 'like':
                 filters.append(col.str.contains(val, case=False, regex=False))
@@ -1117,6 +1118,8 @@ class Tabulator(BaseTable):
 
     def __init__(self, value=None, **params):
         import pandas.io.formats.style
+        click_handler = params.pop('on_click', None)
+        edit_handler = params.pop('on_edit', None)
         if isinstance(value, pandas.io.formats.style.Styler):
             style = value
             value = value.data
@@ -1133,6 +1136,10 @@ class Tabulator(BaseTable):
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
+        if click_handler:
+            self.on_click(click_handler)
+        if edit_handler:
+            self.on_edit(edit_handler)
         if style is not None:
             self.style._todo = style._todo
 

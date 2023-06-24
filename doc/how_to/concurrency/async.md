@@ -3,7 +3,6 @@
 When using Python you can use async callbacks wherever you would ordinarily use a regular synchronous function. For instance you can use `pn.bind` on an async function:
 
 ```{pyodide}
-import aiohttp
 import panel as pn
 
 widget = pn.widgets.IntSlider(start=0, end=10)

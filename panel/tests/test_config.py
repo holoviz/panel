@@ -4,7 +4,8 @@ Tests pn.config variables
 import pytest
 
 from panel import config, state
-from panel.pane import HTML
+from panel.pane import HTML, panel
+from panel.param import ParamFunction
 from panel.tests.conftest import set_env_var
 
 
@@ -39,6 +40,15 @@ def test_session_override():
     state.curdoc = None
     assert config.sizing_mode is None
 
+@pytest.mark.usefixtures("with_curdoc")
+def test_defer_load():
+    config.defer_load = True
+
+    def test():
+        return 1
+
+    assert ParamFunction.applies(test)
+    assert isinstance(panel(test), ParamFunction)
 
 def test_console_output_replace_stdout(document, comm, get_display_handle):
     pane = HTML()

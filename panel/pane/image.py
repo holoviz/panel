@@ -357,7 +357,7 @@ class JPG(ImageBase):
     ... )
     """
 
-    filetype: ClassVar[str] = 'jpg'
+    filetype: ClassVar[str] = 'jpeg'
 
     _extensions: ClassVar[Tuple[str, ...]] = ('jpeg', 'jpg')
 

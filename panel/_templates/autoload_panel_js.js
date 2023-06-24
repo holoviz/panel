@@ -24,7 +24,7 @@ calls it with the rendered model.
   }
 
   var force = {{ force|default(False)|json }};
-  var py_version = '{{ version }}'.replace('rc', '-rc.');
+  var py_version = '{{ version }}'.replace('rc', '-rc.').replace('.dev', '-dev.');
   var is_dev = py_version.indexOf("+") !== -1 || py_version.indexOf("-") !== -1;
   var reloading = {{ reloading|default(False)|json }};
   var Bokeh = root.Bokeh;

@@ -68,8 +68,11 @@ class Vizzu(ModelPane, SyncableData):
     _updates: ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
+        click_handler = params.pop('on_click', None)
         super().__init__(object, **params)
         self._event_handlers = []
+        if click_handler:
+            self.on_click(click_handler)
 
     @classmethod
     def applies(cls, object):
@@ -117,7 +120,7 @@ class Vizzu(ModelPane, SyncableData):
                         columns.append({'name': col, 'type': 'datetime'})
                     elif isinstance(value, str):
                         columns.append({'name': col, 'type': 'dimension'})
-                    elif isinstance(value, (float, np.float, int, np.int)):
+                    elif isinstance(value, (float, np.float_, np.int_, int)):
                         columns.append({'name': col, 'type': 'measure'})
                     else:
                         columns.append({'name': col, 'type': 'dimension'})

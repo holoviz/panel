@@ -16,7 +16,7 @@ on:
 
 jobs:
   downstream_tests:
-    uses: pyviz-dev/holoviz_tasks/.github/workflows/run_downstream_tests.yaml@main
+    uses: holoviz-dev/holoviz_tasks/.github/workflows/run_downstream_tests.yaml@main
     with:
       downstream_repos_as_json: "{\"downstream_repo\":[\"holoviews\", \"lumen\"]}"
     secrets:

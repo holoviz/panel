@@ -1,6 +1,7 @@
 import time
 
 import pytest
+import traitlets
 
 from bokeh.core.has_props import _default_resolver
 from bokeh.model import Model
@@ -11,6 +12,17 @@ from panel.io.server import serve
 from panel.layout import Row
 from panel.pane.ipywidget import Reacton
 
+try:
+    import reacton
+except Exception:
+    reacton = None
+requires_reacton = pytest.mark.skipif(reacton is None, reason="requires reaction")
+
+try:
+    import anywidget
+except Exception:
+    anywidget = None
+requires_anywidget = pytest.mark.skipif(anywidget is None, reason="requires anywidget")
 
 @pytest.fixture(scope="module", autouse=True)
 def cleanup_ipywidgets():
@@ -18,6 +30,7 @@ def cleanup_ipywidgets():
     yield
     _default_resolver._known_models = old_models
 
+@requires_reacton
 def test_reacton(page, port):
     import reacton
     import reacton.ipywidgets
@@ -54,7 +67,7 @@ def test_reacton(page, port):
 
     serve(reacton_app, port=port, threaded=True, show=False)
 
-    time.sleep(0.5)
+    time.sleep(0.2)
 
     page.goto(f"http://localhost:{port}")
 
@@ -73,3 +86,49 @@ def test_reacton(page, port):
     time.sleep(0.5)
 
     assert cleanups
+
+
+@requires_anywidget()
+def test_anywidget(page, port):
+
+    class CounterWidget(anywidget.AnyWidget):
+        # Widget front-end JavaScript code
+        _esm = """
+        export function render(view) {
+          let getCount = () => view.model.get("count");
+          let button = document.createElement("button");
+          button.innerHTML = `count is ${getCount()}`;
+          button.addEventListener("click", () => {
+            view.model.set("count", getCount() + 1);
+            view.model.save_changes();
+          });
+          view.model.on("change:count", () => {
+            button.innerHTML = `count is ${getCount()}`;
+          });
+          view.el.appendChild(button);
+        }
+        """
+        # Stateful property that can be accessed by JavaScript & Python
+        count = traitlets.Int(0).tag(sync=True)
+
+    counter = CounterWidget()
+
+    serve(counter, port=port, threaded=True, show=False)
+
+    time.sleep(0.5)
+
+    page.goto(f"http://localhost:{port}")
+
+    time.sleep(0.2)
+
+    page.locator('.lm-Widget button').click()
+
+    time.sleep(0.2)
+
+    assert counter.count == 1
+
+    page.locator('.lm-Widget button').click()
+
+    time.sleep(0.2)
+
+    assert counter.count == 2

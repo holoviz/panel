@@ -92,7 +92,7 @@ class Accordion(NamedListPanel):
         models and cleaning up any dropped objects.
         """
         from panel.pane.base import RerenderError, panel
-        new_models = []
+        new_models, old_models = [], []
         if len(self._names) != len(self):
             raise ValueError(
                 'Accordion names do not match objects, ensure that the '
@@ -130,13 +130,17 @@ class Accordion(NamedListPanel):
                 self._panels[id(pane)] = card
             if ref in card._models:
                 panel = card._models[ref][0]
+                old_models.append(panel)
             else:
                 try:
                     panel = card._get_model(doc, root, model, comm)
                     if self.toggle:
                         cb = CustomJS(args={'accordion': model}, code=self._toggle)
                         panel.js_on_change('collapsed', cb)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(
                         model, current_objects[:i], doc, root, comm
                     )
@@ -146,7 +150,7 @@ class Accordion(NamedListPanel):
         self._set_active()
         self._update_cards()
         self._update_active()
-        return new_models
+        return new_models, old_models
 
     def _compute_sizing_mode(self, children, props):
         children = [subchild for child in children for subchild in child.children[1:]]

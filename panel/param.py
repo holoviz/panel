@@ -4,6 +4,7 @@ set of widgets.
 """
 from __future__ import annotations
 
+import asyncio
 import inspect
 import itertools
 import json
@@ -17,7 +18,8 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Generator, List, Mapping, Optional, Tuple,
+    Type,
 )
 
 import param
@@ -200,8 +202,6 @@ class Param(PaneBase):
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
 
-    priority: ClassVar[float | bool | None] = 0.1
-
     _ignored_refs: ClassVar[Tuple[str]] = ('object',)
 
     _linkable_properties: ClassVar[Tuple[str]] = ()
@@ -297,6 +297,7 @@ class Param(PaneBase):
                     parameters = []
                 else:
                     parameters = [p for p in event.new.param if p != 'name']
+                if event.new is not None:
                     self.name = param_name(event.new.name)
             if event.name == 'parameters':
                 if event.new is None:
@@ -468,6 +469,15 @@ class Param(PaneBase):
             kw['description'] = textwrap.dedent(p_obj.doc).strip()
 
         # Update kwargs
+        onkeyup = kw_widget.pop('onkeyup', False)
+        throttled = kw_widget.pop('throttled', False)
+        ignored_kws = [repr(k) for k in kw_widget if k not in widget_class.param]
+        if ignored_kws:
+            self.param.warning(
+                f'Param pane was given unknown keyword argument(s) for {p_name!r} '
+                f'parameter with a widget of type {widget_class!r}. The following '
+                f'keyword arguments could not be applied: {", ".join(ignored_kws)}.'
+            )
         kw.update(kw_widget)
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
@@ -501,9 +511,9 @@ class Param(PaneBase):
             def action(change):
                 value(self.object)
             watcher = widget.param.watch(action, 'clicks')
-        elif kw_widget.get('onkeyup', False) and hasattr(widget, 'value_input'):
+        elif onkeyup and hasattr(widget, 'value_input'):
             watcher = widget.param.watch(link_widget, 'value_input')
-        elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
+        elif throttled and hasattr(widget, 'value_throttled'):
             watcher = widget.param.watch(link_widget, 'value_throttled')
         else:
             watcher = widget.param.watch(link_widget, 'value')
@@ -565,7 +575,7 @@ class Param(PaneBase):
                 idx = self._internal_callbacks.index(prev_watcher)
                 self._internal_callbacks[idx] = watchers[0]
                 return
-            elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
+            elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
                 updates['value'] = change.new
             elif isinstance(widget, Row) and len(widget) == 2:
@@ -696,9 +706,11 @@ class Param(PaneBase):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        return (is_parameterized(obj) or
-                isinstance(obj, param.parameterized.Parameters) or
-                (isinstance(obj, param.Parameter) and obj.owner is not None))
+        if isinstance(obj, param.parameterized.Parameters):
+            return 0.8
+        elif (is_parameterized(obj) or (isinstance(obj, param.Parameter) and obj.owner is not None)):
+            return 0.1
+        return False
 
     @classmethod
     def widget_type(cls, pobj):
@@ -748,7 +760,7 @@ class ParamMethod(ReplacementPane):
     return any object which itself can be rendered as a Pane.
     """
 
-    defer_load = param.Boolean(default=config.defer_load, doc="""
+    defer_load = param.Boolean(default=None, doc="""
         Whether to defer load until after the page is rendered.
         Can be set as parameter or by setting panel.config.defer_load.""")
 
@@ -761,7 +773,10 @@ class ParamMethod(ReplacementPane):
         Can be set as parameter or by setting panel.config.loading_indicator.""")
 
     def __init__(self, object=None, **params):
+        if 'defer_load' not in params:
+            params['defer_load'] = config.defer_load
         super().__init__(object, **params)
+        self._async_task = None
         self._evaled = not (self.lazy or self.defer_load)
         self._link_object_params()
         if object is not None:
@@ -795,10 +810,24 @@ class ParamMethod(ReplacementPane):
         return eval_function(function)
 
     async def _eval_async(self, awaitable):
+        if self._async_task:
+            self._async_task.cancel()
+        self._async_task = task = asyncio.current_task()
+        curdoc = state.curdoc
+        has_context = bool(curdoc.session_context) if curdoc else False
+        if has_context:
+            curdoc.on_session_destroyed(lambda context: task.cancel())
         try:
-            new_object = await awaitable
-            self._update_inner(new_object)
+            if isinstance(awaitable, types.AsyncGeneratorType):
+                async for new_obj in awaitable:
+                    self._update_inner(new_obj)
+            else:
+                self._update_inner(await awaitable)
+        except Exception as e:
+            if not curdoc or (has_context and curdoc.session_context):
+                raise e
         finally:
+            self._async_task = None
             self._inner_layout.loading = False
 
     def _replace_pane(self, *args, force=False):
@@ -813,10 +842,14 @@ class ParamMethod(ReplacementPane):
                 new_object = Spacer()
             else:
                 new_object = self.eval(self.object)
-            if inspect.isawaitable(new_object):
+            if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return
-            self._update_inner(new_object)
+            elif isinstance(new_object, Generator):
+                for new_obj in new_object:
+                    self._update_inner(new_obj)
+            else:
+                self._update_inner(new_object)
         finally:
             self._inner_layout.loading = False
 
@@ -953,7 +986,7 @@ class ParamFunction(ParamMethod):
             if hasattr(obj, '_dinfo'):
                 return True
             if (
-                kwargs.get('defer_load') or
+                kwargs.get('defer_load') or cls.param.defer_load.default or
                 (cls.param.defer_load.default is None and config.defer_load) or
                 iscoroutinefunction(obj)
             ):

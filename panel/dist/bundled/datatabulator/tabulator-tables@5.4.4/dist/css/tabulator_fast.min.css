@@ -1219,8 +1219,8 @@ body.tabulator-print-fullscreen-hide > *:not(.tabulator-print-fullscreen) {
 .tabulator .tabulator-header .tabulator-col .tabulator-header-filter input,
 .tabulator .tabulator-header .tabulator-col .tabulator-header-filter select {
   border: 1px solid #999;
-  background: #444;
-  color: #fff;
+  background: var(--neutral-fill-input-rest);
+  color: var(--neutral-foreground-rest);
 }
 .tabulator .tabulator-header .tabulator-calcs-holder {
   background: var(--fill-color) !important;

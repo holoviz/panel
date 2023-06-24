@@ -25,6 +25,7 @@ from typing_extensions import Literal
 
 from .. import __version__, config
 from ..util import base_version, escape
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .markdown import build_single_handler_application
 from .mime_render import find_imports
 from .resources import (
@@ -321,7 +322,9 @@ def script_to_html(
     # Collect resources
     resources = Resources(mode='inline' if inline else 'cdn')
     loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
-    spinner_css = loading_css()
+    spinner_css = loading_css(
+        config.loading_spinner, config.loading_color, config.loading_max_height
+    )
     css_resources.append(
         f'<style type="text/css">\n{loading_base}\n{spinner_css}\n</style>'
     )
@@ -356,7 +359,7 @@ def script_to_html(
         template = get_env().from_string("{% extends base %}\n" + template)
     html = template.render(context)
     html = (html
-        .replace('<body>', f'<body class="pn-loading {config.loading_spinner}">')
+        .replace('<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">')
     )
     return html, web_worker
 

@@ -39,7 +39,7 @@ def test_file_download_updates_when_navigating_between_dynamic_tabs(page, port):
     page.goto(f"http://localhost:{port}")
 
     with page.expect_download() as download_info:
-        page.click('a.bk-btn')
+        page.click('.bk-btn > a')
 
     download = download_info.value
     tmp = tempfile.NamedTemporaryFile(suffix='.txt')
@@ -55,7 +55,7 @@ def test_file_download_updates_when_navigating_between_dynamic_tabs(page, port):
     page.keyboard.press('Enter')
 
     with page.expect_download() as download_info:
-        page.click('a.bk-btn')
+        page.click('.bk-btn > a')
 
     download = download_info.value
     tmp = tempfile.NamedTemporaryFile(suffix='.txt')

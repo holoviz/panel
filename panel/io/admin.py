@@ -337,11 +337,11 @@ def get_cpu():
 def get_process_info():
     memory = Trend(
         data=get_mem(), plot_x='time', plot_y='memory', plot_type='step',
-        title='Memory Usage (MB)', width=300, height=300
+        name='Memory Usage (MB)', width=300, height=300
     )
     cpu = Trend(
         data=get_cpu(), plot_x='time', plot_y='cpu', plot_type='step',
-        title='CPU Usage (%)', width=300, height=300
+        name='CPU Usage (%)', width=300, height=300
     )
     def update_stats():
         memory.stream(get_mem())
@@ -385,19 +385,19 @@ def get_session_info(doc=None):
     df = get_session_data()
     total = Trend(
         data=df[['time', 'total']], plot_x='time', plot_y='total', plot_type='step',
-        title='Total Sessions', width=300, height=300
+        name='Total Sessions', width=300, height=300
     )
     active = Trend(
         data=df[['time', 'live']], plot_x='time', plot_y='live', plot_type='step',
-        title='Active Sessions', width=300, height=300
+        name='Active Sessions', width=300, height=300
     )
     render = Trend(
         data=df[['time', 'render']], plot_x='time', plot_y='render', plot_type='step',
-        title='Avg. Time to Render (s)', width=300, height=300
+        name='Avg. Time to Render (s)', width=300, height=300
     )
     duration = Trend(
         data=df[['time', 'duration']], plot_x='time', plot_y='duration', plot_type='step',
-        title='Avg. Session Duration (s)', width=300, height=300
+        name='Avg. Session Duration (s)', width=300, height=300
     )
     # Set up callbacks
     def update_session_info(event):

@@ -5,19 +5,22 @@ models rendered on the frontend.
 """
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import difflib
+import inspect
 import logging
 import re
 import sys
 import textwrap
+import types
 
 from collections import Counter, defaultdict, namedtuple
 from functools import lru_cache, partial
 from pprint import pformat
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Set,
-    Tuple, Type, Union,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Generator, List, Mapping,
+    Optional, Set, Tuple, Type, Union,
 )
 
 import bleach
@@ -187,7 +190,9 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
             from .config import config
-            stylesheets = [loading_css(), f'{CDN_DIST}css/loading.css']
+            stylesheets = [loading_css(
+                config.loading_spinner, config.loading_color, config.loading_max_height
+            ), f'{CDN_DIST}css/loading.css']
             stylesheets += process_raw_css(config.raw_css)
             stylesheets += config.css_files
             stylesheets += [
@@ -533,8 +538,9 @@ class Reactive(Syncable, Viewable):
 
     __abstract = True
 
-    def __init__(self, **params):
-        params, refs = self._extract_refs(params)
+    def __init__(self, refs=None, **params):
+        self._async_refs = {}
+        params, refs = self._extract_refs(params, refs)
         super().__init__(**params)
         self._refs = refs
         self._setup_refs(refs)
@@ -549,9 +555,25 @@ class Reactive(Syncable, Viewable):
         elif hasattr(value, '_dinfo'):
             ref = value
             value = eval_function(value)
+            if isinstance(value, Generator):
+                if pname == 'refs':
+                    v = {}
+                    for iv in value:
+                        v.update(iv)
+                else:
+                    for v in value:
+                        pass
+                value = v
+        if inspect.isawaitable(value) or isinstance(value, types.AsyncGeneratorType):
+            param.parameterized.async_executor(partial(self._async_ref, pname, value))
+            value = None
         return ref, value
 
     def _validate_ref(self, pname, value):
+        if pname == 'refs':
+            raise ValueError(
+                'refs should never be captured.'
+            )
         pobj = self.param[pname]
         pobj._validate(value)
         if isinstance(pobj, param.Dynamic) and callable(value) and hasattr(value, '_dinfo'):
@@ -559,10 +581,11 @@ class Reactive(Syncable, Viewable):
                 'Dynamic parameters should not capture functions with dependencies.'
             )
 
-    def _extract_refs(self, params):
-        processed, refs = {}, {}
+    def _extract_refs(self, params, refs):
+        processed, out_refs = {}, {}
+        params['refs'] = refs
         for pname, value in params.items():
-            if pname not in self.param or pname in self._ignored_refs:
+            if pname != 'refs' and (pname not in self.param or pname in self._ignored_refs):
                 processed[pname] = value
                 continue
 
@@ -582,31 +605,84 @@ class Reactive(Syncable, Viewable):
             # objects with dependencies
             ref, value = self._resolve_ref(pname, value)
             if ref is not None:
-                refs[pname] = ref
-            processed[pname] = value
-        return processed, refs
+                out_refs[pname] = ref
+            if pname == 'refs':
+                if value is not None:
+                    processed.update(value)
+            else:
+                processed[pname] = value
+        return processed, out_refs
+
+    async def _async_ref(self, pname, awaitable):
+        if pname in self._async_refs:
+            self._async_refs[pname].cancel()
+        self._async_refs[pname] = task = asyncio.current_task()
+        curdoc = state.curdoc
+        has_context = bool(curdoc.session_context) if curdoc else False
+        if has_context:
+            curdoc.on_session_destroyed(lambda context: task.cancel())
+        try:
+            if isinstance(awaitable, types.AsyncGeneratorType):
+                async for new_obj in awaitable:
+                    if pname == 'refs':
+                        self.param.update(new_obj)
+                    else:
+                        self.param.update({pname: new_obj})
+            elif pname == 'refs':
+                self.param.update(await awaitable)
+            else:
+                self.param.update({pname: await awaitable})
+        except Exception as e:
+            if not curdoc or (has_context and curdoc.session_context):
+                raise e
+        finally:
+            del self._async_refs[pname]
 
     def _sync_refs(self, *events):
         from .config import config
         if config.loading_indicator:
             self.loading = True
         updates = {}
+        generators = {}
         for pname, p in self._refs.items():
             if isinstance(p, param.Parameter):
                 deps = (p,)
             else:
                 deps = extract_dependencies(p)
+
             # Skip updating value if dependency has not changed
             if not any((dep.owner is e.obj and dep.name == e.name) for dep in deps for e in events):
                 continue
             if isinstance(p, param.Parameter):
-                updates[pname] = getattr(p.owner, p.name)
+                new_val = getattr(p.owner, p.name)
             else:
-                updates[pname] = eval_function(p)
+                new_val = eval_function(p)
+
+            if inspect.isawaitable(new_val) or isinstance(new_val, types.AsyncGeneratorType):
+                param.parameterized.async_executor(partial(self._async_ref, pname, new_val))
+                continue
+
+            if isinstance(new_val, Generator):
+                generators[pname] = new_val
+                new_val = next(new_val)
+
+            if pname == 'refs':
+                updates.update(new_val)
+            else:
+                updates[pname] = new_val
+
         if config.loading_indicator:
             updates['loading'] = False
         with param.edit_constant(self):
             self.param.update(updates)
+        for pname, gen in generators.items():
+            for v in gen:
+                if pname == 'refs':
+                    updates.update(v)
+                else:
+                    updates[pname] = v
+                with param.edit_constant(self):
+                    self.param.update(updates)
 
     def _setup_refs(self, refs):
         groups = defaultdict(list)
@@ -901,7 +977,7 @@ class SyncableData(Reactive):
     with the frontend via a ColumnDataSource.
     """
 
-    selection = param.List(default=[], class_=int, doc="""
+    selection = param.List(default=[], item_type=int, doc="""
         The currently selected rows in the data.""")
 
     # Parameters which when changed require an update of the data

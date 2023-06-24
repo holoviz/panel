@@ -2,51 +2,40 @@
 
 The guides below assumes you have already signed up and logged into your account at [huggingface.co](https://huggingface.co/).
 
-## Duplicate an existing space
+## 🚀 Deploy Panel on Spaces
 
-The easiest way to get started is to  [search](https://huggingface.co/spaces), find and duplicate an existing space. A simple space to duplicate is
-[MarcSkovMadsen/awesome-panel](https://huggingface.co/spaces/MarcSkovMadsen/awesome-panel).
+You can deploy Panel on Spaces with just a few clicks:
 
-- Open the space [MarcSkovMadsen/awesome-panel](https://huggingface.co/spaces/MarcSkovMadsen/awesome-panel).
-- Click the 3 dots and select *Duplicate this Space*.
+<a href="https://huggingface.co/new-space?template=Panel-Org/panel-template"> <img src="https://huggingface.co/datasets/huggingface/badges/raw/main/deploy-to-spaces-lg.svg"/> </a>
 
-<img src="../../_static/hugging-face-duplicate.png" style="width:67%"></img>
+There are a few key parameters you need to define: the Owner (either your personal account or an organization), a Space name, and Visibility. In case you intend to execute computationally intensive deep learning models, consider upgrading to a GPU to boost performance.
 
-- Follow the instructions to finish the duplication.
+<img src="../../_static/images/hugging_face_space.png" style="width:90%"></img>
 
-Once you have finalized the duplication you will need to take a look at the `app.py` file in the new space to figure out what to replace.
+Once you have created the space, it will start out in “Building” status, which will change to “Running” once your space is ready to go.
 
-<img src="../../_static/hugging-face-app-py.png" style="width:67%"></img>
+## ⚡️ What will you see?
+When your space is built and ready, you will see this image classification Panel app which will let you fetch a random image and run the OpenAI CLIP classifier model on it. Check out our [blog post](https://blog.holoviz.org/building_an_interactive_ml_dashboard_in_panel.html) for a walkthrough of this app.
 
-## Creating a new space from scratch
+<img src="https://assets.holoviz.org/panel/gifs/hugging_face_template.gif" style="width:90%"></img>
 
-You can deploy Panel to Hugging Face Spaces as a [*Custom Python Space*](https://huggingface.co/docs/hub/spaces-sdks-python). For a general introduction to Hugging Face Spaces see the [Spaces Overview](https://huggingface.co/docs/hub/spaces-overview).
+## 🛠️ How to customize and make your own app?
 
-Go to [Spaces](https://huggingface.co/spaces) and click the "Create New Space" button.
+The Space template will populate a few files to get your app started:
 
-<img src="../../_static/hugging-face-create-new-space.png" style="width:67%"></img>
+<img src="../../_static/images/hugging_face_space_files.png" style="width:90%"></img>
 
-Fill out the form. Make sure to select the *Gradio Space SDK*.
+Three files are important:
 
-<img src="../../_static/hugging-face-create-spaces-form.png" style="width:67%"></img>
+### 1. app.py
 
-A Gradio space will serve your app via the command `python app.py`. I.e. you cannot run `panel serve app.py ...`.
+This file defines your Panel application code. You can start by modifying the existing application or replace it entirely to build your own application. To learn more about writing your own Panel app, refer to the [Panel documentation](https://panel.holoviz.org/).
 
-To work around this your `app.py` will need to either
+### 2. Dockerfile
 
-- Use `subprocess` to run `panel serve ...` or
-- Use `pn.serve` to serve one or more functions.
+The Dockerfile contains a sequence of commands that Docker will execute to construct and launch an image as a container that your Panel app will run in. Typically, to serve a Panel app, we use the command "panel serve app.py". In this specific file, we divide the command into a list of strings. Furthermore, we must define the address and port because Hugging Face will expects to serve your application on port 7860. Additionally, we need to specify the "allow-websocket-origin" flag to enable the connection to the server's websocket.
 
-The app also needs to run on a port given by the `PORT` environment variable.
 
-Check out the example repository [MarcSkovMadsen/awesome-panel](https://huggingface.co/spaces/MarcSkovMadsen/awesome-panel/tree/main) for inspiration.
+### 3. requirements.txt
 
-## Git clone
-
-Optionally you can git clone your repository using
-
-```bash
-git clone https://huggingface.co/spaces/NAME-OF-USER/NAME-OF-SPACE
-```
-
-<img src="../../_static/hugging-face-git-clone.png" style="width:67%"></img>
+This file defines the required packages for our Panel app. When using Space, dependencies listed in the requirements.txt file will be automatically installed. You have the freedom to modify this file by removing unnecessary packages or adding additional ones that are required for your application. Feel free to make the necessary changes to ensure your app has the appropriate packages installed.

@@ -430,7 +430,9 @@ class Serve(_BkServe):
                     )
             else:
                 basic_login_template = None
-            kwargs['auth_provider'] = BasicProvider(basic_login_template=basic_login_template)
+            kwargs['auth_provider'] = BasicProvider(
+                basic_login_template=basic_login_template
+            )
 
         if args.cookie_secret and config.cookie_secret:
             raise ValueError(

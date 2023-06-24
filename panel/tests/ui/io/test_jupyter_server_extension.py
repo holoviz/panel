@@ -1,5 +1,10 @@
 import pytest
 
+try:
+    from playwright.sync_api import expect
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
+
 from panel.tests.util import wait_until
 
 pytestmark = pytest.mark.jupyter
@@ -38,3 +43,9 @@ def test_jupyter_server_kernel_error(page, jupyter_preview):
     page.click('button')
 
     wait_until(lambda: page.text_content('pre') == '1', page)
+
+@pytest.mark.flaky(max_runs=3)
+def test_jupyter_server_session_arg_theme(page, jupyter_preview):
+    page.goto(f"{jupyter_preview}/app.py?theme=dark", timeout=30000)
+
+    expect(page.locator('body')).to_have_css('color', 'rgb(0, 0, 0)')

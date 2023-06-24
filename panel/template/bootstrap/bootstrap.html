@@ -53,6 +53,8 @@
 	--sidebar-width: {{ sidebar_width }}px;
       }
       #header {
+	--bs-body-bg: var(--header-background);
+	--bs-body-color: var(--header-color);
 	background-color: var(--header-background);
 	color: var(--header-color);
       }
@@ -106,7 +108,7 @@
 
   <div class="row overflow-hidden" id="content">
     {% if nav %}
-    <div class="sidenav collapse-horizontal show" id="sidebar">
+    <div class="sidenav collapse-horizontal {{ 'collapse' if collapsed_sidebar else 'show'}}" id="sidebar">
       <ul class="nav flex-column">
 	{% for doc in docs %}
 	{% for root in doc.roots %}

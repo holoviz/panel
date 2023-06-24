@@ -183,7 +183,7 @@ class GridBox(ListPanel):
         model = self._bokeh_model()
         root = root or model
         self._models[root.ref['id']] = (model, parent)
-        objects = self._get_objects(model, [], doc, root, comm)
+        objects, _ = self._get_objects(model, [], doc, root, comm)
         children = self._get_children(objects, self.nrows, self.ncols)
         css_classes = self._compute_css_classes(children)
         properties = {k: v for k, v in self._get_properties(doc).items() if k not in ('ncols', 'nrows')}
@@ -206,21 +206,24 @@ class GridBox(ListPanel):
                 old = events['objects'].old
             else:
                 old = self.objects
-            objects = self._get_objects(model, old, doc, root, comm)
+            objects, old_models = self._get_objects(model, old, doc, root, comm)
             children = self._get_children(objects, self.nrows, self.ncols)
             msg[self._rename['objects']] = children
+        else:
+            old_models = None
 
         with hold(doc):
             msg = {k: v for k, v in msg.items() if k not in ('nrows', 'ncols')}
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                super(Panel, self)._update_model(events, msg, root, model, doc, comm)
-                if update:
-                    return
-                ref = root.ref['id']
-                if ref in state._views and preprocess:
-                    state._views[ref][0]._preprocess(root)
+                with doc.models.freeze():
+                    super(Panel, self)._update_model(events, msg, root, model, doc, comm)
+                    if update:
+                        return
+                    ref = root.ref['id']
+                    if ref in state._views and preprocess:
+                        state._views[ref][0]._preprocess(root, self, old_models)
             finally:
                 Panel._batch_update = update
 
@@ -315,7 +318,7 @@ class GridSpec(Panel):
             if old not in current_objects:
                 old._cleanup(root)
 
-        children = []
+        children, old_children = [], []
         for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
             x0 = 0 if x0 is None else x0
             x1 = (self.ncols) if x1 is None else x1
@@ -341,10 +344,14 @@ class GridSpec(Panel):
 
             if obj in old_objects:
                 child, _ = obj._models[root.ref['id']]
+                old_children.append(child)
             else:
                 try:
                     child = obj._get_model(doc, root, model, comm)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
 
             if isinstance(child, BkFlexBox) and len(child.children) == 1:
@@ -352,7 +359,7 @@ class GridSpec(Panel):
             else:
                 child.update(**properties)
             children.append((child, r, c, h, w))
-        return children
+        return children, old_children
 
     def _compute_sizing_mode(self, children, props):
         children = [child for (child, _, _, _, _) in children]

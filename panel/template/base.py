@@ -436,15 +436,18 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
     feel without having to write any Jinja2 template themselves.
     """
 
-    config = param.ClassSelector(default=_base_config(), class_=_base_config,
-                                 constant=True, doc="""
-        Configuration object declaring custom CSS and JS files to load
-        specifically for this template.""")
-
     busy_indicator = param.ClassSelector(default=LoadingSpinner(width=20, height=20),
                                          class_=BooleanIndicator, constant=True,
                                          allow_None=True, doc="""
         Visual indicator of application busy state.""")
+
+    collapsed_sidebar = param.Selector(default=False, constant=True, doc="""
+        Whether the sidebar (if present) is initially collapsed.""")
+
+    config = param.ClassSelector(default=_base_config(), class_=_base_config,
+                                 constant=True, doc="""
+        Configuration object declaring custom CSS and JS files to load
+        specifically for this template.""")
 
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")
@@ -577,7 +580,14 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
             params['favicon'] = str(params['favicon'])
         if 'notifications' not in params and config.notifications:
             params['notifications'] = state.notifications if state.curdoc else NotificationArea()
-        super().__init__(template=template, **params)
+
+        config_params = {
+            p: v for p, v in params.items() if p in _base_config.param
+        }
+        super().__init__(template=template, **{
+            p: v for p, v in params.items() if p not in _base_config.param or p == 'name'
+        })
+        self.config.param.update(config_params)
         self._js_area = HTML(margin=0, width=0, height=0)
         if 'embed(roots.js_area)' in template:
             self._render_items['js_area'] = (self._js_area, [])
@@ -640,7 +650,9 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
         name = clsname.lower()
         dist_path = get_dist_path(cdn=cdn)
 
-        raw_css.extend(list(self.config.raw_css) + [loading_css()])
+        raw_css.extend(list(self.config.raw_css) + [loading_css(
+            config.loading_spinner, config.loading_color, config.loading_max_height
+        )])
         for rname, res in self._design.resolve_resources(cdn).items():
             if isinstance(res, dict):
                 resource_types[rname].update(res)
@@ -748,6 +760,7 @@ class BasicTemplate(BaseTemplate, ResourceComponent):
         self._render_variables['main_max_width'] = self.main_max_width
         self._render_variables['sidebar_width'] = self.sidebar_width
         self._render_variables['theme'] = self._design.theme
+        self._render_variables['collapsed_sidebar'] = self.collapsed_sidebar
 
     def _update_busy(self) -> None:
         if self.busy_indicator:

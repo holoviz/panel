@@ -49,10 +49,12 @@
     <style>
       :root {
 	  --header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
-	  --header-color: {{ header_color or "var(--design-primary-text-color, --panel-on-primary-color))" }};
+	  --header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
 	  --sidebar-width: {{ sidebar_width }}px;
       }
       #header {
+          --mdc-theme-background: var(--header-background);
+          --mdc-theme-on-background: var(--header-color);
 	  background-color: var(--header-background);
 	  color: var(--header-color);
       }
@@ -109,7 +111,7 @@
   </header>
 
   {% if nav %}
-  <aside class="mdc-drawer mdc-top-app-bar--fixed-adjust mdc-drawer--dismissible mdc-drawer--open" id="sidebar">
+  <aside class="mdc-drawer mdc-top-app-bar--fixed-adjust mdc-drawer--dismissible {{ '' if collapsed_sidebar else 'mdc-drawer--open' }}" id="sidebar">
     <div class="mdc-drawer__content">
       <div class="mdc-list">
 	{% for doc in docs %}
@@ -166,8 +168,6 @@
     topAppBar.listen('MDCTopAppBar:nav', function() {
       drawer.open = !drawer.open;
     });
-
-    drawer.open = true;
     {% endif %}
 
     var modal_el = document.getElementById("pn-Modal");

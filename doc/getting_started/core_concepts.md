@@ -58,7 +58,7 @@ text.value # 👈 the "value" Parameter of this widget reflects the current valu
 text.param.value # 👈 can be used as a reference to the live value
 ```
 
-We will dive into this more deeply later, for now just remember that parameters (whether associated with widgets or not) allow you to pass around a reference to a value that automatically updates if the original value changes.
+We will dive into this more deeply later, for now just remember that parameter objects (whether associated with widgets or not) allow you to pass around a reference to a value that automatically updates if the original value changes.
 
 ## Display and rendering
 
@@ -218,7 +218,7 @@ df_pane.servable()
 :::{admonition} Note
 :class: info
 
-In the notebook the `.servable()` method is effectively a no-op. This means you can add it the components you want to add to the rendered app but also see it rendered inline. This makes it possible to build components sequentially in a notebook while simultaneously building an application to be served. If you want to mark someething servable but do _not_ want it rendered inline, just put a semicolon (';') after it to tell Jupyter not to render it even if it is the last item in the cell.
+In the notebook the `.servable()` method is effectively a no-op. This means you can add it the components you want to add to the rendered app but also see it rendered inline. This makes it possible to build components sequentially in a notebook while simultaneously building an application to be served. If you want to mark something servable but do _not_ want it rendered inline, just put a semicolon (';') after it to tell Jupyter not to render it even if it is the last item in the cell.
 :::
 
 ## Widgets
@@ -236,12 +236,12 @@ def square(x):
 pn.Row(pn.bind(square, x))
 ```
 
-The `pn.bind` function lets us bind widget or a *Parameter* **object** to a function that returns an item to be displayed. Once bound, the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily. Even better, if you use a Panel-aware library like hvPlot, you often don't even need to write and bind a function explicitly, as hvPlot's [.interactive](https://hvplot.holoviz.org/user_guide/Interactive.html) DataFrames already create reactive pipelines by accepting widgets and parameters for most arguments and options.
+The `pn.bind` function lets us bind a widget or a *Parameter* **object** to a function that returns an item to be displayed. Once bound, the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. In this way you can express reactivity between widgets and output very easily. Even better, if you use a Panel-aware library like hvPlot, you often don't even need to write and bind a function explicitly, as hvPlot's [.interactive](https://hvplot.holoviz.org/user_guide/Interactive.html) DataFrames already create reactive pipelines by accepting widgets and parameters for most arguments and options.
 
 :::{admonition} Reminder
 :class: info
 
-Remember how we talked about the difference between a *Parameter* **value** and a *Parameter* **object**. In the previous example the widget itself is effectively an alias for the *Parameter* object, i.e. the binding operation is exactly equivalent to `pn.bind(square, x.param.value)`. This is true for all widgets: the widget object is treated as an alias for the widget's `value` *Parameter*. So you can generally either pass in the widget (as a convenient shorthand) or the underlying parameter object.
+Remember how we talked about the difference between a *Parameter* **value** and a *Parameter* **object**. In the previous example the widget itself is effectively an alias for the *Parameter* object, i.e. the binding operation is exactly equivalent to `pn.bind(square, x.param.value)`. This is true for all widgets: the widget object is treated as an alias for the widget's `value` *Parameter* object. So you can generally either pass in the widget (as a convenient shorthand) or the underlying *Parameter* object.
 :::
 
 The binding approach above works, but it is quite heavy handed. Whenever the slider value changes, Panel will re-create a whole new Pane and re-render the output. If we want more fine-grained control we can instead explicitly instantiate a `Markdown` pane and pass it bound functions and *Parameters* by reference:

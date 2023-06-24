@@ -76,11 +76,12 @@ class Tabs(NamedListPanel):
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
         self._rendered = defaultdict(dict)
-        self.param.active.bounds = (0, len(self)-1)
+        self.param.active.bounds = (-1, len(self)-1)
         self.param.watch(self._update_active, ['dynamic', 'active'])
 
     def _update_names(self, event):
-        self.param.active.bounds = (0, len(event.new)-1)
+        # No active tabs will have a value of -1
+        self.param.active.bounds = (-1, len(event.new)-1)
         super()._update_names(event)
 
     def _cleanup(self, root: Model | None = None) -> None:
@@ -159,7 +160,7 @@ class Tabs(NamedListPanel):
         models and cleaning up any dropped objects.
         """
         from ..pane.base import RerenderError, panel
-        new_models = []
+        new_models, old_models = [], []
         if len(self._names) != len(self):
             raise ValueError('Tab names do not match objects, ensure '
                              'that the Tabs.objects are not modified '
@@ -199,6 +200,7 @@ class Tabs(NamedListPanel):
 
             if prev_hidden and not hidden and pref in rendered:
                 child = rendered[pref]
+                old_models.append(child)
             elif hidden:
                 child = BkSpacer(**{k: v for k, v in pane.param.values().items()
                                     if k in Layoutable.param and v is not None and
@@ -207,11 +209,14 @@ class Tabs(NamedListPanel):
             else:
                 try:
                     rendered[pref] = child = pane._get_model(doc, root, model, comm)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
 
             panel = panels[pref] = BkTabPanel(
                 title=name, name=pane.name, child=child, closable=self.closable
             )
             new_models.append(panel)
-        return new_models
+        return new_models, old_models
