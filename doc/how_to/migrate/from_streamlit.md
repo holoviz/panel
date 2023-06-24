@@ -27,8 +27,6 @@ You *run* and *show* the app with *autoreload* via
 streamlit run app.py
 ```
 
-The application looks like
-
 ![Streamlit Hello World Example](../../_static/images/streamlit_hello_world.png)
 
 ### Panel Hello World Example
@@ -41,30 +39,11 @@ pn.extension(sizing_mode="stretch_width", template="bootstrap")
 pn.panel("Hello World").servable()
 ```
 
-You must always include `pn.extension` to configure the application.
-
-You don't have to provide any arguments to `pn.extension`, but we recommend you at least configure
-
-- the `sizing_mode` to `stretch_width` in order to achieve responsiveness.
-- a `template` to get a familiar layout with a *main* area and an (optional) *sidebar* area.
-
-You use `pn.panel` in the same way as `st.write` to *magically* display
-Python objects like (markdown) strings, dataframes, plots and more. Check out the
-{py:function}`pn.panel <panel.panel.base.panel>` API Reference for the
-details.
-
-You use `.servable` to add one or more Panel objects to the *template* when served as a web app.
-
 You *serve* and *show* (i.e. open) the app in your browser with *autoreload* via
 
 ```bash
 panel serve app.py --autoreload --show
 ```
-
-See the [Command Line Guide](../../server/commandline.html) for more
-command line options.
-
-The application looks like
 
 ![Panel Hello World Example](../../_static/images/panel_hello_world.png)
 
@@ -75,7 +54,7 @@ You should replace
 - `import streamlit as st` with `import panel as pn` and
 - `st.write` with `pn.panel`.
 
-You will also have to
+You will have to
 
 - add `pn.extension` to configure your Panel application via optional arguments like `sizing_mode` and `template`.
 - add `.servable` to the Panel objects you want to include in your apps *template* when served as
@@ -121,8 +100,6 @@ ax.hist(data, bins=20)
 st.pyplot(fig)
 ```
 
-The app looks like
-
 ![Streamlit Matplotlib Example](../../_static/images/streamlit_mpl_example.png)
 
 ### Panel Matplotlib Example
@@ -148,8 +125,6 @@ ax.hist(data, bins=20)
 
 pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both').servable()
 ```
-
-The app looks like
 
 ![Panel Matplotlib Example](../../_static/images/panel_mpl_example.png)
 
@@ -187,9 +162,7 @@ $$ a + ar + a r^2 + a r^3 + \cdots + a r^{n-1} = \sum_{k=0}^{n-1} ar^k = a \left
 """).servable()
 ````
 
-The app looks like
-
-![Streamlit Layout Example](../../_static/images/panel_markdown_example.png)
+![Panel Markdown Example](../../_static/images/panel_markdown_example.png)
 
 ### Display Content Migration Steps
 
@@ -227,8 +200,6 @@ with col2:
     st.write("# The powerful data exploration & web app framework for Python")
 ```
 
-The app looks like
-
 ![Streamlit Layout Example](../../_static/images/streamlit_layout_example.png)
 
 I would love to align the images (and texts) but I could not find functionality like *row*, *margin* or *spacing* to do this.
@@ -259,8 +230,6 @@ row2 = pn.Row(
 
 pn.Column(row1, row2).servable()
 ```
-
-The app looks like
 
 ![Panel Layout Example](../../_static/images/panel_layout_example.png)
 
@@ -326,8 +295,6 @@ pn.state.template.param.update(
 )
 ```
 
-The app looks like
-
 ![Panel Template Example](https://assets.holoviz.org/panel/gifs/panel_app_example.gif)
 
 ### Template Migration Steps
@@ -361,8 +328,6 @@ bins = st.slider(value=20, min_value=10, max_value=30, step=1, label="Bins")
 st.write(bins)
 ```
 
-The app looks like
-
 ![Streamlit Widgets Example](../../_static/images/streamlit_widgets_example.png)
 
 ### Panel Integer Slider Example
@@ -379,16 +344,14 @@ bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
 pn.Column(bins, pn.pane.Str(bins)).servable()
 ```
 
+![Panel Widgets Example](../../_static/images/panel_widgets_example.png)
+
 If you check the type of the variables, you will notice a key difference. Streamlit's `bins` returns the value of the slider as an `integer` while Panel's `bins` returns an `IntSlider`!
 
 To access the value of the slider in Panel, you would need to call `bins.value`.
 
 For more info about the `IntSlider` check out the
 [`IntSlider` Guide](../../reference/widgets/IntSlider.md).
-
-The app looks like
-
-![Panel Widgets Example](../../_static/images/panel_widgets_example.png)
 
 ### Input Migration Steps
 
@@ -466,8 +429,6 @@ pn.Row(
 ).servable()
 ```
 
-The app looks like
-
 ![Show Activity](https://user-images.githubusercontent.com/42288570/246325570-11484dd6-4523-401f-b709-6c0cc7996410.gif)
 
 We will show you how to migrate your Streamlit activity indicators to Panel in the
@@ -521,8 +482,6 @@ ax.hist(data, bins=bins)
 st.pyplot(fig)
 ```
 
-The app looks like
-
 ![Streamlit Basic Interactivity Example](https://assets.holoviz.org/panel/gifs/streamlit_interactivity_example.gif)
 
 The entire script is rerun *top to bottom* when you change the `bins` slider.
@@ -550,16 +509,9 @@ bplot = pn.bind(plot, data=data, bins=bins_input)
 pn.Column(bins, bplot).servable()
 ```
 
-Only the `plot` function is rerun when you change the `bins` slider. You specify that
-by *binding* the `plot` function to the `bins` widget using `pn.bind`.
-
-The app looks like
-
 ![Panel Basic Interactivity Example](https://assets.holoviz.org/panel/gifs/panel_interactivity_example.gif)
 
-You might notice that the Panel app updates much quicker and more smoothly than the Streamlit app.
-This is due to fundamental differences in architectures. With Panel you will be able to
-develop very smooth and performant apps.
+With Panel only the `plot` function is rerun when you change the `bins` slider. This makes your Panel app update much quicker and more smoothly than the Streamlit app.
 
 ### Multiple Updates Example
 
@@ -604,8 +556,6 @@ The function took {time_end - time_start:1.1f} seconds to complete
 else:
     st.write(f"Calculation {option} did not run yet")
 ```
-
-The app looks like
 
 ![Streamlit multiple updates example](https://assets.holoviz.org/panel/gifs/streamlit_runner_example.gif)
 
@@ -679,11 +629,9 @@ pn.Column(
 ).servable()
 ```
 
-You will notice that we use the `pn.indicators.LoadingSpinner` to indicate the activity.
-
-The app looks like
-
 ![Panel Multiple Updates Examples](https://assets.holoviz.org/panel/gifs/panel_runner_example.gif)
+
+You will notice that we use the `pn.indicators.LoadingSpinner` to indicate the activity.
 
 #### Panel Multiple Updates Alternative Indicator Example
 
@@ -762,8 +710,6 @@ pn.Column(
 ).servable()
 ```
 
-The app looks like
-
 ![Panel Multiple Updates Alternative Example](https://assets.holoviz.org/panel/gifs/panel_generator_example.gif)
 
 ### Multiple Results Example
@@ -794,8 +740,6 @@ else:
             result = model()
             st.write(f"Result {i}: {result}")
 ```
-
-The app looks like
 
 ![Streamlit Multiple Results Example](https://assets.holoviz.org/panel/gifs/streamlit_multi_example.gif)
 
@@ -938,8 +882,6 @@ bplot = pn.bind(plot, data, bins)
 pn.Column(bins, pn.panel(bplot, loading_indicator=True)).servable()
 ```
 
-The app looks like
-
 ![Panel Cache Example](https://assets.holoviz.org/panel/gifs/panel_cache_example.gif)
 
 You can also use `pn.cache` as an function. I.e. as
@@ -981,6 +923,81 @@ You can specify the *home* page with the `--index` flag.
 ```bash
 panel serve home.py page1.py page2.ipynb --index=home
 ```
+
+## Session State
+
+Session state (and callbacks) were added to Streamlit as an after thought
+to enable sharing variables between re-runs and across apps inside a multipage app.
+
+Panels execution model is very different and session state is not really a topic.
+
+### Streamlit Session State Example
+
+```python
+import random
+from uuid import uuid4
+
+import streamlit as st
+
+st.session_state.setdefault("rows", {})
+
+def create_row(hex_id=None):
+    if hex_id is None:
+        hex_id = uuid4().hex
+        value = random.randint(0, 100)
+        st.session_state.rows[hex_id] = value
+    else:
+        value = st.session_state.rows[hex_id]
+
+    st.number_input("Enter a number", value=value, key=f"num_{hex_id}")
+
+st.title("Dynamically add new rows")
+
+button_cols = st.columns(2)
+with button_cols[0]:
+    add_row = st.button("Add new row", use_container_width=True)
+with button_cols[1]:
+    clear_rows = st.button("Clear all rows", use_container_width=True)
+
+if clear_rows:
+    st.session_state.rows = {}
+
+for hex_id in st.session_state.rows.keys():
+    create_row(hex_id=hex_id)
+
+if add_row:
+    create_row()
+```
+
+![Streamlit Session State Example](https://user-images.githubusercontent.com/42288570/248444403-3e9548a5-71a6-4154-8e85-b9d9e08b9111.png)
+
+With Streamlit you need session state to keep track of the dynamically created `rows`.
+
+### Panel Session State Example
+
+```python
+import random
+
+import panel as pn
+pn.extension(sizing_mode="stretch_width")
+
+def create_row(_):
+    value = random.randint(0, 100)
+    row = pn.widgets.TextInput(name="Enter a number", value=str(value))
+    rows.append(row)
+
+rows = pn.Column()
+add_row = pn.widgets.Button(name="Add new row", on_click=create_row)
+clear_rows = pn.widgets.Button(name="Clear all rows", on_click=lambda _: rows.clear())
+main = pn.Column("# Dynamically add new rows", pn.Row(add_row, clear_rows), rows)
+
+pn.template.BootstrapTemplate(main=[main], main_max_width="600px").servable()
+```
+
+As the Panel script is only executed once per session the `rows` objects will keep track of your
+*session state*.
+
+![Panel Session State Example](https://user-images.githubusercontent.com/42288570/248446319-ffce4caf-f7b4-48ff-9e26-4edd4ff78fe5.png)
 
 ## Migration Support
 
