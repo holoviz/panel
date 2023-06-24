@@ -13,8 +13,7 @@ When you `panel serve` your app, the app is *loaded* as follows
 - the apps template is populated and sent to the users client (browser)
 - a web socket connection is created between the server and the users client to handle additional communication as you interact with the app.
 
-The consequence of this is that any long running code executed before the app is loaded will
-increase the waiting time for the user. **If the waiting time is more than 2-5 seconds your users might get confused and even leave the application behind**.
+The consequence of this is that any long running code executed before the app is loaded will increase the waiting time for the user. **If the waiting time is more than 2-5 seconds your users might get confused and even leave the application behind**.
 
 Here is an example of an app that takes +5 seconds to load.
 
