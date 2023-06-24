@@ -195,9 +195,9 @@ The app looks like
 
 You should
 
-- replace your Streamlit `st.some_object` function with the corresponding Panel
-`pn.pane.SomeObject` class.
-- replace your streamlit text elements with `pn.pane.Markdown`.
+- replace your Streamlit `st.some_object` *snake cased* functions with the corresponding Panel
+`pn.pane.SomeObject` *Pascal Cased* classes.
+- replace your Streamlit text elements with `pn.pane.Markdown`.
 
 You can identify the corresponding Panel *pane* in the
 [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
@@ -273,8 +273,8 @@ the [`Row` Guide](../../reference/layouts/Row.md)
 
 You should
 
-- replace your Streamlit `st.some_layout` function with the corresponding Panel
-`pn.SomeLayout` class.
+- replace your Streamlit `st.some_layout` *snake cased* function with the corresponding Panel
+`pn.SomeLayout` *Pascal Cased* class.
 
 You can identify the relevant layout to migrate to in the
 [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
@@ -861,14 +861,14 @@ In Panel
 - the script served is rerun when a user visits the page.
 - only your *bound functions* are rerun on user interactions.
 
-In Panel you can use `pn.cache` and `pn.state.as_cached` to speed up
+In Panel you can use `pn.cache` to speed up
 
 - the initial load of your page and
 - expensive, bound functions
 
 across users sessions.
 
-Check out the [Cache How-To Guides](../caching/index.md) for the
+Check out the [Cache How-To Guides](../caching/index.md) for more
 details.
 
 ### Cache Example
@@ -906,7 +906,7 @@ st.pyplot(plot(data, bins))
 
 I've added `sleep` statements to make the functions more *expensive*.
 
-#### Panel Session Cache Example
+#### Panel Cache Example
 
 ```python
 from time import sleep
@@ -940,7 +940,7 @@ pn.Column(bins, pn.panel(bplot, loading_indicator=True)).servable()
 
 The app looks like
 
-![Panel Session Cache Example](https://assets.holoviz.org/panel/gifs/panel_cache_example.gif)
+![Panel Cache Example](https://assets.holoviz.org/panel/gifs/panel_cache_example.gif)
 
 You can also use `pn.cache` as an function. I.e. as
 
@@ -952,11 +952,15 @@ Using `pn.cache` as a function can help you keep your business logic
 (`data` and `plot` function) and your caching logic (when and how to apply caching) separate. This
 can help you reusable and maintainable code.
 
+### Typical Caching Mistakes
+
+- Using `pn.state.cache` instead of `pn.cache`. `pn.state.cache` is a simple dictionary and cannot be used as a function or a decorator.
+
 ### Cache Migration Steps
 
 To migrate
 
-- replace `st.cache_data` and `st.cache_resource` with `pn.cache` or `pn.state.as_cached`.
+- replace `st.cache_data` and `st.cache_resource` with `pn.cache`.
 
 You should consider caching expensive
 
