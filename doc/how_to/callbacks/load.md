@@ -7,13 +7,13 @@ You can use this to improve the user experience of your app.
 
 ## Motivation
 
-When you `panel serve` your app, the app is *loaded* as follows
+When a user opens your app, the app is *loaded* as follows
 
-- the app file is read and executed
-- the apps template is populated, sent to the user and rendered
-- a web socket connection is created between the server and the users client to handle additional communication as you interact with the app.
+- the app file is executed
+- the app template is sent to the user and rendered
+- a web socket connection is opened to enable fast, bi-directional communication as your interact with the app.
 
-Thus any long running code executed when the app file is first executed will increase the the waiting time before your users see any signs that your app is working. **If the waiting time is more than 2-5 seconds your users might get confused and even leave the application behind**.
+Thus any long running code executed before the app is loaded will increase the the waiting time before your users see your apps template. **If the waiting time is more than 2-5 seconds your users might get confused and even leave the application behind**.
 
 Here is an example of an app that takes +5 seconds to load.
 
@@ -38,8 +38,8 @@ Now lets learn how to defer long running tasks to after the application has load
 
 ## Defer all Tasks
 
-Its easy defer the execution of all displayed tasks with `pn.config.defer_load=True` or
-`pn.extension(defer_load=True)`. Lets take an example.
+Its easy defer the execution of all displayed tasks with
+`pn.extension(..., defer_load=True)`. Lets take an example.
 
 ```python
 import time
@@ -122,7 +122,7 @@ pn.Column(
 
 ## Defer and Orchestrate Dependent Tasks
 
-Sometimes you have multiple tasks that depend on each other and you need to *orchestrate* them. To handle those scenarios you can combine what you have learned so far with `pn.bind` and/ or `pn.depends`.
+Sometimes you have multiple tasks that depend on each other and you need to *orchestrate* them. To handle those scenarios you can combine what you have learned so far with `pn.bind`.
 
 Lets take an example where we
 
@@ -178,11 +178,3 @@ pn.Column(
 ```
 
 ![panel-defer-dependent-tasks-example](https://user-images.githubusercontent.com/42288570/245752488-b2963489-bdff-4323-b801-03a763992af9.gif)
-
-## Tips and Tricks
-
-You can
-
-- use caching to avoid rerunning expensive tasks
-- use periodic callbacks or async generator functions to update the `data` and rerun the tasks on a periodic schedule.
-- schedule `async` tasks with `pn.panel`, `pn.state.onload`, `pn.bind` and `pn.depends` to improve the user experience further.
