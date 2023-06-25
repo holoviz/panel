@@ -566,7 +566,7 @@ def test_datetimepicker_name(page, port):
     time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
 
-    expect(page.locator('.datetimepicker-with-name').locator(".bk-input-group")).to_have_text(name)
+    expect(page.locator('.datetimepicker-with-name > .bk-input-group > label')).to_have_text(name)
 
 def test_datetimepicker_no_value(page, port, datetime_start_end):
     datetime_picker_widget = DatetimePicker()
