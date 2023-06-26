@@ -85,6 +85,7 @@ import math
 import operator
 import sys
 
+from collections.abc import Callable
 from types import FunctionType, MethodType
 from typing import Any
 
@@ -96,7 +97,7 @@ from .depends import (
 from .layout import Column, HSpacer, Row
 from .pane import DataFrame, panel
 from .util import (
-    eval_function, full_groupby, get_method_owner, is_dataframe,
+    eval_function, full_groupby, get_method_owner, is_dataframe, is_series,
 )
 from .viewable import Viewable
 from .widgets.base import Widget
@@ -236,7 +237,7 @@ class interactive_base:
         obj = transform_dependency(obj)
         if kwargs.get('fn'):
             fn = kwargs.pop('fn')
-            wrapper = kwargs.pop('wrapper', None)
+            wrapper = kwargs.pop('_wrapper', None)
         elif isinstance(obj, (FunctionType, MethodType)):
             fn = obj
             obj = eval_function(obj)
@@ -261,7 +262,7 @@ class interactive_base:
 
     def __init__(
         self, obj, operation=None, fn=None, depth=0, method=None, prev=None,
-        _shared_obj=None, _current=None, **kwargs
+        _shared_obj=None, _current=None, _wrapper=None, **kwargs
     ):
         # _init is used to prevent to __getattribute__ to execute its
         # specialized code.
@@ -339,8 +340,6 @@ class interactive_base:
             ref for arg in self._operation['kwargs'].values()
             for ref in _resolve_ref(arg)
         ]
-
-        print([p.name for p in ps], self._operation)
         return ps
 
     def _setup_invalidations(self, depth: int = 0):
@@ -397,13 +396,15 @@ class interactive_base:
         depth = self._depth + 1
         if copy:
             kwargs = dict(
-                self._kwargs, _current=self._current, method=self._method, fn=self._fn,
-                prev=self._prev, wrapper=self._wrapper, **kwargs
+                self._kwargs, _current=self._current, method=self._method,
+                prev=self._prev, **kwargs
             )
         else:
             kwargs = dict(prev=self, **dict(self._kwargs, **kwargs))
         return type(self)(
-            self._obj, operation=operation, depth=depth, _shared_obj=self._shared_obj, **kwargs
+            self._obj, operation=operation, depth=depth, fn=self._fn,
+            _shared_obj=self._shared_obj, _wrapper=self._wrapper,
+            **kwargs
         )
 
     def __dir__(self):
@@ -441,7 +442,10 @@ class interactive_base:
         self_dict = super().__getattribute__('__dict__')
         no_lookup = (
             'eval', '_dirty', '_prev', '_operation', '_obj', '_shared_obj',
-            '_method', '_eval_operation', '_display_opts', '_fn'
+            '_method', '_eval_operation', '_display_opts', '_fn', '_resolve_accessor',
+            '_clone', '_setup_invalidations', '_params', '_fn_params',
+            '_invalidate_current', '_depth', '_current', '_kwargs',
+            '_wrapper',
         )
         if not self_dict.get('_init') or name in no_lookup:
             return super().__getattribute__(name)
@@ -656,7 +660,6 @@ class interactive_base:
         elif operation.get('reverse'):
             obj = fn(resolved_args[0], obj, *resolved_args[1:], **resolved_kwargs)
         else:
-            print(resolved_args, resolved_kwargs)
             obj = fn(obj, *resolved_args, **resolved_kwargs)
         return obj
 
@@ -717,6 +720,8 @@ class interactive(interactive_base):
     because a dependency changed.
     """
 
+    _accessors: dict[str, Callable[[interactive], Any]] = {}
+
     _display_options: tuple[str] = ('loc', 'center')
 
     _display_handlers: dict[type, tuple[Viewable, dict[str, Any]]] = {}
@@ -740,6 +745,27 @@ class interactive(interactive_base):
         """
         cls._display_handlers[obj_type] = (handler, kwargs)
 
+    @classmethod
+    def register_accessor(cls, name: str, accessor: Callable[interactive, Any]):
+        """
+        Registers an accessor that extends interactive with custom
+        behavior.
+
+        Arguments
+        ---------
+        name: str
+          The name of the accessor will be attribute-accessible under.
+        accessor: Callable[interactive, any]
+          A callable that will return the accessor namespace object
+          given the interactive object it is registered on.
+        """
+        if name in cls._accessors:
+            raise ValueError(
+                f'Cannot register {name!r} accessor as another accessor was already '
+                'registered under the same name.'
+            )
+        cls._accessors[name] = accessor
+
     def __init__(self, obj, **kwargs):
         display_opts = {}
         for _, opts in self._display_handlers.values():
@@ -751,9 +777,11 @@ class interactive(interactive_base):
         })
         super().__init__(obj, **kwargs)
         self._display_opts = display_opts
+        for name, accessor in interactive._accessors.items():
+            setattr(self, name, accessor(self))
 
     def _clone(self, operation=None, copy=False, **kwargs):
-        kwargs.update(self._display_opts)
+        kwargs = dict(self._display_opts, **kwargs)
         return super()._clone(operation=operation, copy=copy, **kwargs)
 
     def _transform_output(self, obj):
@@ -765,12 +793,13 @@ class interactive(interactive_base):
             applies = predicate(obj)
             if applies:
                 break
-        if applies and handler is not None:
-            display_opts = {
-                k: v for k, v in self._display_opts.items() if k in opts
-            }
-            obj = handler(obj, **display_opts)
-        return obj
+        if not applies or handler is None:
+            return obj
+        display_opts = {
+            k: v for k, v in self._display_opts.items() if k in opts
+        }
+        display_opts.update(self._kwargs)
+        return handler(obj, **display_opts)
 
     def _repr_mimebundle_(self, include=[], exclude=[]):
         return self.layout()._repr_mimebundle_()
@@ -867,13 +896,18 @@ class interactive(interactive_base):
             if (isinstance(p.owner, Widget) and
                 p.owner not in widgets):
                 widgets.append(p.owner)
+
+        operations = []
         prev = self
         while prev is not None:
             if prev._operation:
-                for w in _find_widgets(prev._operation):
-                    if w not in widgets:
-                        widgets.append(w)
+                operations.append(prev._operation)
             prev = prev._prev
+
+        for op in operations[::-1]:
+            for w in _find_widgets(op):
+                if w not in widgets:
+                    widgets.append(w)
         return Column(*widgets)
 
 
@@ -886,4 +920,7 @@ register_depends_transform(_interactive_transform)
 
 interactive.register_display_handler(
     is_dataframe, handler=DataFrame, max_rows=100
+)
+interactive.register_display_handler(
+    is_series, handler=DataFrame, max_rows=100
 )
