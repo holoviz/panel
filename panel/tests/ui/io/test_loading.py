@@ -4,6 +4,7 @@ import pytest
 
 try:
     from playwright.sync_api import expect
+    pytestmark = pytest.mark.ui
 except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
@@ -11,7 +12,6 @@ from panel.config import config
 from panel.io.server import serve
 from panel.pane import Markdown
 
-pytestmark = pytest.mark.ui
 
 def test_global_loading_indicator(page, port):
     def app():
