@@ -4,7 +4,7 @@ import param
 
 from param.parameterized import iscoroutinefunction
 
-from .util import eval_function
+from .util import deprecated, eval_function
 
 _dependency_transforms = []
 
@@ -33,7 +33,9 @@ def transform_dependency(arg):
     return arg
 
 # Alias for backward compatibility
-param_value_if_widget = transform_dependency
+def param_value_if_widget(*args, **kwargs):
+    deprecated("1.4", "param_value_if_widget", "transform_dependency")
+    return transform_dependency(*args, **kwargs)
 
 def depends(*args, **kwargs):
     """
