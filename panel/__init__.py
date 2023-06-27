@@ -56,7 +56,6 @@ from . import widgets  # noqa
 from .config import __version__, config, panel_extension as extension  # noqa
 from .depends import bind, depends  # noqa
 from .interact import interact  # noqa
-from .interactive import interactive  # noqa
 from .io import (  # noqa
     _jupyter_server_extension_paths, cache, ipywidget, serve, state,
 )
@@ -66,6 +65,7 @@ from .layout import (  # noqa
 )
 from .pane import panel  # noqa
 from .param import Param  # noqa
+from .react import react  # noqa
 from .template import Template  # noqa
 from .widgets import indicators, widget  # noqa
 
@@ -94,7 +94,6 @@ __all__ = (
     "extension",
     "indicators",
     "interact",
-    "interactive",
     "ipywidget",
     "layout",
     "links",
@@ -102,6 +101,7 @@ __all__ = (
     "panel",
     "param",
     "pipeline",
+    "react",
     "reactive",
     "serve",
     "state",
