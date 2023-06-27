@@ -96,9 +96,8 @@ from .depends import (
 )
 from .layout import Column, HSpacer, Row
 from .pane import DataFrame, panel
-from .util import (
-    eval_function, full_groupby, get_method_owner, is_dataframe, is_series,
-)
+from .util import eval_function, full_groupby, get_method_owner
+from .util.checks import is_dataframe, is_series
 from .viewable import Viewable
 from .widgets.base import Widget
 
@@ -198,6 +197,18 @@ class Wrapper(param.Parameterized):
     object = param.Parameter()
 
 
+class FigureWrapper(param.Parameterized):
+
+    figure = param.Parameter()
+
+    def get_ax(self):
+        from matplotlib.backends.backend_agg import FigureCanvas
+        from matplotlib.pyplot import Figure
+        self.figure = fig = Figure()
+        FigureCanvas(fig)
+        return fig.subplots()
+
+
 class react_base:
     """
     `react` allows wrapping objects and then operating on them
@@ -222,6 +233,39 @@ class react_base:
     >>> ifloat.set(1)
     2
     """
+
+    _accessors: dict[str, Callable[[react], Any]] = {}
+
+    _method_handlers: dict[str, Callable] = {}
+
+    @classmethod
+    def register_accessor(cls, name: str, accessor: Callable[react, Any]):
+        """
+        Registers an accessor that extends react with custom
+        behavior.
+
+        Arguments
+        ---------
+        name: str
+          The name of the accessor will be attribute-accessible under.
+        accessor: Callable[react, any]
+          A callable that will return the accessor namespace object
+          given the react object it is registered on.
+        """
+        if name in cls._accessors:
+            raise ValueError(
+                f'Cannot register {name!r} accessor as another accessor was already '
+                'registered under the same name.'
+            )
+        cls._accessors[name] = accessor
+
+    @classmethod
+    def register_method_handler(cls, method, handler):
+        """
+        Registers a handler that is called when a specific method on
+        an object is called.
+        """
+        cls._method_handlers[method] = handler
 
     @classmethod
     def _applies(cls, obj):
@@ -474,20 +518,22 @@ class react_base:
         return super().__getattribute__(name)
 
     def __call__(self, *args, **kwargs):
-        if self._method is None:
-            if self._depth == 0:
-                # This code path is entered when initializing an react
-                # class from the accessor, e.g. with df.react(). As
-                # calling the accessor df.react already returns an
-                # react instance.
-                return self._clone(*args, **kwargs)
-            # TODO: When is this error raised?
-            raise AttributeError
+        if self._method is None and self._depth == 0:
+            # This code path is entered when initializing an react
+            # class from the accessor, e.g. with df.react(). As
+            # calling the accessor df.react already returns an
+            # react instance.
+            return self._clone(*args, **kwargs)
+
         new = self._clone(copy=True)
+        method = new._method or '__call__'
+        if method in react_base._method_handlers:
+            handler = react_base._method_handlers[method]
+            method = handler(self)
         try:
             kwargs = dict(kwargs)
             operation = {
-                'fn': new._method,
+                'fn': method,
                 'args': args,
                 'kwargs': kwargs,
                 'reverse': False
@@ -721,32 +767,9 @@ class react(react_base):
     because a dependency changed.
     """
 
-    _accessors: dict[str, Callable[[react], Any]] = {}
-
     _display_options: tuple[str] = ('loc', 'center')
 
     _display_handlers: dict[type, tuple[Viewable, dict[str, Any]]] = {}
-
-    @classmethod
-    def register_accessor(cls, name: str, accessor: Callable[react, Any]):
-        """
-        Registers an accessor that extends react with custom
-        behavior.
-
-        Arguments
-        ---------
-        name: str
-          The name of the accessor will be attribute-accessible under.
-        accessor: Callable[react, any]
-          A callable that will return the accessor namespace object
-          given the react object it is registered on.
-        """
-        if name in cls._accessors:
-            raise ValueError(
-                f'Cannot register {name!r} accessor as another accessor was already '
-                'registered under the same name.'
-            )
-        cls._accessors[name] = accessor
 
     @classmethod
     def register_display_handler(cls, obj_type, handler, **kwargs):
@@ -927,3 +950,14 @@ react.register_display_handler(
 react.register_display_handler(
     is_series, handler=DataFrame, max_rows=100
 )
+
+def _plot_handler(interactive):
+    fig_wrapper = FigureWrapper()
+    def handler(obj, *args, **kwargs):
+        if 'ax' not in kwargs:
+            kwargs['ax'] = fig_wrapper.get_ax()
+        obj.plot(*args, **kwargs)
+        return fig_wrapper.figure
+    return handler
+
+react.register_method_handler('plot', _plot_handler)
