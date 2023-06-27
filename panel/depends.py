@@ -4,7 +4,8 @@ import param
 
 from param.parameterized import iscoroutinefunction
 
-from .util import deprecated, eval_function
+from .util import eval_function
+from .util.warnings import deprecated
 
 _dependency_transforms = []
 
