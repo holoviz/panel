@@ -728,25 +728,6 @@ class react(react_base):
     _display_handlers: dict[type, tuple[Viewable, dict[str, Any]]] = {}
 
     @classmethod
-    def register_display_handler(cls, obj_type, handler, **kwargs):
-        """
-        Registers a display handler for a specific type of object,
-        making it possible to define custom display options for
-        specific objects.
-
-        Arguments
-        ---------
-        obj_type: type | callable
-          The type to register a custom display handler on.
-        handler: Viewable | callable
-          A Viewable or callable that is given the object to be displayed
-          and the custom keyword arguments.
-        kwargs: dict[str, Any]
-          Additional display options to register for this type.
-        """
-        cls._display_handlers[obj_type] = (handler, kwargs)
-
-    @classmethod
     def register_accessor(cls, name: str, accessor: Callable[react, Any]):
         """
         Registers an accessor that extends react with custom
@@ -766,6 +747,25 @@ class react(react_base):
                 'registered under the same name.'
             )
         cls._accessors[name] = accessor
+
+    @classmethod
+    def register_display_handler(cls, obj_type, handler, **kwargs):
+        """
+        Registers a display handler for a specific type of object,
+        making it possible to define custom display options for
+        specific objects.
+
+        Arguments
+        ---------
+        obj_type: type | callable
+          The type to register a custom display handler on.
+        handler: Viewable | callable
+          A Viewable or callable that is given the object to be displayed
+          and the custom keyword arguments.
+        kwargs: dict[str, Any]
+          Additional display options to register for this type.
+        """
+        cls._display_handlers[obj_type] = (handler, kwargs)
 
     def __init__(self, obj, **kwargs):
         display_opts = {}
@@ -791,16 +791,19 @@ class react(react_base):
         """
         applies = False
         for predicate, (handler, opts) in self._display_handlers.items():
-            applies = predicate(obj)
+            display_opts = {
+                k: v for k, v in self._display_opts.items() if k in opts
+            }
+            display_opts.update(self._kwargs)
+            try:
+                applies = predicate(obj, **display_opts)
+            except TypeError:
+                applies = predicate(obj)
             if applies:
-                break
-        if not applies or handler is None:
-            return obj
-        display_opts = {
-            k: v for k, v in self._display_opts.items() if k in opts
-        }
-        display_opts.update(self._kwargs)
-        return handler(obj, **display_opts)
+                new = handler(obj, **display_opts)
+                if new is not obj:
+                    return new
+        return obj
 
     def _repr_mimebundle_(self, include=[], exclude=[]):
         return self.layout()._repr_mimebundle_()
@@ -910,7 +913,6 @@ class react(react_base):
                 if w not in widgets:
                     widgets.append(w)
         return Column(*widgets)
-
 
 def _react_transform(obj):
     if not isinstance(obj, react):
