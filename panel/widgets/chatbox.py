@@ -631,6 +631,10 @@ class ChatBox(CompositeWidget):
         Arguments
         ---------
         serialize (bool): Whether to serialize the messages into a string.
+
+        Returns
+        -------
+        messages (list): List of dictionaries with "role" and "content" as keys.
         """
         messages = []
         for user_message in self.value:
