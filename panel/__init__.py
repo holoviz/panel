@@ -65,7 +65,7 @@ from .layout import (  # noqa
 )
 from .pane import panel  # noqa
 from .param import Param  # noqa
-from .react import reactive  # noqa
+from .ref import ref  # noqa
 from .template import Template  # noqa
 from .widgets import indicators, widget  # noqa
 
@@ -101,7 +101,7 @@ __all__ = (
     "panel",
     "param",
     "pipeline",
-    "reactive",
+    "ref",
     "serve",
     "state",
     "viewable",
