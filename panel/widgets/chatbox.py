@@ -611,14 +611,22 @@ class ChatBox(CompositeWidget):
         """
         self.value = []
 
-    def export(self) -> List[Dict[str, Union[List[Any], Any]]]:
+    def export(self, serialize: bool = True) -> List[Dict[str, Union[List[Any], Any]]]:
         """
         Exports the chat log into a list of dictionaries with
         "role" and "content" as keys.
+
+        Arguments
+        ---------
+        serialize (bool): Whether to serialize the messages into a string.
         """
         messages = []
         for user_message in self.value:
             user, message = self._separate_user_message(user_message)
+            if hasattr(message, "value"):
+                message = message.value
+            elif hasattr(message, "object"):
+                message = message.object
             messages.append({"role": user, "content": message})
         return messages
 

@@ -236,6 +236,7 @@ def test_chat_box_export(document, comm):
     value = [
         {"user1": "Hello"},
         {"user2": "Hi"},
+        {"user1": TextInput(value="Some valueo!")},
     ]
     chat_box = ChatBox(value=value.copy(), primary_name="Panel User")
     messages = chat_box.export()
@@ -248,6 +249,10 @@ def test_chat_box_export(document, comm):
         {
             "role": "user2",
             "content": "Hi",
+        },
+        {
+            "role": "user1",
+            "content": "Some valueo!",
         },
     ]
 
