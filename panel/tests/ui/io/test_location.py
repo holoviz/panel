@@ -83,8 +83,7 @@ def test_set_hash_update_document(page, port):
         'hash': '#123',
         'reload': None
     }
-    actual_location = page.evaluate('() => document.location')
-    verify_document_location(expected_location, actual_location, page)
+    verify_document_location(expected_location, page)
 
 
 def test_set_document_location_update_state(page, port):
