@@ -419,14 +419,20 @@ class ChatBox(CompositeWidget):
         """
         Separate the user and message from a dictionary.
         """
-        if len(user_message) != 1:
+        if len(user_message) == 1:
+            user = self._get_name(user_message)
+            message_contents = user_message[user]
+        elif "role" in user_message and "content" in user_message:
+            user = user_message["role"]
+            message_contents = user_message["content"]
+        else:
             raise ValueError(
                 f"Expected a dictionary with one key-value pair, e.g. "
-                f"{{'User': 'Message'}} , but got {user_message}"
+                f"{{'User': 'Message'}} or two key-value pairs with "
+                f"'role' and 'content' as keys, e.g. "
+                f"{{'role': 'User', 'content': 'Message'}}, "
+                f"but got {user_message}"
             )
-
-        user = self._get_name(user_message)
-        message_contents = user_message[user]
         return user, message_contents
 
     def _instantiate_message_row(
