@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 try:
@@ -9,8 +7,8 @@ except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
 from panel import config, state
-from panel.io.server import serve
 from panel.template import BootstrapTemplate
+from panel.tests.util import serve_component
 
 
 def test_server_reuse_sessions(page, port, reuse_sessions):
@@ -19,14 +17,12 @@ def test_server_reuse_sessions(page, port, reuse_sessions):
         counts[0] += 1
         return content
 
-    serve(app, port=port, threaded=True, show=False)
+    serve_component(page, port, app)
 
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
     expect(page.locator(".markdown h3")).to_have_text('Count 0')
 
     page.goto(f"http://localhost:{port}")
+
     expect(page.locator(".markdown h3")).to_have_text('Count 1')
 
 
@@ -40,11 +36,7 @@ def test_server_reuse_sessions_with_session_key_func(page, port, reuse_sessions)
         counts[0] += 1
         return tmpl
 
-    serve(app, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}/?arg=foo")
+    serve_component(page, port, app, suffix='/?arg=foo')
 
     expect(page).to_have_title('foo')
     expect(page.locator(".markdown h3")).to_have_text('Count 0')

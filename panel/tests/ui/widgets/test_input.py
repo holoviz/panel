@@ -1,10 +1,8 @@
 import datetime
-import time
 
 import pytest
 
-from panel.io.server import serve
-from panel.tests.util import wait_until
+from panel.tests.util import serve_component, wait_until
 from panel.widgets import DatetimePicker, DatetimeRangePicker
 
 try:
@@ -143,9 +141,8 @@ def valid_next_month(old_month, new_month, old_year, new_year):
 
 def test_datetimepicker_default(page, port, weekdays_as_str, months_as_str):
     datetime_picker_widget = DatetimePicker()
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, port, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-calendar')
     expect(datetime_picker).to_have_count(1)
@@ -310,9 +307,8 @@ def test_datetimepicker_value(page, port, march_2021, datetime_value_data):
     datetime_picker_widget = DatetimePicker(
         value=datetime.datetime(year, month, day, hour, min, sec)
     )
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, port, datetime_picker_widget)
 
     datetime_value = page.locator('.flatpickr-input')
     assert datetime_value.input_value() == datetime_str
@@ -378,9 +374,8 @@ def test_datetimepicker_start_end(page, port, march_2021, datetime_start_end):
     march_2021_str, num_days, _, _ = march_2021
 
     datetime_picker_widget = DatetimePicker(start=start, end=end)
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, port, datetime_picker_widget)
 
     datetime_value = page.locator('.flatpickr-input')
     # click to show the datetime picker container
@@ -401,9 +396,8 @@ def test_datetimepicker_disabled_dates(page, port, disabled_dates):
     datetime_picker_widget = DatetimePicker(
         disabled_dates=disabled_list, value=active_date
     )
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, port, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -421,9 +415,8 @@ def test_datetimepicker_enabled_dates(page, port, march_2021, enabled_dates):
     datetime_picker_widget = DatetimePicker(
         enabled_dates=enabled_list, value=active_date
     )
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, port, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -442,9 +435,8 @@ def test_datetimepicker_enabled_dates(page, port, march_2021, enabled_dates):
 
 def test_datetimepicker_enable_time(page, port):
     datetime_picker_widget = DatetimePicker(enable_time=False)
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, port, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -457,9 +449,8 @@ def test_datetimepicker_enable_time(page, port):
 
 def test_datetimepicker_enable_seconds(page, port):
     datetime_picker_widget = DatetimePicker(enable_seconds=False)
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, port, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -487,9 +478,8 @@ def test_datetimepicker_enable_seconds(page, port):
 
 def test_datetimepicker_military_time(page, port):
     datetime_picker_widget = DatetimePicker(military_time=False)
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, port, datetime_picker_widget)
 
     # click to show the datetime picker container
     datetime_value = page.locator('.flatpickr-input')
@@ -538,9 +528,9 @@ def test_datetimepicker_military_time(page, port):
 
 def test_datetimepicker_disable_editing(page, port):
     datetime_picker_widget = DatetimePicker(disabled=True)
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, port, datetime_picker_widget)
+
     expect(page.locator('.flatpickr-input')).to_have_attribute('disabled', 'true')
 
 
@@ -549,9 +539,8 @@ def test_datetimepicker_visible(page, port):
     datetime_picker_widget = DatetimePicker(
         visible=False, css_classes=['invisible-datetimepicker']
     )
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, port, datetime_picker_widget)
 
     expect(page.locator('.invisible-datetimepicker')).to_have_css('display', 'none')
 
@@ -562,18 +551,15 @@ def test_datetimepicker_name(page, port):
     datetime_picker_widget = DatetimePicker(
         name=name, css_classes=['datetimepicker-with-name']
     )
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+
+    serve_component(page, port, datetime_picker_widget)
 
     expect(page.locator('.datetimepicker-with-name > .bk-input-group > label')).to_have_text(name)
 
 def test_datetimepicker_no_value(page, port, datetime_start_end):
     datetime_picker_widget = DatetimePicker()
 
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-input')
     assert datetime_picker.input_value() == ""
@@ -588,9 +574,7 @@ def test_datetimepicker_no_value(page, port, datetime_start_end):
 def test_datetimerangepicker_no_value(page, port, datetime_start_end):
     datetime_picker_widget = DatetimeRangePicker()
 
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-input')
     assert datetime_picker.input_value() == ""
@@ -600,15 +584,14 @@ def test_datetimerangepicker_no_value(page, port, datetime_start_end):
     wait_until(lambda: datetime_picker.input_value() == expected, page)
 
     datetime_picker_widget.value = None
+
     wait_until(lambda: datetime_picker.input_value() == '', page)
 
 
 def test_datetimepicker_remove_value(page, port, datetime_start_end):
     datetime_picker_widget = DatetimePicker(value=datetime_start_end[0])
 
-    serve(datetime_picker_widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, datetime_picker_widget)
 
     datetime_picker = page.locator('.flatpickr-input')
     assert datetime_picker.input_value() == "2021-03-02 00:00:00"

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import time
 
 import numpy as np
 import pandas as pd
@@ -26,9 +25,8 @@ pytestmark = pytest.mark.ui
 
 from panel import state
 from panel.depends import bind
-from panel.io.server import serve
 from panel.models.tabulator import _TABULATOR_THEMES_MAPPING
-from panel.tests.util import get_ctrl_modifier, wait_until
+from panel.tests.util import get_ctrl_modifier, serve_component, wait_until
 from panel.widgets import Select, Tabulator
 
 
@@ -127,16 +125,9 @@ def tabulator_column_values(page, col_name: str) -> list[str]:
 def test_tabulator_no_console_error(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
+    msgs = serve_component(page, port, widget)
 
-    msgs = []
-    page.on("console", lambda msg: msgs.append(msg))
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
-
-    time.sleep(1)
+    page.wait_for_timeout(1000)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
@@ -145,11 +136,7 @@ def test_tabulator_default(page, port, df_mixed, df_mixed_as_string):
     nrows, ncols = df_mixed.shape
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expected_ncols = ncols + 2  # _index + index + data columns
 
@@ -190,11 +177,7 @@ def test_tabulator_default(page, port, df_mixed, df_mixed_as_string):
 def test_tabulator_value_changed(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     df_mixed.loc['idx0', 'str'] = 'AA'
     # Need to trigger the value as the dataframe was modified
@@ -207,11 +190,7 @@ def test_tabulator_value_changed(page, port, df_mixed):
 def test_tabulator_disabled(page, port, df_mixed):
     widget = Tabulator(df_mixed, disabled=True)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="A"')
     cell.click()
@@ -223,11 +202,7 @@ def test_tabulator_disabled(page, port, df_mixed):
 def test_tabulator_show_index_disabled(page, port, df_mixed):
     widget = Tabulator(df_mixed, show_index=False)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator('text="index"')).to_have_count(0)
 
@@ -236,11 +211,7 @@ def test_tabulator_titles(page, port, df_mixed):
     titles = {col: col.upper() for col in df_mixed.columns}
     widget = Tabulator(df_mixed, titles=titles)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     for col in df_mixed.columns:
         expected_title = titles[col]
@@ -250,11 +221,7 @@ def test_tabulator_titles(page, port, df_mixed):
 def test_tabulator_hidden_columns(page, port, df_mixed):
     widget = Tabulator(df_mixed, hidden_columns=['float', 'date', 'datetime'])
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expected_text = """
         index
@@ -288,11 +255,7 @@ def test_tabulator_buttons_display(page, port, df_mixed):
     icon_text = 'icon'
     widget = Tabulator(df_mixed, buttons={'Print': icon_text})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expected_ncols = ncols + 3  # _index + index + data columns + button col
 
@@ -326,19 +289,13 @@ def test_tabulator_buttons_event(page, port, df_mixed):
 
     widget.on_click(cb)
 
-    serve(widget, port=port, threaded=True, show=False)
+    serve_component(page, port, widget)
 
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
     icon = page.locator("text=icon").first
     icon.wait_for()
     # Click on the first button
     icon.click()
 
-    time.sleep(0.2)
-
-    assert state == expected_state
     wait_until(lambda: state == expected_state, page)
 
 
@@ -348,11 +305,7 @@ def test_tabulator_formatters_bokeh_bool(page, port, df_mixed):
     df_mixed['bool'] = s
     widget = Tabulator(df_mixed, formatters={'bool': BooleanFormatter()})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # The BooleanFormatter renders with svg icons.
     cells = page.locator(".tabulator-cell", has=page.locator("svg"))
@@ -372,11 +325,7 @@ def test_tabulator_formatters_bokeh_date(page, port, df_mixed):
         },
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator('text="10:00"')).to_have_count(1)
     assert page.locator('text="Tue, 01 Jan 2019"').count() == 1
@@ -393,11 +342,7 @@ def test_tabulator_formatters_bokeh_date_with_nan(page, port, df_mixed):
         },
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator('text="10:00"')).to_have_count(1)
     assert page.locator('text="Tue, 01 Jan 2019"').count() == 1
@@ -416,11 +361,7 @@ def test_tabulator_formatters_bokeh_number(page, port, df_mixed):
         },
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator('text="1.000"')).to_have_count(1)
     assert page.locator('text="3.140"').count() == 1
@@ -436,11 +377,7 @@ def test_tabulator_formatters_bokeh_string(page, port, df_mixed):
         },
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator('text="A"')).to_have_attribute(
         "style",
@@ -456,11 +393,7 @@ def test_tabulator_formatters_bokeh_html(page, port, df_mixed):
         },
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator('text="A"')).to_have_attribute(
         "style",
@@ -478,11 +411,7 @@ def test_tabulator_formatters_bokeh_scientific(page, port, df_mixed):
         },
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator('text="3.140e+6"')).to_have_count(1)
     assert page.locator('text="nan-float"').count() == 1
@@ -494,11 +423,7 @@ def test_tabulator_formatters_tabulator_str(page, port, df_mixed):
         formatters={'int': 'star'},
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # The star formatter renders with svg icons.
     cells = page.locator(".tabulator-cell", has=page.locator("svg"))
@@ -512,11 +437,7 @@ def test_tabulator_formatters_tabulator_dict(page, port, df_mixed):
         formatters={'int': {'type': 'star', 'stars': nstars}},
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # The star formatter renders with svg icons.
     cells = page.locator(".tabulator-cell", has=page.locator("svg"))
@@ -529,11 +450,7 @@ def test_tabulator_formatters_tabulator_dict(page, port, df_mixed):
 def test_tabulator_formatters_after_init(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Wait until the table is rendered
     expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
@@ -553,11 +470,7 @@ def test_tabulator_formatters_after_init(page, port, df_mixed):
 def test_tabulator_editors_bokeh_string(page, port, df_mixed):
     widget = Tabulator(df_mixed, editors={'str': StringEditor()})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="A"')
     cell.click()
@@ -568,11 +481,7 @@ def test_tabulator_editors_bokeh_string(page, port, df_mixed):
 def test_tabulator_editors_bokeh_string_completions(page, port, df_mixed):
     widget = Tabulator(df_mixed, editors={'str': StringEditor(completions=['AAA'])})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="A"')
     cell.click()
@@ -584,11 +493,7 @@ def test_tabulator_editors_bokeh_string_completions(page, port, df_mixed):
 def test_tabulator_editors_bokeh_text(page, port, df_mixed):
     widget = Tabulator(df_mixed, editors={'str': TextEditor()})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="A"')
     cell.click()
@@ -601,11 +506,7 @@ def test_tabulator_editors_bokeh_int(page, port, df_mixed):
     step = 2
     widget = Tabulator(df_mixed, editors={'int': IntEditor(step=step)})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="1"').first
     cell.click()
@@ -620,11 +521,7 @@ def test_tabulator_editors_bokeh_number(page, port, df_mixed):
     step = 0.1
     widget = Tabulator(df_mixed, editors={'float': NumberEditor(step=step)})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="3.14"')
     cell.click()
@@ -638,11 +535,7 @@ def test_tabulator_editors_bokeh_number(page, port, df_mixed):
 def test_tabulator_editors_bokeh_checkbox(page, port, df_mixed):
     widget = Tabulator(df_mixed, editors={'bool': CheckboxEditor()})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="true"').first
     cell.click()
@@ -655,11 +548,7 @@ def test_tabulator_editors_bokeh_checkbox(page, port, df_mixed):
 def test_tabulator_editors_bokeh_date(page, port, df_mixed):
     widget = Tabulator(df_mixed, editors={'date': DateEditor()})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="2019-01-01"')
     cell.click()
@@ -670,11 +559,7 @@ def test_tabulator_editors_bokeh_date(page, port, df_mixed):
 def test_tabulator_editors_bokeh_select(page, port, df_mixed):
     widget = Tabulator(df_mixed, editors={'str': SelectEditor(options=['option1'])})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="A"')
     cell.click()
@@ -685,11 +570,7 @@ def test_tabulator_editors_bokeh_select(page, port, df_mixed):
 def test_tabulator_editors_panel_date(page, port, df_mixed):
     widget = Tabulator(df_mixed, editors={'date': 'date'})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="2019-01-01"')
     cell.click()
@@ -718,11 +599,7 @@ def test_tabulator_editors_panel_date(page, port, df_mixed):
 def test_tabulator_editors_panel_datetime(page, port, df_mixed):
     widget = Tabulator(df_mixed, editors={'datetime': 'datetime'})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="2019-01-01 10:00:00"')
     cell.click()
@@ -759,11 +636,7 @@ def test_tabulator_editors_tabulator_disable_one(page, port, df_mixed):
         editors={'float': None},
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     page.locator('text="3.14"').click()
     page.wait_for_timeout(200)
@@ -773,11 +646,7 @@ def test_tabulator_editors_tabulator_disable_one(page, port, df_mixed):
 def test_tabulator_editors_tabulator_str(page, port, df_mixed):
     widget = Tabulator(df_mixed, editors={'str': 'textarea'})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="A"')
     cell.click()
@@ -790,11 +659,7 @@ def test_tabulator_editors_tabulator_dict(page, port, df_mixed):
         editors={'str': {'type': 'textarea', 'elementAttributes': {'maxlength': '10'}}}
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="A"')
     cell.click()
@@ -807,11 +672,7 @@ def test_tabulator_editors_tabulator_list_default(page, port):
     df = pd.DataFrame({'values': ['A', 'B']})
     widget = Tabulator(df, header_filters={'values': 'list'})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     header = page.locator('input[type="search"]')
     expect(header).to_have_count(1)
@@ -826,11 +687,7 @@ def test_tabulator_editors_tabulator_list_default(page, port):
 def test_tabulator_column_layouts(page, port, df_mixed, layout):
     widget = Tabulator(df_mixed, layout=layout)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     layout_mapping = {
         "fit_data": "fitData",
@@ -848,11 +705,7 @@ def test_tabulator_column_layouts(page, port, df_mixed, layout):
 def test_tabulator_alignment_header_default(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # The default header alignment is left
     for col in df_mixed.columns:
@@ -862,11 +715,7 @@ def test_tabulator_alignment_header_default(page, port, df_mixed):
 def test_tabulator_alignment_text_default(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     findex = df_mixed.index[0]
     cell = page.locator(f'text="{findex}"')
@@ -906,11 +755,7 @@ def test_tabulator_alignment_header_str(page, port, df_mixed):
     halign = 'center'
     widget = Tabulator(df_mixed, header_align=halign)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     for col in df_mixed.columns:
         expect(page.locator(f'text="{col}"')).to_have_css('text-align', halign)
@@ -920,11 +765,7 @@ def test_tabulator_alignment_header_dict(page, port, df_mixed):
     halign = {'int': 'left'}
     widget = Tabulator(df_mixed, header_align=halign)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # for col in df_mixed.columns:
     for col, align in halign.items():
@@ -935,11 +776,7 @@ def test_tabulator_alignment_text_str(page, port, df_mixed):
     talign = 'center'
     widget = Tabulator(df_mixed, text_align=talign)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cells = page.locator('.tabulator-cell:visible')
 
@@ -955,11 +792,7 @@ def test_tabulator_frozen_columns(page, port, df_mixed):
     frozen_cols = ['float', 'int']
     widget = Tabulator(df_mixed, frozen_columns=frozen_cols, width=width, widths=widths)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expected_text = """
     float
@@ -1034,11 +867,7 @@ def test_tabulator_frozen_rows(page, port):
     height, width = 200, 200
     widget = Tabulator(df, frozen_rows=[-2, 1], height=height, width=width)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expected_text = """
     index
@@ -1089,11 +918,7 @@ def test_tabulator_patch_no_horizontal_rescroll(page, port, df_mixed):
     df_mixed['tomodify'] = 'target'
     widget = Tabulator(df_mixed, width=width, widths=widths)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="target"').first
     # Scroll to the right
@@ -1121,11 +946,7 @@ def test_tabulator_patch_no_vertical_rescroll(page, port):
     height, width = 100, 200
     widget = Tabulator(df, height=height, width=width)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Scroll to the bottom
     target_cell = page.locator(f'text="{target}"')
@@ -1172,11 +993,7 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, port, df_mixed, pa
         pagination=pagination
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.3)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     header = page.locator(f'text="{col_name}"')
     # Scroll to the right
@@ -1205,11 +1022,7 @@ def test_tabulator_header_filter_always_visible(page, port, df_mixed):
         header_filters={col_name: {'type': 'input', 'func': 'like'}},
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     header = page.locator('input[type="search"]')
     expect(header).to_have_count(1)
@@ -1230,11 +1043,7 @@ def test_tabulator_theming(page, port, df_mixed, df_mixed_as_string, theme):
     page.on("response", lambda response: responses.append(response))
     widget = Tabulator(df_mixed, theme=theme)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Check that the whole table content is on the page
     table = page.locator('.pnx-tabulator.tabulator')
@@ -1260,11 +1069,7 @@ def test_tabulator_theming(page, port, df_mixed, df_mixed_as_string, theme):
 def test_tabulator_selection_selectable_by_default(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     assert widget.selectable
     # Click on the first row of the index column to select the row
@@ -1283,11 +1088,7 @@ def test_tabulator_selection_selectable_by_default(page, port, df_mixed):
 def test_tabulator_selection_selectable_one_at_a_time(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     rows = page.locator('.tabulator-row')
     # Click on the first row of the index column to select the row
@@ -1321,11 +1122,7 @@ def test_tabulator_selection_selectable_one_at_a_time(page, port, df_mixed):
 def test_tabulator_selection_selectable_ctrl(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     rows = page.locator('.tabulator-row')
     # Click on the first row of the index column to select the row
@@ -1360,11 +1157,7 @@ def test_tabulator_selection_selectable_ctrl(page, port, df_mixed):
 def test_tabulator_selection_selectable_shift(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     rows = page.locator('.tabulator-row')
     # Click on the first row of the index column to select the row
@@ -1387,11 +1180,7 @@ def test_tabulator_selection_selectable_shift(page, port, df_mixed):
 def test_tabulator_selection_selectable_disabled(page, port, df_mixed):
     widget = Tabulator(df_mixed, selectable=False)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Click on the first row of the index column
     rows = page.locator('.tabulator-row')
@@ -1411,11 +1200,7 @@ def test_tabulator_selection_default_selection(page, port, df_mixed):
     selection = [0, 2]
     widget = Tabulator(df_mixed, selection=[0, 2])
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     rows = page.locator('.tabulator-row')
 
@@ -1432,11 +1217,7 @@ def test_tabulator_selection_default_selection(page, port, df_mixed):
 def test_tabulator_selection_selectable_checkbox_all(page, port, df_mixed):
     widget = Tabulator(df_mixed, selectable='checkbox')
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Select the first checkbox and check it
     checkboxes = page.locator('input[type="checkbox"]')
@@ -1457,11 +1238,7 @@ def test_tabulator_selection_selectable_checkbox_all(page, port, df_mixed):
 def test_tabulator_selection_selectable_checkbox_multiple(page, port, df_mixed):
     widget = Tabulator(df_mixed, selectable='checkbox')
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     checkboxes = page.locator('input[type="checkbox"]')
     checkboxes.first.wait_for()
@@ -1491,11 +1268,7 @@ def test_tabulator_selection_selectable_checkbox_multiple(page, port, df_mixed):
 def test_tabulator_selection_selectable_checkbox_single(page, port, df_mixed):
     widget = Tabulator(df_mixed, selectable='checkbox-single')
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     checkboxes = page.locator('input[type="checkbox"]')
     expect(checkboxes).to_have_count(len(df_mixed))
@@ -1525,11 +1298,7 @@ def test_tabulator_selection_selectable_checkbox_single(page, port, df_mixed):
 def test_tabulator_selection_selectable_toggle(page, port, df_mixed):
     widget = Tabulator(df_mixed, selectable='toggle')
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     rows = page.locator('.tabulator-row')
     # Click on the first row of the index column to select the row
@@ -1569,11 +1338,7 @@ def test_tabulator_selection_selectable_toggle(page, port, df_mixed):
 def test_tabulator_selection_selectable_rows(page, port, df_mixed):
     widget = Tabulator(df_mixed, selectable_rows=lambda df: [1])
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     rows = page.locator('.tabulator-row')
     # Click on the first row of the index column to select the row
@@ -1601,11 +1366,7 @@ def test_tabulator_selection_selectable_rows(page, port, df_mixed):
 def test_tabulator_row_content(page, port, df_mixed):
     widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     openables = page.locator('text="►"')
     expect(openables).to_have_count(len(df_mixed))
@@ -1638,11 +1399,7 @@ def test_tabulator_row_content_expand_from_python_init(page, port, df_mixed):
         expanded = [0, 2],
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     for i in range(len(df_mixed)):
         row_content = page.locator(f'text="{df_mixed.iloc[i]["str"]}-row-content"')
@@ -1653,18 +1410,14 @@ def test_tabulator_row_content_expand_from_python_init(page, port, df_mixed):
 
     openables = page.locator('text="►"')
     closables = page.locator('text="▼"')
-    assert closables.count() == len(widget.expanded)
-    assert openables.count() == len(df_mixed) - len(widget.expanded)
+    expect(closables).to_have_count(len(widget.expanded))
+    expect(openables).to_have_count(len(df_mixed) - len(widget.expanded))
 
 
 def test_tabulator_row_content_expand_from_python_after(page, port, df_mixed):
     widget = Tabulator(df_mixed, row_content=lambda i: f"{i['str']}-row-content")
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Expanding the rows after the server is launched
     widget.expanded = [0, 2]
@@ -1676,19 +1429,13 @@ def test_tabulator_row_content_expand_from_python_after(page, port, df_mixed):
         else:
             expect(row_content).to_have_count(0)
 
-    openables = page.locator('text="►"')
-    closables = page.locator('text="▼"')
-    assert closables.count() == len(widget.expanded)
-    assert openables.count() == len(df_mixed) - len(widget.expanded)
+    expect(page.locator('text="▼"')).to_have_count(len(widget.expanded))
+    expect(page.locator('text="►"')).to_have_count(len(df_mixed) - len(widget.expanded))
 
     widget.expanded = []
 
-    time.sleep(0.2)
-
-    openables = page.locator('text="►"')
-    closables = page.locator('text="▼"')
-    assert closables.count() == 0
-    assert openables.count() == len(df_mixed)
+    expect(page.locator('text="▼"')).to_have_count(0)
+    expect(page.locator('text="►"')).to_have_count(len(df_mixed))
 
 
 def test_tabulator_groups(page, port, df_mixed):
@@ -1697,11 +1444,7 @@ def test_tabulator_groups(page, port, df_mixed):
         groups={'Group1': ['int', 'float'], 'Group2': ['date', 'datetime']},
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expected_text = """
     index
@@ -1760,11 +1503,7 @@ def test_tabulator_groupby(page, port):
 
     widget = Tabulator(df, groupby=['cat1', 'cat2'])
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expected_text = """
     index
@@ -1816,11 +1555,7 @@ def test_tabulator_groupby(page, port):
 def test_tabulator_hierarchical(page, port, df_multiindex):
     widget = Tabulator(df_multiindex, hierarchical=True)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator('text="Index: groups | subgroups"')).to_have_count(1)
 
@@ -1847,11 +1582,7 @@ def test_tabulator_cell_click_event(page, port, df_mixed):
     values = []
     widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     page.locator('text="idx0"').click()
     wait_until(lambda: len(values) >= 1, page)
@@ -1867,11 +1598,7 @@ def test_tabulator_edit_event(page, port, df_mixed):
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="A"')
     cell.click()
@@ -1890,11 +1617,7 @@ def test_tabulator_edit_event_abort(page, port, df_mixed):
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="3.14"')
     cell.click()
@@ -1902,10 +1625,11 @@ def test_tabulator_edit_event_abort(page, port, df_mixed):
     editable_cell.fill('0')
     editable_cell.press('Escape')
 
-    time.sleep(0.2)
+    expect(cell).to_contain_text('3.14')
 
-    assert not values
-    assert cell.text_content() == '3.14'
+    page.wait_for_timeout(200)
+
+    assert values == []
 
 
 def test_tabulator_edit_event_empty_to_nan(page, port, df_mixed):
@@ -1914,11 +1638,7 @@ def test_tabulator_edit_event_empty_to_nan(page, port, df_mixed):
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="3.14"')
     cell.click()
@@ -1937,11 +1657,7 @@ def test_tabulator_pagination(page, port, df_mixed, pagination):
     page_size = 2
     widget = Tabulator(df_mixed, pagination=pagination, page_size=page_size)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     counts = count_per_page(len(df_mixed), page_size)
     i = 0
@@ -1966,11 +1682,7 @@ def test_tabulator_filter_constant_scalar(page, port, df_mixed):
     fltr, col = 'A', 'str'
     widget.add_filter(fltr, col)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Check the table has the right number of rows
     expect(page.locator('.tabulator-row')).to_have_count(1)
@@ -1988,11 +1700,7 @@ def test_tabulator_filter_constant_list(page, port, df_mixed):
     fltr, col = ['A', 'B'], 'str'
     widget.add_filter(fltr, col)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Check the table has the right number of rows
     expect(page.locator('.tabulator-row')).to_have_count(2)
@@ -2011,11 +1719,7 @@ def test_tabulator_filter_constant_tuple_range(page, port, df_mixed):
     fltr, col = (1, 2), 'int'
     widget.add_filter(fltr, col)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Check the table has the right number of rows
     expect(page.locator('.tabulator-row')).to_have_count(2)
@@ -2038,11 +1742,7 @@ def test_tabulator_filter_param(page, port, df_mixed):
     p = P(s=filt_val)
     widget.add_filter(p.param['s'], column=filt_col)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     df_filtered = df_mixed.loc[df_mixed[filt_col] == filt_val, :]
 
@@ -2072,11 +1772,7 @@ def test_tabulator_filter_bound_function(page, port, df_mixed):
     w_filter = Select(value='A', options=['A', 'B', ''])
     widget.add_filter(bind(filt_, val=w_filter))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     df_filtered = filt_(df_mixed, w_filter.value)
 
@@ -2107,11 +1803,7 @@ def test_tabulator_header_filters_default(page, port, df_mixed, cols):
     df_mixed = df_mixed[cols]
     widget = Tabulator(df_mixed, header_filters=True)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Check that all the columns have a header filter, including the index column
     expect(page.locator('.tabulator-header-filter')).to_have_count(len(cols) + 1)
@@ -2137,11 +1829,7 @@ def test_tabulator_header_filters_default_index(page, port, index, expected_sele
     df = pd.DataFrame(index=index)
     widget = Tabulator(df, header_filters=True)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # The number columns (unit, int and float) are expected to have a number input
     expect(page.locator(expected_selector)).to_have_count(1)
@@ -2155,11 +1843,7 @@ def test_tabulator_header_filters_init_from_editors(page, port, df_mixed):
     }
     widget = Tabulator(df_mixed, header_filters=True, editors=editors)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     number_header = page.locator('input[type="number"]')
     expect(number_header).to_have_count(1)
@@ -2173,11 +1857,7 @@ def test_tabulator_header_filters_init_explicitly(page, port, df_mixed):
     }
     widget = Tabulator(df_mixed, header_filters=header_filters)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Check that only the columns explicitly given a header filter spec have a header filter
     expect(page.locator('.tabulator-header-filter')).to_have_count(len(header_filters))
@@ -2197,11 +1877,7 @@ def test_tabulator_header_filters_set_from_client(page, port, df_mixed):
     }
     widget = Tabulator(df_mixed, header_filters=header_filters)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     number_header = page.locator('input[type="number"]')
     number_header.click()
@@ -2231,11 +1907,7 @@ def test_tabulator_header_filters_set_from_client(page, port, df_mixed):
 def test_tabulator_download(page, port, df_mixed, df_mixed_as_string):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Check that the whole table content is on the page, just
     # to make sure the page is loaded before triggering the
@@ -2267,11 +1939,7 @@ def test_tabulator_streaming_default(page, port):
     df = pd.DataFrame(np.random.random((3, 2)), columns=['A', 'B'])
     widget = Tabulator(df)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator('.tabulator-row')).to_have_count(len(df))
 
@@ -2300,11 +1968,7 @@ def test_tabulator_streaming_no_follow(page, port):
     df = pd.DataFrame(arr, columns=['A', 'B'])
     widget = Tabulator(df, height=100)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator('.tabulator-row')).to_have_count(len(df))
     assert page.locator('text="-1"').count() == 2
@@ -2342,11 +2006,7 @@ def test_tabulator_streaming_no_follow(page, port):
 def test_tabulator_patching(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     new_vals = {
         'str': ['AA', 'BB'],
@@ -2374,11 +2034,7 @@ def test_tabulator_patching_no_event(page, port, df_mixed):
     events = []
     widget.param.watch(lambda e: events.append(e), 'value')
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     new_vals = {
         'str': ['AA', 'BB'],
@@ -2420,11 +2076,7 @@ def test_tabulator_styling_init(page, port, df_mixed):
     )
     widget = Tabulator(df_styled)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     max_int = df_mixed['int'].max()
     max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
@@ -2437,11 +2089,7 @@ def test_tabulator_patching_and_styling(page, port, df_mixed):
     df_styled = df_mixed.style.apply(highlight_max, subset=['int'])
     widget = Tabulator(df_styled)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Changing the highest value in the int column should
     # update the style so that this cell gets a yellow background
@@ -2460,11 +2108,7 @@ def test_tabulator_filters_and_styling(page, port, df_mixed):
     table.add_filter(select, 'str')
     layout = Column(select, table)
 
-    serve(layout, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, layout)
 
     # Filtering to one field and then clicking None again should display all data, with styling
     page.locator('option').nth(1).click()
@@ -2482,11 +2126,7 @@ def test_tabulator_configuration(page, port, df_mixed):
     # Pass a configuration property to disable this behaviour.
     widget = Tabulator(df_mixed, configuration={'columnDefaults': {'headerSort': False}})
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator(".tabulator-sortable")).to_have_count(0)
 
@@ -2502,11 +2142,7 @@ def test_tabulator_editor_datetime_nan(page, port, df_mixed):
 
     widget.on_edit(callback)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Doesn't trigger a table edit event
     cell = page.locator('text="-"')
@@ -2530,11 +2166,7 @@ def test_tabulator_sorters_on_init(page, port, df_mixed, col, dir):
     dir_ = 'asc' if dir == 'ascending' else 'desc'
     widget = Tabulator(df_mixed, sorters=[{'field': col, 'dir': dir_}])
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     sorted_header = page.locator(f'[aria-sort="{dir}"]:visible')
     expect(sorted_header).to_have_attribute('tabulator-field', col)
@@ -2556,11 +2188,7 @@ def test_tabulator_sorters_on_init_multiple(page, port):
     sorters = [{'field': 'col1', 'dir': 'desc'}, {'field': 'col2', 'dir': 'asc'}]
     widget = Tabulator(df, sorters=sorters)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     s1 = page.locator('[aria-sort="descending"]:visible')
     expect(s1).to_have_attribute('tabulator-field', 'col1')
@@ -2578,11 +2206,7 @@ def test_tabulator_sorters_on_init_multiple(page, port):
 def test_tabulator_sorters_set_after_init(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     widget.sorters = [{'field': 'int', 'dir': 'desc'}]
 
@@ -2598,11 +2222,7 @@ def test_tabulator_sorters_set_after_init(page, port, df_mixed):
 def test_tabulator_sorters_from_client(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     page.locator('.tabulator-col', has_text='float').locator('.tabulator-col-sorter').click()
 
@@ -2620,11 +2240,7 @@ def test_tabulator_sorters_from_client(page, port, df_mixed):
 def test_tabulator_sorters_pagination_no_page_reset(page, port, df_mixed):
     widget = Tabulator(df_mixed, pagination='remote', page_size=2)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     page.locator('text="Next"').click()
 
@@ -2645,12 +2261,7 @@ def test_tabulator_sorters_pagination_no_page_reset(page, port, df_mixed):
 def test_tabulator_sorters_pagination(page, port, df_mixed, pagination):
     widget = Tabulator(df_mixed, pagination=pagination, page_size=2)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
-
+    serve_component(page, port, widget)
 
     s = page.locator('.tabulator-col', has_text='str').locator('.tabulator-col-sorter')
     s.click()
@@ -2679,11 +2290,7 @@ def test_tabulator_edit_event_sorters_not_automatically_applied(page, port, df_m
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expected_vals = list(df_mixed['str'].sort_values(ascending=False))
 
@@ -2715,11 +2322,7 @@ def test_tabulator_click_event_and_header_filters(page, port):
     values = []
     widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Set a filter on col1
     str_header = page.locator('input[type="search"]')
@@ -2750,11 +2353,7 @@ def test_tabulator_click_event_and_header_filters_and_streamed_data(page, port):
     values = []
     widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Set a filter on col1
     str_header = page.locator('input[type="search"]')
@@ -2794,11 +2393,7 @@ def test_tabulator_edit_event_and_header_filters_last_row(page, port):
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Set a filter on col1
     str_header = page.locator('input[type="search"]')
@@ -2835,11 +2430,7 @@ def test_tabulator_edit_event_and_header_filters(page, port):
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Set a filter on col1
     str_header = page.locator('input[type="search"]')
@@ -2880,11 +2471,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, port, show_in
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     header = page.locator('input[type="search"]')
     header.click()
@@ -2952,11 +2539,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, po
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     header = page.locator('input[type="search"]')
     header.click()
@@ -3060,11 +2643,7 @@ def test_tabulator_edit_event_integrations(page, port, sorter, python_filter, he
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     if sorter == 'sorter':
         s = page.locator('.tabulator-col', has_text=sorter_col).locator('.tabulator-col-sorter')
@@ -3143,11 +2722,7 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
     values = []
     widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     if sorter == 'sorter':
         s = page.locator('.tabulator-col', has_text=sorter_col).locator('.tabulator-col-sorter')
@@ -3190,11 +2765,7 @@ def test_tabulator_click_event_selection_integrations(page, port, sorter, python
 def test_tabulator_selection_sorters_on_init(page, port, df_mixed):
     widget = Tabulator(df_mixed, sorters=[{'field': 'int', 'dir': 'desc'}])
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Click on the last index cell to select it
     last_index = df_mixed.index[-1]
@@ -3220,11 +2791,7 @@ def test_tabulator_selection_header_filter_unchanged(page, port):
         header_filters={'col1': {'type': 'input', 'func': 'like'}}
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     str_header = page.locator('input[type="search"]')
     str_header.click()
@@ -3251,11 +2818,7 @@ def test_tabulator_selection_header_filter_changed(page, port):
         header_filters={'col1': {'type': 'input', 'func': 'like'}}
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     str_header = page.locator('input[type="search"]')
     str_header.click()
@@ -3274,11 +2837,7 @@ def test_tabulator_loading_no_horizontal_rescroll(page, port, df_mixed):
     df_mixed['Target'] = 'target'
     widget = Tabulator(df_mixed, width=width, widths=widths)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     cell = page.locator('text="target"').first
     # Scroll to the right
@@ -3305,11 +2864,7 @@ def test_tabulator_loading_no_vertical_rescroll(page, port):
     height, width = 200, 200
     widget = Tabulator(df, height=height, width=width)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Scroll to the bottom, and give it a little extra time
     cell = page.locator('text="T"')
@@ -3336,11 +2891,7 @@ def test_tabulator_trigger_value_update(page, port):
     df = pd.DataFrame(np.random.rand(nrows, 2), columns=['a', 'b'])
     widget = Tabulator(df)
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     expect(page.locator('.tabulator-row')).to_have_count(nrows)
     widget.param.trigger('value')
@@ -3359,11 +2910,7 @@ def test_tabulator_selection_header_filter_pagination_updated(page, port, df_mix
         page_size=3,
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     page.locator('text="Last"').click()
     wait_until(lambda: widget.page == 2, page)
@@ -3424,11 +2971,7 @@ def test_tabulator_sort_algorithm(page, port):
     values = []
     widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Click on the cell
     target_val = 'i'
@@ -3497,11 +3040,7 @@ def test_tabulator_sort_algorithm_no_show_index(page, port):
     values = []
     widget.on_click(lambda e: values.append((e.column, e.row, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Click on the cell
     target_val = 'i'
@@ -3538,11 +3077,7 @@ def test_tabulator_sort_algorithm_by_type(page, port, col, vals):
 
     widget = Tabulator(df, sorters=[{'field': col, 'dir': 'asc'}])
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Attempt at making this test more robust.
     page.wait_for_timeout(200)
@@ -3568,11 +3103,7 @@ def test_tabulator_python_filter_edit(page, port):
     values = []
     widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     # Check the table has the right number of rows
     expect(page.locator('.tabulator-row')).to_have_count(2)
@@ -3602,11 +3133,7 @@ def test_tabulator_sorter_default_number(page, port):
     df = pd.DataFrame({'x': []}).astype({'x': int})
     widget = Tabulator(df, sorters=[{"field": "x", "dir": "desc"}])
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, widget)
 
     df2 = pd.DataFrame({'x': [0, 96, 116]})
     widget.value = df2
@@ -3628,13 +3155,7 @@ def test_tabulator_update_hidden_columns(page, port):
         df, hidden_columns=['a', 'b'], sizing_mode='stretch_width'
     )
 
-    serve(widget, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
-
-    time.sleep(0.2)
+    serve_component(page, port, widget)
 
     col_a_cells = page.locator('text="3"')
 
@@ -3642,8 +3163,6 @@ def test_tabulator_update_hidden_columns(page, port):
     assert not col_a_cells.nth(1).is_visible()
 
     widget.hidden_columns = ['b']
-
-    time.sleep(0.2)
 
     col_a_cells = page.locator('text="3"')
     title_bbox = page.locator('text="a"').bounding_box()

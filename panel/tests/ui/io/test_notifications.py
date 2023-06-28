@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 try:
@@ -9,9 +7,9 @@ except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
 from panel.config import config
-from panel.io.server import serve
 from panel.io.state import state
 from panel.template import BootstrapTemplate
+from panel.tests.util import serve_component
 from panel.widgets import Button
 
 
@@ -25,11 +23,7 @@ def test_notifications_no_template(page, port):
         button.on_click(callback)
         return button
 
-    serve(app, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, app)
 
     page.click('.bk-btn')
 
@@ -45,11 +39,8 @@ def test_notifications_with_template(page, port):
         button.on_click(callback)
         tmpl = BootstrapTemplate()
         tmpl.main.append(button)
-        serve(tmpl, port=port, threaded=True, show=False)
 
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, tmpl)
 
     page.click('.bk-btn')
 

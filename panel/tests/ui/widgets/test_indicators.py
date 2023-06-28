@@ -1,12 +1,10 @@
-import time
-
 import pytest
 
 pytestmark = pytest.mark.ui
 
 from bokeh.models import Tooltip
 
-from panel.io.server import serve
+from panel.tests.util import serve_component
 from panel.widgets import TooltipIcon
 
 try:
@@ -21,11 +19,7 @@ except ImportError:
 def test_plaintext_tooltip(page, port, value):
     tooltip_icon = TooltipIcon(value="Test")
 
-    serve(tooltip_icon, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, tooltip_icon)
 
     icon = page.locator(".bk-icon")
     expect(icon).to_have_count(1)

@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 try:
@@ -9,8 +7,8 @@ except Exception:
 
 altair_available = pytest.mark.skipif(alt is None, reason='Requires altair')
 
-from panel.io.server import serve
 from panel.pane import Vega
+from panel.tests.util import serve_component, wait_until
 
 try:
     from playwright.sync_api import expect
@@ -37,16 +35,10 @@ vega_example = {
 
 def test_vega_no_console_errors(page, port):
     vega = Vega(vega_example)
-    serve(vega, port=port, threaded=True, show=False)
 
-    msgs = []
-    page.on("console", lambda msg: msgs.append(msg))
+    msgs = serve_component(page, port, vega)
 
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
-
-    time.sleep(1)
+    page.wait_for_timeout(1000)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
@@ -62,11 +54,7 @@ def test_altair_select_point(page, port, dataframe):
 
     pane = Vega(chart)
 
-    serve(pane, port=port, threaded=True, show=False)
-
-    time.sleep(1)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, pane)
 
     vega_plot = page.locator('.vega-embed')
     expect(vega_plot).to_have_count(1)
@@ -75,16 +63,12 @@ def test_altair_select_point(page, port, dataframe):
 
     page.mouse.click(bbox['x']+200, bbox['y']+150)
 
-    time.sleep(0.2)
-
-    assert pane.selection.multi == [2]
+    wait_until(lambda: pane.selection.multi == [2], page)
 
     page.keyboard.down('Shift')
     page.mouse.click(bbox['x']+300, bbox['y']+100)
 
-    time.sleep(0.2)
-
-    assert pane.selection.multi == [2, 3]
+    wait_until(lambda: pane.selection.multi == [2, 3], page)
 
 @altair_available
 def test_altair_select_interval(page, port, dataframe):
@@ -94,11 +78,7 @@ def test_altair_select_interval(page, port, dataframe):
 
     pane = Vega(chart)
 
-    serve(pane, port=port, threaded=True, show=False)
-
-    time.sleep(1)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, pane)
 
     vega_plot = page.locator('.vega-embed')
     expect(vega_plot).to_have_count(1)
@@ -111,9 +91,7 @@ def test_altair_select_interval(page, port, dataframe):
     page.mouse.move(bbox['x']+300, bbox['y']+300, steps=5)
     page.mouse.up()
 
-    time.sleep(0.2)
-
-    assert pane.selection.brush == {'int': [0.61, 2.61], 'float': [0.33333333333333326, 7]}
+    wait_until(lambda: pane.selection.brush == {'int': [0.61, 2.61], 'float': [0.33333333333333326, 7]}, page)
 
 
 @altair_available
@@ -135,11 +113,7 @@ def test_altair_select_agg(page, port, dataframe):
 
     pane = Vega(chart)
 
-    serve(pane, port=port, threaded=True, show=False)
-
-    time.sleep(1)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, pane)
 
     vega_plot = page.locator('.vega-embed')
     expect(vega_plot).to_have_count(1)
@@ -148,13 +122,9 @@ def test_altair_select_agg(page, port, dataframe):
 
     page.mouse.click(bbox['x']+50, bbox['y']+50)
 
-    time.sleep(0.2)
-
-    assert pane.selection.multi_bar_ref == [{'str': 'C'}]
+    wait_until(lambda: pane.selection.multi_bar_ref == [{'str': 'C'}], page)
 
     page.keyboard.down('Shift')
     page.mouse.click(bbox['x']+50, bbox['y']+10)
 
-    time.sleep(0.2)
-
-    assert pane.selection.multi_bar_ref == [{'str': 'C'}, {'str': 'A'}]
+    wait_until(lambda: pane.selection.multi_bar_ref == [{'str': 'C'}, {'str': 'A'}], page)

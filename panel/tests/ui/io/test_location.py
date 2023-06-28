@@ -4,18 +4,17 @@ import pytest
 
 import panel as pn
 
-from panel.io.server import serve
-from panel.tests.util import serve_panel_widget
+from panel.tests.util import serve_component, wait_until
 from panel.util import parse_query
 from panel.widgets import FloatSlider, RangeSlider, TextInput
 
 pytestmark = pytest.mark.ui
 
 
-def verify_document_location(expected_location, actual_location):
+def verify_document_location(expected_location, page):
     for param in expected_location:
-        assert param in actual_location
-        assert actual_location[param] == expected_location[param]
+        wait_until(lambda: param in page.evaluate('() => document.location'), page)
+        wait_until(lambda: page.evaluate('() => document.location')[param] == expected_location[param], page)
 
 
 def test_set_url_params_update_document(page, port):
@@ -43,8 +42,7 @@ def test_set_url_params_update_document(page, port):
         pn.state.onload(cb)
         return widgets
 
-    serve_panel_widget(page, port, app)
-    page.wait_for_timeout(500)
+    serve_component(page, port, app)
 
     expected_location = {
         'protocol': 'http:',
@@ -54,16 +52,15 @@ def test_set_url_params_update_document(page, port):
         'hash': '',
         'reload': None
     }
-    actual_location = page.evaluate('() => document.location')
-    verify_document_location(expected_location, actual_location)
-    assert parse_query(actual_location['search']) == {
+    verify_document_location(expected_location, page)
+    wait_until(lambda: parse_query(page.evaluate('() => document.location')['search']) == {
         'range_value': [1, 2],
         'slider_value': 2,
         'text_value': 'Simple Text'
-    }
+    }, page)
 
 
-def test_set_hash_update_documment(page, port):
+def test_set_hash_update_document(page, port):
     def app():
         """simple app to set hash at onload"""
         widget = TextInput(name='Text')
@@ -74,8 +71,7 @@ def test_set_hash_update_documment(page, port):
         pn.state.onload(cb)
         return widget
 
-    serve_panel_widget(page, port, app)
-    page.wait_for_timeout(200)
+    serve_component(page, port, app)
 
     expected_location = {
         'href': f'http://localhost:{port}/#123',
@@ -88,7 +84,7 @@ def test_set_hash_update_documment(page, port):
         'reload': None
     }
     actual_location = page.evaluate('() => document.location')
-    verify_document_location(expected_location, actual_location)
+    verify_document_location(expected_location, actual_location, page)
 
 
 def test_set_document_location_update_state(page, port):
@@ -106,10 +102,7 @@ def test_set_document_location_update_state(page, port):
         pn.state.onload(cb)
         return widget
 
-    serve(app, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-    page.goto(f"http://localhost:{port}/?text_value=Text+Value")
-    page.wait_for_timeout(200)
+    serve_component(page, port, app, suffix="/?text_value=Text+Value")
 
     # confirm value of the text input widget
-    assert widget.value == 'Text Value'
+    wait_until(lambda: widget.value == 'Text Value', page)

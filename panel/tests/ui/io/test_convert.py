@@ -213,7 +213,7 @@ def test_pyodide_test_convert_tabulator_app(page, runtime, launch_app):
 
     page.click('.bk-btn')
 
-    time.sleep(1)
+    page.wait_for_timeout(1)
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 

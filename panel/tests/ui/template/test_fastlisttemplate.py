@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 try:
@@ -8,9 +6,9 @@ try:
 except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
-from panel.io.server import serve
 from panel.pane import Markdown
 from panel.template import FastListTemplate
+from panel.tests.util import serve_component
 
 
 def test_fast_list_template_no_console_errors(page, port):
@@ -19,14 +17,9 @@ def test_fast_list_template_no_console_errors(page, port):
 
     tmpl.main.append(md)
 
-    serve(tmpl, port=port, threaded=True, show=False)
+    msgs = serve_component(page, port, tmpl)
 
-    time.sleep(0.2)
-
-    msgs = []
-    page.on("console", lambda msg: msgs.append(msg))
-
-    page.goto(f"http://localhost:{port}", timeout=40_000)
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
 
     known_messages = [
         "[bokeh] setting log level to: 'info'",
@@ -45,11 +38,7 @@ def test_fast_list_template_updates(page, port):
 
     tmpl.main.append(md)
 
-    serve(tmpl, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}", timeout=40_000)
+    serve_component(page, port, tmpl)
 
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
     md.object = 'Updated'

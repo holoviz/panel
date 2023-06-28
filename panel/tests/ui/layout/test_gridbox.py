@@ -1,9 +1,7 @@
-import time
-
 import pytest
 
 from panel import Column, GridBox, Spacer
-from panel.io.server import serve
+from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
@@ -13,11 +11,7 @@ def test_gridbox(page, port):
         ncols=4
     )
 
-    serve(grid, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, grid)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
 
@@ -25,8 +19,6 @@ def test_gridbox(page, port):
     assert bbox['height'] == 150
 
     grid.ncols = 6
-
-    time.sleep(0.1)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
 
@@ -44,11 +36,7 @@ def test_gridbox_unequal(page, port):
         ncols=4
     )
 
-    serve(grid, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, grid)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox div")
@@ -74,8 +62,6 @@ def test_gridbox_unequal(page, port):
     assert bbox5['height'] == 30
 
     grid.ncols = 5
-
-    time.sleep(0.1)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox div")
@@ -109,11 +95,7 @@ def test_gridbox_stretch_width(page, port):
         ncols=2, sizing_mode='stretch_width'
     ), width=800)
 
-    serve(grid, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, grid)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox div")
@@ -143,11 +125,7 @@ def test_gridbox_stretch_height(page, port):
         ncols=2, sizing_mode='stretch_height'
     ), height=800)
 
-    serve(grid, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, grid)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox div")
@@ -178,11 +156,7 @@ def test_gridbox_stretch_both(page, port):
         ncols=2, sizing_mode='stretch_both'
     ), height=800, width=600)
 
-    serve(grid, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, grid)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox div")

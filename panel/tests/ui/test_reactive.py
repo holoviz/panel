@@ -1,5 +1,3 @@
-import time
-
 import param
 import pytest
 
@@ -9,8 +7,8 @@ try:
 except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
-from panel.io.server import serve
 from panel.reactive import ReactiveHTML
+from panel.tests.util import serve_component, wait_until
 
 
 class ReactiveComponent(ReactiveHTML):
@@ -30,11 +28,7 @@ class ReactiveComponent(ReactiveHTML):
 def test_reactive_html_click_js_event(page, port):
     component = ReactiveComponent()
 
-    serve(component, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, component)
 
     expect(page.locator(".reactive")).to_have_text('1')
 
@@ -42,65 +36,51 @@ def test_reactive_html_click_js_event(page, port):
 
     expect(page.locator(".reactive")).to_have_text('2')
 
-    time.sleep(0.2)
-
-    assert component.count == 2
+    wait_until(lambda: component.count == 2, page)
 
 def test_reactive_html_set_loading_no_rerender(page, port):
     component = ReactiveComponent()
 
-    serve(component, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, component)
 
     expect(page.locator(".reactive")).to_have_text('1')
+
     component.loading = True
-    time.sleep(0.1)
     expect(page.locator(".reactive")).to_have_text('1')
+
     component.loading = False
-    time.sleep(0.1)
     expect(page.locator(".reactive")).to_have_text('1')
 
 def test_reactive_html_changing_css_classes_rerenders(page, port):
     component = ReactiveComponent()
 
-    serve(component, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, component)
 
     expect(page.locator(".reactive")).to_have_text('1')
 
     component.css_classes = ['custom']
-    time.sleep(0.1)
+
     expect(page.locator(".reactive")).to_have_text('1')
 
     component.loading = True
-    time.sleep(0.1)
+
     expect(page.locator(".reactive")).to_have_text('1')
 
     component.css_classes = []
-    time.sleep(0.1)
+
     expect(page.locator(".reactive")).to_have_text('1')
 
 def test_reactive_html_set_background_no_rerender(page, port):
     component = ReactiveComponent()
 
-    serve(component, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, component)
 
     expect(page.locator(".reactive")).to_have_text('1')
 
     component.styles = dict(background='red')
-    time.sleep(0.1)
+
     expect(page.locator(".reactive")).to_have_text('1')
 
     component.styles = dict(background='green')
-    time.sleep(0.1)
+
     expect(page.locator(".reactive")).to_have_text('1')

@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 pytestmark = pytest.mark.ui
@@ -10,9 +8,9 @@ try:
 except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
-from panel.io.server import serve
 from panel.io.state import state
 from panel.pane import Markdown
+from panel.tests.util import serve_component
 
 
 def test_on_load(page, port):
@@ -25,10 +23,6 @@ def test_on_load(page, port):
         state.onload(cb)
         return md
 
-    serve(app, port=port, threaded=True, show=False)
-
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, app)
 
     expect(page.locator('.markdown').locator("div")).to_have_text('Loaded\n')

@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 pytestmark = pytest.mark.ui
@@ -7,16 +5,19 @@ pytestmark = pytest.mark.ui
 from panel.io.server import serve
 from panel.layout import Row
 from panel.pane import PDF, PNG, SVG
+from panel.tests.util import serve_component, wait_for_server
 
 PDF_FILE = 'https://assets.holoviz.org/panel/samples/pdf_sample.pdf'
 PNG_FILE = 'https://assets.holoviz.org/panel/samples/png_sample.png'
 SVG_FILE = 'https://assets.holoviz.org/panel/samples/svg_sample.svg'
 
-def get_bbox(page, port, obj, wait=0.5):
-    serve(obj, port=port, threaded=True, show=False)
+def get_bbox(page, port, obj):
+    serve(obj, port=port, threaded=True, show=False, liveness=True)
     if isinstance(obj, Row):
         obj = obj[0]
-    time.sleep(wait)
+
+    wait_for_server(port)
+
     if obj.embed:
         page.goto(f"http://localhost:{port}")
         return page.locator("img").bounding_box()
@@ -172,10 +173,7 @@ def test_svg_stretch_both(embed, page, port):
 def test_pdf_embed(page, port):
     pdf_pane = PDF(PDF_FILE, embed=True)
 
-    serve(pdf_pane, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, pdf_pane)
 
     src = page.locator("embed").get_attribute('src')
 
@@ -186,10 +184,7 @@ def test_pdf_embed_start_page(page, port):
     # The pdf does not have 2 pages just to verify #page is set
     pdf_pane = PDF(PDF_FILE, start_page=22, embed=True)
 
-    serve(pdf_pane, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, pdf_pane)
 
     src = page.locator("embed").get_attribute('src')
 
@@ -200,10 +195,7 @@ def test_pdf_no_embed_start_page(page, port):
     # The pdf does not have 2 pages just to verify #page is set
     pdf_pane = PDF(PDF_FILE, start_page=22, embed=False)
 
-    serve(pdf_pane, port=port, threaded=True, show=False)
-    time.sleep(0.2)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, pdf_pane)
 
     src = page.locator("embed").get_attribute('src')
     assert src == PDF_FILE + "#page=22"

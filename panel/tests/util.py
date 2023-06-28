@@ -12,6 +12,7 @@ from threading import Thread
 
 import numpy as np
 import pytest
+import requests
 
 from packaging.version import Version
 
@@ -202,10 +203,28 @@ def get_ctrl_modifier():
         raise ValueError(f'No control modifier defined for platform {sys.platform}')
 
 
-def serve_panel_widget(page, port, pn_widget, sleep=0.5):
-    serve(pn_widget, port=port, threaded=True, show=False)
-    time.sleep(sleep)
-    page.goto(f"http://localhost:{port}")
+def serve_component(page, port, pn_widget, suffix=''):
+    msgs = []
+    page.on("console", lambda msg: msgs.append(msg))
+
+    serve(pn_widget, port=port, threaded=True, show=False, liveness=True)
+    wait_for_server(port)
+    page.goto(f"http://localhost:{port}{suffix}")
+    return msgs
+
+
+def wait_for_server(port, timeout=3):
+    start = time.time()
+    url = f"http://localhost:{port}/liveness"
+    while True:
+        try:
+            if requests.get(url).ok:
+                return
+        except Exception:
+            pass
+        time.sleep(0.05)
+        if (time.time()-start) > timeout:
+            raise RuntimeError(f'{url} did not respond before timeout.')
 
 
 @contextlib.contextmanager

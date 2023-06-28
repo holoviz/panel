@@ -1,13 +1,12 @@
 import io
 import sys
 import tempfile
-import time
 
 import param
 import pytest
 
-from panel.io.server import serve
 from panel.layout import Column, Tabs
+from panel.tests.util import serve_component
 from panel.widgets import FileDownload, TextInput
 
 pytestmark = pytest.mark.ui
@@ -32,11 +31,7 @@ def test_file_download_updates_when_navigating_between_dynamic_tabs(page, port):
         dynamic=True
     )
 
-    serve(tabs, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, tabs)
 
     with page.expect_download() as download_info:
         page.click('.bk-btn > a')

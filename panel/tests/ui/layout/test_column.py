@@ -1,9 +1,7 @@
-import time
-
 import pytest
 
 from panel import Column, Spacer
-from panel.io.server import serve
+from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
@@ -15,11 +13,7 @@ def test_column_scroll(page, port):
         scroll=True, height=420
     )
 
-    serve(col, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, col)
 
     bbox = page.locator(".bk-Column").bounding_box()
 

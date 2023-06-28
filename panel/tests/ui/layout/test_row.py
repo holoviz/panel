@@ -1,25 +1,19 @@
-import time
-
 import pytest
 
 from panel import Row, Spacer
-from panel.io.server import serve
+from panel.tests.util import serve_component
 
 pytestmark = pytest.mark.ui
 
 def test_row_scroll(page, port):
-    col = Row(
+    row = Row(
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
         Spacer(styles=dict(background='blue'), width=200, height=200),
         scroll=True, width=420
     )
 
-    serve(col, port=port, threaded=True, show=False)
-
-    time.sleep(0.5)
-
-    page.goto(f"http://localhost:{port}")
+    serve_component(page, port, row)
 
     bbox = page.locator(".bk-Row").bounding_box()
 

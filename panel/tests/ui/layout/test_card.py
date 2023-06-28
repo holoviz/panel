@@ -1,7 +1,7 @@
 import pytest
 
 from panel import Card
-from panel.tests.util import serve_panel_widget
+from panel.tests.util import serve_component
 from panel.widgets import FloatSlider, TextInput
 
 try:
@@ -23,7 +23,7 @@ def card_components():
 def test_card_default(page, port, card_components):
     w1, w2 = card_components
     card = Card(w1, w2)
-    serve_panel_widget(page, port, card)
+    serve_component(page, port, card)
 
     card_elements = page.locator('.card > div, .card > button')
     # the card is expanded as default and includes a header and its inner objects
@@ -45,7 +45,7 @@ def test_card_default(page, port, card_components):
 def test_card_collapsed(page, port, card_components):
     w1, w2 = card_components
     card = Card(w1, w2)
-    serve_panel_widget(page, port, card)
+    serve_component(page, port, card)
 
     card_elements = page.locator('.card > div, .card > button')
     card_button = page.locator('.card-button')
@@ -67,7 +67,7 @@ def test_card_collapsed(page, port, card_components):
 def test_card_not_collapsible(page, port, card_components):
     w1, w2 = card_components
     card = Card(w1, w2, collapsible=False)
-    serve_panel_widget(page, port, card)
+    serve_component(page, port, card)
 
     # no card button to disable collapsing the card
     card_button = page.locator('.card-button')
@@ -80,7 +80,7 @@ def test_card_not_collapsible(page, port, card_components):
 def test_card_hide_header(page, port, card_components):
     w1, w2 = card_components
     card = Card(w1, w2, hide_header=True)
-    serve_panel_widget(page, port, card)
+    serve_component(page, port, card)
 
     # no card header
     card_header = page.locator('.card-header')
@@ -93,7 +93,7 @@ def test_card_hide_header(page, port, card_components):
 def test_card_objects(page, port, card_components):
     w1, w2 = card_components
     card = Card(w1, w2)
-    serve_panel_widget(page, port, card)
+    serve_component(page, port, card)
 
     new_objects = [w2]
     # set new list of objects for the card
@@ -119,7 +119,7 @@ def test_card_title(page, port, card_components):
     w1, w2 = card_components
     card_title = 'Card Title'
     card = Card(w1, w2, title=card_title)
-    serve_panel_widget(page, port, card)
+    serve_component(page, port, card)
 
     assert page.locator('.card-title').locator("div").inner_text() == card_title
 
@@ -129,7 +129,7 @@ def test_card_background(page, port, card_components):
     background = 'rgb(128, 128, 128)'
     card = Card(w1, w2, styles=dict(background=background))
 
-    serve_panel_widget(page, port, card)
+    serve_component(page, port, card)
 
     card_widget = page.locator('.card')
     assert f'background: {background};' in card_widget.get_attribute('style')
@@ -140,7 +140,7 @@ def test_card_background_legacy(page, port, card_components):
     background = 'rgb(128, 128, 128)'
     card = Card(w1, w2, background=background)
 
-    serve_panel_widget(page, port, card)
+    serve_component(page, port, card)
 
     card_widget = page.locator('.card')
     assert f'background: {background};' in card_widget.get_attribute('style')
@@ -155,7 +155,7 @@ def test_card_header_color_formatting(page, port):
         active_header_background=active_header_background,
         header_background=header_background,
     )
-    serve_panel_widget(page, port, card)
+    serve_component(page, port, card)
 
     card_header = page.locator('.card-header')
     assert f'color: {header_color};' in card_header.get_attribute('style')
@@ -181,7 +181,7 @@ def test_card_custom_css(page, port):
     card.header_css_classes.append(additional_header_css_class)
     card.button_css_classes.append(additional_button_css_class)
 
-    serve_panel_widget(page, port, card)
+    serve_component(page, port, card)
 
     card_widget = page.locator(f'.card.{additional_css_class}')
     expect(card_widget).to_have_count(1)
