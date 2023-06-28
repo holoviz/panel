@@ -1,5 +1,10 @@
 import pytest
 
+try:
+    from playwright.sync_api import expect
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
+
 pytestmark = pytest.mark.ui
 
 from panel.pane import Markdown
@@ -11,9 +16,11 @@ def test_update_markdown_pane(page, port):
 
     serve_component(page, port, md)
 
-    assert page.locator(".markdown").locator("div").text_content() == 'Initial\n'
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
+
     md.object = 'Updated'
-    assert page.locator(".markdown").locator("div").text_content() == 'Updated\n'
+
+    expect(page.locator(".markdown").locator("div")).to_have_text('Updated\n')
 
 
 def test_update_markdown_pane_resizes(page, port):
