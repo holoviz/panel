@@ -573,9 +573,10 @@ class Reactive(Syncable, Viewable):
             raise ValueError(
                 'refs should never be captured.'
             )
+        from .react import react
         pobj = self.param[pname]
         pobj._validate(value)
-        if isinstance(pobj, param.Dynamic) and callable(value) and hasattr(value, '_dinfo'):
+        if isinstance(pobj, param.Dynamic) and callable(value) and (hasattr(value, '_dinfo') or isinstance(value, react)):
             raise ValueError(
                 'Dynamic parameters should not capture functions with dependencies.'
             )

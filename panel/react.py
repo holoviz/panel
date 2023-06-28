@@ -85,9 +85,8 @@ import math
 import operator
 import sys
 
-from collections.abc import Callable
 from types import FunctionType, MethodType
-from typing import Any
+from typing import Any, Callable, Optional
 
 import param
 
@@ -184,11 +183,25 @@ def _find_widgets(op):
             isinstance(op_arg.owner, Widget) and
             op_arg.owner not in widgets):
             widgets.append(op_arg.owner)
-        if isinstance(op_arg, slice):
-            nested_op = {"args": [op_arg.start, op_arg.stop, op_arg.step], "kwargs": {}}
+        if hasattr(op_arg, '_dinfo'):
+            dinfo = op_arg._dinfo
+            args = list(dinfo.get('dependencies', []))
+            kwargs = dinfo.get('kw', {})
+            nested_op = {"args": args, "kwargs": kwargs}
             for widget in _find_widgets(nested_op):
                 if widget not in widgets:
                     widgets.append(widget)
+        elif isinstance(op_arg, slice):
+            nested_op = {"args": [op_arg.start, op_arg.stop, op_arg.step], "kwargs": {}}
+        elif isinstance(op_arg, (list, tuple)):
+            nested_op = {"args": op_arg, "kwargs": {}}
+        elif isinstance(op_arg, dict):
+            nested_op = {"args": (), "kwargs": op_arg}
+        else:
+            continue
+        for widget in _find_widgets(nested_op):
+            if widget not in widgets:
+                widgets.append(widget)
     return widgets
 
 
@@ -239,7 +252,9 @@ class react_base:
     _method_handlers: dict[str, Callable] = {}
 
     @classmethod
-    def register_accessor(cls, name: str, accessor: Callable[react, Any]):
+    def register_accessor(
+        cls, name: str, accessor: Callable[[react], Any], predicate = Optional[Callable[[Any], bool]]
+    ):
         """
         Registers an accessor that extends react with custom
         behavior.
@@ -248,16 +263,17 @@ class react_base:
         ---------
         name: str
           The name of the accessor will be attribute-accessible under.
-        accessor: Callable[react, any]
+        accessor: Callable[[react], any]
           A callable that will return the accessor namespace object
           given the react object it is registered on.
+        predicate: Callable[[Any], bool] | None
         """
         if name in cls._accessors:
             raise ValueError(
                 f'Cannot register {name!r} accessor as another accessor was already '
                 'registered under the same name.'
             )
-        cls._accessors[name] = accessor
+        cls._accessors[name] = (accessor, predicate)
 
     @classmethod
     def register_method_handler(cls, method, handler):
@@ -322,6 +338,10 @@ class react_base:
         self._dirty = True
         self._current_ = None
         self._setup_invalidations(depth)
+        for name, (accessor, predicate) in react._accessors.items():
+            if predicate is None or predicate(self._current):
+                setattr(self, name, accessor(self))
+
 
     @property
     def _obj(self):
@@ -466,7 +486,7 @@ class react_base:
             return self._clone(copy=True)
         # This is executed when one runs e.g. `dfi.A > 1`, in which case after
         # dfi.A the _method 'A' is set (in __getattribute__) which allows
-        # _resolve_accessor to keep building the operation dim expression.
+        # _resolve_accessor to record the attribute access as an operation.
         operation = {
             'fn': getattr,
             'args': (self._method,),
@@ -801,8 +821,6 @@ class react(react_base):
         })
         super().__init__(obj, **kwargs)
         self._display_opts = display_opts
-        for name, accessor in react._accessors.items():
-            setattr(self, name, accessor(self))
 
     def _clone(self, operation=None, copy=False, **kwargs):
         kwargs = dict(self._display_opts, **kwargs)
@@ -953,11 +971,11 @@ react.register_display_handler(
 
 def _plot_handler(interactive):
     fig_wrapper = FigureWrapper()
-    def handler(obj, *args, **kwargs):
+    def plot(obj, *args, **kwargs):
         if 'ax' not in kwargs:
             kwargs['ax'] = fig_wrapper.get_ax()
         obj.plot(*args, **kwargs)
         return fig_wrapper.figure
-    return handler
+    return plot
 
 react.register_method_handler('plot', _plot_handler)
