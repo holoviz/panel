@@ -956,10 +956,10 @@ def _reactive_transform(obj):
 
 register_depends_transform(_reactive_transform)
 
-reactive_base.register_display_handler(
+reactive.register_display_handler(
     is_dataframe, handler=DataFrame, max_rows=100
 )
-reactive_base.register_display_handler(
+reactive.register_display_handler(
     is_series, handler=DataFrame, max_rows=100
 )
 
