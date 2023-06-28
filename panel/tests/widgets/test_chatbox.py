@@ -206,8 +206,8 @@ def test_chat_box_allow_input(document, comm):
     chat_box = ChatBox(allow_input=True)
     assert chat_box.allow_input == True
     assert isinstance(chat_box._message_inputs["TextInput"], TextInput)
-    # column, text input, button
-    assert len(chat_box._composite) == 3
+    # column, text input, button, hidden_scroll_trigger
+    assert len(chat_box._composite) == 4
 
 
 def test_chat_box_not_allow_input(document, comm):
@@ -215,8 +215,8 @@ def test_chat_box_not_allow_input(document, comm):
     assert chat_box.allow_input == False
     assert chat_box._message_inputs == {}
     assert chat_box._send_button is None
-    # column, button
-    assert len(chat_box._composite) == 2
+    # column, button, hidden_scroll_trigger
+    assert len(chat_box._composite) == 3
 
 
 def test_chat_box_primary_name(document, comm):
@@ -380,6 +380,73 @@ def test_chat_box_replace_value(document, comm):
     assert chat_box.rows[0].value == ["Hey!"]
     assert chat_box.rows[1].value == ["Bye"]
     assert chat_box.value == [{"You": "Hey!"}, {"Bot": "Bye"}]
+
+
+def test_chat_box_paginate_keep_likes(document, comm):
+    chat_box = ChatBox(
+        name="Chat",
+        value=[{"A": "a"}, {"B": "b"}, {"C": "c"}],
+        max_rows=2,
+        fetch_size=1,
+        allow_likes=True,
+    )
+    chat_box.rows[1].liked = True
+    assert len(chat_box._chat_log) == 2
+    assert chat_box.rows[0].value == ["b"]
+    assert chat_box.rows[1].value == ["c"]
+    assert chat_box.rows[1].liked
+
+    # fetch more
+    chat_box._fetch_button.param.trigger("clicks")
+    assert len(chat_box._chat_log) == 3
+    assert chat_box.rows[0].value == ["a"]
+    assert chat_box.rows[1].value == ["b"]
+    assert chat_box.rows[2].value == ["c"]
+    assert chat_box.rows[2].liked
+
+    # enter new message
+    chat_box.append({"D": "d"})
+    chat_box.rows[1].liked = True
+    assert len(chat_box._chat_log) == 2
+    assert chat_box.rows[0].value == ["c"]
+    assert chat_box.rows[1].value == ["d"]
+
+    # fetch again
+    chat_box._fetch_button.param.trigger("clicks")
+    assert len(chat_box._chat_log) == 3
+    assert chat_box.rows[0].value == ["b"]
+    assert chat_box.rows[1].value == ["c"]
+    assert chat_box.rows[2].value == ["d"]
+    assert chat_box.rows[1].liked
+    assert chat_box.rows[2].liked
+
+    # fetch again
+    chat_box._fetch_button.param.trigger("clicks")
+    assert len(chat_box._chat_log) == 4
+    assert chat_box.rows[0].value == ["a"]
+    assert chat_box.rows[1].value == ["b"]
+    assert chat_box.rows[2].value == ["c"]
+    assert chat_box.rows[3].value == ["d"]
+    assert chat_box.rows[2].liked
+    assert chat_box.rows[3].liked
+
+
+def test_chat_box_height(document, comm):
+    chat_box = ChatBox(
+        name="Chat",
+        value=[{"A": "a"}, {"B": "b"}, {"C": "c"}],
+        height=100,
+    )
+    assert chat_box._chat_log.height == 100
+
+
+def test_chat_box_max_height(document, comm):
+    chat_box = ChatBox(
+        name="Chat",
+        value=[{"A": "a"}, {"B": "b"}, {"C": "c"}],
+        max_height=100,
+    )
+    assert chat_box._chat_log.height == 100
 
 
 def test_chat_row(document, comm):

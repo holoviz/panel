@@ -8,7 +8,7 @@ import param
 
 from .._param import Margin
 from ..layout import (
-    Column, ListPanel, Row, Tabs,
+    Column, HSpacer, ListPanel, Row, Tabs, WidgetBox,
 )
 from ..pane.base import PaneBase, panel as _panel
 from ..pane.image import Image
@@ -16,7 +16,7 @@ from ..pane.markup import Markdown
 from ..viewable import Layoutable, Viewable
 from .base import CompositeWidget
 from .button import Button, Toggle
-from .input import StaticText, TextInput
+from .input import IntInput, StaticText, TextInput
 
 
 class ChatRow(CompositeWidget):
@@ -258,6 +258,12 @@ class ChatBox(CompositeWidget):
     show_names = param.Boolean(default=True, doc="""
         Whether to show chat participant's names below the message.""")
 
+    max_rows = param.Integer(default=10, doc="""
+        Maximum number of rows to display.""")
+
+    fetch_size = param.Integer(default=5, doc="""
+        Number of rows on each fetch.""")
+
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
     def __init__(self, **params):
@@ -266,6 +272,8 @@ class ChatBox(CompositeWidget):
             params["sizing_mode"] = None
 
         super().__init__(**params)
+        self._num_loaded_rows = None
+        self._cached_rows = []
 
         # Set up layout
         layout = {
@@ -273,51 +281,93 @@ class ChatBox(CompositeWidget):
             for p in Layoutable.param
             if p not in ("name", "styles", "margin") and getattr(self, p) is not None
         }
-        chat_layout = layout.copy()
-        chat_layout.update(
+        chat_log_layout = layout.copy()
+        chat_log_layout.update(
             styles={
                 "overflow-y": "auto",
                 "overflow-x": "auto",
                 "flex-direction": "column" if self.ascending else "column-reverse",
             },
+            # used to scroll
+            height=layout.get("max_height") or layout.get("height", 500),
+            sizing_mode="stretch_width",
+            css_classes=layout.get("css_classes", []) + ["chat-log"]
         )
-        self._chat_title = StaticText(
-            value=f"{self.name}",
-            styles={"font-size": "1.5em"},
+        self._chat_log = WidgetBox(**chat_log_layout)
+        button_layout = dict(
             align="center",
-        )
-        self._chat_log = Column(**chat_layout)
-        self._scroll_button = Button(
-            name="Scroll to latest",
-            align="center",
-            sizing_mode="fixed",
             width=115,
             height=35,
-            margin=0,
+            margin=(0, 15),
         )
-        self._add_scroll_callback(self._scroll_button, "clicks")
+        self._scroll_button = Button(
+            name="Scroll to latest",
+            **button_layout
+        )
+        self._fetch_button = Button(
+            name="Fetch more",
+            disabled=True,
+            **button_layout
+        )
+        button_row = Row(
+            HSpacer(),
+            self._scroll_button,
+            self._fetch_button,
+            HSpacer(),
+            sizing_mode="stretch_width",
+            align="center",
+        )
         self._current_hue = self.message_hue
         if self._current_hue:
             self._default_colors = self._generate_default_hsl(self._current_hue)
         else:
             self._default_colors = []
 
-        # add interactivity
-        self.param.watch(self._refresh_log, "value")
+        # a workaround hack so I can trigger the Javascript through Python
+        # by changing the value incrementally
+        self._hidden_scroll_trigger = IntInput(visible=False)
 
-        box_objects = [self._chat_title] if self.name else []
+        box_objects = []
         box_objects.append(self._chat_log)
         if self.ascending:
-            box_objects.insert(0, self._scroll_button)
+            box_objects.insert(0, button_row)
         else:
-            box_objects.append(self._scroll_button)
+            box_objects.append(button_row)
 
         if self.allow_input:
             self._attach_input(box_objects, layout)
         else:
             self._message_inputs = {}
             self._send_button = None
+        box_objects.append(self._hidden_scroll_trigger)
+
+        if self.name:
+            self._chat_title = StaticText(
+                value=f"{self.name}",
+                styles={"font-size": "2em"},
+                align="center",
+            )
+            box_objects.insert(0, self._chat_title)
+
         self._composite[:] = box_objects
+
+        # add interactivity
+        self.param.watch(self._refresh_log, "value")
+        self._fetch_button.on_click(self._fetch_more)
+        self._scroll_button.on_click(self._trigger_scroll_callback)
+        self._hidden_scroll_trigger.jscallback(
+            value="""
+                const outerColumn = document.querySelector(".bk-Column");
+                const column = outerColumn.shadowRoot.querySelector(".bk-Column");
+
+                if (ascending) {
+                    column.scrollTop = column.scrollHeight;
+                } else {
+                    column.scrollTop = -column.scrollHeight;
+                }
+            """,
+            args={"ascending": self.ascending},
+        )
 
         # populate with initial value
         self.param.trigger("value")
@@ -334,39 +384,11 @@ class ChatBox(CompositeWidget):
             (f"hsl({hue}, 15%, 60%)", "white"),
         ]
 
-    def _add_scroll_callback(self, obj: Viewable, what: str):
+    def _trigger_scroll_callback(self, _):
         """
-        main is for template
-        outerColumn & column is for fixed height
-        window is for none of the above
+        Hack to trigger Javascript with Python.
         """
-        code = """
-            const outerColumn = document.querySelector(".bk-Column");
-            const column = outerColumn.shadowRoot.querySelector(".bk-Column");
-            const main = document.getElementById("main");
-
-            if (ascending) {
-                column.scrollTop = column.scrollHeight;
-                if (main) {
-                    main.scrollTop = main.scrollHeight;
-                }
-                if (column.scrollTop == 0) {
-                    window.scrollTo(0, document.body.scrollHeight);
-                }
-            } else {
-                column.scrollTop = -column.scrollHeight;
-                if (main) {
-                    main.scrollTop = -main.scrollHeight;
-                }
-                if (column.scrollTop == 0) {
-                    window.scrollTo(0, -document.body.scrollHeight);
-                }
-            }
-        """
-        obj.jscallback(
-            args={"ascending": self.ascending},
-            **{what: code},
-        )
+        self._hidden_scroll_trigger.value += 1
 
     def _link_disabled_loading(self, obj: Viewable):
         """
@@ -411,7 +433,6 @@ class ChatBox(CompositeWidget):
             # the send button
             if isinstance(message_input, TextInput):
                 message_input.param.watch(self._enter_message, "value")
-            self._add_scroll_callback(message_input, "value")
             send_button = self._send_button.clone()
             self._link_disabled_loading(send_button)
             message_row = Row(message_input, send_button, **row_layout)
@@ -507,12 +528,32 @@ class ChatBox(CompositeWidget):
         )
         return message_row
 
+    def _toggle_fetch_button(self):
+        if len(self._cached_rows) < self._num_loaded_rows:
+            disabled = True
+        else:
+            disabled = False
+        self._fetch_button.disabled = disabled
+
+    def _fetch_more(self, _):
+        """
+        Fetch more messages from the cache.
+        """
+        if self._num_loaded_rows is None:
+            self._num_loaded_rows = self.max_rows
+        else:
+            self._num_loaded_rows += self.fetch_size
+
+        # load from the tail of the cache
+        message_rows = self._cached_rows[-self._num_loaded_rows:]
+        self._chat_log.objects = message_rows
+        self._toggle_fetch_button()
+
     def _refresh_log(self, event: Optional[param.parameterized.Event] = None) -> None:
         """
         Refresh the chat log for complete replacement of all messages.
         """
         user_messages = event.new
-
         message_rows = []
         previous_user = None
         for i, user_message in enumerate(user_messages):
@@ -527,13 +568,22 @@ class ChatBox(CompositeWidget):
             )
 
             # try to rebuild liked status
-            if len(self._chat_log.objects) > i:
-                original_message_row = self._chat_log.objects[i]
+            if i < len(self._cached_rows):
+                original_message_row = self._cached_rows[i]
                 if original_message_row.value == message_row.value:
                     message_row.liked = original_message_row.liked
             message_rows.append(message_row)
 
-        self._chat_log.objects = message_rows
+        # for performance, apply limit again
+        self._num_loaded_rows = self.max_rows
+        self._chat_log.objects = message_rows[-self.max_rows:]
+        self._toggle_fetch_button()
+
+        # we need to cache a copy for liked status
+        self._cached_rows = message_rows.copy()
+
+        # ensure the scrollbar shows latest message
+        self._scroll_button.param.trigger("clicks")
 
     def _enter_message(self, _: Optional[param.parameterized.Event] = None) -> None:
         """
