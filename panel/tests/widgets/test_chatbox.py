@@ -444,3 +444,14 @@ def test_chat_row_align_end(document, comm):
 def test_chat_row_not_show_name(document, comm):
     chat_row = ChatRow(value=["Hello"], name="user1", show_name=False)
     assert chat_row._name is None
+
+
+def test_chat_row_bubble_obj_sizing_mode_default(document, comm):
+    chat_row = ChatRow(value=["Hello"], name="user1", show_name=False)
+    assert chat_row._bubble[0].sizing_mode == "stretch_width"
+
+
+def test_chat_row_bubble_obj_sizing_mode_set(document, comm):
+    widget = TextInput(sizing_mode="fixed", width=300, height=100)
+    chat_row = ChatRow(value=[widget], name="user1", show_name=False)
+    assert chat_row._bubble[0].sizing_mode == "fixed"

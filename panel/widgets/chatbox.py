@@ -108,7 +108,6 @@ class ChatRow(CompositeWidget):
             align="center",
             margin=8,
             styles=bubble_styles,
-            width_policy="min",
         )
 
         # create heart icon next to chat
@@ -137,7 +136,6 @@ class ChatRow(CompositeWidget):
             row_objects = row_objects[::-1]
 
         container_params = dict(
-            width_policy="min",
             sizing_mode="fixed",
             align=(horizontal_align, "center"),
         )
@@ -185,6 +183,9 @@ class ChatRow(CompositeWidget):
                 panel_obj = self.default_message_callable(value=obj)
         except ValueError:
             panel_obj = _panel(obj, stylesheets=stylesheets, styles=text_styles)
+
+        if panel_obj.sizing_mode is None:
+            panel_obj.sizing_mode = "stretch_width"
 
         if "overflow-wrap" not in panel_obj.styles:
             panel_obj.styles.update({"overflow-wrap": "break-word"})
