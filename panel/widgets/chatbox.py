@@ -302,6 +302,9 @@ class ChatBox(CompositeWidget):
         else:
             self._default_colors = []
 
+        # add interactivity
+        self.param.watch(self._refresh_log, "value")
+
         box_objects = [self._chat_title] if self.name else []
         box_objects.append(self._chat_log)
         if self.ascending:
@@ -315,9 +318,6 @@ class ChatBox(CompositeWidget):
             self._message_inputs = {}
             self._send_button = None
         self._composite[:] = box_objects
-
-        # add interactivity
-        self.param.watch(self._refresh_log, "value")
 
         # populate with initial value
         self.param.trigger("value")
@@ -335,17 +335,36 @@ class ChatBox(CompositeWidget):
         ]
 
     def _add_scroll_callback(self, obj: Viewable, what: str):
-        code = """
-            const outerColumn = document.querySelector(".bk-Column")
-            const column = outerColumn.shadowRoot.querySelector(".bk-Column")
         """
-        if self.ascending:
-            code += "\ncolumn.scrollTop = column.scrollHeight"
-        else:
-            code += "\ncolumn.scrollTop = -column.scrollHeight"
+        main is for template
+        outerColumn & column is for fixed height
+        window is for none of the above
+        """
+        code = """
+            const outerColumn = document.querySelector(".bk-Column");
+            const column = outerColumn.shadowRoot.querySelector(".bk-Column");
+            const main = document.getElementById("main");
 
+            if (ascending) {
+                column.scrollTop = column.scrollHeight;
+                if (main) {
+                    main.scrollTop = main.scrollHeight;
+                }
+                if (column.scrollTop == 0) {
+                    window.scrollTo(0, document.body.scrollHeight);
+                }
+            } else {
+                column.scrollTop = -column.scrollHeight;
+                if (main) {
+                    main.scrollTop = -main.scrollHeight;
+                }
+                if (column.scrollTop == 0) {
+                    window.scrollTo(0, -document.body.scrollHeight);
+                }
+            }
+        """
         obj.jscallback(
-            args={"chat_log": self._chat_log},
+            args={"ascending": self.ascending},
             **{what: code},
         )
 
@@ -392,7 +411,7 @@ class ChatBox(CompositeWidget):
             # the send button
             if isinstance(message_input, TextInput):
                 message_input.param.watch(self._enter_message, "value")
-                self._add_scroll_callback(message_input, "value")
+            self._add_scroll_callback(message_input, "value")
             send_button = self._send_button.clone()
             self._link_disabled_loading(send_button)
             message_row = Row(message_input, send_button, **row_layout)
