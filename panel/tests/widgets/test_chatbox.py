@@ -232,6 +232,26 @@ def test_chat_box_primary_name(document, comm):
     assert chat_box.value == value + [{"Panel User": "Hello!"}]
 
 
+def test_chat_box_export(document, comm):
+    value = [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+    ]
+    chat_box = ChatBox(value=value.copy(), primary_name="Panel User")
+    messages = chat_box.export()
+
+    assert messages == [
+        {
+            "role": "user1",
+            "content": "Hello",
+        },
+        {
+            "role": "user2",
+            "content": "Hi",
+        },
+    ]
+
+
 def test_chat_box_inferred_primary_name(document, comm):
     value = [
         {"user1": "Hello"},
