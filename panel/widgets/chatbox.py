@@ -623,10 +623,11 @@ class ChatBox(CompositeWidget):
         messages = []
         for user_message in self.value:
             user, message = self._separate_user_message(user_message)
-            if hasattr(message, "value"):
-                message = message.value
-            elif hasattr(message, "object"):
-                message = message.object
+            if serialize:
+                if hasattr(message, "value"):
+                    message = message.value
+                elif hasattr(message, "object"):
+                    message = message.object
             messages.append({"role": user, "content": message})
         return messages
 
