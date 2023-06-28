@@ -1,30 +1,30 @@
 """
-react API
+reactive API
 
-`react` is a wrapper around a Python object that lets users create
+`reactive` is a wrapper around a Python object that lets users create
 reactive pipelines by calling existing APIs on an object with dynamic
 parameters or widgets.
 
-A `react` instance watches what operations are applied to the object
+A `reactive` instance watches what operations are applied to the object
 and records these on each instance, which are then strung together
 into a chain.
 
-The original input to an react pipeline is stored in a mutable
+The original input to an reactive pipeline is stored in a mutable
 list and can be accessed via the `_obj` property. The shared mutable
-data structure ensures that all `react` instances created from
+data structure ensures that all `reactive` instances created from
 the same object can hold a shared reference that can be updated,
 e.g. via the `.set` method or because the input was itself a reference
 to some object that can potentially be updated.
 
-When an operation is applied to an `react` instance, it will
+When an operation is applied to an `reactive` instance, it will
 record the operation and create a new instance using `_clone` method,
 e.g. `dfi.head()` first records that the `'head'` attribute is
 accessed, this is achieved by overriding `__getattribute__`. A new
-react object is returned, which will then record that it is
+reactive object is returned, which will then record that it is
 being called, and that new object will be itself called as
-`react` implements `__call__`. `__call__` returns another
-`react` instance. To be able to watch all the potential
-operations that may be applied to an object, `react` implements:
+`reactive` implements `__call__`. `__call__` returns another
+`reactive` instance. To be able to watch all the potential
+operations that may be applied to an object, `reactive` implements:
 
 - `__getattribute__`: Watching for attribute accesses
 - `__call__`: Intercepting both actual calls or method calls if an
@@ -33,14 +33,14 @@ operations that may be applied to an object, `react` implements:
 - Operators: Implementing all valid operators `__gt__`, `__add__`, etc.
 - `__array_ufunc__`: Intercepting numpy universal function calls
 
-The `react` object evaluates operations lazily but whenever the
+The `reactive` object evaluates operations lazily but whenever the
 current value is needed the operations are automatically
 evaluated. Note that even attribute access or tab-completion
 operations can result in evaluation of the pipeline. This is very
 useful in Notebook sessions, as this allows to inspect the transformed
 object at any point of the pipeline, and as such provide correct
 auto-completion and docstrings. E.g. executing `dfi.A.max?` in an
-react REPL or notebook where it allows returning the docstring
+interactive REPL or notebook where it allows returning the docstring
 of the method being accessed.
 
 The actual operations are stored as a dictionary on the `_operation`
@@ -55,23 +55,23 @@ attribute of each instance. They contain 4 keys:
              reverse order.
 
 The `_depth` attribute starts at 0 and is incremented by 1 every time
-a new `react` instance is created part of a chain.  The root
+a new `reactive` instance is created part of a chain.  The root
 instance in an expression has a `_depth` of 0. An expression can
 consist of multiple chains, such as `dfi[dfi.A > 1]`, as the
-`react` instance is referenced twice in the expression. As a
-consequence `_depth` is not the total count of `react` instance
+`reactive` instance is referenced twice in the expression. As a
+consequence `_depth` is not the total count of `reactive` instance
 creations of a pipeline, it is the count of instances created in the
-outer chain. In the example, that would be `dfi[]`. Each `react`
+outer chain. In the example, that would be `dfi[]`. Each `reactive`
 instance keeps a reference to the previous instance in the chain and
 each instance tracks whether its current value is up-to-date via the
 `_dirty` attribute which is set to False if any dependency changes.
 
 The `_method` attribute is a string that temporarily stores the
 method/attr accessed on the object, e.g. `_method` is 'head' in
-`dfi.head()`, until the react instance created in the pipeline
+`dfi.head()`, until the reactive instance created in the pipeline
 is called at which point `_method` is reset to None. In cases such as
 `dfi.head` or `dfi.A`, `_method` is not (yet) reset to None. At this
-stage the react instance returned has its `_current` attribute
+stage the reactive instance returned has its `_current` attribute
 not updated, e.g. `dfi.A._current` is still the original dataframe,
 not the 'A' series. Keeping `_method` is thus useful for instance to
 display `dfi.A`, as the evaluation of the object will check whether
@@ -137,7 +137,7 @@ def _resolve_value(value):
             _resolve_value(value.stop),
             _resolve_value(value.step)
         )
-    elif isinstance(value, react):
+    elif isinstance(value, reactive):
         return value.eval()
     value = transform_dependency(value)
     if hasattr(value, '_dinfo'):
@@ -153,7 +153,7 @@ def _resolve_ref(ref):
         return [r for v in ref.values() for r in _resolve_ref(v)]
     elif isinstance(ref, slice):
         return [r for v in (ref.start, ref.stop, ref.step) for r in _resolve_ref(v)]
-    elif isinstance(ref, react):
+    elif isinstance(ref, reactive):
         return ref._params
     ref = transform_dependency(ref)
     if hasattr(ref, '_dinfo'):
@@ -222,9 +222,9 @@ class FigureWrapper(param.Parameterized):
         return fig.subplots()
 
 
-class react_base:
+class reactive_base:
     """
-    `react` allows wrapping objects and then operating on them
+    `reactive` allows wrapping objects and then operating on them
     interactively while recording any operations applied to them. By
     recording all arguments or operands in the operations the recorded
     pipeline can be replayed if an operand represents a dynamic value.
@@ -238,7 +238,7 @@ class react_base:
     --------
     Instantiate it from an object:
 
-    >>> ifloat = react(3.14)
+    >>> ifloat = reactive(3.14)
     >>> ifloat * 2
     6.28
 
@@ -247,25 +247,26 @@ class react_base:
     2
     """
 
-    _accessors: dict[str, Callable[[react], Any]] = {}
+    _accessors: dict[str, Callable[[reactive], Any]] = {}
 
     _method_handlers: dict[str, Callable] = {}
 
     @classmethod
     def register_accessor(
-        cls, name: str, accessor: Callable[[react], Any], predicate: Optional[Callable[[Any], bool]] = None
+        cls, name: str, accessor: Callable[[reactive], Any],
+        predicate: Optional[Callable[[Any], bool]] = None
     ):
         """
-        Registers an accessor that extends react with custom
+        Registers an accessor that extends reactive with custom
         behavior.
 
         Arguments
         ---------
         name: str
           The name of the accessor will be attribute-accessible under.
-        accessor: Callable[[react], any]
+        accessor: Callable[[reactive], any]
           A callable that will return the accessor namespace object
-          given the react object it is registered on.
+          given the reactive object it is registered on.
         predicate: Callable[[Any], bool] | None
         """
         if name in cls._accessors:
@@ -313,7 +314,7 @@ class react_base:
         for subcls in cls.__subclasses__():
             if subcls._applies(obj):
                 clss = subcls
-        inst = super(react_base, cls).__new__(clss)
+        inst = super(reactive_base, cls).__new__(clss)
         inst._fn = fn
         inst._shared_obj = kwargs.get('_shared_obj', None if obj is None else [obj])
         inst._wrapper = wrapper
@@ -329,7 +330,7 @@ class react_base:
         self._method = method
         self._operation = operation
         self._depth = depth
-        if isinstance(obj, react_base) and not prev:
+        if isinstance(obj, reactive_base) and not prev:
             self._prev = obj
         else:
             self._prev = prev
@@ -338,7 +339,7 @@ class react_base:
         self._dirty = True
         self._current_ = None
         self._setup_invalidations(depth)
-        for name, (accessor, predicate) in react._accessors.items():
+        for name, (accessor, predicate) in reactive_base._accessors.items():
             if predicate is None or predicate(self._current):
                 setattr(self, name, accessor(self))
 
@@ -538,17 +539,10 @@ class react_base:
         return super().__getattribute__(name)
 
     def __call__(self, *args, **kwargs):
-        if self._method is None and self._depth == 0:
-            # This code path is entered when initializing an react
-            # class from the accessor, e.g. with df.react(). As
-            # calling the accessor df.react already returns an
-            # react instance.
-            return self._clone(*args, **kwargs)
-
         new = self._clone(copy=True)
         method = new._method or '__call__'
-        if method in react_base._method_handlers:
-            handler = react_base._method_handlers[method]
+        if method in reactive_base._method_handlers:
+            handler = reactive_base._method_handlers[method]
             method = handler(self)
         try:
             kwargs = dict(kwargs)
@@ -566,7 +560,7 @@ class react_base:
         return clone
 
     #----------------------------------------------------------------
-    # react pipeline APIs
+    # reactive pipeline APIs
     #----------------------------------------------------------------
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
@@ -734,8 +728,8 @@ class react_base:
 
     def eval(self):
         """
-        Returns the current state of the react expression. The
-        returned object is no longer react.
+        Returns the current state of the reactive expression by
+        evaluating the pipeline.
         """
         if not self._dirty:
             return self._current_
@@ -775,9 +769,9 @@ class react_base:
         return self
 
 
-class react(react_base):
+class reactive(reactive_base):
     """
-    `react` allows wrapping objects and then operating on them
+    `reactive` allows wrapping objects and then operating on them
     interactively while recording any operations applied to them.  By
     recording all arguments or operands in the operations the recorded
     pipeline can be replayed if an operand represents a dynamic value.
@@ -860,7 +854,7 @@ class react(react_base):
         """
         Returns a layout of the widgets and output arranged according
         to the center and widget location specified in the
-        react call.
+        reactive call.
         """
         widget_box = self.widgets()
         panel = self.output()
@@ -906,12 +900,12 @@ class react(react_base):
 
     def output(self):
         """
-        Returns the output of the react pipeline as a Panel
+        Returns the output of the reactive pipeline as a Panel
         component.
 
         Returns
         -------
-        DynamicMap or Panel object wrapping the react output.
+        DynamicMap or Panel object wrapping the reactive output.
         """
         return self.panel(**self._kwargs)
 
@@ -923,14 +917,14 @@ class react(react_base):
 
     def set_display(self, **kwargs):
         """
-        Overrides the display options for this react object.
+        Overrides the display options for this reactive object.
         """
         self._display_opts = dict(self._display_opts, **kwargs)
         return self
 
     def widgets(self):
         """
-        Returns a Column of widgets which control the react output.
+        Returns a Column of widgets which control the reactive output.
 
         Returns
         -------
@@ -955,17 +949,17 @@ class react(react_base):
                     widgets.append(w)
         return Column(*widgets)
 
-def _react_transform(obj):
-    if not isinstance(obj, react):
+def _reactive_transform(obj):
+    if not isinstance(obj, reactive):
         return obj
     return bind(lambda *_: obj.eval(), *obj._params)
 
-register_depends_transform(_react_transform)
+register_depends_transform(_reactive_transform)
 
-react.register_display_handler(
+reactive_base.register_display_handler(
     is_dataframe, handler=DataFrame, max_rows=100
 )
-react.register_display_handler(
+reactive_base.register_display_handler(
     is_series, handler=DataFrame, max_rows=100
 )
 
@@ -978,4 +972,4 @@ def _plot_handler(interactive):
         return fig_wrapper.figure
     return plot
 
-react.register_method_handler('plot', _plot_handler)
+reactive_base.register_method_handler('plot', _plot_handler)

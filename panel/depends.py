@@ -2,8 +2,10 @@ from inspect import isasyncgenfunction
 
 import param
 
+from packaging.version import Version
 from param.parameterized import iscoroutinefunction
 
+from .config import __version__
 from .util import eval_function
 from .util.warnings import deprecated
 
@@ -23,9 +25,9 @@ def register_depends_transform(transform):
 def transform_dependency(arg):
     """
     Transforms arguments for depends and bind functions applying any
-    DEPENDENCY_TRANSFORMS. This is useful for adding handling for
-    depending on object that are not simple Parameters or functions
-    with dependency definitions.
+    registered transform. This makes it possible to depend on objects
+    other than simple Parameters or functions with dependency
+    definitions.
     """
     for transform in _dependency_transforms:
         if isinstance(arg, param.Parameter) or hasattr(arg, '_dinfo'):
@@ -35,7 +37,8 @@ def transform_dependency(arg):
 
 # Alias for backward compatibility
 def param_value_if_widget(*args, **kwargs):
-    deprecated("1.4", "param_value_if_widget", "transform_dependency")
+    if Version(Version(__version__).base_version) > '1.2':
+        deprecated("1.4", "param_value_if_widget", "transform_dependency")
     return transform_dependency(*args, **kwargs)
 
 def depends(*args, **kwargs):
