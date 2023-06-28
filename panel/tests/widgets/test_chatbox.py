@@ -1,7 +1,7 @@
 from panel.depends import bind
 from panel.layout import Column
 from panel.pane import JPG
-from panel.widgets import FileInput, TextInput
+from panel.widgets import FileInput, Select, TextInput
 from panel.widgets.chatbox import ChatBox, ChatRow
 
 JPG_FILE = "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
@@ -237,9 +237,11 @@ def test_chat_box_export(document, comm):
         {"user1": "Hello"},
         {"user2": "Hi"},
         {"user1": TextInput(value="Some valueo!")},
+        {"user2": [TextInput(value="another val!"), Select(options=["A"], value="A")]},
+        {"user3": Column(TextInput(value="B"), TextInput(value="C"))},
     ]
     chat_box = ChatBox(value=value.copy(), primary_name="Panel User")
-    messages = chat_box.export()
+    messages = chat_box.export(serialize=True)
 
     assert messages == [
         {
@@ -253,6 +255,29 @@ def test_chat_box_export(document, comm):
         {
             "role": "user1",
             "content": "Some valueo!",
+        },
+        {
+            "role": "user2",
+            "content": "another val!\nA",
+        },
+        {
+            "role": "user3",
+            "content": "B\nC",
+        },
+    ]
+
+def test_chat_box_export_not_serialize(document, comm):
+    text_input = TextInput(value="Some valueo!")
+    value = [
+        {"user1": text_input},
+    ]
+    chat_box = ChatBox(value=value.copy(), primary_name="Panel User")
+    messages = chat_box.export(serialize=False)
+
+    assert messages == [
+        {
+            "role": "user1",
+            "content": text_input,
         },
     ]
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import (
     Any, ClassVar, Dict, List, Optional, Tuple, Type, Union,
 )
@@ -611,6 +612,17 @@ class ChatBox(CompositeWidget):
         """
         self.value = []
 
+    def _serialize_message(self, message: Union[List[Any], Any]) -> str:
+        if isinstance(message, Iterable) and not isinstance(message, str):
+            return "\n".join(self._serialize_message(m) for m in message)
+
+        if hasattr(message, "value"):
+            message = message.value
+        elif hasattr(message, "object"):
+            message = message.object
+        message = str(message)
+        return message
+
     def export(self, serialize: bool = True) -> List[Dict[str, Union[List[Any], Any]]]:
         """
         Exports the chat log into a list of dictionaries with
@@ -624,10 +636,7 @@ class ChatBox(CompositeWidget):
         for user_message in self.value:
             user, message = self._separate_user_message(user_message)
             if serialize:
-                if hasattr(message, "value"):
-                    message = message.value
-                elif hasattr(message, "object"):
-                    message = message.object
+                message = self._serialize_message(message)
             messages.append({"role": user, "content": message})
         return messages
 
