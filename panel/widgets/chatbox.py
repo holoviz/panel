@@ -611,5 +611,16 @@ class ChatBox(CompositeWidget):
         """
         self.value = []
 
+    def export(self) -> List[Dict[str, Union[List[Any], Any]]]:
+        """
+        Exports the chat log into a list of dictionaries with
+        "role" and "content" as keys.
+        """
+        messages = []
+        for user_message in self.value:
+            user, message = self._separate_user_message(user_message)
+            messages.append({"role": user, "content": message})
+        return messages
+
     def __len__(self) -> int:
         return len(self.value)
