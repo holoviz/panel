@@ -225,7 +225,7 @@ class FigureWrapper(param.Parameterized):
 class react_base:
     """
     `react` allows wrapping objects and then operating on them
-    reactly while recording any operations applied to them.  By
+    interactively while recording any operations applied to them. By
     recording all arguments or operands in the operations the recorded
     pipeline can be replayed if an operand represents a dynamic value.
 
@@ -253,7 +253,7 @@ class react_base:
 
     @classmethod
     def register_accessor(
-        cls, name: str, accessor: Callable[[react], Any], predicate = Optional[Callable[[Any], bool]]
+        cls, name: str, accessor: Callable[[react], Any], predicate: Optional[Callable[[Any], bool]] = None
     ):
         """
         Registers an accessor that extends react with custom
