@@ -37,7 +37,7 @@ def transform_dependency(arg):
 
 # Alias for backward compatibility
 def param_value_if_widget(*args, **kwargs):
-    if Version(Version(__version__).base_version) > '1.2':
+    if Version(Version(__version__).base_version) > Version('1.2'):
         deprecated("1.4", "param_value_if_widget", "transform_dependency")
     return transform_dependency(*args, **kwargs)
 
