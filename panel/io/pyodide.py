@@ -223,6 +223,23 @@ def _process_document_events(doc: Document, events: List[Any]):
     patch_json = _serialize_buffers(patch_json, buffers=buffer_map)
     return patch_json, buffer_map
 
+# JS function to convert undefined -> null (workaround for https://github.com/pyodide/pyodide/issues/3968)
+_convertUndefined = pyodide.code.run_js("""
+const convertUndefined = (obj) => {
+  Object
+    .entries(obj)
+    .forEach(([key, value]) => {
+      if (!!value && (typeof value === 'object')) {
+        convertUndefined(value);
+      } else if (value === undefined) {
+        obj[key] = null;
+      }
+    });
+  return obj;
+}
+convertUndefined
+""")
+
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
     Links Python and JS documents in Pyodide ensuring that messages
@@ -251,7 +268,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         json_patch, buffer_map = _process_document_events(pydoc, [event])
         json_patch = pyodide.ffi.to_js(json_patch, dict_converter=Object.fromEntries)
         buffer_map = pyodide.ffi.to_js(buffer_map)
-        jsdoc.apply_json_patch(json_patch, buffer_map)
+        jsdoc.apply_json_patch(_convertUndefined(json_patch), buffer_map)
 
     pydoc.on_change(pysync)
     pydoc.unhold()
@@ -279,7 +296,7 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
             return
         json_patch, buffer_map = _process_document_events(doc, [event])
         json_patch = pyodide.ffi.to_js(json_patch, dict_converter=Object.fromEntries)
-        dispatch_fn(json_patch, pyodide.ffi.to_js(buffer_map), msg_id)
+        dispatch_fn(_convertUndefined(json_patch), pyodide.ffi.to_js(buffer_map), msg_id)
 
     doc.on_change(pysync)
     doc.unhold()
