@@ -283,7 +283,7 @@ export class DataTabulatorView extends HTMLBoxView {
   tabulator: any;
   columns: Map<string, any> = new Map();
   _tabulator_cell_updating: boolean=false
-  _updating_page: boolean = true
+  _updating_page: boolean = false
   _updating_sort: boolean = false
   _selection_updating: boolean = false
   _initializing: boolean
@@ -969,6 +969,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setPage(): void {
+    console.log(Math.min(this.model.max_page, this.model.page))
     this.tabulator.setPage(Math.min(this.model.max_page, this.model.page))
     if (this.model.pagination === "local") {
       this.renderChildren()
