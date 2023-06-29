@@ -1809,7 +1809,7 @@ def test_tabulator_header_filters_default(page, port, df_mixed, cols):
     expect(page.locator('.tabulator-header-filter')).to_have_count(len(cols) + 1)
 
     # Check the table has the right number of rows, i.e. no filter is applied by default
-    assert expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
 
     assert widget.filters == []
     assert widget.current_view.equals(df_mixed)
