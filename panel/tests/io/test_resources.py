@@ -86,7 +86,7 @@ def test_resources_model_server(document):
                 'static/extensions/panel/bundled/datatabulator/luxon/build/global/luxon.min.js',
             ]
             assert resources.css_files == [
-                'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.55.0/dist/css/tabulator_simple.min.css'
+                'static/extensions/panel/bundled/datatabulator/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css'
             ]
 
 def test_resources_model_cdn(document):
