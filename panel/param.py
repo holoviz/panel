@@ -764,6 +764,9 @@ class ParamMethod(ReplacementPane):
         Whether to defer load until after the page is rendered.
         Can be set as parameter or by setting panel.config.defer_load.""")
 
+    generator_mode = param.Selector(default='replace', objects=['append', 'replace'], doc="""
+        Whether generators should 'append' to or 'replace' existing output.""")
+
     lazy = param.Boolean(default=False, doc="""
         Whether to lazily evaluate the contents of the object
         only when it is required for rendering.""")
@@ -819,8 +822,15 @@ class ParamMethod(ReplacementPane):
             curdoc.on_session_destroyed(lambda context: task.cancel())
         try:
             if isinstance(awaitable, types.AsyncGeneratorType):
+                append_mode = self.generator_mode == 'append'
+                if append_mode:
+                    self._inner_layout[:] = []
                 async for new_obj in awaitable:
-                    self._update_inner(new_obj)
+                    if append_mode:
+                        self._inner_layout.append(new_obj)
+                        self._pane = self._inner_layout[-1]
+                    else:
+                        self._update_inner(new_obj)
             else:
                 self._update_inner(await awaitable)
         except Exception as e:
@@ -846,8 +856,15 @@ class ParamMethod(ReplacementPane):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return
             elif isinstance(new_object, Generator):
+                append_mode = self.generator_mode == 'append'
+                if append_mode:
+                    self._inner_layout[:] = []
                 for new_obj in new_object:
-                    self._update_inner(new_obj)
+                    if append_mode:
+                        self._inner_layout.append(new_obj)
+                        self._pane = self._inner_layout[-1]
+                    else:
+                        self._update_inner(new_obj)
             else:
                 self._update_inner(new_object)
         finally:
