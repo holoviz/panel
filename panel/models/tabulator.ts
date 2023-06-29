@@ -341,6 +341,7 @@ export class DataTabulatorView extends HTMLBoxView {
       if (!this._updating_page)
         this.setPage()
     })
+    this.connect(p.visible.change, () => this.setVisibility())
     this.connect(p.max_page.change, () => this.setMaxPage())
     this.connect(p.frozen_rows.change, () => this.setFrozen())
     this.connect(p.sorters.change, () => this.setSorters())
@@ -411,7 +412,7 @@ export class DataTabulatorView extends HTMLBoxView {
     super.render()
     this._initializing = true
     const container = div({style: "display: contents;"})
-    const el = div({class: "pnx-tabulator", style: "width: 100%; height: 100%"})
+    const el = div({class: "pnx-tabulator", style: "width: 100%; height: 100%; visibility: hidden;"})
     container.appendChild(el)
     this.shadow_el.appendChild(container)
 
@@ -422,6 +423,8 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   style_redraw(): void {
+    if (this.model.visible)
+      this.tabulator.element.style.visibility = 'visible';
     if (!this._initializing && !this._building)
       this.redraw()
   }
@@ -890,6 +893,12 @@ export class DataTabulatorView extends HTMLBoxView {
     for (const row of this.model.frozen_rows) {
       this.tabulator.getRow(row).freeze()
     }
+  }
+
+  setVisibility(): void {
+    if (this.tabulator == null)
+      return
+    this.tabulator.element.style.visibility = this.model.visible ? 'visible' : 'hidden';
   }
 
   updatePage(pageno: number): void {
