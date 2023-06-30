@@ -26,6 +26,7 @@
 }
 
 :host(.loader) div > span {
+  font-size: max(calc(var(--loading-spinner-size) * 0.2), 12px);
   padding-left: calc(var(--loading-spinner-size) + 1em);
 }
 
