@@ -153,7 +153,10 @@ class Panel(Reactive):
             else:
                 try:
                     child = pane._get_model(doc, root, model, comm)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
             new_models.append(child)
         return new_models, old_models
@@ -210,39 +213,49 @@ class Panel(Reactive):
         # Iterate over children and determine responsiveness along
         # each axis, scaling and the widths of each component.
         heights, widths = [], []
-        all_expand_width, all_expand_height, expand_width, expand_height, scale = True, True, False, False, False
+        all_expand_height, expand_width, expand_height, scale = True, False, False, False
         for child in children:
             smode = child.sizing_mode
             if smode and 'scale' in smode:
                 scale = True
-            if smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both'):
-                expand_width = True
+
+            width_expanded = smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
+            height_expanded = smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both')
+            expand_width |= width_expanded
+            expand_height |= height_expanded
+            if width_expanded:
+                width = child.min_width
             else:
-                width = child.width or child.min_width
-                if width:
-                    if isinstance(margin, tuple):
-                        if len(margin) == 2:
-                            width += margin[1]*2
-                        else:
-                            width += margin[1] + margin[3]
+                width = child.width
+                if not child.width:
+                    width = child.min_width
+            if width:
+                if isinstance(margin, tuple):
+                    if len(margin) == 2:
+                        width += margin[1]*2
                     else:
-                        width += margin*2
-                    widths.append(width)
-                all_expand_width = False
-            if smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both'):
-                expand_height = True
+                        width += margin[1] + margin[3]
+                else:
+                    width += margin*2
+                widths.append(width)
+
+            if height_expanded:
+                height = child.min_height
             else:
-                height = child.height or child.min_height
+                height = child.height
                 if height:
-                    if isinstance(margin, tuple):
-                        if len(margin) == 2:
-                            height += margin[0]*2
-                        else:
-                            height += margin[0] + margin[2]
+                    all_expand_height = False
+                else:
+                    height = child.min_height
+            if height:
+                if isinstance(margin, tuple):
+                    if len(margin) == 2:
+                        height += margin[0]*2
                     else:
-                        height += margin*2
-                    heights.append(height)
-                all_expand_height = False
+                        height += margin[0] + margin[2]
+                else:
+                    height += margin*2
+                heights.append(height)
 
         # Infer new sizing mode based on children
         mode = 'scale' if scale else 'stretch'
@@ -264,15 +277,21 @@ class Panel(Reactive):
 
         properties = {'sizing_mode': sizing_mode}
         if ((sizing_mode.endswith('_width') or sizing_mode.endswith('_both')) and
-            not all_expand_width and widths and 'min_width' not in properties):
+            widths and 'min_width' not in properties):
             width_op = max if self._direction == 'vertical' else sum
             min_width = width_op(widths)
-            properties['min_width'] = min(min_width, properties.get('max_width') or 0)
+            op_widths = [min_width]
+            if 'max_width' in properties:
+                op_widths.append(properties['max_width'])
+            properties['min_width'] = min(op_widths)
         if ((sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and
-            not all_expand_height and heights and 'min_height' not in properties):
+            heights and 'min_height' not in properties):
             height_op = max if self._direction == 'horizontal' else sum
             min_height = height_op(heights)
-            properties['min_height'] = min(min_height, properties.get('max_height') or 0)
+            op_heights = [min_height]
+            if 'max_height' in properties:
+                op_heights.append(properties['max_height'])
+            properties['min_height'] = min(op_heights)
         return properties
 
     #----------------------------------------------------------------

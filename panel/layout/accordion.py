@@ -137,7 +137,10 @@ class Accordion(NamedListPanel):
                     if self.toggle:
                         cb = CustomJS(args={'accordion': model}, code=self._toggle)
                         panel.js_on_change('collapsed', cb)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(
                         model, current_objects[:i], doc, root, comm
                     )

@@ -17,7 +17,7 @@ repos:
         exclude: \.min\.js$
       - id: trailing-whitespace
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.0.261'
+    rev: 'v0.0.274'
     hooks:
       - id: ruff # See 'setup.cfg' for args
         args: [panel]
@@ -28,12 +28,12 @@ repos:
       - id: isort
         name: isort (python)
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: v0.1.9
+    rev: v0.1.10
     hooks:
       - id: clean-notebook
         args: [-i, tags]
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.4
+    rev: v2.2.5
     hooks:
       - id: codespell
         additional_dependencies:

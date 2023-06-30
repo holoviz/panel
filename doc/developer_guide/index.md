@@ -109,7 +109,7 @@ You will likely want to check out the [testing](testing.md) guide. Meanwhile, if
 
 ## Useful Links
 
-- [Dev version of Panel Site](https://pyviz-dev.github.io/panel)
+- [Dev version of Panel Site](https://holoviz-dev.github.io/panel)
    - Use this to explore new, not yet released features and docs
 - [Panel main branch on Binder](https://mybinder.org/v2/gh/holoviz/panel/main?urlpath=lab/tree/examples)
    - Use this to quickly explore and manually test the newest panel features in a fresh environment with all requirements installed.

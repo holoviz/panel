@@ -348,7 +348,10 @@ class GridSpec(Panel):
             else:
                 try:
                     child = obj._get_model(doc, root, model, comm)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
 
             if isinstance(child, BkFlexBox) and len(child.children) == 1:

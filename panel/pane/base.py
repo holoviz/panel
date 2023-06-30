@@ -24,7 +24,7 @@ from ..io.document import create_doc_if_none_exists, unlocked
 from ..io.notebook import push
 from ..io.state import state
 from ..layout.base import (
-    ListPanel, NamedListPanel, Panel, Row,
+    Column, ListPanel, NamedListPanel, Panel, Row,
 )
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
@@ -94,6 +94,11 @@ class RerenderError(RuntimeError):
     """
     Error raised when a pane requests re-rendering during initial render.
     """
+
+    def __init__(self, *args, layout=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.layout = layout
+
 
 T = TypeVar('T', bound='PaneBase')
 
@@ -556,7 +561,7 @@ class ReplacementPane(PaneBase):
         super().__init__(object, **params)
         self._pane = panel(None)
         self._internal = True
-        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
+        self._inner_layout = Column(self._pane, **{k: v for k, v in params.items() if k in Column.param})
         self._internal_callbacks.append(
             self.param.watch(self._update_inner_layout, list(Layoutable.param))
         )
@@ -703,7 +708,7 @@ class ReplacementPane(PaneBase):
             return
 
         self._pane = new_pane
-        self._inner_layout[0] = self._pane
+        self._inner_layout[:] = [self._pane]
         self._internal = internal
 
     def _cleanup(self, root: Model | None = None) -> None:

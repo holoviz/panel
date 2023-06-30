@@ -1,18 +1,25 @@
 import random
 
+from pytest import warns
+
 from panel import (
     Column, Param, Row, WidgetBox, state,
 )
 from panel.pane import HTML
+from panel.util.warnings import PanelDeprecationWarning
 from panel.widgets import IntSlider, Trend
 
 
 def test_constructor():
-    Trend(title="Test")
+    Trend(name="Test")
+
+def test_deprecated_parameter():
+    with warns(PanelDeprecationWarning):
+        Trend(title="Test")
 
 
 def manualtest_constructor():
-    return Trend(title="Test")
+    return Trend(name="Test")
 
 
 def test_trend_auto_value(document, comm):
@@ -45,7 +52,7 @@ def manualtest_app():
     data = {"x": [1, 2, 3, 4, 5], "y": [3800, 3700, 3800, 3900, 4000]}
 
     trend = Trend(
-        title="Panel Users",
+        name="Panel Users",
         value=4000,
         value_change=0.51,
         data=data,

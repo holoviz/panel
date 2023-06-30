@@ -29,18 +29,21 @@ from typing import (
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource, FixedTicker
+from bokeh.models import ColumnDataSource, FixedTicker, Tooltip
 from bokeh.plotting import figure
 from tqdm.asyncio import tqdm as _tqdm
 
+from .._param import Align
 from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
 from ..models import (
-    HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator,
+    HTML, Progress as _BkProgress, TooltipIcon as _BkTooltipIcon,
+    TrendIndicator as _BkTrendIndicator,
 )
 from ..pane.markup import Str
 from ..reactive import SyncableData
 from ..util import escape, updating
+from ..util.warnings import deprecated
 from ..viewable import Viewable
 from .base import Widget
 
@@ -214,6 +217,10 @@ class Progress(ValueIndicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
+    sizing_mode = param.ObjectSelector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])
+
     value = param.Integer(default=-1, bounds=(-1, None), doc="""
         The current value of the progress bar. If set to -1 the progress
         bar will be indeterminate and animate depending on the active
@@ -230,8 +237,6 @@ class Progress(ValueIndicator):
         self.param.value.bounds = (-1, self.max)
 
     def __init__(self,**params):
-        if "sizing_mode" not in params:
-            params["sizing_mode"] = None
         super().__init__(**params)
         self._update_value_bounds()
 
@@ -1014,7 +1019,7 @@ class Trend(SyncableData, Indicator):
     :Example:
 
     >>> data = {'x': np.arange(50), 'y': np.random.randn(50).cumsum()}
-    >>> Trend(title='Price', data=data, plot_type='area', width=200, height=200)
+    >>> Trend(name='Price', data=data, plot_type='area', width=200, height=200)
     """
 
     data = param.Parameter(doc="""
@@ -1044,7 +1049,7 @@ class Trend(SyncableData, Indicator):
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None])
 
-    title = param.String(doc="""The title or a short description of the card""")
+    name = param.String(doc="""The name or a short description of the card""")
 
     value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
@@ -1061,6 +1066,12 @@ class Trend(SyncableData, Indicator):
     }
 
     _widget_type: ClassVar[Type[Model]] = _BkTrendIndicator
+
+    def __init__(self, **params):
+        if "title" in params:
+            params["name"] = params.pop("title")
+            deprecated("1.3", "title",  "name")
+        super().__init__(**params)
 
     def _get_data(self):
         if self.data is None:
@@ -1307,6 +1318,37 @@ class Tqdm(Indicator):
         self.value = self.param.value.default
         self.text = self.param.text.default
 
+
+class TooltipIcon(Widget):
+    """
+    The `TooltipIcon` displays a small `?` icon. When you hover over the `?` icon, the `value`
+    will display.
+
+    Use the `TooltipIcon` to provide
+
+    - helpful information to users without taking up a lot of screen space
+    - tooltips next to Panel widgets that do not support tooltips yet.
+
+    Reference: https://panel.holoviz.org/reference/indicators/TooltipIcon.html
+
+    :Example:
+
+    >>> pn.widgets.TooltipIcon(value="This is a simple tooltip by using a string")
+    """
+
+    value = param.ClassSelector(default="Description", class_=(str, Tooltip), doc="""
+        The description in the tooltip.""")
+
+    align = Align(default='center', doc="""
+        Whether the object should be aligned with the start, end or
+        center of its container. If set as a tuple it will declare
+        (vertical, horizontal) alignment.""")
+
+    _widget_type = _BkTooltipIcon
+
+    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'description'}
+
+
 __all__ = [
     "BooleanIndicator",
     "BooleanStatus",
@@ -1317,6 +1359,7 @@ __all__ = [
     "Number",
     "Progress",
     "String",
+    "TooltipIcon",
     "Tqdm",
     "Trend",
     "ValueIndicator",

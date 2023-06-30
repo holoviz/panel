@@ -1,9 +1,9 @@
 from panel.layout import Spacer, Swipe
 
 
-def test_swip_construct(document, comm):
-    before = Spacer(background="red", height=400, width=800)
-    after = Spacer(background="green", height=400, width=800)
+def test_swipe_construct(document, comm):
+    before = Spacer(styles={"background": "red"}, height=400, width=800)
+    after = Spacer(styles={"background": "green"}, height=400, width=800)
     swipe = Swipe(
         before,
         after,

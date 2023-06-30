@@ -283,7 +283,7 @@ export class DataTabulatorView extends HTMLBoxView {
   tabulator: any;
   columns: Map<string, any> = new Map();
   _tabulator_cell_updating: boolean=false
-  _updating_page: boolean = true
+  _updating_page: boolean = false
   _updating_sort: boolean = false
   _selection_updating: boolean = false
   _initializing: boolean
@@ -341,6 +341,7 @@ export class DataTabulatorView extends HTMLBoxView {
       if (!this._updating_page)
         this.setPage()
     })
+    this.connect(p.visible.change, () => this.setVisibility())
     this.connect(p.max_page.change, () => this.setMaxPage())
     this.connect(p.frozen_rows.change, () => this.setFrozen())
     this.connect(p.sorters.change, () => this.setSorters())
@@ -411,7 +412,7 @@ export class DataTabulatorView extends HTMLBoxView {
     super.render()
     this._initializing = true
     const container = div({style: "display: contents;"})
-    const el = div({class: "pnx-tabulator", style: "width: 100%; height: 100%"})
+    const el = div({class: "pnx-tabulator", style: "width: 100%; height: 100%; visibility: hidden;"})
     container.appendChild(el)
     this.shadow_el.appendChild(container)
 
@@ -422,6 +423,8 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   style_redraw(): void {
+    if (this.model.visible)
+      this.tabulator.element.style.visibility = 'visible';
     if (!this._initializing && !this._building)
       this.redraw()
   }
@@ -475,6 +478,11 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.on("pageLoaded", (pageno: number) => {
       this.updatePage(pageno)
     })
+    this.tabulator.on("renderComplete", () => {
+      if (this._building)
+	return
+      this.postUpdate()
+    });
     this.tabulator.on("dataSorting", (sorters: any[]) => {
       const sorts = []
       for (const s of sorters) {
@@ -856,8 +864,6 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.rowManager.setData(data, true, false)
     else
       this.tabulator.setData(data)
-
-    this.postUpdate()
   }
 
   addData(): void {
@@ -865,13 +871,13 @@ export class DataTabulatorView extends HTMLBoxView {
     const last_row = rows[rows.length-1]
     const start = ((last_row?.data._index) || 0)
     this.setData()
-    this.postUpdate()
     if (this.model.follow && last_row)
       this.tabulator.scrollToRow(start, "top", false)
   }
 
   postUpdate(): void {
     this.setSelection()
+    this.setStyles()
   }
 
   updateOrAddData(): void {
@@ -881,13 +887,18 @@ export class DataTabulatorView extends HTMLBoxView {
 
     let data = transform_cds_to_records(this.model.source, true)
     this.tabulator.setData(data)
-    this.postUpdate()
   }
 
   setFrozen(): void {
     for (const row of this.model.frozen_rows) {
       this.tabulator.getRow(row).freeze()
     }
+  }
+
+  setVisibility(): void {
+    if (this.tabulator == null)
+      return
+    this.tabulator.element.style.visibility = this.model.visible ? 'visible' : 'hidden';
   }
 
   updatePage(pageno: number): void {
@@ -958,6 +969,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setPage(): void {
+    console.log(Math.min(this.model.max_page, this.model.page))
     this.tabulator.setPage(Math.min(this.model.max_page, this.model.page))
     if (this.model.pagination === "local") {
       this.renderChildren()

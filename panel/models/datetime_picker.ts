@@ -41,11 +41,20 @@ export class DatetimePickerView extends InputWidgetView {
     this.connect(max_date.change, () => this._picker?.set("maxDate", this.model.max_date))
     this.connect(disabled_dates.change, () => {
       const {disabled_dates} = this.model
-      this._picker?.set("disable", disabled_dates != null ? _convert_date_list(disabled_dates) : undefined)
+      this._picker?.set("disable", disabled_dates != null ? _convert_date_list(disabled_dates) : [])
     })
     this.connect(enabled_dates.change, () => {
       const {enabled_dates} = this.model
-      this._picker?.set("enable", enabled_dates != null ? _convert_date_list(enabled_dates) : undefined)
+      if (enabled_dates != null) {
+        this._picker?.set("enable", _convert_date_list(enabled_dates))
+      } else {
+        // this reimplements `set()` for the `undefined` case
+        if (this._picker) {
+          this._picker.config._enable = undefined
+          this._picker.redraw()
+          this._picker.updateValue(true)
+        }
+      }
     })
     this.connect(inline.change, () => this._picker?.set("inline", this.model.inline))
     this.connect(enable_time.change, () => this._picker?.set("enableTime", this.model.enable_time))

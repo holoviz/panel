@@ -54,7 +54,7 @@
   {% if show_header %}
   <nav id="header">
     {% if nav %}
-    <span onclick="closeNav()" id="sidebar-button">
+    <span onclick="{{ 'openNav()' if collapsed_sidebar else 'closeNav()' }}" id="sidebar-button">
       <div class="pn-bar"></div>
       <div class="pn-bar"></div>
       <div class="pn-bar"></div>
@@ -99,7 +99,7 @@
 
   <div id="content">
     {% if nav %}
-    <div class="sidenav hidden" id="sidebar">
+    <div class="sidenav {{'hidden' if collapsed_sidebar else ''}}" id="sidebar">
       <ul class="nav flex-column">
         {% for doc in docs %}
         {% for root in doc.roots %}
@@ -114,7 +114,7 @@
 
     <div class="main" id="main">
       {% if not show_header and nav %}
-      <span onclick="openNav()" id="sidebar-button" class="sidebar-button-standalone">
+      <span onclick="{{ 'openNav()' if collapsed_sidebar else 'closeNav()' }}" id="sidebar-button" class="sidebar-button-standalone">
 	<div class="pn-bar"></div>
 	<div class="pn-bar"></div>
 	<div class="pn-bar"></div>
@@ -203,7 +203,6 @@
   function closeNav() {
     document.getElementById("sidebar").classList.add("hidden");
     document.getElementById("sidebar-button").onclick = openNav;
-    console.log(document.getElementById("sidebar-button").onclick)
   }
 
   var modal = document.getElementById("pn-Modal");

@@ -9,10 +9,9 @@ from panel.widgets import DatetimePicker, DatetimeRangePicker
 
 try:
     from playwright.sync_api import expect
+    pytestmark = pytest.mark.ui
 except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
-
-pytestmark = pytest.mark.ui
 
 
 @pytest.fixture
@@ -435,6 +434,11 @@ def test_datetimepicker_enabled_dates(page, port, march_2021, enabled_dates):
     disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
     expect(disabled_days).to_have_count(num_days - len(enabled_list))
 
+    # enable all days
+    datetime_picker_widget.enabled_dates = None
+    disabled_days = page.locator('.flatpickr-calendar .flatpickr-day.flatpickr-disabled')
+    expect(disabled_days).to_have_count(0)
+
 
 def test_datetimepicker_enable_time(page, port):
     datetime_picker_widget = DatetimePicker(enable_time=False)
@@ -537,9 +541,7 @@ def test_datetimepicker_disable_editing(page, port):
     serve(datetime_picker_widget, port=port, threaded=True, show=False)
     time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
-
-    datetime_value = page.locator('.flatpickr-input')
-    assert datetime_value.get_attribute('disabled') == 'true'
+    expect(page.locator('.flatpickr-input')).to_have_attribute('disabled', 'true')
 
 
 def test_datetimepicker_visible(page, port):
@@ -551,8 +553,7 @@ def test_datetimepicker_visible(page, port):
     time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
 
-    invisible_datetime_picker = page.locator('.invisible-datetimepicker')
-    expect(invisible_datetime_picker).to_have_css('display', 'none')
+    expect(page.locator('.invisible-datetimepicker')).to_have_css('display', 'none')
 
 
 def test_datetimepicker_name(page, port):
@@ -565,9 +566,7 @@ def test_datetimepicker_name(page, port):
     time.sleep(0.2)
     page.goto(f"http://localhost:{port}")
 
-    datetime_picker_with_name = page.locator('.datetimepicker-with-name')
-    datetime_picker_with_name.locator(".bk-input-group").text_content() == name
-
+    expect(page.locator('.datetimepicker-with-name > .bk-input-group > label')).to_have_text(name)
 
 def test_datetimepicker_no_value(page, port, datetime_start_end):
     datetime_picker_widget = DatetimePicker()
