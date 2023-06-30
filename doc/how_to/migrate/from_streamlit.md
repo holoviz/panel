@@ -2,10 +2,10 @@
 
 This guide addresses how to migrate from Streamlit to Panel.
 
-This guide can also be used as
+This guide can also be used as:
 
-- an alternative *Introduction to Panel* guide if you are already familiar with Streamlit.
-- a means of comparing Streamlit and Panel on a more detailed level. You won't see the many additional unique and powerful features that Panel provides though.
+- An alternative *Introduction to Panel* guide if you are already familiar with Streamlit.
+- A means of comparing Streamlit and Panel on a more detailed level, without going into some of the unique functionality that Panel provides.
 
 ---
 
@@ -49,41 +49,29 @@ panel serve app.py --autoreload --show
 
 ### Basic Migration Steps
 
-You should replace
+You should replace:
 
 - `import streamlit as st` with `import panel as pn` and
 - `st.write` with `pn.panel`.
 
-You will have to
+You will have to:
 
 - add `pn.extension` to configure your Panel application via optional arguments like `sizing_mode` and `template`.
 - add `.servable` to the Panel objects you want to include in your apps *template* when served as
 a web app.
 
-For production you will also have to
+For production you will also have to migrate some of your app configuration to `panel serve` [command line options](../server/commandline.md) or environment variables.
 
-- Migrate some of your app configuration to `panel serve` [command line options](../server/commandline.md) or environment.
-variables.
-
-You won't have to
-
-- Provide your email or
-- opt out of telemetry data collection.
-
-We have never collected or had plans to collect telemetry data from our users apps.
+You **won't** have to provide your email or opt out of telemetry data collection. We have never collected or had plans to collect telemetry data from our users apps.
 
 ## Displaying Content with Panes
 
-In Panel the objects that can display your Python objects are called *panes*. With Panels *panes*
-you will be able to
+In Panel the objects that can display your Python objects are called *panes*. With Panels *panes* you will be able to:
 
-- get notifications about interactions like click events on your plots and tables and react to them.
-- use unique data visualization ecosystems like HoloViz, ipywidgets and VTK.
+- Get notifications about interactions like click events on your plots and tables and react to them.
+- Use unique data visualization ecosystems like HoloViz, ipywidgets and VTK.
 
-Check out the
-[Panes Section](../../reference/index.md#panes) of
-the [Component Gallery](../../reference/index.md) for the full list of
-*panes*.
+Check out the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md) for the full list of *panes*.
 
 ### Streamlit Matplotlib Example
 
@@ -166,14 +154,13 @@ $$ a + ar + a r^2 + a r^3 + \cdots + a r^{n-1} = \sum_{k=0}^{n-1} ar^k = a \left
 
 ### Display Content Migration Steps
 
-You should
+To display content in Panel:
 
-- replace your Streamlit `st.some_object` *snake cased* functions with the corresponding Panel
-`pn.pane.SomeObject` *Pascal Cased* classes.
-- replace your Streamlit text elements with `pn.pane.Markdown`.
+- Replace your Streamlit `st.some_object` *snake cased* functions with the corresponding Panel
+`pn.pane.SomeObject` *CamelCased* classes.
+- Replace your Streamlit text elements with `pn.pane.Markdown`.
 
-You can identify the corresponding Panel *pane* in the
-[Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
+You can identify the corresponding Panel *pane* in the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index.md).
 
 ## Organizing Components with Layouts
 
@@ -181,8 +168,7 @@ You can identify the corresponding Panel *pane* in the
 
 Panel provides layouts similar to the ones you know from Streamlit and many unique ones.
 
-Check out the [Layouts Section](../../reference/index.md#layouts) of the
-[Component Gallery](../../reference/index.html) for the full list of *layouts*.
+Check out the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.html) for the full list of *layouts*.
 
 ### Streamlit Layout Example
 
@@ -202,11 +188,10 @@ with col2:
 
 ![Streamlit Layout Example](../../_static/images/streamlit_layout_example.png)
 
-I would love to align the images (and texts) but I could not find functionality like *row*, *margin* or *spacing* to do this.
 
 ### Panel Layout Example
 
-You will find Panels *layouts* in the `pn` module.
+You can access Panel's *layouts* in the top-level `pn` namespace:
 
 ```python
 import panel as pn
@@ -233,20 +218,16 @@ pn.Column(row1, row2).servable()
 
 ![Panel Layout Example](../../_static/images/panel_layout_example.png)
 
-Panels `Column` and `Row` are *list like* objects. So you can use familiar methods like `.append`,
-`.pop` and `[]` indexing when you work with them. For the details check out the
-[`Column` Guide](../../reference/layouts/Column.md) and
-the [`Row` Guide](../../reference/layouts/Row.md)
+Panels `Column` and `Row` are *list like* objects. So you can use familiar methods like `.append`, `.pop` and `[]` indexing when you work with them. For the details check out the [`Column` Guide](../../reference/layouts/Column.md) and the [`Row` Guide](../../reference/layouts/Row.md)
 
 ### Layout Migration Steps
 
-You should
+To migrate your layouts to Panel
 
 - replace your Streamlit `st.some_layout` *snake cased* function with the corresponding Panel
-`pn.SomeLayout` *Pascal Cased* class.
+`pn.SomeLayout` *CamelCased* class.
 
-You can identify the relevant layout to migrate to in the
-[Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
+You can identify the relevant layout to migrate to in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
 
 ## Adding Layout and Style with Templates
 
@@ -302,10 +283,8 @@ pn.state.template.param.update(
 When migrating you will have to decide which template to use
 
 - Blank (default)
-- A built in like *vanilla*, *bootstrap*, *material* or *fast*. See the
-[Templates Section](../../reference/index#templates) of the
-[Components Guide](../../reference/index).
-- A custom template
+- A built-in template like *vanilla*, *bootstrap*, *material* or *fast*. See the [Templates Section](../../reference/index#templates) of the [Components Guide](../../reference/index).
+- A custom template declared using Jinja2 syntax.
 
 ## Accepting User Inputs with Widgets
 
@@ -313,10 +292,7 @@ In Panel the objects that can accept user inputs are called *widgets*.
 
 Panel provides widgets similar to the ones you know from Streamlit and some unique ones in addition.
 
-Check out the
-[Widgets Section](../../reference/index.md#widgets) of
-the [Component Gallery](../../reference/index.md) for the full list of
-*widgets*.
+Check out the [Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md) for the full list of *widgets*.
 
 ### Streamlit Integer Slider Example
 
@@ -350,28 +326,24 @@ If you check the type of the variables, you will notice a key difference. Stream
 
 To access the value of the slider in Panel, you would need to call `bins.value`.
 
-For more info about the `IntSlider` check out the
-[`IntSlider` Guide](../../reference/widgets/IntSlider.md).
+For more info about the `IntSlider` check out the [`IntSlider` Guide](../../reference/widgets/IntSlider.md).
 
 ### Input Migration Steps
 
-You should
+To migrate your app's widget inputs to Panel:
 
-- replace your Streamlit `st.some_widget` function with the corresponding Panel
+- Replace your Streamlit `st.some_widget` function with the corresponding Panel
 `pn.widgets.SomeWidget` class.
 
-You can identify the corresponding widget via the
-[Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
+You can identify the corresponding widget via the [Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
 
 ## Show Activity
 
 Panel supports many ways of indicating activity
 
-- Indicators. See the [Indicators Section](../../reference/index.md#indicators)
-of the [Component Gallery](../../reference/index.md).
+- Indicators. See the [Indicators Section](../../reference/index.md#indicators) of the [Component Gallery](../../reference/index.md).
 - `disabled`/ `loading` parameters on Panel components
-- `loading_indicator` parameter for `pn.panel` or `pn.config`. If `True` a
-loading indicator will be shown on your *bound functions* when they are re-run.
+- `loading_indicator` parameter for `pn.panel` or `pn.config`. If `True` a loading indicator will be shown on your *bound functions* when they are re-run.
 
 ```python
 import panel as pn
@@ -431,19 +403,16 @@ pn.Row(
 
 ![Show Activity](https://user-images.githubusercontent.com/42288570/246325570-11484dd6-4523-401f-b709-6c0cc7996410.gif)
 
-We will show you how to migrate your Streamlit activity indicators to Panel in the
-[Interactivity Section](#add-interactivity-with-pnbind) just below.
+We will show you how to migrate your Streamlit activity indicators to Panel in the [Interactivity Section](#add-interactivity-with-pnbind) just below.
 
 ## Add Interactivity with `pn.bind`
 
-Both Streamlit and Panel are *reactive* frameworks that *react* when you interact with your
-application. But they work very differently:
+Both Streamlit and Panel are *reactive* frameworks that *react* when you interact with your application. But they work very differently:
 
 - Streamlit executes the whole script *top to bottom* on user interactions.
 - Panel executes specific *bound* functions on user interactions.
 
-Panels `pn.bind` provides the functionality to *bind* functions to widgets. We call the resulting
-functions *bound functions*. You use `pn.bind` as follows
+Panels `pn.bind` provides the functionality to *bind* functions to widgets. We call the resulting functions *bound functions*. You use `pn.bind` as follows
 
 ```python
 # 1. Define your function(s)
@@ -461,8 +430,7 @@ With Panels interactivity architecture you will be able develop and maintain lar
 
 ### Basic Interactivity Example
 
-This example will show you how to migrate code that produces a single result
-and only updates the UI once the code execution has completed.
+This example will show you how to migrate code that produces a single result and only updates the UI once the code execution has completed.
 
 #### Streamlit Basic Interactivity Example
 
@@ -515,8 +483,7 @@ With Panel only the `plot` function is rerun when you change the `bins` slider. 
 
 ### Multiple Updates Example
 
-This example will show you how to migrate code that produces a single result
-and updates the UI multiple times during the code execution.
+This example will show you how to migrate code that produces a single result and updates the UI multiple times during the code execution.
 
 #### Streamlit Multiple Updates Example
 
@@ -526,16 +493,13 @@ import time
 
 import streamlit as st
 
-
 def calculation_a():
     time.sleep(1.5)
     return random.randint(0, 100)
 
-
 def calculation_b():
     time.sleep(3.5)
     return random.randint(-100, 0)
-
 
 st.write("# Calculation Runner")
 option = st.radio("Which calculation would you like to perform?", ("A", "B"))
@@ -564,69 +528,6 @@ else:
 With Panel you will use a *generator function* to update a component multiple times during code execution.
 
 ```python
-import time
-import random
-
-import panel as pn
-
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
-pn.state.template.param.update(site="Panel", title="Calculation Runner")
-
-
-def notify_choice(calculation):
-    return f"You chose: {calculation}"
-
-
-def calculation_a():
-    time.sleep(1.5)
-    return random.randint(0, 100)
-
-
-def calculation_b():
-    time.sleep(1.5)
-    return random.randint(0, 100)
-
-
-def run_calculation(running, calculation):
-    if not running:
-        yield "Calculation did not run yet"
-        return  # This will break the execution
-    yield pn.Row(
-        pn.indicators.LoadingSpinner(value=True, width=50, height=50, align="center"),
-        "Running... Please wait!",
-        align="center",
-    )
-    if calculation == "A":
-        func = calculation_a
-    else:
-        func = calculation_b
-    time_start = time.perf_counter()
-    result = func()
-    time_end = time.perf_counter()
-    yield f"""
-        Done!
-
-        Result: {result}
-
-        The function took {time_end - time_start:1.1f} seconds to complete
-        """
-
-
-calculation_input = pn.widgets.RadioBoxGroup(name="Calculation", options=["A", "B"])
-run_input = pn.widgets.Button(
-    name="Press to run calculation",
-    icon="caret-right",
-    button_type="primary",
-    sizing_mode="fixed",
-    width=250,
-)
-pn.Column(
-    "Which calculation would you like to perform?",
-    calculation_input,
-    pn.bind(notify_choice, calculation_input),
-    run_input,
-    pn.bind(run_calculation, run_input, calculation_input),
-).servable()
 ```
 
 ![Panel Multiple Updates Examples](https://assets.holoviz.org/panel/gifs/panel_runner_example.gif)
@@ -640,65 +541,49 @@ An alternative to using an *indicator* would be to change the `.disabled` and `.
 ```python
 import time
 import random
-from textwrap import dedent
 
 import panel as pn
 
 pn.extension(sizing_mode="stretch_width", template="bootstrap")
 pn.state.template.param.update(site="Panel", title="Calculation Runner")
 
-
 def notify_choice(calculation):
     return f"You chose: {calculation}"
 
-
 def calculation_a():
-    time.sleep(1.5)
+    time.sleep(2)
     return random.randint(0, 100)
-
 
 def calculation_b():
-    time.sleep(1.5)
+    time.sleep(1)
     return random.randint(0, 100)
-
 
 def run_calculation(running, calculation):
     if not running:
         yield "Calculation did not run yet"
-        return  # This will break the execution
-    try:
-        calculation_input.loading = True
-        run_input.loading = True
-        yield pn.Row(
-            pn.indicators.LoadingSpinner(value=True, width=50, height=50, align="center"),
-            "Running... Please wait!",
-            align="center",
-        )
-        if calculation == "A":
-            func = calculation_a
-        else:
-            func = calculation_b
-        time_start = time.perf_counter()
-        result = func()
-        time_end = time.perf_counter()
-        yield dedent(
-            f"""
-            Done!
-            Result: {result}
-            The function took {time_end - time_start:1.1f} seconds to complete
-            """
-        )
-    finally:
-        calculation_input.loading = False
-        run_input.loading = False
+        return # This will break the execution
 
+    calc = calculation_a if calculation == "A" else calculation_b
+    with run_input.param.set(loading=True):
+        yield pn.indicators.LoadingSpinner(
+            value=True, size=50, name='Running... Please Wait!'
+        )
+        time_start = time.perf_counter()
+        result = calc()
+        time_end = time.perf_counter()
+        yield f"""
+        Done!
+
+        Result: {result}
+
+        The function took {time_end - time_start:1.1f} seconds to complete
+        """
 
 calculation_input = pn.widgets.RadioBoxGroup(name="Calculation", options=["A", "B"])
 run_input = pn.widgets.Button(
     name="Press to run calculation",
     icon="caret-right",
     button_type="primary",
-    sizing_mode="fixed",
     width=250,
 )
 pn.Column(
@@ -754,29 +639,24 @@ import panel as pn
 
 pn.extension(sizing_mode="stretch_width")
 
-
 def model():
     time.sleep(1)
     return random.randint(0, 100)
-
 
 def results(running):
     if not running:
         return "The model has not run yet"
 
-    layout = pn.Column()
     for i in range(0, 10):
         result = model()
-        message = f"Result {i}: {result}"
-        layout.append(message)
-        yield layout
-    yield layout  # This will force the UI to update
-
+        yield f"Result {i}: {result}"
 
 run_input = pn.widgets.Button(name="Run model")
+output = pn.bind(results, run_input)
+
 pn.Column(
     run_input,
-    pn.panel(pn.bind(results, run_input), loading_indicator=True),
+    pn.panel(output, loading_indicator=True, generator_mode='append'),
 ).servable()
 ```
 
@@ -786,8 +666,7 @@ pn.Column(
 
 You should
 
-- Move your business logic to functions. Business logic can be code to load data, transform data, run calculations,
-create plots, calculate the mass of the milky way, train models, do inference etc.
+- Move your business logic to functions. Business logic can be code to load data, transform data, run calculations, create plots, calculate the mass of the milky way, train models, do inference etc.
 - Add interactivity by using `pn.bind` to bind your functions to your widgets.
   - Use generator functions (`yield`) if you want to update the UI multiple times during the functions execution.
 - Indicate activity as described in the [Show Activity Section](#show-activity).
@@ -929,7 +808,7 @@ panel serve home.py page1.py page2.ipynb --index=home
 Session state (and callbacks) were added to Streamlit as an after thought
 to enable sharing variables between re-runs and across apps inside a multipage app.
 
-Panels execution model is very different and session state is not really a topic.
+Panels execution model is very different and session state can be handled automatically by storing variables in the applications namespace.
 
 ### Streamlit Session State Example
 
@@ -969,7 +848,7 @@ if add_row:
     create_row()
 ```
 
-![Streamlit Session State Example](https://user-images.githubusercontent.com/42288570/248444403-3e9548a5-71a6-4154-8e85-b9d9e08b9111.png)
+![Streamlit Session State Example](../../_static/images/streamlit_session_cache.png)
 
 With Streamlit you need session state to keep track of the dynamically created `rows`.
 
@@ -979,25 +858,29 @@ With Streamlit you need session state to keep track of the dynamically created `
 import random
 
 import panel as pn
-pn.extension(sizing_mode="stretch_width")
 
-def create_row(_):
+pn.extension(sizing_mode="stretch_width", template='bootstrap')
+
+def create_row(event):
     value = random.randint(0, 100)
     row = pn.widgets.TextInput(name="Enter a number", value=str(value))
     rows.append(row)
 
 rows = pn.Column()
 add_row = pn.widgets.Button(name="Add new row", on_click=create_row)
-clear_rows = pn.widgets.Button(name="Clear all rows", on_click=lambda _: rows.clear())
-main = pn.Column("# Dynamically add new rows", pn.Row(add_row, clear_rows), rows)
+clear_rows = pn.widgets.Button(name="Clear all rows", on_click=lambda event: rows.clear())
 
-pn.template.BootstrapTemplate(main=[main], main_max_width="600px").servable()
+pn.Column(
+    "# Dynamically add new rows",
+	pn.Row(add_row, clear_rows),
+	rows
+).servable()
 ```
 
 As the Panel script is only executed once per session the `rows` objects will keep track of your
 *session state*.
 
-![Panel Session State Example](https://user-images.githubusercontent.com/42288570/248446319-ffce4caf-f7b4-48ff-9e26-4edd4ff78fe5.png)
+![Panel Session State Example](../../_static/images/panel_session_cache.png)
 
 ## Migration Support
 
