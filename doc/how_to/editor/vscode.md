@@ -44,7 +44,8 @@ To configure the integrated debugger for Panel, you will need to add a debugging
             "args": [
                 "panel",
                 "serve",
-                "${relativeFile}"
+                "${relativeFile}",
+                "--show"
             ],
             "console": "integratedTerminal",
             "justMyCode": true
