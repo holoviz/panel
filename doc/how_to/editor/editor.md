@@ -37,6 +37,19 @@ panel serve app.py --show --autoreload
 The `--show` flag will open a browser tab with the live app and the ``--autoreload`` flag ensures that the app reloads whenever you make a change to the Python source.
 :::
 
-![](../../_static/editor_server_app.png)
+![App Developed in an Editor](../../_static/editor_server_app.png)
+
+## Debugging
+
+The simplest way to debug is to insert a `breakpoint()` in your code and then serve your app from a terminal. Type `help` in the debugger to see the available *commands*.
+
+<img src="../../_static/terminal-breakpoint.png" styles="max-height:300px;max-width:100%"></img>
+
+If your editor or IDE provides *integrated debugging* you can also use that. You can do that in one of two ways
+
+- Use `.show()` on a single Panel component or
+- Use `.servable()` and configure your editor to start debugging using the command `python -m panel serve <name-of-script.py>`.
 
 ## Related Resources
+
+- [VS Code Guide](vscode.md)
