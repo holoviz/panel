@@ -283,7 +283,7 @@ class Panel(Reactive):
             op_widths = [min_width]
             if 'max_width' in properties:
                 op_widths.append(properties['max_width'])
-            properties['min_height'] = min(op_widths)
+            properties['min_width'] = min(op_widths)
         if ((sizing_mode.endswith('_height') or sizing_mode.endswith('_both')) and
             heights and 'min_height' not in properties):
             height_op = max if self._direction == 'horizontal' else sum

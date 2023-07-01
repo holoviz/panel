@@ -553,6 +553,7 @@ def test_serve_can_serve_bokeh_app_from_file():
     assert "/bk-app" in server._tornado.applications
 
 
+@pytest.mark.flaky(max_runs=3)
 def test_server_thread_pool_change_event(threads, port):
     button = Button(name='Click')
     button2 = Button(name='Click')

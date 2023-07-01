@@ -70,9 +70,12 @@ def push(doc: 'Document', comm: 'Comm', binary: bool = True) -> None:
     msg = diff(doc, binary=binary)
     if msg is None:
         return
+    # WARNING: CommManager model assumes that either JSON content OR a buffer
+    #          is sent. Therefore we must NEVER(!!!) send both at once.
     comm.send(msg.header_json)
     comm.send(msg.metadata_json)
     comm.send(msg.content_json)
+
     for buffer in msg.buffers:
         header = json.dumps(buffer.ref)
         payload = buffer.to_bytes()

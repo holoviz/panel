@@ -4,6 +4,12 @@ import pytest
 
 pytestmark = pytest.mark.ui
 
+try:
+    from playwright.sync_api import expect
+    pytestmark = pytest.mark.ui
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
+
 from panel.io.server import serve
 from panel.io.state import state
 from panel.pane import Markdown
@@ -25,6 +31,4 @@ def test_on_load(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    time.sleep(0.2)
-
-    assert page.locator('.markdown').locator("div").text_content() == 'Loaded\n'
+    expect(page.locator('.markdown').locator("div")).to_have_text('Loaded\n')

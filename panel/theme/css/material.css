@@ -6,6 +6,7 @@
   --slider-size: 4px;
   --padding-vertical: 10px;
   --mdc-on-surface: inherit;
+  --current-background-color: var(--mdc-theme-background);
 }
 
 :host-context(.mdc-top-app-bar) .bk-menu {
@@ -30,6 +31,7 @@
 
 :host(.mdc-card),
 :host(.accordion) {
+  --current-background-color: var(--mdc-theme-background);
   color: var(--mdc-theme-on-surface);
   background-color: var(--mdc-theme-background);
   box-shadow: rgb(0 0 0 / 20%) 0px 2px 1px -1px,
@@ -43,10 +45,11 @@
 
 .card-header,
 .accordion-header {
-  background-color: var(--mdc-theme-surface);
+  --current-background-color: var(--mdc-theme-surface);
+  background-color: var(--current-background-color);
   border: unset;
   border-radius: 0;
-  border-bottom: 0.2px solid var(--mdc-theme-surface);
+  border-bottom: 0.2px solid var(--current-background-color);
   padding: 0px 6px;
 }
 
@@ -252,7 +255,7 @@ textarea.bk-input:not([type='file']) {
 .bk-input-group > label:has(+ .bk-input-container),
 .bk-input-group > label:has(+ .bk-spin-wrapper),
 .bk-input-group > label:has(+ textarea) {
-  backdrop-filter: blur(1000px);
+  background-color: var(--current-background-color);
   position: absolute;
   left: 0;
   top: 0;

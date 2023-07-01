@@ -16,7 +16,10 @@ from typing import (
 
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
-from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
+from bokeh.document.events import (
+    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
+    DocumentChangedEvent, ModelChangedEvent,
+)
 from bokeh.models import CustomJS
 
 from ..config import config
@@ -29,6 +32,11 @@ logger = logging.getLogger(__name__)
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+DISPATCH_EVENTS = (
+    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
+    ModelChangedEvent
+)
 
 @dataclasses.dataclass
 class Request:
@@ -246,7 +254,7 @@ def unlocked() -> Iterator:
         monkeypatch_events(events)
         remaining_events, dispatch_events = [], []
         for event in events:
-            if isinstance(event, ModelChangedEvent) and not locked:
+            if isinstance(event, DISPATCH_EVENTS) and not locked:
                 dispatch_events.append(event)
             else:
                 remaining_events.append(event)

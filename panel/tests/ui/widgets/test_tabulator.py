@@ -15,6 +15,8 @@ from bokeh.models.widgets.tables import (
     TextEditor,
 )
 
+from panel.layout.base import Column
+
 try:
     from playwright.sync_api import expect
 except ImportError:
@@ -1958,6 +1960,22 @@ def test_tabulator_pagination(page, port, df_mixed, pagination):
             break
 
 
+def test_tabulator_pagination_programmatic_update(page, port, df_mixed):
+    widget = Tabulator(df_mixed, pagination='local', page_size=2)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    widget.page = 2
+
+    time.sleep(0.2)
+
+    expect(page.locator('.tabulator-page.active')).to_have_text('2')
+
+
 def test_tabulator_filter_constant_scalar(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
@@ -2449,6 +2467,30 @@ def test_tabulator_patching_and_styling(page, port, df_mixed):
     max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
     expect(max_cell).to_have_count(1)
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
+
+def test_tabulator_filters_and_styling(page, port, df_mixed):
+    df_styled = df_mixed.style.apply(highlight_max, subset=['int'])
+
+    select = Select(options = [None, 'A', 'B', 'C', 'D'], size = 5)
+    table = Tabulator(df_styled)
+    table.add_filter(select, 'str')
+    layout = Column(select, table)
+
+    serve(layout, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Filtering to one field and then clicking None again should display all data, with styling
+    page.locator('option').nth(1).click()
+    page.locator('option').nth(0).click()
+
+    max_int = df_mixed['int'].max()
+    max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
+    expect(max_cell).to_have_count(1)
+    expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
+
 
 
 def test_tabulator_configuration(page, port, df_mixed):

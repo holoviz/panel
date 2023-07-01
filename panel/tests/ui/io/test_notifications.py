@@ -2,7 +2,11 @@ import time
 
 import pytest
 
-pytestmark = pytest.mark.ui
+try:
+    from playwright.sync_api import expect
+    pytestmark = pytest.mark.ui
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
 
 from panel.config import config
 from panel.io.server import serve
@@ -29,9 +33,7 @@ def test_notifications_no_template(page, port):
 
     page.click('.bk-btn')
 
-    time.sleep(0.1)
-
-    assert page.text_content('.notyf__message') == 'MyError'
+    expect(page.locator('.notyf__message')).to_have_text('MyError')
 
 
 def test_notifications_with_template(page, port):
@@ -51,6 +53,4 @@ def test_notifications_with_template(page, port):
 
     page.click('.bk-btn')
 
-    time.sleep(0.1)
-
-    assert page.text_content('.notyf__message') == 'MyError'
+    expect(page.locator('.notyf__message')).to_have_text('MyError')

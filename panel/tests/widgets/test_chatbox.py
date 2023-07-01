@@ -156,6 +156,52 @@ def test_chat_box_extend(document, comm):
     assert len(chat_box) == 2
 
 
+def test_insert(document, comm):
+    chat_box = ChatBox()
+    message = {"user": "Hello"}
+    chat_box.insert(0, message)
+    assert chat_box.value == [message]
+    assert len(chat_box) == 1
+
+    # Inserting at an index greater than the current length
+    chat_box.insert(2, {"user": "Hi"})
+    assert chat_box.value == [message, {"user": "Hi"}]
+    assert len(chat_box) == 2
+
+
+def test_pop(document, comm):
+    chat_box = ChatBox()
+    message1 = {"user": "Hello"}
+    message2 = {"user": "Hi"}
+    message3 = {"user": "Hey"}
+    chat_box.extend([message1, message2, message3])
+
+    # Pop the last message
+    popped_message = chat_box.pop()
+    assert popped_message == message3
+    assert chat_box.value == [message1, message2]
+    assert len(chat_box) == 2
+
+    # Pop a specific index
+    popped_message = chat_box.pop(0)
+    assert popped_message == message1
+    assert chat_box.value == [message2]
+    assert len(chat_box) == 1
+
+
+def test_replace(document, comm):
+    chat_box = ChatBox()
+    message1 = {"user": "Hello"}
+    message2 = {"user": "Hi"}
+    chat_box.extend([message1, message2])
+
+    # Replace a message at a specific index
+    new_message = {"user": "Hey"}
+    chat_box.replace(1, new_message)
+    assert chat_box.value == [message1, new_message]
+    assert len(chat_box) == 2
+
+
 def test_chat_box_allow_input(document, comm):
     chat_box = ChatBox(allow_input=True)
     assert chat_box.allow_input == True
@@ -207,7 +253,7 @@ def test_chat_box_message_colors(document, comm):
     chat_box = ChatBox(value=value.copy(), message_colors={"user1": "red"})
     assert chat_box.message_colors["user1"] == "red"
     # random generated colors are hexcodes
-    assert chat_box.message_colors["user2"] == ("rgb(246, 246, 246)", "black")
+    assert chat_box.message_colors["user2"] == ("rgb(235, 235, 235)", "black")
 
 
 def test_chat_box_message_colors_with_hue(document, comm):
@@ -261,6 +307,20 @@ def test_chat_box_show_name(document, comm):
     chat_box = ChatBox(value=value.copy())
     assert chat_box.rows[0]._name.object == "user1"
     assert chat_box.rows[1]._name.object == "user2"
+    # no name shown for consecutive messages from the same user
+    assert chat_box.rows[2]._name is None
+
+
+def test_chat_box_show_names(document, comm):
+    # name should only show on the first message
+    value = [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+        {"user2": "Hi"},
+    ]
+    chat_box = ChatBox(value=value.copy(), show_names=False)
+    assert chat_box.rows[0]._name is None
+    assert chat_box.rows[1]._name is None
     # no name shown for consecutive messages from the same user
     assert chat_box.rows[2]._name is None
 
@@ -384,3 +444,14 @@ def test_chat_row_align_end(document, comm):
 def test_chat_row_not_show_name(document, comm):
     chat_row = ChatRow(value=["Hello"], name="user1", show_name=False)
     assert chat_row._name is None
+
+
+def test_chat_row_bubble_obj_sizing_mode_default(document, comm):
+    chat_row = ChatRow(value=["Hello"], name="user1", show_name=False)
+    assert chat_row._bubble[0].sizing_mode == "stretch_width"
+
+
+def test_chat_row_bubble_obj_sizing_mode_set(document, comm):
+    widget = TextInput(sizing_mode="fixed", width=300, height=100)
+    chat_row = ChatRow(value=[widget], name="user1", show_name=False)
+    assert chat_row._bubble[0].sizing_mode == "fixed"

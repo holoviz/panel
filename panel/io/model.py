@@ -87,6 +87,9 @@ def diff(
     msg = patch_doc(header, {'use_buffers': binary}, patch_json)
     doc.callbacks._held_events = [e for e in doc.callbacks._held_events if e not in patch_events]
     doc.models.flush_synced(lambda model: not serializer.has_ref(model))
+    if binary:
+        for buffer in serializer.buffers:
+            msg.add_buffer(buffer)
     return msg
 
 def remove_root(obj: 'Model', replace: Optional['Document'] = None) -> None:

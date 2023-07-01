@@ -119,7 +119,7 @@ json_editor = pn.widgets.JSONEditor(
 # Model: katex
 latex1 = pn.pane.LaTeX(
     "The LaTeX pane supports two delimiters: $LaTeX$ and \(LaTeX\)",
-    style={"font-size": "18pt"},
+    styles={"font-size": "18pt"},
     width=800,
 )
 
@@ -127,7 +127,7 @@ latex1 = pn.pane.LaTeX(
 
 # Model: mathjax
 latex2 = pn.pane.LaTeX(
-    "$\sum_{j}{\sum_{i}{a*w_{j, i}}}$", renderer="mathjax", style={"font-size": "18pt"}
+    "$\sum_{j}{\sum_{i}{a*w_{j, i}}}$", renderer="mathjax", styles={"font-size": "18pt"}
 )
 
 # Model: perspective
@@ -198,7 +198,7 @@ terminal = pn.widgets.Terminal(
 
 # Model: trend
 _data = {"x": np.arange(50), "y": np.random.randn(50).cumsum()}
-trend = pn.indicators.Trend(title="Price", data=_data, width=200, height=200)
+trend = pn.indicators.Trend(name="Price", data=_data, width=200, height=200)
 
 # Model: vega
 try:

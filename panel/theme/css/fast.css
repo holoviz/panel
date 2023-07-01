@@ -161,10 +161,12 @@ img {
 
 .card-header,
 .accordion-header {
+  align-items: center;
   background-color: var(--neutral-fill-rest);
   border: unset;
   box-shadow: unset;
   color: var(--neutral-foreground-rest);
+  display: flex;
   height: unset;
 }
 
@@ -172,14 +174,9 @@ img {
   margin: 1em;
 }
 
-.card-header > .card-header-row {
-  margin-left: 15px;
-}
-
 .card-button {
   display: block;
   margin-left: 0.5em;
-  padding-right: 1em;
 }
 
 :host(.card-title) h1,

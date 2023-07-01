@@ -2,16 +2,16 @@ import os
 
 import pytest
 
+try:
+    from playwright.sync_api import expect
+    pytestmark = pytest.mark.ui
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
+
 from panel.tests.util import (
     run_panel_serve, unix_only, wait_for_port, write_file,
 )
 
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
-
-pytestmark = pytest.mark.ui
 
 @unix_only
 def test_basic_auth(py_file, page):
