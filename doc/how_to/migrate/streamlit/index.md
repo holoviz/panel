@@ -70,18 +70,18 @@ How to add interactivity with `pn.bind`.
 How to improve the performance with caching
 :::
 
-:::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1 sd-animate-grow50` Multi Page Apps
-:link: multipage_apps
-:link-type: doc
-
-How to create multi page apps
-:::
-
 :::{grid-item-card} {octicon}`list-ordered;2.5em;sd-mr-1 sd-animate-grow50` Session State
 :link: session_state
 :link-type: doc
 
 How to store state for a session
+:::
+
+:::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1 sd-animate-grow50` Multi Page Apps
+:link: multipage_apps
+:link-type: doc
+
+How to create multi page apps
 :::
 
 ::::

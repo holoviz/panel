@@ -1,6 +1,6 @@
 # Session State
 
-Session state (and callbacks) were added to Streamlit as an after thought
+Session state was added to Streamlit as an after thought
 to enable sharing variables between re-runs and across apps inside a multipage app.
 
 Panels execution model is very different and session state can be handled automatically by storing variables in the applications namespace.

@@ -49,6 +49,6 @@ pn.Column(bins, pn.pane.Str(bins)).servable()
 
 ![Panel Widgets Example](../../../_static/images/panel_widgets_example.png)
 
-Please note that in Panel `bin` is an instance of `IntSlider` and not an integer value. To access the value of `bins` in Panel, you would need to call `bins.value`.
+Please note that in Panel `bins` is an instance of `IntSlider` and not an integer value. To access the value of `bins` in Panel, you would need to call `bins.value`.
 
 Check out the [`IntSlider` Guide](../../../reference/widgets/IntSlider.md) if you want to learn more about it.

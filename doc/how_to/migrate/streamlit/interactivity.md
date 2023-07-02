@@ -2,10 +2,17 @@
 
 Both Streamlit and Panel are *reactive* frameworks that *react* when you interact with your application. But they work very differently:
 
-- Streamlit executes the whole script *top to bottom* on user interactions.
-- Panel executes the application script once per user session and specific *bound* functions on user interactions.
+In Streamlit
 
-With Panels interactivity architecture you will be able develop and maintain large, advanced and fast apps.
+- your script is run once when a user visits the page.
+- your script is rerun *top to bottom* on user interactions.
+
+In Panel
+
+- your script is run once when a user visits the page.
+- only *specific, bound functions* are rerun on user interactions.
+
+With Panels interactivity architecture you will be able develop and maintain larger and more complex apps.
 
 ---
 

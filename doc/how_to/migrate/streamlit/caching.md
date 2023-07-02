@@ -1,6 +1,8 @@
 # Improve the performance with Caching
 
-One of the key concepts in Streamlit is *caching*. In Streamlit
+One of the key concepts in Streamlit is *caching*.
+
+In Streamlit
 
 - your script is run once when a user visits the page.
 - your script is rerun *top to bottom* on user interactions.
