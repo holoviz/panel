@@ -33,7 +33,7 @@ def some_long_running_task():
 pn.panel(some_long_running_task).servable()
 ```
 
-![panel-longrunning-task-example](https://user-images.githubusercontent.com/42288570/245752515-1329b4c3-da45-41e7-b3b5-b1b4f09eecd4.gif)
+![panel-longrunning-task-example](https://assets.holoviz.org/panel/gifs/long_running_task.gif)
 
 Now lets learn how to defer long running tasks to after the application has loaded.
 
@@ -55,7 +55,7 @@ def long_running_task():
 pn.Column("# I'm shown on load", long_running_task).servable()
 ```
 
-![panel-defer-all-example](https://user-images.githubusercontent.com/42288570/245752511-b2970c4c-7144-4b1a-af36-4c90b1873de6.gif)
+![panel-defer-all-example](https://assets.holoviz.org/panel/gifs/defer_all_tasks.gif)
 
 ## Defer Specific Tasks
 
@@ -83,4 +83,4 @@ pn.Column(
 ).servable()
 ```
 
-![panel-defer-specific-example](https://user-images.githubusercontent.com/42288570/245752506-9ac676e9-65b2-4d9d-a01a-ce01a12dfda4.gif)
+![panel-defer-specific-example](https://assets.holoviz.org/panel/gifs/defer_specific_task.gif)
