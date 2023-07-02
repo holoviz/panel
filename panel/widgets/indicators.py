@@ -160,7 +160,9 @@ class LoadingSpinner(BooleanIndicator):
 
     _rename = {'name': 'text'}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None, 'bgcolor': None}
+    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+        'value': None, 'color': None, 'bgcolor': None, 'size': None
+    }
 
     _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/loadingspinner.css']
 
