@@ -1,30 +1,30 @@
 """
 reactive API
 
-`ref` is a wrapper around a Python object that lets users create
+`expression` is a wrapper around a Python object that lets users create
 reactive pipelines by calling existing APIs on an object with dynamic
 parameters or widgets.
 
-A `ref` instance watches what operations are applied to the object
+A `expression` instance watches what operations are applied to the object
 and records these on each instance, which are then strung together
 into a chain.
 
-The original input to a `ref` is stored in a mutable list and can be
+The original input to a `expression` is stored in a mutable list and can be
 accessed via the `_obj` property. The shared mutable data structure
 ensures that all `reactive` instances created from the same object can
-hold a shared reference that can be updated, e.g. via the `.set`
+hold a shared expressionerence that can be updated, e.g. via the `.set`
 method or because the input was itself a reference to some object that
 can potentially be updated.
 
-When an operation is applied to an `ref` instance, it will
+When an operation is applied to an `expression` instance, it will
 record the operation and create a new instance using `_clone` method,
 e.g. `dfi.head()` first records that the `'head'` attribute is
 accessed, this is achieved by overriding `__getattribute__`. A new
 reactive object is returned, which will then record that it is
 being called, and that new object will be itself called as
-`ref` implements `__call__`. `__call__` returns another
-`ref` instance. To be able to watch all the potential
-operations that may be applied to an object, `ref` implements:
+`expression` implements `__call__`. `__call__` returns another
+`expression` instance. To be able to watch all the potential
+operations that may be applied to an object, `expression` implements:
 
 - `__getattribute__`: Watching for attribute accesses
 - `__call__`: Intercepting both actual calls or method calls if an
@@ -33,7 +33,7 @@ operations that may be applied to an object, `ref` implements:
 - Operators: Implementing all valid operators `__gt__`, `__add__`, etc.
 - `__array_ufunc__`: Intercepting numpy universal function calls
 
-The `ref` object evaluates operations lazily but whenever the
+The `expression` object evaluates operations lazily but whenever the
 current value is needed the operations are automatically
 evaluated. Note that even attribute access or tab-completion
 operations can result in evaluation of the pipeline. This is very
@@ -55,23 +55,23 @@ attribute of each instance. They contain 4 keys:
              reverse order.
 
 The `_depth` attribute starts at 0 and is incremented by 1 every time
-a new `ref` instance is created part of a chain.  The root
+a new `expression` instance is created part of a chain.  The root
 instance in an expression has a `_depth` of 0. An expression can
 consist of multiple chains, such as `dfi[dfi.A > 1]`, as the
-`ref` instance is referenced twice in the expression. As a
-consequence `_depth` is not the total count of `ref` instance
+`expression` instance is referenced twice in the expression. As a
+consequence `_depth` is not the total count of `expression` instance
 creations of a pipeline, it is the count of instances created in the
-outer chain. In the example, that would be `dfi[]`. Each `ref`
+outer chain. In the example, that would be `dfi[]`. Each `expression`
 instance keeps a reference to the previous instance in the chain and
 each instance tracks whether its current value is up-to-date via the
 `_dirty` attribute which is set to False if any dependency changes.
 
 The `_method` attribute is a string that temporarily stores the
 method/attr accessed on the object, e.g. `_method` is 'head' in
-`dfi.head()`, until the `ref` instance created in the pipeline
+`dfi.head()`, until the `expression` instance created in the pipeline
 is called at which point `_method` is reset to None. In cases such as
 `dfi.head` or `dfi.A`, `_method` is not (yet) reset to None. At this
-stage the ref instance returned has its `_current` attribute
+stage the expression instance returned has its `_current` attribute
 not updated, e.g. `dfi.A._current` is still the original dataframe,
 not the 'A' series. Keeping `_method` is thus useful for instance to
 display `dfi.A`, as the evaluation of the object will check whether
@@ -137,7 +137,7 @@ def _resolve_value(value):
             _resolve_value(value.stop),
             _resolve_value(value.step)
         )
-    elif isinstance(value, ref):
+    elif isinstance(value, expression):
         return value.eval()
     value = transform_dependency(value)
     if hasattr(value, '_dinfo'):
@@ -153,7 +153,7 @@ def _resolve_ref(reference):
         return [r for v in reference.values() for r in _resolve_ref(v)]
     elif isinstance(reference, slice):
         return [r for v in (reference.start, reference.stop, reference.step) for r in _resolve_ref(v)]
-    elif isinstance(reference, ref):
+    elif isinstance(reference, expression):
         return reference._params
     reference = transform_dependency(reference)
     if hasattr(reference, '_dinfo'):
@@ -222,9 +222,9 @@ class FigureWrapper(param.Parameterized):
         return fig.subplots()
 
 
-class ref_base:
+class expression_base:
     """
-    `ref_base` allows wrapping objects and then operating on them
+    `expression_base` allows wrapping objects and then operating on them
     interactively while recording any operations applied to them. By
     recording all arguments or operands in the operations the recorded
     pipeline can be replayed if an operand represents a dynamic value.
@@ -238,7 +238,7 @@ class ref_base:
     --------
     Instantiate it from an object:
 
-    >>> ifloat = ref(3.14)
+    >>> ifloat = expression(3.14)
     >>> ifloat * 2
     6.28
 
@@ -247,25 +247,25 @@ class ref_base:
     2
     """
 
-    _accessors: dict[str, Callable[[ref], Any]] = {}
+    _accessors: dict[str, Callable[[expression], Any]] = {}
 
     _method_handlers: dict[str, Callable] = {}
 
     @classmethod
     def register_accessor(
-        cls, name: str, accessor: Callable[[ref], Any],
+        cls, name: str, accessor: Callable[[expression], Any],
         predicate: Optional[Callable[[Any], bool]] = None
     ):
         """
-        Registers an accessor that extends ref with custom behavior.
+        Registers an accessor that extends expression with custom behavior.
 
         Arguments
         ---------
         name: str
           The name of the accessor will be attribute-accessible under.
-        accessor: Callable[[ref], any]
+        accessor: Callable[[expression], any]
           A callable that will return the accessor namespace object
-          given the ref object it is registered on.
+          given the expression object it is registered on.
         predicate: Callable[[Any], bool] | None
         """
         if name in cls._accessors:
@@ -313,7 +313,7 @@ class ref_base:
         for subcls in cls.__subclasses__():
             if subcls._applies(obj):
                 clss = subcls
-        inst = super(ref_base, cls).__new__(clss)
+        inst = super(expression_base, cls).__new__(clss)
         inst._fn = fn
         inst._shared_obj = kwargs.get('_shared_obj', None if obj is None else [obj])
         inst._wrapper = wrapper
@@ -329,7 +329,7 @@ class ref_base:
         self._method = method
         self._operation = operation
         self._depth = depth
-        if isinstance(obj, ref_base) and not prev:
+        if isinstance(obj, expression_base) and not prev:
             self._prev = obj
         else:
             self._prev = prev
@@ -338,7 +338,7 @@ class ref_base:
         self._dirty = True
         self._current_ = None
         self._setup_invalidations(depth)
-        for name, (accessor, predicate) in ref_base._accessors.items():
+        for name, (accessor, predicate) in expression_base._accessors.items():
             if predicate is None or predicate(self._current):
                 setattr(self, name, accessor(self))
 
@@ -540,8 +540,8 @@ class ref_base:
     def __call__(self, *args, **kwargs):
         new = self._clone(copy=True)
         method = new._method or '__call__'
-        if method in ref_base._method_handlers:
-            handler = ref_base._method_handlers[method]
+        if method in expression_base._method_handlers:
+            handler = expression_base._method_handlers[method]
             method = handler(self)
         try:
             kwargs = dict(kwargs)
@@ -559,7 +559,7 @@ class ref_base:
         return clone
 
     #----------------------------------------------------------------
-    # ref pipeline APIs
+    # expression pipeline APIs
     #----------------------------------------------------------------
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
@@ -727,8 +727,8 @@ class ref_base:
 
     def eval(self):
         """
-        Returns the current state of the ref expression by
-        evaluating the pipeline.
+        Returns the current state of the expression by evaluating the
+        pipeline.
         """
         if not self._dirty:
             return self._current_
@@ -768,9 +768,9 @@ class ref_base:
         return self
 
 
-class ref(ref_base):
+class expression(expression_base):
     """
-    `ref` allows wrapping objects and then operating on them
+    `expression` allows wrapping objects and then operating on them
     interactively while recording any operations applied to them.  By
     recording all arguments or operands in the operations the recorded
     pipeline can be replayed if an operand represents a dynamic value.
@@ -852,7 +852,7 @@ class ref(ref_base):
     def layout(self, **kwargs):
         """
         Returns a layout of the widgets and output arranged according
-        to the center and widget location specified in the `ref`
+        to the center and widget location specified in the `expression`
         constructor.
         """
         widget_box = self.widgets()
@@ -899,12 +899,12 @@ class ref(ref_base):
 
     def output(self):
         """
-        Returns the output of the ref pipeline as a Panel
+        Returns the output of the expression pipeline as a Panel
         component.
 
         Returns
         -------
-        DynamicMap or Panel object wrapping the ref output.
+        DynamicMap or Panel object wrapping the expression output.
         """
         return self.panel(**self._kwargs)
 
@@ -916,14 +916,14 @@ class ref(ref_base):
 
     def set_display(self, **kwargs):
         """
-        Overrides the display options for this ref object.
+        Overrides the display options for this expression object.
         """
         self._display_opts = dict(self._display_opts, **kwargs)
         return self
 
     def widgets(self):
         """
-        Returns a Column of widgets which control the ref output.
+        Returns a Column of widgets which control the expression output.
 
         Returns
         -------
@@ -948,17 +948,17 @@ class ref(ref_base):
                     widgets.append(w)
         return Column(*widgets)
 
-def _ref_transform(obj):
-    if not isinstance(obj, ref):
+def _expression_transform(obj):
+    if not isinstance(obj, expression):
         return obj
     return bind(lambda *_: obj.eval(), *obj._params)
 
-register_depends_transform(_ref_transform)
+register_depends_transform(_expression_transform)
 
-ref.register_display_handler(
+expression.register_display_handler(
     is_dataframe, handler=DataFrame, max_rows=100
 )
-ref.register_display_handler(
+expression.register_display_handler(
     is_series, handler=DataFrame, max_rows=100
 )
 
@@ -971,4 +971,4 @@ def _plot_handler(interactive):
         return fig_wrapper.figure
     return plot
 
-ref_base.register_method_handler('plot', _plot_handler)
+expression_base.register_method_handler('plot', _plot_handler)

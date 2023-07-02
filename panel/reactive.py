@@ -573,11 +573,11 @@ class Reactive(Syncable, Viewable):
             raise ValueError(
                 'refs should never be captured.'
             )
-        from .ref import ref
+        from .expression import expression
         pobj = self.param[pname]
         pobj._validate(value)
         if (isinstance(pobj, param.Dynamic) and callable(value) and
-            (hasattr(value, '_dinfo') or isinstance(value, ref))):
+            (hasattr(value, '_dinfo') or isinstance(value, expression))):
             raise ValueError(
                 'Dynamic parameters should not capture functions with dependencies.'
             )
