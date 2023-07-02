@@ -1,23 +1,18 @@
-# Defer Long Running Tasks to Run After the Application Loads
+# Defer Long Running Tasks to Improve the User Experience
 
-This guide addresses how to defer long running tasks to after the application has loaded.
-You can use this to improve the user experience.
+This guide addresses how to defer and orchestrate long running background tasks with `pn.state.on_load`. You can use this to improve the user experience of your app.
 
 ---
 
-## Defer Long Running Tasks to Improve the User Experience
+## Motivation
 
-When you `panel serve` your app, the app is *loaded* as follows
+When a user opens your app, the app is *loaded* as follows
 
-- the app file is read and executed
-- the apps template is populated and sent to the users client (browser)
-- a web socket connection is created between the server and the users client
+- the app file is executed
+- the app template is sent to the user and rendered
+- a web socket connection is opened to enable fast, bi-directional communication as your interact with the app.
 
-After the app is *loaded* all communication is done via the web socket connection. For example when
-you change a slider to update a plot.
-
-The consequence of this is that any long running code executed before the app is loaded will
-increase the waiting time for the user. **If the waiting time is more than 2-5 seconds your users might get confused and even leave the application behind**.
+Thus any long running code executed before the app is loaded will increase the the waiting time before your users see your apps template. **If the waiting time is more than 2-5 seconds your users might get confused and even leave the application behind**.
 
 Here is an example of an app that takes +5 seconds to load.
 
@@ -27,98 +22,49 @@ import panel as pn
 
 pn.extension(template="bootstrap")
 
+layout = pn.pane.Markdown()
 
 def some_long_running_task():
-    time.sleep(5)
-    return "# Wow. That took some time. Are you still here?"
+    time.sleep(5) # Some long running task
+    layout.object = "# Wow. That took some time. Are you still here?"
 
+some_long_running_task()
 
-pn.panel(some_long_running_task).servable()
+layout.servable()
 ```
+
+![panel-longrunning-task-example](https://user-images.githubusercontent.com/42288570/245752515-1329b4c3-da45-41e7-b3b5-b1b4f09eecd4.gif)
 
 Now lets learn how to defer long running tasks to after the application has loaded.
 
-## Defer the Execution of all Tasks
-
-Its easy defer the execution of all displayed tasks with `pn.config.defer_load=True` or
-`pn.extension(defer_load=True)`. Lets take an example.
+## Defer a Task
 
 ```python
 import time
 import panel as pn
 
-pn.extension(defer_load=True, loading_indicator=True, template="bootstrap")
+pn.extension(template="bootstrap")
 
-def long_running_task():
-    time.sleep(3)
-    return "# I'm deferred and shown after load"
+layout = pn.pane.Markdown("# Loading...")
 
-pn.Column("# I'm shown on load", long_running_task).servable()
+def some_long_running_task():
+    time.sleep(5) # Some long running task
+    layout.object = "# Done"
+
+pn.state.onload(some_long_running_task)
+
+layout.servable()
 ```
 
-## Defer the Execution of Specific Tasks
+![panel-onload-example](https://user-images.githubusercontent.com/42288570/250338232-3777ff1e-4832-4cc9-aac0-03875b8c69f5.gif)
 
-Its also easy to defer the execution of selected, displayed tasks with `pn.panel(..., defer_load=True)`.
+Note that `pn.state.onload` accepts both *sync* and *async* functions.
 
-```python
-import time
-import panel as pn
+This example could also be implemented using a *bound and displayed function*. We recommend using that method together with `defer_load` when possible. See the [Defer Bound and Displayed Functions Guide](defer_load.md).
 
-pn.extension(loading_indicator=True, template="bootstrap")
+## Defer and Orchestrate Dependent Tasks
 
-
-def short_running_task():
-    return "# I'm shown on load"
-
-
-def long_running_task():
-    time.sleep(3)
-    return "# I'm deferred and shown after load"
-
-
-pn.Column(
-    short_running_task,
-    pn.panel(long_running_task, defer_load=True, min_height=50, min_width=200),
-).servable()
-```
-
-## Defer the Execution of Tasks That Do Not Return Anything
-
-So far the tasks have been producing and returning viewable objects to be displayed in a your app. Sometimes that is not what you want. Sometimes you want to load or pre-compute one or more parameter values, send a message somewhere or similar.
-
-For those use cases you can use `pn.state.onload` to run one or more tasks when the application has loaded.
-
-```python
-import time
-import panel as pn
-import pandas as pd
-import param
-
-pn.extension(loading_indicator=True, template="bootstrap")
-
-class AppState(param.Parameterized):
-    data = param.DataFrame()
-
-def short_running_task():
-    return "# I'm shown on load"
-
-state = AppState()
-
-def update():
-    time.sleep(2)
-    state.data = pd.DataFrame({"x": [1, 2, 3, 4], "y": [1, 3, 2, 4]})
-
-pn.state.onload(update)
-
-pn.Column(
-    short_running_task,
-    pn.pane.DataFrame(state.param.data),
-).servable()
-```
-
-## Defer the Execution of Dependent Tasks
-
-Sometimes you have multiple tasks that depend on each other and and you need to *orchestrate* them. To handle those scenarios you can combine what you have learned so far with `pn.bind` and/ or `pn.depends`.
+Sometimes you have multiple tasks that depend on each other and you need to *orchestrate* them. To handle those scenarios you use `pn.state.onload` to defer background tasks and `pn.bind` to trigger *bound and displayed* functions when the the background tasks have finished.
 
 Lets take an example where we
 
@@ -173,8 +119,4 @@ pn.Column(
 ).servable()
 ```
 
-## Tips and Tricks
-
-- Use caching to avoid rerunning expensive tasks
-- Use periodic callbacks or async generator functions to update the `data` and rerun the tasks on a periodic
-schedule.
+![panel-onload-dependent-tasks-example](https://user-images.githubusercontent.com/42288570/245752488-b2963489-bdff-4323-b801-03a763992af9.gif)
