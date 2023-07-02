@@ -305,8 +305,9 @@ def cache(
     ttl=None, to_disk=False, cache_path='./cache', per_session=False
 ):
     """
-    Decorator to memoize functions with options to configure the
-    caching behavior
+    Memoizes functions for a user session. Can be used as function annotation or just directly.
+
+    For global caching across user sessions use `pn.state.as_cached`.
 
     Arguments
     ---------

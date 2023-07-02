@@ -225,6 +225,25 @@ How to run Panel applications entirely in the browser using WebAssembly (Wasm), 
 
 ::::
 
+## Migrate to Panel
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} Migrate from Streamlit
+:link: migrate/streamlit/index
+:link-type: doc
+
+```{image} https://assets.holoviz.org/panel/background/comparisons/streamlit_logo.png
+:width: 125px
+:align: center
+:name: Streamlit
+```
+
+:::
+
+::::
+
 ```{toctree}
 :titlesonly:
 :hidden:
@@ -237,4 +256,5 @@ manage_session_tasks
 test_and_debug
 prepare_to_share
 share_your_work
+migrate_to_panel
 ```

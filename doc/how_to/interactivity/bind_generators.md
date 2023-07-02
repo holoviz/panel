@@ -13,7 +13,11 @@ import panel as pn
 pn.extension()
 ```
 
-Let us say we have some action that is triggered by a widget, such as a button, and while we are computing the results we want to provide feedback to the user. Using imperative programming this involves writing callbacks that update the current state of our components. This is complex and really we prefer to write reactive components. This is where reactive generators come in.
+Let us say we have some action that is triggered by a widget, such as a button, and while we are computing the results we want to provide feedback to the user. Using imperative programming this involves writing callbacks that update the current state of our components. This is complex and really we prefer to write reactive components. This is where *generator functions* come in.
+
+:::{important}
+A *generator* function is a function that use `yield` to *return* results as they are produced during the execution. It is not allowed to `return` anything, but can use `return` to *break* the execution. For an introduction to *generator functions* check out [Real Python | Introduction to generator functions](https://realpython.com/introduction-to-python-generators/).
+:::
 
 In the example below we add a `Button` to trigger some calculation. Initially the calculation hasn't yet run, so we check the value provided by the `Button` indicating whether a calculation has been triggered and while it is `False` we `yield` some text and `return`. However, when the `Button` is clicked the function is called again with `run=True` and we kick off some calculation. As this calculation progresses we can `yield` updates and then once the calculation is successful we `yield` again with the final result:
 
@@ -33,7 +37,7 @@ def runner(run):
 pn.Row(run, pn.bind(runner, run))
 ```
 
-This provides a powerful mechanism for providing incrememental updates as we load some data, perform some data processing processing.
+This provides a powerful mechanism for providing incrememental updates as we load some data, perform some data processing, etc.
 
 This can also be combined with asynchronous processing, e.g. to dynamically stream in new data as it arrives:
 

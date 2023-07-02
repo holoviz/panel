@@ -443,7 +443,7 @@ class _state(param.Parameterized):
 
     def as_cached(self, key: str, fn: Callable[[], T], ttl: int = None, **kwargs) -> T:
         """
-        Caches the return value of a function, memoizing on the given
+        Caches the return value of a function globally across user sessions, memoizing on the given
         key and supplied keyword arguments.
 
         Note: Keyword arguments must be hashable.
