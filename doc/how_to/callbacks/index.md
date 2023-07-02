@@ -12,11 +12,18 @@ These How-to pages provide solutions for common tasks related to setting up call
 How to leverage asynchronous callbacks to run I/O bound tasks in parallel.
 :::
 
+:::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1 sd-animate-grow50` Defer Bound Functions Until Load
+:link: defer_load
+:link-type: doc
+
+How to defer execution of bound and displayed functions until the application is loaded with `defer_load`.
+:::
+
 :::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1 sd-animate-grow50` Defer Callbacks Until Load
 :link: load
 :link-type: doc
 
-How to set up callbacks to defer a task until the application is loaded.
+How to set up callbacks to defer a task until the application is loaded with `pn.state.onload`.
 :::
 
 :::{grid-item-card} {octicon}`sync;2.5em;sd-mr-1 sd-animate-grow50` Periodically Run Callbacks
