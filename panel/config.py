@@ -794,7 +794,7 @@ class panel_extension(_pyviz_extension):
         except ImportError:
             pass
 
-        if "VSCODE_PID" in os.environ:
+        if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
             config.comms = "vscode"
             self._ignore_bokeh_warnings()
             return
