@@ -30,6 +30,8 @@
     --sidebar-width: {{ sidebar_width }}px;
   }
   #header {
+    --background-color: var(--header-background);
+    --text-color: var(--header-color);
     background-color: var(--header-background);
     color: var(--header-color);
     {% if theme._name == 'default' %}

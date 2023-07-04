@@ -483,6 +483,7 @@ class BaseTable(ReactiveData, Widget):
             elif op == '<=':
                 filters.append(col <= val)
             elif op == 'in':
+                if not isinstance(val, (list, np.ndarray)): val = [val]
                 filters.append(col.isin(val))
             elif op == 'like':
                 filters.append(col.str.contains(val, case=False, regex=False))

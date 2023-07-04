@@ -2,16 +2,15 @@ import time
 
 import pytest
 
-pytestmark = pytest.mark.ui
+try:
+    from playwright.sync_api import expect
+    pytestmark = pytest.mark.ui
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
 
 from panel.io.server import serve
 from panel.pane import Markdown
 from panel.template import BootstrapTemplate
-
-try:
-    from playwright.sync_api import expect
-except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
 
 
 def test_bootstrap_template_no_console_errors(page, port):
@@ -67,7 +66,6 @@ def test_bootstrap_template_updates(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    assert page.locator(".markdown").locator("div").text_content() == 'Initial\n'
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
     md.object = 'Updated'
-    time.sleep(0.1)
-    assert page.locator(".markdown").locator("div").text_content() == 'Updated\n'
+    expect(page.locator(".markdown").locator("div")).to_have_text('Updated\n')

@@ -101,12 +101,12 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=3.1.1,<3.2.0',
+    'bokeh >=3.1.1,<3.3.0',
     'param >=1.12.0',
     'pyviz_comms >=0.7.4',
     'xyzservices >=2021.09.1', # Bokeh dependency, but pyodide 23.0.0 does not always pick it up
     'markdown',
-    'markdown-it-py<3',
+    'markdown-it-py',
     'linkify-it-py',
     'mdit-py-plugins',
     'requests',
@@ -137,17 +137,20 @@ _tests = [
     'pre-commit',
     'psutil',
     # Libraries tested in unit tests
+    'altair',
+    'anywidget',
     'folium',
+    'diskcache',
+    'holoviews >=1.16.0',
     'ipympl',
+    'ipython >=7.0',
+    'ipyvuetify',
+    'ipywidgets_bokeh',
+    'numpy',
+    'pandas >=1.3',
+    'reacton',
     'scipy',
     'twine',
-    'pandas >=1.3',
-    'ipython >=7.0',
-    'holoviews >=1.16.0',
-    'diskcache',
-    'ipyvuetify',
-    'reacton',
-    'numpy <1.24',
 ]
 
 _ui = [
@@ -197,7 +200,7 @@ extras_require = {
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite ==0.8.0',
+        'nbsite ==0.8.1',
         'lxml'
     ],
     'ui': _ui
@@ -215,7 +218,7 @@ extras_require['build'] = [
     'setuptools >=42',
     'requests',
     'packaging',
-    'bokeh >=3.1.1,<3.2.0',
+    'bokeh >=3.1.1,<3.3.0',
     'pyviz_comms >=0.7.4',
     'bleach',
     'tqdm >=4.48.0',

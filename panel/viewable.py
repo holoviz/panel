@@ -724,7 +724,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         # Warning
         prev = f'{type(self).name}(..., background={self.background!r})'
         new = f"{type(self).name}(..., styles={{'background': {self.background!r}}})"
-        deprecated("1.1", prev, new)
+        deprecated("1.3", prev, new)
 
         self.styles = dict(self.styles, background=self.background)
 
@@ -860,7 +860,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         Prints a compositional repr of the class.
         """
-        deprecated('1.1', f'{type(self).__name__}.pprint', 'print')
+        deprecated('1.3', f'{type(self).__name__}.pprint', 'print')
         print(self)
 
     def select(
@@ -898,7 +898,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         port: int (optional, default=0)
           Allows specifying a specific port
         """
-        deprecated('1.1', f'{type(self).__name__}.app', 'panel.io.notebook.show_server')
+        deprecated('1.3', f'{type(self).__name__}.app', 'panel.io.notebook.show_server')
         return show_server(self, notebook_url, port)
 
     def embed(

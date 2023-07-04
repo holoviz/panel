@@ -59,7 +59,7 @@ html_theme_options = {
         },
         {
             "name": "Discord",
-            "url": "https://discord.gg/AXRHnJU6sP",
+            "url": "https://discord.gg/UXdtYyGVQX",
             "icon": "fa-brands fa-discord",
         },
     ],
@@ -68,7 +68,7 @@ html_theme_options = {
     "pygment_dark_style": "material",
     "header_links_before_dropdown": 5,
     'secondary_sidebar_items': [
-        "github_stars",
+        "github-stars-button",
         "panelitelink",
         "page-toc",
     ],

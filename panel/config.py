@@ -607,6 +607,7 @@ class panel_extension(_pyviz_extension):
         'gridstack': ['GridStack'],
         'katex': ['katex'],
         'mathjax': ['MathJax'],
+        'perspective': ['perspective'],
         'plotly': ['Plotly'],
         'tabulator': ['Tabulator'],
         'terminal': ['Terminal', 'xtermjs'],
@@ -632,6 +633,9 @@ class panel_extension(_pyviz_extension):
         for arg in args:
             if arg == 'notifications' and 'notifications' not in params:
                 params['notifications'] = True
+            if arg == 'ipywidgets':
+                from .io.resources import CSS_URLS
+                params['css_files'] = params.get('css_files', []) + [CSS_URLS['font-awesome']]
             if arg in self._imports:
                 try:
                     if (arg == 'ipywidgets' and get_ipython() and # noqa (get_ipython)

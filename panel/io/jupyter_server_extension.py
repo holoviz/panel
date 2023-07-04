@@ -423,10 +423,10 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         if self.session_id in state._kernels:
             del state._kernels[self.session_id]
         self._ping_job.stop()
-        reply = self.kernel.shutdown(reply=True)
-        future = self.kernel_manager.shutdown_kernel(self.kernel_id, now=True)
-        asyncio.ensure_future(reply)
-        asyncio.ensure_future(future)
+        self._shutdown_futures = [
+            asyncio.ensure_future(self.kernel.shutdown(reply=True)),
+            asyncio.ensure_future(self.kernel_manager.shutdown_kernel(self.kernel_id, now=True))
+        ]
         self.kernel = None
 
 

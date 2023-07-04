@@ -380,7 +380,7 @@ def bundle_resources(roots, resources, notebook=False, reloading=False, enable_m
         for bundle in extensions:
             server_url = bundle.server_url
             if resources.root_url and not resources.absolute:
-                server_url = server_url.replace(resources.root_url, '')
+                server_url = server_url.replace(resources.root_url, '', 1)
             js_files.append(server_url)
     elif mode == "cdn":
         for bundle in extensions:

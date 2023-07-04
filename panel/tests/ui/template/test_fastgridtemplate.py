@@ -2,7 +2,11 @@ import time
 
 import pytest
 
-pytestmark = pytest.mark.ui
+try:
+    from playwright.sync_api import expect
+    pytestmark = pytest.mark.ui
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
 
 from panel.io.server import serve
 from panel.pane import Markdown
@@ -42,7 +46,6 @@ def test_fast_grid_template_updates(page, port):
 
     page.goto(f"http://localhost:{port}", timeout=40_000)
 
-    assert page.locator(".markdown").locator("div").text_content() == 'Initial\n'
+    expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
     md.object = 'Updated'
-    time.sleep(0.1)
-    assert page.locator(".markdown").locator("div").text_content() == 'Updated\n'
+    expect(page.locator(".markdown").locator("div")).to_have_text('Updated\n')

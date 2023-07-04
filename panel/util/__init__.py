@@ -332,12 +332,13 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
         module: ext for ext, module in extension._imports.items()
     }
     ext = ext or module.split('.')[-1]
-    loaded = not state._extensions or external_modules[module] in state._extensions
+    ext_name = external_modules[module]
+    loaded_extensions = state._extensions
+    loaded = loaded_extensions is None or ext_name in loaded_extensions
     if module in sys.modules and loaded:
         model_cls = getattr(sys.modules[module], model)
         if f'{model_cls.__module__}.{model}' not in Model.model_class_reverse_map:
             _default_resolver.add(model_cls)
-
         return model_cls
 
     if notebook:
@@ -347,11 +348,26 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
             'ensure you load it as part of the extension using:'
             f'\n\npn.extension(\'{ext}\')\n'
         )
+    elif not loaded and state._is_launching:
+        # If we are still launching the application it is not too late
+        # to automatically load the extension and therefore ensure it
+        # is included in the resources added to the served page
+        param.main.param.warning(
+            f'pn.extension was initialized but {ext!r} extension was not '
+            'loaded. Since the application is still launching the extension '
+            'was loaded automatically but we strongly recommend you load '
+            'the extension explicitly with the following argument(s):'
+            f'\n\npn.extension({ext!r})\n'
+        )
+        if loaded_extensions is None:
+            state._extensions_[state.curdoc] = [ext_name]
+        else:
+            loaded_extensions.append(ext_name)
     elif not loaded:
         param.main.param.warning(
-            f'pn.extension was initialized but {ext!r} extension was not'
+            f'pn.extension was initialized but {ext!r} extension was not '
             'loaded. In order for the required resources to be initialized '
-            'ensure the extension using is loaded with the extension:'
+            'ensure the extension is loaded with the following argument(s):'
             f'\n\npn.extension({ext!r})\n'
         )
     elif root is not None and root.ref['id'] in state._views:

@@ -120,7 +120,7 @@ class Vizzu(ModelPane, SyncableData):
                         columns.append({'name': col, 'type': 'datetime'})
                     elif isinstance(value, str):
                         columns.append({'name': col, 'type': 'dimension'})
-                    elif isinstance(value, (float, np.float, int, np.int)):
+                    elif isinstance(value, (float, np.float_, np.int_, int)):
                         columns.append({'name': col, 'type': 'measure'})
                     else:
                         columns.append({'name': col, 'type': 'dimension'})

@@ -469,6 +469,8 @@ class Param(PaneBase):
             kw['description'] = textwrap.dedent(p_obj.doc).strip()
 
         # Update kwargs
+        onkeyup = kw_widget.pop('onkeyup', False)
+        throttled = kw_widget.pop('throttled', False)
         ignored_kws = [repr(k) for k in kw_widget if k not in widget_class.param]
         if ignored_kws:
             self.param.warning(
@@ -509,9 +511,9 @@ class Param(PaneBase):
             def action(change):
                 value(self.object)
             watcher = widget.param.watch(action, 'clicks')
-        elif kw_widget.get('onkeyup', False) and hasattr(widget, 'value_input'):
+        elif onkeyup and hasattr(widget, 'value_input'):
             watcher = widget.param.watch(link_widget, 'value_input')
-        elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
+        elif throttled and hasattr(widget, 'value_throttled'):
             watcher = widget.param.watch(link_widget, 'value_throttled')
         else:
             watcher = widget.param.watch(link_widget, 'value')
@@ -573,7 +575,7 @@ class Param(PaneBase):
                 idx = self._internal_callbacks.index(prev_watcher)
                 self._internal_callbacks[idx] = watchers[0]
                 return
-            elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
+            elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
                 updates['value'] = change.new
             elif isinstance(widget, Row) and len(widget) == 2:
@@ -758,9 +760,12 @@ class ParamMethod(ReplacementPane):
     return any object which itself can be rendered as a Pane.
     """
 
-    defer_load = param.Boolean(default=config.defer_load, doc="""
+    defer_load = param.Boolean(default=None, doc="""
         Whether to defer load until after the page is rendered.
         Can be set as parameter or by setting panel.config.defer_load.""")
+
+    generator_mode = param.Selector(default='replace', objects=['append', 'replace'], doc="""
+        Whether generators should 'append' to or 'replace' existing output.""")
 
     lazy = param.Boolean(default=False, doc="""
         Whether to lazily evaluate the contents of the object
@@ -771,6 +776,8 @@ class ParamMethod(ReplacementPane):
         Can be set as parameter or by setting panel.config.loading_indicator.""")
 
     def __init__(self, object=None, **params):
+        if 'defer_load' not in params:
+            params['defer_load'] = config.defer_load
         super().__init__(object, **params)
         self._async_task = None
         self._evaled = not (self.lazy or self.defer_load)
@@ -815,8 +822,15 @@ class ParamMethod(ReplacementPane):
             curdoc.on_session_destroyed(lambda context: task.cancel())
         try:
             if isinstance(awaitable, types.AsyncGeneratorType):
+                append_mode = self.generator_mode == 'append'
+                if append_mode:
+                    self._inner_layout[:] = []
                 async for new_obj in awaitable:
-                    self._update_inner(new_obj)
+                    if append_mode:
+                        self._inner_layout.append(new_obj)
+                        self._pane = self._inner_layout[-1]
+                    else:
+                        self._update_inner(new_obj)
             else:
                 self._update_inner(await awaitable)
         except Exception as e:
@@ -842,8 +856,15 @@ class ParamMethod(ReplacementPane):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return
             elif isinstance(new_object, Generator):
+                append_mode = self.generator_mode == 'append'
+                if append_mode:
+                    self._inner_layout[:] = []
                 for new_obj in new_object:
-                    self._update_inner(new_obj)
+                    if append_mode:
+                        self._inner_layout.append(new_obj)
+                        self._pane = self._inner_layout[-1]
+                    else:
+                        self._update_inner(new_obj)
             else:
                 self._update_inner(new_object)
         finally:
@@ -982,7 +1003,7 @@ class ParamFunction(ParamMethod):
             if hasattr(obj, '_dinfo'):
                 return True
             if (
-                kwargs.get('defer_load') or
+                kwargs.get('defer_load') or cls.param.defer_load.default or
                 (cls.param.defer_load.default is None and config.defer_load) or
                 iscoroutinefunction(obj)
             ):

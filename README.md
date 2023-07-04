@@ -21,7 +21,7 @@ Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt
 </tr>
 <tr>
 <td>Latest dev release</td>
-<td><a href="https://github.com/holoviz/panel/tags"><img src="https://img.shields.io/github/v/tag/holoviz/panel.svg?label=tag&amp;colorB=11ccbb" alt="Github tag"></a> <a href="https://pyviz-dev.github.io/panel/"><img src="https://img.shields.io/website-up-down-green-red/https/pyviz-dev.github.io/panel.svg?label=dev%20website" alt="dev-site"></a></td>
+<td><a href="https://github.com/holoviz/panel/tags"><img src="https://img.shields.io/github/v/tag/holoviz/panel.svg?label=tag&amp;colorB=11ccbb" alt="Github tag"></a> <a href="https://holoviz-dev.github.io/panel/"><img src="https://img.shields.io/website-up-down-green-red/https/holoviz-dev.github.io/panel.svg?label=dev%20website" alt="dev-site"></a></td>
 </tr>
 <tr>
 <td>Latest release</td>

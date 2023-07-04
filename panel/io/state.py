@@ -104,9 +104,6 @@ class _state(param.Parameterized):
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
-    loaded = param.Boolean(default=False, doc="""
-       Whether the page is fully loaded.""")
-
     rel_path = param.String(default='', readonly=True, doc="""
        Relative path from the current app being served to the root URL.
        If application is embedded in a different server via autoload.js
@@ -242,6 +239,13 @@ class _state(param.Parameterized):
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
         return thread_id
+
+    @property
+    def _is_launching(self) -> bool:
+        curdoc = self.curdoc
+        if not curdoc or not curdoc.session_context:
+            return False
+        return not bool(curdoc.session_context.server_context.sessions)
 
     @property
     def _is_pyodide(self) -> bool:
@@ -439,7 +443,7 @@ class _state(param.Parameterized):
 
     def as_cached(self, key: str, fn: Callable[[], T], ttl: int = None, **kwargs) -> T:
         """
-        Caches the return value of a function, memoizing on the given
+        Caches the return value of a function globally across user sessions, memoizing on the given
         key and supplied keyword arguments.
 
         Note: Keyword arguments must be hashable.

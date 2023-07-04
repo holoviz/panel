@@ -113,29 +113,21 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    markers, skipped, selected = [], [], []
-    for marker, info in optional_markers.items():
-        if not config.getoption("--{}".format(marker)):
-            skip_test = pytest.mark.skip(
-                reason=info['skip-reason'].format(marker)
-            )
-            for item in items:
-                if marker in item.keywords:
-                    item.add_marker(skip_test)
+    skipped, selected = [], []
+    markers = [m for m in optional_markers if config.getoption(f"--{m}")]
+    empty = not markers
+    for item in items:
+        if empty and any(m in item.keywords for m in optional_markers):
+            skipped.append(item)
+        elif empty:
+            selected.append(item)
+        elif not empty and any(m in item.keywords for m in markers):
+            selected.append(item)
         else:
-            markers.append(marker)
-            for item in items:
-                if marker in item.keywords:
-                    selected.append(item)
-                else:
-                    skipped.append(item)
-    skip_test = pytest.mark.skip(
-        reason=f"test not one of {', '.join(markers)}"
-    )
-    for item in skipped:
-        if item in selected:
-            continue
-        item.add_marker(skip_test)
+            skipped.append(item)
+
+    config.hook.pytest_deselected(items=skipped)
+    items[:] = selected
 
 
 @pytest.fixture
