@@ -50,7 +50,7 @@ from . import links  # noqa
 from . import pane  # noqa
 from . import param  # noqa
 from . import pipeline  # noqa
-from . import reactive  # noqa
+from . import react  # noqa
 from . import viewable  # noqa
 from . import widgets  # noqa
 from .config import __version__, config, panel_extension as extension  # noqa
@@ -67,6 +67,14 @@ from .pane import panel  # noqa
 from .param import Param  # noqa
 from .template import Template  # noqa
 from .widgets import indicators, widget  # noqa
+
+
+def __getattr__(name):
+    if name == "reactive":
+        from .util.warnings import deprecated
+        deprecated("1.4", "panel.reactive", "panel.react")
+        return react
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = (
     "__version__",
@@ -100,6 +108,7 @@ __all__ = (
     "panel",
     "param",
     "pipeline",
+    "react",
     "reactive",
     "serve",
     "state",
