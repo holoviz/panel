@@ -41,7 +41,7 @@ You *run* and *show* the app with *autoreload* via
 streamlit run app.py
 ```
 
-![Streamlit Hello World Example](../../../_static/images/streamlit_hello_world.png)
+![Streamlit Hello World Example](../../_static/images/streamlit_hello_world.png)
 
 ### Panel Hello World Example
 
@@ -59,4 +59,4 @@ You *serve* and *show* (i.e. open) the app in your browser with *autoreload* via
 panel serve app.py --autoreload --show
 ```
 
-![Panel Hello World Example](../../../_static/images/panel_hello_world.png)
+![Panel Hello World Example](../../_static/images/panel_hello_world.png)
