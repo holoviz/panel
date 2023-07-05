@@ -15,6 +15,10 @@
   );
 }
 
+.bk-btn-group > .bk-btn {
+  line-height: var(--line-height);
+}
+
 .bk-btn:active {
   transform: scale(0.98);
 }
@@ -24,7 +28,7 @@
 }
 
 :host(.solid) .bk-btn {
-  border: unset;
+  border: 1.2px solid rgba(0, 0, 0, 0);
 }
 
 :host(.solid) .bk-btn.bk-btn-default {

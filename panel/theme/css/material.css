@@ -236,7 +236,7 @@ button.mdc-button.mdc-card-button {
 }
 
 textarea.bk-input:not([type='file']) {
-  padding: 12px 10px;
+  padding: 0.5em 10px;
 }
 
 .bk-input[disabled] {
