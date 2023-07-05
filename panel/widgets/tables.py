@@ -1575,7 +1575,7 @@ class Tabulator(BaseTable):
         if 'hidden_columns' in params:
             import pandas as pd
             if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):
-                params['hidden_columns'] += [self.value.index.name or 'index']
+                params['hidden_columns'] = params['hidden_columns'] + [self.value.index.name or 'index']
         if 'selectable_rows' in params:
             params['selectable_rows'] = self._get_selectable()
         return params

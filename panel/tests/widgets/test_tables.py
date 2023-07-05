@@ -1972,10 +1972,9 @@ def test_tabulator_formatter_update(dataframe, document, comm):
     model_formatter = model.columns[2].formatter
     assert model_formatter.format == formatter.format
 
-def test_tabulator_pandas_import():
+def test_tabulator_hidden_columns_fix():
     # Checks for: https://github.com/holoviz/panel/issues/4102
-    _tabulator = Tabulator(
-        pd.DataFrame(),
-        show_index=False,
-    )
-    _tabulator.hidden_columns = ["a", "b", "c"]
+    #             https://github.com/holoviz/panel/issues/5209
+    table = Tabulator(pd.DataFrame(), show_index=False)
+    table.hidden_columns = ["a", "b", "c"]
+    assert table.hidden_columns == ["a", "b", "c"]
