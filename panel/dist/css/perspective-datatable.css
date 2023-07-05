@@ -248,11 +248,15 @@ regular-table::-webkit-scrollbar-thumb:hover {
   box-shadow: 5px 4px 0px -4px var(--inactive--color, #eaedef);
 }
 .psp-is-top.psp-header-group:not(.psp-header-group-corner) {
-  box-shadow: 5px 4px 0px -4px var(--inactive--color, #eaedef),
+  box-shadow:
+    5px 4px 0px -4px var(--inactive--color, #eaedef),
     0px 10px 0 -9px var(--inactive--color, #eaedef);
 }
-.psp-header-border.psp-header-group:not(.psp-is-top):not(.psp-header-group-corner) {
-  box-shadow: 1px 0px var(--inactive--color, #eaedef),
+.psp-header-border.psp-header-group:not(.psp-is-top):not(
+    .psp-header-group-corner
+  ) {
+  box-shadow:
+    1px 0px var(--inactive--color, #eaedef),
     0px 10px 0 -9px var(--inactive--color, #eaedef);
 }
 .psp-header-leaf.psp-header-border {
@@ -283,8 +287,10 @@ regular-table
   td:not(.psp-row-selected):not(.psp-row-subselected) {
   border-color: var(--rt-hover--border-color, #c5c9d080) !important;
   background-color: transparent;
-  box-shadow: 0px 1px 0px var(--rt-hover--border-color, #c5c9d080),
-    0px 3px 0px rgba(0, 0, 0, 0.05), 0px 5px 0px rgba(0, 0, 0, 0.01);
+  box-shadow:
+    0px 1px 0px var(--rt-hover--border-color, #c5c9d080),
+    0px 3px 0px rgba(0, 0, 0, 0.05),
+    0px 5px 0px rgba(0, 0, 0, 0.01);
 }
 regular-table
   tbody
