@@ -1,11 +1,8 @@
 from .react import (
-    LinkWatcher as _LinkWatcher,
-    Syncable as _Syncable,
-    Reactive as _Reactive,
+    LinkWatcher as _LinkWatcher, Reactive as _Reactive,
+    ReactiveData as _ReactiveData, ReactiveHTML as _ReactiveHTML,
+    ReactiveHTMLMetaclass as _ReactiveHTMLMetaclass, Syncable as _Syncable,
     SyncableData as _SyncableData,
-    ReactiveData as _ReactiveData,
-    ReactiveHTMLMetaclass as _ReactiveHTMLMetaclass,
-    ReactiveHTML as _ReactiveHTML,
 )
 from .util.warnings import deprecated
 
