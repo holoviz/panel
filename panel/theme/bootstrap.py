@@ -51,7 +51,8 @@ class Bootstrap(Design):
             'margin': (10, 5)
         },
         Tabulator: {
-            'theme': 'bootstrap4'
+            'theme': 'bootstrap5',
+            'theme_classes': ['table-sm']
         },
         Viewable: {
             'stylesheets': [Inherit, f'{CDN_DIST}bundled/theme/bootstrap.css']
