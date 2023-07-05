@@ -300,9 +300,7 @@ class BaseTable(ReactiveData, Widget):
         return params
 
     def _get_properties(self, doc: Document) -> Dict[str, Any]:
-        print(self.hidden_columns)
         properties = super()._get_properties(doc)
-        print(self.hidden_columns)
         properties['columns'] = self._get_columns()
         properties['source']  = ColumnDataSource(
             data=self._data, selected=Selection(indices=self.selection)
@@ -316,7 +314,6 @@ class BaseTable(ReactiveData, Widget):
         properties = self._get_properties(doc)
         model = self._widget_type(**properties)
         root = root or model
-        print(self.hidden_columns)
         self._link_props(model.source, ['data'], doc, root, comm)
         self._link_props(model.source.selected, ['indices'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
@@ -1598,7 +1595,6 @@ class Tabulator(BaseTable):
         )
         self._link_props(model, ['page', 'sorters', 'expanded', 'filters'], doc, root, comm)
         self._register_events('cell-click', 'table-edit', model=model, doc=doc, comm=comm)
-        print(self.hidden_columns)
         return model
 
     def _get_filter_spec(self, column: TableColumn) -> Dict[str, Any]:
