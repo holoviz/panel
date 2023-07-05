@@ -200,7 +200,7 @@ extras_require = {
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite ==0.8.1',
+        'nbsite ==0.8.2',
         'lxml'
     ],
     'ui': _ui
