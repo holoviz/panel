@@ -61,7 +61,7 @@ from .io import (  # noqa
 )
 from .layout import (  # noqa
     Accordion, Card, Column, FlexBox, FloatPanel, GridBox, GridSpec, GridStack,
-    HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
+    HSpacer, Row, ScrollLog, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
 )
 from .pane import panel  # noqa
 from .param import Param  # noqa
@@ -82,6 +82,7 @@ __all__ = (
     "Param",
     "Row",
     "Spacer",
+    "ScrollLog",
     "Tabs",
     "Template",
     "VSpacer",

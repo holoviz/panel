@@ -37,6 +37,7 @@ from .flex import FlexBox  # noqa
 from .float import FloatPanel  # noqa
 from .grid import GridBox, GridSpec  # noqa
 from .gridstack import GridStack  # noqa
+from .scrolllog import ScrollLog  # noqa
 from .spacer import (  # noqa
     Divider, HSpacer, Spacer, VSpacer,
 )
@@ -58,7 +59,9 @@ __all__ = (
     "ListPanel",
     "Panel",
     "Row",
+    "ScrollLog",
     "Spacer",
+    "Swipe",
     "Tabs",
     "VSpacer",
     "WidgetBox"
