@@ -13,7 +13,7 @@ To migrate your layouts to Panel
 - replace your Streamlit `st.some_layout` *snake cased* function with the corresponding Panel
 `pn.SomeLayout` *CamelCased* class.
 
-You can identify the relevant layout to migrate to in the [Layouts Section](../../../reference/index.md#layouts) of the [Component Gallery](../../../reference/index.md).
+You can identify the relevant layout to migrate to in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
 
 ## Example
 
@@ -35,7 +35,7 @@ with col2:
     st.write("# The powerful data exploration & web app framework for Python")
 ```
 
-![Streamlit Layout Example](../../../_static/images/streamlit_layout_example.png)
+![Streamlit Layout Example](../../_static/images/streamlit_layout_example.png)
 
 #### Panel Columns Example
 
@@ -64,6 +64,6 @@ row2 = pn.Row(
 pn.Column(row1, row2).servable()
 ```
 
-![Panel Layout Example](../../../_static/images/panel_layout_example.png)
+![Panel Layout Example](../../_static/images/panel_layout_example.png)
 
-Panels `Column` and `Row` are *list like* objects. So you can use familiar methods like `.append`, `.pop` and `[]` indexing when you work with them. For the details check out the [`Column` Guide](../../../reference/layouts/Column.md) and the [`Row` Guide](../../../reference/layouts/Row.md)
+Panels `Column` and `Row` are *list like* objects. So you can use familiar methods like `.append`, `.pop` and `[]` indexing when you work with them. For the details check out the [`Column` Guide](../../reference/layouts/Column.md) and the [`Row` Guide](../../reference/layouts/Row.md)

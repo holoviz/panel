@@ -10,5 +10,5 @@
 :hidden:
 :maxdepth: 1
 
-Migrate from Streamlit<migrate/streamlit/index>
+Migrate from Streamlit<streamlit_migration/index>
 ```

@@ -53,7 +53,7 @@ if add_row:
     create_row()
 ```
 
-![Streamlit Session State Example](../../../_static/images//streamlit_dymamic_layout.png)
+![Streamlit Session State Example](../../_static/images//streamlit_dymamic_layout.png)
 
 With Streamlit you need session state to keep track of the dynamically created `rows`.
 
@@ -85,4 +85,4 @@ pn.Column(
 As the Panel script is only executed once per session the `rows` objects will keep track of your
 *session state*.
 
-![Panel Session State Example](../../../_static/images/panel_dynamic_layout.png)
+![Panel Session State Example](../../_static/images/panel_dynamic_layout.png)

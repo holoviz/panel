@@ -13,7 +13,7 @@ To migrate your app's input widgets to Panel:
 - Replace your Streamlit `st.some_widget` function with the corresponding Panel
 `pn.widgets.SomeWidget` class.
 
-You can identify the corresponding widget via the [Widgets Section](../../../reference/index.md#widgets) of the [Component Gallery](../../../reference/index.md).
+You can identify the corresponding widget via the [Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
 
 ## Example
 
@@ -31,7 +31,7 @@ bins = st.slider(value=20, min_value=10, max_value=30, step=1, label="Bins")
 st.write(bins)
 ```
 
-![Streamlit Widgets Example](../../../_static/images/streamlit_widgets_example.png)
+![Streamlit Widgets Example](../../_static/images/streamlit_widgets_example.png)
 
 #### Panel Integer Slider Example
 
@@ -47,8 +47,8 @@ bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, name="Bins")
 pn.Column(bins, pn.pane.Str(bins)).servable()
 ```
 
-![Panel Widgets Example](../../../_static/images/panel_widgets_example.png)
+![Panel Widgets Example](../../_static/images/panel_widgets_example.png)
 
 Please note that in Panel `bins` is an instance of `IntSlider` and not an integer value. To access the value of `bins` in Panel, you would need to call `bins.value`.
 
-Check out the [`IntSlider` Guide](../../../reference/widgets/IntSlider.md) if you want to learn more about it.
+Check out the [`IntSlider` Guide](../../reference/widgets/IntSlider.md) if you want to learn more about it.
