@@ -345,6 +345,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this.connect(p.max_page.change, () => this.setMaxPage())
     this.connect(p.frozen_rows.change, () => this.setFrozen())
     this.connect(p.sorters.change, () => this.setSorters())
+    this.connect(p.theme_classes.change, () => this.setCSSClasses(this.tabulator.element))
     this.connect(this.model.source.properties.data.change, () => this.setData())
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => {
@@ -408,16 +409,24 @@ export class DataTabulatorView extends HTMLBoxView {
     this._initializing = false
   }
 
+  setCSSClasses(el: HTMLDivElement): void {
+    el.className = "pnx-tabulator tabulator"
+    for (const cls of this.model.theme_classes)
+      el.classList.add(cls)
+  }
+
   render(): void {
     super.render()
     this._initializing = true
     const container = div({style: "display: contents;"})
-    const el = div({class: "pnx-tabulator", style: "width: 100%; height: 100%; visibility: hidden;"})
+    const el = div({style: "width: 100%; height: 100%; visibility: hidden;"})
+    this.setCSSClasses(el)
     container.appendChild(el)
     this.shadow_el.appendChild(container)
 
     let configuration = this.getConfiguration()
     this.tabulator = new Tabulator(el, configuration)
+    console.log(el, this.tabulator)
     this.watch_stylesheets()
     this.init_callbacks()
   }
@@ -1127,6 +1136,7 @@ export namespace DataTabulator {
     source: p.Property<ColumnDataSource>
     sorters: p.Property<any[]>
     cell_styles: p.Property<any>
+    theme_classes: p.Property<string[]>
   }
 }
 
@@ -1171,6 +1181,7 @@ export class DataTabulator extends HTMLBox {
       source:         [ Ref(ColumnDataSource)       ],
       sorters:        [ Array(Any),              [] ],
       cell_styles:    [ Any,                     {} ],
+      theme_classes:  [ Array(String),           [] ],
     }))
   }
 }
