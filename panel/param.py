@@ -32,7 +32,7 @@ from .layout import (
     Column, Panel, Row, Spacer, Tabs,
 )
 from .pane.base import PaneBase, ReplacementPane
-from .reactive import Reactive
+from .react import Reactive
 from .util import (
     abbreviated_repr, eval_function, full_groupby, fullpath, get_method_owner,
     is_parameterized, param_name, recursive_parameterized,

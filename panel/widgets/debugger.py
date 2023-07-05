@@ -15,7 +15,7 @@ import param
 from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..layout import Card, HSpacer, Row
-from ..reactive import ReactiveHTML
+from ..react import ReactiveHTML
 from .terminal import Terminal
 
 

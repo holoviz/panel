@@ -39,7 +39,7 @@ from ..pane import (
     HTML, HoloViews, Str, panel as _panel,
 )
 from ..pane.image import ImageBase
-from ..reactive import ReactiveHTML
+from ..react import ReactiveHTML
 from ..theme.base import (
     THEMES, DefaultTheme, Design, Theme,
 )

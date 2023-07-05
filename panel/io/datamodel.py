@@ -7,7 +7,7 @@ import param as pm
 from bokeh.model import DataModel
 from bokeh.models import ColumnDataSource
 
-from ..reactive import Syncable
+from ..react import Syncable
 from .notebook import push_on_root
 
 

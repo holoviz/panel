@@ -27,7 +27,7 @@ from pyviz_comms import JupyterComm
 from ..depends import param_value_if_widget
 from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
-from ..reactive import Reactive, ReactiveData
+from ..react import Reactive, ReactiveData
 from ..util import (
     clone_model, isdatetime, lazy_load, updating,
 )

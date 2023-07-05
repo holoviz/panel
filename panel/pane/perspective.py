@@ -15,7 +15,7 @@ from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
 from ..io.resources import CDN_DIST
-from ..reactive import ReactiveData
+from ..react import ReactiveData
 from ..util import lazy_load
 from ..viewable import Viewable
 from .base import ModelPane

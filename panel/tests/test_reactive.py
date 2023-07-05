@@ -16,7 +16,7 @@ from bokeh.models import Div
 
 from panel.depends import bind, depends
 from panel.layout import Tabs, WidgetBox
-from panel.reactive import Reactive, ReactiveHTML
+from panel.react import Reactive, ReactiveHTML
 from panel.viewable import Viewable
 from panel.widgets import (
     Checkbox, IntInput, StaticText, TextInput,

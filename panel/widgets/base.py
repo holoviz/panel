@@ -19,7 +19,7 @@ from bokeh.models.dom import HTML
 
 from .._param import Margin
 from ..layout.base import Row
-from ..reactive import Reactive
+from ..react import Reactive
 from ..viewable import Layoutable, Viewable
 
 if TYPE_CHECKING:

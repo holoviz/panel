@@ -2,7 +2,7 @@ from pathlib import Path
 
 import param
 
-from ..reactive import ReactiveHTML
+from ..react import ReactiveHTML
 from .base import ListLike
 
 

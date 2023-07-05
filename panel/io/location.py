@@ -13,7 +13,7 @@ from typing import (
 import param
 
 from ..models.location import Location as _BkLocation
-from ..reactive import Syncable
+from ..react import Syncable
 from ..util import parse_query
 from .document import create_doc_if_none_exists
 from .state import state

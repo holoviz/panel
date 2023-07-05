@@ -327,7 +327,7 @@ class _config(_base_config):
     @param.depends('notifications', watch=True)
     def _enable_notifications(self):
         from .io.notifications import NotificationArea
-        from .reactive import ReactiveHTMLMetaclass
+        from .react import ReactiveHTMLMetaclass
         if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
             ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
         if not state.curdoc:
@@ -621,7 +621,7 @@ class panel_extension(_pyviz_extension):
     _comms_detected_before = False
 
     def __call__(self, *args, **params):
-        from .reactive import ReactiveHTML, ReactiveHTMLMetaclass
+        from .react import ReactiveHTML, ReactiveHTMLMetaclass
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
         }

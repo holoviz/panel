@@ -252,7 +252,7 @@ def require_components():
         if "." in qual_name:
             js_requires.append(model)
 
-    from ..reactive import ReactiveHTML
+    from ..react import ReactiveHTML
     js_requires += list(param.concrete_descendents(ReactiveHTML).values())
 
     for export, js in config.js_files.items():

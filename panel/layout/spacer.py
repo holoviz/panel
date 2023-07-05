@@ -10,7 +10,7 @@ import param
 from bokeh.models import Div as BkDiv, Spacer as BkSpacer
 
 from ..io.resources import CDN_DIST
-from ..reactive import Reactive
+from ..react import Reactive
 
 
 class Spacer(Reactive):

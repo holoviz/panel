@@ -8,7 +8,7 @@ import param
 
 from bokeh.models import Column as BkColumn, CustomJS
 
-from ..reactive import Reactive
+from ..react import Reactive
 from .base import NamedListPanel
 from .card import Card
 

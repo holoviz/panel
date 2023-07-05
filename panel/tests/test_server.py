@@ -22,7 +22,7 @@ from panel.layout import Row
 from panel.models import HTML as BkHTML
 from panel.models.tabulator import TableEditEvent
 from panel.pane import Markdown
-from panel.reactive import ReactiveHTML
+from panel.react import ReactiveHTML
 from panel.template import BootstrapTemplate
 from panel.tests.util import wait_until
 from panel.widgets import (

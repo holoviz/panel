@@ -17,7 +17,7 @@ from bokeh.models import Column as BkColumn, Row as BkRow
 from ..io.model import hold
 from ..io.resources import CDN_DIST
 from ..io.state import state
-from ..reactive import Reactive
+from ..react import Reactive
 from ..util import param_name, param_reprs
 
 if TYPE_CHECKING:

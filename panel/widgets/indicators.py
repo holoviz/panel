@@ -41,7 +41,7 @@ from ..models import (
     TrendIndicator as _BkTrendIndicator,
 )
 from ..pane.markup import Str
-from ..reactive import SyncableData
+from ..react import SyncableData
 from ..util import escape, updating
 from ..util.warnings import deprecated
 from ..viewable import Viewable

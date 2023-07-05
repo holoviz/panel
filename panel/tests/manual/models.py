@@ -156,7 +156,7 @@ progress = pn.indicators.Progress(name="Progress", value=20, width=200, height=2
 text_editor = pn.widgets.TextEditor(placeholder="Enter some text", width=500)
 
 # Model: reactive_html
-class _Slideshow(pn.reactive.ReactiveHTML):
+class _Slideshow(pn.react.ReactiveHTML):
 
     index = param.Integer(default=0)
 

@@ -28,7 +28,7 @@ from ..layout.base import (
 )
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
-from ..reactive import Reactive
+from ..react import Reactive
 from ..util import param_reprs
 from ..util.checks import is_dataframe, is_series
 from ..viewable import (

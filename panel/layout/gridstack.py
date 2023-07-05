@@ -7,7 +7,7 @@ import param
 
 from ..config import config
 from ..io.resources import CDN_DIST, bundled_files
-from ..reactive import ReactiveHTML
+from ..react import ReactiveHTML
 from ..util import classproperty
 from .grid import GridSpec
 

@@ -19,7 +19,7 @@ from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 from .io.datamodel import create_linked_datamodel
 from .io.loading import LOADING_INDICATOR_CSS_CLASS
 from .models import ReactiveHTML
-from .reactive import Reactive
+from .react import Reactive
 from .util.warnings import warn
 from .viewable import Viewable
 

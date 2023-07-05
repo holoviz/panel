@@ -8,7 +8,7 @@ from typing import ClassVar, List
 import param
 
 from ..io.resources import CDN_DIST
-from ..reactive import ReactiveHTML
+from ..react import ReactiveHTML
 from .base import ListLike
 
 

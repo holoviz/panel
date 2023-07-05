@@ -10,7 +10,7 @@ except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 
 from panel.io.server import serve
-from panel.reactive import ReactiveHTML
+from panel.react import ReactiveHTML
 
 
 class ReactiveComponent(ReactiveHTML):

@@ -89,7 +89,7 @@ def param_to_jslink(model, widget):
     """
     Converts Param pane widget links into JS links if possible.
     """
-    from ..reactive import Reactive
+    from ..react import Reactive
     from ..widgets import LiteralInput, Widget
 
     param_pane = widget._param_pane

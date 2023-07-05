@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, ClassVar, Mapping
 import param  # type: ignore
 
 from ..models.browser import BrowserInfo as _BkBrowserInfo
-from ..reactive import Syncable
+from ..react import Syncable
 from .document import create_doc_if_none_exists
 from .state import state
 
