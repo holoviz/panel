@@ -52,6 +52,10 @@
 
 /* Input widgets */
 
+textarea.bk-input {
+  padding: 0.5em var(--padding-horizontal);
+}
+
 .bk-input {
   background-color: var(--background-color);
   color: var(--text-color);
