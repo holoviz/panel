@@ -351,7 +351,13 @@ class _config(_base_config):
 
     def __setattr__(self, attr, value):
         from .io.state import state
-        if not getattr(self, 'initialized', False) or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
+
+        # _param__private added in Param 2
+        if hasattr(self, '_param__private'):
+            init = getattr(self._param__private, 'initialized', False)
+        else:
+            init = getattr(self, 'initialized', False)
+        if not init or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
             return super().__setattr__(attr, value)
         value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
         if attr in self._globals:
@@ -389,7 +395,12 @@ class _config(_base_config):
         end up being modified.
         """
         from .io.state import state
-        init = super().__getattribute__('initialized')
+
+        # _param__private added in Param 2
+        try:
+            init = super().__getattribute__('_param__private').initialized
+        except AttributeError:
+            init = super().__getattribute__('initialized')
         global_params = super().__getattribute__('_globals')
         if init and not attr.startswith('__'):
             params = super().__getattribute__('param')
