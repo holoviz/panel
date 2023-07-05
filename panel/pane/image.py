@@ -57,7 +57,7 @@ class FileBase(HTMLBasePane):
         filetype = cls.filetype.split('+')[0]
         exts = cls._extensions or (filetype,)
         if hasattr(obj, f'_repr_{filetype}_'):
-            return True
+            return 0.15
         if isinstance(obj, PurePath):
             obj = str(obj.absolute())
         if isinstance(obj, str):
