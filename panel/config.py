@@ -787,14 +787,11 @@ class panel_extension(_pyviz_extension):
             return
 
         # Try to detect environment so that we can enable comms
-        try:
-            import google.colab  # noqa
+        if "google.colab" in sys.modules:
             config.comms = "colab"
             return
-        except ImportError:
-            pass
 
-        if "VSCODE_PID" in os.environ:
+        if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
             config.comms = "vscode"
             self._ignore_bokeh_warnings()
             return
