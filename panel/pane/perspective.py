@@ -269,6 +269,9 @@ class Perspective(ModelPane, ReactiveData):
     columns = param.List(default=None, doc="""
         A list of source columns to show as columns. For example ["x", "y"]""")
 
+    editable = param.Boolean(default=True, allow_None=True, doc="""
+      Whether items are editable.""")
+
     expressions = param.List(default=None, doc="""
       A list of expressions computing new columns from existing columns.
       For example [""x"+"index""]""")
