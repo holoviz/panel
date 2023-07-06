@@ -19,8 +19,6 @@ a web app.
 
 For production you will also have to migrate some of your app configuration to `panel serve` [command line options](../server/commandline.md) or environment variables.
 
-You **won't** have to provide your email or opt out of telemetry data collection. We have never collected or had plans to collect telemetry data from our users apps.
-
 ## Examples
 
 ### Hello World
