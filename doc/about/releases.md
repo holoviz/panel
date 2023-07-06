@@ -2,6 +2,46 @@
 
 See [the HoloViz blog](https://blog.holoviz.org/tag/panel.html) for a visual summary of the major features added in each release.
 
+## Version 1.2.0
+
+Date: 2023-07-06
+
+This release primarily aims at providing compatibility with Bokeh 3.2 and the upcoming Param 2.0 release. Additionally it includes a number of improvements including the ability to generate multiple outputs from a generator using the new `'append'` mode and updates and fixes for Tabulator. We are also excited about the new Streamlit migration guide and a number of bug fixes. Many thanks to @sdc50, @xiaoyang-sde and the core team including @ahuang11, @MarcSkovMadsen, @Hoxbro, @maximlt and @philippjfr for contributing to this release.
+
+### Enhancements
+
+- Add `append` mode for reactive generator output ([#5129](https://github.com/holoviz/panel/pull/5129))
+- Upgrade to `Tabulator` 5.5 ([[#5182](https://github.com/holoviz/panel/pull/5182)](https://github.com/holoviz/panel/pull/5182))
+- Add support for `LoadingSpinner` label ([#5194](https://github.com/holoviz/panel/pull/5194))
+- Add the `editable` parameter to `Perspective` ([#5211](https://github.com/holoviz/panel/pull/5211))
+- Add support for setting `theme_classes` on `Tabulator` ([#5216](https://github.com/holoviz/panel/pull/5216))
+- Move resource handling onto `BaseTemplate` ([#5228](https://github.com/holoviz/panel/pull/5228))
+
+### Bug fixes
+
+- Correctly process fields on `Vega` (and altair) selections ([#5164](https://github.com/holoviz/panel/pull/5164))
+- Fix for resource handling particularly when working with Django ([#5175](https://github.com/holoviz/panel/pull/5175))
+- Fix `ChatBox` bubble width ([#5172](https://github.com/holoviz/panel/pull/5172))
+- Fix `Tabulator.visible` handling ([[#5182](https://github.com/holoviz/panel/pull/5182)](https://github.com/holoviz/panel/pull/5182))
+- Fix programmatic updates to `Tabulator.page` ([#5187](https://github.com/holoviz/panel/pull/5187))
+- Ensure bokeh events generated in pyodide convert `None` to `null` ([#5191](https://github.com/holoviz/panel/pull/5191))
+- Improve notebook detection ([#5201](https://github.com/holoviz/panel/pull/5201))
+- Reduce priority of `_repr_<img>_` to ensure `_repr_html_` takes precedence ([#5217](https://github.com/holoviz/panel/pull/5217))
+- Ensure we do not modify `Tabulator.hidden_columns` inplace ([#5218](https://github.com/holoviz/panel/pull/5218))
+- Alignment and styling fixes for text input and button widgets ([#5219](https://github.com/holoviz/panel/pull/5219))
+- Fix updates to `Plotly` nested properties such as selections ([#5227](https://github.com/holoviz/panel/pull/5227))
+
+### Documentation
+
+- Add Streamlit migration guide ([#5027](https://github.com/holoviz/panel/pull/5027))
+- Improve `defer_load` how-to guide ([#5112](https://github.com/holoviz/panel/pull/5112))
+
+### Compatibility
+
+- Remove markdown-it-py pins ([#5159](https://github.com/holoviz/panel/pull/5159))
+- Forward compatibility fixes for Param 2.0 ([#5169](https://github.com/holoviz/panel/pull/5169), [#5198](https://github.com/holoviz/panel/pull/5198))
+- Compatibility with Bokeh 3.2 ([#5185](https://github.com/holoviz/panel/pull/5185))
+
 ## Version 1.1.1
 
 Date: 2023-06-21
