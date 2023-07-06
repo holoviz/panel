@@ -13,6 +13,7 @@ This release primarily aims at providing compatibility with Bokeh 3.2 and the up
 - Add support for `LoadingSpinner` label ([#5194](https://github.com/holoviz/panel/pull/5194))
 - Add the `editable` parameter to `Perspective` ([#5211](https://github.com/holoviz/panel/pull/5211))
 - Add support for setting `theme_classes` on `Tabulator` ([#5216](https://github.com/holoviz/panel/pull/5216))
+- Move resource handling onto `BaseTemplate` ([#5228](https://github.com/holoviz/panel/pull/5228))
 
 ### Bug fixes
 
@@ -26,6 +27,7 @@ This release primarily aims at providing compatibility with Bokeh 3.2 and the up
 - Reduce priority of `_repr_<img>_` to ensure `_repr_html_` takes precedence ([#5217](https://github.com/holoviz/panel/pull/5217))
 - Ensure we do not modify `Tabulator.hidden_columns` inplace ([#5218](https://github.com/holoviz/panel/pull/5218))
 - Alignment and styling fixes for text input and button widgets ([#5219](https://github.com/holoviz/panel/pull/5219))
+- Fix updates to `Plotly` nested properties such as selections ([#5227](https://github.com/holoviz/panel/pull/5227))
 
 ### Documentation
 
