@@ -18,7 +18,7 @@ from bokeh.model import Model
 
 from .config import config, panel_extension
 from .io.resources import RESOURCE_URLS
-from .reactive import ReactiveHTML
+from .react import ReactiveHTML
 from .template.base import BasicTemplate
 from .theme import Design
 
