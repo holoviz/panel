@@ -20,8 +20,8 @@ jobs:
         shell: bash -l {0}
     env:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
-      PKG_TEST_PYTHON: "--test-python=py38"
-      PYTHON_VERSION: "3.8"
+      PKG_TEST_PYTHON: "--test-python=py39"
+      PYTHON_VERSION: "3.9"
       MPLBACKEND: "Agg"
     steps:
       - name: remove nodejs
@@ -37,7 +37,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
-          python-version: 3.8
+          python-version: 3.9
       - uses: actions/setup-node@v2
         with:
           node-version: '16'
@@ -93,8 +93,8 @@ jobs:
         shell: bash -l {0}
     env:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
-      PKG_TEST_PYTHON: "--test-python=py38"
-      PYTHON_VERSION: "3.8"
+      PKG_TEST_PYTHON: "--test-python=py39"
+      PYTHON_VERSION: "3.9"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
       PYPI: "https://upload.pypi.org/legacy/"
