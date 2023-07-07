@@ -55,7 +55,7 @@ This example demonstrates how APIs in Panel differ, to see the same app implemen
 - [Declarative API](stocks_declarative)
 - [Reactive API](stocks_reactive)
 
-Other APIs in Panel are all reactive in some way, triggering actions whenever manipulating a widget causes a parameter to change, without users writing code to trigger callbacks explicitly. The callback based API on the other allows complete low-level control of precisely how the different components of the app are updated, but they can quickly become unmaintainable because the complexity increases dramatically as more callbacks are added. The approach works by defining callbacks using the ``.param.watch`` API that either update or replace the already rendered components when a watched parameter changes:
+Other APIs in Panel are all reactive in some way, triggering actions whenever manipulating a widget causes a parameter to change, without users writing code to trigger callbacks explicitly. The callback based API on the other allows complete low-level control of precisely how the different components of the app are updated, but they can quickly become unmaintainable because the complexity increases dramatically as more callbacks are added. The approach works by defining callbacks using the ``.param.watch`` API that either updates or replaces	 the already rendered components when a watched parameter changes:
 
 ```{pyodide}
 backend = pn.widgets.Select(name='Backend', options=plot_fns)
