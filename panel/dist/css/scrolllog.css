@@ -22,7 +22,9 @@
   justify-content: center;
   /* For animation */
   opacity: 0;
-  transition: visibility 0s, opacity 0.2s ease-in-out;
+  transition:
+    visibility 0s,
+    opacity 0.2s ease-in-out;
 }
 
 .visible {
