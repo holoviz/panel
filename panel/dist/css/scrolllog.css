@@ -5,9 +5,9 @@
 .scroll-down-arrow {
   /* For location */
   position: absolute;
-  bottom: 50;
-  left: 95%;
-  transform: translate(0%, -105%);
+  bottom: 0%;
+  left: 50%;
+  transform: translate(0%, 0%);
   /* For icon */
   cursor: pointer;
   visibility: hidden;
