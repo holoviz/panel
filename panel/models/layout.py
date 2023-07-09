@@ -7,6 +7,7 @@ from bokeh.models.layouts import LayoutDOM
 __all__ = (
     "Card",
     "HTMLBox",
+    "ScrollLog",
 )
 
 class HTMLBox(LayoutDOM):
@@ -33,3 +34,8 @@ class Card(Column):
     hide_header = Bool(False, help="Whether to hide the Card header")
 
     tag = String('tag', help="CSS class to use for the Card as a whole.")
+
+
+class ScrollLog(Column):
+
+    autoscroll = Bool(True, help="Whether to scroll to the bottom on update.")
