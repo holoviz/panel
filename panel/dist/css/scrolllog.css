@@ -1,13 +1,12 @@
-.scroll-log {
+:host(.scroll-log) {
   overflow-y: scroll;
 }
 
 .scroll-down-arrow {
   /* For location */
-  position: absolute;
-  bottom: 0%;
-  left: 50%;
-  transform: translate(0%, 0%);
+  position: sticky;
+  top: calc(100% - 35px);
+  left: calc(100% - 60px);
   /* For icon */
   cursor: pointer;
   visibility: hidden;
@@ -22,9 +21,7 @@
   justify-content: center;
   /* For animation */
   opacity: 0;
-  transition:
-    visibility 0s,
-    opacity 0.2s ease-in-out;
+  transition: visibility 0s, opacity 0.2s ease-in-out;
 }
 
 .visible {

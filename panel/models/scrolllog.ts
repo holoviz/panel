@@ -1,9 +1,14 @@
 import { Column, ColumnView } from "@bokehjs/models/layouts/column";
+import * as DOM from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties";
 
 export class ScrollLogView extends ColumnView {
   model: ScrollLog;
-  scroll_down_arrow: HTMLElement;
+  scroll_down_arrow_el: HTMLElement;
+
+  scroll_to_bottom(): void {
+    this.el.scrollTop = this.el.scrollHeight;
+  }
 
   connect_signals(): void {
     super.connect_signals();
@@ -15,24 +20,47 @@ export class ScrollLogView extends ColumnView {
         this.scroll_to_bottom();
       });
     }
+  }
+
+  render(): void {
+    super.render()
+    this.empty()
+    this._update_stylesheets()
+    this._update_css_classes()
+    this._apply_styles()
+    this._apply_visible()
+
+    this.class_list.add(...this.css_classes())
+    this.el.style.overflowY = "auto"
+    this.el.style.height = "300px"
+
+    this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-down-arrow' });
+    this.scroll_down_arrow_el.textContent = '⬇';
+    this.shadow_el.appendChild(this.scroll_down_arrow_el);
+
+    this.scroll_down_arrow_el.addEventListener("click", () => {
+      this.scroll_to_bottom();
+    });
 
     this.el.addEventListener("scroll", () => {
       const scrollThreshold = 20;
-      const scrollDistanceFromBottom =
-        this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
+      const scrollDistanceFromBottom = this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
 
-      this.scroll_down_arrow.classList.toggle(
+      this.scroll_down_arrow_el.classList.toggle(
         "visible", scrollDistanceFromBottom >= scrollThreshold
       )
     });
 
-    this.scroll_down_arrow.addEventListener("click", () => {
-      this.scroll_to_bottom();
-    });
+    for (const child_view of this.child_views.slice(1)) {
+      this.shadow_el.appendChild(child_view.el)
+      child_view.render()
+      child_view.after_render()
+    }
   }
 
-  scroll_to_bottom(): void {
-    this.el.scrollTop = this.el.scrollHeight;
+  after_render(): void {
+    super.after_render()
+    this.scroll_to_bottom();
   }
 }
 
