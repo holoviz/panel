@@ -4,6 +4,8 @@ from typing import (
     TYPE_CHECKING, ClassVar, List, Type,
 )
 
+import param
+
 from ..io.resources import CDN_DIST
 from ..layout.base import Column
 from ..models import ScrollLog as BkScrollLog
@@ -20,6 +22,18 @@ class ScrollLog(Column):
     Reference: https://panel.holoviz.org/reference/layouts/ScrollLog.html
     """
 
+    css_classes = param.List(
+        default=["scroll-log"],
+        doc="""
+        CSS classes to apply to the overall ScrollLog.""",
+    )
+
     _bokeh_model: ClassVar[Type[Model]] = BkScrollLog
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/scrolllog.css"]
+
+    def __init__(self, *objects, **params):
+        if "sizing_mode" not in params:
+            params["sizing_mode"] = "stretch_width"
+
+        super().__init__(*objects, **params)
