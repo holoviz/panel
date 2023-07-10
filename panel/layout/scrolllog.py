@@ -22,7 +22,7 @@ class ScrollLog(Column):
 
     _bokeh_model: ClassVar[Type[Model]] = BkScrollLog
 
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}/layout/scrolllog.css"]
+    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/scrolllog.css"]
 
     def __init__(self, *objects, **params):
         if "sizing_mode" not in params:

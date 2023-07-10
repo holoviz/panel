@@ -21,11 +21,9 @@ export class ScrollLogView extends ColumnView {
       const scrollDistanceFromBottom =
         this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
 
-      if (scrollDistanceFromBottom < scrollThreshold) {
-        this.scroll_down_arrow.classList.remove("visible");
-      } else {
-        this.scroll_down_arrow.classList.add("visible");
-      }
+      this.scroll_down_arrow.classList.toggle(
+        "visible", scrollDistanceFromBottom >= scrollThreshold
+      )
     });
 
     this.scroll_down_arrow.addEventListener("click", () => {
@@ -46,7 +44,7 @@ export namespace ScrollLog {
   };
 }
 
-export interface ScrollLog extends ScrollLog.Attrs {}
+export interface ScrollLog extends ScrollLog.Attrs { }
 
 export class ScrollLog extends Column {
   properties: ScrollLog.Props;
