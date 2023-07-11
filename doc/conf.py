@@ -2,9 +2,9 @@ import json
 import os
 import pathlib
 
-from packaging.version import Version
-
 import param
+
+from packaging.version import Version
 
 param.parameterized.docstring_signature = False
 param.parameterized.docstring_describe_params = False
