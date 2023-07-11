@@ -2,6 +2,8 @@ import json
 import os
 import pathlib
 
+from packaging.version import Version
+
 import param
 
 param.parameterized.docstring_signature = False
@@ -199,6 +201,20 @@ def patched_card_run(self):
 
 CardDirective.run = patched_card_run
 
+def update_versions(app, docname, source):
+    # Inspired by: https://stackoverflow.com/questions/8821511
+    import bokeh
+    version_replace = {
+       "{{PANEL_VERSION}}" : Version(panel.__version__).base_version,
+       "{{BOKEH_VERSION}}" : Version(bokeh.__version__).base_version,
+       "{{PYSCRIPT_VERSION}}" : "2022.09.1",
+       "{{PYODIDE_VERSION}}" : "0.21.2",
+    }
+
+    for old, new in version_replace.items():
+        source[0] = source[0].replace(old, new)
+
+
 def setup(app) -> None:
     try:
         from nbsite.paramdoc import param_formatter, param_skip
@@ -207,6 +223,7 @@ def setup(app) -> None:
     except ImportError:
         print('no param_formatter (no param?)')
 
+    app.connect('source-read', update_versions)
     nbbuild.setup(app)
     app.add_config_value('grid_item_link_domain', '', 'html')
 
