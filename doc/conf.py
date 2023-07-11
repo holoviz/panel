@@ -204,8 +204,8 @@ def update_versions(app, docname, source):
     version_replace = {
        "{{PANEL_VERSION}}" : PY_VERSION,
        "{{BOKEH_VERSION}}" : BOKEH_VERSION,
-       "{{PYSCRIPT_VERSION}}" : "2022.09.1",
-       "{{PYODIDE_VERSION}}" : "0.21.2",
+       "{{PYSCRIPT_VERSION}}" : "2022.12.1",
+       "{{PYODIDE_VERSION}}" : "0.23.4",
     }
 
     for old, new in version_replace.items():
