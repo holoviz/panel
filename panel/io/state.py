@@ -995,7 +995,12 @@ class _state(param.Parameterized):
         from ..config import config
         if config.notifications and self.curdoc and self.curdoc.session_context and self.curdoc not in self._notifications:
             from .notifications import NotificationArea
-            self._notifications[self.curdoc] = notifications = NotificationArea()
+            js_events = {}
+            if config.ready_message:
+                js_events['document_ready'] = {'type': 'success', 'message': config.ready_message, 'duration': 3}
+            if config.disconnect_warning:
+                js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_warning}
+            self._notifications[self.curdoc] = notifications = NotificationArea(js_events=js_events)
             return notifications
         elif self.curdoc is None or self.curdoc.session_context is None:
             return self._notification

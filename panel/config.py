@@ -131,6 +131,10 @@ class _config(_base_config):
     design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
 
+    disconnect_warning = param.String(doc="""
+        The warning notification to display to the user when the connection
+        to the server is dropped.""")
+
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
 
@@ -161,12 +165,16 @@ class _config(_base_config):
     loading_max_height = param.Integer(default=400, doc="""
         Maximum height of the loading indicator.""")
 
-    notifications = param.Boolean(default=False, doc="""
+    notifications = param.Boolean(default=True, doc="""
         Whether to enable notifications functionality.""")
 
     profiler = param.Selector(default=None, allow_None=True, objects=[
         'pyinstrument', 'snakeviz', 'memray'], doc="""
         The profiler engine to enable.""")
+
+    ready_message = param.String(doc="""
+        The notification to display when the application is ready and
+        fully loaded.""")
 
     reuse_sessions = param.Boolean(default=False, doc="""
         Whether to reuse a session for the initial request to speed up

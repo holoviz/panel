@@ -43,7 +43,13 @@ class Notification(param.Parameterized):
 
 class NotificationAreaBase(ReactiveHTML):
 
-    disconnect_warning = param.String(default="Connection to server lost, reload page to reconnect.")
+    js_events = param.Dict(doc="""
+        A dictionary that configures notifications for specific Bokeh Document
+        events, e.g.:
+
+          {'connection_lost': {'type': 'error', 'message': 'Connection Lost!', 'duration': 5}}
+
+        will trigger a warning on the Bokeh ConnectionLost event.""")
 
     notifications = param.List(item_type=Notification)
 
@@ -75,12 +81,13 @@ class NotificationAreaBase(ReactiveHTML):
         preprocess: bool = True
     ) -> 'Model':
         root = super().get_root(doc, comm, preprocess)
-        if self.disconnect_warning:
-            doc.js_on_event("connection_lost", CustomJS(code=f"""
+
+        for event, notification in self.js_events.items():
+            doc.js_on_event(event, CustomJS(code=f"""
             var config = {{
-              message: {self.disconnect_warning!r},
-              duration: 0,
-              notification_type: "error",
+              message: {notification['msg']!r},
+              duration: {notification.get('duration', 0)},
+              notification_type: {notification['type']!r},
               _destroyed: false
             }}
             notifications.data.notifications.push(config)
