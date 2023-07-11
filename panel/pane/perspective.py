@@ -4,8 +4,9 @@ import datetime as dt
 import sys
 
 from enum import Enum
+from functools import partial
 from typing import (
-    TYPE_CHECKING, ClassVar, List, Mapping, Optional, Type,
+    TYPE_CHECKING, Callable, ClassVar, List, Mapping, Optional, Type,
 )
 
 import numpy as np
@@ -15,6 +16,7 @@ from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from pyviz_comms import JupyterComm
 
 from ..io.resources import CDN_DIST
+from ..io.state import state
 from ..reactive import ReactiveData
 from ..util import lazy_load
 from ..viewable import Viewable
@@ -24,6 +26,7 @@ if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
+    from ..models.perspective import RowClickEvent
 
 DEFAULT_THEME = "material"
 
@@ -315,6 +318,8 @@ class Perspective(ModelPane, ReactiveData):
 
     _data_params: ClassVar[List[str]] = ['object']
 
+    _on_click_callbacks: List[Callable[[RowClickEvent], None]] = []
+
     _rename: ClassVar[Mapping[str, str | None]] = {
         'selection': None
     }
@@ -460,7 +465,27 @@ class Perspective(ModelPane, ReactiveData):
         self._bokeh_model = lazy_load(
             'panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm), root
         )
-        return super()._get_model(doc, root, parent, comm)
+        model = super()._get_model(doc, root, parent, comm)
+        self._register_events('row-click', model=model, doc=doc, comm=comm)
+        return model
 
     def _update(self, ref: str, model: Model) -> None:
         model.update(**self._get_properties(model.document, source=model.source))
+
+    def _process_event(self, event):
+        if event.event_name == 'row-click':
+            for cb in self._on_click_callbacks:
+                state.execute(partial(cb, event), schedule=False)
+
+    def on_click(self, callback: Callable[[RowClickEvent], None]):
+        """
+        Register a callback to be executed when any row is clicked.
+        The callback is given a RowClickEvent declaring the config,
+        column names, and row values of the row that was clicked.
+
+        Arguments
+        ---------
+        callback: (callable)
+            The callback to run on edit events.
+        """
+        self._on_click_callbacks.append(callback)
