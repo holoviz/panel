@@ -131,8 +131,8 @@ class _config(_base_config):
     design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
 
-    disconnect_warning = param.String(doc="""
-        The warning notification to display to the user when the connection
+    disconnect_notification = param.String(doc="""
+        The notification to display to the user when the connection
         to the server is dropped.""")
 
     exception_handler = param.Callable(default=None, doc="""
@@ -165,14 +165,14 @@ class _config(_base_config):
     loading_max_height = param.Integer(default=400, doc="""
         Maximum height of the loading indicator.""")
 
-    notifications = param.Boolean(default=True, doc="""
+    notifications = param.Boolean(default=False, doc="""
         Whether to enable notifications functionality.""")
 
     profiler = param.Selector(default=None, allow_None=True, objects=[
         'pyinstrument', 'snakeviz', 'memray'], doc="""
         The profiler engine to enable.""")
 
-    ready_message = param.String(doc="""
+    ready_notification = param.String(doc="""
         The notification to display when the application is ready and
         fully loaded.""")
 
@@ -647,7 +647,9 @@ class panel_extension(_pyviz_extension):
         newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if state.curdoc and state.curdoc not in state._extensions_:
             state._extensions_[state.curdoc] = []
-        if params.get('notifications') and 'notifications' not in args:
+        if params.get('ready_notification') or params.get('disconnect_notification'):
+            params['notifications'] = True
+        if params.get('notifications', config.notifications) and 'notifications' not in args:
             args += ('notifications',)
         for arg in args:
             if arg == 'notifications' and 'notifications' not in params:

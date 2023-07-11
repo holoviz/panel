@@ -43,7 +43,7 @@ class Notification(param.Parameterized):
 
 class NotificationAreaBase(ReactiveHTML):
 
-    js_events = param.Dict(doc="""
+    js_events = param.Dict(default={}, doc="""
         A dictionary that configures notifications for specific Bokeh Document
         events, e.g.:
 
@@ -85,7 +85,7 @@ class NotificationAreaBase(ReactiveHTML):
         for event, notification in self.js_events.items():
             doc.js_on_event(event, CustomJS(code=f"""
             var config = {{
-              message: {notification['msg']!r},
+              message: {notification['message']!r},
               duration: {notification.get('duration', 0)},
               notification_type: {notification['type']!r},
               _destroyed: false
