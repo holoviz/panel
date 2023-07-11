@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Optional
 
 import param
 
+from bokeh.models import CustomJS
+
 from ..config import config
 from ..reactive import ReactiveHTML
 from ..util import classproperty
@@ -41,6 +43,8 @@ class Notification(param.Parameterized):
 
 class NotificationAreaBase(ReactiveHTML):
 
+    disconnect_warning = param.String(default="Connection to server lost, reload page to reconnect.")
+
     notifications = param.List(item_type=Notification)
 
     position = param.Selector(default='bottom-right', objects=[
@@ -71,6 +75,17 @@ class NotificationAreaBase(ReactiveHTML):
         preprocess: bool = True
     ) -> 'Model':
         root = super().get_root(doc, comm, preprocess)
+        if self.disconnect_warning:
+            doc.js_on_event("connection_lost", CustomJS(code=f"""
+            var config = {{
+              message: {self.disconnect_warning!r},
+              duration: 0,
+              notification_type: "error",
+              _destroyed: false
+            }}
+            notifications.data.notifications.push(config)
+            notifications.data.properties.notifications.change.emit()
+            """, args={'notifications': root}))
         self._documents[doc] = root
         return root
 
@@ -243,7 +258,6 @@ class NotificationArea(NotificationAreaBase):
             if (ntype.value === 'custom') {
               config.background = color.color
             }
-            console.log(config, ntype.value)
             notifications.data.notifications.push(config)
             notifications.data.properties.notifications.change.emit()
             """
