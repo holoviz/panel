@@ -20,6 +20,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 9999;
   /* For animation */
   opacity: 0;
   transition: visibility 0s, opacity 0.2s ease-in-out;

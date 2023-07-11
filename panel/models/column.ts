@@ -1,4 +1,4 @@
-import { Column as BkColumn, ColumnView as BkColumnView } from "@bokehjs/models/layouts/Column";
+import { Column as BkColumn, ColumnView as BkColumnView } from "@bokehjs/models/layouts/column";
 import * as DOM from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties";
 
@@ -44,13 +44,10 @@ export class ColumnView extends BkColumnView {
     this._apply_visible()
 
     this.class_list.add(...this.css_classes())
-    this.el.style.overflowY = "auto"
-    this.el.style.height = "300px"
 
     this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-down-arrow' });
     this.scroll_down_arrow_el.textContent = '⬇';
     this.shadow_el.appendChild(this.scroll_down_arrow_el);
-
     this.scroll_down_arrow_el.addEventListener("click", () => {
       this.scroll_to_bottom();
     });
@@ -76,12 +73,12 @@ export namespace Column {
   export type Attrs = p.AttrsOf<Props>;
 
   export type Props = BkColumn.Props & {
-    scroll_arrow_threshold: p.Property<number>;
     auto_scroll: p.Property<boolean>;
+    scroll_arrow_threshold: p.Property<number>;
   };
 }
 
-export interface Column extends Column.Attrs { }
+export interface Column extends BkColumn.Attrs { }
 
 export class Column extends BkColumn {
   properties: Column.Props;
@@ -96,8 +93,8 @@ export class Column extends BkColumn {
     this.prototype.default_view = ColumnView;
 
     this.define<Column.Props>(({ Int, Boolean }) => ({
-      scroll_arrow_threshold: [Int, 20],
       auto_scroll: [Boolean, true],
+      scroll_arrow_threshold: [Int, 20],
     }));
   }
 }
