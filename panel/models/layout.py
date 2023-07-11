@@ -44,12 +44,12 @@ class Card(BkColumn):
 
 
 class Column(BkColumn):
-    scroll_arrow_threshold = Nullable(
-        Float,
+
+    auto_scroll = Bool(False, help="Whether to scroll to the latest row on update.")
+
+    scroll_arrow_threshold = Float(
         help="""
         Threshold for showing scroll arrow that scrolls to the latest on click.
-        The arrow will always be shown if this is set to 0.
+        The arrow will be hidden if set to 0.
         """,
     )
-
-    auto_scroll = Bool(True, help="Whether to scroll to the latest row on update.")

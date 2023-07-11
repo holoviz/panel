@@ -6,14 +6,14 @@ export class ColumnView extends BkColumnView {
   model: Column;
   scroll_down_arrow_el: HTMLElement;
 
-  scroll_to_bottom(): void {
+  scroll_to_latest(): void {
     this.el.scrollTop = this.el.scrollHeight;
   }
 
   toggle_scroll_arrow(): void {
     const scrollThreshold = this.model.properties.scroll_arrow_threshold;
-    const scrollDistanceFromBottom = this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
 
+    const scrollDistanceFromBottom = this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
     this.scroll_down_arrow_el.classList.toggle(
       "visible", scrollDistanceFromBottom >= scrollThreshold.get_value()
     )
@@ -22,15 +22,18 @@ export class ColumnView extends BkColumnView {
   connect_signals(): void {
     super.connect_signals();
 
-    const { scroll_arrow_threshold, auto_scroll } = this.model.properties;
+    const { auto_scroll, scroll_arrow_threshold } = this.model.properties;
 
-    this.on_change(scroll_arrow_threshold, () => {
-      this.toggle_scroll_arrow();
-    });
+    if (scroll_arrow_threshold.get_value() > 0) {
+      this.on_change(scroll_arrow_threshold, () => {
+        this.toggle_scroll_arrow();
+      });
+    }
 
-    if (auto_scroll) {
+    if (auto_scroll.get_value()) {
+      console.log(auto_scroll.get_value())
       this.on_change(this.model.properties.children, () => {
-        this.scroll_to_bottom();
+        this.scroll_to_latest();
       });
     }
   }
@@ -45,27 +48,25 @@ export class ColumnView extends BkColumnView {
 
     this.class_list.add(...this.css_classes())
 
-    this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-down-arrow' });
-    this.scroll_down_arrow_el.textContent = '⬇';
-    this.shadow_el.appendChild(this.scroll_down_arrow_el);
-    this.scroll_down_arrow_el.addEventListener("click", () => {
-      this.scroll_to_bottom();
-    });
+    const scrollThreshold = this.model.properties.scroll_arrow_threshold;
+    if (scrollThreshold.get_value() > 0) {
+      this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-down-arrow' });
+      this.shadow_el.appendChild(this.scroll_down_arrow_el);
 
-    this.el.addEventListener("scroll", () => {
-      this.toggle_scroll_arrow();
-    });
+      this.el.addEventListener("scroll", () => {
+        this.toggle_scroll_arrow();
+      });
+
+      this.scroll_down_arrow_el.addEventListener("click", () => {
+        this.scroll_to_latest();
+      });
+    }
 
     for (const child_view of this.child_views.slice(1)) {
       this.shadow_el.appendChild(child_view.el)
       child_view.render()
       child_view.after_render()
     }
-  }
-
-  after_render(): void {
-    super.after_render()
-    this.scroll_to_bottom();
   }
 }
 
@@ -92,9 +93,9 @@ export class Column extends BkColumn {
   static {
     this.prototype.default_view = ColumnView;
 
-    this.define<Column.Props>(({ Int, Boolean }) => ({
-      auto_scroll: [Boolean, true],
-      scroll_arrow_threshold: [Int, 20],
+    this.define<Column.Props>(({ Boolean, Int }) => ({
+      auto_scroll: [Boolean, false],
+      scroll_arrow_threshold: [Int, 0],
     }));
   }
 }

@@ -1,6 +1,13 @@
 :host(.scrollable) {
-  overflow: scroll;
+  overflow: auto;
+}
+
+:host(.scrollable-vertical) {
   overflow-y: scroll;
+}
+
+:host(.scrollable-horizontal) {
+  overflow-x: scroll;
 }
 
 .scroll-down-arrow {
@@ -29,4 +36,8 @@
 .visible {
   visibility: visible;
   opacity: 1;
+}
+
+.scroll-down-arrow:before {
+  content: '⬇';
 }

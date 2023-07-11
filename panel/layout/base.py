@@ -829,7 +829,10 @@ class NamedListPanel(NamedListLike, Panel):
             scroll = params.pop('scroll')
             css_classes = list(self.css_classes or [])
             if scroll:
-                css_classes += ['scrollable']
+                if hasattr(self, "_direction"):
+                    css_classes += [f'scrollable-{self._direction}']
+                else:
+                    css_classes += ['scrollable']
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
@@ -880,11 +883,28 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
+    auto_scroll = param.Boolean(
+        default=False,
+        doc="Whether to scroll to the latest row on update."
+    )
+
+    scroll_arrow_threshold = param.Number(
+        doc="""
+        Threshold for showing scroll arrow that scrolls to the latest on click.
+        The arrow will be hidden if set to 0.
+        """,
+    )
+
     _bokeh_model: ClassVar[Type[Model]] = PnColumn
 
     _direction = 'vertical'
 
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
+
+    def __init__(self, *objects: Any, **params: Any):
+        if "auto_scroll" in params or "scroll_arrow_threshold" in params:
+            params["scroll"] = True
+        super().__init__(*objects, **params)
 
 
 class WidgetBox(ListPanel):
