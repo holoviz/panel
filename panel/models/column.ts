@@ -1,21 +1,34 @@
-import { Column, ColumnView } from "@bokehjs/models/layouts/column";
+import { Column as BkColumn, ColumnView as BkColumnView } from "@bokehjs/models/layouts/Column";
 import * as DOM from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties";
 
-export class ScrollLogView extends ColumnView {
-  model: ScrollLog;
+export class ColumnView extends BkColumnView {
+  model: Column;
   scroll_down_arrow_el: HTMLElement;
 
   scroll_to_bottom(): void {
     this.el.scrollTop = this.el.scrollHeight;
   }
 
+  toggle_scroll_arrow(): void {
+    const scrollThreshold = this.model.properties.scroll_arrow_threshold;
+    const scrollDistanceFromBottom = this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
+
+    this.scroll_down_arrow_el.classList.toggle(
+      "visible", scrollDistanceFromBottom >= scrollThreshold.get_value()
+    )
+  }
+
   connect_signals(): void {
     super.connect_signals();
 
-    const { autoscroll } = this.model.properties;
+    const { scroll_arrow_threshold, auto_scroll } = this.model.properties;
 
-    if (autoscroll) {
+    this.on_change(scroll_arrow_threshold, () => {
+      this.toggle_scroll_arrow();
+    });
+
+    if (auto_scroll) {
       this.on_change(this.model.properties.children, () => {
         this.scroll_to_bottom();
       });
@@ -43,12 +56,7 @@ export class ScrollLogView extends ColumnView {
     });
 
     this.el.addEventListener("scroll", () => {
-      const scrollThreshold = 20;
-      const scrollDistanceFromBottom = this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
-
-      this.scroll_down_arrow_el.classList.toggle(
-        "visible", scrollDistanceFromBottom >= scrollThreshold
-      )
+      this.toggle_scroll_arrow();
     });
 
     for (const child_view of this.child_views.slice(1)) {
@@ -64,30 +72,32 @@ export class ScrollLogView extends ColumnView {
   }
 }
 
-export namespace ScrollLog {
+export namespace Column {
   export type Attrs = p.AttrsOf<Props>;
 
-  export type Props = Column.Props & {
-    autoscroll: p.Property<boolean>;
+  export type Props = BkColumn.Props & {
+    scroll_arrow_threshold: p.Property<number>;
+    auto_scroll: p.Property<boolean>;
   };
 }
 
-export interface ScrollLog extends ScrollLog.Attrs { }
+export interface Column extends Column.Attrs { }
 
-export class ScrollLog extends Column {
-  properties: ScrollLog.Props;
+export class Column extends BkColumn {
+  properties: Column.Props;
 
-  constructor(attrs?: Partial<ScrollLog.Attrs>) {
+  constructor(attrs?: Partial<Column.Attrs>) {
     super(attrs);
   }
 
   static __module__ = "panel.models.layout";
 
   static {
-    this.prototype.default_view = ScrollLogView;
+    this.prototype.default_view = ColumnView;
 
-    this.define<ScrollLog.Props>(({ Boolean }) => ({
-      autoscroll: [Boolean, true],
+    this.define<Column.Props>(({ Int, Boolean }) => ({
+      scroll_arrow_threshold: [Int, 20],
+      auto_scroll: [Boolean, true],
     }));
   }
 }

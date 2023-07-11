@@ -12,11 +12,12 @@ from typing import (
 
 import param
 
-from bokeh.models import Column as BkColumn, Row as BkRow
+from bokeh.models import Row as BkRow
 
 from ..io.model import hold
 from ..io.resources import CDN_DIST
 from ..io.state import state
+from ..models import Column as PnColumn
 from ..reactive import Reactive
 from ..util import param_name, param_reprs
 
@@ -879,7 +880,7 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    _bokeh_model: ClassVar[Type[Model]] = BkColumn
+    _bokeh_model: ClassVar[Type[Model]] = PnColumn
 
     _direction = 'vertical'
 
@@ -929,7 +930,7 @@ class WidgetBox(ListPanel):
 
     @property
     def _bokeh_model(self) -> Type[Model]: # type: ignore
-        return BkRow if self.horizontal else BkColumn
+        return BkRow if self.horizontal else PnColumn
 
     @property
     def _direction(self):
