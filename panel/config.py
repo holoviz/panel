@@ -332,20 +332,19 @@ class _config(_base_config):
         threads = self.nthreads if self.nthreads else None
         state._thread_pool = ThreadPoolExecutor(max_workers=threads)
 
-    @param.depends('disconnect_notification', 'notifications', 'ready_notification', watch=True)
+    @param.depends('notifications', watch=True)
     def _enable_notifications(self):
-        if not any((self.disconnect_notification, self.notifications, self.ready_notification)):
-            return
-        elif not self.notifications:
-            self.notifications = True
-            return
-
         from .io.notifications import NotificationArea
         from .reactive import ReactiveHTMLMetaclass
         if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
             ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
         if not state.curdoc:
             state._notification = NotificationArea()
+
+    @param.depends('disconnect_notification', 'ready_notification', watch=True)
+    def _enable_notifications(self):
+        if self.disconnect_notification or self.ready_notification:
+            self.notifications = True
 
     @contextmanager
     def set(self, **kwargs):
@@ -386,8 +385,9 @@ class _config(_base_config):
             if state.curdoc not in self._session_config:
                 self._session_config[state.curdoc] = {}
             self._session_config[state.curdoc][attr] = value
-            if attr in self.param:
-                self.param.trigger(attr)
+            watchers = self._param_watchers.get(attr, {}).get('value', [])
+            for w in watchers:
+                w.fn()
         elif f'_{attr}' in self.param and hasattr(self, f'_{attr}_'):
             validate_config(self, f'_{attr}', value)
             super().__setattr__(f'_{attr}_', value)
