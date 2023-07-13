@@ -89,7 +89,7 @@ from param.reactive import reactive
 
 from .layout import Column, HSpacer, Row
 from .pane import DataFrame, panel
-from .util.checks import is_dataframe, is_series
+from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .widgets.base import Widget
 
 
@@ -299,6 +299,7 @@ reactive.register_accessor('panel', Panel)
 reactive.register_accessor('widgets', Widgets)
 reactive.register_display_handler(is_dataframe, handler=DataFrame, max_rows=100)
 reactive.register_display_handler(is_series, handler=DataFrame, max_rows=100)
+reactive.register_display_handler(is_mpl_axes, handler=lambda ax: ax.get_figure())
 
 def _plot_handler(reactive):
     fig_wrapper = FigureWrapper()
