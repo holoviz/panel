@@ -7,7 +7,10 @@ export class ColumnView extends BkColumnView {
   scroll_down_arrow_el: HTMLElement;
 
   scroll_to_latest(): void {
-    this.el.scrollTop = this.el.scrollHeight;
+    // Waits for the child to be rendered before scrolling
+    requestAnimationFrame(() => {
+      this.el.scrollTop = this.el.scrollHeight;
+    });
   }
 
   toggle_scroll_arrow(): void {
@@ -24,16 +27,14 @@ export class ColumnView extends BkColumnView {
 
     const { auto_scroll, scroll_arrow_threshold } = this.model.properties;
 
+    if (auto_scroll) {
+      this.on_change(this.model.properties.children, () => {
+        this.scroll_to_latest();
+      });
+    }
     if (scroll_arrow_threshold.get_value() > 0) {
       this.on_change(scroll_arrow_threshold, () => {
         this.toggle_scroll_arrow();
-      });
-    }
-
-    if (auto_scroll.get_value()) {
-      console.log(auto_scroll.get_value())
-      this.on_change(this.model.properties.children, () => {
-        this.scroll_to_latest();
       });
     }
   }
