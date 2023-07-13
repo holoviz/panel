@@ -773,7 +773,11 @@ class panel_extension(_pyviz_extension):
         except Exception:
             return
 
+        from param.ipython import IPythonDisplay
+
         from .io.notebook import load_notebook
+
+        IPythonDisplay.enabled = False
 
         self._detect_comms(params)
 

@@ -24,7 +24,10 @@ from typing import (
 
 import param
 
-from param.parameterized import classlist, discard_events, iscoroutinefunction
+from param.depends import eval_function_with_deps
+from param.parameterized import (
+    classlist, discard_events, get_method_owner, iscoroutinefunction,
+)
 
 from .config import config
 from .io import state
@@ -34,8 +37,8 @@ from .layout import (
 from .pane.base import PaneBase, ReplacementPane
 from .reactive import Reactive
 from .util import (
-    abbreviated_repr, eval_function, full_groupby, fullpath, get_method_owner,
-    is_parameterized, param_name, recursive_parameterized,
+    abbreviated_repr, full_groupby, fullpath, is_parameterized, param_name,
+    recursive_parameterized,
 )
 from .viewable import Layoutable, Viewable
 from .widgets import (
@@ -810,7 +813,7 @@ class ParamMethod(ReplacementPane):
 
     @classmethod
     def eval(self, function):
-        return eval_function(function)
+        return eval_function_with_deps(function)
 
     async def _eval_async(self, awaitable):
         if self._async_task:

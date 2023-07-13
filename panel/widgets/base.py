@@ -16,9 +16,9 @@ import param  # type: ignore
 
 from bokeh.models import ImportedStyleSheet, Tooltip
 from bokeh.models.dom import HTML
+from param.depends import register_depends_transform
 
 from .._param import Margin
-from ..depends import register_depends_transform
 from ..layout.base import Row
 from ..reactive import Reactive
 from ..viewable import Layoutable, Viewable

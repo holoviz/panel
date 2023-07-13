@@ -8,10 +8,10 @@ from typing import (
 
 import param
 
+from param.depends import register_depends_transform
 from pyviz_comms import JupyterComm
 
 from ..config import config
-from ..depends import register_depends_transform
 from ..models import IPyWidget as _BkIPyWidget
 from .base import PaneBase
 

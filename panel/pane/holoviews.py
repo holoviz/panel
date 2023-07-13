@@ -17,8 +17,8 @@ import param
 from bokeh.models import Range1d, Spacer as _BkSpacer
 from bokeh.themes.theme import Theme
 from packaging.version import Version
+from param.depends import bind, register_depends_transform
 
-from ..depends import bind, register_depends_transform
 from ..io import state, unlocked
 from ..layout import (
     Column, HSpacer, Row, WidgetBox,
