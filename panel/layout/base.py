@@ -886,15 +886,13 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    auto_scroll = param.Boolean(
-        default=False, doc="""
+    auto_scroll = param.Boolean(default=False, doc="""
         Whether to scroll to the latest object on update."""
     )
 
-    scroll_button_threshold = param.Number(
-        doc="""
-        Threshold for showing scroll arrow that scrolls to the latest on click.
-        The arrow will be hidden if set to 0."""
+    scroll_button_threshold = param.Number(bounds=(0, None), doc="""
+        Threshold for showing scroll button that scrolls to the latest on click.
+        The button will be hidden if set to 0."""
     )
 
     _bokeh_model: ClassVar[Type[Model]] = PnColumn
