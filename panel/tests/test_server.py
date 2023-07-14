@@ -314,14 +314,16 @@ def test_server_session_info(port):
 
         doc = list(html._documents.keys())[0]
         session_context = param.Parameterized()
+        request = param.Parameterized()
+        request.arguments = {}
+        session_context.request = request
         session_context._document = doc
         session_context.id = sid
         doc._session_context = weakref.ref(session_context)
-        state.curdoc = doc
-        state._init_session(None)
-        assert state.session_info['live'] == 1
+        with set_curdoc(doc):
+            state._init_session(None)
+            assert state.session_info['live'] == 1
 
-    state.curdoc = None
     html._server_destroy(session_context)
     state._destroy_session(session_context)
     assert state.session_info['live'] == 0
