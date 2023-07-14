@@ -32,7 +32,7 @@ The `pn.config` object allows setting various configuration variables, the confi
 : List of raw CSS strings to add to load.
 
 `reuse_sessions`
-: Whether to reuse a session for the initial request to speed up the initial page render. Note that if the initial page differs between sessions, e.g. because it uses query parameters to modify the rendered content, then this option will result in the wrong content being rendered. See the [Performance and Debugging guide](Performance_and_Debugging.rst#Reuse-sessions) for more information.
+: Whether to reuse a session for the initial request to speed up the initial page render. Note that if the initial page differs between sessions, e.g. because it uses query parameters to modify the rendered content, then this option will result in the wrong content being rendered. See the corresponding [how-to guide](../how_to/performance/reuse_sessions.md) for more information.
 
 `safe_embed`
 : Whether to record all set events when embedding rather than just those that are changed

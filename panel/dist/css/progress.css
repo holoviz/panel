@@ -1,15 +1,15 @@
 progress {
-    appearance: none;
-    -moz-appearance: none;
-    -webkit-appearance: none;
-    border: none;
-    height: 20px;
-    border-radius: 3px;
-    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5) inset;
-    color: royalblue;
-    position: relative;
-    margin: 0 0 1.5em;
-    width: 100%;
+  appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  height: 20px;
+  border-radius: 3px;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5) inset;
+  color: royalblue;
+  position: relative;
+  margin: 0 0 1.5em;
+  width: 100%;
 }
 
 progress[value]::-webkit-progress-bar {
@@ -20,7 +20,10 @@ progress[value]::-webkit-progress-bar {
 
 progress[value] ::-webkit-progress-value {
   position: relative;
-  background-size: 35px 20px, 100% 100%, 100% 100%;
+  background-size:
+    35px 20px,
+    100% 100%,
+    100% 100%;
   border-radius: 3px;
 }
 
@@ -33,7 +36,10 @@ progress.active:not([value])::before {
 }
 
 progress[value]::-moz-progress-bar {
-  background-size: 35px 20px, 100% 100%, 100% 100%;
+  background-size:
+    35px 20px,
+    100% 100%,
+    100% 100%;
   border-radius: 3px;
 }
 
@@ -181,7 +187,7 @@ progress:not([value])::-webkit-progress-bar {
     left/2.5em 1.5em;
 }
 progress:not([value])::before {
-  content: " ";
+  content: ' ';
   position: absolute;
   height: 20px;
   top: 0;

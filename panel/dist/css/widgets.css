@@ -1,9 +1,6 @@
-.scrollable {
-  overflow: scroll;
-}
-
 /* JSON Pane */
-.bk-root .json-formatter-row .json-formatter-string, .bk-root .json-formatter-row .json-formatter-stringifiable {
+.bk-root .json-formatter-row .json-formatter-string,
+.bk-root .json-formatter-row .json-formatter-stringifiable {
   white-space: pre-wrap;
 }
 

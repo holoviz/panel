@@ -7,9 +7,6 @@ import re
 import urllib.parse as urlparse
 import uuid
 
-from typing import List, Tuple, Type
-
-import pkg_resources
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
@@ -19,8 +16,11 @@ from tornado.httputil import url_concat
 from tornado.web import RequestHandler
 
 from .config import config
+from .entry_points import entry_points_for
 from .io import state
-from .io.resources import ERROR_TEMPLATE, _env
+from .io.resources import (
+    BASIC_LOGIN_TEMPLATE, CDN_DIST, ERROR_TEMPLATE, _env,
+)
 from .util import base64url_decode, base64url_encode
 
 log = logging.getLogger(__name__)
@@ -805,20 +805,6 @@ class OAuthProvider(AuthProvider):
         return get_user
 
     @property
-    def endpoints(self) -> List[Tuple[str, Type[RequestHandler]]]:
-        ''' URL patterns for login/logout endpoints.
-
-        '''
-        endpoints: List[Tuple[str, Type[RequestHandler]]] = []
-        if self.login_handler:
-            assert self.login_url is not None
-            endpoints.append(('/login', self.login_handler))
-        if self.logout_handler:
-            assert self.logout_url is not None
-            endpoints.append(('/logout', self.logout_handler))
-        return endpoints
-
-    @property
     def login_url(self):
         if config.oauth_redirect_uri is None:
             return '/login'
@@ -841,6 +827,77 @@ class OAuthProvider(AuthProvider):
         return LogoutHandler
 
 
+class BasicLoginHandler(RequestHandler):
+
+    def get(self):
+        try:
+            errormessage = self.get_argument("error")
+        except Exception:
+            errormessage = ""
+        html = self._basic_login_template.render(
+            errormessage=errormessage, PANEL_CDN=CDN_DIST
+        )
+        self.write(html)
+
+    def _validate(self, username, password):
+        if 'basic_auth' in state._server_config.get(self.application, {}):
+            auth_info = state._server_config[self.application]['basic_auth']
+        else:
+            auth_info = config.basic_auth
+        if isinstance(auth_info, str) and os.path.isfile(auth_info):
+            with open(auth_info, encoding='utf-8') as auth_file:
+                auth_info = json.loads(auth_file.read())
+        if isinstance(auth_info, dict):
+            if username not in auth_info:
+                return False
+            return password == auth_info[username]
+        elif password == auth_info:
+            return True
+        return False
+
+    def post(self):
+        username = self.get_argument("username", "")
+        password = self.get_argument("password", "")
+        auth = self._validate(username, password)
+        if auth:
+            self.set_current_user(username)
+            self.redirect("/")
+        else:
+            error_msg = "?error=" + tornado.escape.url_escape("Login incorrect")
+            self.redirect('/login' + error_msg)
+
+    def set_current_user(self, user):
+        if not user:
+            self.clear_cookie("user")
+            return
+        self.set_secure_cookie("user", user, expires_days=config.oauth_expiry)
+        id_token = base64url_encode(json.dumps({'user': user}))
+        if state.encryption:
+            id_token = state.encryption.encrypt(id_token.encode('utf-8'))
+        self.set_secure_cookie('id_token', id_token, expires_days=config.oauth_expiry)
+
+
+
+class BasicProvider(OAuthProvider):
+
+    def __init__(self, basic_login_template=None):
+        if basic_login_template is None:
+            self._basic_login_template = BASIC_LOGIN_TEMPLATE
+        else:
+            with open(basic_login_template) as f:
+                self._basic_login_template = _env.from_string(f.read())
+        super().__init__()
+
+    @property
+    def login_url(self):
+        return '/login'
+
+    @property
+    def login_handler(self):
+        BasicLoginHandler._basic_login_template = self._basic_login_template
+        return BasicLoginHandler
+
+
 AUTH_PROVIDERS = {
     'auth0': Auth0Handler,
     'azure': AzureAdLoginHandler,
@@ -854,7 +911,7 @@ AUTH_PROVIDERS = {
 }
 
 # Populate AUTH Providers from external extensions
-for entry_point in pkg_resources.iter_entry_points('panel.auth'):
-    AUTH_PROVIDERS[entry_point.name] = entry_point.resolve()
+for entry_point in entry_points_for('panel.auth'):
+    AUTH_PROVIDERS[entry_point.name] = entry_point.load()
 
 config.param.objects(False)['_oauth_provider'].objects = list(AUTH_PROVIDERS.keys())

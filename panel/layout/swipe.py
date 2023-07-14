@@ -14,7 +14,7 @@ from .base import ListLike
 
 class Swipe(ListLike, ReactiveHTML):
     """
-    The Swipe layout enables you to quickly compare two panels layed
+    The Swipe layout enables you to quickly compare two panels laid
     out on top of each other with a part of the *before* panel shown
     on one side of a slider and a part of the *after* panel shown on
     the other side.
@@ -29,12 +29,14 @@ class Swipe(ListLike, ReactiveHTML):
     slider_color = param.Color(default="black", doc="""
         The color of the slider""")
 
-    value = param.Integer(50, bounds=(0, 100), doc="""
+    value = param.Integer(default=50, bounds=(0, 100), doc="""
         The percentage of the *after* panel to show.""")
 
     _before = param.Parameter()
 
     _after = param.Parameter()
+
+    _direction: ClassVar[str | None] = 'vertical'
 
     _template = """
     <div id="container" class="swipe-container">

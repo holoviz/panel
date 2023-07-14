@@ -220,4 +220,4 @@ You should be able to run this app yourself by changing to the `examples/apps/dj
 
 ## Multiple apps
 
-This is the most basic configuration for a bokeh server. It is of course possible to add multiple apps in the same way and then registering them with Django in the way described in the [configuration](#Configuration) section above. To see a multi-app Django server have a look at ``examples/apps/django_multi_apps`` and launch it with `python manage.py runserver` as before.
+This is the most basic configuration for a bokeh server. It is of course possible to add multiple apps in the same way and then registering them with Django in the way described in the [configuration](#configuration) section above. To see a multi-app Django server have a look at ``examples/apps/django_multi_apps`` and launch it with `python manage.py runserver` as before.

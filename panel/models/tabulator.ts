@@ -174,7 +174,7 @@ const timestampSorter = function(a: any, b: any, _aRow: any, _bRow: any, _column
 const dateEditor = function(cell: any, onRendered: any, success: any, cancel: any) {
   //cell - the cell component for the editable cell
   //onRendered - function to call when the editor has been rendered
-  //success - function to call to pass the successfuly updated value to Tabulator
+  //success - function to call to pass the successfully updated value to Tabulator
   //cancel - function to call to abort the edit and return to a normal cell
 
   //create and style input
@@ -228,7 +228,7 @@ const dateEditor = function(cell: any, onRendered: any, success: any, cancel: an
 const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel: any) {
   //cell - the cell component for the editable cell
   //onRendered - function to call when the editor has been rendered
-  //success - function to call to pass the successfuly updated value to Tabulator
+  //success - function to call to pass the successfully updated value to Tabulator
   //cancel - function to call to abort the edit and return to a normal cell
 
   //create and style input
@@ -283,13 +283,13 @@ export class DataTabulatorView extends HTMLBoxView {
   tabulator: any;
   columns: Map<string, any> = new Map();
   _tabulator_cell_updating: boolean=false
-  _updating_page: boolean = true
+  _updating_page: boolean = false
   _updating_sort: boolean = false
   _selection_updating: boolean = false
   _initializing: boolean
   _lastVerticalScrollbarTopPosition: number = 0;
   _applied_styles: boolean = false
-  _building: boolean=false
+  _building: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
@@ -341,9 +341,11 @@ export class DataTabulatorView extends HTMLBoxView {
       if (!this._updating_page)
         this.setPage()
     })
+    this.connect(p.visible.change, () => this.setVisibility())
     this.connect(p.max_page.change, () => this.setMaxPage())
     this.connect(p.frozen_rows.change, () => this.setFrozen())
     this.connect(p.sorters.change, () => this.setSorters())
+    this.connect(p.theme_classes.change, () => this.setCSSClasses(this.tabulator.element))
     this.connect(this.model.source.properties.data.change, () => this.setData())
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => {
@@ -395,6 +397,7 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     if (this.tabulator.rowManager.renderer != null) {
       this.tabulator.rowManager.redraw(true)
+      this.renderChildren()
       this.setStyles()
     }
   }
@@ -406,17 +409,33 @@ export class DataTabulatorView extends HTMLBoxView {
     this._initializing = false
   }
 
+  setCSSClasses(el: HTMLDivElement): void {
+    el.className = "pnx-tabulator tabulator"
+    for (const cls of this.model.theme_classes)
+      el.classList.add(cls)
+  }
+
   render(): void {
     super.render()
     this._initializing = true
     const container = div({style: "display: contents;"})
-    const el = div({class: "pnx-tabulator", style: "width: 100%; height: 100%"})
+    const el = div({style: "width: 100%; height: 100%; visibility: hidden;"})
+    this.setCSSClasses(el)
     container.appendChild(el)
     this.shadow_el.appendChild(container)
 
     let configuration = this.getConfiguration()
     this.tabulator = new Tabulator(el, configuration)
+    console.log(el, this.tabulator)
+    this.watch_stylesheets()
     this.init_callbacks()
+  }
+
+  style_redraw(): void {
+    if (this.model.visible)
+      this.tabulator.element.style.visibility = 'visible';
+    if (!this._initializing && !this._building)
+      this.redraw()
   }
 
   tableInit(): void {
@@ -468,6 +487,11 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.on("pageLoaded", (pageno: number) => {
       this.updatePage(pageno)
     })
+    this.tabulator.on("renderComplete", () => {
+      if (this._building)
+	return
+      this.postUpdate()
+    });
     this.tabulator.on("dataSorting", (sorters: any[]) => {
       const sorts = []
       for (const s of sorters) {
@@ -849,8 +873,6 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.rowManager.setData(data, true, false)
     else
       this.tabulator.setData(data)
-
-    this.postUpdate()
   }
 
   addData(): void {
@@ -858,13 +880,13 @@ export class DataTabulatorView extends HTMLBoxView {
     const last_row = rows[rows.length-1]
     const start = ((last_row?.data._index) || 0)
     this.setData()
-    this.postUpdate()
     if (this.model.follow && last_row)
       this.tabulator.scrollToRow(start, "top", false)
   }
 
   postUpdate(): void {
     this.setSelection()
+    this.setStyles()
   }
 
   updateOrAddData(): void {
@@ -874,7 +896,6 @@ export class DataTabulatorView extends HTMLBoxView {
 
     let data = transform_cds_to_records(this.model.source, true)
     this.tabulator.setData(data)
-    this.postUpdate()
   }
 
   setFrozen(): void {
@@ -883,11 +904,18 @@ export class DataTabulatorView extends HTMLBoxView {
     }
   }
 
+  setVisibility(): void {
+    if (this.tabulator == null)
+      return
+    this.tabulator.element.style.visibility = this.model.visible ? 'visible' : 'hidden';
+  }
+
   updatePage(pageno: number): void {
     if (this.model.pagination === 'local' && this.model.page !== pageno) {
       this._updating_page = true
       this.model.page = pageno
       this._updating_page = false
+      this.setStyles()
     }
   }
 
@@ -950,11 +978,20 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setPage(): void {
+    console.log(Math.min(this.model.max_page, this.model.page))
     this.tabulator.setPage(Math.min(this.model.max_page, this.model.page))
+    if (this.model.pagination === "local") {
+      this.renderChildren()
+      this.setStyles()
+    }
   }
 
   setPageSize(): void {
     this.tabulator.setPageSize(this.model.page_size)
+    if (this.model.pagination === "local") {
+      this.renderChildren()
+      this.setStyles()
+    }
   }
 
   setSelection(): void {
@@ -1099,6 +1136,7 @@ export namespace DataTabulator {
     source: p.Property<ColumnDataSource>
     sorters: p.Property<any[]>
     cell_styles: p.Property<any>
+    theme_classes: p.Property<string[]>
   }
 }
 
@@ -1143,6 +1181,7 @@ export class DataTabulator extends HTMLBox {
       source:         [ Ref(ColumnDataSource)       ],
       sorters:        [ Array(Any),              [] ],
       cell_styles:    [ Any,                     {} ],
+      theme_classes:  [ Array(String),           [] ],
     }))
   }
 }

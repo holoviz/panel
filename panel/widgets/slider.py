@@ -25,6 +25,7 @@ from bokeh.models.widgets import (
 
 from ..config import config
 from ..io import state
+from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
 from ..util import (
     datetime_as_utctimestamp, edit_readonly, param_reprs, value_as_date,
@@ -71,6 +72,8 @@ class _SliderBase(Widget):
     def __init__(self, **params):
         if 'value' in params and 'value_throttled' in self.param:
             params['value_throttled'] = params['value']
+        if 'orientation' == 'vertical':
+            params['height'] = self.param.width.default
         super().__init__(**params)
 
     def __repr__(self, depth=0):
@@ -610,7 +613,7 @@ class IntRangeSlider(RangeSlider):
         The lower bound.""")
 
     end = param.Integer(default=1, doc="""
-        The uppper bound.""")
+        The upper bound.""")
 
     step = param.Integer(default=1, doc="""
         The step size""")
@@ -798,7 +801,7 @@ class _EditableContinuousSlider(CompositeWidget):
 
         self._value_edit = self._input_widget(
             margin=0, align='end', css_classes=['slider-edit'],
-            stylesheets=['css/editable_slider.css']
+            stylesheets=[f'{CDN_DIST}css/editable_slider.css']
         )
         self._value_edit.param.watch(self._sync_value, 'value')
         self._value_edit.param.watch(self._sync_value, 'value_throttled')
@@ -1018,11 +1021,11 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self._slider.param.watch(self._sync_value, 'value')
         self._slider.param.watch(self._sync_value, 'value_throttled')
         self._start_edit = FloatInput(
-            css_classes=['slider-edit'], stylesheets=['css/editable_slider.css'],
+            css_classes=['slider-edit'], stylesheets=[f'{CDN_DIST}css/editable_slider.css'],
             min_width=50, margin=0, format=self.format
         )
         self._end_edit = FloatInput(
-            css_classes=['slider-edit'], stylesheets=['css/editable_slider.css'],
+            css_classes=['slider-edit'], stylesheets=[f'{CDN_DIST}css/editable_slider.css'],
             min_width=50, margin=(0, 0, 0, 10), format=self.format
         )
         self._start_edit.param.watch(self._sync_start_value, 'value')
@@ -1030,7 +1033,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self._end_edit.param.watch(self._sync_end_value, 'value')
         self._end_edit.param.watch(self._sync_end_value, 'value_throttled')
 
-        sep = StaticText(value='...', margin=(0, 2, 0, 2), align='end')
+        sep = StaticText(value='...', margin=(0, 5, 0, 5), align='end')
         edit = Row(self._label, self._start_edit, sep, self._end_edit,
                    sizing_mode='stretch_width', margin=0)
         self._composite.extend([edit, self._slider])

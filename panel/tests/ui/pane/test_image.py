@@ -68,8 +68,8 @@ def test_png_scale_height(sizing_mode, embed, page, port):
     png = PNG(PNG_FILE, sizing_mode=sizing_mode, fixed_aspect=True, embed=embed)
     row = Row(png, height=500)
     bbox = get_bbox(page, port, row)
-    assert bbox['width'] == 640
-    assert bbox['height'] == 480
+    assert int(bbox['width']) == 653
+    assert bbox['height'] == 490
 
 @pytest.mark.parametrize('sizing_mode', ['stretch_both', 'scale_both'])
 @pytest.mark.parametrize('embed', [False, True])
@@ -78,7 +78,7 @@ def test_png_scale_both(sizing_mode, embed, page, port):
     row = Row(png, width=800, height=500)
     bbox = get_bbox(page, port, row)
     assert bbox['width'] == 780
-    assert bbox['height'] == 480
+    assert bbox['height'] == 490
 
 @pytest.mark.parametrize('embed', [False, True])
 def test_png_stretch_width(embed, page, port):
@@ -94,7 +94,7 @@ def test_png_stretch_height(embed, page, port):
     row = Row(png, height=500)
     bbox = get_bbox(page, port, row)
     assert bbox['width'] == 500
-    assert bbox['height'] == 480
+    assert bbox['height'] == 490
 
 @pytest.mark.parametrize('embed', [False, True])
 def test_png_stretch_both(embed, page, port):
@@ -102,7 +102,7 @@ def test_png_stretch_both(embed, page, port):
     row = Row(png, width=800, height=500)
     bbox = get_bbox(page, port, row)
     assert bbox['width'] == 780
-    assert bbox['height'] == 480
+    assert bbox['height'] == 490
 
 @pytest.mark.parametrize('embed', [False, True])
 def test_svg_native_size(embed, page, port):
@@ -133,8 +133,8 @@ def test_svg_scale_height(sizing_mode, embed, page, port):
     svg = SVG(SVG_FILE, sizing_mode=sizing_mode, fixed_aspect=True, embed=embed)
     row = Row(svg, height=500)
     bbox = get_bbox(page, port, row)
-    assert int(bbox['width']) == 569
-    assert bbox['height'] == 480
+    assert int(bbox['width']) == 580
+    assert bbox['height'] == 490
 
 @pytest.mark.parametrize('sizing_mode', ['stretch_both', 'scale_both'])
 @pytest.mark.parametrize('embed', [False, True])
@@ -143,7 +143,7 @@ def test_svg_scale_both(sizing_mode, embed, page, port):
     row = Row(svg, width=800, height=500)
     bbox = get_bbox(page, port, row)
     assert bbox['width'] == 780
-    assert bbox['height'] == 480
+    assert bbox['height'] == 490
 
 @pytest.mark.parametrize('embed', [False, True])
 def test_svg_stretch_width(embed, page, port):
@@ -159,7 +159,7 @@ def test_svg_stretch_height(embed, page, port):
     row = Row(svg, height=500)
     bbox = get_bbox(page, port, row)
     assert bbox['width'] == 500
-    assert bbox['height'] == 480
+    assert bbox['height'] == 490
 
 @pytest.mark.parametrize('embed', [False, True])
 def test_svg_stretch_both(embed, page, port):
@@ -167,7 +167,7 @@ def test_svg_stretch_both(embed, page, port):
     row = Row(svg, width=800, height=500)
     bbox = get_bbox(page, port, row)
     assert bbox['width'] == 780
-    assert bbox['height'] == 480
+    assert bbox['height'] == 490
 
 def test_pdf_embed(page, port):
     pdf_pane = PDF(PDF_FILE, embed=True)

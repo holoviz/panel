@@ -10,7 +10,7 @@ import zipfile
 
 from abc import abstractmethod
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional,
 )
 from urllib.request import urlopen
 
@@ -48,7 +48,7 @@ class AbstractVTK(PaneBase):
               axis' ticks.
           - ``labels`` (array of strings) - optional.
               Label displayed respectively to the `ticks` positions.
-              If `labels` are not defined they are infered from the
+              If `labels` are not defined they are inferred from the
               `ticks` array.
           - ``digits``: number of decimal digits when `ticks` are converted to `labels`.
           - ``fontsize``: size in pts of the ticks labels.
@@ -343,9 +343,10 @@ class BaseVTKRenderWindow(AbstractVTK):
         ren_win.Render()
         scene = rws.serializeInstance(None, ren_win, context.getReferenceId(ren_win), context, 0)
         scene['properties']['numberOfLayers'] = 2 #On js side the second layer is for the orientation widget
-        arrays = {name: context.getCachedDataArray(name, binary=binary, compression=compression)
-                    for name in context.dataArrayCache.keys()
-                    if name not in exclude_arrays}
+        arrays = {
+            name: context.getCachedDataArray(name, binary=True, compression=False)
+            for name in context.dataArrayCache.keys() if name not in exclude_arrays
+        }
         annotations = context.getAnnotations()
         return scene, arrays, annotations
 
@@ -513,7 +514,8 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
             'physicalTranslation',
             'physicalScale',
             'physicalViewUp',
-            'physicalViewNorth'
+            'physicalViewNorth',
+            'remoteId',
         ]
         if self.camera is not None:
             for k, v in self.camera.items():
@@ -563,7 +565,7 @@ class VTKVolume(AbstractVTK):
         light direction and the object surface normal.""")
 
     display_volume = param.Boolean(default=True, doc="""
-        If set to True, the 3D respresentation of the volume is
+        If set to True, the 3D representation of the volume is
         displayed using ray casting.""")
 
     display_slices = param.Boolean(default=False, doc="""
@@ -587,7 +589,7 @@ class VTKVolume(AbstractVTK):
     mapper = param.Dict(doc="Lookup Table in format {low, high, palette}")
 
     max_data_size = param.Number(default=(256 ** 3) * 2 / 1e6, doc="""
-        Maximum data size transfert allowed without subsampling""")
+        Maximum data size transfer allowed without subsampling""")
 
     nan_opacity = param.Number(default=1., bounds=(0., 1.), doc="""
         Opacity applied to nan values in slices""")
@@ -599,7 +601,7 @@ class VTKVolume(AbstractVTK):
         The value must be specified as an hexadecimal color string.""")
 
     rescale = param.Boolean(default=False, doc="""
-        If set to True the colormap is rescaled beween min and max
+        If set to True the colormap is rescaled between min and max
         value of the non-transparent pixel, otherwise  the full range
         of the pixel values are used.""")
 
@@ -728,19 +730,21 @@ class VTKVolume(AbstractVTK):
     @classmethod
     def register_serializer(cls, class_type, serializer):
         """
-        Register a seriliazer for a given type of class.
+        Register a serializer for a given type of class.
         A serializer is a function which take an instance of `class_type`
         (like a vtk.vtkImageData) as input and return a numpy array of the data
         """
         cls._serializers.update({class_type:serializer})
 
     def _volume_from_array(self, sub_array):
-        return dict(buffer=base64encode(sub_array.ravel(order='F')),
-                    dims=sub_array.shape,
-                    spacing=self._sub_spacing,
-                    origin=self.origin,
-                    data_range=(np.nanmin(sub_array), np.nanmax(sub_array)),
-                    dtype=sub_array.dtype.name)
+        return dict(
+            buffer=base64encode(sub_array.ravel(order='F')),
+            dims=sub_array.shape,
+            spacing=self._sub_spacing,
+            origin=self.origin,
+            data_range=(np.nanmin(sub_array), np.nanmax(sub_array)),
+            dtype=sub_array.dtype.name
+        )
 
     def _get_volume_data(self):
         if self.object is None:
@@ -818,7 +822,6 @@ class VTKJS(AbstractVTK):
 
     _updates = True
 
-
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._vtkjs = None
@@ -865,6 +868,16 @@ class VTKJS(AbstractVTK):
         vtkjs = self._get_vtkjs()
         model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
 
-    def export_vtkjs(self, filename='vtk_panel.vtkjs'):
-        with open(filename, 'wb') as f:
-            f.write(self._get_vtkjs())
+    def export_vtkjs(self, filename: str | IO ='vtk_panel.vtkjs'):
+        """
+        Exports current VTK data to .vtkjs file.
+
+        Arguments
+        ---------
+        filename: str | IO
+        """
+        if hasattr(filename, 'write'):
+            filename.write(self._get_vtkjs())
+        else:
+            with open(filename, 'wb') as f:
+                f.write(self._get_vtkjs())

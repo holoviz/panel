@@ -1,0 +1,73 @@
+name: jupyterlite
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Site to build and deploy'
+        type: choice
+        options:
+        - dev
+        - main
+        - dryrun
+        required: true
+        default: dryrun
+  schedule:
+    - cron: '0 19 * * SUN'
+
+jobs:
+  deploy_jupyterlite:
+    name: JupyterLite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: "100"
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+      - name: Set up base env
+        run: |
+          pip install --upgrade pip
+          pip install hatch hatch-conda
+          hatch env create jupyterlite
+      - name: Build jupyterlite
+        run: |
+          hatch run jupyterlite:build
+      - name: Set and echo git ref
+        id: vars
+        run: |
+          echo 'Deploying from ref ${GITHUB_REF#refs/*/}'
+          echo 'tag=${GITHUB_REF#refs/*/}' >> $GITHUB_OUTPUT
+      - name: Upload dev
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
+          (github.event_name == 'workflow_run' && (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.ACCESS_TOKEN }}
+          external_repository: holoviz-dev/panelite-dev
+          publish_dir: ./lite/dist
+          force_orphan: true
+      - name: Upload prod
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'main') ||
+          (github.event_name == 'push' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.ACCESS_TOKEN }}
+          external_repository: holoviz-dev/panelite
+          publish_dir: ./lite/dist
+          cname: panelite.holoviz.org
+          force_orphan: true

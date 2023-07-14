@@ -15,7 +15,7 @@ def test_gridbox(page, port):
 
     serve(grid, port=port, threaded=True, show=False)
 
-    time.sleep(0.5)
+    time.sleep(0.2)
 
     page.goto(f"http://localhost:{port}")
 
@@ -25,6 +25,8 @@ def test_gridbox(page, port):
     assert bbox['height'] == 150
 
     grid.ncols = 6
+
+    time.sleep(0.1)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
 
@@ -44,7 +46,7 @@ def test_gridbox_unequal(page, port):
 
     serve(grid, port=port, threaded=True, show=False)
 
-    time.sleep(0.5)
+    time.sleep(0.2)
 
     page.goto(f"http://localhost:{port}")
 
@@ -72,6 +74,8 @@ def test_gridbox_unequal(page, port):
     assert bbox5['height'] == 30
 
     grid.ncols = 5
+
+    time.sleep(0.1)
 
     bbox = page.locator(".bk-GridBox").bounding_box()
     children = page.locator(".bk-GridBox div")
@@ -107,7 +111,7 @@ def test_gridbox_stretch_width(page, port):
 
     serve(grid, port=port, threaded=True, show=False)
 
-    time.sleep(0.5)
+    time.sleep(0.2)
 
     page.goto(f"http://localhost:{port}")
 
@@ -141,7 +145,7 @@ def test_gridbox_stretch_height(page, port):
 
     serve(grid, port=port, threaded=True, show=False)
 
-    time.sleep(0.5)
+    time.sleep(0.2)
 
     page.goto(f"http://localhost:{port}")
 
@@ -176,7 +180,7 @@ def test_gridbox_stretch_both(page, port):
 
     serve(grid, port=port, threaded=True, show=False)
 
-    time.sleep(0.5)
+    time.sleep(0.2)
 
     page.goto(f"http://localhost:{port}")
 

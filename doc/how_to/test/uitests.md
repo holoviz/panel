@@ -40,10 +40,10 @@ import param
 class App(pn.viewable.Viewer):
     run = param.Event(doc="Runs for click_delay seconds when clicked")
     runs = param.Integer(doc="The number of runs")
-    status = param.String("No runs yet")
+    status = param.String(default="No runs yet")
 
-    load_delay = param.Number(0.5)
-    run_delay = param.Number(0.5)
+    load_delay = param.Number(default=0.5)
+    run_delay = param.Number(default=0.5)
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -73,13 +73,13 @@ class App(pn.viewable.Viewer):
         self.runs+=1
         self.status=f"Finished run {self.runs} in {duration}sec"
 
-    @pn.depends("run", watch=True)
+    @param.depends("run", watch=True)
     def _run_with_status_update(self):
         self._start_run()
         self._result_pane[:] = [self._run()]
         self._stop_run()
 
-    @pn.depends("status", watch=True)
+    @param.depends("status", watch=True)
     def _update_status_pane(self):
         self._status_pane.object = self.status
 

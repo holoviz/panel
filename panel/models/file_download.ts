@@ -1,10 +1,12 @@
-import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
-
-import buttons_css, * as buttons from "@bokehjs/styles/buttons.css"
-import {input, StyleSheetLike} from "@bokehjs/core/dom"
-
+import {build_view, IterViews} from "@bokehjs/core/build_views"
 import {ButtonType} from "@bokehjs/core/enums"
 import * as p from "@bokehjs/core/properties"
+
+import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
+import {Icon, IconView} from "@bokehjs/models/ui/icons/icon"
+
+import buttons_css, * as buttons from "@bokehjs/styles/buttons.css"
+import {prepend, nbsp, text, button, StyleSheetLike} from "@bokehjs/core/dom"
 
 function dataURItoBlob(dataURI: string) {
   // convert base64 to raw binary data held in a string
@@ -28,13 +30,26 @@ function dataURItoBlob(dataURI: string) {
 
 export class FileDownloadView extends InputWidgetView {
   model: FileDownload
+
+  protected icon_view?: IconView
+
   anchor_el: HTMLAnchorElement
+  button_el: HTMLButtonElement
   _downloadable: boolean = false
   _click_listener: any
   _prev_href: string | null = ""
   _prev_download: string | null = ""
 
-  protected input_el: HTMLInputElement
+  override *children(): IterViews {
+    yield* super.children()
+    if (this.icon_view != null)
+      yield this.icon_view
+  }
+
+  public *controls() {
+    yield (this.anchor_el as any)
+    yield (this.button_el as any)
+  }
 
   connect_signals(): void {
     super.connect_signals()
@@ -42,7 +57,20 @@ export class FileDownloadView extends InputWidgetView {
     this.connect(this.model.properties.filename.change, () => this._update_download())
     this.connect(this.model.properties._transfers.change, () => this._handle_click())
     this.connect(this.model.properties.label.change, () => this._update_label())
-    this.connect(this.model.properties.disabled.change, () => this.set_disabled())
+  }
+
+  override remove(): void {
+    if (this.icon_view != null)
+      this.icon_view.remove()
+    super.remove()
+  }
+
+  override async lazy_initialize(): Promise<void> {
+    await super.lazy_initialize()
+    const {icon} = this.model
+    if (icon != null) {
+      this.icon_view = await build_view(icon, {parent: this})
+    }
   }
 
   render(): void {
@@ -59,6 +87,15 @@ export class FileDownloadView extends InputWidgetView {
     // 2. auto=False: The widget is first a button and becomes a download link after the first click
     // 3. auto=True: The widget is a button, i.e right click to "Save as..." won't work
     this.anchor_el = document.createElement('a')
+    this.button_el = button({
+      disabled: this.model.disabled,
+      type: "bk_btn, bk_btn_type",
+    })
+    if (this.icon_view != null) {
+      const separator = this.model.label != "" ? nbsp() : text("")
+      prepend(this.button_el, this.icon_view.el, separator)
+      this.icon_view.render()
+    }
     this._update_button_style()
     this._update_label()
 
@@ -88,16 +125,8 @@ export class FileDownloadView extends InputWidgetView {
       this._click_listener = this._increment_clicks.bind(this)
       this.anchor_el.addEventListener("click", this._click_listener)
     }
-    this.group_el.appendChild(this.anchor_el)
-
-    // If this is not added it will give the following error
-    // "Uncaught TypeError: t is undefined"
-    // This seems to be related to button do not have a value
-    // property.
-    this.input_el = input({
-      type: "bk_btn, bk_btn_type",
-    })
-    this.input_el.addEventListener("change", () => this.change_input())
+    this.button_el.appendChild(this.anchor_el)
+    this.group_el.appendChild(this.button_el)
   }
 
   stylesheets(): StyleSheetLike[] {
@@ -111,7 +140,7 @@ export class FileDownloadView extends InputWidgetView {
   _handle_click() : void {
     // When auto=False the button becomes a link which no longer
     // requires being updated.
-    if ( !this.model.auto && this._downloadable)
+    if ( (!this.model.auto && this._downloadable) || this.anchor_el.hasAttribute("disabled"))
       return
 
     this._make_link_downloadable()
@@ -161,21 +190,13 @@ export class FileDownloadView extends InputWidgetView {
 
   _update_button_style(): void {
     const btn_type = buttons[`btn_${this.model.button_type}` as const]
-    if (!this.anchor_el.hasAttribute("class") ){ // When the widget is rendered.
-      this.anchor_el.classList.add(buttons.btn)
-      this.anchor_el.classList.add(btn_type)
+    if (!this.button_el.hasAttribute("class") ){ // When the widget is rendered.
+      this.button_el.classList.add(buttons.btn)
+      this.button_el.classList.add(btn_type)
     } else {  // When the button type is changed.
       const prev_button_type = this.anchor_el.classList.item(1)
       if (prev_button_type)
-        this.anchor_el.classList.replace(prev_button_type, btn_type)
-    }
-  }
-
-  set_disabled(): void {
-    if (this.model.disabled){
-      this.anchor_el.setAttribute("disabled", "")
-    } else {
-      this.anchor_el.removeAttribute("disabled")
+        this.button_el.classList.replace(prev_button_type, btn_type)
     }
   }
 }
@@ -189,6 +210,7 @@ export namespace FileDownload {
     clicks: p.Property<number>
     data: p.Property<string | null>
     embed: p.Property<boolean>
+    icon: p.Property<Icon | null>
     label: p.Property<string>
     filename: p.Property<string | null>
     _transfers: p.Property<number>
@@ -209,11 +231,12 @@ export class FileDownload extends InputWidget {
   static {
     this.prototype.default_view = FileDownloadView
 
-    this.define<FileDownload.Props>(({Boolean, Int, Nullable, String}) => ({
+    this.define<FileDownload.Props>(({Boolean, Int, Nullable, Ref, String}) => ({
       auto:         [ Boolean,          false ],
       clicks:       [ Int,                  0 ],
       data:         [ Nullable(String),  null ],
       embed:        [ Boolean,          false ],
+      icon:        [ Nullable(Ref(Icon)), null ],
       label:        [ String,      "Download" ],
       filename:     [ Nullable(String),  null ],
       button_type:  [ ButtonType,   "default" ], // TODO (bev)

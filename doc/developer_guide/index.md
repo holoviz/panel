@@ -126,13 +126,30 @@ The Panel environements can quickly grow in size, to clean up (i.e. remove) all 
 hatch env prune
 ```
 
+This will ensure that every time you make a commit linting will automatically be applied.
+
+## Developing custom models
+
+Panel ships with a number of custom Bokeh models, which have both Python and Javascript components. When developing Panel these custom models have to be compiled. This happens automatically with `pip install -e .`, however when running actively developing you can rebuild the extension with `panel build panel`. The `build` command is just an alias for `bokeh build`; see
+the [Bokeh developer guide](https://docs.bokeh.org/en/latest/docs/dev_guide/setup.html) for more information about developing bokeh models.
+
+Just like any other Javascript (or Typescript) library Panel defines a `package.json` and `package-lock.json` files. When adding, updating or removing a dependency in the package.json file ensure you commit the changes to the `package-lock.json` after running `npm install`.
+
+## Bundling resources
+
+Panel bundles external resources required for custom models and templates into the `panel/dist` directory. The bundled resources have to be collected whenever they change, so rerun `pip install -e .`  whenever you change one of the following:
+
+* A new model is added with a `__javascript_raw__` declaration or an existing model is updated
+* A new template with a `_resources` declaration is added or an existing template is updated
+* A CSS file in one of template directories (`panel/template/*/`) is added or modified
+
 ## Next Steps
 
-You will likely want to check out the :ref:`devguide_testing` guide. Meanwhile, if you have any problems with the steps here, please visit our [Discourse](https://discourse.holoviz.org/c/panel/5).
+You will likely want to check out the [testing](testing.md) guide. Meanwhile, if you have any problems with the steps here, please visit our [Discourse](https://discourse.holoviz.org/c/panel/5).
 
 ## Useful Links
 
-- [Dev version of Panel Site](https://pyviz-dev.github.io/panel)
+- [Dev version of Panel Site](https://holoviz-dev.github.io/panel)
    - Use this to explore new, not yet released features and docs
 - [Panel main branch on Binder](https://mybinder.org/v2/gh/holoviz/panel/main?urlpath=lab/tree/examples)
    - Use this to quickly explore and manually test the newest panel features in a fresh environment with all requirements installed.

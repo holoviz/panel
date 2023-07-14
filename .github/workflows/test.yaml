@@ -52,6 +52,7 @@ jobs:
       # the `pyviz` channel, except that we don't want to configure
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
+      OMP_NUM_THREADS: 1
     steps:
       - uses: actions/checkout@v3
         with:

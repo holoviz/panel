@@ -229,11 +229,11 @@ def test_interact_replaces_model(document, comm):
     assert new_pane is not pane
     new_div = column.children[1].children[0]
     assert isinstance(new_div, BkHTML)
-    assert new_div.text.endswith('&lt;p&gt;ABC&lt;/p&gt;')
+    assert new_div.text.endswith('&lt;p&gt;ABC&lt;/p&gt;\n')
     assert new_pane._models[column.ref['id']][0] is new_div
 
     interact_pane._cleanup(column)
-    assert len(interact_pane._callbacks) == 6
+    assert len(interact_pane._internal_callbacks) == 6
     # Note one of the callbacks is Viewable._set_background
     # the counter should be reduced when this function is removed.
 

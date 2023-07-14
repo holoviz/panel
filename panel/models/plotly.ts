@@ -11,93 +11,106 @@ import {HTMLBox, HTMLBoxView, set_size} from "./layout"
 
 
 interface PlotlyHTMLElement extends HTMLDivElement {
-    _fullLayout: any
-    layout: any;
-    on(event: 'plotly_relayout', callback: (eventData: any) => void): void;
-    on(event: 'plotly_relayouting', callback: (eventData: any) => void): void;
-    on(event: 'plotly_restyle', callback: (eventData: any) => void): void;
-    on(event: 'plotly_click', callback: (eventData: any) => void): void;
-    on(event: 'plotly_hover', callback: (eventData: any) => void): void;
-    on(event: 'plotly_clickannotation', callback: (eventData: any) => void): void;
-    on(event: 'plotly_selected', callback: (eventData: any) => void): void;
-    on(event: 'plotly_deselect', callback: () => void): void;
-    on(event: 'plotly_unhover', callback: () => void): void;
+  _fullLayout: any
+  layout: any;
+  on(event: 'plotly_relayout', callback: (eventData: any) => void): void;
+  on(event: 'plotly_relayouting', callback: (eventData: any) => void): void;
+  on(event: 'plotly_restyle', callback: (eventData: any) => void): void;
+  on(event: 'plotly_click', callback: (eventData: any) => void): void;
+  on(event: 'plotly_hover', callback: (eventData: any) => void): void;
+  on(event: 'plotly_clickannotation', callback: (eventData: any) => void): void;
+  on(event: 'plotly_selected', callback: (eventData: any) => void): void;
+  on(event: 'plotly_deselect', callback: () => void): void;
+  on(event: 'plotly_unhover', callback: () => void): void;
+}
+
+function convertUndefined(obj: any): any {
+  Object
+    .entries(obj)
+    .forEach(([key, value]) => {
+      if (!!value && (typeof value === 'object')) {
+        convertUndefined(value);
+      } else if (value === undefined) {
+        obj[key] = null;
+      }
+    });
+  return obj;
 }
 
 const filterEventData = (gd: any, eventData: any, event: string) => {
-    // Ported from dash-core-components/src/components/Graph.react.js
-    let filteredEventData: {[k: string]: any} = Array.isArray(eventData)? []: {};
+  // Ported from dash-core-components/src/components/Graph.react.js
+  let filteredEventData: {[k: string]: any} = Array.isArray(eventData)? []: {};
 
-    if (event === "click" || event === "hover" || event === "selected") {
-        const points = [];
+  if (event === "click" || event === "hover" || event === "selected") {
+    const points = [];
 
-        if (eventData === undefined || eventData === null) {
-            return null;
+    if (eventData === undefined || eventData === null) {
+      return null;
+    }
+
+    /*
+     * remove `data`, `layout`, `xaxis`, etc
+     * objects from the event data since they're so big
+     * and cause JSON stringify circular structure errors.
+     *
+     * also, pull down the `customdata` point from the data array
+     * into the event object
+     */
+    const data = gd.data;
+
+    for (let i = 0; i < eventData.points.length; i++) {
+      const fullPoint = eventData.points[i];
+
+      let pointData: {[k: string]: any} = {};
+      for (let property in fullPoint) {
+        const val = fullPoint[property];
+        if (fullPoint.hasOwnProperty(property) &&
+            !Array.isArray(val) && !isPlainObject(val) &&
+            val !== undefined)  {
+          pointData[property] = val;
+        }
+      }
+
+      if (fullPoint !== undefined && fullPoint !== null) {
+        if(fullPoint.hasOwnProperty("curveNumber") &&
+           fullPoint.hasOwnProperty("pointNumber") &&
+           data[fullPoint["curveNumber"]].hasOwnProperty("customdata")) {
+
+          pointData["customdata"] =
+            data[fullPoint["curveNumber"]].customdata[
+              fullPoint["pointNumber"]
+            ]
         }
 
-        /*
-         * remove `data`, `layout`, `xaxis`, etc
-         * objects from the event data since they're so big
-         * and cause JSON stringify ciricular structure errors.
-         *
-         * also, pull down the `customdata` point from the data array
-         * into the event object
-         */
-        const data = gd.data;
-
-        for (let i = 0; i < eventData.points.length; i++) {
-            const fullPoint = eventData.points[i];
-
-            let pointData: {[k: string]: any} = {};
-            for (let property in fullPoint) {
-              const val = fullPoint[property];
-              if (fullPoint.hasOwnProperty(property) &&
-                  !Array.isArray(val) && !isPlainObject(val) &&
-                  val !== undefined)  {
-                pointData[property] = val;
-              }
-            }
-
-            if (fullPoint !== undefined && fullPoint !== null) {
-              if(fullPoint.hasOwnProperty("curveNumber") &&
-                  fullPoint.hasOwnProperty("pointNumber") &&
-                  data[fullPoint["curveNumber"]].hasOwnProperty("customdata")) {
-
-                pointData["customdata"] =
-                    data[fullPoint["curveNumber"]].customdata[
-                        fullPoint["pointNumber"]
-                    ]
-              }
-
-              // specific to histogram. see https://github.com/plotly/plotly.js/pull/2113/
-              if (fullPoint.hasOwnProperty('pointNumbers')) {
-                  pointData["pointNumbers"] = fullPoint.pointNumbers;
-              }
-            }
-
-            points[i] = pointData;
+        // specific to histogram. see https://github.com/plotly/plotly.js/pull/2113/
+        if (fullPoint.hasOwnProperty('pointNumbers')) {
+          pointData["pointNumbers"] = fullPoint.pointNumbers;
         }
-        filteredEventData["points"] = points;
-    } else if (event === 'relayout' || event === 'restyle') {
-        /*
-         * relayout shouldn't include any big objects
-         * it will usually just contain the ranges of the axes like
-         * "xaxis.range[0]": 0.7715822247381828,
-         * "xaxis.range[1]": 3.0095292008680063`
-         */
-        for (let property in eventData) {
-              if (eventData.hasOwnProperty(property))  {
-                filteredEventData[property] = eventData[property];
-              }
-        }
+      }
+
+      points[i] = pointData;
     }
-    if (eventData.hasOwnProperty('range')) {
-        filteredEventData["range"] = eventData["range"];
+    filteredEventData["points"] = points;
+  } else if (event === 'relayout' || event === 'restyle') {
+    /*
+     * relayout shouldn't include any big objects
+     * it will usually just contain the ranges of the axes like
+     * "xaxis.range[0]": 0.7715822247381828,
+     * "xaxis.range[1]": 3.0095292008680063`
+     */
+    for (let property in eventData) {
+      if (eventData.hasOwnProperty(property))  {
+        filteredEventData[property] = eventData[property];
+      }
     }
-    if (eventData.hasOwnProperty('lassoPoints')) {
-        filteredEventData["lassoPoints"] = eventData["lassoPoints"];
-    }
-    return filteredEventData;
+  }
+  if (eventData.hasOwnProperty('range')) {
+    filteredEventData["range"] = eventData["range"];
+  }
+  if (eventData.hasOwnProperty('lassoPoints')) {
+    filteredEventData["lassoPoints"] = eventData["lassoPoints"];
+  }
+  return convertUndefined(filteredEventData);
 };
 
 
@@ -112,6 +125,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _setViewport: Function
   _settingViewport: boolean = false
   _plotInitialized: boolean = false
+  _rendered: boolean = false
   _reacting: boolean = false
   _relayouting: boolean = false
   container: PlotlyHTMLElement
@@ -156,9 +170,6 @@ export class PlotlyPlotView extends HTMLBoxView {
       this.plot(true)
     });
     this.connect(this.model.properties.viewport.change, () => this._updateViewportFromProperty());
-    this.connect(this.model.properties.visibility.change, () => {
-      this.el.style.visibility = this.model.visibility ? 'visible' : 'hidden'
-    })
   }
 
   override remove(): void {
@@ -170,18 +181,26 @@ export class PlotlyPlotView extends HTMLBoxView {
     super.render()
     this.container = <PlotlyHTMLElement>div()
     set_size(this.container, this.model)
-    this.container.style.visibility = this.model.visibility ? 'visible' : 'hidden'
+    this._rendered = false
     this.shadow_el.appendChild(this.container)
+    this.watch_stylesheets()
     this.plot().then(() => {
+      this._rendered = true
       if (this.model.relayout != null)
 	(window as any).Plotly.relayout(this.container, this.model.relayout);
       (window as any).Plotly.Plots.resize(this.container);
     })
   }
 
+  style_redraw(): void {
+    if (this._rendered)
+      (window as any).Plotly.Plots.resize(this.container);
+  }
+
   after_layout(): void {
     super.after_layout();
-    (window as any).Plotly.Plots.resize(this.container)
+    if (this._rendered)
+      (window as any).Plotly.Plots.resize(this.container)
   }
 
   _trace_data(): any {
@@ -211,7 +230,7 @@ export class PlotlyPlotView extends HTMLBoxView {
     //  - plotly_relayout
     this.container.on('plotly_relayout', (eventData: any) => {
       if (eventData['_update_from_property'] !== true) {
-        this.model.relayout_data = filterEventData(
+	this.model.relayout_data = filterEventData(
           this.container, eventData, 'relayout');
 
         this._updateViewportProperty();
@@ -404,7 +423,6 @@ export namespace PlotlyPlot {
     viewport: p.Property<any>
     viewport_update_policy: p.Property<string>
     viewport_update_throttle: p.Property<number>
-    visibility: p.Property<boolean>
     _render_count: p.Property<number>
   }
 }
@@ -423,7 +441,7 @@ export class PlotlyPlot extends HTMLBox {
   static {
     this.prototype.default_view = PlotlyPlotView
 
-    this.define<PlotlyPlot.Props>(({Array, Any, Boolean, Nullable, Number, Ref, String}) => ({
+    this.define<PlotlyPlot.Props>(({Array, Any, Nullable, Number, Ref, String}) => ({
       data: [ Array(Any), [] ],
       layout: [ Any, {} ],
       config: [ Any, {} ],
@@ -440,7 +458,6 @@ export class PlotlyPlot extends HTMLBox {
       viewport: [ Any, {} ],
       viewport_update_policy: [ String, "mouseup" ],
       viewport_update_throttle: [ Number, 200 ],
-      visibility: [ Boolean, true],
       _render_count: [ Number, 0 ],
     }))
   }

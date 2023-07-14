@@ -23,7 +23,7 @@ run-coverage = "pytest panel --cov=./panel --cov-report=xml -n logical --dist lo
 run = "run-coverage --no-cov"
 run-examples = [
   'pytest panel --docs',
-  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*VTK*.ipynb"  --ignore-glob="*Terminal.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*xgboost_classifier.ipynb"  --ignore-glob="*clifford_interact.ipynb" --ignore-glob="*NetworkX.ipynb" --ignore-glob="*streaming_videostream.ipynb"'
+  'pytest -n logical --dist loadscope --nbval-lax examples/reference examples/gallery --ignore-glob="*VTK*.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*Terminal.ipynb"  --ignore-glob="*DatePicker.ipynb"'
 ]
 
 [[envs.test.matrix]]
@@ -47,7 +47,7 @@ post-install-commands = [
   "panel bundle --all",
 ]
 [envs.test-ui.scripts]
-run-coverage = "pytest panel --cov=./panel --cov-report=xml --cov-config=.uicoveragerc --ui --jupyter --browser chromium"
+run-coverage = "pytest panel --cov=./panel --cov-report=xml --cov-config=.uicoveragerc --ui --jupyter --browser chromium -n logical --dist loadgroup"
 run = "run-coverage --no-cov"
 start-jupyter = [
   "jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix",
@@ -104,8 +104,13 @@ dependencies = [
 ]
 [envs.jupyterlite.scripts]
 build = [
+  # Install the dependencies
+  "python -m pip install -r ./lite/requirements.txt",
+  # Build pyodide wheels for JupyterLite
   "python ./scripts/build_pyodide_wheels.py lite/pypi",
-  "python ./scripts/generate_panelite_content.py",
+  # Convert content
+  "python ./scripts/panellite/generate_panelite_content.py",
+  # Build the JupyterLite site
   "jupyter lite build --lite-dir lite --output-dir lite/dist"
 ]
 
@@ -131,7 +136,7 @@ ui-test = "pytest panel --ui --jupyter --browser chromium"
 lint = "pre-commit run -a"
 example-test = [
   'pytest panel --docs',
-  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*VTK*.ipynb"  --ignore-glob="*Terminal.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*xgboost_classifier.ipynb"  --ignore-glob="*clifford_interact.ipynb" --ignore-glob="*NetworkX.ipynb" --ignore-glob="*streaming_videostream.ipynb"'
+  'pytest -n logical --dist loadscope --nbval-lax examples/reference examples/gallery --ignore-glob="*VTK*.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*Terminal.ipynb"  --ignore-glob="*DatePicker.ipynb"'
 ]
 pyodide-wheels = "python scripts/build_pyodide_wheels.py"
 
@@ -160,7 +165,7 @@ ui-test = "pytest panel --ui --jupyter --browser chromium"
 lint = "pre-commit run -a"
 example-test = [
   'pytest panel --docs',
-  'pytest -n logical --dist loadscope --nbval-lax examples/user_guide examples/reference examples/gallery --ignore-glob="*VTK.ipynb" --ignore-glob="*VTKVolume.ipynb" --ignore-glob="*VTK*.ipynb"  --ignore-glob="*Terminal.ipynb" --ignore-glob="*dynamic_tabs.ipynb" --ignore-glob="*xgboost_classifier.ipynb"  --ignore-glob="*clifford_interact.ipynb" --ignore-glob="*NetworkX.ipynb" --ignore-glob="*streaming_videostream.ipynb"'
+  'pytest -n logical --dist loadscope --nbval-lax examples/reference examples/gallery --ignore-glob="*VTK*.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*Terminal.ipynb"  --ignore-glob="*DatePicker.ipynb"'
 ]
 pyodide-wheels = "python scripts/build_pyodide_wheels.py"
 

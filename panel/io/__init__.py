@@ -32,7 +32,7 @@ __all__ = (
     "PeriodicCallback",
     "Resources",
     "ipywidget",
-    "panel_logger"
+    "panel_logger",
     "profile",
     "push",
     "push_notebook",

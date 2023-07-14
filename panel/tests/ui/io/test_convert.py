@@ -154,7 +154,7 @@ def wait_for_app(launch_app, app, page, runtime, wait=True, **kwargs):
 
     convert_apps(
         [app_path], app_path.parent, runtime=runtime, build_pwa=False,
-        prerender=False, panel_version='local', **kwargs
+        prerender=False, panel_version='local', inline=True, **kwargs
     )
 
     msgs = []
@@ -162,7 +162,7 @@ def wait_for_app(launch_app, app, page, runtime, wait=True, **kwargs):
 
     page.goto(f"http://localhost:8123/{app_path.name[:-3]}.html")
 
-    cls = f'pn-loading {config.loading_spinner}'
+    cls = f'pn-loading pn-{config.loading_spinner}'
     expect(page.locator('body')).to_have_class(cls)
     if wait:
         expect(page.locator('body')).not_to_have_class(cls, timeout=90 * 1000)

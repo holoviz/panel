@@ -69,10 +69,11 @@ class EditableRange(Viewer):
 Finally, we'll implement the required ``__panel__`` method, which returns the Panel layout to be rendered. Panel will call this method when displaying the component.
 
 ```{pyodide}
-
 import param
 import panel as pn
+
 from panel.viewable import Viewer
+
 pn.extension() # for notebook
 
 class EditableRange(Viewer):
@@ -112,4 +113,5 @@ pn.Column(
 ```
 
 ## Related Resources
-- To create custom components from scratch, check out [How To > Build Components from Scratch](./custom_reactiveHTML.md) and read the associated [Background > Building Custom Components](../../background/components/components_custom) for further explanation.
+
+- To create custom components from scratch, check out [How To > Build Components from Scratch](./custom_reactiveHTML.md) and read the associated [Explanation > Building Custom Components](../../explanation/components/components_custom.md) for further explanation.

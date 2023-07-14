@@ -1,3 +1,0 @@
-# Panel and Param
-
-WIP

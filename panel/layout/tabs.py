@@ -10,10 +10,9 @@ from typing import (
 
 import param
 
-from bokeh.models import (
-    Spacer as BkSpacer, TabPanel as BkTabPanel, Tabs as BkTabs,
-)
+from bokeh.models import Spacer as BkSpacer, TabPanel as BkTabPanel
 
+from ..models.tabs import Tabs as BkTabs
 from ..viewable import Layoutable
 from .base import NamedListPanel
 
@@ -56,6 +55,8 @@ class Tabs(NamedListPanel):
 
     _bokeh_model: ClassVar[Type[Model]] = BkTabs
 
+    _direction: ClassVar[str | None] = 'vertical'
+
     _js_transforms: ClassVar[Mapping[str, str]] = {'tabs': """
     var ids = [];
     for (var t of value) {{ ids.push(t.id) }};
@@ -75,11 +76,12 @@ class Tabs(NamedListPanel):
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
         self._rendered = defaultdict(dict)
-        self.param.active.bounds = (0, len(self)-1)
+        self.param.active.bounds = (-1, len(self)-1)
         self.param.watch(self._update_active, ['dynamic', 'active'])
 
     def _update_names(self, event):
-        self.param.active.bounds = (0, len(event.new)-1)
+        # No active tabs will have a value of -1
+        self.param.active.bounds = (-1, len(event.new)-1)
         super()._update_names(event)
 
     def _cleanup(self, root: Model | None = None) -> None:
@@ -138,9 +140,9 @@ class Tabs(NamedListPanel):
                 self.param.trigger('objects')
                 return
 
-    def _compute_sizing_mode(self, children, sizing_mode, styles):
+    def _compute_sizing_mode(self, children, props):
         children = [child.child for child in children]
-        return super()._compute_sizing_mode(children, sizing_mode, styles)
+        return super()._compute_sizing_mode(children, props)
 
     #----------------------------------------------------------------
     # Model API
@@ -158,7 +160,7 @@ class Tabs(NamedListPanel):
         models and cleaning up any dropped objects.
         """
         from ..pane.base import RerenderError, panel
-        new_models = []
+        new_models, old_models = [], []
         if len(self._names) != len(self):
             raise ValueError('Tab names do not match objects, ensure '
                              'that the Tabs.objects are not modified '
@@ -198,6 +200,7 @@ class Tabs(NamedListPanel):
 
             if prev_hidden and not hidden and pref in rendered:
                 child = rendered[pref]
+                old_models.append(child)
             elif hidden:
                 child = BkSpacer(**{k: v for k, v in pane.param.values().items()
                                     if k in Layoutable.param and v is not None and
@@ -206,11 +209,14 @@ class Tabs(NamedListPanel):
             else:
                 try:
                     rendered[pref] = child = pane._get_model(doc, root, model, comm)
-                except RerenderError:
+                except RerenderError as e:
+                    if e.layout is not None and e.layout is not self:
+                        raise e
+                    e.layout = None
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
 
             panel = panels[pref] = BkTabPanel(
                 title=name, name=pane.name, child=child, closable=self.closable
             )
             new_models.append(panel)
-        return new_models
+        return new_models, old_models

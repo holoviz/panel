@@ -19,6 +19,8 @@ import param
 
 from bokeh.plotting import figure
 
+pn.extension()
+
 class Shape(param.Parameterized):
 
     radius = param.Number(default=1, bounds=(0, 1))
@@ -115,4 +117,5 @@ pn.Row(
 ---
 
 ## Related Resources
-- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs
+
+- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs

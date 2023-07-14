@@ -146,9 +146,9 @@ class FastWrapper(ReactiveHTML):
         'render': """
         let accent, bg, luminance
         if (window._JUPYTERLAB) {
-          accent = getComputedStyle(view.el).getPropertyValue('--jp-brand-color0').trim();
-          bg = getComputedStyle(view.el).getPropertyValue('--jp-layout-color0').trim();
-          let color = getComputedStyle(view.el).getPropertyValue('--jp-ui-font-color0').trim();
+          accent = getComputedStyle(document.body).getPropertyValue('--jp-brand-color0').trim();
+          bg = getComputedStyle(document.body).getPropertyValue('--jp-layout-color0').trim();
+          let color = getComputedStyle(document.body).getPropertyValue('--jp-ui-font-color0').trim();
           luminance = color == 'rgba(255, 255, 255, 1)' ? 0.23 : 1.0;
         } else {
           accent = data.style.accent_base_color;
@@ -170,10 +170,10 @@ class FastWrapper(ReactiveHTML):
 DEFAULT_STYLE = FastStyle()
 
 DARK_STYLE = FastStyle(
-    background_color="#181818",
+    background_color="#181818", #242424
     color="#ffffff",
     header_color="#ffffff",
-    luminance=0.23,
+    luminance=0.1,
     neutral_fill_card_rest="#212121",
     neutral_focus="#717171",
     neutral_foreground_rest="#e5e5e5",

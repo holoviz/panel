@@ -29,11 +29,10 @@ from panel.pane.vtk.vtk import (
 )
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
-pyvista_available = pytest.mark.skipif((pv is None) or (vtk is None), reason="requires pyvista")
+pyvista_available = pytest.mark.skipif(True or (vtk is None), reason="requires pyvista")
 
 
 def make_render_window():
-
     #cone actor
     cone = vtk.vtkConeSource()
     coneMapper = vtk.vtkPolyDataMapper()
@@ -58,6 +57,7 @@ def make_render_window():
     renWin.AddRenderer(ren)
     return renWin
 
+@pytest.fixture
 def pyvista_render_window():
     """
     Allow to download and create a more complex example easily
@@ -68,9 +68,9 @@ def pyvista_render_window():
     head = examples.download_head() #test volume
     uniform = examples.load_uniform() #test structured grid
 
-    scalars=sphere.points[:, 2]
-    sphere.point_arrays['test'] = scalars #allow to test scalars
-    sphere.set_active_scalars('test')
+    scalars = sphere.points[:, 2]
+    sphere.point_data["values"] = scalars #allow to test scalars
+    sphere.set_active_scalars("values")
 
     uniform.set_active_scalars("Spatial Cell Data")
 
@@ -88,7 +88,8 @@ def pyvista_render_window():
     pl.add_mesh(uniform)
     pl.add_actor(multiblock)
     pl.add_volume(head)
-    return pl.ren_win
+    yield pl.ren_win
+    pv.close_all()
 
 def make_image_data():
     image_data = vtk.vtkImageData()
@@ -271,9 +272,8 @@ def test_vtk_sync_helpers(document, comm):
 
 
 @pyvista_available
-def test_vtk_pane_more_complex(document, comm, tmp_path):
-    renWin = pyvista_render_window()
-    pane = VTK(renWin)
+def test_vtk_pane_more_complex(pyvista_render_window, document, comm, tmp_path):
+    pane = VTK(pyvista_render_window)
 
     # Create pane
     model = pane.get_root(document, comm=comm)

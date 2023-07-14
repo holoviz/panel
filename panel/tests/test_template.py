@@ -3,8 +3,6 @@ These that verify Templates are working correctly.
 """
 import json
 
-from packaging.version import Version
-
 try:
     import holoviews as hv
 except Exception:
@@ -12,9 +10,6 @@ except Exception:
 
 import param
 import pytest
-
-latest_param = pytest.mark.skipif(Version(param.__version__) < Version('1.10.0a4'),
-                                  reason="requires param>=1.10.0a4")
 
 from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
@@ -99,7 +94,6 @@ list_templates = [
     if not issubclass(t, ReactTemplate)
 ]
 
-@latest_param
 @pytest.mark.parametrize('template', list_templates)
 def test_basic_template(template, document, comm):
     tmplt = template(title='BasicTemplate', header_background='blue', header_color='red')
@@ -199,7 +193,7 @@ def test_list_template_insert_order(template_class):
 
     template.main.extend([2, 3])
 
-    objs = list(template._render_items.values())[3:]
+    objs = list(template._render_items.values())[4:]
     ((obj1, tag1), (obj2, tag2), (obj3, tag3), (obj4, tag4)) = objs
 
     assert tag1 == tag2 == tag3 == tag4 == ['main']
@@ -228,7 +222,7 @@ def test_grid_template_override():
     template.main[0, 0] = item
     template.main[0, 0] = override
 
-    objs = list(template._render_items.values())[3:]
+    objs = list(template._render_items.values())[4:]
     assert len(objs) == 1
     ((obj, tags),) = objs
 

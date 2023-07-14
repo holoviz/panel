@@ -18,9 +18,6 @@
 {% for css in template_resources['css'].values() %}
 <link rel="stylesheet" href="{{ css }}">
 {% endfor %}
-{% for src in template_resources['extra_css'] %}
-<link rel="stylesheet"  href="{{ src }}">
-{% endfor %}
 {% for raw_css in template_resources['raw_css'] %}
 <style type="text/css">
 {{ raw_css }}
@@ -34,6 +31,19 @@
 {% for src in template_resources['js_modules'].values() %}
 <script src="{{ src }}" type="module"></script>
 {% endfor %}
+
+<style>
+  :root {
+    --header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
+    --header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
+    --sidebar-width: {{ sidebar_width }}px;
+  }
+  #header {
+    background-color: var(--header-background);
+    color: var(--header-color);
+  }
+</style>
+
 {% endblock %}
 
 <!-- goes in body -->
@@ -79,7 +89,7 @@
   </div>
 </div>
 
-<script>
+<script type="text/javascript">
   var config = {
     content: [
       {
@@ -146,14 +156,6 @@
     container.on("resize", resize_dispatcher)
   })
 
-  // Absolute hackery to get GoldenLayout to initialize even though
-  // document is not ready. Without this bokeh will complain that
-  // DOM nodes to render roots into are not initialized in time.
-  Object.defineProperty(document, 'readyState', {
-    get() { return readyState },
-    set(value) { return readyState = value },
-  });
-  document.readyState = 'complete'
 
   myLayout.init()
   window.addEventListener('resize', (event) => {
@@ -181,6 +183,9 @@
 {{ embed(roots.location) }}
 {% if notifications %}
 {{ embed(roots.notifications) }}
+{% endif %}
+{% if browser_info %}
+{{ embed(roots.browser_info) }}
 {% endif %}
 
 {% endblock %}

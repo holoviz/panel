@@ -43,10 +43,10 @@ import param
 class App(pn.viewable.Viewer):
     run = param.Event(doc="Runs for click_delay seconds when clicked")
     runs = param.Integer(doc="The number of runs")
-    status = param.String("No runs yet")
+    status = param.String(default="No runs yet")
 
-    load_delay = param.Number(0.5)
-    run_delay = param.Number(0.5)
+    load_delay = param.Number(default=0.5)
+    run_delay = param.Number(default=0.5)
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -76,13 +76,13 @@ class App(pn.viewable.Viewer):
         self.runs+=1
         self.status=f"Finished run {self.runs} in {duration}sec"
 
-    @pn.depends("run", watch=True)
+    @param.depends("run", watch=True)
     def _run_with_status_update(self):
         self._start_run()
         self._result_pane[:] = [self._run()]
         self._stop_run()
 
-    @pn.depends("status", watch=True)
+    @param.depends("status", watch=True)
     def _update_status_pane(self):
         self._status_pane.object = self.status
 
@@ -178,7 +178,7 @@ Open [http://localhost:8089](http://localhost:8089). Keep the default settings a
 
 ![panel-locust.gif](https://assets.holoviz.org/panel/gifs/locust.gif)
 
-The median response time is ~530ms when one user requests the page every second. If you try to increase to 10 simultanous users you will see a median response time of ~5300ms. If this is a likely scenario, you will have to look into how to improve the performance of your app.
+The median response time is ~530ms when one user requests the page every second. If you try to increase to 10 simultaneous users you will see a median response time of ~5300ms. If this is a likely scenario, you will have to look into how to improve the performance of your app.
 
 ## Test advanced interactions with Loadwright
 

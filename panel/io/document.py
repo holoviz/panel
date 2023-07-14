@@ -16,8 +16,14 @@ from typing import (
 
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
-from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
+from bokeh.document.events import (
+    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
+    DocumentChangedEvent, ModelChangedEvent,
+)
+from bokeh.models import CustomJS
 
+from ..config import config
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .model import monkeypatch_events
 from .state import curdoc_locked, state
 
@@ -26,6 +32,11 @@ logger = logging.getLogger(__name__)
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+DISPATCH_EVENTS = (
+    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
+    ModelChangedEvent
+)
 
 @dataclasses.dataclass
 class Request:
@@ -60,7 +71,7 @@ def _dispatch_events(doc: Document, events: List[DocumentChangedEvent]) -> None:
     for event in events:
         doc.callbacks.trigger_on_change(event)
 
-def _cleanup_doc(doc):
+def _cleanup_doc(doc, destroy=True):
     for callback in doc.session_destroyed_callbacks:
         try:
             callback(None)
@@ -81,13 +92,18 @@ def _cleanup_doc(doc):
                     p._hooks = []
                     p._param_watchers = {}
                     p._documents = {}
-                    p._callbacks = {}
+                    p._internal_callbacks = {}
             pane._param_watchers = {}
             pane._documents = {}
-            pane._callbacks = {}
+            pane._internal_callbacks = {}
         else:
             views[ref] = (pane, root, doc, comm)
     state._views = views
+
+    # When reusing sessions we must clean up the Panel state but we
+    # must **not** destroy the template or the document
+    if not destroy:
+        return
 
     # Clean up templates
     if doc in state._templates:
@@ -95,25 +111,37 @@ def _cleanup_doc(doc):
         tmpl._documents = {}
         del state._templates[doc]
 
-    # Destroy doc
+    # Destroy document
     doc.destroy(None)
 
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
 
-def init_doc(doc: Optional[Document]) -> Document:
+def create_doc_if_none_exists(doc: Optional[Document]) -> Document:
     curdoc = doc or curdoc_locked()
     if curdoc is None:
         curdoc = Document()
     elif not isinstance(curdoc, Document):
         curdoc = curdoc._doc
+    return curdoc
+
+def init_doc(doc: Optional[Document]) -> Document:
+    curdoc = create_doc_if_none_exists(doc)
     if not curdoc.session_context:
         return curdoc
 
     thread = threading.current_thread()
     if thread:
         state._thread_id_[curdoc] = thread.ident
+
+    if config.global_loading_spinner:
+        curdoc.js_on_event(
+            'document_ready', CustomJS(code=f"""
+            const body = document.getElementsByTagName('body')[0]
+            body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
+            """)
+        )
 
     session_id = curdoc.session_context.id
     sessions = state.session_info['sessions']
@@ -226,7 +254,7 @@ def unlocked() -> Iterator:
         monkeypatch_events(events)
         remaining_events, dispatch_events = [], []
         for event in events:
-            if isinstance(event, ModelChangedEvent) and not locked:
+            if isinstance(event, DISPATCH_EVENTS) and not locked:
                 dispatch_events.append(event)
             else:
                 remaining_events.append(event)

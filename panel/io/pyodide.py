@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import hashlib
 import io
 import json
 import os
+import pathlib
 import sys
 
 from typing import (
@@ -17,7 +19,7 @@ import param
 import pyodide # isort: split
 
 from bokeh import __version__
-from bokeh.core.serialization import Serializer
+from bokeh.core.serialization import Buffer, Serializer
 from bokeh.document import Document
 from bokeh.document.json import PatchJson
 from bokeh.embed.elements import script_for_render_items
@@ -27,12 +29,16 @@ from bokeh.events import DocumentReady
 from bokeh.io.doc import set_curdoc
 from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
-from js import JSON, Object, XMLHttpRequest
+from bokeh.util.sampledata import (
+    __file__ as _bk_util_dir, _download_file, external_data_dir, splitext,
+)
+from js import JSON, XMLHttpRequest
 
 from ..config import config
-from ..util import edit_readonly, is_holoviews, isurl
+from ..util import edit_readonly, isurl
 from . import resources
 from .document import MockSessionContext
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
@@ -171,6 +177,41 @@ def _model_json(model: Model, target: str) -> Tuple[Document, str]:
         version   = __version__,
     ))
 
+def _serialize_buffers(obj, buffers={}):
+    """
+    Recursively iterates over a JSON patch and converts Buffer objects
+    to a reference or base64 serialized representation.
+
+    Arguments
+    ---------
+    obj: dict
+        Dictionary containing events to patch the JS Document with.
+    buffers: dict
+        Binary array buffers.
+
+    Returns
+    --------
+    Serialization safe version of the original object.
+    """
+    if isinstance(obj, dict):
+        return {
+            key: _serialize_buffers(o, buffers=buffers) for key, o in obj.items()
+        }
+    elif isinstance(obj, list):
+        return [
+            _serialize_buffers(o, buffers=buffers) for o in obj
+        ]
+    elif isinstance(obj, tuple):
+        return tuple(
+            _serialize_buffers(o, buffers=buffers) for o in obj
+        )
+    elif isinstance(obj, Buffer):
+        if obj.id in buffers: # TODO: and len(obj.data) > _threshold:
+            return obj.ref
+        else:
+            return obj.to_base64()
+    return obj
+
 def _process_document_events(doc: Document, events: List[Any]):
     serializer = Serializer(references=doc.models.synced_references)
     patch_json = PatchJson(events=serializer.encode(events))
@@ -179,11 +220,24 @@ def _process_document_events(doc: Document, events: List[Any]):
     buffer_map = {}
     for buffer in serializer.buffers:
         buffer_map[buffer.id] = pyodide.ffi.to_js(buffer.to_bytes()).buffer
+    patch_json = _serialize_buffers(patch_json, buffers=buffer_map)
     return patch_json, buffer_map
+
+# JS function to convert undefined -> null (workaround for https://github.com/pyodide/pyodide/issues/3968)
+_dict_converter = pyodide.code.run_js("""
+((entries) => {
+  for (let entry of entries) {
+    if (entry[1] === undefined) {
+      entry[1] = null;
+    }
+  }
+  return Object.fromEntries(entries);
+})
+""")
 
 def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     """
-    Links Python and JS documents in Pyodide ensuring taht messages
+    Links Python and JS documents in Pyodide ensuring that messages
     are passed between them.
 
     Arguments
@@ -207,7 +261,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         if setter is not None and setter == 'js':
             return
         json_patch, buffer_map = _process_document_events(pydoc, [event])
-        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=Object.fromEntries)
+        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
         buffer_map = pyodide.ffi.to_js(buffer_map)
         jsdoc.apply_json_patch(json_patch, buffer_map)
 
@@ -236,7 +290,7 @@ def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None
         if setter is not None and getattr(event, 'setter', None) == setter:
             return
         json_patch, buffer_map = _process_document_events(doc, [event])
-        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=Object.fromEntries)
+        json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
         dispatch_fn(json_patch, pyodide.ffi.to_js(buffer_map), msg_id)
 
     doc.on_change(pysync)
@@ -274,6 +328,33 @@ def _get_pyscript_target():
         return sys.stdout._out # type: ignore
     elif not _IN_WORKER:
         raise ValueError("Could not determine target node to write to.")
+
+def _download_sampledata(progress: bool = False) -> None:
+    """
+    Download bokeh sampledata
+    """
+    data_dir = external_data_dir(create=True)
+    s3 = 'https://sampledata.bokeh.org'
+    with open(pathlib.Path(_bk_util_dir).parent / "sampledata.json") as f:
+        files = json.load(f)
+    for filename, md5 in files:
+        real_name, ext = splitext(filename)
+        if ext == '.zip':
+            if not splitext(real_name)[1]:
+                real_name += ".csv"
+        else:
+            real_name += ext
+        real_path = data_dir / real_name
+        if real_path.exists():
+            with open(real_path, "rb") as file:
+                data = file.read()
+            local_md5 = hashlib.md5(data).hexdigest()
+            if local_md5 == md5:
+                continue
+        _download_file(s3, filename, data_dir, progress=progress)
+
+bokeh.sampledata.download = _download_sampledata
+bokeh.util.sampledata.download = _download_sampledata
 
 #---------------------------------------------------------------------
 # Public API
@@ -366,7 +447,7 @@ async def write(target: str, obj: Any) -> None:
     obj = as_panel(obj)
     pydoc, model_json = _model_json(obj, target)
     views = await Bokeh.embed.embed_item(JSON.parse(model_json))
-    jsdoc = views[0].model.document
+    jsdoc = list(views.roots)[0].model.document
     _link_docs(pydoc, jsdoc)
     pydoc.unhold()
 
@@ -377,7 +458,7 @@ def hide_loader() -> None:
     from js import document
 
     body = document.getElementsByTagName('body')[0]
-    body.classList.remove("pn-loading", config.loading_spinner)
+    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, config.loading_spinner)
 
 def sync_location():
     """
@@ -432,7 +513,7 @@ async def write_doc(doc: Document | None = None) -> Tuple[str, str, str]:
     # If we have DOM access render and sync the document
     if root_els is not None:
         views = await Bokeh.embed.embed_items(JSON.parse(docs_json), JSON.parse(render_items))
-        jsdoc = list(views[0].roots.values())[0].model.document
+        jsdoc = list(views[0].roots)[0].model.document
         _link_docs(pydoc, jsdoc)
         sync_location()
         hide_loader()
@@ -463,7 +544,7 @@ def pyrender(
     -------
     Returns an JS Map containing the content, mime_type, stdout and stderr.
     """
-    from ..pane import panel as as_panel
+    from ..pane import HoloViews, Interactive, panel as as_panel
     from ..viewable import Viewable, Viewer
     kwargs = {}
     if stdout_callback:
@@ -472,7 +553,7 @@ def pyrender(
         kwargs['stderr'] = WriteCallbackStream(stderr_callback)
     out = exec_with_return(code, **kwargs)
     ret = {}
-    if isinstance(out, (Model, Viewable, Viewer)) or is_holoviews(out):
+    if isinstance(out, (Model, Viewable, Viewer)) or HoloViews.applies(out) or Interactive.applies(out):
         doc, model_json = _model_json(as_panel(out), target)
         state.cache[target] = doc
         ret['content'], ret['mime_type'] = model_json, 'application/bokeh'

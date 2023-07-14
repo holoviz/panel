@@ -9,6 +9,8 @@ To start, let's see how a ``TextInput`` widget and a ``Markdown`` pane normally 
 ```{pyodide}
 import panel as pn
 
+pn.extension()
+
 pn.Row(
     pn.widgets.TextInput(value="Editable text"),
     pn.pane.Markdown('Some markdown')
@@ -54,4 +56,4 @@ Note that here we explicitly set `t.value` before displaying the panel to trigge
 ---
 
 ## Related Resources
-- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs
+- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs

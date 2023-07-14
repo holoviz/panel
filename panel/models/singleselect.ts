@@ -8,15 +8,13 @@ import * as inputs from "@bokehjs/styles/widgets/inputs.css"
 export class SingleSelectView extends InputWidgetView {
   model: SingleSelect
 
-  protected select_el: HTMLSelectElement
+  declare input_el: HTMLSelectElement
 
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.value.change, () => this.render_selection())
     this.connect(this.model.properties.options.change, () => this.render())
     this.connect(this.model.properties.disabled_options.change, () => this.render())
-    this.connect(this.model.properties.name.change, () => this.render())
-    this.connect(this.model.properties.title.change, () => this.render())
     this.connect(this.model.properties.size.change, () => this.render())
     this.connect(this.model.properties.disabled.change, () => this.render())
   }
@@ -36,16 +34,16 @@ export class SingleSelectView extends InputWidgetView {
       return option({value: value, disabled: disabled}, _label)
     })
 
-    this.select_el = select({
+    this.input_el = select({
       multiple: false,
       class: inputs.input,
       name: this.model.name,
       disabled: this.model.disabled,
     }, options)
-    this.select_el.style.backgroundImage = 'none';
+    this.input_el.style.backgroundImage = 'none';
 
-    this.select_el.addEventListener("change", () => this.change_input())
-    this.group_el.appendChild(this.select_el)
+    this.input_el.addEventListener("change", () => this.change_input())
+    this.group_el.appendChild(this.input_el)
 
     this.render_selection()
   }
@@ -59,14 +57,14 @@ export class SingleSelectView extends InputWidgetView {
 
     // Note that some browser implementations might not reduce
     // the number of visible options for size <= 3.
-    this.select_el.size = this.model.size
+    this.input_el.size = this.model.size
   }
 
   change_input(): void {
     const is_focused = this.el.querySelector('select:focus') != null
 
     let value = null
-    for (const el of this.el.querySelectorAll('option')) {
+    for (const el of this.shadow_el.querySelectorAll('option')) {
       if (el.selected) {
         value = el.value
         break
@@ -80,7 +78,7 @@ export class SingleSelectView extends InputWidgetView {
     // focus remains on <select> and one can seamlessly scroll
     // up/down.
     if (is_focused)
-      this.select_el.focus()
+      this.input_el.focus()
   }
 }
 
@@ -110,11 +108,11 @@ export class SingleSelect extends InputWidget {
   static {
     this.prototype.default_view = SingleSelectView
 
-    this.define<SingleSelect.Props>(({Any, Array, Int, String}) => ({
+    this.define<SingleSelect.Props>(({Any, Array, Int, Nullable, String}) => ({
       disabled_options: [ Array(String), [] ],
       options:          [ Array(Any), []    ],
       size:             [ Int,         4    ], // 4 is the HTML default
-      value:            [ String,     ""    ],
+      value:            [ Nullable(String),     null ],
     }))
   }
 }

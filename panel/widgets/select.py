@@ -9,7 +9,7 @@ import re
 
 from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Type,
+    TYPE_CHECKING, Any, ClassVar, Dict, List, Mapping, Type,
 )
 
 import param
@@ -22,6 +22,7 @@ from bokeh.models.widgets import (
     RadioGroup as _BkRadioBoxGroup,
 )
 
+from ..io.resources import CDN_DIST
 from ..layout import Column
 from ..models import CustomSelect, SingleSelect as _BkSingleSelect
 from ..util import PARAM_NAME_PATTERN, indexOf, isIn
@@ -175,13 +176,18 @@ class Select(SingleSelectBase):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'groups': None, 'size': None
+        'groups': None,
     }
 
     _source_transforms: ClassVar[Mapping[str, str | None]] = {
         'size': None, 'groups': None
     }
+
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/select.css']
 
     @property
     def _widget_type(self):
@@ -191,7 +197,7 @@ class Select(SingleSelectBase):
         super().__init__(**params)
         if self.size == 1:
             self.param.size.constant = True
-        self._callbacks.extend([
+        self._internal_callbacks.extend([
             self.param.watch(
                 self._validate_options_groups,
                 ['options', 'groups']
@@ -318,6 +324,9 @@ class _MultiSelectBase(SingleSelectBase):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
     _supports_embed: ClassVar[bool] = False
 
     __abstract = True
@@ -367,6 +376,8 @@ class MultiSelect(_MultiSelectBase):
     size = param.Integer(default=4, doc="""
         The number of items displayed at once (i.e. determines the
         widget height).""")
+
+    _stylesheets: ClassVar[List[str]] = [f'{CDN_DIST}css/select.css']
 
     _widget_type: ClassVar[Type[Model]] = _BkMultiSelect
 
@@ -469,6 +480,9 @@ class AutocompleteInput(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    description = param.String(default=None, doc="""
+        An HTML string describing the function of this component.""")
+
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title', 'options': 'completions'}
 
     _widget_type: ClassVar[Type[Model]] = _BkAutocompleteInput
@@ -485,7 +499,9 @@ class _RadioGroupBase(SingleSelectBase):
 
     _supports_embed = False
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'options': 'labels', 'value': 'active'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'name': None, 'options': 'labels', 'value': 'active'
+    }
 
     _source_transforms = {'value': "source.labels[value]"}
 
@@ -556,6 +572,10 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
     orientation = param.Selector(default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+
+    _source_transforms = {
+        'value': "source.labels[value]", 'button_style': None
+    }
 
     _supports_embed: ClassVar[bool] = True
 
@@ -651,6 +671,10 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
     orientation = param.Selector(default='horizontal',
         objects=['horizontal', 'vertical'], doc="""
         Button group orientation, either 'horizontal' (default) or 'vertical'.""")
+
+    _source_transforms = {
+        'value': "value.map((index) => source.labels[index])", 'button_style': None
+    }
 
     _widget_type: ClassVar[Type[Model]] = _BkCheckboxButtonGroup
 

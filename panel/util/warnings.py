@@ -42,9 +42,7 @@ def find_stack_level() -> int:
     stacklevel = 0
     while frame:
         fname = inspect.getfile(frame)
-        if (
-            fname.startswith(pkg_dir) or fname.startswith(param_dir)
-        ) and not fname.startswith(test_dir):
+        if fname.startswith((pkg_dir, param_dir)) and not fname.startswith(test_dir):
             frame = frame.f_back
             stacklevel += 1
         else:
@@ -62,12 +60,12 @@ def deprecated(
 
     import panel as pn
 
-    current_version = Version(pn.__version__)
+    current_version = Version(Version(pn.__version__).base_version)
 
     if isinstance(remove_version, str):
         remove_version = Version(remove_version)
 
-    if remove_version < current_version:
+    if remove_version <= current_version:
         # This error is mainly for developers to remove the deprecated.
         raise ValueError(
             f"{old!r} should have been removed in {remove_version}, current version {current_version}."

@@ -4,6 +4,7 @@ Markdown, and also regular strings.
 """
 from __future__ import annotations
 
+import functools
 import json
 import textwrap
 
@@ -43,7 +44,7 @@ class HTMLBasePane(ModelPane):
         if "style" in params:
             # In Bokeh 3 'style' was changed to 'styles'.
             params["styles"] = params.pop("style")
-            deprecated("1.1", "style",  "styles")
+            deprecated("1.3", "style",  "styles")
         super().__init__(object=object, **params)
 
 
@@ -60,7 +61,7 @@ class HTML(HTMLBasePane):
 
     >>> HTML(
     ...     "<h1>This is a HTML pane</h1>",
-    ...     style={'background-color': '#F6F6F6'}
+    ...     styles={'background-color': '#F6F6F6'}
     ... )
     """
 
@@ -76,7 +77,7 @@ class HTML(HTMLBasePane):
         module, name = getattr(obj, '__module__', ''), type(obj).__name__
         if ((any(m in module for m in ('pandas', 'dask')) and
             name in ('DataFrame', 'Series')) or hasattr(obj, '_repr_html_')):
-            return 0.2
+            return 0 if isinstance(obj, param.Parameterized) else 0.2
         elif isinstance(obj, str):
             return None
         else:
@@ -272,7 +273,7 @@ class Str(HTMLBasePane):
 
     >>> Str(
     ...    'This raw string will not be formatted, except for the applied style.',
-    ...    style={'font-size': '12pt'}
+    ...    styles={'font-size': '12pt'}
     ... )
     """
 
@@ -319,17 +320,26 @@ class Markdown(HTMLBasePane):
 
     extensions = param.List(default=[
         "extra", "smarty", "codehilite"], doc="""
-        Markdown extension to apply when transforming markup.""")
+        Markdown extension to apply when transforming markup.
+        Does not apply if renderer is set to 'markdown-it' or 'myst'.""")
+
+    plugins = param.List(default=[], doc="""
+        Additional markdown-it-py plugins to use.""")
+
+    renderer = param.Selector(default='markdown-it', objects=[
+        'markdown-it', 'myst', 'markdown'], doc="""
+        Markdown renderer implementation.""")
 
     # Priority depends on the data type
     priority: ClassVar[float | bool | None] = None
 
     _rename: ClassVar[Mapping[str, str | None]] = {
-        'dedent': None, 'disable_math': None, 'extensions': None
+        'dedent': None, 'disable_math': None, 'extensions': None,
+        'plugins': None, 'renderer': None
     }
 
     _rerender_params: ClassVar[List[str]] = [
-        'object', 'dedent', 'extensions', 'css_classes'
+        'object', 'dedent', 'extensions', 'css_classes', 'plugins'
     ]
 
     _target_transforms: ClassVar[Mapping[str, str | None]] = {
@@ -349,6 +359,51 @@ class Markdown(HTMLBasePane):
         else:
             return False
 
+    @classmethod
+    @functools.lru_cache(maxsize=None)
+    def _get_parser(cls, renderer, plugins):
+        if renderer == 'markdown':
+            return None
+        from markdown_it import MarkdownIt
+        from markdown_it.renderer import RendererHTML
+        from mdit_py_plugins.anchors import anchors_plugin
+        from mdit_py_plugins.deflist import deflist_plugin
+        from mdit_py_plugins.footnote import footnote_plugin
+        from mdit_py_plugins.tasklists import tasklists_plugin
+
+        def hilite(token, langname, attrs):
+            try:
+                from markdown.extensions.codehilite import CodeHilite
+                return CodeHilite(src=token, lang=langname).hilite()
+            except Exception:
+                return token
+
+        if renderer == 'markdown-it':
+            parser = MarkdownIt('gfm-like', renderer_cls=RendererHTML)
+        elif renderer == 'myst':
+            from myst_parser.parsers.mdit import (
+                MdParserConfig, create_md_parser,
+            )
+            config = MdParserConfig(heading_anchors=1, enable_extensions=[
+                'colon_fence', 'linkify', 'smartquotes', 'tasklist',
+                'attrs_block'
+            ], enable_checkboxes=True)
+            parser = create_md_parser(config, RendererHTML)
+        parser = (
+            parser
+            .enable('strikethrough').enable('table')
+            .use(anchors_plugin, permalink=True).use(deflist_plugin).use(footnote_plugin).use(tasklists_plugin)
+        )
+        for plugin in plugins:
+            parser = parser.use(plugin)
+        try:
+            from mdit_py_emoji import emoji_plugin
+            parser = parser.use(emoji_plugin)
+        except Exception:
+            pass
+        parser.options['highlight'] = hilite
+        return parser
+
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
         import markdown
         if obj is None:
@@ -357,9 +412,12 @@ class Markdown(HTMLBasePane):
             obj = obj._repr_markdown_()
         if self.dedent:
             obj = textwrap.dedent(obj)
-        html = markdown.markdown(
-            obj, extensions=self.extensions, output_format='html5'
-        )
+        if self.renderer == 'markdown':
+            html = markdown.markdown(
+                obj, extensions=self.extensions, output_format='html5'
+            )
+        else:
+            html = self._get_parser(self.renderer, tuple(self.plugins)).render(obj)
         return dict(object=escape(html))
 
     def _process_param_change(self, params):

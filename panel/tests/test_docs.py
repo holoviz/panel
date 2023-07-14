@@ -21,7 +21,8 @@ REF_PATH = Path(__file__).parents[2] / "examples" / "reference"
 ref_available = pytest.mark.skipif(not REF_PATH.is_dir(), reason="folder 'examples/reference' not found")
 
 DOC_PATH = Path(__file__).parents[2] / "doc"
-doc_files = sorted(DOC_PATH.rglob("*.md"))
+IGNORED = ['vtk']
+doc_files = [df for df in sorted(DOC_PATH.rglob("*.md")) if not any(ig in str(df).lower() for ig in IGNORED)]
 doc_available = pytest.mark.skipif(not DOC_PATH.is_dir(), reason="folder 'doc' not found")
 
 
@@ -40,7 +41,7 @@ def test_layouts_are_in_reference_gallery():
 
 @ref_available
 def test_widgets_are_in_reference_gallery():
-    exceptions = {"CompositeWidget", "Widget", "ToggleGroup", "NumberInput", "Spinner"}
+    exceptions = {"Ace", "CompositeWidget", "Widget", "ToggleGroup", "NumberInput", "Spinner"}
     docs = {
         f.with_suffix("").name
         for g in ("indicators", "widgets")

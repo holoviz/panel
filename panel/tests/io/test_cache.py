@@ -15,6 +15,7 @@ except Exception:
 diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires diskcache")
 
 from panel.io.cache import _find_hash_func, cache
+from panel.io.state import set_curdoc
 
 ################
 # Test hashing #
@@ -185,6 +186,17 @@ def test_cache_clear():
     fn.clear()
     assert fn(0, 0) == 1
 
+def test_per_session_cache(document):
+    global OFFSET
+    OFFSET.clear()
+    fn = cache(function_with_args, per_session=True)
+    with set_curdoc(document):
+        assert fn(a=0, b=0) == 0
+    assert fn(a=0, b=0) == 1
+    with set_curdoc(document):
+        assert fn(a=0, b=0) == 0
+    assert fn(a=0, b=0) == 1
+
 @pytest.mark.xdist_group("cache")
 @diskcache_available
 def test_disk_cache():
@@ -201,12 +213,12 @@ def test_disk_cache():
 
 @pytest.mark.xdist_group("cache")
 @pytest.mark.parametrize('to_disk', (True, False))
-def test_cache_lifo(to_disk):
+def test_cache_fifo(to_disk):
     if to_disk and diskcache is None:
         pytest.skip('requires diskcache')
     global OFFSET
     OFFSET.clear()
-    fn = cache(function_with_args, max_items=2, policy='lifo', to_disk=to_disk)
+    fn = cache(function_with_args, max_items=2, policy='fifo', to_disk=to_disk)
     assert fn(0, 0) == 0
     assert fn(0, 1) == 1
     assert fn(0, 0) == 0

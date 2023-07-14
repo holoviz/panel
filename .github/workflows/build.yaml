@@ -20,8 +20,8 @@ jobs:
         shell: bash -l {0}
     env:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
-      PKG_TEST_PYTHON: "--test-python=py38"
-      PYTHON_VERSION: "3.8"
+      PKG_TEST_PYTHON: "--test-python=py39"
+      PYTHON_VERSION: "3.9"
       MPLBACKEND: "Agg"
     steps:
       - name: remove nodejs
@@ -37,10 +37,10 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
-          python-version: 3.8
+          python-version: 3.9
       - uses: actions/setup-node@v2
         with:
-          node-version: '15'
+          node-version: '16'
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: Set output
@@ -52,6 +52,8 @@ jobs:
           conda install "pip<21.2.1"
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
+          # See: https://github.com/holoviz/panel/pull/4979
+          conda install -c conda-forge "urllib3<2.0.0" "conda-build==3.24"
       - name: build pyodide wheels for CDN
         run: |
           python ./scripts/build_pyodide_wheels.py
@@ -91,8 +93,8 @@ jobs:
         shell: bash -l {0}
     env:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
-      PKG_TEST_PYTHON: "--test-python=py38"
-      PYTHON_VERSION: "3.8"
+      PKG_TEST_PYTHON: "--test-python=py39"
+      PYTHON_VERSION: "3.9"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
       PYPI: "https://upload.pypi.org/legacy/"

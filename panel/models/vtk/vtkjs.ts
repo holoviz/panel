@@ -26,13 +26,13 @@ export class VTKJSPlotView extends AbstractVTKView {
 
   init_vtk_renwin(): void {
     this._vtk_renwin = vtkns.FullScreenRenderWindow.newInstance({
-      rootContainer: this.el,
+      rootContainer: this._vtk_container,
       container: this._vtk_container,
     })
   }
 
   plot(): void {
-    if (!this.model.data) {
+    if (this.model.data == null) {
       this._vtk_renwin.getRenderWindow().render()
       return
     }
@@ -44,13 +44,14 @@ export class VTKJSPlotView extends AbstractVTKView {
           dataAccessHelper,
         })
         const fn = (window as any).vtk.macro.debounce(
-          () =>
+          () => {
             setTimeout(() => {
               if (this._axes == null && this.model.axes) this._set_axes()
               this._set_camera_state()
               this._get_camera_state()
-            }, 100),
-          100
+	      this._vtk_renwin.getRenderWindow().render()
+            }, 100)
+	  }, 100
         )
         sceneImporter.setUrl("index.json")
         sceneImporter.onReady(fn)

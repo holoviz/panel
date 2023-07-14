@@ -39,6 +39,9 @@ from .checks import (  # noqa
 
 bokeh_version = Version(bokeh.__version__)
 
+# Bokeh serializes NaT as this value
+# Discussion on why https://github.com/bokeh/bokeh/pull/10449/files#r479988469
+BOKEH_JS_NAT = -9223372036854776.0
 
 PARAM_NAME_PATTERN = re.compile(r'^.*\d{5}$')
 
@@ -174,6 +177,32 @@ def get_method_owner(meth):
         return meth.__self__
 
 
+def extract_dependencies(function):
+    """
+    Extract references from a method or function that declares the references.
+    """
+    subparameters = list(function._dinfo['dependencies'])+list(function._dinfo['kw'].values())
+    params = []
+    for p in subparameters:
+        if isinstance(p, str):
+            owner = get_method_owner(function)
+            *subps, p = p.split('.')
+            for subp in subps:
+                owner = getattr(owner, subp, None)
+                if owner is None:
+                    raise ValueError('Cannot depend on undefined sub-parameter {p!r}.')
+            if p in owner.param:
+                pobj = owner.param[p]
+                if pobj not in params:
+                    params.append(pobj)
+            else:
+                for sp in extract_dependencies(getattr(owner, p)):
+                    if sp not in params:
+                        params.append(sp)
+        elif p not in params:
+            params.append(p)
+    return params
+
 
 def value_as_datetime(value):
     """
@@ -194,7 +223,7 @@ def value_as_date(value):
 
 def datetime_as_utctimestamp(value):
     """
-    Converts a datetime to a UTC timestamp used by Bokeh interally.
+    Converts a datetime to a UTC timestamp used by Bokeh internally.
     """
     return value.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
 
@@ -297,14 +326,21 @@ def eval_function(function):
 
 
 def lazy_load(module, model, notebook=False, root=None, ext=None):
-    if module in sys.modules:
+    from ..config import panel_extension as extension
+    from ..io.state import state
+    external_modules = {
+        module: ext for ext, module in extension._imports.items()
+    }
+    ext = ext or module.split('.')[-1]
+    ext_name = external_modules[module]
+    loaded_extensions = state._extensions
+    loaded = loaded_extensions is None or ext_name in loaded_extensions
+    if module in sys.modules and loaded:
         model_cls = getattr(sys.modules[module], model)
         if f'{model_cls.__module__}.{model}' not in Model.model_class_reverse_map:
             _default_resolver.add(model_cls)
-
         return model_cls
 
-    ext = ext or module.split('.')[-1]
     if notebook:
         param.main.param.warning(
             f'{model} was not imported on instantiation and may not '
@@ -312,15 +348,35 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
             'ensure you load it as part of the extension using:'
             f'\n\npn.extension(\'{ext}\')\n'
         )
-    elif root is not None:
-        from ..io.state import state
-        if root.ref['id'] in state._views:
-            param.main.param.warning(
-                f'{model} was not imported on instantiation may not '
-                'render in the served application. Ensure you add the '
-                'following to the top of your application:'
-                f'\n\npn.extension(\'{ext}\')\n'
-            )
+    elif not loaded and state._is_launching:
+        # If we are still launching the application it is not too late
+        # to automatically load the extension and therefore ensure it
+        # is included in the resources added to the served page
+        param.main.param.warning(
+            f'pn.extension was initialized but {ext!r} extension was not '
+            'loaded. Since the application is still launching the extension '
+            'was loaded automatically but we strongly recommend you load '
+            'the extension explicitly with the following argument(s):'
+            f'\n\npn.extension({ext!r})\n'
+        )
+        if loaded_extensions is None:
+            state._extensions_[state.curdoc] = [ext_name]
+        else:
+            loaded_extensions.append(ext_name)
+    elif not loaded:
+        param.main.param.warning(
+            f'pn.extension was initialized but {ext!r} extension was not '
+            'loaded. In order for the required resources to be initialized '
+            'ensure the extension is loaded with the following argument(s):'
+            f'\n\npn.extension({ext!r})\n'
+        )
+    elif root is not None and root.ref['id'] in state._views:
+        param.main.param.warning(
+            f'{model} was not imported on instantiation may not '
+            'render in the served application. Ensure you add the '
+            'following to the top of your application:'
+            f'\n\npn.extension(\'{ext}\')\n'
+        )
     return getattr(import_module(module), model)
 
 

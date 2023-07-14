@@ -53,6 +53,7 @@ if TYPE_CHECKING:
     from ..template.base import BaseTemplate
     from ..viewable import Viewable
     from ..widgets.indicators import BooleanIndicator
+    from .browser import BrowserInfo
     from .callbacks import PeriodicCallback
     from .location import Location
     from .notifications import NotificationArea
@@ -103,9 +104,6 @@ class _state(param.Parameterized):
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
-    loaded = param.Boolean(default=False, doc="""
-       Whether the page is fully loaded.""")
-
     rel_path = param.String(default='', readonly=True, doc="""
        Relative path from the current app being served to the root URL.
        If application is embedded in a different server via autoload.js
@@ -144,6 +142,10 @@ class _state(param.Parameterized):
     _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
 
     # Locations
+    _browser: ClassVar[BrowserInfo | None] = None # Global BrowserInfo, e.g. for notebook context
+    _browsers: ClassVar[WeakKeyDictionary[Document, BrowserInfo]] = WeakKeyDictionary() # Server browser indexed by document
+
+    # Locations
     _location: ClassVar[Location | None] = None # Global location, e.g. for notebook context
     _locations: ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
 
@@ -164,6 +166,7 @@ class _state(param.Parameterized):
     # An index of all currently active servers
     _servers: ClassVar[Dict[str, Tuple[Server, Viewable | BaseTemplate, List[Document]]]] = {}
     _threads: ClassVar[Dict[str, StoppableThread]] = {}
+    _server_config: ClassVar[WeakKeyDictionary[Any, Dict[str, Any]]] = WeakKeyDictionary()
 
     # Jupyter display handles
     _handles: ClassVar[Dict[str, [DisplayHandle, List[str]]]] = {}
@@ -188,7 +191,7 @@ class _state(param.Parameterized):
 
     # Profilers
     _launching = []
-    _profiles = param.Dict(defaultdict(list))
+    _profiles = param.Dict(default=defaultdict(list))
 
     # Endpoints
     _rest_endpoints = {}
@@ -196,8 +199,15 @@ class _state(param.Parameterized):
     # Style cache
     _stylesheets: ClassVar[WeakKeyDictionary[Document, Dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
 
+    # Loaded extensions
+    _extensions_: ClassVar[WeakKeyDictionary[Document, List[str]]] = WeakKeyDictionary()
+
     # Locks
     _cache_locks: ClassVar[Dict[str, threading.Lock]] = {'main': threading.Lock()}
+
+    # Sessions
+    _sessions = {}
+    _session_key_funcs = {}
 
     def __repr__(self) -> str:
         server_info = []
@@ -218,10 +228,24 @@ class _state(param.Parameterized):
             return IOLoop.current()
 
     @property
+    def _extensions(self):
+        doc = self.curdoc
+        if not (doc and doc in self._extensions_):
+            return
+        return self._extensions_[doc]
+
+    @property
     def _current_thread(self) -> str | None:
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
         return thread_id
+
+    @property
+    def _is_launching(self) -> bool:
+        curdoc = self.curdoc
+        if not curdoc or not curdoc.session_context:
+            return False
+        return not bool(curdoc.session_context.server_context.sessions)
 
     @property
     def _is_pyodide(self) -> bool:
@@ -419,7 +443,7 @@ class _state(param.Parameterized):
 
     def as_cached(self, key: str, fn: Callable[[], T], ttl: int = None, **kwargs) -> T:
         """
-        Caches the return value of a function, memoizing on the given
+        Caches the return value of a function globally across user sessions, memoizing on the given
         key and supplied keyword arguments.
 
         Note: Keyword arguments must be hashable.
@@ -716,6 +740,8 @@ class _state(param.Parameterized):
         if self._thread_pool is not None:
             self._thread_pool.shutdown(wait=False)
             self._thread_pool = None
+        self._sessions.clear()
+        self._session_key_funcs.clear()
 
     def schedule_task(
         self, name: str, callback: Callable[[], None], at: Tat =None,
@@ -872,13 +898,28 @@ class _state(param.Parameterized):
         return urljoin(self.base_url, app_url)
 
     @property
+    def browser_info(self) -> BrowserInfo | None:
+        from ..config import config
+        from .browser import BrowserInfo
+        if config.browser_info and self.curdoc and self.curdoc.session_context and self.curdoc not in self._browsers:
+            browser = self._browsers[self.curdoc] = BrowserInfo()
+        elif self.curdoc is None:
+            if self._browser is None and config.browser_info:
+                self._browser = BrowserInfo()
+            browser = self._browser
+        else:
+            browser = self._browsers.get(self.curdoc) if self.curdoc else None
+        return browser
+
+    @property
     def curdoc(self) -> Document | None:
         """
         Returns the Document that is currently being executed.
         """
         try:
             doc = curdoc_locked()
-            if doc and doc.session_context or self._is_pyodide:
+            pyodide_session = self._is_pyodide and 'pyodide_kernel' not in sys.modules
+            if doc and (doc.session_context or pyodide_session):
                 return doc
         finally:
             curdoc = self._curdoc.get()

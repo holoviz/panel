@@ -34,7 +34,7 @@ class Card(Column):
     active_header_background = param.String(doc="""
         A valid CSS color for the header background when not collapsed.""")
 
-    button_css_classes = param.List(['card-button'], doc="""
+    button_css_classes = param.List(default=['card-button'], doc="""
         CSS classes to apply to the button element.""")
 
     collapsible = param.Boolean(default=True, doc="""
@@ -43,7 +43,7 @@ class Card(Column):
     collapsed = param.Boolean(default=False, doc="""
         Whether the contents of the Card are collapsed.""")
 
-    css_classes = param.List(['card'], doc="""
+    css_classes = param.List(default=['card'], doc="""
         CSS classes to apply to the overall Card.""")
 
     header = param.Parameter(doc="""
@@ -56,13 +56,13 @@ class Card(Column):
     header_color = param.String(doc="""
         A valid CSS color to apply to the header text.""")
 
-    header_css_classes = param.List(['card-header'], doc="""
+    header_css_classes = param.List(default=['card-header'], doc="""
         CSS classes to apply to the header element.""")
 
     hide_header = param.Boolean(default=False, doc="""
         Whether to skip rendering the header.""")
 
-    title_css_classes = param.List(['card-title'], doc="""
+    title_css_classes = param.List(default=['card-title'], doc="""
         CSS classes to apply to the header title.""")
 
     title = param.String(doc="""
@@ -110,10 +110,12 @@ class Card(Column):
             params = {
                 'object': f'<h3>{self.title}</h3>' if self.title else "&#8203;",
                 'css_classes': self.title_css_classes,
-                'margin': (5, 0)
+                'margin': (5, 0),
             }
+            if self.header_color:
+                params['styles'] = {'color': self.header_color}
             if self._header is not None:
-                self._header.param.set_param(**params)
+                self._header.param.update(**params)
                 return
             else:
                 self._header = item = HTML(**params)
@@ -124,12 +126,13 @@ class Card(Column):
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         ref = root.ref['id']
+        models, old_models = super()._get_objects(model, old_objects, doc, root, comm)
         if ref in self._header_layout._models:
             header = self._header_layout._models[ref][0]
+            old_models.append(header)
         else:
             header = self._header_layout._get_model(doc, root, model, comm)
-        objects = super()._get_objects(model, old_objects, doc, root, comm)
-        return [header]+objects
+        return [header]+models, old_models
 
-    def _compute_sizing_mode(self, children, sizing_mode, styles):
-        return super()._compute_sizing_mode(children[1:], sizing_mode, styles)
+    def _compute_sizing_mode(self, children, props):
+        return super()._compute_sizing_mode(children[1:], props)

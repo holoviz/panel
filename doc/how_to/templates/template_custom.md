@@ -11,7 +11,7 @@ This guide addresses how to build a custom template.
 
 ## Build a Template in a Single File
 
-Completely custom templates extend the default jinja2 template in various ways. Before we dive into modifying such a template, let us take a look at the default template used by Panel:
+Completely custom templates extend the default [Jinja2](https://palletsprojects.com/p/jinja/) template in various ways. Before we dive into modifying such a template, let us take a look at the default template used by Panel:
 
 ```html
 {% from macros import embed %}
@@ -64,7 +64,7 @@ In this case we will extend the postamble block of the header to load some addit
 template = """
 {% extends base %}
 
-<!-- goes in body -->
+<!-- goes in head -->
 {% block postamble %}
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 {% endblock %}
@@ -160,4 +160,4 @@ tmpl.servable()
 
 - See [How-to > Apply Templates > Customize Template Theme](./template_theme.md) to just use a custom theme.
 - See [How-to > Apply Templates > Set a Template](./template_set.md) for alternate approaches to set a template.
-- Read [Background > Templates](../../background/templates/templates_overview.md) for explanation.
+- Read [Explanation > Templates](../../explanation/templates/templates_overview.md) for explanation.

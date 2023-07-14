@@ -111,7 +111,7 @@ import os
 import pathlib
 import sys
 
-app = '{{ path }}'
+app = r'{{ path }}'
 os.chdir(str(pathlib.Path(app).parent))
 sys.path = [os.getcwd()] + sys.path[1:]
 
@@ -179,13 +179,15 @@ class PanelJupyterHandler(JupyterHandler):
             if msg_type == 'execute_result':
                 data = msg['content']['data']
                 if 'text/error' in data:
-                    raise RuntimeError("Panel application errored during startup.")
+                    raise RuntimeError(data['text/error'])
                 extension_dirs = data['application/bokeh-extensions']
                 result = data['text/html']
             elif msg_type == 'comm_open' and msg['content']['target_name'] == self.session_id:
                 comm_id = msg['content']['comm_id']
             elif msg_type == 'stream' and msg['content']['name'] == 'stderr':
-                logger.info(msg['content']['text'])
+                logger.error(msg['content']['text'])
+            elif msg_type == "error":
+                logger.error(msg['content']['traceback'])
         return result, comm_id, extension_dirs
 
     @tornado.web.authenticated
@@ -383,10 +385,12 @@ class PanelWSProxy(WSHandler, JupyterHandler):
                 if not await ensure_async(self.kernel.is_alive()):
                     raise RuntimeError("Kernel died before expected shutdown of Panel app.")
                 continue
-            if not (
-                msg['header']['msg_type'] == 'comm_msg' and
-                msg['content']['comm_id'] == self.comm_id
-            ):
+
+            msg_type = msg['header']['msg_type']
+            if msg_type == 'stream' and msg['content']['name'] == 'stderr':
+                logger.error(msg['content']['text'])
+                continue
+            elif not (msg_type == 'comm_msg' and msg['content']['comm_id'] == self.comm_id):
                 continue
             content, metadata = msg['content'], msg['metadata']
             status = metadata.get('status')
@@ -419,10 +423,10 @@ class PanelWSProxy(WSHandler, JupyterHandler):
         if self.session_id in state._kernels:
             del state._kernels[self.session_id]
         self._ping_job.stop()
-        reply = self.kernel.shutdown(reply=True)
-        future = self.kernel_manager.shutdown_kernel(self.kernel_id, now=True)
-        asyncio.ensure_future(reply)
-        asyncio.ensure_future(future)
+        self._shutdown_futures = [
+            asyncio.ensure_future(self.kernel.shutdown(reply=True)),
+            asyncio.ensure_future(self.kernel_manager.shutdown_kernel(self.kernel_id, now=True))
+        ]
         self.kernel = None
 
 

@@ -28,7 +28,7 @@ pyodideWorker.onmessage = async (event) => {
   const loading_msgs = document.getElementsByClassName('pn-loading-msg')
   if (msg.type === 'idle') {
     if (pyodideWorker.queue.length) {
-      const patch = pyodideWorker.jsdoc.create_json_patch_string(pyodideWorker.queue)
+      const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
       pyodideWorker.busy = true
       pyodideWorker.queue = []
       pyodideWorker.postMessage({type: 'patch', patch: patch})

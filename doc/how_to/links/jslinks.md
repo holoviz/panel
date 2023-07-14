@@ -13,6 +13,8 @@ Let us start by linking the ``value`` of the ``TextInput`` widget to the ``objec
 ```{pyodide}
 import panel as pn
 
+pn.extension()
+
 markdown = pn.pane.Markdown('Markdown display')
 text_input = pn.widgets.TextInput(value=markdown.object)
 
@@ -77,5 +79,6 @@ pn.Row(url, button)
 ---
 
 ## Related Resources
-- See the [Background > APIs](../../background/apis/index.md) for context on this and other Panel APIs
+
+- See the [Explanation > APIs](../../explanation/api/index.md) for context on this and other Panel APIs
 - The [How to > Link Plot Parameters in Javascript](./links) guide addresses how to link Bokeh and HoloViews plot parameters in Javascript.

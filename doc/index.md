@@ -2,127 +2,134 @@
 sd_hide_title: true
 ---
 
-```{image} _static/logo_stacked.png
----
-width: 125
----
+```{image} _static/logo_horizontal_dark_theme.png
+:class: only-dark homepage-logo
+:width: 250px
+```
+
+```{image} _static/logo_horizontal_light_theme.png
+:class: only-light homepage-logo
+:width: 250px
 ```
 
 # Overview
 
-<h2 style="margin-top: 0.3em;">A high-level app and dashboarding solution for Python</h2>
+<h2 style="margin-top: 0.3em;">The powerful data exploration & web app framework for Python</h2>
 
-::::{grid} 2 2 5 5
-:gutter: 1
+::::{grid} 2 4 4 4
 
-:::{grid-item-card} Attractors
-:link: https://attractors.pyviz.demo.anaconda.com/attractors_panel
+:::{grid-item-card} Portfolio Analyzer
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_analyzer
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/attractors.png
-```
-:::
-
-:::{grid-item-card} Gapminders
-:link: https://gapminders.pyviz.demo.anaconda.com
-:link-type: url
-
-```{image} https://assets.holoviews.org/panel/thumbnails/index/gapminders.png
-```
-:::
-
-:::{grid-item-card} Penguins
-:link: https://penguin-crossfilter.pyviz.demo.anaconda.com
-:link-type: url
-
-```{image} https://assets.holoviews.org/panel/thumbnails/index/penguins.png
-```
-:::
-
-:::{grid-item-card} Glaciers
-:link: https://glaciers.pyviz.demo.anaconda.com
-:link-type: url
-
-```{image} https://assets.holoviews.org/panel/thumbnails/index/glaciers.png
+```{image} https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
+---
+alt: Portfolio Analyzer App
+---
 ```
 :::
 
 :::{grid-item-card} Portfolio Optimizer
-:link: https://portfolio-optimizer.pyviz.demo.anaconda.com
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_optimizer
 :link-type: url
 
-```{image} https://assets.holoviews.org/panel/thumbnails/index/portfolio_optimizer.png
+```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
+---
+alt: Portfolio Optimizer App
+---
+```
+:::
+
+:::{grid-item-card} MRI Slicer
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/vtk_slicer
+:link-type: url
+
+```{image} https://assets.holoviz.org/panel/gallery/vtk_slicer.png
+---
+alt: VTK 3D Slicer App
+---
+```
+:::
+
+:::{grid-item-card} Videostream
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/streaming_videostream
+:link-type: url
+
+```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
+---
+alt: scikit-image Videostream App
+---
 ```
 :::
 
 ::::
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you create custom interactive web apps and dashboards by connecting user-defined widgets to plots, images, tables, or text.
+Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you **easily build powerful tools, dashboards and complex applications entirely in Python**. It has a batteries-included philosophy, putting the PyData ecosystem, powerful data tables and much more at your fingertips. High-level reactive APIs and lower-level callback based APIs ensure you can quickly build exploratory applications, but you aren't limited if you build complex, multi-page apps with rich interactivity. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem, your gateway into a connected ecosystem of data exploration tools.
 
-```{eval-rst}
-.. notebook:: panel ../examples/homepage.ipynb
-    :disable_interactivity_warning: True
-```
-
-Compared to other approaches, Panel is novel in that it supports nearly all plotting libraries, works just as well in a Jupyter notebook as on a standalone secure web server, uses the same code for both those cases, supports both Python-backed and static HTML/JavaScript exported applications, and can be used to develop rich interactive applications without tying your domain-specific code to any particular GUI or web tools.
+```{notebook} panel ../examples/homepage.ipynb
+:disable_interactivity_warning: True
+````
 
 Panel makes it simple to:
 
-- Use the PyData tools and plotting libraries that you know and love
-- Develop in your favorite editor or notebook environment and seamlessly deploy the resulting application
-- Iterate quickly to prototype apps and dashboards while offering polished templates for your final deployment
-- Support deep interactivity by communicating client-side interactions and events to Python
-- Stream data large and small to the frontend
-- Add authentication to your application using the inbuilt OAuth providers
+- Develop in your favorite **editor or notebook** environment
+- Combine the **PyData tools and plotting libraries** that you know and love
+- **Iterate quickly** to develop data tools, dashboards and complex apps
+- **Collaborate** across skill levels and tool preferences
+- Add **advanced bi-directional communication** to your data apps
+- Create interactive **big data** applications with **crossfiltering**
+- Create **high performing**, **streaming** data applications
+- Create data apps that **can run entirely in the browser**
+- Create **polished, performant, secure and production-ready web applications**
 
 ## Usage
 
 ::::{grid} 1 2 2 4
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Core Concepts
-:link: getting_started/core_concepts
+:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Getting Started
+:link: getting_started/index
 :link-type: doc
 
-Introduces you to some of the core concepts behind Panel, how to develop Panel applications effectively both in your IDE and in the notebook and some of the core features that make Panel such a powerful library.
+The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
 :::
 
-:::{grid-item-card} {octicon}`plug;2.5em;sd-mr-1` Installation
-:link: getting_started/installation
+:::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` How-to
+:link: how_to/index
 :link-type: doc
 
-Walks you through setting up your Python environment, installing Panel into it and how to configure your editor, IDE or notebook environment appropriately.
+How-to guides provide step by step recipes for solving essential problems and tasks that arise during your work.
 :::
 
-:::{grid-item-card} {octicon}`tools;2.5em;sd-mr-1` Build an app
-:link: getting_started/build_app
+:::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Explanation
+:link: explanation/index
 :link-type: doc
 
-A more hands on tour taking you through the process of loading some data, displaying it and then building an application around it with some of the rich features that Panel supports.
+Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
 :::
 
-:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` User Guide
-:link: user_guide/index
+:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` API Reference
+:link: api/index
 :link-type: doc
 
-For a more in-depth guide through a range of topics, starting from the various APIs of Panel, through to building custom components and authentication visit our user guide.
+The Panel API Reference Manual provides a comprehensive reference for all methods and parameters on Panel components.
 :::
 
 ::::
 
-For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/). If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
+For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/) or our [Discord server](https://discord.gg/muhupDZM). If you have any [issues](https://github.com/holoviz/panel/issues), [feature requests](https://github.com/holoviz/panel/issues) or wish to [contribute](https://github.com/holoviz/panel/blob/main/CONTRIBUTING.MD), you can visit our [GitHub site](https://github.com/holoviz/panel).
 
 ## Sponsors
 
 The Panel project is grateful for the sponsorship by the organizations and companies below:
 
-::::{grid} 2
+::::{grid} 2 2 2 4
 
 :::{grid-item-card}
+:class-body: sponsor-logo
 :link: https://www.anaconda.com/
 :link-type: url
 :text-align: center
-:columns: 6
 
 ```{image} https://static.bokeh.org/sponsor/anaconda.png
 ---
@@ -133,14 +140,40 @@ alt: Anaconda Logo
 
 
 :::{grid-item-card}
+:class-body: sponsor-logo
 :link: https://www.blackstone.com/the-firm/
 :link-type: url
 :text-align: center
-:columns: 6
 
 ```{image} https://static.bokeh.org/sponsor/blackstone.png
 ---
 alt: Blackstone Logo
+---
+```
+:::
+
+:::{grid-item-card}
+:class-body: sponsor-logo
+:link: https://numfocus.org/
+:link-type: url
+:text-align: center
+
+```{image} https://numfocus.org/wp-content/uploads/2017/03/numfocusweblogo_orig-1.png
+---
+alt: NumFOCUS Logo
+---
+```
+:::
+
+:::{grid-item-card}
+:class-body: sponsor-logo
+:link: https://quansight.com/
+:link-type: url
+:text-align: center
+
+```{image} https://assets.holoviz.org/logos/Quansight-logo.svg
+---
+alt: Quansight Logo
 ---
 ```
 :::
@@ -156,12 +189,13 @@ alt: Blackstone Logo
 
 getting_started/index
 how_to/index
-gallery/index
-background/index
+explanation/index
 reference/index
+gallery/index
 api/index
+upgrade
 FAQ
-about/index.rst
+about/index
 ```
 
 ```{toctree}
@@ -171,5 +205,4 @@ about/index.rst
 :caption: FOR DEVELOPERS
 
 developer_guide/index
-releases
 ```

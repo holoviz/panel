@@ -1,0 +1,97 @@
+<!-- Uses the template from https://github.com/bokeh/bokeh/tree/branch-3.2/examples/server/app/server_auth -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Panel App with BasicAuth</title>
+    <style>
+    *{
+        margin:0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    html{
+        height: 100%;
+    }
+    body{
+        font-family: 'Segoe UI', sans-serif;;
+        font-size: 1rem;
+        line-height: 1.6;
+        height: 100%;
+    }
+    p{
+        padding-bottom: 5px;
+    }
+    .wrap {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #fafafa;
+    }
+    .login-form{
+        width: 350px;
+        margin: 0 auto;
+        border: 1px solid #ddd;
+        padding: 2rem;
+        background: #ffffff;
+    }
+    .form-input{
+        background: #fafafa;
+        border: 1px solid #eeeeee;
+        padding: 12px;
+        width: 100%;
+    }
+    .form-group{
+        margin-bottom: 1rem;
+    }
+    .form-button{
+        background: #69d2e7;
+        border: 1px solid #ddd;
+        color: #ffffff;
+        padding: 10px;
+        width: 100%;
+        text-transform: uppercase;
+    }
+    .form-button:hover{
+        background: #69c8e7;
+    }
+    .form-header{
+        text-align: center;
+        margin-bottom : 2rem;
+    }
+    .form-footer{
+        text-align: center;
+    }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <form class="login-form" action="/login" method="post">
+            <div class="form-header">
+                <h3><img src="{{ PANEL_CDN }}images/logo_stacked.png" width="150" height="120"></h3>
+                <p> Login to access your application</p>
+            </div>
+            <div class="form-group">
+                <span style="color:rgb(255, 0, 0);font-weight:bold" class="errormessage">{{errormessage}}</span>
+            </div>
+            <p></p>
+            <!--Email Input-->
+            <div class="form-group">
+                <input name="username" type="text" class="form-input" autocapitalize="off" autocorrect="off" placeholder="username">
+            </div>
+            <!--Password Input-->
+            <div class="form-group">
+                <input name="password" type="password" class="form-input" placeholder="password">
+            </div>
+            <!--Login Button-->
+            <div class="form-group">
+                <button class="form-button" type="submit">Login</button>
+            </div>
+            <div><small>
+            <p><a href="https://panel.holoviz.org/how_to/authentication/index.html">See the documentation</a> for a full discussion.</p>
+            </small></div>
+        </form>
+    </div>
+  </body>
+  </html>

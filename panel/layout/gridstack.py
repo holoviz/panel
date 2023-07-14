@@ -84,26 +84,36 @@ class GridStack(ReactiveHTML, GridSpec):
         }
         gridstack.on('resizestop', (event, el) => {
           sync_state()
+          view.invalidate_layout()
         })
         gridstack.on('dragstop', (event, el) => {
           sync_state()
         })
         sync_state()
         state.gridstack = gridstack
+        state.init = false
         """,
-        'after_layout': "self.nrows(); state.gridstack.engine._notify();",
+        'after_layout': """
+        self.nrows()
+        if (!state.init) {
+          state.init = true
+          view.invalidate_layout()
+        }
+        state.gridstack.engine._notify()
+        """,
         'allow_drag':   "state.gridstack.enableMove(data.allow_drag)",
         'allow_resize': "state.gridstack.enableResize(data.allow_resize)",
         'ncols':        "state.gridstack.column(data.ncols)",
         'nrows': """
         state.gridstack.opts.row = data.nrows
         if (data.nrows) {
-          const height = model.height || grid.offsetHeight;
+          const height = model.height || grid.offsetHeight || model.min_height;
           state.gridstack.cellHeight(Math.floor(height/data.nrows))
         } else {
           state.gridstack.cellHeight('auto')
         }
-        """
+        """,
+        "remove": "state.gridstack.destroy()"
     }
 
     __css_raw__ = [

@@ -18,7 +18,7 @@ pn.extension('katex')
 pipeline = pn.pipeline.Pipeline()
 ```
 
-Now let's populate the pipeline with our first stage which takes two inputs (`a` and `b`) and produces two outputs (`c`, computed by mutiplying the inputs, and `d`, computed by raising `a` to the power `b`).
+Now let's populate the pipeline with our first stage which takes two inputs (`a` and `b`) and produces two outputs (`c`, computed by multiplying the inputs, and `d`, computed by raising `a` to the power `b`).
 
 To create this stage, let's:
 
@@ -40,10 +40,12 @@ class Stage1(param.Parameterized):
     def view(self):
         c, d = self.output()
         c_out = pn.pane.LaTeX('${a} * {b} = {c}$'.format(
-            a=self.a, b=self.b, c=c), style={'font-size': '2em'})
+            a=self.a, b=self.b, c=c), styles={'font-size': '2em'})
         d_out = pn.pane.LaTeX('${a}^{{{b}}} = {d}$'.format(
-            a=self.a, b=self.b, d=d), style={'font-size': '2em'})
-        return pn.Column(c_out, d_out,  margin=(40, 10), background='#f0f0f0')
+            a=self.a, b=self.b, d=d), styles={'font-size': '2em'})
+        return pn.Column(
+		    c_out, d_out,  margin=(40, 10), styles={'background': '#f0f0f0'}
+		)
 
     def panel(self):
         return pn.Row(self.param, self.view,)
@@ -88,8 +90,8 @@ class Stage2(param.Parameterized):
     @param.depends('c', 'exp')
     def view(self):
         out = pn.pane.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
-                      style={'font-size': '2em'})
-        return pn.Column(out, margin=(40, 10), background='#f0f0f0')
+                      styles={'font-size': '2em'})
+        return pn.Column(out, margin=(40, 10), styles={'background': '#f0f0f0'})
 
     def panel(self):
         return pn.Row(self.param, self.view)
@@ -132,10 +134,10 @@ class Stage1(param.Parameterized):
     def view(self):
         c, d = self.output()
         c_out = pn.pane.LaTeX('${a} * {b} = {c}$'.format(
-            a=self.a, b=self.b, c=c), style={'font-size': '2em'})
+            a=self.a, b=self.b, c=c), styles={'font-size': '2em'})
         d_out = pn.pane.LaTeX('${a}^{{{b}}} = {d}$'.format(
-            a=self.a, b=self.b, d=d), style={'font-size': '2em'})
-        return pn.Column(c_out, d_out,  margin=(40, 10), background='#f0f0f0')
+            a=self.a, b=self.b, d=d), styles={'font-size': '2em'})
+        return pn.Column(c_out, d_out,  margin=(40, 10), styles={'background': '#f0f0f0'})
 
     def panel(self):
         return pn.Row(self.param, self.view,)
@@ -148,8 +150,8 @@ class Stage2(param.Parameterized):
     @param.depends('c', 'exp')
     def view(self):
         out = pn.pane.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
-                      style={'font-size': '2em'})
-        return pn.Column(out, margin=(40, 10), background='#f0f0f0')
+                      styles={'font-size': '2em'})
+        return pn.Column(out, margin=(40, 10), styles={'background': '#f0f0f0'})
 
     def panel(self):
         return pn.Row(self.param, self.view)

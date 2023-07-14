@@ -12,6 +12,15 @@ WIP
 
 ## pn.state.on_session_destroyed
 
-In many cases it is useful to define on_session_destroyed callbacks to perform any custom cleanup that is required, e.g,  dispose  a database engine, or when a user is logged out. These callbacks can be registered with `pn.state.on_session_destroyed(callback)`
+In many cases it is useful to define `on_session_destroyed` callbacks to perform any custom cleanup that is required, e.g,  dispose  a database engine, log out a user etc.
+
+The callbacks must have the signature
+
+```python
+def callback(session_context):
+    ...
+```
+
+and can be registered with `pn.state.on_session_destroyed(callback)`.
 
 ## Related Resources

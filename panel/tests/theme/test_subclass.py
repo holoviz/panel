@@ -29,7 +29,7 @@ def test_subclassed_inheritance():
     assert s3.url == f'{CDN_DIST}bundled/theme/bootstrap_default.css'
     assert isinstance(s4, ImportedStyleSheet)
     assert s4.url == f'{CDN_DIST}bundled/theme/bootstrap.css'
-    assert s5 == '.bk-input { color: red }\n'
+    assert s5 == '.bk-input {\n  color: red;\n}\n'
 
 
 def test_subclassed_inheritance_server(server_document):

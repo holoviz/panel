@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import unittest.mock
 
 from functools import partial
@@ -156,12 +157,11 @@ def test_text_input_controls():
     assert isinstance(wb2, WidgetBox)
 
     params1 = {w.name.replace(" ", "_").lower() for w in wb2 if len(w.name)}
-    params2 = set(Viewable.param) - {"background", "design", "stylesheets"}
+    params2 = set(Viewable.param) - {"background", "design", "stylesheets", "loading"}
     # Background should be moved when Layoutable.background is removed.
 
     assert not len(params1 - params2)
     assert not len(params2 - params1)
-
 
 def test_pass_widget_by_reference():
     int_input = IntInput(start=0, end=400, value=42)
@@ -173,7 +173,6 @@ def test_pass_widget_by_reference():
 
     assert text_input.width == 101
 
-
 def test_pass_param_by_reference():
     int_input = IntInput(start=0, end=400, value=42)
     text_input = TextInput(width=int_input.param.value)
@@ -183,7 +182,6 @@ def test_pass_param_by_reference():
     int_input.value = 101
 
     assert text_input.width == 101
-
 
 def test_pass_bind_function_by_reference():
     int_input = IntInput(start=0, end=400, value=42)
@@ -196,6 +194,125 @@ def test_pass_bind_function_by_reference():
 
     assert text_input.width == 111
 
+def test_pass_bind_generator_by_reference():
+    int_input = IntInput(start=0, end=400, value=42)
+
+    def gen(v):
+        yield v + 10
+
+    text_input = TextInput(width=bind(gen, int_input))
+
+    assert text_input.width == 52
+
+    int_input.value = 101
+
+    assert text_input.width == 111
+
+def test_pass_bind_multi_generator_by_reference():
+    int_input = IntInput(start=0, end=400, value=42)
+
+    def gen(v):
+        yield v + 10
+        yield v + 20
+
+    text_input = TextInput(width=bind(gen, int_input))
+
+    widths = []
+    text_input.param.watch(lambda e: widths.append(e.new), 'width')
+
+    assert text_input.width == 62
+
+    int_input.value = 101
+
+    assert widths == [111, 121]
+    assert text_input.width == 121
+
+@pytest.mark.asyncio
+async def test_pass_bind_async_generator_by_reference():
+    int_input = IntInput(start=0, end=400, value=42)
+
+    async def gen(v):
+        yield v + 10
+
+    text_input = TextInput(width=bind(gen, int_input))
+
+    await asyncio.sleep(0.01)
+    assert text_input.width == 52
+
+    int_input.value = 101
+
+    await asyncio.sleep(0.01)
+    assert text_input.width == 111
+
+@pytest.mark.asyncio
+async def test_pass_bind_multi_async_generator_by_reference():
+    int_input = IntInput(start=0, end=400, value=42)
+
+    async def gen(v):
+        yield v + 10
+        yield v + 20
+
+    text_input = TextInput(width=bind(gen, int_input))
+
+    widths = []
+    text_input.param.watch(lambda e: widths.append(e.new), 'width')
+
+    await asyncio.sleep(0.01)
+    assert text_input.width == 62
+
+    int_input.value = 101
+
+    await asyncio.sleep(0.01)
+    assert widths == [52, 62, 111, 121]
+    assert text_input.width == 121
+
+
+@pytest.mark.asyncio
+async def test_pass_bind_multi_async_generator_by_reference_and_abort():
+    int_input = IntInput(start=0, end=400, value=42)
+
+    async def gen(v):
+        yield v + 10
+        await asyncio.sleep(0.1)
+        yield v + 20
+
+    text_input = TextInput(width=bind(gen, int_input))
+
+    await asyncio.sleep(0.01)
+    assert text_input.width == 52
+    int_input.value = 101
+    await asyncio.sleep(0.01)
+    assert text_input.width == 111
+    await asyncio.sleep(0.1)
+    assert text_input.width == 121
+
+def test_pass_parameterized_method_by_reference():
+
+    class Test(param.Parameterized):
+
+        a = param.Parameter(default=1)
+        b = param.Parameter(default=2)
+
+        @param.depends('a')
+        def dep_a(self):
+            return self.a
+
+        @param.depends('dep_a', 'b')
+        def dep_ab(self):
+            return self.dep_a() + self.b
+
+    test = Test()
+    int_input = IntInput(start=0, end=400, value=test.dep_ab)
+
+    assert int_input.value == 3
+
+    test.a = 3
+
+    assert int_input.value == 5
+
+    test.b = 5
+
+    assert int_input.value == 8
 
 def test_pass_depends_function_by_reference():
     int_input = IntInput(start=0, end=400, value=42)
@@ -652,3 +769,16 @@ def test_reactive_html_templated_variable_not_in_declared_node():
             """
     assert 'could not be expanded because the <select> node' in str(excinfo)
     assert '{%- for option in children %}' in str(excinfo)
+
+def test_reactive_design_stylesheets_update(document, comm):
+    widget = TextInput(stylesheets=[':host { --design-background-color: red }'])
+
+    model = widget.get_root(document, comm)
+
+    assert len(model.stylesheets) == 5
+    assert model.stylesheets[-1] == widget.stylesheets[0]
+
+    widget.stylesheets = [':host { --design-background-color: blue }']
+
+    assert len(model.stylesheets) == 5
+    assert model.stylesheets[-1] == widget.stylesheets[0]

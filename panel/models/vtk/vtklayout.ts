@@ -5,7 +5,7 @@ import {clone} from "@bokehjs/core/util/object"
 import {ColorMapper} from "@bokehjs/models/mappers/color_mapper"
 import {Enum} from "@bokehjs/core/kinds"
 
-import {HTMLBox, HTMLBoxView} from "../layout"
+import {HTMLBox, HTMLBoxView, set_size} from "../layout"
 import {vtkns, setup_vtkns, VolumeType, majorAxis, applyStyle, CSSProperties, Annotation} from "./util"
 import {VTKColorBar} from "./vtkcolorbar"
 import {VTKAxes} from "./vtkaxes"
@@ -196,7 +196,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
       this._vtk_container = div()
       this.init_vtk_renwin()
       this._init_annotations_container()
-      //set_size(this._vtk_container, this.model)
+      set_size(this._vtk_container, this.model)
       this.shadow_el.appendChild(this._vtk_container)
       // update camera model state only at the end of the interaction
       // with the scene (avoid bouncing events and large amount of events)
@@ -208,7 +208,6 @@ export abstract class AbstractVTKView extends HTMLBoxView {
       this._add_annotations()
       this.model.renderer_el = this._vtk_renwin
     } else {
-      //set_size(this._vtk_container, this.model)
       // warning if _vtk_renwin contain controllers or other elements
       // we must attach them to the new el
       this.shadow_el.appendChild(this._vtk_container)
@@ -246,6 +245,7 @@ export abstract class AbstractVTKView extends HTMLBoxView {
     let state: any
     if (vtk_camera){
       state = clone(vtk_camera.get())
+      delete state.cameraLightTransform
       delete state.classHierarchy
       delete state.vtkObject
       delete state.vtkCamera
@@ -451,7 +451,6 @@ export abstract class AbstractVTKView extends HTMLBoxView {
             .getActiveCamera()
             .set(this.model.camera)
       this._vtk_renwin.getRenderer().resetCameraClippingRange()
-      this._vtk_render()
       this._setting_camera = false
     }
   }
@@ -476,7 +475,7 @@ export namespace AbstractVTKPlot {
   export type Props = HTMLBox.Props & {
     axes: p.Property<VTKAxes | null>
     camera: p.Property<any>
-    data: p.Property<string | VolumeType | null>
+    data: p.Property<string | VolumeType | ArrayBuffer | null>
     enable_keybindings: p.Property<boolean>
     orientation_widget: p.Property<boolean>
     color_mappers: p.Property<ColorMapper[]>
@@ -505,7 +504,7 @@ export abstract class AbstractVTKPlot extends HTMLBox {
   static {
     this.define<AbstractVTKPlot.Props>(({Any, Ref, Array, Boolean, Nullable}) => ({
       axes:                           [ Nullable(Ref(VTKAxes)),       null ],
-      camera:                         [ Any                                ],
+      camera:                         [ Any,                            {} ],
       color_mappers:                  [ Array(Ref(ColorMapper)),        [] ],
       orientation_widget:             [ Boolean,                     false ],
       interactive_orientation_widget: [ Boolean,                     false ],

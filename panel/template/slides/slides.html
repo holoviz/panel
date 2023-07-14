@@ -1,0 +1,232 @@
+{% extends base %}
+
+{% block preamble %}
+{% if app_favicon %}<link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">{% endif %}
+{% if manifest %}<link rel="manifest" href="{{ manifest }}">{% endif %}
+{% if meta_name %}<meta name="name" content="{{ meta_name }}">{% endif %}
+{% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
+{% if meta_keywords %}<meta name="keywords" content="{{ meta_keywords }}">{% endif %}
+{% if meta_author %}<meta name="author" content="{{ meta_author }}">{% endif %}
+{% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
+{% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
+{% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
+
+<!-- Template CSS -->
+{% for css in template_resources['css'].values() %}
+<link rel="stylesheet" href="{{ css }}">
+{% endfor %}
+{% for raw_css in template_resources['raw_css'] %}
+<style type="text/css">
+{{ raw_css }}
+</style>
+{% endfor %}
+
+<style>
+  :root {
+    --header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
+    --header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
+    --sidebar-width: {{ sidebar_width }}px;
+  }
+  #header {
+    background-color: var(--header-background);
+    color: var(--header-color);
+    {% if theme._name == 'default' %}
+    box-shadow: 5px 5px 20px silver;
+    {% endif %}
+  }
+  #sidebar {
+    width: var(--sidebar-width);
+  }
+</style>
+
+<!-- Template JS -->
+{% for src in template_resources['js'].values() %}
+<script src="{{ src }}"></script>
+{% endfor %}
+{% for src in template_resources['js_modules'].values() %}
+<script src="{{ src }}" type="module"></script>
+{% endfor %}
+{% endblock %}
+
+<!-- goes in body -->
+{% block contents %}
+<div id="container">
+  {% if show_header %}
+  <nav id="header">
+    {% if nav %}
+    <span onclick="{{ 'openNav()' if collapsed_sidebar else 'closeNav()' }}" id="sidebar-button">
+      <div class="pn-bar"></div>
+      <div class="pn-bar"></div>
+      <div class="pn-bar"></div>
+    </span>
+    {% endif %}
+    <div class="app-header">
+      {% if app_logo %}
+      <a href="{{ site_url }}" class="logo-wrapper">
+	<img src="{{ app_logo }}" class="app-logo"></img>
+      </a>
+      {% endif %}
+      {% if site_title %}
+      <a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>
+      {% endif %}
+      {% if site_title and app_title%}
+      <span class="title">-</span>
+      {% endif %}
+      {% if app_title %}
+      <a class="title" href="" >&nbsp;{{ app_title }}</a>
+      {% endif %}
+    </div>
+    <div id="header-items">
+    {% for doc in docs %}
+    {% for root in doc.roots %}
+    {% if "header" in root.tags %}
+    {{ embed(root) | indent(8) }}
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+    </div>
+    {% if busy %}
+    <div class="pn-busy-container">
+      {{ embed(roots.busy_indicator) | indent(6) }}
+    </div>
+    {% endif %}
+  </nav>
+  {% else %}
+  <div class="pn-busy-standalone">
+    {{ embed(roots.busy_indicator) | indent(6) }}
+  </div>
+  {% endif %}
+
+  <div id="content">
+    {% if nav %}
+    <div class="sidenav {{'hidden' if collapsed_sidebar else ''}}" id="sidebar">
+      <ul class="nav flex-column">
+        {% for doc in docs %}
+        {% for root in doc.roots %}
+        {% if "nav" in root.tags %}
+          {{ embed(root) | indent(8) }}
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="main" id="main">
+      {% if not show_header and nav %}
+      <span onclick="{{ 'openNav()' if collapsed_sidebar else 'closeNav()' }}" id="sidebar-button" class="sidebar-button-standalone">
+	<div class="pn-bar"></div>
+	<div class="pn-bar"></div>
+	<div class="pn-bar"></div>
+      </span>
+      {% endif %}
+
+      {% if main_max_width %}
+      <div style="margin-left: auto; margin-right: auto; max-width: {{main_max_width}}">
+      {% endif %}
+      <div class="reveal">
+	<div class="slides {% if not show_header %}slide-margin{% endif %}">
+	  {% set main_count = namespace(value=0) %}
+	  {% for doc in docs %}
+	  {% for root in doc.roots %}
+	  {% if "main" in root.tags %}
+	  <{{ 'div class="fragment"' if "fragment" in root.tags else "section" }} id="slide-{{ main_count.value }}">
+	    {{ embed(root) | indent(4) }}
+	  {% set main_count.value = main_count.value + 1 %}
+	  {% if "fragment" in root.tags %}
+          </div>
+          {% endif %}
+          {% if (loop.index >= doc.roots|length or "fragment" not in doc.roots[loop.index].tags) %}
+          </section>
+	  {% endif %}
+	  {% endif %}
+	  {% endfor %}
+	  {% endfor %}
+	</div>
+      </div>
+      {% if main_max_width %}
+      </div>
+      {% endif %}
+
+      <div id="pn-Modal" class="pn-modal header-adjust">
+	<div class="pn-modal-content">
+	  <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+	  {% for doc in docs %}
+	  {% for root in doc.roots %}
+	  {% if "modal" in root.tags %}
+	  {{ embed(root) | indent(10) }}
+	  {% endif %}
+	  {% endfor %}
+	  {% endfor %}
+	</div>
+      </div>
+
+      {% if not show_header %}
+      <div class='footer'>
+	<div class="title-wrapper">
+	  {% if site_title %}
+	  <a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>
+	  {% endif %}
+	  {% if site_title and app_title%}
+	  <span class="title">-</span>
+	  {% endif %}
+	  {% if app_title %}
+	  <a class="title" href="" >&nbsp;{{ app_title }}</a>
+	  {% endif %}
+	</div>
+	{% if app_logo %}
+	<a href="{{ site_url }}" class="logo-wrapper">
+	  <img src="{{ app_logo }}" class="app-logo"></img>
+	</a>
+	{% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  var config = {{ reveal_config | json }}
+  config.embedded = true;
+  config.disableLayout = true;
+  Reveal.initialize(config);
+
+  Reveal.on('slidechanged', event => {
+    window.location.hash = `#/${event.currentSlide.id}`
+  })
+
+  function openNav() {
+    document.getElementById("sidebar").classList.remove("hidden");
+    document.getElementById("sidebar-button").onclick = closeNav;
+  }
+
+  function closeNav() {
+    document.getElementById("sidebar").classList.add("hidden");
+    document.getElementById("sidebar-button").onclick = openNav;
+  }
+
+  var modal = document.getElementById("pn-Modal");
+  var span = document.getElementById("pn-closeModal");
+
+  span.onclick = function() {
+    modal.style.display = "none";
+  }
+
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+</script>
+
+{{ embed(roots.js_area) }}
+{{ embed(roots.actions) }}
+{{ embed(roots.location) }}
+{% if notifications %}
+{{ embed(roots.notifications) }}
+{% endif %}
+{% if browser_info %}
+{{ embed(roots.browser_info) }}
+{% endif %}
+
+{% endblock %}

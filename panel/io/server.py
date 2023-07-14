@@ -21,6 +21,7 @@ import weakref
 from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
+from html import escape
 from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union,
@@ -38,23 +39,28 @@ from bokeh.application.handlers.code import (
     CodeHandler, _monkeypatch_io, patch_curdoc,
 )
 from bokeh.application.handlers.function import FunctionHandler
-from bokeh.command.util import build_single_handler_application
-from bokeh.core.templates import AUTOLOAD_JS
+from bokeh.core.json_encoder import serialize_json
+from bokeh.core.templates import AUTOLOAD_JS, FILE, MACROS
 from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.embed.bundle import Script
-from bokeh.embed.elements import (
-    html_page_for_render_items, script_for_render_items,
-)
+from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem
+from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.io import curdoc
+from bokeh.models import CustomJS
 from bokeh.server.server import Server as BokehServer
-from bokeh.server.urls import per_app_patterns
+from bokeh.server.urls import per_app_patterns, toplevel_patterns
 from bokeh.server.views.autoload_js_handler import (
     AutoloadJsHandler as BkAutoloadJsHandler,
 )
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
+from bokeh.server.views.root_handler import RootHandler as BkRootHandler
 from bokeh.server.views.static_handler import StaticHandler
+from bokeh.util.serialization import make_id
+from bokeh.util.token import (
+    generate_jwt_token, generate_session_id, get_token_payload,
+)
 # Tornado imports
 from tornado.ioloop import IOLoop
 from tornado.web import (
@@ -67,9 +73,11 @@ from ..config import config
 from ..util import edit_readonly, fullpath
 from ..util.warnings import warn
 from .document import init_doc, unlocked, with_lock  # noqa
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
 )
+from .markdown import build_single_handler_application
 from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import (
@@ -81,7 +89,9 @@ from .state import set_curdoc, state
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from bokeh.document import Document
+    from bokeh.bundle import Bundle
+    from bokeh.core.types import ID
+    from bokeh.document.document import DocJson, Document
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.session import ServerSession
     from jinja2 import Template
@@ -98,6 +108,7 @@ if TYPE_CHECKING:
 #---------------------------------------------------------------------
 
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
+DEFAULT_TITLE = "Panel Application"
 
 def _origin_url(url: str) -> str:
     if url.startswith("http"):
@@ -116,6 +127,14 @@ def _eval_panel(
 ):
     from ..pane import panel as as_panel
     from ..template import BaseTemplate
+
+    if config.global_loading_spinner:
+        doc.js_on_event(
+            'document_ready', CustomJS(code=f"""
+            const body = document.getElementsByTagName('body')[0]
+            body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
+            """)
+        )
 
     # Set up instrumentation for logging sessions
     logger.info(LOG_SESSION_LAUNCHING, id(doc))
@@ -193,10 +212,76 @@ state.on_session_created(_initialize_session_info)
 # Bokeh patches
 #---------------------------------------------------------------------
 
+
+def html_page_for_render_items(
+    bundle: Bundle | tuple[str, str], docs_json: dict[ID, DocJson],
+    render_items: list[RenderItem], title: str, template: Template | str | None = None,
+    template_variables: dict[str, Any] = {}
+) -> str:
+    """
+    Render an HTML page from a template and Bokeh render items.
+
+    Arguments
+    ---------
+    bundle (tuple):
+        A tuple containing (bokehjs, bokehcss)
+    docs_json (JSON-like):
+        Serialized Bokeh Document
+    render_items (RenderItems)
+        Specific items to render from the document and where
+    title (str or None)
+        A title for the HTML page. If None, DEFAULT_TITLE is used
+    template (str or Template or None, optional) :
+        A Template to be used for the HTML page. If None, FILE is used.
+    template_variables (dict, optional):
+        Any Additional variables to pass to the template
+
+    Returns
+    -------
+    str
+    """
+    if title is None:
+        title = DEFAULT_TITLE
+
+    bokeh_js, bokeh_css = bundle
+
+    json_id = make_id()
+    json = escape(serialize_json(docs_json), quote=False)
+    json = wrap_in_script_tag(json, "application/json", json_id)
+
+    script = wrap_in_script_tag(script_for_render_items(json_id, render_items))
+
+    context = template_variables.copy()
+
+    context.update(dict(
+        title = title,
+        bokeh_js = bokeh_js,
+        bokeh_css = bokeh_css,
+        plot_script = json + script,
+        docs = render_items,
+        base = BASE_TEMPLATE,
+        macros = MACROS,
+    ))
+
+    if len(render_items) == 1:
+        context["doc"] = context["docs"][0]
+        context["roots"] = context["doc"].roots
+
+    if template is None:
+        template = BASE_TEMPLATE
+    elif isinstance(template, str):
+        template = _env.from_string("{% extends base %}\n" + template)
+
+    html = template.render(context)
+    return html
+
 def server_html_page_for_session(
-    session: 'ServerSession', resources: 'Resources', title: str,
+    session: 'ServerSession',
+    resources: 'Resources',
+    title: str,
+    token: str | None = None,
     template: str | Template = BASE_TEMPLATE,
-    template_variables: Optional[Dict[str, Any]] = None
+    template_variables: Optional[Dict[str, Any]] = None,
 ) -> str:
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
@@ -205,22 +290,36 @@ def server_html_page_for_session(
     else:
         dist_url = CDN_DIST
 
-    session.document._template_variables['dist_url'] = dist_url
-    for root in session.document.roots:
+    doc = session.document
+    doc._template_variables['theme_name'] = config.theme
+    doc._template_variables['dist_url'] = dist_url
+    for root in doc.roots:
         patch_model_css(root, dist_url=dist_url)
 
     render_item = RenderItem(
-        token = session.token,
-        roots = session.document.roots,
+        token = token or session.token,
+        roots = doc.roots,
         use_for_title = False,
     )
 
     if template_variables is None:
         template_variables = {}
 
-    bundle = bundle_resources(session.document.roots, resources)
-    return html_page_for_render_items(bundle, {}, [render_item], title,
-        template=template, template_variables=template_variables)
+    if template is FILE:
+        template = BASE_TEMPLATE
+
+    with set_curdoc(doc):
+        bundle = bundle_resources(doc.roots, resources)
+        html = html_page_for_render_items(
+            bundle, {}, [render_item], title, template=template,
+            template_variables=template_variables
+        )
+        if config.global_loading_spinner:
+            html = html.replace(
+                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">'
+            )
+    return html
+
 
 def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url, absolute=False):
     resources = Resources.from_bokeh(resources, absolute=absolute)
@@ -313,7 +412,6 @@ class Application(BkApplication):
 
 bokeh.command.util.Application = Application # type: ignore
 
-
 class SessionPrefixHandler:
 
     @contextmanager
@@ -344,9 +442,47 @@ class SessionPrefixHandler:
 class DocHandler(BkDocHandler, SessionPrefixHandler):
 
     @authenticated
+    async def get_session(self):
+        from ..config import config
+        path = self.request.path
+        session = None
+        if config.reuse_sessions and path in state._session_key_funcs:
+            key = state._session_key_funcs[path](self.request)
+            session = state._sessions.get(key)
+        if session is None:
+            session = await super().get_session()
+            with set_curdoc(session.document):
+                if config.reuse_sessions:
+                    key_func = config.session_key_func or (lambda r: (r.path, r.arguments.get('theme', [b'default'])[0].decode('utf-8')))
+                    state._session_key_funcs[path] = key_func
+                    key = key_func(self.request)
+                    state._sessions[key] = session
+                    session.block_expiration()
+        return session
+
+    @authenticated
     async def get(self, *args, **kwargs):
+        app = self.application
         with self._session_prefix():
+            key_func = state._session_key_funcs.get(self.request.path, lambda r: r.path)
+            old_request = key_func(self.request) in state._sessions
             session = await self.get_session()
+            if old_request and state._sessions.get(key_func(self.request)) is session:
+                session_id = generate_session_id(
+                    secret_key=self.application.secret_key,
+                    signed=self.application.sign_sessions
+                )
+                payload = get_token_payload(session.token)
+                del payload['session_expiry']
+                token = generate_jwt_token(
+                    session_id,
+                    secret_key=app.secret_key,
+                    signed=app.sign_sessions,
+                    expiration=app.session_token_expiration,
+                    extra_payload=payload
+                )
+            else:
+                token = session.token
             logger.info(LOG_SESSION_CREATED, id(session.document))
             with set_curdoc(session.document):
                 if config.authorize_callback and not config.authorize_callback(state.user_info):
@@ -366,8 +502,8 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
                     resources = Resources.from_bokeh(self.application.resources())
                     page = server_html_page_for_session(
                         session, resources=resources, title=session.document.title,
-                        template=session.document.template,
-                        template_variables=session.document.template_variables
+                        token=token, template=session.document.template,
+                        template_variables=session.document.template_variables,
                     )
         self.set_header("Content-Type", 'text/html')
         self.write(page)
@@ -397,16 +533,31 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
         with self._session_prefix():
             session = await self.get_session()
             with set_curdoc(session.document):
-                resources = Resources.from_bokeh(self.application.resources(server_url))
+                resources = Resources.from_bokeh(
+                    self.application.resources(server_url), absolute=True
+                )
                 js = autoload_js_script(
                     session.document, resources, session.token, element_id,
-                    app_path, absolute_url
+                    app_path, absolute_url, absolute=True
                 )
 
         self.set_header("Content-Type", 'application/javascript')
         self.write(js)
 
 per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
+
+class RootHandler(BkRootHandler):
+    """
+    Custom RootHandler that provides the CDN_DIST directory as a
+    template variable.
+    """
+
+    def render(self, *args, **kwargs):
+        kwargs['PANEL_CDN'] = CDN_DIST
+        return super().render(*args, **kwargs)
+
+toplevel_patterns[0] = (r'/?', RootHandler)
+bokeh.server.tornado.RootHandler = RootHandler
 
 
 class ComponentResourceHandler(StaticFileHandler):
@@ -557,7 +708,7 @@ def modify_document(self, doc: 'Document'):
         def handle_exception(handler, e):
             from bokeh.application.handlers.handler import handle_exception
 
-            from ..pane import HTML
+            from ..pane import Alert
 
             # Clean up
             del sys.modules[module.__name__]
@@ -571,9 +722,9 @@ def modify_document(self, doc: 'Document'):
 
             # Serve error
             e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-            HTML(
-                f'<b>{type(e).__name__}</b>: {e_msg}</br><pre style="overflow-y: scroll">{tb}</pre>',
-                css_classes=['alert', 'alert-danger'], sizing_mode='stretch_width'
+            Alert(
+                f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
+                alert_type='danger', margin=5, sizing_mode='stretch_width'
             ).servable()
 
         if config.autoreload:
@@ -775,6 +926,7 @@ def get_server(
     location: bool | Location = True,
     admin: bool = False,
     static_dirs: Mapping[str, str] = {},
+    basic_auth: str = None,
     oauth_provider: Optional[str] = None,
     oauth_key: Optional[str] = None,
     oauth_secret: Optional[str] = None,
@@ -824,6 +976,8 @@ def get_server(
     static_dirs: dict (optional, default={})
       A dictionary of routes and local paths to serve as static file
       directories on those routes.
+    basic_auth: str (optional, default=None)
+      Password or filepath to use with basic auth provider.
     oauth_provider: str
       One of the available OAuth providers
     oauth_key: str (optional, default=None)
@@ -865,7 +1019,7 @@ def get_server(
                     title_ = title[slug]
                 except KeyError:
                     raise KeyError(
-                        "Keys of the title dictionnary and of the apps "
+                        "Keys of the title dictionary and of the apps "
                         f"dictionary must match. No {slug} key found in the "
                         "title dictionary.")
             else:
@@ -884,7 +1038,7 @@ def get_server(
                     continue
             if isinstance(app, pathlib.Path):
                 app = str(app) # enables serving apps from Paths
-            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb"))
+            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb") or app.endswith('.md'))
                 and os.path.isfile(app)):
                 apps[slug] = app = build_single_handler_application(app)
                 app._admin = admin
@@ -896,7 +1050,7 @@ def get_server(
     else:
         if isinstance(panel, pathlib.Path):
             panel = str(panel) # enables serving apps from Paths
-        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb"))
+        if (isinstance(panel, str) and (panel.endswith(".py") or panel.endswith(".ipynb") or panel.endswith('.md'))
             and os.path.isfile(panel)):
             apps = {'/': build_single_handler_application(panel)}
         else:
@@ -942,7 +1096,12 @@ def get_server(
 
     # Configure OAuth
     from ..config import config
-    if oauth_provider:
+    server_config = {}
+    if basic_auth:
+        from ..auth import BasicProvider
+        server_config['basic_auth'] = basic_auth
+        opts['auth_provider'] = BasicProvider()
+    elif oauth_provider:
         from ..auth import OAuthProvider
         config.oauth_provider = oauth_provider # type: ignore
         opts['auth_provider'] = OAuthProvider()
@@ -965,6 +1124,7 @@ def get_server(
         print(f"Launching server at {url}")
 
     state._servers[server_id] = (server, panel, [])
+    state._server_config[server._tornado] = server_config
 
     if show:
         def show_callback():

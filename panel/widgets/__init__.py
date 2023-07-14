@@ -32,14 +32,15 @@ How to use Panel widgets in 4 simple steps
 For more detail see the Getting Started Guide
 https://panel.holoviz.org/getting_started/index.html
 """
-from .ace import Ace  # noqa
 from .base import CompositeWidget, Widget  # noqa
 from .button import Button, MenuButton, Toggle  # noqa
+from .chatbox import ChatBox  # noqa
+from .codeeditor import Ace, CodeEditor  # noqa
 from .debugger import Debugger  # noqa
 from .file_selector import FileSelector  # noqa
 from .indicators import (  # noqa
     BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number, Progress,
-    Tqdm, Trend,
+    TooltipIcon, Tqdm, Trend,
 )
 from .input import (  # noqa
     ArrayInput, Checkbox, ColorPicker, DatePicker, DatetimeInput,
@@ -72,9 +73,11 @@ __all__ = (
     "AutocompleteInput",
     "BooleanStatus",
     "Button",
+    "ChatBox",
     "Checkbox",
     "CheckBoxGroup",
     "CheckButtonGroup",
+    "CodeEditor",
     "ColorPicker",
     "CompositeWidget",
     "CrossSelector",
@@ -124,6 +127,7 @@ __all__ = (
     "SpeechToText",
     "Spinner",
     "StaticText",
+    "Switch",
     "Tabulator",
     "Terminal",
     "TextAreaInput",
@@ -132,6 +136,7 @@ __all__ = (
     "TextToSpeech",
     "Toggle",
     "ToggleGroup",
+    "TooltipIcon",
     "Tqdm",
     "Trend",
     "Utterance",
