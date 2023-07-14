@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Optional
 
 import param
 
+from bokeh.models import CustomJS
+
 from ..config import config
 from ..reactive import ReactiveHTML
 from ..util import classproperty
@@ -41,6 +43,14 @@ class Notification(param.Parameterized):
 
 class NotificationAreaBase(ReactiveHTML):
 
+    js_events = param.Dict(default={}, doc="""
+        A dictionary that configures notifications for specific Bokeh Document
+        events, e.g.:
+
+          {'connection_lost': {'type': 'error', 'message': 'Connection Lost!', 'duration': 5}}
+
+        will trigger a warning on the Bokeh ConnectionLost event.""")
+
     notifications = param.List(item_type=Notification)
 
     position = param.Selector(default='bottom-right', objects=[
@@ -71,6 +81,18 @@ class NotificationAreaBase(ReactiveHTML):
         preprocess: bool = True
     ) -> 'Model':
         root = super().get_root(doc, comm, preprocess)
+
+        for event, notification in self.js_events.items():
+            doc.js_on_event(event, CustomJS(code=f"""
+            var config = {{
+              message: {notification['message']!r},
+              duration: {notification.get('duration', 0)},
+              notification_type: {notification['type']!r},
+              _destroyed: false
+            }}
+            notifications.data.notifications.push(config)
+            notifications.data.properties.notifications.change.emit()
+            """, args={'notifications': root}))
         self._documents[doc] = root
         return root
 
@@ -243,7 +265,6 @@ class NotificationArea(NotificationAreaBase):
             if (ntype.value === 'custom') {
               config.background = color.color
             }
-            console.log(config, ntype.value)
             notifications.data.notifications.push(config)
             notifications.data.properties.notifications.change.emit()
             """
