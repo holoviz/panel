@@ -887,15 +887,14 @@ class Column(ListPanel):
     """
 
     auto_scroll = param.Boolean(
-        default=False,
-        doc="Whether to scroll to the latest object on update."
+        default=False, doc="""
+        Whether to scroll to the latest object on update."""
     )
 
-    scroll_arrow_threshold = param.Number(
+    scroll_button_threshold = param.Number(
         doc="""
         Threshold for showing scroll arrow that scrolls to the latest on click.
-        The arrow will be hidden if set to 0.
-        """,
+        The arrow will be hidden if set to 0."""
     )
 
     _bokeh_model: ClassVar[Type[Model]] = PnColumn
@@ -904,10 +903,9 @@ class Column(ListPanel):
 
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
 
-    def __init__(self, *objects: Any, **params: Any):
-        if "auto_scroll" in params or "scroll_arrow_threshold" in params:
-            params["scroll"] = True
-        super().__init__(*objects, **params)
+    @param.depends("auto_scroll", "scroll_button_threshold", watch=True, on_init=True)
+    def _set_scrollable(self):
+        self.scroll = self.scroll or self.auto_scroll or self.scroll_button_threshold
 
 
 class WidgetBox(ListPanel):

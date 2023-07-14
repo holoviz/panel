@@ -14,7 +14,7 @@ export class ColumnView extends BkColumnView {
   }
 
   toggle_scroll_arrow(): void {
-    const scrollThreshold = this.model.properties.scroll_arrow_threshold;
+    const scrollThreshold = this.model.properties.scroll_button_threshold;
 
     const scrollDistanceFromBottom = this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
     this.scroll_down_arrow_el.classList.toggle(
@@ -25,15 +25,15 @@ export class ColumnView extends BkColumnView {
   connect_signals(): void {
     super.connect_signals();
 
-    const { auto_scroll, scroll_arrow_threshold } = this.model.properties;
+    const { auto_scroll, scroll_button_threshold } = this.model.properties;
 
     if (auto_scroll) {
       this.on_change(this.model.properties.children, () => {
         this.scroll_to_latest();
       });
     }
-    if (scroll_arrow_threshold.get_value() > 0) {
-      this.on_change(scroll_arrow_threshold, () => {
+    if (scroll_button_threshold.get_value() > 0) {
+      this.on_change(scroll_button_threshold, () => {
         this.toggle_scroll_arrow();
       });
     }
@@ -49,9 +49,9 @@ export class ColumnView extends BkColumnView {
 
     this.class_list.add(...this.css_classes())
 
-    const scrollThreshold = this.model.properties.scroll_arrow_threshold;
+    const scrollThreshold = this.model.properties.scroll_button_threshold;
     if (scrollThreshold.get_value() > 0) {
-      this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-arrow' });
+      this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-button' });
       this.shadow_el.appendChild(this.scroll_down_arrow_el);
 
       this.el.addEventListener("scroll", () => {
@@ -76,7 +76,7 @@ export namespace Column {
 
   export type Props = BkColumn.Props & {
     auto_scroll: p.Property<boolean>;
-    scroll_arrow_threshold: p.Property<number>;
+    scroll_button_threshold: p.Property<number>;
   };
 }
 
@@ -96,7 +96,7 @@ export class Column extends BkColumn {
 
     this.define<Column.Props>(({ Boolean, Int }) => ({
       auto_scroll: [Boolean, false],
-      scroll_arrow_threshold: [Int, 0],
+      scroll_button_threshold: [Int, 0],
     }));
   }
 }

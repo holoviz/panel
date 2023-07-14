@@ -47,7 +47,7 @@ class Column(BkColumn):
 
     auto_scroll = Bool(False, help="Whether to scroll to the latest row on update.")
 
-    scroll_arrow_threshold = Float(
+    scroll_button_threshold = Float(
         help="""
         Threshold for showing scroll arrow that scrolls to the latest on click.
         The arrow will be hidden if set to 0.
