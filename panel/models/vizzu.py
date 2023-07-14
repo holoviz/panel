@@ -2,7 +2,7 @@
 Defines custom VizzuChart bokeh model to render Vizzu charts.
 """
 from bokeh.core.properties import (
-    Any, Dict, Instance, Int, List, String,
+    Any, Bool, Dict, Instance, Int, List, String,
 )
 from bokeh.events import ModelEvent
 from bokeh.models import LayoutDOM
@@ -30,7 +30,7 @@ class VizzuChart(LayoutDOM):
     __javascript_module_exports__ = ['Vizzu']
 
     __javascript_modules__ = [
-        f"{config.npm_cdn}/vizzu@0.7.1/dist/vizzu.min.js"
+        f"{config.npm_cdn}/vizzu@0.8.0/dist/vizzu.min.js"
     ]
 
     @classproperty
@@ -54,3 +54,5 @@ class VizzuChart(LayoutDOM):
     duration = Int(500)
 
     style = Dict(String, Any)
+
+    tooltip = Bool()

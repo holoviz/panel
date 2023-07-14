@@ -72,6 +72,9 @@ export class VizzuChartView extends HTMLBoxView {
     this.connect(this.model.source.properties.data.change, () => update_prop('data'))
     this.connect(this.model.source.streaming, () => update_prop('data'))
     this.connect(this.model.source.patching, () => update_prop('data'))
+    this.connect(this.model.properties.tooltip.change, () => {
+      this.vizzu_view.feature('tooltip', this.model.tooltip)
+    })
     this.connect(this.model.properties.style.change, () => update_prop('style'))
   }
 
@@ -136,6 +139,7 @@ export class VizzuChartView extends HTMLBoxView {
       chart.on('click', (event: any) => {
 	this.model.trigger_event(new VizzuEvent(event.data))
       })
+      chart.feature('tooltip', this.model.tooltip)
       this._animating = false
     })
   }
@@ -157,6 +161,7 @@ export namespace VizzuChart {
     source: p.Property<ColumnDataSource>
     duration: p.Property<number>
     style: p.Property<any>
+    tooltip: p.Property<boolean>
   }
 }
 
@@ -174,13 +179,14 @@ export class VizzuChart extends HTMLBox {
   static {
     this.prototype.default_view = VizzuChartView
 
-    this.define<VizzuChart.Props>(({Any, Array, Number, Ref}) => ({
+    this.define<VizzuChart.Props>(({Any, Array, Boolean, Number, Ref}) => ({
       animation:   [ Any,                     {} ],
       config:      [ Any,                     {} ],
       columns:     [ Array(Any),              [] ],
       source:      [ Ref(ColumnDataSource),      ],
       duration:    [ Number,                 500 ],
       style:       [ Any,                     {} ],
+      tooltip:     [ Boolean,              false ],
     }))
   }
 }

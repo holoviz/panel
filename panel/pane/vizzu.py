@@ -57,6 +57,9 @@ class Vizzu(ModelPane, SyncableData):
     style = param.Dict(default={}, doc="""
         Style configuration of the chart.""")
 
+    tooltip = param.Boolean(default=False, doc="""
+        Whether to enable tooltips.""")
+
     _data_params: ClassVar[List[str]] = ['object']
 
     _rename: ClassVar[Dict[str, str | None]] = {
