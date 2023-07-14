@@ -12,7 +12,7 @@ features = [
   "tests"
 ]
 pre-install-commands = [
-  'conda install -y -c conda-forge graphviz xgboost "nodejs >=16"'
+  'conda install -y -c conda-forge xgboost "nodejs >=16"'
 ]
 post-install-commands = [
   # TODO: remove after release of hvplot 0.8.5
@@ -72,7 +72,7 @@ features = [
   "recommended"
 ]
 pre-install-commands = [
-  'conda install -y -c conda-forge graphviz xgboost "nodejs >=16"'
+  'conda install -y -c conda-forge xgboost "nodejs >=16"'
 ]
 post-install-commands = [
   "python scripts/build_pyodide_wheels.py",

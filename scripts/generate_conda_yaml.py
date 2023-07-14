@@ -11,9 +11,7 @@ PROJECT_DATA = toml.load(
     pathlib.Path(__file__).parent.parent / 'pyproject.toml'
 )['project']
 
-PROJECT_MAP = {
-    'graphviz': 'python-graphviz'
-}
+PROJECT_MAP = {}
 
 def normalize_dependency(dep):
     for proj, conda_dep in PROJECT_MAP.items():

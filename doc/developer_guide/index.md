@@ -69,15 +69,15 @@ hatch env show
 ┏━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
 ┃ Name    ┃ Type    ┃ Envs           ┃ Features    ┃ Dependencies    ┃ Scripts        ┃
 ┡━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━┩
-│ test    │ conda   │ test.py3.8     │ examples    │ python-graphviz │ run            │
-│         │         │ test.py3.9     │ recommended │ vtk==9.0.1      │ run-coverage   │
-│         │         │ test.py3.10    │ tests       │ xgboost         │ run-examples   │
+│ test    │ conda   │ test.py3.8     │ examples    │ vtk             │ run            │
+│         │         │ test.py3.9     │ recommended │ xgboost         │ run-coverage   │
+│         │         │ test.py3.10    │ tests       │                 │ run-examples   │
 │         │         │ test.py3.11    │             │                 │                │
 │         │         │ test.py3.12    │             │                 │                │
 ├─────────┼─────────┼────────────────┼─────────────┼─────────────────┼────────────────┤
-│ test-ui │ conda   │ test-ui.py3.8  │ recommended │ python-graphviz │ run            │
-│         │         │ test-ui.py3.9  │ tests       │ vtk==9.0.1      │ run-coverage   │
-│         │         │ test-ui.py3.10 │ ui          │ xgboost         │ run-examples   │
+│ test-ui │ conda   │ test-ui.py3.8  │ recommended │ vtk             │ run            │
+│         │         │ test-ui.py3.9  │ tests       │ xgboost         │ run-coverage   │
+│         │         │ test-ui.py3.10 │ ui          │                 │ run-examples   │
 │         │         │ test-ui.py3.11 │             │                 │ start-jupyter  │
 │         │         │ test-ui.py3.12 │             │                 │                │
 ├─────────┼─────────┼────────────────┼─────────────┼─────────────────┼────────────────┤

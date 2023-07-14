@@ -96,7 +96,6 @@ examples = [
     "django <4",
     "fastparquet",
     "folium",
-    "graphviz",
     "holoviews >=1.16.0",
     "hvplot",
     "ipyleaflet",
@@ -110,7 +109,6 @@ examples = [
     "plotly >=4.0",
     "pydeck",
     "pyecharts",
-    "pygraphviz",
     "pyinstrument >=4.0",
     "pyvista",
     "reacton",
@@ -133,7 +131,6 @@ pip-extras = [
 ]
 conda-extras = [
     "nodejs >=16",
-    "python-graphviz",
     "vtk",
     "xgboost"
 ]
