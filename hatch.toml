@@ -111,7 +111,7 @@ build = [
   # Build pyodide wheels for JupyterLite
   "python ./scripts/build_pyodide_wheels.py lite/pypi",
   # Convert content
-  "python ./scripts/panellite/generate_panelite_content.py",
+  "python ./scripts/panelite/generate_panelite_content.py",
   # Build the JupyterLite site
   "jupyter lite build --lite-dir lite --output-dir lite/dist"
 ]
