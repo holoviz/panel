@@ -333,7 +333,7 @@ class _config(_base_config):
         state._thread_pool = ThreadPoolExecutor(max_workers=threads)
 
     @param.depends('notifications', watch=True)
-    def _enable_notifications(self):
+    def _setup_notifications(self):
         from .io.notifications import NotificationArea
         from .reactive import ReactiveHTMLMetaclass
         if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
