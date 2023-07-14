@@ -20,6 +20,7 @@ import panel
 from panel.io.convert import BOKEH_VERSION, MINIMUM_VERSIONS, PY_VERSION
 from panel.io.resources import CDN_DIST
 
+ROOT = pathlib.Path(__file__).parent
 PANEL_ROOT = pathlib.Path(panel.__file__).parent
 
 version = release = base_version(panel.__version__)
@@ -127,7 +128,7 @@ else:
     bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
 def get_requirements():
-    with open('pyodide_dependencies.json') as deps:
+    with open(ROOT/'pyodide_dependencies.json') as deps:
         dependencies = json.load(deps)
     requirements = {}
     for src, deps in dependencies.items():
