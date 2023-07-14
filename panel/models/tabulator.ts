@@ -466,7 +466,6 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.on("scrollVertical", debounce(() => {
       this.setStyles()
     }, 50, false))
-    this.tabulator.on("rowFormatter", (row: any) => this._render_row(row))
 
     // Sync state with model
     this.tabulator.on("rowSelectionChanged", (data: any, rows: any) => this.rowSelectionChanged(data, rows))
@@ -577,6 +576,7 @@ export class DataTabulatorView extends HTMLBoxView {
       paginationSize: this.model.page_size,
       paginationInitialPage: 1,
       groupBy: this.groupBy,
+      rowFormatter: (row: any) => this._render_row(row),
       frozenRows: (row: any) => {
 	return this.model.frozen_rows.length ? this.model.frozen_rows.includes(row._row.data._index) : false
       }
