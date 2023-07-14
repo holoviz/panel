@@ -191,3 +191,11 @@ def test_card_custom_css(page, port):
 
     card_button = page.locator(f'.card-button.{additional_button_css_class}')
     expect(card_button).to_have_count(1)
+
+
+def test_card_scrollable(page, port):
+    card = Card(scroll=True)
+    serve_panel_widget(page, port, card)
+
+    card_widget = page.locator('.card')
+    assert 'scrollable-vertical' in card_widget.get_attribute('class')

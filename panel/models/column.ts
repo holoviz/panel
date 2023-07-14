@@ -51,7 +51,7 @@ export class ColumnView extends BkColumnView {
 
     const scrollThreshold = this.model.properties.scroll_arrow_threshold;
     if (scrollThreshold.get_value() > 0) {
-      this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-down-arrow' });
+      this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-arrow' });
       this.shadow_el.appendChild(this.scroll_down_arrow_el);
 
       this.el.addEventListener("scroll", () => {

@@ -793,11 +793,14 @@ class ListPanel(ListLike, Panel):
         )
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        scroll = params.pop('scroll', None)
-        css_classes = self.css_classes or []
-        if scroll:
-            params['css_classes'] = css_classes + ['scrollable']
-        elif scroll == False:
+        if 'scroll' in params:
+            scroll = params.pop('scroll')
+            css_classes = list(self.css_classes or [])
+            if scroll:
+                if self._direction is not None:
+                    css_classes += [f'scrollable-{self._direction}']
+                else:
+                    css_classes += ['scrollable']
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
@@ -829,7 +832,7 @@ class NamedListPanel(NamedListLike, Panel):
             scroll = params.pop('scroll')
             css_classes = list(self.css_classes or [])
             if scroll:
-                if hasattr(self, "_direction"):
+                if self._direction is not None:
                     css_classes += [f'scrollable-{self._direction}']
                 else:
                     css_classes += ['scrollable']
@@ -885,7 +888,7 @@ class Column(ListPanel):
 
     auto_scroll = param.Boolean(
         default=False,
-        doc="Whether to scroll to the latest row on update."
+        doc="Whether to scroll to the latest object on update."
     )
 
     scroll_arrow_threshold = param.Number(

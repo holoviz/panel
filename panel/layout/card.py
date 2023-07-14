@@ -99,7 +99,7 @@ class Card(Column):
         scroll = params.pop('scroll', None)
         css_classes = self.css_classes or []
         if scroll:
-            params['css_classes'] = css_classes + ['scrollable-y']
+            params['css_classes'] = css_classes + ['scrollable-vertical']
         elif scroll == False:
             params['css_classes'] = css_classes
         return super(ListPanel, self)._process_param_change(params)

@@ -3,11 +3,11 @@
 }
 
 :host(.scrollable-vertical) {
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 :host(.scrollable-horizontal) {
-  overflow-x: scroll;
+  overflow-x: auto;
 }
 
 .scroll-down-arrow {
