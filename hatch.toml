@@ -90,7 +90,7 @@ serve = [
   "cd builtdocs",
   "python -m http.server 8000"
 ]
-build-pyodide = "panel convert examples/gallery/**/*.ipynb --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index"
+build-pyodide = "panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json"
 
 [[envs.docs.matrix]]
 python = ["3.9"]
