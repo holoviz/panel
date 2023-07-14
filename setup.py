@@ -204,7 +204,7 @@ _conda_only = [
 ]
 
 extras_require = {
-    'examples': _examples
+    'examples': _examples,
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
