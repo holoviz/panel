@@ -103,7 +103,7 @@ For development we recommend using the `dev` environment. To create a `dev` envi
 hatch -e dev.py3.10 shell
 ```
 
-Throughout the documentation we will use the Python 3.10 environmen but you can select any supported Python version by replacing `py3.10` with the desired version. Once you are inside the environment you can confirm it is set up correctly with:
+Throughout the documentation we will use the Python 3.10 environment but you can select any supported Python version by replacing `py3.10` with the desired version. Once you are inside the environment you can confirm it is set up correctly with:
 
 ```bash
 hatch run unit-test
