@@ -65,6 +65,8 @@ class _SliderBase(Widget):
     tooltips = param.Boolean(default=True, doc="""
         Whether the slider handle should display tooltips.""")
 
+    _rename: ClassVar[Mapping[str, str | None]] = {'value_throttled': None}
+
     _widget_type: ClassVar[Type[Model]] = _BkSlider
 
     __abstract = True

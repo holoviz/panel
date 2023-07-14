@@ -525,7 +525,9 @@ class _NumericInputBase(Widget):
     end = param.Parameter(default=None, allow_None=True, doc="""
         Optional maximum allowable value.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'start': 'low', 'end': 'high'}
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'start': 'low', 'end': 'high', 'value_throttled': None
+    }
 
     _widget_type: ClassVar[Type[Model]] = _BkNumericInput
 
