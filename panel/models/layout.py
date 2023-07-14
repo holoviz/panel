@@ -15,7 +15,19 @@ class HTMLBox(LayoutDOM):
     """ """
 
 
-class Card(BkColumn):
+class Column(BkColumn):
+
+    auto_scroll = Bool(False, help="Whether to scroll to the latest row on update.")
+
+    scroll_button_threshold = Float(
+        help="""
+        Threshold for showing scroll arrow that scrolls to the latest on click.
+        The arrow will be hidden if set to 0.
+        """,
+    )
+
+
+class Card(Column):
     active_header_background = Nullable(
         String, help="Background color of active Card header."
     )
@@ -41,15 +53,3 @@ class Card(BkColumn):
     hide_header = Bool(False, help="Whether to hide the Card header")
 
     tag = String("tag", help="CSS class to use for the Card as a whole.")
-
-
-class Column(BkColumn):
-
-    auto_scroll = Bool(False, help="Whether to scroll to the latest row on update.")
-
-    scroll_button_threshold = Float(
-        help="""
-        Threshold for showing scroll arrow that scrolls to the latest on click.
-        The arrow will be hidden if set to 0.
-        """,
-    )

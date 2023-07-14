@@ -903,7 +903,7 @@ class Column(ListPanel):
 
     @param.depends("auto_scroll", "scroll_button_threshold", watch=True, on_init=True)
     def _set_scrollable(self):
-        self.scroll = self.scroll or self.auto_scroll or self.scroll_button_threshold
+        self.scroll = self.scroll or self.auto_scroll or bool(self.scroll_button_threshold)
 
 
 class WidgetBox(ListPanel):
