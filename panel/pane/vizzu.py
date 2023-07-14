@@ -36,12 +36,12 @@ class Vizzu(ModelPane, SyncableData):
     """
 
     animation = param.Dict(default={}, doc="""
-        Animation settings (see https://lib.vizzuhq.com/latest/reference/modules/vizzu.Anim.html).""")
+        Animation settings (see https://lib.vizzuhq.com/latest/reference/modules/Anim/).""")
 
     config = param.Dict(default={}, doc="""
         The config contains all of the parameters needed to render a
         particular static chart or a state of an animated chart
-        (see https://lib.vizzuhq.com/latest/reference/interfaces/vizzu.Config.Chart.html).""")
+        (see https://lib.vizzuhq.com/latest/reference/interfaces/Config.Chart/).""")
 
     click = param.Parameter(doc="""
         Data associated with the latest click event.""")
@@ -58,7 +58,7 @@ class Vizzu(ModelPane, SyncableData):
         Style configuration of the chart.""")
 
     tooltip = param.Boolean(default=False, doc="""
-        Whether to enable tooltips.""")
+        Whether to enable tooltips on the chart.""")
 
     _data_params: ClassVar[List[str]] = ['object']
 
