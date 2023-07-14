@@ -12,9 +12,11 @@ features = [
   "tests"
 ]
 pre-install-commands = [
-  'conda install -y -c conda-forge graphviz xgboost'
+  'conda install -y -c conda-forge graphviz xgboost "nodejs >=16"'
 ]
 post-install-commands = [
+  # TODO: remove after release of hvplot 0.8.5
+  "pip install --pre --upgrade hvplot",
   "bokeh sampledata",
   "panel bundle --all"
 ]
@@ -70,7 +72,7 @@ features = [
   "recommended"
 ]
 pre-install-commands = [
-  'conda install -y -c conda-forge graphviz vtk==9.0.1 xgboost'
+  'conda install -y -c conda-forge graphviz xgboost "nodejs >=16"'
 ]
 post-install-commands = [
   "python scripts/build_pyodide_wheels.py",
@@ -148,8 +150,9 @@ type = "conda"
 conda-forge = true
 pre-install-commands = [
   "pip install toml PyYAML",
-  'python scripts/generate_conda_yaml.py -c conda-forge pyviz/label/dev -o conda-extras doc examples recommended tests ui --pip-only pip-extras',
+  'python scripts/generate_conda_yaml.py -c conda-forge pyviz/label/dev nodefaults -o conda-extras doc examples recommended tests ui --pip-only pip-extras',
   "conda env update --file environment.yaml",
+  'python -c "import os; os.remove(\"environment.yaml\")"',
 ]
 post-install-commands = [
   "bokeh sampledata",

@@ -17,7 +17,7 @@ PROJECT_MAP = {
 
 def normalize_dependency(dep):
     for proj, conda_dep in PROJECT_MAP.items():
-        if proj in dep:
+        if proj.split()[0] == dep:
             dep = dep.replace(proj, conda_dep)
     return dep.replace('==', '=').replace(' =', '=').replace(' >', '>').replace(' <', '<')
 

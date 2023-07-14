@@ -133,8 +133,9 @@ pip-extras = [
     "vega_datasets",
 ]
 conda-extras = [
+    "nodejs >=16",
     "python-graphviz",
-    "vtk==9.0.1",
+    "vtk",
     "xgboost"
 ]
 recommended = [
@@ -174,7 +175,7 @@ tests = [
     "twine",
 ]
 ui = [
-    "jupyter-server",
+    "jupyter_server",
     "playwright",
     "pytest-playwright",
 ]

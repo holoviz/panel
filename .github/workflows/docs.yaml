@@ -52,9 +52,6 @@ jobs:
         with:
           miniconda-version: "latest"
           auto-update-conda: true
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
       - name: Set up base environment
         run: |
           pip install --upgrade pip
