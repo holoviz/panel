@@ -50,10 +50,6 @@ export class VizzuChartView extends HTMLBoxView {
 	  else
 	    change = {...change, style: this.model.style}
 	}
-	if (this.update.includes('data') && this.update.length === 1) {
-	  this.render()
-	  return
-	}
 	this._animating = true
 	this.vizzu_view.animate(change, this.model.duration+'ms').then(() => {
 	  this._animating = false
