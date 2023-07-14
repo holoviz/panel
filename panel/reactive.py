@@ -30,6 +30,7 @@ from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
 from bokeh.models import ImportedStyleSheet
 from packaging.version import Version
+from param.depends import eval_function_with_deps
 from param.parameterized import ParameterizedMetaclass, Watcher
 
 from .io.document import unlocked
@@ -44,7 +45,7 @@ from .models.reactive_html import (
     DOMEvent, ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser,
 )
 from .util import (
-    BOKEH_JS_NAT, HTML_SANITIZER, classproperty, edit_readonly, escape,
+    BOKEH_JS_NAT, classproperty, edit_readonly, escape,
     eval_function, extract_dependencies, updating,
 )
 from .viewable import Layoutable, Renderable, Viewable
@@ -553,7 +554,7 @@ class Reactive(Syncable, Viewable):
             value = getattr(value.owner, value.name)
         elif hasattr(value, '_dinfo'):
             ref = value
-            value = eval_function(value)
+            value = eval_function_with_deps(value)
             if isinstance(value, Generator):
                 if pname == 'refs':
                     v = {}
@@ -657,7 +658,7 @@ class Reactive(Syncable, Viewable):
             if isinstance(p, param.Parameter):
                 new_val = getattr(p.owner, p.name)
             else:
-                new_val = eval_function(p)
+                new_val = eval_function_with_deps(p)
 
             if inspect.isawaitable(new_val) or isinstance(new_val, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._async_ref, pname, new_val))
