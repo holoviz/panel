@@ -1,6 +1,5 @@
 -e .[all_pip,build]
 -e binder/jupyter-panel-apps-server/.
--e binder/jupyter-voila-docs-server/.
 pyecharts
 xlsxwriter
 pyarrow
