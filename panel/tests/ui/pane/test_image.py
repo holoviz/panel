@@ -1,7 +1,5 @@
 import time
 
-from pathlib import Path
-
 import pytest
 
 pytestmark = pytest.mark.ui
@@ -209,9 +207,3 @@ def test_pdf_no_embed_start_page(page, port):
 
     src = page.locator("embed").get_attribute('src')
     assert src == PDF_FILE + "#page=22"
-
-def test_pdf_local_file():
-    path = (Path(__file__).parent/"sample.pdf").absolute()
-    pdf = PDF(object=path)
-    result = pdf._transform_object(obj=pdf.object)
-    assert result=="a"
