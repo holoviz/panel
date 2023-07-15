@@ -23,7 +23,7 @@ class Swipe(ListLike, ReactiveHTML):
     objects = param.List(default=[], bounds=(0, 2), doc="""
         The list of child objects that make up the layout.""", precedence=-1)
 
-    slider_width = param.Integer(default=5, bounds=(0, 25), doc="""
+    slider_width = param.Integer(default=2, bounds=(0, 25), doc="""
         The width of the slider in pixels""")
 
     slider_color = param.Color(default="black", doc="""

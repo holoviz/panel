@@ -60,8 +60,8 @@ from .io import (  # noqa
     _jupyter_server_extension_paths, cache, ipywidget, serve, state,
 )
 from .layout import (  # noqa
-    Accordion, Card, Column, FlexBox, FloatPanel, GridBox, GridSpec, GridStack,
-    HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
+    Accordion, Card, Column, Fade, FlexBox, FloatPanel, GridBox, GridSpec,
+    GridStack, HSpacer, Row, Spacer, Swipe, Tabs, VSpacer, WidgetBox,
 )
 from .pane import panel  # noqa
 from .param import Param  # noqa
@@ -73,6 +73,7 @@ __all__ = (
     "Accordion",
     "Card",
     "Column",
+    "Fade",
     "FlexBox",
     "FloatPanel",
     "GridBox",
