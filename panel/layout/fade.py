@@ -15,9 +15,8 @@ from .base import ListLike
 class Fade(ListLike, ReactiveHTML):
     """
     The Fade layout enables you to quickly compare two panels laid
-    out on top of each other with a part of the *before* panel shown
-    on one side of a slider and a part of the *after* panel shown on
-    the other side.
+    out on top of each other; moving the slider to the left will fade out
+    the top panel.
     """
 
     objects = param.List(
