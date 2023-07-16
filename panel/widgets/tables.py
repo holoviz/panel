@@ -1086,9 +1086,14 @@ class Tabulator(BaseTable):
     theme = param.ObjectSelector(
         default="simple", objects=[
             'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-            'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'
+            'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast',
+            'bootstrap5'
         ], doc="""
         Tabulator CSS theme to apply to table.""")
+
+    theme_classes = param.List(default=[], item_type=str, doc="""
+       List of extra CSS classes to apply to the Tabulator element
+       to customize the theme.""")
 
     _data_params: ClassVar[List[str]] = [
         'value', 'page', 'page_size', 'pagination', 'sorters', 'filters'
@@ -1570,7 +1575,7 @@ class Tabulator(BaseTable):
         if 'hidden_columns' in params:
             import pandas as pd
             if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):
-                params['hidden_columns'] += [self.value.index.name or 'index']
+                params['hidden_columns'] = params['hidden_columns'] + [self.value.index.name or 'index']
         if 'selectable_rows' in params:
             params['selectable_rows'] = self._get_selectable()
         return params

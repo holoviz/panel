@@ -51,12 +51,14 @@ def panel(obj: Any, **kwargs) -> Viewable:
 
     Any keyword arguments are passed down to the applicable Pane.
 
-    To lazily render components you may also provide a Python
-    function, with or without bound parameter dependencies and set
-    `defer_load=True`. Setting `loading_indicator=True` will display a
-    loading indicator while the function is being evaluated.
+    Setting `loading_indicator=True` will display a loading indicator while the function is being
+    evaluated.
 
-    Reference: https://panel.holoviz.org/background/components/components_overview.html#panes
+    To lazily render components when the application loads, you may also provide a Python
+    function, with or without bound parameter dependencies and set
+    `defer_load=True`.
+
+    Reference: https://panel.holoviz.org/explanation/components/components_overview.html#panes
 
     >>> pn.panel(some_python_object, width=500)
 

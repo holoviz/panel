@@ -6,6 +6,11 @@
   --sd-color-card-border-hover: #0072b5;
 }
 
+/* Fix breadcrumb overlap https://github.com/holoviz/panel/issues/5199 */
+.header-article__inner .header-article-item {
+  height: unset;
+}
+
 /* Homepage Showcase */
 
 .showcase-table {

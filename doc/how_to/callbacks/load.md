@@ -33,7 +33,7 @@ some_long_running_task()
 layout.servable()
 ```
 
-![panel-longrunning-task-example](https://user-images.githubusercontent.com/42288570/245752515-1329b4c3-da45-41e7-b3b5-b1b4f09eecd4.gif)
+![panel-longrunning-task-example](https://assets.holoviz.org/panel/gifs/long_load.gif)
 
 Now lets learn how to defer long running tasks to after the application has loaded.
 
@@ -56,7 +56,7 @@ pn.state.onload(some_long_running_task)
 layout.servable()
 ```
 
-![panel-onload-example](https://user-images.githubusercontent.com/42288570/250338232-3777ff1e-4832-4cc9-aac0-03875b8c69f5.gif)
+![panel-onload-example](https://assets.holoviz.org/panel/gifs/onload_callback.gif)
 
 Note that `pn.state.onload` accepts both *sync* and *async* functions.
 
@@ -88,24 +88,26 @@ class AppState(param.Parameterized):
         time.sleep(2)
         state.data = pd.DataFrame({"x": [1, 2, 3, 4], "y": [1, 3, 2, 4]})
 
-def loading_indicator():
-    return pn.indicators.LoadingSpinner(value=True, height=25, width=25, align="center")
+def loading_indicator(label):
+    return pn.indicators.LoadingSpinner(
+        value=True, name=label, size=25, align="center"
+    )
 
 def short_running_task():
     return "# I'm shown on load"
 
 def table(data):
     if data is None:
-        return pn.Row(loading_indicator(), "Loading data")
+        return loading_indicator("Loading data")
 
     return pn.pane.DataFrame(data)
 
 def plot(data):
     if data is None:
-        yield pn.Row(loading_indicator(), "Waiting for data")
+        yield loading_indicator("Waiting for data")
         return
 
-    yield pn.Row(loading_indicator(), "Transforming data")
+    yield loading_indicator("Transforming data")
     time.sleep(2)  # Some long running transformation
     yield data.hvplot()
 
@@ -119,4 +121,4 @@ pn.Column(
 ).servable()
 ```
 
-![panel-onload-dependent-tasks-example](https://user-images.githubusercontent.com/42288570/245752488-b2963489-bdff-4323-b801-03a763992af9.gif)
+![panel-onload-dependent-tasks-example](https://assets.holoviz.org/panel/gifs/onload_dependent.gif)

@@ -62,7 +62,7 @@ class IconMixin(Widget):
 
     icon = param.String(default=None, doc="""
         An icon to render to the left of the button label. Either an SVG or an
-        icon name which is loaded from https://tabler-icons.io/.""")
+        icon name which is loaded from https://tabler-icons.io.""")
 
     icon_size = param.String(default='1em', doc="""
         Size of the icon as a string, e.g. 12px or 1em.""")
@@ -171,7 +171,7 @@ class Button(_ClickButton):
 
     :Example:
 
-    >>> pn.widgets.Button(name='Click me', button_type='primary')
+    >>> pn.widgets.Button(name='Click me', icon='caret-right', button_type='primary')
     """
 
     clicks = param.Integer(default=0, doc="""
