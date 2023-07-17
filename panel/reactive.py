@@ -458,7 +458,7 @@ class Syncable(Renderable):
             self._process_events(events)
 
         for property_change_event_middleware in state._property_change_event_middlewares:
-            property_change_event_middleware.postprocess(self, doc, events)
+            property_change_event_middleware.postprocess()
 
     def _schedule_change(self, doc: Document, comm: Comm | None) -> None:
         with hold(doc, comm=comm):
