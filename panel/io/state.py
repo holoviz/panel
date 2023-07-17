@@ -55,9 +55,11 @@ if TYPE_CHECKING:
     from .browser import BrowserInfo
     from .callbacks import PeriodicCallback
     from .location import Location
+    from .middlewares import (
+        BokehEventMiddleware, PropertyChangeEventMiddleware,
+    )
     from .notifications import NotificationArea
     from .server import StoppableThread
-    from .middlewares import BokehEventMiddleware, PropertyChangeEventMiddleware
 
     T = TypeVar("T")
 
