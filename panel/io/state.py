@@ -57,6 +57,7 @@ if TYPE_CHECKING:
     from .location import Location
     from .notifications import NotificationArea
     from .server import StoppableThread
+    from .middlewares import BokehEventMiddleware, PropertyChangeEventMiddleware
 
     T = TypeVar("T")
 
@@ -213,6 +214,10 @@ class _state(param.Parameterized):
     # Override user info
     _oauth_user_overrides = {}
     _active_users = Counter()
+
+    # Middlewares
+    _bokeh_event_middlewares: ClassVar[List[BokehEventMiddleware]] = []
+    _property_change_event_middlewares: ClassVar[List[PropertyChangeEventMiddleware]] = []
 
     def __repr__(self) -> str:
         server_info = []
@@ -879,6 +884,18 @@ class _state(param.Parameterized):
                              "of Boolean type.")
         if indicator not in self._indicators:
             self._indicators.append(indicator)
+
+    def add_bokeh_event_middleware(self, middleware: BokehEventMiddleware) -> None:
+        """
+        TODO: Write docs
+        """
+        self._bokeh_event_middlewares.append(middleware)
+
+    def add_property_change_event_middleware(self, middleware: PropertyChangeEventMiddleware) -> None:
+        """
+        TODO: Write docs
+        """
+        self._property_change_event_middlewares.append(middleware)
 
     #----------------------------------------------------------------
     # Public Properties

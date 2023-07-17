@@ -529,7 +529,10 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         self._models = {}
         self._comms = {}
         self._kernels = {}
+        # TODO - Write docs
+        component_name = params.pop('component_name', type(self).__name__)
         super().__init__(**params)
+        self.component_name = component_name
         self._found_links = set()
         self._logger = logging.getLogger(f'{__name__}.{type(self).__name__}')
 
