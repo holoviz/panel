@@ -5,6 +5,14 @@ import {PanelMarkupView} from "./layout"
 export class KaTeXView extends PanelMarkupView {
   model: KaTeX
 
+  connect_signals(): void {
+    super.connect_signals();
+    const { text } = p;
+    this.on_change([text], () => {
+      this.render();
+    });
+  }
+
   render(): void {
     super.render();
     this.container.innerHTML = this.model.text;
