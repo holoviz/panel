@@ -25,4 +25,4 @@ We don't think Streamlit sucks as the ironic title of the video thumbnail sugges
 
 ## Code Examples
 
-If you want to compare examples with code, check out the [How to Migrate From Streamlit Guide](../../how_to/migrate/from_streamlit).
+If you want to compare examples with code, check out the [How to Migrate From Streamlit Guide](../../how_to/streamlit_migration/index.md).
