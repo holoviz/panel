@@ -1,5 +1,5 @@
 from bokeh.document import Document
-from bokeh.events improt Event
+from bokeh.events import Event
 
 from typing import Any, Dict
 from ..reactive import Syncable
