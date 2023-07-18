@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from enum import Enum
 from typing import (
     Any, ClassVar, Dict, List, Optional, Tuple, Type, Union,
 )
@@ -18,6 +19,17 @@ from ..viewable import Layoutable, Viewable
 from .base import CompositeWidget
 from .button import Button, Toggle
 from .input import StaticText, TextInput
+
+
+class ChatExportFormat(Enum):
+    """
+    The ChatExportFormat enum allows specifying the format to export
+    the chat log in.
+    """
+
+    JSON = "json"
+    TUPLE = "tuple"
+    OPENAI = "openai"
 
 
 class ChatRow(CompositeWidget):
@@ -623,25 +635,38 @@ class ChatBox(CompositeWidget):
         message = str(message)
         return message
 
-    def export(self, serialize: bool = True) -> List[Dict[str, Union[List[Any], Any]]]:
+    def export(
+            self,
+            serialize: bool = True,
+            format: Union[ChatExportFormat, str] = ChatExportFormat.JSON
+        ) -> List[Union[Dict[str, Any], Tuple[str, Any]]]:
         """
-        Exports the chat log into a list of dictionaries with
-        "role" and "content" as keys.
+        Exports the chat log into a list of the specified field
 
         Arguments
         ---------
         serialize (bool): Whether to serialize the messages into a string.
+        format (str | ChatExportFormat): The format to export the chat log in;
+            'json', 'tuple', or 'openai'.
 
         Returns
         -------
-        messages (list): List of dictionaries with "role" and "content" as keys.
+        messages (list): List of messages.
         """
         messages = []
         for user_message in self.value:
             user, message = self._separate_user_message(user_message)
             if serialize:
                 message = self._serialize_message(message)
-            messages.append({"role": user, "content": message})
+            if isinstance(format, str):
+                format = ChatExportFormat(format.lower())
+
+            if format == ChatExportFormat.JSON:
+                messages.append({user: message})
+            elif format == ChatExportFormat.TUPLE:
+                messages.append((user, message))
+            elif format == ChatExportFormat.OPENAI:
+                messages.append({"role": user, "content": message})
         return messages
 
     def __len__(self) -> int:

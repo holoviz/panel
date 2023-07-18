@@ -232,7 +232,7 @@ def test_chat_box_primary_name(document, comm):
     assert chat_box.value == value + [{"Panel User": "Hello!"}]
 
 
-def test_chat_box_export(document, comm):
+def test_chat_box_export_json(document, comm):
     value = [
         {"user1": "Hello"},
         {"user2": "Hi"},
@@ -241,7 +241,44 @@ def test_chat_box_export(document, comm):
         {"user3": Column(TextInput(value="B"), TextInput(value="C"))},
     ]
     chat_box = ChatBox(value=value.copy(), primary_name="Panel User")
-    messages = chat_box.export(serialize=True)
+    messages = chat_box.export(serialize=True, format="json")
+    assert messages == [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+        {"user1": "Some valueo!"},
+        {"user2": "another val!\nA"},
+        {"user3": "B\nC"},
+    ]
+
+def test_chat_box_export_tuple(document, comm):
+    value = [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+        {"user1": TextInput(value="Some valueo!")},
+        {"user2": [TextInput(value="another val!"), Select(options=["A"], value="A")]},
+        {"user3": Column(TextInput(value="B"), TextInput(value="C"))},
+    ]
+    chat_box = ChatBox(value=value.copy(), primary_name="Panel User")
+    messages = chat_box.export(serialize=True, format="tuple")
+    assert messages == [
+        ("user1", "Hello"),
+        ("user2", "Hi"),
+        ("user1", "Some valueo!"),
+        ("user2", "another val!\nA"),
+        ("user3", "B\nC")
+    ]
+
+
+def test_chat_box_export_openai(document, comm):
+    value = [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+        {"user1": TextInput(value="Some valueo!")},
+        {"user2": [TextInput(value="another val!"), Select(options=["A"], value="A")]},
+        {"user3": Column(TextInput(value="B"), TextInput(value="C"))},
+    ]
+    chat_box = ChatBox(value=value.copy(), primary_name="Panel User")
+    messages = chat_box.export(serialize=True, format="openai")
 
     assert messages == [
         {
@@ -275,10 +312,7 @@ def test_chat_box_export_not_serialize(document, comm):
     messages = chat_box.export(serialize=False)
 
     assert messages == [
-        {
-            "role": "user1",
-            "content": text_input,
-        },
+        {"user1": text_input},
     ]
 
 
