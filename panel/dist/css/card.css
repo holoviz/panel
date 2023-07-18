@@ -38,8 +38,7 @@
 }
 
 .card-header-row {
-  margin-bottom: auto;
-  margin-top: auto;
+  margin-left: auto 1em;
   position: relative !important;
   max-width: calc(100% - 2em);
 }
