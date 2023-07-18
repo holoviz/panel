@@ -89,6 +89,11 @@ jobs:
         run: |
           conda activate test-environment
           doit test_unit
+      - name: doit test_unit-subprocess
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          conda activate test-environment
+          doit test_subprocess
       - name: test examples
         # Remove when all examples tools can be installed on 3.10
         if: (!(contains(matrix.python-version, '3.1')))
