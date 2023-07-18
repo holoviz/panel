@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from typing import (
     Any, ClassVar, Dict, List, Optional, Tuple, Type, Union,
 )
@@ -16,6 +17,7 @@ from ..pane.markup import Markdown
 from ..viewable import Layoutable, Viewable
 from .base import CompositeWidget
 from .button import Button, Toggle
+from .indicators import LoadingSpinner
 from .input import StaticText, TextInput
 
 
@@ -191,6 +193,10 @@ class ChatRow(CompositeWidget):
             panel_obj.styles.update({"overflow-wrap": "break-word"})
         return panel_obj
 
+    @param.depends("value", watch=True)
+    def _update_value(self):
+        self._bubble.objects = [self._serialize_obj(obj) for obj in self.value]
+
     def _update_like(self, event: param.parameterized.Event):
         """
         Update the like button when the user clicks it.
@@ -201,6 +207,30 @@ class ChatRow(CompositeWidget):
         else:
             event.obj.name = "♡"
 
+class TemporaryMessage(param.Parameterized):
+    name = param.String(constant=True)
+    value = param.Parameter()
+
+    _chat_box: 'ChatBox' = param.Parameter()
+    _chat_row: ChatRow = param.ClassSelector(default=None, class_=ChatRow)
+
+    def __init__(self, chat_box: ChatBox, user: str, value=None):
+        super().__init__(name=user, _chat_box=chat_box)
+        if value is not None:
+            self.value = value
+
+    @param.depends("value", watch=True)
+    def _handle_value_changed(self):
+        if self._chat_row:
+            self._chat_row.value = [self.value]
+        else:
+            self._chat_row = self._chat_box._instantiate_message_row(user=self.name, message_contents=[self.value], show_name=self._chat_box.show_names)
+            self._chat_box._chat_log.append(self._chat_row)
+
+    def _finalize(self):
+        self._chat_box._chat_log.pop(-1)
+        if self.value:
+            self._chat_box.append({self.name: self.value})
 
 class ChatBox(CompositeWidget):
     """
@@ -613,3 +643,21 @@ class ChatBox(CompositeWidget):
 
     def __len__(self) -> int:
         return len(self.value)
+
+    @contextmanager
+    def respond(self: ChatBox, user: str, value="__LoadingSpinner__", raise_exception=True):
+        disabled_org = self.disabled
+        if value=="__LoadingSpinner__":
+            value = LoadingSpinner(value=True, height=25, color="success")
+        try:
+            self.disabled=True
+            message = TemporaryMessage(chat_box=self, user=user, value=value)
+            yield message
+        except Exception as e:
+            if raise_exception:
+                raise e
+            else:
+                message.value = e
+        finally:
+            message._finalize()
+            self.disabled=disabled_org
