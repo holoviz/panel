@@ -303,6 +303,8 @@ class Number(ValueIndicator):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
+        if not any(p in self._source_transforms or p == 'name' for p in msg):
+            return msg
         font_size = msg.pop('font_size', self.font_size)
         title_font_size = msg.pop('title_size', self.title_size)
         name = msg.pop('name', self.name)
@@ -357,6 +359,8 @@ class String(ValueIndicator):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
+        if not any(p in self._source_transforms or p == 'name' for p in msg):
+            return msg
         font_size = msg.pop('font_size', self.font_size)
         title_font_size = msg.pop('title_size', self.title_size)
         name = msg.pop('name', self.name)
