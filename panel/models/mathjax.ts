@@ -7,10 +7,7 @@ export class MathJaxView extends PanelMarkupView {
 
   connect_signals(): void {
     super.connect_signals();
-    const { text, has_math_disabled } = p;
-    this.on_change([text, has_math_disabled], () => {
-      this.render();
-    });
+    this.connect(this.model.properties.text.change, () => this.render());
   }
 
   override render(): void {
