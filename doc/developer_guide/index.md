@@ -110,10 +110,11 @@ You will likely want to check out the [testing](testing.md) guide. Meanwhile, if
 ## Useful Links
 
 - [Dev version of Panel Site](https://holoviz-dev.github.io/panel)
-   - Use this to explore new, not yet released features and docs
+  - Use this to explore new, not yet released features and docs
 - [Panel main branch on Binder](https://mybinder.org/v2/gh/holoviz/panel/main?urlpath=lab/tree/examples)
-   - Use this to quickly explore and manually test the newest panel features in a fresh environment with all requirements installed.
-   - Replace `main` with `name-of-other-branch` for other branches.
+  - Use this to quickly explore and manually test the newest panel features in a fresh environment with all requirements installed.
+  - Replace `main` with `name-of-other-branch` or `version`for other branches.
+    - For example https://mybinder.org/v2/gh/holoviz/panel/v1.1.1?urlpath=lab/tree/examples
 
 ```{toctree}
 :titlesonly:
