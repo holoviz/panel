@@ -487,6 +487,8 @@ class PDF(FileBase):
             if not isinstance(data, bytes):
                 data = data.encode('utf-8')
             b64 = base64.b64encode(data).decode("utf-8")
+            if self.embed:
+                return dict(text=b64)
             obj = f'data:application/pdf;base64,{b64}'
 
         w, h = self.width or '100%', self.height or '100%'
