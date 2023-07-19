@@ -30,7 +30,7 @@ def get_multiple_responses(prompt):
     yield RESPONSE
 
 def stream_response(prompt):
-    for token in RESPONSE.split():
+    for token in ["I ", "dont' ", "know"]:
         yield token
 
 # Todo: Todo: Support Async versions of everything
@@ -190,3 +190,45 @@ def test_can_stream_tokens():
     # Its important add the text message and not view
     # because we need the text value to give the AI context for the next task
     assert chat_box.value == [{"Assistant": message.final}]
+
+def test_can_create_chat_interface_in_one_line_of_code():
+    """This is what Gradio offers
+
+    See: https://twitter.com/Gradio/status/1681019345500078080
+    """
+    # Given
+    def response(prompt, value):
+        return get_response(prompt)
+    prompt="What is 2+2?"
+    message = {"User": prompt}
+    answer = {"Assistant": get_response(prompt)}
+    # When
+    chat_box = ChatBox(response=response)
+    chat_box.append(message)
+
+    # Assert
+    assert chat_box.value==[
+        message, answer
+    ]
+
+def test_can_create_streaming_chat_interface_in_one_line_of_code():
+    """This is what Gradio offers
+
+    See: https://twitter.com/Gradio/status/1681019345500078080
+    """
+    # Given
+    def response(prompt, value):
+        for token in stream_response(prompt):
+            yield token
+
+    prompt="What is 2+2?"
+    message = {"User": prompt}
+    answer = {"Assistant": "".join(stream_response(prompt))}
+    # When
+    chat_box = ChatBox(response=response)
+    chat_box.append(message)
+
+    # Assert
+    assert chat_box.value==[
+        message, answer
+    ]

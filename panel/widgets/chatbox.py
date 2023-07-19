@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import inspect
+
 from contextlib import contextmanager
 from typing import (
     Any, ClassVar, Dict, List, Optional, Tuple, Type, Union,
@@ -8,6 +10,7 @@ from typing import (
 import param
 
 from .._param import Margin
+from ..depends import bind
 from ..layout import (
     Column, ListPanel, Row, Tabs,
 )
@@ -20,6 +23,10 @@ from .button import Button, Toggle
 from .indicators import LoadingSpinner
 from .input import StaticText, TextInput
 
+USER_ROLE="User"
+ASSISTANT_ROLE="Assistant"
+SYSTEM_ROLE="System"
+RAISE_EXCEPTION=True
 
 class ChatRow(CompositeWidget):
     """
@@ -312,7 +319,7 @@ class ChatBox(CompositeWidget):
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
-    def __init__(self, **params):
+    def __init__(self, response=None, **params):
         # set up parameters
         if params.get("width") and params.get("height") and "sizing_mode" not in params:
             params["sizing_mode"] = None
@@ -370,6 +377,8 @@ class ChatBox(CompositeWidget):
 
         # add interactivity
         self.param.watch(self._refresh_log, "value")
+        if response:
+            self.create_interface(response)
 
         # populate with initial value
         self.param.trigger("value")
@@ -667,7 +676,7 @@ class ChatBox(CompositeWidget):
         return len(self.value)
 
     @contextmanager
-    def respond(self: ChatBox, user: str, value="__LoadingSpinner__", raise_exception=True):
+    def respond(self: ChatBox, user: str, value="__LoadingSpinner__", raise_exception=RAISE_EXCEPTION):
         disabled_org = self.disabled
         if value=="__LoadingSpinner__":
             value = LoadingSpinner(value=True, height=25, color="success")
@@ -683,3 +692,37 @@ class ChatBox(CompositeWidget):
         finally:
             message._finalize()
             self.disabled=disabled_org
+
+    def _respond_to_user_input(self, value, response, user: str, assistant: str, raise_exception: bool):
+            if not value:
+                return
+
+            last = value[-1]
+            role, prompt = next(iter(last.items()))
+            if role!=user:
+                return
+
+            with self.respond(user=assistant, value=None, raise_exception=raise_exception) as message:
+                message.value = response(prompt, value)
+
+    def _respond_streaming_to_user_input(self, value, response, user: str, assistant: str, raise_exception: bool):
+            if not value:
+                return
+
+            last = value[-1]
+            role, prompt = next(iter(last.items()))
+            if role!=user:
+                return
+            view = Markdown("")
+            with self.respond(user=assistant, value=view, raise_exception=raise_exception) as message:
+                for token in response(prompt, value):
+                    view.object+=token
+                message.final=view.object
+
+    def create_interface(self, response, user=None, assistant=None, raise_exception=True):
+        user=user or USER_ROLE
+        assistant=assistant or ASSISTANT_ROLE
+        if inspect.isgeneratorfunction(response):
+            bind(self._respond_streaming_to_user_input, value=self, response=response, user=user, assistant=assistant, raise_exception=False, watch=True)
+        else:
+            bind(self._respond_to_user_input, value=self, response=response, user=user, assistant=assistant, raise_exception=False, watch=True)
