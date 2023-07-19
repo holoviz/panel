@@ -13,7 +13,7 @@
 .scroll-button {
   /* For location */
   position: sticky;
-  top: calc(100% - 35px);
+  top: calc(100% - 38px);
   left: calc(100% - 60px);
   /* For icon */
   cursor: pointer;
@@ -23,7 +23,7 @@
   background-color: rgba(0, 0, 0, 0.25);
   color: white;
   width: 36px;
-  height: 36px;
+  min-height: 36px;
   margin-bottom: -36px; /* Remove space taken */
   display: flex;
   align-items: center;
