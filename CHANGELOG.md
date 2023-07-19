@@ -1,5 +1,30 @@
 # Releases
 
+## Version 1.2.1
+
+Date: 2023-07-18
+
+This micro-release focuses on a small number of enhancements and rendering related bug fixes. Specifically it adds support for notifying users when the page is ready and when the Websocket disconnects using corresponding config options and upgrades the Vizzu version, thereby adding support for tooltips and enabling animations when the data is updated. The bug fixes are primarily focused on ensuring components such as `GridStack` and `Tabulator` render correctly and do not unnecessarily re-render or reload stylesheets. Many thanks and welcome to @owenlamont and @sciemon for their first contributions to Panel and the maintainers @MarcSkovMadsen, @Hoxbro and @philippjfr for contributing to this release.
+
+### Enhancements
+
+- Add `config.disconnect_notification` and `config.ready_notification` ([#5244](https://github.com/holoviz/panel/pull/5244))
+- Add `Vizzu` tooltip support and allow animations when data is updated ([#5258](https://github.com/holoviz/panel/pull/5258))
+- Style tweaks for `Card` and `Select` components ([#5280](https://github.com/holoviz/panel/pull/5280))
+
+### Bug fixes
+
+- Ensure `GridStack` children are sized correctly after render ([#5242](https://github.com/holoviz/panel/pull/5242))
+- Fix `Tabulator` expanded row rendering ([#5253](https://github.com/holoviz/panel/pull/5253))
+- Fix bug where local `PDF` pane is rendered as base64 string ([#5264](https://github.com/holoviz/panel/issues/5264))
+- Avoid full re-rendering when updating `HTML` based components ([#5275](https://github.com/holoviz/panel/pull/5275))
+- Ensure that `Design` does not trigger unnecessary updates to stylesheets ([#5278](https://github.com/holoviz/panel/pull/5278))
+
+### Documentation
+
+- Fix binder ([#5257](https://github.com/holoviz/panel/pull/5257))
+- Various smaller documentation fixes ([#5234](https://github.com/holoviz/panel/pull/5234), [#5249](https://github.com/holoviz/panel/pull/5249), [#5266](https://github.com/holoviz/panel/pull/5266))
+
 ## Version 1.2.0
 
 Date: 2023-07-06

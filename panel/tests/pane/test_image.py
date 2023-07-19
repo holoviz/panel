@@ -155,7 +155,7 @@ def test_pdf_local_file(document, comm):
     pdf_pane = PDF(object=path)
     model = pdf_pane.get_root(document, comm)
     assert model.text.startswith("&lt;embed src=&quot;data:application/pdf;base64,JVBER")
-    assert model.text.endswith("RU9GCg==#page=1&quot; width=&#x27;100%&#x27; height=&#x27;100%&#x27; type=&quot;application/pdf&quot;&gt;")
+    assert model.text.endswith("==#page=1&quot; width=&#x27;100%&#x27; height=&#x27;100%&#x27; type=&quot;application/pdf&quot;&gt;")
 
 def test_png_native_size(document, comm):
     png = PNG(PNG_FILE, embed=False)
