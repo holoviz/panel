@@ -16,7 +16,7 @@ export class ColumnView extends BkColumnView {
   }
 
   scroll_to_latest(): void {
-    if (!this.model.properties.auto_scroll)
+    if (!this.model.auto_scroll)
       return
 
     // Waits for the child to be rendered before scrolling
@@ -26,7 +26,7 @@ export class ColumnView extends BkColumnView {
   }
 
   toggle_scroll_arrow(): void {
-    const threshold = this.model.properties.scroll_button_threshold.get_value()
+    const threshold = this.model.scroll_button_threshold
     const scrollDistanceFromBottom = this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
     this.scroll_down_arrow_el.classList.toggle(
       "visible", (threshold !== 0) && (scrollDistanceFromBottom >= threshold)
@@ -69,7 +69,7 @@ export namespace Column {
   };
 }
 
-export interface Column extends BkColumn.Attrs { }
+export interface Column extends Column.Attrs { }
 
 export class Column extends BkColumn {
   properties: Column.Props;
