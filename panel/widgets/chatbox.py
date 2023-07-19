@@ -28,6 +28,7 @@ class ChatExportFormat(Enum):
     """
 
     JSON = "json"
+    LEGACY = "legacy"
     TUPLE = "tuple"
     OPENAI = "openai"
 
@@ -647,7 +648,7 @@ class ChatBox(CompositeWidget):
         ---------
         serialize (bool): Whether to serialize the messages into a string.
         format (str | ChatExportFormat): The format to export the chat log in;
-            'json', 'tuple', or 'openai'.
+            'json', 'legacy', 'tuple', or 'openai'.
 
         Returns
         -------
@@ -662,6 +663,8 @@ class ChatBox(CompositeWidget):
                 format = ChatExportFormat(format.lower())
 
             if format == ChatExportFormat.JSON:
+                messages.append({"user": user, "value": message})
+            elif format == ChatExportFormat.LEGACY:
                 messages.append({user: message})
             elif format == ChatExportFormat.TUPLE:
                 messages.append((user, message))

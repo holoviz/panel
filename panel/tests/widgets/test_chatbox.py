@@ -243,6 +243,39 @@ def test_chat_box_export_json(document, comm):
     chat_box = ChatBox(value=value.copy(), primary_name="Panel User")
     messages = chat_box.export(serialize=True, format="json")
     assert messages == [
+        {
+            "user": "user1",
+            "value": "Hello",
+        },
+        {
+            "user": "user2",
+            "value": "Hi",
+        },
+        {
+            "user": "user1",
+            "value": "Some valueo!",
+        },
+        {
+            "user": "user2",
+            "value": "another val!\nA",
+        },
+        {
+            "user": "user3",
+            "value": "B\nC",
+        },
+    ]
+
+def test_chat_box_export_legacy(document, comm):
+    value = [
+        {"user1": "Hello"},
+        {"user2": "Hi"},
+        {"user1": TextInput(value="Some valueo!")},
+        {"user2": [TextInput(value="another val!"), Select(options=["A"], value="A")]},
+        {"user3": Column(TextInput(value="B"), TextInput(value="C"))},
+    ]
+    chat_box = ChatBox(value=value.copy(), primary_name="Panel User")
+    messages = chat_box.export(serialize=True, format="legacy")
+    assert messages == [
         {"user1": "Hello"},
         {"user2": "Hi"},
         {"user1": "Some valueo!"},
