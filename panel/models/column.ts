@@ -16,7 +16,7 @@ export class ColumnView extends BkColumnView {
   }
 
   scroll_to_latest(): void {
-    if (!this.model.auto_scroll)
+    if (!this.model.properties.auto_scroll)
       return
 
     // Waits for the child to be rendered before scrolling
@@ -26,9 +26,8 @@ export class ColumnView extends BkColumnView {
   }
 
   toggle_scroll_arrow(): void {
-    const threshold = this.model.scroll_button_threshold
+    const threshold = this.model.properties.scroll_button_threshold.get_value()
     const scrollDistanceFromBottom = this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
-    console.log(scrollDistanceFromBottom, (threshold !== 0) && (scrollDistanceFromBottom >= threshold))
     this.scroll_down_arrow_el.classList.toggle(
       "visible", (threshold !== 0) && (scrollDistanceFromBottom >= threshold)
     )
