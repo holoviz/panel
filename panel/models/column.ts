@@ -62,7 +62,6 @@ export class ColumnView extends BkColumnView {
 
 export namespace Column {
   export type Attrs = p.AttrsOf<Props>;
-
   export type Props = BkColumn.Props & {
     auto_scroll: p.Property<boolean>;
     scroll_button_threshold: p.Property<number>;
