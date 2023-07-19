@@ -119,6 +119,9 @@ builtdocs/
 lite/
 .jupyterlite.doit.db
 
+# jetbrains settings
+.idea/
+
 # vscode settings
 .vscode/
 .vscode/panel.code-workspace
@@ -139,3 +142,13 @@ doc/reference/*
 !/panel/dist/css
 !/panel/dist/css/*.css
 .venv2/
+.npm/*
+.local/*
+.jupyter-server-log.txt
+.bash_history
+.bash_logout
+.bashrc
+.profile
+.config/code-server/*
+.conda/*
+.jupyter/*

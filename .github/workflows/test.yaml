@@ -80,6 +80,9 @@ jobs:
       - name: Run unit test suite
         run: |
           hatch -v run test.py${{ matrix.python-version }}:run
+      - name: Run subprocess unit test suite
+        run: |
+          hatch -v run test.py${{ matrix.python-version }}:run-subprocess
       - name: Run example test suite
         run: |
           hatch -v run test.py${{ matrix.python-version }}:run-examples

@@ -27,6 +27,7 @@ run-examples = [
   'pytest panel --docs',
   'pytest -n logical --dist loadscope --nbval-lax examples/reference examples/gallery --ignore-glob="*VTK*.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*Terminal.ipynb"  --ignore-glob="*DatePicker.ipynb"'
 ]
+run-subprocess = "pytest panel --cov=./panel --cov-report=xml --subprocess"
 
 [[envs.test.matrix]]
 python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
@@ -140,6 +141,7 @@ example-test = [
   'pytest panel --docs',
   'pytest -n logical --dist loadscope --nbval-lax examples/reference examples/gallery --ignore-glob="*VTK*.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*Terminal.ipynb"  --ignore-glob="*DatePicker.ipynb"'
 ]
+subprocess-test = "pytest panel --subprocess"
 pyodide-wheels = "python scripts/build_pyodide_wheels.py"
 
 [[envs.pip.matrix]]
@@ -170,6 +172,7 @@ example-test = [
   'pytest panel --docs',
   'pytest -n logical --dist loadscope --nbval-lax examples/reference examples/gallery --ignore-glob="*VTK*.ipynb" --ignore-glob="*Vega.ipynb" --ignore-glob="*DeckGL.ipynb" --ignore-glob="*Terminal.ipynb"  --ignore-glob="*DatePicker.ipynb"'
 ]
+subprocess-test = "pytest panel --subprocess"
 pyodide-wheels = "python scripts/build_pyodide_wheels.py"
 
 [[envs.dev.matrix]]

@@ -352,19 +352,11 @@ textarea.bk-input {
 
 .bk-input:focus option:checked,
 .bk-input:focus option:checked,
-.bk-input option:active {
-  background: var(--accent-fill-hover) -webkit-linear-gradient(bottom, var(
-          --accent-fill-hover
-        )
-        0%, var(--accent-fill-hover) 100%);
-}
-
+.bk-input option:active,
 .bk-input option:hover,
 .bk-input:focus option:hover {
-  background: var(--accent-fill-hover) -webkit-linear-gradient(bottom, var(
-          --accent-fill-hover
-        )
-        0%, var(--accent-fill-hover) 100%);
+  background-color: var(--accent-fill-hover);
+  color: var(--foreground-on-accent-rest);
 }
 
 select:-internal-list-box option:checked {
