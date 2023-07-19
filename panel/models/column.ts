@@ -6,7 +6,19 @@ export class ColumnView extends BkColumnView {
   model: Column;
   scroll_down_arrow_el: HTMLElement;
 
+  connect_signals(): void {
+    super.connect_signals();
+
+    const { children, scroll_button_threshold } = this.model.properties;
+
+    this.on_change(children, () => this.scroll_to_latest());
+    this.on_change(scroll_button_threshold, () => this.toggle_scroll_arrow())
+  }
+
   scroll_to_latest(): void {
+    if (!this.model.auto_scroll)
+      return
+
     // Waits for the child to be rendered before scrolling
     requestAnimationFrame(() => {
       this.el.scrollTop = this.el.scrollHeight;
@@ -14,29 +26,12 @@ export class ColumnView extends BkColumnView {
   }
 
   toggle_scroll_arrow(): void {
-    const scrollThreshold = this.model.properties.scroll_button_threshold;
-
+    const threshold = this.model.scroll_button_threshold
     const scrollDistanceFromBottom = this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight;
+    console.log(scrollDistanceFromBottom, (threshold !== 0) && (scrollDistanceFromBottom >= threshold))
     this.scroll_down_arrow_el.classList.toggle(
-      "visible", scrollDistanceFromBottom >= scrollThreshold.get_value()
+      "visible", (threshold !== 0) && (scrollDistanceFromBottom >= threshold)
     )
-  }
-
-  connect_signals(): void {
-    super.connect_signals();
-
-    const { auto_scroll, scroll_button_threshold } = this.model.properties;
-
-    if (auto_scroll) {
-      this.on_change(this.model.properties.children, () => {
-        this.scroll_to_latest();
-      });
-    }
-    if (scroll_button_threshold.get_value() > 0) {
-      this.on_change(scroll_button_threshold, () => {
-        this.toggle_scroll_arrow();
-      });
-    }
   }
 
   render(): void {
@@ -48,22 +43,17 @@ export class ColumnView extends BkColumnView {
     this._apply_visible()
 
     this.class_list.add(...this.css_classes())
+    this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-button' });
+    this.shadow_el.appendChild(this.scroll_down_arrow_el);
 
-    const scrollThreshold = this.model.properties.scroll_button_threshold;
-    if (scrollThreshold.get_value() > 0) {
-      this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-button' });
-      this.shadow_el.appendChild(this.scroll_down_arrow_el);
+    this.el.addEventListener("scroll", () => {
+      this.toggle_scroll_arrow();
+    });
+    this.scroll_down_arrow_el.addEventListener("click", () => {
+      this.scroll_to_latest();
+    });
 
-      this.el.addEventListener("scroll", () => {
-        this.toggle_scroll_arrow();
-      });
-
-      this.scroll_down_arrow_el.addEventListener("click", () => {
-        this.scroll_to_latest();
-      });
-    }
-
-    for (const child_view of this.child_views.slice(1)) {
+    for (const child_view of this.child_views) {
       this.shadow_el.appendChild(child_view.el)
       child_view.render()
       child_view.after_render()

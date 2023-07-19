@@ -10,7 +10,7 @@
   overflow-x: auto;
 }
 
-.scroll-down-arrow {
+.scroll-button {
   /* For location */
   position: sticky;
   top: calc(100% - 35px);
@@ -30,9 +30,7 @@
   z-index: 9999;
   /* For animation */
   opacity: 0;
-  transition:
-    visibility 0s,
-    opacity 0.2s ease-in-out;
+  transition: visibility 0s, opacity 0.2s ease-in-out;
 }
 
 .visible {
@@ -40,6 +38,6 @@
   opacity: 1;
 }
 
-.scroll-down-arrow:before {
+.scroll-button:before {
   content: '⬇';
 }

@@ -794,8 +794,8 @@ class ListPanel(ListLike, Panel):
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         if 'scroll' in params:
-            scroll = params.pop('scroll')
-            css_classes = list(self.css_classes or [])
+            scroll = params['scroll']
+            css_classes = params.get('css_classes', self.css_classes)
             if scroll:
                 if self._direction is not None:
                     css_classes += [f'scrollable-{self._direction}']
@@ -829,8 +829,8 @@ class NamedListPanel(NamedListLike, Panel):
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         if 'scroll' in params:
-            scroll = params.pop('scroll')
-            css_classes = list(self.css_classes or [])
+            scroll = params['scroll']
+            css_classes = params.get('css_classes', self.css_classes)
             if scroll:
                 if self._direction is not None:
                     css_classes += [f'scrollable-{self._direction}']
@@ -887,13 +887,11 @@ class Column(ListPanel):
     """
 
     auto_scroll = param.Boolean(default=False, doc="""
-        Whether to scroll to the latest object on update."""
-    )
+        Whether to scroll to the last object on update.""")
 
-    scroll_button_threshold = param.Number(bounds=(0, None), doc="""
-        Threshold for showing scroll button that scrolls to the latest on click.
-        The button will be hidden if set to 0."""
-    )
+    scroll_button_threshold = param.Integer(bounds=(0, None), doc="""
+        Threshold for showing button that scrolls to the bottom on click.
+        The button will be hidden if set to 0.""")
 
     _bokeh_model: ClassVar[Type[Model]] = PnColumn
 
