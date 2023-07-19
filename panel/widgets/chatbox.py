@@ -207,9 +207,27 @@ class ChatRow(CompositeWidget):
         else:
             event.obj.name = "♡"
 
-class TemporaryMessage(param.Parameterized):
-    name = param.String(constant=True)
-    value = param.Parameter()
+class ChatResponse(param.Parameterized):
+    """A Context Manager exposed by the ChatBox.respond method. This context manager makes it easy and safe to
+    temporarily indicate activity, stream tokens, display AI thinking, planning etc., stream tokes
+    etc.
+
+    When entered
+
+    - The ChatBox is disabled
+    - A temporary ChatRow is added to the ChatBox log. The ChatRow bubble displays the name and
+    value.
+    """
+    name = param.String(doc="The name of the user/ role", constant=True)
+    value = param.Parameter(doc="""The value to display in the temporary ChatRow bubble. If final
+    is not set, this value will be used to create the message appended to ChatBox.value""")
+    # Enable the user to specify both the value and additional meta data
+    # The user could also set the final value in the value parameter. But it could trigger
+    # a huge communication from server to frontend.
+    # If param has a method to update the value without triggering events I think that would be
+    # better to use.
+    final = param.Parameter(doc="""If set, this value will be appended as the resulting message to
+    ChatBox.value""")
 
     _chat_box: 'ChatBox' = param.Parameter()
     _chat_row: ChatRow = param.ClassSelector(default=None, class_=ChatRow)
@@ -229,8 +247,12 @@ class TemporaryMessage(param.Parameterized):
 
     def _finalize(self):
         self._chat_box._chat_log.pop(-1)
-        if self.value:
-            self._chat_box.append({self.name: self.value})
+        if self.final:
+            final = self.final
+        else:
+            final = self.value
+        if final:
+            self._chat_box.append({self.name: final})
 
 class ChatBox(CompositeWidget):
     """
@@ -651,7 +673,7 @@ class ChatBox(CompositeWidget):
             value = LoadingSpinner(value=True, height=25, color="success")
         try:
             self.disabled=True
-            message = TemporaryMessage(chat_box=self, user=user, value=value)
+            message = ChatResponse(chat_box=self, user=user, value=value)
             yield message
         except Exception as e:
             if raise_exception:
