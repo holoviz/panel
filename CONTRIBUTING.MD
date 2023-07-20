@@ -4,6 +4,7 @@
 
 You can contribute in many ways, for example, by
 
+- Giving our project a ⭐ on [Github](https://github.com/holoviz/panel).
 - Sharing knowledge about Panel on social media.
 - Writing blog posts or creating videos.
 - Sharing knowledge about Panel at conferences and other events.
