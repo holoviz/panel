@@ -39,6 +39,7 @@ def stream_response(prompt):
 
 def test_can_provide_response():
     """The user can quickly add a new response"""
+    # Given
     chat_box = ChatBox()
     prompt = "What is 2+2"
     # When: this is our recommended best practices
@@ -67,7 +68,7 @@ def test_can_get_and_use_single_message(messages):
 
 def test_can_respond_to_primary_user_input():
     """The AI can be called and return a response when ever the user enters a new prompt"""
-    # Give
+    # Given
     chat_box = ChatBox()
 
     # When: this is our best practice implementation
@@ -99,6 +100,7 @@ def test_can_respond_to_primary_user_input():
 
 def test_can_disable_chatbox_while_providing_slow_response():
     """The ChatBox can easily be disabled while a slow response is generated"""
+    # Given
     chat_box = ChatBox()
     prompt = "What is 2+2?"
 
@@ -112,6 +114,7 @@ def test_can_disable_chatbox_while_providing_slow_response():
     assert not chat_box.disabled
 
 def test_can_provide_custom_spinner_while_providing_slow_response():
+    # Given
     chat_box = ChatBox()
     prompt = "What is 2+2?"
     indicator = LoadingSpinner(value=True, height=25, color="success")
@@ -190,6 +193,59 @@ def test_can_stream_tokens():
     # Its important add the text message and not view
     # because we need the text value to give the AI context for the next task
     assert chat_box.value == [{"Assistant": message.final}]
+
+def test_can_undo():
+    # Given
+    chat_box = ChatBox()
+    # When: this is our recommended best practices
+    def undo(event):
+        if len(chat_box)>=2:
+            chat_box.value=chat_box.value[:-2]
+
+    undo_button = pn.widgets.Button(name="Undo", on_click=undo)
+
+    chat_box.append({"User": "What is 2+2?"})
+    chat_box.append({"Assistant": "4"})
+    undo_button.param.trigger("clicks")
+
+    # Then
+    assert len(chat_box)==0
+
+def test_can_retry():
+    """We can retry a prompt"""
+    # Given
+    chat_box = ChatBox()
+    # When: this is our recommended best practices
+    def retry(event):
+        if len(chat_box)>=2:
+            chat_box.value=chat_box.value[:-1]
+
+    undo_button = pn.widgets.Button(name="Retry", on_click=retry)
+
+    chat_box.append({"User": "What is 2+2?"})
+    chat_box.append({"Assistant": "4"})
+    undo_button.param.trigger("clicks")
+
+    # Then
+    assert len(chat_box)==1
+
+def test_can_clear():
+    """We can clear the ChatBox"""
+    # Given
+    chat_box = ChatBox()
+    # When: this is our recommended best practices
+    def clear(event):
+        if len(chat_box)>0:
+            chat_box.value=[]
+
+    undo_button = pn.widgets.Button(name="Clear", on_click=clear)
+
+    chat_box.append({"User": "What is 2+2?"})
+    chat_box.append({"Assistant": "4"})
+    undo_button.param.trigger("clicks")
+
+    # Then
+    assert len(chat_box)==0
 
 def test_can_create_chat_interface_in_one_line_of_code():
     """This is what Gradio offers
