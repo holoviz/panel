@@ -21,7 +21,8 @@ post-install-commands = [
   "panel bundle --all"
 ]
 [envs.test.scripts]
-run-coverage = "pytest panel --cov=./panel --cov-report=xml -n logical --dist loadgroup"
+# run-coverage = "pytest panel --cov=./panel --cov-report=xml -n logical --dist loadgroup"
+run-coverage = "pytest panel --cov=./panel --cov-report=xml -n logical --dist no"
 run = "run-coverage --no-cov"
 run-examples = [
   'pytest panel --docs',
