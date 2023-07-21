@@ -426,7 +426,6 @@ export class DataTabulatorView extends HTMLBoxView {
 
     let configuration = this.getConfiguration()
     this.tabulator = new Tabulator(el, configuration)
-    console.log(el, this.tabulator)
     this.watch_stylesheets()
     this.init_callbacks()
   }
@@ -606,17 +605,19 @@ export class DataTabulatorView extends HTMLBoxView {
         if (this.model.children.has(idx))
           children.push(this.model.children.get(idx))
       }
-      await build_views(this._child_views, children, {parent: (null as any)})
+      await build_views(this._child_views, children, {parent: this})
       resolve(null)
     }).then(() => {
       for (const r of this.model.expanded) {
         const row = this.tabulator.getRow(r)
-        this._render_row(row)
+        this._render_row(row, false)
       }
+      this.tabulator.rowManager.adjustTableSize()
+      this.invalidate_layout()
     })
   }
 
-  _render_row(row: any): void {
+  _render_row(row: any, resize: boolean = true): void {
     const index = row._row?.data._index
     if (!this.model.expanded.includes(index) || !this.model.children.has(index))
       return
@@ -626,21 +627,17 @@ export class DataTabulatorView extends HTMLBoxView {
       return
     (view as any)._parent = this
     const rowEl = row.getElement()
-    let viewEl = rowEl.children[rowEl.children.length-1]
-    if (viewEl.className === 'bk') {
-      if (viewEl.children.length)
-        return
-    } else {
-      viewEl = null
-    }
-    if (viewEl == null) {
-      const style = getComputedStyle(this.tabulator.element.children[1].children[0])
-      const bg = style.backgroundColor
-      const neg_margin = "-" + rowEl.style.paddingLeft
-      viewEl = div({style: "background-color: " + bg +"; margin-left:" + neg_margin})
-    }
+    const style = getComputedStyle(this.tabulator.element.children[1].children[0])
+    const bg = style.backgroundColor
+    const neg_margin = "-" + rowEl.style.paddingLeft;
+    const viewEl = div({style: "background-color: " + bg +"; margin-left:" + neg_margin + "; max-width: 100%; overflow-x: hidden;"})
+    viewEl.appendChild(view.el)
     rowEl.appendChild(viewEl)
-    view.render_to(viewEl)
+    view.render()
+    if (resize) {
+      this.tabulator.rowManager.adjustTableSize()
+      this.invalidate_layout()
+    }
   }
 
   _expand_render(cell: any): string {
@@ -978,7 +975,6 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   setPage(): void {
-    console.log(Math.min(this.model.max_page, this.model.page))
     this.tabulator.setPage(Math.min(this.model.max_page, this.model.page))
     if (this.model.pagination === "local") {
       this.renderChildren()

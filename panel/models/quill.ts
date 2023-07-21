@@ -47,9 +47,10 @@ export class QuillInputView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    this.container = div({})
+    this.container = div({style: "visibility: hidden;"})
     this.shadow_el.appendChild(this.container)
     const theme = (this.model.mode === 'bubble') ? 'bubble' : 'snow'
+    this.watch_stylesheets()
     this.quill = new (window as any).Quill(this.container, {
       modules: {
         toolbar: this.model.toolbar
@@ -75,6 +76,10 @@ export class QuillInputView extends HTMLBoxView {
       // Update selection and some other properties
       this.quill.selection.update()
     });
+  }
+
+  style_redraw(): void {
+    this.container.style.visibility = 'visible';
   }
 
   after_layout(): void {
