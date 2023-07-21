@@ -52,11 +52,14 @@ def test_column_auto_scroll(page, port):
 
     assert 'scrollable-vertical' in column.get_attribute('class')
 
-    scroll_loc = column.scrollTop
+    scroll_loc = column.evaluate('(el) => el.scrollTop')
     assert scroll_loc == 0
 
     col.append(Spacer(styles=dict(background='yellow'), width=200, height=200))
-    new_scroll_loc = column.scrollTop
+
+    time.sleep(0.5)
+
+    new_scroll_loc = column.evaluate('(el) => el.scrollTop')
     assert new_scroll_loc > scroll_loc
 
 
@@ -65,7 +68,7 @@ def test_column_scroll_button_threshold(page, port):
         Spacer(styles=dict(background='red'), width=200, height=200),
         Spacer(styles=dict(background='green'), width=200, height=200),
         Spacer(styles=dict(background='blue'), width=200, height=200),
-        scroll_button_threshold=0.5, height=420
+        scroll_button_threshold=10, height=420
     )
 
     serve(col, port=port, threaded=True, show=False)
@@ -83,7 +86,10 @@ def test_column_scroll_button_threshold(page, port):
     assert 'scrollable-vertical' in column.get_attribute('class')
 
     # trigger scroll event
-    column.scrollTop = 1
+    column.evaluate('(el) => el.scrollTop = 5')
+
+    time.sleep(0.5)
+
     scroll_arrow = page.locator(".scroll-button")
-    assert scroll_arrow.get_attribute('class') == 'scroll-button'
+    assert scroll_arrow.get_attribute('class') == 'scroll-button visible'
     assert scroll_arrow.is_visible()

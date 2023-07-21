@@ -21,7 +21,7 @@ def test_row_scroll(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    row_el = page.locator(".bk-Row").bounding_box()
+    row_el = page.locator(".bk-Row")
     bbox = row_el.bounding_box()
 
     assert bbox['width'] == 420
