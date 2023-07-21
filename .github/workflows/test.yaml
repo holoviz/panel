@@ -70,9 +70,6 @@ jobs:
           miniconda-version: "latest"
           auto-update-conda: true
           auto-activate-base: true
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 16.x
       - name: Set up environment
         run: |
           conda info
@@ -125,9 +122,6 @@ jobs:
           miniconda-version: "latest"
           auto-update-conda: true
           auto-activate-base: true
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 16.x
       - name: Set up environment
         run: |
           pip install --upgrade pip
