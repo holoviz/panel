@@ -426,7 +426,6 @@ export class DataTabulatorView extends HTMLBoxView {
 
     let configuration = this.getConfiguration()
     this.tabulator = new Tabulator(el, configuration)
-    console.log(el, this.tabulator)
     this.watch_stylesheets()
     this.init_callbacks()
   }
@@ -618,7 +617,7 @@ export class DataTabulatorView extends HTMLBoxView {
     })
   }
 
-  _render_row(row: any, resize: bool = true): void {
+  _render_row(row: any, resize: boolean = true): void {
     const index = row._row?.data._index
     if (!this.model.expanded.includes(index) || !this.model.children.has(index))
       return
