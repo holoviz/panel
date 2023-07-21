@@ -529,7 +529,6 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         self._models = {}
         self._comms = {}
         self._kernels = {}
-        # TODO - Write docs
         component_name = params.pop('component_name', type(self).__name__)
         super().__init__(**params)
         self.component_name = component_name
@@ -635,6 +634,18 @@ class Renderable(param.Parameterized, MimeRenderMixin):
     def __repr__(self, depth: int = 0) -> str:
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self)))
+
+    @property
+    def component_name(self) -> str:
+        """
+        A user given custom name for this component. Default is the class
+        name of the component e.g. `Row` or `Button`.
+        """
+        return self._component_name
+
+    @component_name.setter
+    def component_name(self, v: str):
+        self._component_name = v
 
     def get_root(
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,

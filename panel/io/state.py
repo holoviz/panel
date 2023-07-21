@@ -218,8 +218,8 @@ class _state(param.Parameterized):
     _active_users = Counter()
 
     # Middlewares
-    _bokeh_event_middlewares: ClassVar[List[BokehEventMiddleware]] = []
-    _property_change_event_middlewares: ClassVar[List[PropertyChangeEventMiddleware]] = []
+    _bokeh_event_middlewares: List[BokehEventMiddleware] = []
+    _property_change_event_middlewares: List[PropertyChangeEventMiddleware] = []
 
     def __repr__(self) -> str:
         server_info = []
@@ -889,13 +889,29 @@ class _state(param.Parameterized):
 
     def add_bokeh_event_middleware(self, middleware: BokehEventMiddleware) -> None:
         """
-        TODO: Write docs
+        Adds a middleware to be triggered during processing of bokeh events.
+        Users should provide their own implementation for BokehEventMiddleware.
+
+        Arguments
+        ---------
+        middleware: BokehEventMiddleware
+          Middleware whose preprocess and postprocess methods will be
+          executed before and after processing of a bokeh event on all
+          Panel components.
         """
         self._bokeh_event_middlewares.append(middleware)
 
     def add_property_change_event_middleware(self, middleware: PropertyChangeEventMiddleware) -> None:
         """
-        TODO: Write docs
+        Adds a middleware to be triggered during processing of property change
+        events. Users should provide their own implementation for PropertyChangeEventMiddleware.
+
+        Arguments
+        ---------
+        middleware: PropertyChangeEventMiddleware
+          Middleware whose preprocess and postprocess methods will be
+          executed before and after processing of property change event(s)
+          on all Panel components.
         """
         self._property_change_event_middlewares.append(middleware)
 
