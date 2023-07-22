@@ -47,7 +47,7 @@ def create_plot(variable="Temperature", window=30, sigma=10):
     )
 ```
 
-We can now call our `find_outliers` function with specific parameters to get a plot with a single set of parameters.
+We can now call our `create_plot` function with specific parameters to get a plot with a single set of parameters.
 
 ```{pyodide}
 create_plot(variable='Temperature', window=20, sigma=10)
@@ -80,7 +80,7 @@ first_app = pn.Column(variable_widget, window_widget, sigma_widget, bound_plot)
 first_app
 ```
 
-As long as you have a live Python process running, dragging these widgets will trigger a call to the `find_outliers` callback function, evaluating it for whatever combination of parameter values you select and displaying the results.
+As long as you have a live Python process running, dragging these widgets will trigger a call to the `create_plot` callback function, evaluating it for whatever combination of parameter values you select and displaying the results.
 
 ## Next Steps
 
