@@ -2,7 +2,7 @@
 
 At this point you should have [set up your environment and installed Panel](installation.md) so you should be ready to get going.
 
-On this page, we're going to be building a basic interactive application based on Numpy, Pandas and hvplot. If you want to implement this app yourself as you follow along, we recommend starting with a Jupyter notebook.
+On this page, we're going to be building a basic interactive application based on Numpy, Pandas and [hvplot](https://hvplot.holoviz.org/). If you want to implement this app yourself as you follow along, we recommend starting with a Jupyter notebook. You can also launch the Notebook with JupyterLite on the right.
 
 ## Fetch the data
 
