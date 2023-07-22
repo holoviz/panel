@@ -8,18 +8,18 @@ The Panel How-to guides provide step by step recipes for solving essential probl
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`device-desktop;2.5em;sd-mr-1 sd-animate-grow50` Develop in a notebook or editor
-:link: display/index
+:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1 sd-animate-grow50` Develop in a notebook
+:link: notebook/index
 :link-type: doc
 
-How to effectively develop apps in your favorite notebook or code editor environment.
+How to effectively develop apps in a notebook environment.
 :::
 
-:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1 sd-animate-grow50` Choose an API
-:link: apis/index
+:::{grid-item-card} {octicon}`file-code;2.5em;sd-mr-1 sd-animate-grow50` Develop in an editor
+:link: editor/index
 :link-type: doc
 
-How to choose from the different APIs offered by Panel.
+How to effectively develop apps in a Python or Markdown file.
 :::
 
 ::::
@@ -51,38 +51,24 @@ How to arrange and size components on the page.
 How to apply designs, themes and custom styling to components to achieve a polished look and feel.
 :::
 
-:::{grid-item-card} {octicon}`infinity;2.5em;sd-mr-1 sd-animate-grow50` Bind widgets to functions (`Reactive API`)
-:link: reactive/index
+:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1 sd-animate-grow50` Add interactivity
+:link: interactivity/index
 :link-type: doc
 
-How to link selected widgets to arguments and make a reactive function.
+How to link add interactivity to your applications using reactive APIs.
 :::
 
-:::{grid-item-card} {octicon}`pulse;2.5em;sd-mr-1 sd-animate-grow50` Autogenerate UIs (`Interact API`)
-:link: interact/index
+:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1 sd-animate-grow50` Apply templates
+:link: templates/index
 :link-type: doc
 
-How to autogenerate UIs for function arguments.
-:::
-
-:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1 sd-animate-grow50` Generate UIs from declared parameters (`Param API`)
-:link: param/index
-:link-type: doc
-
-How to use Parameterized classes with Panel to generate UIs without writing GUI code.
-:::
-
-:::{grid-item-card} {octicon}`link;2.5em;sd-mr-1 sd-animate-grow50` Explicitly link parameters (`Callbacks API`)
-:link: links/index
-:link-type: doc
-
-How to link the parameters of Panel components in Python and Javascript.
+How to use a Template to customize the look and feel of a deployed Panel app.
 :::
 
 ::::
 
 
-## Create specialized UIs
+## Use specialized UIs and APIs
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -99,6 +85,20 @@ How to build a Panel Pipeline that connects multiple panels into a sequential us
 :link-type: doc
 
 How to extend Panel by building custom components.
+:::
+
+:::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1 sd-animate-grow50` Generate UIs from declared parameters (`Declarative API`)
+:link: param/index
+:link-type: doc
+
+How to use Parameterized classes with Panel to generate UIs without writing GUI code.
+:::
+
+:::{grid-item-card} {octicon}`link;2.5em;sd-mr-1 sd-animate-grow50` Explicitly link parameters (`Callbacks API`)
+:link: links/index
+:link-type: doc
+
+How to link the parameters of Panel components in Python and Javascript.
 :::
 
 ::::
@@ -152,13 +152,6 @@ How to set up unit tests, UI tests and load testing to ensure your applications 
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`repo-template;2.5em;sd-mr-1 sd-animate-grow50` Apply templates
-:link: templates/index
-:link-type: doc
-
-How to use a Template to customize the look and feel of a deployed Panel app.
-:::
 
 :::{grid-item-card} {octicon}`hourglass;2.5em;sd-mr-1 sd-animate-grow50` Improve performance
 :link: performance/index
@@ -232,6 +225,26 @@ How to run Panel applications entirely in the browser using WebAssembly (Wasm), 
 
 ::::
 
+## Migrate to Panel
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} Migrate from Streamlit
+:link: streamlit_migration/index
+:link-type: doc
+
+```{image} https://assets.holoviz.org/panel/background/comparisons/streamlit_logo.png
+:width: 125px
+:align: center
+:name: Streamlit
+```
+
+How to migrate existing Streamlit applications to Panel.
+:::
+
+::::
+
 ```{toctree}
 :titlesonly:
 :hidden:
@@ -239,9 +252,10 @@ How to run Panel applications entirely in the browser using WebAssembly (Wasm), 
 
 prepare_to_develop
 build_apps
-create_specialized_uis
+use_specialized_uis
 manage_session_tasks
 test_and_debug
 prepare_to_share
 share_your_work
+migrate_to_panel
 ```

@@ -16,7 +16,10 @@ from typing import (
 
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
-from bokeh.document.events import DocumentChangedEvent, ModelChangedEvent
+from bokeh.document.events import (
+    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
+    DocumentChangedEvent, ModelChangedEvent,
+)
 from bokeh.models import CustomJS
 
 from ..config import config
@@ -29,6 +32,11 @@ logger = logging.getLogger(__name__)
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+DISPATCH_EVENTS = (
+    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
+    ModelChangedEvent
+)
 
 @dataclasses.dataclass
 class Request:
@@ -84,10 +92,10 @@ def _cleanup_doc(doc, destroy=True):
                     p._hooks = []
                     p._param_watchers = {}
                     p._documents = {}
-                    p._callbacks = {}
+                    p._internal_callbacks = {}
             pane._param_watchers = {}
             pane._documents = {}
-            pane._callbacks = {}
+            pane._internal_callbacks = {}
         else:
             views[ref] = (pane, root, doc, comm)
     state._views = views
@@ -110,12 +118,16 @@ def _cleanup_doc(doc, destroy=True):
 # Public API
 #---------------------------------------------------------------------
 
-def init_doc(doc: Optional[Document]) -> Document:
+def create_doc_if_none_exists(doc: Optional[Document]) -> Document:
     curdoc = doc or curdoc_locked()
     if curdoc is None:
         curdoc = Document()
     elif not isinstance(curdoc, Document):
         curdoc = curdoc._doc
+    return curdoc
+
+def init_doc(doc: Optional[Document]) -> Document:
+    curdoc = create_doc_if_none_exists(doc)
     if not curdoc.session_context:
         return curdoc
 
@@ -131,14 +143,6 @@ def init_doc(doc: Optional[Document]) -> Document:
             """)
         )
 
-    # ALERT: Temporary override to ensure layouts are initialized
-    curdoc.js_on_event('document_ready', CustomJS(code="""
-    for (const root of Object.values(Bokeh.index)) {
-      if (root.invalidate_layout) {
-        root.invalidate_layout()
-      }
-    }
-    """))
     session_id = curdoc.session_context.id
     sessions = state.session_info['sessions']
     if session_id not in sessions:
@@ -250,7 +254,7 @@ def unlocked() -> Iterator:
         monkeypatch_events(events)
         remaining_events, dispatch_events = [], []
         for event in events:
-            if isinstance(event, ModelChangedEvent) and not locked:
+            if isinstance(event, DISPATCH_EVENTS) and not locked:
                 dispatch_events.append(event)
             else:
                 remaining_events.append(event)

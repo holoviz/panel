@@ -4,7 +4,6 @@ resources via the panel.config object.
 """
 from __future__ import annotations
 
-import copy
 import importlib
 import json
 import logging
@@ -17,8 +16,11 @@ import textwrap
 from base64 import b64encode
 from collections import OrderedDict
 from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import (
+    TYPE_CHECKING, Dict, List, Literal, TypedDict,
+)
 
 import param
 
@@ -28,7 +30,7 @@ from bokeh.embed.bundle import (
 )
 from bokeh.model import Model
 from bokeh.models import ImportedStyleSheet
-from bokeh.resources import Resources as BkResources
+from bokeh.resources import Resources as BkResources, _get_server_urls
 from bokeh.settings import settings as _settings
 from jinja2.environment import Environment
 from jinja2.loaders import FileSystemLoader
@@ -36,7 +38,17 @@ from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
 from ..util import isurl, url_path
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .state import state
+
+if TYPE_CHECKING:
+    from bokeh.resources import Urls
+
+    class ResourcesType(TypedDict):
+        css: Dict[str, str]
+        js:  Dict[str, str]
+        js_modules: Dict[str, str]
+        raw_css: List[str]
 
 logger = logging.getLogger(__name__)
 
@@ -122,14 +134,7 @@ JS_URLS = {
 
 extension_dirs['panel'] = str(DIST_DIR)
 
-if mimetypes.types_map.get('.js') == 'text/plain':
-    logger.warn(
-        "Mimetype declaration for .js files was set to 'text/plain'. "
-        "This will interefere with serving JS modules. Ensure your system "
-        "does not override the mimetype declaration and/or contact your "
-        "system administrator. "
-    )
-    mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("application/javascript", ".js")
 
 @contextmanager
 def set_resource_mode(mode):
@@ -143,21 +148,37 @@ def set_resource_mode(mode):
         RESOURCE_MODE = old_mode
         _settings.resources.set_value(old_resources)
 
+def use_cdn() -> bool:
+    return _settings.resources(default="server") != 'server'
+
+def get_dist_path(cdn: bool | Literal['auto'] = 'auto') -> str:
+    cdn = use_cdn() if cdn == 'auto' else cdn
+    if cdn:
+        dist_path = CDN_DIST
+    elif state.rel_path:
+        dist_path = f'{state.rel_path}/{LOCAL_DIST}'
+    else:
+        dist_path = f'{LOCAL_DIST}'
+    return dist_path
+
+def is_cdn_url(url) -> bool:
+    return isurl(url) and url.startswith(CDN_DIST)
+
 def process_raw_css(raw_css):
     """
     Converts old-style Bokeh<3 compatible CSS to Bokeh 3 compatible CSS.
     """
     return [BK_PREFIX_RE.sub('.', css) for css in raw_css]
 
-def loading_css():
-    from ..config import config
-    with open(ASSETS_DIR / f'{config.loading_spinner}_spinner.svg', encoding='utf-8') as f:
-        svg = f.read().replace('\n', '').format(color=config.loading_color)
+@lru_cache(maxsize=None)
+def loading_css(loading_spinner, color, max_height):
+    with open(ASSETS_DIR / f'{loading_spinner}_spinner.svg', encoding='utf-8') as f:
+        svg = f.read().replace('\n', '').format(color=color)
     b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return textwrap.dedent(f"""
-    :host(.pn-loading).{config.loading_spinner}:before, .pn-loading.{config.loading_spinner}:before {{
+    :host(.{LOADING_INDICATOR_CSS_CLASS}.pn-{loading_spinner}):before, .pn-loading.pn-{loading_spinner}:before {{
       background-image: url("data:image/svg+xml;base64,{b64}");
-      background-size: auto calc(min(50%, {config.loading_max_height}px));
+      background-size: auto calc(min(50%, {max_height}px));
     }}""")
 
 def resolve_custom_path(
@@ -250,7 +271,7 @@ def resolve_stylesheet(cls, stylesheet: str, attribute: str | None = None):
         if not state._is_pyodide and state.curdoc and state.curdoc.session_context:
             stylesheet = component_resource_path(cls, attribute, stylesheet)
         else:
-            stylesheet = custom_path.read_text('utf-8')
+            stylesheet = custom_path.read_text(encoding='utf-8')
     return stylesheet
 
 def patch_model_css(root, dist_url):
@@ -297,7 +318,7 @@ def bundled_files(model, file_type='javascript'):
         if url in shared:
             prefixed = filepath
             test_path = BUNDLE_DIR / test_filepath
-        elif not test_filepath.startswith(name):
+        elif not test_filepath.replace('/', '').startswith(f'{name}/'):
             prefixed = f'{name}/{test_filepath}'
             test_path = bdir / test_filepath
         else:
@@ -314,7 +335,7 @@ def bundled_files(model, file_type='javascript'):
             files.append(url)
     return files
 
-def bundle_resources(roots, resources, notebook=False):
+def bundle_resources(roots, resources, notebook=False, reloading=False, enable_mathjax='auto'):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
     if not isinstance(resources, Resources):
@@ -327,17 +348,19 @@ def bundle_resources(roots, resources, notebook=False):
     css_files = []
     css_raw = []
 
-    use_mathjax = (_use_mathjax(roots) or 'mathjax' in ext._loaded_extensions) if roots else True
+    if isinstance(enable_mathjax, bool):
+        use_mathjax = enable_mathjax
+    elif roots:
+        use_mathjax = _use_mathjax(roots) or 'mathjax' in ext._loaded_extensions
+    else:
+        use_mathjax = False
 
     if js_resources:
-        if hasattr(resources, 'clone'):
-            js_resources = js_resources.clone()
-            if not use_mathjax and "bokeh-mathjax" in js_resources.components:
-                js_resources.components.remove("bokeh-mathjax")
-        else:
-            js_resources = copy.deepcopy(js_resources)
-            if not use_mathjax and "bokeh-mathjax" in js_resources.js_components:
-                js_resources.js_components.remove("bokeh-mathjax")
+        js_resources = js_resources.clone()
+        if not use_mathjax and "bokeh-mathjax" in js_resources.components:
+            js_resources.components.remove("bokeh-mathjax")
+        if reloading:
+            js_resources.components.clear()
 
         js_files.extend(js_resources.js_files)
         js_raw.extend(js_resources.js_raw)
@@ -346,11 +369,19 @@ def bundle_resources(roots, resources, notebook=False):
     css_raw.extend(css_resources.css_raw)
 
     extensions = _bundle_extensions(None, js_resources)
+    if reloading:
+        extensions = [
+            ext for ext in extensions if not ext.cdn_url.startswith('https://unpkg.com/@holoviz/panel@')
+        ]
     extra_js = []
     if mode == "inline":
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
     elif mode == "server":
-        js_files.extend([ bundle.server_url for bundle in extensions ])
+        for bundle in extensions:
+            server_url = bundle.server_url
+            if resources.root_url and not resources.absolute:
+                server_url = server_url.replace(resources.root_url, '', 1)
+            js_files.append(server_url)
     elif mode == "cdn":
         for bundle in extensions:
             if bundle.cdn_url is not None:
@@ -367,19 +398,121 @@ def bundle_resources(roots, resources, notebook=False):
 
     hashes = js_resources.hashes if js_resources else {}
     return Bundle(
-        css_files=css_files, css_raw=css_raw, hashes=hashes,
-        js_files=js_files, js_raw=js_raw,
+        css_files=css_files,
+        css_raw=css_raw,
+        hashes=hashes,
+        js_files=js_files,
+        js_raw=js_raw,
         js_module_exports=resources.js_module_exports,
-        js_modules=resources.js_modules, notebook=notebook,
+        js_modules=resources.js_modules,
+        notebook=notebook,
     )
+
+
+class ResourceComponent:
+    """
+    Mix-in class for components that define a set of resources
+    that have to be resolved.
+    """
+
+    _resources = {
+        'css': {},
+        'font': {},
+        'js': {},
+        'js_modules': {},
+        'raw_css': [],
+    }
+
+    @classmethod
+    def _resolve_resource(cls, resource_type: str, resource: str, cdn: bool = False):
+        dist_path = get_dist_path(cdn=cdn)
+        if resource.startswith(CDN_DIST):
+            resource_path = resource.replace(f'{CDN_DIST}bundled/', '')
+        elif resource.startswith(config.npm_cdn):
+            resource_path = resource.replace(config.npm_cdn, '')[1:]
+        elif resource.startswith('http:'):
+            resource_path = url_path(resource)
+        else:
+            resource_path = resource
+
+        if resource_type == 'js_modules' and not (state.rel_path or cdn):
+            prefixed_dist = f'./{dist_path}'
+        else:
+            prefixed_dist = dist_path
+
+        bundlepath = BUNDLE_DIR / resource_path.replace('/', os.path.sep)
+        # Windows may trigger OSError: [WinError 123]
+        try:
+            is_file = bundlepath.is_file()
+        except Exception:
+            is_file = False
+        if is_file:
+            return f'{prefixed_dist}bundled/{resource_path}'
+        elif isurl(resource):
+            return resource
+        elif resolve_custom_path(cls, resource):
+            return component_resource_path(
+                cls, f'_resources/{resource_type}', resource
+            )
+
+    def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourcesType:
+        """
+        Resolves the resources required for this component.
+
+        Arguments
+        ---------
+        cdn: bool | Literal['auto']
+            Whether to load resources from CDN or local server. If set
+            to 'auto' value will be automatically determine based on
+            global settings.
+
+        Returns
+        -------
+        Dictionary containing JS and CSS resources.
+        """
+        cls = type(self)
+        resources = {}
+        for rt, res in self._resources.items():
+            if not isinstance(res, dict):
+                continue
+            if rt == 'font':
+                rt = 'css'
+            res = {
+                name: url if isurl(url) else f'{cls.__name__.lower()}/{url}'
+                for name, url in res.items()
+            }
+            if rt in resources:
+                resources[rt] = dict(resources[rt], **res)
+            else:
+                resources[rt] = res
+
+        cdn = use_cdn() if cdn == 'auto' else cdn
+        resource_types: ResourcesType = {
+            'js': {},
+            'js_modules': {},
+            'css': {},
+            'raw_css': []
+        }
+
+        for resource_type in resource_types:
+            if resource_type not in resources or resource_type == 'raw_css':
+                continue
+            resource_files = resource_types[resource_type]
+            for rname, resource in resources[resource_type].items():
+                resolved_resource = self._resolve_resource(
+                    resource_type, resource, cdn=cdn
+                )
+                if resolved_resource:
+                    resource_files[rname] = resolved_resource
+        return resource_types
 
 
 class Resources(BkResources):
 
     def __init__(self, *args, absolute=False, notebook=False, **kwargs):
-        super().__init__(*args, **kwargs)
         self.absolute = absolute
         self.notebook = notebook
+        super().__init__(*args, **kwargs)
 
     @classmethod
     def from_bokeh(cls, bkr, absolute=False, notebook=False):
@@ -423,6 +556,13 @@ class Resources(BkResources):
 
         return external_resources
 
+    def _server_urls(self) -> Urls:
+        return _get_server_urls(
+            self.root_url if self.absolute else '',
+            False if self.dev else self.minified,
+            self.path_versioner
+        )
+
     def extra_resources(self, resources, resource_type):
         """
         Adds resources for ReactiveHTML components.
@@ -447,13 +587,9 @@ class Resources(BkResources):
             resource = resource.replace('https://unpkg.com', config.npm_cdn)
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
-            if self.mode == 'server' and self.notebook:
-                resource = resource.replace(self.root_url, '').replace(CDN_DIST, '')
-                if resource.startswith('static/'):
-                    resource = f'/panel-preview/{resource}'
-                else:
-                    resource = f'/panel-preview/static/extensions/panel/{resource}'
-            elif (resource.startswith(state.base_url) or resource.startswith('static/')):
+            if self.mode == 'server':
+                resource = resource.replace(CDN_DIST, LOCAL_DIST)
+            if (resource.startswith(state.base_url) or resource.startswith('static/')):
                 if resource.startswith(state.base_url):
                     resource = resource[len(state.base_url):]
                 if state.rel_path:
@@ -462,6 +598,25 @@ class Resources(BkResources):
                     resource = f'{self.root_url}{resource}'
             new_resources.append(resource)
         return new_resources
+
+    def clone(self, *, components=None) -> Resources:
+        """
+        Make a clone of a resources instance allowing to override its components.
+        """
+        return Resources(
+            mode=self.mode,
+            version=self.version,
+            root_dir=self.root_dir,
+            dev=self.dev,
+            minified=self.minified,
+            log_level=self.log_level,
+            root_url=self._root_url,
+            path_versioner=self.path_versioner,
+            components=components if components is not None else list(self.components),
+            base_dir=self.base_dir,
+            notebook=self.notebook,
+            absolute=self.absolute
+        )
 
     @property
     def dist_dir(self):
@@ -479,33 +634,69 @@ class Resources(BkResources):
         return dist_dir
 
     @property
+    def css_files(self):
+        from ..config import config
+
+        files = super(Resources, self).css_files
+        self.extra_resources(files, '__css__')
+        css_files = self.adjust_paths([
+            css for css in files if self.mode != 'inline' or not is_cdn_url(css)
+        ])
+        if config.design:
+            css_files += list(config.design._resources.get('font', {}).values())
+        for cssf in config.css_files:
+            if os.path.isfile(cssf) or cssf in files:
+                continue
+            css_files.append(cssf)
+        return css_files
+
+    @property
     def css_raw(self):
         from ..config import config
         raw = super(Resources, self).css_raw
+
+        # Inline local dist resources
+        css_files = self._collect_external_resources("__css__")
+        self.extra_resources(css_files, '__css__')
+        raw += [
+            (DIST_DIR / css.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+            for css in css_files if is_cdn_url(css)
+        ]
+
+        # Add local CSS files
         for cssf in config.css_files:
             if not os.path.isfile(cssf):
                 continue
-            with open(cssf, encoding='utf-8') as f:
-                css_txt = f.read()
-                if css_txt not in raw:
-                    raw.append(css_txt)
+            css_txt = process_raw_css([Path(cssf).read_text(encoding='utf-8')])[0]
+            if css_txt not in raw:
+                raw.append(css_txt)
+
+        # Add loading spinner
         if config.global_loading_spinner:
-            loading_base = (DIST_DIR / "css" / "loading.css").read_text()
-            raw.extend([loading_base, loading_css()])
-        return raw + process_raw_css(config.raw_css)
+            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
+            raw.extend([loading_base, loading_css(
+                config.loading_spinner, config.loading_color, config.loading_max_height
+            )])
+        return raw + process_raw_css(config.raw_css) + process_raw_css(config.global_css)
 
     @property
     def js_files(self):
         from ..config import config
 
+        # Gather JS files
         files = super(Resources, self).js_files
         self.extra_resources(files, '__javascript__')
-
-        files += list(config.js_files.values())
+        files += [js for js in config.js_files.values()]
         if config.design:
-            files += list(config.design._resources.get('js', {}).values())
+            design_js = config.design().resolve_resources(
+                cdn=self.notebook or 'auto', include_theme=False
+            )['js'].values()
+            files += [res for res in design_js if res not in files]
 
-        js_files = self.adjust_paths(files)
+        # Filter and adjust JS file urls
+        js_files = self.adjust_paths([
+            js for js in files if self.mode != 'inline' or not is_cdn_url(js)
+        ])
 
         # Load requirejs last to avoid interfering with other libraries
         dist_dir = self.dist_dir
@@ -517,7 +708,6 @@ class Resources(BkResources):
             js_files.append(requirejs)
             if any('ace' in jsf for jsf in js_files):
                 js_files.append(dist_dir + 'post_require.js')
-
         return js_files
 
     @property
@@ -527,14 +717,14 @@ class Resources(BkResources):
 
         modules = list(config.js_modules.values())
         self.extra_resources(modules, '__javascript_modules__')
-
         if config.design:
-            design_name = config.design.__name__.lower()
-            for resource in config.design._resources.get('js_modules', {}).values():
-                if not isurl(resource):
-                    resource = f'{CDN_DIST}bundled/{design_name}/{resource}'
-                if resource not in modules:
-                    modules.append(resource)
+            design_resources = config.design().resolve_resources(
+                cdn=self.notebook or 'auto', include_theme=False
+            )
+            modules += [
+                res for res in design_resources['js_modules'].values()
+                if res not in modules
+            ]
 
         for model in param.concrete_descendents(ReactiveHTML).values():
             if not (getattr(model, '__javascript_modules__', None) and model._loaded()):
@@ -556,20 +746,36 @@ class Resources(BkResources):
         return modules
 
     @property
-    def css_files(self):
+    def js_raw(self):
+        raw_js = super(Resources, self).js_raw
+        if not self.mode == 'inline':
+            return raw_js
+
+        # Inline local dist resources
+        js_files = self._collect_external_resources("__javascript__")
+        self.extra_resources(js_files, '__javascript__')
+        raw_js += [
+            (DIST_DIR / js.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+            for js in js_files if is_cdn_url(js)
+        ]
+
+        # Inline config.js_files
         from ..config import config
+        raw_js += [
+            Path(js).read_text(encoding='utf-8') for js in config.js_files.values()
+            if os.path.isfile(js)
+        ]
 
-        files = super(Resources, self).css_files
-        self.extra_resources(files, '__css__')
-        css_files = self.adjust_paths(files)
+        # Inline config.design JS resources
         if config.design:
-            css_files += list(config.design._resources.get('font', {}).values())
-
-        for cssf in config.css_files:
-            if os.path.isfile(cssf) or cssf in files:
-                continue
-            css_files.append(cssf)
-        return css_files
+            design_js = config.design().resolve_resources(
+                cdn=True, include_theme=False
+            )['js'].values()
+            raw_js += [
+                (DIST_DIR / js.replace(CDN_DIST, '')).read_text(encoding='utf-8')
+                for js in design_js if is_cdn_url(js)
+            ]
+        return raw_js
 
     @property
     def render_js(self):

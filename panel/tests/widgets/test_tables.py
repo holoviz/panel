@@ -1375,6 +1375,21 @@ def test_tabulator_constant_list_filter_client_side(document, comm):
     }, index=[2, 4])
     pd.testing.assert_frame_equal(table._processed, expected)
 
+def test_tabulator_constant_single_element_list_filter_client_side(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    table.filters = [{'field': 'C', 'type': 'in', 'value': ['foo3']}]
+
+    expected = pd.DataFrame({
+        'A': np.array([2.]),
+        'B': np.array([0.]),
+        'C': np.array(['foo3']),
+        'D': np.array(['2009-01-05T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }, index=[2])
+    pd.testing.assert_frame_equal(table._processed, expected)
+
 def test_tabulator_keywords_filter_client_side(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
@@ -1586,7 +1601,7 @@ def test_tabulator_widget_scalar_filter(document, comm):
 def test_tabulator_constant_list_filter(document, comm, col):
     df = makeMixedDataFrame()
     # The mixed dataframe has duplicate number values in the B columns,
-    # simplify the test by setting the targetted valued before filtering.
+    # simplify the test by setting the targeted valued before filtering.
     df.at[2, 'B'] = 10.0
     df.at[4, 'B'] = 20.0
     table = Tabulator(df)
@@ -1957,10 +1972,9 @@ def test_tabulator_formatter_update(dataframe, document, comm):
     model_formatter = model.columns[2].formatter
     assert model_formatter.format == formatter.format
 
-def test_tabulator_pandas_import():
+def test_tabulator_hidden_columns_fix():
     # Checks for: https://github.com/holoviz/panel/issues/4102
-    _tabulator = Tabulator(
-        pd.DataFrame(),
-        show_index=False,
-    )
-    _tabulator.hidden_columns = ["a", "b", "c"]
+    #             https://github.com/holoviz/panel/issues/5209
+    table = Tabulator(pd.DataFrame(), show_index=False)
+    table.hidden_columns = ["a", "b", "c"]
+    assert table.hidden_columns == ["a", "b", "c"]

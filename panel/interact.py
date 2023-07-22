@@ -45,7 +45,7 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
         if name in kwargs:
             value = kwargs.pop(name)
         elif ann is not empty:
-            param.main.warning("Using function annotations to implicitly specify interactive controls is deprecated. "
+            param.main.param.warning("Using function annotations to implicitly specify interactive controls is deprecated. "
                                "Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
             value = ann
         elif default is not empty:
@@ -170,7 +170,7 @@ class interactive(PaneBase):
 
             pname = 'clicks' if name == 'manual' else v
             watcher = widget_obj.param.watch(update_pane, pname)
-            self._callbacks.append(watcher)
+            self._internal_callbacks.append(watcher)
 
     def _cleanup(self, root: Model | None = None) -> None:
         self._inner_layout._cleanup(root)

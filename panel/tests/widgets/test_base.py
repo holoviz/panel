@@ -6,14 +6,14 @@ from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.tests.util import check_layoutable_properties
 from panel.widgets import (
-    CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge, Terminal,
-    TextInput, ToggleGroup, Tqdm, Widget,
+    Ace, CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge,
+    LoadingSpinner, Terminal, TextInput, ToggleGroup, Tqdm, Widget,
 )
 from panel.widgets.tables import BaseTable
 
 excluded = (
-    BaseTable, CompositeWidget, Dial, FileDownload, LinearGauge,
-    ToggleGroup, Terminal, Tqdm
+    Ace, BaseTable, CompositeWidget, Dial, FileDownload, LinearGauge,
+    LoadingSpinner, ToggleGroup, Terminal, Tqdm
 )
 
 all_widgets = [
@@ -38,7 +38,7 @@ def test_widget_untracked_watchers(widget, document, comm):
         w for pwatchers in widg._param_watchers.values()
         for awatchers in pwatchers.values() for w in awatchers
     ]
-    assert len([wfn for wfn in watchers if wfn not in widg._callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0
+    assert len([wfn for wfn in watchers if wfn not in widg._internal_callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0
 
 @pytest.mark.parametrize('widget', all_widgets)
 def test_widget_linkable_params(widget, document, comm):

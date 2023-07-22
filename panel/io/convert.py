@@ -25,6 +25,7 @@ from typing_extensions import Literal
 
 from .. import __version__, config
 from ..util import base_version, escape
+from .loading import LOADING_INDICATOR_CSS_CLASS
 from .markdown import build_single_handler_application
 from .mime_render import find_imports
 from .resources import (
@@ -45,10 +46,12 @@ PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "
 BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
-PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.22.1/full/pyodide.js'
+PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js'
 PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/releases/2022.12.1/pyscript.css" />'
 PYSCRIPT_JS = '<script defer src="https://pyscript.net/releases/2022.12.1/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
+
+MINIMUM_VERSIONS = {}
 
 ICON_DIR = DIST_DIR / 'images'
 PWA_IMAGES = [
@@ -148,7 +151,7 @@ def make_index(files, title=None, manifest=True):
     items = {label: './'+os.path.basename(f) for label, f in sorted(files.items())}
     return INDEX_TEMPLATE.render(
         items=items, manifest=manifest, apple_icon=apple_icon,
-        favicon=favicon, title=title, npm_cdn=config.npm_cdn
+        favicon=favicon, title=title, PANEL_CDN=CDN_DIST
     )
 
 def build_pwa_manifest(files, title=None, **kwargs):
@@ -205,10 +208,11 @@ def script_to_html(
     # Run script
     if hasattr(filename, 'read'):
         handler = CodeHandler(source=filename.read(), filename='convert.py')
+        app_name = f'app-{str(uuid.uuid4())}'
         app = Application(handler)
     else:
         path = pathlib.Path(filename)
-        name = '.'.join(path.name.split('.')[:-1])
+        app_name = '.'.join(path.name.split('.')[:-1])
         app = build_single_handler_application(str(path.absolute()))
     document = Document()
     document._session_context = lambda: MockSessionContext(document=document)
@@ -227,7 +231,7 @@ def script_to_html(
     if requirements == 'auto':
         requirements = find_imports(source)
     elif isinstance(requirements, str) and pathlib.Path(requirements).is_file():
-        requirements = pathlib.Path(requirements).read_text().split('/n')
+        requirements = pathlib.Path(requirements).read_text(encoding='utf-8').split('/n')
         try:
             from packaging.requirements import Requirement
             requirements = [
@@ -251,10 +255,13 @@ def script_to_html(
         bokeh_req = f'bokeh=={BOKEH_VERSION}'
     base_reqs = [bokeh_req, panel_req]
     if http_patch:
-        base_reqs.append('pyodide-http==0.1.0')
+        base_reqs.append('pyodide-http==0.2.1')
     reqs = base_reqs + [
         req for req in requirements if req not in ('panel', 'bokeh')
     ]
+    for name, min_version in MINIMUM_VERSIONS.items():
+        if any(name in req for req in reqs):
+            reqs = [f'{name}>={min_version}' if name in req else req for req in reqs]
 
     # Execution
     post_code = POST_PYSCRIPT if runtime == 'pyscript' else POST
@@ -279,7 +286,7 @@ def script_to_html(
             if js_resources == 'auto':
                 js_resources = []
             worker_handler = WORKER_HANDLER_TEMPLATE.render({
-                'name': name,
+                'name': app_name,
                 'loading_spinner': config.loading_spinner
             })
             web_worker = WEB_WORKER_TEMPLATE.render({
@@ -314,15 +321,17 @@ def script_to_html(
 
     # Collect resources
     resources = Resources(mode='inline' if inline else 'cdn')
-    loading_base = (DIST_DIR / "css" / "loading.css").read_text()
-    spinner_css = loading_css()
+    loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8')
+    spinner_css = loading_css(
+        config.loading_spinner, config.loading_color, config.loading_max_height
+    )
     css_resources.append(
         f'<style type="text/css">\n{loading_base}\n{spinner_css}\n</style>'
     )
     with set_curdoc(document):
         bokeh_js, bokeh_css = bundle_resources(document.roots, resources)
     extra_js = [INIT_SERVICE_WORKER, bokeh_js] if manifest else [bokeh_js]
-    bokeh_js = '\n'.join(extra_js+js_resources)
+    bokeh_js = '\n'.join(js_resources+extra_js)
     bokeh_css = '\n'.join([bokeh_css]+css_resources)
 
     # Configure template
@@ -350,7 +359,7 @@ def script_to_html(
         template = get_env().from_string("{% extends base %}\n" + template)
     html = template.render(context)
     html = (html
-        .replace('<body>', f'<body class="pn-loading {config.loading_spinner}">')
+        .replace('<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">')
     )
     return html, web_worker
 
@@ -402,6 +411,7 @@ def _convert_process_pool(
     apps: List[str],
     dest_path: str | None = None,
     max_workers: int = 4,
+    requirements: List[str] | Literal['auto'] | os.PathLike = 'auto',
     **kwargs
 ):
     import multiprocessing as mp
@@ -416,7 +426,13 @@ def _convert_process_pool(
         ) as executor:
             futures = []
             for app in group:
-                f = executor.submit(convert_app, app, dest_path, **kwargs)
+                if isinstance(requirements, dict):
+                    app_requires = requirements.get(app, 'auto')
+                else:
+                    app_requires = requirements
+                f = executor.submit(
+                    convert_app, app, dest_path, requirements=app_requires, **kwargs
+                )
                 futures.append(f)
             for future in concurrent.futures.as_completed(futures):
                 result = future.result()
@@ -453,7 +469,7 @@ def convert_apps(
         name for the application cache to ensure.
     runtime: 'pyodide' | 'pyscript' | 'pyodide-worker'
         The runtime to use for running Python in the browser.
-    requirements: 'auto' | List[str] | os.PathLike
+    requirements: 'auto' | List[str] | os.PathLike | Dict[str, 'auto' | List[str] | os.PathLike]
         The list of requirements to include (in addition to Panel).
         By default automatically infers dependencies from imports
         in the application. May also provide path to a requirements.txt
@@ -491,12 +507,24 @@ def convert_apps(
 
     manifest = 'site.webmanifest' if build_pwa else None
 
+    if isinstance(requirements, dict):
+        app_requirements = {}
+        for app in apps:
+            matches = [
+                deps for name, deps in requirements.items()
+                if app.endswith(name.replace(os.path.sep, '/'))
+            ]
+            app_requirements[app] = matches[0] if matches else 'auto'
+    else:
+        app_requirements = requirements
+
     kwargs = {
-        'requirements': requirements, 'runtime': runtime,
+        'requirements': app_requirements, 'runtime': runtime,
         'prerender': prerender, 'manifest': manifest,
         'panel_version': panel_version, 'http_patch': http_patch,
         'inline': inline, 'verbose': verbose
     }
+
     if state._is_pyodide:
         files = dict((convert_app(app, dest_path, **kwargs) for app in apps))
     else:

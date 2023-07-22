@@ -230,7 +230,7 @@ class Serve(_BkServe):
     )
 
     # Supported file extensions
-    _extensions = ['.py']
+    _extensions = ['.py', '.ipynb', '.md']
 
     def customize_applications(self, args, applications):
         if args.index and not args.index.endswith('.html'):
@@ -430,7 +430,9 @@ class Serve(_BkServe):
                     )
             else:
                 basic_login_template = None
-            kwargs['auth_provider'] = BasicProvider(basic_login_template=basic_login_template)
+            kwargs['auth_provider'] = BasicProvider(
+                basic_login_template=basic_login_template
+            )
 
         if args.cookie_secret and config.cookie_secret:
             raise ValueError(

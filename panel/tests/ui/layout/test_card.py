@@ -100,12 +100,19 @@ def test_card_objects(page, port, card_components):
     card.objects = new_objects
 
     card_elements = page.locator('.card > div, .card > button')
-    expect(card_elements).to_have_count(len(new_objects) + 1)
+    expect(card_elements).to_have_count(2)
 
     card_header = card_elements.nth(0)
     w2_object = card_elements.nth(1)
     assert 'card-header' in card_header.get_attribute('class')
     assert 'class_w2' in w2_object.get_attribute('class')
+
+    w3 = TextInput(name='Text:', css_classes=['class_w3'])
+    card.append(w3)
+    card_elements = page.locator('.card > div, .card > button')
+    expect(card_elements).to_have_count(3)
+    w3_object = card_elements.nth(2)
+    assert 'class_w3' in w3_object.get_attribute('class')
 
 
 def test_card_title(page, port, card_components):

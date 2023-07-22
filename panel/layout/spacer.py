@@ -21,7 +21,7 @@ class Spacer(Reactive):
     Like all other components spacers support both absolute and responsive
     sizing modes.
 
-    Reference: https://panel.holoviz.org/user_guide/Customization.html#spacers
+    How-to: https://panel.holoviz.org/how_to/layout/spacing.html#spacer-components
 
     :Example:
 
@@ -70,7 +70,7 @@ class HSpacer(Spacer):
     Using this component we can space objects equidistantly in a layout and
     allow the empty space to shrink when the browser is resized.
 
-    Reference: https://panel.holoviz.org/user_guide/Customization.html#spacers
+    How-to: https://panel.holoviz.org/how_to/layout/spacing.html#spacer-components
 
     :Example:
 

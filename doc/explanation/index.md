@@ -9,11 +9,11 @@ Beyond the [Getting Started > Core Concepts](../getting_started/core_concepts.md
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`arrow-both;2.5em;sd-mr-1 sd-animate-grow50` API context
-:link: api/api_context
+:::{grid-item-card} {octicon}`workflow;2.5em;sd-mr-1 sd-animate-grow50` API context
+:link: api/index
 :link-type: doc
 
-Learn why there are multiple Panel APIs.
+Learn the pros and cons of Panel's different APIs.
 :::
 
 ::::
@@ -27,7 +27,7 @@ Learn why there are multiple Panel APIs.
 :link: components/components_overview
 :link-type: doc
 
-Deepen your understanding about Panel's visible objects and layouts types.
+Deepen your understanding about Panel's visible objects and layout types.
 :::
 
 :::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1 sd-animate-grow50` Custom components
@@ -75,10 +75,10 @@ Deepen your understanding about Template styling in Panel.
 :link: dependencies/param
 :link-type: doc
 
-Learn about why Panel utilizes the Param library.
+Learn about why and how Panel utilizes the Param library.
 
 ```{image} https://assets.holoviz.org/panel/background/dependencies/param_logo_stacked.png
-:width: 250px
+:width: 125px
 :align: center
 :name: Param
 ```
@@ -89,10 +89,10 @@ Learn about why Panel utilizes the Param library.
 :link: dependencies/bokeh
 :link-type: doc
 
-Learn about why Panel utilizes the Bokeh library.
+Learn about why and how Panel utilizes the Bokeh library.
 
 ```{image} https://assets.holoviz.org/panel/background/dependencies/bokeh-icon%405x.png
-:width: 250px
+:width: 125px
 :align: center
 :name: Bokeh
 ```
@@ -111,7 +111,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/dash_logo.png
-:width: 250px
+:width: 125px
 :align: center
 :name: Dash
 ```
@@ -123,7 +123,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/jupyter_logo.png
-:height: 250px
+:height: 125px
 :align: center
 :name: ipywidgets
 ```
@@ -131,11 +131,11 @@ Learn about why Panel utilizes the Bokeh library.
 :::
 
 :::{grid-item-card} Panel vs. Voila
-:link: comparisons/compare_js
+:link: comparisons/compare_voila
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/voila_logo.webp
-:width: 250px
+:width: 125px
 :align: center
 :name: Voila
 ```
@@ -147,7 +147,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/streamlit_logo.png
-:width: 250px
+:width: 125px
 :align: center
 :name: Streamlit
 ```
@@ -155,11 +155,11 @@ Learn about why Panel utilizes the Bokeh library.
 :::
 
 :::{grid-item-card} Panel vs. JavaScript
-:link: comparisons/compare_voila
+:link: comparisons/compare_js
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/comparisons/JavaScript_logo.png
-:width: 250px
+:width: 125px
 :align: center
 :name: JavaScript
 ```
@@ -171,7 +171,7 @@ Learn about why Panel utilizes the Bokeh library.
 :link-type: doc
 
 ```{image} https://assets.holoviz.org/panel/background/dependencies/bokeh-icon%405x.png
-:width: 250px
+:width: 125px
 :align: center
 :name: Bokeh
 ```

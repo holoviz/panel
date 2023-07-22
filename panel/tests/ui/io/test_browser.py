@@ -8,6 +8,7 @@ from panel.config import config
 from panel.io.server import serve
 from panel.io.state import state
 from panel.pane import Markdown
+from panel.tests.util import wait_until
 
 
 def test_browser_sync(page, port):
@@ -24,7 +25,7 @@ def test_browser_sync(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    time.sleep(0.2)
+    wait_until(lambda: bool(info), page)
 
     assert info['dark_mode'] == page.evaluate("() => window.matchMedia('(prefers-color-scheme: dark)').matches")
     assert info['device_pixel_ratio'] == page.evaluate('() => window.devicePixelRatio')

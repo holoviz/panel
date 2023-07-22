@@ -248,7 +248,7 @@ class RecognitionResult(param.Parameterized):
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognitionResult
     """
 
-    alternatives = param.List(class_=RecognitionAlternative, constant=True, doc="""
+    alternatives = param.List(item_type=RecognitionAlternative, constant=True, doc="""
         The list of the n-best alternatives""")
 
     is_final = param.Boolean(constant=True, doc="""

@@ -11,7 +11,8 @@ import uuid
 from functools import partial
 from pathlib import Path, PurePath
 from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple, Type,
+    IO, TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Optional, Tuple,
+    Type,
 )
 
 import param
@@ -22,12 +23,13 @@ from bokeh.settings import settings as _settings
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
 from ..config import _base_config, config, panel_extension
+from ..io.document import init_doc
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.notifications import NotificationArea
 from ..io.resources import (
-    BUNDLE_DIR, CDN_DIST, DOC_DIST, LOCAL_DIST, _env, component_resource_path,
-    loading_css, resolve_custom_path,
+    BUNDLE_DIR, CDN_DIST, ResourceComponent, _env, component_resource_path,
+    get_dist_path, loading_css, resolve_custom_path,
 )
 from ..io.save import save
 from ..io.state import curdoc_locked, state
@@ -39,9 +41,9 @@ from ..pane import (
 from ..pane.image import ImageBase
 from ..reactive import ReactiveHTML
 from ..theme.base import (
-    THEME_CSS, THEMES, DefaultTheme, Design, Theme,
+    THEMES, DefaultTheme, Design, Theme,
 )
-from ..util import isurl, relative_to, url_path
+from ..util import isurl
 from ..viewable import (
     MimeRenderMixin, Renderable, ServableMixin, Viewable,
 )
@@ -53,16 +55,9 @@ if TYPE_CHECKING:
     from bokeh.server.contexts import BokehSessionContext
     from jinja2 import Template as _Template
     from pyviz_comms import Comm
-    from typing_extensions import Literal, TypedDict
 
     from ..io.location import Location
-
-    class ResourcesType(TypedDict):
-        css: Dict[str, str]
-        js:  Dict[str, str]
-        js_modules: Dict[str, str]
-        extra_css: List[str]
-        raw_css: List[str]
+    from ..io.resources import ResourcesType
 
 
 _server_info: str = (
@@ -73,7 +68,16 @@ _server_info: str = (
 FAVICON_URL: str = "/static/extensions/panel/images/favicon.ico"
 
 
-class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
+class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, ResourceComponent):
+
+    config = param.ClassSelector(default=_base_config(), class_=_base_config,
+                                 constant=True, doc="""
+        Configuration object declaring custom CSS and JS files to load
+        specifically for this template.""")
+
+    design = param.ClassSelector(class_=Design, default=Design,
+                                 is_instance=False, instantiate=False, doc="""
+        A Design applies themes to a template.""")
 
     location = param.Boolean(default=False, doc="""
         Whether to add a Location component to this Template.
@@ -84,12 +88,23 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
     theme = param.ClassSelector(class_=Theme, default=DefaultTheme,
                                 constant=True, is_instance=False, instantiate=False)
 
-    design = param.ClassSelector(class_=Design, default=Design, constant=True,
-                                 is_instance=False, instantiate=False, doc="""
-        A Design applies a specific design system to a template.""")
-
     # Dictionary of property overrides by Viewable type
     modifiers: ClassVar[Dict[Type[Viewable], Dict[str, Any]]] = {}
+
+    #############
+    # Resources #
+    #############
+
+    # pathlib.Path pointing to local CSS file(s)
+    _css: ClassVar[Path | str | List[Path | str] | None] = None
+
+    # pathlib.Path pointing to local JS file(s)
+    _js: ClassVar[Path | str | List[Path | str] | None] = None
+
+    # External resources
+    _resources: ClassVar[Dict[str, Dict[str, str]]] = {
+        'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}
+    }
 
     __abstract = True
 
@@ -97,7 +112,14 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
         self, template: str | _Template, items=None,
         nb_template: Optional[str | _Template] = None, **params
     ):
-        super().__init__(**params)
+        config_params = {
+            p: v for p, v in params.items() if p in _base_config.param
+        }
+        super().__init__(**{
+            p: v for p, v in params.items() if p not in _base_config.param or p == 'name'
+        })
+        self.config.param.update(config_params)
+
         if isinstance(template, str):
             self._code: str | None = template
             self.template = _env.from_string(template)
@@ -113,7 +135,14 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
         self._documents: List[Document] = []
         self._server = None
         self._layout = self._build_layout()
+        self._setup_design()
+
+    @param.depends('design', watch=True)
+    def _setup_design(self):
         self._design = self.design(theme=self.theme)
+
+    def _update_vars(self, *args) -> None:
+        self._render_variables['template_resources'] = self.resolve_resources()
 
     def _build_layout(self) -> Column:
         str_repr = Str(repr(self))
@@ -157,6 +186,8 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
     ):
         # Initialize document
         document: Document = doc or curdoc_locked()
+        document = init_doc(document)
+
         self._documents.append(document)
         if document not in state._templates:
             state._templates[document] = self
@@ -185,7 +216,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
             # Render root without pre-processing
             model = obj.get_root(document, comm, preprocess=False)
             model.name = name
-            model.tags = tags
+            model.tags = model.tags + [tag for tag in tags if tag not in model.tags]
             mref = model.ref['id']
             if isinstance(model, LayoutDOM):
                 sizing_modes[mref] = model.sizing_mode
@@ -231,6 +262,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
         else:
             document.template = self.template
 
+        self._update_vars()
         document._template_variables['sizing_modes'] = sizing_modes
         document._template_variables.update(self._render_variables)
         return document
@@ -283,6 +315,103 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
+
+    def resolve_resources(self, cdn: bool | Literal['auto'] = 'auto') -> ResourcesType:
+        """
+        Resolves the resources required for this template component.
+
+        Arguments
+        ---------
+        cdn: bool | Literal['auto']
+            Whether to load resources from CDN or local server. If set
+            to 'auto' value will be automatically determine based on
+            global settings.
+
+        Returns
+        -------
+        Dictionary containing JS and CSS resources.
+        """
+        cls = type(self)
+        resource_types = super().resolve_resources(cdn=cdn)
+        js_files = resource_types['js']
+        js_modules = resource_types['js_modules']
+        css_files = resource_types['css']
+        raw_css = resource_types['raw_css']
+
+        clsname = cls.__name__
+        name = clsname.lower()
+        dist_path = get_dist_path(cdn=cdn)
+
+        raw_css.extend(list(self.config.raw_css) + [loading_css(
+            config.loading_spinner, config.loading_color, config.loading_max_height
+        )])
+        for rname, res in self._design.resolve_resources(cdn).items():
+            if isinstance(res, dict):
+                resource_types[rname].update(res)
+            else:
+                resource_types[rname] += [
+                    r for r in res if res not in resource_types[rname]
+                ]
+
+        for rname, js in self.config.js_files.items():
+            if '//' not in js and state.rel_path:
+                js = f'{state.rel_path}/{js}'
+            js_files[rname] = js
+        for rname, js in self.config.js_modules.items():
+            if '//' not in js and state.rel_path:
+                js = f'{state.rel_path}/{js}'
+            js_modules[rname] = js
+        for i, css in enumerate(list(self.config.css_files)):
+            if '//' not in css and state.rel_path:
+                css = f'{state.rel_path}/{css}'
+            css_files[f'config_{i}'] = css
+
+        # CSS files
+        base_css = self._css
+        if not isinstance(base_css, list):
+            base_css = [base_css] if base_css else []
+        for css in base_css:
+            tmpl_name = name
+            for scls in cls.__mro__[1:]:
+                if not issubclass(scls, BaseTemplate):
+                    continue
+                elif scls._css is None:
+                    break
+                tmpl_css = scls._css if isinstance(scls._css, list) else [scls._css]
+                if css in tmpl_css:
+                    tmpl_name = scls.__name__.lower()
+
+            css_file = os.path.basename(css)
+            if (BUNDLE_DIR / tmpl_name / css_file).is_file():
+                css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
+            elif isurl(css):
+                css_files[f'base_{css_file}'] = css
+            elif resolve_custom_path(self, css):
+                css_files[f'base_{css_file}' ] = component_resource_path(self, '_css', css)
+
+        # JS files
+        base_js = self._js
+        if not isinstance(base_js, list):
+            base_js = [base_js] if base_js else []
+        for js in base_js:
+            tmpl_name = name
+            for cls in type(self).__mro__[1:-5]:
+                if not issubclass(cls, BaseTemplate):
+                    continue
+                elif cls._js is None:
+                    break
+                tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
+                if js in tmpl_js:
+                    tmpl_name = cls.__name__.lower()
+            js_name = os.path.basename(js)
+            if (BUNDLE_DIR / tmpl_name / js_name).is_file():
+                js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
+            elif isurl(js):
+                js_files[f'base_{js_name}'] = js
+            elif resolve_custom_path(self, js):
+                js_files[f'base_{js_name}'] = component_resource_path(self, '_js', js)
+
+        return resource_types
 
     def save(
         self, filename: str | os.PathLike | IO, title: Optional[str] = None,
@@ -350,6 +479,43 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin):
         """
         return self._init_doc(doc, title=title, location=location)
 
+    def servable(
+        self, title: Optional[str] = None, location: bool | 'Location' = True,
+        area: str = 'main', target: Optional[str] = None
+    ) -> 'BaseTemplate':
+        """
+        Serves the template and returns self to allow it to display
+        itself in a notebook context.
+
+        Arguments
+        ---------
+        title : str
+          A string title to give the Document (if served as an app)
+        location : boolean or panel.io.location.Location
+          Whether to create a Location component to observe and
+          set the URL location.
+        area: str (deprecated)
+          The area of a template to add the component too. Only has an
+          effect if pn.config.template has been set.
+        target: str
+          Target area to write to. If a template has been configured
+          on pn.config.template this refers to the target area in the
+          template while in pyodide this refers to the ID of the DOM
+          node to write to.
+
+        Returns
+        -------
+        The template
+        """
+        if curdoc_locked().session_context and config.template:
+            raise RuntimeError(
+                'Cannot mark template as servable if a global template '
+                'is defined. Either explicitly construct a template and '
+                'serve it OR set `pn.config.template`, whether directly '
+                'or via `pn.extension(template=...)`, not both.'
+            )
+        return super().servable(title, location, area, target)
+
     def select(self, selector=None):
         """
         Iterates over the Template and any potential children in the
@@ -399,15 +565,13 @@ class BasicTemplate(BaseTemplate):
     feel without having to write any Jinja2 template themselves.
     """
 
-    config = param.ClassSelector(default=_base_config(), class_=_base_config,
-                                 constant=True, doc="""
-        Configuration object declaring custom CSS and JS files to load
-        specifically for this template.""")
-
     busy_indicator = param.ClassSelector(default=LoadingSpinner(width=20, height=20),
                                          class_=BooleanIndicator, constant=True,
                                          allow_None=True, doc="""
         Visual indicator of application busy state.""")
+
+    collapsed_sidebar = param.Selector(default=False, constant=True, doc="""
+        Whether the sidebar (if present) is initially collapsed.""")
 
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")
@@ -497,28 +661,13 @@ class BasicTemplate(BaseTemplate):
     # Resources #
     #############
 
-    # Resource locations for bundled resources
-    _CDN: ClassVar[str] = CDN_DIST
-    _LOCAL: ClassVar[str] = LOCAL_DIST
-
-    # pathlib.Path pointing to local CSS file(s)
-    _css: ClassVar[Path | str | List[Path | str] | None] = None
-
-    # pathlib.Path pointing to local JS file(s)
-    _js: ClassVar[Path | str | List[Path | str] | None] = None
-
     # pathlib.Path pointing to local Jinja2 template
     _template: ClassVar[Path | None] = None
-
-    # External resources
-    _resources: ClassVar[Dict[str, Dict[str, str]]] = {
-        'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}
-    }
 
     __abstract = True
 
     def __init__(self, **params):
-        template = self._template.read_text()
+        template = self._template.read_text(encoding='utf-8')
         if 'header' not in params:
             params['header'] = ListLike()
         else:
@@ -544,6 +693,7 @@ class BasicTemplate(BaseTemplate):
             params['favicon'] = str(params['favicon'])
         if 'notifications' not in params and config.notifications:
             params['notifications'] = state.notifications if state.curdoc else NotificationArea()
+
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
         if 'embed(roots.js_area)' in template:
@@ -573,7 +723,6 @@ class BasicTemplate(BaseTemplate):
         title = self.title if self.title != self.param.title.default else title
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
-        self._update_vars()
         document = super()._init_doc(doc, comm, title, notebook, location)
         if self.notifications:
             state._notifications[document] = self.notifications
@@ -581,152 +730,8 @@ class BasicTemplate(BaseTemplate):
             document.theme = self._design.theme.bokeh_theme
         return document
 
-    def _template_resources(self) -> ResourcesType:
-        clsname = type(self).__name__
-        name = clsname.lower()
-        use_cdn = _settings.resources(default="server") != 'server'
-        if use_cdn:
-            dist_path = self._CDN
-        elif state.rel_path:
-            dist_path = f'{state.rel_path}/{self._LOCAL}'
-        else:
-            dist_path = f'{self._LOCAL}'
-
-        # External resources
-        css_files: Dict[str, str] = {}
-        js_files: Dict[str, str] = {}
-        js_modules: Dict[str, str] = {}
-        resource_types: ResourcesType = {
-            'css': css_files,
-            'js': js_files,
-            'js_modules': js_modules,
-            'extra_css': [],
-            'raw_css': list(self.config.raw_css) + [loading_css()]
-        }
-
-        theme = self._design.theme
-        for attr in ('base_css', 'css'):
-            css = getattr(theme, attr, None)
-            if css is None:
-                continue
-            basename = os.path.basename(css)
-            key = 'theme_base' if 'base' in attr else 'theme'
-            if relative_to(css, THEME_CSS):
-                css_files[key] = dist_path + f'bundled/theme/{basename}'
-            elif resolve_custom_path(theme, css):
-                owner = type(theme).param[attr].owner
-                css_files[key] = component_resource_path(owner, attr, css)
-
-        resolved_resources: List[Literal['css', 'js', 'js_modules']] = ['css', 'js', 'js_modules']
-
-        # Resolve Design resources
-        resources = dict(self._resources)
-        for rt, res in self._design._resources.items():
-            if not isinstance(res, dict):
-                continue
-            if rt == 'font':
-                rt = 'css'
-            res = {
-                name: url if isurl(url) else f'{type(self._design).__name__.lower()}/{url}'
-                for name, url in res.items()
-            }
-            if rt in resources:
-                resources[rt] = dict(resources[rt], **res)
-            else:
-                resources[rt] = res
-
-        for resource_type in resolved_resources:
-            if resource_type not in resources:
-                continue
-            resource_files = resource_types[resource_type]
-            for rname, resource in resources[resource_type].items():
-                if resource.startswith(CDN_DIST):
-                    resource_path = resource.replace(f'{CDN_DIST}bundled/', '')
-                elif resource.startswith(config.npm_cdn):
-                    resource_path = resource.replace(config.npm_cdn, '')[1:]
-                elif resource.startswith('http:'):
-                    resource_path = url_path(resource)
-                else:
-                    resource_path = resource
-
-                if resource_type == 'js_modules' and not (state.rel_path or use_cdn):
-                    prefixed_dist = f'./{dist_path}'
-                else:
-                    prefixed_dist = dist_path
-
-                bundlepath = BUNDLE_DIR / resource_path.replace('/', os.path.sep)
-                if bundlepath.is_file():
-                    resource_files[rname] = f'{prefixed_dist}bundled/{resource_path}'
-                elif isurl(resource):
-                    resource_files[rname] = resource
-                elif resolve_custom_path(self, resource):
-                    resource_files[rname] = component_resource_path(
-                        self, f'_resources/{resource_type}', resource
-                    )
-
-        for name, js in self.config.js_files.items():
-            if '//' not in js and state.rel_path:
-                js = f'{state.rel_path}/{js}'
-            js_files[name] = js
-        for name, js in self.config.js_modules.items():
-            if '//' not in js and state.rel_path:
-                js = f'{state.rel_path}/{js}'
-            js_modules[name] = js
-
-        extra_css = resource_types['extra_css']
-        for css in list(self.config.css_files):
-            if '//' not in css and state.rel_path:
-                css = f'{state.rel_path}/{css}'
-            extra_css.append(css)
-
-        # CSS files
-        base_css = self._css
-        if not isinstance(base_css, list):
-            base_css = [base_css] if base_css else []
-        for css in base_css:
-            tmpl_name = name
-            for cls in type(self).__mro__[1:-5]:
-                if not issubclass(cls, BasicTemplate):
-                    continue
-                elif cls._css is None:
-                    break
-                tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
-                if css in tmpl_css:
-                    tmpl_name = cls.__name__.lower()
-
-            css_file = os.path.basename(css)
-            if (BUNDLE_DIR / tmpl_name / css_file).is_file():
-                css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
-            elif isurl(css):
-                css_files[f'base_{css_file}'] = css
-            elif resolve_custom_path(self, css):
-                css_files[f'base_{css_file}' ] = component_resource_path(self, '_css', css)
-
-        # JS files
-        base_js = self._js
-        if not isinstance(base_js, list):
-            base_js = [base_js] if base_js else []
-        for js in base_js:
-            tmpl_name = name
-            for cls in type(self).__mro__[1:-5]:
-                if not issubclass(cls, BasicTemplate):
-                    continue
-                elif cls._js is None:
-                    break
-                tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
-                if js in tmpl_js:
-                    tmpl_name = cls.__name__.lower()
-            js_name = os.path.basename(js)
-            if (BUNDLE_DIR / tmpl_name / js_name).is_file():
-                js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
-            elif isurl(js):
-                js_files[f'base_{js_name}'] = js
-            elif resolve_custom_path(self, js):
-                js_files[f'base_{js_name}'] = component_resource_path(self, '_js', js)
-
-        return resource_types
-
     def _update_vars(self, *args) -> None:
+        super()._update_vars(*args)
         self._render_variables['app_title'] = self.title
         self._render_variables['meta_name'] = self.title
         self._render_variables['site_title'] = self.site
@@ -753,10 +758,9 @@ class BasicTemplate(BaseTemplate):
             favicon = img._b64(img._data(img.object))
         else:
             if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
-                favicon = DOC_DIST + "icons/favicon.ico"
+                favicon = CDN_DIST + "images/favicon.ico"
             else:
                 favicon = self.favicon
-        self._render_variables['template_resources'] = self._template_resources()
         self._render_variables['app_logo'] = logo
         self._render_variables['app_favicon'] = favicon
         self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
@@ -765,6 +769,7 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['main_max_width'] = self.main_max_width
         self._render_variables['sidebar_width'] = self.sidebar_width
         self._render_variables['theme'] = self._design.theme
+        self._render_variables['collapsed_sidebar'] = self.collapsed_sidebar
 
     def _update_busy(self) -> None:
         if self.busy_indicator:

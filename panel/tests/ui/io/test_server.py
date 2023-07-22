@@ -2,7 +2,11 @@ import time
 
 import pytest
 
-pytestmark = pytest.mark.ui
+try:
+    from playwright.sync_api import expect
+    pytestmark = pytest.mark.ui
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
 
 from panel import config, state
 from panel.io.server import serve
@@ -20,12 +24,10 @@ def test_server_reuse_sessions(page, port, reuse_sessions):
     time.sleep(0.2)
 
     page.goto(f"http://localhost:{port}")
-
-    assert page.text_content(".markdown h3") == 'Count 0'
+    expect(page.locator(".markdown h3")).to_have_text('Count 0')
 
     page.goto(f"http://localhost:{port}")
-
-    assert page.text_content(".markdown h3") == 'Count 1'
+    expect(page.locator(".markdown h3")).to_have_text('Count 1')
 
 
 def test_server_reuse_sessions_with_session_key_func(page, port, reuse_sessions):
@@ -44,10 +46,10 @@ def test_server_reuse_sessions_with_session_key_func(page, port, reuse_sessions)
 
     page.goto(f"http://localhost:{port}/?arg=foo")
 
-    assert page.text_content("title") == 'foo'
-    assert page.text_content(".markdown h3") == 'Count 0'
+    expect(page).to_have_title('foo')
+    expect(page.locator(".markdown h3")).to_have_text('Count 0')
 
     page.goto(f"http://localhost:{port}/?arg=bar")
 
-    assert page.text_content("title") == 'bar'
-    assert page.text_content(".markdown h3") == 'Count 1'
+    expect(page).to_have_title('bar')
+    expect(page.locator(".markdown h3")).to_have_text('Count 1')

@@ -14,7 +14,7 @@ Here, the Vue component tags `<v-component></v-component>` are responsible for r
 
 The components are usually defined in a .vue file and require Webpack to serve.
 
-With Panel you can take a **simpler approach**, there is no need to configure, learn and maintain an advanced javascript build tool chain to utilize Vue.js. We will show you how this is done below using Panels [ReactiveHTML](https://panel.holoviz.org/user_guide/Custom_Components.html#reactivehtml-components).
+With Panel you can take a **simpler approach**, there is no need to configure, learn and maintain an advanced javascript build tool chain to utilize Vue.js. We will show you how this is done below using Panels [ReactiveHTML](https://panel.holoviz.org/how_to/custom_components/custom_reactiveHTML.html).
 
 ## Let's get started
 

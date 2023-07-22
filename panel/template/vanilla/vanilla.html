@@ -17,9 +17,6 @@
 {% for css in template_resources['css'].values() %}
 <link rel="stylesheet" href="{{ css }}">
 {% endfor %}
-{% for src in template_resources['extra_css'] %}
-<link rel="stylesheet"  href="{{ src }}">
-{% endfor %}
 {% for raw_css in template_resources['raw_css'] %}
 <style type="text/css">
 {{ raw_css }}
@@ -28,19 +25,21 @@
 
 <style>
   :root {
-      --header-color: {{ header_color if header_color else "var(--panel-on-primary-color)" }};
-      --header-bg: {{ header_background if header_background else "var(--panel-primary-color)" }};
-      --sidebar-width: {{ sidebar_width }}px;
+    --header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
+    --header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
+    --sidebar-width: {{ sidebar_width }}px;
   }
   #header {
-      background-color: var(--header-bg);
-      color: var(--header-color);
-      {% if theme._name == 'default' %}
-      box-shadow: 5px 5px 20px silver;
-      {% endif %}
+    --background-color: var(--header-background);
+    --text-color: var(--header-color);
+    background-color: var(--header-background);
+    color: var(--header-color);
+    {% if theme._name == 'default' %}
+    box-shadow: 5px 5px 20px silver;
+    {% endif %}
   }
   #sidebar {
-      width: var(--sidebar-width);
+    width: var(--sidebar-width);
   }
 </style>
 
@@ -58,7 +57,7 @@
 <div id="container">
   <nav id="header">
     {% if nav %}
-    <span onclick="closeNav()" id="sidebar-button">
+    <span onclick="{{ 'openNav()' if collapsed_sidebar else 'closeNav()' }}" id="sidebar-button">
       <div class="pn-bar"></div>
       <div class="pn-bar"></div>
       <div class="pn-bar"></div>
@@ -98,7 +97,7 @@
 
   <div id="content">
     {% if nav %}
-    <div class="sidenav" id="sidebar">
+    <div class="sidenav {{'hidden' if collapsed_sidebar else ''}}" id="sidebar">
       <ul class="nav flex-column">
         {% for doc in docs %}
         {% for root in doc.roots %}
@@ -111,9 +110,9 @@
     </div>
     {% endif %}
 
-    <div class="main" id="main" style="margin-left: {{ 'calc(var(--sidebar-width) + 30px)' if nav or sidebar_footer else '15px' }};">
+    <div class="main" id="main">
       {% if main_max_width %}
-      <div style="margin-left: auto; margin-right: auto;max-width: {{main_max_width}}">
+      <div style="margin-left: auto; margin-right: auto; max-width: {{main_max_width}}">
       {% endif %}
       {% for doc in docs %}
       {% for root in doc.roots %}
@@ -143,15 +142,13 @@
 </div>
 
 <script>
-    function openNav() {
-    document.getElementById("sidebar").style.left = 0;
-    document.getElementById("main").style.marginLeft = "calc(var(--sidebar-width) + 30px)";
+  function openNav() {
+    document.getElementById("sidebar").classList.remove("hidden");
     document.getElementById("sidebar-button").onclick = closeNav;
   }
 
   function closeNav() {
-    document.getElementById("sidebar").style.left = "calc(-1 * var(--sidebar-width) - 20px)";
-    document.getElementById("main").style.marginLeft = "15px";
+    document.getElementById("sidebar").classList.add("hidden");
     document.getElementById("sidebar-button").onclick = openNav;
   }
 

@@ -52,6 +52,8 @@ def _get_type(spec, version):
     if version >= 5:
         if isinstance(spec, dict):
             return spec.get('select', {}).get('type', 'interval')
+        elif isinstance(spec.select, dict):
+            return spec.select.get('type', 'interval')
         else:
             return getattr(spec.select, 'type', 'interval')
     else:
@@ -193,6 +195,7 @@ class Vega(ModelPane):
             for e, stype in self._selections.items()
         }
         if self.selection and (set(self.selection.param) - {'name'}) == set(params):
+            self.selection.param.update({p: None for p in params})
             return
         self.selection = type('Selection', (param.Parameterized,), params)()
 

@@ -38,8 +38,8 @@ export class VideoView extends HTMLBoxView {
         this.videoEl.width = this.model.width;
     }
     this.videoEl.style.objectFit = 'fill'
-    this.videoEl.style.minWidth = '100%';
-    this.videoEl.style.minHeight = '100%';
+    this.videoEl.style.width = '100%';
+    this.videoEl.style.height = '100%';
     this.videoEl.controls = true
     this.videoEl.src = this.model.value
     this.videoEl.currentTime = this.model.time

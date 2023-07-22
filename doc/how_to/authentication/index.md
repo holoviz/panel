@@ -2,7 +2,7 @@
 
 Authentication is a difficult topic fraught with potential pitfalls and complicated configuration options. Panel aims to be a "batteries-included" package for building applications and dashboards and therefore ships with a number of inbuilt providers for authentication in an application.
 
-The primary mechanism by which Panel performs autentication is [OAuth 2.0](https://oauth.net/2/). The official specification for OAuth 2.0 describes the protocol as follows:
+The primary mechanism by which Panel performs authentication is [OAuth 2.0](https://oauth.net/2/). The official specification for OAuth 2.0 describes the protocol as follows:
 
     The OAuth 2.0 authorization framework enables a third-party
     application to obtain limited access to an HTTP service, either on

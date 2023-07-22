@@ -48,7 +48,7 @@ class AbstractVTK(PaneBase):
               axis' ticks.
           - ``labels`` (array of strings) - optional.
               Label displayed respectively to the `ticks` positions.
-              If `labels` are not defined they are infered from the
+              If `labels` are not defined they are inferred from the
               `ticks` array.
           - ``digits``: number of decimal digits when `ticks` are converted to `labels`.
           - ``fontsize``: size in pts of the ticks labels.
@@ -566,7 +566,7 @@ class VTKVolume(AbstractVTK):
         light direction and the object surface normal.""")
 
     display_volume = param.Boolean(default=True, doc="""
-        If set to True, the 3D respresentation of the volume is
+        If set to True, the 3D representation of the volume is
         displayed using ray casting.""")
 
     display_slices = param.Boolean(default=False, doc="""
@@ -590,7 +590,7 @@ class VTKVolume(AbstractVTK):
     mapper = param.Dict(doc="Lookup Table in format {low, high, palette}")
 
     max_data_size = param.Number(default=(256 ** 3) * 2 / 1e6, doc="""
-        Maximum data size transfert allowed without subsampling""")
+        Maximum data size transfer allowed without subsampling""")
 
     nan_opacity = param.Number(default=1., bounds=(0., 1.), doc="""
         Opacity applied to nan values in slices""")
@@ -602,7 +602,7 @@ class VTKVolume(AbstractVTK):
         The value must be specified as an hexadecimal color string.""")
 
     rescale = param.Boolean(default=False, doc="""
-        If set to True the colormap is rescaled beween min and max
+        If set to True the colormap is rescaled between min and max
         value of the non-transparent pixel, otherwise  the full range
         of the pixel values are used.""")
 
@@ -843,7 +843,7 @@ class VTKJS(AbstractVTK):
         props = self._get_properties(doc)
         vtkjs = self._get_vtkjs()
         if vtkjs is not None:
-            props['data'] = vtkjs
+            props['data'] = base64encode(vtkjs)
         model = VTKJSPlot(**props)
         root = root or model
         self._link_props(model, ['camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
@@ -866,7 +866,8 @@ class VTKJS(AbstractVTK):
 
     def _update(self, ref: str, model: Model) -> None:
         self._vtkjs = None
-        model.data = self._get_vtkjs()
+        vtkjs = self._get_vtkjs()
+        model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
 
     def export_vtkjs(self, filename: str | IO ='vtk_panel.vtkjs'):
         """

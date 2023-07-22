@@ -579,7 +579,7 @@ def annotationSerializer(parent, prop, propId, context, depth):
 
 def genericPropSerializer(parent, prop, popId, context, depth):
     # This kind of actor has two "children" of interest, a property and a
-    # mapper (optionnaly a texture)
+    # mapper (optionally a texture)
     mapperInstance = None
     propertyInstance = None
     calls = []
@@ -774,7 +774,7 @@ def genericPolyDataMapperSerializer(parent, mapper, mapperId, context, depth):
     instance['properties'].update({
         'resolveCoincidentTopology': mapper.GetResolveCoincidentTopology(),
         'renderTime': mapper.GetRenderTime(),
-        'arrayAccessMode': 1, # since we can't set mapper arrayId on vtkjs, we force acess mode by name and use retrieve name function
+        'arrayAccessMode': 1, # since we can't set mapper arrayId on vtkjs, we force access mode by name and use retrieve name function
         'scalarRange': mapper.GetScalarRange(),
         'useLookupTableScalarRange': 1 if mapper.GetUseLookupTableScalarRange() else 0,
         'scalarVisibility': mapper.GetScalarVisibility(),

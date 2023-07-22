@@ -1,6 +1,8 @@
 import * as p from "@bokehjs/core/properties"
 import {clone} from "@bokehjs/core/util/object"
 
+import {debounce} from  "debounce"
+
 import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
 
 import {initialize_fullscreen_render} from "./panel_fullscreen_renwin_sync"
@@ -27,18 +29,13 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.arrays.change, () => {})
-    this.connect(this.model.properties.scene.change, () => {
-      if (this.model.rebuild) {
-        this._vtk_renwin = null
-        this.invalidate_render()
-      } else {
-        const state = clone(this.model.scene)
-        this._sync_plot(state, () => {
-          this._on_scene_ready()
-        })
-      }
-    })
+    const update = debounce(() => {
+      this._vtk_renwin.delete()
+      this._vtk_renwin = null
+      this.invalidate_render()
+    }, 20)
+    this.connect(this.model.properties.arrays.change, update)
+    this.connect(this.model.properties.scene.change, update)
     this.connect(this.model.properties.one_time_reset.change, () => {
       this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
     })
@@ -50,6 +47,13 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       container: this._vtk_container,
       synchronizerContext: this._synchronizer_context,
     })
+  }
+
+  override remove(): void {
+    if (this._vtk_renwin) {
+      this._vtk_renwin.delete()
+    }
+    super.remove()
   }
 
   plot(): void {
@@ -116,7 +120,7 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
   constructor(attrs?: Partial<VTKSynchronizedPlot.Attrs>) {
     super(attrs)
     initialize_fullscreen_render()
-    this.outline = vtkns.OutlineFilter.newInstance() //use to display bouding box of a selected actor
+    this.outline = vtkns.OutlineFilter.newInstance() //use to display bounding box of a selected actor
     const mapper = vtkns.Mapper.newInstance()
     mapper.setInputConnection(this.outline.getOutputPort())
     this.outline_actor = vtkns.Actor.newInstance()

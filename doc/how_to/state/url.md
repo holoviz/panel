@@ -12,16 +12,16 @@ When starting a server session Panel will attach a `Location` component which ca
 
 ### Core
 
-* **``pathname``** (string): pathname part of the url, e.g. '/user_guide/Interact.html'.
+* **``pathname``** (string): pathname part of the url, e.g. '/how_to/layout/spacing.html'.
 * **``search``** (string): search part of the url e.g. '?color=blue'.
-* **``hash_``** (string): hash part of the url e.g. '#interact'.
+* **``hash_``** (string): hash part of the url e.g. '#margin-parameter'.
 * **``reload``** (bool): Whether or not to reload the page when the url is updated.
     - For independent apps this should be set to True.
     - For integrated or single page apps this should be set to False.
 
 ### Readonly
 
-* **``href``** (string): The full url, e.g. 'https://panel.holoviz.org/user_guide/Interact.html:80?color=blue#interact'.
+* **``href``** (string): The full url, e.g. 'https://panel.holoviz.org:443/how_to/layout/spacing.html?color=blue#margin-parameter'.
 * **``protocol``** (string): protocol part of the url, e.g. 'http:' or 'https:'
 * **``port``** (string): port number, e.g. '80'
 

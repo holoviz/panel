@@ -4,7 +4,7 @@ Welcome to the Upgrade Guide for Panel! When we make backward-incompatible chang
 
 ## Version 1.0
 
-The 1.0 release brings a wealth of improvements, including significant changes to the layout engine and an improved approach to handling CSS for individual components. These improvements are thanks to the new Bokeh 3.x releases, which received a bottom-up rewrite of layouts and CSS handling. These updates not only boost the performance but also elevate the customizability of your Panel apps.
+The 1.0 release brings a wealth of improvements compared to the 0.x series, including significant changes to the layout engine and an improved approach to handling CSS for individual components. These improvements are thanks to the new Bokeh 3.x releases, which received a bottom-up rewrite of layouts and CSS handling. These updates not only boost the performance but also elevate the customizability of your Panel apps.
 
 As with any major update, it's important to understand the implications of these changes for your existing applications. This guide is designed to walk you through the key updates introduced in Panel 1.0, the rationale behind them, and the critical considerations to consider while adapting your applications to this new version. We'll take you on a comprehensive journey, outlining how the new layout engine transforms how you create and manage your Panel apps and the impact of the enhanced CSS handling on your components.
 
@@ -32,14 +32,16 @@ Now let us explore what changed in this release. In the past, the behavior of a 
 
 - If a child is responsive in width then the layout should also be responsive in width (unless a fixed `width` has been).
 - If a container is vertical (e.g. a `Column`) or supports responsive reflowing (e.g. a `FlexBox`) and a child is responsive in height then the container should also be height-responsive (unless a fixed `height` is set).
-- If a container is horizontal (e.g. a `Row`) and all children are responsive in height then the container should also be height-responsive. This behavior is assymetrical with width because there isn't always vertical space to expand into and it is better for the component to match the height of the other children.
+- If a container is horizontal (e.g. a `Row`) and all children are responsive in height then the container should also be height-responsive. This behavior is asymmetrical with width because there isn't always vertical space to expand into and it is better for the component to match the height of the other children.
 - If any children declare a fixed `width` or `height` then the container will inherit these as `min_width` and `min_height` settings to ensure that sufficient space is allocated.
 
 These very explicit rules ensure consistent behavior in most cases, however it is always best to be explicit and declare the sizes.
 
 Let us walk through an example. Below we declare a responsive `Image` and a fixed-size `Markdown` pane inside a `Row`. According to the rules above the `Row` layout will inherit responsive sizing in `width` but not `height`. Additionally it will inherit a `min_width` from the `Markdown` pane.
 
-![Container sizing_mode](_static/images/container_scale_width.png)
+<div style="text-align:center">
+<img src="_static/images/container_scale_width.png" alt="Container sizing_mode" width="500"/>
+</div>
 
 :::{note}
 To maintain backward compatibility Panel will still try to infer the appropriate sizing mode by inspecting the children of a container. It is, however, always best to be explicit.
@@ -161,6 +163,12 @@ at the top of your application. The flipside of this is that if you call `pn.ext
 We recommend always declaring all required extensions at the top of your application.
 :::
 
+### Smaller changes
+
+- `Tabulator.frozen_rows` now respects the order of rows in the data instead of the order in which the `frozen_rows` were defined.
+- `Viewable.embed` now returns a `Mimebundle` object that can be rendered in a notebook but also in other contexts.
+- The `policy` argument toon `pn.cache` used to accept `'LIFO'` but instead implemented a `'FIFO'` policy. This has been fixed and the function now only accepts `'LRU'`, `'LIFO'`, and `'LFU'` policies.
+
 ### Deprecations
 
 The following changes have been deprecated; we will warn you and guide you on how to update them.
@@ -179,9 +187,3 @@ pn.pane.Markdown("# Hello", styles={'background': 'red'})
 #### `Ace` renamed to `CodeEditor`
 
 `pn.widgets.Ace()` has been renamed to `pn.widgets.CodeEditor()` to reflect better what the component does and not the implementation used.
-
-#### Miscellaneous
-
-Small behavior changes:
-
-`Tabulator.frozen_rows` now respects the order of rows in the data instead of the order in which the `frozen_rows` were defined.

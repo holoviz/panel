@@ -16,36 +16,38 @@ Let us construct a very simple app containing two plots in the `main` area and t
 ``` {code-block} python
 :emphasize-lines: 5, 21-29
 
-import panel as pn
+import hvplot.pandas
 import numpy as np
-import holoviews as hv
+import pandas as pd
+import panel as pn
 
-bootstrap = pn.template.BootstrapTemplate(title='Bootstrap Template')
+template = pn.template.BootstrapTemplate(title='Bootstrap Template')
 
 xs = np.linspace(0, np.pi)
 freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
 phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi)
 
-@pn.depends(freq=freq, phase=phase)
 def sine(freq, phase):
-    return hv.Curve((xs, np.sin(xs*freq+phase))).opts(
-        responsive=True, min_height=200)
+    return pd.DataFrame(dict(y=np.sin(xs*freq+phase)), index=xs)
 
-@pn.depends(freq=freq, phase=phase)
 def cosine(freq, phase):
-    return hv.Curve((xs, np.cos(xs*freq+phase))).opts(
-        responsive=True, min_height=200)
+    return pd.DataFrame(dict(y=np.cos(xs*freq+phase)), index=xs)
 
-bootstrap.sidebar.append(freq)
-bootstrap.sidebar.append(phase)
+dfi_sine = hvplot.bind(sine, freq, phase).interactive()
+dfi_cosine = hvplot.bind(cosine, freq, phase).interactive()
 
-bootstrap.main.append(
+plot_opts = dict(responsive=True, min_height=400)
+
+template.sidebar.append(freq)
+template.sidebar.append(phase)
+
+template.main.append(
     pn.Row(
-        pn.Card(hv.DynamicMap(sine), title='Sine'),
-        pn.Card(hv.DynamicMap(cosine), title='Cosine')
+        pn.Card(dfi_sine.hvplot(**plot_opts).output(), title='Sine'),
+        pn.Card(dfi_cosine.hvplot(**plot_opts).output(), title='Cosine'),
     )
 )
-bootstrap.servable()
+template.servable();
 ```
 :::
 
@@ -69,29 +71,32 @@ Another, often simpler approach is to set the global template with the `pn.exten
 ``` {code-block} python
 :emphasize-lines: 4, 7-8, 20-23
 
-import panel as pn
+import hvplot.pandas
 import numpy as np
-import holoviews as hv
+import pandas as pd
+import panel as pn
+
 pn.extension(template='bootstrap')
 
 xs = np.linspace(0, np.pi)
 freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2).servable(target='sidebar')
 phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi).servable(target='sidebar')
 
-@pn.depends(freq=freq, phase=phase)
 def sine(freq, phase):
-    return hv.Curve((xs, np.sin(xs*freq+phase))).opts(
-        responsive=True, min_height=200)
+    return pd.DataFrame(dict(y=np.sin(xs*freq+phase)), index=xs)
 
-@pn.depends(freq=freq, phase=phase)
 def cosine(freq, phase):
-    return hv.Curve((xs, np.cos(xs*freq+phase))).opts(
-        responsive=True, min_height=200)
+    return pd.DataFrame(dict(y=np.cos(xs*freq+phase)), index=xs)
+
+dfi_sine = hvplot.bind(sine, freq, phase).interactive()
+dfi_cosine = hvplot.bind(cosine, freq, phase).interactive()
+
+plot_opts = dict(responsive=True, min_height=400)
 
 pn.Row(
-    pn.Card(hv.DynamicMap(sine), title='Sine'),
-    pn.Card(hv.DynamicMap(cosine), title='Cosine')
-).servable(target='main')
+    pn.Card(dfi_sine.hvplot(**plot_opts).output(), title='Sine'),
+    pn.Card(dfi_cosine.hvplot(**plot_opts).output(), title='Cosine'),
+).servable(target='main');
 ```
 :::
 

@@ -13,7 +13,7 @@ The first step in configuring a OAuth is to specify a specific OAuth provider. P
 * `google`: Google
 * `okta`: Okta
 
-We will go through the process of configuring each of these individually later but for now all we need to know that the `oauth_provider` can be set on the commandline using the `--oauth-provider` CLI argument to `panel serve` or the `PANEL_OAUTH_PROVIDER` environment variable.
+We will go through the process of configuring each of these individually in [Providers](./providers.md) but for now all we need to know that the `oauth_provider` can be set on the commandline using the `--oauth-provider` CLI argument to `panel serve` or the `PANEL_OAUTH_PROVIDER` environment variable.
 
 Examples:
 

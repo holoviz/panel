@@ -16,7 +16,7 @@ The getting started guide will get you set up with Panel and provide a basic ove
 Walks you through setting up your Python environment, installing Panel into it and how to configure your editor, IDE or notebook environment appropriately.
 
 +++
-[Learn more »](installation.rst)
+[Learn more »](installation)
 :::
 
 :::{grid-item-card} {octicon}`tools;2.5em;sd-mr-1` Build an app
@@ -29,7 +29,6 @@ Before we dig into some of the core concepts behind Panel this guide gives you a
 [Learn more »](build_app)
 :::
 
-
 :::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Core Concepts
 :link: core_concepts
 :link-type: doc
@@ -41,7 +40,6 @@ Introduces you to some of the core concepts behind Panel, how to develop Panel a
 :::
 
 ::::
-
 
 ```{toctree}
 :titlesonly:

@@ -43,7 +43,7 @@ def test_editableslider_textinput_end(page, port, widget, val1, val2, val3, func
     widget = widget()
 
     serve(widget, port=port, threaded=True, show=False)
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     page.goto(f"http://localhost:{port}")
 

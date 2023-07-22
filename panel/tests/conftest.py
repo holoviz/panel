@@ -27,7 +27,9 @@ from panel.config import panel_extension
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 
-CUSTOM_MARKS = ('ui', 'jupyter')
+CUSTOM_MARKS = ('ui', 'jupyter', 'subprocess')
+
+config.apply_signatures = False
 
 JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
@@ -88,6 +90,11 @@ optional_markers = {
         "marker-descr": "Jupyter test marker",
         "skip-reason": "Test only runs with the --jupyter option."
     },
+    "subprocess": {
+        "help": "Runs tests that fork the process",
+        "marker-descr": "Subprocess test marker",
+        "skip-reason": "Test only runs with the --subprocess option."
+    },
     "docs": {
         "help": "Runs docs specific tests",
         "marker-descr": "Docs test marker",
@@ -111,29 +118,21 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    markers, skipped, selected = [], [], []
-    for marker, info in optional_markers.items():
-        if not config.getoption("--{}".format(marker)):
-            skip_test = pytest.mark.skip(
-                reason=info['skip-reason'].format(marker)
-            )
-            for item in items:
-                if marker in item.keywords:
-                    item.add_marker(skip_test)
+    skipped, selected = [], []
+    markers = [m for m in optional_markers if config.getoption(f"--{m}")]
+    empty = not markers
+    for item in items:
+        if empty and any(m in item.keywords for m in optional_markers):
+            skipped.append(item)
+        elif empty:
+            selected.append(item)
+        elif not empty and any(m in item.keywords for m in markers):
+            selected.append(item)
         else:
-            markers.append(marker)
-            for item in items:
-                if marker in item.keywords:
-                    selected.append(item)
-                else:
-                    skipped.append(item)
-    skip_test = pytest.mark.skip(
-        reason=f"test not one of {', '.join(markers)}"
-    )
-    for item in skipped:
-        if item in selected:
-            continue
-        item.add_marker(skip_test)
+            skipped.append(item)
+
+    config.hook.pytest_deselected(items=skipped)
+    items[:] = selected
 
 
 @pytest.fixture
@@ -306,7 +305,6 @@ def set_env_var(env_var, value):
         del os.environ[env_var]
     else:
         os.environ[env_var] = old_value
-
 
 @pytest.fixture(autouse=True)
 def module_cleanup():

@@ -16,7 +16,7 @@ from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import HTMLBox
 
-TABULATOR_VERSION = "5.4.4"
+TABULATOR_VERSION = "5.5.0"
 
 JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.js"
 MOMENT_SRC = f"{config.npm_cdn}/luxon/build/global/luxon.min.js"
@@ -25,7 +25,8 @@ THEME_PATH = f"tabulator-tables@{TABULATOR_VERSION}/dist/css/"
 THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
 TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-    'bootstrap4', 'materialize', 'bulma', 'semantic-ui'
+    'bootstrap4', 'bootstrap4', 'bootstrap5', 'materialize', 'bulma',
+    'semantic-ui'
 ]
 # Theme names were renamed in Tabulator 5.0.
 _TABULATOR_THEMES_MAPPING = {
@@ -134,6 +135,8 @@ class DataTabulator(HTMLBox):
     select_mode = Any()
 
     selectable_rows = Nullable(List(Int))
+
+    theme_classes = List(String)
 
     __css_raw__ = CSS_URLS
 

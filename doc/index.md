@@ -2,73 +2,79 @@
 sd_hide_title: true
 ---
 
-```{image} _static/logo_stacked.png
----
-width: 125
----
+```{image} _static/logo_horizontal_dark_theme.png
+:class: only-dark homepage-logo
+:width: 250px
+```
+
+```{image} _static/logo_horizontal_light_theme.png
+:class: only-light homepage-logo
+:width: 250px
 ```
 
 # Overview
 
-<h2 style="margin-top: 0.3em;">The powerful data exploration and application framework for Python</h2>
+<h2 style="margin-top: 0.3em;">The powerful data exploration & web app framework for Python</h2>
 
-::::{grid} 2 2 5 5
-:gutter: 1
+::::{grid} 2 4 4 4
 
-:::{grid-item-card} Portfolio Optimizer
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_optimizer
+:::{grid-item-card} Portfolio Analyzer
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_analyzer
 :link-type: url
 
-```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
+```{image} https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
+---
+alt: Portfolio Analyzer App
+---
 ```
 :::
 
-:::{grid-item-card} MRI Cross-sections
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/vtk_slicer
+:::{grid-item-card} Portfolio Optimizer
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/portfolio_optimizer
+:link-type: url
+
+```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
+---
+alt: Portfolio Optimizer App
+---
+```
+:::
+
+:::{grid-item-card} MRI Slicer
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/vtk_slicer
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/vtk_slicer.png
+---
+alt: VTK 3D Slicer App
+---
 ```
 :::
 
 :::{grid-item-card} Videostream
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/streaming_videostream
+:link: https://|gallery-endpoint|.pyviz.demo.anaconda.com/streaming_videostream
 :link-type: url
 
 ```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
-```
-:::
-
-:::{grid-item-card} Crossfiltering
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/penguin_crossfilter
-:link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
-```
-:::
-
-:::{grid-item-card} Portfolio Analyzer
-:link: https://panel-gallery-dev.pyviz.demo.anaconda.com/portfolio_analyzer
-:link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
+---
+alt: scikit-image Videostream App
+---
 ```
 :::
 
 ::::
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you **build powerful, richly interactive, dashboards and complex applications entirely in Python**. It has a batteries-included philosophy, putting the PyData ecosystem, powerful data tables and much more at your fingertips. High-level reactive APIs and lower-level callback based APIs ensure you can quickly build exploratory applications but you aren't limited if you build complex, multi-page apps with rich interactivity. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem, your gateway into a connected ecosystem of data exploration tools.
+Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library that lets you **easily build powerful tools, dashboards and complex applications entirely in Python**. It has a batteries-included philosophy, putting the PyData ecosystem, powerful data tables and much more at your fingertips. High-level reactive APIs and lower-level callback based APIs ensure you can quickly build exploratory applications, but you aren't limited if you build complex, multi-page apps with rich interactivity. Panel is a member of the [HoloViz](https://holoviz.org/) ecosystem, your gateway into a connected ecosystem of data exploration tools.
 
-```{eval-rst}
-.. notebook:: panel ../examples/homepage.ipynb
-    :disable_interactivity_warning: True
-```
+```{notebook} panel ../examples/homepage.ipynb
+:disable_interactivity_warning: True
+````
 
 Panel makes it simple to:
 
 - Develop in your favorite **editor or notebook** environment
 - Combine the **PyData tools and plotting libraries** that you know and love
-- **Iterate quickly** to develop data tools, apps and dashboards
+- **Iterate quickly** to develop data tools, dashboards and complex apps
 - **Collaborate** across skill levels and tool preferences
 - Add **advanced bi-directional communication** to your data apps
 - Create interactive **big data** applications with **crossfiltering**
@@ -96,7 +102,7 @@ How-to guides provide step by step recipes for solving essential problems and ta
 :::
 
 :::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Explanation
-:link: background/index
+:link: explanation/index
 :link-type: doc
 
 Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
@@ -111,20 +117,19 @@ The Panel API Reference Manual provides a comprehensive reference for all method
 
 ::::
 
-For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/) or our [Discord server](https://discord.gg/muhupDZM). If you have any [issues](https://github.com/holoviz/panel/issues) or wish to [contribute code](https://help.github.com/articles/about-pull-requests), you can visit our [GitHub site](https://github.com/holoviz/panel).
+For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/) or our [Discord server](https://discord.gg/muhupDZM). If you have any [issues](https://github.com/holoviz/panel/issues), [feature requests](https://github.com/holoviz/panel/issues) or wish to [contribute](https://github.com/holoviz/panel/blob/main/CONTRIBUTING.MD), you can visit our [GitHub site](https://github.com/holoviz/panel).
 
 ## Sponsors
 
 The Panel project is grateful for the sponsorship by the organizations and companies below:
 
-::::{grid} 2
+::::{grid} 2 2 2 4
 
 :::{grid-item-card}
 :class-body: sponsor-logo
 :link: https://www.anaconda.com/
 :link-type: url
 :text-align: center
-:columns: 3
 
 ```{image} https://static.bokeh.org/sponsor/anaconda.png
 ---
@@ -139,7 +144,6 @@ alt: Anaconda Logo
 :link: https://www.blackstone.com/the-firm/
 :link-type: url
 :text-align: center
-:columns: 3
 
 ```{image} https://static.bokeh.org/sponsor/blackstone.png
 ---
@@ -153,7 +157,6 @@ alt: Blackstone Logo
 :link: https://numfocus.org/
 :link-type: url
 :text-align: center
-:columns: 3
 
 ```{image} https://numfocus.org/wp-content/uploads/2017/03/numfocusweblogo_orig-1.png
 ---
@@ -167,7 +170,6 @@ alt: NumFOCUS Logo
 :link: https://quansight.com/
 :link-type: url
 :text-align: center
-:columns: 3
 
 ```{image} https://assets.holoviz.org/logos/Quansight-logo.svg
 ---

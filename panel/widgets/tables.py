@@ -68,7 +68,7 @@ class BaseTable(ReactiveData, Widget):
         (overrides the default chosen based on the type).""")
 
     hierarchical = param.Boolean(default=False, constant=True, doc="""
-        Whether to generate a hierachical index.""")
+        Whether to generate a hierarchical index.""")
 
     row_height = param.Integer(default=40, doc="""
         The height of each table row.""")
@@ -111,6 +111,7 @@ class BaseTable(ReactiveData, Widget):
         self._renamed_cols = {}
         self._filters = []
         self._index_mapping = {}
+        self._edited_indexes = []
         super().__init__(value=value, **params)
         self.param.watch(self._setup_on_change, ['editors', 'formatters'])
         self.param.trigger('editors')
@@ -233,7 +234,11 @@ class BaseTable(ReactiveData, Widget):
             columns.append(column)
         return columns
 
-    def _setup_on_change(self, event: param.parameterized.Event):
+    def _setup_on_change(self, *events: param.parameterized.Event):
+        for event in events:
+            self._process_on_change(event)
+
+    def _process_on_change(self, event: param.parameterized.Event):
         old, new = event.old, event.new
         for model in (old if isinstance(old, dict) else {}).values():
             if not isinstance(model, (CellEditor, CellFormatter)):
@@ -478,6 +483,7 @@ class BaseTable(ReactiveData, Widget):
             elif op == '<=':
                 filters.append(col <= val)
             elif op == 'in':
+                if not isinstance(val, (list, np.ndarray)): val = [val]
                 filters.append(col.isin(val))
             elif op == 'like':
                 filters.append(col.str.contains(val, case=False, regex=False))
@@ -1066,7 +1072,7 @@ class Tabulator(BaseTable):
           - 'checkbox'
               Adds a column of checkboxes to toggle selections
           - 'checkbox-single'
-              Same as 'checkbox' but header does not alllow select/deselect all
+              Same as 'checkbox' but header does not allow select/deselect all
           - 'toggle'
               Selection toggles when clicked
           - int
@@ -1080,9 +1086,14 @@ class Tabulator(BaseTable):
     theme = param.ObjectSelector(
         default="simple", objects=[
             'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-            'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'
+            'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast',
+            'bootstrap5'
         ], doc="""
         Tabulator CSS theme to apply to table.""")
+
+    theme_classes = param.List(default=[], item_type=str, doc="""
+       List of extra CSS classes to apply to the Tabulator element
+       to customize the theme.""")
 
     _data_params: ClassVar[List[str]] = [
         'value', 'page', 'page_size', 'pagination', 'sorters', 'filters'
@@ -1112,6 +1123,8 @@ class Tabulator(BaseTable):
 
     def __init__(self, value=None, **params):
         import pandas.io.formats.style
+        click_handler = params.pop('on_click', None)
+        edit_handler = params.pop('on_edit', None)
         if isinstance(value, pandas.io.formats.style.Styler):
             style = value
             value = value.data
@@ -1121,7 +1134,6 @@ class Tabulator(BaseTable):
         self.style = None
         self._computed_styler = None
         self._child_panels = {}
-        self._edited_indexes = []
         self._explicit_pagination = 'pagination' in params
         self._on_edit_callbacks = []
         self._on_click_callbacks = {}
@@ -1129,6 +1141,10 @@ class Tabulator(BaseTable):
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
+        if click_handler:
+            self.on_click(click_handler)
+        if edit_handler:
+            self.on_edit(edit_handler)
         if style is not None:
             self.style._todo = style._todo
 
@@ -1559,7 +1575,7 @@ class Tabulator(BaseTable):
         if 'hidden_columns' in params:
             import pandas as pd
             if not self.show_index and self.value is not None and not isinstance(self.value.index, pd.MultiIndex):
-                params['hidden_columns'] += [self.value.index.name or 'index']
+                params['hidden_columns'] = params['hidden_columns'] + [self.value.index.name or 'index']
         if 'selectable_rows' in params:
             params['selectable_rows'] = self._get_selectable()
         return params

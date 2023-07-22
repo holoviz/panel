@@ -185,6 +185,10 @@ class Plotly(ModelPane):
         if self._figure is None or self.relayout_data is None:
             return
         relayout_data = self._clean_relayout_data(self.relayout_data)
+        # The _compound_array_props are sometimes not correctly reset
+        # which means that they are desynchronized with _props causing
+        # incorrect lookups and potential errors when updating a property
+        self._figure.layout._compound_array_props.clear()
         self._figure.plotly_relayout(relayout_data)
 
     @staticmethod
@@ -282,11 +286,27 @@ class Plotly(ModelPane):
                 params['styles'] = {}
         return params
 
+    def _process_param_change(self, params):
+        props = super()._process_param_change(params)
+        if 'layout' in props or 'stylesheets' in props:
+            if 'layout' in props:
+                layout = props['layout']
+            elif self._models:
+                # Improve lookup of current layout
+                layout = list(self._models.values())[0][0].layout
+            else:
+                return props
+            btn_color = layout.get('template', {}).get('layout', {}).get('font', {}).get('color', 'black')
+            props['stylesheets'] = props.get('stylesheets', []) + [
+                f':host {{ --plotly-icon-color: gray; --plotly-active-icon-color: {btn_color}; }}'
+            ]
+        return props
+
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        self._bokeh_model  = lazy_load(
+        self._bokeh_model = lazy_load(
             'panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm), root
         )
         return super()._get_model(doc, root, parent, comm)

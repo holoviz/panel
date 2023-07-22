@@ -72,6 +72,8 @@ class _SliderBase(Widget):
     def __init__(self, **params):
         if 'value' in params and 'value_throttled' in self.param:
             params['value_throttled'] = params['value']
+        if 'orientation' == 'vertical':
+            params['height'] = self.param.width.default
         super().__init__(**params)
 
     def __repr__(self, depth=0):
@@ -611,7 +613,7 @@ class IntRangeSlider(RangeSlider):
         The lower bound.""")
 
     end = param.Integer(default=1, doc="""
-        The uppper bound.""")
+        The upper bound.""")
 
     step = param.Integer(default=1, doc="""
         The step size""")

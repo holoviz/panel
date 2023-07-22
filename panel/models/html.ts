@@ -42,6 +42,10 @@ export class HTMLView extends PanelMarkupView {
 
   connect_signals(): void {
     super.connect_signals()
+    this.connect(this.model.properties.text.change, () => {
+      const html = this.process_tex()
+      this.set_html(html)
+    })
     this.connect(this.model.properties.events.change, () => {
       this._remove_event_listeners()
       this._setup_event_listeners()
@@ -53,20 +57,31 @@ export class HTMLView extends PanelMarkupView {
     this.invalidate_layout()
   }
 
-  render(): void {
-    super.render()
-    this.shadow_el.appendChild(this.container)
-
-    if (this.provider.status == "failed" || this.provider.status == "loaded")
-      this._has_finished = true
-
-    const html = this.process_tex()
+  set_html(html: string | null): void {
     if (html) {
       this.container.innerHTML = html
       if (this.model.run_scripts)
 	runScripts(this.container)
       this._setup_event_listeners()
     }
+  }
+
+  render(): void {
+    super.render()
+    this.container.style.visibility = 'hidden';
+    this.shadow_el.appendChild(this.container)
+
+    if (this.provider.status == "failed" || this.provider.status == "loaded")
+      this._has_finished = true
+
+    const html = this.process_tex()
+    this.watch_stylesheets()
+    this.set_html(html)
+  }
+
+  style_redraw(): void {
+    if (this.model.visible)
+      this.container.style.visibility = 'visible';
   }
 
   process_tex(): string {

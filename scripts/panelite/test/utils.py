@@ -11,14 +11,14 @@ class Retrier(object):
          self.delay=delay
 
          self.retries = 0
-         self.acomplished = False
+         self.accomplished = False
 
     def __enter__(self):
          return self
 
     def __exit__(self, exc, value, traceback):
          if not exc:
-             self.acomplished = True
+             self.accomplished = True
              return True
          self.retries += 1
          time.sleep(self.delay)

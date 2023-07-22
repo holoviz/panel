@@ -152,11 +152,11 @@ class FileInput(Widget):
     description = param.String(default=None, doc="""
         An HTML string describing the function of this component.""")
 
-    filename = param.ClassSelector(default=None, class_=(str, list),
-                               is_instance=True)
+    filename = param.ClassSelector(
+        default=None, class_=(str, list), is_instance=True)
 
-    mime_type = param.ClassSelector(default=None, class_=(str, list),
-                               is_instance=True)
+    mime_type = param.ClassSelector(
+        default=None, class_=(str, list), is_instance=True)
 
     multiple = param.Boolean(default=False)
 
@@ -294,9 +294,9 @@ class DatePicker(Widget):
     end = param.CalendarDate(default=None, doc="""
         Inclusive upper bound of the allowed date selection""")
 
-    disabled_dates = param.List(default=None, class_=(date, str))
+    disabled_dates = param.List(default=None, item_type=(date, str))
 
-    enabled_dates = param.List(default=None, class_=(date, str))
+    enabled_dates = param.List(default=None, item_type=(date, str))
 
     width = param.Integer(default=300, allow_None=True, doc="""
       Width of this component. If sizing_mode is set to stretch
@@ -326,10 +326,10 @@ class DatePicker(Widget):
 
 class _DatetimePickerBase(Widget):
 
-    disabled_dates = param.List(default=None, class_=(date, str), doc="""
+    disabled_dates = param.List(default=None, item_type=(date, str), doc="""
       Dates to make unavailable for selection.""")
 
-    enabled_dates = param.List(default=None, class_=(date, str), doc="""
+    enabled_dates = param.List(default=None, item_type=(date, str), doc="""
       Dates to make available for selection.""")
 
     enable_time = param.Boolean(default=True, doc="""
@@ -480,7 +480,7 @@ class DatetimeRangePicker(_DatetimePickerBase):
 
 class ColorPicker(Widget):
     """
-    The `ColorPicker` widget allows selecting a hexidecimal RGB color value
+    The `ColorPicker` widget allows selecting a hexadecimal RGB color value
     using the browser’s color-picking widget.
 
     Reference: https://panel.holoviz.org/reference/widgets/ColorPicker.html
@@ -495,6 +495,10 @@ class ColorPicker(Widget):
 
     value = param.Color(default=None, doc="""
         The selected color""")
+
+    width = param.Integer(default=52, allow_None=True, doc="""
+      Width of this component. If sizing_mode is set to stretch
+      or scale mode this will merely be used as a suggestion.""")
 
     _widget_type: ClassVar[Type[Model]] = _BkColorPicker
 
@@ -751,7 +755,7 @@ class LiteralInput(Widget):
         super().__init__(**params)
         self._state = ''
         self._validate(None)
-        self._callbacks.append(self.param.watch(self._validate, 'value'))
+        self._internal_callbacks.append(self.param.watch(self._validate, 'value'))
 
     def _validate(self, event):
         if self.type is None: return

@@ -12,9 +12,7 @@
 
 Construct individual components<components/index>
 Styling components<styling/index>
+Interactivity<interactivity/index>
 Arranging components<layout/index>
 Bind Component Parameters (Reactive API)<reactive/index>
-Autogenerate UIs (Interact API)<interact/index>
-Explicitly link parameters (Callbacks API)<links/index>
-Generate UIs from declared parameters (Param API)<param/index>
 ```

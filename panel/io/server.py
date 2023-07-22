@@ -21,6 +21,7 @@ import weakref
 from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
+from html import escape
 from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union,
@@ -38,23 +39,25 @@ from bokeh.application.handlers.code import (
     CodeHandler, _monkeypatch_io, patch_curdoc,
 )
 from bokeh.application.handlers.function import FunctionHandler
-from bokeh.core.templates import AUTOLOAD_JS, FILE
+from bokeh.core.json_encoder import serialize_json
+from bokeh.core.templates import AUTOLOAD_JS, FILE, MACROS
 from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
 from bokeh.embed.bundle import Script
-from bokeh.embed.elements import (
-    html_page_for_render_items, script_for_render_items,
-)
+from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem
+from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.io import curdoc
 from bokeh.models import CustomJS
 from bokeh.server.server import Server as BokehServer
-from bokeh.server.urls import per_app_patterns
+from bokeh.server.urls import per_app_patterns, toplevel_patterns
 from bokeh.server.views.autoload_js_handler import (
     AutoloadJsHandler as BkAutoloadJsHandler,
 )
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
+from bokeh.server.views.root_handler import RootHandler as BkRootHandler
 from bokeh.server.views.static_handler import StaticHandler
+from bokeh.util.serialization import make_id
 from bokeh.util.token import (
     generate_jwt_token, generate_session_id, get_token_payload,
 )
@@ -86,7 +89,9 @@ from .state import set_curdoc, state
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from bokeh.document import Document
+    from bokeh.bundle import Bundle
+    from bokeh.core.types import ID
+    from bokeh.document.document import DocJson, Document
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.session import ServerSession
     from jinja2 import Template
@@ -103,6 +108,7 @@ if TYPE_CHECKING:
 #---------------------------------------------------------------------
 
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
+DEFAULT_TITLE = "Panel Application"
 
 def _origin_url(url: str) -> str:
     if url.startswith("http"):
@@ -206,6 +212,69 @@ state.on_session_created(_initialize_session_info)
 # Bokeh patches
 #---------------------------------------------------------------------
 
+
+def html_page_for_render_items(
+    bundle: Bundle | tuple[str, str], docs_json: dict[ID, DocJson],
+    render_items: list[RenderItem], title: str, template: Template | str | None = None,
+    template_variables: dict[str, Any] = {}
+) -> str:
+    """
+    Render an HTML page from a template and Bokeh render items.
+
+    Arguments
+    ---------
+    bundle (tuple):
+        A tuple containing (bokehjs, bokehcss)
+    docs_json (JSON-like):
+        Serialized Bokeh Document
+    render_items (RenderItems)
+        Specific items to render from the document and where
+    title (str or None)
+        A title for the HTML page. If None, DEFAULT_TITLE is used
+    template (str or Template or None, optional) :
+        A Template to be used for the HTML page. If None, FILE is used.
+    template_variables (dict, optional):
+        Any Additional variables to pass to the template
+
+    Returns
+    -------
+    str
+    """
+    if title is None:
+        title = DEFAULT_TITLE
+
+    bokeh_js, bokeh_css = bundle
+
+    json_id = make_id()
+    json = escape(serialize_json(docs_json), quote=False)
+    json = wrap_in_script_tag(json, "application/json", json_id)
+
+    script = wrap_in_script_tag(script_for_render_items(json_id, render_items))
+
+    context = template_variables.copy()
+
+    context.update(dict(
+        title = title,
+        bokeh_js = bokeh_js,
+        bokeh_css = bokeh_css,
+        plot_script = json + script,
+        docs = render_items,
+        base = BASE_TEMPLATE,
+        macros = MACROS,
+    ))
+
+    if len(render_items) == 1:
+        context["doc"] = context["docs"][0]
+        context["roots"] = context["doc"].roots
+
+    if template is None:
+        template = BASE_TEMPLATE
+    elif isinstance(template, str):
+        template = _env.from_string("{% extends base %}\n" + template)
+
+    html = template.render(context)
+    return html
+
 def server_html_page_for_session(
     session: 'ServerSession',
     resources: 'Resources',
@@ -220,9 +289,6 @@ def server_html_page_for_session(
         dist_url = f'{state.rel_path}/{LOCAL_DIST}' if state.rel_path else LOCAL_DIST
     else:
         dist_url = CDN_DIST
-
-    if template is FILE:
-        template = BASE_TEMPLATE
 
     doc = session.document
     doc._template_variables['theme_name'] = config.theme
@@ -239,6 +305,9 @@ def server_html_page_for_session(
     if template_variables is None:
         template_variables = {}
 
+    if template is FILE:
+        template = BASE_TEMPLATE
+
     with set_curdoc(doc):
         bundle = bundle_resources(doc.roots, resources)
         html = html_page_for_render_items(
@@ -247,7 +316,7 @@ def server_html_page_for_session(
         )
         if config.global_loading_spinner:
             html = html.replace(
-                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} {config.loading_spinner}">'
+                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">'
             )
     return html
 
@@ -464,16 +533,31 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
         with self._session_prefix():
             session = await self.get_session()
             with set_curdoc(session.document):
-                resources = Resources.from_bokeh(self.application.resources(server_url))
+                resources = Resources.from_bokeh(
+                    self.application.resources(server_url), absolute=True
+                )
                 js = autoload_js_script(
                     session.document, resources, session.token, element_id,
-                    app_path, absolute_url
+                    app_path, absolute_url, absolute=True
                 )
 
         self.set_header("Content-Type", 'application/javascript')
         self.write(js)
 
 per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
+
+class RootHandler(BkRootHandler):
+    """
+    Custom RootHandler that provides the CDN_DIST directory as a
+    template variable.
+    """
+
+    def render(self, *args, **kwargs):
+        kwargs['PANEL_CDN'] = CDN_DIST
+        return super().render(*args, **kwargs)
+
+toplevel_patterns[0] = (r'/?', RootHandler)
+bokeh.server.tornado.RootHandler = RootHandler
 
 
 class ComponentResourceHandler(StaticFileHandler):
@@ -624,7 +708,7 @@ def modify_document(self, doc: 'Document'):
         def handle_exception(handler, e):
             from bokeh.application.handlers.handler import handle_exception
 
-            from ..pane import HTML
+            from ..pane import Alert
 
             # Clean up
             del sys.modules[module.__name__]
@@ -638,9 +722,9 @@ def modify_document(self, doc: 'Document'):
 
             # Serve error
             e_msg = str(e).replace('\033[1m', '<b>').replace('\033[0m', '</b>')
-            HTML(
-                f'<b>{type(e).__name__}</b>: {e_msg}</br><pre style="overflow-y: scroll">{tb}</pre>',
-                css_classes=['alert', 'alert-danger'], sizing_mode='stretch_width'
+            Alert(
+                f'<b>{type(e).__name__}</b>: {e_msg}\n<pre style="overflow-y: auto">{tb}</pre>',
+                alert_type='danger', margin=5, sizing_mode='stretch_width'
             ).servable()
 
         if config.autoreload:
@@ -842,6 +926,7 @@ def get_server(
     location: bool | Location = True,
     admin: bool = False,
     static_dirs: Mapping[str, str] = {},
+    basic_auth: str = None,
     oauth_provider: Optional[str] = None,
     oauth_key: Optional[str] = None,
     oauth_secret: Optional[str] = None,
@@ -891,6 +976,8 @@ def get_server(
     static_dirs: dict (optional, default={})
       A dictionary of routes and local paths to serve as static file
       directories on those routes.
+    basic_auth: str (optional, default=None)
+      Password or filepath to use with basic auth provider.
     oauth_provider: str
       One of the available OAuth providers
     oauth_key: str (optional, default=None)
@@ -932,7 +1019,7 @@ def get_server(
                     title_ = title[slug]
                 except KeyError:
                     raise KeyError(
-                        "Keys of the title dictionnary and of the apps "
+                        "Keys of the title dictionary and of the apps "
                         f"dictionary must match. No {slug} key found in the "
                         "title dictionary.")
             else:
@@ -1009,7 +1096,12 @@ def get_server(
 
     # Configure OAuth
     from ..config import config
-    if oauth_provider:
+    server_config = {}
+    if basic_auth:
+        from ..auth import BasicProvider
+        server_config['basic_auth'] = basic_auth
+        opts['auth_provider'] = BasicProvider()
+    elif oauth_provider:
         from ..auth import OAuthProvider
         config.oauth_provider = oauth_provider # type: ignore
         opts['auth_provider'] = OAuthProvider()
@@ -1032,6 +1124,7 @@ def get_server(
         print(f"Launching server at {url}")
 
     state._servers[server_id] = (server, panel, [])
+    state._server_config[server._tornado] = server_config
 
     if show:
         def show_callback():

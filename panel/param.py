@@ -4,6 +4,7 @@ set of widgets.
 """
 from __future__ import annotations
 
+import asyncio
 import inspect
 import itertools
 import json
@@ -17,12 +18,13 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from functools import partial
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, List, Mapping, Optional, Tuple, Type,
+    TYPE_CHECKING, Any, ClassVar, Generator, List, Mapping, Optional, Tuple,
+    Type,
 )
 
 import param
 
-from param.parameterized import classlist, discard_events
+from param.parameterized import classlist, discard_events, iscoroutinefunction
 
 from .config import config
 from .io import state
@@ -200,8 +202,6 @@ class Param(PaneBase):
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
 
-    priority: ClassVar[float | bool | None] = 0.1
-
     _ignored_refs: ClassVar[Tuple[str]] = ('object',)
 
     _linkable_properties: ClassVar[Tuple[str]] = ()
@@ -297,6 +297,7 @@ class Param(PaneBase):
                     parameters = []
                 else:
                     parameters = [p for p in event.new.param if p != 'name']
+                if event.new is not None:
                     self.name = param_name(event.new.name)
             if event.name == 'parameters':
                 if event.new is None:
@@ -312,10 +313,10 @@ class Param(PaneBase):
             self.parameters = parameters
             return
 
-        for cb in list(self._callbacks):
+        for cb in list(self._internal_callbacks):
             if cb.inst in self._widget_box.objects:
                 cb.inst.param.unwatch(cb)
-                self._callbacks.remove(cb)
+                self._internal_callbacks.remove(cb)
 
         # Construct widgets
         if self.object is None:
@@ -387,7 +388,7 @@ class Param(PaneBase):
             watchers = [selector.param.watch(update_pane, 'value')]
             if toggle:
                 watchers.append(toggle.param.watch(toggle_pane, 'value'))
-            self._callbacks += watchers
+            self._internal_callbacks += watchers
 
             if self.expand:
                 if self.expand_button:
@@ -465,9 +466,18 @@ class Param(PaneBase):
                 kw['fixed_end'] = p_obj.bounds[1]
 
         if p_obj.doc:
-            kw['description'] = textwrap.dedent(p_obj.doc.lstrip())
+            kw['description'] = textwrap.dedent(p_obj.doc).strip()
 
         # Update kwargs
+        onkeyup = kw_widget.pop('onkeyup', False)
+        throttled = kw_widget.pop('throttled', False)
+        ignored_kws = [repr(k) for k in kw_widget if k not in widget_class.param]
+        if ignored_kws:
+            self.param.warning(
+                f'Param pane was given unknown keyword argument(s) for {p_name!r} '
+                f'parameter with a widget of type {widget_class!r}. The following '
+                f'keyword arguments could not be applied: {", ".join(ignored_kws)}.'
+            )
         kw.update(kw_widget)
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
@@ -482,7 +492,7 @@ class Param(PaneBase):
         widget._param_pane = self
         widget._param_name = p_name
 
-        watchers = self._callbacks
+        watchers = self._internal_callbacks
 
         def link_widget(change):
             if p_name in self._updating:
@@ -501,9 +511,9 @@ class Param(PaneBase):
             def action(change):
                 value(self.object)
             watcher = widget.param.watch(action, 'clicks')
-        elif kw_widget.get('onkeyup', False) and hasattr(widget, 'value_input'):
+        elif onkeyup and hasattr(widget, 'value_input'):
             watcher = widget.param.watch(link_widget, 'value_input')
-        elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
+        elif throttled and hasattr(widget, 'value_throttled'):
             watcher = widget.param.watch(link_widget, 'value_throttled')
         else:
             watcher = widget.param.watch(link_widget, 'value')
@@ -562,10 +572,10 @@ class Param(PaneBase):
                 def action(event):
                     change.new(self.object)
                 watchers[0] = widget.param.watch(action, 'clicks')
-                idx = self._callbacks.index(prev_watcher)
-                self._callbacks[idx] = watchers[0]
+                idx = self._internal_callbacks.index(prev_watcher)
+                self._internal_callbacks[idx] = watchers[0]
                 return
-            elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
+            elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
                 updates['value'] = change.new
             elif isinstance(widget, Row) and len(widget) == 2:
@@ -658,7 +668,7 @@ class Param(PaneBase):
 
     def _rerender_widget(self, p_name):
         watchers = []
-        for w in self._callbacks:
+        for w in self._internal_callbacks:
             if w.inst is self._widgets[p_name]:
                 w.inst.param.unwatch(w)
             else:
@@ -696,9 +706,11 @@ class Param(PaneBase):
 
     @classmethod
     def applies(cls, obj: Any) -> float | bool | None:
-        return (is_parameterized(obj) or
-                isinstance(obj, param.parameterized.Parameters) or
-                (isinstance(obj, param.Parameter) and obj.owner is not None))
+        if isinstance(obj, param.parameterized.Parameters):
+            return 0.8
+        elif (is_parameterized(obj) or (isinstance(obj, param.Parameter) and obj.owner is not None)):
+            return 0.1
+        return False
 
     @classmethod
     def widget_type(cls, pobj):
@@ -748,9 +760,12 @@ class ParamMethod(ReplacementPane):
     return any object which itself can be rendered as a Pane.
     """
 
-    defer_load = param.Boolean(default=config.defer_load, doc="""
+    defer_load = param.Boolean(default=None, doc="""
         Whether to defer load until after the page is rendered.
         Can be set as parameter or by setting panel.config.defer_load.""")
+
+    generator_mode = param.Selector(default='replace', objects=['append', 'replace'], doc="""
+        Whether generators should 'append' to or 'replace' existing output.""")
 
     lazy = param.Boolean(default=False, doc="""
         Whether to lazily evaluate the contents of the object
@@ -761,7 +776,10 @@ class ParamMethod(ReplacementPane):
         Can be set as parameter or by setting panel.config.loading_indicator.""")
 
     def __init__(self, object=None, **params):
+        if 'defer_load' not in params:
+            params['defer_load'] = config.defer_load
         super().__init__(object, **params)
+        self._async_task = None
         self._evaled = not (self.lazy or self.defer_load)
         self._link_object_params()
         if object is not None:
@@ -795,10 +813,31 @@ class ParamMethod(ReplacementPane):
         return eval_function(function)
 
     async def _eval_async(self, awaitable):
+        if self._async_task:
+            self._async_task.cancel()
+        self._async_task = task = asyncio.current_task()
+        curdoc = state.curdoc
+        has_context = bool(curdoc.session_context) if curdoc else False
+        if has_context:
+            curdoc.on_session_destroyed(lambda context: task.cancel())
         try:
-            new_object = await awaitable
-            self._update_inner(new_object)
+            if isinstance(awaitable, types.AsyncGeneratorType):
+                append_mode = self.generator_mode == 'append'
+                if append_mode:
+                    self._inner_layout[:] = []
+                async for new_obj in awaitable:
+                    if append_mode:
+                        self._inner_layout.append(new_obj)
+                        self._pane = self._inner_layout[-1]
+                    else:
+                        self._update_inner(new_obj)
+            else:
+                self._update_inner(await awaitable)
+        except Exception as e:
+            if not curdoc or (has_context and curdoc.session_context):
+                raise e
         finally:
+            self._async_task = None
             self._inner_layout.loading = False
 
     def _replace_pane(self, *args, force=False):
@@ -813,22 +852,33 @@ class ParamMethod(ReplacementPane):
                 new_object = Spacer()
             else:
                 new_object = self.eval(self.object)
-            if inspect.isawaitable(new_object):
+            if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
                 return
-            self._update_inner(new_object)
+            elif isinstance(new_object, Generator):
+                append_mode = self.generator_mode == 'append'
+                if append_mode:
+                    self._inner_layout[:] = []
+                for new_obj in new_object:
+                    if append_mode:
+                        self._inner_layout.append(new_obj)
+                        self._pane = self._inner_layout[-1]
+                    else:
+                        self._update_inner(new_obj)
+            else:
+                self._update_inner(new_object)
         finally:
             self._inner_layout.loading = False
 
     def _update_pane(self, *events):
         callbacks = []
-        for watcher in self._callbacks:
+        for watcher in self._internal_callbacks:
             obj = watcher.inst if watcher.inst is None else watcher.cls
             if obj is self:
                 callbacks.append(watcher)
                 continue
             obj.param.unwatch(watcher)
-        self._callbacks = callbacks
+        self._internal_callbacks = callbacks
         self._link_object_params()
         self._replace_pane()
 
@@ -843,7 +893,7 @@ class ParamMethod(ReplacementPane):
                 new_deps = parameterized.param.method_dependencies(self.object.__name__)
                 for p in list(deps):
                     if p in new_deps: continue
-                    watchers = self._callbacks
+                    watchers = self._internal_callbacks
                     for w in list(watchers):
                         if (w.inst is p.inst and w.cls is p.cls and
                             p.name in w.parameter_names):
@@ -858,7 +908,7 @@ class ParamMethod(ReplacementPane):
                     pobj = p.cls if p.inst is None else p.inst
                     ps = [_p.name for _p in params]
                     watcher = pobj.param.watch(update_pane, ps, p.what)
-                    self._callbacks.append(watcher)
+                    self._internal_callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
             self._replace_pane()
@@ -872,7 +922,7 @@ class ParamMethod(ReplacementPane):
                 if props:
                     pobj.jslink(self._inner_layout, **props)
             watcher = pobj.param.watch(update_pane, ps, p.what)
-            self._callbacks.append(watcher)
+            self._internal_callbacks.append(watcher)
 
     def _get_model(
         self, doc: Document, root: Optional[Model] = None,
@@ -917,7 +967,7 @@ class ParamFunction(ParamMethod):
     def _link_object_params(self):
         deps = getattr(self.object, '_dinfo', {})
         dep_params = list(deps.get('dependencies', [])) + list(deps.get('kw', {}).values())
-        if not dep_params and not self.lazy and not self.defer_load:
+        if not dep_params and not self.lazy and not self.defer_load and not iscoroutinefunction(self.object):
             fn = getattr(self.object, '__bound_function__', self.object)
             fn_name = getattr(fn, '__name__', repr(self.object))
             self.param.warning(
@@ -941,7 +991,7 @@ class ParamFunction(ParamMethod):
                          if dep.name in pobj._linkable_params}
                 if props:
                     pobj.jslink(self._inner_layout, **props)
-            self._callbacks.append(watcher)
+            self._internal_callbacks.append(watcher)
 
     #----------------------------------------------------------------
     # Public API
@@ -952,7 +1002,11 @@ class ParamFunction(ParamMethod):
         if isinstance(obj, types.FunctionType):
             if hasattr(obj, '_dinfo'):
                 return True
-            if kwargs.get('defer_load') or (cls.param.defer_load.default is None and config.defer_load):
+            if (
+                kwargs.get('defer_load') or cls.param.defer_load.default or
+                (cls.param.defer_load.default is None and config.defer_load) or
+                iscoroutinefunction(obj)
+            ):
                 return True
             return None
         return False
@@ -985,7 +1039,7 @@ class JSONInit(param.Parameterized):
         Optional path to a JSON file containing the parameter settings.""")
 
     def __call__(self, parameterized):
-        warnobj = param.main if isinstance(parameterized, type) else parameterized
+        warnobj = param.main.param if isinstance(parameterized, type) else parameterized.param
         param_class = (parameterized if isinstance(parameterized, type)
                        else parameterized.__class__)
 
@@ -1031,7 +1085,7 @@ def link_param_method(root_view, root_model):
 
     for widget in widgets:
         for method in methods:
-            for cb in method._callbacks:
+            for cb in method._internal_callbacks:
                 pobj = cb.cls if cb.inst is None else cb.inst
                 if widget._param_pane.object is pobj and widget._param_name in cb.parameter_names:
                     if isinstance(widget, DiscreteSlider):

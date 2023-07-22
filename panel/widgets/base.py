@@ -14,8 +14,10 @@ from typing import (
 
 import param  # type: ignore
 
-from bokeh.models import ImportedStyleSheet
+from bokeh.models import ImportedStyleSheet, Tooltip
+from bokeh.models.dom import HTML
 
+from .._param import Margin
 from ..layout.base import Row
 from ..reactive import Reactive
 from ..viewable import Layoutable, Viewable
@@ -45,7 +47,7 @@ class Widget(Reactive):
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    margin = param.Parameter(default=(5, 10), doc="""
+    margin = Margin(default=(5, 10), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
@@ -95,6 +97,13 @@ class Widget(Reactive):
         )
         return layout[0]
 
+    @property
+    def _linked_properties(self) -> Tuple[str]:
+        props = list(super()._linked_properties)
+        if 'description' in props:
+            props.remove('description')
+        return tuple(props)
+
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         params = super()._process_param_change(params)
         if self._widget_type is not None and 'stylesheets' in params:
@@ -102,6 +111,19 @@ class Widget(Reactive):
             params['stylesheets'] = [
                 ImportedStyleSheet(url=ss) for ss in css
             ] + params['stylesheets']
+        if "description" in params:
+            description = params["description"]
+            if isinstance(description, str):
+                from ..pane.markup import Markdown
+                parser = Markdown._get_parser('markdown-it', ())
+                html = parser.render(description)
+                params['description'] = Tooltip(
+                    content=HTML(html), position='right',
+                    stylesheets=[':host { white-space: initial; max-width: 300px; }'],
+                    syncable=False
+                )
+            elif isinstance(description, Tooltip):
+                description.syncable = False
         return params
 
     def _get_model(
@@ -166,9 +188,13 @@ class CompositeWidget(Widget):
                   if getattr(self, p) is not None}
         if layout.get('width', self.width) is None and 'sizing_mode' not in layout:
             layout['sizing_mode'] = 'stretch_width'
+        if layout.get('sizing_mode') not in (None, 'fixed') and layout.get('width'):
+            min_width = layout.pop('width')
+            if not layout.get('min_width'):
+                layout['min_width'] = min_width
         self._composite = self._composite_type(**layout)
         self._models = self._composite._models
-        self._callbacks.append(
+        self._internal_callbacks.append(
             self.param.watch(self._update_layout_params, layout_params)
         )
 

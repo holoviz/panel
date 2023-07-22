@@ -1,16 +1,20 @@
 import logging
+import os
 
 from functools import partial
 
 import ipykernel
+import jupyter_client.session as session
 import param
 
 from bokeh.document.events import MessageSentEvent
 from bokeh.document.json import Literal, MessageSent, TypedDict
 from bokeh.util.serialization import make_id
 from ipykernel.comm import Comm, CommManager
+from ipykernel.kernelbase import Kernel
 from ipywidgets import Widget
 from ipywidgets._version import __protocol_version__
+from ipywidgets.widgets.widget import _remove_buffers
 
 # Stop ipywidgets_bokeh from patching the kernel
 ipykernel.kernelbase.Kernel._instance = ''
@@ -20,10 +24,24 @@ from ipywidgets_bokeh.kernel import (
 )
 from ipywidgets_bokeh.widget import IPyWidget
 from tornado.ioloop import IOLoop
+from traitlets import Any
 
+from ..config import __version__
 from ..util import classproperty
 from .state import set_curdoc, state
 
+try:
+    # Support for ipywidgets>=8.0.5
+    import comm
+
+    from comm.base_comm import BaseComm
+
+    class TempComm(BaseComm):
+        def publish_msg(self, *args, **kwargs): pass
+
+    comm.create_comm = lambda *args, **kwargs: TempComm(target_name='panel-temp-comm', primary=False)
+except Exception:
+    comm = None
 
 def _get_kernel(cls=None, doc=None):
     doc = doc or state.curdoc
@@ -48,16 +66,31 @@ def _on_widget_constructed(widget, doc=None):
         return
     widget._document = doc
     kernel = _get_kernel(doc=doc)
-    if widget.comm and isinstance(widget.comm.kernel, PanelKernel):
+    if (widget.comm and widget.comm.target_name != 'panel-temp-comm' and
+        (not (comm and isinstance(widget.comm, comm.DummyComm)) and
+         isinstance(widget.comm.kernel, PanelKernel))):
         return
-    args = dict(
-        target_name='jupyter.widget', data={}, buffers=[],
-        metadata={'version': __protocol_version__}
-    )
+    wstate, buffer_paths, buffers = _remove_buffers(widget.get_state())
+    args = {
+        'target_name': 'jupyter.widget',
+        'data': {
+            'state': wstate,
+            'buffer_paths': buffer_paths
+        },
+        'buffers': buffers,
+        'metadata': {
+            'version': __protocol_version__
+        }
+    }
     if widget._model_id is not None:
         args['comm_id'] = widget._model_id
-    widget.comm = Comm(**args)
+    try:
+        widget.comm = Comm(**args)
+    except Exception as e:
+        if 'PANEL_IPYWIDGET' not in os.environ:
+            raise e
     kernel.register_widget(widget)
+
 
 # Patch font-awesome CSS onto ipywidgets_bokeh IPyWidget
 IPyWidget.__css__ = [
@@ -98,7 +131,7 @@ class MessageSentEventPatched(MessageSentEvent):
 class PanelSessionWebsocket(SessionWebsocket):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        session.Session.__init__(self, *args, **kwargs)
         self._document = kwargs.pop('document', None)
         self._queue = []
         self._document.on_message("ipywidgets_bokeh", self.receive)
@@ -138,12 +171,21 @@ class PanelSessionWebsocket(SessionWebsocket):
             for event in self._queue:
                 self._document.callbacks.trigger_on_change(event)
         except Exception as e:
-            param.main.warning(f'ipywidgets event dispatch failed with: {e}')
+            param.main.param.warning(f'ipywidgets event dispatch failed with: {e}')
         finally:
             self._queue = []
 
+class ShellStream:
 
-class PanelKernel(BokehKernel):
+    def flush(self, *args):
+        pass
+
+class PanelKernel(Kernel):
+    implementation = 'panel'
+    implementation_version = __version__
+    banner = 'banner'
+
+    shell_stream = Any(ShellStream(), allow_none=True)
 
     def __init__(self, key=None, document=None):
         super().__init__()
@@ -164,11 +206,14 @@ class PanelKernel(BokehKernel):
             handler = getattr(self.comm_manager, msg_type)
             self.shell_handlers[msg_type] = self._wrap_handler(msg_type, handler)
 
+    async def _flush_control_queue(self):
+        pass
+
     def register_widget(self, widget):
         comm = widget.comm
         comm.kernel = self
-        comm.open()
         self.comm_manager.register_comm(comm)
+        comm.open()
 
     def _wrap_handler(self, msg_type, handler):
         doc = self.session._document

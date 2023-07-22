@@ -90,7 +90,7 @@ This will ensure that every time you make a commit linting will automatically be
 
 ## Developing custom models
 
-Panel ships with a number of custom Bokeh models, which have both Python and Javascript components. When developing Panel these custom models have to be compiled. This happens automatically with `SETUPTOOLS_ENABLE_FEATURES=legacy-editable pip install -e .` or `python setup.py develop`, however when runnning actively developing you can rebuild the extension with `panel build panel`. The `build` command is just an alias for `bokeh build`; see
+Panel ships with a number of custom Bokeh models, which have both Python and Javascript components. When developing Panel these custom models have to be compiled. This happens automatically with `SETUPTOOLS_ENABLE_FEATURES=legacy-editable pip install -e .` or `python setup.py develop`, however when running actively developing you can rebuild the extension with `panel build panel`. The `build` command is just an alias for `bokeh build`; see
 the [Bokeh developer guide](https://docs.bokeh.org/en/latest/docs/dev_guide/setup.html) for more information about developing bokeh models.
 
 Just like any other Javascript (or Typescript) library Panel defines a `package.json` and `package-lock.json` files. When adding, updating or removing a dependency in the package.json file ensure you commit the changes to the `package-lock.json` after running `npm install`.
@@ -109,11 +109,12 @@ You will likely want to check out the [testing](testing.md) guide. Meanwhile, if
 
 ## Useful Links
 
-- [Dev version of Panel Site](https://pyviz-dev.github.io/panel)
-   - Use this to explore new, not yet released features and docs
+- [Dev version of Panel Site](https://holoviz-dev.github.io/panel)
+  - Use this to explore new, not yet released features and docs
 - [Panel main branch on Binder](https://mybinder.org/v2/gh/holoviz/panel/main?urlpath=lab/tree/examples)
-   - Use this to quickly explore and manually test the newest panel features in a fresh environment with all requirements installed.
-   - Replace `main` with `name-of-other-branch` for other branches.
+  - Use this to quickly explore and manually test the newest panel features in a fresh environment with all requirements installed.
+  - Replace `main` with `name-of-other-branch` or `version`for other branches.
+    - For example https://mybinder.org/v2/gh/holoviz/panel/v1.1.1?urlpath=lab/tree/examples
 
 ```{toctree}
 :titlesonly:

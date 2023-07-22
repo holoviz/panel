@@ -13,28 +13,28 @@ _ROOT = pathlib.Path(__file__).parent
 
 class FastBaseTemplate(BasicTemplate):
 
-    accent_base_color = param.String(default="#0072B5", doc="""
+    accent_base_color = param.Color(default="#0072B5", doc="""
         Optional body accent color override.""")
 
-    background_color = param.String(doc="""
+    background_color = param.Color(doc="""
         Optional body background color override.""")
 
     corner_radius = param.Integer(default=3, bounds=(0,25), doc="""
         The corner radius applied to controls.""")
 
     font = param.String(doc="""
-        The font to use.""")
+        The font name(s) to apply.""")
 
     font_url = param.String(doc="""
         A font url to import.""")
 
-    header_neutral_color = param.String(doc="""
+    header_neutral_color = param.Color(doc="""
         Optional header neutral color override.""")
 
-    header_accent_base_color = param.String(doc="""
+    header_accent_base_color = param.Color(doc="""
         Optional header accent color override.""")
 
-    neutral_color = param.String(doc="""
+    neutral_color = param.Color(doc="""
         Optional body neutral color override.""")
 
     theme_toggle = param.Boolean(default=True, doc="""
@@ -47,11 +47,11 @@ class FastBaseTemplate(BasicTemplate):
         A HTML string appended to the sidebar""")
 
     # Might be extended to accordion or tabs in the future
-    main_layout = param.Selector(default="card", label="Layout", objects=["", "card"], doc="""
+    main_layout = param.Selector(default="card", label="Layout", objects=[None, "card"], doc="""
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
         Could be extended to Accordion, Tab etc. in the future.""")
 
-    design = param.ClassSelector(class_=Design, default=Fast, constant=True,
+    design = param.ClassSelector(class_=Design, default=Fast,
                                  is_instance=False, instantiate=False, doc="""
         A Design applies a specific design system to a template.""")
 

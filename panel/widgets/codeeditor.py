@@ -60,7 +60,7 @@ class CodeEditor(Widget):
         elif 'disabled' in params:
             params['readonly'] = params['disabled']
         super().__init__(**params)
-        self._callbacks.append(
+        self._internal_callbacks.append(
             self.param.watch(self._update_disabled, ['disabled', 'readonly'])
         )
         self.jslink(self, readonly='disabled', bidirectional=True)
@@ -86,5 +86,5 @@ class CodeEditor(Widget):
 
 class Ace(CodeEditor):
     def __init__(self, **params):
-        deprecated("1.1", "Ace", "CodeEditor")
+        deprecated("1.3", "Ace", "CodeEditor")
         super().__init__(**params)

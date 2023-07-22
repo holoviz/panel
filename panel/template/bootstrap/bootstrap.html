@@ -40,9 +40,6 @@
     {% for css in template_resources['css'].values() %}
     <link rel="stylesheet" href="{{ css }}">
     {% endfor %}
-    {% for src in template_resources['extra_css'] %}
-    <link rel="stylesheet"  href="{{ src }}">
-    {% endfor %}
     {% for raw_css in template_resources['raw_css'] %}
     <style type="text/css">
     {{ raw_css }}
@@ -50,9 +47,20 @@
     {% endfor %}
 
     <style>
+      :root {
+	--header-background: {{ header_background or "var(--design-primary-color, var(--panel-primary-color))" }};
+	--header-color: {{ header_color or "var(--design-primary-text-color, var(--panel-on-primary-color))" }};
+	--sidebar-width: {{ sidebar_width }}px;
+      }
+      #header {
+	--bs-body-bg: var(--header-background);
+	--bs-body-color: var(--header-color);
+	background-color: var(--header-background);
+	color: var(--header-color);
+      }
       #sidebar {
-        max-width: {{ sidebar_width }}px !important;
-        width: {{ sidebar_width }}px;
+        max-width: var(--sidebar-width) !important;
+        width: var(--sidebar-width);
       }
     </style>
 
@@ -68,7 +76,7 @@
 <!-- goes in body -->
 {% block contents %}
 <div class="container-fluid d-flex flex-column vh-100 overflow-hidden" id="container">
-  <nav class="navbar navbar-expand-md sticky-top shadow" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+  <nav class="navbar navbar-expand-md sticky-top shadow" id="header">
     {% if nav %}
     <button type="button" id="sidebar-toggle" class="navbar-toggle" data-bs-toggle="collapse" data-bs-target="#sidebar" aria-expanded="true" aria-label="Toggle sidebar" aria-controls="sidebar">
       <span class="navbar-toggler-icon"></span>
@@ -100,7 +108,7 @@
 
   <div class="row overflow-hidden" id="content">
     {% if nav %}
-    <div class="sidenav collapse-horizontal show" id="sidebar">
+    <div class="sidenav collapse-horizontal {{ 'collapse' if collapsed_sidebar else 'show'}}" id="sidebar">
       <ul class="nav flex-column">
 	{% for doc in docs %}
 	{% for root in doc.roots %}

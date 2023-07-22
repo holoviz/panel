@@ -10,7 +10,7 @@ import param  # type: ignore
 
 from ..models.browser import BrowserInfo as _BkBrowserInfo
 from ..reactive import Syncable
-from .document import init_doc
+from .document import create_doc_if_none_exists
 from .state import state
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ class BrowserInfo(Syncable):
         self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
     ) -> 'Model':
-        doc = init_doc(doc)
+        doc = create_doc_if_none_exists(doc)
         root = self._get_model(doc, comm=comm)
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)

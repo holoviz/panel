@@ -42,7 +42,7 @@ def _wrap_callback(cb, wrapped, doc, comm, callbacks):
     Wraps a bokeh callback ensuring that any events triggered by it
     appropriately dispatch events in the notebook. Also temporarily
     replaces the wrapped callback with the real one while the callback
-    is exectuted to ensure the callback can be removed as usual.
+    is executed to ensure the callback can be removed as usual.
     """
     hold = doc.callbacks.hold_value
     doc.hold('combine')
@@ -249,8 +249,6 @@ class Matplotlib(Image, IPyWidget):
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._managers = {}
-        self._explicit_width = params.get('width') is not None
-        self._explicit_height = params.get('height') is not None
 
     def _get_widget(self, fig):
         import matplotlib.backends
@@ -274,14 +272,6 @@ class Matplotlib(Image, IPyWidget):
         canvas.mpl_connect('close_event', closer)
         return manager
 
-    @param.depends('width', watch=True)
-    def _set_explicict_width(self):
-        self._explicit_width = self.width is not None
-
-    @param.depends('height', watch=True)
-    def _set_explicict_height(self):
-        self._explicit_height = self.height is not None
-
     @property
     def _img_type(self):
         if self.format == 'png':
@@ -290,23 +280,6 @@ class Matplotlib(Image, IPyWidget):
             return SVG
         else:
             return PDF
-
-    def _update_dimensions(self):
-        w, h = self.object.get_size_inches()
-        dpi = self.dpi / 2. if self.high_dpi else self.dpi
-        with param.discard_events(self):
-            if not self._explicit_width:
-                if self._explicit_height:
-                    self.width = int(self.height * (w/h))
-                else:
-                    self.width = int(dpi * w)
-                self._explicit_width = False
-            if not self._explicit_height:
-                if self._explicit_width:
-                    self.height = int(self.width * (w/h))
-                else:
-                    self.height = self.height or int(dpi * h)
-                self._explicit_height = False
 
     @property
     def filetype(self):
@@ -330,7 +303,6 @@ class Matplotlib(Image, IPyWidget):
         self, doc: Document, root: Optional[Model] = None,
         parent: Optional[Model] = None, comm: Optional[Comm] = None
     ) -> Model:
-        self._update_dimensions()
         if not self.interactive:
             return self._img_type._get_model(self, doc, root, parent, comm)
         self.object.set_dpi(self.dpi)
@@ -347,7 +319,6 @@ class Matplotlib(Image, IPyWidget):
 
     def _update(self, ref: str, model: Model) -> None:
         if not self.interactive:
-            self._update_dimensions()
             model.update(**self._get_properties(model.document))
             return
         manager = self._managers[ref]

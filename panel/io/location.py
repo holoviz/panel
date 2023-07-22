@@ -15,12 +15,13 @@ import param
 from ..models.location import Location as _BkLocation
 from ..reactive import Syncable
 from ..util import parse_query
-from .document import init_doc
+from .document import create_doc_if_none_exists
 from .state import state
 
 if TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
+    from bokeh.server.contexts import BokehSessionContext
     from pyviz_comms import Comm
 
 
@@ -80,12 +81,20 @@ class Location(Syncable):
         self, doc: Optional[Document] = None, comm: Optional[Comm] = None,
         preprocess: bool = True
     ) -> 'Model':
-        doc = init_doc(doc)
+        doc = create_doc_if_none_exists(doc)
         root = self._get_model(doc, comm=comm)
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)
         self._documents[doc] = root
         return root
+
+    def _server_destroy(self, session_context: BokehSessionContext) -> None:
+        for p, ps, _, _ in self._synced:
+            try:
+                self.unsync(p, ps)
+            except Exception:
+                pass
+        super()._server_destroy(session_context)
 
     def _cleanup(self, root: Model | None = None) -> None:
         if root:
@@ -174,7 +183,7 @@ class Location(Syncable):
         parameters (list or dict):
           A list or dictionary specifying parameters to sync.
           If a dictionary is supplied it should define a mapping from
-          the Parameterized's parameteres to the names of the query
+          the Parameterized's parameters to the names of the query
           parameters.
         on_error: (callable):
           Callback when syncing Parameterized with URL parameters

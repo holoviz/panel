@@ -24,7 +24,7 @@ class DatetimePicker(InputWidget):
 
     disabled_dates = Nullable(List(Either(Date, Datetime, Tuple(Date, Date), Tuple(Datetime, Datetime))), default=None, help="""
     A list of dates of ``(start, end)`` date ranges to make unavailable for
-    selection. All other dates will be avalable.
+    selection. All other dates will be available.
 
     .. note::
         Only one of ``disabled_dates`` and ``enabled_dates`` should be specified.

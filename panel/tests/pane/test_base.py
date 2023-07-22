@@ -70,7 +70,7 @@ def test_pane_loading_param(pane, document, comm):
 
     p.loading = True
 
-    css_classes = [LOADING_INDICATOR_CSS_CLASS, config.loading_spinner]
+    css_classes = [LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}']
     assert all(cls in model.css_classes for cls in css_classes)
 
     p.loading = False
@@ -88,7 +88,7 @@ def test_pane_untracked_watchers(pane, document, comm):
         w for pwatchers in p._param_watchers.values()
         for awatchers in pwatchers.values() for w in awatchers
     ]
-    assert len([wfn for wfn in watchers if wfn not in p._callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0
+    assert len([wfn for wfn in watchers if wfn not in p._internal_callbacks and not hasattr(wfn.fn, '_watcher_name')]) == 0
 
 @pytest.mark.parametrize('pane', all_panes)
 def test_pane_clone(pane):

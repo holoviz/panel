@@ -1,5 +1,7 @@
 import sys
 
+from inspect import isasyncgenfunction
+
 import param
 
 from param.parameterized import iscoroutinefunction
@@ -39,14 +41,13 @@ def depends(*args, **kwargs):
     Python decorator annotating a function or `Parameterized` method to
     express its dependencies on a set of Parameters.
 
+    Despite still being available, usage of `pn.depends` is no longer
+    recommended, in favor of the less intrusive `pn.bind`.
+
     Returns a "reactive" function that binds (some of) its arguments to
     Parameter values. This means that the "reactive" function can
     (or will if `watch=True`) be automatically invoked whenever the underlying
     parameter values change.
-
-    See also `pn.bind`.
-
-    Reference: https://panel.holoviz.org/user_guide/APIs.html#reactive-functions
 
     :Example:
 
@@ -87,7 +88,7 @@ def bind(function, *args, watch=False, **kwargs):
     (or will if `watch=True`) be automatically invoked whenever the underlying
     parameter values change.
 
-    Reference: https://panel.holoviz.org/user_guide/APIs.html#reactive-functions
+    How-to: https://panel.holoviz.org/how_to/interactivity/bind_function.html
 
     :Example:
 
@@ -184,7 +185,7 @@ def _param_bind(function, *args, watch=False, **kwargs):
         elif isinstance(v, param.Parameter):
             dependencies[kw] = v
 
-    def combine_arguments(wargs, wkwargs):
+    def combine_arguments(wargs, wkwargs, asynchronous=False):
         combined_args = []
         for arg in args:
             if hasattr(arg, '_dinfo'):
@@ -201,7 +202,13 @@ def _param_bind(function, *args, watch=False, **kwargs):
                 arg = getattr(arg.owner, arg.name)
             combined_kwargs[kw] = arg
         for kw, arg in wkwargs.items():
-            if kw.startswith('__arg') or kw.startswith('__kwarg') or kw.startswith('__fn'):
+            if asynchronous:
+                if kw.startswith('__arg'):
+                    combined_args[int(kw[5:])] = arg
+                elif kw.startswith('__kwarg'):
+                    combined_kwargs[kw[8:]] = arg
+                continue
+            elif kw.startswith('__arg') or kw.startswith('__kwarg') or kw.startswith('__fn'):
                 continue
             combined_kwargs[kw] = arg
         return combined_args, combined_kwargs
@@ -217,12 +224,24 @@ def _param_bind(function, *args, watch=False, **kwargs):
                 fn = eval_function(p)
         return fn
 
-    if iscoroutinefunction(function):
+    if isasyncgenfunction(function):
+        async def wrapped(*wargs, **wkwargs):
+            combined_args, combined_kwargs = combine_arguments(
+                wargs, wkwargs, asynchronous=True
+            )
+            evaled = eval_fn()(*combined_args, **combined_kwargs)
+            async for val in evaled:
+                yield val
+        wrapper_fn = depends(**dependencies, watch=watch)(wrapped)
+        wrapped._dinfo = wrapper_fn._dinfo
+    elif iscoroutinefunction(function):
         @depends(**dependencies, watch=watch)
         async def wrapped(*wargs, **wkwargs):
-            combined_args, combined_kwargs = combine_arguments(wargs, wkwargs)
-
-            return await eval_fn()(*combined_args, **combined_kwargs)
+            combined_args, combined_kwargs = combine_arguments(
+                wargs, wkwargs, asynchronous=True
+            )
+            evaled = eval_fn()(*combined_args, **combined_kwargs)
+            return await evaled
     else:
         @depends(**dependencies, watch=watch)
         def wrapped(*wargs, **wkwargs):

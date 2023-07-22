@@ -32,25 +32,26 @@ export class VTKJSPlotView extends AbstractVTKView {
   }
 
   plot(): void {
-    if (!this.model.data) {
+    if (this.model.data == null) {
       this._vtk_renwin.getRenderWindow().render()
       return
     }
     const dataAccessHelper = vtkns.DataAccessHelper.get("zip", {
-      zipContent: this.model.data,
+      zipContent: atob(this.model.data as string),
       callback: (_zip: unknown) => {
         const sceneImporter = vtkns.HttpSceneLoader.newInstance({
           renderer: this._vtk_renwin.getRenderer(),
           dataAccessHelper,
         })
         const fn = (window as any).vtk.macro.debounce(
-          () =>
+          () => {
             setTimeout(() => {
               if (this._axes == null && this.model.axes) this._set_axes()
               this._set_camera_state()
               this._get_camera_state()
-            }, 100),
-          100
+	      this._vtk_renwin.getRenderWindow().render()
+            }, 100)
+	  }, 100
         )
         sceneImporter.setUrl("index.json")
         sceneImporter.onReady(fn)
@@ -72,8 +73,8 @@ export class VTKJSPlot extends AbstractVTKPlot {
   static {
     this.prototype.default_view = VTKJSPlotView
 
-    this.define<VTKJSPlot.Props>(({Boolean, Bytes, Nullable}) => ({
-      data:               [ Nullable(Bytes)  ],
+    this.define<VTKJSPlot.Props>(({Boolean, Nullable, String}) => ({
+      data:               [ Nullable(String)  ],
       enable_keybindings: [ Boolean, false    ],
     }))
   }

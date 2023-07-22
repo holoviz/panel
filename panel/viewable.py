@@ -21,11 +21,11 @@ import uuid
 from functools import partial
 from typing import (
     IO, TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Mapping, Optional,
-    TypeVar,
 )
 
 import param  # type: ignore
 
+from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
 from bokeh.resources import Resources
 from jinja2 import Template
@@ -34,13 +34,13 @@ from pyviz_comms import Comm  # type: ignore
 from ._param import Align, Aspect, Margin
 from .config import config, panel_extension
 from .io import serve
-from .io.document import init_doc
+from .io.document import create_doc_if_none_exists, init_doc
 from .io.embed import embed_state
 from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
-    JupyterCommManagerBinary as JupyterCommManager, ipywidget,
-    render_mimebundle, render_model, show_embed, show_server,
+    JupyterCommManagerBinary as JupyterCommManager, ipywidget, render_embed,
+    render_mimebundle, render_model, show_server,
 )
 from .io.save import save
 from .io.state import curdoc_locked, state
@@ -112,6 +112,11 @@ class Layoutable(param.Parameterized):
     stylesheets = param.List(default=[], doc="""
         List of stylesheets defined as URLs pointing to .css files
         or raw CSS defined as a string.""")
+
+    tags = param.List(default=[], doc="""
+        List of arbitrary tags to add to the component.
+        Can be useful for templating or for storing metadata on
+        the model.""")
 
     width = param.Integer(default=None, bounds=(0, None), doc="""
         The width of the component (in pixels). This can be either
@@ -292,7 +297,6 @@ class Layoutable(param.Parameterized):
         super().__init__(**params)
 
 
-_Self = TypeVar('_Self', bound='ServableMixin')
 
 class ServableMixin:
     """
@@ -326,6 +330,7 @@ class ServableMixin:
         else:
             loc_model = loc._get_model(doc, root)
         loc_model.name = 'location'
+        doc.on_session_destroyed(loc._server_destroy) # type: ignore
         doc.add_root(loc_model)
         return loc
 
@@ -336,7 +341,7 @@ class ServableMixin:
     def servable(
         self, title: Optional[str] = None, location: bool | 'Location' = True,
         area: str = 'main', target: Optional[str] = None
-    ) -> _Self:
+    ) -> 'ServableMixin':
         """
         Serves the object or adds it to the configured
         pn.state.template if in a `panel serve` context, writes to the
@@ -388,7 +393,10 @@ class ServableMixin:
             from .io.pyodide import _IN_WORKER, _get_pyscript_target, write
             if _IN_WORKER:
                 return self
-            target = target or _get_pyscript_target()
+            try:
+                target = target or _get_pyscript_target()
+            except Exception:
+                target = None
             if target is not None:
                 asyncio.create_task(write(target, self))
         return self
@@ -453,10 +461,16 @@ class MimeRenderMixin:
         held = doc.callbacks.hold_value
         patch = manager.assemble(msg)
         doc.hold()
-        patch.apply_to_document(doc, comm.id if comm else None)
-        doc.unhold()
-        if held:
-            doc.hold(held)
+        try:
+            patch.apply_to_document(doc, comm.id if comm else None)
+        except DeserializationError:
+            self.param.warning(
+                "Comm received message that could not be deserialized."
+            )
+        finally:
+            doc.unhold()
+            if held:
+                doc.hold(held)
 
     def _on_error(self, ref: str, error: Exception) -> None:
         if ref not in state._handles or config.console_output in [None, 'disable']:
@@ -508,7 +522,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
     __abstract = True
 
     def __init__(self, **params):
-        self._callbacks = []
+        self._internal_callbacks = []
         self._documents = {}
         self._models = {}
         self._comms = {}
@@ -560,13 +574,23 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         if ref in state._handles:
             del state._handles[ref]
 
-    def _preprocess(self, root: 'Model') -> None:
+    def _preprocess(self, root: 'Model', changed=None, old_models=None) -> None:
         """
-        Applies preprocessing hooks to the model.
+        Applies preprocessing hooks to the root model.
+
+        Some preprocessors have to always iterate over the entire
+        model tree but others only have to update newly added models.
+        To support the optimized case we optionally provide the
+        Panel object that was changed and any old, unchanged models
+        so they can be skipped (see https://github.com/holoviz/panel/pull/4989)
         """
+        changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
         for hook in hooks:
-            hook(self, root)
+            try:
+                hook(self, root, changed, old_models)
+            except TypeError:
+                hook(self, root)
 
     def _render_model(self, doc: Optional[Document] = None, comm: Optional[Comm] = None) -> 'Model':
         if doc is None:
@@ -627,8 +651,8 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         -------
         Returns the bokeh model corresponding to this panel object
         """
-        doc = init_doc(doc)
-        if self._design and comm:
+        doc = create_doc_if_none_exists(doc)
+        if self._design and (comm or (state._is_pyodide and not doc.session_context)):
             wrapper = self._design._wrapper(self)
             if wrapper is self:
                 root = self._get_model(doc, comm=comm)
@@ -671,7 +695,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         self._update_loading()
         self._update_background()
         self._update_design()
-        self._callbacks.extend([
+        self._internal_callbacks.extend([
             self.param.watch(self._update_background, 'background'),
             self.param.watch(self._update_design, 'design'),
             self.param.watch(self._update_loading, 'loading')
@@ -700,7 +724,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         # Warning
         prev = f'{type(self).name}(..., background={self.background!r})'
         new = f"{type(self).name}(..., styles={{'background': {self.background!r}}})"
-        deprecated("1.1", prev, new)
+        deprecated("1.3", prev, new)
 
         self.styles = dict(self.styles, background=self.background)
 
@@ -789,8 +813,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         else:
             location = None
 
-        from IPython.display import display
-
         doc = Document()
         comm = state._comm_manager.get_server_comm()
         model = self._render_model(doc, comm)
@@ -799,7 +821,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 
-        if config.console_output != 'disable':
+        if config.console_output != 'disable' and not state._is_pyodide:
+            from IPython.display import display
+
             ref = model.ref['id']
             handle = display(display_id=uuid.uuid4().hex)
             state._handles[ref] = (handle, [])
@@ -825,15 +849,18 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
-        inherited = {p: v for p, v in self.param.values().items()
-                     if not self.param[p].readonly}
+        inherited = {
+            p: v for p, v in self.param.values().items()
+            if not self.param[p].readonly and v is not self.param[p].default
+            and not (v is None and not self.param[p].allow_None)
+        }
         return type(self)(**dict(inherited, **params))
 
     def pprint(self) -> None:
         """
         Prints a compositional repr of the class.
         """
-        deprecated('1.1', f'{type(self).__name__}.pprint', 'print')
+        deprecated('1.3', f'{type(self).__name__}.pprint', 'print')
         print(self)
 
     def select(
@@ -871,7 +898,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         port: int (optional, default=0)
           Allows specifying a specific port
         """
-        deprecated('1.1', f'{type(self).__name__}.app', 'panel.io.notebook.show_server')
+        deprecated('1.3', f'{type(self).__name__}.app', 'panel.io.notebook.show_server')
         return show_server(self, notebook_url, port)
 
     def embed(
@@ -904,7 +931,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         states: dict (default={})
           A dictionary specifying the widget values to embed for each widget
         """
-        show_embed(
+        return render_embed(
             self, max_states, max_opts, json, json_prefix, save_path,
             load_path, progress, states
         )
@@ -989,7 +1016,18 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if title or doc.title == 'Bokeh Application':
             title = title or 'Panel Application'
             doc.title = title
-        model = self.get_root(doc)
+
+        if self._design:
+            wrapper = self._design._wrapper(self)
+            if wrapper is self:
+                model = self.get_root(doc)
+            else:
+                model = wrapper.get_root(doc)
+                ref = model.ref['id']
+                state._views[ref] = (wrapper, model, doc, None)
+        else:
+            model = self.get_root(doc)
+
         doc.on_session_destroyed(state._destroy_session)
         doc.on_session_destroyed(self._server_destroy) # type: ignore
         self._documents[doc] = model
@@ -997,7 +1035,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if location:
             self._add_location(doc, location, model)
         if config.notifications and doc is state.curdoc:
-            notification_model = state.notifications._get_model(doc, model)
+            notification_model = state.notifications.get_root(doc)
             notification_model.name = 'notifications'
             doc.add_root(notification_model)
         if config.browser_info and doc is state.curdoc:

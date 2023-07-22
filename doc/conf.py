@@ -17,7 +17,7 @@ description = 'High-level dashboarding for python visualization libraries'
 
 import panel
 
-from panel.io.convert import BOKEH_VERSION, PY_VERSION
+from panel.io.convert import BOKEH_VERSION, MINIMUM_VERSIONS, PY_VERSION
 from panel.io.resources import CDN_DIST
 
 PANEL_ROOT = pathlib.Path(panel.__file__).parent
@@ -25,23 +25,26 @@ PANEL_ROOT = pathlib.Path(panel.__file__).parent
 version = release = base_version(panel.__version__)
 js_version = json.loads((PANEL_ROOT / 'package.json').read_text())['version']
 
+is_dev = any(ext in version for ext in ('a', 'b', 'rc'))
+
 # For the interactivity warning box created by nbsite to point to the right
 # git tag instead of the default i.e. main.
 os.environ['BRANCH'] = f"v{release}"
 
 html_static_path += ['_static']
 
-html_css_files = [
-    'nbsite.css',
+html_css_files += [
     'css/custom.css',
-    'css/dataframe.css',
 ]
 
 html_theme = "pydata_sphinx_theme"
-html_logo = "_static/logo_horizontal.png"
 html_favicon = "_static/icons/favicon.ico"
 
 html_theme_options = {
+    "logo": {
+        "image_light": "_static/logo_horizontal_light_theme.png",
+        "image_dark": "_static/logo_horizontal_dark_theme.png",
+    },
     "github_url": "https://github.com/holoviz/panel",
     "icon_links": [
         {
@@ -56,14 +59,19 @@ html_theme_options = {
         },
         {
             "name": "Discord",
-            "url": "https://discord.gg/muhupDZM",
+            "url": "https://discord.gg/UXdtYyGVQX",
             "icon": "fa-brands fa-discord",
         },
     ],
-    "google_analytics_id": "UA-154795830-2",
+    "analytics": {"google_analytics_id": "G-L0C8PGT2LM"},
     "pygment_light_style": "material",
     "pygment_dark_style": "material",
-    "header_links_before_dropdown": 5
+    "header_links_before_dropdown": 5,
+    'secondary_sidebar_items': [
+        "github-stars-button",
+        "panelitelink",
+        "page-toc",
+    ],
 }
 
 extensions += [
@@ -75,6 +83,11 @@ extensions += [
 napoleon_numpy_docstring = True
 
 myst_enable_extensions = ["colon_fence", "deflist"]
+
+gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
+gallery_url = f'https://{gallery_endpoint}.pyviz.demo.anaconda.com'
+jlite_url = 'https://pyviz-dev.github.io/panelite-dev' if is_dev else 'https://panelite.holoviz.org'
+pyodide_url = 'https://pyviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
 
 nbsite_gallery_conf = {
     'github_org': 'holoviz',
@@ -101,8 +114,8 @@ nbsite_gallery_conf = {
         }
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
-    'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/',
-    'jupyterlite_url': 'https://panelite.holoviz.org/lab/index.html'
+    'deployment_url': gallery_url,
+    'jupyterlite_url': jlite_url,
 }
 
 if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
@@ -113,17 +126,27 @@ else:
     panel_req = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
     bokeh_req = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 
+def get_requirements():
+    with open('pyodide_dependencies.json') as deps:
+        dependencies = json.load(deps)
+    requirements = {}
+    for src, deps in dependencies.items():
+        if deps is None:
+            continue
+        src = src.replace('.ipynb', '').replace('.md', '')
+        for name, min_version in MINIMUM_VERSIONS.items():
+            if any(name in req for req in deps):
+                deps = [f'{name}>={min_version}' if name in req else req for req in deps]
+        requirements[src] = deps
+    return requirements
+
 nbsite_pyodide_conf = {
-    'PYODIDE_URL': 'https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js',
-    'requirements': [bokeh_req, panel_req, 'pandas', 'pyodide-http', 'holoviews>=1.16.0a5'],
-    'requires': {
-        'gallery/hvplot_explorer': ['scipy'],
-        'gallery/penguin_crossfilter': ['scipy'],
-        'gallery/windturbines': ['fastparquet']
-    }
+    'PYODIDE_URL': 'https://cdn.jsdelivr.net/pyodide/v0.23.1/full/pyodide.js',
+    'requirements': [bokeh_req, panel_req, 'pyodide-http'],
+    'requires': get_requirements()
 }
 
-templates_path = [
+templates_path += [
     '_templates'
 ]
 
@@ -131,7 +154,10 @@ html_context.update({
     "last_release": f"v{release}",
     "github_user": "holoviz",
     "github_repo": "panel",
-    "default_mode": "light"
+    "default_mode": "light",
+    "panelite_endpoint": jlite_url,
+    "gallery_url": gallery_url,
+    "pyodide_url": pyodide_url
 })
 
 nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
@@ -139,4 +165,49 @@ nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
 # Override the Sphinx default title that appends `documentation`
 html_title = f'{project} v{version}'
 
-suppress_warnings = ["myst.header", "ref.myst", "mystnb.unknown_mime_type"]
+
+# Patching GridItemCardDirective to be able to substitute the domain name
+# in the link option.
+from sphinx_design.cards import CardDirective
+from sphinx_design.grids import GridItemCardDirective
+
+orig_grid_run = GridItemCardDirective.run
+
+def patched_grid_run(self):
+    app = self.state.document.settings.env.app
+    existing_link = self.options.get('link')
+    domain = getattr(app.config, 'grid_item_link_domain', None)
+    if self.has_content:
+        self.content.replace('|gallery-endpoint|', domain)
+    if existing_link and domain:
+        new_link = existing_link.replace('|gallery-endpoint|', domain)
+        self.options['link'] = new_link
+    return list(orig_grid_run(self))
+
+GridItemCardDirective.run = patched_grid_run
+
+orig_card_run = CardDirective.run
+
+def patched_card_run(self):
+    app = self.state.document.settings.env.app
+    existing_link = self.options.get('link')
+    domain = getattr(app.config, 'grid_item_link_domain', None)
+    if existing_link and domain:
+        new_link = existing_link.replace('|gallery-endpoint|', domain)
+        self.options['link'] = new_link
+    return orig_card_run(self)
+
+CardDirective.run = patched_card_run
+
+def setup(app) -> None:
+    try:
+        from nbsite.paramdoc import param_formatter, param_skip
+        app.connect('autodoc-process-docstring', param_formatter)
+        app.connect('autodoc-skip-member', param_skip)
+    except ImportError:
+        print('no param_formatter (no param?)')
+
+    nbbuild.setup(app)
+    app.add_config_value('grid_item_link_domain', '', 'html')
+
+grid_item_link_domain = gallery_endpoint

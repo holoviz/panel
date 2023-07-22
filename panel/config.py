@@ -9,6 +9,7 @@ import importlib
 import inspect
 import os
 import sys
+import warnings
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -16,7 +17,9 @@ from weakref import WeakKeyDictionary
 
 import param
 
+from bokeh.core.has_props import _default_resolver
 from bokeh.document import Document
+from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
 from pyviz_comms import (
     JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension,
@@ -24,7 +27,6 @@ from pyviz_comms import (
 
 from .io.logging import panel_log_handler
 from .io.state import state
-from .theme import Design
 
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
@@ -65,7 +67,7 @@ class _base_config(param.Parameterized):
         name to the URL of the JS file.""")
 
     js_modules = param.Dict(default={}, doc="""
-        External JS fils to load as modules. Dictionary should map from
+        External JS files to load as modules. Dictionary should map from
         exported name to the URL of the JS file.""")
 
     raw_css = param.List(default=[], doc="""
@@ -126,18 +128,25 @@ class _config(_base_config):
     defer_load = param.Boolean(default=False, doc="""
         Whether to defer load of rendered functions.""")
 
-    design = param.ClassSelector(class_=Design, is_instance=False, doc="""
+    design = param.ClassSelector(class_=None, is_instance=False, doc="""
         The design system to use to style components.""")
+
+    disconnect_notification = param.String(doc="""
+        The notification to display to the user when the connection
+        to the server is dropped.""")
 
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
+
+    global_css = param.List(default=[], doc="""
+        List of raw CSS to be added to the header.""")
 
     global_loading_spinner = param.Boolean(default=False, doc="""
         Whether to add a global loading spinner for the whole application.""")
 
     layout_compatibility = param.Selector(default='warn', objects=['warn', 'error'], doc="""
         Provide compatibility for older layout specifications. Incompatible
-        specifications will triger warnings by default but can be set to error.
+        specifications will trigger warnings by default but can be set to error.
         Compatibility to be set to error by default in Panel 1.1.""")
 
     load_entry_points = param.Boolean(default=True, doc="""
@@ -162,6 +171,10 @@ class _config(_base_config):
     profiler = param.Selector(default=None, allow_None=True, objects=[
         'pyinstrument', 'snakeviz', 'memray'], doc="""
         The profiler engine to enable.""")
+
+    ready_notification = param.String(doc="""
+        The notification to display when the application is ready and
+        fully loaded.""")
 
     reuse_sessions = param.Boolean(default=False, doc="""
         Whether to reuse a session for the initial request to speed up
@@ -248,13 +261,14 @@ class _config(_base_config):
         Whenever an event arrives from the frontend it will be
         dispatched to the thread pool to be processed.""")
 
-    _basic_auth = param.ObjectSelector(
-        default=None, allow_None=True, objects=[], doc="""
-        Use Basic authentification.""")
+    _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
+        Password, dictionary with a mapping from username to password
+        or filepath containing JSON to use with the basic auth
+        provider.""")
 
     _oauth_provider = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
-        Select between a list of authentification providers.""")
+        Select between a list of authentication providers.""")
 
     _oauth_expiry = param.Number(default=1, bounds=(0, None), doc="""
         Expiry of the OAuth cookie in number of days.""")
@@ -319,13 +333,18 @@ class _config(_base_config):
         state._thread_pool = ThreadPoolExecutor(max_workers=threads)
 
     @param.depends('notifications', watch=True)
-    def _enable_notifications(self):
+    def _setup_notifications(self):
         from .io.notifications import NotificationArea
         from .reactive import ReactiveHTMLMetaclass
         if self.notifications and 'notifications' not in ReactiveHTMLMetaclass._loaded_extensions:
             ReactiveHTMLMetaclass._loaded_extensions.add('notifications')
         if not state.curdoc:
             state._notification = NotificationArea()
+
+    @param.depends('disconnect_notification', 'ready_notification', watch=True)
+    def _enable_notifications(self):
+        if self.disconnect_notification or self.ready_notification:
+            self.notifications = True
 
     @contextmanager
     def set(self, **kwargs):
@@ -345,10 +364,16 @@ class _config(_base_config):
 
     def __setattr__(self, attr, value):
         from .io.state import state
-        if not getattr(self, 'initialized', False) or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
+
+        # _param__private added in Param 2
+        if hasattr(self, '_param__private'):
+            init = getattr(self._param__private, 'initialized', False)
+        else:
+            init = getattr(self, 'initialized', False)
+        if not init or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
             return super().__setattr__(attr, value)
         value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
-        if attr in self._globals:
+        if attr in self._globals or self.param._TRIGGER:
             super().__setattr__(attr if attr in self.param else f'_{attr}', value)
         elif state.curdoc is not None:
             if attr in self.param:
@@ -360,6 +385,9 @@ class _config(_base_config):
             if state.curdoc not in self._session_config:
                 self._session_config[state.curdoc] = {}
             self._session_config[state.curdoc][attr] = value
+            watchers = self._param_watchers.get(attr, {}).get('value', [])
+            for w in watchers:
+                w.fn()
         elif f'_{attr}' in self.param and hasattr(self, f'_{attr}_'):
             validate_config(self, f'_{attr}', value)
             super().__setattr__(f'_{attr}_', value)
@@ -383,7 +411,12 @@ class _config(_base_config):
         end up being modified.
         """
         from .io.state import state
-        init = super().__getattribute__('initialized')
+
+        # _param__private added in Param 2
+        try:
+            init = super().__getattribute__('_param__private').initialized
+        except AttributeError:
+            init = super().__getattribute__('initialized')
         global_params = super().__getattribute__('_globals')
         if init and not attr.startswith('__'):
             params = super().__getattribute__('param')
@@ -393,7 +426,7 @@ class _config(_base_config):
         curdoc = state.curdoc
         if curdoc and curdoc not in session_config:
             session_config[curdoc] = {}
-        if (attr in ('raw_css', 'css_files', 'js_files', 'js_modules') and
+        if (attr in ('raw_css', 'global_css', 'css_files', 'js_files', 'js_modules') and
             curdoc and attr not in session_config[curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
@@ -601,6 +634,7 @@ class panel_extension(_pyviz_extension):
         'gridstack': ['GridStack'],
         'katex': ['katex'],
         'mathjax': ['MathJax'],
+        'perspective': ['perspective'],
         'plotly': ['Plotly'],
         'tabulator': ['Tabulator'],
         'terminal': ['Terminal', 'xtermjs'],
@@ -618,9 +652,19 @@ class panel_extension(_pyviz_extension):
         reactive_exts = {
             v._extension_name: v for k, v in param.concrete_descendents(ReactiveHTML).items()
         }
+        newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
         if state.curdoc and state.curdoc not in state._extensions_:
             state._extensions_[state.curdoc] = []
+        if params.get('ready_notification') or params.get('disconnect_notification'):
+            params['notifications'] = True
+        if params.get('notifications', config.notifications) and 'notifications' not in args:
+            args += ('notifications',)
         for arg in args:
+            if arg == 'notifications' and 'notifications' not in params:
+                params['notifications'] = True
+            if arg == 'ipywidgets':
+                from .io.resources import CSS_URLS
+                params['css_files'] = params.get('css_files', []) + [CSS_URLS['font-awesome']]
             if arg in self._imports:
                 try:
                     if (arg == 'ipywidgets' and get_ipython() and # noqa (get_ipython)
@@ -628,7 +672,17 @@ class panel_extension(_pyviz_extension):
                         continue
                 except Exception:
                     pass
-                __import__(self._imports[arg])
+
+                # Ensure all models are registered
+                module = self._imports[arg]
+                if module in sys.modules:
+                    for model in sys.modules[module].__dict__.values():
+                        if isinstance(model, type) and issubclass(model, Model):
+                            qual = getattr(model, '__qualified_model__', None)
+                            if qual and qual not in _default_resolver.known_models:
+                                _default_resolver.add(model)
+                else:
+                    __import__(module)
                 self._loaded_extensions.append(arg)
 
                 if state.curdoc:
@@ -644,6 +698,7 @@ class panel_extension(_pyviz_extension):
 
         for k, v in params.items():
             if k == 'design' and isinstance(v, str):
+                from .theme import Design
                 try:
                     importlib.import_module(f'panel.theme.{self._design}')
                 except Exception:
@@ -657,12 +712,13 @@ class panel_extension(_pyviz_extension):
                         f'systems include: {list(designs)}.'
                     )
                 setattr(config, k, designs[v])
-            elif k in ('css_files', 'raw_css'):
+            elif k in ('css_files', 'raw_css', 'global_css'):
                 if not isinstance(v, list):
                     raise ValueError('%s should be supplied as a list, '
                                      'not as a %s type.' %
                                      (k, type(v).__name__))
-                getattr(config, k).extend(v)
+                existing = getattr(config, k)
+                existing.extend([new for new in v if new not in existing])
             elif k == 'js_files':
                 getattr(config, k).update(v)
             else:
@@ -672,6 +728,7 @@ class panel_extension(_pyviz_extension):
             self._apply_signatures()
 
         loaded = self._loaded
+        panel_extension._loaded = True
 
         # Short circuit pyvista extension load if VTK is already initialized
         if loaded and args == ('vtk',) and 'vtk' in self._loaded_extensions:
@@ -694,6 +751,9 @@ class panel_extension(_pyviz_extension):
             else:
                 hv.Store.current_backend = backend
 
+        if config.load_entry_points:
+            self._load_entry_points()
+
         # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
@@ -704,33 +764,9 @@ class panel_extension(_pyviz_extension):
 
         self._detect_comms(params)
 
-        newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
-        custom_resources = [
-            resource for resource in ('css_files', 'js_files', 'js_modules', 'raw_css')
-            if getattr(config, resource)
-        ]
-        if loaded and newly_loaded:
-            self.param.warning(
-                "A HoloViz extension was loaded previously. This means "
-                "the extension is already initialized and the following "
-                f"Panel extensions could not be properly loaded: {newly_loaded}."
-                "If you are loading custom extensions with pn.extension(...) "
-                "ensure that this is called before any other HoloViz "
-                "extension such as hvPlot or HoloViews."
-            )
-        elif loaded and custom_resources:
-            resources_string = ', '.join(custom_resources)
-            self.param.warning(
-                "A HoloViz extension was loaded previously. This means the "
-                f"extension is already initialized and custom {resources_string} "
-                "resources could not be loaded. If you are loading custom "
-                "extensions with pn.extension(...) ensure that this is called"
-                "before any other HoloViz extension such as hvPlot or HoloViews."
-            )
-        else:
-            panel_extension._loaded_extensions += newly_loaded
+        panel_extension._loaded_extensions += newly_loaded
 
-        if hasattr(ip, 'kernel') and not self._loaded and not config._doc_build:
+        if hasattr(ip, 'kernel') and not loaded and not config._doc_build:
             # TODO: JLab extension and pyviz_comms should be changed
             #       to allow multiple cleanup comms to be registered
             _JupyterCommManager.get_client_comm(self._process_comm_msg,
@@ -754,21 +790,19 @@ class panel_extension(_pyviz_extension):
         # Disable simple ids, old state and multiple tabs in notebooks can cause IDs to clash
         bk_settings.simple_ids.set_value(False)
 
-        if not nb_loaded and hasattr(ip, 'kernel'):
-            load_notebook(config.inline)
-        panel_extension._loaded = True
+        if hasattr(ip, 'kernel'):
+            load_notebook(
+                config.inline, reloading=nb_loaded
+            )
 
-        if config.browser_info and state.browser_info:
+        if not nb_loaded and config.browser_info and state.browser_info:
             doc = Document()
             comm = state._comm_manager.get_server_comm()
             model = state.browser_info._render_model(doc, comm)
             bundle, meta = state.browser_info._render_mimebundle(model, doc, comm)
             display(bundle, metadata=meta, raw=True)  # noqa
-        if config.notifications:
+        if not nb_loaded and config.notifications:
             display(state.notifications)  # noqa
-
-        if config.load_entry_points:
-            self._load_entry_points()
 
     def _detect_comms(self, params):
         called_before = self._comms_detected_before
@@ -782,15 +816,13 @@ class panel_extension(_pyviz_extension):
             return
 
         # Try to detect environment so that we can enable comms
-        try:
-            import google.colab  # noqa
+        if "google.colab" in sys.modules:
             config.comms = "colab"
             return
-        except ImportError:
-            pass
 
-        if "VSCODE_PID" in os.environ:
+        if "VSCODE_CWD" in os.environ or "VSCODE_PID" in os.environ:
             config.comms = "vscode"
+            self._ignore_bokeh_warnings()
             return
 
     def _apply_signatures(self):
@@ -842,6 +874,11 @@ class panel_extension(_pyviz_extension):
         """
         from .entry_points import load_entry_points
         load_entry_points('panel.extension')
+
+    def _ignore_bokeh_warnings(self):
+        from bokeh.util.warnings import BokehUserWarning
+        warnings.filterwarnings("ignore", category=BokehUserWarning, message="reference already known")
+
 
 #---------------------------------------------------------------------
 # Private API

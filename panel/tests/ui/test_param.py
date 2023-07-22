@@ -2,7 +2,11 @@ import time
 
 import pytest
 
-pytestmark = pytest.mark.ui
+try:
+    from playwright.sync_api import expect
+    pytestmark = pytest.mark.ui
+except ImportError:
+    pytestmark = pytest.mark.skip('playwright not available')
 
 from panel.io.server import serve
 from panel.pane import panel
@@ -23,6 +27,4 @@ def test_param_defer_load(page, port):
 
     assert page.locator(".pn-loading")
 
-    time.sleep(0.5)
-
-    assert page.locator(".markdown").locator("div").text_content() == 'I render after load!\n'
+    expect(page.locator(".markdown").locator("div")).to_have_text('I render after load!\n')

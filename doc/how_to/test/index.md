@@ -32,7 +32,7 @@ How to test performance by simulating multiple users accessing an app concurrent
 :hidden:
 :maxdepth: 1
 
-loadtests
 pytest
-uitest
+uitests
+loadtests
 ```

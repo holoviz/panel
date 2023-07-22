@@ -15,6 +15,8 @@ from bokeh.models.widgets.tables import (
     TextEditor,
 )
 
+from panel.layout.base import Column
+
 try:
     from playwright.sync_api import expect
 except ImportError:
@@ -1223,7 +1225,7 @@ def test_tabulator_header_filter_always_visible(page, port, df_mixed):
 
 @pytest.mark.parametrize('theme', Tabulator.param['theme'].objects)
 def test_tabulator_theming(page, port, df_mixed, df_mixed_as_string, theme):
-    # Subscribe the reponse events to check that the CSS is loaded
+    # Subscribe the response events to check that the CSS is loaded
     responses = []
     page.on("response", lambda response: responses.append(response))
     widget = Tabulator(df_mixed, theme=theme)
@@ -1330,7 +1332,7 @@ def test_tabulator_selection_selectable_ctrl(page, port, df_mixed):
     c0 = page.locator('text="idx0"')
     c0.wait_for()
     c0.click()
-    # Click on the thrid row with CTRL pressed should add that row to the selection
+    # Click on the third row with CTRL pressed should add that row to the selection
     modifier = get_ctrl_modifier()
     page.locator("text=idx2").click(modifiers=[modifier])
     expected_selection = [0, 2]
@@ -1369,7 +1371,7 @@ def test_tabulator_selection_selectable_shift(page, port, df_mixed):
     c0 = page.locator('text="idx0"')
     c0.wait_for()
     c0.click()
-    # Click on the thrid row with SHIFT pressed should select the 2nd row too
+    # Click on the third row with SHIFT pressed should select the 2nd row too
     page.locator("text=idx2").click(modifiers=['Shift'])
     expected_selection = [0, 1, 2]
     wait_until(lambda: widget.selection == expected_selection, page)
@@ -1958,6 +1960,22 @@ def test_tabulator_pagination(page, port, df_mixed, pagination):
             break
 
 
+def test_tabulator_pagination_programmatic_update(page, port, df_mixed):
+    widget = Tabulator(df_mixed, pagination='local', page_size=2)
+
+    serve(widget, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    widget.page = 2
+
+    time.sleep(0.2)
+
+    expect(page.locator('.tabulator-page.active')).to_have_text('2')
+
+
 def test_tabulator_filter_constant_scalar(page, port, df_mixed):
     widget = Tabulator(df_mixed)
 
@@ -2177,7 +2195,7 @@ def test_tabulator_header_filters_init_explicitly(page, port, df_mixed):
 
     page.goto(f"http://localhost:{port}")
 
-    # Check that only the columns explicitely given a header filter spec have a header filter
+    # Check that only the columns explicitly given a header filter spec have a header filter
     expect(page.locator('.tabulator-header-filter')).to_have_count(len(header_filters))
 
     number_header = page.locator('input[type="number"]')
@@ -2449,6 +2467,30 @@ def test_tabulator_patching_and_styling(page, port, df_mixed):
     max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
     expect(max_cell).to_have_count(1)
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
+
+def test_tabulator_filters_and_styling(page, port, df_mixed):
+    df_styled = df_mixed.style.apply(highlight_max, subset=['int'])
+
+    select = Select(options = [None, 'A', 'B', 'C', 'D'], size = 5)
+    table = Tabulator(df_styled)
+    table.add_filter(select, 'str')
+    layout = Column(select, table)
+
+    serve(layout, port=port, threaded=True, show=False)
+
+    time.sleep(0.2)
+
+    page.goto(f"http://localhost:{port}")
+
+    # Filtering to one field and then clicking None again should display all data, with styling
+    page.locator('option').nth(1).click()
+    page.locator('option').nth(0).click()
+
+    max_int = df_mixed['int'].max()
+    max_cell = page.locator('.tabulator-cell', has=page.locator(f'text="{max_int}"'))
+    expect(max_cell).to_have_count(1)
+    expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
+
 
 
 def test_tabulator_configuration(page, port, df_mixed):

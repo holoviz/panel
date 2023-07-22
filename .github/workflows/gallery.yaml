@@ -67,9 +67,8 @@ jobs:
           (github.event_name == 'workflow_run' && !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           conda activate test
-          python scripts/gallery/collect_thumbnails.py
           ae5 login --hostname pyviz.demo.anaconda.com --username ${{ secrets.AE5_USERNAME }} --password ${{ secrets.AE5_PASSWORD }}
           ae5 deployment stop panel-gallery --yes || :
           ae5 project delete panel-gallery --yes || :
           ae5 project upload examples/gallery --name panel-gallery --tag ${{ steps.vars.outputs.tag }}
-          ae5 deployment start panel-gallery-dev --endpoint panel-gallery --command default --public --command default --resource-profile extra-large --wait
+          ae5 deployment start panel-gallery --endpoint panel-gallery --command default --public --command default --resource-profile extra_large --wait

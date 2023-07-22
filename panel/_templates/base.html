@@ -23,13 +23,14 @@ that accepts these same parameters.
     <meta charset="utf-8">
     <title>{% block title %}{{ title | e if title else "Panel App" }}{% endblock %}</title>
     <link rel="apple-touch-icon" sizes="180x180" href="{{ dist_url }}images/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ dist_url }}images/favicon.ico">
+    {% if app_favicon is not defined %} <link rel="icon" type="image/png" sizes="32x32" href="{{ dist_url }}images/favicon.ico"> {% endif %}
     {% if manifest_url %}<link rel="manifest" href="{{ manifest_url }}">{% endif %}
     {% if theme_name == "dark"%}<style>html { background-color: #121212 }</style>{% endif %}
   {%  block preamble -%}{%- endblock %}
   {%  block resources %}
     <style>
       html, body {
+	display: flow-root;
         box-sizing: border-box;
         height: 100%;
         margin: 0;
