@@ -50,8 +50,8 @@ Because we are already using `hvplot`, we can use the other powerful API of plot
 idf.hvplot(kind="scatter", x="bill_length_mm", y="bill_depth_mm", by="sex")
 ```
 
-The default is to include both the widgets and the interactive panel (graph or table) when we display the interactive 
-dataframe.  If we wish to display them separately we can access the widgets and the panel as .widgets and .panel() 
+The default is to include both the widgets and the interactive panel (graph or table) when we display the interactive
+dataframe.  If we wish to display them separately we can access the widgets and the panel as .widgets and .panel()
 respectively.
 
 ```{pyodide}
@@ -73,3 +73,5 @@ pn.Row(
 ```
 
 ## Related Resources
+
+* [hvplot.interact documentation](https://hvplot.holoviz.org/user_guide/Interactive.html)
