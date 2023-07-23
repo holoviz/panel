@@ -145,4 +145,3 @@ Alternatively you can also use the `panel.io.pyodide.write` function to write in
 ```python
 await pn.io.pyodide.write('simple_app', component)
 ```
-
