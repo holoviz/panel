@@ -89,7 +89,7 @@ Once installed you will be able to `import panel` in your `<py-script>` tag. Aga
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.2.0.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.2.0.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@holoviz/panel@1.2.0/dist/panel.min.js"></script>
-    
+
     <link rel="stylesheet" href="https://pyscript.net/releases/2022.09.1/pyscript.css" />
     <script defer src="https://pyscript.net/releases/2022.09.1/pyscript.js"></script>
   </head>
