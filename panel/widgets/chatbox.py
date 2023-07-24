@@ -637,10 +637,10 @@ class ChatBox(CompositeWidget):
         return message
 
     def export(
-            self,
-            serialize: bool = True,
-            format: Union[ChatExportFormat, str] = ChatExportFormat.JSON
-        ) -> List[Union[Dict[str, Any], Tuple[str, Any]]]:
+        self,
+        serialize: bool = True,
+        format: Union[ChatExportFormat, str] = ChatExportFormat.JSON
+    ) -> List[Union[Dict[str, Any], Tuple[str, Any]]]:
         """
         Exports the chat log into a list of the specified field
 
