@@ -42,14 +42,18 @@ WORKER_HANDLER_TEMPLATE  = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
+PYODIDE_VERSION = 'v0.23.4'
+PYSCRIPT_VERSION = '2023.03.1'
 PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_DIST}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
-PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js'
-PYSCRIPT_CSS = '<link rel="stylesheet" href="https://pyscript.net/releases/2022.12.1/pyscript.css" />'
-PYSCRIPT_JS = '<script defer src="https://pyscript.net/releases/2022.12.1/pyscript.js"></script>'
+PYODIDE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
+PYODIDE_PYC_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/pyc/pyodide.js'
+PYSCRIPT_CSS = f'<link rel="stylesheet" href="https://pyscript.net/releases/{PYSCRIPT_VERSION}/pyscript.css" />'
+PYSCRIPT_JS = f'<script defer src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/pyscript.js"></script>'
 PYODIDE_JS = f'<script src="{PYODIDE_URL}"></script>'
+PYODIDE_PYC_JS = f'<script src="{PYODIDE_URL}"></script>'
 
 MINIMUM_VERSIONS = {}
 
@@ -177,7 +181,8 @@ def script_to_html(
     panel_version: Literal['auto', 'local'] | str = 'auto',
     manifest: str | None = None,
     http_patch: bool = True,
-    inline: bool = False
+    inline: bool = False,
+    compiled: bool = True
 ) -> str:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
@@ -204,6 +209,8 @@ def script_to_html(
         to allow urllib3 and requests to work.
     inline: bool
         Whether to inline resources.
+    compiled: bool
+        Whether to use pre-compiled pyodide bundles.
     """
     # Run script
     if hasattr(filename, 'read'):
@@ -290,14 +297,14 @@ def script_to_html(
                 'loading_spinner': config.loading_spinner
             })
             web_worker = WEB_WORKER_TEMPLATE.render({
-                'PYODIDE_URL': PYODIDE_URL,
+                'PYODIDE_URL': PYODIDE_PYC_URL if compiled else PYODIDE_URL,
                 'env_spec': env_spec,
                 'code': code
             })
             plot_script = wrap_in_script_tag(worker_handler)
         else:
             if js_resources == 'auto':
-                js_resources = [PYODIDE_JS]
+                js_resources = [PYODIDE_PYC_JS if compiled else PYODIDE_JS]
             script_template = _pn_env.from_string(PYODIDE_SCRIPT)
             plot_script = script_template.render({
                 'env_spec': env_spec,
