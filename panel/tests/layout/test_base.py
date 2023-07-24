@@ -569,9 +569,9 @@ def test_no_expand_fixed(panel, document, comm):
     assert model.sizing_mode == 'fixed'
 
 
-@pytest.mark.parametrize('scroll_param', ["auto_scroll_limit", "scroll", "scroll_button_threshold"])
+@pytest.mark.parametrize('scroll_param', ["auto_scroll_limit", "scroll", "scroll_button_threshold", "view_latest"])
 def test_column_scroll_params_sets_scroll(scroll_param, document, comm):
-    if scroll_param != "scroll_button_threshold":
+    if scroll_param in ["auto_scroll_limit", "scroll_button_threshold"]:
         params = {scroll_param: True}
     else:
         params = {scroll_param: 1}

@@ -177,3 +177,30 @@ def test_column_scroll_button_threshold_disabled(page, port):
     time.sleep(0.5)
     assert scroll_arrow.get_attribute('class') == 'scroll-button'
     assert not scroll_arrow.is_visible()
+
+
+def test_column_view_latest(page, port):
+    col = Column(
+        Spacer(styles=dict(background='red'), width=200, height=200),
+        Spacer(styles=dict(background='green'), width=200, height=200),
+        Spacer(styles=dict(background='blue'), width=200, height=200),
+        view_latest=True, scroll=True, height=420
+    )
+
+    serve(col, port=port, threaded=True, show=False)
+
+    time.sleep(0.5)
+
+    page.goto(f"http://localhost:{port}")
+
+    column = page.locator(".bk-panel-models-layout-Column")
+    bbox = column.bounding_box()
+
+    assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
+    assert bbox['height'] == 420
+
+    assert 'scrollable-vertical' in column.get_attribute('class')
+
+    # assert scroll location does not start at top
+    scroll_loc = column.evaluate('(el) => el.scrollTop')
+    assert scroll_loc != 0

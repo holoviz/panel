@@ -31,6 +31,11 @@ class Column(BkColumn):
         display the scroll button. Setting to 0
         disables the scroll button.""")
 
+    view_latest = Bool(
+        default=False,
+        help="""
+        Whether to scroll to the latest object on init. If not
+        enabled the view will be on the first object.""")
 
 class Card(Column):
     active_header_background = Nullable(

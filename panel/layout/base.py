@@ -896,6 +896,10 @@ class Column(ListPanel):
         display the scroll button. Setting to 0
         disables the scroll button.""")
 
+    view_latest = param.Boolean(default=False, doc="""
+        Whether to scroll to the latest object on init. If not
+        enabled the view will be on the first object.""")
+
     _bokeh_model: ClassVar[Type[Model]] = PnColumn
 
     _direction = 'vertical'

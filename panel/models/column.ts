@@ -67,8 +67,14 @@ export class ColumnView extends BkColumnView {
       child_view.render()
       child_view.after_render()
     }
+  }
 
+  after_render(): void {
+    super.after_render()
     requestAnimationFrame(() => {
+      if (this.model.view_latest) {
+        this.scroll_to_latest();
+      }
       this.toggle_scroll_arrow();
     });
   }
@@ -79,6 +85,7 @@ export namespace Column {
   export type Props = BkColumn.Props & {
     auto_scroll_limit: p.Property<number>;
     scroll_button_threshold: p.Property<number>;
+    view_latest: p.Property<boolean>;
   };
 }
 
@@ -96,9 +103,10 @@ export class Column extends BkColumn {
   static {
     this.prototype.default_view = ColumnView;
 
-    this.define<Column.Props>(({ Int }) => ({
+    this.define<Column.Props>(({ Int, Boolean }) => ({
       auto_scroll_limit: [Int, 0],
       scroll_button_threshold: [Int, 0],
+      view_latest: [Boolean, false],
     }));
   }
 }
