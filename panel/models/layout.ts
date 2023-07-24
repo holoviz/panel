@@ -8,6 +8,7 @@ import * as p from "@bokehjs/core/properties"
 export class PanelMarkupView extends WidgetView {
   container: HTMLDivElement
   model: Markup
+  _initialized_stylesheets: any
 
   override async lazy_initialize() {
     await super.lazy_initialize()
@@ -19,11 +20,24 @@ export class PanelMarkupView extends WidgetView {
       })
   }
 
-  override connect_signals(): void {
-    super.connect_signals()
-    this.connect(this.model.change, () => {
-      this.render()
-    })
+  watch_stylesheets(): void {
+    this._initialized_stylesheets = {}
+    for (const sts of this._applied_stylesheets) {
+      const style_el = (sts as any).el
+      if (style_el instanceof HTMLLinkElement) {
+	this._initialized_stylesheets[style_el.href] = false
+	style_el.addEventListener("load", () => {
+	  this._initialized_stylesheets[style_el.href] = true
+	  if (
+	    Object.values(this._initialized_stylesheets).every(Boolean)
+	  )
+	    this.style_redraw()
+	})
+      }
+    }
+  }
+
+  style_redraw(): void {
   }
 
   has_math_disabled() {

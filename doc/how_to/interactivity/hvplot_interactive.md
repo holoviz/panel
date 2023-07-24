@@ -36,11 +36,31 @@ idf = idf[(idf["species"] == species_widget) & (idf["year"] >= year_widget)]
 
 idf.head()
 ```
+Similarly we can use other pandas features in the same way.
+
+```{pyodide}
+head_widget = pn.widgets.IntSlider(name="Head", start=1, end=10)\
+
+idf.head(head_widget)
+```
 
 Because we are already using `hvplot`, we can use the other powerful API of plotting the data with `hvplot`:
 
 ```{pyodide}
 idf.hvplot(kind="scatter", x="bill_length_mm", y="bill_depth_mm", by="sex")
+```
+
+The default is to include both the widgets and the interactive panel (graph or table) when we display the interactive
+dataframe.  If we wish to display them separately we can access the widgets and the panel as .widgets and .panel()
+respectively.
+
+```{pyodide}
+pn.Column(
+    idf.widgets(),
+    pn.Spacer(height=30),
+    "Selected penguins",
+    idf.head().panel(),
+)
 ```
 
 However we can also use bind the interactive pipeline we have built to a Panel component, e.g. a `Tabulator` widget:
@@ -53,3 +73,5 @@ pn.Row(
 ```
 
 ## Related Resources
+
+* [hvplot.interact documentation](https://hvplot.holoviz.org/user_guide/Interactive.html)

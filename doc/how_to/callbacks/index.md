@@ -54,6 +54,13 @@ How to schedule tasks that run independently of any user visiting an application
 How to safely modify Bokeh models to avoid running into issues with the Bokeh `Document` lock.
 :::
 
+:::{grid-item-card} {octicon}`link;2.5em;sd-mr-1 sd-animate-grow50` Connection Notifications
+:link: notifications
+:link-type: doc
+
+How to add notifications when the application is ready and when it loses the server connection.
+:::
+
 ::::
 
 ## Examples

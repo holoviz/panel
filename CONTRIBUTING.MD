@@ -4,6 +4,7 @@
 
 You can contribute in many ways, for example, by
 
+- Giving our project a ⭐ on [Github](https://github.com/holoviz/panel).
 - Sharing knowledge about Panel on social media.
 - Writing blog posts or creating videos.
 - Sharing knowledge about Panel at conferences and other events.
@@ -15,6 +16,6 @@ You can contribute in many ways, for example, by
 - Becoming a member of the [HoloViz Steering Committee](https://github.com/holoviz/holoviz/blob/main/doc/governance/org-docs/STEERING-COMMITTEE.md).
 - Improving our code base. For example, by improving doc strings, type annotations or tests.
 
-Before you start contributing to our code base or documentation, please make sure your contribution is well described and discussed in a [Github Issue](https://github.com/holoviz/panel/issues). To get started check out the [Developer Guide](https://panel.holoviz.org/developer_guide/index.html).
+Before you start contributing to our code base or documentation, please make sure your contribution is well described and discussed in a [Github Issue](https://github.com/holoviz/panel/issues). To **get started** check out the [Developer Guide](https://panel.holoviz.org/developer_guide/index.html).
 
 If you need help to get started, please reach out via [Discord](https://discord.gg/rb6gPXbdAr).

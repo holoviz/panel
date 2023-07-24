@@ -58,7 +58,7 @@ jobs:
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
       OMP_NUM_THREADS: 1
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a14
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
         with:
           name: unit_test_suite
           python-version: ${{ matrix.python-version }}
@@ -89,6 +89,11 @@ jobs:
         run: |
           conda activate test-environment
           doit test_unit
+      - name: doit test_unit-subprocess
+        if: contains(matrix.os, 'ubuntu')
+        run: |
+          conda activate test-environment
+          doit test_subprocess
       - name: test examples
         # Remove when all examples tools can be installed on 3.10
         if: (!(contains(matrix.python-version, '3.1')))
@@ -124,7 +129,7 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
     steps:
-      - uses: holoviz-dev/holoviz_tasks/install@v0.1a14
+      - uses: holoviz-dev/holoviz_tasks/install@v0.1a15
         with:
           name: ui_test_suite
           python-version: 3.9
@@ -133,7 +138,6 @@ jobs:
           cache: true
           nodejs: true
           playwright: true
-          conda-mamba: mamba
         id: install
       - name: doit develop_install
         if: steps.install.outputs.cache-hit != 'true'

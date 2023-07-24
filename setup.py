@@ -159,44 +159,52 @@ _ui = [
     'pytest-playwright'
 ]
 
+_examples = [
+    'holoviews >=1.16.0',
+    'hvplot',
+    'plotly >=4.0',
+    'altair',
+    'streamz',
+    'vega_datasets',
+    'vtk',
+    'scikit-learn',
+    'datashader',
+    'jupyter_bokeh >=3.0.7',
+    'django <4',
+    'channels',
+    'pyvista',
+    'ipywidgets',
+    'ipywidgets_bokeh',
+    'ipyvolume',
+    'ipyleaflet',
+    'ipympl',
+    'folium',
+    'xarray',
+    'pyinstrument >=4.0',
+    'aiohttp',
+    'croniter',
+    'graphviz',
+    'networkx >=2.5',
+    'pygraphviz',
+    'seaborn',
+    'pydeck',
+    'graphviz',
+    'python-graphviz',
+    'xgboost',
+    'ipyvuetify',
+    'reacton',
+    'scikit-image',
+    'fastparquet'
+]
+
+# Anything only installable via conda
+_conda_only = [
+    'pygraphviz',
+    'python-graphviz',
+]
+
 extras_require = {
-    'examples': [
-        'holoviews >=1.16.0',
-        'hvplot',
-        'plotly >=4.0',
-        'altair',
-        'streamz',
-        'vega_datasets',
-        'vtk',
-        'scikit-learn',
-        'datashader',
-        'jupyter_bokeh >=3.0.7',
-        'django <4',
-        'channels',
-        'pyvista',
-        'ipywidgets',
-        'ipywidgets_bokeh',
-        'ipyvolume',
-        'ipyleaflet',
-        'ipympl',
-        'folium',
-        'xarray',
-        'pyinstrument >=4.0',
-        'aiohttp',
-        'croniter',
-        'graphviz',
-        'networkx >=2.5',
-        'pygraphviz',
-        'seaborn',
-        'pydeck',
-        'graphviz',
-        'python-graphviz',
-        'xgboost',
-        'ipyvuetify',
-        'reacton',
-        'scikit-image',
-        'fastparquet'
-    ],
+    'examples': _examples,
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
@@ -207,6 +215,7 @@ extras_require = {
 }
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
+extras_require['all_pip'] = sorted(set(extras_require['all']) - set(_conda_only))
 
 # Superset of what's in pyproject.toml (includes non-python
 # dependencies).  Also, pyproject.toml isn't supported by all tools

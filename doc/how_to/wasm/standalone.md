@@ -6,7 +6,7 @@ To install Panel in the browser you merely have to use the installation mechanis
 
 ### Pyodide
 
-Currently the best supported mechanism for installing packages in Pyodide is `micropip`.
+Currently, the best supported mechanism for installing packages in Pyodide is `micropip`.
 
 To get started with Pyodide simply follow their [Getting started guide](https://pyodide.org/en/stable/usage/quickstart.html). Note that if you want to render Panel output you will also have to load [Bokeh.js](https://docs.bokeh.org/en/2.4.1/docs/first_steps/installation.html#install-bokehjs:~:text=Installing%20standalone%20BokehJS%C2%B6) and Panel.js from CDN. The most basic pyodide application therefore looks like this:
 
@@ -29,7 +29,10 @@ To get started with Pyodide simply follow their [Getting started guide](https://
         let pyodide = await loadPyodide();
         await pyodide.loadPackage("micropip");
         const micropip = pyodide.pyimport("micropip");
-        await micropip.install('panel')
+        await micropip.install([
+          "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl",
+          "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"]
+        )
         pyodide.runPython(`
           import panel as pn
 
@@ -93,8 +96,8 @@ Once installed you will be able to `import panel` in your `<py-script>` tag. Aga
   <body>
     <py-config>
        packages = [
-         "panel",
-         ...
+          "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl"
+          "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"
        ]
     </py-config>
     <div id="simple_app"></div>
