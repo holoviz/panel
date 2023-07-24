@@ -43,7 +43,7 @@ PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
 PYODIDE_VERSION = 'v0.23.4'
-PYSCRIPT_VERSION = '2023.05.1'
+PYSCRIPT_VERSION = '2023.03.1'
 PANEL_LOCAL_WHL = DIST_DIR / 'wheels' / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = DIST_DIR / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
@@ -181,7 +181,8 @@ def script_to_html(
     panel_version: Literal['auto', 'local'] | str = 'auto',
     manifest: str | None = None,
     http_patch: bool = True,
-    inline: bool = False
+    inline: bool = False,
+    compiled: bool = True
 ) -> str:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
@@ -208,6 +209,8 @@ def script_to_html(
         to allow urllib3 and requests to work.
     inline: bool
         Whether to inline resources.
+    compiled: bool
+        Whether to use pre-compiled pyodide bundles.
     """
     # Run script
     if hasattr(filename, 'read'):
@@ -294,14 +297,14 @@ def script_to_html(
                 'loading_spinner': config.loading_spinner
             })
             web_worker = WEB_WORKER_TEMPLATE.render({
-                'PYODIDE_URL': PYODIDE_PYC_URL,
+                'PYODIDE_URL': PYODIDE_PYC_URL if compiled else PYODIDE_URL,
                 'env_spec': env_spec,
                 'code': code
             })
             plot_script = wrap_in_script_tag(worker_handler)
         else:
             if js_resources == 'auto':
-                js_resources = [PYODIDE_PYC_JS]
+                js_resources = [PYODIDE_PYC_JS if compiled else PYODIDE_JS]
             script_template = _pn_env.from_string(PYODIDE_SCRIPT)
             plot_script = script_template.render({
                 'env_spec': env_spec,
