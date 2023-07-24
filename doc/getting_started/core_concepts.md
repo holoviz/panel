@@ -27,6 +27,8 @@ pn.extension()
 
 Now, when you put a Panel component at the end of a notebook cell it will render as part of the output of that cell. By changing the code in your cell and re-running it you can quickly iterate and build the individual units that will make up your final application. This way of working has many benefits because you can work on each component in your application individually without having to re-run your entire application each time.
 
+<img src="https://assets.holoviz.org/panel/gifs/jupyterlab_preview.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
+
 ### Editor
 
 If you are working in an editor, declare the Panel components that you want to display as `servable` (we will discover what that means soon), then launch the script or notebook file. For example, if you were to save the app you built in the previous page into `app.py` and declared `first_app.servable()` within the file, then on the command line you can just run:
@@ -36,6 +38,8 @@ panel serve app.py --autoreload --show
 ```
 
 Once you run that command Panel will launch a server that will serve your app, open a tab in your default browser (`--show`) and update the application whenever you update the code (`--autoreload`).
+
+<img src="https://assets.holoviz.org/panel/gifs/jupyterlab_preview.gif" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 > Checkout [How-to > Prepare to develop](../how_to/prepare_to_develop.md) for more guidance on each of the development environment options.
 ## Control flow
@@ -339,6 +343,8 @@ pn.Column(
     '# Sine curve', mpl
 ).servable(target='main')
 ```
+
+<img src="../_static/images/core_concepts_app.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
 
 ## Next Steps
 
