@@ -55,6 +55,9 @@ jobs:
       # it as one of the sources.
       PYCTDEV_SELF_CHANNEL: "pyviz/label/dev"
       OMP_NUM_THREADS: 1
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -107,6 +110,9 @@ jobs:
       PYTHONIOENCODING: "utf-8"
       PANEL_LOG_LEVEL: info
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
       - uses: actions/checkout@v3
         with:
