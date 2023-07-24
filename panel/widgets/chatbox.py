@@ -73,7 +73,7 @@ class ChatRow(CompositeWidget):
     ):
         bubble_styles = {
             "overflow-x": "auto",
-            "overflow-y": "auto",
+            "overflow-y": "scroll",
             "box-shadow": "rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;",
             "padding": "0.5em",
         }
@@ -108,6 +108,7 @@ class ChatRow(CompositeWidget):
             align="center",
             margin=8,
             styles=bubble_styles,
+            sizing_mode="stretch_width",
         )
 
         # create heart icon next to chat
@@ -136,8 +137,9 @@ class ChatRow(CompositeWidget):
             row_objects = row_objects[::-1]
 
         container_params = dict(
-            sizing_mode="fixed",
+            styles={"overflow-y": "auto", "max-height": "300px"},
             align=(horizontal_align, "center"),
+            sizing_mode="fixed",
         )
         row = Row(*row_objects, **container_params)
         if show_name:
@@ -173,6 +175,8 @@ class ChatRow(CompositeWidget):
         stylesheets = ["p { margin-block-start: 0.2em; margin-block-end: 0.2em;}"]
         text_styles = {"color": self._bubble_styles.get("color")}
         try:
+            if isinstance(obj, str):
+                panel_obj = StaticText(value=obj, stylesheets=stylesheets, styles=text_styles)
             if self.default_message_callable is None or issubclass(
                 self.default_message_callable, PaneBase
             ):
@@ -183,12 +187,11 @@ class ChatRow(CompositeWidget):
                 panel_obj = self.default_message_callable(value=obj)
         except ValueError:
             panel_obj = _panel(obj, stylesheets=stylesheets, styles=text_styles)
-
-        if panel_obj.sizing_mode is None:
-            panel_obj.sizing_mode = "stretch_width"
+        panel_obj.sizing_mode = "stretch_width"
 
         if "overflow-wrap" not in panel_obj.styles:
             panel_obj.styles.update({"overflow-wrap": "break-word"})
+
         return panel_obj
 
     def _update_like(self, event: param.parameterized.Event):
@@ -281,21 +284,24 @@ class ChatBox(CompositeWidget):
                 "flex-direction": "column" if self.ascending else "column-reverse",
             },
         )
+
+        sizing_mode = chat_layout.get("sizing_mode", None)
+        if sizing_mode == "fixed" and "height" not in chat_layout:
+            chat_layout["height"] = 500
+        elif sizing_mode is None or sizing_mode == "stretch_width":
+            chat_layout["height"] = 500
+
         self._chat_title = StaticText(
             value=f"{self.name}",
             styles={"font-size": "1.5em"},
             align="center",
         )
-        self._chat_log = Column(**chat_layout)
-        self._scroll_button = Button(
-            name="Scroll to latest",
-            align="center",
-            sizing_mode="fixed",
-            width=115,
-            height=35,
-            margin=0,
+        self._chat_log = Column(
+            scroll=True,
+            auto_scroll=True,
+            scroll_button_threshold=20,
+            **chat_layout
         )
-        self._add_scroll_callback(self._scroll_button, "clicks")
         self._current_hue = self.message_hue
         if self._current_hue:
             self._default_colors = self._generate_default_hsl(self._current_hue)
@@ -304,10 +310,6 @@ class ChatBox(CompositeWidget):
 
         box_objects = [self._chat_title] if self.name else []
         box_objects.append(self._chat_log)
-        if self.ascending:
-            box_objects.insert(0, self._scroll_button)
-        else:
-            box_objects.append(self._scroll_button)
 
         if self.allow_input:
             self._attach_input(box_objects, layout)
@@ -334,21 +336,6 @@ class ChatBox(CompositeWidget):
             (f"hsl({hue}, 15%, 60%)", "white"),
         ]
 
-    def _add_scroll_callback(self, obj: Viewable, what: str):
-        code = """
-            const outerColumn = document.querySelector(".bk-Column")
-            const column = outerColumn.shadowRoot.querySelector(".bk-Column")
-        """
-        if self.ascending:
-            code += "\ncolumn.scrollTop = column.scrollHeight"
-        else:
-            code += "\ncolumn.scrollTop = -column.scrollHeight"
-
-        obj.jscallback(
-            args={"chat_log": self._chat_log},
-            **{what: code},
-        )
-
     def _link_disabled_loading(self, obj: Viewable):
         """
         Link the disabled and loading attributes of the chat box to the
@@ -374,7 +361,6 @@ class ChatBox(CompositeWidget):
             button_type="default",
             sizing_mode="stretch_width",
             max_width=100,
-            height=35,
         )
         self._send_button.on_click(self._enter_message)
 
@@ -392,7 +378,6 @@ class ChatBox(CompositeWidget):
             # the send button
             if isinstance(message_input, TextInput):
                 message_input.param.watch(self._enter_message, "value")
-                self._add_scroll_callback(message_input, "value")
             send_button = self._send_button.clone()
             self._link_disabled_loading(send_button)
             message_row = Row(message_input, send_button, **row_layout)
