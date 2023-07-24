@@ -886,12 +886,15 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    auto_scroll = param.Boolean(default=False, doc="""
-        Whether to scroll to the last object on update.""")
+    auto_scroll_limit = param.Integer(bounds=(0, None), doc="""
+        Max pixel distance from the latest object in the Column to
+        activate automatic scrolling upon update. Setting to 0
+        disables auto-scrolling.""")
 
     scroll_button_threshold = param.Integer(bounds=(0, None), doc="""
-        Threshold for showing button that scrolls to the bottom on click.
-        The button will be hidden if set to 0.""")
+        Min pixel distance from the latest object in the Column to
+        display the scroll button. Setting to 0
+        disables the scroll button.""")
 
     _bokeh_model: ClassVar[Type[Model]] = PnColumn
 
@@ -899,9 +902,9 @@ class Column(ListPanel):
 
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
 
-    @param.depends("auto_scroll", "scroll_button_threshold", watch=True, on_init=True)
+    @param.depends("auto_scroll_limit", "scroll_button_threshold", watch=True, on_init=True)
     def _set_scrollable(self):
-        self.scroll = self.scroll or self.auto_scroll or bool(self.scroll_button_threshold)
+        self.scroll = self.scroll or bool(self.auto_scroll_limit) or bool(self.scroll_button_threshold)
 
 
 class WidgetBox(ListPanel):

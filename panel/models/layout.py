@@ -1,5 +1,5 @@
 from bokeh.core.properties import (
-    Bool, Float, List, Nullable, String,
+    Bool, Int, List, Nullable, String,
 )
 from bokeh.models import Column as BkColumn
 from bokeh.models.layouts import LayoutDOM
@@ -17,14 +17,19 @@ class HTMLBox(LayoutDOM):
 
 class Column(BkColumn):
 
-    auto_scroll = Bool(False, help="Whether to scroll to the latest row on update.")
-
-    scroll_button_threshold = Float(
+    auto_scroll_limit = Int(
+        default=0,
         help="""
-        Threshold for showing scroll arrow that scrolls to the latest on click.
-        The arrow will be hidden if set to 0.
-        """,
-    )
+        Max pixel distance from the latest object in the Column to
+        activate automatic scrolling upon update. Setting to 0
+        disables auto-scrolling.""")
+
+    scroll_button_threshold = Int(
+        default=0,
+        help="""
+        Min pixel distance from the latest object in the Column to
+        display the scroll button. Setting to 0
+        disables the scroll button.""")
 
 
 class Card(Column):
