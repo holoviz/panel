@@ -344,9 +344,7 @@ def test_chat_box_export_not_serialize(document, comm):
     chat_box = ChatBox(value=value.copy(), primary_name="Panel User")
     messages = chat_box.export(serialize=False)
 
-    assert messages == [
-        {"user1": text_input},
-    ]
+    assert messages == [{'user': 'user1', 'value': text_input}]
 
 
 def test_chat_box_inferred_primary_name(document, comm):
