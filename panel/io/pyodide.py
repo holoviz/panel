@@ -266,8 +266,12 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         jsdoc.apply_json_patch(json_patch, buffer_map)
 
     pydoc.on_change(pysync)
-    pydoc.unhold()
-    pydoc.callbacks.trigger_event(DocumentReady())
+
+    try:
+        pydoc.unhold()
+        pydoc.callbacks.trigger_event(DocumentReady())
+    except Exception as e:
+        print(f'Error raised while processing Document events: {e}')
 
 def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None, setter: str | None = None):
     """
@@ -458,7 +462,7 @@ def hide_loader() -> None:
     from js import document
 
     body = document.getElementsByTagName('body')[0]
-    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, config.loading_spinner)
+    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}')
 
 def sync_location():
     """
