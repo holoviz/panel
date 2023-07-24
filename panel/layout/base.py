@@ -906,9 +906,14 @@ class Column(ListPanel):
 
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
 
-    @param.depends("auto_scroll_limit", "scroll_button_threshold", watch=True, on_init=True)
+    @param.depends("auto_scroll_limit", "scroll_button_threshold", "view_latest", watch=True, on_init=True)
     def _set_scrollable(self):
-        self.scroll = self.scroll or bool(self.auto_scroll_limit) or bool(self.scroll_button_threshold)
+        self.scroll = (
+            self.scroll or
+            bool(self.auto_scroll_limit) or
+            bool(self.scroll_button_threshold) or
+            self.view_latest
+        )
 
 
 class WidgetBox(ListPanel):
