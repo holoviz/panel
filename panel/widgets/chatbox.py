@@ -1,25 +1,38 @@
 from __future__ import annotations
 
+from contextlib import ExitStack
+from dataclasses import dataclass
+from io import BytesIO
+from tempfile import NamedTemporaryFile
 from typing import (
     Any, ClassVar, Dict, List, Optional, Tuple, Type, Union,
 )
 
 import param
 
+from bokeh.model import Model
 from param.parameterized import iscoroutinefunction
 
 from .._param import Margin
 from ..layout import (
     Column, ListPanel, Row, Tabs,
 )
-from ..pane.base import PaneBase, panel as _panel
-from ..pane.image import Image
-from ..pane.markup import Markdown
+from ..pane.base import panel as _panel
+from ..pane.image import PDF, Image
+from ..pane.markup import DataFrame, Markdown
+from ..pane.media import Audio, Video
 from ..viewable import Layoutable, Renderable, Viewable
-from .base import CompositeWidget
+from .base import CompositeWidget, Widget
 from .button import Button, Toggle
 from .indicators import LoadingSpinner
-from .input import StaticText, TextInput
+from .input import FileInput, StaticText, TextInput
+
+
+@dataclass
+class _FileInputMessage:
+    content: bytes
+    file_name: str
+    mime_type: str
 
 
 class ChatRow(CompositeWidget):
@@ -120,7 +133,6 @@ class ChatRow(CompositeWidget):
             name="♡", width=30, height=30, align="end", visible=show_like
         )
         self._like.link(self, value="liked", bidirectional=True)
-        self._like.param.watch(self._update_like, "value")
 
         # layout objects
         message_layout = {
@@ -166,6 +178,41 @@ class ChatRow(CompositeWidget):
 
         self._composite[:] = [row]
 
+    def _get_message_callable(self, content, mime_type, file_name=None):
+        message_callable = _panel
+        if mime_type == 'application/pdf':
+            content = self._exit_stack.enter_context(
+                BytesIO(content)
+            )
+            message_callable = PDF
+        elif mime_type.startswith('audio/'):
+            f = self._exit_stack.enter_context(
+                NamedTemporaryFile(suffix=".mp3", delete=False)
+            )
+            f.write(content)
+            f.seek(0)
+            content = f.name
+            message_callable = Audio
+        elif mime_type.startswith('video/'):
+            content = self._exit_stack.enter_context(
+                BytesIO(content)
+            )
+            message_callable = Video
+        elif mime_type.startswith('image/'):
+            content = self._exit_stack.enter_context(
+                BytesIO(content)
+            )
+            message_callable = Image
+        elif mime_type.endswith("/csv"):
+            import pandas as pd
+            with BytesIO(content) as buf:
+                content = pd.read_csv(buf)
+            message_callable = DataFrame
+        elif file_name is not None:
+            content = f"`{file_name}`"
+        return content, message_callable
+
+    @param.depends("value", watch=True)
     def _serialize_obj(
         self, obj: Any
     ) -> Viewable:
@@ -177,25 +224,49 @@ class ChatRow(CompositeWidget):
 
         stylesheets = ["p { margin-block-start: 0.2em; margin-block-end: 0.2em;}"]
         text_styles = {"color": self._bubble_styles.get("color")}
-        try:
-            if self.default_message_callable is None or issubclass(
-                self.default_message_callable, PaneBase
-            ):
-                panel_obj = (self.default_message_callable or _panel)(
-                    obj, stylesheets=stylesheets, styles=text_styles
+
+        message_callable = self.default_message_callable or _panel
+        if isinstance(obj, _FileInputMessage):
+            content = obj.content
+            mime_type = obj.mime_type
+            file_name = obj.file_name
+            obj, message_callable = self._get_message_callable(
+                content, mime_type, file_name=file_name
+            )
+        elif message_callable is None:
+            try:
+                import magic
+                mime_type = magic.from_buffer(obj, mime=True)
+                obj, message_callable = self._get_message_callable(
+                    content, mime_type, file_name=None
                 )
+            except ImportError:
+                message_callable = _panel
+
+        try:
+            if isinstance(message_callable, Widget):
+                panel_obj = message_callable(value=obj)
             else:
-                panel_obj = self.default_message_callable(value=obj)
+                panel_obj = message_callable(
+                    obj,
+                    stylesheets=stylesheets,
+                    styles=text_styles
+                )
         except ValueError:
             panel_obj = _panel(obj, stylesheets=stylesheets, styles=text_styles)
 
         if panel_obj.sizing_mode is None:
-            panel_obj.sizing_mode = "stretch_width"
+            panel_obj.sizing_mode = "scale_width"
+        if panel_obj.max_width is None:
+            panel_obj.max_width = 800
+        if panel_obj.max_height is None:
+            panel_obj.max_height = 400
 
         if "overflow-wrap" not in panel_obj.styles:
             panel_obj.styles.update({"overflow-wrap": "break-word"})
         return panel_obj
 
+    @param.depends("liked", watch=True)
     def _update_like(self, event: param.parameterized.Event):
         """
         Update the like button when the user clicks it.
@@ -205,6 +276,13 @@ class ChatRow(CompositeWidget):
             event.obj.name = "❤️"
         else:
             event.obj.name = "♡"
+
+    @property
+    def components(self):
+        """
+        The panel components of the message.
+        """
+        return self._bubble.objects
 
 
 class ChatBox(CompositeWidget):
@@ -230,7 +308,8 @@ class ChatBox(CompositeWidget):
 
     response_callback = param.Callable(default=None, doc="""
         Callback function to call when the user enters a message.
-        The callback should accept two arguments, the `message`
+        The callback should accept two arguments, the `contents`
+        (widget values, pane object, layout objects)
         and the instance of the `chat_box` widget.""")
 
     response_placeholder = param.ClassSelector(
@@ -278,12 +357,16 @@ class ChatBox(CompositeWidget):
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
+    _exit_stack: ExitStack = None
+
     def __init__(self, **params):
         # set up parameters
         if params.get("width") and params.get("height") and "sizing_mode" not in params:
             params["sizing_mode"] = None
 
         super().__init__(**params)
+
+        self._exit_stack = ExitStack()
 
         # Set up layout
         layout = {
@@ -336,7 +419,8 @@ class ChatBox(CompositeWidget):
 
         # add interactivity
         self.param.watch(self._refresh_log, "value")
-        self.param.watch(self._on_input, "value")
+        if self.response_callback:
+            self.param.watch(self._on_input, "value", queued=True)
 
         # populate with initial value
         self.param.trigger("value")
@@ -395,7 +479,6 @@ class ChatBox(CompositeWidget):
             max_width=100,
             height=35,
         )
-        self._send_button.on_click(self._enter_message)
 
         row_layout = layout.copy()
         row_layout.pop("width", None)
@@ -413,6 +496,7 @@ class ChatBox(CompositeWidget):
                 message_input.param.watch(self._enter_message, "value")
                 self._add_scroll_callback(message_input, "value")
             send_button = self._send_button.clone()
+            send_button.on_click(self._enter_message)
             self._link_disabled_loading(send_button)
             message_row = Row(message_input, send_button, **row_layout)
             input_items.append((message_input_name, message_row))
@@ -496,6 +580,7 @@ class ChatBox(CompositeWidget):
         align = "start" if is_other_user else "end"
         if not isinstance(message_contents, list):
             message_contents = [message_contents]
+
         message_row = ChatRow(
             name=user,
             value=message_contents,
@@ -552,6 +637,12 @@ class ChatBox(CompositeWidget):
                 message_input.value_input = ""
             message = message_input.value
             if message:
+                if isinstance(message_input, FileInput):
+                    message = _FileInputMessage(
+                        content=message_input.value,
+                        mime_type=message_input.mime_type,
+                        file_name=message_input.filename,
+                    )
                 break
         else:
             return  # no message entered across all inputs
@@ -559,24 +650,32 @@ class ChatBox(CompositeWidget):
         user = self.primary_name or "You"
         self.append({user: message})
 
-    async def _on_input(self, event: param.parameterized.Event) -> None:
+    async def _on_input(self, _) -> None:
         """
         Callback to execute when the user presses Enter in the input
         widget.
         """
-        if not event.new:
+        if not self.value:
             return
-
-        last_user_message = event.new[-1]
-        user, message = self._separate_user_message(last_user_message)
+        chat_row = self._chat_log.objects[-1]
+        user = chat_row.name
         if self.response_name == user:
             return
+        components = chat_row.components
         if self.response_placeholder is None:
             self.response_placeholder = LoadingSpinner(
                 value=True, width=17, height=17
             )
         self.append({self.response_name: self.response_placeholder})
-        result = self.response_callback(message, self)
+        contents = []
+        for component in components:
+            if hasattr(component, "object"):
+                contents.append(component.object)
+            elif hasattr(component, "value"):
+                contents.append(component.value)
+        if len(contents) == 1:
+            contents = contents[0]
+        result = self.response_callback(contents, self)
         if iscoroutinefunction(self.response_callback):
             async for update in result:
                 self.replace(-1, {self.response_name: update})
@@ -662,3 +761,7 @@ class ChatBox(CompositeWidget):
 
     def __len__(self) -> int:
         return len(self.value)
+
+    def _cleanup(self, root: Model | None = None) -> None:
+        super()._cleanup(root)
+        self._exit_stack.close()
