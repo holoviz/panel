@@ -15,9 +15,10 @@ from ..layout import (
 from ..pane.base import PaneBase, panel as _panel
 from ..pane.image import Image
 from ..pane.markup import Markdown
-from ..viewable import Layoutable, Viewable
+from ..viewable import Layoutable, Renderable, Viewable
 from .base import CompositeWidget
 from .button import Button, Toggle
+from .indicators import LoadingSpinner
 from .input import StaticText, TextInput
 
 
@@ -110,6 +111,8 @@ class ChatRow(CompositeWidget):
             align="center",
             margin=8,
             styles=bubble_styles,
+            min_height=48,
+            min_width=48,
         )
 
         # create heart icon next to chat
@@ -229,6 +232,10 @@ class ChatBox(CompositeWidget):
         Callback function to call when the user enters a message.
         The callback should accept two arguments, the `message`
         and the instance of the `chat_box` widget.""")
+
+    response_placeholder = param.ClassSelector(
+        default=None, class_=(Renderable, str), doc="""
+        Placeholder to display while the response is generating.""")
 
     response_name = param.String(default="AI", doc="""
         Name of the user who responds to the primary user.""")
@@ -564,7 +571,11 @@ class ChatBox(CompositeWidget):
         user, message = self._separate_user_message(last_user_message)
         if self.response_name == user:
             return
-        self.append({self.response_name: ""})
+        if self.response_placeholder is None:
+            self.response_placeholder = LoadingSpinner(
+                value=True, width=17, height=17
+            )
+        self.append({self.response_name: self.response_placeholder})
         result = self.response_callback(message, self)
         if iscoroutinefunction(self.response_callback):
             async for update in result:
