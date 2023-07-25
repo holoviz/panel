@@ -131,7 +131,8 @@ pip-extras = [
 ]
 conda-extras = [
     "nodejs >=16",
-    "vtk",
+    # TODO: re-add vtk
+    # "vtk",
     "xgboost"
 ]
 recommended = [
