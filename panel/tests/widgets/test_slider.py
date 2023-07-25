@@ -404,7 +404,6 @@ def test_discrete_slider_options_dict(document, comm):
         discrete_slider.value = options['1']
         assert widget.value == 1
 
-
 @pytest.mark.parametrize(
     'editableslider,start,end,step,val1,val2,val3,diff1',
     [
@@ -476,6 +475,16 @@ def test_editable_slider(document, comm,
     assert slider._slider.end == slider.fixed_end == slider_widget.end
     slider.fixed_end = None
 
+def test_editable_slider_disabled():
+    slider = EditableFloatSlider(disabled=True)
+
+    assert slider._slider.disabled
+    assert slider._value_edit.disabled
+
+    slider.disabled = False
+
+    assert not slider._slider.disabled
+    assert not slider._value_edit.disabled
 
 @pytest.mark.parametrize(
     'editableslider,start,end,step,val1,val2,val3,diff1',
@@ -545,6 +554,18 @@ def test_editable_rangeslider(document, comm,
     assert slider._slider.end == slider.fixed_end == slider_widget.end
     slider.fixed_end = None
 
+def test_editable_range_slider_disabled():
+    slider = EditableRangeSlider(disabled=True)
+
+    assert slider._slider.disabled
+    assert slider._start_edit.disabled
+    assert slider._end_edit.disabled
+
+    slider.disabled = False
+
+    assert not slider._slider.disabled
+    assert not slider._start_edit.disabled
+    assert not slider._end_edit.disabled
 
 @pytest.mark.parametrize(
     "editableslider",
