@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import inspect
-
 from typing import (
     Any, ClassVar, Dict, List, Optional, Tuple, Type, Union,
 )
 
 import param
+
+from param.parameterized import iscoroutinefunction
 
 from .._param import Margin
 from ..layout import (
@@ -18,7 +18,6 @@ from ..pane.markup import Markdown
 from ..viewable import Layoutable, Viewable
 from .base import CompositeWidget
 from .button import Button, Toggle
-from .indicators import LoadingSpinner
 from .input import StaticText, TextInput
 
 
@@ -226,6 +225,14 @@ class ChatBox(CompositeWidget):
         Name of the primary user (the one who inputs messages);
         the first key found in value will be used if unspecified.""")
 
+    response_callback = param.Callable(default=None, doc="""
+        Callback function to call when the user enters a message.
+        The callback should accept two arguments, the `message`
+        and the instance of the `chat_box` widget.""")
+
+    response_name = param.String(default="AI", doc="""
+        Name of the user who responds to the primary user.""")
+
     allow_input = param.Boolean(default=True, doc="""
         Whether to allow the primary user to interactively enter messages.""")
 
@@ -322,6 +329,7 @@ class ChatBox(CompositeWidget):
 
         # add interactivity
         self.param.watch(self._refresh_log, "value")
+        self.param.watch(self._on_input, "value")
 
         # populate with initial value
         self.param.trigger("value")
@@ -544,6 +552,26 @@ class ChatBox(CompositeWidget):
         user = self.primary_name or "You"
         self.append({user: message})
 
+    async def _on_input(self, event: param.parameterized.Event) -> None:
+        """
+        Callback to execute when the user presses Enter in the input
+        widget.
+        """
+        if not event.new:
+            return
+
+        last_user_message = event.new[-1]
+        user, message = self._separate_user_message(last_user_message)
+        if self.response_name == user:
+            return
+        self.append({self.response_name: ""})
+        result = self.response_callback(message, self)
+        if iscoroutinefunction(self.response_callback):
+            async for update in result:
+                self.replace(-1, {self.response_name: update})
+        else:
+            self.replace(-1, {self.response_name: result})
+
     @property
     def rows(self) -> List[ChatRow]:
         """
@@ -623,64 +651,3 @@ class ChatBox(CompositeWidget):
 
     def __len__(self) -> int:
         return len(self.value)
-
-
-class AIChatInterface(CompositeWidget):
-
-    input_callback = param.Callable(doc="""
-        Callback to execute when the user submits a new message.
-        The callback should accept two arguments, the `message`
-        and the instance of AI Chat `interface` widget.""")
-
-    ai_name = param.String(default="AI", doc="""
-        Name of the AI user.""")
-
-    message_placeholder = param.ClassSelector(
-        default=None, class_=Viewable, doc="""
-        Placeholder to display when the AI is processing.""")
-
-    chat_box = param.ClassSelector(default=None, class_=ChatBox, doc="""
-        ChatBox widget to use; if not provided a default will be used.""")
-
-    def __init__(self, **params):
-        super().__init__(**params)
-        if self.chat_box is None:
-            self.chat_box = ChatBox()
-        self.chat_box.param.watch(self._on_input, "value")
-
-        if self.message_placeholder is None:
-            self.message_placeholder = LoadingSpinner(
-                value=True, width=17, height=17, sizing_mode="fixed",
-            )
-        self._composite[:] = [self.chat_box]
-
-    async def _on_input(self, event: param.parameterized.Event) -> None:
-        """
-        Callback to execute when the user presses Enter in the input
-        widget.
-        """
-        chat_box = self.chat_box
-        last_user_message = event.new[-1]
-        user, message = chat_box._separate_user_message(last_user_message)
-        if self.ai_name == user:
-            return
-        chat_box.append({self.ai_name: [self.message_placeholder]})
-        result = self.input_callback(message, self)
-        if inspect.isawaitable(result):
-            await result
-
-    def stream(self, token: str) -> None:
-        """
-        Concatenates token response to the last message.
-
-        Arguments
-        ---------
-        token (str): The token to concatenate to the last message.
-        """
-        last_user_message = self.chat_box.value[-1]
-        user, message = self.chat_box._separate_user_message(last_user_message)
-        if isinstance(message, list):
-            message = message[-1]
-        if not isinstance(message, str):
-            message = ""
-        self.chat_box.replace(-1, {user: message + token})
