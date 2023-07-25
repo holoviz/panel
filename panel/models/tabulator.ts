@@ -1,10 +1,10 @@
 import {undisplay} from "@bokehjs/core/dom"
 import {isArray} from "@bokehjs/core/util/types"
-import {build_views} from "@bokehjs/core/build_views"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties";
+import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 import {TableColumn} from "@bokehjs/models/widgets/tables"
 import {Attrs} from "@bokehjs/core/types"
@@ -598,20 +598,25 @@ export class DataTabulatorView extends HTMLBoxView {
     }
   }
 
+  get child_models(): LayoutDOM[] {
+    const children = []
+    for (const idx of this.model.expanded) {
+      if (this.model.children.has(idx))
+        children.push(this.model.children.get(idx))
+    }
+    return children
+  }
+
   renderChildren(): void {
     new Promise(async (resolve: any) => {
-      const children = []
-      for (const idx of this.model.expanded) {
-        if (this.model.children.has(idx))
-          children.push(this.model.children.get(idx))
-      }
-      await build_views(this._child_views, children, {parent: this})
+      await this.build_child_views()
       resolve(null)
     }).then(() => {
       for (const r of this.model.expanded) {
         const row = this.tabulator.getRow(r)
         this._render_row(row, false)
       }
+      this._update_children()
       this.tabulator.rowManager.adjustTableSize()
       this.invalidate_layout()
     })
@@ -625,16 +630,17 @@ export class DataTabulatorView extends HTMLBoxView {
     const view = this._child_views.get(model)
     if (view == null)
       return
-    (view as any)._parent = this
     const rowEl = row.getElement()
     const style = getComputedStyle(this.tabulator.element.children[1].children[0])
     const bg = style.backgroundColor
-    const neg_margin = "-" + rowEl.style.paddingLeft;
+    const neg_margin = rowEl.style.paddingLeft ? "-" + rowEl.style.paddingLeft : '0';
     const viewEl = div({style: "background-color: " + bg +"; margin-left:" + neg_margin + "; max-width: 100%; overflow-x: hidden;"})
     viewEl.appendChild(view.el)
     rowEl.appendChild(viewEl)
     view.render()
+    view.after_render()
     if (resize) {
+      this._update_children()
       this.tabulator.rowManager.adjustTableSize()
       this.invalidate_layout()
     }
