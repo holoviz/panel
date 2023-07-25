@@ -76,8 +76,7 @@ jobs:
       - name: Set up environment
         run: |
           conda info
-          pip install --upgrade pip
-          pip install hatch hatch-conda wheel
+          pipx install hatch hatch-conda
           hatch -v env create test.py${{ matrix.python-version }}
       - name: Run unit test suite
         run: |
@@ -130,8 +129,7 @@ jobs:
           auto-activate-base: true
       - name: Set up environment
         run: |
-          pip install --upgrade pip
-          pip install hatch hatch-conda wheel
+          pipx install hatch hatch-conda
           hatch -v env create test-ui.py3.10
       - name: Run UI test suite
         run: |
