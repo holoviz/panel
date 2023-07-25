@@ -76,7 +76,8 @@ jobs:
       - name: Set up environment
         run: |
           conda info
-          pipx install hatch hatch-conda
+          pipx install hatch
+          pipx inject hatch hatch-conda
           hatch -v env create test.py${{ matrix.python-version }}
       - name: Run unit test suite
         run: |
@@ -129,7 +130,8 @@ jobs:
           auto-activate-base: true
       - name: Set up environment
         run: |
-          pipx install hatch hatch-conda
+          pipx install hatch
+          pipx inject hatch hatch-conda
           hatch -v env create test-ui.py3.10
       - name: Run UI test suite
         run: |
