@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import inspect
+
 from typing import (
     Any, ClassVar, Dict, List, Optional, Tuple, Type, Union,
 )
@@ -524,7 +526,7 @@ class ChatBox(CompositeWidget):
 
         self._chat_log.objects = message_rows
 
-    async def _enter_message(self, _: Optional[param.parameterized.Event] = None) -> None:
+    def _enter_message(self, _: Optional[param.parameterized.Event] = None) -> None:
         """
         Append the message from the text input when the user presses Enter.
         """
@@ -637,12 +639,13 @@ class AIChatInterface(CompositeWidget):
         default=None, class_=Viewable, doc="""
         Placeholder to display when the AI is processing.""")
 
-    chat_box_kwargs = param.Dict(default={}, doc="""
-        Keyword arguments to pass to the ChatBox.""")
+    chat_box = param.ClassSelector(default=None, class_=ChatBox, doc="""
+        ChatBox widget to use; if not provided a default will be used.""")
 
     def __init__(self, **params):
         super().__init__(**params)
-        self.chat_box = ChatBox(**self.chat_box_kwargs)
+        if self.chat_box is None:
+            self.chat_box = ChatBox()
         self.chat_box.param.watch(self._on_input, "value")
 
         if self.message_placeholder is None:
@@ -651,7 +654,7 @@ class AIChatInterface(CompositeWidget):
             )
         self._composite[:] = [self.chat_box]
 
-    def _on_input(self, event: param.parameterized.Event) -> None:
+    async def _on_input(self, event: param.parameterized.Event) -> None:
         """
         Callback to execute when the user presses Enter in the input
         widget.
@@ -662,7 +665,9 @@ class AIChatInterface(CompositeWidget):
         if self.ai_name == user:
             return
         chat_box.append({self.ai_name: [self.message_placeholder]})
-        self.input_callback(message, self)
+        result = self.input_callback(message, self)
+        if inspect.isawaitable(result):
+            await result
 
     def stream(self, token: str) -> None:
         """
