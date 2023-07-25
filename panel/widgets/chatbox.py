@@ -628,9 +628,9 @@ class ChatBox(CompositeWidget):
 class AIChatInterface(CompositeWidget):
 
     input_callback = param.Callable(doc="""
-        Callback to execute when the user presses Enter in the input
-        widget. The callback should accept a single argument, the
-        message input widget.""")
+        Callback to execute when the user submits a new message.
+        The callback should accept two arguments, the `message`
+        and the instance of AI Chat `interface` widget.""")
 
     ai_name = param.String(default="AI", doc="""
         Name of the AI user.""")
