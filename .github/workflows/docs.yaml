@@ -53,10 +53,11 @@ jobs:
         with:
           miniconda-version: "latest"
           auto-update-conda: true
+          auto-activate-base: false
       - name: Set up base environment
         run: |
-          pip install --upgrade pip
-          pip install hatch hatch-conda
+          pip3 install --upgrade pip
+          pip3 install hatch hatch-conda
           hatch -v env create docs
       - name: Build docs
         run: |
