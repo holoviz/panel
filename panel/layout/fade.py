@@ -1,5 +1,5 @@
 """
-The Fade layout enables you to quickly compare two panels
+The Fade layout enables you to quickly compare multiple panels
 """
 from __future__ import annotations
 
@@ -14,53 +14,50 @@ from .base import ListLike
 
 class Fade(ListLike, ReactiveHTML):
     """
-    The Fade layout enables you to quickly compare two panels laid
-    out on top of each other; moving the slider to the left will fade out
-    the top panel.
+    The Fade layout enables you to quickly compare multiple objects;
+    laid on top of each other with a slider to fade between them.
+    For example, if there are two objects, the first panel will be
+    fully opaque when the slider is at 0%, the second panel will be
+    fully opaque when the slider is at 100%, and both objects will be
+    half opaque when the slider is at 50%.
+    This can also support more than two objects and will gradually
+    fade between object 0 to object 1 to object 2.
     """
 
     objects = param.List(
         default=[],
-        bounds=(0, 2),
-        doc="""
-        The list of child objects that make up the layout.""",
+        doc="The list of child objects that make up the layout.",
         precedence=-1,
     )
 
     slider_width = param.Integer(
         default=25,
         bounds=(0, 100),
-        doc="""
-        The width of the slider in pixels""",
+        doc="The width of the slider in pixels",
     )
 
     slider_color = param.Color(
         default="black",
-        doc="""
-        The color of the slider""",
+        doc="The color of the slider",
     )
 
     value = param.Integer(
-        default=100,
+        default=0,
         bounds=(0, 100),
-        doc="""
-        The value percentage of the *after* panel.""",
+        doc="The percentage value of the slider.",
     )
 
-    _before = param.Parameter()
-
-    _after = param.Parameter()
+    _objects = param.List(default=[])
 
     _direction: ClassVar[str | None] = "vertical"
 
     _template = """
-    <div id="container" class="fade-container">
-        <div id="before" class="outer">
-            <div id="before-inner" class="inner">${_before}</div>
+    <div id="fade-container" class="fade-container">
+        {% for obj in _objects %}
+        <div id="object-{{ loop.index0 }}" class="outer" style="overflow: hidden;">
+            <div id="object-inner-{{ loop.index0 }}" class="inner">${obj}</div>
         </div>
-        <div id="after" class="outer" style="overflow: hidden;">
-            <div id="after-inner" class="inner">${_after}</div>
-        </div>
+        {% endfor %}
         <div id="slider" class="slider" onmousedown="${script('drag')}"
             style="background: ${slider_color}; width: ${slider_width}px;">
         </div>
@@ -70,6 +67,7 @@ class Fade(ListLike, ReactiveHTML):
 
     _scripts = {
         "render": """
+            data.value = 0;
             self.adjustSlider()
         """,
         "after_layout": """
@@ -85,7 +83,7 @@ class Fade(ListLike, ReactiveHTML):
                 e.preventDefault();
                 current = e.clientX
                 start = view.el.getBoundingClientRect().left
-                value = parseInt(((current-start)/ container.clientWidth)*100)
+                value = parseInt(((current-start)/ fade_container.clientWidth)*100)
                 data.value = Math.max(0, Math.min(value, 100))
             }
             let e = event || window.event;
@@ -94,8 +92,27 @@ class Fade(ListLike, ReactiveHTML):
             document.addEventListener('mousemove', handleDrag);
         """,
         "value": """
-            after.style.opacity = `${data.value/100}`
-            self.adjustSlider()
+            objects = fade_container.getElementsByClassName('outer');
+            const numObjects = objects.length;
+            const sliderValue = data.value / 100; // Scale data.value to range 0-1
+
+            const opacityStep = 1 / (numObjects - 1);
+            const nearestObjectIndex = Math.floor(sliderValue / opacityStep);
+            const remainder = sliderValue % opacityStep;
+
+            let opacity;
+            for (let i = 0; i < numObjects; i++) {
+                if (i === nearestObjectIndex) {
+                    opacity = 1 - remainder / opacityStep;
+                } else if (i === nearestObjectIndex + 1) {
+                    opacity = remainder / opacityStep;
+                } else {
+                    opacity = (nearestObjectIndex < i && i < nearestObjectIndex + 1) ? 1 : 0;
+                }
+                console.log(opacity, i);
+                objects[i].style.opacity = opacity;
+            }
+            self.adjustSlider();
         """,
         "slider_width": "self.adjustSlider()",
         "adjustSlider": """
@@ -103,7 +120,6 @@ class Fade(ListLike, ReactiveHTML):
             slider.style.marginLeft = `calc(${data.value}% - ${halfWidth}px)`
         """,
     }
-
 
     _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/fade.css"]
 
@@ -122,24 +138,11 @@ class Fade(ListLike, ReactiveHTML):
 
     @param.depends("objects", watch=True, on_init=True)
     def _update_layout(self):
-        self._before = self.before
-        self._after = self.after
-
-    @property
-    def before(self):
-        return self[0] if len(self) else None
-
-    @before.setter
-    def before(self, before):
-        self[0] = before
-
-    @property
-    def after(self):
-        return self[1] if len(self) > 1 else None
-
-    @after.setter
-    def after(self, after):
-        self[1] = after
+        for i, obj in enumerate(self.objects):
+            if i < len(self._objects):
+                self._objects[i] = obj
+            else:
+                self._objects.append(obj)
 
     def select(self, selector=None):
         """
@@ -157,6 +160,6 @@ class Fade(ListLike, ReactiveHTML):
         viewables: list(Viewable)
         """
         objects = super().select(selector)
-        for obj in self:
+        for obj in self._objects:
             objects += obj.select(selector)
         return objects
