@@ -59,6 +59,7 @@ __all__ = (
     "Panel",
     "Row",
     "Spacer",
+    "Swipe",
     "Tabs",
     "VSpacer",
     "WidgetBox"

@@ -21,7 +21,10 @@ def test_row_scroll(page, port):
 
     page.goto(f"http://localhost:{port}")
 
-    bbox = page.locator(".bk-Row").bounding_box()
+    row_el = page.locator(".bk-Row")
+    bbox = row_el.bounding_box()
 
     assert bbox['width'] == 420
     assert bbox['height'] in (200, 215) # Ignore if browser hides empty scrollbar
+
+    assert 'scrollable-horizontal' in row_el.get_attribute('class')

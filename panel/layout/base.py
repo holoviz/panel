@@ -12,11 +12,12 @@ from typing import (
 
 import param
 
-from bokeh.models import Column as BkColumn, Row as BkRow
+from bokeh.models import Row as BkRow
 
 from ..io.model import hold
 from ..io.resources import CDN_DIST
 from ..io.state import state
+from ..models import Column as PnColumn
 from ..reactive import Reactive
 from ..util import param_name, param_reprs
 
@@ -792,11 +793,14 @@ class ListPanel(ListLike, Panel):
         )
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        scroll = params.pop('scroll', None)
-        css_classes = self.css_classes or []
-        if scroll:
-            params['css_classes'] = css_classes + ['scrollable']
-        elif scroll == False:
+        if 'scroll' in params:
+            scroll = params['scroll']
+            css_classes = params.get('css_classes', self.css_classes)
+            if scroll:
+                if self._direction is not None:
+                    css_classes += [f'scrollable-{self._direction}']
+                else:
+                    css_classes += ['scrollable']
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
@@ -825,10 +829,13 @@ class NamedListPanel(NamedListLike, Panel):
 
     def _process_param_change(self, params: Dict[str, Any]) -> Dict[str, Any]:
         if 'scroll' in params:
-            scroll = params.pop('scroll')
-            css_classes = list(self.css_classes or [])
+            scroll = params['scroll']
+            css_classes = params.get('css_classes', self.css_classes)
             if scroll:
-                css_classes += ['scrollable']
+                if self._direction is not None:
+                    css_classes += [f'scrollable-{self._direction}']
+                else:
+                    css_classes += ['scrollable']
             params['css_classes'] = css_classes
         return super()._process_param_change(params)
 
@@ -879,11 +886,34 @@ class Column(ListPanel):
     >>> pn.Column(some_widget, some_pane, some_python_object)
     """
 
-    _bokeh_model: ClassVar[Type[Model]] = BkColumn
+    auto_scroll_limit = param.Integer(bounds=(0, None), doc="""
+        Max pixel distance from the latest object in the Column to
+        activate automatic scrolling upon update. Setting to 0
+        disables auto-scrolling.""")
+
+    scroll_button_threshold = param.Integer(bounds=(0, None), doc="""
+        Min pixel distance from the latest object in the Column to
+        display the scroll button. Setting to 0
+        disables the scroll button.""")
+
+    view_latest = param.Boolean(default=False, doc="""
+        Whether to scroll to the latest object on init. If not
+        enabled the view will be on the first object.""")
+
+    _bokeh_model: ClassVar[Type[Model]] = PnColumn
 
     _direction = 'vertical'
 
     _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/listpanel.css']
+
+    @param.depends("auto_scroll_limit", "scroll_button_threshold", "view_latest", watch=True, on_init=True)
+    def _set_scrollable(self):
+        self.scroll = (
+            self.scroll or
+            bool(self.auto_scroll_limit) or
+            bool(self.scroll_button_threshold) or
+            self.view_latest
+        )
 
 
 class WidgetBox(ListPanel):
@@ -929,7 +959,7 @@ class WidgetBox(ListPanel):
 
     @property
     def _bokeh_model(self) -> Type[Model]: # type: ignore
-        return BkRow if self.horizontal else BkColumn
+        return BkRow if self.horizontal else PnColumn
 
     @property
     def _direction(self):
