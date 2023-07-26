@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import inspect
+
 from contextlib import ExitStack
 from dataclasses import dataclass
 from io import BytesIO
@@ -11,7 +13,6 @@ from typing import (
 import param
 
 from bokeh.model import Model
-from param.parameterized import iscoroutinefunction
 
 from .._param import Margin
 from ..layout import (
@@ -24,7 +25,6 @@ from ..pane.media import Audio, Video
 from ..viewable import Layoutable, Renderable, Viewable
 from .base import CompositeWidget, Widget
 from .button import Button, Toggle
-from .indicators import LoadingSpinner
 from .input import FileInput, StaticText, TextInput
 
 
@@ -309,15 +309,15 @@ class ChatBox(CompositeWidget):
     response_callback = param.Callable(default=None, doc="""
         Callback function to call when the user enters a message.
         The callback should accept two arguments, the `contents`
-        (widget values, pane object, layout objects)
-        and the instance of the `chat_box` widget.""")
+        (widget values, pane object, layout objects), the `name`
+        of the user, and the instance of the `chat_box`.""")
 
     response_placeholder = param.ClassSelector(
-        default=None, class_=(Renderable, str), doc="""
+        default="", class_=(Renderable, str), doc="""
         Placeholder to display while the response is generating.""")
 
-    response_name = param.String(default="Assistant", doc="""
-        Name of the user who responds to the primary user.""")
+    default_response_name = param.String(default="Assistant", doc="""
+        The default name of the user who responds to the primary user.""")
 
     allow_input = param.Boolean(default=True, doc="""
         Whether to allow the primary user to interactively enter messages.""")
@@ -649,6 +649,25 @@ class ChatBox(CompositeWidget):
         user = self.primary_name or "You"
         self.append({user: message})
 
+    async def _parse_response(self, response):
+        user = None
+        message = response
+        if isinstance(response, dict):
+            try:
+                user, message = self._separate_user_message(response)
+            except ValueError:
+                pass
+        if not user:
+            user = self.default_response_name
+
+        if self.rows[-1].name != user:
+            self.append({user: self.response_placeholder})
+        self.replace(-1, {user: message})
+
+    async def _stream_response(self, response):
+        async for chunk in response:
+            await self._parse_response(chunk)
+
     async def _on_input(self, _) -> None:
         """
         Callback to execute when the user presses Enter in the input
@@ -657,32 +676,34 @@ class ChatBox(CompositeWidget):
         if not self.value or not self.response_callback:
             return
 
-        chat_row = self._chat_log.objects[-1]
+        # extract previous user
+        chat_row = self.rows[-1]
         user = chat_row.name
-        if user == self.response_name or user == "":
-            return
 
-        components = chat_row.components
-        if self.response_placeholder is None:
-            self.response_placeholder = LoadingSpinner(
-                value=True, width=17, height=17
-            )
-        self.append({"": self.response_placeholder})
-
+        # get contents from previous user
         contents = []
+        components = chat_row.components
         for component in components:
             if hasattr(component, "object"):
                 contents.append(component.object)
+            elif hasattr(component, "objects"):
+                contents.extend(component.objects)
             elif hasattr(component, "value"):
                 contents.append(component.value)
         if len(contents) == 1:
             contents = contents[0]
-        result = self.response_callback(contents, self)
-        if iscoroutinefunction(self.response_callback):
-            async for update in result:
-                self.replace(-1, {self.response_name: update})
+
+        if contents is None or len(contents) == 0:
+            return
+
+        # get response and replace placeholder
+        response = self.response_callback(contents, user, self)
+        if hasattr(response, "__aiter__"):
+            self._stream_response(response)
+        elif inspect.isawaitable(response):
+            await self._parse_response(await response)
         else:
-            self.replace(-1, {self.response_name: result})
+            await self._parse_response(response)
 
     @property
     def rows(self) -> List[ChatRow]:
