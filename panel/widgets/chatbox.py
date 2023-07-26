@@ -316,7 +316,7 @@ class ChatBox(CompositeWidget):
         default=None, class_=(Renderable, str), doc="""
         Placeholder to display while the response is generating.""")
 
-    response_name = param.String(default="AI", doc="""
+    response_name = param.String(default="Assistant", doc="""
         Name of the user who responds to the primary user.""")
 
     allow_input = param.Boolean(default=True, doc="""
@@ -419,8 +419,7 @@ class ChatBox(CompositeWidget):
 
         # add interactivity
         self.param.watch(self._refresh_log, "value")
-        if self.response_callback:
-            self.param.watch(self._on_input, "value", queued=True)
+        self.param.watch(self._on_input, "value")
 
         # populate with initial value
         self.param.trigger("value")
@@ -655,18 +654,21 @@ class ChatBox(CompositeWidget):
         Callback to execute when the user presses Enter in the input
         widget.
         """
-        if not self.value:
+        if not self.value or not self.response_callback:
             return
+
         chat_row = self._chat_log.objects[-1]
         user = chat_row.name
-        if self.response_name == user:
+        if user == self.response_name or user == "":
             return
+
         components = chat_row.components
         if self.response_placeholder is None:
             self.response_placeholder = LoadingSpinner(
                 value=True, width=17, height=17
             )
-        self.append({self.response_name: self.response_placeholder})
+        self.append({"": self.response_placeholder})
+
         contents = []
         for component in components:
             if hasattr(component, "object"):
