@@ -120,7 +120,6 @@ class ChatRow(CompositeWidget):
 
         # create the chat bubble
         self._bubble = Column(
-            *[self._serialize_obj(obj) for obj in self.value],
             align="center",
             margin=8,
             styles=bubble_styles,
@@ -176,7 +175,10 @@ class ChatRow(CompositeWidget):
         else:
             self._name = None
 
+        self.param.watch(self._update_like, "liked")
+
         self._composite[:] = [row]
+        self.param.trigger("value")
 
     def _get_message_callable(self, content, mime_type, file_name=None):
         message_callable = _panel
@@ -212,9 +214,8 @@ class ChatRow(CompositeWidget):
             content = f"`{file_name}`"
         return content, message_callable
 
-    @param.depends("value", watch=True)
     def _serialize_obj(
-        self, obj: Any
+        self, obj: Any = None
     ) -> Viewable:
         """
         Convert an object to a Panel object.
@@ -266,8 +267,11 @@ class ChatRow(CompositeWidget):
             panel_obj.styles.update({"overflow-wrap": "break-word"})
         return panel_obj
 
-    @param.depends("liked", watch=True)
-    def _update_like(self, event: param.parameterized.Event):
+    @param.depends("value", watch=True)
+    def _update_bubble(self):
+        self._bubble.objects = [self._serialize_obj(obj) for obj in self.value]
+
+    def _update_like(self, event):
         """
         Update the like button when the user clicks it.
         """
@@ -649,7 +653,7 @@ class ChatBox(CompositeWidget):
         user = self.primary_name or "You"
         self.append({user: message})
 
-    async def _parse_response(self, response):
+    async def _parse_response(self, response, new=True):
         user = None
         message = response
         if isinstance(response, dict):
@@ -660,13 +664,20 @@ class ChatBox(CompositeWidget):
         if not user:
             user = self.default_response_name
 
-        if self.rows[-1].name != user:
+        if new:
             self.append({user: self.response_placeholder})
-        self.replace(-1, {user: message})
+
+        self.rows[-1].value = [message]
+        return user, message
 
     async def _stream_response(self, response):
+        new = True
+        user = None
+        message = None
         async for chunk in response:
-            await self._parse_response(chunk)
+            user, message = await self._parse_response(chunk, new=new)
+            new = False
+        return user, message
 
     async def _on_input(self, _) -> None:
         """
@@ -699,11 +710,14 @@ class ChatBox(CompositeWidget):
         # get response and replace placeholder
         response = self.response_callback(contents, user, self)
         if hasattr(response, "__aiter__"):
-            self._stream_response(response)
+            user, message = await self._stream_response(response)
         elif inspect.isawaitable(response):
-            await self._parse_response(await response)
+            user, message = await self._parse_response(await response)
         else:
-            await self._parse_response(response)
+            user, message = await self._parse_response(response)
+
+        if user and message:
+            self.replace(-1, {user: message})
 
     @property
     def rows(self) -> List[ChatRow]:
