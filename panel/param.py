@@ -491,7 +491,7 @@ class Param(PaneBase):
             )
         kw.update(kw_widget)
 
-        kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
+        kwargs = {k: v for k, v in kw.items() if k in widget_class.param or k == 'component_name'}
 
         if isinstance(widget_class, type) and issubclass(widget_class, Button):
             kwargs.pop('value', None)
