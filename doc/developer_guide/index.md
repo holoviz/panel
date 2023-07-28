@@ -16,9 +16,23 @@ To install Git on any platform, refer to the [Installing Git](https://git-scm.co
 
 In order to contribute to Panel you will also need [Github account](https://github.com/join) and knowledge of the [*fork and pull request workflow**](https://docs.github.com/en/get-started/quickstart/contributing-to-projects).
 
-## Cloning the Repository
+### Pip
 
-The source code for the Panel project is hosted on [GitHub](https://github.com/holoviz/panel). To clone the source repository
+First time contributors can get quickly up to speed using `pip` and not `conda`.
+
+### Conda
+
+Developing Panel requires a wide range of packages that are not easily and quickly available using pip. To make this more manageable, core developers rely heavily on the [conda package manager](https://conda.io/docs/intro.html) for the free [Anaconda](https://anaconda.com/downloads) Python distribution. However, ``conda`` can also install non-Python package dependencies, which helps streamline Panel development greatly. It is *strongly* recommended that anyone developing Panel also use ``conda``, and the remainder of the instructions will assume that ``conda`` is available.
+
+To install Conda on any platform, see the [Download conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html) section of the `conda documentation`_.
+
+## Cloning the Project
+
+The source code for the Panel project is hosted on [GitHub](https://github.com/holoviz/panel).
+
+### First time contributors
+
+To clone the source repository
 
 - Go to [github.com/holoviz/panel](https://github.com/holoviz/panel)
 - [Fork the repository](https://docs.github.com/en/get-started/quickstart/contributing-to-projects#forking-a-repository)
@@ -28,16 +42,25 @@ The source code for the Panel project is hosted on [GitHub](https://github.com/h
 git clone https://github.com/<Your UserName Here>/panel.git
 ```
 
-This will create a ``panel`` directory at your file system location. This ``panel`` directory is referred to as the *source checkout* for the remainder of this document. For the remainder of this document we will assume your current working directory is the *source checkout* directory.
+### Core developer
 
-## Install
+Core developers can work directly with the Panel repository. To clone run
+
+```base
+git clone https://github.com/holoviz/panel.git
+```
+
+## Installing the Project
+
+The instructions for cloning above created a ``panel`` directory at your file system location. This ``panel`` directory is referred to as the *source checkout* for the remainder of this document. For the remainder of this document we will assume your current working directory is the *source checkout* directory.
 
 ### First Time Contributor
 
 We recommend this install to first time contributors that
 
 - want to make a simple, quick contribution to notebooks, docs or the Python code
-- can use PSF python and pip (i.e. not Anaconda or conda) to create and manage [virtual environments](https://realpython.com/python-virtual-environments-a-primer/).
+- can use pip to create and manage [virtual environments](https://realpython.com/python-virtual-environments-a-primer/).
+- are not going to contribute to Bokeh models.
 
 Create a new virtual environment and activate it.
 
@@ -45,6 +68,7 @@ Run
 
 ```bash
 pip install -e . jupyterlab pre-commit
+panel bundle --all
 pre-commit install
 ```
 
@@ -56,13 +80,13 @@ You can start Jupyter Lab by running
 jupyter lab
 ```
 
-### Regular Contributor
+If you start seeing `ImportError` due to missing packages, you can manually install them using
+`pip` or consider if its time to install in the same way as the *core developers*.
 
-#### Conda
+### Core Developer
 
-Developing Panel requires a wide range of packages that are not easily and quickly available using pip. To make this more manageable, core developers rely heavily on the [conda package manager](https://conda.io/docs/intro.html) for the free [Anaconda](https://anaconda.com/downloads) Python distribution. However, ``conda`` can also install non-Python package dependencies, which helps streamline Panel development greatly. It is *strongly* recommended that anyone developing Panel also use ``conda``, and the remainder of the instructions will assume that ``conda`` is available.
-
-To install Conda on any platform, see the [Download conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html) section of the `conda documentation`_.
+This is the *full install* used by the *core developers*. Use this is you have become a regular
+contributor or want to contribute to more advanced parts of Panel like Bokeh models.
 
 #### Create a development environment
 
