@@ -8,9 +8,9 @@ If you have any problems with the steps here, please reach out in the `dev` chan
 
 ## Preliminaries
 
-### Knowledge of contributing to Open Source
+### Basic understanding of how to contribute to Open Source
 
-A basic understanding of how to contribute to Open Source. If you don't have that please study one
+If this is your first open source contribution, please study one
 or more of the below resources.
 
 - [How to Get Started with Contributing to Open Source | Video](https://youtu.be/RGd5cOXpCQw)
@@ -31,7 +31,7 @@ First time contributors can get quickly up to speed using `pip` instead of `cond
 
 ### Conda
 
-Developing all aspects of Panel requires a wide range of packages that are not easily and quickly available using pip. To make this more manageable, core developers rely heavily on the [conda package manager](https://conda.io/docs/intro.html) for the free [Anaconda](https://anaconda.com/downloads) Python distribution. However, ``conda`` can also install non-Python package dependencies, which helps streamline Panel development greatly. It is *strongly* recommended that any regular or experienced contributor use ``conda``.
+Developing all aspects of Panel requires a wide range of packages that are not easily and quickly available using pip. To make this more manageable, core developers rely heavily on the [conda package manager](https://conda.io/docs/intro.html) for the free [Anaconda](https://anaconda.com/downloads) Python distribution. However, ``conda`` can also install non-Python package dependencies, which helps streamline Panel development greatly. It is *strongly* recommended that any experienced or regular contributor use ``conda``.
 
 To install Conda on any platform, see the [Download conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html) section of the `conda documentation`_.
 
@@ -69,7 +69,6 @@ We recommend this install to first time contributors that
 
 - want to make a simple, quick contribution to notebooks, docs or the Python code
 - can use pip to create and manage [virtual environments](https://realpython.com/python-virtual-environments-a-primer/).
-- are not going to contribute to Bokeh models.
 
 Create a new virtual environment and activate it.
 
@@ -174,9 +173,9 @@ Panel bundles external resources required for custom models and templates into t
 * A new template with a `_resources` declaration is added or an existing template is updated
 * A CSS file in one of template directories (`panel/template/*/`) is added or modified
 
-## Next Steps
+#### Next Steps
 
-You will likely want to check out the [testing](testing.md) guide.
+You will likely want to check out the [Testing Guide](testing.md).
 
 ## Useful Links
 
@@ -185,7 +184,7 @@ You will likely want to check out the [testing](testing.md) guide.
 - [Panel main branch on Binder](https://mybinder.org/v2/gh/holoviz/panel/main?urlpath=lab/tree/examples)
   - Use this to quickly explore and manually test the newest panel features in a fresh environment with all requirements installed.
   - Replace `main` with `name-of-other-branch` or `version`for other branches.
-    - For example https://mybinder.org/v2/gh/holoviz/panel/v1.1.1?urlpath=lab/tree/examples
+    - For example https://mybinder.org/v2/gh/holoviz/panel/v1.2.1?urlpath=lab/tree/examples
 
 ```{toctree}
 :titlesonly:
