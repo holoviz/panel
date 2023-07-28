@@ -8,17 +8,25 @@ If you have any problems with the steps here, please reach out in the `dev` chan
 
 ## Preliminaries
 
+### Knowledge of contributing to Open Source
+
+A basic understanding of how to contribute to Open Source. If you don't have that please study one
+or more of the below resources.
+
+- [How to Get Started with Contributing to Open Source | Video](https://youtu.be/RGd5cOXpCQw) or [Contributing to Open-Source Projects as a New Python Developer | Video](https://youtu.be/jTTf4oLkvaM)
+- [How to Contribute to an Open Source Python Project | Blog post](https://www.educative.io/blog/contribue-open-source-python-project)
+
 ### Git
 
 The Panel source code is stored in a [Git](https://git-scm.com) source control repository.  The first step to working on Panel is to install Git on to your system.  There are different ways to do this depending on whether, you are using Windows, OSX, or Linux.
 
 To install Git on any platform, refer to the [Installing Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) section of the [Pro Git Book](https://git-scm.com/book/en/v2).
 
-In order to contribute to Panel you will also need [Github account](https://github.com/join) and knowledge of the [*fork and pull request workflow**](https://docs.github.com/en/get-started/quickstart/contributing-to-projects).
+In order to contribute to Panel you will also need [Github account](https://github.com/join) and knowledge of the [*fork and pull request workflow*](https://docs.github.com/en/get-started/quickstart/contributing-to-projects).
 
 ### Pip
 
-First time contributors can get quickly up to speed using `pip` and not `conda`.
+First time contributors can get quickly up to speed using `pip` instead of `conda`.
 
 ### Conda
 
