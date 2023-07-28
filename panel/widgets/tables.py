@@ -89,6 +89,9 @@ class BaseTable(ReactiveData, Widget):
     titles = param.Dict(default={}, doc="""
         A mapping from column name to a title to override the name with.""")
 
+    tooltips = param.Dict(default={}, doc="""
+        A mapping from column name to tooltip displayed over column.""")
+
     widths = param.ClassSelector(default={}, class_=(dict, int), doc="""
         A mapping from column name to column width or a fixed column
         width.""")
@@ -222,6 +225,9 @@ class BaseTable(ReactiveData, Widget):
                 col_kwargs['width'] = self.widths.get(str(col))
             else:
                 col_kwargs['width'] = 0
+
+            if str(col) in self.tooltips:
+                col_kwargs['tooltip'] = self.tooltips[str(col)]
 
             title = self.titles.get(col, str(col))
             if col in indexes and len(indexes) > 1 and self.hierarchical:
