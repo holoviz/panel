@@ -4,7 +4,7 @@ The Panel library is a complex project which provides a wide range of data inter
 
 This guide describes how to install and configure the development environment fully.
 
-If you have any problems with the steps here, please reach out in the `dev` channel on [Discord](https://discord.gg/rb6gPXbdAr).
+If you have any problems with the steps here, please reach out in the `dev` channel on [Discord](https://discord.gg/rb6gPXbdAr) or on [Discourse](https://discourse.holoviz.org/).
 
 ## Preliminaries
 
