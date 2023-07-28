@@ -1,8 +1,8 @@
 # Developer Guide
 
-The Panel library is a complex project which provides a wide range of data interfaces and an extensible set of plotting backends, which means the development and testing process involves a wide set of libraries.
+The Panel library is a project which provides a wide range of data interfaces and an extensible set of plotting backends, which means the development and testing process involves a wide set of libraries.
 
-This guide describes how to install and configure the development environment fully.
+This guide describes how to install and configure the development environment either simplified for first time contributors or fully as done by core developers.
 
 If you have any problems with the steps here, please reach out in the `dev` channel on [Discord](https://discord.gg/rb6gPXbdAr) or on [Discourse](https://discourse.holoviz.org/).
 
@@ -13,7 +13,8 @@ If you have any problems with the steps here, please reach out in the `dev` chan
 A basic understanding of how to contribute to Open Source. If you don't have that please study one
 or more of the below resources.
 
-- [How to Get Started with Contributing to Open Source | Video](https://youtu.be/RGd5cOXpCQw) or [Contributing to Open-Source Projects as a New Python Developer | Video](https://youtu.be/jTTf4oLkvaM)
+- [How to Get Started with Contributing to Open Source | Video](https://youtu.be/RGd5cOXpCQw)
+- [Contributing to Open-Source Projects as a New Python Developer | Video](https://youtu.be/jTTf4oLkvaM)
 - [How to Contribute to an Open Source Python Project | Blog post](https://www.educative.io/blog/contribue-open-source-python-project)
 
 ### Git
@@ -30,7 +31,7 @@ First time contributors can get quickly up to speed using `pip` instead of `cond
 
 ### Conda
 
-Developing Panel requires a wide range of packages that are not easily and quickly available using pip. To make this more manageable, core developers rely heavily on the [conda package manager](https://conda.io/docs/intro.html) for the free [Anaconda](https://anaconda.com/downloads) Python distribution. However, ``conda`` can also install non-Python package dependencies, which helps streamline Panel development greatly. It is *strongly* recommended that anyone developing Panel also use ``conda``, and the remainder of the instructions will assume that ``conda`` is available.
+Developing all aspects of Panel requires a wide range of packages that are not easily and quickly available using pip. To make this more manageable, core developers rely heavily on the [conda package manager](https://conda.io/docs/intro.html) for the free [Anaconda](https://anaconda.com/downloads) Python distribution. However, ``conda`` can also install non-Python package dependencies, which helps streamline Panel development greatly. It is *strongly* recommended that any regular or experienced contributor use ``conda``.
 
 To install Conda on any platform, see the [Download conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html) section of the `conda documentation`_.
 
@@ -38,7 +39,7 @@ To install Conda on any platform, see the [Download conda](https://docs.conda.io
 
 The source code for the Panel project is hosted on [GitHub](https://github.com/holoviz/panel).
 
-### First time contributors
+### Non-core developer
 
 To clone the source repository
 
@@ -62,7 +63,7 @@ git clone https://github.com/holoviz/panel.git
 
 The instructions for cloning above created a ``panel`` directory at your file system location. This ``panel`` directory is referred to as the *source checkout* for the remainder of this document. For the remainder of this document we will assume your current working directory is the *source checkout* directory.
 
-### First Time Contributor
+### Basic Install with pip
 
 We recommend this install to first time contributors that
 
@@ -88,13 +89,12 @@ You can start Jupyter Lab by running
 jupyter lab
 ```
 
-If you start seeing `ImportError` due to missing packages, you can manually install them using
-`pip` or consider if its time to install in the same way as the *core developers*.
+If you start seeing `ImportError` due to missing packages, you can install them manually using
+`pip` or consider if its time to switch to a *full install* with conda.
 
-### Core Developer
+### Full Install with conda
 
-This is the *full install* used by the *core developers*. Use this is you have become a regular
-contributor or want to contribute to more advanced parts of Panel like Bokeh models.
+This is the *full install* used by the *core developers*.
 
 #### Create a development environment
 
