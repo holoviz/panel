@@ -82,7 +82,11 @@ class PeriodicCallback(param.Parameterized):
         from .state import set_curdoc
         try:
             with set_curdoc(self._doc):
-                cb = self.callback()
+                if self.running:
+                    self.counter += 1
+                    if self.counter > self.count:
+                        self.stop()
+                cb = self.callback() if self.running else None
         except Exception:
             cb = None
         if post:
@@ -98,7 +102,6 @@ class PeriodicCallback(param.Parameterized):
         if not self._background:
             with edit_readonly(state):
                 state._busy_counter -= 1
-        self.counter += 1
         if self.timeout is not None:
             dt = (time.time() - self._start_time) * 1000
             if dt > self.timeout:
