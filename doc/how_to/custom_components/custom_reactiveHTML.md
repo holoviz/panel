@@ -29,7 +29,7 @@ class Slideshow(ReactiveHTML):
     _template = '<img id="slideshow" src="https://picsum.photos/800/300?image=${index}" onclick="${_img_click}"></img>'
 
     def _img_click(self, event):
-        self.index += 1
+        self.index = self.index + 1
 
 print('run the code block above, then click on the image below')
 
@@ -45,7 +45,30 @@ class JSSlideshow(ReactiveHTML):
 
     _template = """<img id="slideshow" src="https://picsum.photos/800/300?image=${index}" onclick="${script('click')}"></img>"""
 
+    _scripts = {'click': 'data.index = data.index + 1'}
+
+JSSlideshow(width=800, height=300)
+```
+
+Note, if we include a `_log` method that relies on the `index` variable, and `_scripts` has been shortened to use in-place variable modification like `{'click': 'data.index += 1'}` on the Python side, any changes made to the `index` variable will not be updated. Consequently, the `_log` method will not be triggered.
+
+This applies to all in-place variable modifications like `push`, `pop`, and others.
+
+```{pyodide}
+from panel.reactive import ReactiveHTML
+import param
+
+class JSSlideshow(ReactiveHTML):
+
+    index = param.Integer(default=0)
+
+    _template = """<img id="slideshow" src="https://picsum.photos/800/300?image=${index}" onclick="${script('click')}"></img>"""
+
     _scripts = {'click': 'data.index += 1'}
+
+    @param.depends("index", watch=True)
+    def _log(self):
+        print(self.index)
 
 JSSlideshow(width=800, height=300)
 ```
