@@ -29,7 +29,7 @@ from ..layout.base import (
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
-from ..util import param_reprs
+from ..util import param_reprs, param_watchers
 from ..util.checks import is_dataframe, is_series
 from ..viewable import (
     Layoutable, ServableMixin, Viewable, Viewer,
@@ -658,7 +658,7 @@ class ReplacementPane(PaneBase):
         custom_watchers = []
         if isinstance(object, Reactive):
             watchers = [
-                w for pwatchers in object._param_watchers.values()
+                w for pwatchers in param_watchers(object).values()
                 for awatchers in pwatchers.values() for w in awatchers
             ]
             custom_watchers = [

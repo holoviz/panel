@@ -19,7 +19,7 @@ from ..io.resources import CDN_DIST
 from ..io.state import state
 from ..models import Column as PnColumn
 from ..reactive import Reactive
-from ..util import param_name, param_reprs
+from ..util import param_name, param_reprs, param_watchers
 
 if TYPE_CHECKING:
     from bokeh.document import Document
@@ -531,7 +531,7 @@ class NamedListLike(param.Parameterized):
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
-        self._param_watchers['objects']['value'].reverse()
+        param_watchers(self)['objects']['value'].reverse()
 
     def _to_object_and_name(self, item):
         from ..pane import panel

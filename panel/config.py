@@ -27,6 +27,7 @@ from pyviz_comms import (
 
 from .io.logging import panel_log_handler
 from .io.state import state
+from .util import param_watchers
 
 __version__ = str(param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
@@ -385,7 +386,7 @@ class _config(_base_config):
             if state.curdoc not in self._session_config:
                 self._session_config[state.curdoc] = {}
             self._session_config[state.curdoc][attr] = value
-            watchers = self._param_watchers.get(attr, {}).get('value', [])
+            watchers = param_watchers(self).get(attr, {}).get('value', [])
             for w in watchers:
                 w.fn()
         elif f'_{attr}' in self.param and hasattr(self, f'_{attr}_'):
