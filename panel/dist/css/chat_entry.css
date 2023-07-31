@@ -54,12 +54,12 @@
 }
 
 .chat-entry .message {
-  display: flex;
-  flex-direction: column;
   background-color: #f1f0f0;
   padding: 15px;
   border-radius: 5px;
   font-size: 1.25em;
+  min-width: 50px;
+  text-align: center;
 }
 
 .chat-entry .footer {

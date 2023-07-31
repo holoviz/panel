@@ -31,6 +31,7 @@ https://panel.holoviz.org/getting_started/index.html
 """
 from .alert import Alert  # noqa
 from .base import PaneBase, panel  # noqa
+from .chat_entry import ChatEntry, ChatReactionIcons  # noqa
 from .deckgl import DeckGL  # noqa
 from .echarts import ECharts  # noqa
 from .equation import LaTeX  # noqa
@@ -57,6 +58,8 @@ __all__ = (
     "Alert",
     "Audio",
     "Bokeh",
+    "ChatEntry",
+    "ChatReactionIcons",
     "DataFrame",
     "DeckGL",
     "ECharts",
