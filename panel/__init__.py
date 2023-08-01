@@ -54,7 +54,6 @@ from . import reactive  # noqa
 from . import viewable  # noqa
 from . import widgets  # noqa
 from .config import __version__, config, panel_extension as extension  # noqa
-from .dataclass import ChatMessage  # noqa
 from .depends import bind, depends  # noqa
 from .interact import interact  # noqa
 from .io import (  # noqa
@@ -73,7 +72,6 @@ __all__ = (
     "__version__",
     "Accordion",
     "Card",
-    "ChatMessage",
     "Column",
     "FlexBox",
     "FloatPanel",

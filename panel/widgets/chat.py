@@ -1,4 +1,5 @@
 
+import datetime
 
 from inspect import isawaitable
 from io import BytesIO
@@ -10,7 +11,6 @@ from typing import (
 
 import param
 
-from ..dataclass import ChatMessage
 from ..io.resources import CDN_DIST
 from ..layout import (
     Column, ListPanel, Row, Tabs,
@@ -24,6 +24,7 @@ from ..reactive import ReactiveHTML
 from ..viewable import Viewable
 from .base import CompositeWidget, Widget
 from .button import Button
+from .indicators import LoadingSpinner
 from .input import TextInput
 
 
@@ -44,7 +45,7 @@ class ChatReactionIcons(ReactiveHTML):
     _icon_base_url = param.String("https://tabler-icons.io/static/tabler-icons/icons/")
 
     _template = """
-        <div id="reactions" class="reactions">
+        <div id="reaction-icons" class="reaction-icons">
             {% for reaction, icon_name in options.items() %}
             <img id="icon-{{ loop.index0 }}" alt="{{ reaction }}"
                 {% if reaction in value and reaction in active_icons %}
@@ -79,120 +80,126 @@ class ChatReactionIcons(ReactiveHTML):
         """
     }
 
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/chat_reaction_icons.css'
+    ]
 
-class ChatEntry(CompositeWidget):
-    value = param.ClassSelector(class_=ChatMessage, doc="The ChatMessage to display.")
+
+class ChatEntry(ReactiveHTML):
+
+    value = param.Parameter(doc="""
+        The message contents. Can be a string, pane, widget, layout, etc.""")
+
+    user = param.Parameter(default="User", doc="""
+        Name of the user who sent the message.""")
+
+    avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
+        The avatar to use for the user. Can be a single character text, an emoji,
+        a URL, a file path, or a binary IO. If not set, uses the first letter
+        of the name.""")
+
+    reactions = param.List(doc="""
+        Reactions to associate with the message.""")
+
+    timestamp = param.Date(
+        default=datetime.datetime.utcnow(), doc="""
+        Timestamp of the message. Defaults to the instantiation time.""")
+
     reaction_icons = param.ClassSelector(class_=ChatReactionIcons, doc="""
         The available reaction icons to click on.""")
+
     timestamp_format = param.String(default="%H:%M", doc="The timestamp format.")
-    show_avatar = param.Boolean(default=False, doc="Whether to show the avatar.")
+
+    show_avatar = param.Boolean(default=True, doc="Whether to show the avatar.")
+
     show_user = param.Boolean(default=True, doc="Whether to show the name.")
+
     show_timestamp = param.Boolean(default=True, doc="Whether to show the timestamp.")
-    css_classes = param.List(
-        default=["chat-entry"],
-        doc="""CSS classes to apply to the layout.""",
-    )
 
-    _avatar = param.String(doc="The rendered avatar.")
+    _avatar_pane = param.Parameter(doc="The rendered avatar pane.")
 
-    _timestamp = param.String(doc="The rendered timestamp.")
+    _user_pane = param.Parameter(doc="The rendered user pane.")
 
-    _composite_type: ClassVar[Type[Row]] = Row
+    _value = param.Parameter(doc="The raw value.")
 
-    _stylesheets: ClassVar[List[str]] = [f"{CDN_DIST}css/chat_entry.css"]
+    _value_pane = param.Parameter(doc="The rendered value pane.")
+
+    _template = """
+    <div class="chat-entry">
+
+        {% if show_avatar %}
+        <span id="avatar" class="avatar">${_avatar_pane}</span>
+        {% endif %}
+
+        <div class="right">
+            {% if show_user %}
+            <span id="name" class="name">${_user_pane}</span>
+            {% endif %}
+
+            <div id="message" class="message">
+                ${_value_pane}
+            </div>
+
+            <div id="footer" class="footer">
+                {% if show_timestamp %}
+                <span id="timestamp" class="timestamp">
+                    {{ timestamp.strftime(timestamp_format) }}
+                </span>
+                {% endif %}
+                {% if reaction_icons %}
+                ${reaction_icons}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    """
+
+    _stylesheets: ClassVar[List[str]] = [
+        f'{CDN_DIST}css/chat_entry.css'
+    ]
 
     def __init__(self, **params):
-        if isinstance(params["value"], str):
-            params["value"] = ChatMessage(value=params["value"])
-        self._message_container = Column(stylesheets=self._stylesheets)
-
+        self._value = params["value"]
+        if params.get("reaction_icons") is None:
+            params["reaction_icons"] = ChatReactionIcons()
+        elif isinstance(params["reaction_icons"], dict):
+            params["reaction_icons"] = ChatReactionIcons(options=params["reaction_icons"])
         super().__init__(**params)
-        right = Column(
-            HTML(self.value.param.user, css_classes=["name"]),
-            self._message_container,
-            HTML(self._timestamp, css_classes=["timestamp"]),
-            stylesheets=self._stylesheets,
-        )
-        self._composite[:] = [HTML(self._avatar, css_classes=["avatar", "text"]), right]
+        self.reaction_icons.link(self, value="reactions", bidirectional=True)
+        self.link(self, value="_value")
 
-    def _get_panel_callable(self, content, mime_type, file_name=None):
-        message_callable = _panel
-        if mime_type == 'application/pdf':
-            content = self._exit_stack.enter_context(
-                BytesIO(content)
-            )
-            message_callable = PDF
-        elif mime_type.startswith('audio/'):
-            f = self._exit_stack.enter_context(
-                NamedTemporaryFile(suffix=".mp3", delete=False)
-            )
-            f.write(content)
-            f.seek(0)
-            content = f.name
-            message_callable = Audio
-        elif mime_type.startswith('video/'):
-            content = self._exit_stack.enter_context(
-                BytesIO(content)
-            )
-            message_callable = Video
-        elif mime_type.startswith('image/'):
-            content = self._exit_stack.enter_context(
-                BytesIO(content)
-            )
-            message_callable = Image
-        elif mime_type.endswith("/csv"):
-            import pandas as pd
-            with BytesIO(content) as buf:
-                content = pd.read_csv(buf)
-            message_callable = DataFrame
-        elif file_name is not None:
-            content = f"`{file_name}`"
-        return content, message_callable
-
-    @param.depends("value.avatar", watch=True, on_init=True)
+    @param.depends('avatar', watch=True, on_init=True)
     def _render_avatar(self) -> None:
         """
-        Renders the avatar as an image or text.
+        Render the avatar pane as some HTML text or Image pane.
         """
-        avatar = self.value.avatar
-        if avatar.startswith("http") or Path(avatar).exists():
-            self._avatar = f"<img src='{avatar}' class='avatar'>"
+        avatar = self.avatar
+        if not avatar and self.user:
+            avatar = self.user[0]
+
+        if len(avatar) == 1:
+            self._avatar_pane = HTML(avatar, css_classes=["avatar"])
         else:
-            self._avatar = avatar
+            self._avatar_pane = Image(avatar, width=35, height=35, css_classes=["avatar"])
 
-    @param.depends("value.value", watch=True, on_init=True)
-    def _render_message_content(self) -> None:
-        message_content = self.value.value
-        if isinstance(message_content, Viewable):
-            self._message_container.objects = [message_content]
-
-        try:
-            import magic
-            mime_type = magic.from_buffer(message_content, mime=True)
-            message_content, message_callable = self._get_panel_callable(
-                message_content, mime_type, file_name=None
-            )
-        except ImportError:
-            message_callable = _panel
-
-        css_classes = ["message"]
-        try:
-            if isinstance(message_callable, Widget):
-                panel_obj = message_callable(
-                    value=message_content, css_classes=css_classes)
-            else:
-                panel_obj = message_callable(
-                    message_content, css_classes=css_classes)
-        except ValueError:
-            panel_obj = _panel(message_content, css_classes=css_classes)
-        self._message_container.objects = [panel_obj]
-
-    @param.depends("value.timestamp", watch=True, on_init=True)
-    def _render_timestamp(self) -> None:
+    @param.depends('user', watch=True, on_init=True)
+    def _render_user(self) -> None:
         """
-        Formats the timestamp.
+        Render the user pane as some HTML text or Image pane.
         """
-        self._timestamp = self.value.timestamp.strftime(self.timestamp_format)
+        self._user_pane = HTML(self.user, css_classes=["name"])
+
+    @param.depends('value', watch=True, on_init=True)
+    def _render_value(self) -> None:
+        """
+        Render the value pane as some HTML text or Image pane.
+        """
+        if isinstance(self._value, str):
+            self._value_pane = HTML(self._value, css_classes=["value"])
+        elif isinstance(self._value, Viewable):
+            self._value_pane = self._value
+        else:
+            self._value_pane = _panel(self._value, css_classes=["value"])
 
 class ChatCard(Card):
 
@@ -201,8 +208,12 @@ class ChatCard(Card):
         The signature must include the previous message `value`, the previous `user` name,
         and the `chat_card` instance.""")
 
-    placeholder = param.String(doc="""
-        Placeholder to display while the callback is running.""")
+    placeholder = param.Parameter(doc="""
+        Placeholder to display while the callback is running.
+        If not set, defaults to a LoadingSpinner.""")
+
+    show_placeholder = param.Boolean(default=False, doc="""
+        Whether to show the placeholder while the callback is running.""")
 
     auto_scroll_limit = param.Integer(default=100, bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
@@ -222,14 +233,19 @@ class ChatCard(Card):
         Params to pass to ChatEntry, like `reaction_icons`, `timestamp_format`,
         `show_avatar`, `show_user`, and `show_timestamp`.""")
 
+    _disabled = param.Boolean(default=False, doc="""
+        Whether the chat card is disabled.""")
+
     _rename: ClassVar[Mapping[str, None]] = dict(
-        Card._rename, **{
+        Column._rename, **{
         'callback': None,
         'placeholder': None,
+        'show_placeholder': None,
         'auto_scroll_limit': None,
         'scroll_button_threshold': None,
         'view_latest': None,
         'chat_entry_params': None,
+        '_disabled': None
     })
 
     _stylesheets: ClassVar[List[str]] = [
@@ -269,20 +285,18 @@ class ChatCard(Card):
             chat_log_params["max_height"] = chat_log_height
         else:
             chat_log_params["height"] = chat_log_height
+        chat_log_params["margin"] = 0
 
         self._chat_log = Column(**chat_log_params)
         super().__init__(self._chat_log, **params)
 
-    @property
-    def messages(self) -> List[ChatMessage]:
-        """
-        A list of the current ChatMessage values.
-
-        Returns
-        -------
-        The current ChatMessage values.
-        """
-        return [obj.value for obj in self._chat_log.objects]
+        if self.placeholder is None:
+            self.placeholder = LoadingSpinner(
+                width=10,
+                height=10,
+                value=True,
+                margin=(10, 0, 10, 3)
+            )
 
     @param.depends("title", "header", watch=True, on_init=True)
     def _hide_header(self):
@@ -294,50 +308,57 @@ class ChatCard(Card):
         else:
             self.hide_header = False
 
-    def _update_entry(self, placeholder_entry: ChatEntry, message: Any) -> None:
+    def _update_entry(self, message: Any, entry: ChatEntry) -> bool:
         """
         Update the placeholder entry with the response.
         """
-        if isinstance(message, ChatMessage):
-            message_param_values = dict(message.param.get_param_values())
-            message_param_values.pop("name")
-        elif isinstance(message, dict):
+        if isinstance(message, dict):
             message_param_values = message
         else:
             message_param_values =  {"value": message}
-        placeholder_entry.value.param.update(**message_param_values)
+
+        if entry is None:
+            entry = ChatEntry(**message_param_values, **self.chat_entry_params)
+            self._chat_log.append(entry)
+        else:
+            entry.param.update(**message_param_values)
+        return entry
 
     async def _execute_callback(self):
         """
         Execute the callback and send the response.
         """
-        entry = self._chat_log[-1]
-        message = entry.value
-        response = self.callback(message.value, message.user, self)
+        try:
+            self._disabled = True
+            entry = self._chat_log[-1]
 
-        new = True
-        if new:
-            new = False
-            placeholder_entry = ChatEntry(
-                value=ChatMessage(value=self.placeholder),
-                **self.chat_entry_params
-            )
-            self._chat_log.append(placeholder_entry)
+            if self.show_placeholder:
+                response_entry = self._update_entry({
+                    "value": self.placeholder,
+                    "user": "&nbsp;",
+                    "avatar": " ",
+                }, None)
+            else:
+                response_entry = None
 
-        if hasattr(response, "__aiter__"):
-            async for chunk in response:
-                self._update_entry(placeholder_entry, chunk)
-        elif hasattr(response, "__iter__"):
-            for chunk in response:
-                self._update_entry(placeholder_entry, chunk)
-        elif isawaitable(self.callback):
-            self._update_entry(placeholder_entry, await response)
-        else:
-            self._update_entry(placeholder_entry, response)
+            response = self.callback(entry.value, entry.user, self)
+
+            if hasattr(response, "__aiter__"):
+                async for chunk in response:
+                    response_entry = self._update_entry(chunk, response_entry)
+            elif hasattr(response, "__iter__"):
+                for chunk in response:
+                    response_entry = self._update_entry(chunk, response_entry)
+            elif isawaitable(self.callback):
+                response_entry = self._update_entry(await response, response_entry)
+            else:
+                response_entry = self._update_entry(response, response_entry)
+        finally:
+            self._disabled = False
 
     async def send(
         self,
-        message: Union[ChatMessage, dict, str],
+        message: Union[ChatEntry, dict, str],
     ) -> None:
         """
         Send a message to the Chat Card and
@@ -345,96 +366,20 @@ class ChatCard(Card):
 
         Parameters
         ----------
-        message : Union[ChatMessage, dict, str]
+        message : Union[ChatEntry, dict, str]
             The message to send.
         """
-        entry = ChatEntry(value=message, **self.chat_entry_params)
+        if isinstance(message, str):
+            message = {"value": message}
+
+        if isinstance(message, dict):
+            entry = ChatEntry(**message, **self.chat_entry_params)
+        else:
+            entry = message
+
         self._chat_log.append(entry)
         if self.callback:
             await self._execute_callback()
-
-    # async def respond(
-    #     self,
-    #     message: Union[ChatMessage, dict, str],
-    #     user: Optional[str] = None,
-    #     avatar: Optional[Union[str, BinaryIO]] = None,
-    # ):
-    #     """
-    #     Respond to the last message.
-
-    #     Parameters
-    #     ----------
-    #     message : Union[ChatMessage, dict, str]
-    #         The message to send.
-    #     user : str, optional
-    #         The user name to use.
-    #     avatar : Union[str, BinaryIO], optional
-    #         The avatar to use.
-    #     """
-    #     if isinstance(message, str):
-    #         message = {"value": message}
-    #     if isinstance(message, dict):
-    #         if user:
-    #             message["user"] = user
-    #         if avatar:
-    #             message["avatar"] = avatar
-    #         message = ChatMessage(**message)
-    #     entry = ChatEntry(value=message, **self.chat_entry_params)
-    #     self._chat_log.append(entry)
-
-    def export(self, reactions: List[str] = None, format: Optional[str] = None) -> List[Any]:
-        """
-        Filters the chat log by reactions and exports them
-        in the specified format.
-
-        Parameters
-        ----------
-        reactions : List[str], optional
-            The reactions to filter by; messages with any of the
-            reactions will be exported. If None, all messages will be
-            exported.
-        format : str, optional
-            The format to export to; The supported formats are supported:
-            - "entry" (ChatEntry)
-            - "message" (ChatMessage)
-            - "contents" (ChatMessage.value)
-            - "json" (ChatMessage.json())
-
-        Returns
-        -------
-        The exported logs in the specified format.
-        """
-        output = []
-        for entry in self._chat_log.objects:
-            message = entry.object
-            if reactions is not None:
-                if not set(reactions).intersection(message.reactions):
-                    continue
-            if format == "entry":
-                output.append(entry)
-            elif format == "message":
-                output.append(message)
-            elif format == "contents":
-                output.append(message.value)
-            elif format == "json":
-                output.append(message.json())
-            else:
-                raise ValueError(f"Unsupported format: {format}")
-        return output
-
-# class OpenAIChatCard(ChatCard):
-#     api_key = param.String(doc="""
-#         The OpenAI API key."""
-#     )
-
-#     model = param.String(default="gpt-3.5-turbo", doc="""
-#         The OpenAI model to use.""")
-
-#     temperature = param.Number(default=0.5, bounds=(0, 1), doc="""
-#         The temperature to use for the OpenAI model.""")
-
-#     max_tokens = param.Integer(default=100, bounds=(1, None), doc="""
-#         The maximum number of tokens to generate.""")
 
 
 class ChatInterface(CompositeWidget):
@@ -462,6 +407,7 @@ class ChatInterface(CompositeWidget):
             self.value = ChatCard(objects=[])
 
         input_layout = self._init_inputs()
+        self.link(self.value, disabled="_disabled", bidirectional=True)
         self._composite[:] = [self.value, input_layout]
 
     def _link_disabled_loading(self, obj: Viewable):
@@ -490,7 +436,6 @@ class ChatInterface(CompositeWidget):
 
         input_layout = Tabs()
         for name, widget in self._inputs.items():
-            self._link_disabled_loading(widget)
             widget.sizing_mode = "stretch_width"
             # for longer form messages, like TextArea / Ace, don't
             # submit when clicking away; only if they manually click
@@ -518,6 +463,10 @@ class ChatInterface(CompositeWidget):
         """
         Send the input when the user presses Enter.
         """
+        # wait until the chat card's callback is done executing
+        if self.disabled:
+            return
+
         for widget in self._inputs.values():
             if hasattr(widget, "value_input"):
                 widget.value_input = ""
@@ -528,7 +477,7 @@ class ChatInterface(CompositeWidget):
         else:
             return  # no message entered across all inputs
 
-        message = ChatMessage(
+        message = ChatEntry(
             value=value, user=self.user, avatar=self.avatar
         )
         await self.value.send(message=message)
