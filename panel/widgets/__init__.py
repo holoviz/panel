@@ -77,7 +77,6 @@ __all__ = (
     "BooleanStatus",
     "Button",
     "ChatEntry",
-    "ChatMessage",
     "ChatInterface",
     "ChatCard",
     "ChatBox",

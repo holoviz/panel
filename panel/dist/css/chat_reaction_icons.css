@@ -1,0 +1,9 @@
+.reaction-icons {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+}
+
+:host(.reaction-icons.dark) {
+  filter: invert(1);
+}
