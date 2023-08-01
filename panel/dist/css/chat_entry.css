@@ -5,9 +5,10 @@
   margin-left: 10px;
   margin-top: 20px;
   margin-right: 20px;
+  background-color: red;
 }
 
-.chat-entry .left {
+.left {
   display: flex;
   flex-direction: column;
   justify-content: start;
@@ -18,42 +19,45 @@
   margin-right: 5px;
 }
 
-.chat-entry .avatar {
+.avatar {
   display: flex;
   align-items: initial;
   border-radius: 5px;
-  height: 40px;
 }
 
-.chat-entry .avatar .text {
-  font-size: 38px;
-  margin-top: -7px;
+.text {
+  padding-left: 10px;
+  padding-top: 15px;
+  font-size: 40px;
   text-align: center;
 }
 
-.chat-entry .avatar .image {
-  width: 40px;
+.image {
+  padding-left: 10px;
+  padding-top: 25px;
+  width: 100px;
   text-align: center;
 }
 
-.chat-entry .right {
+.right {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
-.chat-entry .header {
+.header {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
 }
 
-.chat-entry .header .name {
+.name {
   font-size: 1em;
+  margin-bottom: -5px;
 }
 
-.chat-entry .message {
+.message {
   background-color: #f1f0f0;
   padding: 15px;
   border-radius: 5px;
@@ -62,19 +66,20 @@
   text-align: center;
 }
 
-.chat-entry .footer {
+.footer {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+  margin-top: -5px;
 }
 
-.chat-entry .reaction_icons {
+.reaction_icons {
   display: flex;
   flex-direction: row;
 }
 
-.chat-entry .timestamp {
+.timestamp {
   font-size: 0.75em;
   color: #a9a9a9;
 }

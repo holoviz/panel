@@ -37,5 +37,7 @@ class ChatMessage(param.Parameterized):
 
     def __init__(self, **params):
         super().__init__(**params)
-        if not self.avatar:
+        if not self.avatar and self.user:
             self.avatar = self.user[0]
+        else:
+            self.avatar = "?"
