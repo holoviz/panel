@@ -205,7 +205,7 @@ def create_linked_datamodel(obj, root=None):
             else:
                 ref = None
 
-            if ref:
+            if ref and ref in state._views:
                 _, _, doc, comm = state._views[ref]
                 if comm or state._unblocked(doc):
                     with unlocked():
