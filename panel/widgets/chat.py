@@ -5,6 +5,8 @@ from typing import (
 
 import param
 
+from param.parameterized import iscoroutinefunction
+
 from ..dataclass import ChatMessage
 from ..io.resources import CDN_DIST
 from ..layout import (
@@ -128,6 +130,27 @@ class ChatCard(Card):
         """
         entry = ChatEntry(message, **self.chat_entry_params)
         self._chat_log.append(entry)
+        await self._respond()
+
+    async def _stream_response(self, response):
+        new = True
+        async for chunk in response:
+            if new:
+                new = False
+                placeholder_entry = ChatEntry("", **self.chat_entry_params)
+                self._chat_log.append(placeholder_entry)
+            self._chat_log[-1] = ChatEntry(chunk, **self.chat_entry_params)
+
+    async def _respond(self):
+        if self.callback:
+            message = self._chat_log[-1].object
+            response = self.callback(message.value, message.user, self)
+            if hasattr(response, "__aiter__"):
+                await self._stream_response(response)
+            elif iscoroutinefunction(self.callback):
+                self._chat_log[-1] = await response
+            else:
+                self._chat_log[-1] = response
 
     def export(self, reactions: List[str] = None, format: Optional[str] = None) -> List[Any]:
         """
