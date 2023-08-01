@@ -834,6 +834,10 @@ class BasicLoginHandler(RequestHandler):
             errormessage = self.get_argument("error")
         except Exception:
             errormessage = ""
+
+        next_url = self.get_argument('next', None)
+        if next_url:
+            self.set_cookie("next_url", next_url)
         html = self._basic_login_template.render(
             errormessage=errormessage, PANEL_CDN=CDN_DIST
         )
@@ -861,7 +865,8 @@ class BasicLoginHandler(RequestHandler):
         auth = self._validate(username, password)
         if auth:
             self.set_current_user(username)
-            self.redirect("/")
+            next_url = self.get_cookie("next_url", "/")
+            self.redirect(next_url)
         else:
             error_msg = "?error=" + tornado.escape.url_escape("Login incorrect")
             self.redirect('/login' + error_msg)
