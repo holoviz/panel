@@ -1,6 +1,7 @@
 
 import datetime
 
+from dataclasses import dataclass
 from inspect import isawaitable
 from io import BytesIO
 from pathlib import Path
@@ -25,7 +26,14 @@ from ..viewable import Viewable
 from .base import CompositeWidget, Widget
 from .button import Button
 from .indicators import LoadingSpinner
-from .input import TextInput
+from .input import FileInput, TextInput
+
+
+@dataclass
+class _FileInputMessage:
+    content: bytes
+    file_name: str
+    mime_type: str
 
 
 class ChatReactionIcons(ReactiveHTML):
@@ -122,7 +130,7 @@ class ChatEntry(ReactiveHTML):
 
     _value = param.Parameter(doc="The raw value.")
 
-    _value_pane = param.Parameter(doc="The rendered value pane.")
+    _value_viewable = param.Parameter(doc="The rendered value pane.")
 
     _template = """
     <div class="chat-entry">
@@ -137,7 +145,7 @@ class ChatEntry(ReactiveHTML):
             {% endif %}
 
             <div id="message" class="message">
-                ${_value_pane}
+                ${_value_viewable}
             </div>
 
             <div id="footer" class="footer">
@@ -180,7 +188,9 @@ class ChatEntry(ReactiveHTML):
         if len(avatar) == 1:
             self._avatar_pane = HTML(avatar, css_classes=["avatar"])
         else:
-            self._avatar_pane = Image(avatar, width=35, height=35, css_classes=["avatar"])
+            self._avatar_pane = Image(
+                avatar, width=35, height=35, css_classes=["avatar"]
+            )
 
     @param.depends('user', watch=True, on_init=True)
     def _render_user(self) -> None:
@@ -195,11 +205,12 @@ class ChatEntry(ReactiveHTML):
         Render the value pane as some HTML text or Image pane.
         """
         if isinstance(self._value, str):
-            self._value_pane = HTML(self._value, css_classes=["value"])
+            self._value_viewable = HTML(self._value, css_classes=["value"])
         elif isinstance(self._value, Viewable):
-            self._value_pane = self._value
+            self._value_viewable = self._value
         else:
-            self._value_pane = _panel(self._value, css_classes=["value"])
+            self._value_viewable = _panel(self._value, css_classes=["value"])
+
 
 class ChatCard(Card):
 
@@ -321,7 +332,8 @@ class ChatCard(Card):
             entry = ChatEntry(**message_param_values, **self.chat_entry_params)
             self._chat_log.append(entry)
         else:
-            entry.param.update(**message_param_values)
+            for key in message_param_values:
+                setattr(entry, key, message_param_values[key])
         return entry
 
     async def _execute_callback(self):
@@ -389,7 +401,7 @@ class ChatInterface(CompositeWidget):
 
     value = param.ClassSelector(class_=ChatCard, doc="The ChatCard widget.")
 
-    inputs = param.List(default=[TextInput], doc="""
+    widgets = param.List(default=[TextInput], doc="""
         Widgets to use for the input.""")
 
     user = param.String(default="You", doc="Name of the ChatInterface user.")
@@ -406,7 +418,7 @@ class ChatInterface(CompositeWidget):
         if self.value is None:
             self.value = ChatCard(objects=[])
 
-        input_layout = self._init_inputs()
+        input_layout = self._init_widgets()
         self.link(self.value, disabled="_disabled", bidirectional=True)
         self._composite[:] = [self.value, input_layout]
 
@@ -419,7 +431,7 @@ class ChatInterface(CompositeWidget):
             setattr(obj, key, getattr(self, key))
             self.link(obj, **{key: key})
 
-    def _init_inputs(self) -> Union[Tabs, Row]:
+    def _init_widgets(self) -> Union[Tabs, Row]:
         """
         Initialize the input widgets.
 
@@ -427,15 +439,15 @@ class ChatInterface(CompositeWidget):
         -------
         The input widgets.
         """
-        self._inputs = {}
-        for widget in self.inputs:
+        self._widgets = {}
+        for widget in self.widgets:
             key = widget.name or widget.__class__.__name__
             if isinstance(widget, type):  # check if instantiated
                 widget = widget()
-            self._inputs[key] = widget
+            self._widgets[key] = widget
 
         input_layout = Tabs()
-        for name, widget in self._inputs.items():
+        for name, widget in self._widgets.items():
             widget.sizing_mode = "stretch_width"
             # for longer form messages, like TextArea / Ace, don't
             # submit when clicking away; only if they manually click
@@ -454,7 +466,7 @@ class ChatInterface(CompositeWidget):
             message_row = Row(widget, send_button)
             input_layout.append((name, message_row))
 
-        if len(self._inputs) == 1:
+        if len(self._widgets) == 1:
             input_layout = input_layout[0]  # if only a single input, don't use tabs
 
         return input_layout
@@ -467,15 +479,21 @@ class ChatInterface(CompositeWidget):
         if self.disabled:
             return
 
-        for widget in self._inputs.values():
+        for widget in self._widgets.values():
             if hasattr(widget, "value_input"):
                 widget.value_input = ""
             value = widget.value
             if value:
+                if isinstance(widget, FileInput):
+                    value = _FileInputMessage(
+                        content=value,
+                        mime_type=widget.mime_type,
+                        file_name=widget.filename,
+                    )
                 widget.value = ""
                 break
         else:
-            return  # no message entered across all inputs
+            return  # no message entered across all widgets
 
         message = ChatEntry(
             value=value, user=self.user, avatar=self.avatar
