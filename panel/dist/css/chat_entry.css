@@ -35,6 +35,7 @@
 
 .center {
   width: fit-content;
+  max-width: 800px;
   padding: 0px;
 }
 
@@ -45,7 +46,6 @@
   padding-block: 10px;
   border-radius: 5px;
   font-size: 1.25em;
-  height: fit-content;
   min-width: 50px;
   min-height: 50px;
   max-height: 400px;

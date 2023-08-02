@@ -334,6 +334,9 @@ class ChatCard(Card):
     _disabled = param.Boolean(default=False, doc="""
         Whether the chat card is disabled.""")
 
+    _previous_user = param.String(default="", doc="""
+        The previous user name.""")
+
     _rename: ClassVar[Mapping[str, None]] = dict(
         Column._rename, **{
         'callback': None,
@@ -344,6 +347,7 @@ class ChatCard(Card):
         'scroll_button_threshold': None,
         'view_latest': None,
         'entry_params': None,
+        '_previous_user': None,
         '_disabled': None
     })
 
@@ -387,8 +391,7 @@ class ChatCard(Card):
         chat_log_params["margin"] = 0
 
         self._chat_log = Column(**chat_log_params)
-        self._respond_trigger = Button(visible=False)
-        self._respond_trigger.on_click(self._execute_callback)
+        self._chat_log.param.watch(self._execute_callback, "objects")
         super().__init__(self._chat_log, **params)
 
         if self.placeholder is None:
@@ -420,12 +423,10 @@ class ChatCard(Card):
             message_param_values =  {"value": message}
 
         updated_entry = ChatEntry(**message_param_values, **self.entry_params)
+        self._previous_user = updated_entry.user
         if entry is None:
-            if self.placeholder:
-                try:
-                    self._chat_log.remove(self.placeholder)
-                except ValueError:
-                    pass
+            if self.show_placeholder:
+                self._chat_log.remove(self.placeholder)
             self._chat_log.append(updated_entry)
         else:
             index = list(self._chat_log).index(entry)
@@ -443,8 +444,12 @@ class ChatCard(Card):
         try:
             self._disabled = True
             entry = self._chat_log[-1]
+            if not isinstance(entry, ChatEntry):
+                return
+            if self._previous_user == entry.user:
+                return  # prevent recursion
 
-            if self.placeholder:
+            if self.show_placeholder:
                 self._chat_log.append(self.placeholder)
 
             value = entry._value_viewable
@@ -496,8 +501,7 @@ class ChatCard(Card):
             entry = message
 
         self._chat_log.append(entry)
-        if respond:
-            self._respond_trigger.param.trigger("clicks")
+
 
 class ChatInterface(CompositeWidget):
     """
