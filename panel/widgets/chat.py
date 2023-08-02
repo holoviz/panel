@@ -401,6 +401,7 @@ class ChatCard(Card):
             entry = ChatEntry(**message_param_values, **self.chat_entry_params)
             self._chat_log.append(entry)
         else:
+            print(message_param_values)
             entry.param.update(**message_param_values)
         return entry
 
