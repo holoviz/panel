@@ -124,11 +124,13 @@ class ChatEntry(ReactiveHTML):
 
     show_timestamp = param.Boolean(default=True, doc="Whether to show the timestamp.")
 
-    _avatar_pane = param.ClassSelector(class_=(HTML, Image), doc="The rendered avatar pane.")
+    _avatar_pane = param.Parameter(doc="The rendered avatar pane.")
 
-    _user_pane = param.ClassSelector(class_=HTML, doc="The rendered user pane.")
+    _user_pane = param.Parameter(doc="The rendered user pane.")
 
-    _value_viewable = param.ClassSelector(class_=Viewable, doc="The rendered value viewable.")
+    _value = param.Parameter(doc="The raw value.")
+
+    _value_viewable = param.Parameter(doc="The rendered value pane.")
 
     _template = """
     <div class="chat-entry">
@@ -167,6 +169,7 @@ class ChatEntry(ReactiveHTML):
     _exit_stack: ExitStack = None
 
     def __init__(self, **params):
+        self._value = params["value"]  # need to save it before it becomes a Viewable
         self._exit_stack = ExitStack()
 
         if params.get("reaction_icons") is None:
@@ -175,6 +178,7 @@ class ChatEntry(ReactiveHTML):
             params["reaction_icons"] = ChatReactionIcons(options=params["reaction_icons"])
         super().__init__(**params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
+        self.link(self, value="_value")
 
     @param.depends('avatar', watch=True, on_init=True)
     def _render_avatar(self) -> None:
@@ -192,15 +196,6 @@ class ChatEntry(ReactiveHTML):
                 avatar, width=35, height=35, css_classes=["avatar"]
             )
 
-    def _cleanup(self) -> None:
-        """
-        Cleanup the exit stack.
-        """
-        if self._exit_stack is not None:
-            self._exit_stack.close()
-            self._exit_stack = None
-        super()._cleanup()
-
     @param.depends('user', watch=True, on_init=True)
     def _render_user(self) -> None:
         """
@@ -213,7 +208,7 @@ class ChatEntry(ReactiveHTML):
         """
         Render the value pane as some HTML text or Image pane.
         """
-        value = self.value
+        value = self._value
         if isinstance(value, str):
             self._value_viewable = HTML(value, css_classes=["value"])
         elif isinstance(value, Viewable):
@@ -278,6 +273,15 @@ class ChatEntry(ReactiveHTML):
         elif file_name is not None:
             contents = f"`{file_name}`"
         return contents, message_callable
+
+    def _cleanup(self) -> None:
+        """
+        Cleanup the exit stack.
+        """
+        if self._exit_stack is not None:
+            self._exit_stack.close()
+            self._exit_stack = None
+        super()._cleanup()
 
 class ChatCard(Card):
 
@@ -401,7 +405,6 @@ class ChatCard(Card):
             entry = ChatEntry(**message_param_values, **self.chat_entry_params)
             self._chat_log.append(entry)
         else:
-            print(message_param_values)
             entry.param.update(**message_param_values)
         return entry
 
