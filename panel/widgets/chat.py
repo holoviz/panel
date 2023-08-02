@@ -19,7 +19,7 @@ from ..layout import (
 from ..layout.card import Card
 from ..pane.base import panel as _panel
 from ..pane.image import PDF, Image
-from ..pane.markup import HTML, DataFrame
+from ..pane.markup import HTML, DataFrame, Markdown
 from ..pane.media import Audio, Video
 from ..reactive import ReactiveHTML
 from ..viewable import Viewable
@@ -40,7 +40,7 @@ class ChatReactionIcons(ReactiveHTML):
 
     value = param.List(doc="The selected reactions.")
 
-    options = param.Dict(default={"favorite": "heart"}, doc="""
+    options = param.Dict(default={"favorite": "heart", "like": "thumb-up"}, doc="""
         A key-value pair of reaction values and their corresponding tabler icon names
         found on https://tabler-icons.io.""")
 
@@ -51,6 +51,8 @@ class ChatReactionIcons(ReactiveHTML):
         if not set, the active icon name will default to its "filled" version.""")
 
     _icon_base_url = param.String("https://tabler-icons.io/static/tabler-icons/icons/")
+
+    _stylesheets = [f'{CDN_DIST}css/chat_reaction_icons.css']
 
     _template = """
         <div id="reaction-icons" class="reaction-icons">
@@ -92,10 +94,15 @@ class ChatReactionIcons(ReactiveHTML):
         f'{CDN_DIST}css/chat_reaction_icons.css'
     ]
 
+    def __init__(self, **params):
+        super().__init__(**params)
+        if self.icon_size.endswith("px"):
+            self.max_width = int(self.icon_size[:-2])
 
-class ChatEntry(ReactiveHTML):
 
-    value = param.Parameter(doc="""
+class ChatEntry(CompositeWidget):
+
+    value = param.ClassSelector(class_=object, doc="""
         The message contents. Can be a string, pane, widget, layout, etc.""")
 
     user = param.Parameter(default="User", doc="""
@@ -128,39 +135,11 @@ class ChatEntry(ReactiveHTML):
 
     _user_pane = param.Parameter(doc="The rendered user pane.")
 
-    _value = param.Parameter(doc="The raw value.")
+    _timestamp_pane = param.Parameter(doc="The rendered timestamp pane.")
+
+    _center_row = param.Parameter(doc="The center row containing the value and reaction icons.")
 
     _value_viewable = param.Parameter(doc="The rendered value pane.")
-
-    _template = """
-    <div class="chat-entry">
-
-        {% if show_avatar %}
-        <span id="avatar" class="avatar">${_avatar_pane}</span>
-        {% endif %}
-
-        <div class="right">
-            {% if show_user %}
-            <span id="name" class="name">${_user_pane}</span>
-            {% endif %}
-
-            <div id="message" class="message">
-                ${_value_viewable}
-            </div>
-
-            <div id="footer" class="footer">
-                {% if show_timestamp %}
-                <span id="timestamp" class="timestamp">
-                    {{ timestamp.strftime(timestamp_format) }}
-                </span>
-                {% endif %}
-                {% if reaction_icons %}
-                ${reaction_icons}
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    """
 
     _stylesheets: ClassVar[List[str]] = [
         f'{CDN_DIST}css/chat_entry.css'
@@ -169,7 +148,6 @@ class ChatEntry(ReactiveHTML):
     _exit_stack: ExitStack = None
 
     def __init__(self, **params):
-        self._value = params["value"]  # need to save it before it becomes a Viewable
         self._exit_stack = ExitStack()
 
         if params.get("reaction_icons") is None:
@@ -178,7 +156,62 @@ class ChatEntry(ReactiveHTML):
             params["reaction_icons"] = ChatReactionIcons(options=params["reaction_icons"])
         super().__init__(**params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
-        self.link(self, value="_value")
+
+        left_col = Column(
+            self._avatar_pane,
+            max_width=60,
+            height=100,
+            css_classes=["left"],
+            stylesheets=self._stylesheets,
+        )
+        self._center_row = Row(
+            self._value_viewable,
+            self.reaction_icons,
+            css_classes=["center"],
+            stylesheets=self._stylesheets,
+        )
+        right_col = Column(
+            self._user_pane,
+            self._center_row,
+            self._timestamp_pane,
+            css_classes=["right"],
+            stylesheets=self._stylesheets,
+        )
+        self._composite[:] = [left_col, right_col]
+
+    def _get_renderer(self, contents, mime_type, file_name=None):
+        renderer = _panel
+        if mime_type == 'application/pdf':
+            contents = self._exit_stack.enter_context(
+                BytesIO(contents)
+            )
+            renderer = PDF
+        elif mime_type.startswith('audio/'):
+            f = self._exit_stack.enter_context(
+                NamedTemporaryFile(suffix=".mp3", delete=False)
+            )
+            f.write(contents)
+            f.seek(0)
+            contents = f.name
+            renderer = Audio
+        elif mime_type.startswith('video/'):
+            contents = self._exit_stack.enter_context(
+                BytesIO(contents)
+            )
+            renderer = Video
+        elif mime_type.startswith('image/'):
+            contents = self._exit_stack.enter_context(
+                BytesIO(contents)
+            )
+            renderer = Image
+        elif mime_type.endswith("/csv"):
+            import pandas as pd
+            with BytesIO(contents) as buf:
+                contents = pd.read_csv(buf)
+            renderer = DataFrame
+        elif file_name is not None:
+            contents = f"`{file_name}`"
+        return contents, renderer
 
     @param.depends('avatar', watch=True, on_init=True)
     def _render_avatar(self) -> None:
@@ -208,73 +241,51 @@ class ChatEntry(ReactiveHTML):
         """
         Render the value pane as some HTML text or Image pane.
         """
-        value = self._value
+        value = self.value
         if isinstance(value, str):
-            self._value_viewable = HTML(value, css_classes=["value"])
+            value_viewable = Markdown(value)
         elif isinstance(value, Viewable):
-            self._value_viewable = value
+            value_viewable = value
         else:
             if isinstance(value, _FileInputMessage):
                 contents = value.contents
                 mime_type = value.mime_type
                 file_name = value.file_name
-                value, message_callable = self._get_value_callable(
+                value, renderer = self._get_renderer(
                     contents, mime_type, file_name=file_name
                 )
             else:
                 try:
                     import magic
                     mime_type = magic.from_buffer(value, mime=True)
-                    value, message_callable = self._get_value_callable(
+                    value, renderer = self._get_renderer(
                         value, mime_type, file_name=None
                     )
                 except Exception:
-                    message_callable = _panel
+                    renderer = _panel
 
             try:
-                if isinstance(message_callable, Widget):
-                    value_viewable = message_callable(value=value)
+                if isinstance(renderer, Widget):
+                    value_viewable = renderer(value=value)
                 else:
-                    value_viewable = message_callable(value)
+                    value_viewable = renderer(value)
             except ValueError:
                 value_viewable = _panel(value)
-            self._value_viewable = value_viewable
 
-    def _get_value_callable(self, contents, mime_type, file_name=None):
-        message_callable = _panel
-        if mime_type == 'application/pdf':
-            contents = self._exit_stack.enter_context(
-                BytesIO(contents)
-            )
-            message_callable = PDF
-        elif mime_type.startswith('audio/'):
-            f = self._exit_stack.enter_context(
-                NamedTemporaryFile(suffix=".mp3", delete=False)
-            )
-            f.write(contents)
-            f.seek(0)
-            contents = f.name
-            message_callable = Audio
-        elif mime_type.startswith('video/'):
-            contents = self._exit_stack.enter_context(
-                BytesIO(contents)
-            )
-            message_callable = Video
-        elif mime_type.startswith('image/'):
-            contents = self._exit_stack.enter_context(
-                BytesIO(contents)
-            )
-            message_callable = Image
-        elif mime_type.endswith("/csv"):
-            import pandas as pd
-            with BytesIO(contents) as buf:
-                contents = pd.read_csv(buf)
-            message_callable = DataFrame
-        elif file_name is not None:
-            contents = f"`{file_name}`"
-        return contents, message_callable
+        self._value_viewable = value_viewable
+        self._value_viewable.css_classes = ["message"]
 
-    def _cleanup(self) -> None:
+    @param.depends('timestamp', watch=True, on_init=True)
+    def _render_timestamp(self) -> None:
+        """
+        Render the timestamp pane as some HTML text or Image pane.
+        """
+        self._timestamp_pane = HTML(
+            self.timestamp.strftime(self.timestamp_format),
+            css_classes=["timestamp"],
+        )
+
+    def _cleanup(self, root=None) -> None:
         """
         Cleanup the exit stack.
         """
@@ -294,6 +305,11 @@ class ChatCard(Card):
         Placeholder to display while the callback is running.
         If not set, defaults to a LoadingSpinner.""")
 
+    placeholder_text = param.String(default="Loading...", doc="""
+        If placeholder is the default LoadingSpinner,
+        the text to display next to it.
+    """)
+
     show_placeholder = param.Boolean(default=True, doc="""
         Whether to show the placeholder while the callback is running.""")
 
@@ -311,7 +327,7 @@ class ChatCard(Card):
         Whether to scroll to the latest object on init. If not
         enabled the view will be on the first object.""")
 
-    chat_entry_params = param.Dict(default={}, doc="""
+    entry_params = param.Dict(default={}, doc="""
         Params to pass to ChatEntry, like `reaction_icons`, `timestamp_format`,
         `show_avatar`, `show_user`, and `show_timestamp`.""")
 
@@ -322,11 +338,12 @@ class ChatCard(Card):
         Column._rename, **{
         'callback': None,
         'placeholder': None,
+        'placeholder_text': None,
         'show_placeholder': None,
         'auto_scroll_limit': None,
         'scroll_button_threshold': None,
         'view_latest': None,
-        'chat_entry_params': None,
+        'entry_params': None,
         '_disabled': None
     })
 
@@ -376,10 +393,11 @@ class ChatCard(Card):
 
         if self.placeholder is None:
             self.placeholder = LoadingSpinner(
-                width=10,
-                height=10,
+                name=self.placeholder_text,
                 value=True,
-                margin=(10, 0, 10, 3)
+                width=40,
+                height=40,
+                margin=25
             )
 
     @param.depends("title", "header", watch=True, on_init=True)
@@ -401,12 +419,19 @@ class ChatCard(Card):
         else:
             message_param_values =  {"value": message}
 
+        updated_entry = ChatEntry(**message_param_values, **self.entry_params)
         if entry is None:
-            entry = ChatEntry(**message_param_values, **self.chat_entry_params)
-            self._chat_log.append(entry)
+            if self.placeholder:
+                try:
+                    self._chat_log.remove(self.placeholder)
+                except ValueError:
+                    pass
+            self._chat_log.append(updated_entry)
         else:
-            entry.param.update(**message_param_values)
-        return entry
+            index = list(self._chat_log).index(entry)
+            del entry
+            self._chat_log[index] = updated_entry
+        return updated_entry
 
     async def _execute_callback(self, _):
         """
@@ -419,14 +444,8 @@ class ChatCard(Card):
             self._disabled = True
             entry = self._chat_log[-1]
 
-            if self.show_placeholder:
-                response_entry = self._update_entry({
-                    "value": self.placeholder,
-                    "user": "&nbsp;",
-                    "avatar": " ",
-                }, None)
-            else:
-                response_entry = None
+            if self.placeholder:
+                self._chat_log.append(self.placeholder)
 
             value = entry._value_viewable
             if hasattr(value, "object"):
@@ -440,6 +459,7 @@ class ChatCard(Card):
 
             response = self.callback(contents, entry.user, self)
 
+            response_entry = None
             if hasattr(response, "__aiter__"):
                 async for chunk in response:
                     response_entry = self._update_entry(chunk, response_entry)
@@ -471,7 +491,7 @@ class ChatCard(Card):
             message = {"value": message}
 
         if isinstance(message, dict):
-            entry = ChatEntry(**message, **self.chat_entry_params)
+            entry = ChatEntry(**message, **self.entry_params)
         else:
             entry = message
 
