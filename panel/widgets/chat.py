@@ -313,12 +313,12 @@ class ChatCard(Card):
     show_placeholder = param.Boolean(default=True, doc="""
         Whether to show the placeholder while the callback is running.""")
 
-    auto_scroll_limit = param.Integer(default=100, bounds=(0, None), doc="""
+    auto_scroll_limit = param.Integer(default=200, bounds=(0, None), doc="""
         Max pixel distance from the latest object in the Column to
         activate automatic scrolling upon update. Setting to 0
         disables auto-scrolling.""")
 
-    scroll_button_threshold = param.Integer(default=50, bounds=(0, None), doc="""
+    scroll_button_threshold = param.Integer(default=100, bounds=(0, None), doc="""
         Min pixel distance from the latest object in the Column to
         display the scroll button. Setting to 0
         disables the scroll button.""")
@@ -347,8 +347,8 @@ class ChatCard(Card):
         'scroll_button_threshold': None,
         'view_latest': None,
         'entry_params': None,
+        '_disabled': None,
         '_previous_user': None,
-        '_disabled': None
     })
 
     _stylesheets: ClassVar[List[str]] = [
@@ -391,9 +391,10 @@ class ChatCard(Card):
         chat_log_params["margin"] = 0
 
         self._chat_log = Column(**chat_log_params)
-        self._chat_log.param.watch(self._execute_callback, "objects")
         super().__init__(self._chat_log, **params)
 
+        self._respond_trigger = Button(visible=False)
+        self._respond_trigger.on_click(self._execute_callback)
         if self.placeholder is None:
             self.placeholder = LoadingSpinner(
                 name=self.placeholder_text,
@@ -423,7 +424,6 @@ class ChatCard(Card):
             message_param_values =  {"value": message}
 
         updated_entry = ChatEntry(**message_param_values, **self.entry_params)
-        self._previous_user = updated_entry.user
         if entry is None:
             if self.show_placeholder:
                 self._chat_log.remove(self.placeholder)
@@ -446,8 +446,6 @@ class ChatCard(Card):
             entry = self._chat_log[-1]
             if not isinstance(entry, ChatEntry):
                 return
-            if self._previous_user == entry.user:
-                return  # prevent recursion
 
             if self.show_placeholder:
                 self._chat_log.append(self.placeholder)
@@ -475,8 +473,19 @@ class ChatCard(Card):
                 response_entry = self._update_entry(await response, response_entry)
             else:
                 response_entry = self._update_entry(response, response_entry)
+
+            if response_entry is None:
+                return
+
+            if self._previous_user != response_entry.user:
+                self._respond_trigger.param.trigger("clicks")
+            else:
+                self._previous_user = response_entry.user
         finally:
+            if self.show_placeholder:
+                self._chat_log.remove(self.placeholder)
             self._disabled = False
+
 
     def send(
         self,
@@ -501,7 +510,8 @@ class ChatCard(Card):
             entry = message
 
         self._chat_log.append(entry)
-
+        if respond:
+            self._respond_trigger.param.trigger("clicks")
 
 class ChatInterface(CompositeWidget):
     """
