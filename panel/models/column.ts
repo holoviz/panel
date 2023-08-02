@@ -4,7 +4,7 @@ import * as p from "@bokehjs/core/properties";
 
 export class ColumnView extends BkColumnView {
   model: Column;
-  scroll_down_arrow_el: HTMLElement;
+  scroll_down_button_el: HTMLElement;
 
   connect_signals(): void {
     super.connect_signals();
@@ -12,7 +12,7 @@ export class ColumnView extends BkColumnView {
     const { children, scroll_button_threshold } = this.model.properties;
 
     this.on_change(children, () => this.trigger_auto_scroll());
-    this.on_change(scroll_button_threshold, () => this.toggle_scroll_arrow())
+    this.on_change(scroll_button_threshold, () => this.toggle_scroll_button())
   }
 
   get distance_from_latest(): number {
@@ -35,12 +35,14 @@ export class ColumnView extends BkColumnView {
     this.scroll_to_latest()
   }
 
-  toggle_scroll_arrow(): void {
+  toggle_scroll_button(): void {
     const threshold = this.model.scroll_button_threshold
     const exceeds_threshold = this.distance_from_latest >= threshold
-    this.scroll_down_arrow_el.classList.toggle(
-      "visible", threshold !== 0 && exceeds_threshold
-    )
+    requestAnimationFrame(() => {
+      this.scroll_down_button_el.classList.toggle(
+        "visible", threshold !== 0 && exceeds_threshold
+      )
+    });
   }
 
   render(): void {
@@ -52,13 +54,13 @@ export class ColumnView extends BkColumnView {
     this._apply_visible()
 
     this.class_list.add(...this.css_classes())
-    this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-button' });
-    this.shadow_el.appendChild(this.scroll_down_arrow_el);
+    this.scroll_down_button_el = DOM.createElement('div', { class: 'scroll-button' });
+    this.shadow_el.appendChild(this.scroll_down_button_el);
 
     this.el.addEventListener("scroll", () => {
-      this.toggle_scroll_arrow();
+      this.toggle_scroll_button();
     });
-    this.scroll_down_arrow_el.addEventListener("click", () => {
+    this.scroll_down_button_el.addEventListener("click", () => {
       this.scroll_to_latest();
     });
 
@@ -75,7 +77,7 @@ export class ColumnView extends BkColumnView {
       if (this.model.view_latest) {
         this.scroll_to_latest();
       }
-      this.toggle_scroll_arrow();
+      this.toggle_scroll_button();
     });
   }
 }
