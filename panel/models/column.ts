@@ -4,7 +4,7 @@ import * as p from "@bokehjs/core/properties";
 
 export class ColumnView extends BkColumnView {
   model: Column;
-  scroll_down_arrow_el: HTMLElement;
+  scroll_down_button_el: HTMLElement;
 
   connect_signals(): void {
     super.connect_signals();
@@ -39,7 +39,7 @@ export class ColumnView extends BkColumnView {
     const threshold = this.model.scroll_button_threshold
     const exceeds_threshold = this.distance_from_latest >= threshold
     requestAnimationFrame(() => {
-      this.scroll_down_arrow_el.classList.toggle(
+      this.scroll_down_button_el.classList.toggle(
         "visible", threshold !== 0 && exceeds_threshold
       )
     });
@@ -54,13 +54,13 @@ export class ColumnView extends BkColumnView {
     this._apply_visible()
 
     this.class_list.add(...this.css_classes())
-    this.scroll_down_arrow_el = DOM.createElement('div', { class: 'scroll-button' });
-    this.shadow_el.appendChild(this.scroll_down_arrow_el);
+    this.scroll_down_button_el = DOM.createElement('div', { class: 'scroll-button' });
+    this.shadow_el.appendChild(this.scroll_down_button_el);
 
     this.el.addEventListener("scroll", () => {
       this.toggle_scroll_button();
     });
-    this.scroll_down_arrow_el.addEventListener("click", () => {
+    this.scroll_down_button_el.addEventListener("click", () => {
       this.scroll_to_latest();
     });
 
