@@ -414,6 +414,16 @@ class ChatCard(Card):
         else:
             self.hide_header = False
 
+    def _remove_placeholder(self):
+        """
+        Remove the placeholder from the chat log.
+        """
+        if self.show_placeholder:
+            try:
+                self._chat_log.remove(self.placeholder)
+            except ValueError:
+                pass
+
     def _update_entry(self, message: Any, entry: ChatEntry) -> bool:
         """
         Update the placeholder entry with the response.
@@ -425,14 +435,42 @@ class ChatCard(Card):
 
         updated_entry = ChatEntry(**message_param_values, **self.entry_params)
         if entry is None:
-            if self.show_placeholder:
-                self._chat_log.remove(self.placeholder)
+            self._remove_placeholder()
             self._chat_log.append(updated_entry)
         else:
             index = list(self._chat_log).index(entry)
             del entry
             self._chat_log[index] = updated_entry
         return updated_entry
+
+    def _extract_contents(self, entry):
+        """
+        Extracts the contents from the entry's panel object.
+        """
+        value = entry._value_viewable
+        if hasattr(value, "object"):
+            contents = value.object
+        elif hasattr(value, "objects"):
+            contents = value.objects
+        elif hasattr(value, "value"):
+            contents = value.value
+        else:
+            contents = value
+        return contents
+
+    async def _serialize_response(self, response):
+        response_entry = None
+        if hasattr(response, "__aiter__"):
+            async for chunk in response:
+                response_entry = self._update_entry(chunk, response_entry)
+        elif hasattr(response, "__iter__"):
+            for chunk in response:
+                response_entry = self._update_entry(chunk, response_entry)
+        elif isawaitable(self.callback):
+            response_entry = self._update_entry(await response, response_entry)
+        else:
+            response_entry = self._update_entry(response, response_entry)
+        return response_entry
 
     async def _execute_callback(self, _):
         """
@@ -442,38 +480,16 @@ class ChatCard(Card):
             return
 
         try:
-            self._disabled = True
             entry = self._chat_log[-1]
             if not isinstance(entry, ChatEntry):
                 return
 
+            self._disabled = True
             if self.show_placeholder:
                 self._chat_log.append(self.placeholder)
-
-            value = entry._value_viewable
-            if hasattr(value, "object"):
-                contents = value.object
-            elif hasattr(value, "objects"):
-                contents = value.objects
-            elif hasattr(value, "value"):
-                contents = value.value
-            else:
-                contents = value
-
+            contents = self._extract_contents(entry)
             response = self.callback(contents, entry.user, self)
-
-            response_entry = None
-            if hasattr(response, "__aiter__"):
-                async for chunk in response:
-                    response_entry = self._update_entry(chunk, response_entry)
-            elif hasattr(response, "__iter__"):
-                for chunk in response:
-                    response_entry = self._update_entry(chunk, response_entry)
-            elif isawaitable(self.callback):
-                response_entry = self._update_entry(await response, response_entry)
-            else:
-                response_entry = self._update_entry(response, response_entry)
-
+            response_entry = await self._serialize_response(response)
             if response_entry is None:
                 return
 
@@ -482,10 +498,8 @@ class ChatCard(Card):
             else:
                 self._previous_user = response_entry.user
         finally:
-            if self.show_placeholder:
-                self._chat_log.remove(self.placeholder)
+            self._remove_placeholder()
             self._disabled = False
-
 
     def send(
         self,
@@ -493,8 +507,8 @@ class ChatCard(Card):
         respond: bool = True,
     ) -> None:
         """
-        Send a message to the Chat Card and
-        execute the callback if provided.
+        Send a message to the Chat Card. If respond,
+        additionally executes the callback, if provided.
 
         Parameters
         ----------
@@ -512,6 +526,13 @@ class ChatCard(Card):
         self._chat_log.append(entry)
         if respond:
             self._respond_trigger.param.trigger("clicks")
+
+    def clear(self) -> None:
+        """
+        Clear the chat log.
+        """
+        self._chat_log.clear()
+
 
 class ChatInterface(CompositeWidget):
     """
@@ -532,14 +553,41 @@ class ChatInterface(CompositeWidget):
 
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
+    _undone_objects = param.List(doc="""
+        The objects that were undone from the chat log that can be restored.""")
+
+    _cleared_objects = param.List(doc="""
+        The objects that were cleared from the chat log that can be restored.""")
+
+    _button_indices = param.Dict(default={}, doc="""
+        The mapping of widget names to their corresponding button indices.""")
+
     def __init__(self, **params):
         super().__init__(**params)
         if self.value is None:
             self.value = ChatCard(objects=[])
 
-        input_layout = self._init_widgets()
+        self._input_layout = self._init_widgets()
+        self._button_indices = {
+            "send": 1,
+            "repeat": 2,
+            "undo": 3,
+            "clear": 4,
+        }
         self.link(self.value, disabled="_disabled", bidirectional=True)
-        self._composite[:] = [self.value, input_layout]
+        self.param.watch(self._reverse_clear_button, "_cleared_objects")
+        self.param.watch(self._reverse_undo_button, "_undone_objects")
+        self._composite[:] = [self.value, self._input_layout]
+
+    # layer another decorator to add delay
+    def _toggle_disabled(func):
+        def wrapper(self, *args, **kwargs):
+            self.disabled = True
+            try:
+                func(self, *args, **kwargs)
+            finally:
+                self.disabled = False
+        return wrapper
 
     def _link_disabled_loading(self, obj: Viewable):
         """
@@ -549,6 +597,22 @@ class ChatInterface(CompositeWidget):
         for key in ["disabled", "loading"]:
             setattr(obj, key, getattr(self, key))
             self.link(obj, **{key: key})
+
+    def _reverse_button(self, event, index):
+        for i in range(len(self._input_layout)):
+            clear_button = self._input_layout[i][index]
+            if len(event.new) == 0:
+                clear_button.button_type = "default"
+                clear_button.name = ""
+            else:
+                clear_button.button_type = "success"
+                clear_button.name = "🔙"
+
+    def _reverse_clear_button(self, event):
+        self._reverse_button(event, self._button_indices["clear"])
+
+    def _reverse_undo_button(self, event):
+        self._reverse_button(event, self._button_indices["undo"])
 
     def _init_widgets(self) -> Union[Tabs, Row]:
         """
@@ -565,6 +629,11 @@ class ChatInterface(CompositeWidget):
                 widget = widget()
             self._widgets[key] = widget
 
+        button_kwargs = dict(
+            width=75,
+            height=40,
+            margin=(5, 5),
+        )
         input_layout = Tabs()
         for name, widget in self._widgets.items():
             widget.sizing_mode = "stretch_width"
@@ -572,17 +641,36 @@ class ChatInterface(CompositeWidget):
             # submit when clicking away; only if they manually click
             # the send button
             if isinstance(widget, TextInput):
-                widget.param.watch(self._enter_input, "value")
+                widget.param.watch(self._enter_input, "value", queued=True)
             send_button = Button(
-                name="Send",
-                button_type="default",
-                sizing_mode="stretch_width",
-                max_width=100,
-                height=35,
+                icon="send",
+                **button_kwargs
+            )
+            repeat_button = Button(
+                icon="repeat-once",
+                **button_kwargs
+            )
+            undo_button = Button(
+                icon="arrow-back",
+                **button_kwargs
+            )
+            clear_button = Button(
+                icon="trash",
+                button_type="danger",
+                **button_kwargs
             )
             send_button.on_click(self._enter_input)
-            self._link_disabled_loading(send_button)
-            message_row = Row(widget, send_button)
+            repeat_button.on_click(self._click_repeat)
+            undo_button.on_click(self._click_undo)
+            clear_button.on_click(self._click_clear)
+            message_row = Row(
+                widget, send_button, repeat_button, undo_button, clear_button
+            )
+            for button in message_row[1:]:
+                # do not disable widget because it loses mouse focus
+                # _enter_input will just ignore the user inputs if disabled
+                self._link_disabled_loading(button)
+
             input_layout.append((name, message_row))
 
         if len(self._widgets) == 1:
@@ -597,6 +685,10 @@ class ChatInterface(CompositeWidget):
         # wait until the chat card's callback is done executing
         if self.disabled:
             return
+
+        # no longer can restore cleared messages
+        self._undo_objects = []
+        self._cleared_objects = []
 
         for widget in self._widgets.values():
             if hasattr(widget, "value_input"):
@@ -618,3 +710,91 @@ class ChatInterface(CompositeWidget):
             value=value, user=self.user, avatar=self.avatar
         )
         self.value.send(message=message)
+
+    def _find_last_user_index(self) -> int:
+        """
+        Find the last entry sent by the user.
+        """
+        entries = self.value._chat_log.objects
+        if not entries:
+            return 0
+
+        for i, entry in enumerate(entries[::-1], 1):
+            if entry.user == self.user:
+                break
+        return i
+
+    def undo(self, count: Optional[int] = None) -> int:
+        """
+        Undo the last `count` messages and
+        return the number of messages undone.
+
+        Parameters
+        ----------
+        count : Optional[int]
+            The number of messages to undo. If None, undo up to the
+            last message sent by the user.
+
+        Returns
+        -------
+        The number of messages undone.
+        """
+        entries = self.value._chat_log.objects
+        if count is None:
+            count = self._find_last_user_index()
+        elif count == 0:
+            return 0
+        self.value._chat_log.objects = entries[:-count]
+        return count
+
+    def repeat(self) -> None:
+        """
+        Repeat the last user input.
+        """
+        entries = self.value._chat_log.objects
+        count = self._find_last_user_index()
+
+        # replace the input widget with the last message sent by the user
+        # so it can be edited easily
+        widget = self._input_layout[self._input_layout.active][0]
+        widget.value = entries[-count].value
+
+        self.value._chat_log.objects = entries[:-count]
+
+    @_toggle_disabled
+    def _click_repeat(self, _):
+        """
+        Button click version of repeat.
+        """
+        self.repeat()
+
+    @_toggle_disabled
+    def _click_undo(self, _):
+        """
+        Button click version of undo.
+        """
+        if not self._undone_objects:
+            count = self._find_last_user_index()
+            self._undone_objects = self.value._chat_log.objects[-count:]
+            self.undo()
+        else:
+            self.value._chat_log.objects = [
+                *self.value._chat_log.objects,
+                *self._undone_objects
+            ]
+            self._undone_objects = []
+            self._cleared_objects = []
+
+    @_toggle_disabled
+    def _click_clear(self, _):
+        """
+        Button click version of clear. Additionally, can restore
+        cleared messages.
+        """
+        if not self._cleared_objects:
+            self._cleared_objects = self.value._chat_log.objects
+            self.value.clear()
+        else:
+            self.value._chat_log.objects = self._cleared_objects
+            self._undone_objects = []
+            self._cleared_objects = []
