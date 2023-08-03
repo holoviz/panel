@@ -31,6 +31,18 @@ from .input import FileInput, TextInput
 
 @dataclass
 class _FileInputMessage:
+    """
+    A dataclass to hold the contents of a file input message.
+
+    Parameters
+    ----------
+    contents : bytes
+        The contents of the file.
+    file_name : str
+        The name of the file.
+    mime_type : str
+        The mime type of the file.
+    """
     contents: bytes
     file_name: str
     mime_type: str
@@ -38,6 +50,23 @@ class _FileInputMessage:
 
 @dataclass
 class _ChatButtonData:
+    """
+    A dataclass to hold the metadata and data related to the
+    chat buttons.
+
+    Parameters
+    ----------
+    index : int
+        The index of the button.
+    name : str
+        The name of the button.
+    icon : str
+        The icon to display.
+    objects : List
+        The objects to display.
+    buttons : List
+        The buttons to display.
+    """
     index: int
     name: str
     icon: str
@@ -46,6 +75,22 @@ class _ChatButtonData:
 
 
 class ChatReactionIcons(ReactiveHTML):
+    """
+    A widget to display reaction icons that can be clicked on.
+
+    Parameters
+    ----------
+    value : List
+        The selected reactions.
+    options : Dict
+        A key-value pair of reaction values and their corresponding tabler icon names
+        found on https://tabler-icons.io.
+    icon_size : str
+        The size of each icon.
+    active_icons : Dict
+        The mapping of reactions to their corresponding active icon names;
+        if not set, the active icon name will default to its "filled" version.
+    """
 
     value = param.List(doc="The selected reactions.")
 
@@ -110,6 +155,34 @@ class ChatReactionIcons(ReactiveHTML):
 
 
 class ChatEntry(CompositeWidget):
+    """
+    A widget to display a chat entry.
+
+    Parameters
+    ----------
+    value : object
+        The message contents. Can be a string, pane, widget, layout, etc.
+    user : str
+        Name of the user who sent the message.
+    avatar : object
+        The avatar to use for the user. Can be a single character text, an emoji,
+        a URL, a file path, or a binary IO. If not set, uses the first letter
+        of the name.
+    reactions : List
+        Reactions to associate with the message.
+    reaction_icons : ChatReactionIcons
+        The available reaction icons to click on.
+    timestamp : datetime
+        Timestamp of the message. Defaults to the instantiation time.
+    timestamp_format : str
+        The timestamp format.
+    show_avatar : bool
+        Whether to show the avatar.
+    show_user : bool
+        Whether to show the name.
+    show_timestamp : bool
+        Whether to show the timestamp.
+    """
 
     value = param.ClassSelector(class_=object, doc="""
         The message contents. Can be a string, pane, widget, layout, etc.""")
@@ -125,12 +198,12 @@ class ChatEntry(CompositeWidget):
     reactions = param.List(doc="""
         Reactions to associate with the message.""")
 
+    reaction_icons = param.ClassSelector(class_=ChatReactionIcons, doc="""
+        The available reaction icons to click on.""")
+
     timestamp = param.Date(
         default=datetime.datetime.utcnow(), doc="""
         Timestamp of the message. Defaults to the instantiation time.""")
-
-    reaction_icons = param.ClassSelector(class_=ChatReactionIcons, doc="""
-        The available reaction icons to click on.""")
 
     timestamp_format = param.String(default="%H:%M", doc="The timestamp format.")
 
@@ -228,6 +301,7 @@ class ChatEntry(CompositeWidget):
             avatar = self.user[0]
 
         if len(avatar) == 1:
+            # single character or emoji
             avatar_pane = HTML(avatar, css_classes=["avatar"])
         else:
             avatar_pane = Image(
@@ -301,18 +375,19 @@ class ChatEntry(CompositeWidget):
             self._exit_stack = None
         super()._cleanup()
 
-class ChatCard(CompositeWidget):
+
+class ChatFeed(CompositeWidget):
 
     value = param.List(item_type=ChatEntry, doc="""
-        The entries to add to the chat block.""")
+        The entries to add to the chat feed.""")
 
     header = param.Parameter(doc="""
-        The header of the chat card.""")
+        The header of the chat feed. Can be a string, pane, or widget.""")
 
     callback = param.Callable(doc="""
         Callback to execute when a user sends a message.
         The signature must include the previous message value `contents`, the previous `user` name,
-        and the `chat_card` instance.""")
+        and the `chat_feed` instance.""")
 
     placeholder = param.Parameter(doc="""
         Placeholder to display while the callback is running.
@@ -320,8 +395,7 @@ class ChatCard(CompositeWidget):
 
     placeholder_text = param.String(default="Loading...", doc="""
         If placeholder is the default LoadingSpinner,
-        the text to display next to it.
-    """)
+        the text to display next to it.""")
 
     placeholder_threshold = param.Number(default=0.28, bounds=(0, None), doc="""
         Min duration in seconds to display the placeholder. If 0, the placeholder
@@ -350,13 +424,13 @@ class ChatCard(CompositeWidget):
         `show_avatar`, `show_user`, and `show_timestamp`.""")
 
     _disabled = param.Boolean(default=False, doc="""
-        Whether the chat card is disabled.""")
+        Whether the chat feed is disabled.""")
 
     _previous_user = param.String(default="", doc="""
         The previous user name.""")
 
     _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/chat_card.css'
+        f'{CDN_DIST}css/chat_feed.css'
     ]
 
     _composite_type: ClassVar[Type[ListPanel]] = Card
@@ -381,7 +455,7 @@ class ChatCard(CompositeWidget):
             p: getattr(self, p)
             for p in Column.param
             if (
-                p in ChatCard.param and
+                p in ChatFeed.param and
                 p != "name" and
                 getattr(self, p) is not None
             )
@@ -626,12 +700,13 @@ class ChatCard(CompositeWidget):
         """
         self._chat_log.objects = entries
 
+
 class ChatInterface(CompositeWidget):
     """
     High level widget that contains the chat log and the chat input.
     """
 
-    value = param.ClassSelector(class_=ChatCard, doc="The ChatCard widget.")
+    value = param.ClassSelector(class_=ChatFeed, doc="The ChatFeed widget.")
 
     widgets = param.List(default=[TextInput], doc="""
         Widgets to use for the input.""")
@@ -660,7 +735,7 @@ class ChatInterface(CompositeWidget):
     def __init__(self, **params):
         super().__init__(**params)
         if self.value is None:
-            self.value = ChatCard(objects=[])
+            self.value = ChatFeed(objects=[])
 
         button_icons = {
             "send": "send",
@@ -748,7 +823,7 @@ class ChatInterface(CompositeWidget):
         """
         Send the input when the user presses Enter.
         """
-        # wait until the chat card's callback is done executing
+        # wait until the chat feed's callback is done executing
         if self.disabled:
             return
 
