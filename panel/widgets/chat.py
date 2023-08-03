@@ -630,7 +630,7 @@ class ChatInterface(CompositeWidget):
             self._widgets[key] = widget
 
         button_kwargs = dict(
-            width=75,
+            width=60,
             height=40,
             margin=(5, 5),
         )
@@ -687,7 +687,7 @@ class ChatInterface(CompositeWidget):
             return
 
         # no longer can restore cleared messages
-        self._undo_objects = []
+        self._undone_objects = []
         self._cleared_objects = []
 
         for widget in self._widgets.values():
