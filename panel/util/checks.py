@@ -58,6 +58,13 @@ def is_series(obj) -> bool:
     return isinstance(obj, pd.Series)
 
 
+def is_mpl_axes(obj) -> bool:
+    if 'matplotlib' not in sys.modules:
+        return False
+    from matplotlib.axes import Axes
+    return isinstance(obj, Axes)
+
+
 def isIn(obj, objs):
     """
     Checks if the object is in the list of objects safely.
