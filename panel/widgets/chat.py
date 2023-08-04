@@ -164,10 +164,10 @@ class ChatEntry(CompositeWidget):
         The message contents. Can be a string, pane, widget, layout, etc.
     user : str
         Name of the user who sent the message.
-    avatar : object
+    avatar : str | BinaryIO
         The avatar to use for the user. Can be a single character text, an emoji,
-        a URL, a file path, or a binary IO. If not set, uses the first letter
-        of the name.
+        or anything supported by `pn.pane.Image`. If not set, uses the
+        first character of the name.
     reactions : List
         Reactions to associate with the message.
     reaction_icons : ChatReactionIcons
@@ -192,8 +192,8 @@ class ChatEntry(CompositeWidget):
 
     avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
-        a URL, a file path, or a binary IO. If not set, uses the first letter
-        of the name.""")
+        or anything supported by `pn.pane.Image`. If not set, uses the
+        first character of the name.""")
 
     reactions = param.List(doc="""
         Reactions to associate with the message.""")
@@ -202,8 +202,7 @@ class ChatEntry(CompositeWidget):
         The available reaction icons to click on.""")
 
     timestamp = param.Date(
-        default=datetime.datetime.utcnow(), doc="""
-        Timestamp of the message. Defaults to the instantiation time.""")
+        doc="""Timestamp of the message. Defaults to the instantiation time.""")
 
     timestamp_format = param.String(default="%H:%M", doc="The timestamp format.")
 
@@ -213,7 +212,7 @@ class ChatEntry(CompositeWidget):
 
     show_timestamp = param.Boolean(default=True, doc="Whether to show the timestamp.")
 
-    _value_viewable = param.Parameter(doc="The rendered value pane.")
+    _value_panel = param.Parameter(doc="The rendered value pane.")
 
     _stylesheets: ClassVar[List[str]] = [
         f'{CDN_DIST}css/chat_entry.css'
@@ -224,13 +223,15 @@ class ChatEntry(CompositeWidget):
     def __init__(self, **params):
         from ..param import ParamMethod
         self._exit_stack = ExitStack()
-
+        if params.get("timestamp") is None:
+            params["timestamp"] = datetime.datetime.utcnow()
         if params.get("reaction_icons") is None:
             params["reaction_icons"] = ChatReactionIcons()
         elif isinstance(params["reaction_icons"], dict):
             params["reaction_icons"] = ChatReactionIcons(options=params["reaction_icons"])
         super().__init__(**params)
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
+        self.param.trigger("reactions")
 
         render_kwargs = dict(
             inplace=True, stylesheets=self._stylesheets
@@ -257,7 +258,15 @@ class ChatEntry(CompositeWidget):
         )
         self._composite[:] = [left_col, right_col]
 
-    def _get_renderer(self, contents, mime_type, file_name=None):
+    def _select_renderer(
+            self,
+            contents: Any,
+            mime_type: str,
+            file_name: str = None,
+        ):
+        """
+        Determine the renderer to use based on the mime type.
+        """
         renderer = _panel
         if mime_type == 'application/pdf':
             contents = self._exit_stack.enter_context(
@@ -287,9 +296,42 @@ class ChatEntry(CompositeWidget):
             with BytesIO(contents) as buf:
                 contents = pd.read_csv(buf)
             renderer = DataFrame
+        elif mime_type.startswith("text"):
+            if isinstance(contents, bytes):
+                contents = contents.decode("utf-8")
         elif file_name is not None:
             contents = f"`{file_name}`"
         return contents, renderer
+
+    def _create_panel(self, value):
+        """
+        Create a panel object from the value.
+        """
+        if isinstance(value, _FileInputMessage):
+            contents = value.contents
+            mime_type = value.mime_type
+            file_name = value.file_name
+            value, renderer = self._select_renderer(
+                contents, mime_type, file_name=file_name
+            )
+        else:
+            try:
+                import magic
+                mime_type = magic.from_buffer(value, mime=True)
+                value, renderer = self._select_renderer(
+                    value, mime_type, file_name=None
+                )
+            except Exception:
+                renderer = _panel
+
+        try:
+            if isinstance(renderer, Widget):
+                value_panel = renderer(value=value)
+            else:
+                value_panel = renderer(value)
+        except ValueError:
+            value_panel = _panel(value)
+        return value_panel
 
     @param.depends('avatar')
     def _render_avatar(self) -> None:
@@ -304,9 +346,12 @@ class ChatEntry(CompositeWidget):
             # single character or emoji
             avatar_pane = HTML(avatar, css_classes=["avatar"])
         else:
-            avatar_pane = Image(
-                avatar, width=35, height=35, css_classes=["avatar"]
-            )
+            try:
+                avatar_pane = Image(
+                    avatar, width=35, height=35, css_classes=["avatar"]
+                )
+            except ValueError:
+                avatar_pane = HTML(avatar, css_classes=["avatar"])
         return avatar_pane
 
     @param.depends('user')
@@ -323,40 +368,16 @@ class ChatEntry(CompositeWidget):
         """
         value = self.value
         if isinstance(value, str):
-            value_viewable = Markdown(value)
+            value_panel = Markdown(value)
         elif isinstance(value, Viewable):
-            value_viewable = value
+            value_panel = value
         else:
-            if isinstance(value, _FileInputMessage):
-                contents = value.contents
-                mime_type = value.mime_type
-                file_name = value.file_name
-                value, renderer = self._get_renderer(
-                    contents, mime_type, file_name=file_name
-                )
-            else:
-                try:
-                    import magic
-                    mime_type = magic.from_buffer(value, mime=True)
-                    value, renderer = self._get_renderer(
-                        value, mime_type, file_name=None
-                    )
-                except Exception:
-                    renderer = _panel
+            value_panel = self._create_panel(value)
+        value_panel.css_classes = ["message"]
+        self._value_panel = value_panel
+        return value_panel
 
-            try:
-                if isinstance(renderer, Widget):
-                    value_viewable = renderer(value=value)
-                else:
-                    value_viewable = renderer(value)
-            except ValueError:
-                value_viewable = _panel(value)
-
-        value_viewable.css_classes = ["message"]
-        self._value_viewable = value_viewable
-        return value_viewable
-
-    @param.depends('timestamp')
+    @param.depends('timestamp', 'timestamp_format')
     def _render_timestamp(self) -> None:
         """
         Render the timestamp pane as some HTML text or Image pane.
@@ -377,7 +398,6 @@ class ChatEntry(CompositeWidget):
 
 
 class ChatFeed(CompositeWidget):
-
     value = param.List(item_type=ChatEntry, doc="""
         The entries to add to the chat feed.""")
 
@@ -546,7 +566,7 @@ class ChatFeed(CompositeWidget):
         """
         Extracts the contents from the entry's panel object.
         """
-        value = entry._value_viewable
+        value = entry._value_panel
         if hasattr(value, "object"):
             contents = value.object
         elif hasattr(value, "objects"):
@@ -715,8 +735,8 @@ class ChatInterface(CompositeWidget):
 
     avatar = param.ClassSelector(class_=(str, BinaryIO), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
-        a URL, a file path, or a binary IO. If not set, uses the first letter
-        of the name.""")
+        or anything supported by `pn.pane.Image`. If not set, uses the
+        first character of the name.""")
 
     show_rerun = param.Boolean(default=False, doc="""
         Whether to show the rerun button.""")
