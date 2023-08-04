@@ -71,20 +71,9 @@ class TestChatEntry:
             == "https://assets.holoviz.org/panel/samples/jpg_sample.jpg"
         )
 
-    def test_update_user(self):
-        entry = pn.widgets.ChatEntry(user="A")
-        columns = entry._composite.objects
-        user_pane = columns[1][0].object()
-        assert isinstance(user_pane, pn.pane.HTML)
-        assert user_pane.object == "A"
-
-        entry.user = "B"
-        user_pane = columns[1][0].object()
-        assert user_pane.object == "B"
-
-        entry.user = "❤️"
-        user_pane = columns[1][0].object()
-        assert user_pane.object == "❤️"
+        entry.show_avatar = False
+        avatar_pane = columns[0][0].object()
+        assert not avatar_pane.visible
 
     def test_update_user(self):
         entry = pn.widgets.ChatEntry(user="Andrew")
@@ -96,6 +85,10 @@ class TestChatEntry:
         entry.user = "August"
         user_pane = columns[1][0].object()
         assert user_pane.object == "August"
+
+        entry.show_user = False
+        user_pane = columns[0][0].object()
+        assert not user_pane.visible
 
     def test_update_value(self):
         entry = pn.widgets.ChatEntry(value="Test")
@@ -137,3 +130,7 @@ class TestChatEntry:
         timestamp_pane = columns[1][2].object()
         dt_str = special_dt.strftime(mm_dd_yyyy)
         assert timestamp_pane.object == dt_str
+
+        entry.show_timestamp = False
+        timestamp_pane = columns[0][0].object()
+        assert not timestamp_pane.visible
