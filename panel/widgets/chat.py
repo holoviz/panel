@@ -106,7 +106,7 @@ class ChatReactionIcons(ReactiveHTML):
 
     _icon_base_url = param.String("https://tabler-icons.io/static/tabler-icons/icons/")
 
-    _stylesheets = [f'{CDN_DIST}css/chat_reaction_icons.css']
+    _stylesheets = [f"{CDN_DIST}css/chat_reaction_icons.css"]
 
     _template = """
         <div id="reaction-icons" class="reaction-icons">
@@ -145,7 +145,7 @@ class ChatReactionIcons(ReactiveHTML):
     }
 
     _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/chat_reaction_icons.css'
+        f"{CDN_DIST}css/chat_reaction_icons.css"
     ]
 
     def __init__(self, **params):
@@ -170,8 +170,9 @@ class ChatEntry(CompositeWidget):
         first character of the name.
     reactions : List
         Reactions to associate with the message.
-    reaction_icons : ChatReactionIcons
-        The available reaction icons to click on.
+    reaction_icons : ChatReactionIcons | dict
+        A mapping of reactions to their reaction icons; if not provided
+        defaults to `{"favorite": "heart"}`.
     timestamp : datetime
         Timestamp of the message. Defaults to the instantiation time.
     timestamp_format : str
@@ -198,11 +199,12 @@ class ChatEntry(CompositeWidget):
     reactions = param.List(doc="""
         Reactions to associate with the message.""")
 
-    reaction_icons = param.ClassSelector(class_=ChatReactionIcons, doc="""
-        The available reaction icons to click on.""")
+    reaction_icons = param.ClassSelector(class_=(ChatReactionIcons, dict), doc="""
+        A mapping of reactions to their reaction icons; if not provided
+        defaults to `{"favorite": "heart"}`.""")
 
-    timestamp = param.Date(
-        doc="""Timestamp of the message. Defaults to the instantiation time.""")
+    timestamp = param.Date(doc="""
+        Timestamp of the message. Defaults to the creation time.""")
 
     timestamp_format = param.String(default="%H:%M", doc="The timestamp format.")
 
@@ -212,24 +214,28 @@ class ChatEntry(CompositeWidget):
 
     show_timestamp = param.Boolean(default=True, doc="Whether to show the timestamp.")
 
-    _value_panel = param.Parameter(doc="The rendered value pane.")
+    _value_panel = param.Parameter(doc="The rendered value panel.")
 
     _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/chat_entry.css'
+        f"{CDN_DIST}css/chat_entry.css"
     ]
 
     _exit_stack: ExitStack = None
 
     def __init__(self, **params):
-        from ..param import ParamMethod
+        from ..param import ParamMethod  # circular imports
+
         self._exit_stack = ExitStack()
+
         if params.get("timestamp") is None:
             params["timestamp"] = datetime.datetime.utcnow()
         if params.get("reaction_icons") is None:
-            params["reaction_icons"] = ChatReactionIcons()
-        elif isinstance(params["reaction_icons"], dict):
-            params["reaction_icons"] = ChatReactionIcons(options=params["reaction_icons"])
+            params["reaction_icons"] = {"favorite": "heart"}
+        if isinstance(params["reaction_icons"], dict):
+            params["reaction_icons"] = ChatReactionIcons(
+                options=params["reaction_icons"])
         super().__init__(**params)
+
         self.reaction_icons.link(self, value="reactions", bidirectional=True)
         self.param.trigger("reactions")
 
@@ -268,12 +274,12 @@ class ChatEntry(CompositeWidget):
         Determine the renderer to use based on the mime type.
         """
         renderer = _panel
-        if mime_type == 'application/pdf':
+        if mime_type == "application/pdf":
             contents = self._exit_stack.enter_context(
                 BytesIO(contents)
             )
             renderer = PDF
-        elif mime_type.startswith('audio/'):
+        elif mime_type.startswith("audio/"):
             f = self._exit_stack.enter_context(
                 NamedTemporaryFile(suffix=".mp3", delete=False)
             )
@@ -281,12 +287,12 @@ class ChatEntry(CompositeWidget):
             f.seek(0)
             contents = f.name
             renderer = Audio
-        elif mime_type.startswith('video/'):
+        elif mime_type.startswith("video/"):
             contents = self._exit_stack.enter_context(
                 BytesIO(contents)
             )
             renderer = Video
-        elif mime_type.startswith('image/'):
+        elif mime_type.startswith("image/"):
             contents = self._exit_stack.enter_context(
                 BytesIO(contents)
             )
@@ -333,7 +339,7 @@ class ChatEntry(CompositeWidget):
             value_panel = _panel(value)
         return value_panel
 
-    @param.depends('avatar')
+    @param.depends("avatar")
     def _render_avatar(self) -> None:
         """
         Render the avatar pane as some HTML text or Image pane.
@@ -343,28 +349,29 @@ class ChatEntry(CompositeWidget):
             avatar = self.user[0]
 
         if len(avatar) == 1:
-            # single character or emoji
-            avatar_pane = HTML(avatar, css_classes=["avatar"])
+            # single character
+            avatar_pane = HTML(avatar)
         else:
             try:
-                avatar_pane = Image(
-                    avatar, width=35, height=35, css_classes=["avatar"]
-                )
+                avatar_pane = Image(avatar, width=35, height=35)
             except ValueError:
-                avatar_pane = HTML(avatar, css_classes=["avatar"])
+                # likely an emoji
+                avatar_pane = HTML(avatar)
+        avatar_pane.css_classes = ["avatar"]
+        avatar_pane.visible = self.show_avatar
         return avatar_pane
 
-    @param.depends('user')
+    @param.depends("user")
     def _render_user(self) -> None:
         """
         Render the user pane as some HTML text or Image pane.
         """
-        return HTML(self.user, css_classes=["name"])
+        return HTML(self.user, css_classes=["name"], visible=self.show_user)
 
-    @param.depends('value')
+    @param.depends("value")
     def _render_value(self):
         """
-        Render the value pane as some HTML text or Image pane.
+        Renders value as a panel object.
         """
         value = self.value
         if isinstance(value, str):
@@ -373,18 +380,23 @@ class ChatEntry(CompositeWidget):
             value_panel = value
         else:
             value_panel = self._create_panel(value)
-        value_panel.css_classes = ["message"]
+        value_panel.css_classes = [
+            *value_panel.css_classes, "message"
+        ]
+
+        # used in ChatFeed to extract its contents
         self._value_panel = value_panel
         return value_panel
 
-    @param.depends('timestamp', 'timestamp_format')
+    @param.depends("timestamp", "timestamp_format", "show_timestamp")
     def _render_timestamp(self) -> None:
         """
-        Render the timestamp pane as some HTML text or Image pane.
+        Formats the timestamp and renders it as HTML pane.
         """
         return HTML(
             self.timestamp.strftime(self.timestamp_format),
             css_classes=["timestamp"],
+            visible=self.show_timestamp,
         )
 
     def _cleanup(self, root=None) -> None:
@@ -398,6 +410,10 @@ class ChatEntry(CompositeWidget):
 
 
 class ChatFeed(CompositeWidget):
+    """
+
+
+    """
     value = param.List(item_type=ChatEntry, doc="""
         The entries to add to the chat feed.""")
 
@@ -450,7 +466,7 @@ class ChatFeed(CompositeWidget):
         The previous user name.""")
 
     _stylesheets: ClassVar[List[str]] = [
-        f'{CDN_DIST}css/chat_feed.css'
+        f"{CDN_DIST}css/chat_feed.css"
     ]
 
     _composite_type: ClassVar[Type[ListPanel]] = Card
@@ -463,9 +479,9 @@ class ChatFeed(CompositeWidget):
             "header": self.header,
             "collapsed": False,
             "collapsible": False,
-            "css_classes": ['chat-card'],
-            "header_css_classes": ['chat-card-header'],
-            "title_css_classes": ['chat-card-title'],
+            "css_classes": ["chat-card"],
+            "header_css_classes": ["chat-card-header"],
+            "title_css_classes": ["chat-card-title"],
         }
         card_params.update(**self.card_params)
         self._composite.param.update(**card_params)
