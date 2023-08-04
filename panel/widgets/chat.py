@@ -477,6 +477,7 @@ class ChatFeed(CompositeWidget):
         # instantiate the card
         card_params = {
             "header": self.header,
+            "hide_header": self.header is None,
             "collapsed": False,
             "collapsible": False,
             "css_classes": ["chat-card"],
@@ -531,15 +532,12 @@ class ChatFeed(CompositeWidget):
         chat_log_params["margin"] = 0
         return chat_log_params
 
-    @param.depends("header", watch=True, on_init=True)
+    @param.depends("header", watch=True)
     def _hide_header(self):
         """
         Hide the header if there is no title or header.
         """
-        if not self.header:
-            self.hide_header = True
-        else:
-            self.hide_header = False
+        self._composite.hide_header = self.header is None
 
     def _replace_placeholder(self, entry: Optional[ChatEntry] = None):
         """
