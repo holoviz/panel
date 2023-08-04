@@ -35,6 +35,7 @@
 
 .center {
   width: fit-content;
+  margin-right: 10px; /* Space for reaction icons */
   max-width: 1000px;
   padding: 0px;
 }
@@ -50,6 +51,7 @@
   min-height: 50px;
   max-height: 400px;
   overflow-y: scroll;
+  margin-left: 10px; /* Space for avatar */
   background-color: var(--neutral-fill-active, #f1f1f1);
 }
 

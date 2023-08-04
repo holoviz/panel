@@ -412,7 +412,6 @@ class ChatEntry(CompositeWidget):
 class ChatFeed(CompositeWidget):
     """
 
-
     """
     value = param.List(item_type=ChatEntry, doc="""
         The entries to add to the chat feed.""")
@@ -433,7 +432,7 @@ class ChatFeed(CompositeWidget):
         If placeholder is the default LoadingSpinner,
         the text to display next to it.""")
 
-    placeholder_threshold = param.Number(default=0.28, bounds=(0, None), doc="""
+    placeholder_threshold = param.Number(default=0.2, bounds=(0, None), doc="""
         Min duration in seconds to display the placeholder. If 0, the placeholder
         will be disabled.""")
 
@@ -473,6 +472,7 @@ class ChatFeed(CompositeWidget):
 
     def __init__(self, **params: Any):
         super().__init__(**params)
+        self._parent_interface = None
 
         # instantiate the card
         card_params = {
@@ -525,9 +525,7 @@ class ChatFeed(CompositeWidget):
             chat_log_params.get("max_height") or
             chat_log_params.get("height", 450)
         )
-        if "height" in sizing_mode or "both" in sizing_mode:
-            chat_log_params["max_height"] = chat_log_height
-        else:
+        if "height" not in sizing_mode and "both" not in sizing_mode:
             chat_log_params["height"] = chat_log_height
         chat_log_params["margin"] = 0
         return chat_log_params
@@ -642,10 +640,18 @@ class ChatFeed(CompositeWidget):
 
             self._disabled = True
             num_entries = len(self._chat_log)
-            task = asyncio.create_task(self._submit_callback(entry))
-            await self._append_placeholder(task, num_entries)
-            await task
-            response_entry = task.result()
+            if isawaitable(self.callback):
+                task = asyncio.create_task(self._submit_callback(entry))
+                await self._append_placeholder(task, num_entries)
+                await task
+                response_entry = task.result()
+            else:
+                self._chat_log.append(self.placeholder)
+                response_entry = await self._submit_callback(entry)
+
+            if response_entry is None:
+                return
+
             if entry.user != response_entry.user:
                 self._previous_user = response_entry.user
                 self._respond_trigger.param.trigger("clicks")
@@ -677,6 +683,8 @@ class ChatFeed(CompositeWidget):
             message = {"value": message}
 
         if isinstance(message, dict):
+            if "value" not in message:
+                raise ValueError("Message must contain a value.")
             entry = ChatEntry(**message, **self.entry_params)
         else:
             entry = message
@@ -734,6 +742,20 @@ class ChatFeed(CompositeWidget):
         """
         self._chat_log.objects = entries
 
+    @property
+    def parent_interface(self, **params) -> "ChatInterface":
+        """
+        Returns a ChatInterface with this ChatFeed as its value.
+        """
+        return self._parent_interface
+
+    @parent_interface.setter
+    def parent_interface(self, parent_interface: "ChatInterface") -> None:
+        """
+        Sets the parent interface.
+        """
+        self._parent_interface = parent_interface
+
 
 class ChatInterface(CompositeWidget):
     """
@@ -742,8 +764,9 @@ class ChatInterface(CompositeWidget):
 
     value = param.ClassSelector(class_=ChatFeed, doc="The ChatFeed widget.")
 
-    widgets = param.List(default=[TextInput], doc="""
-        Widgets to use for the input.""")
+    widgets = param.List(doc="""
+        Widgets to use for the input. If not provided, defaults to
+        `[TextInput]`.""")
 
     user = param.String(default="You", doc="Name of the ChatInterface user.")
 
@@ -752,7 +775,11 @@ class ChatInterface(CompositeWidget):
         or anything supported by `pn.pane.Image`. If not set, uses the
         first character of the name.""")
 
-    show_rerun = param.Boolean(default=False, doc="""
+    reset_on_send = param.Boolean(default=False, doc="""
+        Whether to reset the widget's value after sending a message;
+        has no effect for `TextInput`.""")
+
+    show_rerun = param.Boolean(default=True, doc="""
         Whether to show the rerun button.""")
 
     show_undo = param.Boolean(default=True, doc="""
@@ -767,9 +794,14 @@ class ChatInterface(CompositeWidget):
     _composite_type: ClassVar[Type[ListPanel]] = Column
 
     def __init__(self, **params):
+        if params.get("widgets") is None:
+            params["widgets"] = [TextInput(placeholder="Send a message")]
+
         super().__init__(**params)
         if self.value is None:
-            self.value = ChatFeed(objects=[])
+            self.value = ChatFeed(value=[], _parent_interface=self)
+        else:
+            self.value._parent_interface = self
 
         button_icons = {
             "send": "send",
@@ -789,16 +821,6 @@ class ChatInterface(CompositeWidget):
         self._composite[:] = [self.value, self._input_layout]
 
         self.link(self.value, disabled="_disabled", bidirectional=True)
-
-
-    def _toggle_disabled(func):
-        def wrapper(self, *args, **kwargs):
-            self.disabled = True
-            try:
-                func(self, *args, **kwargs)
-            finally:
-                self.disabled = False
-        return wrapper
 
     def _link_disabled_loading(self, obj: Viewable):
         """
@@ -858,25 +880,25 @@ class ChatInterface(CompositeWidget):
         Send the input when the user presses Enter.
         """
         # wait until the chat feed's callback is done executing
+        # before allowing another input
         if self.disabled:
             return
 
-        for widget in self._widgets.values():
-            if hasattr(widget, "value_input"):
-                widget.value_input = ""
-            value = widget.value
-            if value:
-                if isinstance(widget, FileInput):
-                    value = _FileInputMessage(
-                        contents=value,
-                        mime_type=widget.mime_type,
-                        file_name=widget.filename,
-                    )
-                widget.value = ""
-                break
+        active_widget = self.active_widget
+        value = active_widget.value
+        if value:
+            if isinstance(active_widget, FileInput):
+                value = _FileInputMessage(
+                    contents=value,
+                    mime_type=active_widget.mime_type,
+                    file_name=active_widget.filename,
+                )
+            if isinstance(active_widget, TextInput) or self.reset_on_send:
+                if hasattr(active_widget, "value_input"):
+                    active_widget.value_input = ""
+                active_widget.value = ""
         else:
-            return  # no message entered across all widgets
-
+            return  # no message entered
         self._reset_button_data()
         message = ChatEntry(
             value=value, user=self.user, avatar=self.avatar
@@ -894,6 +916,10 @@ class ChatInterface(CompositeWidget):
         return 0
 
     def _toggle_revert(self, button_data, active):
+        """
+        Toggle the button's icon and name to indicate
+        whether the action can be reverted.
+        """
         for button in button_data.buttons:
             if active and button_data.objects:
                 button.button_type = "success"
@@ -903,6 +929,10 @@ class ChatInterface(CompositeWidget):
                 button.name = ""
 
     def _reset_button_data(self):
+        """
+        Clears all the objects in the button data
+        to prevent reverting.
+        """
         for button_data in self._button_data.values():
             button_data.objects.clear()
             self._toggle_revert(button_data, False)
@@ -916,11 +946,7 @@ class ChatInterface(CompositeWidget):
         entries = self.value.undo(count)
         if not entries:
             return
-
-        # select the current input tab
-        tab = self._input_layout[self._input_layout.active]
-        widget = tab.objects[0]
-        widget.value = entries[0].value
+        self.active_widget.value = entries[0].value
 
     def _click_undo(self, _):
         """
@@ -952,3 +978,32 @@ class ChatInterface(CompositeWidget):
         else:
             self.value.entries = clear_objects.copy()
             self._reset_button_data()
+
+    @property
+    def active_widget(self):
+        """
+        The currently active widget.
+        """
+        if isinstance(self._input_layout, Tabs):
+            active = self._input_layout.active
+            return self._input_layout[active].objects[0]
+        else:
+            return self._input_layout.objects[0]
+
+    @property
+    def active_tab(self):
+        """
+        The currently active input widget tab index.
+        """
+        if isinstance(self._input_layout, Tabs):
+            return self._input_layout.active
+        else:
+            return 0
+
+    @active_tab.setter
+    def active_tab(self, tab: int):
+        """
+        Set the active input widget tab index.
+        """
+        if isinstance(self._input_layout, Tabs):
+            self._input_layout.active = tab
