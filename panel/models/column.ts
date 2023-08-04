@@ -38,11 +38,11 @@ export class ColumnView extends BkColumnView {
   toggle_scroll_button(): void {
     const threshold = this.model.scroll_button_threshold
     const exceeds_threshold = this.distance_from_latest >= threshold
-    requestAnimationFrame(() => {
+    if (this.scroll_down_button_el) {
       this.scroll_down_button_el.classList.toggle(
         "visible", threshold !== 0 && exceeds_threshold
       )
-    });
+    };
   }
 
   render(): void {
