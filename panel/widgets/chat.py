@@ -339,7 +339,7 @@ class ChatEntry(CompositeWidget):
             value_panel = _panel(value)
         return value_panel
 
-    @param.depends("avatar")
+    @param.depends("avatar", "show_avatar")
     def _render_avatar(self) -> None:
         """
         Render the avatar pane as some HTML text or Image pane.
@@ -361,7 +361,7 @@ class ChatEntry(CompositeWidget):
         avatar_pane.visible = self.show_avatar
         return avatar_pane
 
-    @param.depends("user")
+    @param.depends("user", "show_user")
     def _render_user(self) -> None:
         """
         Render the user pane as some HTML text or Image pane.
