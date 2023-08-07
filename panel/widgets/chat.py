@@ -420,9 +420,10 @@ class ChatFeed(CompositeWidget):
         The header of the chat feed. Can be a string, pane, or widget.""")
 
     callback = param.Callable(doc="""
-        Callback to execute when a user sends a message.
-        The signature must include the previous message value `contents`,
-        the previous `user` name, and the component `instance`.""")
+        Callback to execute when a user sends a message or
+        when `execute_callback` is called. The signature must include
+        the previous message value `contents`, the previous `user` name,
+        and the component `instance`.""")
 
     placeholder = param.Parameter(doc="""
         Placeholder to display while the callback is running.
@@ -503,8 +504,8 @@ class ChatFeed(CompositeWidget):
         self._composite[:] = [self._chat_log]
 
         # handle async callbacks using this trick
-        self._respond_trigger = Button(visible=False)
-        self._respond_trigger.on_click(self._prepare_response)
+        self._callback_trigger = Button(visible=False)
+        self._callback_trigger.on_click(self._prepare_response)
 
         if self.placeholder is None:
             self.placeholder = LoadingSpinner(
@@ -658,7 +659,7 @@ class ChatFeed(CompositeWidget):
 
             if entry.user != response_entry.user:
                 self._previous_user = response_entry.user
-                self._respond_trigger.param.trigger("clicks")
+                self._callback_trigger.param.trigger("clicks")
         finally:
             self._replace_placeholder(None)
             self.disabled = disabled
@@ -687,14 +688,18 @@ class ChatFeed(CompositeWidget):
         """
         entry = self._build_entry(message)
         self._chat_log.append(entry)
+
         if respond:
-            self._respond_trigger.param.trigger("clicks")
+            self.execute_callback()
         return entry
 
     def stream(self, token: str, entry: Optional[ChatEntry] = None) -> None:
         """
         Streams a token and updates the provided entry, if provided,
         otherwise creates a new entry in the chat log.
+
+        Unlike send, this will not automatically execute the callback
+        upon completion; to do so manually, invoke the `execute_callback` method.
 
         This method is primarily for outputs that are not generators--
         notably LangChain. For most cases, use the send method instead.
@@ -705,6 +710,10 @@ class ChatFeed(CompositeWidget):
             The token to stream.
         entry : Optional[ChatEntry]
             The entry to update.
+
+        Returns
+        -------
+        The entry that was updated.
         """
         updated_entry = self._build_entry(message=token)
         if entry is None:
@@ -714,6 +723,12 @@ class ChatFeed(CompositeWidget):
             updated_entry.value = entry.value + updated_entry.value
             entry.param.update(**updated_entry.param.values())
             return entry
+
+    def execute_callback(self):
+        """
+        Executes the callback with the latest entry in the chat log.
+        """
+        self._callback_trigger.param.trigger("clicks")
 
     def undo(self, count: Optional[int] = 1) -> List[Any]:
         """
