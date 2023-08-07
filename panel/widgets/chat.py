@@ -504,7 +504,7 @@ class ChatFeed(CompositeWidget):
 
         # handle async callbacks using this trick
         self._respond_trigger = Button(visible=False)
-        self._respond_trigger.on_click(self._execute_callback)
+        self._respond_trigger.on_click(self._prepare_response)
 
         if self.placeholder is None:
             self.placeholder = LoadingSpinner(
@@ -544,32 +544,39 @@ class ChatFeed(CompositeWidget):
         index = None
         if self.placeholder_threshold > 0:
             try:
-                index = list(self._chat_log).index(self.placeholder)
+                index = self.entries.index(self.placeholder)
             except ValueError:
                 pass
 
         if index is not None:
-            if entry is None:
-                self._chat_log.remove(self.placeholder)
-            else:
+            if entry is not None:
                 self._chat_log[index] = entry
-        elif entry is not None:
+            elif entry is None:
+                self._chat_log.remove(self.placeholder)
+        elif entry is not None and entry.value:
             self._chat_log.append(entry)
 
-    def _update_entry(self, message: Any, entry: ChatEntry) -> bool:
+    def _build_entry(self, message):
+        if isinstance(message, str):
+            message = {"value": message}
+
+        if isinstance(message, dict):
+            if "value" not in message:
+                raise ValueError("Message must contain a value.")
+            entry = ChatEntry(**message, **self.entry_params)
+        else:
+            entry = message
+        return entry
+
+    def _update_entry(self, message: Any, entry: Optional[ChatEntry] = None) -> bool:
         """
         Update the placeholder entry with the response.
         """
-        if isinstance(message, dict):
-            message_param_values = message
-        else:
-            message_param_values =  {"value": message}
-
+        updated_entry = self._build_entry(message=message)
         if entry is None:
-            entry = ChatEntry(**message_param_values, **self.entry_params)
-            self._replace_placeholder(entry)
+            self._replace_placeholder(updated_entry)
         else:
-            entry.param.update(**message_param_values)
+            entry.param.update(**updated_entry.param.values())
         return entry
 
     def _extract_contents(self, entry):
@@ -595,19 +602,23 @@ class ChatFeed(CompositeWidget):
         elif hasattr(response, "__iter__"):
             for chunk in response:
                 response_entry = self._update_entry(chunk, response_entry)
-        elif isawaitable(self.callback):
+        elif isawaitable(response):
             response_entry = self._update_entry(await response, response_entry)
         else:
             response_entry = self._update_entry(response, response_entry)
         return response_entry
 
-    async def _submit_callback(self, entry: ChatEntry):
+    async def _handle_callback(self, entry: ChatEntry):
         contents = self._extract_contents(entry)
         response = self.callback(contents, entry.user, self)
         response_entry = await self._serialize_response(response)
         return response_entry
 
-    async def _append_placeholder(self, task: asyncio.Task, num_entries: int):
+    async def _schedule_placeholder(
+        self,
+        task: asyncio.Task,
+        num_entries: int,
+    ):
         if self.placeholder_threshold == 0:
             return
 
@@ -616,36 +627,31 @@ class ChatFeed(CompositeWidget):
             duration = asyncio.get_event_loop().time() - start
             if duration > self.placeholder_threshold:
                 self._chat_log.append(self.placeholder)
-                break
-            elif duration > 60:
-                # in case something went horribly wrong
-                break
+                return
             await asyncio.sleep(0.05)
 
-    async def _execute_callback(self, _):
-        """
-        Execute the callback and send the response.
-        """
+    async def _prepare_response(self, _):
         if self.callback is None:
             return
 
+        disabled = self.disabled
         try:
+            self.disabled = True
             entry = self._chat_log[-1]
             if not isinstance(entry, ChatEntry):
                 return
             elif entry.user == self._previous_user:
                 return
 
-            self.disabled = True
             num_entries = len(self._chat_log)
             if isawaitable(self.callback):
-                task = asyncio.create_task(self._submit_callback(entry))
-                await self._append_placeholder(task, num_entries)
+                task = asyncio.create_task(self._handle_callback(entry))
+                await self._schedule_placeholder(task, num_entries)
                 await task
                 response_entry = task.result()
             else:
                 self._chat_log.append(self.placeholder)
-                response_entry = await self._submit_callback(entry)
+                response_entry = await self._handle_callback(entry)
 
             if response_entry is None:
                 return
@@ -655,7 +661,9 @@ class ChatFeed(CompositeWidget):
                 self._respond_trigger.param.trigger("clicks")
         finally:
             self._replace_placeholder(None)
-            self.disabled = False
+            self.disabled = disabled
+
+    # public API
 
     def send(
         self,
@@ -677,20 +685,35 @@ class ChatFeed(CompositeWidget):
         -------
         The entry that was created.
         """
-        if isinstance(message, str):
-            message = {"value": message}
-
-        if isinstance(message, dict):
-            if "value" not in message:
-                raise ValueError("Message must contain a value.")
-            entry = ChatEntry(**message, **self.entry_params)
-        else:
-            entry = message
-
+        entry = self._build_entry(message)
         self._chat_log.append(entry)
         if respond:
             self._respond_trigger.param.trigger("clicks")
         return entry
+
+    def stream(self, token: str, entry: Optional[ChatEntry] = None) -> None:
+        """
+        Streams a token and updates the provided entry, if provided,
+        otherwise creates a new entry in the chat log.
+
+        This method is primarily for outputs that are not generators--
+        notably LangChain. For most cases, use the send method instead.
+
+        Parameters
+        ----------
+        token : str
+            The token to stream.
+        entry : Optional[ChatEntry]
+            The entry to update.
+        """
+        updated_entry = self._build_entry(message=token)
+        if entry is None:
+            self._replace_placeholder(updated_entry)
+            return updated_entry
+        else:
+            updated_entry.value = entry.value + updated_entry.value
+            entry.param.update(**updated_entry.param.values())
+            return entry
 
     def undo(self, count: Optional[int] = 1) -> List[Any]:
         """
