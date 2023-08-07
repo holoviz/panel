@@ -472,7 +472,6 @@ class ChatFeed(CompositeWidget):
 
     def __init__(self, **params: Any):
         super().__init__(**params)
-        self._parent_interface = None
 
         # instantiate the card
         card_params = {
@@ -480,9 +479,9 @@ class ChatFeed(CompositeWidget):
             "hide_header": self.header is None,
             "collapsed": False,
             "collapsible": False,
-            "css_classes": ["chat-card"],
-            "header_css_classes": ["chat-card-header"],
-            "title_css_classes": ["chat-card-title"],
+            "css_classes": ["chat-feed"],
+            "header_css_classes": ["chat-feed-header"],
+            "title_css_classes": ["chat-feed-title"],
         }
         card_params.update(**self.card_params)
         self._composite.param.update(**card_params)
@@ -497,7 +496,8 @@ class ChatFeed(CompositeWidget):
                 getattr(self, p) is not None
             )
         }
-        chat_log_params["styles"] = {"background": "transparent"}
+        chat_log_params["css_classes"] = ["chat-feed-log"]
+        chat_log_params["stylesheets"] = self._stylesheets
         chat_log_params = self._configure_log_sizing(chat_log_params)
         self._chat_log = Column(**chat_log_params)
         self._composite[:] = [self._chat_log]
@@ -516,10 +516,8 @@ class ChatFeed(CompositeWidget):
             )
 
     def _configure_log_sizing(self, chat_log_params):
-        sizing_mode = chat_log_params.get("sizing_mode", "stretch_width")
+        sizing_mode = chat_log_params.get("sizing_mode", "stretch_both")
         chat_log_params["sizing_mode"] = sizing_mode
-        if sizing_mode is None:
-            chat_log_params["sizing_mode"] = "stretch_width"
         chat_log_params["objects"] = self.value
         chat_log_height = (
             chat_log_params.get("max_height") or
@@ -638,7 +636,7 @@ class ChatFeed(CompositeWidget):
             elif entry.user == self._previous_user:
                 return
 
-            self._disabled = True
+            self.disabled = True
             num_entries = len(self._chat_log)
             if isawaitable(self.callback):
                 task = asyncio.create_task(self._submit_callback(entry))
@@ -657,7 +655,7 @@ class ChatFeed(CompositeWidget):
                 self._respond_trigger.param.trigger("clicks")
         finally:
             self._replace_placeholder(None)
-            self._disabled = False
+            self.disabled = False
 
     def send(
         self,
@@ -742,27 +740,11 @@ class ChatFeed(CompositeWidget):
         """
         self._chat_log.objects = entries
 
-    @property
-    def parent_interface(self, **params) -> "ChatInterface":
-        """
-        Returns a ChatInterface with this ChatFeed as its value.
-        """
-        return self._parent_interface
 
-    @parent_interface.setter
-    def parent_interface(self, parent_interface: "ChatInterface") -> None:
-        """
-        Sets the parent interface.
-        """
-        self._parent_interface = parent_interface
-
-
-class ChatInterface(CompositeWidget):
+class ChatInterface(ChatFeed):
     """
     High level widget that contains the chat log and the chat input.
     """
-
-    value = param.ClassSelector(class_=ChatFeed, doc="The ChatFeed widget.")
 
     widgets = param.List(doc="""
         Widgets to use for the input. If not provided, defaults to
@@ -791,17 +773,10 @@ class ChatInterface(CompositeWidget):
     _button_data = param.Dict(default={}, doc="""
         Metadata and data related to the buttons.""")
 
-    _composite_type: ClassVar[Type[ListPanel]] = Column
-
     def __init__(self, **params):
         if params.get("widgets") is None:
             params["widgets"] = [TextInput(placeholder="Send a message")]
-
         super().__init__(**params)
-        if self.value is None:
-            self.value = ChatFeed(value=[], _parent_interface=self)
-        else:
-            self.value._parent_interface = self
 
         button_icons = {
             "send": "send",
@@ -818,9 +793,7 @@ class ChatInterface(CompositeWidget):
             ) for index, (name, icon) in enumerate(button_icons.items())
         }
         self._input_layout = self._init_widgets()
-        self._composite[:] = [self.value, self._input_layout]
-
-        self.link(self.value, disabled="_disabled", bidirectional=True)
+        self._composite[:] = [self._chat_log, self._input_layout]
 
     def _link_disabled_loading(self, obj: Viewable):
         """
@@ -866,7 +839,7 @@ class ChatInterface(CompositeWidget):
                 buttons.append(button)
                 button_data.buttons.append(button)
 
-            message_row = Row(widget, *buttons)
+            message_row = Row(widget, *buttons, sizing_mode="stretch_width")
             input_layout.append((name, message_row))
 
         # if only a single input, don't use tabs
@@ -903,13 +876,13 @@ class ChatInterface(CompositeWidget):
         message = ChatEntry(
             value=value, user=self.user, avatar=self.avatar
         )
-        self.value.send(message=message)
+        self.send(message=message)
 
     def _get_last_user_entry_index(self) -> int:
         """
         Get the index of the last user entry.
         """
-        entries = self.value.entries[::-1]
+        entries = self.entries[::-1]
         for index, entry in enumerate(entries, 1):
             if entry.user == self.user:
                 return index
@@ -943,7 +916,7 @@ class ChatInterface(CompositeWidget):
         which can trigger the callback again.
         """
         count = self._get_last_user_entry_index()
-        entries = self.value.undo(count)
+        entries = self.undo(count)
         if not entries:
             return
         self.active_widget.value = entries[0].value
@@ -958,10 +931,10 @@ class ChatInterface(CompositeWidget):
         undo_objects = undo_data.objects
         if not undo_objects:
             count = self._get_last_user_entry_index()
-            undo_data.objects = self.value.undo(count)
+            undo_data.objects = self.undo(count)
             self._toggle_revert(undo_data, True)
         else:
-            self.value.entries = [*self.value.entries, *undo_objects.copy()]
+            self.entries = [*self.entries, *undo_objects.copy()]
             self._reset_button_data()
 
     def _click_clear(self, _):
@@ -973,10 +946,10 @@ class ChatInterface(CompositeWidget):
         clear_data = self._button_data["clear"]
         clear_objects = clear_data.objects
         if not clear_objects:
-            clear_data.objects = self.value.clear()
+            clear_data.objects = self.clear()
             self._toggle_revert(clear_data, True)
         else:
-            self.value.entries = clear_objects.copy()
+            self.entries = clear_objects.copy()
             self._reset_button_data()
 
     @property
