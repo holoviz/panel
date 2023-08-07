@@ -1,7 +1,4 @@
 .chat-feed-header {
   margin-left: 15px;
-}
-
-.chat-feed-log {
-  height: inherit;
+  background: red;
 }
