@@ -421,7 +421,7 @@ class ChatFeed(CompositeWidget):
 
     callback = param.Callable(doc="""
         Callback to execute when a user sends a message or
-        when `execute_callback` is called. The signature must include
+        when `respond` is called. The signature must include
         the previous message value `contents`, the previous `user` name,
         and the component `instance`.""")
 
@@ -690,7 +690,7 @@ class ChatFeed(CompositeWidget):
         self._chat_log.append(entry)
 
         if respond:
-            self.execute_callback()
+            self.respond()
         return entry
 
     def stream(self, token: str, entry: Optional[ChatEntry] = None) -> None:
@@ -699,7 +699,7 @@ class ChatFeed(CompositeWidget):
         otherwise creates a new entry in the chat log.
 
         Unlike send, this will not automatically execute the callback
-        upon completion; to do so manually, invoke the `execute_callback` method.
+        upon completion; to do so manually, invoke the `respond` method.
 
         This method is primarily for outputs that are not generators--
         notably LangChain. For most cases, use the send method instead.
@@ -724,7 +724,7 @@ class ChatFeed(CompositeWidget):
             entry.param.update(**updated_entry.param.values())
             return entry
 
-    def execute_callback(self):
+    def respond(self):
         """
         Executes the callback with the latest entry in the chat log.
         """
