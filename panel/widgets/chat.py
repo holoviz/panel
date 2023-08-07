@@ -421,8 +421,8 @@ class ChatFeed(CompositeWidget):
 
     callback = param.Callable(doc="""
         Callback to execute when a user sends a message.
-        The signature must include the previous message value `contents`, the previous `user` name,
-        and the `chat_feed` instance.""")
+        The signature must include the previous message value `contents`,
+        the previous `user` name, and the component `instance`.""")
 
     placeholder = param.Parameter(doc="""
         Placeholder to display while the callback is running.
@@ -516,7 +516,7 @@ class ChatFeed(CompositeWidget):
             )
 
     def _configure_log_sizing(self, chat_log_params):
-        sizing_mode = chat_log_params.get("sizing_mode", "stretch_both")
+        sizing_mode = chat_log_params.get("sizing_mode", "stretch_width")
         chat_log_params["sizing_mode"] = sizing_mode
         chat_log_params["objects"] = self.value
         chat_log_height = (
@@ -772,6 +772,10 @@ class ChatInterface(ChatFeed):
 
     _button_data = param.Dict(default={}, doc="""
         Metadata and data related to the buttons.""")
+
+    _stylesheets: ClassVar[List[str]] = [
+        f"{CDN_DIST}css/chat_interface.css"
+    ]
 
     def __init__(self, **params):
         if params.get("widgets") is None:
