@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import functools
 import json
+import re
 import textwrap
 
 from typing import (
@@ -404,6 +405,14 @@ class Markdown(HTMLBasePane):
         parser.options['highlight'] = hilite
         return parser
 
+    @staticmethod
+    def _replace_newlines_with_br_in_p_tags(html_text):
+        def replace_newlines(match):
+            return match.group(0).replace('\n', '<br>')
+        return re.sub(
+            r'<p>.*?</p>', replace_newlines, html_text, flags=re.DOTALL
+        )
+
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
         import markdown
         if obj is None:
@@ -412,13 +421,14 @@ class Markdown(HTMLBasePane):
             obj = obj._repr_markdown_()
         if self.dedent:
             obj = textwrap.dedent(obj)
+
         if self.renderer == 'markdown':
             html = markdown.markdown(
                 obj, extensions=self.extensions, output_format='html5'
             )
         else:
             html = self._get_parser(self.renderer, tuple(self.plugins)).render(obj)
-        html = html.replace("\n", "<br>")
+        html = self._replace_newlines_with_br_in_p_tags(html)
         return dict(object=escape(html))
 
     def _process_param_change(self, params):
