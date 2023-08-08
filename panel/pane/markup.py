@@ -418,6 +418,7 @@ class Markdown(HTMLBasePane):
             )
         else:
             html = self._get_parser(self.renderer, tuple(self.plugins)).render(obj)
+        html = html.replace("\n", "<br>")
         return dict(object=escape(html))
 
     def _process_param_change(self, params):
