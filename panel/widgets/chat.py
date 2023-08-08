@@ -509,7 +509,7 @@ class ChatFeed(CompositeWidget):
 
         if self.placeholder is None:
             self.placeholder = LoadingSpinner(
-                name=self.placeholder_text,
+                name=self.param.placeholder_text,
                 value=True,
                 width=40,
                 height=40,
@@ -598,11 +598,11 @@ class ChatFeed(CompositeWidget):
     async def _serialize_response(self, response):
         response_entry = None
         if hasattr(response, "__aiter__"):
-            async for chunk in response:
-                response_entry = self._update_entry(chunk, response_entry)
+            async for token in response:
+                response_entry = self._update_entry(token, response_entry)
         elif hasattr(response, "__iter__"):
-            for chunk in response:
-                response_entry = self._update_entry(chunk, response_entry)
+            for token in response:
+                response_entry = self._update_entry(token, response_entry)
         elif isawaitable(response):
             response_entry = self._update_entry(await response, response_entry)
         else:
@@ -695,8 +695,10 @@ class ChatFeed(CompositeWidget):
 
     def stream(self, token: str, entry: Optional[ChatEntry] = None) -> None:
         """
-        Streams a token and updates the provided entry, if provided,
-        otherwise creates a new entry in the chat log.
+        Streams a token and updates the provided entry, if provided.
+        Otherwise creates a new entry in the chat log, so be sure the
+        returned entry is passed back into the method, e.g.
+        `entry = chat.stream(token, entry)`.
 
         Unlike send, this will not automatically execute the callback
         upon completion; to do so manually, invoke the `respond` method.
