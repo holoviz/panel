@@ -7,7 +7,7 @@ from inspect import isawaitable
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from typing import (
-    Any, BinaryIO, ClassVar, List, Optional, Type, Union,
+    Any, BinaryIO, ClassVar, Dict, List, Optional, Type, Union,
 )
 
 import param
@@ -18,7 +18,7 @@ from ..layout import (
 )
 from ..layout.card import Card
 from ..pane.base import panel as _panel
-from ..pane.image import PDF, Image
+from ..pane.image import PDF, Image, ImageBase
 from ..pane.markup import HTML, DataFrame, Markdown
 from ..pane.media import Audio, Video
 from ..reactive import ReactiveHTML
@@ -516,7 +516,7 @@ class ChatFeed(CompositeWidget):
                 margin=25
             )
 
-    def _configure_log_sizing(self, chat_log_params):
+    def _configure_log_sizing(self, chat_log_params: Dict[str, Any]) -> Dict[str, Any]:
         sizing_mode = chat_log_params.get("sizing_mode", "stretch_width")
         chat_log_params["sizing_mode"] = sizing_mode
         chat_log_params["objects"] = self.value
@@ -536,7 +536,7 @@ class ChatFeed(CompositeWidget):
         """
         self._composite.hide_header = self.header is None
 
-    def _replace_placeholder(self, entry: Optional[ChatEntry] = None):
+    def _replace_placeholder(self, entry: Optional[ChatEntry] = None) -> None:
         """
         Replace the placeholder from the chat log with the entry
         if placeholder, otherwise simply append the entry.
@@ -557,19 +557,35 @@ class ChatFeed(CompositeWidget):
         elif entry is not None and entry.value:
             self._chat_log.append(entry)
 
-    def _build_entry(self, message):
+    def _build_entry(
+            self,
+            message: Union[ChatEntry, dict, Any],
+            user: Optional[str] = None,
+            avatar: Optional[Union[str, BinaryIO]] = None,
+        ) -> ChatEntry:
+        if message is None:
+            return
+
         if isinstance(message, str):
             message = {"value": message}
+
+        new_params = {}
+        if user is not None:
+            new_params["user"] = user
+        if avatar is not None:
+            new_params["avatar"] = avatar
 
         if isinstance(message, dict):
             if "value" not in message:
                 raise ValueError("Message must contain a value.")
+            message.update(**new_params)
             entry = ChatEntry(**message, **self.entry_params)
         else:
+            message.param.update(**new_params)
             entry = message
         return entry
 
-    def _update_entry(self, message: Any, entry: Optional[ChatEntry] = None) -> bool:
+    def _update_entry(self, message: Any, entry: Optional[ChatEntry] = None) -> ChatEntry:
         """
         Update the placeholder entry with the response.
         """
@@ -580,7 +596,7 @@ class ChatFeed(CompositeWidget):
             entry.param.update(**updated_entry.param.values())
         return entry
 
-    def _extract_contents(self, entry):
+    def _extract_contents(self, entry: ChatEntry) -> Any:
         """
         Extracts the contents from the entry's panel object.
         """
@@ -595,7 +611,7 @@ class ChatFeed(CompositeWidget):
             contents = value
         return contents
 
-    async def _serialize_response(self, response):
+    async def _serialize_response(self, response: Any) -> Optional[ChatEntry]:
         response_entry = None
         if hasattr(response, "__aiter__"):
             async for token in response:
@@ -609,7 +625,7 @@ class ChatFeed(CompositeWidget):
             response_entry = self._update_entry(response, response_entry)
         return response_entry
 
-    async def _handle_callback(self, entry: ChatEntry):
+    async def _handle_callback(self, entry: ChatEntry) -> Optional[ChatEntry]:
         contents = self._extract_contents(entry)
         response = self.callback(contents, entry.user, self)
         response_entry = await self._serialize_response(response)
@@ -619,7 +635,7 @@ class ChatFeed(CompositeWidget):
         self,
         task: asyncio.Task,
         num_entries: int,
-    ):
+    ) -> None:
         if self.placeholder_threshold == 0:
             return
 
@@ -631,7 +647,7 @@ class ChatFeed(CompositeWidget):
                 return
             await asyncio.sleep(0.05)
 
-    async def _prepare_response(self, _):
+    async def _prepare_response(self, _) -> None:
         if self.callback is None:
             return
 
@@ -664,21 +680,57 @@ class ChatFeed(CompositeWidget):
             self._replace_placeholder(None)
             self.disabled = disabled
 
+    def _stream(self, token: str, entry: ChatEntry) -> ChatEntry:
+        """
+        Updates the entry with the token and handles nested
+        objects by traversing the entry's value and updating the
+        last panel in the column that supports strings; e.g.
+        updates Markdown here: `Column(Markdown(...), Image(...))`
+        """
+        i = -1
+        parent_panel = None
+        value_panel = entry
+        attr = "value"
+        value = entry.value
+        while not isinstance(value, str) or isinstance(value_panel, ImageBase):
+            value_panel = value
+            if hasattr(value, "objects"):
+                parent_panel = value
+                attr = "objects"
+                value = value.objects[i]
+            elif hasattr(value, "object"):
+                attr = "object"
+                value = value.object
+            elif hasattr(value, "value"):
+                attr = "value"
+                value = value.value
+            elif parent_panel is not None:
+                value = parent_panel
+                parent_panel = None
+                i -= 1
+        setattr(value_panel, attr, value + token)
+
     # public API
 
     def send(
         self,
-        message: Union[ChatEntry, dict, str],
+        message: Union[ChatEntry, dict, Any],
+        user: Optional[str] = None,
+        avatar: Optional[Union[str, BinaryIO]] = None,
         respond: bool = True,
-    ) -> None:
+    ) -> ChatEntry:
         """
         Send a message and creates a new entry in the chat log.
         If respond, additionally executes the callback, if provided.
 
         Parameters
         ----------
-        message : Union[ChatEntry, dict, str]
+        message : Union[ChatEntry, dict, Any]
             The message to send.
+        user : Optional[str]
+            The user to send as; overrides the message entry's user if provided.
+        avatar : Optional[Union[str, BinaryIO]]
+            The avatar to use; overrides the message entry's avatar if provided.
         respond : bool
             Whether to execute the callback.
 
@@ -686,19 +738,25 @@ class ChatFeed(CompositeWidget):
         -------
         The entry that was created.
         """
-        entry = self._build_entry(message)
+        entry = self._build_entry(message, user=user, avatar=avatar)
         self._chat_log.append(entry)
 
         if respond:
             self.respond()
         return entry
 
-    def stream(self, token: str, entry: Optional[ChatEntry] = None) -> None:
+    def stream(
+            self,
+            token: str,
+            user: Optional[str] = None,
+            avatar: Optional[Union[str, BinaryIO]] = None,
+            entry: Optional[ChatEntry] = None,
+        ) -> ChatEntry:
         """
         Streams a token and updates the provided entry, if provided.
         Otherwise creates a new entry in the chat log, so be sure the
         returned entry is passed back into the method, e.g.
-        `entry = chat.stream(token, entry)`.
+        `entry = chat.stream(token, entry=entry)`.
 
         Unlike send, this will not automatically execute the callback
         upon completion; to do so manually, invoke the `respond` method.
@@ -710,6 +768,10 @@ class ChatFeed(CompositeWidget):
         ----------
         token : str
             The token to stream.
+        user : Optional[str]
+            The user to stream as; overrides the entry's user if provided.
+        avatar : Optional[Union[str, BinaryIO]]
+            The avatar to use; overrides the entry's avatar if provided.
         entry : Optional[ChatEntry]
             The entry to update.
 
@@ -717,14 +779,15 @@ class ChatFeed(CompositeWidget):
         -------
         The entry that was updated.
         """
-        updated_entry = self._build_entry(message=token)
-        if entry is None:
-            self._replace_placeholder(updated_entry)
-            return updated_entry
+        replace = entry is None
+        entry = self._build_entry(
+            message=entry or token, user=user, avatar=avatar
+        )
+        if replace:
+            self._replace_placeholder(entry)
         else:
-            updated_entry.value = entry.value + updated_entry.value
-            entry.param.update(**updated_entry.param.values())
-            return entry
+            self._stream(token, entry)
+        return entry
 
     def respond(self):
         """
@@ -932,7 +995,7 @@ class ChatInterface(ChatFeed):
                 return index
         return 0
 
-    def _toggle_revert(self, button_data, active):
+    def _toggle_revert(self, button_data: _ChatButtonData, active: bool):
         """
         Toggle the button's icon and name to indicate
         whether the action can be reverted.
