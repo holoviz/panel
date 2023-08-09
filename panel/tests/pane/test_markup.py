@@ -74,7 +74,8 @@ def test_markdown_pane_dedent(document, comm):
     assert model.text.startswith('&lt;pre&gt;&lt;code&gt;ABC')
 
 def test_markdown_pane_newline(document, comm):
-    pane = Markdown("Hello\nWorld\nI'm here!")
+    pane = Markdown("Hello\nWorld\nI'm here!",
+                    renderer="markdown-it", renderer_options={"breaks": True})
 
     # Create pane
     model = pane.get_root(document, comm=comm)

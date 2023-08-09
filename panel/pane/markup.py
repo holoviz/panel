@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import functools
 import json
-import re
 import textwrap
 
 from typing import (
@@ -331,6 +330,9 @@ class Markdown(HTMLBasePane):
         'markdown-it', 'myst', 'markdown'], doc="""
         Markdown renderer implementation.""")
 
+    renderer_options = param.Dict(default={}, doc="""
+        Options to pass to the markdown renderer.""")
+
     # Priority depends on the data type
     priority: ClassVar[float | bool | None] = None
 
@@ -362,7 +364,7 @@ class Markdown(HTMLBasePane):
 
     @classmethod
     @functools.lru_cache(maxsize=None)
-    def _get_parser(cls, renderer, plugins):
+    def _get_parser(cls, renderer, renderer_options, plugins):
         if renderer == 'markdown':
             return None
         from markdown_it import MarkdownIt
@@ -380,7 +382,11 @@ class Markdown(HTMLBasePane):
                 return token
 
         if renderer == 'markdown-it':
-            parser = MarkdownIt('gfm-like', renderer_cls=RendererHTML)
+            parser = MarkdownIt(
+                'gfm-like',
+                renderer_cls=RendererHTML,
+                options_update=renderer_options
+            )
         elif renderer == 'myst':
             from myst_parser.parsers.mdit import (
                 MdParserConfig, create_md_parser,
@@ -388,7 +394,7 @@ class Markdown(HTMLBasePane):
             config = MdParserConfig(heading_anchors=1, enable_extensions=[
                 'colon_fence', 'linkify', 'smartquotes', 'tasklist',
                 'attrs_block'
-            ], enable_checkboxes=True)
+            ], enable_checkboxes=True, **renderer_options)
             parser = create_md_parser(config, RendererHTML)
         parser = (
             parser
@@ -405,14 +411,6 @@ class Markdown(HTMLBasePane):
         parser.options['highlight'] = hilite
         return parser
 
-    @staticmethod
-    def _replace_newlines_with_br_in_p_tags(html_text):
-        def replace_newlines(match):
-            return match.group(0).replace('\n', '<br>')
-        return re.sub(
-            r'<p>.*?</p>', replace_newlines, html_text, flags=re.DOTALL
-        )
-
     def _transform_object(self, obj: Any) -> Dict[str, Any]:
         import markdown
         if obj is None:
@@ -424,11 +422,15 @@ class Markdown(HTMLBasePane):
 
         if self.renderer == 'markdown':
             html = markdown.markdown(
-                obj, extensions=self.extensions, output_format='html5'
+                obj,
+                extensions=self.extensions,
+                output_format='html5',
+                **self.renderer_options
             )
         else:
-            html = self._get_parser(self.renderer, tuple(self.plugins)).render(obj)
-        html = self._replace_newlines_with_br_in_p_tags(html)
+            html = self._get_parser(
+                self.renderer, self.renderer_options, tuple(self.plugins)
+            ).render(obj)
         return dict(object=escape(html))
 
     def _process_param_change(self, params):
