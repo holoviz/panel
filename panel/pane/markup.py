@@ -338,7 +338,7 @@ class Markdown(HTMLBasePane):
 
     _rename: ClassVar[Mapping[str, str | None]] = {
         'dedent': None, 'disable_math': None, 'extensions': None,
-        'plugins': None, 'renderer': None
+        'plugins': None, 'renderer': None, 'renderer_options': None
     }
 
     _rerender_params: ClassVar[List[str]] = [
@@ -364,9 +364,11 @@ class Markdown(HTMLBasePane):
 
     @classmethod
     @functools.lru_cache(maxsize=None)
-    def _get_parser(cls, renderer, renderer_options, plugins):
+    def _get_parser(cls, renderer, plugins, **renderer_options):
         if renderer == 'markdown':
             return None
+        if "breaks" not in renderer_options:
+            renderer_options["breaks"] = True
         from markdown_it import MarkdownIt
         from markdown_it.renderer import RendererHTML
         from mdit_py_plugins.anchors import anchors_plugin
@@ -429,7 +431,7 @@ class Markdown(HTMLBasePane):
             )
         else:
             html = self._get_parser(
-                self.renderer, self.renderer_options, tuple(self.plugins)
+                self.renderer, tuple(self.plugins), **self.renderer_options
             ).render(obj)
         return dict(object=escape(html))
 
