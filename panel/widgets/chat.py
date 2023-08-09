@@ -564,7 +564,7 @@ class ChatFeed(CompositeWidget):
         if value is None:
             return
 
-        if isinstance(value, str):
+        if not isinstance(value, (ChatEntry, dict)):
             value = {"value": value}
 
         new_params = {}
@@ -586,9 +586,10 @@ class ChatFeed(CompositeWidget):
             entry = value
         return entry
 
-    def _update_entry(self, value: Any, entry: Optional[ChatEntry] = None) -> ChatEntry:
+    def _upsert_entry(self, value: Any, entry: Optional[ChatEntry] = None) -> ChatEntry:
         """
-        Update the placeholder entry with the response.
+        Replace the placeholder entry with the response or update
+        the entry's value with the response.
         """
         updated_entry = self._build_entry(value)
         if entry is None:
@@ -616,14 +617,14 @@ class ChatFeed(CompositeWidget):
         response_entry = None
         if hasattr(response, "__aiter__"):
             async for token in response:
-                response_entry = self._update_entry(token, response_entry)
+                response_entry = self._upsert_entry(token, response_entry)
         elif hasattr(response, "__iter__"):
             for token in response:
-                response_entry = self._update_entry(token, response_entry)
+                response_entry = self._upsert_entry(token, response_entry)
         elif isawaitable(response):
-            response_entry = self._update_entry(await response, response_entry)
+            response_entry = self._upsert_entry(await response, response_entry)
         else:
-            response_entry = self._update_entry(response, response_entry)
+            response_entry = self._upsert_entry(response, response_entry)
         return response_entry
 
     async def _handle_callback(self, entry: ChatEntry) -> Optional[ChatEntry]:
@@ -658,8 +659,6 @@ class ChatFeed(CompositeWidget):
             entry = self._chat_log[-1]
             if not isinstance(entry, ChatEntry):
                 return
-            elif entry.user == self._previous_user:
-                return
 
             num_entries = len(self._chat_log)
             if isawaitable(self.callback):
@@ -673,10 +672,8 @@ class ChatFeed(CompositeWidget):
 
             if response_entry is None:
                 return
-
-            if entry.user != response_entry.user:
+            elif response_entry.user != entry.user:
                 self._previous_user = response_entry.user
-                self._callback_trigger.param.trigger("clicks")
         finally:
             self._replace_placeholder(None)
             self.disabled = disabled
