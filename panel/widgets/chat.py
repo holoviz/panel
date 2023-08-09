@@ -756,9 +756,6 @@ class ChatFeed(CompositeWidget):
         returned entry is passed back into the method, e.g.
         `entry = chat.stream(token, entry=entry)`.
 
-        Unlike send, this will not automatically execute the callback
-        upon completion; to do so manually, invoke the `respond` method.
-
         This method is primarily for outputs that are not generators--
         notably LangChain. For most cases, use the send method instead.
 
