@@ -60,7 +60,7 @@ The above command installs Panel's dependencies using conda, then performs a pip
 
 If you also want to run the UI tests run the following:
 ``` bash
-pip install playwright pytest-playwright
+conda install pytest-playwright -c microsoft -c conda-forge
 playwright install chromium
 ```
 
